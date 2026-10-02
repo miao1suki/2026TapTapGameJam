@@ -12,3 +12,13 @@
 
 追加独立条目：日期、负责人、分支、功能/场景范围、接口变更、验证结果、交接提交。
 不要删除/改写其他成员正在进行的工作。
+
+## 基础工具与相机 Timeline 范本
+
+- 日期：2026-10-02。
+- 负责人：orpheus0829。
+- 分支：`codex/orpheus0829/basic-tools`。
+- 范围：恢复 `Assets/GJ_Tools/BasicTools`；在 `SampleScene` 增加相机管理、TimelineCamRig 与示例玩家组件；为 `CameraTimelineClip` Inspector 的 2D/3D 相关参数增加可折叠视觉分区；新增 Timeline 示例资产与 TimelineSettings。
+- 接口变更：运行时接口无变更；Timeline 相机 Inspector 仅调整显示分组。
+- 验证：补丁静态检查通过；Unity 全量编译和 PlayMode 验证未在本轮完成，交由整合者复验。
+- 交接提交：本条目随当前任务提交。

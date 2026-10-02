@@ -4,6 +4,10 @@ using UnityEngine;
 [CustomEditor(typeof(CameraTimelineClip))]
 public class CameraTimelineClipInspector : Editor
 {
+    private const string ModeDependentFoldoutKey =
+        "CameraTimelineClipInspector.ModeDependentExpanded";
+
+    private bool modeDependentExpanded;
     private SerializedProperty cameraMoveMode;
     private SerializedProperty resetSubMode;
     private SerializedProperty resetLerpFactor;
@@ -87,6 +91,9 @@ public class CameraTimelineClipInspector : Editor
         startSpeed = serializedObject.FindProperty("startSpeed");
         endSpeed = serializedObject.FindProperty("endSpeed");
         useLastFrameAsOrigin = serializedObject.FindProperty("useLastFrameAsOrigin");
+        modeDependentExpanded = SessionState.GetBool(
+            ModeDependentFoldoutKey,
+            modeRequest.enumValueIndex != 0);
     }
 
     public override void OnInspectorGUI()
@@ -111,7 +118,7 @@ public class CameraTimelineClipInspector : Editor
                 EditorGUILayout.PropertyField(resetLerpFactor, new GUIContent("归位平滑速度", "数值越大拉回越快"));
             }
             EditorGUILayout.PropertyField(lockLookAtPlayer, new GUIContent("看向角色", "归位过程中持续看向角色"));
-            DrawProjectionSection();
+            DrawModeDependentSection(false);
             serializedObject.ApplyModifiedProperties();
             return;
         }
@@ -169,9 +176,7 @@ public class CameraTimelineClipInspector : Editor
 
         EditorGUILayout.PropertyField(lockLookAtPlayer, new GUIContent("看向角色", "全程看向角色；关闭则使用机位朝向"));
         DrawMotionCurveSection();
-        DrawProjectionSection();
-        DrawAxisConstraintSection();
-        Draw2DTurnSection();
+        DrawModeDependentSection();
 
         if (mode == CamMoveMode.SmoothLerp)
         {
@@ -193,6 +198,54 @@ public class CameraTimelineClipInspector : Editor
         }
     }
 
+    private void DrawModeDependentSection()
+    {
+        DrawModeDependentSection(true);
+    }
+
+    private void DrawModeDependentSection(bool include2DControls)
+    {
+        DrawDivider();
+        modeDependentExpanded = EditorGUILayout.Foldout(
+            modeDependentExpanded,
+            include2DControls
+                ? "2D / 3D 模式相关参数 · 受申请模式影响"
+                : "2D / 3D 模式申请 · 受申请模式影响",
+            true);
+        SessionState.SetBool(
+            ModeDependentFoldoutKey,
+            modeDependentExpanded);
+        if (modeDependentExpanded)
+        {
+            EditorGUILayout.LabelField(
+                include2DControls
+                    ? "这里只影响模式申请、2D 转向和正交轴约束；普通运镜、环绕和目标机位参数不受影响。"
+                    : "归位模式只保留模式申请；2D 转向和正交轴约束由普通运镜片段处理。",
+                EditorStyles.miniLabel);
+            DrawProjectionSection();
+            if (include2DControls)
+            {
+                Draw2DTurnSection();
+                DrawAxisConstraintSection();
+            }
+        }
+        DrawDivider();
+    }
+
+    private static void DrawDivider(string label = null)
+    {
+        EditorGUILayout.Space(6);
+        Rect rect = EditorGUILayout.GetControlRect(false, 1f);
+        EditorGUI.DrawRect(rect, new Color(0.35f, 0.35f, 0.35f, 0.9f));
+        if (string.IsNullOrEmpty(label))
+        {
+            return;
+        }
+
+        EditorGUILayout.Space(2);
+        EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+    }
+
     private void DrawProjectionSection()
     {
         EditorGUILayout.Space(2);
@@ -204,7 +257,7 @@ public class CameraTimelineClipInspector : Editor
             TimelineCameraModeRequest.None)
         {
             EditorGUILayout.LabelField(
-                "保持 Project CameraModeController 当前模式",
+                "不申请模式：保持当前 2D / 3D；2D 转向与正交轴约束按当前投影判断。",
                 EditorStyles.miniLabel);
             return;
         }

@@ -7,8 +7,9 @@
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |
 | 基础玩家 | `Assets/Player` | 基础motor重新接入；不含旧玩法 |
+| 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
 | 成就 | `Assets/_Project/Code/Systems/Achievements` | 其他程序旧功能，空新catalog |
-| Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 其他程序旧功能，无demo场景 |
+| Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本 |
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。
