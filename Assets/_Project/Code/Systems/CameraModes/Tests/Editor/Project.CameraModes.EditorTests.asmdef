@@ -1,0 +1,21 @@
+{
+  "name": "Project.CameraModes.EditorTests",
+  "rootNamespace": "Project.CameraModes.Tests",
+  "references": [
+    "Project.CameraModes.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

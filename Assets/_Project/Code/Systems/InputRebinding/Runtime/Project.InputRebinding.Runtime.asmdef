@@ -1,0 +1,17 @@
+{
+  "name": "Project.InputRebinding.Runtime",
+  "rootNamespace": "Project.InputRebinding",
+  "references": [
+    "Project.InputAbstraction.Runtime",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

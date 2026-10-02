@@ -1,0 +1,27 @@
+{
+  "name": "Project.GameFlow.EditorTests",
+  "rootNamespace": "Project.GameFlow.Tests",
+  "references": [
+    "Project.GameFlow.Runtime",
+    "Project.GameFlow.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

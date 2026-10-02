@@ -1,0 +1,17 @@
+{
+  "name": "Project.Achievements.Runtime",
+  "rootNamespace": "Project.Achievements",
+  "references": [
+    "Unity.UGUI",
+    "Project.InputAbstraction.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

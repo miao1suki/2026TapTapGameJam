@@ -1,0 +1,20 @@
+{
+  "name": "Project.Achievements.Editor",
+  "rootNamespace": "Project.Achievements.Editor",
+  "references": [
+    "Project.Achievements.Runtime",
+    "Project.InputAbstraction.Runtime",
+    "Unity.UGUI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

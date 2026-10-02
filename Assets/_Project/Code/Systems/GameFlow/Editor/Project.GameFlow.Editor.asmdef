@@ -1,0 +1,23 @@
+{
+  "name": "Project.GameFlow.Editor",
+  "rootNamespace": "Project.GameFlow.Editor",
+  "references": [
+    "Project.GameFlow.Runtime",
+    "Project.CameraModes.Runtime",
+    "Project.InputAbstraction.Runtime",
+    "Project.InputRebinding.Runtime",
+    "Unity.InputSystem",
+    "Unity.UGUI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

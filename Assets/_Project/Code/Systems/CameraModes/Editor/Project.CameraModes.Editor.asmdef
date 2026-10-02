@@ -1,0 +1,18 @@
+{
+  "name": "Project.CameraModes.Editor",
+  "rootNamespace": "Project.CameraModes.Editor",
+  "references": [
+    "Project.CameraModes.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

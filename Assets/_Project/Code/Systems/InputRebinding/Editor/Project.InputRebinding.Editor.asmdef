@@ -1,0 +1,20 @@
+{
+  "name": "Project.InputRebinding.Editor",
+  "rootNamespace": "Project.InputRebinding.Editor",
+  "references": [
+    "Project.InputAbstraction.Runtime",
+    "Project.InputRebinding.Runtime",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

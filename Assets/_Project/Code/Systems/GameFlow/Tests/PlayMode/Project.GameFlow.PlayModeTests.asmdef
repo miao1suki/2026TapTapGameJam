@@ -1,0 +1,22 @@
+{
+  "name": "Project.GameFlow.PlayModeTests",
+  "rootNamespace": "Project.GameFlow.Tests",
+  "references": [
+    "Project.InputAbstraction.Runtime",
+    "Project.GameFlow.Runtime",
+    "Project.CameraModes.Runtime",
+    "Unity.UGUI"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

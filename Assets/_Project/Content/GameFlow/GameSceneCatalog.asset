@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e60e4ef9f9bc4f94db77490d7239d71c, type: 3}
+  m_Name: GameSceneCatalog
+  m_EditorClassIdentifier: Project.GameFlow.Runtime::Project.GameFlow.GameSceneCatalog
+  bootstrapScenePath: Assets/_Project/Scenes/Bootstrap/Bootstrap.unity
+  persistentScenePaths:
+  - Assets/_Project/Scenes/Systems/Systems_Core.unity
+  - Assets/_Project/Scenes/Systems/Systems_Input.unity
+  - Assets/_Project/Scenes/Systems/Systems_Audio.unity
+  - Assets/_Project/Scenes/Systems/Systems_Camera.unity
+  - Assets/_Project/Scenes/Systems/Systems_UI.unity
+  flowScenes:
+  - id: 0
+    scenePath: Assets/_Project/Scenes/Flow/MainMenu.unity
+    gameplay: 0
+  - id: 10
+    scenePath: Assets/_Project/Scenes/Levels/Level_01/Level_01.unity
+    gameplay: 1
+  - id: 20
+    scenePath: Assets/_Project/Scenes/Levels/Level_02/Level_02.unity
+    gameplay: 1
+  - id: 30
+    scenePath: Assets/_Project/Scenes/Levels/Level_03/Level_03.unity
+    gameplay: 1
+  - id: 100
+    scenePath: Assets/_Project/Scenes/Flow/Ending.unity
+    gameplay: 0

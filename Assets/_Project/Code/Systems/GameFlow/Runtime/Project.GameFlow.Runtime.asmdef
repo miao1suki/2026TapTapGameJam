@@ -1,0 +1,18 @@
+{
+  "name": "Project.GameFlow.Runtime",
+  "rootNamespace": "Project.GameFlow",
+  "references": [
+    "Project.CameraModes.Runtime",
+    "Project.InputAbstraction.Runtime",
+    "Unity.UGUI"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
