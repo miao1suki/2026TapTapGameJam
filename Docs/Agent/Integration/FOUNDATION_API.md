@@ -19,7 +19,7 @@
 `InputService` 可替换 `IInputSource`，便于测试。`VirtualJoystick` / `VirtualInputButton` 提供触摸输入。
 `PlatformUILayoutController` 按 Desktop/Mobile 保存与切换布局；两平台均允许手柄。
 `InputBindingService` 与 `InputBindingBootstrap` 管理重绑定，编辑窗口为旧功能保留。
-`CameraModeSwitch` 保留枚举/API，但默认无绑定、无触摸按钮、无玩家消费逻辑；以后要启用需单独需求。
+`CameraModeSwitch` 已由 `PlayerInputDriver` 消费，作为 `GameplayAbility` 请求提交到 `CameraModeController`；默认绑定 Tab/F/手柄 Select。Timeline 的 Cutscene 要求仍可压过玩家请求。
 
 ## 相机唯一写入者
 
@@ -33,8 +33,9 @@ Timeline使用 `TimelineCamRig.Acquire/Release/SetShotTransform` 通过Manager�
 
 ## 玩家（基础子集）
 
-`Project.Player.PlayerController`：Rigidbody + CapsuleCollider，固定XY平面移动、跳跃、冲刺，普通3D物理碰撞，无投影碰撞或深度校正。
-API：`Motor`、`IsGrounded`、`IsControlLocked`、`CurrentStateId`、`HasActionBinding`、`TryPlayAction(ActSO)`、`SetControlLocked(bool)`、`ReceiveTimelineSignal()`。
+`Project.Player.PlayerController` 只负责马的物理与动作能力：Rigidbody + CapsuleCollider，固定XY平面移动、跳跃、冲刺，普通3D物理碰撞，无投影碰撞或深度校正。
+输入由 `Project.Player.PlayerInputDriver` 读取 GameInput，再通过 `SetMoveInput`、`SetSprintInput`、`RequestJump`、`TryPlayAction` 等命令驱动 PlayerController；`PlayerInputDriver` 同时也是相机模式的 `GameplayAbility` requester。
+API：`Motor`、`IsGrounded`、`IsControlLocked`、`CurrentStateId`、`TryPlayAction(ActSO)`、`SetControlLocked(bool)`、`ReceiveTimelineSignal()`。
 控制锁采用引用计数；每次加锁必须同一调用方配对解锁，禁用会清空。
 `PlayerActionRunner` 播放Timeline，动作遵循优先级及 Interruptible，LockMovement只锁基础motor。
 事件：`ActionStarted/ActionCompleted/ControlLockChanged/TimelineSignalReceived`。
@@ -56,8 +57,31 @@ TimelineKit保留 `ActSO`、actor host、hitbox、effect/audio、Camera tracks�
 `SurfaceTileAuthoringService` 是Editor编辑/生成入口；修改需Undo/标脏。
 `SurfaceTileSheetImporterWindow` 提供ObjectField源图、缩放、选区、自动识别完整块与追加碎片，调用现有Generator生成稳定瓦片ID。
 配方与原图放一起；输出图集/库按配方路径。工具没有内置美术素材。
-烘焙生成Mesh/Material/PNG资产并绑定引用；保存场景或prefab并提交全部依赖。运行时使用持久化结果，不依赖Editor。
+烘焙生成Mesh/Material/PNG资产并绑定引用；保存场景或prefab并提交全部依赖。运行时优先使用持久化结果；
+没有烘焙时由Runtime根据已序列化的Placement生成显示Mesh，因此绘制数据可直接进入Play。方块基础颜色由
+`LevelEditorPlacedBlock`序列化并在运行时重应用，不再染到贴画输出层。
 Shader位于 `Assets/_Project/Rendering/Shaders/SurfaceTiles`，名称前缀2026TapTap；不要省略它们。
+
+## 2D 关卡编辑器（Development）
+
+`Assets/_Project/Development/LevelEditor/Orpheus0829` 是实验工具，不属于正式流程。栏目数据在
+`LevelEditorPalette`/`LevelEditorBlockEntry`；条目有 `Custom` 与 `Prefab` 两种模式。`Custom` 保存颜色、
+贴画和组件模板，放置时应用这些数据；`Prefab` 只保存预制体引用，放置时不应用颜色、贴画或组件模板。
+组件模板使用 `LevelEditorComponentEditorWindow` 生成到 `GeneratedBlocks`，通过 `customTemplate` 关联；
+运行时不依赖编辑器窗口，场景仍只序列化最终实例。`LevelEditorState.GenerationParent` 保存当前场景的
+生成父物体；放置时仅在新实例与父物体同场景时挂载，否则回退到编辑器内容根节点。
+正式接入前需确认该工具的生命周期、场景临时对象和打包边界。
+
+## 方块功能组件
+
+`Assets/_Project/Code/Systems/BlockFeatures` 提供不绑定颜色的方块功能契约。功能组件继承
+`BlockFeature`，由 `BlockRuntime` 统一发现、校验、排序和 Tick。组件通过 `BlockContext`
+使用能力查询、信号、命令、链接和表现接口；组件编辑窗口保存模板前会运行
+`BlockFeatureValidationUtility` 校验依赖、冲突和重复数量。
+
+`BlockPowerFeature` 提供 `IBlockPowerSignalTransmitter` 和 `IBlockPowerSwitch`。
+角色分为开关/信号源，输出分为单次/持续/脉冲，并提供传播距离与可视化调试。
+动力容量、连接、消耗和仲裁规则仍待施工。
 
 ## 验证
 

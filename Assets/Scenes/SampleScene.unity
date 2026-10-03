@@ -530,6 +530,7 @@ GameObject:
   - component: {fileID: 700000008}
   - component: {fileID: 700000009}
   - component: {fileID: 700000010}
+  - component: {fileID: 700000011}
   m_Layer: 0
   m_Name: TestPlayer
   m_TagString: Player
@@ -720,7 +721,21 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &700000011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 700000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c3d4e5f60718293a4b5c6d7e8f9012, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerInputDriver
   actionBindings: []
+  cameraModeController: {fileID: 330585550}
+  cameraModeTransitionDuration: 0.2
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0

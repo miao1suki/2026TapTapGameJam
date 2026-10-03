@@ -129,6 +129,12 @@ namespace Project.SurfaceTiles.Editor
                 Vector3 localPoint = candidate.transform
                     .InverseTransformPoint(hits[index].point);
                 Vector2Int grid = candidate.GetGridSize(candidateFace);
+                if (SurfaceTileEditorState.UseForcedFace &&
+                    candidateFace != SurfaceTileEditorState.ForcedFace)
+                {
+                    continue;
+                }
+
                 if (!SurfaceTileGeometry.TryGetCell(
                         candidate.SurfaceCollider,
                         candidateFace,

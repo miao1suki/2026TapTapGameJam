@@ -3,14 +3,16 @@
 | 系统 | 源码 | 状态 |
 |---|---|---|
 | 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 旧功能可用子集，清洁新场景 |
-| 相机 Manager/跟随/2D3D | `Assets/_Project/Code/Systems/CameraModes` | 旧功能保留；无默认游戏切换快捷键 |
+| 相机 Manager/跟随/2D3D | `Assets/_Project/Code/Systems/CameraModes` | 旧功能保留；PlayerInputDriver 可用 CameraModeSwitch 申请 2D/3D，Timeline 优先级更高 |
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |
-| 基础玩家 | `Assets/Player` | 基础motor重新接入；不含旧玩法 |
+| 基础玩家 | `Assets/Player` | `PlayerController` 仅保留马能力，`PlayerInputDriver` 负责默认输入；不含旧玩法 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
 | 成就 | `Assets/_Project/Code/Systems/Achievements` | 其他程序旧功能，空新catalog |
 | Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本 |
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
+| 方块功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 全覆盖交互契约；动力组件含开关/信号源与单次/持续/脉冲调试，完整动力网络待施工 |
+| 2D关卡编辑器原型 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 实验工具；栏目增删改、自定义/原预制体模式、自定义组件模板与调试、玩家平面工具，栏目贴画复用 SurfaceTiles |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。
 开发者：[运行与场景](../Developer/GAME_FLOW.md)、[贴画与切片](../Developer/SURFACE_TILES.md)、[旧成就与Timeline](../Developer/LEGACY_SYSTEMS.md)。

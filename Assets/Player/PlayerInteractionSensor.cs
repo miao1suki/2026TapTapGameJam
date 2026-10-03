@@ -1,5 +1,5 @@
-using Project.InputAbstraction;
 using UnityEngine;
+using Project.InputAbstraction;
 
 namespace Project.Player
 {
@@ -15,34 +15,18 @@ namespace Project.Player
 
         private readonly Collider[] overlapBuffer =
             new Collider[32];
-        private PlayerController controller;
-
         public IInteractionTarget CurrentTarget { get; private set; }
         public bool HasTarget => CurrentTarget != null;
 
-        private void Awake()
-        {
-            controller = GetComponent<PlayerController>();
-        }
-
-        private void Update()
+        public void RefreshTarget()
         {
             CurrentTarget = FindNearestTarget();
-            if (!GameInput.WasTriggeredThisFrame(
-                    InputActionId.Interact))
-            {
-                return;
-            }
+        }
 
-            if (controller == null ||
-                controller.CurrentStateId != PlayerStateId.Normal ||
-                controller.HasActionBinding(InputActionId.Interact) ||
-                CurrentTarget == null)
-            {
-                return;
-            }
-
-            CurrentTarget.TryInteract(gameObject);
+        public bool TryInteract()
+        {
+            return CurrentTarget != null &&
+                   CurrentTarget.TryInteract(gameObject);
         }
 
         private IInteractionTarget FindNearestTarget()

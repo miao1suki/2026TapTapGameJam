@@ -13,6 +13,7 @@ namespace Project.SurfaceTiles.Editor
     {
         private const string RootName = "surface-tile-scene-hud";
         private const string VisiblePreference = "2026TapTap.SurfaceTiles.Visible";
+        private static bool suppressed;
 
         static SurfaceTileSceneHud()
         {
@@ -64,7 +65,8 @@ namespace Project.SurfaceTiles.Editor
 
         private static void OnSceneGUI(SceneView sceneView)
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            if (EditorApplication.isPlayingOrWillChangePlaymode ||
+                suppressed)
             {
                 sceneView.rootVisualElement.Q<VisualElement>(RootName)
                     ?.RemoveFromHierarchy();
@@ -84,6 +86,12 @@ namespace Project.SurfaceTiles.Editor
             {
                 ((HudElements)root.userData).Refresh();
             }
+        }
+
+        internal static void SetSuppressed(bool value)
+        {
+            suppressed = value;
+            SceneView.RepaintAll();
         }
 
         private static VisualElement CreateRoot()

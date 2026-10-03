@@ -29,6 +29,7 @@ namespace Project.SurfaceTiles
         [SerializeField, HideInInspector] private Vector3 bakedColliderSize;
         [SerializeField, HideInInspector] private Vector3 bakedLossyScale;
         [SerializeField, HideInInspector] private float bakedCellSize;
+        private Mesh runtimeMesh;
 
         public SurfaceTilePalette Palette => palette;
         public float CellSize => cellSize;
@@ -376,6 +377,16 @@ namespace Project.SurfaceTiles
         private void OnEnable()
         {
             EnsureBaseVisibility();
+            EnsureRuntimeVisual();
+        }
+
+        private void OnDestroy()
+        {
+            if (runtimeMesh != null)
+            {
+                Destroy(runtimeMesh);
+                runtimeMesh = null;
+            }
         }
 
         private void OnValidate()
@@ -512,6 +523,65 @@ namespace Project.SurfaceTiles
             sourceRenderer.enabled = transparentBase
                 ? false
                 : sourceRendererWasEnabled;
+        }
+
+        private void EnsureRuntimeVisual()
+        {
+            if (!Application.isPlaying ||
+                palette == null ||
+                placements.Count == 0)
+            {
+                return;
+            }
+
+            EnsureRuntimeOutput();
+            if (bakedMesh != null && bakedMaterial != null)
+            {
+                outputFilter.sharedMesh = bakedMesh;
+                outputRenderer.sharedMaterial = bakedMaterial;
+                return;
+            }
+
+            if (runtimeMesh == null)
+            {
+                runtimeMesh = SurfaceTileRuntimeMeshBuilder.Build(this);
+                runtimeMesh.name = name + "_SurfaceTiles_Runtime";
+                runtimeMesh.hideFlags = HideFlags.DontSave;
+            }
+
+            outputFilter.sharedMesh = runtimeMesh;
+            outputRenderer.sharedMaterial = palette.PreviewMaterial;
+        }
+
+        private void EnsureRuntimeOutput()
+        {
+            if (outputFilter != null && outputRenderer != null)
+            {
+                return;
+            }
+
+            Transform child = transform.Find("__SurfaceTiles");
+            GameObject output = child != null
+                ? child.gameObject
+                : new GameObject("__SurfaceTiles");
+            if (child == null)
+            {
+                output.transform.SetParent(transform, false);
+            }
+
+            MeshFilter filter = output.GetComponent<MeshFilter>();
+            if (filter == null)
+            {
+                filter = output.AddComponent<MeshFilter>();
+            }
+
+            MeshRenderer renderer = output.GetComponent<MeshRenderer>();
+            if (renderer == null)
+            {
+                renderer = output.AddComponent<MeshRenderer>();
+            }
+
+            BindOutput(filter, renderer);
         }
     }
 }

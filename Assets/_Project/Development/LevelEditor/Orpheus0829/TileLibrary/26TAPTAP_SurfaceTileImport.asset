@@ -1,0 +1,2237 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 077bd03255354244dbdc9f6227f489ba, type: 3}
+  m_Name: 26TAPTAP_SurfaceTileImport
+  m_EditorClassIdentifier: Project.SurfaceTiles.Editor::Project.SurfaceTiles.Editor.SurfaceTileSheetImportRecipe
+  sourceTexture: {fileID: 2800000, guid: 316c628eccd46c241a40b82215d1caf9, type: 3}
+  outputFolder: Assets/_Project/Development/LevelEditor/Orpheus0829/TileLibrary
+  outputName: 26TAPTAP
+  outputWidth: 128
+  outputHeight: 128
+  sourcePixelsPerCell: 64
+  transparentPadding: 4
+  trimTransparentPixels: 1
+  allowUpscale: 1
+  anchor: 0
+  regions:
+  - displayName: Tile_001
+    rect:
+      x: 2302
+      y: 894
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_002
+    rect:
+      x: 982
+      y: 854
+      width: 36
+      height: 36
+    enabled: 1
+  - displayName: Tile_003
+    rect:
+      x: 714
+      y: 850
+      width: 12
+      height: 44
+    enabled: 1
+  - displayName: Tile_004
+    rect:
+      x: 2258
+      y: 834
+      width: 12
+      height: 60
+    enabled: 1
+  - displayName: Tile_005
+    rect:
+      x: 254
+      y: 830
+      width: 260
+      height: 68
+    enabled: 1
+  - displayName: Tile_006
+    rect:
+      x: 638
+      y: 830
+      width: 64
+      height: 64
+    enabled: 1
+  - displayName: Tile_007
+    rect:
+      x: 1982
+      y: 830
+      width: 260
+      height: 68
+    enabled: 1
+  - displayName: Tile_008
+    rect:
+      x: 982
+      y: 806
+      width: 36
+      height: 36
+    enabled: 1
+  - displayName: Tile_009
+    rect:
+      x: 2814
+      y: 766
+      width: 64
+      height: 64
+    enabled: 1
+  - displayName: Tile_010
+    rect:
+      x: 2426
+      y: 746
+      width: 24
+      height: 68
+    enabled: 1
+  - displayName: Tile_011
+    rect:
+      x: 254
+      y: 702
+      width: 260
+      height: 68
+    enabled: 1
+  - displayName: Tile_012
+    rect:
+      x: 638
+      y: 702
+      width: 256
+      height: 68
+    enabled: 1
+  - displayName: Tile_013
+    rect:
+      x: 1982
+      y: 702
+      width: 260
+      height: 68
+    enabled: 1
+  - displayName: Tile_014
+    rect:
+      x: 2406
+      y: 674
+      width: 12
+      height: 52
+    enabled: 1
+  - displayName: Tile_015
+    rect:
+      x: 2430
+      y: 674
+      width: 12
+      height: 52
+    enabled: 1
+  - displayName: Tile_016
+    rect:
+      x: 2450
+      y: 674
+      width: 12
+      height: 52
+    enabled: 1
+  - displayName: Tile_017
+    rect:
+      x: 2474
+      y: 638
+      width: 24
+      height: 228
+    enabled: 1
+  - displayName: Tile_018
+    rect:
+      x: 2526
+      y: 638
+      width: 196
+      height: 228
+    enabled: 1
+  - displayName: Tile_019
+    rect:
+      x: 2750
+      y: 638
+      width: 24
+      height: 228
+    enabled: 1
+  - displayName: Tile_020
+    rect:
+      x: 2814
+      y: 638
+      width: 256
+      height: 68
+    enabled: 1
+  - displayName: Tile_021
+    rect:
+      x: 3250
+      y: 638
+      width: 92
+      height: 156
+    enabled: 1
+  - displayName: Tile_022
+    rect:
+      x: 3710
+      y: 638
+      width: 260
+      height: 260
+    enabled: 1
+  - displayName: Tile_023
+    rect:
+      x: 2410
+      y: 594
+      width: 12
+      height: 36
+    enabled: 1
+  - displayName: Tile_024
+    rect:
+      x: 194
+      y: 578
+      width: 56
+      height: 60
+    enabled: 1
+  - displayName: Tile_025
+    rect:
+      x: 1922
+      y: 578
+      width: 56
+      height: 60
+    enabled: 1
+  - displayName: Tile_026
+    rect:
+      x: 254
+      y: 574
+      width: 260
+      height: 68
+    enabled: 1
+  - displayName: Tile_027
+    rect:
+      x: 1066
+      y: 574
+      width: 24
+      height: 228
+    enabled: 1
+  - displayName: Tile_028
+    rect:
+      x: 1118
+      y: 574
+      width: 196
+      height: 228
+    enabled: 1
+  - displayName: Tile_029
+    rect:
+      x: 1342
+      y: 574
+      width: 24
+      height: 228
+    enabled: 1
+  - displayName: Tile_030
+    rect:
+      x: 1982
+      y: 574
+      width: 260
+      height: 68
+    enabled: 1
+  - displayName: Tile_031
+    rect:
+      x: 3390
+      y: 574
+      width: 260
+      height: 324
+    enabled: 1
+  - displayName: Tile_032
+    rect:
+      x: 638
+      y: 562
+      width: 260
+      height: 56
+    enabled: 1
+  - displayName: Tile_033
+    rect:
+      x: 4082
+      y: 562
+      width: 284
+      height: 400
+    enabled: 1
+  - displayName: Tile_034
+    rect:
+      x: 1534
+      y: 530
+      width: 260
+      height: 272
+    enabled: 1
+  - displayName: Tile_035
+    rect:
+      x: 2454
+      y: 526
+      width: 12
+      height: 52
+    enabled: 1
+  - displayName: Tile_036
+    rect:
+      x: 2494
+      y: 510
+      width: 260
+      height: 56
+    enabled: 1
+  - displayName: Tile_037
+    rect:
+      x: 3966
+      y: 510
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_038
+    rect:
+      x: 3262
+      y: 494
+      width: 88
+      height: 136
+    enabled: 1
+  - displayName: Tile_039
+    rect:
+      x: 254
+      y: 446
+      width: 260
+      height: 68
+    enabled: 1
+  - displayName: Tile_040
+    rect:
+      x: 1982
+      y: 446
+      width: 260
+      height: 68
+    enabled: 1
+  - displayName: Tile_041
+    rect:
+      x: 638
+      y: 442
+      width: 260
+      height: 64
+    enabled: 1
+  - displayName: Tile_042
+    rect:
+      x: 2494
+      y: 386
+      width: 260
+      height: 64
+    enabled: 1
+  - displayName: Tile_043
+    rect:
+      x: 1150
+      y: 330
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_044
+    rect:
+      x: 1278
+      y: 330
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_045
+    rect:
+      x: 1022
+      y: 322
+      width: 68
+      height: 64
+    enabled: 1
+  - displayName: Tile_046
+    rect:
+      x: 1406
+      y: 322
+      width: 68
+      height: 64
+    enabled: 1
+  - displayName: Tile_047
+    rect:
+      x: 254
+      y: 318
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_048
+    rect:
+      x: 382
+      y: 318
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_049
+    rect:
+      x: 510
+      y: 318
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_050
+    rect:
+      x: 638
+      y: 318
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_051
+    rect:
+      x: 1534
+      y: 318
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_052
+    rect:
+      x: 1922
+      y: 318
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_053
+    rect:
+      x: 2050
+      y: 318
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_054
+    rect:
+      x: 2178
+      y: 318
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_055
+    rect:
+      x: 2306
+      y: 318
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_056
+    rect:
+      x: 1022
+      y: 194
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_057
+    rect:
+      x: 1150
+      y: 194
+      width: 68
+      height: 48
+    enabled: 1
+  - displayName: Tile_058
+    rect:
+      x: 1406
+      y: 194
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_059
+    rect:
+      x: 2558
+      y: 194
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_060
+    rect:
+      x: 2686
+      y: 194
+      width: 68
+      height: 48
+    enabled: 1
+  - displayName: Tile_061
+    rect:
+      x: 2942
+      y: 194
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_062
+    rect:
+      x: 254
+      y: 190
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_063
+    rect:
+      x: 382
+      y: 190
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_064
+    rect:
+      x: 510
+      y: 190
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_065
+    rect:
+      x: 638
+      y: 190
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_066
+    rect:
+      x: 766
+      y: 190
+      width: 64
+      height: 68
+    enabled: 1
+  - displayName: Tile_067
+    rect:
+      x: 894
+      y: 190
+      width: 64
+      height: 68
+    enabled: 1
+  - displayName: Tile_068
+    rect:
+      x: 1278
+      y: 190
+      width: 68
+      height: 56
+    enabled: 1
+  - displayName: Tile_069
+    rect:
+      x: 1922
+      y: 190
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_070
+    rect:
+      x: 2050
+      y: 190
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_071
+    rect:
+      x: 2178
+      y: 190
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_072
+    rect:
+      x: 2306
+      y: 190
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_073
+    rect:
+      x: 2434
+      y: 190
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_074
+    rect:
+      x: 2814
+      y: 190
+      width: 68
+      height: 56
+    enabled: 1
+  - displayName: Tile_075
+    rect:
+      x: 2814
+      y: 74
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_076
+    rect:
+      x: 1022
+      y: 66
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_077
+    rect:
+      x: 1278
+      y: 66
+      width: 68
+      height: 48
+    enabled: 1
+  - displayName: Tile_078
+    rect:
+      x: 1406
+      y: 66
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_079
+    rect:
+      x: 2558
+      y: 66
+      width: 68
+      height: 64
+    enabled: 1
+  - displayName: Tile_080
+    rect:
+      x: 2686
+      y: 66
+      width: 68
+      height: 48
+    enabled: 1
+  - displayName: Tile_081
+    rect:
+      x: 2942
+      y: 66
+      width: 68
+      height: 52
+    enabled: 1
+  - displayName: Tile_082
+    rect:
+      x: 254
+      y: 62
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_083
+    rect:
+      x: 382
+      y: 62
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_084
+    rect:
+      x: 510
+      y: 62
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_085
+    rect:
+      x: 638
+      y: 62
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_086
+    rect:
+      x: 766
+      y: 62
+      width: 64
+      height: 68
+    enabled: 1
+  - displayName: Tile_087
+    rect:
+      x: 894
+      y: 62
+      width: 64
+      height: 68
+    enabled: 1
+  - displayName: Tile_088
+    rect:
+      x: 1150
+      y: 62
+      width: 68
+      height: 56
+    enabled: 1
+  - displayName: Tile_089
+    rect:
+      x: 1922
+      y: 62
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_090
+    rect:
+      x: 2050
+      y: 62
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_091
+    rect:
+      x: 2178
+      y: 62
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_092
+    rect:
+      x: 2306
+      y: 62
+      width: 68
+      height: 68
+    enabled: 1
+  - displayName: Tile_093
+    rect:
+      x: 638
+      y: 878
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_094
+    rect:
+      x: 654
+      y: 878
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_095
+    rect:
+      x: 670
+      y: 878
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_096
+    rect:
+      x: 686
+      y: 878
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_097
+    rect:
+      x: 638
+      y: 862
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_098
+    rect:
+      x: 654
+      y: 862
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_099
+    rect:
+      x: 670
+      y: 862
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_100
+    rect:
+      x: 686
+      y: 862
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_101
+    rect:
+      x: 638
+      y: 846
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_102
+    rect:
+      x: 654
+      y: 846
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_103
+    rect:
+      x: 670
+      y: 846
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_104
+    rect:
+      x: 686
+      y: 846
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_105
+    rect:
+      x: 638
+      y: 830
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_106
+    rect:
+      x: 654
+      y: 830
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_107
+    rect:
+      x: 670
+      y: 830
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_108
+    rect:
+      x: 686
+      y: 830
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_109
+    rect:
+      x: 3318
+      y: 826
+      width: 12
+      height: 12
+    enabled: 1
+  - displayName: Tile_110
+    rect:
+      x: 2814
+      y: 814
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_111
+    rect:
+      x: 2830
+      y: 814
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_112
+    rect:
+      x: 2846
+      y: 814
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_113
+    rect:
+      x: 2862
+      y: 814
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_114
+    rect:
+      x: 2890
+      y: 802
+      width: 12
+      height: 28
+    enabled: 1
+  - displayName: Tile_115
+    rect:
+      x: 2814
+      y: 798
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_116
+    rect:
+      x: 2830
+      y: 798
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_117
+    rect:
+      x: 2846
+      y: 798
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_118
+    rect:
+      x: 2862
+      y: 798
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_119
+    rect:
+      x: 3346
+      y: 798
+      width: 12
+      height: 12
+    enabled: 1
+  - displayName: Tile_120
+    rect:
+      x: 3346
+      y: 786
+      width: 12
+      height: 12
+    enabled: 1
+  - displayName: Tile_121
+    rect:
+      x: 2814
+      y: 782
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_122
+    rect:
+      x: 2830
+      y: 782
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_123
+    rect:
+      x: 2846
+      y: 782
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_124
+    rect:
+      x: 2862
+      y: 782
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_125
+    rect:
+      x: 2438
+      y: 778
+      width: 12
+      height: 28
+    enabled: 1
+  - displayName: Tile_126
+    rect:
+      x: 2814
+      y: 766
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_127
+    rect:
+      x: 2830
+      y: 766
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_128
+    rect:
+      x: 2846
+      y: 766
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_129
+    rect:
+      x: 2862
+      y: 766
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_130
+    rect:
+      x: 654
+      y: 754
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_131
+    rect:
+      x: 686
+      y: 754
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_132
+    rect:
+      x: 702
+      y: 754
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_133
+    rect:
+      x: 750
+      y: 754
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_134
+    rect:
+      x: 766
+      y: 754
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_135
+    rect:
+      x: 814
+      y: 754
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_136
+    rect:
+      x: 830
+      y: 754
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_137
+    rect:
+      x: 862
+      y: 754
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_138
+    rect:
+      x: 718
+      y: 750
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_139
+    rect:
+      x: 734
+      y: 750
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_140
+    rect:
+      x: 782
+      y: 750
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_141
+    rect:
+      x: 798
+      y: 750
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_142
+    rect:
+      x: 2426
+      y: 746
+      width: 12
+      height: 68
+    enabled: 1
+  - displayName: Tile_143
+    rect:
+      x: 638
+      y: 738
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_144
+    rect:
+      x: 658
+      y: 738
+      width: 12
+      height: 16
+    enabled: 1
+  - displayName: Tile_145
+    rect:
+      x: 670
+      y: 738
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_146
+    rect:
+      x: 686
+      y: 738
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_147
+    rect:
+      x: 702
+      y: 738
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_148
+    rect:
+      x: 734
+      y: 738
+      width: 16
+      height: 12
+    enabled: 1
+  - displayName: Tile_149
+    rect:
+      x: 750
+      y: 738
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_150
+    rect:
+      x: 766
+      y: 738
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_151
+    rect:
+      x: 782
+      y: 738
+      width: 16
+      height: 12
+    enabled: 1
+  - displayName: Tile_152
+    rect:
+      x: 814
+      y: 738
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_153
+    rect:
+      x: 830
+      y: 738
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_154
+    rect:
+      x: 846
+      y: 738
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_155
+    rect:
+      x: 862
+      y: 738
+      width: 12
+      height: 16
+    enabled: 1
+  - displayName: Tile_156
+    rect:
+      x: 878
+      y: 738
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_157
+    rect:
+      x: 718
+      y: 734
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_158
+    rect:
+      x: 798
+      y: 734
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_159
+    rect:
+      x: 654
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_160
+    rect:
+      x: 670
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_161
+    rect:
+      x: 686
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_162
+    rect:
+      x: 702
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_163
+    rect:
+      x: 718
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_164
+    rect:
+      x: 798
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_165
+    rect:
+      x: 814
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_166
+    rect:
+      x: 830
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_167
+    rect:
+      x: 846
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_168
+    rect:
+      x: 862
+      y: 722
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_169
+    rect:
+      x: 3218
+      y: 722
+      width: 12
+      height: 12
+    enabled: 1
+  - displayName: Tile_170
+    rect:
+      x: 3234
+      y: 722
+      width: 12
+      height: 12
+    enabled: 1
+  - displayName: Tile_171
+    rect:
+      x: 638
+      y: 718
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_172
+    rect:
+      x: 734
+      y: 718
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_173
+    rect:
+      x: 750
+      y: 718
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_174
+    rect:
+      x: 766
+      y: 718
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_175
+    rect:
+      x: 782
+      y: 718
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_176
+    rect:
+      x: 878
+      y: 718
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_177
+    rect:
+      x: 3218
+      y: 710
+      width: 12
+      height: 12
+    enabled: 1
+  - displayName: Tile_178
+    rect:
+      x: 686
+      y: 706
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_179
+    rect:
+      x: 830
+      y: 706
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_180
+    rect:
+      x: 638
+      y: 702
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_181
+    rect:
+      x: 654
+      y: 702
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_182
+    rect:
+      x: 670
+      y: 702
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_183
+    rect:
+      x: 702
+      y: 702
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_184
+    rect:
+      x: 718
+      y: 702
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_185
+    rect:
+      x: 734
+      y: 702
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_186
+    rect:
+      x: 750
+      y: 702
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_187
+    rect:
+      x: 766
+      y: 702
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_188
+    rect:
+      x: 782
+      y: 702
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_189
+    rect:
+      x: 798
+      y: 702
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_190
+    rect:
+      x: 814
+      y: 702
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_191
+    rect:
+      x: 846
+      y: 702
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_192
+    rect:
+      x: 862
+      y: 702
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_193
+    rect:
+      x: 878
+      y: 702
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_194
+    rect:
+      x: 3218
+      y: 698
+      width: 12
+      height: 12
+    enabled: 1
+  - displayName: Tile_195
+    rect:
+      x: 2830
+      y: 690
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_196
+    rect:
+      x: 2862
+      y: 690
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_197
+    rect:
+      x: 2878
+      y: 690
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_198
+    rect:
+      x: 2926
+      y: 690
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_199
+    rect:
+      x: 2942
+      y: 690
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_200
+    rect:
+      x: 2990
+      y: 690
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_201
+    rect:
+      x: 3006
+      y: 690
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_202
+    rect:
+      x: 3038
+      y: 690
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_203
+    rect:
+      x: 2894
+      y: 686
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_204
+    rect:
+      x: 2910
+      y: 686
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_205
+    rect:
+      x: 2958
+      y: 686
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_206
+    rect:
+      x: 2974
+      y: 686
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_207
+    rect:
+      x: 2814
+      y: 674
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_208
+    rect:
+      x: 2834
+      y: 674
+      width: 12
+      height: 16
+    enabled: 1
+  - displayName: Tile_209
+    rect:
+      x: 2846
+      y: 674
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_210
+    rect:
+      x: 2862
+      y: 674
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_211
+    rect:
+      x: 2878
+      y: 674
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_212
+    rect:
+      x: 2910
+      y: 674
+      width: 16
+      height: 12
+    enabled: 1
+  - displayName: Tile_213
+    rect:
+      x: 2926
+      y: 674
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_214
+    rect:
+      x: 2942
+      y: 674
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_215
+    rect:
+      x: 2958
+      y: 674
+      width: 16
+      height: 12
+    enabled: 1
+  - displayName: Tile_216
+    rect:
+      x: 2990
+      y: 674
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_217
+    rect:
+      x: 3006
+      y: 674
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_218
+    rect:
+      x: 3022
+      y: 674
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_219
+    rect:
+      x: 3038
+      y: 674
+      width: 12
+      height: 16
+    enabled: 1
+  - displayName: Tile_220
+    rect:
+      x: 3054
+      y: 674
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_221
+    rect:
+      x: 2894
+      y: 670
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_222
+    rect:
+      x: 2974
+      y: 670
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_223
+    rect:
+      x: 2830
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_224
+    rect:
+      x: 2846
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_225
+    rect:
+      x: 2862
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_226
+    rect:
+      x: 2878
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_227
+    rect:
+      x: 2894
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_228
+    rect:
+      x: 2974
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_229
+    rect:
+      x: 2990
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_230
+    rect:
+      x: 3006
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_231
+    rect:
+      x: 3022
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_232
+    rect:
+      x: 3038
+      y: 658
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_233
+    rect:
+      x: 2814
+      y: 654
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_234
+    rect:
+      x: 2910
+      y: 654
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_235
+    rect:
+      x: 2926
+      y: 654
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_236
+    rect:
+      x: 2942
+      y: 654
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_237
+    rect:
+      x: 2958
+      y: 654
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_238
+    rect:
+      x: 3054
+      y: 654
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_239
+    rect:
+      x: 2862
+      y: 642
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_240
+    rect:
+      x: 3006
+      y: 642
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_241
+    rect:
+      x: 2814
+      y: 638
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_242
+    rect:
+      x: 2830
+      y: 638
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_243
+    rect:
+      x: 2846
+      y: 638
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_244
+    rect:
+      x: 2878
+      y: 638
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_245
+    rect:
+      x: 2894
+      y: 638
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_246
+    rect:
+      x: 2910
+      y: 638
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_247
+    rect:
+      x: 2926
+      y: 638
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_248
+    rect:
+      x: 2942
+      y: 638
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_249
+    rect:
+      x: 2958
+      y: 638
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_250
+    rect:
+      x: 2974
+      y: 638
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_251
+    rect:
+      x: 2990
+      y: 638
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_252
+    rect:
+      x: 3022
+      y: 638
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_253
+    rect:
+      x: 3038
+      y: 638
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_254
+    rect:
+      x: 3054
+      y: 638
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_255
+    rect:
+      x: 4082
+      y: 574
+      width: 280
+      height: 388
+    enabled: 1
+  - displayName: Tile_256
+    rect:
+      x: 4358
+      y: 562
+      width: 8
+      height: 12
+    enabled: 1
+  - displayName: Tile_257
+    rect:
+      x: 782
+      y: 242
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_258
+    rect:
+      x: 814
+      y: 242
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_259
+    rect:
+      x: 894
+      y: 242
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_260
+    rect:
+      x: 942
+      y: 242
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_261
+    rect:
+      x: 910
+      y: 238
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_262
+    rect:
+      x: 926
+      y: 238
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_263
+    rect:
+      x: 766
+      y: 226
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_264
+    rect:
+      x: 786
+      y: 226
+      width: 12
+      height: 16
+    enabled: 1
+  - displayName: Tile_265
+    rect:
+      x: 798
+      y: 226
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_266
+    rect:
+      x: 814
+      y: 226
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_267
+    rect:
+      x: 894
+      y: 226
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_268
+    rect:
+      x: 926
+      y: 226
+      width: 16
+      height: 12
+    enabled: 1
+  - displayName: Tile_269
+    rect:
+      x: 942
+      y: 226
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_270
+    rect:
+      x: 910
+      y: 222
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_271
+    rect:
+      x: 782
+      y: 210
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_272
+    rect:
+      x: 798
+      y: 210
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_273
+    rect:
+      x: 814
+      y: 210
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_274
+    rect:
+      x: 894
+      y: 210
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_275
+    rect:
+      x: 910
+      y: 210
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_276
+    rect:
+      x: 766
+      y: 206
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_277
+    rect:
+      x: 926
+      y: 206
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_278
+    rect:
+      x: 942
+      y: 206
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_279
+    rect:
+      x: 814
+      y: 194
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_280
+    rect:
+      x: 766
+      y: 190
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_281
+    rect:
+      x: 782
+      y: 190
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_282
+    rect:
+      x: 798
+      y: 190
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_283
+    rect:
+      x: 894
+      y: 190
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_284
+    rect:
+      x: 910
+      y: 190
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_285
+    rect:
+      x: 926
+      y: 190
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_286
+    rect:
+      x: 942
+      y: 190
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_287
+    rect:
+      x: 766
+      y: 114
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_288
+    rect:
+      x: 814
+      y: 114
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_289
+    rect:
+      x: 894
+      y: 114
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_290
+    rect:
+      x: 926
+      y: 114
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_291
+    rect:
+      x: 782
+      y: 110
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_292
+    rect:
+      x: 798
+      y: 110
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_293
+    rect:
+      x: 766
+      y: 98
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_294
+    rect:
+      x: 782
+      y: 98
+      width: 16
+      height: 12
+    enabled: 1
+  - displayName: Tile_295
+    rect:
+      x: 814
+      y: 98
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_296
+    rect:
+      x: 894
+      y: 98
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_297
+    rect:
+      x: 910
+      y: 98
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_298
+    rect:
+      x: 926
+      y: 98
+      width: 12
+      height: 16
+    enabled: 1
+  - displayName: Tile_299
+    rect:
+      x: 942
+      y: 98
+      width: 16
+      height: 32
+    enabled: 1
+  - displayName: Tile_300
+    rect:
+      x: 798
+      y: 94
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_301
+    rect:
+      x: 798
+      y: 82
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_302
+    rect:
+      x: 814
+      y: 82
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_303
+    rect:
+      x: 894
+      y: 82
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_304
+    rect:
+      x: 910
+      y: 82
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_305
+    rect:
+      x: 926
+      y: 82
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_306
+    rect:
+      x: 766
+      y: 78
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_307
+    rect:
+      x: 782
+      y: 78
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_308
+    rect:
+      x: 942
+      y: 78
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_309
+    rect:
+      x: 894
+      y: 66
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_310
+    rect:
+      x: 766
+      y: 62
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_311
+    rect:
+      x: 782
+      y: 62
+      width: 16
+      height: 16
+    enabled: 1
+  - displayName: Tile_312
+    rect:
+      x: 798
+      y: 62
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_313
+    rect:
+      x: 814
+      y: 62
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_314
+    rect:
+      x: 910
+      y: 62
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_315
+    rect:
+      x: 926
+      y: 62
+      width: 16
+      height: 20
+    enabled: 1
+  - displayName: Tile_316
+    rect:
+      x: 942
+      y: 62
+      width: 16
+      height: 16
+    enabled: 1

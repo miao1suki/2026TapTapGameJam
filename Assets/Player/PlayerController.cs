@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Project.CameraModes;
 using Project.InputAbstraction;
 using UnityEngine;
 
@@ -11,28 +10,80 @@ namespace Project.Player
     /// <summary>Basic physical motor. No projected platforms, ladders or rope dependencies.</summary>
     [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider), typeof(PlayerActionRunner))]
     [DisallowMultipleComponent]
-    public sealed class PlayerController : MonoBehaviour, IAchievementSignalProvider
+    public sealed class PlayerController :
+        MonoBehaviour,
+        IAchievementSignalProvider
     {
         [SerializeField, Min(0)] private float moveSpeed = 5;
+        [SerializeField, Min(0)] private float moveAcceleration = 20;
+        [SerializeField, Min(0)] private float moveDeceleration = 30;
+        [SerializeField]
+        private AnimationCurve accelerationResponseCurve =
+            AnimationCurve.Linear(0f, 1f, 1f, 1f);
         [SerializeField, Min(0)] private float jumpSpeed = 7;
+        [SerializeField, Min(0)] private float jumpGravityMultiplier = 1.7f;
+        [SerializeField, Min(0)]
+        private float jumpReleaseGravityMultiplier = 2.8f;
+        [SerializeField, Min(0)] private float fallGravityMultiplier = 2.5f;
+        [SerializeField, Min(0)] private float maxFallSpeed = 25f;
         [SerializeField, Min(0)] private float sprintMultiplier = 1.5f;
         [SerializeField, Min(0)] private float coyoteTime = .12f;
         [SerializeField, Min(0)] private float jumpBufferTime = .12f;
         [SerializeField] private LayerMask groundMask = ~0;
-        [SerializeField] private PlayerActionBinding[] actionBindings = Array.Empty<PlayerActionBinding>();
         private Rigidbody motor;
         private CapsuleCollider capsule;
         private PlayerActionRunner runner;
         private Vector2 movement;
         private bool sprint;
         private float jumpUntil = -1, groundedUntil = -1;
+        private float airborneSince = -1f;
+        private bool jumpHeld;
         private int lockDepth;
         private readonly RaycastHit[] groundHits = new RaycastHit[16];
+        private static PhysicsMaterial zeroFrictionMaterial;
         public Rigidbody Motor => motor;
         public bool IsGrounded { get; private set; }
         public bool IsControlLocked => lockDepth > 0;
         public PlayerStateId CurrentStateId => IsControlLocked ? PlayerStateId.Locked :
             runner != null && runner.IsPlaying ? PlayerStateId.Action : PlayerStateId.Normal;
+        public Vector2 MoveInput => movement;
+        public bool SprintRequested => sprint;
+        public float HorizontalVelocity => motor != null
+            ? motor.linearVelocity.x
+            : 0f;
+        public float VerticalVelocity => motor != null
+            ? motor.linearVelocity.y
+            : 0f;
+        public bool JumpHeld => jumpHeld;
+        public float AirTime => IsGrounded
+            ? 0f
+            : Mathf.Max(0f, Time.time - airborneSince);
+        public string GravityMode
+        {
+            get
+            {
+                if (IsGrounded)
+                {
+                    return "Grounded";
+                }
+
+                return motor != null && motor.linearVelocity.y > 0f
+                    ? jumpHeld ? "Jump" : "JumpRelease"
+                    : "Fall";
+            }
+        }
+        public float JumpBufferRemaining => Mathf.Max(
+            0f,
+            jumpUntil - Time.time);
+        public float CoyoteRemaining => Mathf.Max(
+            0f,
+            groundedUntil - Time.time);
+        public ActSO CurrentAction => runner != null
+            ? runner.CurrentAction
+            : null;
+        public bool IsActionPlaying =>
+            runner != null && runner.IsPlaying;
+        public int ControlLockDepth => lockDepth;
         public event Action<ActSO> ActionStarted;
         public event Action<ActSO> ActionCompleted;
         public event Action<bool> ControlLockChanged;
@@ -49,22 +100,54 @@ namespace Project.Player
             motor.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
             motor.interpolation = RigidbodyInterpolation.Interpolate;
             motor.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            motor.useGravity = false;
+            capsule.sharedMaterial = GetZeroFrictionMaterial();
             if (!GetComponent<PlayerInteractionSensor>()) gameObject.AddComponent<PlayerInteractionSensor>();
+        }
+        private static PhysicsMaterial GetZeroFrictionMaterial()
+        {
+            if (zeroFrictionMaterial == null)
+            {
+                zeroFrictionMaterial = new PhysicsMaterial("PlayerZeroFriction")
+                {
+                    dynamicFriction = 0f,
+                    staticFriction = 0f,
+                    frictionCombine = PhysicsMaterialCombine.Minimum,
+                    bounceCombine = PhysicsMaterialCombine.Minimum
+                };
+            }
+
+            return zeroFrictionMaterial;
         }
         private void OnEnable() { runner = GetComponent<PlayerActionRunner>(); runner.Completed += Completed; }
         private void OnDisable()
         {
             if (runner != null) { runner.Completed -= Completed; runner.Stop(); }
             lockDepth = 0; movement = Vector2.zero; jumpUntil = -1;
+            jumpHeld = false;
         }
-        private void Update()
+        public void SetMoveInput(Vector2 value)
         {
-            if (IsControlLocked || Time.timeScale == 0) { movement = Vector2.zero; jumpUntil = -1; return; }
-            movement = GameInput.ReadVector2(InputActionId.Move);
-            sprint = GameInput.IsPressed(InputActionId.Sprint);
-            if (GameInput.WasTriggeredThisFrame(InputActionId.Jump)) jumpUntil = Time.time + jumpBufferTime;
-            foreach (PlayerActionBinding binding in actionBindings)
-                if (binding.action != null && GameInput.WasTriggeredThisFrame(binding.inputAction)) TryPlayAction(binding.action);
+            movement = value;
+        }
+        public void SetSprintInput(bool value)
+        {
+            sprint = value;
+        }
+        public void RequestJump()
+        {
+            jumpUntil = Time.time + jumpBufferTime;
+            jumpHeld = true;
+        }
+        public void SetJumpHeld(bool value)
+        {
+            jumpHeld = value;
+        }
+        public void ClearBufferedInput()
+        {
+            movement = Vector2.zero;
+            jumpUntil = -1;
+            jumpHeld = false;
         }
         private void FixedUpdate()
         {
@@ -79,22 +162,86 @@ namespace Project.Player
                 if (groundHits[i].collider.attachedRigidbody != motor && groundHits[i].normal.y > .5f && motor.linearVelocity.y <= .1f)
                     IsGrounded = true;
             if (IsGrounded) groundedUntil = Time.time + coyoteTime;
+            if (IsGrounded)
+            {
+                airborneSince = -1f;
+            }
+            else if (wasGrounded)
+            {
+                airborneSince = Time.time;
+            }
+
             if (IsGrounded && !wasGrounded) Emit(AchievementSignalIds.PlayerLanded);
             Vector3 velocity = motor.linearVelocity;
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
-            velocity.x = blocked ? 0 : movement.x * moveSpeed * (sprint ? sprintMultiplier : 1);
+            if (blocked)
+            {
+                velocity.x = 0;
+            }
+            else
+            {
+                float targetSpeed = movement.x * moveSpeed *
+                                    (sprint ? sprintMultiplier : 1);
+                bool accelerating =
+                    Mathf.Abs(velocity.x) < Mathf.Abs(targetSpeed) &&
+                    (Mathf.Approximately(velocity.x, 0f) ||
+                     Mathf.Sign(velocity.x) == Mathf.Sign(targetSpeed));
+                float curveMultiplier = 1f;
+                if (accelerating &&
+                    accelerationResponseCurve != null &&
+                    Mathf.Abs(targetSpeed) > 0.0001f)
+                {
+                    float normalizedSpeed = Mathf.InverseLerp(
+                        0f,
+                        Mathf.Abs(targetSpeed),
+                        Mathf.Abs(velocity.x));
+                    curveMultiplier = Mathf.Max(
+                        0f,
+                        accelerationResponseCurve.Evaluate(
+                            normalizedSpeed));
+                }
+
+                float rate = accelerating
+                    ? moveAcceleration * curveMultiplier
+                    : moveDeceleration;
+                velocity.x = rate <= 0f
+                    ? targetSpeed
+                    : Mathf.MoveTowards(
+                        velocity.x,
+                        targetSpeed,
+                        rate * Time.fixedDeltaTime);
+            }
+
             velocity.z = 0;
             if (!blocked && jumpUntil >= Time.time && groundedUntil >= Time.time)
             {
                 velocity.y = jumpSpeed; jumpUntil = groundedUntil = -1; IsGrounded = false;
+                airborneSince = Time.time;
                 Emit(AchievementSignalIds.PlayerJumped);
             }
+
+            if (IsGrounded && velocity.y < 0f)
+            {
+                velocity.y = 0f;
+            }
+            else
+            {
+                float gravityMultiplier = velocity.y > 0f
+                    ? jumpHeld
+                        ? jumpGravityMultiplier
+                        : jumpReleaseGravityMultiplier
+                    : fallGravityMultiplier;
+                velocity.y += Physics.gravity.y *
+                              gravityMultiplier *
+                              Time.fixedDeltaTime;
+                if (maxFallSpeed > 0f &&
+                    velocity.y < -maxFallSpeed)
+                {
+                    velocity.y = -maxFallSpeed;
+                }
+            }
+
             motor.linearVelocity = velocity;
-        }
-        public bool HasActionBinding(InputActionId id)
-        {
-            foreach (var binding in actionBindings) if (binding.inputAction == id && binding.action != null) return true;
-            return false;
         }
         public bool TryPlayAction(ActSO action)
         {

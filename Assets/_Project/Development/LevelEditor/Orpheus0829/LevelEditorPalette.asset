@@ -1,0 +1,1236 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92a3b4c5d6e7f8091234567890123456, type: 3}
+  m_Name: LevelEditorPalette
+  m_EditorClassIdentifier: Assembly-CSharp::Project.LevelEditor.LevelEditorPalette
+  entries:
+  - entryId: ea6f88a776524093942110a86be27af4
+    mode: 0
+    displayName: "\u7EA2\u65B9\u5757"
+    color: {r: 1, g: 0.25, b: 0.25, a: 1}
+    prefab: {fileID: 0}
+    customTemplate: {fileID: 7390616133651642006, guid: ecb599a5a4d59144badef45bb4f53493, type: 3}
+    surfaceTilePalette: {fileID: 0}
+    surfaceTileCellSize: 1
+    surfaceTileTransparentBase: 0
+    surfaceTilePlacements: []
+  - entryId: 29ae700f35e247ddae115899ba7a5f5a
+    mode: 0
+    displayName: "\u84DD\u65B9\u5757"
+    color: {r: 0.22, g: 0.52, b: 1, a: 1}
+    prefab: {fileID: 0}
+    customTemplate: {fileID: 0}
+    surfaceTilePalette: {fileID: 0}
+    surfaceTileCellSize: 1
+    surfaceTileTransparentBase: 0
+    surfaceTilePlacements: []
+  - entryId: 1362ef2c1fa247d2b83942b0970b7101
+    mode: 0
+    displayName: "\u7EFF\u65B9\u5757"
+    color: {r: 0.25, g: 0.8, b: 0.38, a: 1}
+    prefab: {fileID: 0}
+    customTemplate: {fileID: 0}
+    surfaceTilePalette: {fileID: 0}
+    surfaceTileCellSize: 1
+    surfaceTileTransparentBase: 0
+    surfaceTilePlacements: []
+  - entryId: c2a23d40ffe04afc8ef12808af25ae69
+    mode: 0
+    displayName: "\u9ED1\u65B9\u5757"
+    color: {r: 0.08, g: 0.08, b: 0.08, a: 1}
+    prefab: {fileID: 0}
+    customTemplate: {fileID: 0}
+    surfaceTilePalette: {fileID: 0}
+    surfaceTileCellSize: 1
+    surfaceTileTransparentBase: 0
+    surfaceTilePlacements: []
+  - entryId: b425a019bb3c476da08cd4065bd77862
+    mode: 0
+    displayName: "\u767D\u65B9\u5757"
+    color: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+    prefab: {fileID: 0}
+    customTemplate: {fileID: 0}
+    surfaceTilePalette: {fileID: 0}
+    surfaceTileCellSize: 1
+    surfaceTileTransparentBase: 0
+    surfaceTilePlacements: []
+  - entryId: 9722dbcf660242b187a026605cc52f67
+    mode: 0
+    displayName: test
+    color: {r: 0.40415716, g: 0.41143844, b: 0.42138356, a: 1}
+    prefab: {fileID: 0}
+    customTemplate: {fileID: 0}
+    surfaceTilePalette: {fileID: 11400000, guid: 6256579dbea09914487bfc3f247aa58b, type: 2}
+    surfaceTileCellSize: 0.05
+    surfaceTileTransparentBase: 0
+    surfaceTilePlacements:
+    - face: 0
+      cell: {x: 2, y: 17}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 12}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 11}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 9}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 8}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 2, y: 7}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 3, y: 17}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 4, y: 17}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 4, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 5, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 5, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 5, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 5, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 4, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 4, y: 12}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 3, y: 12}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 3, y: 11}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 4, y: 11}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 4, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 5, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 5, y: 9}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 6, y: 9}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 6, y: 8}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 8, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 9, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 10, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 10, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 11, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 11, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 11, y: 12}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 11, y: 11}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 10, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 9, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 8, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 7, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 7, y: 11}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 7, y: 12}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 7, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 8, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 8, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 13, y: 17}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 13, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 14, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 14, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 15, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 15, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 16, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 18, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 17, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 17, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 17, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 16, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 16, y: 12}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 16, y: 11}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 16, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 16, y: 9}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 0
+      cell: {x: 18, y: 17}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 0, y: 18}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 0, y: 17}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 1, y: 17}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 1, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 2, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 2, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 2, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 3, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 3, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 4, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 4, y: 12}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 5, y: 11}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 5, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 6, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 6, y: 9}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 7, y: 9}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 7, y: 8}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 8, y: 8}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 8, y: 7}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 9, y: 7}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 9, y: 6}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 10, y: 6}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 10, y: 5}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 11, y: 5}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 11, y: 4}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 12, y: 4}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 13, y: 4}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 13, y: 3}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 14, y: 3}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 14, y: 2}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 15, y: 2}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 15, y: 1}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 16, y: 1}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 16, y: 0}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 0, y: 2}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 0, y: 1}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 1, y: 1}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 1, y: 2}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 2, y: 2}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 2, y: 3}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 2, y: 4}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 3, y: 4}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 3, y: 5}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 4, y: 5}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 4, y: 6}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 5, y: 6}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 5, y: 7}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 5, y: 8}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 6, y: 8}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 7, y: 10}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 7, y: 11}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 8, y: 12}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 8, y: 13}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 9, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 10, y: 14}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 10, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 11, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 12, y: 15}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 12, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 13, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 14, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 15, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 16, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 17, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 18, y: 16}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 18, y: 17}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}
+    - face: 4
+      cell: {x: 19, y: 17}
+      tileId: bd72ef9421074ebb9a533780d2fd22be
+      quarterTurns: 0
+      flipX: 0
+      flipY: 0
+      anchor: 0
+      layer: 0
+      offsetCells: {x: 0, y: 0}

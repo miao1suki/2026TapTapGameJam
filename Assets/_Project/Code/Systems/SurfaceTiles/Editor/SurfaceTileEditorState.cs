@@ -23,5 +23,8 @@ namespace Project.SurfaceTiles.Editor
         internal static SurfaceTileFace HoverFace { get; set; }
         internal static UnityEngine.Vector2Int HoverCell { get; set; }
         internal static SurfaceTileBlock HoverBlock { get; set; }
+        internal static bool UseForcedFace { get; set; }
+        internal static SurfaceTileFace ForcedFace { get; set; } =
+            SurfaceTileFace.Front;
     }
 }
