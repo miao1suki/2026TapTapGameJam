@@ -1,5 +1,15 @@
 # 工作状态与交接（每次任务重读）
 
+## 可变色方块与颜色工作台
+
+- 日期：2026-10-03。
+- 负责人：Codex。
+- 分支：`codex/color-blocks`。
+- 范围：新项目的 RGB 可变色方块、颜色钥匙、Timeline 相机演出、局部 HSV 褪色、UI Toolkit 工作台及交互图设计数据。
+- 接口变更：新增 `ColorWorldManager`、`ColorBlock`、`HSVColorFadeManager` 与 EventMgr 颜色事件。混色规则暂未执行。
+- 验证：Unity 6000.3.12f1 脚本与 Shader 导入无错误；UI Toolkit 工作台已在编辑器中打开检查；主菜单 Play Mode 冒烟通过，未见 RenderGraph 异常。带颜色方块的拾取与屏幕渐变场景仍需关卡内实测。
+- 交接提交：`codex/color-blocks` 本次提交；仅整合本模块，不包含当前测试场景或他人的瓦片库脏数据。
+
 ## 基础迁移
 
 - 工作分支：`codex/migrate-foundation`。

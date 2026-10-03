@@ -13,8 +13,10 @@
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
 | 方块功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 全覆盖交互契约；动力组件含开关/信号源与单次/持续/脉冲调试，完整动力网络待施工 |
 | 2D关卡编辑器原型 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 实验工具；栏目增删改、自定义/原预制体模式、自定义组件模板与调试、玩家平面工具，栏目贴画复用 SurfaceTiles |
+| 可变色方块/颜色工作台/HSV褪色 | `Assets/_Project/Code/Systems/ColorBlocks` | RGB 类型、钥匙/Timeline、材质/层管理、交互图配置；混色执行待设计 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。
 开发者：[运行与场景](../Developer/GAME_FLOW.md)、[贴画与切片](../Developer/SURFACE_TILES.md)、[旧成就与Timeline](../Developer/LEGACY_SYSTEMS.md)。
+颜色系统：[Agent 接入 API](Integration/COLOR_BLOCKS_API.md)、[制作说明](../Developer/COLOR_BLOCKS.md)。
 迁移记录：[MIGRATION_REPORT.md](MIGRATION_REPORT.md)。
 各模块随源码的 README 是旧实现参考；与这里冲突时以本项目最新说明为准，不复原被排除的场景与玩法。
