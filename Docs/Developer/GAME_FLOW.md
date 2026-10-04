@@ -28,8 +28,8 @@ Scene 视图锁定为 XY 正交平面，点击醒目的编辑模式按钮退出�
 `组件与调试` 会打开组件模板窗口：可添加或删除组件，并用 Inspector 风格的字段调试；Transform、渲染器、
 碰撞体、MeshFilter 和 SurfaceTileBlock 等默认组件不能删除。保存后生成独立模板预制体，之后新放置或
 “替换为当前”时使用；已有场景实例不会被静默重建。
-主窗口的 `父物体选取` 可收起；指定当前场景物体后，之后新放置的方块会成为它的子物体。未指定或引用了其他场景
-物体时，新方块回退到 `__LevelEditorContent`，已有方块不会被重新挂载。
+融合编辑器不再提供手动父物体选取。进入详情搭建时，房间或通道会按自己的名称自动收纳在
+`__PlanningMapGenerated` 下，新放置的方块会自动成为当前房间或通道的子物体。
 进入编辑模式时，编辑器会先对“玩家参考”对象执行一次 SceneView 聚焦，再切换并锁定为 XY 正交视图；未设置玩家时不改变当前视角。
 默认瓦片源图位于 `Assets/_Project/Development/LevelEditor/Orpheus0829/TileLibrary`。缺失或需要重建时使用
 `Tools/2026TapTap/关卡编辑器/重建默认瓦片库`，生成图集、预览材质和 `26TAPTAP_Palette.asset`。

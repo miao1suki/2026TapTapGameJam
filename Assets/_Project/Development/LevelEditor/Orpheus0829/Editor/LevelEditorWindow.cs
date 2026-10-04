@@ -106,8 +106,6 @@ namespace Project.LevelEditor.Editor
         private ObjectField playerField;
         private Toggle playerPlaneLockToggle;
         private Label playerStatusLabel;
-        private ObjectField generationParentField;
-        private Label generationParentStatusLabel;
         private int lastPaletteCount = -1;
         private int lastSelectedIndex = -2;
         private int lastPaletteRevision = -1;
@@ -279,38 +277,6 @@ namespace Project.LevelEditor.Editor
                 playerSection.Add(playerStatusLabel);
                 body.Add(playerSection);
 
-                Foldout generationParentSection = new Foldout
-                {
-                    text = "父物体选取",
-                    value = false
-                };
-                generationParentField = new ObjectField("生成父物体")
-                {
-                    objectType = typeof(GameObject),
-                    allowSceneObjects = true
-                };
-                generationParentField.RegisterValueChangedCallback(evt =>
-                {
-                    if (!refreshing)
-                    {
-                        SetGenerationParent(
-                            evt.newValue as GameObject);
-                    }
-                });
-                generationParentSection.Add(generationParentField);
-
-                VisualElement generationParentActions = Row();
-                generationParentActions.Add(ActionButton(
-                    "使用当前选择",
-                    UseSelectedAsGenerationParent));
-                generationParentSection.Add(generationParentActions);
-
-                generationParentStatusLabel = new Label();
-                generationParentStatusLabel.style.whiteSpace =
-                    WhiteSpace.Normal;
-                generationParentStatusLabel.style.opacity = .8f;
-                generationParentSection.Add(generationParentStatusLabel);
-                body.Add(generationParentSection);
             }
 
             VisualElement sharedScaleRow = Row();
@@ -410,17 +376,6 @@ namespace Project.LevelEditor.Editor
                           : "未锁定编辑平面");
             }
 
-            GameObject generationParent =
-                LevelEditorState.GenerationParent;
-            generationParentField?.SetValueWithoutNotify(
-                generationParent);
-            if (generationParentStatusLabel != null)
-            {
-                generationParentStatusLabel.text =
-                    generationParent == null
-                        ? "未指定：新方块放在 __LevelEditorContent。"
-                        : $"已指定：新方块放在 {generationParent.name} 下。";
-            }
             selectButton.EnableInClassList(
                 "selected-tool",
                 LevelEditorState.Tool == LevelEditorTool.Select);
@@ -577,20 +532,7 @@ namespace Project.LevelEditor.Editor
             }
 
             LevelEditorState.GenerationParent = value;
-            generationParentField?.SetValueWithoutNotify(value);
-            if (generationParentStatusLabel != null)
-            {
-                generationParentStatusLabel.text = value == null
-                    ? "未指定：新方块放在 __LevelEditorContent。"
-                    : $"已指定：新方块放在 {value.name} 下。";
-            }
-
             SceneView.RepaintAll();
-        }
-
-        private void UseSelectedAsGenerationParent()
-        {
-            SetGenerationParent(Selection.activeGameObject);
         }
 
         private void RefreshPalette()
@@ -1220,6 +1162,7 @@ namespace Project.LevelEditor.Editor
             button.style.width = 28f;
             button.style.height = 24f;
             button.style.fontSize = 13f;
+            button.style.unityFontStyleAndWeight = FontStyle.Bold;
             button.style.paddingLeft = 0f;
             button.style.paddingRight = 0f;
             return button;

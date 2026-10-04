@@ -18,7 +18,14 @@ namespace PlanningEditorPrototype
 
         internal static bool HasGeneratedRoot(PlanningRoom room)
         {
-            return FindGeneratedRoot(RoomRootPrefix + room.id) != null;
+            if (room == null)
+            {
+                return false;
+            }
+
+            GameObject root = FindGeneratedRoot(MapRootName);
+            return root != null &&
+                   FindDirectChild(root.transform, room.name) != null;
         }
 
         internal static bool HasGeneratedRoot(PlanningDocument document)
@@ -42,7 +49,9 @@ namespace PlanningEditorPrototype
                 return false;
             }
 
-            if (FindGeneratedRoot(MapRootName) != null)
+            GameObject existingRoot = FindGeneratedRoot(MapRootName);
+            if (existingRoot != null &&
+                HasPlacedBlocks(existingRoot))
             {
                 message = "当前已有整套生成场景。" +
                           "请先撤销或删除整套场景，再单独生成房间。";
@@ -52,13 +61,20 @@ namespace PlanningEditorPrototype
             var rooms = new List<PlanningRoom> { room };
             return TryBuild(
                 room.name,
-                RoomRootPrefix + room.id,
+                MapRootName,
                 rooms,
                 new List<PlanningBox>(),
                 16,
                 16,
                 false,
                 out message);
+        }
+
+        private static bool HasPlacedBlocks(GameObject root)
+        {
+            return root != null &&
+                   root.GetComponentsInChildren<
+                       LevelEditorPlacedBlock>(true).Length > 0;
         }
 
         internal static bool TryBuildDocument(
@@ -80,6 +96,75 @@ namespace PlanningEditorPrototype
                 document.worldBlockCellHeight,
                 true,
                 out message);
+        }
+
+        internal static GameObject FindRoomContainer(PlanningRoom room)
+        {
+            if (room == null)
+            {
+                return null;
+            }
+
+            GameObject root = FindGeneratedRoot(MapRootName);
+            Transform child = FindDirectChild(
+                root != null ? root.transform : null,
+                room.name);
+            return child != null ? child.gameObject : null;
+        }
+
+        internal static GameObject EnsureRoomContainer(
+            PlanningRoom room,
+            bool focus)
+        {
+            if (room == null)
+            {
+                return null;
+            }
+
+            Scene scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid())
+            {
+                return null;
+            }
+
+            GameObject root = FindGeneratedRoot(MapRootName);
+            if (root == null)
+            {
+                root = new GameObject(MapRootName);
+                Undo.RegisterCreatedObjectUndo(
+                    root,
+                    "创建规划关卡根节点");
+                SceneManager.MoveGameObjectToScene(root, scene);
+                root.transform.position = Vector3.zero;
+            }
+
+            Transform child = FindDirectChild(root.transform, room.name);
+            GameObject container;
+            if (child != null)
+            {
+                container = child.gameObject;
+            }
+            else
+            {
+                container = new GameObject(room.name);
+                container.transform.SetParent(root.transform, false);
+                Undo.RegisterCreatedObjectUndo(
+                    container,
+                    room.isConnector
+                        ? "创建通道场景容器"
+                        : "创建房间场景容器");
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (focus)
+            {
+                Selection.activeGameObject = container;
+                SceneView view = SceneView.lastActiveSceneView;
+                view?.FrameSelected();
+                view?.Focus();
+            }
+
+            return container;
         }
 
         private static bool TryBuild(
@@ -714,6 +799,27 @@ namespace PlanningEditorPrototype
                 if (roots[index].name == rootName)
                 {
                     return roots[index];
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindDirectChild(
+            Transform parent,
+            string childName)
+        {
+            if (parent == null || string.IsNullOrEmpty(childName))
+            {
+                return null;
+            }
+
+            for (int index = 0; index < parent.childCount; index++)
+            {
+                Transform child = parent.GetChild(index);
+                if (child.name == childName)
+                {
+                    return child;
                 }
             }
 

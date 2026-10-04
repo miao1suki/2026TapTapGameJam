@@ -144,7 +144,8 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
-                GameObject parent = ResolveRoomParent(room);
+                GameObject parent =
+                    PlanningSceneBuilder.FindRoomContainer(room);
                 if (parent == null)
                 {
                     continue;
@@ -251,21 +252,6 @@ namespace PlanningEditorPrototype
             }
 
             return true;
-        }
-
-        private static GameObject ResolveRoomParent(PlanningRoom room)
-        {
-            if (room == null ||
-                string.IsNullOrEmpty(room.roomParentReference) ||
-                !GlobalObjectId.TryParse(
-                    room.roomParentReference,
-                    out GlobalObjectId globalId))
-            {
-                return null;
-            }
-
-            return GlobalObjectId
-                .GlobalObjectIdentifierToObjectSlow(globalId) as GameObject;
         }
 
         private bool FindSelectedBox(
@@ -511,82 +497,154 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            int minX = int.MaxValue;
-            int maxX = int.MinValue;
-            int minY = int.MaxValue;
-            int maxY = int.MinValue;
-            bool hasBounds = false;
-            if (mode == PlanningCanvasMode.Detail && room.isConnector)
+            if (mode != PlanningCanvasMode.Detail)
             {
-                if (room.boxes.Count == 0)
-                {
-                    PlanningCell origin = GetConnectorOrigin(room);
-                    for (int index = 0; index < room.cells.Count; index++)
-                    {
-                        PlanningCell cell = room.cells[index];
-                        minX = Mathf.Min(
-                            minX,
-                            cell.x - origin.x);
-                        maxX = Mathf.Max(
-                            maxX,
-                            cell.x - origin.x + 1);
-                        minY = Mathf.Min(
-                            minY,
-                            cell.y - origin.y);
-                        maxY = Mathf.Max(
-                            maxY,
-                            cell.y - origin.y + 1);
-                        hasBounds = true;
-                    }
-                }
-
-                for (int index = 0; index < room.boxes.Count; index++)
-                {
-                    PlanningBox box = room.boxes[index];
-                    minX = Mathf.Min(minX, box.x);
-                    maxX = Mathf.Max(maxX, box.x + box.width);
-                    minY = Mathf.Min(minY, box.y);
-                    maxY = Mathf.Max(maxY, box.y + box.height);
-                    hasBounds = true;
-                }
-            }
-            else if (mode == PlanningCanvasMode.Detail &&
-                     room.boxes.Count > 0)
-            {
-                for (int index = 0; index < room.boxes.Count; index++)
-                {
-                    PlanningBox box = room.boxes[index];
-                    minX = Mathf.Min(minX, box.x);
-                    maxX = Mathf.Max(maxX, box.x + box.width);
-                    minY = Mathf.Min(minY, box.y);
-                    maxY = Mathf.Max(maxY, box.y + box.height);
-                    hasBounds = true;
-                }
-            }
-            else
-            {
-                for (int index = 0; index < room.cells.Count; index++)
-                {
-                    PlanningCell cell = room.cells[index];
-                    minX = Mathf.Min(minX, cell.x);
-                    maxX = Mathf.Max(maxX, cell.x + 1);
-                    minY = Mathf.Min(minY, cell.y);
-                    maxY = Mathf.Max(maxY, cell.y + 1);
-                    hasBounds = true;
-                }
+                RectInt worldBounds = GetWorldCellBounds(room);
+                CenterOn(
+                    worldBounds.xMin + worldBounds.width * .5f,
+                    worldBounds.yMin + worldBounds.height * .5f);
+                MarkDirtyRepaint();
+                return;
             }
 
-            if (!hasBounds)
+            HashSet<Vector2Int> cells = BuildDetailCells(room);
+            if (cells.Count == 0)
             {
                 return;
             }
 
-            CalculateDetailFocus(
-                room,
-                out float centerX,
-                out float centerY);
-            CenterOn(centerX, centerY);
+            RectInt bounds = GetCellSetBounds(cells);
+            Vector2 focus = CalculateDensestCenter(cells, bounds);
+            ApplyDetailView(bounds, focus);
             MarkDirtyRepaint();
+        }
+
+        private HashSet<Vector2Int> BuildDetailCells(PlanningRoom room)
+        {
+            var cells = new HashSet<Vector2Int>();
+            if (room.boxes.Count > 0)
+            {
+                for (int index = 0; index < room.boxes.Count; index++)
+                {
+                    PlanningBox box = room.boxes[index];
+                    for (int y = box.y; y < box.y + box.height; y++)
+                    {
+                        for (int x = box.x; x < box.x + box.width; x++)
+                        {
+                            cells.Add(new Vector2Int(x, y));
+                        }
+                    }
+                }
+
+                return cells;
+            }
+
+            PlanningCell origin = room.isConnector
+                ? GetConnectorOrigin(room)
+                : new PlanningCell(0, 0);
+            for (int index = 0; index < room.cells.Count; index++)
+            {
+                PlanningCell cell = room.cells[index];
+                cells.Add(new Vector2Int(
+                    cell.x - origin.x,
+                    cell.y - origin.y));
+            }
+
+            return cells;
+        }
+
+        private static RectInt GetCellSetBounds(
+            HashSet<Vector2Int> cells)
+        {
+            int minX = int.MaxValue;
+            int minY = int.MaxValue;
+            int maxX = int.MinValue;
+            int maxY = int.MinValue;
+            foreach (Vector2Int cell in cells)
+            {
+                minX = Mathf.Min(minX, cell.x);
+                minY = Mathf.Min(minY, cell.y);
+                maxX = Mathf.Max(maxX, cell.x + 1);
+                maxY = Mathf.Max(maxY, cell.y + 1);
+            }
+
+            return new RectInt(
+                minX,
+                minY,
+                Mathf.Max(1, maxX - minX),
+                Mathf.Max(1, maxY - minY));
+        }
+
+        private static Vector2 CalculateDensestCenter(
+            HashSet<Vector2Int> cells,
+            RectInt bounds)
+        {
+            Vector2 fallback = new Vector2(
+                bounds.xMin + bounds.width * .5f,
+                bounds.yMin + bounds.height * .5f);
+            int radius = Mathf.Clamp(
+                Mathf.Max(bounds.width, bounds.height) / 10,
+                2,
+                10);
+            int bestCount = -1;
+            float bestDistance = float.MaxValue;
+            Vector2 bestCenter = fallback;
+            foreach (Vector2Int anchor in cells)
+            {
+                int count = 0;
+                for (int y = anchor.y - radius;
+                     y <= anchor.y + radius;
+                     y++)
+                {
+                    for (int x = anchor.x - radius;
+                         x <= anchor.x + radius;
+                         x++)
+                    {
+                        if (cells.Contains(new Vector2Int(x, y)))
+                        {
+                            count++;
+                        }
+                    }
+                }
+
+                Vector2 candidate = new Vector2(
+                    anchor.x + .5f,
+                    anchor.y + .5f);
+                float distance = (candidate - fallback).sqrMagnitude;
+                if (count > bestCount ||
+                    (count == bestCount &&
+                     distance < bestDistance))
+                {
+                    bestCount = count;
+                    bestDistance = distance;
+                    bestCenter = candidate;
+                }
+            }
+
+            return bestCount == cells.Count
+                ? fallback
+                : bestCenter;
+        }
+
+        private void ApplyDetailView(
+            RectInt bounds,
+            Vector2 focus)
+        {
+            float viewportWidth = Mathf.Max(
+                160f,
+                contentRect.width - 36f);
+            float viewportHeight = Mathf.Max(
+                160f,
+                contentRect.height - 36f);
+            float fitX = viewportWidth /
+                         (Mathf.Max(1, bounds.width) * BaseGridSize);
+            float fitY = viewportHeight /
+                         (Mathf.Max(1, bounds.height) * BaseGridSize);
+            zoom = Mathf.Clamp(
+                Mathf.Min(fitX, fitY),
+                MinimumZoom,
+                Mathf.Min(MaximumZoom, 2f));
+            CenterOn(focus.x, focus.y);
         }
 
         public void FocusWorld()
@@ -745,50 +803,6 @@ namespace PlanningEditorPrototype
                     }
                 }
             }
-        }
-
-        private static void CalculateDetailFocus(
-            PlanningRoom room,
-            out float centerX,
-            out float centerY)
-        {
-            float sumX = 0f;
-            float sumY = 0f;
-            int count = 0;
-            IReadOnlyList<PlanningBox> boxes = room.boxes;
-            for (int boxIndex = 0;
-                 boxIndex < boxes.Count;
-                 boxIndex++)
-            {
-                PlanningBox box = boxes[boxIndex];
-                for (int y = box.y;
-                     y < box.y + box.height;
-                     y++)
-                {
-                    for (int x = box.x;
-                         x < box.x + box.width;
-                         x++)
-                    {
-                        sumX += x + .5f;
-                        sumY += y + .5f;
-                        count++;
-                    }
-                }
-            }
-
-            if (count == 0)
-            {
-                for (int index = 0; index < room.cells.Count; index++)
-                {
-                    PlanningCell cell = room.cells[index];
-                    sumX += cell.x + .5f;
-                    sumY += cell.y + .5f;
-                    count++;
-                }
-            }
-
-            centerX = count > 0 ? sumX / count : 0f;
-            centerY = count > 0 ? sumY / count : 0f;
         }
 
         private void CenterOn(float centerX, float centerY)

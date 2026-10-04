@@ -176,7 +176,6 @@ namespace PlanningEditorPrototype
     {
         public string id;
         public string name;
-        public string roomParentReference;
         public bool isConnector;
         public string fromRoomId;
         public string toRoomId;

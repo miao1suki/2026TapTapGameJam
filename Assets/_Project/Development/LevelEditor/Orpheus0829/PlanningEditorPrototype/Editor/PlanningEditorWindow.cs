@@ -31,14 +31,13 @@ namespace PlanningEditorPrototype
 
         private PlanningDocument document;
         private PlanningCanvas canvas;
-        private TextField mapNameField;
+        private Label currentSaveLabel;
         private ColorField canvasBackgroundField;
         private IntegerField worldBlockWidthField;
         private IntegerField worldBlockHeightField;
         private Button worldBlockUnlockButton;
         private Button worldBlockApplyButton;
         private ObjectField playerContextField;
-        private ObjectField roomParentField;
         private Label contextStatusLabel;
         private VisualElement inspector;
         private VisualElement roomList;
@@ -338,34 +337,6 @@ namespace PlanningEditorPrototype
                 "聚焦玩家",
                 () => embeddedLevelEditor?.FocusPlayer());
             bar.Add(focusPlayer);
-            bar.Add(ContextSeparator());
-
-            roomParentField = new ObjectField("房间父物体")
-            {
-                objectType = typeof(GameObject),
-                allowSceneObjects = true
-            };
-            roomParentField.style.width = 260f;
-            roomParentField.style.marginRight = 4f;
-            roomParentField.RegisterValueChangedCallback(evt =>
-            {
-                if (!refreshingLevelContext)
-                {
-                    SetCurrentRoomParent(
-                        evt.newValue as GameObject);
-                }
-            });
-            bar.Add(roomParentField);
-
-            Button useSelectedParent = TopButton(
-                "设为房间父物体",
-                () => SetCurrentRoomParent(
-                    Selection.activeGameObject));
-            bar.Add(useSelectedParent);
-
-            bar.Add(TopButton(
-                "创建 / 定位房间容器",
-                () => EnsureCurrentRoomContainer(true)));
 
             contextStatusLabel = new Label();
             contextStatusLabel.style.flexGrow = 1f;
@@ -397,6 +368,7 @@ namespace PlanningEditorPrototype
                 pickingMode = PickingMode.Ignore
             };
             grip.style.fontSize = 13f;
+            grip.style.unityFontStyleAndWeight = FontStyle.Bold;
             grip.style.opacity = .8f;
             handle.Add(grip);
 
@@ -495,6 +467,7 @@ namespace PlanningEditorPrototype
                 pickingMode = PickingMode.Ignore
             };
             grip.style.fontSize = 12f;
+            grip.style.unityFontStyleAndWeight = FontStyle.Bold;
             grip.style.opacity = .8f;
             handle.Add(grip);
 
@@ -775,18 +748,26 @@ namespace PlanningEditorPrototype
             brand.style.marginRight = 8f;
             bar.Add(brand);
 
-            mapNameField = new TextField();
-            mapNameField.style.width = 220f;
-            mapNameField.style.height = 28f;
-            mapNameField.RegisterValueChangedCallback(evt =>
-            {
-                if (document != null)
-                {
-                    document.name = evt.newValue;
-                    SaveDocument();
-                }
-            });
-            bar.Add(mapNameField);
+            currentSaveLabel = new Label();
+            currentSaveLabel.style.width = 220f;
+            currentSaveLabel.style.height = 26f;
+            currentSaveLabel.style.paddingLeft = 8f;
+            currentSaveLabel.style.paddingRight = 8f;
+            currentSaveLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+            currentSaveLabel.style.backgroundColor =
+                new Color(.12f, .15f, .2f);
+            currentSaveLabel.style.borderLeftWidth = 1f;
+            currentSaveLabel.style.borderRightWidth = 1f;
+            currentSaveLabel.style.borderTopWidth = 1f;
+            currentSaveLabel.style.borderBottomWidth = 1f;
+            currentSaveLabel.style.borderLeftColor =
+                currentSaveLabel.style.borderRightColor =
+                currentSaveLabel.style.borderTopColor =
+                currentSaveLabel.style.borderBottomColor =
+                new Color(.22f, .27f, .35f);
+            currentSaveLabel.tooltip = "当前存档名，可在“新建 / 存档”中修改。";
+            Round(currentSaveLabel, 4f);
+            bar.Add(currentSaveLabel);
 
             bar.Add(Spacer());
             bar.Add(TopButton("生成整套场景", GenerateMapToScene));
@@ -1137,6 +1118,7 @@ namespace PlanningEditorPrototype
             document.Normalize();
             canvas.SetDocument(document);
             ResetPlanningHistory();
+            RefreshCurrentSaveLabel();
         }
 
         private static Color LoadCanvasBackgroundColor()
@@ -1186,6 +1168,24 @@ namespace PlanningEditorPrototype
                     currentSavePath,
                     document);
             }
+
+            RefreshCurrentSaveLabel();
+        }
+
+        private void RefreshCurrentSaveLabel()
+        {
+            if (currentSaveLabel == null)
+            {
+                return;
+            }
+
+            string name = document != null &&
+                          !string.IsNullOrWhiteSpace(document.name)
+                ? document.name
+                : "未命名地图";
+            currentSaveLabel.text = string.IsNullOrEmpty(currentSavePath)
+                ? $"当前存档：{name}（未保存）"
+                : $"当前存档：{name}";
         }
 
         private void ToggleSaveOverlay()
@@ -1213,6 +1213,7 @@ namespace PlanningEditorPrototype
             currentSavePath = string.Empty;
             EditorPrefs.DeleteKey(CurrentSavePreferenceKey);
             document = PlanningDocument.CreateDefault();
+            document.name = "示例地图";
             canvas.SetDocument(document);
             SaveDocument();
             ResetPlanningHistory();
@@ -1381,7 +1382,6 @@ namespace PlanningEditorPrototype
                         currentSavePath = renamedPath;
                         document.name =
                             Path.GetFileNameWithoutExtension(renamedPath);
-                        mapNameField?.SetValueWithoutNotify(document.name);
                         SaveDocument();
                     }
 
@@ -1569,7 +1569,6 @@ namespace PlanningEditorPrototype
                 document.name = save.Name;
                 currentSavePath = save.Path;
                 SaveDocument();
-                mapNameField?.SetValueWithoutNotify(document.name);
                 saveOverlayStatus.text =
                     $"已保存“{document.name}”。";
                 RefreshSaveSlots();
@@ -1946,6 +1945,7 @@ namespace PlanningEditorPrototype
             RefreshRoomList();
             RefreshConnectorList();
             RefreshInspector();
+            RefreshLevelContext();
         }
 
         private void RefreshAll()
@@ -1955,7 +1955,6 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            mapNameField?.SetValueWithoutNotify(document.name);
             if (!worldBlockSettingsUnlocked)
             {
                 worldBlockWidthField?.SetValueWithoutNotify(
@@ -2074,7 +2073,7 @@ namespace PlanningEditorPrototype
 
         private void RefreshLevelContext()
         {
-            if (playerContextField == null || roomParentField == null)
+            if (playerContextField == null)
             {
                 return;
             }
@@ -2084,9 +2083,9 @@ namespace PlanningEditorPrototype
             playerContextField.SetValueWithoutNotify(player);
 
             PlanningRoom room = document?.FindRoom(canvas?.SelectedRoomId);
-            GameObject roomParent = ResolveRoomParent(room);
-            roomParentField.SetValueWithoutNotify(roomParent);
-            embeddedLevelEditor?.SetGenerationParent(roomParent);
+            GameObject container =
+                PlanningSceneBuilder.FindRoomContainer(room);
+            embeddedLevelEditor?.SetGenerationParent(container);
             refreshingLevelContext = false;
             RefreshLevelContextStatus();
         }
@@ -2149,35 +2148,17 @@ namespace PlanningEditorPrototype
 
             GameObject player = embeddedLevelEditor?.Player;
             PlanningRoom room = document?.FindRoom(canvas?.SelectedRoomId);
-            GameObject roomParent = ResolveRoomParent(room);
+            GameObject container =
+                PlanningSceneBuilder.FindRoomContainer(room);
             string playerText = player != null
                 ? "玩家：" + player.name
                 : "玩家：未选择";
-            string parentText = roomParent != null
-                ? "房间父物体：" + roomParent.name
-                : "房间父物体：未选择";
+            string parentText = room == null
+                ? "房间/通道：未选择"
+                : container != null
+                    ? "自动父物体：" + container.name
+                    : "自动父物体：待创建";
             contextStatusLabel.text = playerText + "  ·  " + parentText;
-        }
-
-        private void SetCurrentRoomParent(GameObject value)
-        {
-            PlanningRoom room = document?.FindRoom(canvas?.SelectedRoomId);
-            if (room == null)
-            {
-                return;
-            }
-
-            if (value != null && !value.scene.IsValid())
-            {
-                value = null;
-            }
-
-            room.roomParentReference = value != null
-                ? GlobalObjectId.GetGlobalObjectIdSlow(value).ToString()
-                : string.Empty;
-            embeddedLevelEditor?.SetGenerationParent(value);
-            SaveDocument();
-            RefreshLevelContext();
         }
 
         private GameObject EnsureCurrentRoomContainer(bool focus)
@@ -2185,61 +2166,24 @@ namespace PlanningEditorPrototype
             PlanningRoom room = document?.FindRoom(canvas?.SelectedRoomId);
             if (room == null)
             {
-                statusLabel.text = "请先在世界图选择一个房间。";
+                statusLabel.text = "请先在世界图选择一个房间或通道。";
                 return null;
             }
 
-            GameObject parent = ResolveRoomParent(room);
-            if (parent == null)
+            GameObject container =
+                PlanningSceneBuilder.EnsureRoomContainer(
+                    room,
+                    focus);
+            if (container == null)
             {
-                Scene scene = SceneManager.GetActiveScene();
-                if (!scene.IsValid())
-                {
-                    statusLabel.text = "当前没有可用场景。";
-                    return null;
-                }
-
-                parent = new GameObject(
-                    $"房间容器_{room.name}_{room.id}");
-                Undo.RegisterCreatedObjectUndo(
-                    parent,
-                    "创建房间场景容器");
-                SceneManager.MoveGameObjectToScene(parent, scene);
-                parent.transform.position = Vector3.zero;
-                room.roomParentReference =
-                    GlobalObjectId.GetGlobalObjectIdSlow(parent).ToString();
-                EditorSceneManager.MarkSceneDirty(scene);
-                SaveDocument();
+                statusLabel.text = "当前没有可用场景。";
+                return null;
             }
 
-            LevelEditorState.GenerationParent = parent;
-            embeddedLevelEditor?.SetGenerationParent(parent);
+            LevelEditorState.GenerationParent = container;
+            embeddedLevelEditor?.SetGenerationParent(container);
             RefreshLevelContext();
-
-            if (focus)
-            {
-                Selection.activeGameObject = parent;
-                SceneView view = SceneView.lastActiveSceneView;
-                view?.FrameSelected();
-                view?.Focus();
-            }
-
-            return parent;
-        }
-
-        private static GameObject ResolveRoomParent(PlanningRoom room)
-        {
-            if (room == null ||
-                string.IsNullOrEmpty(room.roomParentReference) ||
-                !GlobalObjectId.TryParse(
-                    room.roomParentReference,
-                    out GlobalObjectId globalId))
-            {
-                return null;
-            }
-
-            return GlobalObjectId
-                .GlobalObjectIdentifierToObjectSlow(globalId) as GameObject;
+            return container;
         }
 
         private void RefreshRoomList()
