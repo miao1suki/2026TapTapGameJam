@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Project.SurfaceTiles.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -9,6 +10,9 @@ namespace Project.LevelEditor.Editor
     internal static class LevelEditorScenePainter
     {
         private static Vector2Int lastCell = new Vector2Int(int.MinValue, int.MinValue);
+        private static bool strokeActive;
+        private static Vector2Int strokeStart;
+        private static Vector2Int strokeEnd;
 
         static LevelEditorScenePainter()
         {
@@ -35,6 +39,7 @@ namespace Project.LevelEditor.Editor
             Event evt = Event.current;
             if (evt.type == EventType.KeyDown && evt.keyCode == KeyCode.Escape)
             {
+                strokeActive = false;
                 LevelEditorState.Tool = LevelEditorTool.Select;
                 evt.Use();
                 SceneView.RepaintAll();
@@ -43,6 +48,7 @@ namespace Project.LevelEditor.Editor
 
             if (LevelEditorState.Tool == LevelEditorTool.Player)
             {
+                strokeActive = false;
                 lastCell = new Vector2Int(int.MinValue, int.MinValue);
                 LevelEditorPlayerService.EnforceEditPlane();
                 return;
@@ -54,6 +60,20 @@ namespace Project.LevelEditor.Editor
                     GUIUtility.GetControlID(FocusType.Passive));
             }
 
+            if (evt.type == EventType.MouseUp && evt.button == 0)
+            {
+                if (strokeActive)
+                {
+                    CompleteStroke();
+                    strokeActive = false;
+                }
+
+                lastCell = new Vector2Int(int.MinValue, int.MinValue);
+                evt.Use();
+                SceneView.RepaintAll();
+                return;
+            }
+
             if (!TryGetCell(evt.mousePosition, out Vector2Int cell))
             {
                 lastCell = new Vector2Int(int.MinValue, int.MinValue);
@@ -61,14 +81,33 @@ namespace Project.LevelEditor.Editor
             }
 
             DrawHover(cell);
-            if (evt.type == EventType.MouseUp && evt.button == 0)
+            if (evt.alt || evt.button != 0)
             {
-                lastCell = new Vector2Int(int.MinValue, int.MinValue);
+                return;
             }
 
-            if (evt.alt || evt.button != 0 ||
-                (evt.type != EventType.MouseDown &&
-                 evt.type != EventType.MouseDrag) ||
+            if (evt.type == EventType.MouseDown &&
+                IsStrokeTool(LevelEditorState.Tool))
+            {
+                strokeActive = true;
+                strokeStart = cell;
+                strokeEnd = cell;
+                lastCell = cell;
+                evt.Use();
+                SceneView.RepaintAll();
+                return;
+            }
+
+            if (evt.type == EventType.MouseDrag && strokeActive)
+            {
+                strokeEnd = cell;
+                lastCell = cell;
+                evt.Use();
+                SceneView.RepaintAll();
+                return;
+            }
+
+            if (evt.type != EventType.MouseDown ||
                 cell == lastCell)
             {
                 return;
@@ -79,17 +118,86 @@ namespace Project.LevelEditor.Editor
                 case LevelEditorTool.Select:
                     SelectAt(cell);
                     break;
-                case LevelEditorTool.Paint:
-                    PaintAt(cell);
-                    break;
-                case LevelEditorTool.Erase:
-                    LevelEditorBlockFactory.EraseAt(cell);
-                    break;
             }
 
             lastCell = cell;
             evt.Use();
             SceneView.RepaintAll();
+        }
+
+        private static bool IsStrokeTool(LevelEditorTool tool)
+        {
+            return tool == LevelEditorTool.Paint ||
+                   tool == LevelEditorTool.Erase;
+        }
+
+        private static void CompleteStroke()
+        {
+            IEnumerable<Vector2Int> cells =
+                BuildAreaCells(strokeStart, strokeEnd);
+            foreach (Vector2Int cell in cells)
+            {
+                if (LevelEditorState.Tool == LevelEditorTool.Erase)
+                {
+                    LevelEditorBlockFactory.EraseAt(cell);
+                }
+                else
+                {
+                    PaintAt(cell);
+                }
+            }
+        }
+
+        private static IEnumerable<Vector2Int> BuildAreaCells(
+            Vector2Int start,
+            Vector2Int end)
+        {
+            int minX = Mathf.Min(start.x, end.x);
+            int maxX = Mathf.Max(start.x, end.x);
+            int minY = Mathf.Min(start.y, end.y);
+            int maxY = Mathf.Max(start.y, end.y);
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    yield return new Vector2Int(x, y);
+                }
+            }
+        }
+
+        private static IEnumerable<Vector2Int> BuildStrokeCells(
+            Vector2Int start,
+            Vector2Int end)
+        {
+            int x = start.x;
+            int y = start.y;
+            int deltaX = Mathf.Abs(end.x - start.x);
+            int deltaY = -Mathf.Abs(end.y - start.y);
+            int stepX = start.x < end.x ? 1 : -1;
+            int stepY = start.y < end.y ? 1 : -1;
+            int error = deltaX + deltaY;
+
+            while (true)
+            {
+                yield return new Vector2Int(x, y);
+                if (x == end.x && y == end.y)
+                {
+                    yield break;
+                }
+
+                int doubled = error * 2;
+                if (doubled >= deltaY)
+                {
+                    error += deltaY;
+                    x += stepX;
+                }
+
+                if (doubled <= deltaX)
+                {
+                    error += deltaX;
+                    y += stepY;
+                }
+            }
         }
 
         private static void SelectAt(Vector2Int cell)
@@ -103,6 +211,17 @@ namespace Project.LevelEditor.Editor
         private static void PaintAt(Vector2Int cell)
         {
             LevelEditorPalette palette = LevelEditorState.Palette;
+            int propIndex = LevelEditorState.SelectedPropIndex;
+            if (palette != null &&
+                propIndex >= 0 &&
+                propIndex < palette.PropEntries.Count)
+            {
+                LevelEditorBlockFactory.PlaceProp(
+                    palette.PropEntries[propIndex],
+                    cell);
+                return;
+            }
+
             int index = LevelEditorState.SelectedEntryIndex;
             if (palette == null || index < 0 ||
                 index >= palette.Entries.Count)

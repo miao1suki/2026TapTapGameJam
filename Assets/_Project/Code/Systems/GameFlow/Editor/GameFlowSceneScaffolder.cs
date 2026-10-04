@@ -65,7 +65,6 @@ namespace Project.GameFlow.Editor
             EndingPath,
         };
 
-        [MenuItem("Tools/2026TapTap/游戏流程/创建或修复标准场景骨架", priority = 10)]
         public static void Generate()
         {
             EnsureFolderForAsset(CatalogPath);

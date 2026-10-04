@@ -31,7 +31,6 @@ namespace Project.LevelEditor.Editor
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        [MenuItem("Tools/2026TapTap/关卡编辑器/重建默认瓦片库")]
         private static void RebuildDefaultLibrary()
         {
             Generate(true);

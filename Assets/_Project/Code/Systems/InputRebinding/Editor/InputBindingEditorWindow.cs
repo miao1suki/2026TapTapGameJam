@@ -51,7 +51,6 @@ namespace Project.InputRebinding.Editor
         private readonly HashSet<InputActionId> expandedActions =
             new HashSet<InputActionId>();
 
-        [MenuItem("Tools/2026TapTap/Input/按键映射 %#k")]
         public static void Open()
         {
             InputBindingEditorWindow window =

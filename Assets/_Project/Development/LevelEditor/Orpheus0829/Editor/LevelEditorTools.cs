@@ -35,6 +35,7 @@ namespace Project.LevelEditor.Editor
         internal static float CellSize { get; set; } = 1f;
         internal static LevelEditorPalette Palette { get; set; }
         internal static int SelectedEntryIndex { get; set; }
+        internal static int SelectedPropIndex { get; set; }
         internal static int PaletteRevision { get; private set; }
 
         internal static void MarkPaletteChanged()
@@ -48,14 +49,14 @@ namespace Project.LevelEditor.Editor
             {
                 return Mathf.Clamp(
                     EditorPrefs.GetFloat(PaletteScalePreferenceKey, 1f),
-                    .7f,
+                    .5f,
                     1.5f);
             }
             set
             {
                 EditorPrefs.SetFloat(
                     PaletteScalePreferenceKey,
-                    Mathf.Clamp(value, .7f, 1.5f));
+                    Mathf.Clamp(value, .5f, 1.5f));
             }
         }
 
@@ -162,14 +163,8 @@ namespace Project.LevelEditor.Editor
 
     internal static class LevelEditorPlayerService
     {
-        internal static bool EnforceEditPlane()
+        internal static bool SnapPlayerToPlane()
         {
-            if (!LevelEditorState.EditMode ||
-                !LevelEditorState.LockPlayerToPlane)
-            {
-                return false;
-            }
-
             GameObject player = LevelEditorState.Player;
             if (player == null)
             {
@@ -185,7 +180,7 @@ namespace Project.LevelEditor.Editor
 
             Undo.RecordObject(
                 playerTransform,
-                "限制玩家到关卡平面");
+                "将玩家对齐到关卡平面");
             position.z = 0f;
             playerTransform.position = position;
             EditorUtility.SetDirty(playerTransform);
@@ -195,6 +190,17 @@ namespace Project.LevelEditor.Editor
             }
 
             return true;
+        }
+
+        internal static bool EnforceEditPlane()
+        {
+            if (!LevelEditorState.EditMode ||
+                !LevelEditorState.LockPlayerToPlane)
+            {
+                return false;
+            }
+
+            return SnapPlayerToPlane();
         }
     }
 
@@ -211,8 +217,9 @@ namespace Project.LevelEditor.Editor
                     PalettePath);
             if (palette != null)
             {
-                EnsureEntryIds(palette);
-                return palette;
+            EnsureEntryIds(palette);
+            EnsurePropEntryIds(palette);
+            return palette;
             }
 
             string folder = Path.GetDirectoryName(PalettePath)
@@ -296,6 +303,65 @@ namespace Project.LevelEditor.Editor
             LevelEditorState.MarkPaletteChanged();
         }
 
+        internal static int AddProp(
+            LevelEditorPalette palette,
+            string displayName,
+            GameObject prefab)
+        {
+            if (palette == null)
+            {
+                return -1;
+            }
+
+            Undo.RecordObject(palette, "新增道具栏目");
+            var entry = new LevelEditorPropEntry();
+            entry.Configure(displayName, prefab);
+            palette.AddProp(entry);
+            EditorUtility.SetDirty(palette);
+            AssetDatabase.SaveAssetIfDirty(palette);
+            LevelEditorState.MarkPaletteChanged();
+            return palette.PropEntries.Count - 1;
+        }
+
+        internal static bool UpdateProp(
+            LevelEditorPalette palette,
+            int index,
+            string displayName,
+            GameObject prefab)
+        {
+            if (palette == null ||
+                index < 0 ||
+                index >= palette.PropEntries.Count)
+            {
+                return false;
+            }
+
+            Undo.RecordObject(palette, "编辑道具栏目");
+            palette.PropEntries[index].Configure(
+                displayName,
+                prefab);
+            EditorUtility.SetDirty(palette);
+            AssetDatabase.SaveAssetIfDirty(palette);
+            LevelEditorState.MarkPaletteChanged();
+            return true;
+        }
+
+        internal static void RemoveProp(
+            LevelEditorPalette palette,
+            int index)
+        {
+            if (palette == null)
+            {
+                return;
+            }
+
+            Undo.RecordObject(palette, "移除道具栏目");
+            palette.RemovePropAt(index);
+            EditorUtility.SetDirty(palette);
+            AssetDatabase.SaveAssetIfDirty(palette);
+            LevelEditorState.MarkPaletteChanged();
+        }
+
         private static void AddDefaultEntries(LevelEditorPalette palette)
         {
             AddEntry(palette, "红方块", new Color(1f, .25f, .25f), null);
@@ -311,6 +377,28 @@ namespace Project.LevelEditor.Editor
             for (int index = 0; index < palette.Entries.Count; index++)
             {
                 LevelEditorBlockEntry entry = palette.Entries[index];
+                if (entry == null || !string.IsNullOrEmpty(entry.EntryId))
+                {
+                    continue;
+                }
+
+                entry.EnsureEntryId();
+                changed = true;
+            }
+
+            if (changed)
+            {
+                EditorUtility.SetDirty(palette);
+                AssetDatabase.SaveAssetIfDirty(palette);
+            }
+        }
+
+        private static void EnsurePropEntryIds(LevelEditorPalette palette)
+        {
+            bool changed = false;
+            for (int index = 0; index < palette.PropEntries.Count; index++)
+            {
+                LevelEditorPropEntry entry = palette.PropEntries[index];
                 if (entry == null || !string.IsNullOrEmpty(entry.EntryId))
                 {
                     continue;
@@ -493,6 +581,52 @@ namespace Project.LevelEditor.Editor
             }
 
             Undo.RegisterCreatedObjectUndo(instance, "放置关卡方块");
+            MarkDirty(instance.scene);
+            Selection.activeGameObject = instance;
+            return placed;
+        }
+
+        internal static LevelEditorPlacedBlock PlaceProp(
+            LevelEditorPropEntry entry,
+            Vector2Int cell)
+        {
+            if (entry == null ||
+                entry.Prefab == null ||
+                cell.x < -512 ||
+                cell.y < -512 ||
+                cell.x > 512 ||
+                cell.y > 512)
+            {
+                return null;
+            }
+
+            GameObject instance =
+                PrefabUtility.InstantiatePrefab(entry.Prefab)
+                    as GameObject;
+            if (instance == null)
+            {
+                return null;
+            }
+
+            GameObject requestedParent =
+                LevelEditorState.GenerationParent;
+            Transform root = requestedParent != null &&
+                             requestedParent.scene == instance.scene
+                ? requestedParent.transform
+                : GetOrCreateRoot().transform;
+            instance.transform.SetParent(root, true);
+            instance.transform.position = CellToWorld(cell);
+
+            LevelEditorPlacedBlock placed =
+                instance.GetComponent<LevelEditorPlacedBlock>() ??
+                Undo.AddComponent<LevelEditorPlacedBlock>(instance);
+            placed.Configure(
+                cell,
+                entry.DisplayName,
+                Color.white,
+                false,
+                true);
+            Undo.RegisterCreatedObjectUndo(instance, "放置关卡道具");
             MarkDirty(instance.scene);
             Selection.activeGameObject = instance;
             return placed;

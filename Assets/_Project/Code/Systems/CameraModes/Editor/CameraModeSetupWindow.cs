@@ -6,7 +6,6 @@ namespace Project.CameraModes.Editor
 {
     public sealed class CameraModeSetupWindow : EditorWindow
     {
-        [MenuItem("Tools/2026TapTap/2D-3D 相机配置")]
         public static void OpenWindow()
         {
             CameraModeSetupWindow window = GetWindow<CameraModeSetupWindow>();

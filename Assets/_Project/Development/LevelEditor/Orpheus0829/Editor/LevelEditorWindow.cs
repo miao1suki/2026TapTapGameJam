@@ -14,11 +14,10 @@ namespace Project.LevelEditor.Editor
         private LevelEditorPanel panel;
         private double nextRefreshTime;
 
-        [MenuItem("Tools/2026TapTap/关卡编辑器/打开编辑器窗口")]
-        private static void Open()
+        internal static void Open()
         {
             LevelEditorWindow window = GetWindow<LevelEditorWindow>();
-            window.titleContent = new GUIContent("关卡编辑器");
+            window.titleContent = new GUIContent("方块/道具放置器");
             window.minSize = new Vector2(380f, 520f);
             window.Show();
             window.Focus();
@@ -101,44 +100,62 @@ namespace Project.LevelEditor.Editor
         private readonly Button playerToolButton;
         private readonly VisualElement paletteList;
         private readonly Label paletteScaleLabel;
-        private readonly ObjectField playerField;
-        private readonly Toggle playerPlaneLockToggle;
-        private readonly Label playerStatusLabel;
-        private readonly ObjectField generationParentField;
-        private readonly Label generationParentStatusLabel;
-        private readonly Label selectionLabel;
-        private readonly Button replaceButton;
-        private readonly Button removeButton;
+        private readonly VisualElement propList;
+        private ScrollView paletteScroll;
+        private ScrollView propScroll;
+        private ObjectField playerField;
+        private Toggle playerPlaneLockToggle;
+        private Label playerStatusLabel;
+        private ObjectField generationParentField;
+        private Label generationParentStatusLabel;
         private int lastPaletteCount = -1;
         private int lastSelectedIndex = -2;
         private int lastPaletteRevision = -1;
+        private int lastPropCount = -1;
+        private int lastPropIndex = -2;
+        private int lastPropRevision = -1;
         private bool refreshing;
 
-        internal LevelEditorPanel(VisualElement root)
+        internal LevelEditorPanel(
+            VisualElement root,
+            bool includeContextSections = true)
         {
             LevelEditorState.Palette =
                 LevelEditorPaletteService.GetOrCreate();
             LevelEditorState.CellSize = 1f;
             LevelEditorState.Tool = LevelEditorTool.Select;
+            LevelEditorState.SelectedPropIndex = -1;
 
             panel = new VisualElement { pickingMode = PickingMode.Position };
             panel.style.width = Length.Percent(100f);
             panel.style.flexGrow = 1f;
-            panel.style.paddingLeft = 12f;
-            panel.style.paddingRight = 12f;
-            panel.style.paddingTop = 10f;
-            panel.style.paddingBottom = 10f;
-            panel.style.backgroundColor = EditorGUIUtility.isProSkin
-                ? new Color(0.07f, 0.085f, 0.11f, 0.97f)
-                : new Color(0.95f, 0.96f, 0.98f, 0.98f);
-            Round(panel, 8f);
+            float panelPadding = includeContextSections ? 12f : 2f;
+            panel.style.paddingLeft = panelPadding;
+            panel.style.paddingRight = panelPadding;
+            panel.style.paddingTop = includeContextSections ? 10f : 4f;
+            panel.style.paddingBottom = includeContextSections ? 10f : 4f;
+            panel.style.backgroundColor = includeContextSections
+                ? EditorGUIUtility.isProSkin
+                    ? new Color(0.07f, 0.085f, 0.11f, 0.97f)
+                    : new Color(0.95f, 0.96f, 0.98f, 0.98f)
+                : Color.clear;
+            if (includeContextSections)
+            {
+                Round(panel, 8f);
+            }
+
             root.Add(panel);
 
             VisualElement header = Row();
             header.style.alignItems = Align.Center;
+            if (!includeContextSections)
+            {
+                header.style.display = DisplayStyle.None;
+            }
+
             VisualElement titles = new VisualElement();
             titles.style.flexGrow = 1f;
-            Label title = new Label("关卡编辑器");
+            Label title = new Label("方块/道具放置器");
             title.style.fontSize = 16f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             titles.Add(title);
@@ -192,11 +209,14 @@ namespace Project.LevelEditor.Editor
             tools.Add(playerToolButton);
             body.Add(tools);
 
-            gridSizeField = new FloatField("网格尺寸")
+            gridSizeField = new FloatField("格子世界尺寸")
             {
                 value = LevelEditorState.CellSize,
                 isDelayed = true
             };
+            gridSizeField.tooltip =
+                "一个格子对应的 Unity 世界单位，默认 1。" +
+                "不是世界图区块尺寸。";
             gridSizeField.RegisterValueChangedCallback(evt =>
             {
                 if (!refreshing)
@@ -208,87 +228,119 @@ namespace Project.LevelEditor.Editor
             });
             body.Add(gridSizeField);
 
-            Foldout playerSection = new Foldout
+            if (includeContextSections)
             {
-                text = "玩家参考",
-                value = true
-            };
-            playerField = new ObjectField("场景玩家")
-            {
-                objectType = typeof(GameObject),
-                allowSceneObjects = true
-            };
-            playerField.RegisterValueChangedCallback(evt =>
-            {
-                if (!refreshing)
+                Foldout playerSection = new Foldout
                 {
-                    SetPlayer(evt.newValue as GameObject);
-                }
-            });
-            playerSection.Add(playerField);
-
-            VisualElement playerActions = Row();
-            playerActions.Add(ActionButton(
-                "使用当前选择",
-                UseSelectedAsPlayer));
-            playerSection.Add(playerActions);
-
-            playerPlaneLockToggle = new Toggle("限制到 XY 平面")
-            {
-                value = LevelEditorState.LockPlayerToPlane
-            };
-            playerPlaneLockToggle.RegisterValueChangedCallback(evt =>
-            {
-                if (!refreshing)
+                    text = "玩家参考",
+                    value = true
+                };
+                playerField = new ObjectField("场景玩家")
                 {
-                    LevelEditorState.LockPlayerToPlane = evt.newValue;
-                    if (evt.newValue)
+                    objectType = typeof(GameObject),
+                    allowSceneObjects = true
+                };
+                playerField.RegisterValueChangedCallback(evt =>
+                {
+                    if (!refreshing)
                     {
-                        LevelEditorPlayerService.EnforceEditPlane();
-                        SceneView.RepaintAll();
+                        SetPlayer(evt.newValue as GameObject);
                     }
-                }
-            });
-            playerSection.Add(playerPlaneLockToggle);
+                });
+                playerSection.Add(playerField);
 
-            playerStatusLabel = new Label();
-            playerStatusLabel.style.whiteSpace = WhiteSpace.Normal;
-            playerStatusLabel.style.opacity = .8f;
-            playerSection.Add(playerStatusLabel);
-            body.Add(playerSection);
+                VisualElement playerActions = Row();
+                playerActions.Add(ActionButton(
+                    "使用当前选择",
+                    UseSelectedAsPlayer));
+                playerSection.Add(playerActions);
 
-            Foldout generationParentSection = new Foldout
-            {
-                text = "父物体选取",
-                value = false
-            };
-            generationParentField = new ObjectField("生成父物体")
-            {
-                objectType = typeof(GameObject),
-                allowSceneObjects = true
-            };
-            generationParentField.RegisterValueChangedCallback(evt =>
-            {
-                if (!refreshing)
+                playerPlaneLockToggle = new Toggle("限制到 XY 平面")
                 {
-                    SetGenerationParent(
-                        evt.newValue as GameObject);
-                }
-            });
-            generationParentSection.Add(generationParentField);
+                    value = LevelEditorState.LockPlayerToPlane
+                };
+                playerPlaneLockToggle.RegisterValueChangedCallback(evt =>
+                {
+                    if (!refreshing)
+                    {
+                        LevelEditorState.LockPlayerToPlane = evt.newValue;
+                        if (evt.newValue)
+                        {
+                            LevelEditorPlayerService.EnforceEditPlane();
+                            SceneView.RepaintAll();
+                        }
+                    }
+                });
+                playerSection.Add(playerPlaneLockToggle);
 
-            VisualElement generationParentActions = Row();
-            generationParentActions.Add(ActionButton(
-                "使用当前选择",
-                UseSelectedAsGenerationParent));
-            generationParentSection.Add(generationParentActions);
+                playerStatusLabel = new Label();
+                playerStatusLabel.style.whiteSpace = WhiteSpace.Normal;
+                playerStatusLabel.style.opacity = .8f;
+                playerSection.Add(playerStatusLabel);
+                body.Add(playerSection);
 
-            generationParentStatusLabel = new Label();
-            generationParentStatusLabel.style.whiteSpace =
-                WhiteSpace.Normal;
-            generationParentStatusLabel.style.opacity = .8f;
-            generationParentSection.Add(generationParentStatusLabel);
-            body.Add(generationParentSection);
+                Foldout generationParentSection = new Foldout
+                {
+                    text = "父物体选取",
+                    value = false
+                };
+                generationParentField = new ObjectField("生成父物体")
+                {
+                    objectType = typeof(GameObject),
+                    allowSceneObjects = true
+                };
+                generationParentField.RegisterValueChangedCallback(evt =>
+                {
+                    if (!refreshing)
+                    {
+                        SetGenerationParent(
+                            evt.newValue as GameObject);
+                    }
+                });
+                generationParentSection.Add(generationParentField);
+
+                VisualElement generationParentActions = Row();
+                generationParentActions.Add(ActionButton(
+                    "使用当前选择",
+                    UseSelectedAsGenerationParent));
+                generationParentSection.Add(generationParentActions);
+
+                generationParentStatusLabel = new Label();
+                generationParentStatusLabel.style.whiteSpace =
+                    WhiteSpace.Normal;
+                generationParentStatusLabel.style.opacity = .8f;
+                generationParentSection.Add(generationParentStatusLabel);
+                body.Add(generationParentSection);
+            }
+
+            VisualElement sharedScaleRow = Row();
+            Label sharedScaleTitle = new Label("栏目缩放");
+            sharedScaleTitle.style.flexGrow = 1f;
+            sharedScaleTitle.style.unityTextAlign = TextAnchor.MiddleLeft;
+            sharedScaleTitle.style.fontSize = 11f;
+            sharedScaleTitle.style.opacity = .75f;
+            sharedScaleRow.Add(sharedScaleTitle);
+            Button sharedMinus = SmallButton("−", () =>
+                AdjustPaletteScale(-.1f));
+            sharedMinus.style.width = 30f;
+            sharedMinus.style.height = 24f;
+            sharedMinus.style.marginLeft = 3f;
+            sharedMinus.style.marginRight = 2f;
+            sharedScaleRow.Add(sharedMinus);
+            paletteScaleLabel = new Label();
+            paletteScaleLabel.style.width = 42f;
+            paletteScaleLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            sharedScaleRow.Add(paletteScaleLabel);
+            Button sharedPlus = SmallButton("+", () =>
+                AdjustPaletteScale(.1f));
+            sharedPlus.style.width = 30f;
+            sharedPlus.style.height = 24f;
+            sharedPlus.style.marginLeft = 2f;
+            sharedPlus.style.marginRight = 3f;
+            sharedScaleRow.Add(sharedPlus);
+            sharedScaleRow.style.marginTop = 2f;
+            sharedScaleRow.style.marginBottom = 5f;
+            body.Add(sharedScaleRow);
 
             Foldout paletteSection = new Foldout
             {
@@ -296,47 +348,36 @@ namespace Project.LevelEditor.Editor
                 value = true
             };
             paletteList = new VisualElement();
+            paletteList.style.width = Length.Percent(100f);
             paletteList.style.flexDirection = FlexDirection.Row;
             paletteList.style.flexWrap = Wrap.Wrap;
             paletteList.style.paddingTop = 4f;
             paletteList.style.paddingBottom = 4f;
 
-            VisualElement paletteScaleRow = Row();
-            Label paletteScaleTitle = new Label("栏目缩放");
-            paletteScaleTitle.style.flexGrow = 1f;
-            paletteScaleTitle.style.unityTextAlign = TextAnchor.MiddleLeft;
-            paletteScaleRow.Add(paletteScaleTitle);
-            paletteScaleRow.Add(SmallButton("−", () =>
-                AdjustPaletteScale(-.1f)));
-            paletteScaleLabel = new Label();
-            paletteScaleLabel.style.width = 48f;
-            paletteScaleLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
-            paletteScaleRow.Add(paletteScaleLabel);
-            paletteScaleRow.Add(SmallButton("+", () =>
-                AdjustPaletteScale(.1f)));
-            paletteSection.Add(paletteScaleRow);
-
-            ScrollView paletteScroll = new ScrollView();
-            paletteScroll.style.height = 310f;
+            paletteScroll = new ScrollView();
+            paletteScroll.style.height = 240f;
+            paletteScroll.horizontalScrollerVisibility =
+                ScrollerVisibility.Hidden;
             paletteScroll.Add(paletteList);
             paletteSection.Add(paletteScroll);
             body.Add(paletteSection);
 
-            Foldout selection = new Foldout
+            Foldout propSection = new Foldout
             {
-                text = "选中方块",
+                text = "道具栏目",
                 value = true
             };
-            selectionLabel = new Label("未选中");
-            selectionLabel.style.whiteSpace = WhiteSpace.Normal;
-            selection.Add(selectionLabel);
-            VisualElement selectionActions = Row();
-            replaceButton = ActionButton("替换为当前", ReplaceSelected);
-            removeButton = ActionButton("删除选中", RemoveSelected);
-            selectionActions.Add(replaceButton);
-            selectionActions.Add(removeButton);
-            selection.Add(selectionActions);
-            body.Add(selection);
+            propList = new VisualElement();
+            propList.style.width = Length.Percent(100f);
+            propList.style.flexDirection = FlexDirection.Row;
+            propList.style.flexWrap = Wrap.Wrap;
+            propScroll = new ScrollView();
+            propScroll.style.height = 220f;
+            propScroll.horizontalScrollerVisibility =
+                ScrollerVisibility.Hidden;
+            propScroll.Add(propList);
+            propSection.Add(propScroll);
+            body.Add(propSection);
         }
 
         internal void Refresh()
@@ -354,25 +395,32 @@ namespace Project.LevelEditor.Editor
             editModeButton.style.color = Color.white;
             gridSizeField.SetValueWithoutNotify(LevelEditorState.CellSize);
             GameObject player = LevelEditorState.Player;
-            playerField.SetValueWithoutNotify(player);
-            playerPlaneLockToggle.SetValueWithoutNotify(
+            playerField?.SetValueWithoutNotify(player);
+            playerPlaneLockToggle?.SetValueWithoutNotify(
                 LevelEditorState.LockPlayerToPlane);
-            playerPlaneLockToggle.SetEnabled(player != null);
+            playerPlaneLockToggle?.SetEnabled(player != null);
             playerToolButton.SetEnabled(player != null);
-            playerStatusLabel.text = player == null
-                ? "未引用场景玩家。"
-                : $"已引用：{player.name} · " +
-                  (LevelEditorState.LockPlayerToPlane
-                      ? "编辑时锁定 Z=0"
-                      : "未锁定编辑平面");
+            if (playerStatusLabel != null)
+            {
+                playerStatusLabel.text = player == null
+                    ? "未引用场景玩家。"
+                    : $"已引用：{player.name} · " +
+                      (LevelEditorState.LockPlayerToPlane
+                          ? "编辑时锁定 Z=0"
+                          : "未锁定编辑平面");
+            }
+
             GameObject generationParent =
                 LevelEditorState.GenerationParent;
-            generationParentField.SetValueWithoutNotify(
+            generationParentField?.SetValueWithoutNotify(
                 generationParent);
-            generationParentStatusLabel.text =
-                generationParent == null
-                    ? "未指定：新方块放在 __LevelEditorContent。"
-                    : $"已指定：新方块放在 {generationParent.name} 下。";
+            if (generationParentStatusLabel != null)
+            {
+                generationParentStatusLabel.text =
+                    generationParent == null
+                        ? "未指定：新方块放在 __LevelEditorContent。"
+                        : $"已指定：新方块放在 {generationParent.name} 下。";
+            }
             selectButton.EnableInClassList(
                 "selected-tool",
                 LevelEditorState.Tool == LevelEditorTool.Select);
@@ -382,11 +430,57 @@ namespace Project.LevelEditor.Editor
             eraseButton.EnableInClassList(
                 "selected-tool",
                 LevelEditorState.Tool == LevelEditorTool.Erase);
+            StyleToolButton(
+                selectButton,
+                LevelEditorState.Tool == LevelEditorTool.Select);
+            StyleToolButton(
+                paintButton,
+                LevelEditorState.Tool == LevelEditorTool.Paint);
+            StyleToolButton(
+                eraseButton,
+                LevelEditorState.Tool == LevelEditorTool.Erase);
+            StyleToolButton(
+                playerToolButton,
+                LevelEditorState.Tool == LevelEditorTool.Player);
             RefreshPalette();
-            RefreshSelection();
+            RefreshProps();
             paletteScaleLabel.text =
                 $"{Mathf.RoundToInt(LevelEditorState.PaletteScale * 100f)}%";
             refreshing = false;
+        }
+
+        private static void StyleToolButton(
+            Button button,
+            bool selected)
+        {
+            button.style.backgroundColor = selected
+                ? new Color(.16f, .43f, .82f, 1f)
+                : new Color(.12f, .15f, .19f, 1f);
+            button.style.color = selected
+                ? Color.white
+                : new Color(.78f, .82f, .9f);
+            button.style.borderBottomWidth = selected ? 3f : 0f;
+            button.style.borderBottomColor =
+                new Color(.45f, .78f, 1f);
+        }
+
+        internal GameObject Player => LevelEditorState.Player;
+
+        internal void FocusPlayer()
+        {
+            GameObject player = LevelEditorState.Player;
+            if (player == null || !player.scene.IsValid())
+            {
+                return;
+            }
+
+            LevelEditorState.LockPlayerToPlane = true;
+            LevelEditorPlayerService.SnapPlayerToPlane();
+            SetTool(LevelEditorTool.Player);
+            Selection.activeGameObject = player;
+            SceneView view = SceneView.lastActiveSceneView;
+            view?.FrameSelected();
+            view?.Focus();
         }
 
         private void SetEditMode(bool enabled)
@@ -446,7 +540,7 @@ namespace Project.LevelEditor.Editor
             SceneView.RepaintAll();
         }
 
-        private void SetPlayer(GameObject value)
+        internal void SetPlayer(GameObject value)
         {
             if (value != null && !value.scene.IsValid())
             {
@@ -454,7 +548,7 @@ namespace Project.LevelEditor.Editor
             }
 
             LevelEditorState.Player = value;
-            playerField.SetValueWithoutNotify(value);
+            playerField?.SetValueWithoutNotify(value);
             if (value == null &&
                 LevelEditorState.Tool == LevelEditorTool.Player)
             {
@@ -475,7 +569,7 @@ namespace Project.LevelEditor.Editor
             SetPlayer(Selection.activeGameObject);
         }
 
-        private void SetGenerationParent(GameObject value)
+        internal void SetGenerationParent(GameObject value)
         {
             if (value != null && !value.scene.IsValid())
             {
@@ -483,10 +577,14 @@ namespace Project.LevelEditor.Editor
             }
 
             LevelEditorState.GenerationParent = value;
-            generationParentField.SetValueWithoutNotify(value);
-            generationParentStatusLabel.text = value == null
-                ? "未指定：新方块放在 __LevelEditorContent。"
-                : $"已指定：新方块放在 {value.name} 下。";
+            generationParentField?.SetValueWithoutNotify(value);
+            if (generationParentStatusLabel != null)
+            {
+                generationParentStatusLabel.text = value == null
+                    ? "未指定：新方块放在 __LevelEditorContent。"
+                    : $"已指定：新方块放在 {value.name} 下。";
+            }
+
             SceneView.RepaintAll();
         }
 
@@ -523,7 +621,7 @@ namespace Project.LevelEditor.Editor
 
             float scale = Mathf.Clamp(
                 LevelEditorState.PaletteScale,
-                .7f,
+                .5f,
                 1.5f);
             float cardWidth = 124f * scale;
             float cardHeight = 148f * scale;
@@ -540,6 +638,7 @@ namespace Project.LevelEditor.Editor
                 Button card = new Button(() =>
                 {
                     LevelEditorState.SelectedEntryIndex = captured;
+                    LevelEditorState.SelectedPropIndex = -1;
                     LevelEditorState.Tool = LevelEditorTool.Paint;
                     SceneView.RepaintAll();
                 })
@@ -594,73 +693,11 @@ namespace Project.LevelEditor.Editor
 
                 if (index == LevelEditorState.SelectedEntryIndex)
                 {
-                    float actionHeight = Mathf.Clamp(
-                        24f * scale,
-                        18f,
-                        36f);
-                    float actionWidth = Mathf.Clamp(
-                        44f * scale,
-                        32f,
-                        66f);
-                    float actionFontSize = Mathf.Clamp(
-                        12f * scale,
-                        10f,
-                        16f);
-                    float actionInset = Mathf.Clamp(
-                        2f * scale,
-                        1.5f,
-                        3f);
-                    float actionGap = Mathf.Clamp(
-                        4f * scale,
-                        3f,
-                        6f);
-                    float previewHorizontalInset =
-                        (124f - 98f) * .5f * scale;
-
-                    VisualElement cardActions = new VisualElement();
-                    cardActions.style.position = Position.Absolute;
-                    cardActions.style.left = previewHorizontalInset;
-                    cardActions.style.width = 98f * scale;
-                    cardActions.style.top =
-                        6f * scale + actionInset;
-                    cardActions.style.flexDirection = FlexDirection.Row;
-                    cardActions.style.justifyContent = Justify.Center;
-
-                    Button editButton = new Button(() =>
-                        LevelEditorEntryWindow.OpenForEdit(captured))
-                    {
-                        text = "编辑"
-                    };
-                    editButton.style.height = actionHeight;
-                    editButton.style.width = actionWidth;
-                    editButton.style.fontSize = actionFontSize;
-                    editButton.style.unityFontStyleAndWeight =
-                        FontStyle.Bold;
-                    editButton.style.paddingLeft = 0f;
-                    editButton.style.paddingRight = 0f;
-                    editButton.style.backgroundColor =
-                        new Color(.16f, .43f, .82f, 1f);
-                    editButton.style.color = Color.white;
-                    editButton.style.marginRight = actionGap;
-                    cardActions.Add(editButton);
-
-                    Button deleteButton = new Button(() =>
-                        RemovePaletteEntry(captured))
-                    {
-                        text = "删除"
-                    };
-                    deleteButton.style.height = actionHeight;
-                    deleteButton.style.width = actionWidth;
-                    deleteButton.style.fontSize = actionFontSize;
-                    deleteButton.style.unityFontStyleAndWeight =
-                        FontStyle.Bold;
-                    deleteButton.style.paddingLeft = 0f;
-                    deleteButton.style.paddingRight = 0f;
-                    deleteButton.style.backgroundColor =
-                        new Color(.62f, .18f, .16f, 1f);
-                    deleteButton.style.color = Color.white;
-                    cardActions.Add(deleteButton);
-                    cell.Add(cardActions);
+                    cell.Add(CreatePaletteCardActions(
+                        scale,
+                        () => LevelEditorEntryWindow.OpenForEdit(
+                            captured),
+                        () => RemovePaletteEntry(captured)));
                 }
 
                 if (entry.SourcePrefab != null &&
@@ -677,12 +714,20 @@ namespace Project.LevelEditor.Editor
                 paletteList.Add(cell);
             }
 
-            paletteList.Add(CreateAddCard(cardWidth, cardHeight));
+            paletteList.Add(CreateAddCard(
+                cardWidth,
+                cardHeight,
+                LevelEditorEntryWindow.OpenForAdd,
+                "新增方块",
+                new Color(.3f, .66f, 1f, 1f)));
         }
 
         private static VisualElement CreateAddCard(
             float width,
-            float height)
+            float height,
+            System.Action action,
+            string captionText,
+            Color borderColor)
         {
             VisualElement cell = new VisualElement();
             cell.style.width = width;
@@ -690,7 +735,7 @@ namespace Project.LevelEditor.Editor
             cell.style.marginRight = 6f;
             cell.style.marginBottom = 6f;
 
-            Button button = new Button(LevelEditorEntryWindow.OpenForAdd)
+            Button button = new Button(action)
             {
                 text = string.Empty
             };
@@ -710,7 +755,7 @@ namespace Project.LevelEditor.Editor
                 button.style.borderRightColor =
                 button.style.borderTopColor =
                 button.style.borderBottomColor =
-                new Color(.3f, .66f, 1f, 1f);
+                borderColor;
 
             Label plus = new Label("+");
             plus.style.fontSize = 34f;
@@ -719,7 +764,7 @@ namespace Project.LevelEditor.Editor
             plus.pickingMode = PickingMode.Ignore;
             button.Add(plus);
 
-            Label caption = new Label("新增");
+            Label caption = new Label(captionText);
             caption.style.fontSize = 12f;
             caption.style.unityTextAlign = TextAnchor.MiddleCenter;
             caption.pickingMode = PickingMode.Ignore;
@@ -728,35 +773,255 @@ namespace Project.LevelEditor.Editor
             return cell;
         }
 
-        private static Texture2D ResolvePreview(LevelEditorBlockEntry entry)
+        private void RefreshProps()
         {
-            if (!entry.UsesPrefabDirectly &&
-                entry.HasDecoration &&
-                entry.SurfaceTilePlacements.Count > 0)
+            LevelEditorPalette palette = LevelEditorState.Palette;
+            int count = palette != null ? palette.PropEntries.Count : 0;
+            if (count == lastPropCount &&
+                LevelEditorState.SelectedPropIndex == lastPropIndex &&
+                LevelEditorState.PaletteRevision == lastPropRevision)
             {
-                string key = GetDecorationPreviewKey(entry);
-                if (DecorationPreviewCache.TryGetValue(
-                        key,
-                        out Texture2D decorated) &&
-                    decorated != null)
+                return;
+            }
+
+            lastPropCount = count;
+            lastPropIndex = LevelEditorState.SelectedPropIndex;
+            lastPropRevision = LevelEditorState.PaletteRevision;
+            propList.Clear();
+            float scale = Mathf.Clamp(
+                LevelEditorState.PaletteScale,
+                .5f,
+                1.5f);
+            float cardWidth = 124f * scale;
+            float cardHeight = 148f * scale;
+            if (propScroll != null)
+            {
+                propScroll.style.height = Mathf.Clamp(
+                    cardHeight + 24f,
+                    104f,
+                    240f);
+            }
+
+            if (palette != null && count > 0)
+            {
+                for (int index = 0; index < count; index++)
                 {
-                    return decorated;
+                    int captured = index;
+                    LevelEditorPropEntry entry = palette.PropEntries[index];
+                    VisualElement cell = new VisualElement();
+                    cell.style.width = cardWidth;
+                    cell.style.height = cardHeight;
+                    cell.style.marginRight = 6f;
+                    cell.style.marginBottom = 6f;
+
+                    Button card = new Button(() =>
+                    {
+                        LevelEditorState.SelectedPropIndex = captured;
+                        LevelEditorState.SelectedEntryIndex = -1;
+                        LevelEditorState.Tool = LevelEditorTool.Paint;
+                        SceneView.RepaintAll();
+                    })
+                    {
+                        text = string.Empty
+                    };
+                card.style.width = Length.Percent(100f);
+                card.style.height = Length.Percent(100f);
+                card.style.flexDirection = FlexDirection.Column;
+                card.style.alignItems = Align.Center;
+                card.style.justifyContent = Justify.FlexStart;
+                card.style.paddingLeft = 0f;
+                card.style.paddingRight = 0f;
+                card.style.paddingTop = 0f;
+                card.style.paddingBottom = 0f;
+                card.style.backgroundColor = EditorGUIUtility.isProSkin
+                    ? new Color(0.12f, 0.14f, 0.18f, 1f)
+                    : new Color(0.88f, 0.89f, 0.92f, 1f);
+                Color border = captured == LevelEditorState.SelectedPropIndex
+                    ? new Color(.95f, .62f, .2f)
+                    : new Color(.18f, .2f, .24f);
+                card.style.borderLeftWidth = 2f;
+                card.style.borderRightWidth = 2f;
+                card.style.borderTopWidth = 2f;
+                card.style.borderBottomWidth = 2f;
+                card.style.borderLeftColor = border;
+                card.style.borderRightColor = border;
+                card.style.borderTopColor = border;
+                card.style.borderBottomColor = border;
+
+                Texture2D preview = entry.Prefab != null
+                    ? AssetPreview.GetAssetPreview(entry.Prefab)
+                    : null;
+                if (preview == null && entry.Prefab != null)
+                {
+                    preview = AssetPreview.GetMiniThumbnail(entry.Prefab);
                 }
 
-                decorated = LevelEditorDecorationService
-                    .RenderEntryPreview(entry, 128);
-                if (decorated != null)
+                Image image = new Image
                 {
-                    DecorationPreviewCache[key] = decorated;
-                    return decorated;
+                    image = preview,
+                    scaleMode = ScaleMode.ScaleToFit,
+                    pickingMode = PickingMode.Ignore
+                };
+                image.style.width = 98f * scale;
+                image.style.height = 98f * scale;
+                image.style.marginTop = 6f * scale;
+                card.Add(image);
+                Label name = new Label(entry.DisplayName);
+                name.style.width = 116f * scale;
+                name.style.fontSize =
+                    Mathf.Clamp(12f * scale, 10f, 16f);
+                name.style.whiteSpace = WhiteSpace.Normal;
+                name.style.unityTextAlign = TextAnchor.MiddleCenter;
+                name.pickingMode = PickingMode.Ignore;
+                name.style.marginTop = 4f * scale;
+                card.Add(name);
+                cell.Add(card);
+
+                if (captured == LevelEditorState.SelectedPropIndex)
+                {
+                    cell.Add(CreatePaletteCardActions(
+                        scale,
+                        () => LevelEditorPropEntryWindow.OpenForEdit(
+                            captured),
+                        () => RemovePropEntry(captured)));
+                }
+
+                    propList.Add(cell);
                 }
             }
 
-            if (!entry.UsesPrefabDirectly &&
-                entry.Prefab == null &&
-                entry.CustomTemplate != null)
+            propList.Add(CreatePropAddCard(cardWidth, cardHeight));
+        }
+
+        private static VisualElement CreatePropAddCard(
+            float width,
+            float height)
+        {
+            return CreateAddCard(
+                width,
+                height,
+                LevelEditorPropEntryWindow.OpenForAdd,
+                "新增道具",
+                new Color(.95f, .62f, .2f, 1f));
+        }
+
+        private static VisualElement CreatePaletteCardActions(
+            float scale,
+            System.Action editAction,
+            System.Action deleteAction)
+        {
+            float previewHorizontalInset =
+                (124f - 98f) * .5f * scale;
+            float actionHeight = Mathf.Clamp(
+                22f * scale,
+                18f,
+                28f);
+            float actionFontSize = Mathf.Clamp(
+                12f * scale,
+                10f,
+                14f);
+            float actionInset = Mathf.Clamp(
+                2f * scale,
+                1.5f,
+                3f);
+            float actionGap = Mathf.Clamp(
+                4f * scale,
+                3f,
+                6f);
+            float previewWidth = 98f * scale;
+            float actionWidth = Mathf.Clamp(
+                (previewWidth - actionGap - 4f) * .5f,
+                20f,
+                48f);
+
+            VisualElement actions = Row();
+            actions.style.position = Position.Absolute;
+            actions.style.left = previewHorizontalInset;
+            actions.style.width = previewWidth;
+            actions.style.top = 6f * scale + actionInset;
+            actions.style.height = actionHeight + actionInset * 2f;
+            actions.style.justifyContent = Justify.Center;
+            actions.style.alignItems = Align.Center;
+            actions.style.backgroundColor =
+                new Color(.03f, .04f, .055f, .9f);
+            Round(actions, 4f);
+
+            Button edit = new Button(editAction)
             {
-                return GetColorPreview(entry.Color);
+                text = "编辑"
+            };
+            edit.style.width = actionWidth;
+            edit.style.height = actionHeight;
+            edit.style.fontSize = actionFontSize;
+            edit.style.unityFontStyleAndWeight = FontStyle.Bold;
+            edit.style.paddingLeft = 0f;
+            edit.style.paddingRight = 0f;
+            edit.style.backgroundColor =
+                new Color(.16f, .43f, .82f);
+            edit.style.color = Color.white;
+            edit.style.marginRight = actionGap;
+            actions.Add(edit);
+
+            Button delete = new Button(deleteAction)
+            {
+                text = "删除"
+            };
+            delete.style.width = actionWidth;
+            delete.style.height = actionHeight;
+            delete.style.fontSize = actionFontSize;
+            delete.style.unityFontStyleAndWeight = FontStyle.Bold;
+            delete.style.paddingLeft = 0f;
+            delete.style.paddingRight = 0f;
+            delete.style.backgroundColor =
+                new Color(.62f, .18f, .16f);
+            delete.style.color = Color.white;
+            actions.Add(delete);
+            return actions;
+        }
+
+        private void RemovePropEntry(int index)
+        {
+            LevelEditorPalette palette = LevelEditorState.Palette;
+            if (palette == null ||
+                index < 0 ||
+                index >= palette.PropEntries.Count)
+            {
+                return;
+            }
+
+            LevelEditorPropEntry entry = palette.PropEntries[index];
+            if (!EditorUtility.DisplayDialog(
+                    "删除道具栏目",
+                    $"确定删除“{entry.DisplayName}”？",
+                    "删除",
+                    "取消"))
+            {
+                return;
+            }
+
+            LevelEditorPaletteService.RemoveProp(palette, index);
+            LevelEditorState.SelectedPropIndex = Mathf.Max(0, index - 1);
+            lastPropCount = -1;
+            SceneView.RepaintAll();
+        }
+
+        private static Texture2D ResolvePreview(LevelEditorBlockEntry entry)
+        {
+            string key = GetDecorationPreviewKey(entry);
+            if (DecorationPreviewCache.TryGetValue(
+                    key,
+                    out Texture2D cachedFront) &&
+                cachedFront != null)
+            {
+                return cachedFront;
+            }
+
+            Texture2D front = LevelEditorDecorationService
+                .GetEntryFrontPreview(entry, 128);
+            if (front != null)
+            {
+                DecorationPreviewCache[key] = front;
+                return front;
             }
 
             GameObject sourcePrefab = entry.SourcePrefab;
@@ -793,6 +1058,8 @@ namespace Project.LevelEditor.Editor
         {
             StringBuilder builder = new StringBuilder();
             builder.Append(entry.Mode);
+            builder.Append(':');
+            builder.Append(ColorUtility.ToHtmlStringRGBA(entry.Color));
             builder.Append(':');
             builder.Append(entry.SourcePrefab != null
                 ? entry.SourcePrefab.GetInstanceID()
@@ -876,22 +1143,11 @@ namespace Project.LevelEditor.Editor
             return texture;
         }
 
-        private void RefreshSelection()
-        {
-            LevelEditorPlacedBlock selected =
-                LevelEditorBlockFactory.SelectedPlacedBlock();
-            selectionLabel.text = selected == null
-                ? "未选中已放置方块"
-                : $"已选：{selected.name} · 格子 {selected.Cell}";
-            replaceButton.SetEnabled(selected != null);
-            removeButton.SetEnabled(selected != null);
-        }
-
         private void AdjustPaletteScale(float delta)
         {
             float next = Mathf.Clamp(
                 LevelEditorState.PaletteScale + delta,
-                .7f,
+                .5f,
                 1.5f);
             if (Mathf.Approximately(next, LevelEditorState.PaletteScale))
             {
@@ -900,7 +1156,9 @@ namespace Project.LevelEditor.Editor
 
             LevelEditorState.PaletteScale = next;
             lastPaletteCount = -1;
+            lastPropCount = -1;
             RefreshPalette();
+            RefreshProps();
             paletteScaleLabel.text =
                 $"{Mathf.RoundToInt(next * 100f)}%";
         }
@@ -932,27 +1190,6 @@ namespace Project.LevelEditor.Editor
                 0,
                 index - 1);
             lastPaletteCount = -1;
-            SceneView.RepaintAll();
-        }
-
-        private void ReplaceSelected()
-        {
-            LevelEditorPalette palette = LevelEditorState.Palette;
-            int index = LevelEditorState.SelectedEntryIndex;
-            if (palette == null || index < 0 ||
-                index >= palette.Entries.Count)
-            {
-                return;
-            }
-
-            LevelEditorBlockFactory.ReplaceSelected(
-                palette.Entries[index]);
-            SceneView.RepaintAll();
-        }
-
-        private void RemoveSelected()
-        {
-            LevelEditorBlockFactory.RemoveSelected();
             SceneView.RepaintAll();
         }
 

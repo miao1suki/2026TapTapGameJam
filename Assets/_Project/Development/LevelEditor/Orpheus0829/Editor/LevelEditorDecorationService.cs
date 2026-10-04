@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Text;
 using Project.SurfaceTiles;
 using Project.SurfaceTiles.Editor;
 using UnityEditor;
@@ -10,6 +12,9 @@ namespace Project.LevelEditor.Editor
     {
         private const string PreviewRootName =
             "__LevelEditorDecorationPreview";
+        private static readonly Dictionary<string, Texture2D>
+            FrontPreviewCache =
+                new Dictionary<string, Texture2D>();
         private static GameObject previewRoot;
         private static SceneView previousSceneView;
         private static Vector3 previousPivot;
@@ -131,7 +136,7 @@ namespace Project.LevelEditor.Editor
                     new Vector3(0f, 0f, -4f);
                 Camera camera = cameraObject.AddComponent<Camera>();
                 camera.orthographic = true;
-                camera.orthographicSize = 1.1f;
+                camera.orthographicSize = .52f;
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.backgroundColor = Color.clear;
                 camera.cullingMask = ~0;
@@ -176,6 +181,220 @@ namespace Project.LevelEditor.Editor
                 {
                     Object.DestroyImmediate(previewMesh);
                 }
+            }
+        }
+
+        internal static Texture2D RenderEntryFrontPreview(
+            LevelEditorBlockEntry entry,
+            int size)
+        {
+            if (entry == null)
+            {
+                return null;
+            }
+
+            if (entry.HasDecoration &&
+                entry.SurfaceTilePlacements.Count > 0)
+            {
+                return RenderEntryPreview(entry, size);
+            }
+
+            return RenderSimpleFrontPreview(entry, size);
+        }
+
+        internal static Texture2D GetEntryFrontPreview(
+            LevelEditorBlockEntry entry,
+            int size)
+        {
+            if (entry == null)
+            {
+                return null;
+            }
+
+            string key = BuildFrontPreviewKey(entry, size);
+            if (FrontPreviewCache.TryGetValue(
+                    key,
+                    out Texture2D cached) &&
+                cached != null)
+            {
+                return cached;
+            }
+
+            Texture2D preview = RenderEntryFrontPreview(entry, size);
+            if (preview != null)
+            {
+                FrontPreviewCache[key] = preview;
+            }
+
+            return preview;
+        }
+
+        private static string BuildFrontPreviewKey(
+            LevelEditorBlockEntry entry,
+            int size)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.Append(entry.EntryId ?? entry.DisplayName);
+            builder.Append(':');
+            builder.Append(size);
+            builder.Append(':');
+            builder.Append(ColorUtility.ToHtmlStringRGBA(entry.Color));
+            builder.Append(':');
+            builder.Append(entry.SourcePrefab != null
+                ? entry.SourcePrefab.GetInstanceID()
+                : 0);
+            builder.Append(':');
+            builder.Append(entry.SurfaceTilePalette != null
+                ? entry.SurfaceTilePalette.GetInstanceID()
+                : 0);
+            builder.Append(':');
+            builder.Append(entry.SurfaceTileCellSize);
+            builder.Append(':');
+            builder.Append(entry.SurfaceTileTransparentBase ? 1 : 0);
+            for (int index = 0;
+                 index < entry.SurfaceTilePlacements.Count;
+                 index++)
+            {
+                SurfaceTilePlacement placement =
+                    entry.SurfaceTilePlacements[index];
+                if (placement == null)
+                {
+                    continue;
+                }
+
+                builder.Append('|');
+                builder.Append((int)placement.Face);
+                builder.Append(',');
+                builder.Append(placement.Cell.x);
+                builder.Append(',');
+                builder.Append(placement.Cell.y);
+                builder.Append(',');
+                builder.Append(placement.TileId);
+                builder.Append(',');
+                builder.Append(placement.QuarterTurns);
+                builder.Append(',');
+                builder.Append(placement.FlipX ? 1 : 0);
+                builder.Append(',');
+                builder.Append(placement.FlipY ? 1 : 0);
+            }
+
+            return builder.ToString();
+        }
+
+        private static Texture2D RenderSimpleFrontPreview(
+            LevelEditorBlockEntry entry,
+            int size)
+        {
+            GameObject root = new GameObject(
+                "__LevelEditorFrontPreview");
+            root.hideFlags = HideFlags.HideAndDontSave;
+            root.transform.position = new Vector3(100000f, 0f, 0f);
+            RenderTexture target = null;
+            Material temporaryMaterial = null;
+            try
+            {
+                GameObject blockObject = entry.SourcePrefab != null
+                    ? PrefabUtility.InstantiatePrefab(entry.SourcePrefab)
+                        as GameObject
+                    : GameObject.CreatePrimitive(PrimitiveType.Cube);
+                if (blockObject == null)
+                {
+                    return null;
+                }
+
+                blockObject.transform.SetParent(root.transform, false);
+                blockObject.transform.localPosition = Vector3.zero;
+                if (entry.SourcePrefab == null)
+                {
+                    blockObject.transform.localScale =
+                        Vector3.one * .94f;
+                    Shader shader = Shader.Find(
+                        "Universal Render Pipeline/Unlit");
+                    if (shader == null)
+                    {
+                        shader = Shader.Find("Unlit/Color");
+                    }
+
+                    if (shader != null)
+                    {
+                        temporaryMaterial = new Material(shader);
+                        temporaryMaterial.color = entry.Color;
+                        if (temporaryMaterial.HasProperty("_BaseColor"))
+                        {
+                            temporaryMaterial.SetColor(
+                                "_BaseColor",
+                                entry.Color);
+                        }
+
+                        if (temporaryMaterial.HasProperty("_Color"))
+                        {
+                            temporaryMaterial.SetColor(
+                                "_Color",
+                                entry.Color);
+                        }
+
+                        MeshRenderer renderer =
+                            blockObject.GetComponent<MeshRenderer>();
+                        if (renderer != null)
+                        {
+                            renderer.sharedMaterial = temporaryMaterial;
+                        }
+                    }
+                }
+
+                GameObject cameraObject = new GameObject(
+                    "__FrontPreviewCamera");
+                cameraObject.transform.SetParent(root.transform, false);
+                cameraObject.transform.localPosition =
+                    new Vector3(0f, 0f, -4f);
+                Camera camera = cameraObject.AddComponent<Camera>();
+                camera.orthographic = true;
+                camera.orthographicSize = .52f;
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = Color.clear;
+                camera.cullingMask = ~0;
+
+                target = RenderTexture.GetTemporary(
+                    size,
+                    size,
+                    24,
+                    RenderTextureFormat.ARGB32,
+                    RenderTextureReadWrite.sRGB);
+                RenderTexture previous = RenderTexture.active;
+                camera.targetTexture = target;
+                camera.Render();
+                RenderTexture.active = target;
+                Texture2D texture = new Texture2D(
+                    size,
+                    size,
+                    TextureFormat.RGBA32,
+                    false,
+                    false)
+                {
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+                texture.ReadPixels(
+                    new Rect(0f, 0f, size, size),
+                    0,
+                    0);
+                texture.Apply(false, false);
+                RenderTexture.active = previous;
+                camera.targetTexture = null;
+                return texture;
+            }
+            finally
+            {
+                if (target != null)
+                {
+                    RenderTexture.ReleaseTemporary(target);
+                }
+
+                if (temporaryMaterial != null)
+                {
+                    Object.DestroyImmediate(temporaryMaterial);
+                }
+
+                Object.DestroyImmediate(root);
             }
         }
 

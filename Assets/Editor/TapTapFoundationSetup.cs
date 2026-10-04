@@ -14,7 +14,6 @@ using UnityEngine.UI;
 /// <summary>Creates clean foundation content; never imports legacy test scenes or art.</summary>
 public static class TapTapFoundationSetup
 {
-    [MenuItem("Tools/2026TapTap/项目/初始化基础流程")]
     public static void Generate()
     {
         GameFlowSceneScaffolder.Generate();

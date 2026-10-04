@@ -13,7 +13,6 @@ namespace Project.InputAbstraction.Editor
         private static readonly Color JoystickHandle = new Color(1f, 1f, 1f, 0.6f);
         private static readonly Color ButtonColor = new Color(0.12f, 0.18f, 0.28f, 0.72f);
 
-        [MenuItem("GameObject/2026TapTap/Input/创建双平台输入 UI", false, 10)]
         private static void CreatePlatformInputUi()
         {
             GameObject canvasObject = new GameObject(

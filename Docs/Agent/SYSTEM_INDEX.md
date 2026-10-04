@@ -12,7 +12,7 @@
 | Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本 |
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
 | 方块功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 全覆盖交互契约；动力组件含开关/信号源与单次/持续/脉冲调试，完整动力网络待施工 |
-| 2D关卡编辑器原型 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 实验工具；栏目增删改、自定义/原预制体模式、自定义组件模板与调试、玩家平面工具，栏目贴画复用 SurfaceTiles |
+| 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；融合世界图/详情/装配图、方块与空道具栏目、组件模板、贴画、场景生成和本地存档 |
 | 可变色方块/颜色工作台/HSV褪色 | `Assets/_Project/Code/Systems/ColorBlocks` | RGB 类型、钥匙/Timeline、材质/层管理、交互图配置；混色执行待设计 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。

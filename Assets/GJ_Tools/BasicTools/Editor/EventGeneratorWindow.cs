@@ -94,7 +94,6 @@ public class EventGeneratorWindow : EditorWindow
         return options.ToArray();
     }
 
-    [MenuItem("Tools/GJ_Tools/事件生成器")]
     private static void Open()
     {
         EventGeneratorWindow win = GetWindow<EventGeneratorWindow>("GJ 事件生成器");

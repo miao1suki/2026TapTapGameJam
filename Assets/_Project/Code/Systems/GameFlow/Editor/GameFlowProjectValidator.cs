@@ -7,7 +7,6 @@ namespace Project.GameFlow.Editor
 {
     public static class GameFlowProjectValidator
     {
-        [MenuItem("Tools/2026TapTap/游戏流程/检查场景配置", priority = 20)]
         public static void ValidateFromMenu()
         {
             bool valid = Validate(out string report);

@@ -18,7 +18,6 @@ namespace Project.ColorBlocks.Editor
         private ColorInteractionGraphView graph;
         private Label status;
 
-        [MenuItem("Tools/2026TapTap/颜色/颜色工作台")]
         public static void Open()
         {
             var window = CreateWindow<ColorWorkbenchWindow>("颜色工作台");

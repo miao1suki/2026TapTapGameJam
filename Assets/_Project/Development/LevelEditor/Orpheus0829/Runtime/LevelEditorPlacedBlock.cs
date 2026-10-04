@@ -11,23 +11,27 @@ namespace Project.LevelEditor
         [SerializeField] private Color entryColor = Color.white;
         [SerializeField] private bool useEntryColor;
         [SerializeField] private bool hasColorData;
+        [SerializeField] private bool isProp;
 
         public Vector2Int Cell => cell;
         public string EntryName => entryName;
         public Color EntryColor => entryColor;
         public bool HasColorData => hasColorData;
+        public bool IsProp => isProp;
 
         public void Configure(
             Vector2Int valueCell,
             string valueEntryName,
             Color valueColor,
-            bool valueUseEntryColor)
+            bool valueUseEntryColor,
+            bool valueIsProp = false)
         {
             cell = valueCell;
             entryName = valueEntryName;
             entryColor = valueColor;
             useEntryColor = valueUseEntryColor;
             hasColorData = true;
+            isProp = valueIsProp;
             ApplyEntryColor();
         }
 
