@@ -145,6 +145,7 @@ namespace Project.SurfaceTiles.Editor
             tileCanvas.Add(outline);
         }
 
+        [MenuItem("Tools/2026TapTap/方块贴画/导入不规则瓦片图")]
         internal static void OpenWindow()
         {
             SurfaceTileSheetImporterWindow window =

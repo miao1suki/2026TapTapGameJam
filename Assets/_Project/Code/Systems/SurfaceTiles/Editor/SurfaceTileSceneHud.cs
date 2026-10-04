@@ -29,6 +29,7 @@ namespace Project.SurfaceTiles.Editor
             set => EditorPrefs.SetBool(VisiblePreference, value);
         }
 
+        [MenuItem("Tools/2026TapTap/方块贴画/显示 Scene 绘制工具")]
         private static void ShowTool()
         {
             IsVisible = true;
@@ -36,6 +37,7 @@ namespace Project.SurfaceTiles.Editor
             SceneView.RepaintAll();
         }
 
+        [MenuItem("Tools/2026TapTap/方块贴画/让选中物体可贴画")]
         private static void MakePaintable() => Run(() =>
         {
             SurfaceTileBlock block = SurfaceTileAuthoringService
@@ -43,9 +45,11 @@ namespace Project.SurfaceTiles.Editor
             SurfaceTileMeshBuilder.RefreshPreview(block);
         });
 
+        [MenuItem("Tools/2026TapTap/方块贴画/从选中切片创建瓦片库")]
         private static void CreatePalette() => Run(() =>
             SurfaceTileAuthoringService.CreatePaletteFromSelection());
 
+        [MenuItem("Tools/2026TapTap/方块贴画/一键合成选中方块")]
         private static void BakeSelected() => Run(() =>
         {
             SurfaceTileBlock block = SelectedBlock();

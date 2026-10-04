@@ -42,6 +42,7 @@ namespace Project.Achievements.Editor
             Undo.undoRedoPerformed -= OnUndoRedo;
         }
 
+        [MenuItem("Tools/2026TapTap/Achievements/成就工具")]
         public static void Open()
         {
             AchievementToolWindow window =

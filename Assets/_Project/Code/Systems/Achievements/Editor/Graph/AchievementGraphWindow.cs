@@ -39,6 +39,8 @@ namespace Project.Achievements.Editor
             achievementObject = null;
         }
 
+        [MenuItem(
+            "Tools/2026TapTap/Achievements/成就具体条件逻辑图")]
         public static void Open()
         {
             AchievementGraphWindow window =

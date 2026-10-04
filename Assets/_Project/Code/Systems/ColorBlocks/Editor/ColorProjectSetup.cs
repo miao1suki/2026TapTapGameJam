@@ -16,6 +16,7 @@ namespace Project.ColorBlocks.Editor
         private const string TimelineFolder = "Assets/_Project/Content/ColorBlocks/Timelines";
         private const string ShaderFolder = "Assets/_Project/Code/Systems/ColorBlocks/Shaders/";
 
+        [MenuItem("Tools/2026TapTap/颜色/初始化或修复颜色资源")]
         internal static void InitializeFromMenu()
         {
             var catalog = EnsureCatalog();

@@ -21,6 +21,7 @@ namespace Project.GameFlow.Editor
         private EnumField levelIdField;
         private Label currentSceneLabel;
 
+        [MenuItem("Tools/2026TapTap/场景/场景导航与关卡入口", priority = 1)]
         public static void Open()
         {
             GetWindow<GameSceneNavigatorWindow>("场景导航");

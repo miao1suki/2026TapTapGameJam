@@ -23,11 +23,13 @@ namespace Project.GameFlow.Editor
             EditorApplication.delayCall += ApplyStartScenePreference;
         }
 
+        [MenuItem(MenuPath, priority = 30)]
         private static void ToggleAutoBootstrap()
         {
             UseFormalFlow = !UseFormalFlow;
         }
 
+        [MenuItem(MenuPath, true)]
         private static bool ValidateToggleAutoBootstrap()
         {
             Menu.SetChecked(MenuPath, UseFormalFlow);
