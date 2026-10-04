@@ -21,6 +21,7 @@ Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未�
 - `Assets/_Project/Scenes/Levels/Level_XX`：按关卡组织，不按人员职位。
 - `Assets/_Project/Development/<Feature>/<AuthorOrTask>`：独立实验；不默认加入正式构建。
 - `Assets/_Project/Content`：正式流程的 prefab、catalog 和配置。
+- `Assets/_Project/Content/Audio/Music` 与 `SFX`：游戏实际使用的音频及其 `.meta`；音频成员按 `.agents/skills/taptap-audio-worker/SKILL.md` 交付。
 - `Assets/_Project/Art/ArtSource`：未来导入的原始美术。
 - `Assets/_Project/Art/Generated`：工具产物；生成后检查并提交依赖。
 - `Docs/Agent`：agent 的统一交流、约定和状态；每次重新读取。

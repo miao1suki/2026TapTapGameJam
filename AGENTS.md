@@ -15,6 +15,7 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 先验证当前目录是 Unity 项目且 `git remote get-url origin` 为上述仓库；不匹配立即停止写入和推送。
 不在旧项目实现功能，不向旧仓库推送，不复制整个旧 Assets/ProjectSettings。
 分支工作者读取 `.agents/skills/taptap-git-worker/SKILL.md`，只提交并推送自己的分支，由整合者合并。
+交付或更新音乐、音效资源的成员还须读取 `.agents/skills/taptap-audio-worker/SKILL.md`。
 任务结束更新相关功能文档和 `ACTIVE_WORK.md` 中自己的交接记录；不得覆盖其他人的记录。
 
 维护源码、场景和 `.meta` 一起提交。不得提交私钥、凭据、Library、Temp、Logs、Builds 或本地用户设置。

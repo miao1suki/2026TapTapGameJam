@@ -17,3 +17,7 @@
 *.jpg binary
 *.wav binary
 *.mp3 binary
+*.ogg binary
+*.flac binary
+*.aif binary
+*.aiff binary
