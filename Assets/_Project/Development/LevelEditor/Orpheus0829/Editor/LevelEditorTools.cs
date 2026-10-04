@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Project.ColorBlocks;
 using Project.LevelEditor;
 using Project.SurfaceTiles;
 using Project.SurfaceTiles.Editor;
@@ -217,9 +218,9 @@ namespace Project.LevelEditor.Editor
                     PalettePath);
             if (palette != null)
             {
-            EnsureEntryIds(palette);
-            EnsurePropEntryIds(palette);
-            return palette;
+                EnsureEntryIds(palette);
+                EnsurePropEntryIds(palette);
+                return palette;
             }
 
             string folder = Path.GetDirectoryName(PalettePath)
@@ -364,11 +365,67 @@ namespace Project.LevelEditor.Editor
 
         private static void AddDefaultEntries(LevelEditorPalette palette)
         {
-            AddEntry(palette, "红方块", new Color(1f, .25f, .25f), null);
-            AddEntry(palette, "蓝方块", new Color(.22f, .52f, 1f), null);
-            AddEntry(palette, "绿方块", new Color(.25f, .8f, .38f), null);
+            AddManagedColorEntry(palette, "red", "红方块", new Color(1f, .25f, .25f));
+            AddManagedColorEntry(palette, "blue", "蓝方块", new Color(.22f, .52f, 1f));
+            AddManagedColorEntry(palette, "green", "绿方块", new Color(.25f, .8f, .38f));
             AddEntry(palette, "黑方块", new Color(.08f, .08f, .08f), null);
             AddEntry(palette, "白方块", new Color(.95f, .95f, .95f), null);
+        }
+
+        private static void AddManagedColorEntry(
+            LevelEditorPalette palette,
+            string typeId,
+            string displayName,
+            Color previewColor)
+        {
+            string path = "Assets/_Project/Content/ColorBlocks/Prefabs/ColorBlock_" +
+                          typeId + ".prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            int index = AddEntry(
+                palette,
+                displayName,
+                previewColor,
+                prefab,
+                LevelEditorBlockMode.Prefab);
+            if (index < 0)
+            {
+                return;
+            }
+
+            palette.Entries[index].SetManagedColorType(typeId);
+            EditorUtility.SetDirty(palette);
+            AssetDatabase.SaveAssetIfDirty(palette);
+            if (!palette.Entries[index].HasValidManagedColorPrefab)
+            {
+                Debug.LogError($"关卡栏目“{displayName}”未找到有效的 {typeId} 颜色方块预制体：{path}");
+            }
+        }
+
+        internal static bool TryValidateManagedColorEntry(
+            LevelEditorBlockEntry entry,
+            out string message)
+        {
+            message = string.Empty;
+            if (entry == null || string.IsNullOrEmpty(entry.ManagedColorTypeId))
+            {
+                return true;
+            }
+
+            if (!entry.HasValidManagedColorPrefab)
+            {
+                message = $"栏目“{entry.DisplayName}”必须使用基础色为 {entry.ManagedColorTypeId} 的 ColorBlock 预制体。";
+                return false;
+            }
+
+            ColorCatalog catalog = AssetDatabase.LoadAssetAtPath<ColorCatalog>(
+                "Assets/_Project/Resources/ColorBlocks/ColorCatalog.asset");
+            if (catalog == null || catalog.Find(entry.ManagedColorTypeId) == null)
+            {
+                message = $"颜色目录中没有栏目“{entry.DisplayName}”对应的 {entry.ManagedColorTypeId} 类型。";
+                return false;
+            }
+
+            return true;
         }
 
         private static void EnsureEntryIds(LevelEditorPalette palette)
@@ -509,6 +566,14 @@ namespace Project.LevelEditor.Editor
             if (entry == null || cell.x < -512 || cell.y < -512 ||
                 cell.x > 512 || cell.y > 512)
             {
+                return null;
+            }
+
+            if (!LevelEditorPaletteService.TryValidateManagedColorEntry(
+                    entry,
+                    out string validationMessage))
+            {
+                Debug.LogError(validationMessage);
                 return null;
             }
 

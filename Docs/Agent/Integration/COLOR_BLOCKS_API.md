@@ -15,6 +15,8 @@
 
 初始只有 `red`、`green`、`blue` 三个实际类型，界面余下三格为空位。类型 ID 是存档/脚本稳定键，改名只改 `displayName`，不要重命名已有 ID。
 
+关卡编辑器的“红方块 / 绿方块 / 蓝方块”栏目分别绑定 `Assets/_Project/Content/ColorBlocks/Prefabs/ColorBlock_red.prefab`、`ColorBlock_green.prefab`、`ColorBlock_blue.prefab`，采用直接预制体模式。`LevelEditorBlockEntry.ManagedColorTypeId` 与预制体的 `ColorBlock.BaseColorTypeId` 必须一致，颜色目录还须保留相应类型；Scene 绘制和 `PlanningSceneBuilder` 都拒绝失效的栏目，后者在清理旧生成内容之前验证。编辑器不对这些预制体套栏目材质色、贴花或组件模板。其他栏目和已放置的普通方块不被自动改造。
+
 ## 运行时调用
 
 ```csharp

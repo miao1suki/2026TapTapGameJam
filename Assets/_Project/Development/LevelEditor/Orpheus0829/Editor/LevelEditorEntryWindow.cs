@@ -1,3 +1,4 @@
+using Project.ColorBlocks;
 using Project.LevelEditor;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -316,6 +317,22 @@ namespace Project.LevelEditor.Editor
             {
                 statusLabel.text = "直接使用预制体模式需要指定预制体。";
                 return;
+            }
+
+            LevelEditorBlockEntry editingEntry = GetEditingEntry();
+            if (editingEntry != null &&
+                !string.IsNullOrEmpty(editingEntry.ManagedColorTypeId))
+            {
+                ColorBlock colorBlock = prefab != null
+                    ? prefab.GetComponent<ColorBlock>()
+                    : null;
+                if (workingMode != LevelEditorBlockMode.Prefab ||
+                    colorBlock == null ||
+                    colorBlock.BaseColorTypeId != editingEntry.ManagedColorTypeId)
+                {
+                    statusLabel.text = $"此栏目需使用基础色为 {editingEntry.ManagedColorTypeId} 的 ColorBlock 预制体。";
+                    return;
+                }
             }
 
             int selectedIndex;

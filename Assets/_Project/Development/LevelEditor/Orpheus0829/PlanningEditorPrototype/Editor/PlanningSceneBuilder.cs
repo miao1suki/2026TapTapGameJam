@@ -199,7 +199,19 @@ namespace PlanningEditorPrototype
                 return false;
             }
 
-            DestroyGeneratedRoots();
+            for (int index = 0; index < palette.Entries.Count; index++)
+            {
+                LevelEditorBlockEntry entry = palette.Entries[index];
+                if (LevelEditorPaletteService.TryValidateManagedColorEntry(
+                        entry,
+                        out string validationMessage))
+                {
+                    continue;
+                }
+
+                message = validationMessage + " 原场景未改动。";
+                return false;
+            }
 
             List<RoomLayout> layouts = BuildLayouts(
                 rooms,
@@ -210,6 +222,8 @@ namespace PlanningEditorPrototype
                 message = "没有可生成的房间详情。";
                 return false;
             }
+
+            DestroyGeneratedRoots();
 
             var existingCells = new HashSet<Vector2Int>();
             LevelEditorPlacedBlock[] existingBlocks =
@@ -517,7 +531,7 @@ namespace PlanningEditorPrototype
             Vector2Int cell,
             Transform parent)
         {
-            if (entry == null)
+            if (entry == null || !entry.HasValidManagedColorPrefab)
             {
                 return null;
             }

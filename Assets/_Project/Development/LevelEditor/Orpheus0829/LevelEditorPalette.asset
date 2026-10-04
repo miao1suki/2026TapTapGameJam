@@ -23,22 +23,35 @@ MonoBehaviour:
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
     surfaceTilePlacements: []
+  - entryId: 36231c7bdbdd4c499997537ea230f38c
+    mode: 1
+    displayName: "\u7EA2\u65B9\u5757"
+    color: {r: 1, g: 0.25, b: 0.25, a: 1}
+    prefab: {fileID: 2422191113143629447, guid: bbdf116cd06d2fb4d87b1ebb8c18ae02, type: 3}
+    customTemplate: {fileID: 0}
+    managedColorTypeId: red
+    surfaceTilePalette: {fileID: 0}
+    surfaceTileCellSize: 1
+    surfaceTileTransparentBase: 0
+    surfaceTilePlacements: []
   - entryId: 29ae700f35e247ddae115899ba7a5f5a
-    mode: 0
+    mode: 1
     displayName: "\u84DD\u65B9\u5757"
     color: {r: 0.22, g: 0.52, b: 1, a: 1}
-    prefab: {fileID: 0}
+    prefab: {fileID: 524019047373316160, guid: 210c431167d7a014db209c383a9a55d2, type: 3}
     customTemplate: {fileID: 0}
+    managedColorTypeId: blue
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
     surfaceTilePlacements: []
   - entryId: 1362ef2c1fa247d2b83942b0970b7101
-    mode: 0
+    mode: 1
     displayName: "\u7EFF\u65B9\u5757"
     color: {r: 0.25, g: 0.8, b: 0.38, a: 1}
-    prefab: {fileID: 0}
+    prefab: {fileID: 8582130194286690322, guid: ac2d7caad3cfab24d920732a9371c085, type: 3}
     customTemplate: {fileID: 0}
+    managedColorTypeId: green
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
