@@ -49,6 +49,7 @@ namespace Project.ColorBlocks.Editor
                 selectedId = catalog.Colors.FirstOrDefault()?.id;
                 Build();
             }));
+            header.Add(ActionButton("褪色调试", ColorFadeDebugWindow.Open));
             rootVisualElement.Add(header);
 
             if (catalog == null)
@@ -80,7 +81,13 @@ namespace Project.ColorBlocks.Editor
             var graphHeader = new VisualElement { style = { flexDirection = FlexDirection.Row, marginBottom = 8 } };
             graphHeader.Add(new Label("交互图") { style = { fontSize = 15, unityFontStyleAndWeight = FontStyle.Bold, flexGrow = 1 } });
             graphHeader.Add(ActionButton("适配视图", () => graph?.FrameAll()));
-            graphHeader.Add(ActionButton("＋ 节点", () => graph?.AddInteractionNode()));
+            var addNode = new ToolbarMenu { text = "＋ 节点" };
+            foreach (var kind in ColorNodeLibrary.Templates)
+            {
+                var selectedKind = kind;
+                addNode.menu.AppendAction(ColorNodeLibrary.Label(kind), _ => graph?.AddInteractionNode(selectedKind));
+            }
+            graphHeader.Add(addNode);
             graphColumn.Add(graphHeader);
             graph = new ColorInteractionGraphView();
             graph.style.borderTopWidth = 1;
@@ -88,7 +95,7 @@ namespace Project.ColorBlocks.Editor
             graph.style.borderRightWidth = 1;
             graph.style.borderBottomWidth = 1;
             graphColumn.Add(graph);
-            status = new Label("交互图只保存设计结构；混色规则尚未执行。")
+            status = new Label("触发器、条件和基础操作可运行；游泳状态、混色与 Timeline 节点尚未接入。")
             {
                 style = { marginTop = 8, marginBottom = 8, color = new Color(0.67f, 0.75f, 0.82f) }
             };
@@ -127,7 +134,7 @@ namespace Project.ColorBlocks.Editor
         {
             detailPanel.Clear();
             var color = catalog.Find(selectedId);
-            graph.Load(color, SaveGraph);
+            graph.Load(color, catalog, SaveGraph);
             if (color == null)
             {
                 detailPanel.Add(Section("选择一个颜色"));
@@ -228,7 +235,7 @@ namespace Project.ColorBlocks.Editor
             Undo.RecordObject(catalog, "编辑颜色交互图");
             graph.CopyTo(color);
             EditorUtility.SetDirty(catalog);
-            status.text = "已保存交互图结构";
+            status.text = "交互图已修改；保存 Project 资源后写入磁盘。";
         }
 
         private void ApplyEdit(ColorTypeDefinition color, Action action, bool refreshList = false)

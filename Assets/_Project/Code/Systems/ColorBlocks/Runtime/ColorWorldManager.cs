@@ -72,6 +72,7 @@ namespace Project.ColorBlocks
             if (!string.IsNullOrEmpty(definition.unlockEventId))
                 EventMgr.RaiseColorTypeEvent(definition.unlockEventId, typeId);
             HSVColorFadeManager.Instance.SetColorFaded(typeId, false);
+            ColorInteractionRunner.Run(definition, ColorGraphNodeKind.ColorUnlocked);
             return true;
         }
 

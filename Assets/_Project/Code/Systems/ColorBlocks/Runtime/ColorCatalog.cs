@@ -4,12 +4,30 @@ using UnityEngine;
 
 namespace Project.ColorBlocks
 {
+    public enum ColorGraphNodeKind
+    {
+        Note = 0,
+        PlayerEntered = 10,
+        PlayerLeft = 11,
+        ColorBlockTouched = 12,
+        ColorUnlocked = 13,
+        RequirePlayer = 20,
+        RequireSelfBlock = 21,
+        RequireOtherColor = 22,
+        RecolorSelf = 30,
+        UnlockColor = 31,
+        FadeColor = 32,
+        RestoreColor = 33
+    }
+
     [Serializable]
     public sealed class ColorGraphNode
     {
         public string id = Guid.NewGuid().ToString("N");
         public string title = "新节点";
         public Vector2 position;
+        public ColorGraphNodeKind kind;
+        public string colorTypeId;
     }
 
     [Serializable]

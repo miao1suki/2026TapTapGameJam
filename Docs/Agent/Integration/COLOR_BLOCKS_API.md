@@ -12,6 +12,7 @@
 | `HSVColorFadeManager` | 逐类型饱和度 0–1 和过渡时间 | 方块颜色属性 |
 | `SelectiveHsvRendererFeature` | PC/Mobile URP 中按 Unity 层局部屏幕空间褪色 | 游戏进度、交互 |
 | `ColorKeyPickup` | 玩家触发解锁及 Timeline 相机演出 | 决定新的混色规则 |
+| `ColorInteractionRunner` | 执行颜色目录中明确类型的基础交互图节点 | 玩家状态机、Timeline 节点、未定的混色规则 |
 
 初始只有 `red`、`green`、`blue` 三个实际类型，界面余下三格为空位。类型 ID 是存档/脚本稳定键，改名只改 `displayName`，不要重命名已有 ID。
 
@@ -51,10 +52,16 @@ Manager 自身也提供 `ColorUnlocked` 与 `BlockColorChanged` C# 事件。避�
 
 钥匙触发器要求玩家碰撞物体能找到 `Project.Player.PlayerController`。钥匙上的 `PlayableDirector` 绑定 `CameraTimelineTrack`；运行时拾取器会定位现有 `TimelineCamRig`，若只有 `CameraControlManager` 会在该物体上添加 Rig，再把玩家 Transform 作为演出目标。这条轨道仍经统一相机 Manager 接管，不直接操纵 Camera。Prefab 附带 2 秒演出 Timeline，策划可单独调整片段。
 
-## 交互图边界
+## 交互图可执行子集
 
-工作台的节点/连线保存在 `ColorCatalog.colors[*].nodes/edges`，目前是策划配置数据，**没有运行时执行器**。`ColorBlock` 实现 `IInteractionTarget`，颜色和调色能力都解锁后 `CanInteract` 才为真，但 `TryInteract` 暂返回 false。混色、条件判断、节点输出与碰撞触发规则在明确设计后再单独实现，不应把工作台草图当成已生效行为。
+工作台的节点/连线保存在 `ColorCatalog.colors[*].nodes/edges`。只有新增的类型化节点执行；旧自由文本节点保留为 `Note`，不会触发行为。每一种基础色有自己的图，图在该颜色的 `ColorBlock` 发生接触时运行；`ColorUnlocked` 在 `ColorWorldManager.Unlock` 首次成功时运行。
+
+触发节点：玩家碰到本方块、玩家离开本方块、两个 `ColorBlock` 接触、该颜色首次解锁。接触支持 Collider Trigger 与普通 Collision，且只在接触开始/结束时触发，不逐帧触发。两个完全静态 Collider 相贴不会产生 Unity 接触回调；测试两块接触时至少一方要具备合适的 Rigidbody/Trigger 物理配置。条件节点：需要玩家、需要本方块、对方必须是指定色（另一方没有当前色时以其基础色匹配）。操作节点：本方块改色、解锁指定颜色、指定颜色褪色/恢复。操作失败会停止该分支；本方块改色复用 `TryRecolor`，因此要求目标色已解锁且已获得调色能力。图每次最多访问 64 个节点，环路不会无限执行。
+
+这些节点只使用颜色域 API，不直接操作 `BlockRuntime` 的 State/Channel。`BlockFeature` 的 Requires/Conflicts/Writes 约束仍照常适用于挂在该物体上的 BlockFeature；若未来出现写 `BlockChannel.Color` 的 Feature，应先定义桥接与唯一写入方，不能并行写颜色。玩家控制器目前没有游泳状态，故没有“切换游泳/行走”节点。九种交互矩阵中的蓝水、混色变物体等效果还未实现。`IInteractionTarget.TryInteract` 仍返回 false，不要把它当成染色入口。颜色钥匙的解锁→褪色恢复→Timeline 仍由现有 `ColorKeyPickup`/Manager 负责，不需要再用图重复执行。
 
 ## 渲染约束
 
 每个颜色类型独占一个 Unity 用户层（8–31）。现阶段 Renderer Feature 遮罩绘制 **不透明物体**，在透明物体与 UI 绘制之前执行；透明 Sprite/特效若要参与局部褪色需要另设计支持透明度的遮罩。带轮廓的默认方块 Shader 假设原始 Unity Cube 的局部坐标为 ±0.5；非立方体模型应替换相应材质。一个颜色层上的所有不透明 Renderer 会共享该颜色的褪色状态。多个颜色层会各执行一次遮罩及全屏 Blit，新增类型时应评估目标平台性能。
+
+`ColorBlock` 运行时将其子层级的 Renderer 对象设到当前类型的层。无交互的场景物体无需挂 `ColorBlock`，可在 `Tools/2026TapTap/颜色/褪色调试` 选择物体并批量把 Renderer 对象标记到某个颜色层；此操作支持 Undo、保存场景时持久化。Unity Layer 还参与碰撞矩阵与相机剔除，关卡接线后需在 Physics/Camera 配置中核对。

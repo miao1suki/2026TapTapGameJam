@@ -1,5 +1,14 @@
 # 工作状态与交接（每次任务重读）
 
+## 颜色层褪色与交互图基础节点
+
+- 日期：2026-10-04。
+- 负责人：Codex；本地分支：`codex/color-editor-link`，按用户约定完成本地测试前不推送。
+- 范围：ColorBlocks 的按层配置/调试、交互图基础节点与有限运行时执行；不改用户未提交的测试 Scene、瓦片库或颜色目录资产。
+- 接口：复用现有 ColorWorldManager、HSVColorFadeManager 与 BlockFeatures 契约，不接管玩家状态机或 Timeline 所有权。
+- 验证：`Assembly-CSharp` 与 `Assembly-CSharp-Editor` 静态编译均 0 错误/0 警告；Unity 6000.3.12f1 编辑器脚本重载未见编译异常。未改用户未提交 Scene、瓦片库或颜色目录；交互节点与局部褪色仍需在用户测试关卡 Play Mode 实测。
+- 交接：仅本地分支，不推送；现有目录中的旧自由文字节点保留为不执行的备注，策划需保存 Project 资源后测试新连线。
+
 ## 颜色方块与关卡编辑器联动
 
 - 日期：2026-10-04。

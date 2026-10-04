@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Project.InputAbstraction;
+using Project.Player;
 using UnityEngine;
 
 namespace Project.ColorBlocks
@@ -11,6 +13,7 @@ namespace Project.ColorBlocks
         [SerializeField] private Renderer targetRenderer;
         private string currentColorTypeId;
         private Material originalMaterial;
+        private readonly HashSet<Collider> contacts = new HashSet<Collider>();
 
         public string BaseColorTypeId => baseColorTypeId;
         public string CurrentColorTypeId => currentColorTypeId;
@@ -21,14 +24,45 @@ namespace Project.ColorBlocks
             if (targetRenderer == null) targetRenderer = GetComponentInChildren<Renderer>();
             if (targetRenderer != null) originalMaterial = targetRenderer.sharedMaterial;
             var definition = ColorWorldManager.Instance.Catalog?.Find(baseColorTypeId);
-            if (definition != null && definition.unityLayer >= 0 && targetRenderer != null)
-                targetRenderer.gameObject.layer = definition.unityLayer;
+            if (definition != null) ApplyLayer(definition.unityLayer);
         }
 
         private void OnEnable() => ColorWorldManager.Instance.Register(this);
         private void OnDisable()
         {
+            contacts.Clear();
             if (ColorWorldManager.Existing != null) ColorWorldManager.Existing.Unregister(this);
+        }
+
+        private void OnTriggerEnter(Collider other) => EnterContact(other);
+        private void OnTriggerExit(Collider other) => LeaveContact(other);
+        private void OnCollisionEnter(Collision collision) => EnterContact(collision.collider);
+        private void OnCollisionExit(Collision collision) => LeaveContact(collision.collider);
+
+        private void EnterContact(Collider other)
+        {
+            if (other == null || !contacts.Add(other)) return;
+            var owner = ColorWorldManager.Instance.Catalog?.Find(baseColorTypeId);
+            if (owner == null) return;
+            var player = other.GetComponentInParent<PlayerController>();
+            if (player != null)
+                ColorInteractionRunner.Run(owner, ColorGraphNodeKind.PlayerEntered, this, player.gameObject);
+            else
+            {
+                var block = other.GetComponentInParent<ColorBlock>();
+                if (block != null && block != this)
+                    ColorInteractionRunner.Run(owner, ColorGraphNodeKind.ColorBlockTouched, this, other.gameObject, block);
+            }
+        }
+
+        private void LeaveContact(Collider other)
+        {
+            if (other == null || !contacts.Remove(other)) return;
+            var player = other.GetComponentInParent<PlayerController>();
+            if (player == null) return;
+            var owner = ColorWorldManager.Instance.Catalog?.Find(baseColorTypeId);
+            if (owner != null)
+                ColorInteractionRunner.Run(owner, ColorGraphNodeKind.PlayerLeft, this, player.gameObject);
         }
 
         internal void OnBaseColorUnlocked(string typeId)
@@ -62,10 +96,17 @@ namespace Project.ColorBlocks
             var definition = catalog != null ? catalog.Find(currentColorTypeId) : null;
             var activeLayer = definition ?? (catalog != null ? catalog.Find(baseColorTypeId) : null);
             if (activeLayer != null && activeLayer.unityLayer >= 0 && activeLayer.unityLayer < 32)
-                targetRenderer.gameObject.layer = activeLayer.unityLayer;
+                ApplyLayer(activeLayer.unityLayer);
             var material = definition != null ? definition.targetMaterial : catalog != null ? catalog.NeutralMaterial : null;
             if (material == null) material = originalMaterial;
             if (material != null) targetRenderer.sharedMaterial = material;
+        }
+
+        private void ApplyLayer(int layer)
+        {
+            if (layer < 0 || layer > 31) return;
+            foreach (var renderer in GetComponentsInChildren<Renderer>(true))
+                renderer.gameObject.layer = layer;
         }
 
         public bool CanInteract(GameObject interactor) =>

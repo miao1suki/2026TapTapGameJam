@@ -175,12 +175,7 @@ namespace Project.ColorBlocks.Editor
                 swatch = tint,
                 unityLayer = FindAvailableLayer("Color_" + id),
                 targetMaterial = CreateMaterial("Color_" + id, tint, shader),
-                unlockEventId = "color.unlocked." + id,
-                nodes = new System.Collections.Generic.List<ColorGraphNode>
-                {
-                    new ColorGraphNode { id = id + ".touch", title = "接触一级色", position = new Vector2(20, 120) },
-                    new ColorGraphNode { id = id + ".ability", title = "解锁后交互", position = new Vector2(210, 120) }
-                }
+                unlockEventId = "color.unlocked." + id
             });
         }
     }
