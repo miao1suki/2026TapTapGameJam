@@ -179,4 +179,4 @@ MonoBehaviour:
   debugSignalValue: 1
   isOn: 0
   pulseTimer: 0
-  debugActivationCount: 0
+  debugActivationCount: 1
