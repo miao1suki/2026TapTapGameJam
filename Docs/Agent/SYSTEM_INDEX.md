@@ -14,6 +14,7 @@
 | 方块功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 全覆盖交互契约；动力组件含开关/信号源与单次/持续/脉冲调试，完整动力网络待施工 |
 | 2D关卡编辑器原型 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 实验工具；栏目增删改、自定义/原预制体模式、自定义组件模板与调试、玩家平面工具，栏目贴画复用 SurfaceTiles |
 | 可变色方块/颜色工作台/HSV褪色 | `Assets/_Project/Code/Systems/ColorBlocks` | RGB 类型、钥匙/Timeline、材质/层管理、交互图配置；混色执行待设计 |
+| 交互水面（Level_01 适配） | `Assets/ta_source/InteractiveWater` | 多实例独立波纹/反射；Universal Renderer 无光照水下捕获后由水片扰动重着色，Unity 验证待完成 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。
 开发者：[运行与场景](../Developer/GAME_FLOW.md)、[贴画与切片](../Developer/SURFACE_TILES.md)、[旧成就与Timeline](../Developer/LEGACY_SYSTEMS.md)。
