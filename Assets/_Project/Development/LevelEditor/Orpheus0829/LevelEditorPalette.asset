@@ -896,4 +896,13 @@ MonoBehaviour:
       anchor: 0
       layer: 0
       offsetCells: {x: 0, y: 0}
-  propEntries: []
+  propEntries:
+  - entryId: 3c635d52f11f48f18d4d82a53c65e601
+    displayName: 红色钥匙
+    prefab: {fileID: 6622805535834104132, guid: 83e6e8f43f4f1d54289447a18295ca37, type: 3}
+  - entryId: 2986677913284d2f85e9c64011ca22d0
+    displayName: 绿色钥匙
+    prefab: {fileID: 491305582336558569, guid: 6c8401f9adab9d841ba785f52b4f9623, type: 3}
+  - entryId: 04b7a2d6735b4d0cbce343ab1293d6e0
+    displayName: 蓝色钥匙
+    prefab: {fileID: 8140128999958426686, guid: 0c5be6edd719d03459d2e3ac01c4307f, type: 3}

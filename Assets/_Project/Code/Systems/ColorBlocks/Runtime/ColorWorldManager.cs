@@ -11,6 +11,10 @@ namespace Project.ColorBlocks
         private static ColorWorldManager instance;
         private readonly HashSet<string> unlocked = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<ColorBlock> blocks = new HashSet<ColorBlock>();
+        private readonly List<GameObject> waterVisuals = new List<GameObject>();
+        private GameObject waterVisualRoot;
+        private bool waterDirty = true;
+        private float waterReveal = -1f;
         private ColorCatalog catalog;
         private bool hasRecolorAbility;
 
@@ -50,6 +54,95 @@ namespace Project.ColorBlocks
                 Debug.LogError("[ColorBlocks] 缺少 Resources/ColorBlocks/ColorCatalog，请用颜色工作台初始化。");
             HSVColorFadeManager.EnsureCreated();
         }
+
+        private void LateUpdate()
+        {
+            if (waterDirty)
+            {
+                waterDirty = false;
+                RebuildWaterVisuals();
+                waterReveal = -1f;
+            }
+            float nextReveal = HSVColorFadeManager.Instance.GetSaturation("blue");
+            if (!Mathf.Approximately(waterReveal, nextReveal))
+            {
+                waterReveal = nextReveal;
+                ApplyWaterReveal(nextReveal);
+            }
+        }
+
+        private void RebuildWaterVisuals()
+        {
+            if (waterVisualRoot != null) Destroy(waterVisualRoot);
+            waterVisualRoot = null;
+            waterVisuals.Clear();
+            if (catalog == null || catalog.BlueWaterPrefab == null) return;
+
+            var zones = new List<Bounds>();
+            foreach (ColorBlock block in blocks)
+            {
+                if (block == null || !block.IsActiveWater) continue;
+                BoxCollider collider = block.GetComponent<BoxCollider>();
+                if (collider != null) zones.Add(collider.bounds);
+            }
+            bool merged;
+            do
+            {
+                merged = false;
+                for (int i = 0; i < zones.Count && !merged; i++)
+                for (int j = i + 1; j < zones.Count; j++)
+                {
+                    Bounds a = zones[i], b = zones[j];
+                    bool sameDepth = Close(a.min.z, b.min.z) && Close(a.max.z, b.max.z);
+                    bool sameHeight = Close(a.min.y, b.min.y) && Close(a.max.y, b.max.y);
+                    bool sameWidth = Close(a.min.x, b.min.x) && Close(a.max.x, b.max.x);
+                    bool horizontal = sameDepth && sameHeight &&
+                        a.max.x >= b.min.x - .002f && b.max.x >= a.min.x - .002f;
+                    bool vertical = sameDepth && sameWidth &&
+                        a.max.y >= b.min.y - .002f && b.max.y >= a.min.y - .002f;
+                    if (!horizontal && !vertical) continue;
+                    a.Encapsulate(b);
+                    zones[i] = a;
+                    zones.RemoveAt(j);
+                    merged = true;
+                    break;
+                }
+            } while (merged);
+
+            if (zones.Count == 0) return;
+            waterVisualRoot = new GameObject("Water visuals");
+            waterVisualRoot.transform.SetParent(transform, false);
+            waterVisualRoot.SetActive(false);
+            foreach (Bounds zone in zones)
+            {
+                GameObject visual = Instantiate(catalog.BlueWaterPrefab,
+                    new Vector3(zone.min.x, zone.max.y + .01f, zone.min.z - .02f),
+                    Quaternion.identity, waterVisualRoot.transform);
+                visual.name = "Water";
+                InteractiveWater.InteractiveWater water = visual.GetComponent<InteractiveWater.InteractiveWater>();
+                if (water != null) water.ConfigureBlockVolume(
+                    new Vector2(zone.size.x, zone.size.z + .04f), zone.size.y + .01f);
+                waterVisuals.Add(visual);
+            }
+            ApplyWaterReveal(HSVColorFadeManager.Instance.GetSaturation("blue"));
+        }
+
+        private void ApplyWaterReveal(float saturation)
+        {
+            if (waterVisualRoot == null) return;
+            float reveal = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(saturation));
+            bool visible = reveal > .001f;
+            if (waterVisualRoot.activeSelf != visible) waterVisualRoot.SetActive(visible);
+            foreach (GameObject visual in waterVisuals)
+            {
+                if (visual == null) continue;
+                InteractiveWater.InteractiveWater water =
+                    visual.GetComponent<InteractiveWater.InteractiveWater>();
+                if (water != null) water.SetReveal(reveal);
+            }
+        }
+
+        private static bool Close(float a, float b) => Mathf.Abs(a - b) < .002f;
 
         public bool IsUnlocked(string typeId) => !string.IsNullOrEmpty(typeId) && unlocked.Contains(typeId);
 
@@ -95,14 +188,20 @@ namespace Project.ColorBlocks
         internal void Register(ColorBlock block)
         {
             blocks.Add(block);
+            waterDirty = true;
             if (IsUnlocked(block.BaseColorTypeId)) block.OnBaseColorUnlocked(block.BaseColorTypeId);
             else block.ResetToNeutral();
         }
 
-        internal void Unregister(ColorBlock block) => blocks.Remove(block);
+        internal void Unregister(ColorBlock block)
+        {
+            blocks.Remove(block);
+            waterDirty = true;
+        }
 
         internal void NotifyBlockChanged(ColorBlock block, string previous, string current)
         {
+            if (previous == "blue" || current == "blue") waterDirty = true;
             BlockColorChanged?.Invoke(block, previous, current);
             EventMgr.RaiseColorBlockChanged(block, previous, current);
         }

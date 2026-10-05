@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: ColorCatalog
   m_EditorClassIdentifier: Assembly-CSharp::Project.ColorBlocks.ColorCatalog
   neutralMaterial: {fileID: 2100000, guid: 619b9e9c25b32484b89362142882254c, type: 2}
+  blueWaterPrefab: {fileID: 5431656609242072927, guid: 78b64f40e46aa5840960a94f8c65c008, type: 3}
   colors:
   - id: red
     displayName: "\u7EA2"
@@ -20,13 +21,7 @@ MonoBehaviour:
     unityLayer: 8
     targetMaterial: {fileID: 2100000, guid: c23a49a2d61b48848950c7abe942d791, type: 2}
     unlockEventId: color.unlocked.red
-    nodes:
-    - id: red.touch
-      title: "\u63A5\u89E6\u4E00\u7EA7\u8272"
-      position: {x: 20, y: 120}
-    - id: red.ability
-      title: "\u89E3\u9501\u540E\u4EA4\u4E92"
-      position: {x: 210, y: 120}
+    nodes: []
     edges: []
   - id: green
     displayName: "\u7EFF"
@@ -34,13 +29,7 @@ MonoBehaviour:
     unityLayer: 9
     targetMaterial: {fileID: 2100000, guid: 95c59087b8919e745a4dd92c45c23130, type: 2}
     unlockEventId: color.unlocked.green
-    nodes:
-    - id: green.touch
-      title: "\u63A5\u89E6\u4E00\u7EA7\u8272"
-      position: {x: 20, y: 120}
-    - id: green.ability
-      title: "\u89E3\u9501\u540E\u4EA4\u4E92"
-      position: {x: 210, y: 120}
+    nodes: []
     edges: []
   - id: blue
     displayName: "\u84DD"
@@ -48,11 +37,5 @@ MonoBehaviour:
     unityLayer: 10
     targetMaterial: {fileID: 2100000, guid: 4893c0e4715c798408e83be910411952, type: 2}
     unlockEventId: color.unlocked.blue
-    nodes:
-    - id: blue.touch
-      title: "\u63A5\u89E6\u4E00\u7EA7\u8272"
-      position: {x: 20, y: 120}
-    - id: blue.ability
-      title: "\u89E3\u9501\u540E\u4EA4\u4E92"
-      position: {x: 210, y: 120}
+    nodes: []
     edges: []

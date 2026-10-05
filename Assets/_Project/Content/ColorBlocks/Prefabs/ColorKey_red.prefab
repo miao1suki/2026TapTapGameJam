@@ -90,7 +90,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 619b9e9c25b32484b89362142882254c, type: 2}
+  - {fileID: 2100000, guid: c23a49a2d61b48848950c7abe942d791, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -146,3 +146,7 @@ MonoBehaviour:
   colorTypeId: red
   cameraDirector: {fileID: 3727125217599009771}
   hideOnCollect: 1
+  revealAtTimelineProgress: 0.98
+  revealDuration: 1.5
+  orthographicZoomOut: 1.6
+  cameraReturnDuration: 0.85

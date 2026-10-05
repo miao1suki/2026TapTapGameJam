@@ -3,8 +3,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
-using UnityEngine.Playables;
-using UnityEngine.Timeline;
 using UnityEngine.UIElements;
 
 namespace Project.ColorBlocks.Editor
@@ -95,7 +93,7 @@ namespace Project.ColorBlocks.Editor
             graph.style.borderRightWidth = 1;
             graph.style.borderBottomWidth = 1;
             graphColumn.Add(graph);
-            status = new Label("触发器、条件和基础操作可运行；游泳状态、混色与 Timeline 节点尚未接入。")
+            status = new Label("连接触发、条件和操作节点；修改后保存项目资源。")
             {
                 style = { marginTop = 8, marginBottom = 8, color = new Color(0.67f, 0.75f, 0.82f) }
             };
@@ -147,7 +145,7 @@ namespace Project.ColorBlocks.Editor
             var swatch = new ColorField("标识色") { value = color.swatch };
             swatch.RegisterValueChangedCallback(evt => ApplyEdit(color, () => color.swatch = evt.newValue, true));
             detailPanel.Add(swatch);
-            var material = new ObjectField("目标材质") { objectType = typeof(Material), value = color.targetMaterial };
+            var material = new ObjectField("编辑识别材质") { objectType = typeof(Material), value = color.targetMaterial };
             material.RegisterValueChangedCallback(evt => ApplyEdit(color, () => color.targetMaterial = evt.newValue as Material));
             detailPanel.Add(material);
             var layer = new IntegerField("Unity 层") { value = color.unityLayer };
@@ -173,7 +171,7 @@ namespace Project.ColorBlocks.Editor
             detailPanel.Add(Section("场景制作"));
             detailPanel.Add(ActionButton("选中物体 → 可变色方块", () => MakeSelectedBlock(color), true));
             detailPanel.Add(ActionButton("在场景创建颜色钥匙", () => CreatePickup(color)));
-            detailPanel.Add(new Label("可变色方块使用当前类型的层；钥匙附带可编辑的 Timeline 相机轨。")
+            detailPanel.Add(new Label("方块按类型自动分层。颜色钥匙可配置 Timeline 演出。")
             {
                 style = { whiteSpace = WhiteSpace.Normal, color = new Color(0.65f, 0.73f, 0.8f), marginTop = 8 }
             });
@@ -266,11 +264,10 @@ namespace Project.ColorBlocks.Editor
             block.EditorConfigure(color.id, renderer);
             Undo.RecordObject(renderer.gameObject, "设置颜色层");
             renderer.gameObject.layer = color.unityLayer;
-            var catalog = ColorProjectSetup.EnsureCatalog();
-            if (catalog.NeutralMaterial != null)
+            if (color.targetMaterial != null)
             {
-                Undo.RecordObject(renderer, "设置初始白色材质");
-                renderer.sharedMaterial = catalog.NeutralMaterial;
+                Undo.RecordObject(renderer, "设置编辑预览材质");
+                renderer.sharedMaterial = color.targetMaterial;
             }
             EditorUtility.SetDirty(block);
             Selection.activeGameObject = selected;
@@ -278,38 +275,20 @@ namespace Project.ColorBlocks.Editor
 
         private static void CreatePickup(ColorTypeDefinition color)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            string path = "Assets/_Project/Content/ColorBlocks/Prefabs/ColorKey_" +
+                          color.id + ".prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null)
+            {
+                Debug.LogError("[ColorBlocks] 缺少颜色钥匙预制体：" + path);
+                return;
+            }
+            var go = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            if (go == null) return;
             Undo.RegisterCreatedObjectUndo(go, "创建颜色钥匙");
             go.name = color.displayName + "色钥匙";
             go.transform.position = Selection.activeTransform != null ? Selection.activeTransform.position + Vector3.up : Vector3.up;
-            go.transform.localScale = Vector3.one * 0.5f;
-            go.GetComponent<Collider>().isTrigger = true;
-            var renderer = go.GetComponent<Renderer>();
-            var catalog = ColorProjectSetup.EnsureCatalog();
-            if (catalog.NeutralMaterial != null) renderer.sharedMaterial = catalog.NeutralMaterial;
-            var director = Undo.AddComponent<PlayableDirector>(go);
-            director.playOnAwake = false;
-            ColorProjectSetup.EnsureFolder("Assets/_Project/Content/ColorBlocks/Timelines");
-            string path = AssetDatabase.GenerateUniqueAssetPath(
-                "Assets/_Project/Content/ColorBlocks/Timelines/ColorPickup_" + color.id + ".playable");
-            var timeline = ScriptableObject.CreateInstance<TimelineAsset>();
-            AssetDatabase.CreateAsset(timeline, path);
-            var track = timeline.CreateTrack<CameraTimelineTrack>(null, "颜色获取 · 相机");
-            var clip = track.CreateClip<CameraTimelineClip>();
-            clip.duration = 2.0;
-            clip.displayName = "获得" + color.displayName + "色";
-            if (clip.asset is CameraTimelineClip cameraClip)
-            {
-                cameraClip.cameraMoveMode = CamMoveMode.SmoothLerp;
-                cameraClip.cameraTargetLocalPos = new Vector3(0, 2, -4);
-                cameraClip.lockLookAtPlayer = true;
-            }
-            director.playableAsset = timeline;
-            var pickup = Undo.AddComponent<ColorKeyPickup>(go);
-            pickup.EditorConfigure(color.id, director);
-            AssetDatabase.SaveAssets();
             Selection.activeGameObject = go;
-            EditorGUIUtility.PingObject(timeline);
         }
 
         private static Label Section(string text) => new Label(text)

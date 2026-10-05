@@ -49,20 +49,20 @@ namespace Project.ColorBlocks.Editor
             {
                 style = { fontSize = 18, unityFontStyleAndWeight = FontStyle.Bold, marginBottom = 8 }
             });
-            scroll.Add(new Label("场景物体按 Unity 层参与褪色；不需要挂 ColorBlock。运行时按钮不保存状态。")
+            scroll.Add(new Label("未解锁方块显示白色基础材质；解锁后蓝水渐显，红绿等待正式外观。")
             {
                 style = { whiteSpace = WhiteSpace.Normal, marginBottom = 12 }
             });
             duration = new FloatField("过渡时长（秒）") { value = 1.5f };
             scroll.Add(duration);
-            var ability = Button("授予调色能力（测试）", () =>
+            var ability = Button("授予调色能力", () =>
             {
                 ColorWorldManager.Instance.GrantRecolorAbility();
                 message.text = "已在本次运行中授予调色能力。";
             });
             ability.SetEnabled(EditorApplication.isPlaying);
             scroll.Add(ability);
-            message = new Label(EditorApplication.isPlaying ? "运行中，可触发褪色。" : "进入 Play Mode 后可触发褪色；编辑态可分配层。")
+            message = new Label(EditorApplication.isPlaying ? "选择颜色并调整效果。" : "运行时可预览效果；编辑时可分配颜色层。")
             {
                 style = { marginTop = 8, marginBottom = 12, whiteSpace = WhiteSpace.Normal }
             };
@@ -107,7 +107,7 @@ namespace Project.ColorBlocks.Editor
                 row.Add(restore);
                 section.Add(Button("将选中场景物体标记到此颜色层", () => AssignSelectedLayer(captured)));
             }
-            scroll.Add(new Label("仅不透明 Renderer 参与当前 HSV 遮罩。Unity 层也可能影响碰撞矩阵与相机剔除，请检查项目设置。")
+            scroll.Add(new Label("普通场景物体可按颜色层参与褪色；方块的编辑识别色不会在游戏中显示。")
             {
                 style = { whiteSpace = WhiteSpace.Normal, marginTop = 8, marginBottom = 14 }
             });

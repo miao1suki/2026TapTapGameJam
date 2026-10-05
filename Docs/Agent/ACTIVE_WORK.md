@@ -1,5 +1,45 @@
 # 工作状态与交接（每次任务重读）
 
+## 当前功能与协作分支整合（进行中）
+
+- 日期：2026-10-05；负责人：Codex；目标：整合本地已验收的颜色／关卡编辑进度、`Test` 场景、TA 水效果分支和音频分支至 `main` 并推送。
+- 边界：保留当前窗口项目状态；未引用的 `ColorPickup_blue 1.playable` 副本和与本次功能无关的 `SampleScene` 删除不纳入提交。音频首次导入须补齐 Unity `.meta`，不代替音频成员做玩法接线。
+- 验证／交接：待合并后补充。
+
+## Test 开场与颜色初始外观修正
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/color-editor-link`，本地验收前不推送。
+- 范围：仅修正 `Test` 场景玩家 Director 的自动播放、RGB 方块未解锁时的白色基础材质、三色钥匙在 Game 中的初始颜色；不改其他成员的场景或 Timeline 资源。
+- 接口：保持 `ColorBlock` 基础/当前颜色状态与 HSV 表现分离；编辑识别材质仅用于编辑态。未解锁时基础网格使用白色中性材质，解锁后由正式视觉接替；钥匙始终保持预制体的对应颜色材质。
+- 验证/交接：Runtime 与 Editor 程序集顺序编译均 0 错误/0 警告；Unity Play Mode 中 `TestPlayer` 的 Director 保持 0 秒、未自动运镜，未解锁蓝块在运行时显示白色黑边基础网格，Console 0 错误/0 警告。三色钥匙预制体材质及其颜色值已静态核对；用户后来在 `Test` 场景重新放置并保存蓝色钥匙，且确认可见。本次随场景提交；其他颜色钥匙仍需实际关卡验收。
+
+## 颜色解锁演出与编辑器预览修正
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/color-editor-link`，本地验收前不推送。
+- 范围：RGB 方块仅在编辑态使用识别材质，Game 中未解锁时显示白色基础材质；解锁后蓝色使用正式水效果、红绿在正式外观接入前隐藏；蓝水随解锁渐显；颜色钥匙触发拉远—恢复—更快返回的相机演出；关卡编辑器 RGB 预览与三色钥匙道具栏目。
+- 接口：新增 `ICameraLensOverrideSource`，仅当前相机控制源可覆盖镜头大小，投影类型仍由模式权威决定；`TimelineCamRig` 提供镜头尺寸与单次返回时长；`InteractiveWater.SetReveal` 随 HSV 进度控制正面透明度和顶面展开。
+- 验证/交接：相机 Runtime、主 Runtime/Editor、相机 EditorTests 程序集静态编译均 0 错误/0 警告；受本任务影响的已跟踪文件 `git diff --check` 通过。Unity Play Mode 已检查 Test 场景：RGB 编辑识别网格在运行时隐藏；蓝色解锁后只出现 TA 水效果；红绿解锁后没有出现调试材质。临时红色钥匙拾取测试触发了拉远再返回的 Timeline 镜头动画，Console 0 错误/0 警告。保留用户另建的 Timeline 和其他成员资源，不推送。
+
+## Test 场景旧红绿方块替换
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/color-editor-link`，本地验收前不推送。
+- 范围：仅 `Assets/Scenes/Test.unity`，把 16 个旧“能源方块”实例原位替换为标准 `ColorBlock_red` 预制体，保留父级、名称、姿态和网格占位。14 个绿色实例已是标准 `ColorBlock_green`，不做无意义重建；白色房地基与其他场景保持原样。
+- 验证/交接：场景序列化中标准红/绿预制体实例分别为 16/14，旧红色能源预制体实例为 0；Play Mode 解锁红绿后仍不显示编辑识别材质，碰撞和颜色状态由标准 `ColorBlock` 保留。一次性迁移脚本已移除；Test 场景仍为本地未跟踪文件，不推送。
+
+## Test 场景玩家可见外形
+
+- 日期：2026-10-04；负责人：Codex；分支：`codex/color-editor-link`，本地验收前不推送。
+- 范围：仅为 `Assets/Scenes/Test.unity` 的 `TestPlayer` 增加无碰撞的测试外形与专用材质；不改玩家控制与正式玩家预制体。
+- 验证/交接：`TestPlayer` 下新增 `Visual` 胶囊网格，局部中心/尺寸与原 CapsuleCollider 对齐，不含额外碰撞体；专用 URP Lit 琥珀色材质保存在 `Assets/Scenes/TestPlayerVisual.mat`。Unity 的 Game 视图已可见，场景已保存；一次性编辑脚本已移除。仅本地修改，不推送。
+
+## 颜色方块正式化、水效果与多格合并
+
+- 日期：2026-10-04；负责人：Codex；分支：`codex/color-editor-link`，未获本地验收前不推送。
+- 范围：移除旧自由文字节点及对话式 UI 文案；RGB 编辑态/运行态材质与层；一次性修复当前场景中的颜色方块；多选合并编辑；玩家游泳状态；整合 TA 的独立水效果提交 `adce5df`，使蓝水覆盖整个单元方块。
+- 场景：`RoyTestScene` 的 2031 个旧 RGB 基础方块已一次性换成颜色预制体，黑色/能源方块保持原样；`Assets/Scenes/Test.unity` 为用户未跟踪场景，未保存或改写。
+- 接口：颜色状态仍由 ColorWorldManager 持有；玩家游泳由 PlayerController 持有；水视觉封装在颜色模块，不让交互图直接改 BlockRuntime 状态。
+- 验证/交接：Unity 6000.3.12f1 导入和 Runtime/Editor C# 编译均通过；Inspector 确认蓝色预制体实例在 `Color_blue` 层且编辑态显示目标材质。Play Mode 通过主菜单→第一关流程。临时 5×3×2 蓝块在解锁并完成褪色恢复后生成 1 个 TA 水视觉实例；玩家进入水区为 `Swimming`、离开后恢复 `Normal`，涟漪更新无异常。临时测试脚本已移除。游泳手感和 Scene 框选/合并仍需在关卡中人工验收。仅本地分支，不推送。
+
 ## 颜色层褪色与交互图基础节点
 
 - 日期：2026-10-04。
@@ -7,7 +47,7 @@
 - 范围：ColorBlocks 的按层配置/调试、交互图基础节点与有限运行时执行；不改用户未提交的测试 Scene、瓦片库或颜色目录资产。
 - 接口：复用现有 ColorWorldManager、HSVColorFadeManager 与 BlockFeatures 契约，不接管玩家状态机或 Timeline 所有权。
 - 验证：`Assembly-CSharp` 与 `Assembly-CSharp-Editor` 静态编译均 0 错误/0 警告；Unity 6000.3.12f1 编辑器脚本重载未见编译异常。未改用户未提交 Scene、瓦片库或颜色目录；交互节点与局部褪色仍需在用户测试关卡 Play Mode 实测。
-- 交接：仅本地分支，不推送；现有目录中的旧自由文字节点保留为不执行的备注，策划需保存 Project 资源后测试新连线。
+- 交接：此条为先前阶段记录；旧自由文字节点已由上方任务移除，策划需保存 Project 资源后测试新连线。
 
 ## 颜色方块与关卡编辑器联动
 
@@ -17,7 +57,7 @@
 - 范围：关卡编辑器 RGB 栏目改为颜色系统的直接预制体；覆盖 Scene 绘制与规划图场景生成，保留能源方块及其他栏目。
 - 场景：不编辑用户当前未提交的测试 Scene；只改栏目资源、必要的编辑器逻辑与说明。
 - 验证：Unity 6000.3.12f1 导入及 Runtime/Editor 脚本编译通过；RGB 栏目引用的 prefab GUID、根物体、`BaseColorTypeId` 与颜色目录 ID 静态核对通过；Git 补丁检查通过。未在用户未保存的测试场景中执行放置或 Play Mode，待本地验收。
-- 交接：仅本地分支，不推送；已有场景旧普通方块不自动转换。
+- 交接：此条为先前阶段记录；`RoyTestScene` 的旧 RGB 方块已由上方任务完成一次性转换，其他普通方块不自动转换。
 
 ## 音频资源协作规范
 

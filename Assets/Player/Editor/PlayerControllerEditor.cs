@@ -43,6 +43,19 @@ namespace Project.Player.Editor
                 "按住冲刺时对移动速度的倍率。"));
             root.Add(movement);
 
+            Foldout swimming = PlayerInspectorFields.CreateFoldout("游泳");
+            swimming.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "swimSpeed",
+                "游泳速度",
+                "水体内水平和竖直移动的最大速度。"));
+            swimming.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "swimAcceleration",
+                "游泳加速度",
+                "进入水体后逼近目标速度的速率。"));
+            root.Add(swimming);
+
             Foldout jump = PlayerInspectorFields.CreateFoldout(
                 "跳跃");
             jump.Add(PlayerInspectorFields.Create(

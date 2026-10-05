@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Project.ColorBlocks
 {
-    /// <summary>Executes only explicitly typed flow nodes. Legacy note nodes remain inert.</summary>
+    /// <summary>Executes only configured trigger, condition and action nodes.</summary>
     public static class ColorInteractionRunner
     {
         private const int MaxNodesPerEvent = 64;
@@ -79,7 +79,7 @@ namespace Project.ColorBlocks
                     actions++;
                     return true;
                 default:
-                    // Notes and event nodes cannot be executed as effects.
+                    // Event nodes cannot be executed as effects.
                     return false;
             }
         }

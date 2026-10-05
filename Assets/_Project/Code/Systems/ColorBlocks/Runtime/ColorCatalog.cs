@@ -6,7 +6,7 @@ namespace Project.ColorBlocks
 {
     public enum ColorGraphNodeKind
     {
-        Note = 0,
+        Invalid = 0,
         PlayerEntered = 10,
         PlayerLeft = 11,
         ColorBlockTouched = 12,
@@ -24,7 +24,6 @@ namespace Project.ColorBlocks
     public sealed class ColorGraphNode
     {
         public string id = Guid.NewGuid().ToString("N");
-        public string title = "新节点";
         public Vector2 position;
         public ColorGraphNodeKind kind;
         public string colorTypeId;
@@ -44,6 +43,7 @@ namespace Project.ColorBlocks
         public string displayName = "新颜色";
         public Color swatch = Color.white;
         [Range(0, 31)] public int unityLayer = -1;
+        [Tooltip("方块编辑识别材质；内置钥匙也用它显示对应颜色。")]
         public Material targetMaterial;
         public string unlockEventId;
         public List<ColorGraphNode> nodes = new List<ColorGraphNode>();
@@ -54,10 +54,12 @@ namespace Project.ColorBlocks
     public sealed class ColorCatalog : ScriptableObject
     {
         [SerializeField] private Material neutralMaterial;
+        [SerializeField] private GameObject blueWaterPrefab;
         [SerializeField] private List<ColorTypeDefinition> colors =
             new List<ColorTypeDefinition>();
 
         public Material NeutralMaterial => neutralMaterial;
+        public GameObject BlueWaterPrefab => blueWaterPrefab;
         public IReadOnlyList<ColorTypeDefinition> Colors => colors;
 
         public ColorTypeDefinition Find(string id)
@@ -69,6 +71,7 @@ namespace Project.ColorBlocks
 #if UNITY_EDITOR
         public List<ColorTypeDefinition> EditableColors => colors;
         public void SetNeutralMaterial(Material material) => neutralMaterial = material;
+        public void SetBlueWaterPrefab(GameObject prefab) => blueWaterPrefab = prefab;
 #endif
     }
 }

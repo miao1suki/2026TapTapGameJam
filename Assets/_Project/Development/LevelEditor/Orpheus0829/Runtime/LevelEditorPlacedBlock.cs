@@ -7,6 +7,7 @@ namespace Project.LevelEditor
     public sealed class LevelEditorPlacedBlock : MonoBehaviour
     {
         [SerializeField] private Vector2Int cell;
+        [SerializeField] private Vector2Int sizeCells = Vector2Int.one;
         [SerializeField] private string entryName;
         [SerializeField] private Color entryColor = Color.white;
         [SerializeField] private bool useEntryColor;
@@ -14,6 +15,10 @@ namespace Project.LevelEditor
         [SerializeField] private bool isProp;
 
         public Vector2Int Cell => cell;
+        public Vector2Int SizeCells => new Vector2Int(Mathf.Max(1, sizeCells.x), Mathf.Max(1, sizeCells.y));
+        public bool ContainsCell(Vector2Int value) =>
+            value.x >= cell.x && value.y >= cell.y &&
+            value.x < cell.x + SizeCells.x && value.y < cell.y + SizeCells.y;
         public string EntryName => entryName;
         public Color EntryColor => entryColor;
         public bool HasColorData => hasColorData;
@@ -32,7 +37,13 @@ namespace Project.LevelEditor
             useEntryColor = valueUseEntryColor;
             hasColorData = true;
             isProp = valueIsProp;
+            sizeCells = Vector2Int.one;
             ApplyEntryColor();
+        }
+
+        public void SetSizeCells(Vector2Int value)
+        {
+            sizeCells = new Vector2Int(Mathf.Max(1, value.x), Mathf.Max(1, value.y));
         }
 
         public void ApplyEntryColor()

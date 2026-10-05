@@ -42,7 +42,7 @@ namespace Project.ColorBlocks.Editor
                 case ColorGraphNodeKind.UnlockColor: return "操作 / 解锁颜色";
                 case ColorGraphNodeKind.FadeColor: return "表现 / 褪去指定颜色";
                 case ColorGraphNodeKind.RestoreColor: return "表现 / 恢复指定颜色";
-                default: return "旧备注 / 不执行";
+                default: return "无效节点";
             }
         }
 
@@ -56,8 +56,6 @@ namespace Project.ColorBlocks.Editor
                     return "检查接触的另一个 ColorBlock；无当前色时用其基础色。";
                 case ColorGraphNodeKind.ColorUnlocked:
                     return "由颜色管理器首次解锁触发，不需场景碰撞。";
-                case ColorGraphNodeKind.Note:
-                    return "旧节点保留供查看；连线不会执行。";
                 default:
                     return string.Empty;
             }
@@ -68,7 +66,6 @@ namespace Project.ColorBlocks.Editor
     {
         internal readonly string NodeId;
         internal readonly ColorGraphNodeKind Kind;
-        internal readonly TextField TitleField;
         internal readonly PopupField<string> ColorField;
         internal readonly Port Input;
         internal readonly Port Output;
@@ -89,9 +86,6 @@ namespace Project.ColorBlocks.Editor
             Output = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(bool));
             Output.portName = "下一步";
             outputContainer.Add(Output);
-            TitleField = new TextField("备注") { value = data.title };
-            TitleField.RegisterValueChangedCallback(_ => changed());
-            extensionContainer.Add(TitleField);
             if (ColorNodeLibrary.UsesColor(data.kind))
             {
                 var choices = colorIds.ToList();
@@ -152,7 +146,8 @@ namespace Project.ColorBlocks.Editor
             {
                 foreach (var data in color.nodes)
                 {
-                    if (data == null || string.IsNullOrEmpty(data.id) || nodeById.ContainsKey(data.id)) continue;
+                    if (data == null || data.kind == ColorGraphNodeKind.Invalid ||
+                        string.IsNullOrEmpty(data.id) || nodeById.ContainsKey(data.id)) continue;
                     var node = new ColorInteractionNode(data, ColorIds(), ScheduleSave);
                     nodeById.Add(data.id, node);
                     AddElement(node);
@@ -174,7 +169,6 @@ namespace Project.ColorBlocks.Editor
             var data = new ColorGraphNode
             {
                 kind = kind,
-                title = string.Empty,
                 colorTypeId = definition.id,
                 position = new Vector2(35 + nodeById.Count * 35, 180 + nodeById.Count * 35)
             };
@@ -207,7 +201,6 @@ namespace Project.ColorBlocks.Editor
                 color.nodes.Add(new ColorGraphNode
                 {
                     id = node.NodeId,
-                    title = node.TitleField.value,
                     kind = node.Kind,
                     colorTypeId = node.ColorField?.value,
                     position = node.GetPosition().position

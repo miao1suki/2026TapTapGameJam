@@ -90,6 +90,12 @@ namespace Project.CameraModes
         bool TryGetCameraState(in CameraControlContext context, out CameraState state);
     }
 
+    /// <summary>Optional lens-size override for a camera source; projection type remains mode-owned.</summary>
+    public interface ICameraLensOverrideSource
+    {
+        bool TryGetLensOverride(out float orthographicSize, out float fieldOfView);
+    }
+
     public readonly struct CameraControlHandle : IEquatable<CameraControlHandle>, IDisposable
     {
         private readonly CameraControlManager manager;

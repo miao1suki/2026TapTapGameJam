@@ -117,7 +117,7 @@ namespace Project.CameraModes
             }
 
             CameraState state = currentState;
-            ApplyViewModeProjection(ref state);
+            ApplyViewModeProjection(ref state, activeRequest?.source);
             currentState = state;
             ApplyStableState(currentState);
         }
@@ -320,7 +320,7 @@ namespace Project.CameraModes
                 return;
             }
 
-            ApplyViewModeProjection(ref targetState);
+            ApplyViewModeProjection(ref targetState, activeRequest.source);
             SanitizeState(ref targetState);
             if (!isTransitioning)
             {
@@ -496,7 +496,7 @@ namespace Project.CameraModes
                 return;
             }
 
-            ApplyViewModeProjection(ref state);
+            ApplyViewModeProjection(ref state, activeRequest.source);
             SanitizeState(ref state);
             currentState = state;
             transitionStartState = state;
@@ -521,18 +521,23 @@ namespace Project.CameraModes
             }
         }
 
-        private void ApplyViewModeProjection(ref CameraState state)
+        private void ApplyViewModeProjection(
+            ref CameraState state, ICameraControlSource source = null)
         {
-            if (viewModeAuthority == null ||
-                !viewModeAuthority.TryGetProjectionState(
+            if (viewModeAuthority != null &&
+                viewModeAuthority.TryGetProjectionState(
                     out CameraState projectionState))
             {
-                return;
+                state.projection = projectionState.projection;
+                state.orthographicSize = projectionState.orthographicSize;
+                state.fieldOfView = projectionState.fieldOfView;
             }
-
-            state.projection = projectionState.projection;
-            state.orthographicSize = projectionState.orthographicSize;
-            state.fieldOfView = projectionState.fieldOfView;
+            if (source is ICameraLensOverrideSource lens &&
+                lens.TryGetLensOverride(out float size, out float fieldOfView))
+            {
+                state.orthographicSize = size;
+                state.fieldOfView = fieldOfView;
+            }
         }
 
         private static CameraState LerpState(CameraState from, CameraState to, float amount)

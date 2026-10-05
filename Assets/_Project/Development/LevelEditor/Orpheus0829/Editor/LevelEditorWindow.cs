@@ -95,6 +95,8 @@ namespace Project.LevelEditor.Editor
         private readonly Button editModeButton;
         private readonly FloatField gridSizeField;
         private readonly Button selectButton;
+        private readonly Button mergeButton;
+        private readonly Label mergeStatus;
         private readonly Button paintButton;
         private readonly Button eraseButton;
         private readonly Button playerToolButton;
@@ -206,6 +208,20 @@ namespace Project.LevelEditor.Editor
             tools.Add(eraseButton);
             tools.Add(playerToolButton);
             body.Add(tools);
+
+            VisualElement mergeRow = Row();
+            mergeButton = ActionButton("合并选中方块", () =>
+            {
+                if (LevelEditorBlockFactory.MergeSelected(out string result))
+                    SceneView.RepaintAll();
+                mergeStatus.text = result;
+            });
+            mergeRow.Add(mergeButton);
+            body.Add(mergeRow);
+            mergeStatus = new Label("选择工具：单击选中，Ctrl 单击增减，拖动框选。 ");
+            mergeStatus.style.whiteSpace = WhiteSpace.Normal;
+            mergeStatus.style.opacity = .7f;
+            body.Add(mergeStatus);
 
             gridSizeField = new FloatField("格子世界尺寸")
             {
@@ -397,6 +413,7 @@ namespace Project.LevelEditor.Editor
             StyleToolButton(
                 playerToolButton,
                 LevelEditorState.Tool == LevelEditorTool.Player);
+            mergeButton.SetEnabled(LevelEditorBlockFactory.SelectedBlockCount >= 2);
             RefreshPalette();
             RefreshProps();
             paletteScaleLabel.text =

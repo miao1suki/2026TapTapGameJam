@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Project.Player
 {
-    public enum PlayerStateId { Normal = 0, Action = 2, Locked = 3 }
+    public enum PlayerStateId { Normal = 0, Swimming = 1, Action = 2, Locked = 3 }
 
     /// <summary>Basic physical motor. No projected platforms, ladders or rope dependencies.</summary>
     [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider), typeof(PlayerActionRunner))]
@@ -15,6 +15,8 @@ namespace Project.Player
         IAchievementSignalProvider
     {
         [SerializeField, Min(0)] private float moveSpeed = 5;
+        [SerializeField, Min(0)] private float swimSpeed = 3.5f;
+        [SerializeField, Min(0)] private float swimAcceleration = 12f;
         [SerializeField, Min(0)] private float moveAcceleration = 20;
         [SerializeField, Min(0)] private float moveDeceleration = 30;
         [SerializeField]
@@ -39,13 +41,16 @@ namespace Project.Player
         private float airborneSince = -1f;
         private bool jumpHeld;
         private int lockDepth;
+        private readonly HashSet<int> waterSources = new HashSet<int>();
         private readonly RaycastHit[] groundHits = new RaycastHit[16];
         private static PhysicsMaterial zeroFrictionMaterial;
         public Rigidbody Motor => motor;
         public bool IsGrounded { get; private set; }
         public bool IsControlLocked => lockDepth > 0;
+        public bool IsSwimming => waterSources.Count > 0;
         public PlayerStateId CurrentStateId => IsControlLocked ? PlayerStateId.Locked :
-            runner != null && runner.IsPlaying ? PlayerStateId.Action : PlayerStateId.Normal;
+            runner != null && runner.IsPlaying ? PlayerStateId.Action :
+            IsSwimming ? PlayerStateId.Swimming : PlayerStateId.Normal;
         public Vector2 MoveInput => movement;
         public bool SprintRequested => sprint;
         public float HorizontalVelocity => motor != null
@@ -62,6 +67,7 @@ namespace Project.Player
         {
             get
             {
+                if (IsSwimming) return "Swimming";
                 if (IsGrounded)
                 {
                     return "Grounded";
@@ -125,6 +131,15 @@ namespace Project.Player
             if (runner != null) { runner.Completed -= Completed; runner.Stop(); }
             lockDepth = 0; movement = Vector2.zero; jumpUntil = -1;
             jumpHeld = false;
+            waterSources.Clear();
+        }
+        public void EnterWater(Component source)
+        {
+            if (source != null) waterSources.Add(source.GetInstanceID());
+        }
+        public void ExitWater(Component source)
+        {
+            if (source != null) waterSources.Remove(source.GetInstanceID());
         }
         public void SetMoveInput(Vector2 value)
         {
@@ -174,6 +189,18 @@ namespace Project.Player
             if (IsGrounded && !wasGrounded) Emit(AchievementSignalIds.PlayerLanded);
             Vector3 velocity = motor.linearVelocity;
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
+            if (IsSwimming)
+            {
+                Vector2 swimInput = movement;
+                if (jumpHeld) swimInput.y = Mathf.Max(swimInput.y, 1f);
+                Vector2 target = blocked ? Vector2.zero : Vector2.ClampMagnitude(swimInput, 1f) * swimSpeed;
+                velocity.x = Mathf.MoveTowards(velocity.x, target.x, swimAcceleration * Time.fixedDeltaTime);
+                velocity.y = Mathf.MoveTowards(velocity.y, target.y, swimAcceleration * Time.fixedDeltaTime);
+                velocity.z = 0f;
+                jumpUntil = -1f;
+                motor.linearVelocity = velocity;
+                return;
+            }
             if (blocked)
             {
                 velocity.x = 0;

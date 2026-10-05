@@ -127,7 +127,8 @@ namespace Project.Player
                 return;
             }
 
-            if (target.CurrentStateId != PlayerStateId.Normal ||
+            if (target.CurrentStateId != PlayerStateId.Normal &&
+                target.CurrentStateId != PlayerStateId.Swimming ||
                 HasActionBinding(InputActionId.Interact) ||
                 !interactionSensor.HasTarget)
             {

@@ -7,7 +7,8 @@ using UnityEngine;
 public class TimelineCamRig :
     MonoBehaviour,
     ICameraControlSource,
-    ICameraViewModeRequester
+    ICameraViewModeRequester,
+    ICameraLensOverrideSource
 {
     [Header("Project Camera")]
     [SerializeField]
@@ -62,6 +63,10 @@ public class TimelineCamRig :
     private bool _hasNormalState;
     private bool _hasShotState;
     private int _activeTracks;
+    private bool _hasLensOverride;
+    private float _shotOrthographicSize;
+    private float _shotFieldOfView;
+    private float _returnDurationOverride = -1f;
 
     public string CameraControlName => "Timeline Camera";
 
@@ -226,15 +231,39 @@ public class TimelineCamRig :
 
         if (_controlHandle.IsValid)
         {
+            float returnDuration = _returnDurationOverride >= 0f
+                ? _returnDurationOverride : returnTransitionDuration;
             CameraTransition transition =
-                restoreProjectCamera && returnTransitionDuration > 0f
-                    ? CameraTransition.Ease(returnTransitionDuration)
+                restoreProjectCamera && returnDuration > 0f
+                    ? CameraTransition.Ease(returnDuration)
                     : CameraTransition.Immediate;
             _controlHandle.Release(transition);
         }
 
         _controlHandle = default;
         _hasNormalState = false;
+        _hasLensOverride = false;
+        _returnDurationOverride = -1f;
+    }
+
+    public void SetReturnDurationForCurrentShot(float seconds)
+    {
+        _returnDurationOverride = Mathf.Max(0f, seconds);
+    }
+
+    public void SetShotLens(float orthographicSize, float fieldOfView)
+    {
+        _shotOrthographicSize = Mathf.Max(.01f, orthographicSize);
+        _shotFieldOfView = Mathf.Clamp(fieldOfView, 1f, 179f);
+        _hasLensOverride = true;
+    }
+
+    public bool TryGetLensOverride(
+        out float orthographicSize, out float fieldOfView)
+    {
+        orthographicSize = _shotOrthographicSize;
+        fieldOfView = _shotFieldOfView;
+        return _hasLensOverride && isPlayingAnim;
     }
 
     public void SetShotTransform(

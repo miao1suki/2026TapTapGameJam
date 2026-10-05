@@ -20,6 +20,16 @@ namespace Project.ColorBlocks.Editor
         internal static void InitializeFromMenu()
         {
             var catalog = EnsureCatalog();
+            if (catalog.BlueWaterPrefab == null)
+            {
+                GameObject waterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/ta_source/InteractiveWater/water.prefab");
+                if (waterPrefab != null)
+                {
+                    catalog.SetBlueWaterPrefab(waterPrefab);
+                    EditorUtility.SetDirty(catalog);
+                }
+            }
             InstallRendererFeatures();
             EnsureStarterPrefabs(catalog);
             AssetDatabase.SaveAssets();
@@ -111,7 +121,8 @@ namespace Project.ColorBlocks.Editor
                         block.name = "ColorBlock_" + color.id;
                         block.layer = color.unityLayer;
                         var renderer = block.GetComponent<Renderer>();
-                        renderer.sharedMaterial = catalog.NeutralMaterial;
+                        renderer.sharedMaterial = color.targetMaterial != null
+                            ? color.targetMaterial : catalog.NeutralMaterial;
                         block.AddComponent<ColorBlock>().EditorConfigure(color.id, renderer);
                         PrefabUtility.SaveAsPrefabAsset(block, blockPath);
                     }
@@ -133,7 +144,7 @@ namespace Project.ColorBlocks.Editor
                     if (clip.asset is CameraTimelineClip cameraClip)
                     {
                         cameraClip.cameraMoveMode = CamMoveMode.SmoothLerp;
-                        cameraClip.cameraTargetLocalPos = new Vector3(0, 2, -4);
+                        cameraClip.cameraTargetLocalPos = new Vector3(0, 3, -9);
                         cameraClip.lockLookAtPlayer = true;
                     }
                 }
@@ -143,7 +154,8 @@ namespace Project.ColorBlocks.Editor
                     pickup.name = "ColorKey_" + color.id;
                     pickup.transform.localScale = Vector3.one * 0.5f;
                     pickup.GetComponent<Collider>().isTrigger = true;
-                    pickup.GetComponent<Renderer>().sharedMaterial = catalog.NeutralMaterial;
+                    pickup.GetComponent<Renderer>().sharedMaterial = color.targetMaterial != null
+                        ? color.targetMaterial : catalog.NeutralMaterial;
                     var director = pickup.AddComponent<PlayableDirector>();
                     director.playOnAwake = false;
                     director.playableAsset = timeline;

@@ -370,6 +370,19 @@ namespace Project.LevelEditor.Editor
             AddManagedColorEntry(palette, "green", "绿方块", new Color(.25f, .8f, .38f));
             AddEntry(palette, "黑方块", new Color(.08f, .08f, .08f), null);
             AddEntry(palette, "白方块", new Color(.95f, .95f, .95f), null);
+            AddDefaultColorKey(palette, "red", "红色钥匙");
+            AddDefaultColorKey(palette, "green", "绿色钥匙");
+            AddDefaultColorKey(palette, "blue", "蓝色钥匙");
+        }
+
+        private static void AddDefaultColorKey(
+            LevelEditorPalette palette, string typeId, string displayName)
+        {
+            string path = "Assets/_Project/Content/ColorBlocks/Prefabs/ColorKey_" +
+                          typeId + ".prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab != null) AddProp(palette, displayName, prefab);
+            else Debug.LogError($"关卡道具栏目缺少颜色钥匙预制体：{path}");
         }
 
         private static void AddManagedColorEntry(
@@ -419,9 +432,17 @@ namespace Project.LevelEditor.Editor
 
             ColorCatalog catalog = AssetDatabase.LoadAssetAtPath<ColorCatalog>(
                 "Assets/_Project/Resources/ColorBlocks/ColorCatalog.asset");
-            if (catalog == null || catalog.Find(entry.ManagedColorTypeId) == null)
+            ColorTypeDefinition definition = catalog != null
+                ? catalog.Find(entry.ManagedColorTypeId) : null;
+            if (definition == null)
             {
                 message = $"颜色目录中没有栏目“{entry.DisplayName}”对应的 {entry.ManagedColorTypeId} 类型。";
+                return false;
+            }
+
+            if (entry.Prefab.layer != definition.unityLayer)
+            {
+                message = $"栏目“{entry.DisplayName}”的预制体层与颜色目录不一致。";
                 return false;
             }
 
@@ -544,13 +565,15 @@ namespace Project.LevelEditor.Editor
 
         internal static LevelEditorPlacedBlock FindAt(Vector2Int cell)
         {
+            UnityEngine.SceneManagement.Scene targetScene = TargetScene();
             LevelEditorPlacedBlock[] blocks =
                 Object.FindObjectsByType<LevelEditorPlacedBlock>(
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
             for (int index = 0; index < blocks.Length; index++)
             {
-                if (blocks[index].Cell == cell)
+                if (blocks[index].gameObject.scene == targetScene &&
+                    blocks[index].ContainsCell(cell))
                 {
                     return blocks[index];
                 }
@@ -585,12 +608,13 @@ namespace Project.LevelEditor.Editor
             }
 
             GameObject instance;
+            UnityEngine.SceneManagement.Scene targetScene = TargetScene();
             GameObject source = entry.UsesPrefabDirectly
                 ? entry.Prefab
                 : entry.SourcePrefab;
             if (source != null)
             {
-                instance = PrefabUtility.InstantiatePrefab(source)
+                instance = PrefabUtility.InstantiatePrefab(source, targetScene)
                     as GameObject;
             }
             else if (entry.UsesPrefabDirectly)
@@ -600,6 +624,8 @@ namespace Project.LevelEditor.Editor
             else
             {
                 instance = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                if (instance.scene != targetScene)
+                    UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(instance, targetScene);
                 instance.transform.localScale =
                     Vector3.one * LevelEditorState.CellSize;
             }
@@ -666,7 +692,7 @@ namespace Project.LevelEditor.Editor
             }
 
             GameObject instance =
-                PrefabUtility.InstantiatePrefab(entry.Prefab)
+                PrefabUtility.InstantiatePrefab(entry.Prefab, TargetScene())
                     as GameObject;
             if (instance == null)
             {
@@ -707,6 +733,127 @@ namespace Project.LevelEditor.Editor
 
             MarkDirty(block.gameObject.scene);
             Undo.DestroyObjectImmediate(block.gameObject);
+            return true;
+        }
+
+        internal static int SelectedBlockCount
+        {
+            get
+            {
+                int count = 0;
+                foreach (GameObject gameObject in Selection.gameObjects)
+                    if (gameObject != null && gameObject.GetComponent<LevelEditorPlacedBlock>() != null)
+                        count++;
+                return count;
+            }
+        }
+
+        internal static bool MergeSelected(out string message)
+        {
+            var blocks = new List<LevelEditorPlacedBlock>();
+            foreach (GameObject selected in Selection.gameObjects)
+            {
+                if (selected == null) continue;
+                LevelEditorPlacedBlock block = selected.GetComponent<LevelEditorPlacedBlock>();
+                if (block != null) blocks.Add(block);
+            }
+            if (blocks.Count < 2)
+            {
+                message = "至少选择两个单元方块。";
+                return false;
+            }
+
+            LevelEditorPlacedBlock first = blocks[0];
+            GameObject prefab = PrefabUtility.GetCorrespondingObjectFromSource(first.gameObject);
+            int minX = int.MaxValue, minY = int.MaxValue;
+            int maxX = int.MinValue, maxY = int.MinValue;
+            var occupied = new HashSet<Vector2Int>();
+            foreach (LevelEditorPlacedBlock block in blocks)
+            {
+                if (block.IsProp || block.SizeCells != Vector2Int.one ||
+                    block.EntryName != first.EntryName ||
+                    block.transform.parent != first.transform.parent ||
+                    block.gameObject.scene != first.gameObject.scene ||
+                    block.transform.childCount != 0 ||
+                    block.GetComponent<SurfaceTileBlock>() != null ||
+                    block.transform.rotation != first.transform.rotation ||
+                    block.transform.localScale != first.transform.localScale ||
+                    !Mathf.Approximately(block.transform.position.z, first.transform.position.z) ||
+                    PrefabUtility.GetCorrespondingObjectFromSource(block.gameObject) != prefab ||
+                    !CanMergeBlock(block) ||
+                    block.GetComponent<MeshRenderer>().sharedMaterial != first.GetComponent<MeshRenderer>().sharedMaterial ||
+                    block.GetComponent<BoxCollider>().center != first.GetComponent<BoxCollider>().center ||
+                    block.GetComponent<BoxCollider>().size != first.GetComponent<BoxCollider>().size ||
+                    Vector2.Distance(block.transform.position, CellToWorld(block.Cell)) > .002f)
+                {
+                    message = "仅能合并同种、同尺寸、同层级且没有附加内容的单元方块。";
+                    return false;
+                }
+                occupied.Add(block.Cell);
+                minX = Mathf.Min(minX, block.Cell.x);
+                minY = Mathf.Min(minY, block.Cell.y);
+                maxX = Mathf.Max(maxX, block.Cell.x);
+                maxY = Mathf.Max(maxY, block.Cell.y);
+            }
+            int width = maxX - minX + 1;
+            int height = maxY - minY + 1;
+            if (occupied.Count != blocks.Count || occupied.Count != width * height)
+            {
+                message = "选区必须是无空格的矩形。";
+                return false;
+            }
+            for (int x = minX; x <= maxX; x++)
+                for (int y = minY; y <= maxY; y++)
+                    if (!occupied.Contains(new Vector2Int(x, y)))
+                    {
+                        message = "选区必须是无空格的矩形。";
+                        return false;
+                    }
+
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("合并方块");
+            GameObject merged = prefab != null
+                ? PrefabUtility.InstantiatePrefab(prefab, first.gameObject.scene) as GameObject
+                : GameObject.CreatePrimitive(PrimitiveType.Cube);
+            if (merged == null)
+            {
+                message = "无法创建合并方块。";
+                return false;
+            }
+            Undo.RegisterCreatedObjectUndo(merged, "合并方块");
+            merged.transform.SetParent(first.transform.parent, true);
+            merged.name = first.gameObject.name;
+            merged.transform.rotation = first.transform.rotation;
+            merged.transform.localScale = Vector3.Scale(first.transform.localScale, new Vector3(width, height, 1f));
+            merged.transform.position = CellToWorld(new Vector2Int(minX, minY)) +
+                new Vector3((width - 1) * LevelEditorState.CellSize * .5f,
+                    (height - 1) * LevelEditorState.CellSize * .5f,
+                    first.transform.position.z - CellToWorld(first.Cell).z);
+            LevelEditorPlacedBlock placed = merged.GetComponent<LevelEditorPlacedBlock>() ??
+                Undo.AddComponent<LevelEditorPlacedBlock>(merged);
+            placed.Configure(new Vector2Int(minX, minY), first.EntryName,
+                first.EntryColor, prefab == null);
+            placed.SetSizeCells(new Vector2Int(width, height));
+            if (prefab == null)
+                merged.GetComponent<MeshRenderer>().sharedMaterial = first.GetComponent<MeshRenderer>().sharedMaterial;
+            foreach (LevelEditorPlacedBlock block in blocks)
+                Undo.DestroyObjectImmediate(block.gameObject);
+            Selection.activeGameObject = merged;
+            MarkDirty(merged.scene);
+            Undo.CollapseUndoOperations(undoGroup);
+            message = $"已合并为 {width} × {height} 方块。";
+            return true;
+        }
+
+        private static bool CanMergeBlock(LevelEditorPlacedBlock block)
+        {
+            if (block.GetComponent<MeshRenderer>() == null ||
+                block.GetComponent<BoxCollider>() == null ||
+                block.GetComponent<MeshFilter>() == null) return false;
+            foreach (MonoBehaviour behaviour in block.GetComponents<MonoBehaviour>())
+                if (behaviour != null &&
+                    !(behaviour is LevelEditorPlacedBlock) &&
+                    !(behaviour is ColorBlock)) return false;
             return true;
         }
 
@@ -837,15 +984,22 @@ namespace Project.LevelEditor.Editor
 
         private static GameObject GetOrCreateRoot()
         {
-            GameObject root = GameObject.Find(RootName);
-            if (root != null)
+            UnityEngine.SceneManagement.Scene targetScene = TargetScene();
+            foreach (GameObject root in targetScene.GetRootGameObjects())
             {
-                return root;
+                if (root.name == RootName) return root;
             }
 
-            root = new GameObject(RootName);
-            Undo.RegisterCreatedObjectUndo(root, "创建关卡编辑内容根节点");
-            return root;
+            GameObject created = new GameObject(RootName);
+            if (created.scene != targetScene)
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(created, targetScene);
+            Undo.RegisterCreatedObjectUndo(created, "创建关卡编辑内容根节点");
+            return created;
+        }
+
+        private static UnityEngine.SceneManagement.Scene TargetScene()
+        {
+            return UnityEngine.SceneManagement.SceneManager.GetActiveScene();
         }
 
         private static void MarkDirty(UnityEngine.SceneManagement.Scene scene)

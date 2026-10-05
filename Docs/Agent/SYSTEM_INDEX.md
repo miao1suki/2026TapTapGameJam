@@ -12,8 +12,8 @@
 | Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本 |
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
 | 方块功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 全覆盖交互契约；动力组件含开关/信号源与单次/持续/脉冲调试，完整动力网络待施工 |
-| 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；融合世界图/详情/装配图、方块与空道具栏目、组件模板、贴画、场景生成和本地存档；RGB 栏目直连 ColorBlock 预制体 |
-| 可变色方块/颜色工作台/HSV褪色 | `Assets/_Project/Code/Systems/ColorBlocks` | RGB 类型、钥匙/Timeline、按层褪色调试、交互图基础触发/条件/操作节点；九种具体交互及混色执行待设计 |
+| 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；世界图/详情/装配图、方块/道具栏目、矩形多选与单块合并、组件模板、贴画、场景生成和本地存档；RGB 栏目直连 ColorBlock 预制体 |
+| 可变色方块/颜色工作台/HSV褪色 | `Assets/_Project/Code/Systems/ColorBlocks` | RGB 类型、钥匙拉远／恢复／返回演出、按层褪色调试、蓝水同步渐显与玩家游泳、交互图基础节点；九种完整交互及混色执行待设计 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。
 开发者：[运行与场景](../Developer/GAME_FLOW.md)、[贴画与切片](../Developer/SURFACE_TILES.md)、[旧成就与Timeline](../Developer/LEGACY_SYSTEMS.md)。

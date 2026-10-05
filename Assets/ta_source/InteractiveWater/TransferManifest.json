@@ -1,0 +1,151 @@
+{
+  "installRoot": "Assets/ta_source/InteractiveWater",
+  "unityVersion": "6000.3.12f1",
+  "urpVersion": "17.3.0",
+  "assets": [
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Materials/Sprites/SpriteLit.mat",
+      "guid": "817f859300dca0449a1da39771a1da40",
+      "size": 1596,
+      "sha256": "fff07bf65a2f523da0be91ad9ae1b71881b0d7c23d6820c64c47c7214ce33d51"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Materials/Water/CRT_AmbientWave.mat",
+      "guid": "bfc6803532fd84c439dc33d6beac8259",
+      "size": 1118,
+      "sha256": "bcd4f9b566843427ccbe752f36dae3f053eda287b0073f629e0f6df6eb184b55"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Materials/Water/CRT_RippleSimulation.mat",
+      "guid": "8b28910faee7f884c82d4234872122cc",
+      "size": 853,
+      "sha256": "921c41636fe3943ca9981f6771e6739b3dcb28871db1129be99a17d059e8c089"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Materials/Water/FrontMesh.mat",
+      "guid": "ef07008fd91c59c4aa4bfed529eb2287",
+      "size": 2678,
+      "sha256": "e8929ac5363829820ccd1664d6b3a21e4b353053a69406357da8f5f07dc3dc09"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Materials/Water/TopMesh.mat",
+      "guid": "9d6920e6abb01014b8334006b90ff58c",
+      "size": 2427,
+      "sha256": "9704185ad941f2488601507d222eb69a894f3cf538adcb53b306fc0473f0718d"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/RenderTextures/AmbientWave.asset",
+      "guid": "7cf2c93f4b60e3f46b95bb4272c5d4cc",
+      "size": 1294,
+      "sha256": "0beba3dc45c973ee3ebf5bbb4cd5a507b52acfc1cee2c07131279974867615e1"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/RenderTextures/PlanarReflection.renderTexture",
+      "guid": "65f0527390c4ecb4bac8e065a1067980",
+      "size": 861,
+      "sha256": "51163c9e1ac991d00c64135b0520c0857a3f4310356f84532f9aeed8b98037b1"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/RenderTextures/RippleSimulation.asset",
+      "guid": "c9a0f3f161c83994db276e5a12d3abf3",
+      "size": 1299,
+      "sha256": "30d82702d83b5797c11453149be63938c04ca48624b6cf70a225cf9cdaa52394"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Shaders/Sprites/SpriteLit.shadergraph",
+      "guid": "43f0e344f2ce9c747be78cbf7236de7d",
+      "size": 20428,
+      "sha256": "82247e3eaba25a5bbe4ec7aa5f17ec21ea25d9b7ae60799334a27b77baeecdf9"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Shaders/Water/CRT_AmbientWave.shadergraph",
+      "guid": "c96fa63472dda314995065c13c696e22",
+      "size": 78230,
+      "sha256": "a726d366f271b06bf61d3ab8e6d6d96f977ed07c4e91650b22572ecc7cf6cd58"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Shaders/Water/CRT_RippleSimulation.shader",
+      "guid": "94b8a8663295d4e48b3f62b6f4016e39",
+      "size": 2114,
+      "sha256": "ae66f535777154c0aaa9e8a4e8b90562ca83f0bc982458e8ded07f6960a7f4e9"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Shaders/Water/FrontMesh.shadergraph",
+      "guid": "4caca789546e02c4f9ac15be0f1528dd",
+      "size": 286915,
+      "sha256": "5dab77c87bfb933b151c263612e8de91812d7670bc8c6febd5181de04c75bd98"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/ArtAssets/Shaders/Water/TopMesh.shadergraph",
+      "guid": "ddcce30c7361e9b42bd42497274a6b94",
+      "size": 151351,
+      "sha256": "10e4a2c5a8357c425d09c829507ecff99418965be78f60ab26a29de3e1061b89"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/Scripts/InteractiveWater.cs",
+      "guid": "dde1bbc85e8487e49b7594ab5e4862a7",
+      "size": 15591,
+      "sha256": "20bd4c0c1a7a56b00ba5ecc57d82f8e5d6ccb78fbebf922586bf830fdc60238a"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/Scripts/SimplePlanarReflection.cs",
+      "guid": "d33ef2cc7e5b8b64e945ee562a082aaa",
+      "size": 5061,
+      "sha256": "75e1d35bb85cffacbe5258968ccafa8b89872d2a0dff7462d7f0b124b0d2191c"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/Scripts/Utils/CreateInspectorButtonAttribute.cs",
+      "guid": "f7a9a852314092a4ca80d30f57a79ba7",
+      "size": 500,
+      "sha256": "2c518074aebbc51381f55c0f2c22de566114458d0e1159752cefb701021a0edd"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/Scripts/Utils/Editor/CreateInspectorButtonEditor.cs",
+      "guid": "4e7d87613c28d444fb03c8159f46a63e",
+      "size": 1014,
+      "sha256": "bbeb7af09893e70f36285b3845b7207617f9de9d740b67e9eca08ba4f0188a36"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/Scripts/Utils/Editor/SortingLayerDropdownDrawer.cs",
+      "guid": "928ca0020ebc4374c8e82628d9c7866b",
+      "size": 1404,
+      "sha256": "76e5af469896429e976aa70c2c17955043760f2481ee56bc5c363a8c8a0ff8bc"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/Scripts/Utils/SortingLayerDropdownAttribute.cs",
+      "guid": "cfdb527c61199c74396cae3669ba7269",
+      "size": 130,
+      "sha256": "f12a3e025dff2b36c31e0fa81cd387c9b440e37970e396ef2546cf919b9c7beb"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/InteractiveWater.prefab",
+      "guid": "78b64f40e46aa5840960a94f8c65c008",
+      "size": 15499,
+      "sha256": "f5281a621bdc87a5428e37a179a22d0e58c7e2f95a976059ecf2911d6e659afd"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/Meshes/InteractiveWaterFrontPreview.asset",
+      "guid": "de8b8480b4d14124b05cc75a56590bb7",
+      "size": 36830,
+      "sha256": "1ff880cffad441889b23c2367690160ef2582a377025b7b1699bbef62f1220ff"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/Meshes/InteractiveWaterTopPreview.asset",
+      "guid": "54a5ffd078854dbbae451b8b5959ff79",
+      "size": 5025534,
+      "sha256": "d6f920ce612bd1e54ee534b8160449f73392dfa55c2aa75705a93a836a264289"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/Renderer2D.asset",
+      "guid": "424799608f7334c24bf367e4bbfa7f9a",
+      "size": 2318,
+      "sha256": "65212ed2bc469ff1ea67f2a24cafda57b938b4c15cecc2dd8249fbae552a471c"
+    },
+    {
+      "path": "Assets/ta_source/InteractiveWater/README_Import.md",
+      "guid": "437b109b7b115bc888df9166a3de133e",
+      "size": 1849,
+      "sha256": "8a08b8fd13d0982f02bd5bc056d75bf439a3162697403920e1646e798cf3bc66"
+    }
+  ]
+}

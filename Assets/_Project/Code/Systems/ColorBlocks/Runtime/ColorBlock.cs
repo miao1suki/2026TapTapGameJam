@@ -12,24 +12,37 @@ namespace Project.ColorBlocks
         private string baseColorTypeId = "red";
         [SerializeField] private Renderer targetRenderer;
         private string currentColorTypeId;
-        private Material originalMaterial;
         private readonly HashSet<Collider> contacts = new HashSet<Collider>();
 
         public string BaseColorTypeId => baseColorTypeId;
         public string CurrentColorTypeId => currentColorTypeId;
         public bool HasColor => !string.IsNullOrEmpty(currentColorTypeId);
+        public bool IsActiveWater => currentColorTypeId == "blue";
 
         private void Awake()
         {
             if (targetRenderer == null) targetRenderer = GetComponentInChildren<Renderer>();
-            if (targetRenderer != null) originalMaterial = targetRenderer.sharedMaterial;
+            if (!Application.isPlaying) return;
+            ApplyRuntimeVisual();
             var definition = ColorWorldManager.Instance.Catalog?.Find(baseColorTypeId);
             if (definition != null) ApplyLayer(definition.unityLayer);
         }
 
-        private void OnEnable() => ColorWorldManager.Instance.Register(this);
+        private void OnEnable()
+        {
+            if (Application.isPlaying) ColorWorldManager.Instance.Register(this);
+#if UNITY_EDITOR
+            else ApplyEditorPreviewMaterial();
+#endif
+        }
         private void OnDisable()
         {
+            if (!Application.isPlaying) return;
+            foreach (Collider contact in contacts)
+            {
+                PlayerController player = contact != null ? contact.GetComponentInParent<PlayerController>() : null;
+                if (player != null) player.ExitWater(this);
+            }
             contacts.Clear();
             if (ColorWorldManager.Existing != null) ColorWorldManager.Existing.Unregister(this);
         }
@@ -46,7 +59,10 @@ namespace Project.ColorBlocks
             if (owner == null) return;
             var player = other.GetComponentInParent<PlayerController>();
             if (player != null)
+            {
+                if (IsActiveWater) player.EnterWater(this);
                 ColorInteractionRunner.Run(owner, ColorGraphNodeKind.PlayerEntered, this, player.gameObject);
+            }
             else
             {
                 var block = other.GetComponentInParent<ColorBlock>();
@@ -60,6 +76,7 @@ namespace Project.ColorBlocks
             if (other == null || !contacts.Remove(other)) return;
             var player = other.GetComponentInParent<PlayerController>();
             if (player == null) return;
+            player.ExitWater(this);
             var owner = ColorWorldManager.Instance.Catalog?.Find(baseColorTypeId);
             if (owner != null)
                 ColorInteractionRunner.Run(owner, ColorGraphNodeKind.PlayerLeft, this, player.gameObject);
@@ -75,7 +92,8 @@ namespace Project.ColorBlocks
             if (currentColorTypeId == typeId) return false;
             string previous = currentColorTypeId;
             currentColorTypeId = typeId;
-            ApplyMaterial();
+            UpdateWaterContacts(previous);
+            ApplyState();
             ColorWorldManager.Instance.NotifyBlockChanged(this, previous, typeId);
             return true;
         }
@@ -84,22 +102,34 @@ namespace Project.ColorBlocks
         {
             string previous = currentColorTypeId;
             currentColorTypeId = null;
-            ApplyMaterial();
+            UpdateWaterContacts(previous);
+            ApplyState();
             if (!string.IsNullOrEmpty(previous))
                 ColorWorldManager.Instance.NotifyBlockChanged(this, previous, null);
         }
 
-        private void ApplyMaterial()
+        private void ApplyState()
         {
-            if (targetRenderer == null) return;
             var catalog = ColorWorldManager.Instance.Catalog;
             var definition = catalog != null ? catalog.Find(currentColorTypeId) : null;
             var activeLayer = definition ?? (catalog != null ? catalog.Find(baseColorTypeId) : null);
             if (activeLayer != null && activeLayer.unityLayer >= 0 && activeLayer.unityLayer < 32)
                 ApplyLayer(activeLayer.unityLayer);
-            var material = definition != null ? definition.targetMaterial : catalog != null ? catalog.NeutralMaterial : null;
-            if (material == null) material = originalMaterial;
-            if (material != null) targetRenderer.sharedMaterial = material;
+            if (Application.isPlaying) ApplyRuntimeVisual();
+            BoxCollider volume = GetComponent<BoxCollider>();
+            if (volume != null) volume.isTrigger = IsActiveWater;
+        }
+
+        private void UpdateWaterContacts(string previous)
+        {
+            if ((previous == "blue") == IsActiveWater) return;
+            foreach (Collider contact in contacts)
+            {
+                PlayerController player = contact != null ? contact.GetComponentInParent<PlayerController>() : null;
+                if (player == null) continue;
+                if (IsActiveWater) player.EnterWater(this);
+                else player.ExitWater(this);
+            }
         }
 
         private void ApplyLayer(int layer)
@@ -107,6 +137,17 @@ namespace Project.ColorBlocks
             if (layer < 0 || layer > 31) return;
             foreach (var renderer in GetComponentsInChildren<Renderer>(true))
                 renderer.gameObject.layer = layer;
+        }
+
+        private void ApplyRuntimeVisual()
+        {
+            if (targetRenderer == null) return;
+            // The neutral material is the visible, locked-state placeholder.
+            // Once colored, dedicated runtime art/effects replace this mesh.
+            Material neutral = ColorWorldManager.Instance.Catalog?.NeutralMaterial;
+            if (!HasColor && neutral != null)
+                targetRenderer.sharedMaterial = neutral;
+            targetRenderer.enabled = !HasColor && neutral != null;
         }
 
         public bool CanInteract(GameObject interactor) =>
@@ -117,6 +158,18 @@ namespace Project.ColorBlocks
         public bool TryInteract(GameObject interactor) => false;
 
 #if UNITY_EDITOR
+        private void ApplyEditorPreviewMaterial()
+        {
+            if (targetRenderer == null) targetRenderer = GetComponentInChildren<Renderer>();
+            ColorCatalog editorCatalog = Resources.Load<ColorCatalog>("ColorBlocks/ColorCatalog");
+            ColorTypeDefinition definition = editorCatalog != null
+                ? editorCatalog.Find(baseColorTypeId) : null;
+            if (targetRenderer == null) return;
+            targetRenderer.enabled = true;
+            if (definition != null && definition.targetMaterial != null)
+                targetRenderer.sharedMaterial = definition.targetMaterial;
+        }
+
         public void EditorConfigure(string typeId, Renderer renderer)
         {
             baseColorTypeId = typeId;

@@ -184,7 +184,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  cameraTargetLocalPos: {x: 0, y: 2, z: -4}
+  cameraTargetLocalPos: {x: 0, y: 3, z: -9}
   cameraTargetEuler: {x: 0, y: 0, z: 0}
   lockLookAtPlayer: 1
   modeRequest: 0

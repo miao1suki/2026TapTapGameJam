@@ -39,6 +39,33 @@ namespace Project.CameraModes.Tests
             }
         }
 
+        private sealed class LensSource : ICameraControlSource, ICameraLensOverrideSource
+        {
+            public string CameraControlName => "Lens Shot";
+
+            public bool TryGetCameraState(
+                in CameraControlContext context, out CameraState state)
+            {
+                state = new CameraState
+                {
+                    position = new Vector3(0f, 2f, -9f),
+                    rotation = Quaternion.identity,
+                    projection = CameraProjectionMode.Perspective,
+                    orthographicSize = 2f,
+                    fieldOfView = 50f,
+                };
+                return true;
+            }
+
+            public bool TryGetLensOverride(
+                out float orthographicSize, out float fieldOfView)
+            {
+                orthographicSize = 8f;
+                fieldOfView = 50f;
+                return true;
+            }
+        }
+
         private GameObject cameraObject;
         private Camera cameraComponent;
         private CameraControlManager manager;
@@ -194,6 +221,26 @@ namespace Project.CameraModes.Tests
             manager.Tick(0f);
 
             Assert.That(cameraComponent.orthographic, Is.True);
+        }
+
+        [Test]
+        public void LensShot_OverridesSizeButNotViewMode()
+        {
+            CameraModeController modeController =
+                cameraObject.AddComponent<CameraModeController>();
+            modeController.Configure(cameraComponent, null, true);
+            modeController.SnapToMode(CameraViewMode.Side2D, false);
+            manager.ConfigureOutput(cameraComponent);
+
+            CameraControlHandle handle = manager.RequestControl(
+                new LensSource(), CameraControlPriorities.Cutscene,
+                CameraInterruptionPolicy.AllowHigherPriority,
+                CameraTransition.Immediate);
+            manager.Tick(0f);
+
+            Assert.That(cameraComponent.orthographic, Is.True);
+            Assert.That(cameraComponent.orthographicSize, Is.EqualTo(8f).Within(.001f));
+            handle.Release(CameraTransition.Immediate);
         }
 
         private static void AssertMatricesEqual(Matrix4x4 expected, Matrix4x4 actual, float tolerance)

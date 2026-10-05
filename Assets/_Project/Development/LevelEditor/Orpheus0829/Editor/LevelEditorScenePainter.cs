@@ -13,6 +13,9 @@ namespace Project.LevelEditor.Editor
         private static bool strokeActive;
         private static Vector2Int strokeStart;
         private static Vector2Int strokeEnd;
+        private static bool selectionStroke;
+        private static bool selectionAdditive;
+        private static bool selectionDragged;
 
         static LevelEditorScenePainter()
         {
@@ -26,6 +29,8 @@ namespace Project.LevelEditor.Editor
                 !LevelEditorState.EditMode)
             {
                 lastCell = new Vector2Int(int.MinValue, int.MinValue);
+                selectionStroke = false;
+                strokeActive = false;
                 return;
             }
 
@@ -40,6 +45,7 @@ namespace Project.LevelEditor.Editor
             if (evt.type == EventType.KeyDown && evt.keyCode == KeyCode.Escape)
             {
                 strokeActive = false;
+                selectionStroke = false;
                 LevelEditorState.Tool = LevelEditorTool.Select;
                 evt.Use();
                 SceneView.RepaintAll();
@@ -49,6 +55,7 @@ namespace Project.LevelEditor.Editor
             if (LevelEditorState.Tool == LevelEditorTool.Player)
             {
                 strokeActive = false;
+                selectionStroke = false;
                 lastCell = new Vector2Int(int.MinValue, int.MinValue);
                 LevelEditorPlayerService.EnforceEditPlane();
                 return;
@@ -62,7 +69,13 @@ namespace Project.LevelEditor.Editor
 
             if (evt.type == EventType.MouseUp && evt.button == 0)
             {
-                if (strokeActive)
+                if (selectionStroke)
+                {
+                    if (selectionDragged) SelectArea(strokeStart, strokeEnd, selectionAdditive);
+                    else SelectAt(strokeStart, selectionAdditive);
+                    selectionStroke = false;
+                }
+                else if (strokeActive)
                 {
                     CompleteStroke();
                     strokeActive = false;
@@ -81,8 +94,20 @@ namespace Project.LevelEditor.Editor
             }
 
             DrawHover(cell);
+            if (selectionStroke && selectionDragged) DrawSelectionArea(strokeStart, strokeEnd);
             if (evt.alt || evt.button != 0)
             {
+                return;
+            }
+
+            if (evt.type == EventType.MouseDown &&
+                LevelEditorState.Tool == LevelEditorTool.Select)
+            {
+                selectionStroke = true;
+                selectionAdditive = evt.control || evt.command;
+                selectionDragged = false;
+                strokeStart = strokeEnd = cell;
+                evt.Use();
                 return;
             }
 
@@ -93,6 +118,15 @@ namespace Project.LevelEditor.Editor
                 strokeStart = cell;
                 strokeEnd = cell;
                 lastCell = cell;
+                evt.Use();
+                SceneView.RepaintAll();
+                return;
+            }
+
+            if (evt.type == EventType.MouseDrag && selectionStroke)
+            {
+                selectionDragged |= strokeEnd != cell;
+                strokeEnd = cell;
                 evt.Use();
                 SceneView.RepaintAll();
                 return;
@@ -111,13 +145,6 @@ namespace Project.LevelEditor.Editor
                 cell == lastCell)
             {
                 return;
-            }
-
-            switch (LevelEditorState.Tool)
-            {
-                case LevelEditorTool.Select:
-                    SelectAt(cell);
-                    break;
             }
 
             lastCell = cell;
@@ -200,12 +227,48 @@ namespace Project.LevelEditor.Editor
             }
         }
 
-        private static void SelectAt(Vector2Int cell)
+        private static void SelectAt(Vector2Int cell, bool additive)
         {
             LevelEditorPlacedBlock block =
                 LevelEditorBlockFactory.FindAt(cell);
-            Selection.activeGameObject =
-                block != null ? block.gameObject : null;
+            if (!additive)
+            {
+                Selection.activeGameObject = block != null ? block.gameObject : null;
+                return;
+            }
+            var selected = new HashSet<Object>(Selection.objects);
+            if (block != null)
+            {
+                if (!selected.Add(block.gameObject)) selected.Remove(block.gameObject);
+            }
+            Selection.objects = new List<Object>(selected).ToArray();
+        }
+
+        private static void SelectArea(Vector2Int start, Vector2Int end, bool additive)
+        {
+            var selected = additive
+                ? new HashSet<Object>(Selection.objects)
+                : new HashSet<Object>();
+            foreach (Vector2Int cell in BuildAreaCells(start, end))
+            {
+                LevelEditorPlacedBlock block = LevelEditorBlockFactory.FindAt(cell);
+                if (block != null) selected.Add(block.gameObject);
+            }
+            Selection.objects = new List<Object>(selected).ToArray();
+        }
+
+        private static void DrawSelectionArea(Vector2Int start, Vector2Int end)
+        {
+            float size = Mathf.Max(.05f, LevelEditorState.CellSize);
+            float left = Mathf.Min(start.x, end.x) * size;
+            float right = (Mathf.Max(start.x, end.x) + 1) * size;
+            float bottom = Mathf.Min(start.y, end.y) * size;
+            float top = (Mathf.Max(start.y, end.y) + 1) * size;
+            var corners = new[] {
+                new Vector3(left, bottom, 0f), new Vector3(right, bottom, 0f),
+                new Vector3(right, top, 0f), new Vector3(left, top, 0f) };
+            Handles.DrawSolidRectangleWithOutline(corners,
+                new Color(.18f, .62f, 1f, .15f), new Color(.28f, .75f, 1f, .9f));
         }
 
         private static void PaintAt(Vector2Int cell)
