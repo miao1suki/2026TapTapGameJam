@@ -1,10 +1,10 @@
 # 工作状态与交接（每次任务重读）
 
-## 当前功能与协作分支整合（进行中）
+## 当前功能与协作分支整合
 
 - 日期：2026-10-05；负责人：Codex；目标：整合本地已验收的颜色／关卡编辑进度、`Test` 场景、TA 水效果分支和音频分支至 `main` 并推送。
 - 边界：保留当前窗口项目状态；未引用的 `ColorPickup_blue 1.playable` 副本和与本次功能无关的 `SampleScene` 删除不纳入提交。音频首次导入须补齐 Unity `.meta`，不代替音频成员做玩法接线。
-- 验证／交接：待合并后补充。
+- 验证／交接：TA 分支 `adce5df` 和音频分支至 `b22df5b` 的历史均合入当前分支；TA 同文件冲突保留已在 Test Play Mode 验证的水体共享模拟／渐显适配。音频共 14 首 Music、16 个 SFX，Unity 已生成全部 `.meta`，项目内 GUID 无重复；Console 导入后 0 警告／0 错误。Runtime、Editor 程序集重新编译均 0 警告／0 错误；尚未逐条试听、接线或验证最终包体。此条记录随本次合并推送 `main`，较下方旧任务条目的“不推送”状态更新。
 
 ## Test 开场与颜色初始外观修正
 
@@ -178,3 +178,13 @@
 - 接口：每个水面持有自己的波纹/反射纹理与材质；水下捕获由 Universal Renderer 的独立 pass 提供。
 - 状态：代码和 URP Renderer Feature 已写入；默认捕获除 Water/UI 外的可见物体。编译、运行与视觉效果仍待 Unity 验证。
 - 交接：水面资源及其接入配置随 `codex/ta/water-platform-demo` 分支提交推送。
+
+## 开场主题音乐导入
+
+- 日期：2026-10-04。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：音频分支最初导入开场主题曲，后续提交统一重命名并替换为 `bgm_wn_opening_01.wav`，同时增加 BGM 与 SFX；最终资源清单见 `Docs/Agent/Integration/AUDIO_HANDOVER.md`。
+- 接口变更：无（仅音频资源导入）。
+- 验证：音频分支已提交资源与交接文档；首次导入与 `.meta` 由整合者复验。
+- 交接提交：`94db2c9` 起，最终资源提交 `b22df5b`。
