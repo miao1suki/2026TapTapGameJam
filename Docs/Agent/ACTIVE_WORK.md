@@ -143,3 +143,38 @@
 - 后续调整：房间/通道详情聚焦改为寻找方块最密集区域，并按内容包围盒自动计算可见缩放。
 - 验证：使用比赛项目 `6000.3.12` 的编译响应文件通过 Runtime 与主 Editor 静态编译；受影响 asmdef 中除既有相机编辑器缓存引用外均通过。
 - 交接提交：待提交。
+
+## Interactive Water 迁移包
+
+- 日期：2026-10-04。
+- 负责人：Codex。
+- 分支：codex/ta/water-platform-demo。
+- 范围：仅导入 Assets/ta_source/InteractiveWater，包含独立预制体、脚本、材质、Shader Graph、网格、渲染纹理和 Renderer2D 配置；不修改现有场景、ProjectSettings 或 URP Pipeline Asset。
+- 接口变更：新增 InteractiveWater 水面资源；需要在目标项目配置 WaterTopMesh/WaterFrontMesh Sorting Layers，并将 Renderer2D 加入 URP Renderer List、指定给水面相机。
+- 验证：迁移包静态检查包含 50 个文件且无目标文件冲突；Unity 导入及运行待验证。
+- 交接：水面资源及其接入配置随 `codex/ta/water-platform-demo` 分支提交推送；Unity 导入与运行待复验。
+
+
+## Interactive Water 横截面透明修复
+
+- 日期：2026-10-04。
+- 负责人：Codex。
+- 分支：codex/ta/water-platform-demo。
+- 范围：修复迁移后水面横截面的渲染配置；编辑 ProjectSettings/TagManager.asset、PC/Mobile URP Renderer 列表以及水面导入说明。
+- 场景：暂不编辑场景，等待确认正在使用的相机。
+- 接口：补充 WaterTopMesh/WaterFrontMesh Sorting Layers，并注册迁移包的 Renderer2D；保留现有默认 Universal Renderer。
+- 状态：已完成资源与渲染配置的静态修复；Unity 导入、场景视觉效果和运行仍待确认。
+
+- 补充范围：Level_01 使用常驻 Universal Renderer 主相机；调整导入水面的 FrontMesh Shader Graph 与材质，并为 Mobile RPAsset 启用 Opaque Texture，以在现有主相机下实现半透明横截面。
+
+
+## Interactive Water 多实例与水下重着色
+
+- 日期：2026-10-04。
+- 负责人：Codex。
+- 分支：codex/ta/water-platform-demo。
+- 范围：仅调整 Assets/ta_source/InteractiveWater 的运行时资源隔离、水下画面捕获和关联 URP Renderer Feature；不覆盖 Level_01 场景中现有改动。
+- 场景：Level_01 由用户编辑，本任务不写该场景。
+- 接口：每个水面持有自己的波纹/反射纹理与材质；水下捕获由 Universal Renderer 的独立 pass 提供。
+- 状态：代码和 URP Renderer Feature 已写入；默认捕获除 Water/UI 外的可见物体。编译、运行与视觉效果仍待 Unity 验证。
+- 交接：水面资源及其接入配置随 `codex/ta/water-platform-demo` 分支提交推送。

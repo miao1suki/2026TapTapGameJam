@@ -14,6 +14,7 @@
 | 方块功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 全覆盖交互契约；动力组件含开关/信号源与单次/持续/脉冲调试，完整动力网络待施工 |
 | 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；世界图/详情/装配图、方块/道具栏目、矩形多选与单块合并、组件模板、贴画、场景生成和本地存档；RGB 栏目直连 ColorBlock 预制体 |
 | 可变色方块/颜色工作台/HSV褪色 | `Assets/_Project/Code/Systems/ColorBlocks` | RGB 类型、钥匙拉远／恢复／返回演出、按层褪色调试、蓝水同步渐显与玩家游泳、交互图基础节点；九种完整交互及混色执行待设计 |
+| 交互水面 | `Assets/ta_source/InteractiveWater` | TA 独立预制体保留独立波纹/反射；颜色管理器生成的蓝水实例使用共享低分辨率模拟和渐显，已在 Test Play Mode 验证 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。
 开发者：[运行与场景](../Developer/GAME_FLOW.md)、[贴画与切片](../Developer/SURFACE_TILES.md)、[旧成就与Timeline](../Developer/LEGACY_SYSTEMS.md)。
