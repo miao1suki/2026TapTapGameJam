@@ -1,0 +1,161 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8116633e80ce44feadecbe10cdddeaa9, type: 3}
+  m_Name: "\u7EFF\u8272\u94A5\u5319"
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.InteractionObjectDefinition
+  objectId: 3704c06645d34faca8db705ea759748b
+  displayName: "\u7EFF\u8272\u94A5\u5319"
+  prefab: {fileID: 491305582336558569, guid: 6c8401f9adab9d841ba785f52b4f9623, type: 3}
+  baseColorTypeId: green
+  nodes:
+  - id: 3dff5888f30d4ba59809003084add042
+    position: {x: 40, y: 60}
+    kind: 10
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 1f2a5335e5c14d76b9affd4f5a73d553
+    position: {x: 300, y: 60}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: e7eaa0c02e6046da84908c00258e9e1c
+    position: {x: 560, y: 60}
+    kind: 34
+    value: OnInteractionPlayerEntered
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 72dc57c698184397bea48ae9537c8546
+    position: {x: 40, y: 280}
+    kind: 11
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 03c70507c58449ec98379b7d81752403
+    position: {x: 300, y: 280}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: c39ece2f1dae49d090df7130e330b846
+    position: {x: 560, y: 280}
+    kind: 34
+    value: OnInteractionPlayerLeft
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 92cbc6a0aa834156be7d26ab81d03486
+    position: {x: 420, y: 60}
+    kind: 12
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 092c9715246a4f6f9baddec78f4ff327
+    position: {x: 680, y: 60}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: fdacef3f0e584a7cadff1b033fb5dc55
+    position: {x: 940, y: 60}
+    kind: 34
+    value: OnInteractionObjectTouched
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 6509df165b81418197ec07f5f0bb3fbe
+    position: {x: 420, y: 280}
+    kind: 13
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: e3a6b1b6c77f42c093ca629264a79c4d
+    position: {x: 680, y: 280}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 8ed21abc9b084888bc37803d7b5babca
+    position: {x: 940, y: 280}
+    kind: 34
+    value: OnInteractionObjectStay
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 5ab59f29756347dfb1566a1cf3f410da
+    position: {x: 800, y: 280}
+    kind: 13
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: f1b93938219b4d3589a7e6180989872c
+    position: {x: 1060, y: 280}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 59fc0a0624354621802f73c3238e1b65
+    position: {x: 1320, y: 280}
+    kind: 34
+    value: OnInteractionPlayerStay
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: af506dac60db48bd8eabc7501c9e3c88
+    position: {x: 800, y: 60}
+    kind: 15
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: e9e0a8b1c0284ce79f4544350c22b630
+    position: {x: 1080, y: 60}
+    kind: 32
+    value: green
+    number: 1.5
+    argument: 
+    reference: {fileID: 0}
+  edges:
+  - fromId: 3dff5888f30d4ba59809003084add042
+    toId: 1f2a5335e5c14d76b9affd4f5a73d553
+  - fromId: 1f2a5335e5c14d76b9affd4f5a73d553
+    toId: e7eaa0c02e6046da84908c00258e9e1c
+  - fromId: 72dc57c698184397bea48ae9537c8546
+    toId: 03c70507c58449ec98379b7d81752403
+  - fromId: 03c70507c58449ec98379b7d81752403
+    toId: c39ece2f1dae49d090df7130e330b846
+  - fromId: 92cbc6a0aa834156be7d26ab81d03486
+    toId: 092c9715246a4f6f9baddec78f4ff327
+  - fromId: 092c9715246a4f6f9baddec78f4ff327
+    toId: fdacef3f0e584a7cadff1b033fb5dc55
+  - fromId: 6509df165b81418197ec07f5f0bb3fbe
+    toId: e3a6b1b6c77f42c093ca629264a79c4d
+  - fromId: e3a6b1b6c77f42c093ca629264a79c4d
+    toId: 8ed21abc9b084888bc37803d7b5babca
+  - fromId: 5ab59f29756347dfb1566a1cf3f410da
+    toId: f1b93938219b4d3589a7e6180989872c
+  - fromId: f1b93938219b4d3589a7e6180989872c
+    toId: 59fc0a0624354621802f73c3238e1b65
+  - fromId: af506dac60db48bd8eabc7501c9e3c88
+    toId: e9e0a8b1c0284ce79f4544350c22b630

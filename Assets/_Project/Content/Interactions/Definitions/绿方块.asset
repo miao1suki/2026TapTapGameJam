@@ -1,0 +1,161 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8116633e80ce44feadecbe10cdddeaa9, type: 3}
+  m_Name: "\u7EFF\u65B9\u5757"
+  m_EditorClassIdentifier: Assembly-CSharp:Project.Interactions:InteractionObjectDefinition
+  objectId: green-block-object-00000000000000000000000000001
+  displayName: "\u7EFF\u65B9\u5757"
+  prefab: {fileID: 8582130194286690322, guid: ac2d7caad3cfab24d920732a9371c085, type: 3}
+  baseColorTypeId: green
+  nodes:
+  - id: green-node-01
+    position: {x: 40, y: 60}
+    kind: 10
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-02
+    position: {x: 300, y: 60}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-03
+    position: {x: 560, y: 60}
+    kind: 34
+    value: OnInteractionPlayerEntered
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-04
+    position: {x: 40, y: 280}
+    kind: 11
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-05
+    position: {x: 300, y: 280}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-06
+    position: {x: 560, y: 280}
+    kind: 34
+    value: OnInteractionPlayerLeft
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-07
+    position: {x: 40, y: 500}
+    kind: 12
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-08
+    position: {x: 300, y: 500}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-09
+    position: {x: 560, y: 500}
+    kind: 34
+    value: OnInteractionObjectTouched
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-10
+    position: {x: 40, y: 720}
+    kind: 13
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-11
+    position: {x: 300, y: 720}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-12
+    position: {x: 560, y: 720}
+    kind: 34
+    value: OnInteractionObjectStay
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-13
+    position: {x: 860, y: 60}
+    kind: 15
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-14
+    position: {x: 1120, y: 60}
+    kind: 32
+    value: green
+    number: 1.5
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-15
+    position: {x: 800, y: 280}
+    kind: 13
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-16
+    position: {x: 1060, y: 280}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-node-17
+    position: {x: 1320, y: 280}
+    kind: 34
+    value: OnInteractionPlayerStay
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  edges:
+  - fromId: green-node-01
+    toId: green-node-02
+  - fromId: green-node-02
+    toId: green-node-03
+  - fromId: green-node-04
+    toId: green-node-05
+  - fromId: green-node-05
+    toId: green-node-06
+  - fromId: green-node-07
+    toId: green-node-08
+  - fromId: green-node-08
+    toId: green-node-09
+  - fromId: green-node-10
+    toId: green-node-11
+  - fromId: green-node-11
+    toId: green-node-12
+  - fromId: green-node-13
+    toId: green-node-14
+  - fromId: green-node-15
+    toId: green-node-16
+  - fromId: green-node-16
+    toId: green-node-17

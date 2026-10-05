@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 4476650152966094640}
   - component: {fileID: 4138227554053104612}
   - component: {fileID: 4864187898102915616}
+  - component: {fileID: 6224735873028789627}
   m_Layer: 0
   m_Name: ColorKey_blue
   m_TagString: Untagged
@@ -150,3 +151,17 @@ MonoBehaviour:
   revealDuration: 1.5
   orthographicZoomOut: 1.6
   cameraReturnDuration: 0.85
+--- !u!114 &6224735873028789627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8140128999958426686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed3ea2b373d54218a69c408da9105e34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.InteractionObject
+  definition: {fileID: 11400000, guid: e05a68953d5e26347b85e0c12d50aa4a, type: 2}
+  currentColorTypeId: 

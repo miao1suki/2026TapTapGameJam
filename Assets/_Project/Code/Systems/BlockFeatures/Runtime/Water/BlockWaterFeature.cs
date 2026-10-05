@@ -408,7 +408,7 @@ namespace Project.BlockFeatures
             GameObject prefab = waterVisualPrefab;
             if (prefab == null)
             {
-                ColorWorldManager manager = ColorWorldManager.Existing;
+                ColorRuntimeService manager = ColorRuntimeService.Existing;
                 prefab = manager?.Catalog?.BlueWaterPrefab;
             }
 

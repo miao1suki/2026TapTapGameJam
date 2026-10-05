@@ -43,7 +43,7 @@ namespace Project.ColorBlocks
             public override void RecordRenderGraph(RenderGraph graph, ContextContainer frameData)
             {
                 if (!Application.isPlaying || maskMaterial == null || fadeMaterial == null) return;
-                var catalog = ColorWorldManager.Instance.Catalog;
+                var catalog = ColorRuntimeService.Instance.Catalog;
                 if (catalog == null) return;
                 var resources = frameData.Get<UniversalResourceData>();
                 if (resources.isActiveTargetBackBuffer) return;

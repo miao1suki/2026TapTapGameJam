@@ -1,5 +1,16 @@
 # 工作状态与交接（每次任务重读）
 
+## 物体交互管理器与颜色属性迁移
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/interaction-manager`。
+- 范围：新增物体级 `InteractionObjectDefinition`、`InteractionObjectCatalog`、`InteractionObject` 与 `InteractionManager`；ColorBlock 的接触事件和解锁恢复改由物体图入口执行；新增 UI Toolkit 交互管理器和 GraphView；三色方块自动同步到目录和关卡编辑器，方块/道具栏目均提供入口。
+- 节点：玩家进入/离开、物体触碰/停留、经过时间、手动、对象/颜色条件、延迟、褪色、恢复、Timeline、方法调用、设置颜色和日志。
+- 边界：移除 `ColorWorldManager`、`ColorInteractionRunner`、颜色交互图、颜色工作台和褪色调试入口；保留改名后的 `ColorRuntimeService` 作为颜色解锁/水体视觉底层服务，以及 `HSVColorFadeManager` 作为渐变服务。
+- 资源：目录位于 `Assets/_Project/Resources/Interactions/InteractionObjectCatalog.asset`，物体定义位于 `Assets/_Project/Content/Interactions/Definitions`。
+- 验证：Unity `6000.3.12f1` Runtime/Editor 静态编译 0 错误；`git diff --check` 通过；红/蓝/绿定义、目录引用、三色预制体绑定和关卡栏目引用已静态核对。交互图窗口增删节点/连线、三色方块 PlayMode 接触和窗口视觉仍需在编辑器内点击验收。尚未推送或合并。
+- 追加修复：按 Unity 单一 ScriptableObject 类型拆分 `InteractionObjectDefinition` 与 `InteractionObjectCatalog` 脚本并修正资产 GUID，解决交互窗口打开时 `InteractionGraphNode` / `InteractionObjectCatalog` 脚本映射错误；补齐 Unity 6000 GraphView 操作兼容写法、静态调度调用和通用物体非玩家触碰分流。使用当前响应文件（补入新增 Runtime 文件并排除已删除旧颜色脚本）静态编译 Runtime/Editor 均 0 错误。Unity 当前实例尚未重新刷新脚本，需重载后清空旧 Console 历史并验收窗口。
+- 钥匙褪色修复：`ColorRuntimeService` 启动时初始化颜色为褪色，注册方块时按解锁状态同步；`Unlock` 先建立基础恢复状态，再触发同色物体图的 `Manual` 节点。三把钥匙定义已补齐基础颜色和对应 `Restore` 节点值，避免只播放相机 Timeline 而不恢复材质或水体。`ColorKeyPickup` 增加物体图的玩家进入入口及兼容接触方法，避免钥匙默认图在运行时输出“未找到可调用方法”。已完成静态资产核对和 Runtime/Editor 0 错误编译；Unity Console、蓝色钥匙收集和水体渐显仍待编辑器内 PlayMode 验收。本次本地提交为 `d48509a`（尚未合并 `main`）；推送因当前主机无法连接 `github.com:443` 待网络恢复后重试。
+
 ## 字幕道具慢显隐与缩略图缓存清理
 
 - 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。

@@ -1,0 +1,161 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8116633e80ce44feadecbe10cdddeaa9, type: 3}
+  m_Name: "\u84DD\u65B9\u5757"
+  m_EditorClassIdentifier: Assembly-CSharp:Project.Interactions:InteractionObjectDefinition
+  objectId: blue-block-object-000000000000000000000000000001
+  displayName: "\u84DD\u65B9\u5757"
+  prefab: {fileID: 524019047373316160, guid: 210c431167d7a014db209c383a9a55d2, type: 3}
+  baseColorTypeId: blue
+  nodes:
+  - id: blue-node-01
+    position: {x: 40, y: 60}
+    kind: 10
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-02
+    position: {x: 300, y: 60}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-03
+    position: {x: 560, y: 60}
+    kind: 34
+    value: OnInteractionPlayerEntered
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-04
+    position: {x: 40, y: 280}
+    kind: 11
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-05
+    position: {x: 300, y: 280}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-06
+    position: {x: 560, y: 280}
+    kind: 34
+    value: OnInteractionPlayerLeft
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-07
+    position: {x: 40, y: 500}
+    kind: 12
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-08
+    position: {x: 300, y: 500}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-09
+    position: {x: 560, y: 500}
+    kind: 34
+    value: OnInteractionObjectTouched
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-10
+    position: {x: 40, y: 720}
+    kind: 13
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-11
+    position: {x: 300, y: 720}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-12
+    position: {x: 560, y: 720}
+    kind: 34
+    value: OnInteractionObjectStay
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-13
+    position: {x: 860, y: 60}
+    kind: 15
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-14
+    position: {x: 1120, y: 60}
+    kind: 32
+    value: blue
+    number: 1.5
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-15
+    position: {x: 800, y: 280}
+    kind: 13
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-16
+    position: {x: 1060, y: 280}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-node-17
+    position: {x: 1320, y: 280}
+    kind: 34
+    value: OnInteractionPlayerStay
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  edges:
+  - fromId: blue-node-01
+    toId: blue-node-02
+  - fromId: blue-node-02
+    toId: blue-node-03
+  - fromId: blue-node-04
+    toId: blue-node-05
+  - fromId: blue-node-05
+    toId: blue-node-06
+  - fromId: blue-node-07
+    toId: blue-node-08
+  - fromId: blue-node-08
+    toId: blue-node-09
+  - fromId: blue-node-10
+    toId: blue-node-11
+  - fromId: blue-node-11
+    toId: blue-node-12
+  - fromId: blue-node-13
+    toId: blue-node-14
+  - fromId: blue-node-15
+    toId: blue-node-16
+  - fromId: blue-node-16
+    toId: blue-node-17

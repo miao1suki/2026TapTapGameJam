@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6332649236546910240}
   - component: {fileID: 7867967853718945527}
   - component: {fileID: 8874012356789012345}
+  - component: {fileID: 3024042595108526192}
   m_Layer: 0
   m_Name: ScreenNoteTool
   m_TagString: Untagged
@@ -192,6 +193,26 @@ MonoBehaviour:
         m_RotationOrder: 4
       motionDistance: 36
       scaleFrom: 0.82
+      startRotation: -12
+      overshoot: 0.18
+      floatAmplitude: 12
+      floatSpeed: 2
+      glitchStrength: 0.5
+      charactersPerSecond: 24
   playOnce: 1
   hideVisualOnAwake: 1
   destroyAfterPlay: 0
+--- !u!114 &3024042595108526192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4553572954244812789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed3ea2b373d54218a69c408da9105e34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.InteractionObject
+  definition: {fileID: 11400000, guid: a52d149aa78ccf1469e9a9adca8538de, type: 2}
+  currentColorTypeId: 

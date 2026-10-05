@@ -32,7 +32,7 @@ namespace Project.ColorBlocks
 
         private void OnDisable()
         {
-            ColorWorldManager manager = ColorWorldManager.Existing;
+            ColorRuntimeService manager = ColorRuntimeService.Existing;
             if (Application.isPlaying && collected && manager != null &&
                 !manager.IsUnlocked(colorTypeId))
                 manager.Unlock(colorTypeId);
@@ -41,8 +41,22 @@ namespace Project.ColorBlocks
         private void OnTriggerEnter(Collider other)
         {
             var player = other.GetComponentInParent<PlayerController>();
+            if (player == null) return;
+            OnInteractionPlayerEntered(player.gameObject);
+        }
+
+        /// <summary>
+        /// 颜色钥匙的收集入口。钥匙预制体同时挂有通用物体交互来源，
+        /// 因此物体图可以把“玩家进入”连接到这个方法；保留碰撞回退入口
+        /// 以兼容尚未完成交互定义绑定的旧场景。
+        /// </summary>
+        public void OnInteractionPlayerEntered(GameObject actor)
+        {
+            var player = actor != null
+                ? actor.GetComponentInParent<PlayerController>()
+                : null;
             if (collected || player == null) return;
-            if (ColorWorldManager.Instance.IsUnlocked(colorTypeId)) return;
+            if (ColorRuntimeService.Instance.IsUnlocked(colorTypeId)) return;
             collected = true;
             var collider = GetComponent<Collider>();
             if (collider != null) collider.enabled = false;
@@ -52,6 +66,13 @@ namespace Project.ColorBlocks
             }
             StartCoroutine(CollectWithCamera(player));
         }
+
+        // 这些入口让钥匙定义可以安全复用物体图的默认接触链；钥匙本身
+        // 没有需要在停留/离开或非玩家碰触时追加的行为。
+        public void OnInteractionPlayerLeft(GameObject actor) { }
+        public void OnInteractionPlayerStay(GameObject actor) { }
+        public void OnInteractionObjectTouched(GameObject other) { }
+        public void OnInteractionObjectStay(GameObject other) { }
 
         private IEnumerator CollectWithCamera(PlayerController player)
         {
@@ -77,7 +98,7 @@ namespace Project.ColorBlocks
                 }
             }
 
-            bool unlocked = ColorWorldManager.Instance.Unlock(colorTypeId);
+            bool unlocked = ColorRuntimeService.Instance.Unlock(colorTypeId);
             if (unlocked)
                 HSVColorFadeManager.Instance.SetColorFaded(colorTypeId, false, revealDuration);
             float revealTimeout = Time.unscaledTime + revealDuration + 1f;
