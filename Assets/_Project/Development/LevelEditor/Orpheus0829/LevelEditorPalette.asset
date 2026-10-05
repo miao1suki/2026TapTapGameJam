@@ -13,16 +13,6 @@ MonoBehaviour:
   m_Name: LevelEditorPalette
   m_EditorClassIdentifier: Assembly-CSharp::Project.LevelEditor.LevelEditorPalette
   entries:
-  - entryId: ea6f88a776524093942110a86be27af4
-    mode: 0
-    displayName: "\u80FD\u6E90\u65B9\u5757"
-    color: {r: 1, g: 0.25, b: 0.25, a: 1}
-    prefab: {fileID: 0}
-    customTemplate: {fileID: 7390616133651642006, guid: ecb599a5a4d59144badef45bb4f53493, type: 3}
-    surfaceTilePalette: {fileID: 0}
-    surfaceTileCellSize: 1
-    surfaceTileTransparentBase: 0
-    surfaceTilePlacements: []
   - entryId: 36231c7bdbdd4c499997537ea230f38c
     mode: 1
     displayName: "\u7EA2\u65B9\u5757"
@@ -62,6 +52,7 @@ MonoBehaviour:
     color: {r: 0.08, g: 0.08, b: 0.08, a: 1}
     prefab: {fileID: 0}
     customTemplate: {fileID: 0}
+    managedColorTypeId: 
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
@@ -72,6 +63,7 @@ MonoBehaviour:
     color: {r: 0.95, g: 0.95, b: 0.95, a: 1}
     prefab: {fileID: 0}
     customTemplate: {fileID: 0}
+    managedColorTypeId: 
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
@@ -82,6 +74,7 @@ MonoBehaviour:
     color: {r: 0.40415716, g: 0.41143844, b: 0.42138356, a: 1}
     prefab: {fileID: 0}
     customTemplate: {fileID: 0}
+    managedColorTypeId: 
     surfaceTilePalette: {fileID: 11400000, guid: 6256579dbea09914487bfc3f247aa58b, type: 2}
     surfaceTileCellSize: 0.05
     surfaceTileTransparentBase: 0
@@ -898,11 +891,515 @@ MonoBehaviour:
       offsetCells: {x: 0, y: 0}
   propEntries:
   - entryId: 3c635d52f11f48f18d4d82a53c65e601
-    displayName: 红色钥匙
+    displayName: "\u7EA2\u8272\u94A5\u5319"
     prefab: {fileID: 6622805535834104132, guid: 83e6e8f43f4f1d54289447a18295ca37, type: 3}
+    componentValueOverrides: []
   - entryId: 2986677913284d2f85e9c64011ca22d0
-    displayName: 绿色钥匙
+    displayName: "\u7EFF\u8272\u94A5\u5319"
     prefab: {fileID: 491305582336558569, guid: 6c8401f9adab9d841ba785f52b4f9623, type: 3}
+    componentValueOverrides: []
   - entryId: 04b7a2d6735b4d0cbce343ab1293d6e0
-    displayName: 蓝色钥匙
+    displayName: "\u84DD\u8272\u94A5\u5319"
     prefab: {fileID: 8140128999958426686, guid: 0c5be6edd719d03459d2e3ac01c4307f, type: 3}
+    componentValueOverrides: []
+  - entryId: 06e690b71b634be2909b6fecd7ecb627
+    displayName: "\u5B57\u5E55\u6FC0\u53D1(\u6D4B\u8BD5)"
+    prefab: {fileID: 4553572954244812789, guid: 40fd7fa368f76bc4ca0e52adec7ddc07, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.offset.x
+      valueType: Float
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.offset.y
+      valueType: Float
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.layer
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.useManagerDefaults
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.font
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.color
+      valueType: Color
+      value: '{"r":0.0,"g":0.0,"b":0.0,"a":1.0}'
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.anchor
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.offset
+      valueType: Vector2
+      value: '{"x":0.0,"y":0.0}'
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.inAnimation
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.outAnimation
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: hideVisualOnAwake
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: destroyAfterPlay
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Material
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_LayerOverridePriority
+      valueType: Integer
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_IsTrigger
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_ProvidesContacts
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Size
+      valueType: Vector3
+      value: '{"x":1.0,"y":1.0,"z":1.0}'
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Size.x
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Size.y
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Size.z
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Center
+      valueType: Vector3
+      value: '{"x":0.0,"y":0.0,"z":0.0}'
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Center.x
+      valueType: Float
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Center.y
+      valueType: Float
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Center.z
+      valueType: Float
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshFilter
+      componentIndex: 0
+      propertyPath: m_Mesh
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_CastShadows
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ReceiveShadows
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_DynamicOccludee
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_StaticShadowCaster
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MotionVectors
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_LightProbeUsage
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ReflectionProbeUsage
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTracingMode
+      valueType: Integer
+      value: 2
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTraceProcedural
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTracingAccelStructBuildFlagsOverride
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTracingAccelStructBuildFlags
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_SmallMeshCulling
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ForceMeshLod
+      valueType: Integer
+      value: -1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MeshLodSelectionBias
+      valueType: Float
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RenderingLayerMask
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RendererPriority
+      valueType: Integer
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: 'm_Materials.Array.data[0]'
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ProbeAnchor
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_LightProbeVolumeOverride
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ScaleInLightmap
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ReceiveGI
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_PreserveUVs
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_IgnoreNormalsForChartDetection
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ImportantGI
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_StitchLightmapSeams
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MinimumChartSize
+      valueType: Integer
+      value: 4
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_AutoUVMaxDistance
+      valueType: Float
+      value: 0.5
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_AutoUVMaxAngle
+      valueType: Float
+      value: 89
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_LightmapParameters
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MaskInteraction
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.text
+      valueType: String
+      value: Hello World
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.fontSize
+      valueType: Float
+      value: 120
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.normalizedX
+      valueType: Float
+      value: 0.5
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.normalizedY
+      valueType: Float
+      value: 0.5
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.holdDuration
+      valueType: Float
+      value: 3
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.inDuration
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.outDuration
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.motionDistance
+      valueType: Float
+      value: 36
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.scaleFrom
+      valueType: Float
+      value: 0.81999999284744263
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.startRotation
+      valueType: Float
+      value: -12
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.overshoot
+      valueType: Float
+      value: 0.18000000715255737
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.floatAmplitude
+      valueType: Float
+      value: 12
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.floatSpeed
+      valueType: Float
+      value: 2
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.glitchStrength
+      valueType: Float
+      value: 0.5
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.charactersPerSecond
+      valueType: Float
+      value: 24
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: playOnce
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}

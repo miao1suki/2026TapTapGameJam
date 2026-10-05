@@ -99,10 +99,11 @@ namespace Project.ColorBlocks
                 Debug.LogWarning("[ColorBlocks] 颜色钥匙未配置 Timeline；颜色仍会解锁。", this);
                 return false;
             }
-            var rig = FindFirstObjectByType<TimelineCamRig>();
+            var rig = ProjectDiscovery.FindFirst<TimelineCamRig>();
             if (rig == null)
             {
-                var manager = FindFirstObjectByType<Project.CameraModes.CameraControlManager>();
+                var manager = ProjectDiscovery.FindFirst<
+                    Project.CameraModes.CameraControlManager>();
                 if (manager != null) rig = manager.gameObject.AddComponent<TimelineCamRig>();
             }
             if (rig == null)

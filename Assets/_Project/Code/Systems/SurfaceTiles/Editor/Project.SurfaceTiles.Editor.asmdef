@@ -2,6 +2,7 @@
   "name": "Project.SurfaceTiles.Editor",
   "rootNamespace": "Project.SurfaceTiles.Editor",
   "references": [
+    "Project.Shared.Runtime",
     "Project.SurfaceTiles.Runtime"
   ],
   "includePlatforms": [

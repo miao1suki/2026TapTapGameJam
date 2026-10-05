@@ -6,6 +6,7 @@
     "Project.CameraModes.Runtime",
     "Project.InputAbstraction.Runtime",
     "Project.InputRebinding.Runtime",
+    "Project.Shared.Runtime",
     "Unity.InputSystem",
     "Unity.UGUI"
   ],

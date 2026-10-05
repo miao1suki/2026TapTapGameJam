@@ -2,7 +2,8 @@
   "name": "Project.CameraModes.Runtime",
   "rootNamespace": "Project.CameraModes",
   "references": [
-    "Project.InputAbstraction.Runtime"
+    "Project.InputAbstraction.Runtime",
+    "Project.Shared.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

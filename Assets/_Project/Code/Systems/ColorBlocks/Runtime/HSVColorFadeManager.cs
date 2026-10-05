@@ -24,7 +24,8 @@ namespace Project.ColorBlocks
         public static HSVColorFadeManager EnsureCreated()
         {
             if (instance != null) return instance;
-            var existing = FindFirstObjectByType<HSVColorFadeManager>();
+            var existing =
+                ProjectDiscovery.FindFirst<HSVColorFadeManager>();
             if (existing != null) return existing;
             return new GameObject("HSV Color Fade Manager").AddComponent<HSVColorFadeManager>();
         }

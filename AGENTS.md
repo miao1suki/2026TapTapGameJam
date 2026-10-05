@@ -20,3 +20,11 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 
 维护源码、场景和 `.meta` 一起提交。不得提交私钥、凭据、Library、Temp、Logs、Builds 或本地用户设置。
 多人各自创建自己的场景，不采用旧地图总拼、代理同步或对象锁方案。
+<!-- UNITY CODE ASSIST INSTRUCTIONS START -->
+- Project name: 2026TapTapGameJam
+- Unity version: Unity 6000.3.12f1
+- Active game object:
+  - Name: __PlanningMapGenerated
+  - Tag: Untagged
+  - Layer: Default
+<!-- UNITY CODE ASSIST INSTRUCTIONS END -->

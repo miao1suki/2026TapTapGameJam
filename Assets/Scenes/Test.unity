@@ -26350,7 +26350,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  jumpSpeed: 7
+  jumpSpeed: 9.899
   jumpGravityMultiplier: 1.7
   jumpReleaseGravityMultiplier: 2.8
   fallGravityMultiplier: 2.5

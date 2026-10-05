@@ -48,6 +48,11 @@ namespace Project.BlockFeatures
             for (int index = 0; index < features.Count; index++)
             {
                 BlockFeature feature = features[index];
+                if (!feature.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
                 feature.Attach(new BlockContext(this, feature));
             }
         }
@@ -56,7 +61,11 @@ namespace Project.BlockFeatures
         {
             for (int index = 0; index < features.Count; index++)
             {
-                features[index].Detach();
+                if (features[index] != null &&
+                    features[index].IsAttached)
+                {
+                    features[index].Detach();
+                }
             }
 
             signals.Clear();
@@ -73,7 +82,11 @@ namespace Project.BlockFeatures
             float deltaTime = Time.deltaTime;
             for (int index = 0; index < features.Count; index++)
             {
-                features[index].Tick(deltaTime);
+                BlockFeature feature = features[index];
+                if (feature.isActiveAndEnabled)
+                {
+                    feature.Tick(deltaTime);
+                }
             }
 
             DispatchQueues();
@@ -83,7 +96,9 @@ namespace Project.BlockFeatures
         {
             for (int index = 0; index < features.Count; index++)
             {
-                if (features[index] is T candidate)
+                BlockFeature feature = features[index];
+                if (feature.isActiveAndEnabled &&
+                    feature is T candidate)
                 {
                     value = candidate;
                     return true;
@@ -98,6 +113,39 @@ namespace Project.BlockFeatures
         {
             EnsureInitialized();
             DispatchQueues();
+        }
+
+        public void RefreshFeatureSet(
+            bool resetRuntimeState = false)
+        {
+            for (int index = 0; index < features.Count; index++)
+            {
+                BlockFeature feature = features[index];
+                if (feature != null && feature.IsAttached)
+                {
+                    feature.Detach();
+                }
+            }
+
+            features.Clear();
+            if (resetRuntimeState)
+            {
+                state.Clear();
+                signals.Clear();
+                commands.Clear();
+                debugEvents.Clear();
+            }
+
+            initialized = false;
+            EnsureInitialized();
+            for (int index = 0; index < features.Count; index++)
+            {
+                BlockFeature feature = features[index];
+                if (feature.isActiveAndEnabled)
+                {
+                    feature.Attach(new BlockContext(this, feature));
+                }
+            }
         }
 
         public void ReceiveExternalSignal<T>(T signal)
@@ -157,6 +205,9 @@ namespace Project.BlockFeatures
 
             features.Clear();
             GetComponents(features);
+            features.RemoveAll(
+                feature => feature == null ||
+                           !feature.isActiveAndEnabled);
             features.Sort(CompareFeatures);
             State = new RuntimeStateStore(state);
             Query = new RuntimeQueryService(this);
@@ -232,7 +283,11 @@ namespace Project.BlockFeatures
         {
             for (int index = 0; index < features.Count; index++)
             {
-                features[index].DispatchSignal(signal);
+                BlockFeature feature = features[index];
+                if (feature.isActiveAndEnabled)
+                {
+                    feature.DispatchSignal(signal);
+                }
             }
         }
 
@@ -241,7 +296,11 @@ namespace Project.BlockFeatures
         {
             for (int index = 0; index < features.Count; index++)
             {
-                features[index].DispatchCommand(command);
+                BlockFeature feature = features[index];
+                if (feature.isActiveAndEnabled)
+                {
+                    feature.DispatchCommand(command);
+                }
             }
         }
 

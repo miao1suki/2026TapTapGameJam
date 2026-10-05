@@ -54,7 +54,51 @@ namespace Project.Player.Editor
                 "swimAcceleration",
                 "游泳加速度",
                 "进入水体后逼近目标速度的速率。"));
+            swimming.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "swimRiseSpeed",
+                "上浮速度",
+                "水体中按住跳跃键时的缓慢上浮速度。"));
+            swimming.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "swimSinkSpeed",
+                "下潜速度",
+                "水体中未按住跳跃键时的缓慢下沉速度。"));
+            swimming.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "swimVerticalAcceleration",
+                "垂直游泳加速度",
+                "水体中纵向速度在上浮、下沉之间变化的加速度。"));
             root.Add(swimming);
+
+            Foldout climbing = PlayerInspectorFields.CreateFoldout(
+                "攀爬");
+            climbing.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "climbSpeed",
+                "上爬速度",
+                "按住上方向时向上攀爬的速度。"));
+            climbing.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "climbSlideSpeed",
+                "自然下滑速度",
+                "不按上下方向时沿藤蔓缓慢下滑的速度。"));
+            climbing.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "climbDownSpeed",
+                "主动下滑速度",
+                "按住下方向时快速下滑的速度。"));
+            climbing.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "climbHorizontalSpeed",
+                "横向离开速度",
+                "攀爬时横向移动，用于主动离开藤蔓区域。"));
+            climbing.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "climbAcceleration",
+                "攀爬加速度",
+                "攀爬横纵速度逼近目标速度的加速度。"));
+            root.Add(climbing);
 
             Foldout jump = PlayerInspectorFields.CreateFoldout(
                 "跳跃");

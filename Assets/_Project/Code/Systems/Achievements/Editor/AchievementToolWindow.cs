@@ -1256,9 +1256,8 @@ namespace Project.Achievements.Editor
                 if (Application.isPlaying)
                 {
                     AchievementManager manager =
-                        UnityEngine.Object
-                            .FindFirstObjectByType<
-                                AchievementManager>();
+                        ProjectDiscovery.FindFirst<
+                            AchievementManager>();
                     manager?.Reload();
                 }
 

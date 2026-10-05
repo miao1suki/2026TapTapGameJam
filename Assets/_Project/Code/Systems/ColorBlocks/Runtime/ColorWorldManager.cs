@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.BlockFeatures;
 using UnityEngine;
 
 namespace Project.ColorBlocks
@@ -23,7 +24,8 @@ namespace Project.ColorBlocks
             get
             {
                 if (instance != null) return instance;
-                var existing = FindFirstObjectByType<ColorWorldManager>();
+                var existing =
+                    ProjectDiscovery.FindFirst<ColorWorldManager>();
                 if (existing != null) return existing;
                 var root = new GameObject("Color World Manager");
                 return root.AddComponent<ColorWorldManager>();
@@ -82,6 +84,14 @@ namespace Project.ColorBlocks
             foreach (ColorBlock block in blocks)
             {
                 if (block == null || !block.IsActiveWater) continue;
+                IBlockWaterSource waterSource =
+                    block.GetComponent<IBlockWaterSource>();
+                if (waterSource != null &&
+                    waterSource.UsesOwnedVisual)
+                {
+                    continue;
+                }
+
                 BoxCollider collider = block.GetComponent<BoxCollider>();
                 if (collider != null) zones.Add(collider.bounds);
             }
@@ -166,6 +176,67 @@ namespace Project.ColorBlocks
                 EventMgr.RaiseColorTypeEvent(definition.unlockEventId, typeId);
             HSVColorFadeManager.Instance.SetColorFaded(typeId, false);
             ColorInteractionRunner.Run(definition, ColorGraphNodeKind.ColorUnlocked);
+            return true;
+        }
+
+        /// <summary>
+        /// 只修改当前运行实例，不写入场景、目录或存档。
+        /// </summary>
+        public bool SetUnlockedForCurrentSession(
+            string typeId,
+            bool value)
+        {
+            return value
+                ? Unlock(typeId)
+                : Lock(typeId);
+        }
+
+        /// <summary>
+        /// 只修改当前运行实例，不写入场景、目录或存档。
+        /// </summary>
+        public void SetAllUnlockedForCurrentSession(bool value)
+        {
+            if (catalog == null)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                 index < catalog.Colors.Count;
+                 index++)
+            {
+                ColorTypeDefinition definition =
+                    catalog.Colors[index];
+                if (definition != null &&
+                    !string.IsNullOrWhiteSpace(definition.id))
+                {
+                    SetUnlockedForCurrentSession(
+                        definition.id,
+                        value);
+                }
+            }
+        }
+
+        private bool Lock(string typeId)
+        {
+            if (string.IsNullOrWhiteSpace(typeId) ||
+                !unlocked.Remove(typeId))
+            {
+                return false;
+            }
+
+            foreach (ColorBlock block in new List<ColorBlock>(blocks))
+            {
+                if (block != null &&
+                    block.BaseColorTypeId == typeId)
+                {
+                    block.ResetToNeutral();
+                }
+            }
+
+            HSVColorFadeManager.Instance.SetColorFaded(
+                typeId,
+                true);
             return true;
         }
 

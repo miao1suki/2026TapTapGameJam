@@ -40,6 +40,8 @@ namespace PlanningEditorPrototype
         private ObjectField playerContextField;
         private Label contextStatusLabel;
         private VisualElement inspector;
+        private ObjectField sceneBlockReferenceField;
+        private Button sceneBlockLocateButton;
         private VisualElement roomList;
         private VisualElement connectorList;
         private Label statusLabel;
@@ -76,7 +78,9 @@ namespace PlanningEditorPrototype
         private readonly Stack<string> planningRedo =
             new Stack<string>();
         private string planningSnapshot;
+        private string savedDocumentSnapshot;
         private bool restoringPlanningDocument;
+        private int lastPrunedPaletteRevision = -1;
         private bool worldBlockSettingsUnlocked;
         private PlanningWorkspaceMode workspaceMode;
         private PlanningCanvasMode mode;
@@ -263,6 +267,8 @@ namespace PlanningEditorPrototype
             nextLevelEditorRefreshTime = now + .1d;
             embeddedLevelEditor.Refresh();
             SyncPlanningCanvasPalette();
+            PruneMissingPaletteBlocks();
+            canvas?.RefreshPlayerOverlay();
             RefreshLevelContextStatus();
             if (LevelEditorPlayerService.EnforceEditPlane())
             {
@@ -318,6 +324,7 @@ namespace PlanningEditorPrototype
                 {
                     embeddedLevelEditor?.SetPlayer(
                         evt.newValue as GameObject);
+                    canvas?.RefreshPlayerOverlay();
                     RefreshLevelContextStatus();
                 }
             });
@@ -329,14 +336,38 @@ namespace PlanningEditorPrototype
                 {
                     embeddedLevelEditor?.SetPlayer(
                         Selection.activeGameObject);
+                    canvas?.RefreshPlayerOverlay();
                     RefreshLevelContext();
                 });
             bar.Add(useSelectedPlayer);
 
             Button focusPlayer = TopButton(
                 "聚焦玩家",
-                () => embeddedLevelEditor?.FocusPlayer());
+                () =>
+                {
+                    embeddedLevelEditor?.FocusPlayer();
+                    canvas?.FocusPlayer();
+                });
             bar.Add(focusPlayer);
+
+            sceneBlockReferenceField = new ObjectField("场景引用")
+            {
+                objectType = typeof(GameObject),
+                allowSceneObjects = true
+            };
+            sceneBlockReferenceField.style.width = 220f;
+            sceneBlockReferenceField.style.marginRight = 4f;
+            sceneBlockReferenceField.SetEnabled(false);
+            sceneBlockReferenceField.tooltip =
+                "当前选中方块对应的场景实例，只读；不能从这里替换。";
+            bar.Add(sceneBlockReferenceField);
+
+            sceneBlockLocateButton = TopButton(
+                "定位方块",
+                LocateSelectedSceneBlock);
+            sceneBlockLocateButton.tooltip =
+                "选中并定位到该方块的场景物体，之后在正常 Inspector 中编辑。";
+            bar.Add(sceneBlockLocateButton);
 
             contextStatusLabel = new Label();
             contextStatusLabel.style.flexGrow = 1f;
@@ -771,7 +802,13 @@ namespace PlanningEditorPrototype
 
             bar.Add(Spacer());
             bar.Add(TopButton("生成整套场景", GenerateMapToScene));
-            bar.Add(TopButton("同步到装配图", SyncSceneToAssembly));
+            Button saveCurrent = TopButton(
+                "保存到当前存档",
+                SaveToCurrentSlot);
+            saveCurrent.tooltip =
+                "保存当前规划文档；保存后没有新的未保存改动，" +
+                "且选中方块已经生成到场景时，场景引用定位才可用。";
+            bar.Add(saveCurrent);
             bar.Add(TopButton("修复同步", RepairAndSyncCurrentMap));
             bar.Add(TopButton("撤回", UndoPlanning));
             bar.Add(TopButton("重做", RedoPlanning));
@@ -1038,6 +1075,7 @@ namespace PlanningEditorPrototype
             panel.style.backgroundColor = new Color(.09f, .105f, .135f);
             panel.style.borderLeftWidth = 1f;
             panel.style.borderLeftColor = new Color(.2f, .23f, .3f);
+
             panel.Add(SectionTitle("当前选中"));
 
             VisualElement modeRow = Row();
@@ -1118,6 +1156,7 @@ namespace PlanningEditorPrototype
             document.Normalize();
             canvas.SetDocument(document);
             ResetPlanningHistory();
+            MarkPlanningSaved();
             RefreshCurrentSaveLabel();
         }
 
@@ -1172,6 +1211,47 @@ namespace PlanningEditorPrototype
             RefreshCurrentSaveLabel();
         }
 
+        private void MarkPlanningSaved()
+        {
+            savedDocumentSnapshot = document != null
+                ? JsonUtility.ToJson(document, false)
+                : string.Empty;
+            RefreshSelectedSceneReference();
+        }
+
+        private bool HasUnsavedPlanningChanges()
+        {
+            if (document == null)
+            {
+                return false;
+            }
+
+            return string.IsNullOrEmpty(savedDocumentSnapshot) ||
+                   savedDocumentSnapshot !=
+                   JsonUtility.ToJson(document, false);
+        }
+
+        private void SaveToCurrentSlot()
+        {
+            if (document == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(currentSavePath))
+            {
+                statusLabel.text =
+                    "当前地图尚未创建存档，请先在“新建 / 存档”中新建或另存。";
+                ToggleSaveOverlay();
+                return;
+            }
+
+            SaveDocument();
+            MarkPlanningSaved();
+            statusLabel.text =
+                $"已保存到当前存档“{document.name}”。";
+        }
+
         private void RefreshCurrentSaveLabel()
         {
             if (currentSaveLabel == null)
@@ -1217,6 +1297,7 @@ namespace PlanningEditorPrototype
             canvas.SetDocument(document);
             SaveDocument();
             ResetPlanningHistory();
+            MarkPlanningSaved();
             RefreshAll();
             saveOverlay.style.display = DisplayStyle.None;
             statusLabel.text = "已读取内置示例地图。";
@@ -1448,6 +1529,7 @@ namespace PlanningEditorPrototype
                 canvas.SetDocument(document);
                 SaveDocument();
                 ResetPlanningHistory();
+                MarkPlanningSaved();
                 RefreshAll();
                 saveNameField?.SetValueWithoutNotify(string.Empty);
                 saveOverlay.style.display = DisplayStyle.None;
@@ -1482,6 +1564,7 @@ namespace PlanningEditorPrototype
                 canvas.SetDocument(document);
                 SaveDocument();
                 ResetPlanningHistory();
+                MarkPlanningSaved();
                 RefreshAll();
                 saveNameField?.SetValueWithoutNotify(string.Empty);
                 saveOverlay.style.display = DisplayStyle.None;
@@ -1519,6 +1602,7 @@ namespace PlanningEditorPrototype
                 canvas.SetDocument(document);
                 SaveDocument();
                 ResetPlanningHistory();
+                MarkPlanningSaved();
                 RefreshAll();
                 saveNameField?.SetValueWithoutNotify(string.Empty);
                 saveOverlay.style.display = DisplayStyle.None;
@@ -1541,6 +1625,7 @@ namespace PlanningEditorPrototype
                 canvas.SetDocument(document);
                 SaveDocument();
                 ResetPlanningHistory();
+                MarkPlanningSaved();
                 RefreshAll();
                 saveOverlay.style.display = DisplayStyle.None;
                 statusLabel.text =
@@ -1569,6 +1654,7 @@ namespace PlanningEditorPrototype
                 document.name = save.Name;
                 currentSavePath = save.Path;
                 SaveDocument();
+                MarkPlanningSaved();
                 saveOverlayStatus.text =
                     $"已保存“{document.name}”。";
                 RefreshSaveSlots();
@@ -1804,22 +1890,6 @@ namespace PlanningEditorPrototype
                 "确定");
         }
 
-        private void SyncSceneToAssembly()
-        {
-            if (canvas == null ||
-                !canvas.SyncAssemblyFromScene())
-            {
-                statusLabel.text =
-                    "没有可同步的场景房间容器或方块。";
-                return;
-            }
-
-            int unassigned = canvas.LastUnassignedSceneBlockCount;
-            statusLabel.text = unassigned > 0
-                ? $"已同步；另有 {unassigned} 个场景方块未归属房间容器。"
-                : "已从场景同步到装配图。";
-        }
-
         private void RepairAndSyncCurrentMap()
         {
             if (document == null)
@@ -1945,7 +2015,54 @@ namespace PlanningEditorPrototype
             RefreshRoomList();
             RefreshConnectorList();
             RefreshInspector();
+            RefreshSelectedSceneReference();
             RefreshLevelContext();
+        }
+
+        private void RefreshSelectedSceneReference()
+        {
+            if (sceneBlockReferenceField == null)
+            {
+                return;
+            }
+
+            LevelEditorPlacedBlock sceneBlock =
+                canvas != null ? canvas.SelectedSceneBlock : null;
+            GameObject sceneObject =
+                sceneBlock != null ? sceneBlock.gameObject : null;
+            sceneBlockReferenceField.SetValueWithoutNotify(
+                sceneObject);
+            bool saved = !string.IsNullOrEmpty(currentSavePath) &&
+                         !HasUnsavedPlanningChanges();
+            bool generated = sceneObject != null &&
+                             PlanningSceneBuilder.HasAnyGeneratedRoot();
+            bool canLocate = saved && generated;
+            sceneBlockLocateButton?.SetEnabled(canLocate);
+            if (sceneBlockLocateButton != null)
+            {
+                sceneBlockLocateButton.tooltip = canLocate
+                    ? "选中并定位到该方块的场景物体，之后在正常 Inspector 中编辑。"
+                    : sceneObject == null
+                        ? "当前规划格子尚未生成到场景。"
+                        : !saved
+                            ? "请先保存到当前存档；保存后有新改动时也不能定位。"
+                            : "请先生成整套场景。";
+            }
+        }
+
+        private void LocateSelectedSceneBlock()
+        {
+            GameObject sceneObject =
+                canvas?.SelectedSceneBlock?.gameObject;
+            if (sceneObject == null)
+            {
+                return;
+            }
+
+            Selection.activeGameObject = sceneObject;
+            EditorGUIUtility.PingObject(sceneObject);
+            SceneView.lastActiveSceneView?.FrameSelected();
+            SceneView.RepaintAll();
         }
 
         private void RefreshAll()
@@ -1965,6 +2082,7 @@ namespace PlanningEditorPrototype
             RefreshRoomList();
             RefreshConnectorList();
             RefreshInspector();
+            RefreshSelectedSceneReference();
             RefreshToolStyles();
             if (statusLabel != null)
             {
@@ -2081,6 +2199,7 @@ namespace PlanningEditorPrototype
             refreshingLevelContext = true;
             GameObject player = embeddedLevelEditor?.Player;
             playerContextField.SetValueWithoutNotify(player);
+            canvas?.RefreshPlayerOverlay();
 
             PlanningRoom room = document?.FindRoom(canvas?.SelectedRoomId);
             GameObject container =
@@ -2137,6 +2256,111 @@ namespace PlanningEditorPrototype
                     entry.EntryId,
                     entry.DisplayName);
             }
+        }
+
+        private void PruneMissingPaletteBlocks()
+        {
+            LevelEditorPalette palette =
+                LevelEditorState.Palette ??
+                LevelEditorPaletteService.GetOrCreate();
+            if (document == null ||
+                palette == null ||
+                LevelEditorState.PaletteRevision ==
+                lastPrunedPaletteRevision)
+            {
+                return;
+            }
+
+            lastPrunedPaletteRevision =
+                LevelEditorState.PaletteRevision;
+            var entryIds = new HashSet<string>();
+            var entryNames = new HashSet<string>();
+            for (int index = 0; index < palette.Entries.Count; index++)
+            {
+                LevelEditorBlockEntry entry = palette.Entries[index];
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(entry.EntryId))
+                {
+                    entryIds.Add(entry.EntryId);
+                }
+
+                if (!string.IsNullOrEmpty(entry.DisplayName))
+                {
+                    entryNames.Add(entry.DisplayName);
+                }
+            }
+
+            int removed = 0;
+            for (int roomIndex = 0;
+                 roomIndex < document.rooms.Count;
+                 roomIndex++)
+            {
+                removed += document.rooms[roomIndex].boxes.RemoveAll(
+                    box => IsMissingPaletteBlock(
+                        box,
+                        entryIds,
+                        entryNames));
+            }
+
+            removed += document.assemblyPatches.RemoveAll(
+                box => IsMissingPaletteBlock(
+                    box,
+                    entryIds,
+                    entryNames));
+            if (removed == 0)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(planningSnapshot))
+            {
+                planningUndo.Push(planningSnapshot);
+            }
+
+            document.RefreshConnectorPaths();
+            planningSnapshot = JsonUtility.ToJson(document, false);
+            planningRedo.Clear();
+            SaveDocument();
+            RefreshAll();
+            statusLabel.text =
+                $"已删除 {removed} 个引用失效栏目的规划方块。";
+        }
+
+        private static bool IsMissingPaletteBlock(
+            PlanningBox box,
+            HashSet<string> entryIds,
+            HashSet<string> entryNames)
+        {
+            if (box == null || box.type == PlanningDetailType.Prop)
+            {
+                return false;
+            }
+
+            bool hasReference =
+                !string.IsNullOrEmpty(box.paletteEntryId) ||
+                !string.IsNullOrEmpty(box.paletteEntryName);
+            if (!hasReference)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(box.paletteEntryId) &&
+                entryIds.Contains(box.paletteEntryId))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(box.paletteEntryName) &&
+                entryNames.Contains(box.paletteEntryName))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private void RefreshLevelContextStatus()

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Project;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -46,10 +48,9 @@ namespace Project.SurfaceTiles.Editor
                 return;
             }
 
-            SurfaceTileBlock[] blocks = Object.FindObjectsByType<SurfaceTileBlock>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-            for (int index = 0; index < blocks.Length; index++)
+            IReadOnlyList<SurfaceTileBlock> blocks =
+                ProjectDiscovery.FindAll<SurfaceTileBlock>(true);
+            for (int index = 0; index < blocks.Count; index++)
             {
                 SurfaceTileBlock block = blocks[index];
                 if (block == null || block.Palette == null || block.BakeUpToDate)

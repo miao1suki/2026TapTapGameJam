@@ -12,8 +12,10 @@
 | 成就 | `Assets/_Project/Code/Systems/Achievements` | 其他程序旧功能，空新catalog |
 | Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本 |
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
-| 方块功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 全覆盖交互契约；动力组件含开关/信号源与单次/持续/脉冲调试，完整动力网络待施工 |
-| 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；世界图/详情/装配图、方块/道具栏目、矩形多选与单块合并、组件模板、贴画、场景生成和本地存档；RGB 栏目直连 ColorBlock 预制体 |
+| 方块功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 全覆盖交互契约；`BlockAbilityHost`/Catalog 按颜色与角色自动启停动力、水体等模块，完整动力能力配置待施工 |
+| 公共自动发现与 Inspector 基础 | `Assets/_Project/Code/Shared` | `ProjectDiscovery` 统一多态组件/标签/类型发现；项目自制组件使用 UI Toolkit Inspector、中文标签和 Foldout 分区 |
+| 字幕管理器与触发展示 | `Assets/_Project/Code/Systems/Subtitles` | `SubtitleManager` 统一管理中间大字/下方小字、九宫格位置、扩展进出动画与打字机/故障/漂浮等效果；`SubtitleTrigger` 支持重复激发并调用 API，与相机系统解耦 |
+| 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；世界图/详情/装配图、方块/道具栏目、玩家贴纸与拖拽同步、矩形多选与单块合并、组件模板、贴画、场景生成和本地存档；RGB 栏目直连 ColorBlock 预制体 |
 | 可变色方块/颜色工作台/HSV褪色 | `Assets/_Project/Code/Systems/ColorBlocks` | RGB 类型、钥匙拉远／恢复／返回演出、按层褪色调试、蓝水同步渐显与玩家游泳、交互图基础节点；九种完整交互及混色执行待设计 |
 | 交互水面 | `Assets/ta_source/InteractiveWater` | TA 独立预制体保留独立波纹/反射；颜色管理器生成的蓝水实例使用共享低分辨率模拟和渐显，已在 Test Play Mode 验证 |
 

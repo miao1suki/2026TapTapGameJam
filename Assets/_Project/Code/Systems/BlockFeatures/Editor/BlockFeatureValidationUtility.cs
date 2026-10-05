@@ -96,9 +96,21 @@ namespace Project.BlockFeatures.Editor
                 return report;
             }
 
-            BlockFeature[] features =
-                root.GetComponents<BlockFeature>();
-            if (features.Length == 0)
+            IReadOnlyList<BlockFeature> allFeatures =
+                ProjectDiscovery.GetComponents<BlockFeature>(root);
+            var features = new List<BlockFeature>();
+            for (int index = 0;
+                 index < allFeatures.Count;
+                 index++)
+            {
+                if (allFeatures[index] != null &&
+                    allFeatures[index].enabled)
+                {
+                    features.Add(allFeatures[index]);
+                }
+            }
+
+            if (features.Count == 0)
             {
                 return report;
             }
@@ -111,7 +123,7 @@ namespace Project.BlockFeatures.Editor
             }
 
             var counts = new Dictionary<Type, int>();
-            for (int index = 0; index < features.Length; index++)
+            for (int index = 0; index < features.Count; index++)
             {
                 BlockFeature feature = features[index];
                 Type type = feature.GetType();
@@ -124,6 +136,13 @@ namespace Project.BlockFeatures.Editor
                 {
                     report.AddError(
                         $"{type.Name} 缺少中文 DisplayName。");
+                }
+
+                if (string.IsNullOrWhiteSpace(
+                        metadata.DefaultColorId))
+                {
+                    report.AddError(
+                        $"{type.Name} 缺少 DefaultColorId。");
                 }
 
                 if (count + 1 > metadata.MaxPerBlock)
@@ -148,7 +167,7 @@ namespace Project.BlockFeatures.Editor
 
         private static void ValidateRequirements(
             BlockFeatureValidationReport report,
-            BlockFeature[] features,
+            IReadOnlyList<BlockFeature> features,
             BlockFeatureMetadata metadata)
         {
             for (int index = 0; index < metadata.Requires.Count; index++)
@@ -173,7 +192,7 @@ namespace Project.BlockFeatures.Editor
 
         private static void ValidateConflicts(
             BlockFeatureValidationReport report,
-            BlockFeature[] features,
+            IReadOnlyList<BlockFeature> features,
             BlockFeatureMetadata metadata)
         {
             for (int index = 0; index < metadata.Conflicts.Count; index++)
@@ -190,10 +209,10 @@ namespace Project.BlockFeatures.Editor
         }
 
         private static bool HasFeatureImplementing(
-            BlockFeature[] features,
+            IReadOnlyList<BlockFeature> features,
             Type capability)
         {
-            for (int index = 0; index < features.Length; index++)
+            for (int index = 0; index < features.Count; index++)
             {
                 if (capability.IsInstanceOfType(features[index]))
                 {

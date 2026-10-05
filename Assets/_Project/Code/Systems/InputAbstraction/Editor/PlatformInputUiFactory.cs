@@ -1,3 +1,4 @@
+using Project;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -171,8 +172,8 @@ namespace Project.InputAbstraction.Editor
 
         private static void EnsureEventSystem()
         {
-            EventSystem eventSystem = Object.FindFirstObjectByType<EventSystem>(
-                FindObjectsInactive.Include);
+            EventSystem eventSystem =
+                ProjectDiscovery.FindFirst<EventSystem>(true);
             if (eventSystem == null)
             {
                 GameObject eventSystemObject = new GameObject(

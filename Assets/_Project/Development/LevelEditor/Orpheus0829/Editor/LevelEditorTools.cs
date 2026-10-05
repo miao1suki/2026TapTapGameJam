@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Project.BlockFeatures;
 using Project.ColorBlocks;
 using Project.LevelEditor;
 using Project.SurfaceTiles;
@@ -172,17 +173,34 @@ namespace Project.LevelEditor.Editor
                 return false;
             }
 
-            Transform playerTransform = player.transform;
-            Vector3 position = playerTransform.position;
-            if (Mathf.Approximately(position.z, 0f))
+            return SetPlayerPosition(player.transform.position, true);
+        }
+
+        internal static bool SetPlayerPosition(
+            Vector3 position,
+            bool recordUndo)
+        {
+            GameObject player = LevelEditorState.Player;
+            if (player == null || !player.scene.IsValid())
             {
                 return false;
             }
 
-            Undo.RecordObject(
-                playerTransform,
-                "将玩家对齐到关卡平面");
+            Transform playerTransform = player.transform;
             position.z = 0f;
+            if ((playerTransform.position - position).sqrMagnitude <
+                .000001f)
+            {
+                return false;
+            }
+
+            if (recordUndo)
+            {
+                Undo.RecordObject(
+                    playerTransform,
+                    "移动玩家参考");
+            }
+
             playerTransform.position = position;
             EditorUtility.SetDirty(playerTransform);
             if (player.scene.IsValid())
@@ -202,6 +220,125 @@ namespace Project.LevelEditor.Editor
             }
 
             return SnapPlayerToPlane();
+        }
+    }
+
+    internal static class PlanningPlayerUndoUtility
+    {
+        private static readonly List<PlanningPlayerUndoRecord> Records =
+            new List<PlanningPlayerUndoRecord>();
+
+        static PlanningPlayerUndoUtility()
+        {
+            Undo.undoRedoPerformed -= OnUndoRedoPerformed;
+            Undo.undoRedoPerformed += OnUndoRedoPerformed;
+        }
+
+        internal static void RecordDrag(
+            GameObject player,
+            Vector3 beforePosition,
+            Vector3 afterPosition)
+        {
+            if (player == null ||
+                !player.scene.IsValid() ||
+                (beforePosition - afterPosition).sqrMagnitude <
+                .000001f)
+            {
+                return;
+            }
+
+            PlanningPlayerUndoRecord record =
+                ScriptableObject.CreateInstance<
+                    PlanningPlayerUndoRecord>();
+            record.hideFlags = HideFlags.HideAndDontSave;
+            record.Configure(
+                player.GetInstanceID(),
+                beforePosition,
+                afterPosition);
+            Undo.RecordObject(record, "移动玩家参考");
+            record.MarkAfter();
+            Records.Add(record);
+        }
+
+        private static void OnUndoRedoPerformed()
+        {
+            for (int index = Records.Count - 1;
+                 index >= 0;
+                 index--)
+            {
+                PlanningPlayerUndoRecord record = Records[index];
+                if (record == null)
+                {
+                    Records.RemoveAt(index);
+                    continue;
+                }
+
+                if (record.LastHandledVersion == record.Version)
+                {
+                    continue;
+                }
+
+                record.LastHandledVersion = record.Version;
+                Apply(record);
+            }
+        }
+
+        private static void Apply(PlanningPlayerUndoRecord record)
+        {
+            GameObject player = LevelEditorState.Player;
+            if (player == null ||
+                !player.scene.IsValid() ||
+                player.GetInstanceID() != record.PlayerInstanceId)
+            {
+                return;
+            }
+
+            Vector3 target = record.Version == 1
+                ? record.AfterPosition
+                : record.BeforePosition;
+            target.z = 0f;
+            Transform targetTransform = player.transform;
+            if ((targetTransform.position - target).sqrMagnitude <
+                .000001f)
+            {
+                return;
+            }
+
+            targetTransform.position = target;
+            EditorUtility.SetDirty(targetTransform);
+            EditorSceneManager.MarkSceneDirty(player.scene);
+        }
+    }
+
+    internal sealed class PlanningPlayerUndoRecord : ScriptableObject
+    {
+        [SerializeField] private int playerInstanceId;
+        [SerializeField] private Vector3 beforePosition;
+        [SerializeField] private Vector3 afterPosition;
+        [SerializeField] private int version;
+
+        internal int PlayerInstanceId => playerInstanceId;
+        internal Vector3 BeforePosition => beforePosition;
+        internal Vector3 AfterPosition => afterPosition;
+        internal int Version => version;
+        internal int LastHandledVersion { get; set; }
+
+        internal void Configure(
+            int valuePlayerInstanceId,
+            Vector3 valueBeforePosition,
+            Vector3 valueAfterPosition)
+        {
+            playerInstanceId = valuePlayerInstanceId;
+            beforePosition = valueBeforePosition;
+            afterPosition = valueAfterPosition;
+            version = 0;
+            LastHandledVersion = 0;
+        }
+
+        internal void MarkAfter()
+        {
+            version = 1;
+            LastHandledVersion = 1;
         }
     }
 
@@ -297,8 +434,14 @@ namespace Project.LevelEditor.Editor
                 return;
             }
 
+            LevelEditorBlockEntry removedEntry =
+                index >= 0 && index < palette.Entries.Count
+                    ? palette.Entries[index]
+                    : null;
             Undo.RecordObject(palette, "移除关卡方块栏目");
             palette.RemoveAt(index);
+            LevelEditorBlockFactory.RemovePlacedBlocksForEntry(
+                removedEntry);
             EditorUtility.SetDirty(palette);
             AssetDatabase.SaveAssetIfDirty(palette);
             LevelEditorState.MarkPaletteChanged();
@@ -566,11 +709,9 @@ namespace Project.LevelEditor.Editor
         internal static LevelEditorPlacedBlock FindAt(Vector2Int cell)
         {
             UnityEngine.SceneManagement.Scene targetScene = TargetScene();
-            LevelEditorPlacedBlock[] blocks =
-                Object.FindObjectsByType<LevelEditorPlacedBlock>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-            for (int index = 0; index < blocks.Length; index++)
+            IReadOnlyList<LevelEditorPlacedBlock> blocks =
+                ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
+            for (int index = 0; index < blocks.Count; index++)
             {
                 if (blocks[index].gameObject.scene == targetScene &&
                     blocks[index].ContainsCell(cell))
@@ -664,6 +805,7 @@ namespace Project.LevelEditor.Editor
                 entry.DisplayName,
                 entry.Color,
                 !entry.UsesPrefabDirectly);
+            BlockAbilityHost.EnsureOn(instance);
             if (!entry.UsesPrefabDirectly)
             {
                 LevelEditorDecorationService.ApplyToPlacedBlock(
@@ -699,6 +841,9 @@ namespace Project.LevelEditor.Editor
                 return null;
             }
 
+            LevelEditorComponentOverrideUtility.ApplyOverrides(
+                instance,
+                entry.ComponentValueOverrides);
             GameObject requestedParent =
                 LevelEditorState.GenerationParent;
             Transform root = requestedParent != null &&
@@ -723,6 +868,48 @@ namespace Project.LevelEditor.Editor
             return placed;
         }
 
+        internal static void ApplyPropOverridesToPlacedBlocks(
+            LevelEditorPropEntry entry)
+        {
+            if (entry == null ||
+                string.IsNullOrEmpty(entry.DisplayName))
+            {
+                return;
+            }
+
+            UnityEngine.SceneManagement.Scene targetScene =
+                TargetScene();
+            IReadOnlyList<LevelEditorPlacedBlock> blocks =
+                ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
+            int changed = 0;
+            for (int index = 0; index < blocks.Count; index++)
+            {
+                LevelEditorPlacedBlock block = blocks[index];
+                if (!block.IsProp ||
+                    block.gameObject.scene != targetScene ||
+                    block.EntryName != entry.DisplayName)
+                {
+                    continue;
+                }
+
+                Undo.RecordObject(block.gameObject, "应用道具组件数值");
+                LevelEditorComponentOverrideUtility
+                    .RestorePrefabDefaults(
+                        block.gameObject,
+                        entry.Prefab);
+                LevelEditorComponentOverrideUtility.ApplyOverrides(
+                    block.gameObject,
+                    entry.ComponentValueOverrides);
+                EditorUtility.SetDirty(block.gameObject);
+                changed++;
+            }
+
+            if (changed > 0)
+            {
+                MarkDirty(targetScene);
+            }
+        }
+
         internal static bool EraseAt(Vector2Int cell)
         {
             LevelEditorPlacedBlock block = FindAt(cell);
@@ -734,6 +921,47 @@ namespace Project.LevelEditor.Editor
             MarkDirty(block.gameObject.scene);
             Undo.DestroyObjectImmediate(block.gameObject);
             return true;
+        }
+
+        internal static int RemovePlacedBlocksForEntry(
+            LevelEditorBlockEntry entry)
+        {
+            if (entry == null ||
+                string.IsNullOrEmpty(entry.DisplayName))
+            {
+                return 0;
+            }
+
+            UnityEngine.SceneManagement.Scene targetScene =
+                TargetScene();
+            IReadOnlyList<LevelEditorPlacedBlock> blocks =
+                ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
+            var targets = new List<LevelEditorPlacedBlock>();
+            for (int index = 0; index < blocks.Count; index++)
+            {
+                LevelEditorPlacedBlock block = blocks[index];
+                if (!block.IsProp &&
+                    block.gameObject.scene == targetScene &&
+                    block.EntryName == entry.DisplayName)
+                {
+                    targets.Add(block);
+                }
+            }
+
+            if (targets.Count == 0)
+            {
+                return 0;
+            }
+
+            Undo.SetCurrentGroupName("删除栏目并清理已放置方块");
+            for (int index = 0; index < targets.Count; index++)
+            {
+                Undo.DestroyObjectImmediate(
+                    targets[index].gameObject);
+            }
+
+            MarkDirty(targetScene);
+            return targets.Count;
         }
 
         internal static int SelectedBlockCount
@@ -834,6 +1062,7 @@ namespace Project.LevelEditor.Editor
             placed.Configure(new Vector2Int(minX, minY), first.EntryName,
                 first.EntryColor, prefab == null);
             placed.SetSizeCells(new Vector2Int(width, height));
+            BlockAbilityHost.EnsureOn(merged);
             if (prefab == null)
                 merged.GetComponent<MeshRenderer>().sharedMaterial = first.GetComponent<MeshRenderer>().sharedMaterial;
             foreach (LevelEditorPlacedBlock block in blocks)
@@ -859,14 +1088,13 @@ namespace Project.LevelEditor.Editor
 
         internal static void MigratePlacedBlocks()
         {
-            LevelEditorPlacedBlock[] blocks =
-                Object.FindObjectsByType<LevelEditorPlacedBlock>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
+            IReadOnlyList<LevelEditorPlacedBlock> blocks =
+                ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
             float scale = Mathf.Max(.05f, LevelEditorState.CellSize);
-            for (int index = 0; index < blocks.Length; index++)
+            for (int index = 0; index < blocks.Count; index++)
             {
                 LevelEditorPlacedBlock block = blocks[index];
+                BlockAbilityHost.EnsureOn(block.gameObject);
                 bool isPlainPrimitive =
                     PrefabUtility.GetPrefabInstanceStatus(
                         block.gameObject) == PrefabInstanceStatus.NotAPrefab &&

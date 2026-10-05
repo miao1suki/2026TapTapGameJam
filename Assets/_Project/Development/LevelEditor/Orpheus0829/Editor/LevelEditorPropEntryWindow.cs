@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Project.LevelEditor;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -13,6 +14,11 @@ namespace Project.LevelEditor.Editor
         private TextField nameField;
         private ObjectField prefabField;
         private Label statusLabel;
+        private Button editComponentsButton;
+        private GameObject lastPrefab;
+        private readonly List<LevelEditorComponentValueOverride>
+            draftOverrides =
+                new List<LevelEditorComponentValueOverride>();
 
         internal static void OpenForAdd()
         {
@@ -21,7 +27,7 @@ namespace Project.LevelEditor.Editor
             window.editingExisting = false;
             window.editingIndex = -1;
             window.titleContent = new GUIContent("新增道具");
-            window.minSize = new Vector2(340f, 180f);
+            window.minSize = new Vector2(380f, 245f);
             window.Show();
             window.Focus();
             window.LoadValues();
@@ -34,7 +40,7 @@ namespace Project.LevelEditor.Editor
             window.editingExisting = true;
             window.editingIndex = index;
             window.titleContent = new GUIContent("编辑道具");
-            window.minSize = new Vector2(340f, 180f);
+            window.minSize = new Vector2(380f, 245f);
             window.Show();
             window.Focus();
             window.LoadValues();
@@ -60,19 +66,40 @@ namespace Project.LevelEditor.Editor
                 objectType = typeof(GameObject),
                 allowSceneObjects = false
             };
+            prefabField.RegisterValueChangedCallback(evt =>
+            {
+                GameObject selected = evt.newValue as GameObject;
+                if (selected != lastPrefab)
+                {
+                    draftOverrides.Clear();
+                }
+
+                lastPrefab = selected;
+                RefreshEditButton();
+            });
             root.Add(nameField);
             root.Add(prefabField);
 
             Label hint = new Label(
-                "道具栏目只能放入预制体，放置到网格后占用一个格子。");
+                "组件数值用于区分同一个预制体的不同配置；" +
+                "只保存到当前道具栏目，不修改预制体资产。");
             hint.style.whiteSpace = WhiteSpace.Normal;
-            hint.style.opacity = .72f;
+            hint.style.opacity = .76f;
             hint.style.marginTop = 5f;
             root.Add(hint);
 
+            editComponentsButton = new Button(OpenComponentEditor)
+            {
+                text = "编辑组件数值"
+            };
+            editComponentsButton.style.height = 30f;
+            editComponentsButton.style.marginTop = 8f;
+            root.Add(editComponentsButton);
+
             statusLabel = new Label();
             statusLabel.style.whiteSpace = WhiteSpace.Normal;
-            statusLabel.style.marginTop = 6f;
+            statusLabel.style.marginTop = 5f;
+            statusLabel.style.opacity = .82f;
             root.Add(statusLabel);
 
             Button save = new Button(Save)
@@ -99,17 +126,71 @@ namespace Project.LevelEditor.Editor
             if (editingExisting && entry == null)
             {
                 nameField.SetValueWithoutNotify(string.Empty);
+                prefabField.SetValueWithoutNotify(null);
+                draftOverrides.Clear();
                 statusLabel.text = "道具栏目已经不存在。";
+                RefreshEditButton();
                 return;
+            }
+
+            draftOverrides.Clear();
+            if (entry != null)
+            {
+                for (int index = 0;
+                     index < entry.ComponentValueOverrides.Count;
+                     index++)
+                {
+                    LevelEditorComponentValueOverride value =
+                        entry.ComponentValueOverrides[index];
+                    if (value != null)
+                    {
+                        draftOverrides.Add(value.Clone());
+                    }
+                }
             }
 
             nameField.SetValueWithoutNotify(
                 entry != null ? entry.DisplayName : "新道具");
-            prefabField.SetValueWithoutNotify(
-                entry != null ? entry.Prefab : null);
+            lastPrefab = entry != null ? entry.Prefab : null;
+            prefabField.SetValueWithoutNotify(lastPrefab);
             statusLabel.text = editingExisting
-                ? "只允许修改名称和道具预制体。"
+                ? "只允许修改名称、预制体和组件数值覆盖。"
                 : "请选择道具预制体。";
+            RefreshEditButton();
+        }
+
+        private void OpenComponentEditor()
+        {
+            GameObject prefab = prefabField?.value as GameObject;
+            if (prefab == null)
+            {
+                statusLabel.text = "请先指定道具预制体。";
+                return;
+            }
+
+            LevelEditorPropComponentEditorWindow.Open(
+                prefab,
+                draftOverrides,
+                values =>
+                {
+                    draftOverrides.Clear();
+                    for (int index = 0; index < values.Count; index++)
+                    {
+                        draftOverrides.Add(values[index].Clone());
+                    }
+
+                    statusLabel.text =
+                        $"组件数值已编辑，共 {draftOverrides.Count} 项覆盖，尚未保存。";
+                });
+        }
+
+        private void RefreshEditButton()
+        {
+            if (editComponentsButton != null)
+            {
+                editComponentsButton.SetEnabled(
+                    prefabField?.value != null);
+            }
         }
 
         private void Save()
@@ -156,6 +237,14 @@ namespace Project.LevelEditor.Editor
                 }
             }
 
+            LevelEditorPropEntry saved =
+                palette.PropEntries[selectedIndex];
+            saved.ReplaceComponentValueOverrides(draftOverrides);
+            LevelEditorBlockFactory.ApplyPropOverridesToPlacedBlocks(
+                saved);
+            EditorUtility.SetDirty(palette);
+            AssetDatabase.SaveAssetIfDirty(palette);
+            LevelEditorState.MarkPaletteChanged();
             LevelEditorState.SelectedPropIndex = selectedIndex;
             SceneView.RepaintAll();
             Close();

@@ -2,6 +2,7 @@
   "name": "Project.SurfaceTiles.EditorTests",
   "rootNamespace": "Project.SurfaceTiles.Tests",
   "references": [
+    "Project.Shared.Runtime",
     "Project.SurfaceTiles.Runtime",
     "Project.SurfaceTiles.Editor",
     "UnityEngine.TestRunner",

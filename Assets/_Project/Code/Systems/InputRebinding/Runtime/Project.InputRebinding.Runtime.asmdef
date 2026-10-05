@@ -3,6 +3,7 @@
   "rootNamespace": "Project.InputRebinding",
   "references": [
     "Project.InputAbstraction.Runtime",
+    "Project.Shared.Runtime",
     "Unity.InputSystem"
   ],
   "includePlatforms": [],

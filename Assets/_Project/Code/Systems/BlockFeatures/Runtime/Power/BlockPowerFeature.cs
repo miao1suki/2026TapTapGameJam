@@ -58,6 +58,7 @@ namespace Project.BlockFeatures.Power
 
     [BlockFeature(
         DisplayName = "动力信号组件",
+        DefaultColorId = "red",
         Phase = BlockFeaturePhase.Reaction,
         Order = 0,
         MaxPerBlock = 1,

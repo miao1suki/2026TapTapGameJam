@@ -1,4 +1,5 @@
 using System.IO;
+using Project;
 using Project.Player;
 using Project.GameFlow;
 using Project.GameFlow.Editor;
@@ -34,7 +35,8 @@ public static class TapTapFoundationSetup
         for (int i = 0; i < paths.Length; i++)
         {
             Scene scene = EditorSceneManager.OpenScene(paths[i]);
-            var context = Object.FindFirstObjectByType<LevelSceneContext>();
+            var context =
+                ProjectDiscovery.FindFirst<LevelSceneContext>();
             context.SetPlayerPrefab(prefab);
             context.PlayerSpawn.position = new Vector3(-6, 1.2f, 0);
             if (GameObject.Find("FoundationTestGeometry") == null)
@@ -51,11 +53,11 @@ public static class TapTapFoundationSetup
             EditorSceneManager.SaveScene(scene);
         }
         Scene core = EditorSceneManager.OpenScene(GameFlowSceneScaffolder.CorePath);
-        if (!Object.FindFirstObjectByType<AchievementManager>()) new GameObject("AchievementService").AddComponent<AchievementManager>();
-        if (!Object.FindFirstObjectByType<AchievementSignalBridge>()) new GameObject("AchievementSignalBridge").AddComponent<AchievementSignalBridge>();
+        if (!ProjectDiscovery.FindFirst<AchievementManager>()) new GameObject("AchievementService").AddComponent<AchievementManager>();
+        if (!ProjectDiscovery.FindFirst<AchievementSignalBridge>()) new GameObject("AchievementSignalBridge").AddComponent<AchievementSignalBridge>();
         EditorSceneManager.SaveScene(core);
         Scene uiScene = EditorSceneManager.OpenScene(GameFlowSceneScaffolder.UiPath);
-        var router = Object.FindFirstObjectByType<GameUiRouter>();
+        var router = ProjectDiscovery.FindFirst<GameUiRouter>();
         Transform hud = router.transform.Find("GameplayHud");
         if (hud.Find("PlatformInputUI") == null)
         {

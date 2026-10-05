@@ -5,6 +5,7 @@
     "Project.InputAbstraction.Runtime",
     "Project.GameFlow.Runtime",
     "Project.CameraModes.Runtime",
+    "Project.Shared.Runtime",
     "Unity.UGUI"
   ],
   "includePlatforms": [],

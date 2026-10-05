@@ -4,6 +4,7 @@
   "references": [
     "Project.Achievements.Runtime",
     "Project.InputAbstraction.Runtime",
+    "Project.Shared.Runtime",
     "Unity.UGUI"
   ],
   "includePlatforms": [

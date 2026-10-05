@@ -1,7 +1,9 @@
 {
   "name": "Project.SurfaceTiles.Runtime",
   "rootNamespace": "Project.SurfaceTiles",
-  "references": [],
+  "references": [
+    "Project.Shared.Runtime"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

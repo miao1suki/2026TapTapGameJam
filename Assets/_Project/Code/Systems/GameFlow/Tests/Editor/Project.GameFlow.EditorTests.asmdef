@@ -3,7 +3,8 @@
   "rootNamespace": "Project.GameFlow.Tests",
   "references": [
     "Project.GameFlow.Runtime",
-    "Project.GameFlow.Editor"
+    "Project.GameFlow.Editor",
+    "Project.Shared.Runtime"
   ],
   "includePlatforms": [
     "Editor"

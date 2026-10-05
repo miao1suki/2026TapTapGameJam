@@ -70,7 +70,7 @@ namespace Project.GameFlow
             }
 
             CameraFollowController follow =
-                FindFirstObjectByType<CameraFollowController>();
+                ProjectDiscovery.FindFirst<CameraFollowController>();
             if (follow != null)
             {
                 follow.SetTarget(spawnedPlayer.transform, true);
@@ -78,7 +78,7 @@ namespace Project.GameFlow
             }
 
             CameraModeController mode =
-                FindFirstObjectByType<CameraModeController>();
+                ProjectDiscovery.FindFirst<CameraModeController>();
             mode?.SetFollowTarget(spawnedPlayer.transform, true);
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Project;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -344,10 +345,9 @@ namespace Project.SurfaceTiles.Editor
         private static void EnsureUniqueId(SurfaceTileBlock block)
         {
             block.EnsureBlockId();
-            SurfaceTileBlock[] all = UnityEngine.Object.FindObjectsByType<SurfaceTileBlock>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-            for (int index = 0; index < all.Length; index++)
+            IReadOnlyList<SurfaceTileBlock> all =
+                ProjectDiscovery.FindAll<SurfaceTileBlock>(true);
+            for (int index = 0; index < all.Count; index++)
             {
                 if (all[index] != block && all[index].BlockId == block.BlockId)
                 {

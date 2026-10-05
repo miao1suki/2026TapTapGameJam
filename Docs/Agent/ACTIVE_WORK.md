@@ -1,5 +1,122 @@
 # 工作状态与交接（每次任务重读）
 
+## 字幕道具慢显隐与缩略图缓存清理
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：把 `ScreenNoteTool` 预制体及关卡编辑器栏目覆盖中的淡入淡出时长从 0.8 秒调整为 1 秒，保留已有 3 秒停留和文字覆盖；字幕淡入淡出同时驱动 CanvasGroup 和 TMP 文本 alpha；清除栏目中会覆盖预制体空 `inCurve/outCurve` 的旧数据；修正栏目缩略图只清外层缓存、未清渲染服务内部缓存导致颜色可能继续显示为白色的问题。
+- 验证：Runtime 与 Editor 程序集静态编译均 0 错误；预制体和栏目覆盖时长已核对为 1/1/3；空曲线覆盖残留检查为 0；文字序列化未修改；Git 补丁检查通过。
+- 交接提交：待提交。
+
+## 道具组件覆盖面板对齐字幕 Inspector
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：修正关卡编辑器“道具组件数值”中 `SubtitleTrigger` 仍走旧通用字段和无翻译结构的问题。
+- 行为：覆盖面板复用字幕组件的“字幕内容 / 字幕样式 / 触发设置”布局、九宫格位置、扩展动画细节、重复激发开关和预览入口；`AnimationCurve` 也纳入覆盖值序列化。
+- 验证：Assembly-CSharp-Editor 静态编译 0 错误；待完成 Git 补丁检查和 Unity 窗口交互复验。
+- 交接提交：待提交。
+
+## 字幕位置、动画与重复激发扩展
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：扩展 `SubtitleAnchor` 为九宫格位置加自定义位置；扩展字幕动画为淡入横滑、弹性弹出、回弹、旋转、打字机、故障抖动、漂浮和脉冲；`SubtitleTrigger` Inspector 增加“允许重复激发”开关。
+- 行为：打字机由 `charactersPerSecond` 控制逐字速度；新动画细节参数集中在“动画细节”折叠区；重复激发开关复用原有 `playOnce` 运行时语义，不改变已验证过的触发逻辑。
+- 验证：Runtime 与 Editor 程序集静态编译均 0 错误、0 警告；Git 补丁检查通过；Unity 窗口与 PlayMode 交互仍待复验。
+- 交接提交：待提交。
+
+## 主角默认跳跃高度翻倍
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：把主角默认跳跃高度提高到原来的两倍；同步脚本默认值、`RuntimePlayer` 预制体和现有测试场景中的序列化值。
+- 行为：只把起跳速度从 `7` 调整为 `7 × √2 ≈ 9.899`，上升重力、松键重力、下落重力、最大下落速度、土狼时间、跳跃缓冲和横向手感保持不变。
+- 验证：Runtime 与 Editor 程序集静态编译均 0 错误；玩家预制体和 `SampleScene`、`RoyTestScene`、`Test` 中 4 处 `jumpSpeed` 均已同步为 `9.899`；Git 补丁检查通过。未运行 PlayMode 跳跃实测。
+- 交接提交：待提交。
+
+## 纯色栏目缩略图恢复
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：修复受管纯色栏目使用“直接预制体”模式时，缩略图只显示预制体当前白色材质的问题。
+- 行为：预览生成仍使用正式预制体结构，但受管颜色栏目会把栏目颜色通过 `MaterialPropertyBlock` 叠加到预览 renderer，不修改预制体资产和游戏运行材质。
+- 验证：使用比赛项目 Unity 6000.3.12 的 `Assembly-CSharp-Editor.rsp` 完成静态编译，0 错误；Git 补丁检查通过。
+- 交接提交：待提交。
+
+## 网格玩家贴纸与拖拽同步
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：在装配图和房间/通道详情图中增加玩家最高层贴纸，显示玩家缩略图与“玩家”文字；贴纸位置与场景玩家 Transform 双向同步，可直接拖拽移动玩家。
+- 行为：玩家贴纸只做覆盖层，不参与方块/道具占位、覆盖、删除、擦除和生成；进入装配图、房间详情或通道详情后常态显示，玩家位置超出当前视口时贴纸钉在对应边缘而不会消失。设置玩家参考时自动贴到 XY 平面并刷新网格显示；聚焦玩家同时聚焦 SceneView 和网格画面。
+- 撤回：每次拖动结束时写入一条自定义 Undo 记录；撤回/重做时仅当当前指定玩家仍是该记录绑定的玩家对象时才恢复对应位置，玩家引用已变化则跳过。
+- 验证：使用比赛项目 Unity 6000.3.12 的 `Assembly-CSharp-Editor.rsp` 完成静态编译，0 错误、0 警告；Git 补丁检查通过。窗口内的实际拖拽、缩略图异步刷新和 Scene/网格双向同步仍待 Unity 交互复验。
+- 交接提交：待提交。
+
+## 道具组件覆盖排除 Transform
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：修正道具组件数值编辑把预览物体的 `Transform` 位置、旋转和缩放保存为覆盖值的问题；生成道具时不再应用任何 `Transform` 覆盖。
+- 行为：道具组件编辑窗口只列出和控制实际功能组件，不再显示 `Transform`；已有栏目里的 `Transform` 覆盖会作为无效数据忽略，普通放置与规划生成都在应用其他覆盖后最后写入格子位置。
+- 验证：栏目资产已无 `UnityEngine.Transform` 覆盖和预览用的 `10000` 坐标；使用比赛项目 Unity 6000.3.12 的 `Assembly-CSharp-Editor.rsp` 完成静态编译，0 错误；Git 补丁检查通过。
+- 交接提交：待提交。
+
+## 规划方块场景引用重新解析
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：修正详情图/装配图选中规划方块后仍可能使用旧 `sceneBlock` 缓存的问题；每次读取选中项时按房间、场景格、方块/道具类型和栏目名称重新解析当前场景实例。
+- 行为：手动“定位方块”会选中目标并在 SceneView 中执行一次主动聚焦；场景生成后的自动视角保持本次任务既有行为不变。
+- 验证：使用比赛项目 Unity 6000.3.12 的 `Assembly-CSharp-Editor.rsp` 完成静态编译，0 错误；Git 补丁检查通过。
+- 交接提交：待提交。
+
+## 生成场景保持编辑视角
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：生成当前房间、当前通道或整套规划场景后，不再自动对生成根节点执行 SceneView 取景；保留生成后的对象选中和场景重绘。
+- 边界：不改变手动“聚焦玩家”“定位方块”和进入编辑模式时的主动聚焦行为。
+- 验证：使用比赛项目 Unity 6000.3.12 的 `Assembly-CSharp-Editor.rsp` 完成静态编译，0 错误；Git 补丁检查通过。
+- 交接提交：待提交。
+
+## 公共自动发现与自制组件 Inspector 整理
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：新增项目级多态发现服务，统一场景组件、具体实现类型与发现标签查询；为项目自制可见组件补齐 UI Toolkit Inspector、中文标签、Foldout 分区、条件显隐与只读调试信息。
+- 技能约束：以 `.agents/skills/taptap-editor-ui/SKILL.md` 原有编辑器工具、UI Toolkit、工作流和验收规则为优先；在其后追加补充条款，规定日后新增或修改自制组件时必须提供自定义 Inspector；除脚本名和类名外，标题、字段、分组、枚举、提示、按钮与状态信息全部中文，并统一使用 UI Toolkit、Foldout、条件显隐和运行时只读分区。
+- 能力匹配收口：每个 `BlockFeature` 只声明一个 `DefaultColorId`，移除 `RoleTags` 多标签匹配；`BlockAbilityHost` 只按颜色 ID 精确启停组件，不再显示独立“方块角色”维度。
+- 运行时状态显示：`BlockAbilityHost` Inspector 只读显示当前颜色、已启用组件和已禁用组件；不再提供手动颜色或启停入口，`BlockFeature` 在编辑模式下强制禁用，只允许运行时按玩法颜色切换。
+- Play Mode 测试：`ColorWorldManager` Inspector 提供仅本次运行有效的颜色解锁开关，可逐色解锁、逐色锁回以及全部解锁／全部锁上；测试项全局检测颜色目录，后续新增颜色无需改代码，且不写入场景、目录或存档。
+- 验证补充：`SetUnlockedForCurrentSession`、`SetAllUnlockedForCurrentSession` 与 Inspector 测试开关通过 Runtime/Editor 静态编译。
+- 游泳纵向规则：水中未按跳跃键时缓慢下沉，按住跳跃键时缓慢上浮；新增上浮速度、下潜速度和垂直游泳加速度参数，水平游泳保持原速。
+- 边界：不改变玩法数值、组件启停规则、场景序列化内容或第三方 TA/Timeline Inspector；不提交、不推送。
+- 接口：`ProjectDiscovery` 负责返回 `Component` 多态实例与编辑器类型实现；Inspector 辅助层只影响编辑器展示。
+- 验证：项目内非测试脚本的 `FindFirstObjectByType`、`FindObjectsByType` 与 `TypeCache.GetTypesDerivedFrom` 已全部收口到 `ProjectDiscovery`。替换时逐处保留原查询的未激活对象包含规则和返回顺序：默认排除未激活对象，原使用 `Include` 的位置显式传 `true`；批量查找与组件查找不再额外排序。使用比赛项目 `6000.3.12` 的现有响应文件补齐新源码，Runtime 与 Editor 静态编译 0 错误；SurfaceTiles/Achievements Editor 全量源码编译 0 错误（仅手动合并程序集时出现既有跨 asmdef 类型重复警告）；`git diff --check` 通过。Unity 当前实例尚未触发脚本刷新，完整编辑器内编译需在编辑器获得焦点后复核。
+
+## 绿色藤蔓攀爬组件
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：新增 `BlockVineFeature`，只实现绿色方块范围内的纵向攀爬与横向脱离；不实现枝条生长、叶片落脚点、根系连接、正式视觉、音效和跳跃脱离。纵向规则为按上方向向上爬、无输入自然下滑、按下方向快速下滑，松键时清除向上残留速度。
+- 接口：组件提供 `IBlockClimbSource`；`ColorBlock` 在进入/离开接触时转发给攀爬源；`PlayerController` 新增 `Climbing` 状态、`EnterClimb/ExitClimb` 和攀爬速度/加速度参数。
+- 验证：使用比赛项目 `6000.3.12` 响应文件完成 Runtime 与 Editor 静态编译，0 错误；组件内已留 TODO 注释，Editor Inspector 由通用 `BlockFeatureEditor` 自动提供。
+
+## 字幕管理器与触发道具组件
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：新增 `SubtitleManager`、`SubtitleTrigger`、字幕样式/请求数据与 UI Toolkit Inspector；支持中间大字、下方小字、字体、字号、颜色、位置、停留时间和进出动画。
+- 接口：`ShowLarge`、`ShowBottom`、`Show(SubtitleCue)`、`Hide`、`HideAll`；`SubtitleTrigger` 只调用管理器，默认隐藏自身及子 Renderer，保留 Collider。
+- 解耦：字幕使用独立的 `ScreenSpaceOverlay` 画布；字幕端实现 `ISubtitleService` 并由 `SubtitleServiceRegistry` 提供服务，相机端实现共享的 `ICameraViewportSource`，双方只依赖接口且都可独立不存在。
+- 验证：使用比赛项目 `6000.3.12` 响应文件完成 Runtime 与 Editor 静态编译，0 错误。
+
+## 道具预制体组件数值覆盖
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：道具栏目新增“组件数值覆盖”，用于同一预制体的不同配置；道具编辑窗口点击“编辑组件数值”打开独立窗口，组件不可增删搜索，默认组件排在最后并收起，每个组件可恢复预制体默认值。
+- 接口：`LevelEditorComponentValueOverride` 保存组件路径、类型、字段路径和值；道具窗口采集覆盖，`LevelEditorTools` 与 `PlanningSceneBuilder` 共用同一套应用函数。
+- 行为：保存后新放置/规划生成优先应用覆盖值；已有同名道具会先恢复预制体默认值再应用当前覆盖。
+- 验证：Runtime 与 Editor 静态编译通过（手动合并响应文件时出现既有重复源警告），未做 PlayMode/窗口交互验收。
+
+## 详情/装配选中方块场景引用
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：详情图/装配图选中已同步到场景的方块时，“聚焦玩家”所在工具行显示只读场景物体引用和“定位方块”按钮。
+- 行为：引用框禁止替换，只做 `Selection` 与 `Ping`；实际替换或属性编辑仍通过正常 Inspector 完成。同步时若规划数据已有同形方块，也会回填其场景实例引用，不再因为 `BoxesMatch` 提前跳过。
+- 存档门槛：顶部删除“同步到装配图”，改为“保存到当前存档”；只有当前存档已保存、保存后没有新的未保存改动、且选中方块已生成到场景时，“定位方块”才可用。详情/装配选择时会按房间、格子、类型和栏目标识即时反查场景物体，不依赖上一轮同步缓存。
+- 验证：规划编辑器相关 Runtime/Editor 源码静态编译通过。
+
 ## 当前功能与协作分支整合
 
 - 日期：2026-10-05；负责人：Codex；目标：整合本地已验收的颜色／关卡编辑进度、`Test` 场景、TA 水效果分支和音频分支至 `main` 并推送。
@@ -142,6 +259,32 @@
 - 后续调整：移除手动“房间父物体”入口，改为按房间名/通道名自动收纳到 `__PlanningMapGenerated` 下的同名子物体。
 - 后续调整：房间/通道详情聚焦改为寻找方块最密集区域，并按内容包围盒自动计算可见缩放。
 - 验证：使用比赛项目 `6000.3.12` 的编译响应文件通过 Runtime 与主 Editor 静态编译；受影响 asmdef 中除既有相机编辑器缓存引用外均通过。
+- 交接提交：待提交。
+
+## 栏目删除级联清理
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：删除方块栏目时，自动清理当前场景中对应栏目已放置的 `LevelEditorPlacedBlock`，并移除规划文档中引用已失效栏目的方块。
+- 行为：按被删除栏目的旧名称清理场景实例；规划数据按 `paletteEntryId` 优先匹配，缺少 ID 时回退名称匹配，改名或改色不会触发误删。
+- 验证：使用更新后的 Unity 6000.3.12 Editor 响应文件完成静态编译，0 错误。
+- 交接提交：待提交。
+
+## 水体功能组件
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：新增 `BlockWaterFeature`，将 TA 水体、Reveal、玩家游泳、入水/水花/离开音效和波纹调试封装为标准 `BlockFeature`。
+- 接口：提供 `IBlockWaterSource` 与 `IBlockWaterSwitch`；`ColorBlock` 优先把水接触交给该接口，无组件时保留蓝色兼容逻辑；`ColorWorldManager` 不再为自管水体的功能实例重复生成视觉。
+- 运行时：`BlockRuntime` 增加禁用功能过滤和 `RefreshFeatureSet()`，供后续颜色能力 profile 预装或切换组件。
+- 约束审计：全项目现有 `BlockFeature` 派生类为 `BlockPowerFeature` 与 `BlockWaterFeature`；唯一挂载动力功能的 `红方块_*.prefab` 仍保持启用。校验器现只检查 enabled 功能，预装但禁用的 profile 组件不会误报冲突。
+- 验证：使用比赛项目 `6000.3.12` 响应文件完成 Runtime 与 Editor 静态编译，0 错误。
+- 交接提交：待提交。
+
+## 颜色能力控制组件
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
+- 范围：新增 `BlockAbilityHost`、`BlockAbilityCatalog` 与编辑器自动扫描器；`BlockFeatureAttribute` 初始增加 `DefaultColorIds` 和 `RoleTags`，后续已收口为单一 `DefaultColorId` 精确匹配。
+- 行为：编辑器扫描全部 `BlockFeature` 生成能力目录；方块放置/生成时默认补齐 `BlockAbilityHost`；Host 按当前颜色和角色预装全部模块，切换时校验约束后统一启停并刷新 `BlockRuntime`。
+- 验证：使用比赛项目 `6000.3.12` 响应文件完成 Runtime 与 Editor 静态编译，0 错误。
 - 交接提交：待提交。
 
 ## Interactive Water 迁移包

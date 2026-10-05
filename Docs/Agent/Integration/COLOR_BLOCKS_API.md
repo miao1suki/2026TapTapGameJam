@@ -18,7 +18,7 @@
 
 关卡编辑器的“红方块 / 绿方块 / 蓝方块”栏目分别绑定 `Assets/_Project/Content/ColorBlocks/Prefabs/ColorBlock_red.prefab`、`ColorBlock_green.prefab`、`ColorBlock_blue.prefab`，采用直接预制体模式。`LevelEditorBlockEntry.ManagedColorTypeId` 与预制体的 `ColorBlock.BaseColorTypeId` 必须一致，颜色目录还须保留相应类型；Scene 绘制和 `PlanningSceneBuilder` 都拒绝失效的栏目，后者在清理旧生成内容之前验证。编辑器不对这些预制体套栏目材质色、贴花或组件模板。其他栏目和已放置的普通方块不被自动改造。
 
-预制体中的 `targetRenderer` 是基础网格：编辑态使用 `ColorCatalog.colors[*].targetMaterial` 识别材质，Prefab 根层号与颜色目录一致；运行时未解锁则使用 `ColorCatalog.NeutralMaterial`（白底黑框），解锁后禁用该 Renderer，不通过属性块染成 RGB 编辑色。这样 Scene／栏目缩略图可以辨认类型，玩家 Game 与构建版在未解锁时看到白色基础方块，解锁后只看到已接入的正式视觉。Scene 缩略图实例不会注册运行时 Manager。蓝色解锁后的视觉仅由 `ColorWorldManager` 创建的 TA 水效果承担；红、绿正式视觉未接入，解锁后暂不可见但碰撞和交互保留。后续接入正式视觉时须另建运行时效果，不得复用编辑识别材质。`RoyTestScene` 的旧 RGB 基础方块已一次性替换为对应预制体，其他类别保持原样；`Test` 场景的旧红色能源块也已替换。关卡编辑器道具栏目内置 `ColorKey_red/green/blue`，钥匙从开始即使用预制体的对应颜色材质；工作台新建钥匙直接实例化对应预制体，不生成重复 Timeline。
+预制体中的 `targetRenderer` 是基础网格：编辑态使用 `ColorCatalog.colors[*].targetMaterial` 识别材质，Prefab 根层号与颜色目录一致；运行时未解锁则使用 `ColorCatalog.NeutralMaterial`（白底黑框），解锁后禁用该 Renderer，不通过属性块染成 RGB 编辑色。这样 Scene／栏目缩略图可以辨认类型，玩家 Game 与构建版在未解锁时看到白色基础方块，解锁后只看到已接入的正式视觉。Scene 缩略图实例不会注册运行时 Manager。蓝色解锁后的视觉仅由 `ColorWorldManager` 创建的 TA 水效果承担；绿色解锁后由 `BlockVineFeature` 提供攀爬能力，正式藤蔓视觉尚未接入；红色正式视觉未接入，解锁后暂不可见但碰撞和交互保留。后续接入正式视觉时须另建运行时效果，不得复用编辑识别材质。`RoyTestScene` 的旧 RGB 基础方块已一次性替换为对应预制体，其他类别保持原样；`Test` 场景的旧红色能源块也已替换。关卡编辑器道具栏目内置 `ColorKey_red/green/blue`，钥匙从开始即使用预制体的对应颜色材质；工作台新建钥匙直接实例化对应预制体，不生成重复 Timeline。
 
 ## 运行时调用
 
@@ -29,6 +29,8 @@ bool firstUnlock = colors.Unlock("red");
 colors.GrantRecolorAbility(); // 单独的调色能力，不由颜色钥匙自动授予
 bool changed = colors.TryRecolor(block, "blue"); // 目标类型必须先解锁
 colors.ResetProgress(); // 新游戏时显式调用；跨关卡不自动清空
+colors.SetUnlockedForCurrentSession("blue", true); // 仅当前运行实例，不写存档
+colors.SetAllUnlockedForCurrentSession(false); // 仅当前运行实例，全部锁回
 
 string immutableBase = block.BaseColorTypeId;
 string current = block.CurrentColorTypeId; // null 表示尚未解锁的无色状态
@@ -37,7 +39,7 @@ Project.ColorBlocks.HSVColorFadeManager.Instance.SetColorFaded("red", false, 1.2
 float saturation = Project.ColorBlocks.HSVColorFadeManager.Instance.GetSaturation("red");
 ```
 
-`Unlock` 是幂等操作，只有首次解锁返回 `true`。`TryRecolor` 还要求先单独调用 `GrantRecolorAbility()`；颜色钥匙本身只解锁对应颜色，不授予调色能力。方块的基础类型只有制作场景时配置；运行时不提供 setter。解锁基础类型时，当前类型立刻变为基础类型，HSV 进度只驱动独立运行时视觉（目前为蓝水），不显露编辑代理；染色也只改当前类型，不会改基础类型。
+`Unlock` 是幂等操作，只有首次解锁返回 `true`。`TryRecolor` 还要求先单独调用 `GrantRecolorAbility()`；颜色钥匙本身只解锁对应颜色，不授予调色能力。`SetUnlockedForCurrentSession` / `SetAllUnlockedForCurrentSession` 只修改当前运行实例，供 Play Mode 测试自由解锁或锁回；不写场景、颜色目录或存档。方块的基础类型只有制作场景时配置；运行时不提供 setter。解锁基础类型时，当前类型立刻变为基础类型，HSV 进度只驱动独立运行时视觉（目前为蓝水），不显露编辑代理；染色也只改当前类型，不会改基础类型。
 
 ## 事件
 

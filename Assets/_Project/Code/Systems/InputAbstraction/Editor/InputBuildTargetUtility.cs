@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Project;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;
@@ -29,11 +31,10 @@ namespace Project.InputAbstraction.Editor
                 return;
             }
 
-            PlatformUILayoutController[] controllers =
-                Object.FindObjectsByType<PlatformUILayoutController>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-            for (int index = 0; index < controllers.Length; index++)
+            IReadOnlyList<PlatformUILayoutController> controllers =
+                ProjectDiscovery.FindAll<
+                    PlatformUILayoutController>(true);
+            for (int index = 0; index < controllers.Count; index++)
             {
                 PlatformUILayoutController controller = controllers[index];
                 if (!controller.SynchronizeWhenBuildTargetChanges ||
@@ -50,7 +51,7 @@ namespace Project.InputAbstraction.Editor
                 PlatformUILayoutControllerEditor.MarkDirty(controller);
             }
 
-            if (controllers.Length > 0)
+            if (controllers.Count > 0)
             {
                 Debug.Log($"Platform UI switched: {previousMode} -> {newMode}.");
             }

@@ -527,10 +527,15 @@ namespace Project.LevelEditor.Editor
                 LevelEditorState.Tool = LevelEditorTool.Select;
             }
 
-            if (value != null && LevelEditorState.EditMode)
+            if (value != null)
             {
-                Selection.activeGameObject = value;
-                LevelEditorPlayerService.EnforceEditPlane();
+                LevelEditorState.LockPlayerToPlane = true;
+                if (LevelEditorState.EditMode)
+                {
+                    Selection.activeGameObject = value;
+                }
+
+                LevelEditorPlayerService.SnapPlayerToPlane();
             }
 
             SceneView.RepaintAll();
@@ -566,6 +571,9 @@ namespace Project.LevelEditor.Editor
             if (lastPaletteRevision != LevelEditorState.PaletteRevision)
             {
                 DecorationPreviewCache.Clear();
+                PrefabPreviewCache.Clear();
+                ColorPreviewCache.Clear();
+                LevelEditorDecorationService.ClearFrontPreviewCache();
             }
 
             lastPaletteCount = count;

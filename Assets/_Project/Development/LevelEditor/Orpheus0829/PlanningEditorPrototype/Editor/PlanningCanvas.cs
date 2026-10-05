@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
 using UnityEditor;
@@ -60,6 +61,19 @@ namespace PlanningEditorPrototype
         private Vector2Int hoveredCell;
         private readonly Dictionary<string, Image> detailPreviewImages =
             new Dictionary<string, Image>();
+        private VisualElement playerOverlay;
+        private Image playerThumbnail;
+        private Label playerLabel;
+        private Texture2D playerThumbnailTexture;
+        private int playerThumbnailSourceId;
+        private bool isDraggingPlayer;
+        private int playerPointerId = -1;
+        private GameObject playerDragTarget;
+        private Vector2 playerDragOffset;
+        private Vector3 playerDragBeforePosition;
+        private bool playerOverlayClamped;
+        private float playerOverlayWidth = 54f;
+        private float playerOverlayHeight = 74f;
 
         public event Action DocumentChanged;
         public event Action SelectionChanged;
@@ -77,7 +91,44 @@ namespace PlanningEditorPrototype
         public string DetailPropEntryName => detailPropEntryName;
         public string SelectedRoomId => selectedRoomId;
         public string SelectedBoxId => selectedBoxId;
+        public LevelEditorPlacedBlock SelectedSceneBlock
+        {
+            get
+            {
+                if (!FindSelectedBox(
+                        out PlanningRoom room,
+                        out List<PlanningBox> _,
+                        out PlanningBox box) ||
+                    box == null)
+                {
+                    return null;
+                }
+
+                box.sceneBlock = ResolveSceneBlock(
+                    room,
+                    box);
+                return box.sceneBlock;
+            }
+        }
         public float Zoom => zoom;
+
+        public void RefreshPlayerOverlay()
+        {
+            UpdatePlayerOverlay();
+        }
+
+        public bool FocusPlayer()
+        {
+            if (!TryGetPlayerPlanPosition(out Vector2 plan))
+            {
+                return false;
+            }
+
+            CenterOn(plan.x, plan.y);
+            UpdatePlayerOverlay();
+            MarkDirtyRepaint();
+            return true;
+        }
 
         public bool IsPlacingRoom => isPlacingRoom;
 
@@ -185,6 +236,7 @@ namespace PlanningEditorPrototype
                             1,
                             1))
                     {
+                        sceneBlock = block,
                         label = block.EntryName,
                         paletteEntryName = block.IsProp
                             ? string.Empty
@@ -198,6 +250,13 @@ namespace PlanningEditorPrototype
 
                 if (BoxesMatch(room.boxes, syncedBoxes))
                 {
+                    for (int boxIndex = 0;
+                         boxIndex < room.boxes.Count;
+                         boxIndex++)
+                    {
+                        room.boxes[boxIndex].sceneBlock =
+                            syncedBoxes[boxIndex].sceneBlock;
+                    }
                     continue;
                 }
 
@@ -206,11 +265,9 @@ namespace PlanningEditorPrototype
                 syncedRooms++;
             }
 
-            LevelEditorPlacedBlock[] allBlocks =
-                UnityEngine.Object.FindObjectsByType<LevelEditorPlacedBlock>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-            for (int index = 0; index < allBlocks.Length; index++)
+            IReadOnlyList<LevelEditorPlacedBlock> allBlocks =
+                ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
+            for (int index = 0; index < allBlocks.Count; index++)
             {
                 if (!assignedBlocks.Contains(allBlocks[index].GetInstanceID()))
                 {
@@ -258,6 +315,18 @@ namespace PlanningEditorPrototype
             out List<PlanningBox> ownerBoxes,
             out PlanningBox selected)
         {
+            return FindSelectedBox(
+                out PlanningRoom _,
+                out ownerBoxes,
+                out selected);
+        }
+
+        private bool FindSelectedBox(
+            out PlanningRoom ownerRoom,
+            out List<PlanningBox> ownerBoxes,
+            out PlanningBox selected)
+        {
+            ownerRoom = null;
             ownerBoxes = null;
             selected = null;
             if (document == null || string.IsNullOrEmpty(selectedBoxId))
@@ -277,6 +346,7 @@ namespace PlanningEditorPrototype
                     PlanningBox box = room.boxes[boxIndex];
                     if (box.id == selectedBoxId)
                     {
+                        ownerRoom = room;
                         ownerBoxes = room.boxes;
                         selected = box;
                         return true;
@@ -298,6 +368,71 @@ namespace PlanningEditorPrototype
             }
 
             return false;
+        }
+
+        private LevelEditorPlacedBlock ResolveSceneBlock(
+            PlanningRoom room,
+            PlanningBox box)
+        {
+            if (room == null ||
+                room.isConnector ||
+                box == null)
+            {
+                return null;
+            }
+
+            GameObject parent =
+                PlanningSceneBuilder.FindRoomContainer(room);
+            if (parent == null)
+            {
+                return null;
+            }
+
+            GetAssemblyStride(out int strideX, out int strideY);
+            GetAssemblyRoomOffset(
+                room,
+                strideX,
+                strideY,
+                out int offsetX,
+                out int offsetY,
+                out _);
+            int globalPlanX = box.x + offsetX;
+            int globalPlanY = box.y + offsetY;
+            Vector2Int sceneCell = new Vector2Int(
+                globalPlanX,
+                -globalPlanY - 1);
+
+            LevelEditorPlacedBlock[] blocks =
+                parent.GetComponentsInChildren<
+                    LevelEditorPlacedBlock>(true);
+            for (int index = 0; index < blocks.Length; index++)
+            {
+                LevelEditorPlacedBlock block = blocks[index];
+                if (block == null || block.Cell != sceneCell)
+                {
+                    continue;
+                }
+
+                bool expectsProp =
+                    box.type == PlanningDetailType.Prop;
+                if (block.IsProp != expectsProp)
+                {
+                    continue;
+                }
+
+                string expectedName = expectsProp
+                    ? box.propEntryName
+                    : box.paletteEntryName;
+                if (!string.IsNullOrEmpty(expectedName) &&
+                    block.EntryName != expectedName)
+                {
+                    continue;
+                }
+
+                return block;
+            }
+
+            return null;
         }
 
         public void SetBackgroundColor(Color value)
@@ -323,6 +458,385 @@ namespace PlanningEditorPrototype
             RegisterCallback<KeyDownEvent>(OnKeyDown);
             RegisterCallback<GeometryChangedEvent>(
                 _ => UpdateDetailPreviewImages());
+            BuildPlayerOverlay();
+        }
+
+        private void BuildPlayerOverlay()
+        {
+            playerOverlay = new VisualElement
+            {
+                name = "PlanningPlayerOverlay",
+                pickingMode = PickingMode.Position
+            };
+            playerOverlay.style.position = Position.Absolute;
+            playerOverlay.style.alignItems = Align.Center;
+            playerOverlay.style.justifyContent = Justify.FlexStart;
+            playerOverlay.tooltip =
+                "拖动玩家贴纸，位置会同步到场景中的玩家。";
+
+            playerThumbnail = new Image
+            {
+                scaleMode = ScaleMode.ScaleToFit,
+                pickingMode = PickingMode.Ignore
+            };
+            playerThumbnail.style.flexShrink = 0f;
+            playerThumbnail.style.backgroundColor =
+                new Color(.05f, .08f, .12f, .82f);
+            playerThumbnail.style.borderLeftWidth = 2f;
+            playerThumbnail.style.borderRightWidth = 2f;
+            playerThumbnail.style.borderTopWidth = 2f;
+            playerThumbnail.style.borderBottomWidth = 2f;
+            playerThumbnail.style.borderLeftColor =
+                playerThumbnail.style.borderRightColor =
+                playerThumbnail.style.borderTopColor =
+                playerThumbnail.style.borderBottomColor =
+                    new Color(.35f, .85f, 1f, .95f);
+
+            playerLabel = new Label("玩家")
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            playerLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            playerLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            playerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            playerLabel.style.color = Color.white;
+            playerLabel.style.backgroundColor =
+                new Color(.02f, .04f, .06f, .72f);
+            playerLabel.style.paddingLeft = 4f;
+            playerLabel.style.paddingRight = 4f;
+            playerLabel.style.paddingTop = 1f;
+            playerLabel.style.paddingBottom = 1f;
+            playerLabel.style.marginTop = 2f;
+
+            playerOverlay.Add(playerThumbnail);
+            playerOverlay.Add(playerLabel);
+            playerOverlay.RegisterCallback<PointerDownEvent>(
+                OnPlayerPointerDown);
+            playerOverlay.RegisterCallback<PointerMoveEvent>(
+                OnPlayerPointerMove);
+            playerOverlay.RegisterCallback<PointerUpEvent>(
+                OnPlayerPointerUp);
+            playerOverlay.RegisterCallback<PointerCancelEvent>(
+                OnPlayerPointerCancel);
+            playerOverlay.style.display = DisplayStyle.None;
+            Add(playerOverlay);
+        }
+
+        private void UpdatePlayerOverlay()
+        {
+            if (playerOverlay == null)
+            {
+                return;
+            }
+
+            if (!TryGetPlayerPlanPosition(out Vector2 plan))
+            {
+                playerOverlay.style.display = DisplayStyle.None;
+                return;
+            }
+
+            if (contentRect.width <= 0f ||
+                contentRect.height <= 0f)
+            {
+                playerOverlay.style.display = DisplayStyle.None;
+                return;
+            }
+
+            GameObject player = LevelEditorState.Player;
+            UpdatePlayerThumbnail(player);
+
+            float iconSize = Mathf.Clamp(
+                GridSize * 1.35f,
+                42f,
+                78f);
+            float labelHeight = Mathf.Clamp(
+                iconSize * .28f,
+                12f,
+                18f);
+            playerOverlayWidth = iconSize + 8f;
+            playerOverlayHeight = iconSize + labelHeight + 9f;
+            playerOverlay.style.width = playerOverlayWidth;
+            playerOverlay.style.height = playerOverlayHeight;
+            playerThumbnail.style.width = iconSize;
+            playerThumbnail.style.height = iconSize;
+            playerLabel.style.fontSize = Mathf.Clamp(
+                iconSize * .24f,
+                10f,
+                14f);
+            playerLabel.style.height = labelHeight;
+
+            Vector2 center = WorldToScreen(plan);
+            float halfWidth = playerOverlayWidth * .5f;
+            float halfHeight = playerOverlayHeight * .5f;
+            float minX = halfWidth + 2f;
+            float maxX = Mathf.Max(
+                minX,
+                contentRect.width - halfWidth - 2f);
+            float minY = halfHeight + 2f;
+            float maxY = Mathf.Max(
+                minY,
+                contentRect.height - halfHeight - 2f);
+            float clampedX = Mathf.Clamp(center.x, minX, maxX);
+            float clampedY = Mathf.Clamp(center.y, minY, maxY);
+            playerOverlayClamped =
+                !Mathf.Approximately(clampedX, center.x) ||
+                !Mathf.Approximately(clampedY, center.y);
+            playerOverlay.style.left = clampedX - halfWidth;
+            playerOverlay.style.top = clampedY - halfHeight;
+            playerOverlay.style.display = DisplayStyle.Flex;
+            playerOverlay.BringToFront();
+        }
+
+        private void UpdatePlayerThumbnail(GameObject player)
+        {
+            if (playerThumbnail == null || player == null)
+            {
+                return;
+            }
+
+            int sourceId = player.GetInstanceID();
+            if (playerThumbnailTexture != null &&
+                playerThumbnailSourceId == sourceId)
+            {
+                return;
+            }
+
+            playerThumbnailSourceId = sourceId;
+            GameObject source =
+                PrefabUtility.GetCorrespondingObjectFromSource(player) ??
+                player;
+            Texture2D preview = AssetPreview.GetAssetPreview(source);
+            preview ??= AssetPreview.GetMiniThumbnail(source);
+            playerThumbnailTexture = preview;
+            playerThumbnail.image = preview;
+
+            if (preview == null &&
+                AssetPreview.IsLoadingAssetPreview(source.GetInstanceID()))
+            {
+                playerOverlay.schedule.Execute(() =>
+                {
+                    playerThumbnailSourceId = 0;
+                    UpdatePlayerOverlay();
+                }).StartingIn(120);
+            }
+        }
+
+        private bool TryGetPlayerPlanPosition(out Vector2 plan)
+        {
+            plan = default;
+            if (document == null || mode == PlanningCanvasMode.World)
+            {
+                return false;
+            }
+
+            GameObject player = LevelEditorState.Player;
+            if (player == null || !player.scene.IsValid())
+            {
+                return false;
+            }
+
+            Vector3 position = player.transform.position;
+            var globalPlan = new Vector2(
+                position.x,
+                -position.y);
+            if (mode == PlanningCanvasMode.Assembly)
+            {
+                plan = globalPlan;
+                return true;
+            }
+
+            PlanningRoom room = document.FindRoom(selectedRoomId);
+            if (room == null)
+            {
+                return false;
+            }
+
+            if (room.isConnector)
+            {
+                PlanningCell origin = GetConnectorOrigin(room);
+                plan = globalPlan - new Vector2(
+                    origin.x,
+                    origin.y);
+                return true;
+            }
+
+            GetAssemblyStride(out int strideX, out int strideY);
+            GetAssemblyRoomOffset(
+                room,
+                strideX,
+                strideY,
+                out int offsetX,
+                out int offsetY,
+                out _);
+            plan = globalPlan - new Vector2(offsetX, offsetY);
+            return true;
+        }
+
+        private bool TryGetGlobalPlanPosition(
+            Vector2 canvasPosition,
+            out Vector2 globalPlan)
+        {
+            globalPlan = default;
+            if (document == null || mode == PlanningCanvasMode.World)
+            {
+                return false;
+            }
+
+            Vector2 localPlan = ScreenToWorld(canvasPosition);
+            if (mode == PlanningCanvasMode.Assembly)
+            {
+                globalPlan = localPlan;
+                return true;
+            }
+
+            PlanningRoom room = document.FindRoom(selectedRoomId);
+            if (room == null)
+            {
+                return false;
+            }
+
+            if (room.isConnector)
+            {
+                PlanningCell origin = GetConnectorOrigin(room);
+                globalPlan = localPlan + new Vector2(
+                    origin.x,
+                    origin.y);
+                return true;
+            }
+
+            GetAssemblyStride(out int strideX, out int strideY);
+            GetAssemblyRoomOffset(
+                room,
+                strideX,
+                strideY,
+                out int offsetX,
+                out int offsetY,
+                out _);
+            globalPlan = localPlan + new Vector2(offsetX, offsetY);
+            return true;
+        }
+
+        private void SetPlayerFromGlobalPlanPosition(
+            Vector2 globalPlan,
+            bool recordUndo)
+        {
+            var worldPosition = new Vector3(
+                globalPlan.x,
+                -globalPlan.y,
+                0f);
+            if (LevelEditorPlayerService.SetPlayerPosition(
+                    worldPosition,
+                    recordUndo))
+            {
+                UpdatePlayerOverlay();
+                SceneView.RepaintAll();
+            }
+        }
+
+        private void OnPlayerPointerDown(PointerDownEvent evt)
+        {
+            if (evt.button != 0)
+            {
+                return;
+            }
+
+            Vector2 pointerPosition =
+                this.WorldToLocal(evt.position);
+            if (!TryGetGlobalPlanPosition(
+                    pointerPosition,
+                    out Vector2 pointerPlan) ||
+                !TryGetPlayerPlanPosition(out Vector2 playerPlan))
+            {
+                return;
+            }
+
+            isDraggingPlayer = true;
+            playerPointerId = evt.pointerId;
+            playerDragOffset = playerOverlayClamped
+                ? Vector2.zero
+                : playerPlan - pointerPlan;
+            playerDragTarget = LevelEditorState.Player;
+            playerDragBeforePosition =
+                playerDragTarget != null
+                    ? playerDragTarget.transform.position
+                    : Vector3.zero;
+            PointerCaptureHelper.CapturePointer(
+                playerOverlay,
+                evt.pointerId);
+            evt.StopPropagation();
+        }
+
+        private void OnPlayerPointerMove(PointerMoveEvent evt)
+        {
+            if (!isDraggingPlayer ||
+                evt.pointerId != playerPointerId)
+            {
+                return;
+            }
+
+            Vector2 pointerPosition =
+                this.WorldToLocal(evt.position);
+            if (TryGetGlobalPlanPosition(
+                    pointerPosition,
+                    out Vector2 pointerPlan))
+            {
+                SetPlayerFromGlobalPlanPosition(
+                    pointerPlan + playerDragOffset,
+                    false);
+            }
+
+            evt.StopPropagation();
+        }
+
+        private void OnPlayerPointerUp(PointerUpEvent evt)
+        {
+            if (!isDraggingPlayer ||
+                evt.pointerId != playerPointerId)
+            {
+                return;
+            }
+
+            EndPlayerPointerDrag(evt.pointerId, true);
+            evt.StopPropagation();
+        }
+
+        private void OnPlayerPointerCancel(PointerCancelEvent evt)
+        {
+            if (!isDraggingPlayer ||
+                evt.pointerId != playerPointerId)
+            {
+                return;
+            }
+
+            EndPlayerPointerDrag(evt.pointerId, false);
+            evt.StopPropagation();
+        }
+
+        private void EndPlayerPointerDrag(
+            int pointerId,
+            bool recordUndo)
+        {
+            if (pointerId >= 0)
+            {
+                PointerCaptureHelper.ReleasePointer(
+                    playerOverlay,
+                    pointerId);
+            }
+
+            if (recordUndo &&
+                playerDragTarget != null &&
+                LevelEditorState.Player == playerDragTarget)
+            {
+                PlanningPlayerUndoUtility.RecordDrag(
+                    playerDragTarget,
+                    playerDragBeforePosition,
+                    playerDragTarget.transform.position);
+            }
+
+            isDraggingPlayer = false;
+            playerPointerId = -1;
+            playerDragTarget = null;
+            UpdatePlayerOverlay();
         }
 
         public void SetDocument(PlanningDocument value)
@@ -336,6 +850,7 @@ namespace PlanningEditorPrototype
             pan = new Vector2(-90f, -90f);
             zoom = 1f;
             UpdateDetailPreviewImages();
+            UpdatePlayerOverlay();
             MarkDirtyRepaint();
             SelectionChanged?.Invoke();
         }
@@ -389,7 +904,13 @@ namespace PlanningEditorPrototype
         {
             mode = value;
             selectedBoxId = null;
+            if (isDraggingPlayer)
+            {
+                EndPlayerPointerDrag(playerPointerId, false);
+            }
+
             UpdateDetailPreviewImages();
+            UpdatePlayerOverlay();
             MarkDirtyRepaint();
             SelectionChanged?.Invoke();
         }
@@ -812,6 +1333,7 @@ namespace PlanningEditorPrototype
                 centerX * GridSize * zoom,
                 contentRect.height * .5f -
                 centerY * GridSize * zoom);
+            UpdatePlayerOverlay();
         }
 
         private float GridSize => BaseGridSize * zoom;
@@ -1390,18 +1912,21 @@ namespace PlanningEditorPrototype
             if (document == null)
             {
                 HideDetailPreviewImages();
+                UpdatePlayerOverlay();
                 return;
             }
 
             if (mode == PlanningCanvasMode.Assembly)
             {
                 UpdateAssemblyPreviewImages();
+                UpdatePlayerOverlay();
                 return;
             }
 
             if (mode != PlanningCanvasMode.Detail)
             {
                 HideDetailPreviewImages();
+                UpdatePlayerOverlay();
                 return;
             }
 
@@ -1409,6 +1934,7 @@ namespace PlanningEditorPrototype
             if (room == null)
             {
                 HideDetailPreviewImages();
+                UpdatePlayerOverlay();
                 return;
             }
 
@@ -1466,6 +1992,8 @@ namespace PlanningEditorPrototype
                     pair.Value.style.display = DisplayStyle.None;
                 }
             }
+
+            UpdatePlayerOverlay();
         }
 
         private void UpdateAssemblyPreviewImages()
@@ -1999,6 +2527,7 @@ namespace PlanningEditorPrototype
             Vector2 after = ScreenToWorld(pointer);
             pan += (after - before) * GridSize;
             UpdateDetailPreviewImages();
+            UpdatePlayerOverlay();
             MarkDirtyRepaint();
             evt.StopPropagation();
         }
@@ -2087,6 +2616,7 @@ namespace PlanningEditorPrototype
                 pan += position - panLastPosition;
                 panLastPosition = position;
                 UpdateDetailPreviewImages();
+                UpdatePlayerOverlay();
                 MarkDirtyRepaint();
                 evt.StopPropagation();
                 return;

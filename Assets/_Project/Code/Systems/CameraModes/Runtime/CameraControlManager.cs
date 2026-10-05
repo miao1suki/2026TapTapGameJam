@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.Contracts;
 using Project.InputAbstraction;
 using UnityEngine;
 
@@ -7,7 +8,8 @@ namespace Project.CameraModes
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(1000)]
-    public sealed class CameraControlManager : MonoBehaviour
+    public sealed class CameraControlManager : MonoBehaviour,
+        ICameraViewportSource
     {
         private sealed class ControlRequest
         {
@@ -62,6 +64,22 @@ namespace Project.CameraModes
             ? 1f
             : Mathf.Clamp01(transitionElapsed / activeTransition.duration);
         public CameraState CurrentState => currentState;
+
+        public bool TryGetViewport(out CameraViewportInfo info)
+        {
+            if (outputCamera == null)
+            {
+                info = default;
+                return false;
+            }
+
+            info = new CameraViewportInfo(
+                outputCamera.pixelRect,
+                outputCamera.orthographic,
+                outputCamera.orthographicSize,
+                outputCamera.fieldOfView);
+            return true;
+        }
 
         private void Reset()
         {

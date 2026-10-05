@@ -229,6 +229,11 @@ namespace Project.LevelEditor.Editor
             return preview;
         }
 
+        internal static void ClearFrontPreviewCache()
+        {
+            FrontPreviewCache.Clear();
+        }
+
         private static string BuildFrontPreviewKey(
             LevelEditorBlockEntry entry,
             int size)
@@ -341,6 +346,12 @@ namespace Project.LevelEditor.Editor
                         }
                     }
                 }
+                else if (!entry.UsesPrefabDirectly ||
+                         !string.IsNullOrEmpty(
+                             entry.ManagedColorTypeId))
+                {
+                    ApplyRendererColor(blockObject, entry.Color);
+                }
 
                 GameObject cameraObject = new GameObject(
                     "__FrontPreviewCamera");
@@ -395,6 +406,28 @@ namespace Project.LevelEditor.Editor
                 }
 
                 Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void ApplyRendererColor(
+            GameObject target,
+            Color color)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            var properties = new MaterialPropertyBlock();
+            Renderer[] renderers =
+                target.GetComponentsInChildren<Renderer>(true);
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                Renderer renderer = renderers[index];
+                renderer.GetPropertyBlock(properties);
+                properties.SetColor("_Color", color);
+                properties.SetColor("_BaseColor", color);
+                renderer.SetPropertyBlock(properties);
             }
         }
 
@@ -506,11 +539,9 @@ namespace Project.LevelEditor.Editor
         private static void ApplyToMatchingBlocks(
             LevelEditorBlockEntry entry)
         {
-            LevelEditorPlacedBlock[] blocks =
-                Object.FindObjectsByType<LevelEditorPlacedBlock>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-            for (int index = 0; index < blocks.Length; index++)
+            IReadOnlyList<LevelEditorPlacedBlock> blocks =
+                ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
+            for (int index = 0; index < blocks.Count; index++)
             {
                 LevelEditorPlacedBlock placed = blocks[index];
                 if (!entry.UsesPrefabDirectly &&

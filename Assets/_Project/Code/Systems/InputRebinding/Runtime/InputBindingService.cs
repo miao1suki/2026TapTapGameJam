@@ -77,8 +77,7 @@ namespace Project.InputRebinding
         {
             InputActionAsset actionAsset = null;
             InputService sceneService =
-                UnityEngine.Object.FindFirstObjectByType<InputService>(
-                    FindObjectsInactive.Include);
+                ProjectDiscovery.FindFirst<InputService>(true);
             if (sceneService != null &&
                 sceneService.ConfiguredActionAsset != null)
             {

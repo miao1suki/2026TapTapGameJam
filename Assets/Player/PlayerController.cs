@@ -5,7 +5,14 @@ using UnityEngine;
 
 namespace Project.Player
 {
-    public enum PlayerStateId { Normal = 0, Swimming = 1, Action = 2, Locked = 3 }
+    public enum PlayerStateId
+    {
+        Normal = 0,
+        Swimming = 1,
+        Action = 2,
+        Locked = 3,
+        Climbing = 4
+    }
 
     /// <summary>Basic physical motor. No projected platforms, ladders or rope dependencies.</summary>
     [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider), typeof(PlayerActionRunner))]
@@ -17,12 +24,21 @@ namespace Project.Player
         [SerializeField, Min(0)] private float moveSpeed = 5;
         [SerializeField, Min(0)] private float swimSpeed = 3.5f;
         [SerializeField, Min(0)] private float swimAcceleration = 12f;
+        [SerializeField, Min(0)] private float swimRiseSpeed = 1.5f;
+        [SerializeField, Min(0)] private float swimSinkSpeed = .8f;
+        [SerializeField, Min(0)]
+        private float swimVerticalAcceleration = 4f;
+        [SerializeField, Min(0)] private float climbSpeed = 3f;
+        [SerializeField, Min(0)] private float climbSlideSpeed = 1.2f;
+        [SerializeField, Min(0)] private float climbDownSpeed = 4.5f;
+        [SerializeField, Min(0)] private float climbHorizontalSpeed = 2f;
+        [SerializeField, Min(0)] private float climbAcceleration = 12f;
         [SerializeField, Min(0)] private float moveAcceleration = 20;
         [SerializeField, Min(0)] private float moveDeceleration = 30;
         [SerializeField]
         private AnimationCurve accelerationResponseCurve =
             AnimationCurve.Linear(0f, 1f, 1f, 1f);
-        [SerializeField, Min(0)] private float jumpSpeed = 7;
+        [SerializeField, Min(0)] private float jumpSpeed = 9.899f;
         [SerializeField, Min(0)] private float jumpGravityMultiplier = 1.7f;
         [SerializeField, Min(0)]
         private float jumpReleaseGravityMultiplier = 2.8f;
@@ -42,14 +58,19 @@ namespace Project.Player
         private bool jumpHeld;
         private int lockDepth;
         private readonly HashSet<int> waterSources = new HashSet<int>();
+        private readonly HashSet<int> climbSources = new HashSet<int>();
         private readonly RaycastHit[] groundHits = new RaycastHit[16];
         private static PhysicsMaterial zeroFrictionMaterial;
         public Rigidbody Motor => motor;
         public bool IsGrounded { get; private set; }
         public bool IsControlLocked => lockDepth > 0;
         public bool IsSwimming => waterSources.Count > 0;
+        public bool IsClimbing =>
+            climbSources.Count > 0 &&
+            (!IsGrounded || movement.y > .01f);
         public PlayerStateId CurrentStateId => IsControlLocked ? PlayerStateId.Locked :
             runner != null && runner.IsPlaying ? PlayerStateId.Action :
+            IsClimbing ? PlayerStateId.Climbing :
             IsSwimming ? PlayerStateId.Swimming : PlayerStateId.Normal;
         public Vector2 MoveInput => movement;
         public bool SprintRequested => sprint;
@@ -67,6 +88,7 @@ namespace Project.Player
         {
             get
             {
+                if (IsClimbing) return "Climbing";
                 if (IsSwimming) return "Swimming";
                 if (IsGrounded)
                 {
@@ -132,6 +154,7 @@ namespace Project.Player
             lockDepth = 0; movement = Vector2.zero; jumpUntil = -1;
             jumpHeld = false;
             waterSources.Clear();
+            climbSources.Clear();
         }
         public void EnterWater(Component source)
         {
@@ -140,6 +163,14 @@ namespace Project.Player
         public void ExitWater(Component source)
         {
             if (source != null) waterSources.Remove(source.GetInstanceID());
+        }
+        public void EnterClimb(Component source)
+        {
+            if (source != null) climbSources.Add(source.GetInstanceID());
+        }
+        public void ExitClimb(Component source)
+        {
+            if (source != null) climbSources.Remove(source.GetInstanceID());
         }
         public void SetMoveInput(Vector2 value)
         {
@@ -189,13 +220,76 @@ namespace Project.Player
             if (IsGrounded && !wasGrounded) Emit(AchievementSignalIds.PlayerLanded);
             Vector3 velocity = motor.linearVelocity;
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
+            bool jumpRequested = !blocked &&
+                                 jumpUntil >= Time.time &&
+                                 groundedUntil >= Time.time;
+            if (jumpRequested)
+            {
+                climbSources.Clear();
+            }
+
+            if (IsClimbing)
+            {
+                float horizontalTarget = blocked
+                    ? 0f
+                    : Mathf.Clamp(movement.x, -1f, 1f) *
+                      climbHorizontalSpeed;
+                float verticalTarget;
+                if (blocked)
+                {
+                    verticalTarget = 0f;
+                }
+                else if (movement.y > .01f)
+                {
+                    verticalTarget = climbSpeed;
+                }
+                else if (movement.y < -.01f)
+                {
+                    verticalTarget = -climbDownSpeed;
+                }
+                else
+                {
+                    verticalTarget = -climbSlideSpeed;
+                }
+
+                velocity.x = Mathf.MoveTowards(
+                    velocity.x,
+                    horizontalTarget,
+                    climbAcceleration * Time.fixedDeltaTime);
+                if (verticalTarget <= 0f && velocity.y > 0f)
+                {
+                    velocity.y = 0f;
+                }
+
+                velocity.y = Mathf.MoveTowards(
+                    velocity.y,
+                    verticalTarget,
+                    climbAcceleration * Time.fixedDeltaTime);
+                velocity.z = 0f;
+                jumpUntil = -1f;
+                motor.linearVelocity = velocity;
+                return;
+            }
             if (IsSwimming)
             {
-                Vector2 swimInput = movement;
-                if (jumpHeld) swimInput.y = Mathf.Max(swimInput.y, 1f);
-                Vector2 target = blocked ? Vector2.zero : Vector2.ClampMagnitude(swimInput, 1f) * swimSpeed;
-                velocity.x = Mathf.MoveTowards(velocity.x, target.x, swimAcceleration * Time.fixedDeltaTime);
-                velocity.y = Mathf.MoveTowards(velocity.y, target.y, swimAcceleration * Time.fixedDeltaTime);
+                float horizontalTarget = blocked
+                    ? 0f
+                    : Mathf.Clamp(movement.x, -1f, 1f) *
+                      swimSpeed;
+                float verticalTarget = blocked
+                    ? 0f
+                    : jumpHeld
+                        ? swimRiseSpeed
+                        : -swimSinkSpeed;
+                velocity.x = Mathf.MoveTowards(
+                    velocity.x,
+                    horizontalTarget,
+                    swimAcceleration * Time.fixedDeltaTime);
+                velocity.y = Mathf.MoveTowards(
+                    velocity.y,
+                    verticalTarget,
+                    swimVerticalAcceleration *
+                    Time.fixedDeltaTime);
                 velocity.z = 0f;
                 jumpUntil = -1f;
                 motor.linearVelocity = velocity;
@@ -240,7 +334,7 @@ namespace Project.Player
             }
 
             velocity.z = 0;
-            if (!blocked && jumpUntil >= Time.time && groundedUntil >= Time.time)
+            if (jumpRequested)
             {
                 velocity.y = jumpSpeed; jumpUntil = groundedUntil = -1; IsGrounded = false;
                 airborneSince = Time.time;

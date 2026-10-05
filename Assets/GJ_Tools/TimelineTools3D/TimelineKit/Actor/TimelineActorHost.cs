@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Project;
 using Project.InputAbstraction;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -297,7 +298,7 @@ public class TimelineActorHost :
         }
         if (s_poolInstance == null)
         {
-            s_poolInstance = UnityEngine.Object.FindFirstObjectByType(poolType);
+            s_poolInstance = ProjectDiscovery.FindFirst(poolType);
         }
         if (s_poolInstance == null)
         {
@@ -309,15 +310,7 @@ public class TimelineActorHost :
 
     private static Type FindTypeByName(string typeName)
     {
-        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            Type found = assembly.GetType(typeName);
-            if (found != null)
-            {
-                return found;
-            }
-        }
-        return null;
+        return ProjectDiscovery.FindType(typeName);
     }
 
     public GameObject SpawnEffect(GameObject prefab, Vector3 position, Quaternion rotation)

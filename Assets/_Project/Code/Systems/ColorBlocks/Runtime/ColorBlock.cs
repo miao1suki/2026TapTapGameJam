@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Project.BlockFeatures;
+using Project.BlockFeatures.Vine;
 using Project.InputAbstraction;
 using Project.Player;
 using UnityEngine;
@@ -6,6 +8,7 @@ using UnityEngine;
 namespace Project.ColorBlocks
 {
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(BlockAbilityHost))]
     public sealed class ColorBlock : MonoBehaviour, IInteractionTarget
     {
         [SerializeField, Tooltip("设计时基础颜色；运行时只读，不由染色行为改写。")]
@@ -13,11 +16,23 @@ namespace Project.ColorBlocks
         [SerializeField] private Renderer targetRenderer;
         private string currentColorTypeId;
         private readonly HashSet<Collider> contacts = new HashSet<Collider>();
+        private readonly HashSet<Collider> topContacts =
+            new HashSet<Collider>();
 
         public string BaseColorTypeId => baseColorTypeId;
         public string CurrentColorTypeId => currentColorTypeId;
         public bool HasColor => !string.IsNullOrEmpty(currentColorTypeId);
-        public bool IsActiveWater => currentColorTypeId == "blue";
+        public bool IsActiveWater
+        {
+            get
+            {
+                IBlockWaterSource waterSource =
+                    GetComponent<IBlockWaterSource>();
+                return waterSource != null
+                    ? waterSource.IsWaterEnabled
+                    : currentColorTypeId == "blue";
+            }
+        }
 
         private void Awake()
         {
@@ -41,9 +56,22 @@ namespace Project.ColorBlocks
             foreach (Collider contact in contacts)
             {
                 PlayerController player = contact != null ? contact.GetComponentInParent<PlayerController>() : null;
-                if (player != null) player.ExitWater(this);
+                if (player == null) continue;
+                GetComponent<IBlockClimbSource>()?.ExitActor(
+                    player.gameObject);
+                IBlockWaterSource waterSource =
+                    GetComponent<IBlockWaterSource>();
+                if (waterSource != null)
+                {
+                    waterSource.ExitActor(player.gameObject);
+                }
+                else
+                {
+                    player.ExitWater(this);
+                }
             }
             contacts.Clear();
+            topContacts.Clear();
             if (ColorWorldManager.Existing != null) ColorWorldManager.Existing.Unregister(this);
         }
 
@@ -55,12 +83,34 @@ namespace Project.ColorBlocks
         private void EnterContact(Collider other)
         {
             if (other == null || !contacts.Add(other)) return;
+            bool isTopContact = IsTopContact(other);
+            if (isTopContact)
+            {
+                topContacts.Add(other);
+            }
             var owner = ColorWorldManager.Instance.Catalog?.Find(baseColorTypeId);
             if (owner == null) return;
             var player = other.GetComponentInParent<PlayerController>();
             if (player != null)
             {
-                if (IsActiveWater) player.EnterWater(this);
+                if (!isTopContact)
+                {
+                    GetComponent<IBlockClimbSource>()?.EnterActor(
+                        player.gameObject);
+                }
+                if (IsActiveWater)
+                {
+                    IBlockWaterSource waterSource =
+                        GetComponent<IBlockWaterSource>();
+                    if (waterSource != null)
+                    {
+                        waterSource.EnterActor(player.gameObject);
+                    }
+                    else
+                    {
+                        player.EnterWater(this);
+                    }
+                }
                 ColorInteractionRunner.Run(owner, ColorGraphNodeKind.PlayerEntered, this, player.gameObject);
             }
             else
@@ -74,9 +124,21 @@ namespace Project.ColorBlocks
         private void LeaveContact(Collider other)
         {
             if (other == null || !contacts.Remove(other)) return;
+            topContacts.Remove(other);
             var player = other.GetComponentInParent<PlayerController>();
             if (player == null) return;
-            player.ExitWater(this);
+            GetComponent<IBlockClimbSource>()?.ExitActor(
+                player.gameObject);
+            IBlockWaterSource waterSource =
+                GetComponent<IBlockWaterSource>();
+            if (waterSource != null)
+            {
+                waterSource.ExitActor(player.gameObject);
+            }
+            else
+            {
+                player.ExitWater(this);
+            }
             var owner = ColorWorldManager.Instance.Catalog?.Find(baseColorTypeId);
             if (owner != null)
                 ColorInteractionRunner.Run(owner, ColorGraphNodeKind.PlayerLeft, this, player.gameObject);
@@ -123,13 +185,86 @@ namespace Project.ColorBlocks
         private void UpdateWaterContacts(string previous)
         {
             if ((previous == "blue") == IsActiveWater) return;
+            RefreshWaterContacts();
+        }
+
+        internal void RefreshWaterContacts()
+        {
             foreach (Collider contact in contacts)
             {
                 PlayerController player = contact != null ? contact.GetComponentInParent<PlayerController>() : null;
                 if (player == null) continue;
-                if (IsActiveWater) player.EnterWater(this);
-                else player.ExitWater(this);
+                IBlockWaterSource waterSource =
+                    GetComponent<IBlockWaterSource>();
+                if (waterSource != null)
+                {
+                    if (IsActiveWater)
+                    {
+                        waterSource.EnterActor(player.gameObject);
+                    }
+                    else
+                    {
+                        waterSource.ExitActor(player.gameObject);
+                    }
+                }
+                else if (IsActiveWater)
+                {
+                    player.EnterWater(this);
+                }
+                else
+                {
+                    player.ExitWater(this);
+                }
             }
+        }
+
+        internal void RefreshClimbContacts()
+        {
+            IBlockClimbSource climbSource =
+                GetComponent<IBlockClimbSource>();
+            foreach (Collider contact in contacts)
+            {
+                PlayerController player = contact != null
+                    ? contact.GetComponentInParent<PlayerController>()
+                    : null;
+                if (player == null ||
+                    topContacts.Contains(contact))
+                {
+                    continue;
+                }
+
+                if (climbSource != null &&
+                    climbSource.IsClimbEnabled)
+                {
+                    climbSource.EnterActor(player.gameObject);
+                }
+                else
+                {
+                    climbSource?.ExitActor(player.gameObject);
+                }
+            }
+        }
+
+        private bool IsTopContact(Collider other)
+        {
+            Collider selfCollider = GetComponent<Collider>();
+            if (selfCollider == null ||
+                other == null ||
+                selfCollider.isTrigger ||
+                other.isTrigger)
+            {
+                return false;
+            }
+
+            Bounds selfBounds = selfCollider.bounds;
+            Bounds otherBounds = other.bounds;
+            float threshold = Mathf.Max(
+                .04f,
+                Mathf.Min(
+                    selfBounds.size.x,
+                    selfBounds.size.z) * .08f);
+            return otherBounds.min.y >=
+                   selfBounds.max.y - threshold;
         }
 
         private void ApplyLayer(int layer)

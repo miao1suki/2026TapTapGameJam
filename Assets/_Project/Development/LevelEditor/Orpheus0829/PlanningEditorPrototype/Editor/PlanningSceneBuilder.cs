@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Project;
+using Project.BlockFeatures;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
 using Project.SurfaceTiles;
@@ -226,11 +228,9 @@ namespace PlanningEditorPrototype
             DestroyGeneratedRoots();
 
             var existingCells = new HashSet<Vector2Int>();
-            LevelEditorPlacedBlock[] existingBlocks =
-                Object.FindObjectsByType<LevelEditorPlacedBlock>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-            for (int index = 0; index < existingBlocks.Length; index++)
+            IReadOnlyList<LevelEditorPlacedBlock> existingBlocks =
+                ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
+            for (int index = 0; index < existingBlocks.Count; index++)
             {
                 existingCells.Add(existingBlocks[index].Cell);
             }
@@ -427,12 +427,6 @@ namespace PlanningEditorPrototype
             Undo.CollapseUndoOperations(undoGroup);
             EditorSceneManager.MarkSceneDirty(scene);
             Selection.activeGameObject = root;
-            SceneView view = SceneView.lastActiveSceneView;
-            if (view != null)
-            {
-                view.FrameSelected();
-            }
-
             SceneView.RepaintAll();
             message = connectRooms
                 ? $"已生成 {layouts.Count} 个房间、" +
@@ -582,6 +576,7 @@ namespace PlanningEditorPrototype
                 entry.DisplayName,
                 entry.Color,
                 !entry.UsesPrefabDirectly);
+            BlockAbilityHost.EnsureOn(instance);
             if (!entry.UsesPrefabDirectly)
             {
                 LevelEditorDecorationService.ApplyToPlacedBlock(
@@ -720,6 +715,9 @@ namespace PlanningEditorPrototype
                 return null;
             }
 
+            LevelEditorComponentOverrideUtility.ApplyOverrides(
+                instance,
+                prop.ComponentValueOverrides);
             Vector2Int sceneCell = new Vector2Int(
                 cell.x,
                 -cell.y - 1);

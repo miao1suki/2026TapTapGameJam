@@ -41,6 +41,7 @@ namespace Project.BlockFeatures
     public sealed class BlockFeatureAttribute : Attribute
     {
         public string DisplayName { get; set; }
+        public string DefaultColorId { get; set; } = string.Empty;
         public BlockFeaturePhase Phase { get; set; } =
             BlockFeaturePhase.Simulation;
         public int Order { get; set; }
@@ -81,6 +82,10 @@ namespace Project.BlockFeatures
                 attribute.DisplayName)
                 ? string.Empty
                 : attribute.DisplayName.Trim();
+            DefaultColorId = string.IsNullOrWhiteSpace(
+                attribute.DefaultColorId)
+                ? string.Empty
+                : attribute.DefaultColorId.Trim();
             Phase = attribute.Phase;
             Order = attribute.Order;
             MaxPerBlock = Mathf.Max(1, attribute.MaxPerBlock);
@@ -97,6 +102,7 @@ namespace Project.BlockFeatures
 
         public Type FeatureType { get; }
         public string DisplayName { get; }
+        public string DefaultColorId { get; }
         public BlockFeaturePhase Phase { get; }
         public int Order { get; }
         public int MaxPerBlock { get; }
@@ -287,16 +293,44 @@ namespace Project.BlockFeatures
     }
 
     [RequireComponent(typeof(BlockRuntime))]
-    public abstract class BlockFeature : MonoBehaviour
+    public abstract class BlockFeature : MonoBehaviour,
+        IProjectDiscoverySource
     {
         private BlockContext context;
         private BlockFeatureMetadata metadata;
+        private string[] discoveryTags;
 
         public BlockContext Context => context;
         public BlockFeatureMetadata Metadata =>
             metadata ?? (metadata = BlockFeatureMetadataCache.Get(
                 GetType()));
         public bool IsAttached => context != null;
+        public string DiscoveryId => Metadata.FeatureType.FullName;
+        public IReadOnlyList<string> DiscoveryTags
+        {
+            get
+            {
+                if (discoveryTags == null)
+                {
+                    discoveryTags = string.IsNullOrWhiteSpace(
+                        Metadata.DefaultColorId)
+                        ? Array.Empty<string>()
+                        : new[] { Metadata.DefaultColorId };
+                }
+
+                return discoveryTags;
+            }
+        }
+        public int DiscoveryOrder => Metadata.Order;
+
+        private void OnValidate()
+        {
+            // 功能组件只能由运行时 Host 按颜色启停。
+            if (!Application.isPlaying)
+            {
+                enabled = false;
+            }
+        }
 
         public virtual void CollectDebugValues(
             List<BlockDebugValue> values)

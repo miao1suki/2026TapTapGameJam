@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Project;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -135,12 +136,11 @@ namespace Project.SurfaceTiles.Editor
 
         internal static int RepairScene()
         {
-            SurfaceTileBlock[] blocks = Object.FindObjectsByType<SurfaceTileBlock>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            IReadOnlyList<SurfaceTileBlock> blocks =
+                ProjectDiscovery.FindAll<SurfaceTileBlock>(true);
             HashSet<string> ids = new HashSet<string>();
             int repaired = 0;
-            for (int index = 0; index < blocks.Length; index++)
+            for (int index = 0; index < blocks.Count; index++)
             {
                 SurfaceTileBlock block = blocks[index];
                 Undo.RecordObject(block, "修复表面瓦片方块");
@@ -161,7 +161,7 @@ namespace Project.SurfaceTiles.Editor
                 }
             }
 
-            if (blocks.Length > 0)
+            if (blocks.Count > 0)
             {
                 EditorSceneManager.MarkSceneDirty(blocks[0].gameObject.scene);
             }

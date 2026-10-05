@@ -1187,7 +1187,8 @@ namespace Project.LevelEditor.Editor
                     ? searchField.value?.Trim() ?? string.Empty
                     : string.Empty;
                 List<Type> matches = new List<Type>();
-                foreach (Type type in TypeCache.GetTypesDerivedFrom<Component>())
+                foreach (Type type in ProjectDiscovery
+                             .FindImplementations<Component>())
                 {
                     if (owner == null || !owner.CanAdd(type))
                     {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.LevelEditor;
 using UnityEngine;
 
 namespace PlanningEditorPrototype
@@ -77,6 +78,7 @@ namespace PlanningEditorPrototype
         public int y;
         public int width = 1;
         public int height = 1;
+        [NonSerialized] public LevelEditorPlacedBlock sceneBlock;
 
         public PlanningBox()
         {

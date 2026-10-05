@@ -200,7 +200,7 @@ namespace Project.Player
             if (cameraModeController == null)
             {
                 cameraModeController =
-                    FindFirstObjectByType<CameraModeController>();
+                    ProjectDiscovery.FindFirst<CameraModeController>();
             }
         }
 
