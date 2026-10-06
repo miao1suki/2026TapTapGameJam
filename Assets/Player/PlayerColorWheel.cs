@@ -23,7 +23,8 @@ namespace Project.Player
         {
             if (GameInput.WasTriggeredThisFrame(InputActionId.PointerSecondary))
             {
-                ColorBlock block = sensor?.CurrentTarget as ColorBlock;
+                Project.ColorBlocks.ColorBlock block =
+                    sensor?.CurrentTarget as Project.ColorBlocks.ColorBlock;
                 if (block != null && block.TryOpenColorWheel(gameObject))
                 {
                     Show(block.CurrentColorTypeId);
