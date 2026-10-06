@@ -19,6 +19,7 @@ namespace Project.InputRebinding
         private readonly InputActionAsset asset;
         private readonly IInputBindingStorage storage;
         private readonly bool ownsAsset;
+        private readonly bool isPreviewOnly;
         private readonly string defaultJson;
         private readonly List<HistorySnapshot> undoHistory =
             new List<HistorySnapshot>();
@@ -31,7 +32,8 @@ namespace Project.InputRebinding
             InputActionAsset actionAsset,
             IInputBindingStorage bindingStorage,
             string resetJson = null,
-            bool ownsAsset = false)
+            bool ownsAsset = false,
+            bool persistChanges = true)
         {
             asset = actionAsset
                 ?? throw new ArgumentNullException(
@@ -40,16 +42,40 @@ namespace Project.InputRebinding
                 ?? throw new ArgumentNullException(
                     nameof(bindingStorage));
             this.ownsAsset = ownsAsset;
+            isPreviewOnly = !persistChanges;
             defaultJson = string.IsNullOrWhiteSpace(resetJson)
                 ? asset.ToJson()
                 : resetJson;
             Load();
         }
 
-        public static InputBindingService CreateFromInputService()
+        public static InputBindingService CreateFromInputService(
+            bool persistChanges = true)
         {
             InputService service =
                 InputService.EnsureInstance();
+            if (!persistChanges)
+            {
+                InputActionAsset source =
+                    service.RuntimeActionAsset ??
+                    service.ConfiguredActionAsset;
+                if (source == null)
+                {
+                    source =
+                        InputActionAssetFactory
+                            .CreateDefaultGameplayAsset();
+                }
+
+                InputActionAsset preview =
+                    UnityEngine.Object.Instantiate(source);
+                return new InputBindingService(
+                    preview,
+                    new MemoryInputBindingStorage(),
+                    preview.ToJson(),
+                    true,
+                    false);
+            }
+
             InputActionAsset resetAsset =
                 service.ConfiguredActionAsset != null
                     ? UnityEngine.Object.Instantiate(
@@ -102,6 +128,17 @@ namespace Project.InputRebinding
         public InputActionAsset Asset => asset;
         public bool CanUndo => undoHistory.Count > 0;
         public bool CanRedo => redoHistory.Count > 0;
+        public bool IsPreviewOnly => isPreviewOnly;
+
+        public bool CanModifyBinding(InputActionId actionId)
+        {
+            return InputActionBindingPolicy.CanModifyBinding(actionId);
+        }
+
+        public bool CanShowInBindingUI(InputActionId actionId)
+        {
+            return InputActionBindingPolicy.CanShowInBindingUI(actionId);
+        }
 
         public InputActionTrigger GetActionTrigger(
             InputActionId actionId)
@@ -187,6 +224,11 @@ namespace Project.InputRebinding
                 Action completed = null,
                 Action canceled = null)
         {
+            if (!CanModifyBinding(actionId))
+            {
+                return null;
+            }
+
             if (!TryGetAction(actionId, out InputAction action) ||
                 bindingIndex < 0 ||
                 bindingIndex >= action.bindings.Count)
@@ -259,6 +301,11 @@ namespace Project.InputRebinding
             int bindingIndex,
             InputBindingTrigger trigger)
         {
+            if (!CanModifyBinding(actionId))
+            {
+                return;
+            }
+
             if (!InputActionInteractionPolicy.CanConfigureTrigger(
                     actionId) ||
                 !TryGetAction(actionId, out InputAction action) ||
@@ -310,6 +357,11 @@ namespace Project.InputRebinding
             InputActionId actionId,
             InputActionTriggerPolicy policy)
         {
+            if (!CanModifyBinding(actionId))
+            {
+                return;
+            }
+
             if (!TryGetAction(actionId, out _))
             {
                 return;
@@ -336,6 +388,11 @@ namespace Project.InputRebinding
             InputActionId actionId,
             int bindingIndex)
         {
+            if (!CanModifyBinding(actionId))
+            {
+                return;
+            }
+
             if (!TryGetAction(actionId, out InputAction action) ||
                 bindingIndex < 0 ||
                 bindingIndex >= action.bindings.Count)
@@ -370,6 +427,11 @@ namespace Project.InputRebinding
             InputBindingDevice device,
             InputBindingTrigger trigger)
         {
+            if (!CanModifyBinding(actionId))
+            {
+                return -1;
+            }
+
             return AddBinding(
                 actionId,
                 GetDefaultPath(device),
@@ -383,6 +445,11 @@ namespace Project.InputRebinding
             InputBindingDevice device,
             InputBindingTrigger trigger)
         {
+            if (!CanModifyBinding(actionId))
+            {
+                return -1;
+            }
+
             if (string.IsNullOrWhiteSpace(path) ||
                 !TryGetAction(actionId, out InputAction action))
             {
@@ -441,6 +508,11 @@ namespace Project.InputRebinding
             InputActionId actionId,
             int bindingIndex)
         {
+            if (!CanModifyBinding(actionId))
+            {
+                return;
+            }
+
             if (!TryGetAction(actionId, out InputAction action) ||
                 bindingIndex < 0 ||
                 bindingIndex >= action.bindings.Count)
@@ -485,6 +557,11 @@ namespace Project.InputRebinding
 
         public void ClearBindings(InputActionId actionId)
         {
+            if (!CanModifyBinding(actionId))
+            {
+                return;
+            }
+
             if (!TryGetAction(actionId, out InputAction action) ||
                 action.bindings.Count == 0)
             {
@@ -688,39 +765,7 @@ namespace Project.InputRebinding
         public static string GetActionDisplayName(
             InputActionId actionId)
         {
-            switch (actionId)
-            {
-                case InputActionId.Move:
-                    return "移动";
-                case InputActionId.Look:
-                    return "视角";
-                case InputActionId.Navigate:
-                    return "导航";
-                case InputActionId.Jump:
-                    return "跳跃";
-                case InputActionId.Interact:
-                    return "交互";
-                case InputActionId.Cancel:
-                    return "取消";
-                case InputActionId.Submit:
-                    return "确认";
-                case InputActionId.Pause:
-                    return "暂停";
-                case InputActionId.Crouch:
-                    return "蹲下";
-                case InputActionId.Sprint:
-                    return "冲刺";
-                case InputActionId.Attack:
-                    return "攻击";
-                case InputActionId.CameraModeSwitch:
-                    return "切换视角";
-                case InputActionId.PointerPrimary:
-                    return "主指针";
-                case InputActionId.PointerSecondary:
-                    return "次指针";
-                default:
-                    return actionId.ToString();
-            }
+            return InputActionBindingPolicy.GetDisplayName(actionId);
         }
 
         private HistorySnapshot CaptureSnapshot()
@@ -824,6 +869,7 @@ namespace Project.InputRebinding
             }
 
             asset.LoadFromJson(json);
+            InputService.EnsureDefaultMoveBindings(asset);
             for (int index = 0;
                  index < enabledMaps.Count;
                  index++)

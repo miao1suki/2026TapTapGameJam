@@ -1,4 +1,5 @@
 using System.Collections;
+using Project.Audio;
 using UnityEngine;
 
 namespace Project.GameFlow
@@ -13,6 +14,7 @@ namespace Project.GameFlow
         private AudioClip uiClickClip;
         private AudioClip pauseClip;
         private AudioClip levelCompleteClip;
+        private AudioManager audioManager;
 
         public static GameAudioService Instance => instance;
         public int InitializationOrder => 0;
@@ -29,6 +31,13 @@ namespace Project.GameFlow
         public IEnumerator Initialize()
         {
             EnsureSources();
+            audioManager = AudioManager.EnsureInstance();
+            if (audioManager != null)
+            {
+                audioManager.VolumesChanged -= ApplyVolumes;
+                audioManager.VolumesChanged += ApplyVolumes;
+                ApplyVolumes();
+            }
             IsInitialized = true;
             yield break;
         }
@@ -93,9 +102,34 @@ namespace Project.GameFlow
 
         private void OnDestroy()
         {
+            if (audioManager != null)
+            {
+                audioManager.VolumesChanged -= ApplyVolumes;
+                audioManager = null;
+            }
+
             if (instance == this)
             {
                 instance = null;
+            }
+        }
+
+        private void ApplyVolumes()
+        {
+            if (audioManager == null)
+            {
+                return;
+            }
+
+            AudioListener.volume = audioManager.MasterVolume;
+            if (musicSource != null)
+            {
+                musicSource.volume = audioManager.MusicVolume;
+            }
+
+            if (soundEffectSource != null)
+            {
+                soundEffectSource.volume = audioManager.EffectsVolume;
             }
         }
 

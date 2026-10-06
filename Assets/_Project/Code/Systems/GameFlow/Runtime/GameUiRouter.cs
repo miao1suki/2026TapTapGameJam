@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Project.InputAbstraction;
+using Project.StartMenu;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -309,7 +310,10 @@ namespace Project.GameFlow
             switch (sceneId)
             {
                 case GameFlowSceneId.MainMenu:
-                    SetOnly(mainMenuScreen);
+                    SetOnly(
+                        ProjectDiscovery.FindFirst<StartMenuController>(true) != null
+                            ? null
+                            : mainMenuScreen);
                     break;
                 case GameFlowSceneId.Ending:
                     SetOnly(endingScreen);

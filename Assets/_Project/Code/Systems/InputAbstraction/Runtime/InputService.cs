@@ -57,6 +57,12 @@ namespace Project.InputAbstraction
             return instance;
         }
 
+        public static void EnsureDefaultMoveBindings(
+            InputActionAsset asset)
+        {
+            InputActionCatalog.EnsureDefaultMoveBindings(asset);
+        }
+
         public void SetExternalSource(IInputSource source)
         {
             externalSource = source;
@@ -68,6 +74,21 @@ namespace Project.InputAbstraction
             {
                 externalSource = null;
             }
+        }
+
+        public bool EnsureRuntimeInputEnabled()
+        {
+            if (externalSource != null)
+            {
+                return true;
+            }
+
+            if (unitySource == null)
+            {
+                CreateUnitySource();
+            }
+
+            return unitySource != null && unitySource.EnsureEnabled();
         }
 
         private void Awake()
@@ -125,6 +146,8 @@ namespace Project.InputAbstraction
                             .CreateDefaultGameplayAsset();
                 InputBindingOverrideStore.Apply(sourceAsset);
                 InputActionInteractionPolicy.Normalize(
+                    sourceAsset);
+                InputActionCatalog.EnsureDefaultMoveBindings(
                     sourceAsset);
                 unitySource = new UnityInputSource(
                     sourceAsset,

@@ -40,9 +40,53 @@ namespace Project.InputAbstraction
             return asset;
         }
 
+        internal static void EnsureDefaultMoveBindings(
+            InputActionAsset asset)
+        {
+            if (asset == null)
+            {
+                return;
+            }
+
+            InputActionMap map = asset.FindActionMap(
+                MapName,
+                false);
+            InputAction move = map?.FindAction(
+                GetName(InputActionId.Move),
+                false);
+            if (move == null)
+            {
+                return;
+            }
+
+            bool mapWasEnabled = map.enabled;
+            if (mapWasEnabled)
+            {
+                map.Disable();
+            }
+
+            move.RemoveAllBindingOverrides();
+            while (move.bindings.Count > 0)
+            {
+                move.ChangeBinding(0).Erase();
+            }
+
+            ConfigureMoveAction(move);
+
+            if (mapWasEnabled)
+            {
+                map.Enable();
+            }
+        }
+
         private static void AddMoveAction(InputActionMap map, InputActionId id)
         {
             InputAction action = map.AddAction(GetName(id), InputActionType.Value, expectedControlLayout: "Vector2");
+            ConfigureMoveAction(action);
+        }
+
+        private static void ConfigureMoveAction(InputAction action)
+        {
             action.AddCompositeBinding("2DVector")
                 .With("Up", "<Keyboard>/w")
                 .With("Down", "<Keyboard>/s")

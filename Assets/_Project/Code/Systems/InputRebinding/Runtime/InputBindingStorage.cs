@@ -27,4 +27,25 @@ namespace Project.InputRebinding
             InputBindingOverrideStore.Clear();
         }
     }
+
+    public sealed class MemoryInputBindingStorage :
+        IInputBindingStorage
+    {
+        private string json = string.Empty;
+
+        public string Load()
+        {
+            return json;
+        }
+
+        public void Save(string value)
+        {
+            json = value ?? string.Empty;
+        }
+
+        public void Clear()
+        {
+            json = string.Empty;
+        }
+    }
 }

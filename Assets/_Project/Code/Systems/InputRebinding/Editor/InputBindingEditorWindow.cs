@@ -303,6 +303,11 @@ namespace Project.InputRebinding.Editor
                  index < actionIds.Count;
                  index++)
             {
+                if (!service.CanShowInBindingUI(actionIds[index]))
+                {
+                    continue;
+                }
+
                 actionScroll.Add(CreateActionSection(
                     actionIds[index]));
             }
@@ -376,6 +381,7 @@ namespace Project.InputRebinding.Editor
 
             IReadOnlyList<InputBindingInfo> bindings =
                 service.GetBindings(actionId);
+            bool canModify = service.CanModifyBinding(actionId);
             for (int index = 0;
                  index < bindings.Count;
                  index++)
@@ -402,6 +408,17 @@ namespace Project.InputRebinding.Editor
                 foldout.Add(triggerSummary);
             }
 
+            if (!canModify)
+            {
+                Label readOnly = new Label(
+                    "默认只读：移动固定使用 WASD / 左摇杆 / 十字键。");
+                readOnly.style.fontSize = 10f;
+                readOnly.style.marginLeft = 2f;
+                readOnly.style.marginBottom = 3f;
+                readOnly.style.opacity = 0.62f;
+                foldout.Add(readOnly);
+            }
+
             if (bindings.Count == 0)
             {
                 Label empty = new Label("当前映射中没有这个动作。");
@@ -420,9 +437,12 @@ namespace Project.InputRebinding.Editor
                 }
             }
 
-            foldout.Add(CreateAddBindingRow(
-                actionId,
-                bindings.Count > 0));
+            if (canModify)
+            {
+                foldout.Add(CreateAddBindingRow(
+                    actionId,
+                    bindings.Count > 0));
+            }
             return foldout;
         }
 
@@ -430,6 +450,7 @@ namespace Project.InputRebinding.Editor
             InputActionId actionId,
             InputBindingInfo binding)
         {
+            bool canModify = service.CanModifyBinding(actionId);
             VisualElement card = new VisualElement();
             card.style.backgroundColor =
                 EditorGUIUtility.isProSkin
@@ -465,7 +486,8 @@ namespace Project.InputRebinding.Editor
                 FontStyle.Bold;
             row.Add(display);
 
-            if (binding.IsButton &&
+            if (canModify &&
+                binding.IsButton &&
                 InputActionInteractionPolicy
                     .CanConfigureTrigger(actionId))
             {
@@ -486,14 +508,19 @@ namespace Project.InputRebinding.Editor
                 row.Add(trigger);
             }
 
-            Button rebind = CreateButton("改键", () =>
+            Button rebind = CreateButton(
+                canModify ? "改键" : "只读",
+                () =>
             {
                 StartRebind(
                     actionId,
                     binding,
                     display);
-            }, new Color(0.16f, 0.40f, 0.66f, 1f));
+            }, canModify
+                ? new Color(0.16f, 0.40f, 0.66f, 1f)
+                : new Color(0.20f, 0.24f, 0.28f, 1f));
             rebind.style.width = 52f;
+            rebind.SetEnabled(canModify);
             row.Add(rebind);
 
             Button reset = CreateButton("重置", () =>
@@ -504,6 +531,7 @@ namespace Project.InputRebinding.Editor
                 QueueRefresh();
             }, new Color(0.20f, 0.30f, 0.38f, 1f));
             reset.style.width = 52f;
+            reset.SetEnabled(canModify);
             row.Add(reset);
 
             Button remove = CreateButton("删除", () =>
@@ -514,6 +542,7 @@ namespace Project.InputRebinding.Editor
                 QueueRefresh();
             }, new Color(0.48f, 0.20f, 0.22f, 1f));
             remove.style.width = 52f;
+            remove.SetEnabled(canModify);
             row.Add(remove);
             card.Add(row);
             return card;
@@ -1053,8 +1082,7 @@ namespace Project.InputRebinding.Editor
 
         private static IReadOnlyList<InputActionId> GetActionIds()
         {
-            return (InputActionId[])Enum.GetValues(
-                typeof(InputActionId));
+            return InputActionBindingPolicy.GetVisibleActions();
         }
 
         private static string GetDeviceLabel(

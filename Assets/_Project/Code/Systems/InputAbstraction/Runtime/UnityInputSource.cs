@@ -153,6 +153,22 @@ namespace Project.InputAbstraction
         public Vector2 PointerPosition => Mouse.current?.position.ReadValue() ?? Vector2.zero;
         public Vector2 PointerDelta => Mouse.current?.delta.ReadValue() ?? Vector2.zero;
         internal InputActionAsset Asset => asset;
+
+        internal bool EnsureEnabled()
+        {
+            if (map == null)
+            {
+                return false;
+            }
+
+            if (!map.enabled)
+            {
+                map.Enable();
+            }
+
+            return map.enabled;
+        }
+
         public bool HasKeyboard => Keyboard.current != null;
         public bool HasMouse => Mouse.current != null;
         public bool HasGamepad => Gamepad.current != null;
