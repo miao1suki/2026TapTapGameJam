@@ -8,7 +8,15 @@ namespace Project.InputAbstraction
     /// </summary>
     public static class GameInput
     {
-        public static IInputSource Source => InputService.EnsureInstance().ActiveSource;
+        public static IInputSource Source
+        {
+            get
+            {
+                InputService service = InputService.EnsureInstance();
+                service.EnsureRuntimeInputEnabled();
+                return service.ActiveSource;
+            }
+        }
         public static InputPlatformMode PlatformMode =>
             InputService.EnsureInstance().ResolvedPlatformMode;
         public static InputDeviceMode ActiveDeviceMode => Source.ActiveDeviceMode;

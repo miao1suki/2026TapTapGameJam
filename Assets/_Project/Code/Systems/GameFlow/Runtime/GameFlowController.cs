@@ -117,9 +117,11 @@ namespace Project.GameFlow
                 Scene scene = SceneManager.GetSceneByPath(path);
                 if (!scene.IsValid() || !scene.isLoaded)
                 {
-                    AsyncOperation load = SceneManager.LoadSceneAsync(
-                        path,
-                        LoadSceneMode.Additive);
+                    AsyncOperation load =
+                        GameSceneLoader.Instance.LoadSceneAsync(
+                            path,
+                            LoadSceneMode.Additive,
+                            false);
                     if (load == null)
                     {
                         Debug.LogError($"无法加载持久系统场景：{path}", this);
@@ -176,9 +178,10 @@ namespace Project.GameFlow
 
             if (!targetScene.IsValid() || !targetScene.isLoaded)
             {
-                AsyncOperation load = SceneManager.LoadSceneAsync(
-                    targetPath,
-                    LoadSceneMode.Additive);
+                AsyncOperation load =
+                    GameSceneLoader.Instance.LoadSceneAsync(
+                        targetPath,
+                        LoadSceneMode.Additive);
                 if (load == null)
                 {
                     Debug.LogError($"无法加载流程场景：{targetPath}", this);

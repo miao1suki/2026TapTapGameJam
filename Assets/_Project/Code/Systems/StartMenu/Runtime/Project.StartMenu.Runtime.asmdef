@@ -1,12 +1,14 @@
 {
-  "name": "Project.GameFlow.Runtime",
-  "rootNamespace": "Project.GameFlow",
+  "name": "Project.StartMenu.Runtime",
+  "rootNamespace": "Project.StartMenu",
   "references": [
     "Project.Audio.Runtime",
-    "Project.CameraModes.Runtime",
     "Project.InputAbstraction.Runtime",
+    "Project.InputRebinding.Runtime",
+    "Project.Saving.Runtime",
+    "Project.Settings.Runtime",
     "Project.Shared.Runtime",
-    "Project.StartMenu.Runtime",
+    "Unity.InputSystem",
     "Unity.UGUI"
   ],
   "includePlatforms": [],

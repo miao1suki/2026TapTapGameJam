@@ -11,22 +11,7 @@ namespace Project.Player.Editor
     public sealed class PlayerActionBindingDrawer : PropertyDrawer
     {
         private static readonly InputActionId[] Actions =
-        {
-            InputActionId.Move,
-            InputActionId.Look,
-            InputActionId.Navigate,
-            InputActionId.Jump,
-            InputActionId.Interact,
-            InputActionId.Cancel,
-            InputActionId.Submit,
-            InputActionId.Pause,
-            InputActionId.Crouch,
-            InputActionId.Sprint,
-            InputActionId.Attack,
-            InputActionId.CameraModeSwitch,
-            InputActionId.PointerPrimary,
-            InputActionId.PointerSecondary,
-        };
+            InputActionBindingPolicy.GetVisibleActions();
 
         public override VisualElement CreatePropertyGUI(
             SerializedProperty property)
@@ -83,39 +68,7 @@ namespace Project.Player.Editor
 
         private static string GetLabel(InputActionId action)
         {
-            switch (action)
-            {
-                case InputActionId.Move:
-                    return "移动";
-                case InputActionId.Look:
-                    return "视角";
-                case InputActionId.Navigate:
-                    return "导航";
-                case InputActionId.Jump:
-                    return "跳跃";
-                case InputActionId.Interact:
-                    return "交互";
-                case InputActionId.Cancel:
-                    return "取消";
-                case InputActionId.Submit:
-                    return "确认";
-                case InputActionId.Pause:
-                    return "暂停";
-                case InputActionId.Crouch:
-                    return "蹲下";
-                case InputActionId.Sprint:
-                    return "冲刺";
-                case InputActionId.Attack:
-                    return "攻击";
-                case InputActionId.CameraModeSwitch:
-                    return "切换视角";
-                case InputActionId.PointerPrimary:
-                    return "指针主键";
-                case InputActionId.PointerSecondary:
-                    return "指针副键";
-                default:
-                    return action.ToString();
-            }
+            return InputActionBindingPolicy.GetDisplayName(action);
         }
     }
 }

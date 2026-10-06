@@ -1,5 +1,30 @@
 # 工作状态与交接（每次任务重读）
 
+## 编辑器 Play 模式输入焦点修正
+
+- 日期：2026-10-06；负责人：Codex；分支：`codex/orpheus0829/start-menu-settings`。
+- 范围：新增编辑器专用的 Input System 焦点策略，在进入 Play 前后都将输入改为始终发送到 Game 视图，并忽略 Game 视图失焦导致的后台设备禁用；同时让运行时读取输入前自动恢复 Gameplay 动作表，并强制把只读 Move 动作修复为默认 WASD 加手柄绑定。
+- 边界：仅在 `UNITY_EDITOR` 下启用，不进入玩家构建；不修改玩家控制、动作绑定、场景或 InputActionAsset。
+- 验证：使用项目 Editor 响应文件通过 Roslyn 编译，0 错误。
+
+## 开始界面、设置与存档空壳
+
+- 日期：2026-10-06；负责人：Codex；分支：`codex/orpheus0829/start-menu-settings`。
+- 范围：新建 `Assets/_Project/Development/StartMenu/Orpheus0829/Scenes/StartMenuPrototype.unity`，使用 Canvas/UGUI 搭建开始界面原型；主菜单提供开始游戏、设置、退出，开始游戏二级菜单提供继续上次游戏、选择存档和返回；设置提供声音、按键映射、制作人员介绍。
+- 脚本结构：按项目系统目录约定新增 `Assets/_Project/Code/Systems/StartMenu/Runtime|Editor`、`Assets/_Project/Code/Systems/Audio/Runtime` 和 `Assets/_Project/Code/Systems/Saving/Runtime`；音频管理器先只提供全局静音，按键映射只消费现有 `InputBindingService`/`InputActionInteractionPolicy`，不改核心绑定逻辑、不新增操作；存档模块先提供空壳接口和界面。
+- 场景：已创建独立原型场景 `Assets/_Project/Development/StartMenu/Orpheus0829/Scenes/StartMenuPrototype.unity`，不加入 Build Settings；编辑器脚本 `Tools/2026TapTap/UI/生成开始菜单原型` 直接在场景内创建 Camera、EventSystem、Canvas、面板、按钮、设置页、存档页和占位背景，不使用运行时临时 Canvas，也不生成 Prefab 资产。生成器只允许手动点击，不自动执行。
+- 适配：CanvasScaler 不固定输出分辨率，改用 `Screen.width/Screen.height` 在实际设备上实时计算 `ConstantPixelSize.scaleFactor`；窗口或设备分辨率变化时自动重算，缩放范围钳制在 1x 到 2.5x，避免高分辨率屏幕上按钮过小。
+- 界面：运行时全部使用原生 UGUI Canvas/Image/Text/Button/Toggle/ScrollRect，不使用 UI Toolkit；按键映射改为顶部设备切换、每行一个操作、左侧操作名、中间单个改键框、右侧点击/长按列，只列出当前设备真实存在的绑定；点击改键框会显示“正在接听，请按下目标按键”，接听期间临时关闭 InputSystemUIInputModule；移动固定只读为默认键位，底层 `InputActionBindingPolicy` 统一禁止修改，编辑器窗口和运行时设置页都查询该策略并禁用对应控件；`Look / 视角` 通过统一显示策略从两套按键映射界面隐藏，底层动作仍保留；键盘鼠标显示 `WASD（A/D 左右，W/S 上下）`；设置页改为左侧栏目列表加右侧内容面板；存档卡片补上删除按钮。
+- 安全开关：新增 `Project.Settings.Runtime.RuntimeSettingsPolicy.ApplyChangesToRuntime`，当前默认 `false`，统一控制运行时设置页的按键映射、音乐音量和存档操作。关闭时三者都只写入内存预览：不改正式 InputActionAsset、不写音量 PlayerPrefs、不创建或删除磁盘存档。原编辑器按键映射窗口保持原有持久化逻辑，不受这个开关影响。
+- 输入链：`InputActionBindingPolicy` 统一提供按键映射界面的动作集合与显示名；原编辑器、玩家动作抽屉和运行时设置页都读取同一份数据。`CameraModeSwitch` 的显示名统一改为“调色”，内部动作 ID 暂时保留以兼容现有相机绑定。
+- 平台适配：按键映射页按实际设备和平台显示设备栏目；编辑器也会隐藏未连接的手柄，桌面端只显示键盘鼠标并仅在检测到手柄时显示控制器，触屏隐藏；移动端显示触屏，并仅在检测到手柄时显示控制器。手柄连接状态变化时自动刷新栏目。
+- 声音设置：移除运行时界面的布尔全局静音，新增总音量、背景音乐、音效三条滑块；AudioManager 统一保存三项音量，实际音乐为 `总音量 × 背景音乐`，实际音效为 `总音量 × 音效`，目前仅建立控制关系和持久化，未绑定正式音频资源。
+- 音频接入：`GameAudioService` 保持 `Systems_Audio` 常驻播放职责，初始化时获取 `AudioManager` 并订阅音量变化；音乐源应用音乐音量、音效源应用音效音量、`AudioListener` 应用总音量。主菜单和后续 ESC 设置只操作同一份 `AudioManager` 音量数据。
+- 场景链路：开始菜单正式生成路径改为 `Assets/_Project/Scenes/Flow/MainMenu.unity`，场景自带 `GameFlowSceneRoot` 和 `StartMenuFlowBridge`；开始按钮在真实 GameFlow 下请求进入 `Level01`，单独打开原型时仍进入本地二级菜单。`GameUiRouter` 检测到场景内 `StartMenuController` 时会隐藏常驻的旧主菜单画面，避免叠两层 UI。
+- 异步加载：新增 `GameSceneLoader` 和 `IGameLoadingScreen`，流程场景切换统一走异步加载；新增 `GameLoadingScreenAdapter`，后续把加载 Canvas、进度条和百分比文本引用拖入即可接管显示。常驻系统场景启动阶段不显示加载画面，正式流程场景切换会显示。
+- 存档显示：存档名称统一为“章节进度 + 保存时间”，时间使用本地时间 `yyyy-MM-dd HH:mm:ss` 24 小时制；存档卡片主名称显示该组合文本，操作区保留读取和删除。
+- 验证：正式 `Assets/_Project/Scenes/Flow/MainMenu.unity` 已生成并包含 Camera 外的实际流程 UI；场景包含 `StartMenuPrototype`、`StartMenuFlowBridge`、`GameFlowSceneRoot`、Canvas、主菜单、开始二级菜单、设置和存档页面。一次性 `StartMenuPrototypeBuilder.cs` 及 `Project.StartMenu.Editor` 已删除。PlayMode 交互仍需在 Unity 中复验。
+
 ## 字幕道具慢显隐与缩略图缓存清理
 
 - 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
