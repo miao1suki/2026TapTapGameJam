@@ -76,28 +76,46 @@ namespace Project.Interactions.Editor
 
         internal static InteractionObjectDefinition FindForPrefab(
             InteractionObjectCatalog catalog,
-            GameObject prefab)
+            GameObject prefab,
+            string preferredDisplayName = null)
         {
             if (catalog == null || prefab == null) return null;
             string prefabPath = AssetDatabase.GetAssetPath(prefab);
-            for (int index = 0; index < catalog.Objects.Count; index++)
-            {
-                InteractionObjectDefinition item = catalog.Objects[index];
-                if (item == null) continue;
-                if (item.Prefab == prefab) return item;
+            var candidates = new List<InteractionObjectDefinition>();
 
-                // Unity can deserialize the same prefab through two different
-                // object handles while the asset pipeline is refreshing. Compare
-                // the stable asset path as a fallback so synchronization does not
-                // create a duplicate definition for one prefab.
-                if (!string.IsNullOrWhiteSpace(prefabPath) &&
-                    string.Equals(
+            void AddCandidate(InteractionObjectDefinition item)
+            {
+                if (item == null ||
+                    !string.Equals(
                         AssetDatabase.GetAssetPath(item.Prefab),
                         prefabPath,
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    return item;
+                    return;
                 }
+
+                string itemPath = AssetDatabase.GetAssetPath(item);
+                for (int candidateIndex = 0;
+                     candidateIndex < candidates.Count;
+                     candidateIndex++)
+                {
+                    if (string.Equals(
+                            AssetDatabase.GetAssetPath(
+                                candidates[candidateIndex]),
+                            itemPath,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+                }
+
+                candidates.Add(item);
+            }
+
+            for (int index = 0; index < catalog.Objects.Count; index++)
+            {
+                InteractionObjectDefinition item = catalog.Objects[index];
+                AddCandidate(item);
             }
 
             // A catalog entry can temporarily lose its object reference during
@@ -111,17 +129,37 @@ namespace Project.Interactions.Editor
                 InteractionObjectDefinition item = AssetDatabase.LoadAssetAtPath<
                     InteractionObjectDefinition>(
                     AssetDatabase.GUIDToAssetPath(definitionGuids[index]));
-                if (item != null &&
-                    string.Equals(
-                        AssetDatabase.GetAssetPath(item.Prefab),
-                        prefabPath,
-                        StringComparison.OrdinalIgnoreCase))
+                AddCandidate(item);
+            }
+
+            if (candidates.Count == 0)
+            {
+                return null;
+            }
+
+            string preferredName = MakeSafeAssetName(
+                string.IsNullOrWhiteSpace(preferredDisplayName)
+                    ? candidates[0].DisplayName
+                    : preferredDisplayName);
+            InteractionObjectDefinition preferred = candidates[0];
+            int preferredScore = DefinitionPathScore(
+                preferred,
+                preferredName);
+            for (int index = 1; index < candidates.Count; index++)
+            {
+                InteractionObjectDefinition candidate = candidates[index];
+                int score = DefinitionPathScore(candidate, preferredName);
+                if (score < preferredScore ||
+                    (score == preferredScore && string.CompareOrdinal(
+                        AssetDatabase.GetAssetPath(candidate),
+                        AssetDatabase.GetAssetPath(preferred)) < 0))
                 {
-                    return item;
+                    preferred = candidate;
+                    preferredScore = score;
                 }
             }
 
-            return null;
+            return preferred;
         }
 
         internal static InteractionObjectDefinition CreateOrGetDefinition(
@@ -131,13 +169,42 @@ namespace Project.Interactions.Editor
             string baseColorTypeId)
         {
             if (catalog == null) return null;
-            InteractionObjectDefinition existing = FindForPrefab(catalog, prefab);
+            InteractionObjectDefinition existing = FindForPrefab(
+                catalog,
+                prefab,
+                displayName);
             if (existing != null)
             {
+                string prefabPath = AssetDatabase.GetAssetPath(prefab);
+                bool removedDuplicates = false;
+                for (int index = catalog.EditableObjects.Count - 1;
+                     index >= 0;
+                     index--)
+                {
+                    InteractionObjectDefinition item =
+                        catalog.EditableObjects[index];
+                    if (item == null || item == existing ||
+                        !string.Equals(
+                            AssetDatabase.GetAssetPath(item.Prefab),
+                            prefabPath,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    catalog.EditableObjects.RemoveAt(index);
+                    removedDuplicates = true;
+                }
+
                 if (!catalog.EditableObjects.Contains(existing))
                 {
                     Undo.RecordObject(catalog, "恢复物体交互定义目录引用");
                     catalog.EditableObjects.Add(existing);
+                    removedDuplicates = true;
+                }
+
+                if (removedDuplicates)
+                {
                     EditorUtility.SetDirty(catalog);
                 }
                 Undo.RecordObject(existing, "更新物体交互定义");
@@ -159,6 +226,28 @@ namespace Project.Interactions.Editor
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
             return definition;
+        }
+
+        private static int DefinitionPathScore(
+            InteractionObjectDefinition definition,
+            string preferredName)
+        {
+            string path = AssetDatabase.GetAssetPath(definition);
+            string fileName = Path.GetFileNameWithoutExtension(path);
+            if (string.Equals(fileName, preferredName,
+                              StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+
+            int separator = fileName.LastIndexOf(' ');
+            if (separator >= 0 &&
+                int.TryParse(fileName.Substring(separator + 1), out _))
+            {
+                return 2;
+            }
+
+            return 1;
         }
 
         internal static void BindDefinitionToPrefab(

@@ -352,5 +352,5 @@
 - 图资产：红/蓝/绿方块定义已重写为清晰分支链，并加入 `受到其他物体颜色` 条件；预制体已绑定喷流、藤蔓、落差和下一跳组件。
 - 验证：已完成静态源码/资产核对，Unity 编辑器与 PlayMode 尚未在本机本轮运行；推送前需在 Unity 6000.3.12f1 重载脚本并检查 Console、图窗口和实际接触矩阵。
 - 编辑器复验补充：本机 Unity 进程正在运行，但当前 Codex 桌面自动化会话的原生窗口清单为空，无法代点菜单；已直接读取 `%LOCALAPPDATA%/Unity/Editor/Editor.log` 获取 Console 记录。日志中发现 `PlayerColorWheel` 的 `ColorBlock` 命名冲突，已改为显式使用 `Project.ColorBlocks.ColorBlock`。锚点预制体的旧报错来自脚本重载/资产管线刷新期间的重复定义；交互同步现在会按预制体资产路径复用已有定义，并在目录引用暂时丢失时恢复已有资产，避免再次生成“锚点 1”。Unity 重启后的最新日志未再出现编译或预制体保存错误。
-- 空 GUID 资产修复：自动同步曾把锚点定义写成重复资产，并在目录中留下 `{fileID: 0}`；已恢复唯一的 `锚点.asset`（GUID `c8d1e2f30456789abcdeffedcba9876`），同步修正目录、关卡栏目和锚点预制体引用，并将旧式 ScriptableObject 类标识改为 Unity 6000 可解析格式。Unity 同时补齐了锚点预制体 `MeshRenderer` 的 GameObject 引用；目标资产中不再有全零 GUID。使用 Unity 6000.3.12f1 的 Roslyn 响应文件完成 Runtime/Editor 静态编译，均 0 错误；目标 YAML GUID 检查通过。Console 中此前的错误属于自动同步期间的历史记录，待清空面板后再做最终复验。本地修复暂不推送，等待开发者确认。
+- 空 GUID 资产修复：自动同步曾把锚点定义写成重复资产，并在目录中留下 `{fileID: 0}`；已恢复唯一的 `锚点.asset`（GUID `c8d1e2f30456789abcdeffedcba9876`），同步修正目录、关卡栏目和锚点预制体引用，并将旧式 ScriptableObject 类标识改为 Unity 6000 可解析格式。Unity 同时补齐了锚点预制体 `MeshRenderer` 的 GameObject 引用；目标资产中不再有全零 GUID。同步代码现在会优先选择不带数字后缀的正式定义，并移除目录中同一预制体的重复条目。使用 Unity 6000.3.12f1 的 Roslyn 响应文件完成 Runtime/Editor 静态编译，均 0 错误；目标 YAML GUID 检查通过。Console 中此前的错误属于自动同步期间的历史记录，待清空面板后再做最终复验。本地修复暂不推送，等待开发者确认。
 - 未完成：未合并 `main`；需要在 Unity 内放置红蓝绿方块与锚点，确认藤蔓增长视觉、HUD、输入轮盘和水体状态，并在验收后更新本条记录。
