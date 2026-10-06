@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8116633e80ce44feadecbe10cdddeaa9, type: 3}
-  m_Name: "红方块"
+  m_Name: "\u7EA2\u65B9\u5757"
   m_EditorClassIdentifier: Assembly-CSharp:Project.Interactions:InteractionObjectDefinition
   objectId: red-block-object-000000000000000000000000000001
-  displayName: "红方块"
+  displayName: "\u7EA2\u65B9\u5757"
   prefab: {fileID: 2422191113143629447, guid: bbdf116cd06d2fb4d87b1ebb8c18ae02, type: 3}
   baseColorTypeId: red
   nodes:

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8116633e80ce44feadecbe10cdddeaa9, type: 3}
   m_Name: "锚点"
-  m_EditorClassIdentifier: Assembly-CSharp:Project.Interactions:InteractionObjectDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.InteractionObjectDefinition
   objectId: anchor-point-object-000000000000000000000000000001
   displayName: "锚点"
   prefab: {fileID: 810000001, guid: b7c0d1e2f30456789abcdeffedcba987, type: 3}

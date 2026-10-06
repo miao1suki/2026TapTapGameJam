@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8116633e80ce44feadecbe10cdddeaa9, type: 3}
-  m_Name: "绿方块"
+  m_Name: "\u7EFF\u65B9\u5757"
   m_EditorClassIdentifier: Assembly-CSharp:Project.Interactions:InteractionObjectDefinition
   objectId: green-block-object-00000000000000000000000000001
-  displayName: "绿方块"
+  displayName: "\u7EFF\u65B9\u5757"
   prefab: {fileID: 8582130194286690322, guid: ac2d7caad3cfab24d920732a9371c085, type: 3}
   baseColorTypeId: green
   nodes:
