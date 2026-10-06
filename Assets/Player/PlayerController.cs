@@ -57,7 +57,12 @@ namespace Project.Player
         private float airborneSince = -1f;
         private bool jumpHeld;
         private int lockDepth;
+        private float requestedBounceSpeed = -1f;
         private readonly HashSet<int> waterSources = new HashSet<int>();
+        private readonly Dictionary<int, float> waterSpeedMultipliers =
+            new Dictionary<int, float>();
+        private readonly HashSet<int> fallDamageImmunitySources =
+            new HashSet<int>();
         private readonly HashSet<int> climbSources = new HashSet<int>();
         private readonly RaycastHit[] groundHits = new RaycastHit[16];
         private static PhysicsMaterial zeroFrictionMaterial;
@@ -65,6 +70,7 @@ namespace Project.Player
         public bool IsGrounded { get; private set; }
         public bool IsControlLocked => lockDepth > 0;
         public bool IsSwimming => waterSources.Count > 0;
+        public bool IsFallDamageImmune => fallDamageImmunitySources.Count > 0;
         public bool IsClimbing =>
             climbSources.Count > 0 &&
             (!IsGrounded || movement.y > .01f);
@@ -154,11 +160,56 @@ namespace Project.Player
             lockDepth = 0; movement = Vector2.zero; jumpUntil = -1;
             jumpHeld = false;
             waterSources.Clear();
+            waterSpeedMultipliers.Clear();
+            fallDamageImmunitySources.Clear();
             climbSources.Clear();
         }
         public void EnterWater(Component source)
         {
             if (source != null) waterSources.Add(source.GetInstanceID());
+        }
+
+        public void SetSwimSpeedMultiplier(Component source, float multiplier)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            int id = source.GetInstanceID();
+            if (multiplier <= 0f)
+            {
+                waterSpeedMultipliers.Remove(id);
+            }
+            else
+            {
+                waterSpeedMultipliers[id] = multiplier;
+            }
+        }
+
+        public void SetFallDamageImmune(Component source, bool value)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            int id = source.GetInstanceID();
+            if (value)
+            {
+                fallDamageImmunitySources.Add(id);
+            }
+            else
+            {
+                fallDamageImmunitySources.Remove(id);
+            }
+        }
+
+        public void ApplyVerticalBounce(float verticalSpeed)
+        {
+            requestedBounceSpeed = Mathf.Max(
+                requestedBounceSpeed,
+                verticalSpeed);
         }
         public void ExitWater(Component source)
         {
@@ -195,6 +246,17 @@ namespace Project.Player
             jumpUntil = -1;
             jumpHeld = false;
         }
+        private float GetSwimSpeedMultiplier()
+        {
+            float result = 1f;
+            foreach (float multiplier in waterSpeedMultipliers.Values)
+            {
+                result = Mathf.Min(result, multiplier);
+            }
+
+            return result;
+        }
+
         private void FixedUpdate()
         {
             bool wasGrounded = IsGrounded;
@@ -219,6 +281,13 @@ namespace Project.Player
 
             if (IsGrounded && !wasGrounded) Emit(AchievementSignalIds.PlayerLanded);
             Vector3 velocity = motor.linearVelocity;
+            if (requestedBounceSpeed >= 0f)
+            {
+                velocity.y = Mathf.Max(velocity.y, requestedBounceSpeed);
+                requestedBounceSpeed = -1f;
+                IsGrounded = false;
+                airborneSince = Time.time;
+            }
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
             bool jumpRequested = !blocked &&
                                  jumpUntil >= Time.time &&
@@ -275,7 +344,7 @@ namespace Project.Player
                 float horizontalTarget = blocked
                     ? 0f
                     : Mathf.Clamp(movement.x, -1f, 1f) *
-                      swimSpeed;
+                      swimSpeed * GetSwimSpeedMultiplier();
                 float verticalTarget = blocked
                     ? 0f
                     : jumpHeld
@@ -336,7 +405,8 @@ namespace Project.Player
             velocity.z = 0;
             if (jumpRequested)
             {
-                velocity.y = jumpSpeed; jumpUntil = groundedUntil = -1; IsGrounded = false;
+                velocity.y = jumpSpeed * NextJumpBounceService.ConsumeMultiplier();
+                jumpUntil = groundedUntil = -1; IsGrounded = false;
                 airborneSince = Time.time;
                 Emit(AchievementSignalIds.PlayerJumped);
             }

@@ -1413,3 +1413,8 @@ MonoBehaviour:
       valueType: Boolean
       value: 0
       objectReferenceValue: {fileID: 0}
+  - entryId: 7a1b2c3d4e5f60718293a4b5c6d7e8f9
+    displayName: "锚点"
+    prefab: {fileID: 810000001, guid: b7c0d1e2f30456789abcdeffedcba987, type: 3}
+    interactionDefinition: {fileID: 11400000, guid: c8d1e2f30456789abcdeffedcba9876, type: 2}
+    componentValueOverrides: []

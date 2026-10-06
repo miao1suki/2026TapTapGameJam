@@ -10,152 +10,188 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8116633e80ce44feadecbe10cdddeaa9, type: 3}
-  m_Name: "\u7EFF\u65B9\u5757"
+  m_Name: "绿方块"
   m_EditorClassIdentifier: Assembly-CSharp:Project.Interactions:InteractionObjectDefinition
   objectId: green-block-object-00000000000000000000000000001
-  displayName: "\u7EFF\u65B9\u5757"
+  displayName: "绿方块"
   prefab: {fileID: 8582130194286690322, guid: ac2d7caad3cfab24d920732a9371c085, type: 3}
   baseColorTypeId: green
   nodes:
-  - id: green-node-01
-    position: {x: 40, y: 60}
+  - id: green-enter
+    position: {x: 40, y: 40}
     kind: 10
     value: 
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-02
-    position: {x: 300, y: 60}
+  - id: green-enter-player
+    position: {x: 280, y: 40}
     kind: 21
     value: 
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-03
-    position: {x: 560, y: 60}
+  - id: green-enter-call
+    position: {x: 520, y: 40}
     kind: 34
     value: OnInteractionPlayerEntered
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-04
-    position: {x: 40, y: 280}
+  - id: green-enter-bounce
+    position: {x: 760, y: 40}
+    kind: 34
+    value: RegisterBounceActor
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-left
+    position: {x: 40, y: 220}
     kind: 11
     value: 
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-05
-    position: {x: 300, y: 280}
+  - id: green-left-player
+    position: {x: 280, y: 220}
     kind: 21
     value: 
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-06
-    position: {x: 560, y: 280}
+  - id: green-left-call
+    position: {x: 520, y: 220}
     kind: 34
     value: OnInteractionPlayerLeft
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-07
-    position: {x: 40, y: 500}
+  - id: green-left-bounce
+    position: {x: 760, y: 220}
+    kind: 34
+    value: UnregisterBounceActor
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-touch-red-trigger
+    position: {x: 40, y: 420}
     kind: 12
     value: 
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-08
-    position: {x: 300, y: 500}
+  - id: green-touch-red-object
+    position: {x: 260, y: 420}
     kind: 22
     value: 
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-09
-    position: {x: 560, y: 500}
+  - id: green-touch-red-color
+    position: {x: 500, y: 420}
+    kind: 25
+    value: red
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-touch-red-call
+    position: {x: 740, y: 420}
+    kind: 34
+    value: ArmNextJump
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-touch-blue-trigger
+    position: {x: 40, y: 600}
+    kind: 12
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-touch-blue-object
+    position: {x: 260, y: 600}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-touch-blue-color
+    position: {x: 500, y: 600}
+    kind: 25
+    value: blue
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: green-touch-blue-call
+    position: {x: 740, y: 600}
     kind: 34
     value: OnInteractionObjectTouched
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-10
-    position: {x: 40, y: 720}
-    kind: 13
-    value: 
-    number: 0
-    argument: 
-    reference: {fileID: 0}
-  - id: green-node-11
-    position: {x: 300, y: 720}
-    kind: 22
-    value: 
-    number: 0
-    argument: 
-    reference: {fileID: 0}
-  - id: green-node-12
-    position: {x: 560, y: 720}
-    kind: 34
-    value: OnInteractionObjectStay
-    number: 0
-    argument: 
-    reference: {fileID: 0}
-  - id: green-node-13
-    position: {x: 860, y: 60}
+  - id: green-manual
+    position: {x: 40, y: 800}
     kind: 15
     value: 
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-14
-    position: {x: 1120, y: 60}
+  - id: green-manual-restore
+    position: {x: 280, y: 800}
     kind: 32
     value: green
     number: 1.5
     argument: 
     reference: {fileID: 0}
-  - id: green-node-15
-    position: {x: 800, y: 280}
+  - id: green-stay
+    position: {x: 40, y: 980}
     kind: 13
     value: 
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-16
-    position: {x: 1060, y: 280}
+  - id: green-stay-player
+    position: {x: 280, y: 980}
     kind: 21
     value: 
     number: 0
     argument: 
     reference: {fileID: 0}
-  - id: green-node-17
-    position: {x: 1320, y: 280}
+  - id: green-stay-call
+    position: {x: 520, y: 980}
     kind: 34
     value: OnInteractionPlayerStay
     number: 0
     argument: 
     reference: {fileID: 0}
   edges:
-  - fromId: green-node-01
-    toId: green-node-02
-  - fromId: green-node-02
-    toId: green-node-03
-  - fromId: green-node-04
-    toId: green-node-05
-  - fromId: green-node-05
-    toId: green-node-06
-  - fromId: green-node-07
-    toId: green-node-08
-  - fromId: green-node-08
-    toId: green-node-09
-  - fromId: green-node-10
-    toId: green-node-11
-  - fromId: green-node-11
-    toId: green-node-12
-  - fromId: green-node-13
-    toId: green-node-14
-  - fromId: green-node-15
-    toId: green-node-16
-  - fromId: green-node-16
-    toId: green-node-17
+  - fromId: green-enter
+    toId: green-enter-player
+  - fromId: green-enter-player
+    toId: green-enter-call
+  - fromId: green-enter-call
+    toId: green-enter-bounce
+  - fromId: green-left
+    toId: green-left-player
+  - fromId: green-left-player
+    toId: green-left-call
+  - fromId: green-left-call
+    toId: green-left-bounce
+  - fromId: green-touch-red-trigger
+    toId: green-touch-red-object
+  - fromId: green-touch-red-object
+    toId: green-touch-red-color
+  - fromId: green-touch-red-color
+    toId: green-touch-red-call
+  - fromId: green-touch-blue-trigger
+    toId: green-touch-blue-object
+  - fromId: green-touch-blue-object
+    toId: green-touch-blue-color
+  - fromId: green-touch-blue-color
+    toId: green-touch-blue-call
+  - fromId: green-manual
+    toId: green-manual-restore
+  - fromId: green-stay
+    toId: green-stay-player
+  - fromId: green-stay-player
+    toId: green-stay-call

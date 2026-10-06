@@ -324,6 +324,14 @@ namespace Project.Interactions
                 case InteractionNodeKind.RequireObjectId:
                     return other?.Definition != null &&
                            other.Definition.ObjectId == node.value;
+                case InteractionNodeKind.RequireOtherColor:
+                    return other != null &&
+                           string.Equals(
+                               string.IsNullOrWhiteSpace(other.CurrentColorTypeId)
+                                   ? other.BaseColorTypeId
+                                   : other.CurrentColorTypeId,
+                               node.value,
+                               StringComparison.OrdinalIgnoreCase);
                 case InteractionNodeKind.RequireColor:
                     return ResolveColor(actor, other) == node.value;
                 case InteractionNodeKind.Fade:

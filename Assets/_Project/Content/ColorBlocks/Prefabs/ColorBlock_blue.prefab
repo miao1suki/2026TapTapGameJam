@@ -13,6 +13,11 @@ GameObject:
   - component: {fileID: 8704146747841646212}
   - component: {fileID: 781904320071353647}
   - component: {fileID: 4386972434895805465}
+  - component: {fileID: 700000001}
+  - component: {fileID: 700000002}
+  - component: {fileID: 700000003}
+  - component: {fileID: 700000004}
+  - component: {fileID: 700000005}
   m_Layer: 10
   m_Name: ColorBlock_blue
   m_TagString: Untagged
@@ -128,3 +133,95 @@ MonoBehaviour:
   baseColorTypeId: blue
   targetRenderer: {fileID: 781904320071353647}
   interactionDefinition: {fileID: 11400000, guid: 5439892d9140f354ab8f26bebf6c7582, type: 2}
+--- !u!114 &700000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 524019047373316160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c43941cf8ab4bc88b090f383688bf85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.BlockRuntime
+  maxDispatchPasses: 4
+  maxDebugEvents: 128
+--- !u!114 &700000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 524019047373316160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3e4d5f60784219a8b9c0d1e2f34567, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.BlockAbilityHost
+  debugLog: 0
+--- !u!114 &700000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 524019047373316160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89a975d971c942c094ad583fb15850b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.BlockSprayEmitter
+  localOrigin: {x: 0, y: 0.5, z: 0}
+  localDirection: {x: 1, y: 0, z: 0}
+  distance: 4
+  duration: 1.5
+  radius: 0.12
+  sprayColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &700000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 524019047373316160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 162d0a39ae2248c78d23935f172a80b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.VineGrowthEmitter
+  searchRadius: 8
+  growthSpeed: 4
+  segmentLength: 1
+  segmentWidth: 0.35
+  maxSegments: 32
+  segmentMaterial: {fileID: 0}
+--- !u!114 &700000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 524019047373316160}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f019c513bf84b92a4ab9a22e934a84b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.BlockWaterFeature
+  visualMode: 0
+  waterVisualPrefab: {fileID: 0}
+  startsEnabled: 1
+  allowSwimming: 1
+  swimSpeedMultiplier: 0.55
+  restoreHealthOnEnter: 1
+  ignoreFallDamage: 1
+  configureColliderAsTrigger: 1
+  initialReveal: 1
+  enterWaterClip: {fileID: 0}
+  splashClip: {fileID: 0}
+  exitWaterClip: {fileID: 0}
+  enterWaterVolume: 0.9
+  splashVolume: 0.85
+  exitWaterVolume: 0.65
+  createRippleOnEnter: 1
+  debugLog: 0

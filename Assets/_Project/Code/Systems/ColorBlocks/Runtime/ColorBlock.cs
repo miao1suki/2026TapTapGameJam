@@ -419,8 +419,51 @@ namespace Project.ColorBlocks
             isActiveAndEnabled && ColorRuntimeService.Instance.HasRecolorAbility &&
             ColorRuntimeService.Instance.IsUnlocked(baseColorTypeId);
 
-        // The graph is authoring data only. Mixing will be connected when rules are approved.
-        public bool TryInteract(GameObject interactor) => false;
+        public bool CanUseColorWheel(GameObject interactor)
+        {
+            if (!CanInteract(interactor)) return false;
+            return !IsPlayerStandingOnTop(interactor);
+        }
+
+        public bool TryOpenColorWheel(GameObject interactor)
+        {
+            if (!CanUseColorWheel(interactor)) return false;
+            Collider collider = GetComponent<Collider>();
+            BlockSprayEmitter emitter = GetComponent<BlockSprayEmitter>();
+            if (collider != null && emitter != null && interactor != null)
+            {
+                emitter.SetInteractionPoint(
+                    collider.ClosestPoint(interactor.transform.position));
+            }
+            return InteractionManager.Trigger(
+                gameObject,
+                InteractionNodeKind.Manual,
+                interactor,
+                null);
+        }
+
+        public bool TryInteract(GameObject interactor)
+        {
+            return TryOpenColorWheel(interactor);
+        }
+
+        private bool IsPlayerStandingOnTop(GameObject interactor)
+        {
+            if (interactor == null) return false;
+            Collider blockCollider = GetComponent<Collider>();
+            Collider actorCollider = interactor.GetComponentInParent<Collider>();
+            if (blockCollider == null || actorCollider == null ||
+                blockCollider.isTrigger || actorCollider.isTrigger)
+            {
+                return false;
+            }
+
+            Bounds block = blockCollider.bounds;
+            Bounds actor = actorCollider.bounds;
+            return actor.min.y >= block.max.y - .2f &&
+                   actor.center.x >= block.min.x && actor.center.x <= block.max.x &&
+                   actor.center.z >= block.min.z && actor.center.z <= block.max.z;
+        }
 
 #if UNITY_EDITOR
         private void ApplyEditorPreviewMaterial()

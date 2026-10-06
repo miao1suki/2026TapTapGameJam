@@ -23,6 +23,7 @@ namespace Project.Interactions.Editor
             InteractionNodeKind.RequireOtherObject,
             InteractionNodeKind.RequireColor,
             InteractionNodeKind.RequireObjectId,
+            InteractionNodeKind.RequireOtherColor,
             InteractionNodeKind.Delay,
             InteractionNodeKind.Fade,
             InteractionNodeKind.Restore,
@@ -51,6 +52,7 @@ namespace Project.Interactions.Editor
                 case InteractionNodeKind.RequireOtherObject: return "条件 / 需要其他物体";
                 case InteractionNodeKind.RequireColor: return "条件 / 受到颜色";
                 case InteractionNodeKind.RequireObjectId: return "条件 / 受到物体";
+                case InteractionNodeKind.RequireOtherColor: return "条件 / 受到其他物体颜色";
                 case InteractionNodeKind.Delay: return "调度 / 延迟执行";
                 case InteractionNodeKind.Fade: return "表现 / 褪色";
                 case InteractionNodeKind.Restore: return "表现 / 恢复";
@@ -71,6 +73,7 @@ namespace Project.Interactions.Editor
         internal static bool UsesValue(InteractionNodeKind kind) =>
             kind == InteractionNodeKind.RequireColor ||
             kind == InteractionNodeKind.RequireObjectId ||
+            kind == InteractionNodeKind.RequireOtherColor ||
             kind == InteractionNodeKind.Fade ||
             kind == InteractionNodeKind.Restore ||
             kind == InteractionNodeKind.InvokeMethod ||

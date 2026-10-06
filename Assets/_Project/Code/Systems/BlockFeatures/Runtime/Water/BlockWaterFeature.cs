@@ -77,6 +77,26 @@ namespace Project.BlockFeatures
         [SerializeField] private bool allowSwimming = true;
 
         [BlockParameter(
+            Label = "进水速度倍率",
+            Group = "玩家",
+            Order = 1,
+            Tooltip = "蓝色水体内的水平游泳速度倍率。")]
+        [SerializeField, Min(0.05f)] private float swimSpeedMultiplier = .55f;
+
+        [BlockParameter(
+            Label = "进水恢复生命",
+            Group = "玩家",
+            Order = 2,
+            Tooltip = "玩家每次进入此水体恢复的生命值。")]
+        [SerializeField, Min(0f)] private float restoreHealthOnEnter = 1f;
+
+        [BlockParameter(
+            Label = "免疫摔落伤害",
+            Group = "玩家",
+            Order = 3)]
+        [SerializeField] private bool ignoreFallDamage = true;
+
+        [BlockParameter(
             Label = "碰撞体切换为 Trigger",
             Group = "玩家",
             Order = 1,
@@ -246,6 +266,13 @@ namespace Project.BlockFeatures
             if (allowSwimming && player != null)
             {
                 player.EnterWater(this);
+                player.SetSwimSpeedMultiplier(this, swimSpeedMultiplier);
+                if (ignoreFallDamage)
+                {
+                    player.SetFallDamageImmune(this, true);
+                    player.GetComponent<PlayerFallDamage>()?.SetFallDamageImmune(true);
+                }
+                player.GetComponent<PlayerHealth>()?.Heal(restoreHealthOnEnter);
             }
 
             PlayClip(enterWaterClip, enterWaterVolume);
@@ -273,6 +300,12 @@ namespace Project.BlockFeatures
             if (allowSwimming && player != null)
             {
                 player.ExitWater(this);
+                player.SetSwimSpeedMultiplier(this, 0f);
+                if (ignoreFallDamage)
+                {
+                    player.SetFallDamageImmune(this, false);
+                    player.GetComponent<PlayerFallDamage>()?.SetFallDamageImmune(false);
+                }
             }
 
             PlayClip(exitWaterClip, exitWaterVolume);

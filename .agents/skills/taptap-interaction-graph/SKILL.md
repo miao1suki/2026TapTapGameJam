@@ -55,6 +55,14 @@ description: 在 2026TapTap 中使用物体交互管理器连连看设计、接�
 - 方法应可重复调用或明确拒绝重复调用；退出方法必须清除 Enter 设置的状态。
 - `InvokeMethod` 支持无参数、`GameObject` 参数和字符串参数。需要结构化数据时优先新增运行时接口/节点，不要把 JSON 或隐式字符串协议塞进方法名。
 
+本轮已验证的组合入口：
+
+- 红/蓝物体触碰：`物体触碰 → 需要其他物体 → 受到其他物体颜色(blue/red) → 调用方法(ApplySpray)`。
+- 红/绿物体触碰：`物体触碰 → 需要其他物体 → 受到其他物体颜色(green/red) → 调用方法(ArmNextJump)`。
+- 蓝/绿物体触碰：蓝方块图使用 `受到其他物体颜色(green) → 调用方法(GrowVineTowardAnchors)`，藤蔓生成对象归蓝方块持有并在 `OnDisable` 清理。
+- 玩家落差弹跳：`玩家进入 → 需要玩家 → 调用方法(RegisterBounceActor)`，离开链用 `UnregisterBounceActor` 对称清理，落地事件由组件按序列化阈值执行。
+- 右键轮盘：`ColorBlock.TryOpenColorWheel` 记录大方块的实际碰撞点后触发 `Manual` 图；绿方块站立顶部时直接拒绝入口。
+
 ### 新物体
 
 1. 创建或复用预制体，添加 `InteractionObject`。
