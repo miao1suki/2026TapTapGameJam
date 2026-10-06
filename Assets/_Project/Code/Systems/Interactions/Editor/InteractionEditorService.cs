@@ -63,10 +63,46 @@ namespace Project.Interactions.Editor
             GameObject prefab)
         {
             if (catalog == null || prefab == null) return null;
+            string prefabPath = AssetDatabase.GetAssetPath(prefab);
             for (int index = 0; index < catalog.Objects.Count; index++)
             {
                 InteractionObjectDefinition item = catalog.Objects[index];
-                if (item != null && item.Prefab == prefab) return item;
+                if (item == null) continue;
+                if (item.Prefab == prefab) return item;
+
+                // Unity can deserialize the same prefab through two different
+                // object handles while the asset pipeline is refreshing. Compare
+                // the stable asset path as a fallback so synchronization does not
+                // create a duplicate definition for one prefab.
+                if (!string.IsNullOrWhiteSpace(prefabPath) &&
+                    string.Equals(
+                        AssetDatabase.GetAssetPath(item.Prefab),
+                        prefabPath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return item;
+                }
+            }
+
+            // A catalog entry can temporarily lose its object reference during
+            // domain reload. Recover an existing definition asset before creating
+            // a new one, and let the caller re-add it to the catalog.
+            string[] definitionGuids = AssetDatabase.FindAssets(
+                "t:InteractionObjectDefinition",
+                new[] { DefinitionFolder });
+            for (int index = 0; index < definitionGuids.Length; index++)
+            {
+                InteractionObjectDefinition item = AssetDatabase.LoadAssetAtPath<
+                    InteractionObjectDefinition>(
+                    AssetDatabase.GUIDToAssetPath(definitionGuids[index]));
+                if (item != null &&
+                    string.Equals(
+                        AssetDatabase.GetAssetPath(item.Prefab),
+                        prefabPath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return item;
+                }
             }
 
             return null;
@@ -82,6 +118,12 @@ namespace Project.Interactions.Editor
             InteractionObjectDefinition existing = FindForPrefab(catalog, prefab);
             if (existing != null)
             {
+                if (!catalog.EditableObjects.Contains(existing))
+                {
+                    Undo.RecordObject(catalog, "恢复物体交互定义目录引用");
+                    catalog.EditableObjects.Add(existing);
+                    EditorUtility.SetDirty(catalog);
+                }
                 Undo.RecordObject(existing, "更新物体交互定义");
                 existing.Configure(displayName, prefab, baseColorTypeId);
                 EditorUtility.SetDirty(existing);
