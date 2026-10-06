@@ -118,7 +118,7 @@ Shader位于 `Assets/_Project/Rendering/Shaders/SurfaceTiles`，名称前缀2026
 `BlockWaterFeature` 提供 `IBlockWaterSource` 和 `IBlockWaterSwitch`。
 它封装 TA 水体实例、Reveal、游泳进入/离开、入水/水花/离开音效和波纹调试；
 可通过 `BlockWaterVisualMode.FeatureOwned` 自己管理水体，或通过
-`ExternalManager` 沿用颜色管理器水体。动态预装/启停功能组件后调用
+`ExternalManager` 沿用 `ColorRuntimeService` 的共享蓝色水体。动态预装/启停功能组件后调用
 `BlockRuntime.RefreshFeatureSet()` 重建运行时功能集合。
 
 `BlockVineFeature` 提供 `IBlockClimbSource`，挂在绿色方块上时允许玩家

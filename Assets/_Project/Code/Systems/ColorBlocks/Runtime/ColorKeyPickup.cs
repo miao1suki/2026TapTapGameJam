@@ -32,7 +32,7 @@ namespace Project.ColorBlocks
 
         private void OnDisable()
         {
-            ColorWorldManager manager = ColorWorldManager.Existing;
+            ColorRuntimeService manager = ColorRuntimeService.Existing;
             if (Application.isPlaying && collected && manager != null &&
                 !manager.IsUnlocked(colorTypeId))
                 manager.Unlock(colorTypeId);
@@ -41,8 +41,22 @@ namespace Project.ColorBlocks
         private void OnTriggerEnter(Collider other)
         {
             var player = other.GetComponentInParent<PlayerController>();
+            if (player == null) return;
+            OnInteractionPlayerEntered(player.gameObject);
+        }
+
+        /// <summary>
+        /// 颜色钥匙的收集入口。钥匙预制体同时挂有通用物体交互来源，
+        /// 因此物体图可以把“玩家进入”连接到这个方法；保留碰撞回退入口
+        /// 以兼容尚未完成交互定义绑定的旧场景。
+        /// </summary>
+        public void OnInteractionPlayerEntered(GameObject actor)
+        {
+            var player = actor != null
+                ? actor.GetComponentInParent<PlayerController>()
+                : null;
             if (collected || player == null) return;
-            if (ColorWorldManager.Instance.IsUnlocked(colorTypeId)) return;
+            if (ColorRuntimeService.Instance.IsUnlocked(colorTypeId)) return;
             collected = true;
             var collider = GetComponent<Collider>();
             if (collider != null) collider.enabled = false;
@@ -50,11 +64,38 @@ namespace Project.ColorBlocks
             {
                 foreach (var renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = false;
             }
+            bool unlocked = ColorRuntimeService.Instance.Unlock(colorTypeId);
+            if (unlocked)
+            {
+                HSVColorFadeManager.Instance.SetColorFaded(
+                    colorTypeId,
+                    false,
+                    revealDuration);
+                Debug.Log(
+                    $"[ColorBlocks] 钥匙触发入口已解锁 {colorTypeId}：材质恢复/水体显现已开始。",
+                    this);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[ColorBlocks] 钥匙触发入口执行，但 {colorTypeId} 未完成 Unlock。",
+                    this);
+            }
             StartCoroutine(CollectWithCamera(player));
         }
 
+        // 这些入口让钥匙定义可以安全复用物体图的默认接触链；钥匙本身
+        // 没有需要在停留/离开或非玩家碰触时追加的行为。
+        public void OnInteractionPlayerLeft(GameObject actor) { }
+        public void OnInteractionPlayerStay(GameObject actor) { }
+        public void OnInteractionObjectTouched(GameObject other) { }
+        public void OnInteractionObjectStay(GameObject other) { }
+
         private IEnumerator CollectWithCamera(PlayerController player)
         {
+            // 解锁已在触发入口同步完成。镜头 Timeline 不能阻塞颜色恢复；
+            // 这里只等待渐显收尾。
+            bool unlocked = ColorRuntimeService.Instance.IsUnlocked(colorTypeId);
             bool hasCameraShot = PlayCameraCutscene(player);
             if (hasCameraShot)
             {
@@ -77,9 +118,6 @@ namespace Project.ColorBlocks
                 }
             }
 
-            bool unlocked = ColorWorldManager.Instance.Unlock(colorTypeId);
-            if (unlocked)
-                HSVColorFadeManager.Instance.SetColorFaded(colorTypeId, false, revealDuration);
             float revealTimeout = Time.unscaledTime + revealDuration + 1f;
             while (unlocked &&
                    HSVColorFadeManager.Instance.GetSaturation(colorTypeId) < .995f &&

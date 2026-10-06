@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.Interactions;
 using UnityEngine;
 
 namespace Project.LevelEditor
@@ -10,6 +11,7 @@ namespace Project.LevelEditor
         [SerializeField] private string entryId;
         [SerializeField] private string displayName = "新道具";
         [SerializeField] private GameObject prefab;
+        [SerializeField] private InteractionObjectDefinition interactionDefinition;
         [SerializeField]
         private List<LevelEditorComponentValueOverride>
             componentValueOverrides =
@@ -18,6 +20,7 @@ namespace Project.LevelEditor
         public string EntryId => entryId;
         public string DisplayName => displayName;
         public GameObject Prefab => prefab;
+        public InteractionObjectDefinition InteractionDefinition => interactionDefinition;
         public IReadOnlyList<LevelEditorComponentValueOverride>
             ComponentValueOverrides => componentValueOverrides;
 
@@ -34,10 +37,20 @@ namespace Project.LevelEditor
             GameObject valuePrefab)
         {
             EnsureEntryId();
+            if (prefab != valuePrefab)
+            {
+                interactionDefinition = null;
+            }
             displayName = string.IsNullOrWhiteSpace(valueDisplayName)
                 ? "新道具"
                 : valueDisplayName;
             prefab = valuePrefab;
+        }
+
+        public void SetInteractionDefinition(
+            InteractionObjectDefinition value)
+        {
+            interactionDefinition = value;
         }
 
         public void ReplaceComponentValueOverrides(

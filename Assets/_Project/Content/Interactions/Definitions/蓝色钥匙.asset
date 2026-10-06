@@ -1,0 +1,161 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8116633e80ce44feadecbe10cdddeaa9, type: 3}
+  m_Name: "\u84DD\u8272\u94A5\u5319"
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.InteractionObjectDefinition
+  objectId: 71b6499fcb2942438d4aa36237388ad4
+  displayName: "\u84DD\u8272\u94A5\u5319"
+  prefab: {fileID: 8140128999958426686, guid: 0c5be6edd719d03459d2e3ac01c4307f, type: 3}
+  baseColorTypeId: blue
+  nodes:
+  - id: efb47238a85140ed812793d5fe12224c
+    position: {x: 40, y: 60}
+    kind: 10
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 184305bc5ec547ee97a8304855b9b8d4
+    position: {x: 300, y: 60}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: b6b886abe28f429fa581fc9161fc461e
+    position: {x: 560, y: 60}
+    kind: 34
+    value: OnInteractionPlayerEntered
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: b97b476a95704214b0f1d42df786ab14
+    position: {x: 40, y: 280}
+    kind: 11
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 23822df80bd84766af3bd436a5bd7118
+    position: {x: 300, y: 280}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 618bf9cc0e644b8bb2c83df88c8bd877
+    position: {x: 560, y: 280}
+    kind: 34
+    value: OnInteractionPlayerLeft
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: ea75b3419b0b48bb876cd8330cafd1f7
+    position: {x: 420, y: 60}
+    kind: 12
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 5a17081ef81546c2b96fb91db0eafadb
+    position: {x: 680, y: 60}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 57a07b9679a649fd8e93dd8e638ce575
+    position: {x: 940, y: 60}
+    kind: 34
+    value: OnInteractionObjectTouched
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: dcc2fa5edc26473f86595a2ab4d0cf9e
+    position: {x: 420, y: 280}
+    kind: 13
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 5b314794f70b41529ba8576546c875e8
+    position: {x: 680, y: 280}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 9c589a36e7c746b7add2996532469dc4
+    position: {x: 940, y: 280}
+    kind: 34
+    value: OnInteractionObjectStay
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: d195cf53413e4fa4a80a9186df999454
+    position: {x: 800, y: 280}
+    kind: 13
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 58a6dc3c15564e06aaf079e04f33d209
+    position: {x: 1060, y: 280}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 2261c98e46de423e9a02db7d64460897
+    position: {x: 1320, y: 280}
+    kind: 34
+    value: OnInteractionPlayerStay
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: 71ca582b4ffa4c4fa762d8f91e7beb83
+    position: {x: 800, y: 60}
+    kind: 15
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: a5a9fed81c2b42a88481450e3997bee8
+    position: {x: 1080, y: 60}
+    kind: 32
+    value: blue
+    number: 1.5
+    argument: 
+    reference: {fileID: 0}
+  edges:
+  - fromId: efb47238a85140ed812793d5fe12224c
+    toId: 184305bc5ec547ee97a8304855b9b8d4
+  - fromId: 184305bc5ec547ee97a8304855b9b8d4
+    toId: b6b886abe28f429fa581fc9161fc461e
+  - fromId: b97b476a95704214b0f1d42df786ab14
+    toId: 23822df80bd84766af3bd436a5bd7118
+  - fromId: 23822df80bd84766af3bd436a5bd7118
+    toId: 618bf9cc0e644b8bb2c83df88c8bd877
+  - fromId: ea75b3419b0b48bb876cd8330cafd1f7
+    toId: 5a17081ef81546c2b96fb91db0eafadb
+  - fromId: 5a17081ef81546c2b96fb91db0eafadb
+    toId: 57a07b9679a649fd8e93dd8e638ce575
+  - fromId: dcc2fa5edc26473f86595a2ab4d0cf9e
+    toId: 5b314794f70b41529ba8576546c875e8
+  - fromId: 5b314794f70b41529ba8576546c875e8
+    toId: 9c589a36e7c746b7add2996532469dc4
+  - fromId: d195cf53413e4fa4a80a9186df999454
+    toId: 58a6dc3c15564e06aaf079e04f33d209
+  - fromId: 58a6dc3c15564e06aaf079e04f33d209
+    toId: 2261c98e46de423e9a02db7d64460897
+  - fromId: 71ca582b4ffa4c4fa762d8f91e7beb83
+    toId: a5a9fed81c2b42a88481450e3997bee8

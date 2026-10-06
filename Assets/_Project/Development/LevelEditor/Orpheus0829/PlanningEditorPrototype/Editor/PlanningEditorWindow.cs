@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
-using Project.ColorBlocks.Editor;
+using Project.Interactions.Editor;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
 using Project.SurfaceTiles.Editor;
@@ -173,39 +173,35 @@ namespace PlanningEditorPrototype
             rightPanel = BuildInspector();
             main.Add(rightPanel);
             colorsWorkspace = BuildPlaceholderWorkspace(
-                "颜色工作台",
-                "队友颜色模块的入口：颜色类型、颜色钥匙、材质、事件和解锁预览。",
+                "物体交互管理器",
+                "所有可交互物体的交互图入口。颜色只是物体属性，具体逻辑在物体自己的连连看中编辑。",
                 new[]
                 {
-                    "红色 · 解锁与烧灼",
-                    "蓝色 · 交互与解锁",
-                    "绿色 · 交互与解锁",
-                    "新增颜色位",
-                    "初始化颜色资源"
+                    "红方块 · 玩家接触与颜色属性",
+                    "蓝方块 · 水体与褪色",
+                    "绿方块 · 攀爬与停留",
+                    "物体触碰 / 受到颜色",
+                    "延迟 / Timeline / 方法调用"
                 });
             AddWorkspaceAction(
                 colorsWorkspace,
-                "打开颜色工作台",
-                ColorWorkbenchWindow.Open);
-            AddWorkspaceAction(
-                colorsWorkspace,
-                "初始化颜色资源",
-                ColorProjectSetup.InitializeFromMenu);
+                "打开物体交互管理器",
+                InteractionManagerWindow.Open);
             graphWorkspace = BuildPlaceholderWorkspace(
                 "交互图",
-                "颜色、方块功能和环境效果之间的节点、连线与规则会在这里统一编辑。",
+                "新版交互管理器按物体显示完整逻辑；此入口会打开同一个物体交互管理器。",
                 new[]
                 {
-                    "颜色节点 → 方块能力",
-                    "方块能力 → 环境效果",
-                    "环境效果 → 新通路",
-                    "条件 / 延迟 / 连锁",
-                    "添加交互节点"
+                    "本物体 / 玩家 / 触碰 / 停留",
+                    "受到颜色 / 受到物体",
+                    "延迟执行 / 褪色 / 恢复",
+                    "Timeline / 调用脚本方法",
+                    "连线即交互逻辑"
                 });
             AddWorkspaceAction(
                 graphWorkspace,
-                "打开颜色交互图",
-                ColorWorkbenchWindow.Open);
+                "打开物体交互管理器",
+                InteractionManagerWindow.Open);
             workspaceHost.Add(colorsWorkspace);
             workspaceHost.Add(graphWorkspace);
 
@@ -287,7 +283,7 @@ namespace PlanningEditorPrototype
             tabs.style.borderBottomWidth = 1f;
             tabs.style.borderBottomColor = new Color(.2f, .23f, .3f);
             AddWorkspaceButton(tabs, PlanningWorkspaceMode.Map, "地图规划");
-            AddWorkspaceButton(tabs, PlanningWorkspaceMode.Colors, "颜色工作台");
+            AddWorkspaceButton(tabs, PlanningWorkspaceMode.Colors, "物体交互");
             AddWorkspaceButton(
                 tabs,
                 PlanningWorkspaceMode.InteractionGraph,

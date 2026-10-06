@@ -1,0 +1,197 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8116633e80ce44feadecbe10cdddeaa9, type: 3}
+  m_Name: "\u84DD\u65B9\u5757"
+  m_EditorClassIdentifier: Assembly-CSharp:Project.Interactions:InteractionObjectDefinition
+  objectId: blue-block-object-000000000000000000000000000001
+  displayName: "\u84DD\u65B9\u5757"
+  prefab: {fileID: 524019047373316160, guid: 210c431167d7a014db209c383a9a55d2, type: 3}
+  baseColorTypeId: blue
+  nodes:
+  - id: blue-enter
+    position: {x: 40, y: 40}
+    kind: 10
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-enter-player
+    position: {x: 280, y: 40}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-enter-call
+    position: {x: 520, y: 40}
+    kind: 34
+    value: OnInteractionPlayerEntered
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-left
+    position: {x: 40, y: 220}
+    kind: 11
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-left-player
+    position: {x: 280, y: 220}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-left-call
+    position: {x: 520, y: 220}
+    kind: 34
+    value: OnInteractionPlayerLeft
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-touch-red-trigger
+    position: {x: 40, y: 420}
+    kind: 12
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-touch-red-object
+    position: {x: 260, y: 420}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-touch-red-color
+    position: {x: 500, y: 420}
+    kind: 25
+    value: red
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-touch-red-call
+    position: {x: 740, y: 420}
+    kind: 34
+    value: ApplySpray
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-touch-green-trigger
+    position: {x: 40, y: 600}
+    kind: 12
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-touch-green-object
+    position: {x: 260, y: 600}
+    kind: 22
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-touch-green-color
+    position: {x: 500, y: 600}
+    kind: 25
+    value: green
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-touch-green-call
+    position: {x: 740, y: 600}
+    kind: 34
+    value: GrowVineTowardAnchors
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-manual
+    position: {x: 40, y: 800}
+    kind: 15
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-manual-player
+    position: {x: 280, y: 800}
+    kind: 26
+    value: red
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-manual-call
+    position: {x: 520, y: 800}
+    kind: 34
+    value: ApplyPlayerInteraction
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-stay
+    position: {x: 40, y: 980}
+    kind: 13
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-stay-player
+    position: {x: 280, y: 980}
+    kind: 21
+    value: 
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-stay-call
+    position: {x: 520, y: 980}
+    kind: 34
+    value: OnInteractionPlayerStay
+    number: 0
+    argument: 
+    reference: {fileID: 0}
+  - id: blue-manual-restore
+    position: {x: 760, y: 800}
+    kind: 32
+    value: blue
+    number: 1.5
+    argument: 
+    reference: {fileID: 0}
+  edges:
+  - fromId: blue-enter
+    toId: blue-enter-player
+  - fromId: blue-enter-player
+    toId: blue-enter-call
+  - fromId: blue-left
+    toId: blue-left-player
+  - fromId: blue-left-player
+    toId: blue-left-call
+  - fromId: blue-touch-red-trigger
+    toId: blue-touch-red-object
+  - fromId: blue-touch-red-object
+    toId: blue-touch-red-color
+  - fromId: blue-touch-red-color
+    toId: blue-touch-red-call
+  - fromId: blue-touch-green-trigger
+    toId: blue-touch-green-object
+  - fromId: blue-touch-green-object
+    toId: blue-touch-green-color
+  - fromId: blue-touch-green-color
+    toId: blue-touch-green-call
+  - fromId: blue-manual
+    toId: blue-manual-player
+  - fromId: blue-manual-player
+    toId: blue-manual-call
+  - fromId: blue-manual
+    toId: blue-manual-restore
+  - fromId: blue-stay
+    toId: blue-stay-player
+  - fromId: blue-stay-player
+    toId: blue-stay-call

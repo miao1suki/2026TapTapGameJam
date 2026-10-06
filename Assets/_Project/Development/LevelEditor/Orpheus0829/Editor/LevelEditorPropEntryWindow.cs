@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Project.Interactions;
+using Project.Interactions.Editor;
 using Project.LevelEditor;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -95,6 +97,14 @@ namespace Project.LevelEditor.Editor
             editComponentsButton.style.height = 30f;
             editComponentsButton.style.marginTop = 8f;
             root.Add(editComponentsButton);
+
+            Button interactionButton = new Button(OpenInteractionManager)
+            {
+                text = "打开物体交互管理器"
+            };
+            interactionButton.style.height = 30f;
+            interactionButton.style.marginTop = 4f;
+            root.Add(interactionButton);
 
             statusLabel = new Label();
             statusLabel.style.whiteSpace = WhiteSpace.Normal;
@@ -202,6 +212,11 @@ namespace Project.LevelEditor.Editor
                 return;
             }
 
+            InteractionObjectDefinition interactionDefinition =
+                InteractionEditorService.EnsureDefinitionForPrefab(
+                    prefab,
+                    nameField.value);
+
             LevelEditorPalette palette = LevelEditorState.Palette;
             if (palette == null)
             {
@@ -239,6 +254,7 @@ namespace Project.LevelEditor.Editor
 
             LevelEditorPropEntry saved =
                 palette.PropEntries[selectedIndex];
+            saved.SetInteractionDefinition(interactionDefinition);
             saved.ReplaceComponentValueOverrides(draftOverrides);
             LevelEditorBlockFactory.ApplyPropOverridesToPlacedBlocks(
                 saved);
@@ -248,6 +264,22 @@ namespace Project.LevelEditor.Editor
             LevelEditorState.SelectedPropIndex = selectedIndex;
             SceneView.RepaintAll();
             Close();
+        }
+
+        private void OpenInteractionManager()
+        {
+            GameObject prefab = prefabField?.value as GameObject;
+            if (prefab == null)
+            {
+                statusLabel.text = "请先指定道具预制体。";
+                return;
+            }
+
+            InteractionObjectDefinition definition =
+                InteractionEditorService.EnsureDefinitionForPrefab(
+                    prefab,
+                    nameField?.value);
+            InteractionManagerWindow.OpenFor(definition);
         }
 
         private LevelEditorPropEntry GetEditingEntry()

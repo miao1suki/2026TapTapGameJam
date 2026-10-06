@@ -1,5 +1,16 @@
 # 工作状态与交接（每次任务重读）
 
+## 物体交互管理器与颜色属性迁移
+
+- 日期：2026-10-05；负责人：Codex；分支：`codex/interaction-manager`。
+- 范围：新增物体级 `InteractionObjectDefinition`、`InteractionObjectCatalog`、`InteractionObject` 与 `InteractionManager`；ColorBlock 的接触事件和解锁恢复改由物体图入口执行；新增 UI Toolkit 交互管理器和 GraphView；三色方块自动同步到目录和关卡编辑器，方块/道具栏目均提供入口。
+- 节点：玩家进入/离开、物体触碰/停留、经过时间、手动、对象/颜色条件、延迟、褪色、恢复、Timeline、方法调用、设置颜色和日志。
+- 边界：移除 `ColorWorldManager`、`ColorInteractionRunner`、颜色交互图、颜色工作台和褪色调试入口；保留改名后的 `ColorRuntimeService` 作为颜色解锁/水体视觉底层服务，以及 `HSVColorFadeManager` 作为渐变服务。
+- 资源：目录位于 `Assets/_Project/Resources/Interactions/InteractionObjectCatalog.asset`，物体定义位于 `Assets/_Project/Content/Interactions/Definitions`。
+- 验证：Unity `6000.3.12f1` Runtime/Editor 静态编译 0 错误；`git diff --check` 通过；红/蓝/绿定义、目录引用、三色预制体绑定和关卡栏目引用已静态核对。交互图窗口增删节点/连线、三色方块 PlayMode 接触和窗口视觉仍需在编辑器内点击验收。尚未推送或合并。
+- 追加修复：按 Unity 单一 ScriptableObject 类型拆分 `InteractionObjectDefinition` 与 `InteractionObjectCatalog` 脚本并修正资产 GUID，解决交互窗口打开时 `InteractionGraphNode` / `InteractionObjectCatalog` 脚本映射错误；补齐 Unity 6000 GraphView 操作兼容写法、静态调度调用和通用物体非玩家触碰分流。使用当前响应文件（补入新增 Runtime 文件并排除已删除旧颜色脚本）静态编译 Runtime/Editor 均 0 错误。Unity 当前实例尚未重新刷新脚本，需重载后清空旧 Console 历史并验收窗口。
+- 钥匙褪色修复：`ColorRuntimeService` 启动时初始化颜色为褪色，注册方块时按解锁状态同步；`Unlock` 先建立基础恢复状态，再触发同色物体图的 `Manual` 节点。三把钥匙定义已补齐基础颜色和对应 `Restore` 节点值，避免只播放相机 Timeline 而不恢复材质或水体。`ColorKeyPickup` 增加物体图的玩家进入入口及兼容接触方法，避免钥匙默认图在运行时输出“未找到可调用方法”。已完成静态资产核对和 Runtime/Editor 0 错误编译；Unity Console、蓝色钥匙收集和水体渐显仍待编辑器内 PlayMode 验收。本次本地提交为 `d48509a`（尚未合并 `main`）；推送因当前主机无法连接 `github.com:443` 待网络恢复后重试。
+
 ## 字幕道具慢显隐与缩略图缓存清理
 
 - 日期：2026-10-05；负责人：Codex；分支：`codex/orpheus0829/添加功能组件`。
@@ -331,3 +342,20 @@
 - 接口变更：无（仅音频资源导入）。
 - 验证：音频分支已提交资源与交接文档；首次导入与 `.meta` 由整合者复验。
 - 交接提交：`94db2c9` 起，最终资源提交 `b22df5b`。
+
+## 策划蓝绿/红蓝/红绿交互落地
+
+- 日期：2026-10-06；负责人：Codex；分支：`codex/interaction-manager`。
+- 范围：依照物体交互图 skill 直接实现蓝方块水体增强、绿方块落差弹跳、红蓝喷流、红绿下一跳弹高、蓝绿锚点藤蔓，以及右键颜色轮盘站立屏蔽；新增锚点预制体、定义、目录和关卡编辑器道具栏目。
+- 接口：新增 `PlayerHealth`、`PlayerFallDamage`、`PlayerHealthHud`、`GreenBouncePad`、`BlockSprayEmitter`、`VineGrowthEmitter`、`AnchorPoint`、`NextJumpBounceEmitter`；`InteractionNodeKind` 增加 `RequireOtherColor` 与 `RequirePlayerColor`；`PlayerController` 增加游泳倍率、摔落免疫、弹跳请求入口和自动补齐 `PlayerColorWheel`。
+- 默认参数：水体速度倍率 `0.55`、进水恢复 `1`、最大生命 `5`、弹跳阈值 `2m`、弹跳曲线指数 `1.8`、弹跳速度 `10~20m/s`、喷流距离 `4m`/持续 `1.5s`、锚点搜索 `8m`、藤蔓速度 `4m/s`、段长 `1m`、上限 `32`。
+- 图资产：红/蓝/绿方块定义已重写为清晰分支链，并加入 `受到其他物体颜色` 条件；预制体已绑定喷流、藤蔓、落差和下一跳组件。
+- 验证：已完成静态源码/资产核对；补充 `PlayerColorWheel` 的玩家自动挂载、UGUI EventSystem 兜底、绿色方块站立时的轮盘目标屏蔽，以及包含子 Collider 的最近点距离检查。使用 Unity 6000.3.12f1 Roslyn 响应文件完成 Runtime/Editor 静态编译，均 0 错误；`git diff --check` 通过。Unity 编辑器与 PlayMode 仍需在本机清空 Console 后实测轮盘、距离圆和接触矩阵。
+- 编辑器复验补充：本机 Unity 进程正在运行，但当前 Codex 桌面自动化会话的原生窗口清单为空，无法代点菜单；已直接读取 `%LOCALAPPDATA%/Unity/Editor/Editor.log` 获取 Console 记录。日志中发现 `PlayerColorWheel` 的 `ColorBlock` 命名冲突，已改为显式使用 `Project.ColorBlocks.ColorBlock`。锚点预制体的旧报错来自脚本重载/资产管线刷新期间的重复定义；交互同步现在会按预制体资产路径复用已有定义，并在目录引用暂时丢失时恢复已有资产，避免再次生成“锚点 1”。Unity 重启后的最新日志未再出现编译或预制体保存错误。
+- 空 GUID 资产修复：自动同步曾把锚点定义写成重复资产，并在目录中留下 `{fileID: 0}`；已恢复唯一的 `锚点.asset`（GUID `c8d1e2f30456789abcdeffedcba9876`），同步修正目录、关卡栏目和锚点预制体引用，并将旧式 ScriptableObject 类标识改为 Unity 6000 可解析格式。Unity 同时补齐了锚点预制体 `MeshRenderer` 的 GameObject 引用；目标资产中不再有全零 GUID。同步代码现在会优先选择不带数字后缀的正式定义，并移除目录中同一预制体的重复条目。使用 Unity 6000.3.12f1 的 Roslyn 响应文件完成 Runtime/Editor 静态编译，均 0 错误；目标 YAML GUID 检查通过。Console 中此前的错误属于自动同步期间的历史记录，待清空面板后再做最终复验。本地修复暂不推送，等待开发者确认。
+- 清理补充：确认 `锚点 1.asset` 只是同一预制体的无引用副本，已删除该副本及 `.meta`，目录、关卡栏目和预制体统一指向正式 `锚点.asset`；水体组件中原“颜色管理器水体”文案改为 `ColorRuntimeService` 共享颜色水体，保留实际仍在使用的共享视觉模式。
+- 运行时兼容修复：颜色轮盘与生命值 HUD 的 UGUI 文本统一使用 Unity 6000 支持的 `LegacyRuntime.ttf`，移除会在右键打开轮盘时抛出的 `Arial.ttf` 内置字体异常；Runtime/Editor 静态编译均 0 错误。
+- 本轮交互修复：颜色钥匙先解锁颜色、恢复材质并启动水体渐显，再播放相机 Timeline，避免演出阻塞玩法状态；右键轮盘改为按住显示、按指针方向高亮环形选项、松开确认并隐藏；左键使用当前选色能力触发物体图，默认能力为空，切换和交互结果均输出 Console 日志。
+- 蓝色钥匙链路诊断补充：将解锁与 `SetColorFaded(false)` 前移到 `OnInteractionPlayerEntered` 的同步入口，并在物体图触发、方法调用、Unlock 成功/失败和钥匙入口处增加诊断日志；确认 `Publisher socket is null` 来自 `com.merry-yellow.code-assist` 的本地 MQTT 编辑器插件，不属于运行时交互图。Computer Use 当前未返回可控 Unity 窗口，Runtime/Editor 静态编译仍为 0 错误。
+- 颜色目录反序列化修复：`ColorTypeDefinition` 补齐 Unity 所需的 `[Serializable]`，修复 `ColorCatalog.asset` 虽含 red/green/blue 但运行时 `Find("blue")` 为空的问题；钥匙解锁链路待 Unity 重载脚本后实测。
+- 未完成：未合并 `main`、未推送；需要在 Unity 内放置红蓝绿方块与锚点，确认藤蔓增长视觉、HUD、输入轮盘和水体状态，并在验收后更新本条记录。当前 Computer Use 未返回可控 Unity 原生窗口，只能以 Editor.log 和静态编译作为本轮证据。

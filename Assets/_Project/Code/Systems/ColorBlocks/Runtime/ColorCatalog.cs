@@ -4,38 +4,6 @@ using UnityEngine;
 
 namespace Project.ColorBlocks
 {
-    public enum ColorGraphNodeKind
-    {
-        Invalid = 0,
-        PlayerEntered = 10,
-        PlayerLeft = 11,
-        ColorBlockTouched = 12,
-        ColorUnlocked = 13,
-        RequirePlayer = 20,
-        RequireSelfBlock = 21,
-        RequireOtherColor = 22,
-        RecolorSelf = 30,
-        UnlockColor = 31,
-        FadeColor = 32,
-        RestoreColor = 33
-    }
-
-    [Serializable]
-    public sealed class ColorGraphNode
-    {
-        public string id = Guid.NewGuid().ToString("N");
-        public Vector2 position;
-        public ColorGraphNodeKind kind;
-        public string colorTypeId;
-    }
-
-    [Serializable]
-    public sealed class ColorGraphEdge
-    {
-        public string fromId;
-        public string toId;
-    }
-
     [Serializable]
     public sealed class ColorTypeDefinition
     {
@@ -46,8 +14,6 @@ namespace Project.ColorBlocks
         [Tooltip("方块编辑识别材质；内置钥匙也用它显示对应颜色。")]
         public Material targetMaterial;
         public string unlockEventId;
-        public List<ColorGraphNode> nodes = new List<ColorGraphNode>();
-        public List<ColorGraphEdge> edges = new List<ColorGraphEdge>();
     }
 
     [CreateAssetMenu(menuName = "2026TapTap/颜色/颜色目录", fileName = "ColorCatalog")]

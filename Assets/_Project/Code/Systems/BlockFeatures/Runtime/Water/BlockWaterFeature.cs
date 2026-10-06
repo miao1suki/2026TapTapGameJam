@@ -11,7 +11,7 @@ namespace Project.BlockFeatures
     {
         [InspectorName("功能组件自己管理水体")]
         FeatureOwned = 0,
-        [InspectorName("沿用颜色管理器水体")]
+        [InspectorName("沿用颜色水体服务")]
         ExternalManager = 1
     }
 
@@ -53,7 +53,7 @@ namespace Project.BlockFeatures
             Label = "水体管理方式",
             Group = "水体",
             Order = 0,
-            Tooltip = "功能组件自己创建 TA 水体，或沿用颜色管理器的蓝色水体。")]
+            Tooltip = "功能组件自己创建 TA 水体，或沿用颜色水体服务的蓝色水体。")]
         [SerializeField] private BlockWaterVisualMode visualMode =
             BlockWaterVisualMode.FeatureOwned;
 
@@ -75,6 +75,26 @@ namespace Project.BlockFeatures
             Group = "玩家",
             Order = 0)]
         [SerializeField] private bool allowSwimming = true;
+
+        [BlockParameter(
+            Label = "进水速度倍率",
+            Group = "玩家",
+            Order = 1,
+            Tooltip = "蓝色水体内的水平游泳速度倍率。")]
+        [SerializeField, Min(0.05f)] private float swimSpeedMultiplier = .55f;
+
+        [BlockParameter(
+            Label = "进水恢复生命",
+            Group = "玩家",
+            Order = 2,
+            Tooltip = "玩家每次进入此水体恢复的生命值。")]
+        [SerializeField, Min(0f)] private float restoreHealthOnEnter = 1f;
+
+        [BlockParameter(
+            Label = "免疫摔落伤害",
+            Group = "玩家",
+            Order = 3)]
+        [SerializeField] private bool ignoreFallDamage = true;
 
         [BlockParameter(
             Label = "碰撞体切换为 Trigger",
@@ -246,6 +266,13 @@ namespace Project.BlockFeatures
             if (allowSwimming && player != null)
             {
                 player.EnterWater(this);
+                player.SetSwimSpeedMultiplier(this, swimSpeedMultiplier);
+                if (ignoreFallDamage)
+                {
+                    player.SetFallDamageImmune(this, true);
+                    player.GetComponent<PlayerFallDamage>()?.SetFallDamageImmune(true);
+                }
+                player.GetComponent<PlayerHealth>()?.Heal(restoreHealthOnEnter);
             }
 
             PlayClip(enterWaterClip, enterWaterVolume);
@@ -273,6 +300,12 @@ namespace Project.BlockFeatures
             if (allowSwimming && player != null)
             {
                 player.ExitWater(this);
+                player.SetSwimSpeedMultiplier(this, 0f);
+                if (ignoreFallDamage)
+                {
+                    player.SetFallDamageImmune(this, false);
+                    player.GetComponent<PlayerFallDamage>()?.SetFallDamageImmune(false);
+                }
             }
 
             PlayClip(exitWaterClip, exitWaterVolume);
@@ -292,7 +325,7 @@ namespace Project.BlockFeatures
                 "管理方式",
                 visualMode == BlockWaterVisualMode.FeatureOwned
                     ? "功能组件"
-                    : "颜色管理器"));
+                    : "共享颜色水体"));
             values.Add(new BlockDebugValue(
                 "显示进度",
                 reveal.ToString("0.00")));
@@ -408,7 +441,7 @@ namespace Project.BlockFeatures
             GameObject prefab = waterVisualPrefab;
             if (prefab == null)
             {
-                ColorWorldManager manager = ColorWorldManager.Existing;
+                ColorRuntimeService manager = ColorRuntimeService.Existing;
                 prefab = manager?.Catalog?.BlueWaterPrefab;
             }
 

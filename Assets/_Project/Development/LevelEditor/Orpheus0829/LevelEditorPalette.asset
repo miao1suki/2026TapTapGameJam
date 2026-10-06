@@ -20,6 +20,7 @@ MonoBehaviour:
     prefab: {fileID: 2422191113143629447, guid: bbdf116cd06d2fb4d87b1ebb8c18ae02, type: 3}
     customTemplate: {fileID: 0}
     managedColorTypeId: red
+    interactionDefinition: {fileID: 11400000, guid: d1a8b2c3d4e5f60718293a4b5c6d7e80, type: 2}
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
@@ -31,6 +32,7 @@ MonoBehaviour:
     prefab: {fileID: 524019047373316160, guid: 210c431167d7a014db209c383a9a55d2, type: 3}
     customTemplate: {fileID: 0}
     managedColorTypeId: blue
+    interactionDefinition: {fileID: 11400000, guid: 5439892d9140f354ab8f26bebf6c7582, type: 2}
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
@@ -42,6 +44,7 @@ MonoBehaviour:
     prefab: {fileID: 8582130194286690322, guid: ac2d7caad3cfab24d920732a9371c085, type: 3}
     customTemplate: {fileID: 0}
     managedColorTypeId: green
+    interactionDefinition: {fileID: 11400000, guid: e2b9c3d4e5f60718293a4b5c6d7e8091, type: 2}
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
@@ -53,6 +56,7 @@ MonoBehaviour:
     prefab: {fileID: 0}
     customTemplate: {fileID: 0}
     managedColorTypeId: 
+    interactionDefinition: {fileID: 0}
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
@@ -64,6 +68,7 @@ MonoBehaviour:
     prefab: {fileID: 0}
     customTemplate: {fileID: 0}
     managedColorTypeId: 
+    interactionDefinition: {fileID: 0}
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
@@ -75,6 +80,7 @@ MonoBehaviour:
     prefab: {fileID: 0}
     customTemplate: {fileID: 0}
     managedColorTypeId: 
+    interactionDefinition: {fileID: 0}
     surfaceTilePalette: {fileID: 11400000, guid: 6256579dbea09914487bfc3f247aa58b, type: 2}
     surfaceTileCellSize: 0.05
     surfaceTileTransparentBase: 0
@@ -893,18 +899,22 @@ MonoBehaviour:
   - entryId: 3c635d52f11f48f18d4d82a53c65e601
     displayName: "\u7EA2\u8272\u94A5\u5319"
     prefab: {fileID: 6622805535834104132, guid: 83e6e8f43f4f1d54289447a18295ca37, type: 3}
+    interactionDefinition: {fileID: 11400000, guid: 06536bd293ccada4a81c5169488dd935, type: 2}
     componentValueOverrides: []
   - entryId: 2986677913284d2f85e9c64011ca22d0
     displayName: "\u7EFF\u8272\u94A5\u5319"
     prefab: {fileID: 491305582336558569, guid: 6c8401f9adab9d841ba785f52b4f9623, type: 3}
+    interactionDefinition: {fileID: 11400000, guid: 3bcbac681449d8d48879a54c8ff080bb, type: 2}
     componentValueOverrides: []
   - entryId: 04b7a2d6735b4d0cbce343ab1293d6e0
     displayName: "\u84DD\u8272\u94A5\u5319"
     prefab: {fileID: 8140128999958426686, guid: 0c5be6edd719d03459d2e3ac01c4307f, type: 3}
+    interactionDefinition: {fileID: 11400000, guid: e05a68953d5e26347b85e0c12d50aa4a, type: 2}
     componentValueOverrides: []
   - entryId: 06e690b71b634be2909b6fecd7ecb627
     displayName: "\u5B57\u5E55\u6FC0\u53D1(\u6D4B\u8BD5)"
     prefab: {fileID: 4553572954244812789, guid: 40fd7fa368f76bc4ca0e52adec7ddc07, type: 3}
+    interactionDefinition: {fileID: 11400000, guid: a52d149aa78ccf1469e9a9adca8538de, type: 2}
     componentValueOverrides:
     - componentPath: 
       componentTypeName: Project.Subtitles.SubtitleTrigger
@@ -1403,3 +1413,8 @@ MonoBehaviour:
       valueType: Boolean
       value: 0
       objectReferenceValue: {fileID: 0}
+  - entryId: 7a1b2c3d4e5f60718293a4b5c6d7e8f9
+    displayName: "\u951A\u70B9"
+    prefab: {fileID: 810000001, guid: b7c0d1e2f30456789abcdeffedcba987, type: 3}
+    interactionDefinition: {fileID: 11400000, guid: 94640d3fea37bca4597cea9e60eb295d, type: 2}
+    componentValueOverrides: []

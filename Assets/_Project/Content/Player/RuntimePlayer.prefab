@@ -17,6 +17,10 @@ GameObject:
   - component: {fileID: 909119954604964438}
   - component: {fileID: 5389332024260687448}
   - component: {fileID: 600000001}
+  - component: {fileID: 600000002}
+  - component: {fileID: 600000003}
+  - component: {fileID: 600000004}
+  - component: {fileID: 600000005}
   m_Layer: 0
   m_Name: RuntimePlayer
   m_TagString: Player
@@ -211,3 +215,64 @@ MonoBehaviour:
   actionBindings: []
   cameraModeController: {fileID: 0}
   cameraModeTransitionDuration: 0.2
+--- !u!114 &600000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4920354666734387426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ba9afc6f23548609a85a0ad4a6ec684, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerHealth
+  maxHealth: 5
+  startingHealth: 5
+--- !u!114 &600000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4920354666734387426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 665a7fcd44d74c3a8745c442eb602555, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerFallDamage
+  safeFallDistance: 3
+  damagePerMeter: 1
+  damageCurve: {serializedVersion: 2, m_Curve: [], m_PreInfinity: 2, m_PostInfinity: 2, m_RotationOrder: 4}
+--- !u!114 &600000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4920354666734387426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f84038eead54761b66fdf44b1b88844, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.PlayerHealthHud
+  anchoredPosition: {x: 24, y: -24}
+  fontSize: 24
+  color: {r: 1, g: 0.35, b: 0.35, a: 1}
+--- !u!114 &600000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4920354666734387426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af6036251da743968211d0fe98eb1a20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerColorWheel
+  rangeLineWidth: 0.035
+  rangeDashCount: 32
+  rangeColor: {r: 0.55, g: 0.8, b: 1, a: 0.45}
+  wheelSize: 280
+  wheelButtonSize: 72

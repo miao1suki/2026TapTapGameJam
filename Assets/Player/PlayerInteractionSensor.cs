@@ -17,6 +17,46 @@ namespace Project.Player
             new Collider[32];
         public IInteractionTarget CurrentTarget { get; private set; }
         public bool HasTarget => CurrentTarget != null;
+        public float ScanRadius => scanRadius;
+
+        public bool IsWithinRange(IInteractionTarget target)
+        {
+            Component component = target as Component;
+            Behaviour behaviour = component as Behaviour;
+            if (component == null || behaviour == null ||
+                !behaviour.isActiveAndEnabled)
+            {
+                return false;
+            }
+
+            float rangeSqr = scanRadius * scanRadius;
+            Collider[] colliders = component.GetComponentsInChildren<Collider>(true);
+            bool foundCollider = false;
+            float nearestSqr = float.MaxValue;
+            for (int index = 0; index < colliders.Length; index++)
+            {
+                Collider collider = colliders[index];
+                if (collider == null || !collider.enabled ||
+                    !collider.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                foundCollider = true;
+                Vector3 closest = collider.ClosestPoint(transform.position);
+                nearestSqr = Mathf.Min(
+                    nearestSqr,
+                    (closest - transform.position).sqrMagnitude);
+            }
+
+            if (!foundCollider)
+            {
+                nearestSqr = (component.transform.position - transform.position)
+                    .sqrMagnitude;
+            }
+
+            return nearestSqr <= rangeSqr;
+        }
 
         public void RefreshTarget()
         {
@@ -60,10 +100,11 @@ namespace Project.Player
                         continue;
                     }
 
+                    Vector3 closest = collider.ClosestPoint(transform.position);
                     float distance = Vector3.Distance(
                         transform.position,
-                        collider.bounds.center);
-                    if (distance >= nearestDistance)
+                        closest);
+                    if (distance > scanRadius || distance >= nearestDistance)
                     {
                         continue;
                     }
