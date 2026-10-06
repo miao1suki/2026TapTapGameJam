@@ -64,6 +64,23 @@ namespace Project.ColorBlocks
             {
                 foreach (var renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = false;
             }
+            bool unlocked = ColorRuntimeService.Instance.Unlock(colorTypeId);
+            if (unlocked)
+            {
+                HSVColorFadeManager.Instance.SetColorFaded(
+                    colorTypeId,
+                    false,
+                    revealDuration);
+                Debug.Log(
+                    $"[ColorBlocks] 钥匙触发入口已解锁 {colorTypeId}：材质恢复/水体显现已开始。",
+                    this);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[ColorBlocks] 钥匙触发入口执行，但 {colorTypeId} 未完成 Unlock。",
+                    this);
+            }
             StartCoroutine(CollectWithCamera(player));
         }
 
@@ -76,6 +93,9 @@ namespace Project.ColorBlocks
 
         private IEnumerator CollectWithCamera(PlayerController player)
         {
+            // 解锁已在触发入口同步完成。镜头 Timeline 不能阻塞颜色恢复；
+            // 这里只等待渐显收尾。
+            bool unlocked = ColorRuntimeService.Instance.IsUnlocked(colorTypeId);
             bool hasCameraShot = PlayCameraCutscene(player);
             if (hasCameraShot)
             {
@@ -98,9 +118,6 @@ namespace Project.ColorBlocks
                 }
             }
 
-            bool unlocked = ColorRuntimeService.Instance.Unlock(colorTypeId);
-            if (unlocked)
-                HSVColorFadeManager.Instance.SetColorFaded(colorTypeId, false, revealDuration);
             float revealTimeout = Time.unscaledTime + revealDuration + 1f;
             while (unlocked &&
                    HSVColorFadeManager.Instance.GetSaturation(colorTypeId) < .995f &&

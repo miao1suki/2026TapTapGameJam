@@ -271,4 +271,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af6036251da743968211d0fe98eb1a20, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerColorWheel
-  displaySeconds: 0.75
+  rangeLineWidth: 0.035
+  rangeDashCount: 32
+  rangeColor: {r: 0.55, g: 0.8, b: 1, a: 0.45}
+  wheelSize: 280
+  wheelButtonSize: 72

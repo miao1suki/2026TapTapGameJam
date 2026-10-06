@@ -21,7 +21,6 @@ namespace Project.ColorBlocks
         private bool waterDirty = true;
         private float waterReveal = -1f;
         private ColorCatalog catalog;
-        private bool hasRecolorAbility;
 
         public static ColorRuntimeService Instance
         {
@@ -38,10 +37,8 @@ namespace Project.ColorBlocks
 
         public ColorCatalog Catalog => catalog;
         public static ColorRuntimeService Existing => instance;
-        public bool HasRecolorAbility => hasRecolorAbility;
         public event Action<ColorTypeDefinition> ColorUnlocked;
         public event Action<ColorBlock, string, string> BlockColorChanged;
-        public event Action RecolorAbilityGranted;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => instance = null;
@@ -161,18 +158,28 @@ namespace Project.ColorBlocks
 
         public bool IsUnlocked(string typeId) => !string.IsNullOrEmpty(typeId) && unlocked.Contains(typeId);
 
-        public void GrantRecolorAbility()
-        {
-            if (hasRecolorAbility) return;
-            hasRecolorAbility = true;
-            RecolorAbilityGranted?.Invoke();
-            EventMgr.RaiseRecolorAbilityGranted();
-        }
-
         public bool Unlock(string typeId)
         {
             var definition = catalog != null ? catalog.Find(typeId) : null;
-            if (definition == null || !unlocked.Add(typeId)) return false;
+            if (definition == null)
+            {
+                Debug.LogError(
+                    $"[ColorBlocks] Unlock 失败：颜色目录中找不到 {typeId}。",
+                    this);
+                return false;
+            }
+
+            if (!unlocked.Add(typeId))
+            {
+                Debug.Log(
+                    $"[ColorBlocks] Unlock 跳过：{typeId} 已经解锁。",
+                    this);
+                return false;
+            }
+
+            Debug.Log(
+                $"[ColorBlocks] Unlock 成功：{typeId}，开始恢复同色方块与水体。",
+                this);
             foreach (var block in new List<ColorBlock>(blocks))
                 if (block != null) block.OnBaseColorUnlocked(typeId);
             ColorUnlocked?.Invoke(definition);
@@ -259,17 +266,9 @@ namespace Project.ColorBlocks
             return true;
         }
 
-        public bool TryRecolor(ColorBlock block, string targetTypeId)
-        {
-            if (!hasRecolorAbility || block == null || !blocks.Contains(block) || !IsUnlocked(targetTypeId)) return false;
-            if (catalog == null || catalog.Find(targetTypeId) == null) return false;
-            return block.ApplyCurrentColor(targetTypeId);
-        }
-
         public void ResetProgress()
         {
             unlocked.Clear();
-            hasRecolorAbility = false;
             foreach (var block in new List<ColorBlock>(blocks))
                 if (block != null) block.ResetToNeutral();
             HSVColorFadeManager.Instance.ResetAll();
@@ -325,7 +324,6 @@ public partial class EventMgr
     public static event Action<Project.ColorBlocks.ColorTypeDefinition> OnColorUnlocked;
     public static event Action<Project.ColorBlocks.ColorBlock, string, string> OnColorBlockChanged;
     public static event Action<string, string> OnColorTypeEvent;
-    public static event Action OnRecolorAbilityGranted;
 
     public static void RaiseColorUnlocked(Project.ColorBlocks.ColorTypeDefinition color) =>
         OnColorUnlocked?.Invoke(color);
@@ -336,5 +334,4 @@ public partial class EventMgr
     public static void RaiseColorTypeEvent(string eventId, string typeId) =>
         OnColorTypeEvent?.Invoke(eventId, typeId);
 
-    public static void RaiseRecolorAbilityGranted() => OnRecolorAbilityGranted?.Invoke();
 }

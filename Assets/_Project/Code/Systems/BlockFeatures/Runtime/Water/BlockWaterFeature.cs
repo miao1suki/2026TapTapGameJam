@@ -11,7 +11,7 @@ namespace Project.BlockFeatures
     {
         [InspectorName("功能组件自己管理水体")]
         FeatureOwned = 0,
-        [InspectorName("沿用颜色管理器水体")]
+        [InspectorName("沿用颜色水体服务")]
         ExternalManager = 1
     }
 
@@ -53,7 +53,7 @@ namespace Project.BlockFeatures
             Label = "水体管理方式",
             Group = "水体",
             Order = 0,
-            Tooltip = "功能组件自己创建 TA 水体，或沿用颜色管理器的蓝色水体。")]
+            Tooltip = "功能组件自己创建 TA 水体，或沿用颜色水体服务的蓝色水体。")]
         [SerializeField] private BlockWaterVisualMode visualMode =
             BlockWaterVisualMode.FeatureOwned;
 
@@ -325,7 +325,7 @@ namespace Project.BlockFeatures
                 "管理方式",
                 visualMode == BlockWaterVisualMode.FeatureOwned
                     ? "功能组件"
-                    : "颜色管理器"));
+                    : "共享颜色水体"));
             values.Add(new BlockDebugValue(
                 "显示进度",
                 reveal.ToString("0.00")));

@@ -137,6 +137,7 @@ namespace Project.Player
             motor.useGravity = false;
             capsule.sharedMaterial = GetZeroFrictionMaterial();
             if (!GetComponent<PlayerInteractionSensor>()) gameObject.AddComponent<PlayerInteractionSensor>();
+            if (!GetComponent<PlayerColorWheel>()) gameObject.AddComponent<PlayerColorWheel>();
         }
         private static PhysicsMaterial GetZeroFrictionMaterial()
         {

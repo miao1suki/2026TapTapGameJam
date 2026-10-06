@@ -416,7 +416,7 @@ namespace Project.ColorBlocks
         }
 
         public bool CanInteract(GameObject interactor) =>
-            isActiveAndEnabled && ColorRuntimeService.Instance.HasRecolorAbility &&
+            isActiveAndEnabled && interactionDefinition != null &&
             ColorRuntimeService.Instance.IsUnlocked(baseColorTypeId);
 
         public bool CanUseColorWheel(GameObject interactor)

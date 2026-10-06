@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Project.ColorBlocks
 {
+    [Serializable]
     public sealed class ColorTypeDefinition
     {
         public string id = Guid.NewGuid().ToString("N");

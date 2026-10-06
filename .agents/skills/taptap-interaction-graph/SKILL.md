@@ -46,6 +46,8 @@ description: 在 2026TapTap 中使用物体交互管理器连连看设计、接�
 5. 删除节点前确认连线也会被移除；保存后检查资产已标脏并写入 `Assets/_Project/Content/Interactions/Definitions`。
 6. 一个常见接触链为：`玩家进入 → 需要玩家 → 调用方法(GameObject)`；离开链必须有对应的 `玩家离开 → 需要玩家 → 清除方法`。物体关系使用 `物体触碰/停留 → 需要其他物体 → 受到物体/受到颜色 → 效果`。
 7. 解锁恢复链为：`手动 → 恢复(颜色 ID)`。颜色服务会提供基础恢复兜底，但定义仍必须在图中明确写出颜色值，方便策划检查和扩展。
+8. 玩家颜色能力只保存 `PlayerColorWheel.SelectedColorId`。右键轮盘选择颜色后进入目标物体的 `Manual` 图；实际效果必须连接在图上，不能在玩家能力脚本中直接改方块、水体或其他物体状态。需要限制玩家选色时使用 `玩家选中颜色` 节点，并把颜色 ID 写在“值”字段。
+9. 交互入口统一经过 `PlayerInteractionSensor`。轮盘目标、交互键目标和玩家周围虚线圆都使用 `ScanRadius`；执行前再次检查目标仍在半径内、仍启用且仍允许交互。物体含子 Collider 时距离检查取所有有效子 Collider 的最近点，不能退回到根物体中心造成误判。
 
 ## 接入模块的方法
 
@@ -62,6 +64,7 @@ description: 在 2026TapTap 中使用物体交互管理器连连看设计、接�
 - 蓝/绿物体触碰：蓝方块图使用 `受到其他物体颜色(green) → 调用方法(GrowVineTowardAnchors)`，藤蔓生成对象归蓝方块持有并在 `OnDisable` 清理。
 - 玩家落差弹跳：`玩家进入 → 需要玩家 → 调用方法(RegisterBounceActor)`，离开链用 `UnregisterBounceActor` 对称清理，落地事件由组件按序列化阈值执行。
 - 右键轮盘：`ColorBlock.TryOpenColorWheel` 记录大方块的实际碰撞点后触发 `Manual` 图；绿方块站立顶部时直接拒绝入口。
+- 玩家选色：`PlayerColorWheel` 只写入当前颜色并将目标交给 `Manual` 图；没有目标时只保存选色。轮盘 UI 和临时虚线圆由玩家组件创建，组件销毁时必须清理 Canvas、LineRenderer 和运行时材质；不得把轮盘按钮写成直接调用玩法方法。
 
 ### 新物体
 
@@ -80,6 +83,7 @@ description: 在 2026TapTap 中使用物体交互管理器连连看设计、接�
 
 - 每个定义都有有效预制体、唯一 `ObjectId`、有效节点 ID 和连线端点。
 - 颜色钥匙的基础颜色和 `Restore` 节点值一致；三色方块的定义、预制体和目录引用一致。
+- 颜色目录的每个定义类型必须带 Unity 可序列化标记（例如 `[Serializable]`）；不能只看 YAML 文件里有 `red/green/blue`，必须在运行时确认 `ColorRuntimeService.Catalog.Find("red"/"green"/"blue")` 都返回定义。
 - Runtime / Editor 编译 0 错误；`git diff --check` 通过；没有旧颜色管理器类型引用。
 
 ### PlayMode 事件矩阵
@@ -108,6 +112,7 @@ description: 在 2026TapTap 中使用物体交互管理器连连看设计、接�
 - 运行时图执行有节点上限；循环图必须有终止条件或明确的时间/距离上限。
 - 不把策划参数硬编码在方法体；需要调节的值放在定义、预制体或独立配置资产中。
 - UI 入口用 UI Toolkit；正常空状态、缺失预制体和无效连线要在窗口中说明，不让策划依赖 Console。
+- 运行时轮盘可以沿用项目现有 UGUI，但它只能承担选色和目标选择；节点图窗口仍必须使用 UI Toolkit。轮盘没有 EventSystem 时要补齐 Input System UI 模块，避免按钮看得见却无法点击。
 - 如果缺少关键事实（弹高阈值、生命值 API、喷流资源、锚点预制体、藤蔓碰撞层、重复触发规则），先暂停该分支实现并向开发者确认，不用猜一个会改变玩法的默认值。
 
 ## 交付与持续更新

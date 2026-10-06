@@ -1416,5 +1416,5 @@ MonoBehaviour:
   - entryId: 7a1b2c3d4e5f60718293a4b5c6d7e8f9
     displayName: "\u951A\u70B9"
     prefab: {fileID: 810000001, guid: b7c0d1e2f30456789abcdeffedcba987, type: 3}
-    interactionDefinition: {fileID: 11400000, guid: c8d1e2f30456789abcdeffedcba9876, type: 2}
+    interactionDefinition: {fileID: 11400000, guid: 94640d3fea37bca4597cea9e60eb295d, type: 2}
     componentValueOverrides: []

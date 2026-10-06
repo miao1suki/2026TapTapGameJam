@@ -49,7 +49,7 @@ namespace Project.Interactions
             rect.anchoredPosition = anchoredPosition;
             rect.sizeDelta = new Vector2(320f, 48f);
             label = labelObject.GetComponent<Text>();
-            label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             label.fontSize = fontSize;
             label.color = color;
             label.alignment = TextAnchor.UpperLeft;

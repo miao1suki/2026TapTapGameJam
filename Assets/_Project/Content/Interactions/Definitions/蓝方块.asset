@@ -124,8 +124,8 @@ MonoBehaviour:
     reference: {fileID: 0}
   - id: blue-manual-player
     position: {x: 280, y: 800}
-    kind: 21
-    value: 
+    kind: 26
+    value: red
     number: 0
     argument: 
     reference: {fileID: 0}

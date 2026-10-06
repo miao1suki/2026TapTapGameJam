@@ -136,6 +136,10 @@ namespace Project.Interactions
                 return;
             }
 
+            Debug.Log(
+                $"[Interactions] 触发物体图：{source.Definition.DisplayName} / {trigger}",
+                source.InteractionGameObject);
+
             int actorId = actor != null ? actor.GetInstanceID() : 0;
             int otherId = other?.InteractionComponent != null
                 ? other.InteractionComponent.GetInstanceID()
@@ -332,6 +336,11 @@ namespace Project.Interactions
                                    : other.CurrentColorTypeId,
                                node.value,
                                StringComparison.OrdinalIgnoreCase);
+                case InteractionNodeKind.RequirePlayerColor:
+                    return string.Equals(
+                        ResolvePlayerColor(actor),
+                        node.value,
+                        StringComparison.OrdinalIgnoreCase);
                 case InteractionNodeKind.RequireColor:
                     return ResolveColor(actor, other) == node.value;
                 case InteractionNodeKind.Fade:
@@ -368,6 +377,18 @@ namespace Project.Interactions
             return string.IsNullOrWhiteSpace(source.CurrentColorTypeId)
                 ? source.BaseColorTypeId ?? string.Empty
                 : source.CurrentColorTypeId;
+        }
+
+        private static string ResolvePlayerColor(GameObject actor)
+        {
+            if (actor == null)
+            {
+                return string.Empty;
+            }
+
+            Project.Player.PlayerColorWheel wheel =
+                actor.GetComponentInParent<Project.Player.PlayerColorWheel>();
+            return wheel != null ? wheel.SelectedColorId : string.Empty;
         }
 
         private static IInteractionObjectSource ResolveSource(GameObject target)
@@ -501,6 +522,9 @@ namespace Project.Interactions
                             : null
                         : new object[] { node.argument };
                     method.Invoke(behaviour, arguments);
+                    Debug.Log(
+                        $"[Interactions] 方法调用成功：{source.Definition.DisplayName}.{node.value}",
+                        source.InteractionGameObject);
                     return true;
                 }
                 catch (Exception exception)

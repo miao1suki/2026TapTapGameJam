@@ -13,7 +13,11 @@
 - `InteractionManager.Trigger(GameObject, InteractionNodeKind, GameObject, GameObject)`：脚本或 Timeline 的手动入口。实际执行仍由目标定义中的连线决定。
 - `ColorRuntimeService`：颜色解锁、颜色属性、水体视觉和颜色事件的底层服务；不拥有交互图。
 - `HSVColorFadeManager`：颜色层渐变服务，供图中的褪色/恢复节点调用。
-- `ColorBlock.TryOpenColorWheel(GameObject)`：右键颜色轮盘的统一入口。绿色方块在玩家站立于顶部时返回 `false`，避免站立状态与颜色交互同时发生；蓝色大方块会先记录碰撞点再进入 `Manual` 图链。
+- `PlayerColorWheel`：玩家选色能力和右键轮盘 UI。它只保存 `SelectedColorId`；轮盘选择完成后由目标的 `IInteractionTarget.TryInteract` 进入 `Manual` 图。
+- `ColorBlock.TryOpenColorWheel(GameObject)`：保留为交互目标兼容入口。绿色方块在玩家站立于顶部时返回 `false`，避免站立状态与颜色交互同时发生；蓝色大方块会先记录碰撞点再进入 `Manual` 图链。
+- `PlayerInteractionSensor.ScanRadius`：右键目标、交互键目标和玩家周围虚线圆共用的距离半径。
+
+`PlayerController` 会确保玩家运行时存在 `PlayerColorWheel`，因此场景内直接放置玩家组件也能使用轮盘。轮盘没有可用 EventSystem 时会创建带 `InputSystemUIInputModule` 的临时 UI 事件系统；组件销毁时会清理运行时 Canvas、虚线段和材质。距离判断以目标所有启用子 Collider 的最近点为准，轮盘选色提交前会再次检查目标仍在范围内并通过 `CanInteract`。
 
 颜色解锁的顺序是：`ColorRuntimeService.Unlock(typeId)` 先把该颜色的基础褪色状态设为恢复，再派发同色方块定义的 `Manual` 根节点。颜色钥匙自己的 `PlayableDirector` 只承担相机 Timeline，不是材质或水体恢复的唯一来源。启动时颜色目录默认全部褪色；方块注册和锁回操作会再次同步对应状态。
 
@@ -41,4 +45,4 @@
 
 `InteractionObject` 和 `ColorBlock` 会把玩家进入、玩家离开、物体触碰和物体停留转发给管理器。对象类型由 `InteractionObjectDefinition.ObjectId` 判断；颜色通过 `CurrentColorTypeId` 读取。调用方法节点支持无参数、`GameObject` 参数和字符串参数；褪色/恢复节点调用 `HSVColorFadeManager`，Timeline 节点播放 `PlayableDirector`。
 
-节点条件 `RequireOtherColor` 专门读取触碰对象的颜色属性；它与 `RequireObjectId` 可以串联，先限制具体物体再限制颜色。每个组合图都必须保留对应的离开链和生成物清理入口。
+节点条件 `RequirePlayerColor` 读取玩家轮盘当前选色；`RequireOtherColor` 专门读取触碰对象的颜色属性。它们与 `RequireObjectId` 可以串联，先限制具体物体再限制颜色。每个组合图都必须保留对应的离开链和生成物清理入口。

@@ -1,4 +1,5 @@
 using Project.ColorBlocks;
+using Project.InputAbstraction;
 using Project.Player;
 using UnityEngine;
 
@@ -9,7 +10,8 @@ namespace Project.Interactions
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class InteractionObject : MonoBehaviour,
-        IInteractionObjectSource
+        IInteractionObjectSource,
+        IInteractionTarget
     {
         [SerializeField] private InteractionObjectDefinition definition;
         [SerializeField] private string currentColorTypeId;
@@ -141,6 +143,25 @@ namespace Project.Interactions
 
             currentColorTypeId = next;
             return true;
+        }
+
+        public bool CanInteract(GameObject interactor)
+        {
+            return isActiveAndEnabled && definition != null;
+        }
+
+        public bool TryInteract(GameObject interactor)
+        {
+            if (!CanInteract(interactor))
+            {
+                return false;
+            }
+
+            return InteractionManager.Trigger(
+                gameObject,
+                InteractionNodeKind.Manual,
+                interactor,
+                null);
         }
 
         public void Configure(

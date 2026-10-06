@@ -26,6 +26,7 @@ namespace Project.Interactions
         RequireColor = 23,
         RequireObjectId = 24,
         RequireOtherColor = 25,
+        RequirePlayerColor = 26,
 
         // 调度与效果
         Delay = 30,

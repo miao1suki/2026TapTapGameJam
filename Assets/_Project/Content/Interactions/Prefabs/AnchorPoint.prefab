@@ -139,5 +139,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed3ea2b373d54218a69c408da9105e34, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.InteractionObject
-  definition: {fileID: 11400000, guid: c8d1e2f30456789abcdeffedcba9876, type: 2}
+  definition: {fileID: 11400000, guid: 94640d3fea37bca4597cea9e60eb295d, type: 2}
   currentColorTypeId: 
