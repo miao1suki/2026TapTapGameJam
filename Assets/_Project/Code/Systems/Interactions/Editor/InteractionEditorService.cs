@@ -44,6 +44,22 @@ namespace Project.Interactions.Editor
                     CatalogPath);
             if (catalog != null)
             {
+                bool removedInvalidEntries = false;
+                for (int index = catalog.EditableObjects.Count - 1;
+                     index >= 0;
+                     index--)
+                {
+                    if (catalog.EditableObjects[index] != null) continue;
+                    catalog.EditableObjects.RemoveAt(index);
+                    removedInvalidEntries = true;
+                }
+
+                if (removedInvalidEntries)
+                {
+                    EditorUtility.SetDirty(catalog);
+                    AssetDatabase.SaveAssetIfDirty(catalog);
+                }
+
                 return catalog;
             }
 
