@@ -5,17 +5,29 @@ using UnityEngine;
 
 namespace Project.BlockFeatures
 {
+    /// <summary>
+    /// Thin fixed-color feature host for existing level block prefabs.
+    /// It never discovers or adds features; it only enables the authored
+    /// components while the object's color group is active.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BlockRuntime))]
     public sealed class BlockAbilityHost : MonoBehaviour
     {
         [SerializeField] private bool debugLog;
 
+        private readonly List<BlockFeature> features =
+            new List<BlockFeature>();
+        private readonly List<BlockFeature> activeFeatures =
+            new List<BlockFeature>();
         private BlockRuntime runtime;
-        private ColorBlock colorBlock;
+        private IColorObject colorObject;
         private bool applying;
 
-        public string CurrentColorId => ResolveColorId();
+        public string BaseColorId =>
+            colorObject?.BaseColorTypeId ?? string.Empty;
+
+        public IReadOnlyList<BlockFeature> Features => features;
 
         public void CollectFeatureStates(
             List<BlockFeature> enabledFeatures,
@@ -23,9 +35,6 @@ namespace Project.BlockFeatures
         {
             enabledFeatures?.Clear();
             disabledFeatures?.Clear();
-            IReadOnlyList<BlockFeature> features =
-                ProjectDiscovery.GetComponents<BlockFeature>(
-                    gameObject);
             for (int index = 0; index < features.Count; index++)
             {
                 BlockFeature feature = features[index];
@@ -48,31 +57,45 @@ namespace Project.BlockFeatures
         private void Awake()
         {
             runtime = GetComponent<BlockRuntime>();
-            colorBlock = GetComponent<ColorBlock>();
+            colorObject = GetComponent<IColorObject>();
+            RefreshFeatureBuffer();
         }
 
         private void OnEnable()
         {
-            EventMgr.OnColorBlockChanged += OnColorBlockChanged;
-            EnsureAllFeatures();
-            ApplyCurrentProfile();
+            if (colorObject == null)
+            {
+                colorObject = GetComponent<IColorObject>();
+            }
+
+            if (colorObject != null)
+            {
+                colorObject.ActiveStateChanged +=
+                    OnActiveStateChanged;
+            }
+
+            EventMgr.OnRoomColorReset += OnRoomColorReset;
+            RefreshActivation();
         }
 
         private void OnDisable()
         {
-            EventMgr.OnColorBlockChanged -= OnColorBlockChanged;
-        }
-
-        public void ApplyCurrentProfile()
-        {
-            if (applying || runtime == null)
+            if (colorObject != null)
             {
-                return;
+                colorObject.ActiveStateChanged -=
+                    OnActiveStateChanged;
             }
 
-            BlockAbilityCatalog catalog =
-                BlockAbilityCatalogService.Load();
-            if (catalog == null)
+            EventMgr.OnRoomColorReset -= OnRoomColorReset;
+            DisableAllFeatures();
+        }
+
+        /// <summary>
+        /// Rebuilds feature activation from the fixed color state.
+        /// </summary>
+        public void RefreshActivation()
+        {
+            if (applying || runtime == null || colorObject == null)
             {
                 return;
             }
@@ -80,31 +103,9 @@ namespace Project.BlockFeatures
             applying = true;
             try
             {
-                string colorId = ResolveColorId();
-                var activeTypes = new HashSet<Type>();
-                for (int index = 0;
-                     index < catalog.Features.Count;
-                     index++)
-                {
-                    BlockAbilityDefinition definition =
-                        catalog.Features[index];
-                    Type type = ResolveFeatureType(
-                        definition != null
-                            ? definition.featureTypeName
-                            : string.Empty);
-                    if (type == null ||
-                        !MatchesProfile(definition, colorId))
-                    {
-                        continue;
-                    }
-
-                    activeTypes.Add(type);
-                }
-
-                IReadOnlyList<BlockFeature> features =
-                    ProjectDiscovery.GetComponents<BlockFeature>(
-                        gameObject);
-                var activeFeatures = new List<BlockFeature>();
+                RefreshFeatureBuffer();
+                bool active = colorObject.IsActive;
+                activeFeatures.Clear();
                 for (int index = 0; index < features.Count; index++)
                 {
                     BlockFeature feature = features[index];
@@ -113,17 +114,16 @@ namespace Project.BlockFeatures
                         continue;
                     }
 
-                    BlockAbilityDefinition definition =
-                        catalog.Find(feature.GetType().FullName);
-                    if (definition == null)
-                    {
-                        continue;
-                    }
-
-                    bool shouldEnable =
-                        activeTypes.Contains(feature.GetType());
-                    feature.enabled = shouldEnable;
-                    if (shouldEnable)
+                    string requiredColor =
+                        feature.Metadata.DefaultColorId;
+                    bool belongsToColor =
+                        string.IsNullOrWhiteSpace(requiredColor) ||
+                        string.Equals(
+                            requiredColor,
+                            colorObject.BaseColorTypeId,
+                            StringComparison.OrdinalIgnoreCase);
+                    feature.enabled = active && belongsToColor;
+                    if (feature.enabled)
                     {
                         activeFeatures.Add(feature);
                     }
@@ -134,8 +134,10 @@ namespace Project.BlockFeatures
                         out string validationMessage))
                 {
                     Debug.LogError(
-                        $"[BlockAbilityHost] {validationMessage}",
+                        $"[ColorObject] {validationMessage}",
                         this);
+                    DisableAllFeatures();
+                    runtime.RefreshFeatureSet(true);
                     return;
                 }
 
@@ -143,8 +145,8 @@ namespace Project.BlockFeatures
                 if (debugLog)
                 {
                     Debug.Log(
-                        $"[BlockAbilityHost] {name} -> {colorId} " +
-                        $"({activeTypes.Count} features)",
+                        $"[ColorObject] {name} -> " +
+                        $"{(active ? colorObject.BaseColorTypeId : "失效")}",
                         this);
                 }
             }
@@ -154,110 +156,58 @@ namespace Project.BlockFeatures
             }
         }
 
-        private void EnsureAllFeatures()
+        private void RefreshFeatureBuffer()
         {
-            BlockAbilityCatalog catalog =
-                BlockAbilityCatalogService.Load();
-            if (catalog == null)
-            {
-                return;
-            }
+            features.Clear();
+            GetComponents(features);
+        }
 
-            for (int index = 0; index < catalog.Features.Count; index++)
+        private void DisableAllFeatures()
+        {
+            for (int index = 0; index < features.Count; index++)
             {
-                BlockAbilityDefinition definition =
-                    catalog.Features[index];
-                Type type = ResolveFeatureType(
-                    definition != null
-                        ? definition.featureTypeName
-                        : string.Empty);
-                if (type == null ||
-                    !typeof(BlockFeature).IsAssignableFrom(type) ||
-                    GetComponent(type) != null)
+                if (features[index] != null)
                 {
-                    continue;
-                }
-
-                BlockFeature feature =
-                    (BlockFeature)gameObject.AddComponent(type);
-                if (feature != null)
-                {
-                    feature.enabled = false;
+                    features[index].enabled = false;
                 }
             }
         }
 
-        private bool MatchesProfile(
-            BlockAbilityDefinition definition,
-            string colorId)
+        private void OnActiveStateChanged(
+            IColorObject source,
+            bool active)
         {
-            if (definition == null)
+            if (ReferenceEquals(source, colorObject))
             {
-                return false;
+                RefreshActivation();
             }
-
-            return !string.IsNullOrWhiteSpace(
-                       definition.defaultColorId) &&
-                   string.Equals(
-                       definition.defaultColorId,
-                       colorId,
-                       StringComparison.OrdinalIgnoreCase);
         }
 
-        private string ResolveColorId()
+        private void OnRoomColorReset()
         {
-            if (colorBlock == null)
+            for (int index = 0; index < features.Count; index++)
             {
-                colorBlock = GetComponent<ColorBlock>();
-            }
-
-            if (colorBlock != null)
-            {
-                if (!string.IsNullOrEmpty(
-                        colorBlock.CurrentColorTypeId))
+                if (features[index] is IRoomColorResettable resettable)
                 {
-                    return colorBlock.CurrentColorTypeId;
+                    resettable.ResetForRoom();
                 }
-
-                return string.Empty;
             }
 
-            return string.Empty;
-        }
-
-        private void OnColorBlockChanged(
-            ColorBlock block,
-            string previous,
-            string current)
-        {
-            if (block != colorBlock)
+            DisableAllFeatures();
+            if (runtime != null)
             {
-                return;
+                runtime.RefreshFeatureSet(true);
             }
-
-            ApplyCurrentProfile();
-        }
-
-        private static Type ResolveFeatureType(string typeName)
-        {
-            if (string.IsNullOrEmpty(typeName))
-            {
-                return null;
-            }
-
-            Type type = typeof(BlockFeature).Assembly.GetType(
-                typeName);
-            return type ?? Type.GetType(typeName);
         }
 
         private static bool ValidateProfile(
-            List<BlockFeature> features,
+            List<BlockFeature> profileFeatures,
             out string message)
         {
             var counts = new Dictionary<Type, int>();
-            for (int index = 0; index < features.Count; index++)
+            for (int index = 0; index < profileFeatures.Count; index++)
             {
-                BlockFeature feature = features[index];
+                BlockFeature feature = profileFeatures[index];
                 Type type = feature.GetType();
                 BlockFeatureMetadata metadata =
                     BlockFeatureMetadataCache.Get(type);
@@ -276,7 +226,7 @@ namespace Project.BlockFeatures
                 {
                     Type required =
                         metadata.Requires[requirementIndex];
-                    if (!HasCapability(features, required))
+                    if (!HasCapability(profileFeatures, required))
                     {
                         message =
                             $"{metadata.DisplayName} 缺少依赖 " +
@@ -291,7 +241,7 @@ namespace Project.BlockFeatures
                 {
                     Type conflict =
                         metadata.Conflicts[conflictIndex];
-                    if (HasCapability(features, conflict))
+                    if (HasCapability(profileFeatures, conflict))
                     {
                         message =
                             $"{metadata.DisplayName} 与 " +
@@ -306,7 +256,7 @@ namespace Project.BlockFeatures
         }
 
         private static bool HasCapability(
-            List<BlockFeature> features,
+            List<BlockFeature> profileFeatures,
             Type capability)
         {
             if (capability == null)
@@ -314,38 +264,19 @@ namespace Project.BlockFeatures
                 return false;
             }
 
-            for (int index = 0; index < features.Count; index++)
+            for (int index = 0;
+                 index < profileFeatures.Count;
+                 index++)
             {
-                if (features[index] != null &&
-                    capability.IsInstanceOfType(features[index]))
+                if (profileFeatures[index] != null &&
+                    capability.IsInstanceOfType(
+                        profileFeatures[index]))
                 {
                     return true;
                 }
             }
 
             return false;
-        }
-
-        public static BlockAbilityHost EnsureOn(GameObject target)
-        {
-            if (target == null)
-            {
-                return null;
-            }
-
-            BlockAbilityHost host =
-                target.GetComponent<BlockAbilityHost>();
-            if (host != null)
-            {
-                return host;
-            }
-
-#if UNITY_EDITOR
-            return UnityEditor.Undo.AddComponent<BlockAbilityHost>(
-                target);
-#else
-            return target.AddComponent<BlockAbilityHost>();
-#endif
         }
     }
 }

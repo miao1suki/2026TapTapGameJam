@@ -1,5 +1,166 @@
 # 工作状态与交接（每次任务重读）
 
+## 当前规划地图固化为示例地图
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 来源：项目当前存档 `Library/PlanningEditorSaves/111.json`。
+- 资源：复制为 `Assets/_Project/Development/LevelEditor/Orpheus0829/PlanningEditorPrototype/Editor/DefaultPlanningMap.json`，随项目一起保存。
+- 行为：`PlanningDocument.CreateDefault()` 优先读取该 JSON 作为内置“示例地图”，解析失败或资源缺失时才回退旧代码示例。
+- 验证：Runtime/Editor 静态编译 0 错误；`git diff --check` 通过。
+
+## 能源方块合法邻格回弹修正
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 问题：`WouldTrapPlayer` 使用接近整格的 Bounds；玩家站在相邻格时与目标格仅贴边，`Bounds.Intersects` 仍返回 `true`，导致合法邻格被拒绝并回原位。
+- 修改：卡住玩家检测改为检查玩家碰撞体中心是否落入目标格核心区域；玩家站在相邻格、身体边缘伸进目标格时不再误判，只有玩家中心确实在目标格内才禁止放置。
+- 吸附：能源块开始拖拽时先把当前真实位置吸附到所属格中心，避免预制体根节点不在格中心时，拖动一格仍被换算回原格、表现为需要多拖一格。
+- 验证：Runtime/Editor 静态编译 0 错误；`git diff --check` 通过。
+
+## 弹性植物玩家侧落差与跨植物衰减
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 架构：`PlayerController` 管理当前下落高度、最近落地落差、落地向下速度、连续弹跳冷却和衰减倍率；弹性植物只根据玩家给出的本次落差计算并返回弹跳速度。
+- 接口：新增 `IPlayerBounceSurface`。玩家在真实落地时从脚下碰撞体获取弹跳表面并请求速度，植物不再依赖 `OnCollisionEnter/Stay` 猜测摔落。
+- 跨植物：连续弹跳衰减不再保存在单个植物上，玩家在不同弹性植物之间连续弹跳时不会因为换植物而重置衰减。
+- 输入：弹性植物顶面按住 S 时不会触发新弹跳，已有的向上弹跳速度会被 `PlayerController` 清零；已删除“按住跳跃提高 1.5 倍高度”的参数和计算。
+- 触发收口：摔落弹跳只在首次接触植物顶面时尝试，不再从 `OnCollisionStay` 的持续接触中补触发，避免走路进入后被判定为落地反弹。
+- 验证：Unity 6000.3.12f1 Runtime/Editor 静态编译 0 错误；`git diff --check` 通过。
+
+## 道具组件数值编辑覆盖隐藏子物体
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：`LevelEditorPropComponentEditorWindow` 的组件枚举。
+- 行为：预览从只枚举根物体组件改为递归枚举所有子物体组件并包含 inactive/disabled 组件；组件列表继续排除 Transform，数值覆盖按原有组件路径和索引保存。
+- 验证：Unity 6000.3.12f1 Runtime/Editor 静态编译 0 错误；`git diff --check` 通过。
+
+## 红蓝蒸汽与弹性落地修正
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 蒸汽：所有 `WaterVisualFeature` 蓝系组件统一新增红交互蒸汽参数：瞬间/持续、持续时长、推力、作用高度、热浪特效资源、瞬间特效停留。
+- 行为：红色作用于任意蓝系物体后不销毁该物体，在物体顶部生成热浪资源并按配置向上推玩家；持续模式期间重复施加推力，结束后清理热浪。
+- 弹性植物：把有效下落判定改为 `PlayerController` 自己记录最近离地时长和落地时间；即使测试玩家没有 `PlayerFallDamage`，只要满足最近确实处于下落状态就触发摔落弹跳。
+- 弹性植物第二轮：改用 `LandedThisStep` 判定真实落地，摔落弹跳改为立即写入 Rigidbody 竖直速度；同平面走入不会触发，落地反弹不再等下一物理步。
+- 弹性植物第三轮：`LandedThisStep` 只表示重新接地，仍会把走进高差误判为落地；现在额外记录空中最高点、落地真实下落距离和落地向下速度，只有 `LastAirTime`、下落距离或当前下落速度满足条件才触发。
+- 冷却熔岩：`CoolLava_Block` 的 BoxCollider 从触发器改为实体碰撞，可以直接站上去。
+- 验证：Unity 6000.3.12f1 Runtime/Editor 静态编译 0 错误；`git diff --check` 通过。
+
+## 藤蔓生长物独立组件
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 生长链：母藤蔓新增“生长物预制体”参数，`Green_Ladder.prefab` 绑定 `Green_LadderSon.prefab`。逐块/瞬间生长都只能生成该预制体，不再复制母藤蔓自身。
+- 组件：新增 `LadderSonFeature`，继承攀爬和出现动画能力；红色可以烧毁，蓝色浇灌不会再次生长，防止无限套娃。
+- Inspector：`BlockFeatureEditor` 现在沿完整继承链收集 `BlockParameter`，LadderSon 会完整显示与藤蔓相同的攀爬参数；生长参数仍按内部禁浇灌状态隐藏。
+- 弹性植物：补回有效落地记录，使用最近落地时间与最近下落距离作为碰撞回调期间的兜底，避免下落距离在碰撞前被清零导致完全失去反弹。
+- 验证：Unity 6000.3.12f1 Runtime/Editor 静态编译 0 错误；`git diff --check` 通过。
+
+## 移动平台载人修正
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：`MovingPlatformFeature` 的玩家承载链路。
+- 行为：平台只在玩家真正站在顶面时登记承载；平台每帧把自身位移作为命令交给 `PlayerController`，由玩家的 Rigidbody 在自己的 FixedUpdate 中应用，不再直接改玩家 Transform。
+- 收紧：承载登记要求玩家处于接地状态、脚底接近平台顶面且中心在平台水平范围内；侧面/角接触法线阈值提高到 0.8，半空擦到平台不会登记为承载。
+- 边界：不把玩家挂成平台子物体，避免 Rigidbody 与移动父物体产生双重位移和物理抖动；离开顶面、侧面接触或碰撞结束时立即取消承载。
+- 验证：Unity 6000.3.12f1 Runtime/Editor 静态编译 0 错误；`git diff --check` 通过。
+
+## 点击染色与气泡柱持续上浮修复
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 点击染色：左键射线改为直接查找 `IColorApplicationTarget`；`BlockFeature` 统一实现接色入口，水域、水流、气泡、岩浆、藤蔓、植物障碍和弹性植物补上直接反应路径。
+- 反应：红色清除绿色物；蓝色让藤蔓生长；红色可通过预制体参数替换蓝色物；蓝色作用于岩浆。
+- 气泡柱：删除“上方必须有蓝系物体”和“最高顶起格数”条件；默认推力翻倍到 7。持续跟踪玩家，玩家碰撞体与任意蓝色物的垂直重叠超过自身高度一半时保持浮力和气泡水状态；露出超过一半后立即移除气泡水状态、清空浮力并清除剩余向上速度，避免继续冲高；重新下沉会立即恢复上浮，横移离开气泡列或落到气泡下方才清除状态。
+- 气泡柱进入/离开：原先触发体和“气泡列保留”使用两套横向范围，轻微离开可能先被移除跟踪，再回来时不会重新触发。现在统一用气泡碰撞体与玩家碰撞体的实际横向重叠范围判断，回到重叠范围后立即恢复跟踪和上浮。
+- 弹性植物：扩大顶部接触容差，增加碰撞停留兜底，降低默认最短触发间隔；新增“连续弹跳衰减比例”、“衰减重置时间”和“最低弹跳高度（格）”。只有存在有效下落距离时才触发摔落弹跳，同平面走入不再自动弹；连续衰减后的预测高度低于最低弹跳高度时不再触发。
+- 验证：Unity 6000.3.12f1 Runtime/Editor 静态编译 0 错误；`git diff --check` 通过。
+
+## 藤蔓顶面与弹性植物高跳修正
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 藤蔓：进入攀爬前新增侧向接近判定；玩家站在藤蔓顶面时不再进入攀爬，离开侧向范围后正常退出。
+- 弹性植物：顶部接触优先按碰撞体上下边界判断；默认基础弹速提高到 14，摔落转化提高到 1.8，最大弹速提高到 28，保证跳跃和摔落都能形成明显高跳。
+- 边界：不修改玩家基础跳跃参数，不修改其他绿色功能组件。
+
+## 冷却熔岩深蓝高对比材质
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：`CoolLava_Block` 预制体的表现材质。
+- 行为：新增独立 `CoolLava_Block` 材质，沿用红蓝绿同一套描边 Shader，基础色为深蓝，轮廓保持黑色。
+- 边界：不修改 `Color_blue` 等共享颜色材质，也不修改预制体碰撞、组件、位置或替换逻辑。
+
+## 融合编辑器栏目紧凑排版
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：仅调整右侧“方块 / 道具放置器”的栏目布局。
+- 行为：方块栏目滚动区改为和道具栏目一致的一行内容高度，超出后在栏目内部滚动；道具栏目紧跟方块栏目，不再被方块栏目的固定空白推开。
+- 边界：不修改栏目数据、贴画、组件模板、放置、拖拽或场景生成逻辑。
+- 验证：Unity 6000.3.12f1 `Assembly-CSharp-Editor.rsp` 静态编译 0 错误；`git diff --check` 通过。
+
+## 固定功能组件第一版
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：新增 `Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features`，实现红色机关/危险物、蓝色水域、绿色植物三类固定功能组件，并挂到 12 个 `Red_* / Blue_* / Green_*` 玩法预制体。
+- 红色：`LavaHazardFeature`、`MechanismBaseFeature`、`ButtonLockFeature`、`CrankPlatformFeature`、`MovingPlatformFeature`；另外准备 `LiftFeature`、`SpikeFeature`、`LadderFeature`，等待对应预制体。
+- 机关补充：`Red_Battery` 改为 `EnergyBlockFeature`，只有能源方块允许迁移；`Red_Foundation` 的 `MechanismBaseFeature` 只检测贴贴能源并作为 `IMechanismSignalSource` 输出；按钮改为无实体阻挡的交互目标；曲柄改为长按交互推进。
+- 蓝色：`WaterSourceFeature`、`DirectionalCurrentFeature`、`BuoyancyColumnFeature`。
+- 绿色：`ClimbableVineFeature`、`BouncePlantFeature`、`PlantObstacleFeature`。
+- 接口边界：玩家接触统一走 `IPlayerContactReceiver`；机关供电/接收预留 `IMechanismSignalSource`、`IMechanismSignalReceiver`；红绿、蓝绿、红蓝互相反应暂不实现，只保留类型安全接口和 TODO 口径。
+- 输入特例：`Interact` 固定为“点击 + 长按”，按键映射不能把它改成仅点击或仅长按；玩家输入驱动同时分发 `IInteractionTarget` 和 `IInteractionHoldTarget`。所有 `BlockFeature` 新增 `IFeatureVisualTarget` 专属材质和渲染器接口。
+- 蓝色表现：三种蓝色功能组件统一继承 `WaterVisualFeature`，蓝钥匙解锁时从 `ColorCatalog.blueWaterPrefab` 实例化队友水体，并暴露水体预制体、本地偏移和缩放。
+- 第二轮校正：除岩浆外取消坠落伤害；水泡改为格数最高顶起和标签识别；水流改为左右枚举；弹跳植物改为摔落/跳跃/两者模式；按钮改为材质拉杆；曲柄改为每秒进度和无人回弹动画；基座改为四方向网格检测；能源方块加入顺时针/逆时针一格迁移；移动平台改为格数、强制载人、Tag 选择和任一/全部开关逻辑；水域和水泡不再暴露摔落免疫，玩家控制器与坠落记录中的免疫栈一并删除。
+- 第三轮校正：`LevelEditorPlacedBlock` 记录并实现 `IGridCellSizeProvider`；能源、曲柄、基座、移动平台、水泡删除组件内每格尺寸字段，统一读取关卡格子世界尺寸。藤蔓不再配置独立段预制体、段高、动画时长或缩放曲线，直接克隆自身向上生成，逐块生长时每块播放自身出现动画，瞬间长完时只播放最上方新块。机关控制方向收口为平台等消费者绑定基座/按钮/曲柄，基座不再持有绑定机关列表。
+- 第四轮校正：浮力水柱上方蓝系检测从世界单位距离/半径改为“向上检测高度（格）”和“横向检测宽度（格）”；检测盒从气泡上边缘开始，按关卡格子世界尺寸换算。
+- 第五轮校正：`PlayerColorWheel` 左键从“交互圈内最近目标”改为“屏幕射线命中最靠前可交互物体，再检查是否在交互圈内”；圈外和 UI 点击不响应。万能方块继续作为前期辅助代理，由点击目标转发颜色。
+- 万能方块校正：删除单目标字段，自身改为纯色材质，向左右上下四个紧邻的 `IColorApplicationTarget` 广播颜色；新增“持续染色 / 过一会褪色”模式和褪色延迟秒数，Inspector 显示当前颜色、倒计时和广播目标数。
+- 第六轮校正：`Tab/F` 只开关染色轮盘，`E` 负责交互，左键只执行已选颜色染色；删除玩家驱动的 2D/3D 切换。水族水体按格子中心对齐；藤蔓改为实体阻挡并按格进入攀爬，支持自然下滑、S 加速下滑、空格固定与 AD 离开；弹跳植物改为实体碰撞单次弹跳；按钮增加按格交互半径；移动平台碰到方块后反向。
+- 马夫/马修正：`PlayerInputDriver` 读取输入后只调用 `PlayerController` 的轮盘、移动、跳跃和交互命令；`PlayerColorWheel` 不再直接读取 `GameInput`。
+- 字幕展示道具：为 `DisplayBlock.prefab` 接入 `DisplayBlockFeature`，运行时隐藏碰撞体和方块外观，创建世界空间 TMP 文字；支持内容、字体、相对方块高度的字号比例、颜色、九宫格相对位置、左中右对齐，以及相对 `Player` Renderer 的上方/下方排序。
+- 能源方块拖拽校正：删除一格瞬移方案，改为交互圈内长按“搬运”键拿起、鼠标网格吸附拖拽、松手放下；搬运键默认右键并锁定长按。拖动时全输入锁住、碰撞关闭、渲染最上层，目标无效回原位，原位无效则从原位发散寻找合法格，并禁止放到会卡住玩家的格子。
+- 输入与拖拽修正：`Carry` 缺失 action 时自动补右键/手柄北键；编辑器刷新也会修复旧资产，键盘“＋添加”可直接进入听取。拖拽位置限制在玩家交互范围圈内，松手强制结束拖拽并恢复全部控制；“调色”动作允许选择点击或长按，点击式为开关，长按式为按住。
+- 道具演示标签：道具栏目新增 16 个复用 `DisplayBlock` 的字幕展示条目，排除已有字幕块和锚点；条目名使用 `字幕：xx道具`，`DisplayBlockFeature.text` 覆盖为对应道具名，用于摆放在功能道具旁做演示。
+- 预制体：需要接触的玩法物改为 Trigger；移动平台和植物障碍保持实体碰撞。每个玩法物只挂一个固定功能组件。`PlayerHealthHud` 已从玩家预制体和源码中删除，岩浆保持一碰即死。
+- 验证：Runtime/Editor 静态编译 0 错误；已实现 15 个固定功能组件，12 个现有预制体均已挂载对应组件；玩家水体推动与浮力已并入 `PlayerController` 游泳速度计算；`git diff --check` 通过。PlayMode 手感、碰撞矩阵和实际水体表现待 Unity 内复验。
+- 交接提交：待提交。
+
+## 示例地图道具大厅重建
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：重建 `PlanningDocument.CreateDefault()` 内置示例地图；不修改正式关卡场景。
+- 布局：R1 扩为 3×1 世界格道具大厅，18 个现有道具分两层陈列；玩家起点记录在大厅地面并随示例地图读取时同步到已引用的场景玩家。
+- 其他房间：R2-R5 改为地面高度一致的红色机关、蓝色水流、绿色攀爬和终点预留房；通道按各房间地板高度连接，避免悬空或断线。
+- 验证：Runtime/Editor 静态编译 0 错误；示例地图包含 18 个道具引用，ID 全部存在且无重复；`git diff --check` 通过。
+- 交接提交：待提交。
+- 后续调整：R1 扩为 7×2 世界格，改为单层测试长厅；玩家和三把钥匙集中在最左侧，其余道具按通用展示、红色、蓝色、绿色连续分区，一屏地面内逐个检查功能。
+
+## 万能方块预制体基础环境
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：整理用户新增的 `Assets/_Project/Content/ColorBlocks/Prefabs/Universal_Block.prefab`。
+- 行为：预制体改为只保留 Mesh、Collider、Renderer 和 `UniversalColorBlock`；状态渲染器指向自身 Renderer，使用中性材质，层恢复为 Default。移除误挂的 `ColorObject`、`BlockRuntime` 和 `BlockAbilityHost`，避免万能方块被当成红色解锁物体。
+- 栏目：关卡编辑器道具栏目已有“万能方块”入口，本轮不重复新增。
+- 验证：预制体结构、道具栏目引用和中性材质已核对；Runtime/Editor 静态编译 0 错误；`git diff --check` 通过。
+- 交接提交：待提交。
+
+## 颜色大洗牌完整性审计与护栏清理
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：全项目审计旧交互图代码、资产 GUID、预制体挂载、关卡编辑器栏目职责、颜色对象职责、玩家选色入口、文档和退役 Skill。
+- 清理：删除已无引用的 `ColorBlock` 过渡适配器、`ColorBlock_*` 预制体及其编辑器入口；保留 `ColorCatalog` 的水体预制体引用，只移除旧的自动生成水体逻辑；移除方块栏目残留的三色管理字段、校验和默认栏目；停止给普通墙块自动补 `BlockAbilityHost`；删除轮盘遗留的待执行目标路径；删除退役交互图 Skill 中的旧正文。
+- 边界：不改场景文件，用户将在预制体和生成逻辑清理后重建场景；不新增水源、水流、岩浆、机关等具体玩法。
+- 验证：Runtime/Editor 静态编译 0 错误；`git diff --check` 通过；旧类型、旧 GUID、栏目字段和预制体挂载的非场景引用清零。`Assets/Scenes/Test.unity` 与 `Assets/RoyTest/RoyTestScene.unity` 仍保留待重建的旧三色预制体实例，本轮按用户要求不修改场景。
+- 交接提交：待提交。
+
+## 颜色大洗牌结构迁移
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：删除旧物体交互图运行时、GraphView、编辑器同步、Definitions/Catalog 和动态能力目录；把现有 `ColorBlock` 改成固定颜色状态过渡组件；新增 `ColorObject`、`IColorObject`、`IColorApplicationTarget`、`IColorApplicationProxy`、`UniversalColorBlock`；把 `BlockAbilityHost` 改成只启停预制体已有 `BlockFeature` 的薄宿主；钥匙和颜色应用改为直接路径。
+- 删除：`InteractionManager`、`InteractionGraph`、`InteractionObject`、`InteractionObjectDefinition`、`InteractionObjectCatalog`、交互图和定义编辑器、图资产、`BlockAbilityCatalog` 与动态目录；移除关卡编辑器中的交互入口和序列化字段。
+- 保留：`ColorRuntimeService`、`HSVColorFadeManager`、`InteractiveWater`、`ColorKeyPickup`、玩家生命/水体/攀爬/轮盘相关能力，以及锚点、藤蔓、弹跳等具体玩法组件。
+- 边界：本阶段只完成结构迁移和固定颜色启停，不新增水源、水流、浮力、岩浆、机关等具体玩法；旧 `BlockWaterFeature`、`BlockVineFeature`、`BlockPowerFeature` 已删除，颜色 prefab 当前只保留渲染、碰撞、`ColorBlock`、`BlockRuntime` 和 `BlockAbilityHost` 占位骨架。
+- 约束扩充：`BlockFeatureAttribute` 新增 `Category` 和 `Interactions`，基础接口新增 `IPlayerContactReceiver`、`IObjectContactReceiver`、`IColorReactionReceiver`，`BlockFeature` 实现 `IRoomColorResettable`，为后续固定形态组件提供统一约束。
+- 验证：Runtime/Editor Roslyn 静态编译 0 错误；图类型、图资产和旧动态能力目录引用已清零；待 Unity 重新导入后复验预制体、场景和 Inspector。
+- 栏目边界：方块栏目只保存地图墙壁、地形和几何碰撞；红蓝绿玩法预制体全部通过道具栏目放置。已配置玩法预制体位于 `Assets/_Project/Content/ColorBlocks/Prefabs`，使用 `Red_*`、`Blue_*`、`Green_*` 命名。
+- 预制体骨架：12 个颜色玩法 prefab 已从过渡 `ColorBlock` 切换为 `ColorObject`，当前只保留渲染、碰撞、`BlockRuntime` 和 `BlockAbilityHost`；旧具体功能组件已从代码和 prefab 中移除。
+- 交接提交：待提交。
+
 ## 颜色大洗牌 Skill 强制入口
 
 - 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。

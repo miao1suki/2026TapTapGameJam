@@ -47,6 +47,8 @@ namespace Project.InputAbstraction
                     return "跳跃";
                 case InputActionId.Interact:
                     return "交互";
+                case InputActionId.Carry:
+                    return "搬运";
                 case InputActionId.Cancel:
                     return "取消";
                 case InputActionId.Submit:
@@ -76,6 +78,7 @@ namespace Project.InputAbstraction
         ClickOnly = 0,
         HoldOnly = 1,
         Switchable = 2,
+        ClickAndHold = 3,
     }
 
     public static class InputActionInteractionPolicy
@@ -90,12 +93,35 @@ namespace Project.InputAbstraction
                    InputActionTriggerPolicy.Switchable;
         }
 
+        public static bool IsClickAndHold(
+            InputActionId actionId)
+        {
+            return GetPolicy(actionId) ==
+                   InputActionTriggerPolicy.ClickAndHold;
+        }
+
         public static InputActionTriggerPolicy GetPolicy(
             InputActionId actionId)
         {
+            if (actionId == InputActionId.CameraModeSwitch)
+            {
+                return InputActionTriggerPolicy.Switchable;
+            }
+
+            if (actionId == InputActionId.Carry)
+            {
+                return InputActionTriggerPolicy.HoldOnly;
+            }
+
+            if (actionId == InputActionId.Interact)
+            {
+                return InputActionTriggerPolicy.ClickAndHold;
+            }
+
             InputActionTriggerPolicy defaultPolicy =
                 actionId == InputActionId.Crouch ||
-                actionId == InputActionId.Sprint
+                actionId == InputActionId.Sprint ||
+                actionId == InputActionId.CameraModeSwitch
                     ? InputActionTriggerPolicy.Switchable
                     : InputActionTriggerPolicy.ClickOnly;
             int value = PlayerPrefs.GetInt(
@@ -104,13 +130,19 @@ namespace Project.InputAbstraction
             return (InputActionTriggerPolicy)Mathf.Clamp(
                 value,
                 (int)InputActionTriggerPolicy.ClickOnly,
-                (int)InputActionTriggerPolicy.Switchable);
+                (int)InputActionTriggerPolicy.ClickAndHold);
         }
 
         public static void SetPolicy(
             InputActionId actionId,
             InputActionTriggerPolicy policy)
         {
+            if (actionId == InputActionId.Interact ||
+                actionId == InputActionId.Carry)
+            {
+                return;
+            }
+
             PlayerPrefs.SetInt(
                 PreferencePrefix + actionId,
                 (int)policy);
@@ -174,7 +206,13 @@ namespace Project.InputAbstraction
                 value = Mathf.Clamp(
                     value,
                     (int)InputActionTriggerPolicy.ClickOnly,
-                    (int)InputActionTriggerPolicy.Switchable);
+                    (int)InputActionTriggerPolicy.ClickAndHold);
+                if (actionIds[index] == InputActionId.Interact ||
+                    actionIds[index] == InputActionId.Carry)
+                {
+                    continue;
+                }
+
                 PlayerPrefs.SetInt(
                     PreferencePrefix + actionIds[index],
                     value);
@@ -214,9 +252,11 @@ namespace Project.InputAbstraction
                 }
 
                 string interaction =
-                    GetInteraction(
-                        GetPolicy(actionId),
-                        action);
+                    actionId == InputActionId.Carry
+                        ? string.Empty
+                        : GetInteraction(
+                            GetPolicy(actionId),
+                            action);
                 for (int bindingIndex = 0;
                      bindingIndex < action.bindings.Count;
                      bindingIndex++)
@@ -280,6 +320,8 @@ namespace Project.InputAbstraction
             {
                 case InputActionTriggerPolicy.HoldOnly:
                     return "Hold";
+                case InputActionTriggerPolicy.ClickAndHold:
+                    return string.Empty;
                 case InputActionTriggerPolicy.Switchable:
                     return HasHoldBinding(action)
                         ? "Hold"

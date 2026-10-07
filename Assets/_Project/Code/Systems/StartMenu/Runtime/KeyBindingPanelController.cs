@@ -226,8 +226,8 @@ namespace Project.StartMenu
             UpdateTabVisuals();
             lastGamepadConnected = Gamepad.current != null;
             statusText.text = service.IsPreviewOnly
-                ? "预览模式：可以测试改键，不会修改正式映射；移动固定只读。"
-                : "移动固定为默认键位；其他操作点击按键框后开始接听。";
+                ? "预览模式：可以测试改键，不会修改正式映射；移动固定只读，交互固定同时支持点击和长按。"
+                : "移动固定为默认键位；交互固定同时支持点击和长按；其他操作点击按键框后开始接听。";
         }
 
         private bool TryFindBinding(
@@ -335,10 +335,14 @@ namespace Project.StartMenu
                 editable &&
                 binding.IsButton &&
                 InputActionInteractionPolicy.CanConfigureTrigger(actionId);
+            bool clickAndHold =
+                InputActionInteractionPolicy.IsClickAndHold(actionId);
             Button trigger = StartMenuUiFactory.CreateButton(
                 "Trigger",
                 row.transform,
-                switchable
+                clickAndHold
+                    ? "点击+长按"
+                    : switchable
                     ? binding.Trigger == InputBindingTrigger.Hold
                         ? "长按"
                         : "点击"

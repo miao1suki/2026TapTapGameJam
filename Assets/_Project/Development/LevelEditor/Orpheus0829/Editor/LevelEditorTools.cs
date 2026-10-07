@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using Project.BlockFeatures;
 using Project.ColorBlocks;
 using Project.LevelEditor;
 using Project.SurfaceTiles;
@@ -508,9 +507,6 @@ namespace Project.LevelEditor.Editor
 
         private static void AddDefaultEntries(LevelEditorPalette palette)
         {
-            AddManagedColorEntry(palette, "red", "红方块", new Color(1f, .25f, .25f));
-            AddManagedColorEntry(palette, "blue", "蓝方块", new Color(.22f, .52f, 1f));
-            AddManagedColorEntry(palette, "green", "绿方块", new Color(.25f, .8f, .38f));
             AddEntry(palette, "黑方块", new Color(.08f, .08f, .08f), null);
             AddEntry(palette, "白方块", new Color(.95f, .95f, .95f), null);
             AddDefaultColorKey(palette, "red", "红色钥匙");
@@ -526,70 +522,6 @@ namespace Project.LevelEditor.Editor
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (prefab != null) AddProp(palette, displayName, prefab);
             else Debug.LogError($"关卡道具栏目缺少颜色钥匙预制体：{path}");
-        }
-
-        private static void AddManagedColorEntry(
-            LevelEditorPalette palette,
-            string typeId,
-            string displayName,
-            Color previewColor)
-        {
-            string path = "Assets/_Project/Content/ColorBlocks/Prefabs/ColorBlock_" +
-                          typeId + ".prefab";
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            int index = AddEntry(
-                palette,
-                displayName,
-                previewColor,
-                prefab,
-                LevelEditorBlockMode.Prefab);
-            if (index < 0)
-            {
-                return;
-            }
-
-            palette.Entries[index].SetManagedColorType(typeId);
-            EditorUtility.SetDirty(palette);
-            AssetDatabase.SaveAssetIfDirty(palette);
-            if (!palette.Entries[index].HasValidManagedColorPrefab)
-            {
-                Debug.LogError($"关卡栏目“{displayName}”未找到有效的 {typeId} 颜色方块预制体：{path}");
-            }
-        }
-
-        internal static bool TryValidateManagedColorEntry(
-            LevelEditorBlockEntry entry,
-            out string message)
-        {
-            message = string.Empty;
-            if (entry == null || string.IsNullOrEmpty(entry.ManagedColorTypeId))
-            {
-                return true;
-            }
-
-            if (!entry.HasValidManagedColorPrefab)
-            {
-                message = $"栏目“{entry.DisplayName}”必须使用基础色为 {entry.ManagedColorTypeId} 的 ColorBlock 预制体。";
-                return false;
-            }
-
-            ColorCatalog catalog = AssetDatabase.LoadAssetAtPath<ColorCatalog>(
-                "Assets/_Project/Resources/ColorBlocks/ColorCatalog.asset");
-            ColorTypeDefinition definition = catalog != null
-                ? catalog.Find(entry.ManagedColorTypeId) : null;
-            if (definition == null)
-            {
-                message = $"颜色目录中没有栏目“{entry.DisplayName}”对应的 {entry.ManagedColorTypeId} 类型。";
-                return false;
-            }
-
-            if (entry.Prefab.layer != definition.unityLayer)
-            {
-                message = $"栏目“{entry.DisplayName}”的预制体层与颜色目录不一致。";
-                return false;
-            }
-
-            return true;
         }
 
         private static void EnsureEntryIds(LevelEditorPalette palette)
@@ -733,14 +665,6 @@ namespace Project.LevelEditor.Editor
                 return null;
             }
 
-            if (!LevelEditorPaletteService.TryValidateManagedColorEntry(
-                    entry,
-                    out string validationMessage))
-            {
-                Debug.LogError(validationMessage);
-                return null;
-            }
-
             LevelEditorPlacedBlock existing = FindAt(cell);
             if (existing != null)
             {
@@ -804,8 +728,9 @@ namespace Project.LevelEditor.Editor
                 cell,
                 entry.DisplayName,
                 entry.Color,
-                !entry.UsesPrefabDirectly);
-            BlockAbilityHost.EnsureOn(instance);
+                !entry.UsesPrefabDirectly,
+                false,
+                LevelEditorState.CellSize);
             if (!entry.UsesPrefabDirectly)
             {
                 LevelEditorDecorationService.ApplyToPlacedBlock(
@@ -861,7 +786,8 @@ namespace Project.LevelEditor.Editor
                 entry.DisplayName,
                 Color.white,
                 false,
-                true);
+                true,
+                LevelEditorState.CellSize);
             Undo.RegisterCreatedObjectUndo(instance, "放置关卡道具");
             MarkDirty(instance.scene);
             Selection.activeGameObject = instance;
@@ -1060,9 +986,9 @@ namespace Project.LevelEditor.Editor
             LevelEditorPlacedBlock placed = merged.GetComponent<LevelEditorPlacedBlock>() ??
                 Undo.AddComponent<LevelEditorPlacedBlock>(merged);
             placed.Configure(new Vector2Int(minX, minY), first.EntryName,
-                first.EntryColor, prefab == null);
+                first.EntryColor, prefab == null, false,
+                LevelEditorState.CellSize);
             placed.SetSizeCells(new Vector2Int(width, height));
-            BlockAbilityHost.EnsureOn(merged);
             if (prefab == null)
                 merged.GetComponent<MeshRenderer>().sharedMaterial = first.GetComponent<MeshRenderer>().sharedMaterial;
             foreach (LevelEditorPlacedBlock block in blocks)
@@ -1082,7 +1008,7 @@ namespace Project.LevelEditor.Editor
             foreach (MonoBehaviour behaviour in block.GetComponents<MonoBehaviour>())
                 if (behaviour != null &&
                     !(behaviour is LevelEditorPlacedBlock) &&
-                    !(behaviour is ColorBlock)) return false;
+                    !(behaviour is IColorObject)) return false;
             return true;
         }
 
@@ -1094,7 +1020,6 @@ namespace Project.LevelEditor.Editor
             for (int index = 0; index < blocks.Count; index++)
             {
                 LevelEditorPlacedBlock block = blocks[index];
-                BlockAbilityHost.EnsureOn(block.gameObject);
                 bool isPlainPrimitive =
                     PrefabUtility.GetPrefabInstanceStatus(
                         block.gameObject) == PrefabInstanceStatus.NotAPrefab &&
@@ -1117,6 +1042,17 @@ namespace Project.LevelEditor.Editor
 
                 if (block.HasColorData)
                 {
+                    if (!Mathf.Approximately(
+                            block.CellWorldSize,
+                            scale))
+                    {
+                        Undo.RecordObject(
+                            block,
+                            "同步关卡格子尺寸");
+                        block.SetCellWorldSize(scale);
+                        EditorUtility.SetDirty(block);
+                    }
+
                     block.ApplyEntryColor();
                     continue;
                 }
@@ -1130,7 +1066,9 @@ namespace Project.LevelEditor.Editor
                     entry != null ? entry.Color : Color.white,
                     entry != null
                         ? !entry.UsesPrefabDirectly
-                        : isPlainPrimitive);
+                        : isPlainPrimitive,
+                    false,
+                    scale);
                 EditorUtility.SetDirty(block);
                 if (block.gameObject.scene.IsValid())
                 {

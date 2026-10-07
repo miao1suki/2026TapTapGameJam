@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 8779515136228536552}
   - component: {fileID: 3727125217599009771}
   - component: {fileID: 2675603261592782017}
-  - component: {fileID: 1400244743616969296}
   m_Layer: 0
   m_Name: ColorKey_red
   m_TagString: Untagged
@@ -151,17 +150,3 @@ MonoBehaviour:
   revealDuration: 1.5
   orthographicZoomOut: 1.6
   cameraReturnDuration: 0.85
---- !u!114 &1400244743616969296
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6622805535834104132}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed3ea2b373d54218a69c408da9105e34, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.InteractionObject
-  definition: {fileID: 11400000, guid: 06536bd293ccada4a81c5169488dd935, type: 2}
-  currentColorTypeId: 

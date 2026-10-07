@@ -63,6 +63,12 @@ namespace Project.InputAbstraction
             InputActionCatalog.EnsureDefaultMoveBindings(asset);
         }
 
+        public static void EnsureRequiredActions(
+            InputActionAsset asset)
+        {
+            InputActionCatalog.EnsureRequiredActions(asset);
+        }
+
         public void SetExternalSource(IInputSource source)
         {
             externalSource = source;
@@ -147,7 +153,7 @@ namespace Project.InputAbstraction
                 InputBindingOverrideStore.Apply(sourceAsset);
                 InputActionInteractionPolicy.Normalize(
                     sourceAsset);
-                InputActionCatalog.EnsureDefaultMoveBindings(
+                InputActionCatalog.EnsureRequiredActions(
                     sourceAsset);
                 unitySource = new UnityInputSource(
                     sourceAsset,

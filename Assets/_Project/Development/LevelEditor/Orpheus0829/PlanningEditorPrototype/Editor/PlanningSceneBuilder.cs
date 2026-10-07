@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Project;
-using Project.BlockFeatures;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
 using Project.SurfaceTiles;
@@ -13,7 +12,8 @@ namespace PlanningEditorPrototype
 {
     internal static class PlanningSceneBuilder
     {
-        private const float CellSize = 1f;
+        private static float CellSize =>
+            Mathf.Max(.05f, LevelEditorState.CellSize);
         private const int RoomGap = 6;
         private const string RoomRootPrefix = "__PlanningRoom_";
         private const string MapRootName = "__PlanningMapGenerated";
@@ -198,20 +198,6 @@ namespace PlanningEditorPrototype
             if (palette == null || palette.Entries.Count == 0)
             {
                 message = "关卡编辑器还没有可用方块栏目。";
-                return false;
-            }
-
-            for (int index = 0; index < palette.Entries.Count; index++)
-            {
-                LevelEditorBlockEntry entry = palette.Entries[index];
-                if (LevelEditorPaletteService.TryValidateManagedColorEntry(
-                        entry,
-                        out string validationMessage))
-                {
-                    continue;
-                }
-
-                message = validationMessage + " 原场景未改动。";
                 return false;
             }
 
@@ -525,7 +511,7 @@ namespace PlanningEditorPrototype
             Vector2Int cell,
             Transform parent)
         {
-            if (entry == null || !entry.HasValidManagedColorPrefab)
+            if (entry == null)
             {
                 return null;
             }
@@ -575,8 +561,9 @@ namespace PlanningEditorPrototype
                 sceneCell,
                 entry.DisplayName,
                 entry.Color,
-                !entry.UsesPrefabDirectly);
-            BlockAbilityHost.EnsureOn(instance);
+                !entry.UsesPrefabDirectly,
+                false,
+                CellSize);
             if (!entry.UsesPrefabDirectly)
             {
                 LevelEditorDecorationService.ApplyToPlacedBlock(
@@ -734,7 +721,8 @@ namespace PlanningEditorPrototype
                 prop.DisplayName,
                 Color.white,
                 false,
-                true);
+                true,
+                CellSize);
             Undo.RegisterCreatedObjectUndo(instance, "生成规划道具");
             return placed;
         }

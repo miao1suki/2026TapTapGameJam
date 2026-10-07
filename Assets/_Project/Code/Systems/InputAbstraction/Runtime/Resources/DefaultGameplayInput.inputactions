@@ -145,6 +145,16 @@
           "interactions": "",
           "initialStateCheck": false,
           "priority": 0
+        },
+        {
+          "name": "Carry",
+          "type": "Button",
+          "id": "10000000-0000-0000-0000-000000000015",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": false,
+          "priority": 0
         }
       ],
       "bindings": [
@@ -552,6 +562,28 @@
           "processors": "",
           "groups": "Keyboard&Mouse",
           "action": "PointerSecondary",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "10000000-0000-0000-0000-000000000137",
+          "path": "<Mouse>/rightButton",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "Carry",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "10000000-0000-0000-0000-000000000138",
+          "path": "<Gamepad>/buttonNorth",
+          "interactions": "",
+          "processors": "",
+          "groups": "Gamepad",
+          "action": "Carry",
           "isComposite": false,
           "isPartOfComposite": false
         }

@@ -1,13 +1,16 @@
+using Project.BlockFeatures;
 using Project.SurfaceTiles;
 using UnityEngine;
 
 namespace Project.LevelEditor
 {
     [DisallowMultipleComponent]
-    public sealed class LevelEditorPlacedBlock : MonoBehaviour
+    public sealed class LevelEditorPlacedBlock : MonoBehaviour,
+        IGridCellSizeProvider
     {
         [SerializeField] private Vector2Int cell;
         [SerializeField] private Vector2Int sizeCells = Vector2Int.one;
+        [SerializeField, Min(.01f)] private float cellWorldSize = 1f;
         [SerializeField] private string entryName;
         [SerializeField] private Color entryColor = Color.white;
         [SerializeField] private bool useEntryColor;
@@ -16,6 +19,7 @@ namespace Project.LevelEditor
 
         public Vector2Int Cell => cell;
         public Vector2Int SizeCells => new Vector2Int(Mathf.Max(1, sizeCells.x), Mathf.Max(1, sizeCells.y));
+        public float CellWorldSize => Mathf.Max(.01f, cellWorldSize);
         public bool ContainsCell(Vector2Int value) =>
             value.x >= cell.x && value.y >= cell.y &&
             value.x < cell.x + SizeCells.x && value.y < cell.y + SizeCells.y;
@@ -29,7 +33,8 @@ namespace Project.LevelEditor
             string valueEntryName,
             Color valueColor,
             bool valueUseEntryColor,
-            bool valueIsProp = false)
+            bool valueIsProp = false,
+            float valueCellWorldSize = 1f)
         {
             cell = valueCell;
             entryName = valueEntryName;
@@ -38,7 +43,13 @@ namespace Project.LevelEditor
             hasColorData = true;
             isProp = valueIsProp;
             sizeCells = Vector2Int.one;
+            SetCellWorldSize(valueCellWorldSize);
             ApplyEntryColor();
+        }
+
+        public void SetCellWorldSize(float value)
+        {
+            cellWorldSize = Mathf.Max(.01f, value);
         }
 
         public void SetSizeCells(Vector2Int value)

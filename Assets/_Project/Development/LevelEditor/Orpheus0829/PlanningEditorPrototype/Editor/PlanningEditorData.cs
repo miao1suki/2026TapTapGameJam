@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Project.LevelEditor;
+using UnityEditor;
 using UnityEngine;
 
 namespace PlanningEditorPrototype
@@ -250,6 +251,10 @@ namespace PlanningEditorPrototype
     [Serializable]
     public sealed class PlanningDocument
     {
+        private const string DefaultMapAssetPath =
+            "Assets/_Project/Development/LevelEditor/Orpheus0829/" +
+            "PlanningEditorPrototype/Editor/DefaultPlanningMap.json";
+
         public string name = "未命名地图";
         public int worldBlockCellWidth = 16;
         public int worldBlockCellHeight = 16;
@@ -259,6 +264,8 @@ namespace PlanningEditorPrototype
         public List<PlanningLock> locks = new List<PlanningLock>();
         public List<PlanningBox> assemblyPatches =
             new List<PlanningBox>();
+        public string playerStartRoomId;
+        public Vector2 playerStartLocal = new Vector2(2.5f, 12f);
 
         public static string NewId(string prefix)
         {
@@ -269,42 +276,84 @@ namespace PlanningEditorPrototype
 
         public static PlanningDocument CreateDefault()
         {
+            PlanningDocument embedded = LoadEmbeddedDefault();
+            if (embedded != null)
+            {
+                embedded.name = "示例地图";
+                embedded.Normalize();
+                return embedded;
+            }
+
             var document = new PlanningDocument();
             PlanningRoom start = AddRoom(
                 document,
-                "R1 起点",
-                new Vector2Int(0, 0));
+                "R1 道具大厅",
+                new Vector2Int(0, 0),
+                new Vector2Int(1, 0),
+                new Vector2Int(2, 0),
+                new Vector2Int(3, 0),
+                new Vector2Int(4, 0),
+                new Vector2Int(5, 0),
+                new Vector2Int(6, 0),
+                new Vector2Int(0, 1),
+                new Vector2Int(1, 1),
+                new Vector2Int(2, 1),
+                new Vector2Int(3, 1),
+                new Vector2Int(4, 1),
+                new Vector2Int(5, 1),
+                new Vector2Int(6, 1));
             PlanningRoom redRoom = AddRoom(
                 document,
-                "R2 红色教学房",
-                new Vector2Int(2, 0));
+                "R2 红色机关房",
+                new Vector2Int(8, 0));
             PlanningRoom blueRoom = AddRoom(
                 document,
-                "R3 蓝色交互房",
-                new Vector2Int(4, 0));
+                "R3 蓝色水流房",
+                new Vector2Int(9, 0));
             PlanningRoom greenRoom = AddRoom(
                 document,
-                "R4 绿色交互房",
-                new Vector2Int(6, 0));
+                "R4 绿色攀爬房",
+                new Vector2Int(10, 0));
             PlanningRoom finalRoom = AddRoom(
                 document,
-                "R5 终点",
-                new Vector2Int(8, 0));
+                "R5 终点房",
+                new Vector2Int(11, 0));
 
-            BuildSimpleSampleRoomDetails(
+            BuildShowcaseRoomDetails(
                 start,
                 redRoom,
                 blueRoom,
                 greenRoom,
                 finalRoom);
-            BuildSimpleSampleConnectors(
+            BuildShowcaseConnectors(
                 document,
                 start,
                 redRoom,
                 blueRoom,
                 greenRoom,
                 finalRoom);
+            document.playerStartRoomId = start.id;
+            document.playerStartLocal = new Vector2(2.5f, 28f);
             return document;
+        }
+
+        private static PlanningDocument LoadEmbeddedDefault()
+        {
+            TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>(
+                DefaultMapAssetPath);
+            if (asset == null || string.IsNullOrWhiteSpace(asset.text))
+            {
+                return null;
+            }
+
+            try
+            {
+                return JsonUtility.FromJson<PlanningDocument>(asset.text);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         private static PlanningDocument CreateDefaultLegacy()
@@ -484,6 +533,113 @@ namespace PlanningEditorPrototype
                 lockId = lockId
             };
             document.doors.Add(door);
+        }
+
+        private static void BuildShowcaseRoomDetails(
+            PlanningRoom start,
+            PlanningRoom redRoom,
+            PlanningRoom blueRoom,
+            PlanningRoom greenRoom,
+            PlanningRoom finalRoom)
+        {
+            AddBox(start, PlanningDetailType.Solid, 0, 29, 112, 2, "大厅地基");
+            AddBox(start, PlanningDetailType.Solid, 0, 3, 2, 26, "大厅左墙");
+            AddBox(start, PlanningDetailType.Solid, 110, 3, 2, 26, "大厅右墙");
+            AddBox(start, PlanningDetailType.Solid, 2, 3, 108, 1, "大厅顶板");
+            AddBox(start, PlanningDetailType.Note, 4, 4, 104, 1, "测试区：钥匙 / 红 / 蓝 / 绿 / 通用展示", "白方块");
+
+            AddProp(start, "3c635d52f11f48f18d4d82a53c65e601", "红色钥匙", "红色钥匙", 4, 28);
+            AddProp(start, "2986677913284d2f85e9c64011ca22d0", "绿色钥匙", "绿色钥匙", 6, 28);
+            AddProp(start, "04b7a2d6735b4d0cbce343ab1293d6e0", "蓝色钥匙", "蓝色钥匙", 8, 28);
+
+            AddProp(start, "06e690b71b634be2909b6fecd7ecb627", "字幕激发(测试)", "字幕激发测试", 14, 28);
+            AddProp(start, "7a1b2c3d4e5f60718293a4b5c6d7e8f9", "锚点", "锚点", 18, 28);
+            AddProp(start, "8b88592971284aea9d1616569675b69b", "字幕展示道具", "Display_Block", 22, 28);
+            AddProp(start, "0fa659ac46b54c40942bb0566aacf593", "万能方块", "万能方块", 26, 28);
+
+            AddProp(start, "b3197af4d69b44778f4f6d43fb2634e2", "岩浆", "岩浆", 32, 28);
+            AddProp(start, "1b9aae04512d422c827d95dd1f66ba45", "能源快", "能源快", 36, 28);
+            AddProp(start, "ce4252f60fa240bfafb4d340ece01941", "按钮", "按钮", 40, 28);
+            AddProp(start, "d13739bd929949c88ceb41a1a74ea6ea", "曲柄", "曲柄", 44, 28);
+            AddProp(start, "16c56a2b8cfc43ae9ab69270626c8de7", "基座", "基座", 48, 28);
+            AddProp(start, "212cd7a2ff304a6288b4d850132de143", "平台", "平台", 52, 28);
+
+            AddProp(start, "234025e375b248bfbb8ac4dca60021fa", "水源", "水源 A", 58, 28);
+            AddProp(start, "6a317712f4c344038e7eff8345de01a0", "水源", "水源 B", 62, 28);
+            AddProp(start, "4ba0994908e1477fb5f7dae6a0e0cb40", "气泡柱", "气泡柱", 66, 28);
+
+            AddProp(start, "b1789be1339f4f5b897ef3177788da37", "藤蔓", "藤蔓", 72, 28);
+            AddProp(start, "eb7a961c3edb4b2db919a5c209562fed", "弹性植物", "弹性植物", 76, 28);
+            AddProp(start, "2b19e161603c4ea8b7e74919e1656f1b", "植物障碍", "植物障碍", 80, 28);
+
+            BuildReservedRoom(redRoom, "红色机关");
+            BuildReservedRoom(blueRoom, "蓝色水流");
+            BuildReservedRoom(greenRoom, "绿色攀爬");
+            BuildReservedRoom(finalRoom, "终点汇合");
+        }
+
+        private static void BuildReservedRoom(
+            PlanningRoom room,
+            string title)
+        {
+            AddBox(room, PlanningDetailType.Solid, 0, 13, 16, 2, $"{title}房地基");
+            AddBox(room, PlanningDetailType.Solid, 0, 3, 2, 10, "左墙");
+            AddBox(room, PlanningDetailType.Solid, 14, 3, 2, 10, "右墙");
+            AddBox(room, PlanningDetailType.Platform, 3, 11, 4, 1, "入口平台");
+            AddBox(room, PlanningDetailType.Platform, 9, 8, 4, 1, "中段平台");
+            AddBox(room, PlanningDetailType.Note, 3, 4, 10, 1, $"{title}预留区", "白方块");
+        }
+
+        private static void BuildShowcaseConnectors(
+            PlanningDocument document,
+            PlanningRoom start,
+            PlanningRoom redRoom,
+            PlanningRoom blueRoom,
+            PlanningRoom greenRoom,
+            PlanningRoom finalRoom)
+        {
+            var rooms = new List<PlanningRoom>
+            {
+                start,
+                redRoom,
+                blueRoom,
+                greenRoom,
+                finalRoom
+            };
+            GetSampleStride(rooms, out int strideX, out int strideY);
+            AddSampleConnector(
+                document,
+                start,
+                redRoom,
+                new Vector2Int(6, 0),
+                new Vector2Int(8, 0),
+                strideX,
+                strideY);
+            AddSampleConnector(
+                document,
+                redRoom,
+                blueRoom,
+                new Vector2Int(8, 0),
+                new Vector2Int(9, 0),
+                strideX,
+                strideY);
+            AddSampleConnector(
+                document,
+                blueRoom,
+                greenRoom,
+                new Vector2Int(9, 0),
+                new Vector2Int(10, 0),
+                strideX,
+                strideY);
+            AddSampleConnector(
+                document,
+                greenRoom,
+                finalRoom,
+                new Vector2Int(10, 0),
+                new Vector2Int(11, 0),
+                strideX,
+                strideY);
+            document.RefreshConnectorPaths();
         }
 
         private static void BuildSimpleSampleRoomDetails(
@@ -741,6 +897,25 @@ namespace PlanningEditorPrototype
                     : paletteEntryName
             };
             room.boxes.Add(box);
+        }
+
+        private static void AddProp(
+            PlanningRoom room,
+            string entryId,
+            string entryName,
+            string label,
+            int x,
+            int y)
+        {
+            room.boxes.Add(new PlanningBox(
+                PlanningDetailType.Prop,
+                new RectInt(x, y, 1, 1))
+            {
+                label = label,
+                paletteEntryName = "白方块",
+                propEntryId = entryId,
+                propEntryName = entryName
+            });
         }
 
         private static void BuildSampleConnectors(
@@ -1071,6 +1246,33 @@ namespace PlanningEditorPrototype
         public PlanningRoom FindRoom(string roomId)
         {
             return rooms.Find(room => room.id == roomId);
+        }
+
+        public bool TryGetPlayerStartWorldPosition(
+            out Vector3 position)
+        {
+            position = default;
+            PlanningRoom startRoom = FindRoom(playerStartRoomId);
+            if (startRoom == null || startRoom.isConnector)
+            {
+                return false;
+            }
+
+            PlanningLayoutUtility.GetStride(
+                rooms,
+                worldBlockCellWidth,
+                worldBlockCellHeight,
+                out int strideX,
+                out int strideY);
+            PlanningLayoutUtility.RoomLayoutInfo layout =
+                PlanningLayoutUtility.GetRoomLayout(
+                    startRoom,
+                    strideX,
+                    strideY);
+            float globalX = layout.OffsetX + playerStartLocal.x;
+            float globalY = layout.OffsetY + playerStartLocal.y;
+            position = new Vector3(globalX, -globalY, 0f);
+            return true;
         }
 
         public PlanningKey FindKey(string keyId)

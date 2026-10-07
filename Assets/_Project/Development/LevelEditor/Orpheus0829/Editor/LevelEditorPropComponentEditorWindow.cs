@@ -178,7 +178,7 @@ namespace Project.LevelEditor.Editor
                 draftOverrides);
 
             List<Component> components = new List<Component>(
-                preview.GetComponents<Component>());
+                preview.GetComponentsInChildren<Component>(true));
             components.RemoveAll(
                 component => component == null || component is Transform);
             components.Sort((left, right) =>
@@ -256,9 +256,7 @@ namespace Project.LevelEditor.Editor
 
                 hasVisibleField = true;
                 SerializedProperty property = iterator.Copy();
-                var field = new PropertyField(property.Copy());
-                field.BindProperty(property);
-                field.label =
+                string label =
                     PropComponentPresentation.GetPropertyLabel(
                         component,
                         property);
@@ -266,6 +264,32 @@ namespace Project.LevelEditor.Editor
                     PropComponentPresentation.GetPropertyTooltip(
                         component,
                         property);
+                if (property.propertyType ==
+                        SerializedPropertyType.String &&
+                    property.name.EndsWith(
+                        "Tag",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    var tagField = new TagField(label)
+                    {
+                        value = property.stringValue,
+                        tooltip = tooltip
+                    };
+                    tagField.RegisterValueChangedCallback(evt =>
+                    {
+                        property.stringValue = evt.newValue;
+                        serializedObject.ApplyModifiedProperties();
+                        CaptureOverride(component, property);
+                        statusLabel.text =
+                            "组件数值已修改，尚未保存。";
+                    });
+                    section.Add(tagField);
+                    continue;
+                }
+
+                var field = new PropertyField(property.Copy());
+                field.BindProperty(property);
+                field.label = label;
                 if (!string.IsNullOrWhiteSpace(tooltip))
                 {
                     field.tooltip = tooltip;
@@ -627,6 +651,18 @@ namespace Project.LevelEditor.Editor
                     { "SubtitleTrigger.playOnce", "只触发一次" },
                     { "SubtitleTrigger.hideVisualOnAwake", "隐藏物体外观" },
                     { "SubtitleTrigger.destroyAfterPlay", "播放后销毁" },
+                    { "DisplayBlockFeature.text", "显示文字" },
+                    { "DisplayBlockFeature.font", "字体文件" },
+                    { "DisplayBlockFeature.fontSizeRatio", "字号比例（相对方块高度）" },
+                    { "DisplayBlockFeature.color", "文字颜色" },
+                    { "DisplayBlockFeature.anchor", "相对方块位置" },
+                    { "DisplayBlockFeature.textAlignment", "文字对齐" },
+                    { "DisplayBlockFeature.offset", "位置偏移" },
+                    { "DisplayBlockFeature.layerOrder", "玩家图层关系" },
+                    { "DisplayBlockFeature.playerTag", "玩家标签" },
+                    { "DisplayBlockFeature.showOnAwake", "进入游戏时显示" },
+                    { "DisplayBlockFeature.hideColliderOnAwake", "隐藏碰撞体积" },
+                    { "DisplayBlockFeature.hideVisualOnAwake", "隐藏方块外观" },
                 };
 
             private static readonly Dictionary<Type, string>
@@ -670,6 +706,12 @@ namespace Project.LevelEditor.Editor
                         "SubtitleTrigger") == true)
                 {
                     return "字幕触发道具";
+                }
+
+                if (type.FullName?.Contains(
+                        "DisplayBlockFeature") == true)
+                {
+                    return "Display_Block";
                 }
 
                 return ObjectNames.NicifyVariableName(type.Name);

@@ -1,5 +1,4 @@
 using System;
-using Project.CameraModes;
 using Project.InputAbstraction;
 using UnityEngine;
 
@@ -10,26 +9,13 @@ namespace Project.Player
     [RequireComponent(typeof(PlayerController))]
     public sealed class PlayerInputDriver :
         MonoBehaviour,
-        IPlayerDriver,
-        ICameraViewModeRequester
+        IPlayerDriver
     {
         [SerializeField]
         private PlayerActionBinding[] actionBindings =
             Array.Empty<PlayerActionBinding>();
 
-        [SerializeField]
-        private CameraModeController cameraModeController;
-
-        [SerializeField, Min(0f)]
-        private float cameraModeTransitionDuration = .2f;
-
         private PlayerController player;
-        private PlayerInteractionSensor interactionSensor;
-        private CameraViewModeRequestHandle cameraModeRequestHandle;
-
-        public string CameraModeRequesterName => "Player Input";
-        public int CameraModeRequestPriority =>
-            CameraControlPriorities.GameplayAbility;
 
         private void Awake()
         {
@@ -47,8 +33,6 @@ namespace Project.Player
             {
                 player.ClearBufferedInput();
             }
-
-            ReleaseCameraModeRequest();
         }
 
         private void Update()
@@ -69,9 +53,25 @@ namespace Project.Player
             }
 
             player = target;
-            EnsureInteractionSensor();
-            interactionSensor?.RefreshTarget();
+            target.RefreshInteractionTarget();
             UpdateInteraction(target);
+            target.UpdateCarry(
+                GameInput.IsPressed(InputActionId.Carry),
+                GameInput.WasTriggeredThisFrame(
+                    InputActionId.Carry),
+                GameInput.PointerPosition,
+                Camera.main);
+            if (target.IsPointerDragActive)
+            {
+                target.UpdatePointerDrag(
+                    GameInput.PointerPosition,
+                    Camera.main);
+                target.ClearBufferedInput();
+                target.SetJumpHeld(false);
+                return;
+            }
+
+            UpdateColorWheel(target);
 
             if (target.IsControlLocked || Time.timeScale == 0f)
             {
@@ -92,12 +92,6 @@ namespace Project.Player
             target.SetJumpHeld(
                 GameInput.IsPressed(InputActionId.Jump));
 
-            if (GameInput.WasTriggeredThisFrame(
-                    InputActionId.CameraModeSwitch))
-            {
-                ToggleCameraMode();
-            }
-
             for (int index = 0;
                  index < actionBindings.Length;
                  index++)
@@ -116,34 +110,51 @@ namespace Project.Player
 
         private void UpdateInteraction(PlayerController target)
         {
-            if (interactionSensor == null)
-            {
-                return;
-            }
-
-            if (!GameInput.WasTriggeredThisFrame(
-                    InputActionId.Interact))
-            {
-                return;
-            }
-
-            if (target.CurrentStateId != PlayerStateId.Normal &&
-                target.CurrentStateId != PlayerStateId.Swimming ||
-                HasActionBinding(InputActionId.Interact) ||
-                !interactionSensor.HasTarget)
-            {
-                return;
-            }
-
-            interactionSensor.TryInteract();
+            bool interactHeld =
+                GameInput.IsPressed(InputActionId.Interact);
+            target.UpdateInteraction(
+                interactHeld,
+                GameInput.WasTriggeredThisFrame(
+                    InputActionId.Interact),
+                HasActionBinding(InputActionId.Interact));
         }
 
-        private void EnsureInteractionSensor()
+        private void UpdateColorWheel(PlayerController target)
         {
-            if (interactionSensor == null)
+            bool holdMode =
+                GameInput.GetActionTrigger(
+                    InputActionId.CameraModeSwitch) ==
+                InputActionTrigger.Hold;
+            target.UpdateColorWheelInput(
+                holdMode,
+                GameInput.WasPressedThisFrame(
+                    InputActionId.CameraModeSwitch),
+                GameInput.WasReleasedThisFrame(
+                    InputActionId.CameraModeSwitch),
+                GameInput.WasTriggeredThisFrame(
+                    InputActionId.CameraModeSwitch),
+                GameInput.PointerPosition);
+
+            if (target.IsColorWheelOpen)
             {
-                interactionSensor =
-                    GetComponent<PlayerInteractionSensor>();
+                if (GameInput.WasTriggeredThisFrame(
+                        InputActionId.Cancel))
+                {
+                    target.CloseColorWheel();
+                }
+                else if (GameInput.WasTriggeredThisFrame(
+                             InputActionId.PointerPrimary))
+                {
+                    target.CommitColorWheelSelection();
+                }
+
+                return;
+            }
+
+            if (GameInput.WasTriggeredThisFrame(
+                    InputActionId.PointerPrimary))
+            {
+                target.TryUseSelectedColorAbility();
             }
         }
 
@@ -164,53 +175,5 @@ namespace Project.Player
             return false;
         }
 
-        private void ToggleCameraMode()
-        {
-            ResolveCameraModeController();
-            if (cameraModeController == null)
-            {
-                return;
-            }
-
-            CameraViewMode next =
-                cameraModeController.TargetMode ==
-                CameraViewMode.Side2D
-                    ? CameraViewMode.Perspective3D
-                    : CameraViewMode.Side2D;
-
-            if (cameraModeRequestHandle.IsValid)
-            {
-                cameraModeRequestHandle.Release(true);
-            }
-
-            CameraTransition transition =
-                cameraModeTransitionDuration <= 0f
-                    ? CameraTransition.Immediate
-                    : CameraTransition.Ease(
-                        cameraModeTransitionDuration);
-            cameraModeRequestHandle =
-                cameraModeController.RequestMode(
-                    this,
-                    next,
-                    transition);
-        }
-
-        private void ResolveCameraModeController()
-        {
-            if (cameraModeController == null)
-            {
-                cameraModeController =
-                    ProjectDiscovery.FindFirst<CameraModeController>();
-            }
-        }
-
-        private void ReleaseCameraModeRequest()
-        {
-            if (cameraModeRequestHandle.IsValid)
-            {
-                cameraModeRequestHandle.Release(true);
-                cameraModeRequestHandle = default;
-            }
-        }
     }
 }

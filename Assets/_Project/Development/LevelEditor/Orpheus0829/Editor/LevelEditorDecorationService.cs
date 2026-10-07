@@ -346,9 +346,7 @@ namespace Project.LevelEditor.Editor
                         }
                     }
                 }
-                else if (!entry.UsesPrefabDirectly ||
-                         !string.IsNullOrEmpty(
-                             entry.ManagedColorTypeId))
+                else if (!entry.UsesPrefabDirectly)
                 {
                     ApplyRendererColor(blockObject, entry.Color);
                 }

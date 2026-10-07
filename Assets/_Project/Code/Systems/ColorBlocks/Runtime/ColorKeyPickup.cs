@@ -46,9 +46,7 @@ namespace Project.ColorBlocks
         }
 
         /// <summary>
-        /// 颜色钥匙的收集入口。钥匙预制体同时挂有通用物体交互来源，
-        /// 因此物体图可以把“玩家进入”连接到这个方法；保留碰撞回退入口
-        /// 以兼容尚未完成交互定义绑定的旧场景。
+        /// 颜色钥匙的直接收集入口。钥匙只负责解锁颜色，不经过交互图。
         /// </summary>
         public void OnInteractionPlayerEntered(GameObject actor)
         {
@@ -83,13 +81,6 @@ namespace Project.ColorBlocks
             }
             StartCoroutine(CollectWithCamera(player));
         }
-
-        // 这些入口让钥匙定义可以安全复用物体图的默认接触链；钥匙本身
-        // 没有需要在停留/离开或非玩家碰触时追加的行为。
-        public void OnInteractionPlayerLeft(GameObject actor) { }
-        public void OnInteractionPlayerStay(GameObject actor) { }
-        public void OnInteractionObjectTouched(GameObject other) { }
-        public void OnInteractionObjectStay(GameObject other) { }
 
         private IEnumerator CollectWithCamera(PlayerController player)
         {

@@ -1,60 +1,142 @@
-# 方块功能组件
+# 颜色物功能组件
 
-功能方块使用 `Project.BlockFeatures`，核心入口是 `BlockFeature` 和 `BlockRuntime`。
-功能不绑定颜色，颜色只作为栏目、外观或状态数据使用。
+功能组件使用 `Project.BlockFeatures`，核心入口是 `BlockFeature`、`BlockRuntime` 和薄宿主 `BlockAbilityHost`。
 
 ## 编写约束
 
-- 功能组件继承 `BlockFeature`，不要直接写 `Update`、`FixedUpdate`。
-- 一个组件只负责一种主要职责，可以同时实现多个只读能力接口。
-- 读取其他功能通过 `BlockContext.Query.TryGet<T>`，不要直接获取具体模块。
-- 改变状态通过 `BlockContext.Commands.Send`，不要直接改其他组件字段。
-- 瞬时事件通过 `BlockContext.Signals.Emit` 发送。
-- 持久关系通过 `BlockContext.Links` 建立和查询。
-- 动画、音效、特效、材质和颜色变化通过 `BlockContext.Presentation`。
-- 使用 `[BlockFeature]` 声明阶段、顺序、依赖、冲突、端口和写入通道。
-- 每个 `BlockFeature` 的声明必须把 `DisplayName` 写在第一项，并填写组件中文翻译；
-  不修改 C# 脚本名或 Unity 组件名。组件编辑器折叠标题保留组件名，内容区第一行用粗体大号显示中文翻译。
+- 一个组件只负责一种固定功能。
+- 组件继承 `BlockFeature`，不要直接写 `Update`、`FixedUpdate`。
+- 组件形态由脚本类型和所属预制体固定，不能用运行时枚举切换形态。
+- 使用 `[BlockFeature]` 声明中文名、固定颜色组、类别、交互类型、阶段和依赖。
+- 读取其他功能通过 `BlockContext.Query.TryGet<T>`。
+- 改状态通过 `BlockContext.Commands.Send`，瞬时事件通过 `BlockContext.Signals.Emit`。
+- `BlockContext.Presentation` 当前是预留的单物体表现请求接口，默认只记录调试事件；正式表现服务接入前，动画、音效、特效、材质由具体组件自己负责。
+- 每个组件必须提供中文 UI Toolkit Inspector、Foldout、条件显隐和运行时调试。
 
-`BlockRuntime` 会按阶段和顺序调度组件，并在每次 Tick 后按轮次派发信号和命令，
-避免组件递归调用或依赖 Unity 脚本执行顺序。
+基础属性示例：
 
-组件编辑窗口会统一显示 `BlockFeature` 的阶段、顺序、提供/读取能力、写入通道、
-最近信号/命令/联动/表达事件；没有序列化参数时会显示空状态提示。
+```csharp
+[BlockFeature(
+    DisplayName = "水源功能",
+    DefaultColorId = "blue",
+    Category = BlockFeatureCategory.Water,
+    Interactions =
+        BlockFeatureInteraction.PlayerContact |
+        BlockFeatureInteraction.RoomReset,
+    Writes = new[] { BlockChannel.Water })]
+```
 
-功能组件通过 `CollectDebugValues` 和 `CollectDebugActions` 提供可读数据与可执行调试操作，
-组件编辑窗口会自动生成对应按钮。`BlockPowerFeature` 已通过这套钩子提供可编辑调试参数、
-“发送测试激发信号”和“重置计数”操作；动力网络规则仍未实现。
+## 可用类别
 
-`BlockFeature` 的配置参数使用 `[SerializeField]` 暴露，可附加 `[BlockParameter]`
-设置标签和提示。组件编辑窗口把参数放在“参数”Foldout 中直接编辑；运行时状态和调试操作
-分别显示，不把配置参数伪装成只读数据。
+```text
+Mechanism / 机关
+Hazard / 危险物
+Water / 水域
+Plant / 植物
+Movement / 移动
+Reaction / 反应
+Utility / 通用
+```
 
-动力组件先选择角色，再选择信号类型：
+## 可用交互
 
-- `开关`：提供 `IBlockPowerSwitch`，由交互系统调用 `SetPower` / `Toggle`；可选择初始开启。
-- `信号源`：不需要交互开关，放置后立即开始输出。
-- `单次信号`：激活时发送一次。
-- `持续信号`：开启时发送持续状态，关闭时发送停止状态。
-- `脉冲信号`：开启时按“脉冲间隔（秒）”重复发送。
+```text
+PlayerContact / 玩家接触
+ObjectContact / 物体接触
+AppliedColor / 接收颜色
+RoomReset / 房间重置
+```
 
-`传播距离（格）` 是可直接调试的参数，运行时按方块尺寸换算为世界半径，并对范围内的其他
-`BlockRuntime` 转发激发信号。动力容量、消耗、供电方向、连接关系和优先级仍未实现。
-`测试信号值` 是调试载荷，当前不代表正式动力数值。编辑器会根据角色和信号类型自动隐藏无关参数。
-模式和功能阶段、通道、事件类型都已补中文 Inspector 显示。
+对应的直接接口：
 
-## 动力组件
+```csharp
+IPlayerContactReceiver
+IObjectContactReceiver
+IColorReactionReceiver
+IColorApplicationTarget
+IRoomColorResettable
+```
 
-`BlockPowerFeature` 位于
-`Assets/_Project/Code/Systems/BlockFeatures/Runtime/Power`。
-当前提供 `IBlockPowerSignalTransmitter`、`IBlockPowerSwitch` 和两级参数化信号模式。
+声明了交互类型就必须实现对应接口，`BlockFeatureValidationUtility` 会阻止只声明不实现。
 
-尚未实现：
+## 固定颜色与激活
 
-- 动力容量、输入输出和消耗
-- Port/Link 供电连接
-- 供能优先级和通道仲裁
-- 激活信号的正式类型和更复杂的传播规则
-- 动力调试、连线和表现
+`BlockAbilityHost` 只根据 `ColorObject` 的固定 `BaseColorTypeId` 启停预制体已有组件。
 
-在动力规则确定前，不要在其他功能里假设已经有了完整动力网络。
+它不会：
+
+- 查 Catalog
+- 添加组件
+- 读取动态 CurrentColor
+- 在不同形态之间切换
+
+`BlockFeature.OnValidate` 在编辑器中保持组件禁用，运行时由宿主按钥匙解锁状态统一启用。
+
+## 具体组件状态
+
+当前固定功能组件已经接入对应预制体：
+
+```text
+Red_Lava            LavaHazardFeature
+Red_Battery         EnergyBlockFeature
+Red_Button          ButtonLockFeature
+Red_Crank           CrankPlatformFeature
+Red_Foundation      MechanismBaseFeature
+Red_Platform        MovingPlatformFeature
+
+未挂预制体、已备用的机关形态：
+LiftFeature
+SpikeFeature
+LadderFeature
+
+Blue_WaterSource    WaterSourceFeature
+Blue_WaterWay       DirectionalCurrentFeature
+Blue_WaterBubble    BuoyancyColumnFeature
+
+Green_Ladder        ClimbableVineFeature
+Green_JumpPlant     BouncePlantFeature
+Green_PlantObstacle PlantObstacleFeature
+```
+
+三色之间的真实反应、机关之间的连线关系和旧喷流、下一跳、旧动力网络尚未实现；它们只能通过公开的类型安全接口逐步接入，不要恢复动态颜色 profile 或交互图。
+
+蓝色三个功能组件统一继承 `WaterVisualFeature`，默认从 `ColorCatalog.blueWaterPrefab` 接入队友的水体表现；水体预制体、本地偏移和缩放可在 Inspector 调整。
+
+机关附加规则：
+
+- 基座只按左右上下四个网格方向检测 `IEnergySource`，并向平台等消费者输出 `IMechanismSignalSource` 信号；基座没有机关绑定列表。
+- 只有 `EnergyBlockFeature` 声明 `CanMigrate`。
+- 按钮和曲柄通过 `IInteractionTarget`/`IInteractionHoldTarget` 接入玩家交互键。
+- 移动平台支持横向/纵向路线、游荡格数、时间、端点停留、自动/信号驱动、强制载人、Tag 筛选和多个开关的任一/全部激活规则。
+- 水泡只有上方存在其他蓝色 `ColorObject` 时才提供浮力。
+- 弹性植物的弹跳速度由玩家当前坠落高度换算，相关比例全部可调。
+- 所有功能组件都带 `IFeatureVisualTarget`：可配置专属材质和目标 Renderer，后续像水一样接各颜色道具的正式表现。
+
+第二轮校正已生效：
+
+- 游戏只有岩浆会致死；玩家不结算任何摔落伤害，水与水泡也没有摔落免疫参数。
+- 水泡按格数限制最高顶起高度，格高读取关卡编辑器格子世界尺寸，靠标签识别玩家，不再使用图层。
+- 水流只提供左/右枚举和推搡速度。
+- 弹跳植物用“仅摔落 / 仅跳跃 / 两者都可以”模式。
+- 藤蔓提供攀爬倍率和逐块或瞬间生长接口；新藤蔓块克隆藤蔓自身，每块高度读取关卡格子世界尺寸，不单独配置段预制体、段高、动画时长或缩放曲线。
+- 按钮是材质切换拉杆；曲柄按每秒进度转动并支持无人回弹动画。
+- 基座按左右上下四个网格方向检测能源；平台从自己这一侧绑定多个按钮/基座/曲柄并选择任一或全部激活。
+
+第三轮校正：
+
+- `LevelEditorPlacedBlock` 实现 `IGridCellSizeProvider`，放置和生成时记录关卡编辑器当前格子世界尺寸。
+- 能源、曲柄、基座、移动平台、水泡和藤蔓统一通过 `BlockFeature.GridCellWorldSize` 读取该尺寸；不再在各自 Inspector 暴露每格大小。
+- 藤蔓逐块生长时每块播放自身出现动画；瞬间长完时只让最上方新块播放。
+- 机关控制方向统一为消费者绑定信号源；平台持有 `linkedControls`，基座、按钮和曲柄只实现 `IMechanismSignalSource`，不持有机关列表。
+- 蓝色水域与浮力水柱只处理游泳和浮力；玩家侧的摔落免疫栈已删除，`PlayerFallDamage` 仅提供弹跳植物所需的坠落高度。
+- 浮力水柱的上方蓝系检测统一用“向上检测高度（格）”和“横向检测宽度（格）”，检测盒按关卡格子世界尺寸换算。
+- 万能方块自身纯色，并向左右上下四个紧邻目标广播颜色；Inspector 支持持续染色或延迟褪色。
+- 水族水体按格子中心对齐并配置为格子体积；藤蔓是实体阻挡物，按格距离进入攀爬并暴露自然下滑、S 加速下滑和空格固定行为。
+- 弹跳植物是实体阻挡物，只在正确落点触发一次；按钮按格半径检测交互；平台碰撞后反向。
+- 能源方块改为交互圈内长按“搬运”键拿起、鼠标网格吸附拖拽、松手放下；搬运键默认右键并锁定长按，拖动时关闭碰撞并置于最上层，同时锁住玩家全部输入。
+
+字幕展示道具：
+
+- `DisplayBlock` 使用 `DisplayBlockFeature`，运行时可隐藏自身 Collider 与方块外观。
+- 文本使用世界空间 `TextMeshPro`，支持文字内容、相对方块高度的字号比例、字体、颜色、方块九宫格相对位置和左/中/右对齐。
+- 以 `Player` Tag 找到玩家 Renderer 后，文字可以排序在玩家上方或下方。

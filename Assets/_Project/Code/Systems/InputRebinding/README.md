@@ -57,7 +57,7 @@ Assets/_Project/Code/Systems/InputAbstraction/Runtime/
 Move / Look / Navigate
   持续值输入，不显示点击、长按或触发策略
 
-Jump / Interact / Cancel / Submit / Pause / Attack / CameraModeSwitch
+Jump / Interact / Carry / Cancel / Submit / Pause / Attack / CameraModeSwitch
   瞬时按钮动作，默认只按点击触发
 
 Crouch / Sprint
@@ -202,11 +202,12 @@ Ctrl + Shift + Z 重做
 ```text
 Jump             空格
 Interact         E
+Carry            鼠标右键 / 手柄北键
 Cancel / Pause   Escape
 Submit           回车
 Crouch           左 Ctrl
 Sprint           左 Shift
-CameraModeSwitch Tab
+CameraModeSwitch Tab / F（调色；点击式开关，长按式按住）
 Attack           鼠标左键
 PointerPrimary   鼠标左键
 PointerSecondary 鼠标右键

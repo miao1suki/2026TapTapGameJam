@@ -335,4 +335,129 @@ namespace Project.Subtitles.Editor
             return root;
         }
     }
+
+    [CustomEditor(typeof(DisplayBlockFeature))]
+    public sealed class DisplayBlockFeatureEditor :
+        UnityEditor.Editor
+    {
+        public override VisualElement CreateInspectorGUI()
+        {
+            serializedObject.Update();
+            VisualElement root =
+                SubtitleInspectorFields.Root(
+                    serializedObject,
+                    "显示方块");
+            root.Add(ProjectInspectorUtility.CreateHelp(
+                "进入游戏后隐藏自身碰撞体与外观，并按世界空间显示文字。" +
+                "文字位置以方块本地包围盒为基准。"));
+
+            Foldout content = ProjectInspectorUtility.CreateFoldout(
+                "文字内容",
+                true);
+            content.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "text",
+                "显示文字"));
+            content.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "font",
+                "字体文件",
+                "留空时使用 TMP 默认字体。"));
+            content.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "fontSizeRatio",
+                "字号比例（相对方块高度）",
+                "0.5 表示文字行高约占方块高度的 50%。"));
+            content.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "color",
+                "文字颜色"));
+            root.Add(content);
+
+            Foldout placement = ProjectInspectorUtility.CreateFoldout(
+                "位置与图层",
+                true);
+            placement.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "anchor",
+                "相对方块位置"));
+            placement.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "textAlignment",
+                "文字对齐"));
+            placement.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "offset",
+                "位置偏移"));
+            placement.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "layerOrder",
+                "玩家图层关系",
+                "以玩家 Tag 找到玩家的 Renderer 后，将文字排在其上方或下方。"));
+            SerializedProperty playerTag =
+                serializedObject.FindProperty("playerTag");
+            TagField playerTagField = new TagField("玩家标签")
+            {
+                value = playerTag != null
+                    ? playerTag.stringValue
+                    : string.Empty,
+                tooltip = "使用 Unity Tag 选择玩家对象。"
+            };
+            playerTagField.RegisterValueChangedCallback(evt =>
+            {
+                if (playerTag == null)
+                {
+                    return;
+                }
+
+                playerTag.stringValue = evt.newValue;
+                serializedObject.ApplyModifiedProperties();
+            });
+            placement.Add(playerTagField);
+            root.Add(placement);
+
+            Foldout runtime = ProjectInspectorUtility.CreateFoldout(
+                "运行设置",
+                true);
+            runtime.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "showOnAwake",
+                "进入游戏时显示"));
+            runtime.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "hideColliderOnAwake",
+                "隐藏碰撞体积"));
+            runtime.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "hideVisualOnAwake",
+                "隐藏方块外观"));
+            root.Add(runtime);
+
+            DisplayBlockFeature displayBlock =
+                (DisplayBlockFeature)target;
+            Foldout debug = ProjectInspectorUtility.CreateFoldout(
+                "Play 测试",
+                true);
+            Button show = new Button(displayBlock.Show)
+            {
+                text = "显示文字"
+            };
+            Button hide = new Button(displayBlock.Hide)
+            {
+                text = "隐藏文字"
+            };
+            debug.Add(show);
+            debug.Add(hide);
+            root.Add(debug);
+            debug.schedule.Execute(() =>
+            {
+                bool playing = Application.isPlaying;
+                show.SetEnabled(playing);
+                hide.SetEnabled(playing);
+            }).Every(100);
+
+            ProjectInspectorUtility.Bind(root, serializedObject);
+            return root;
+        }
+    }
 }

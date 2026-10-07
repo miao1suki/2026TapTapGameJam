@@ -21,37 +21,31 @@ namespace Project.Player
     }
 
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(PlayerController), typeof(PlayerHealth))]
+    [RequireComponent(typeof(PlayerController))]
     public sealed class PlayerFallDamage : MonoBehaviour
     {
-        [SerializeField, Min(0f)] private float safeFallDistance = 3f;
-        [SerializeField, Min(0f)] private float damagePerMeter = 1f;
-        [SerializeField] private AnimationCurve damageCurve =
-            null;
-
         private PlayerController player;
-        private PlayerHealth health;
         private bool wasGrounded;
         private float highestAirPosition;
         private float fallDistance;
-        private int immunityDepth;
 
         public float LastFallDistance { get; private set; }
-        public bool IsImmune => immunityDepth > 0 ||
-                                 (player != null && player.IsFallDamageImmune);
+        public float LastLandingTime { get; private set; } =
+            float.NegativeInfinity;
+        public float CurrentFallDistance =>
+            Mathf.Max(0f, fallDistance);
         public event Action<PlayerFallDamage, float> Landed;
 
         private void Awake()
         {
             player = GetComponent<PlayerController>();
-            health = GetComponent<PlayerHealth>();
             wasGrounded = player.IsGrounded;
             highestAirPosition = transform.position.y;
         }
 
         private void FixedUpdate()
         {
-            if (player == null || health == null) return;
+            if (player == null) return;
             bool grounded = player.IsGrounded;
             float y = transform.position.y;
             if (!grounded)
@@ -65,15 +59,7 @@ namespace Project.Player
             else if (!wasGrounded)
             {
                 LastFallDistance = Mathf.Max(0f, fallDistance);
-                if (!IsImmune && LastFallDistance > safeFallDistance)
-                {
-                    float excess = LastFallDistance - safeFallDistance;
-                    float scale = damageCurve != null && damageCurve.length > 0
-                        ? Mathf.Max(0f, damageCurve.Evaluate(
-                            Mathf.InverseLerp(safeFallDistance, safeFallDistance + 8f, LastFallDistance)))
-                        : excess;
-                    health.TakeDamage(scale * damagePerMeter);
-                }
+                LastLandingTime = Time.time;
                 Landed?.Invoke(this, LastFallDistance);
                 fallDistance = 0f;
                 highestAirPosition = y;
@@ -84,12 +70,6 @@ namespace Project.Player
                 fallDistance = 0f;
             }
             wasGrounded = grounded;
-        }
-
-        public void SetFallDamageImmune(bool value)
-        {
-            if (value) immunityDepth++;
-            else immunityDepth = Mathf.Max(0, immunityDepth - 1);
         }
 
         public void ApplyBounce(float verticalSpeed)

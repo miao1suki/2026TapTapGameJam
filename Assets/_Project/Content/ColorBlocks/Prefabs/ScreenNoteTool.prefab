@@ -9,11 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5799662059204712481}
+  - component: {fileID: 8874012356789012345}
   - component: {fileID: 820850423255920802}
   - component: {fileID: 6332649236546910240}
   - component: {fileID: 7867967853718945527}
-  - component: {fileID: 8874012356789012345}
-  - component: {fileID: 3024042595108526192}
   m_Layer: 0
   m_Name: ScreenNoteTool
   m_TagString: Untagged
@@ -36,6 +35,94 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8874012356789012345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4553572954244812789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0bdc7f7d8c2e47e8a7ef101609f37af6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Subtitles.SubtitleTrigger
+  cue:
+    layer: 0
+    text: ScreenNoteTool
+    useManagerDefaults: 0
+    style:
+      font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+      fontSize: 56
+      color: {r: 1, g: 1, b: 1, a: 1}
+      anchor: 0
+      normalizedX: 0.5
+      normalizedY: 0.5
+      offset: {x: 0, y: 0}
+      holdDuration: 3
+      inAnimation: 1
+      inDuration: 1
+      outAnimation: 1
+      outDuration: 1
+      inCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      outCurve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 0
+          outSlope: 0
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0
+          outWeight: 0
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      motionDistance: 36
+      scaleFrom: 0.82
+      startRotation: -12
+      overshoot: 0.18
+      floatAmplitude: 12
+      floatSpeed: 2
+      glitchStrength: 0.5
+      charactersPerSecond: 24
+  playOnce: 1
+  hideVisualOnAwake: 1
+  destroyAfterPlay: 0
 --- !u!33 &820850423255920802
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -114,105 +201,3 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8874012356789012345
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4553572954244812789}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0bdc7f7d8c2e47e8a7ef101609f37af6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Subtitles.SubtitleTrigger
-  cue:
-    layer: 0
-    text: ScreenNoteTool
-    useManagerDefaults: 0
-    style:
-      font: {fileID: 0}
-      fontSize: 56
-      color: {r: 1, g: 1, b: 1, a: 1}
-      anchor: 0
-      normalizedX: 0.5
-      normalizedY: 0.5
-      offset: {x: 0, y: 0}
-      holdDuration: 3
-      inAnimation: 1
-      inDuration: 1
-      outAnimation: 1
-      outDuration: 1
-      inCurve:
-        serializedVersion: 2
-        m_Curve:
-        - serializedVersion: 3
-          time: 0
-          value: 0
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        - serializedVersion: 3
-          time: 1
-          value: 1
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      outCurve:
-        serializedVersion: 2
-        m_Curve:
-        - serializedVersion: 3
-          time: 0
-          value: 0
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        - serializedVersion: 3
-          time: 1
-          value: 1
-          inSlope: 0
-          outSlope: 0
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      motionDistance: 36
-      scaleFrom: 0.82
-      startRotation: -12
-      overshoot: 0.18
-      floatAmplitude: 12
-      floatSpeed: 2
-      glitchStrength: 0.5
-      charactersPerSecond: 24
-  playOnce: 1
-  hideVisualOnAwake: 1
-  destroyAfterPlay: 0
---- !u!114 &3024042595108526192
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4553572954244812789}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed3ea2b373d54218a69c408da9105e34, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.InteractionObject
-  definition: {fileID: 11400000, guid: a52d149aa78ccf1469e9a9adca8538de, type: 2}
-  currentColorTypeId: 

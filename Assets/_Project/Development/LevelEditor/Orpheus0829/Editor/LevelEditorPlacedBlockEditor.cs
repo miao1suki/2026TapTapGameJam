@@ -1,5 +1,4 @@
 using Project.Editor;
-using Project.Interactions.Editor;
 using UnityEditor;
 using UnityEngine.UIElements;
 
@@ -52,21 +51,15 @@ namespace Project.LevelEditor.Editor
                 () => block != null
                     ? block.SizeCells.ToString()
                     : "无"));
+            grid.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "格子世界尺寸",
+                () => block != null
+                    ? block.CellWorldSize.ToString("0.###")
+                    : "无"));
             root.Add(grid);
 
             root.Add(ProjectInspectorUtility.CreateHelp(
                 "这些值由关卡编辑器维护；请在规划编辑器中修改栏目或重新放置。"));
-            LevelEditorPlacedBlock placed = (LevelEditorPlacedBlock)target;
-            if (placed != null && placed.IsProp)
-            {
-                root.Add(new UnityEngine.UIElements.Button(() =>
-                {
-                    InteractionManagerWindow.OpenForObject(placed.gameObject);
-                })
-                {
-                    text = "打开物体交互管理器"
-                });
-            }
             ProjectInspectorUtility.Bind(root, serializedObject);
             return root;
         }

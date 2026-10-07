@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using Project.Interactions.Editor;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
 using Project.SurfaceTiles.Editor;
@@ -17,13 +16,11 @@ namespace PlanningEditorPrototype
     {
         private enum PlanningWorkspaceMode
         {
-            Map,
-            Colors,
-            InteractionGraph
+            Map
         }
 
         private const string PreferenceKey =
-            "2026TapTap.PlanningEditorPrototype.Document.SampleV11";
+            "2026TapTap.PlanningEditorPrototype.Document.SampleV12";
         private const string CurrentSavePreferenceKey =
             "2026TapTap.PlanningEditorPrototype.CurrentSavePath";
         private const string CanvasBackgroundPreferenceKey =
@@ -57,8 +54,6 @@ namespace PlanningEditorPrototype
         private readonly Dictionary<PlanningCanvasMode, Button> modeButtons =
             new Dictionary<PlanningCanvasMode, Button>();
         private VisualElement mapWorkspace;
-        private VisualElement colorsWorkspace;
-        private VisualElement graphWorkspace;
         private VisualElement topArea;
         private VisualElement leftRail;
         private VisualElement centerStage;
@@ -172,39 +167,6 @@ namespace PlanningEditorPrototype
                 620f));
             rightPanel = BuildInspector();
             main.Add(rightPanel);
-            colorsWorkspace = BuildPlaceholderWorkspace(
-                "物体交互管理器",
-                "所有可交互物体的交互图入口。颜色只是物体属性，具体逻辑在物体自己的连连看中编辑。",
-                new[]
-                {
-                    "红方块 · 玩家接触与颜色属性",
-                    "蓝方块 · 水体与褪色",
-                    "绿方块 · 攀爬与停留",
-                    "物体触碰 / 受到颜色",
-                    "延迟 / Timeline / 方法调用"
-                });
-            AddWorkspaceAction(
-                colorsWorkspace,
-                "打开物体交互管理器",
-                InteractionManagerWindow.Open);
-            graphWorkspace = BuildPlaceholderWorkspace(
-                "交互图",
-                "新版交互管理器按物体显示完整逻辑；此入口会打开同一个物体交互管理器。",
-                new[]
-                {
-                    "本物体 / 玩家 / 触碰 / 停留",
-                    "受到颜色 / 受到物体",
-                    "延迟执行 / 褪色 / 恢复",
-                    "Timeline / 调用脚本方法",
-                    "连线即交互逻辑"
-                });
-            AddWorkspaceAction(
-                graphWorkspace,
-                "打开物体交互管理器",
-                InteractionManagerWindow.Open);
-            workspaceHost.Add(colorsWorkspace);
-            workspaceHost.Add(graphWorkspace);
-
             statusLabel = new Label();
             statusLabel.style.height = 22f;
             statusLabel.style.paddingLeft = 8f;
@@ -283,11 +245,6 @@ namespace PlanningEditorPrototype
             tabs.style.borderBottomWidth = 1f;
             tabs.style.borderBottomColor = new Color(.2f, .23f, .3f);
             AddWorkspaceButton(tabs, PlanningWorkspaceMode.Map, "地图规划");
-            AddWorkspaceButton(tabs, PlanningWorkspaceMode.Colors, "物体交互");
-            AddWorkspaceButton(
-                tabs,
-                PlanningWorkspaceMode.InteractionGraph,
-                "交互图");
             return tabs;
         }
 
@@ -741,14 +698,6 @@ namespace PlanningEditorPrototype
                     : DisplayStyle.None;
             }
 
-            colorsWorkspace.style.display =
-                value == PlanningWorkspaceMode.Colors
-                    ? DisplayStyle.Flex
-                    : DisplayStyle.None;
-            graphWorkspace.style.display =
-                value == PlanningWorkspaceMode.InteractionGraph
-                    ? DisplayStyle.Flex
-                    : DisplayStyle.None;
             foreach (var pair in workspaceButtons)
             {
                 pair.Value.style.backgroundColor =
@@ -1291,12 +1240,26 @@ namespace PlanningEditorPrototype
             document = PlanningDocument.CreateDefault();
             document.name = "示例地图";
             canvas.SetDocument(document);
+            bool playerPlaced = PositionSamplePlayer(document);
             SaveDocument();
             ResetPlanningHistory();
             MarkPlanningSaved();
             RefreshAll();
             saveOverlay.style.display = DisplayStyle.None;
-            statusLabel.text = "已读取内置示例地图。";
+            statusLabel.text = playerPlaced
+                ? "已读取内置示例地图，玩家已放入道具大厅。"
+                : "已读取内置示例地图。";
+        }
+
+        private bool PositionSamplePlayer(
+            PlanningDocument sample)
+        {
+            return sample != null &&
+                   sample.TryGetPlayerStartWorldPosition(
+                       out Vector3 position) &&
+                   LevelEditorPlayerService.SetPlayerPosition(
+                       position,
+                       true);
         }
 
         private void RefreshSaveSlots()

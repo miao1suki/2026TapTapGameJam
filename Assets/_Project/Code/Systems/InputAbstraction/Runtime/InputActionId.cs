@@ -20,6 +20,7 @@ namespace Project.InputAbstraction
         CameraModeSwitch = 11,
         PointerPrimary = 12,
         PointerSecondary = 13,
+        Carry = 14,
     }
 
     public enum InputActionTrigger

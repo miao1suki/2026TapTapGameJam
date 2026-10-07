@@ -65,6 +65,7 @@ namespace Project.InputRebinding
                         InputActionAssetFactory
                             .CreateDefaultGameplayAsset();
                 }
+                InputService.EnsureRequiredActions(source);
 
                 InputActionAsset preview =
                     UnityEngine.Object.Instantiate(source);
@@ -82,6 +83,7 @@ namespace Project.InputRebinding
                         service.ConfiguredActionAsset)
                     : InputActionAssetFactory
                         .CreateDefaultGameplayAsset();
+            InputService.EnsureRequiredActions(resetAsset);
             string resetJson = resetAsset.ToJson();
             if (Application.isPlaying)
             {
@@ -117,6 +119,7 @@ namespace Project.InputRebinding
                     InputActionAssetFactory
                         .CreateDefaultGameplayAsset();
             }
+            InputService.EnsureRequiredActions(actionAsset);
 
             return new InputBindingService(
                 actionAsset,

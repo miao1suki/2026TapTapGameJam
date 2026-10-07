@@ -20,20 +20,10 @@ namespace Project.ColorBlocks.Editor
         internal static void InitializeFromMenu()
         {
             var catalog = EnsureCatalog();
-            if (catalog.BlueWaterPrefab == null)
-            {
-                GameObject waterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/ta_source/InteractiveWater/water.prefab");
-                if (waterPrefab != null)
-                {
-                    catalog.SetBlueWaterPrefab(waterPrefab);
-                    EditorUtility.SetDirty(catalog);
-                }
-            }
             InstallRendererFeatures();
             EnsureStarterPrefabs(catalog);
             AssetDatabase.SaveAssets();
-            Debug.Log("[ColorBlocks] 颜色目录、材质、层、预制体与 PC/Mobile Renderer Feature 已检查。");
+            Debug.Log("[ColorBlocks] 颜色目录、材质、钥匙、Timeline 与 PC/Mobile Renderer Feature 已检查。");
         }
 
         internal static ColorCatalog EnsureCatalog()
@@ -112,23 +102,6 @@ namespace Project.ColorBlocks.Editor
             EnsureFolder(TimelineFolder);
             foreach (var color in catalog.Colors)
             {
-                var blockPath = PrefabFolder + "/ColorBlock_" + color.id + ".prefab";
-                if (AssetDatabase.LoadAssetAtPath<GameObject>(blockPath) == null)
-                {
-                    var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    try
-                    {
-                        block.name = "ColorBlock_" + color.id;
-                        block.layer = color.unityLayer;
-                        var renderer = block.GetComponent<Renderer>();
-                        renderer.sharedMaterial = color.targetMaterial != null
-                            ? color.targetMaterial : catalog.NeutralMaterial;
-                        block.AddComponent<ColorBlock>().EditorConfigure(color.id, renderer);
-                        PrefabUtility.SaveAsPrefabAsset(block, blockPath);
-                    }
-                    finally { UnityEngine.Object.DestroyImmediate(block); }
-                }
-
                 var pickupPath = PrefabFolder + "/ColorKey_" + color.id + ".prefab";
                 if (AssetDatabase.LoadAssetAtPath<GameObject>(pickupPath) != null) continue;
                 var timelinePath = TimelineFolder + "/ColorPickup_" + color.id + ".playable";

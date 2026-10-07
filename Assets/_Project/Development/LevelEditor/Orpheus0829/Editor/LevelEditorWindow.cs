@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
 using Project.ColorBlocks;
-using Project.Interactions;
-using Project.Interactions.Editor;
 using Project.SurfaceTiles;
 using Project.SurfaceTiles.Editor;
 using UnityEditor;
@@ -595,6 +593,14 @@ namespace Project.LevelEditor.Editor
                 1.5f);
             float cardWidth = 124f * scale;
             float cardHeight = 148f * scale;
+            if (paletteScroll != null)
+            {
+                paletteScroll.style.height = Mathf.Clamp(
+                    cardHeight + 24f,
+                    104f,
+                    240f);
+            }
+
             for (int index = 0; index < palette.Entries.Count; index++)
             {
                 int captured = index;
@@ -667,10 +673,7 @@ namespace Project.LevelEditor.Editor
                         scale,
                         () => LevelEditorEntryWindow.OpenForEdit(
                             captured),
-                        () => RemovePaletteEntry(captured),
-                        entry.Prefab != null
-                            ? () => OpenBlockInteraction(entry)
-                            : null));
+                        () => RemovePaletteEntry(captured)));
                 }
 
                 if (entry.SourcePrefab != null &&
@@ -693,34 +696,6 @@ namespace Project.LevelEditor.Editor
                 LevelEditorEntryWindow.OpenForAdd,
                 "新增方块",
                 new Color(.3f, .66f, 1f, 1f)));
-        }
-
-        private static void OpenBlockInteraction(LevelEditorBlockEntry entry)
-        {
-            if (entry == null || entry.Prefab == null)
-            {
-                EditorUtility.DisplayDialog(
-                    "打开物体交互",
-                    "这个栏目还没有可绑定的预制体。",
-                    "确定");
-                return;
-            }
-
-            InteractionObjectDefinition definition = entry.InteractionDefinition;
-            ColorBlock block = entry.Prefab.GetComponent<ColorBlock>();
-            if (definition == null)
-            {
-                definition = InteractionEditorService.EnsureDefinitionForPrefab(
-                    entry.Prefab,
-                    entry.DisplayName,
-                    block != null ? block.BaseColorTypeId : null);
-                entry.SetInteractionDefinition(definition);
-                EditorUtility.SetDirty(LevelEditorState.Palette);
-                AssetDatabase.SaveAssetIfDirty(LevelEditorState.Palette);
-                LevelEditorState.MarkPaletteChanged();
-            }
-
-            InteractionManagerWindow.OpenFor(definition);
         }
 
         private static VisualElement CreateAddCard(
@@ -884,23 +859,7 @@ namespace Project.LevelEditor.Editor
                         scale,
                         () => LevelEditorPropEntryWindow.OpenForEdit(
                             captured),
-                        () => RemovePropEntry(captured),
-                        () =>
-                        {
-                            InteractionObjectDefinition definition = entry.InteractionDefinition;
-                            if (definition != null)
-                                InteractionManagerWindow.OpenFor(definition);
-                            else if (entry.Prefab != null)
-                            {
-                                definition = InteractionEditorService.EnsureDefinitionForPrefab(
-                                    entry.Prefab,
-                                    entry.DisplayName);
-                                entry.SetInteractionDefinition(definition);
-                                EditorUtility.SetDirty(LevelEditorState.Palette);
-                                AssetDatabase.SaveAssetIfDirty(LevelEditorState.Palette);
-                                InteractionManagerWindow.OpenFor(definition);
-                            }
-                        }));
+                        () => RemovePropEntry(captured)));
                 }
 
                     propList.Add(cell);
@@ -925,8 +884,7 @@ namespace Project.LevelEditor.Editor
         private static VisualElement CreatePaletteCardActions(
             float scale,
             System.Action editAction,
-            System.Action deleteAction,
-            System.Action interactionAction = null)
+            System.Action deleteAction)
         {
             float previewHorizontalInset =
                 (124f - 98f) * .5f * scale;
@@ -947,7 +905,7 @@ namespace Project.LevelEditor.Editor
                 3f,
                 6f);
             float previewWidth = 98f * scale;
-            int actionCount = interactionAction == null ? 2 : 3;
+            const int actionCount = 2;
             float actionWidth = Mathf.Clamp(
                 (previewWidth - actionGap * (actionCount - 1) - 4f) /
                     actionCount,
@@ -981,24 +939,6 @@ namespace Project.LevelEditor.Editor
             edit.style.color = Color.white;
             edit.style.marginRight = actionGap;
             actions.Add(edit);
-
-            if (interactionAction != null)
-            {
-                Button interaction = new Button(interactionAction)
-                {
-                    text = "交互"
-                };
-                interaction.style.width = actionWidth;
-                interaction.style.height = actionHeight;
-                interaction.style.fontSize = actionFontSize;
-                interaction.style.unityFontStyleAndWeight = FontStyle.Bold;
-                interaction.style.paddingLeft = 0f;
-                interaction.style.paddingRight = 0f;
-                interaction.style.backgroundColor = new Color(.19f, .48f, .34f);
-                interaction.style.color = Color.white;
-                interaction.style.marginRight = actionGap;
-                actions.Add(interaction);
-            }
 
             Button delete = new Button(deleteAction)
             {

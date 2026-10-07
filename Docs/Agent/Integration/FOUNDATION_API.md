@@ -19,7 +19,9 @@
 `InputService` 可替换 `IInputSource`，便于测试。`VirtualJoystick` / `VirtualInputButton` 提供触摸输入。
 `PlatformUILayoutController` 按 Desktop/Mobile 保存与切换布局；两平台均允许手柄。
 `InputBindingService` 与 `InputBindingBootstrap` 管理重绑定，编辑窗口为旧功能保留。
-`CameraModeSwitch` 已由 `PlayerInputDriver` 消费，作为 `GameplayAbility` 请求提交到 `CameraModeController`；默认绑定 Tab/F/手柄 Select。Timeline 的 Cutscene 要求仍可压过玩家请求。
+`CameraModeSwitch` 不再由 `PlayerInputDriver` 消费为相机切换；它现在承担“调色”入口，用于开关染色轮盘。相机模式请由场景或 Timeline 演出自行申请，Timeline 的 Cutscene 要求仍保持最高优先级。
+
+`Carry` 是锁定长按的“搬运”动作，默认键盘鼠标右键、手柄北键；PlayerInputDriver 只把按住状态和指针交给 PlayerController，实际拿起、拖拽和放下由目标实现。
 
 ## 公共自动发现
 
@@ -106,33 +108,22 @@ Shader位于 `Assets/_Project/Rendering/Shaders/SurfaceTiles`，名称前缀2026
 
 ## 方块功能组件
 
-`Assets/_Project/Code/Systems/BlockFeatures` 提供不绑定颜色的方块功能契约。功能组件继承
+`Assets/_Project/Code/Systems/BlockFeatures` 提供固定颜色物体的功能组件契约。功能组件继承
 `BlockFeature`，由 `BlockRuntime` 统一发现、校验、排序和 Tick。组件通过 `BlockContext`
-使用能力查询、信号、命令、链接和表现接口；组件编辑窗口保存模板前会运行
+使用能力查询、信号、命令和调试接口；链接与表现接口是预留接口，正式服务接入前不得当作已实现能力；组件编辑窗口保存模板前会运行
 `BlockFeatureValidationUtility` 校验依赖、冲突和重复数量。
 
-`BlockPowerFeature` 提供 `IBlockPowerSignalTransmitter` 和 `IBlockPowerSwitch`。
-角色分为开关/信号源，输出分为单次/持续/脉冲，并提供传播距离与可视化调试。
-动力容量、连接、消耗和仲裁规则仍待施工。
+旧的水体、藤蔓和动力具体组件已经删除。后续按固定形态分别实现
+水源、水流、气泡柱、梯子/藤蔓、弹性植物、植物障碍、岩浆和机关组件。
+每个组件继承 `BlockFeature`，声明固定颜色组，并使用
+`IPlayerContactReceiver`、`IObjectContactReceiver`、`IColorReactionReceiver`
+等直接接口处理行为。
 
-`BlockWaterFeature` 提供 `IBlockWaterSource` 和 `IBlockWaterSwitch`。
-它封装 TA 水体实例、Reveal、游泳进入/离开、入水/水花/离开音效和波纹调试；
-可通过 `BlockWaterVisualMode.FeatureOwned` 自己管理水体，或通过
-`ExternalManager` 沿用 `ColorRuntimeService` 的共享蓝色水体。动态预装/启停功能组件后调用
-`BlockRuntime.RefreshFeatureSet()` 重建运行时功能集合。
-
-`BlockVineFeature` 提供 `IBlockClimbSource`，挂在绿色方块上时允许玩家
-进入碰撞/触发范围后攀爬：上方向向上爬，不按上下方向时缓慢下滑，下方向快速下滑；
-横向输入可主动离开。绿色方块顶面接触只按普通地面处理，不进入攀爬；
-只有侧面进入攀爬范围。枝条生长、叶片落脚点、
-根系区域连接和正式攀爬表现尚未实现，已在组件内留 TODO。
-
-`BlockAbilityHost` 挂在方块根节点，默认随编辑器放置/生成方块补齐。
-编辑器通过 `BlockAbilityCatalogBuilder` 扫描全部 `BlockFeature`，生成
-`Resources/BlockFeatures/BlockAbilityCatalog.asset`。功能组件在
-`BlockFeatureAttribute.DefaultColorId` 中声明唯一的默认颜色；
-Host 只按当前颜色精确启用/禁用组件，并在切换前后校验
-`Requires/Conflicts/MaxPerBlock`。
+`BlockAbilityHost` 挂在颜色物体根节点，作为固定颜色组的薄启停宿主。
+它只检查预制体上已经存在的 `BlockFeature`，根据
+`BlockFeatureAttribute.DefaultColorId` 与物体固定基础颜色匹配后启停，
+并校验 `Requires/Conflicts/MaxPerBlock`。它不再扫描 Catalog、添加组件、
+运行时切换形态或读取动态当前颜色。
 
 ## 验证
 

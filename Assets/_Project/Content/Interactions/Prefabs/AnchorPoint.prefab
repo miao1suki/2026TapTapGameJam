@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 810000004}
   - component: {fileID: 810000005}
   - component: {fileID: 810000006}
-  - component: {fileID: 810000007}
   m_Layer: 0
   m_Name: AnchorPoint
   m_TagString: Untagged
@@ -127,17 +126,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.AnchorPoint
   anchorId: 
---- !u!114 &810000007
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 810000001}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed3ea2b373d54218a69c408da9105e34, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project.Interactions.InteractionObject
-  definition: {fileID: 11400000, guid: 0493f0ba84b64b046bc6e7780fea9f6d, type: 2}
-  currentColorTypeId: 

@@ -30,15 +30,108 @@ namespace Project.BlockFeatures.Editor
             root.Add(ProjectInspectorUtility.CreateScriptField(
                 serializedObject));
             root.Add(ProjectInspectorUtility.CreateHelp(
-                "本组件遵循方块功能组件契约，只处理其声明的能力。" +
-                "启用状态由 BlockAbilityHost 在运行时按颜色控制；" +
+                "本组件遵循颜色物功能组件契约，只处理其声明的能力。" +
+                "启用状态由颜色物功能控制在运行时按固定颜色组切换；" +
                 "编辑器中不会保留手动启用状态。"));
+
+            Foldout contract =
+                ProjectInspectorUtility.CreateFoldout(
+                    "组件契约",
+                    true);
+            contract.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "固定颜色组",
+                () => string.IsNullOrWhiteSpace(
+                    feature.Metadata.DefaultColorId)
+                    ? "无"
+                    : feature.Metadata.DefaultColorId));
+            contract.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "功能类别",
+                () => FormatCategory(
+                    feature.Metadata.Category)));
+            contract.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "交互类型",
+                () => FormatInteractions(
+                    feature.Metadata.Interactions)));
+            root.Add(contract);
 
             AddParameterGroups(root, feature);
             AddRuntimeDebug(root, feature);
 
             ProjectInspectorUtility.Bind(root, serializedObject);
             return root;
+        }
+
+        private static string FormatCategory(
+            BlockFeatureCategory category)
+        {
+            switch (category)
+            {
+                case BlockFeatureCategory.Mechanism:
+                    return "机关";
+                case BlockFeatureCategory.Hazard:
+                    return "危险物";
+                case BlockFeatureCategory.Water:
+                    return "水域";
+                case BlockFeatureCategory.Plant:
+                    return "植物";
+                case BlockFeatureCategory.Movement:
+                    return "移动";
+                case BlockFeatureCategory.Reaction:
+                    return "反应";
+                default:
+                    return "通用";
+            }
+        }
+
+        private static string FormatInteractions(
+            BlockFeatureInteraction interactions)
+        {
+            if (interactions == BlockFeatureInteraction.None)
+            {
+                return "无";
+            }
+
+            var builder = new System.Text.StringBuilder();
+            AppendInteraction(
+                builder,
+                interactions,
+                BlockFeatureInteraction.PlayerContact,
+                "玩家接触");
+            AppendInteraction(
+                builder,
+                interactions,
+                BlockFeatureInteraction.ObjectContact,
+                "物体接触");
+            AppendInteraction(
+                builder,
+                interactions,
+                BlockFeatureInteraction.AppliedColor,
+                "接收颜色");
+            AppendInteraction(
+                builder,
+                interactions,
+                BlockFeatureInteraction.RoomReset,
+                "房间重置");
+            return builder.ToString();
+        }
+
+        private static void AppendInteraction(
+            System.Text.StringBuilder builder,
+            BlockFeatureInteraction interactions,
+            BlockFeatureInteraction flag,
+            string label)
+        {
+            if ((interactions & flag) == 0)
+            {
+                return;
+            }
+
+            if (builder.Length > 0)
+            {
+                builder.Append("、");
+            }
+
+            builder.Append(label);
         }
 
         private void AddParameterGroups(
@@ -49,10 +142,8 @@ namespace Project.BlockFeatures.Editor
                 StringComparer.Ordinal);
             var groupOrder = new Dictionary<string, int>(
                 StringComparer.Ordinal);
-            foreach (FieldInfo field in feature.GetType().GetFields(
-                         BindingFlags.Instance |
-                         BindingFlags.Public |
-                         BindingFlags.NonPublic))
+            foreach (FieldInfo field in EnumerateParameterFields(
+                         feature.GetType()))
             {
                 BlockParameterAttribute parameter =
                     field.GetCustomAttribute<BlockParameterAttribute>();
@@ -116,7 +207,7 @@ namespace Project.BlockFeatures.Editor
                 Foldout foldout =
                     ProjectInspectorUtility.CreateFoldout(
                         groupName,
-                        true);
+                        ShouldExpandGroup(groupName));
                 for (int fieldIndex = 0;
                      fieldIndex < entries.Count;
                      fieldIndex++)
@@ -130,6 +221,36 @@ namespace Project.BlockFeatures.Editor
             }
         }
 
+        private static IEnumerable<FieldInfo> EnumerateParameterFields(
+            Type featureType)
+        {
+            var hierarchy = new List<Type>();
+            for (Type current = featureType;
+                 current != null &&
+                 current != typeof(MonoBehaviour);
+                 current = current.BaseType)
+            {
+                hierarchy.Add(current);
+            }
+
+            for (int typeIndex = hierarchy.Count - 1;
+                 typeIndex >= 0;
+                 typeIndex--)
+            {
+                FieldInfo[] fields = hierarchy[typeIndex].GetFields(
+                    BindingFlags.Instance |
+                    BindingFlags.Public |
+                    BindingFlags.NonPublic |
+                    BindingFlags.DeclaredOnly);
+                for (int fieldIndex = 0;
+                     fieldIndex < fields.Length;
+                     fieldIndex++)
+                {
+                    yield return fields[fieldIndex];
+                }
+            }
+        }
+
         private void AddParameterField(
             VisualElement parent,
             FieldEntry entry)
@@ -138,6 +259,27 @@ namespace Project.BlockFeatures.Editor
                 entry.Parameter.Label)
                 ? entry.Field.Name
                 : entry.Parameter.Label.Trim();
+            SerializedProperty property =
+                serializedObject.FindProperty(entry.Field.Name);
+            if (entry.Field.FieldType == typeof(string) &&
+                entry.Field.Name.EndsWith(
+                    "Tag",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                TagField tag = new TagField(label)
+                {
+                    value = property.stringValue,
+                    tooltip = entry.Parameter.Tooltip
+                };
+                tag.RegisterValueChangedCallback(evt =>
+                {
+                    property.stringValue = evt.newValue;
+                    serializedObject.ApplyModifiedProperties();
+                });
+                parent.Add(tag);
+                return;
+            }
+
             PropertyField field = ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 entry.Field.Name,
@@ -160,13 +302,40 @@ namespace Project.BlockFeatures.Editor
             Action refresh = () =>
             {
                 field.style.display =
-                    condition.intValue ==
-                    entry.Parameter.VisibleWhenValue
+                    MatchesVisibility(
+                        condition,
+                        entry.Parameter.VisibleWhenValue)
                         ? DisplayStyle.Flex
                         : DisplayStyle.None;
             };
             refresh();
             field.schedule.Execute(refresh).Every(100);
+        }
+
+        private static bool ShouldExpandGroup(string groupName)
+        {
+            return !string.Equals(
+                groupName,
+                "表现接口",
+                StringComparison.Ordinal);
+        }
+
+        private static bool MatchesVisibility(
+            SerializedProperty condition,
+            int expected)
+        {
+            if (condition == null)
+            {
+                return true;
+            }
+
+            if (condition.propertyType ==
+                SerializedPropertyType.Boolean)
+            {
+                return (condition.boolValue ? 1 : 0) == expected;
+            }
+
+            return condition.intValue == expected;
         }
 
         private static void AddRuntimeDebug(

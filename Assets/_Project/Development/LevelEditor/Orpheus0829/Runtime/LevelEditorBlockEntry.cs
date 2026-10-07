@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Project.ColorBlocks;
-using Project.Interactions;
 using Project.SurfaceTiles;
 using UnityEngine;
 
@@ -23,8 +21,6 @@ namespace Project.LevelEditor
         [SerializeField] private Color color = Color.white;
         [SerializeField] private GameObject prefab;
         [SerializeField] private GameObject customTemplate;
-        [SerializeField] private string managedColorTypeId;
-        [SerializeField] private InteractionObjectDefinition interactionDefinition;
         [SerializeField] private SurfaceTilePalette surfaceTilePalette;
         [SerializeField, Min(.01f)] private float surfaceTileCellSize = 1f;
         [SerializeField] private bool surfaceTileTransparentBase;
@@ -38,24 +34,6 @@ namespace Project.LevelEditor
         public Color Color => color;
         public GameObject Prefab => prefab;
         public GameObject CustomTemplate => customTemplate;
-        public string ManagedColorTypeId => managedColorTypeId;
-        public InteractionObjectDefinition InteractionDefinition => interactionDefinition;
-        public bool HasValidManagedColorPrefab
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(managedColorTypeId))
-                {
-                    return true;
-                }
-
-                ColorBlock block = prefab != null
-                    ? prefab.GetComponent<ColorBlock>()
-                    : null;
-                return UsesPrefabDirectly && block != null &&
-                       block.BaseColorTypeId == managedColorTypeId;
-            }
-        }
         public GameObject SourcePrefab =>
             customTemplate != null ? customTemplate : prefab;
         public bool UsesPrefabDirectly =>
@@ -100,18 +78,6 @@ namespace Project.LevelEditor
             EnsureEntryId();
             customTemplate = value;
         }
-
-#if UNITY_EDITOR
-        public void SetManagedColorType(string typeId)
-        {
-            managedColorTypeId = typeId;
-        }
-
-        public void SetInteractionDefinition(InteractionObjectDefinition value)
-        {
-            interactionDefinition = value;
-        }
-#endif
 
         public void CaptureDecoration(SurfaceTileBlock block)
         {

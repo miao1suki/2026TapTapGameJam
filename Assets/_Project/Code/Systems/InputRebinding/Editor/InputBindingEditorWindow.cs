@@ -29,7 +29,8 @@ namespace Project.InputRebinding.Editor
         {
             "仅点击",
             "仅长按",
-            "点击/长按可切换"
+            "点击/长按可切换",
+            "点击+长按"
         };
 
         private InputBindingService service;
@@ -284,7 +285,7 @@ namespace Project.InputRebinding.Editor
             body.Add(toolbar);
 
             Label hint = new Label(
-                "仅蹲下和冲刺可调：点击切换 / 长按持续  ·  其他动作固定按下触发");
+                "仅蹲下和冲刺可调：点击切换 / 长按持续  ·  交互固定同时支持点击和长按  ·  其他动作固定按下触发");
             hint.style.marginTop = 7f;
             hint.style.fontSize = 10f;
             hint.style.opacity = 0.56f;
@@ -400,7 +401,9 @@ namespace Project.InputRebinding.Editor
                 Label triggerSummary = new Label(
                     policy == InputActionTriggerPolicy.Switchable
                         ? $"当前触发方式：{GetTriggerLabel(service.GetActionTrigger(actionId))} · 点击切换，长按持续"
-                        : $"触发策略：{GetPolicyLabel(policy)}");
+                        : policy == InputActionTriggerPolicy.ClickAndHold
+                            ? "触发策略：点击 + 长按（固定，两者都可用）"
+                            : $"触发策略：{GetPolicyLabel(policy)}");
                 triggerSummary.style.fontSize = 10f;
                 triggerSummary.style.marginLeft = 2f;
                 triggerSummary.style.marginBottom = 3f;
@@ -507,6 +510,17 @@ namespace Project.InputRebinding.Editor
                 });
                 row.Add(trigger);
             }
+            else if (binding.IsButton &&
+                     InputActionInteractionPolicy.IsClickAndHold(
+                         actionId))
+            {
+                Label both = new Label("点击+长按");
+                both.style.width = 80f;
+                both.style.unityTextAlign =
+                    TextAnchor.MiddleCenter;
+                both.style.opacity = .72f;
+                row.Add(both);
+            }
 
             Button rebind = CreateButton(
                 canModify ? "改键" : "只读",
@@ -606,11 +620,89 @@ namespace Project.InputRebinding.Editor
                 GetControlPath(
                     recommendedDevice,
                     recommendedControl);
+            Label keyboardValueLabel = null;
+
+            void StartKeyboardCaptureAndAdd()
+            {
+                if (FromDeviceLabel(device.value) !=
+                    InputBindingDevice.Keyboard)
+                {
+                    return;
+                }
+
+                InputActionTriggerPolicy capturePolicy =
+                    selectedPolicy;
+                if (keyboardValueLabel != null)
+                {
+                    keyboardValueLabel.text = "监听中";
+                }
+
+                status.text = "正在听取键盘…";
+                StartKeyboardCapture(
+                    actionId,
+                    previewName =>
+                    {
+                        if (keyboardValueLabel != null)
+                        {
+                            keyboardValueLabel.text =
+                                $"识别：{previewName}";
+                        }
+                    },
+                    finalPath =>
+                    {
+                        service.SetTriggerPolicy(
+                            actionId,
+                            capturePolicy);
+                        int bindingIndex =
+                            service.AddBinding(
+                                actionId,
+                                finalPath,
+                                InputBindingDevice.Keyboard,
+                                GetDefaultBindingTrigger(
+                                    capturePolicy));
+                        if (bindingIndex < 0)
+                        {
+                            if (keyboardValueLabel != null)
+                            {
+                                keyboardValueLabel.text =
+                                    "添加失败";
+                            }
+
+                            status.text = "添加失败";
+                            QueueRefresh();
+                            return;
+                        }
+
+                        selectedPath = finalPath;
+                        if (keyboardValueLabel != null)
+                        {
+                            keyboardValueLabel.text =
+                                GetKeyboardDisplayName(
+                                    finalPath);
+                        }
+
+                        status.text = "已添加";
+                        QueueRefresh();
+                    },
+                    () =>
+                    {
+                        selectedPath = string.Empty;
+                        if (keyboardValueLabel != null)
+                        {
+                            keyboardValueLabel.text = "已取消";
+                        }
+
+                        status.text = "已取消";
+                        QueueRefresh();
+                    });
+            }
+
             VisualElement controlHost = new VisualElement();
             controlHost.style.flexGrow = 1f;
             void RebuildControlHost()
             {
                 controlHost.Clear();
+                keyboardValueLabel = null;
                 InputBindingDevice selectedDevice =
                     FromDeviceLabel(device.value);
                 if (selectedDevice ==
@@ -620,6 +712,7 @@ namespace Project.InputRebinding.Editor
                     VisualElement listenRow = Row();
                     listenRow.style.alignItems = Align.Center;
                     Label keyValue = new Label("未听取");
+                    keyboardValueLabel = keyValue;
                     keyValue.style.flexGrow = 1f;
                     keyValue.style.height = 23f;
                     keyValue.style.unityTextAlign =
@@ -632,54 +725,7 @@ namespace Project.InputRebinding.Editor
                     listenRow.Add(keyValue);
                     listenRow.Add(CreateButton(
                         "听取并添加",
-                        () =>
-                        {
-                            InputActionTriggerPolicy capturePolicy =
-                                selectedPolicy;
-                            keyValue.text = "监听中";
-                            status.text = "正在听取键盘…";
-                            StartKeyboardCapture(
-                                actionId,
-                                previewName =>
-                                {
-                                    keyValue.text =
-                                        $"识别：{previewName}";
-                                },
-                                finalPath =>
-                                {
-                                    service.SetTriggerPolicy(
-                                        actionId,
-                                        capturePolicy);
-                                    int bindingIndex =
-                                        service.AddBinding(
-                                            actionId,
-                                            finalPath,
-                                            InputBindingDevice.Keyboard,
-                                            GetDefaultBindingTrigger(
-                                                capturePolicy));
-                                    if (bindingIndex < 0)
-                                    {
-                                        keyValue.text = "添加失败";
-                                        status.text = "添加失败";
-                                        QueueRefresh();
-                                        return;
-                                    }
-
-                                    selectedPath = finalPath;
-                                    keyValue.text =
-                                        GetKeyboardDisplayName(
-                                            finalPath);
-                                    status.text = "已添加";
-                                    QueueRefresh();
-                                },
-                                () =>
-                                {
-                                    selectedPath = string.Empty;
-                                    keyValue.text = "已取消";
-                                    status.text = "已取消";
-                                    QueueRefresh();
-                                });
-                        },
+                        StartKeyboardCaptureAndAdd,
                         new Color(0.18f, 0.38f, 0.64f, 1f)));
                     controlHost.Add(listenRow);
                     return;
@@ -746,6 +792,9 @@ namespace Project.InputRebinding.Editor
                     new List<string>(PolicyOptions),
                     (int)selectedPolicy);
             policyField.style.width = 150f;
+            policyField.SetEnabled(
+                InputActionInteractionPolicy.CanConfigureTrigger(
+                    actionId));
             policyField.RegisterValueChangedCallback(evt =>
             {
                 selectedPolicy =
@@ -758,7 +807,7 @@ namespace Project.InputRebinding.Editor
                 if (FromDeviceLabel(device.value) ==
                     InputBindingDevice.Keyboard)
                 {
-                    status.text = "键盘使用听取并添加";
+                    StartKeyboardCaptureAndAdd();
                     return;
                 }
 
@@ -962,6 +1011,7 @@ namespace Project.InputRebinding.Editor
                 return;
             }
 
+            InputService.EnsureRequiredActions(service.Asset);
             Build();
         }
 
@@ -1199,6 +1249,8 @@ namespace Project.InputRebinding.Editor
                     return InputActionTriggerPolicy.HoldOnly;
                 case "点击/长按可切换":
                     return InputActionTriggerPolicy.Switchable;
+                case "点击+长按":
+                    return InputActionTriggerPolicy.ClickAndHold;
                 default:
                     return InputActionTriggerPolicy.ClickOnly;
             }
@@ -1213,6 +1265,8 @@ namespace Project.InputRebinding.Editor
                     return "仅长按";
                 case InputActionTriggerPolicy.Switchable:
                     return "点击/长按可切换";
+                case InputActionTriggerPolicy.ClickAndHold:
+                    return "点击+长按";
                 default:
                     return "仅点击";
             }
@@ -1244,6 +1298,7 @@ namespace Project.InputRebinding.Editor
             switch (actionId)
             {
                 case InputActionId.Attack:
+                case InputActionId.Carry:
                 case InputActionId.PointerPrimary:
                 case InputActionId.PointerSecondary:
                     return InputBindingDevice.Mouse;
@@ -1267,6 +1322,7 @@ namespace Project.InputRebinding.Editor
                     case InputActionId.Attack:
                     case InputActionId.PointerPrimary:
                         return "鼠标左键";
+                    case InputActionId.Carry:
                     case InputActionId.PointerSecondary:
                         return "鼠标右键";
                 }

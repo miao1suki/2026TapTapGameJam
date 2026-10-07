@@ -13,50 +13,12 @@ MonoBehaviour:
   m_Name: LevelEditorPalette
   m_EditorClassIdentifier: Assembly-CSharp::Project.LevelEditor.LevelEditorPalette
   entries:
-  - entryId: 36231c7bdbdd4c499997537ea230f38c
-    mode: 1
-    displayName: "\u7EA2\u65B9\u5757"
-    color: {r: 1, g: 0.25, b: 0.25, a: 1}
-    prefab: {fileID: 2422191113143629447, guid: bbdf116cd06d2fb4d87b1ebb8c18ae02, type: 3}
-    customTemplate: {fileID: 0}
-    managedColorTypeId: red
-    interactionDefinition: {fileID: 11400000, guid: d1a8b2c3d4e5f60718293a4b5c6d7e80, type: 2}
-    surfaceTilePalette: {fileID: 0}
-    surfaceTileCellSize: 1
-    surfaceTileTransparentBase: 0
-    surfaceTilePlacements: []
-  - entryId: 29ae700f35e247ddae115899ba7a5f5a
-    mode: 1
-    displayName: "\u84DD\u65B9\u5757"
-    color: {r: 0.22, g: 0.52, b: 1, a: 1}
-    prefab: {fileID: 524019047373316160, guid: 210c431167d7a014db209c383a9a55d2, type: 3}
-    customTemplate: {fileID: 0}
-    managedColorTypeId: blue
-    interactionDefinition: {fileID: 11400000, guid: 5439892d9140f354ab8f26bebf6c7582, type: 2}
-    surfaceTilePalette: {fileID: 0}
-    surfaceTileCellSize: 1
-    surfaceTileTransparentBase: 0
-    surfaceTilePlacements: []
-  - entryId: 1362ef2c1fa247d2b83942b0970b7101
-    mode: 1
-    displayName: "\u7EFF\u65B9\u5757"
-    color: {r: 0.25, g: 0.8, b: 0.38, a: 1}
-    prefab: {fileID: 8582130194286690322, guid: ac2d7caad3cfab24d920732a9371c085, type: 3}
-    customTemplate: {fileID: 0}
-    managedColorTypeId: green
-    interactionDefinition: {fileID: 11400000, guid: e2b9c3d4e5f60718293a4b5c6d7e8091, type: 2}
-    surfaceTilePalette: {fileID: 0}
-    surfaceTileCellSize: 1
-    surfaceTileTransparentBase: 0
-    surfaceTilePlacements: []
   - entryId: c2a23d40ffe04afc8ef12808af25ae69
     mode: 0
     displayName: "\u9ED1\u65B9\u5757"
     color: {r: 0.08, g: 0.08, b: 0.08, a: 1}
     prefab: {fileID: 0}
     customTemplate: {fileID: 0}
-    managedColorTypeId: 
-    interactionDefinition: {fileID: 0}
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
@@ -67,8 +29,6 @@ MonoBehaviour:
     color: {r: 0.95, g: 0.95, b: 0.95, a: 1}
     prefab: {fileID: 0}
     customTemplate: {fileID: 0}
-    managedColorTypeId: 
-    interactionDefinition: {fileID: 0}
     surfaceTilePalette: {fileID: 0}
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
@@ -79,8 +39,6 @@ MonoBehaviour:
     color: {r: 0.40415716, g: 0.41143844, b: 0.42138356, a: 1}
     prefab: {fileID: 0}
     customTemplate: {fileID: 0}
-    managedColorTypeId: 
-    interactionDefinition: {fileID: 0}
     surfaceTilePalette: {fileID: 11400000, guid: 6256579dbea09914487bfc3f247aa58b, type: 2}
     surfaceTileCellSize: 0.05
     surfaceTileTransparentBase: 0
@@ -899,37 +857,19 @@ MonoBehaviour:
   - entryId: 3c635d52f11f48f18d4d82a53c65e601
     displayName: "\u7EA2\u8272\u94A5\u5319"
     prefab: {fileID: 6622805535834104132, guid: 83e6e8f43f4f1d54289447a18295ca37, type: 3}
-    interactionDefinition: {fileID: 11400000, guid: 06536bd293ccada4a81c5169488dd935, type: 2}
     componentValueOverrides: []
   - entryId: 2986677913284d2f85e9c64011ca22d0
     displayName: "\u7EFF\u8272\u94A5\u5319"
     prefab: {fileID: 491305582336558569, guid: 6c8401f9adab9d841ba785f52b4f9623, type: 3}
-    interactionDefinition: {fileID: 11400000, guid: 3bcbac681449d8d48879a54c8ff080bb, type: 2}
     componentValueOverrides: []
   - entryId: 04b7a2d6735b4d0cbce343ab1293d6e0
     displayName: "\u84DD\u8272\u94A5\u5319"
     prefab: {fileID: 8140128999958426686, guid: 0c5be6edd719d03459d2e3ac01c4307f, type: 3}
-    interactionDefinition: {fileID: 11400000, guid: e05a68953d5e26347b85e0c12d50aa4a, type: 2}
     componentValueOverrides: []
   - entryId: 06e690b71b634be2909b6fecd7ecb627
-    displayName: "\u5B57\u5E55\u6FC0\u53D1(\u6D4B\u8BD5)"
+    displayName: "\u5B57\u5E55\u6FC0\u53D1\u9053\u5177"
     prefab: {fileID: 4553572954244812789, guid: 40fd7fa368f76bc4ca0e52adec7ddc07, type: 3}
-    interactionDefinition: {fileID: 11400000, guid: a52d149aa78ccf1469e9a9adca8538de, type: 2}
     componentValueOverrides:
-    - componentPath: 
-      componentTypeName: Project.Subtitles.SubtitleTrigger
-      componentIndex: 0
-      propertyPath: cue.style.offset.x
-      valueType: Float
-      value: 0
-      objectReferenceValue: {fileID: 0}
-    - componentPath: 
-      componentTypeName: Project.Subtitles.SubtitleTrigger
-      componentIndex: 0
-      propertyPath: cue.style.offset.y
-      valueType: Float
-      value: 0
-      objectReferenceValue: {fileID: 0}
     - componentPath: 
       componentTypeName: Project.Subtitles.SubtitleTrigger
       componentIndex: 0
@@ -950,13 +890,13 @@ MonoBehaviour:
       propertyPath: cue.style.font
       valueType: ObjectReference
       value: 
-      objectReferenceValue: {fileID: 0}
+      objectReferenceValue: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
     - componentPath: 
       componentTypeName: Project.Subtitles.SubtitleTrigger
       componentIndex: 0
       propertyPath: cue.style.color
       valueType: Color
-      value: '{"r":0.0,"g":0.0,"b":0.0,"a":1.0}'
+      value: '{"r":1.0,"g":1.0,"b":1.0,"a":1.0}'
       objectReferenceValue: {fileID: 0}
     - componentPath: 
       componentTypeName: Project.Subtitles.SubtitleTrigger
@@ -982,9 +922,23 @@ MonoBehaviour:
     - componentPath: 
       componentTypeName: Project.Subtitles.SubtitleTrigger
       componentIndex: 0
+      propertyPath: cue.style.inCurve
+      valueType: AnimationCurve
+      value: '{"preWrapMode":8,"postWrapMode":8}'
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
       propertyPath: cue.style.outAnimation
       valueType: Enum
       value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.Subtitles.SubtitleTrigger
+      componentIndex: 0
+      propertyPath: cue.style.outCurve
+      valueType: AnimationCurve
+      value: '{"preWrapMode":8,"postWrapMode":8}'
       objectReferenceValue: {fileID: 0}
     - componentPath: 
       componentTypeName: Project.Subtitles.SubtitleTrigger
@@ -1306,14 +1260,14 @@ MonoBehaviour:
       componentIndex: 0
       propertyPath: cue.text
       valueType: String
-      value: Hello World
+      value: ScreenNoteTool
       objectReferenceValue: {fileID: 0}
     - componentPath: 
       componentTypeName: Project.Subtitles.SubtitleTrigger
       componentIndex: 0
       propertyPath: cue.style.fontSize
       valueType: Float
-      value: 120
+      value: 56
       objectReferenceValue: {fileID: 0}
     - componentPath: 
       componentTypeName: Project.Subtitles.SubtitleTrigger
@@ -1406,15 +1360,71 @@ MonoBehaviour:
       valueType: Float
       value: 24
       objectReferenceValue: {fileID: 0}
-    - componentPath: 
-      componentTypeName: Project.Subtitles.SubtitleTrigger
-      componentIndex: 0
-      propertyPath: playOnce
-      valueType: Boolean
-      value: 0
-      objectReferenceValue: {fileID: 0}
   - entryId: 7a1b2c3d4e5f60718293a4b5c6d7e8f9
     displayName: "\u951A\u70B9"
     prefab: {fileID: 810000001, guid: b7c0d1e2f30456789abcdeffedcba987, type: 3}
-    interactionDefinition: {fileID: 11400000, guid: 0493f0ba84b64b046bc6e7780fea9f6d, type: 2}
+    componentValueOverrides: []
+  - entryId: 234025e375b248bfbb8ac4dca60021fa
+    displayName: "\u6C34\u6E90"
+    prefab: {fileID: 4491574534968212122, guid: 6dea163cbd3a49e4ca6f35776ac003fc, type: 3}
+    componentValueOverrides: []
+  - entryId: 6a317712f4c344038e7eff8345de01a0
+    displayName: "\u6C34\u6D41"
+    prefab: {fileID: 75558634237822655, guid: c3b01d303480df34cbc923067aa838d5, type: 3}
+    componentValueOverrides: []
+  - entryId: 4ba0994908e1477fb5f7dae6a0e0cb40
+    displayName: "\u6C14\u6CE1\u67F1"
+    prefab: {fileID: 5484731706275738289, guid: 599879792ee04e74b89815defc3440e4, type: 3}
+    componentValueOverrides: []
+  - entryId: b1789be1339f4f5b897ef3177788da37
+    displayName: "\u85E4\u8513"
+    prefab: {fileID: 415088043448545134, guid: 0b9c64b32646e624d930d420a5795b69, type: 3}
+    componentValueOverrides: []
+  - entryId: eb7a961c3edb4b2db919a5c209562fed
+    displayName: "\u5F39\u6027\u690D\u7269"
+    prefab: {fileID: 4048583810825559949, guid: a898ba3a8d320cc4eabeb2d10c7c0336, type: 3}
+    componentValueOverrides: []
+  - entryId: 2b19e161603c4ea8b7e74919e1656f1b
+    displayName: "\u690D\u7269\u969C\u788D"
+    prefab: {fileID: 9035185625685373390, guid: 3bb18fa97e12d304a9ff37d2f6c8aca6, type: 3}
+    componentValueOverrides: []
+  - entryId: b3197af4d69b44778f4f6d43fb2634e2
+    displayName: "\u5CA9\u6D46"
+    prefab: {fileID: 7110465426434250175, guid: ad383514508251042915872143a0be7a, type: 3}
+    componentValueOverrides: []
+  - entryId: 1b9aae04512d422c827d95dd1f66ba45
+    displayName: "\u80FD\u6E90\u5FEB"
+    prefab: {fileID: 2887393928276365968, guid: 144ab52273b074d43ac5dd4fd22497e7, type: 3}
+    componentValueOverrides: []
+  - entryId: ce4252f60fa240bfafb4d340ece01941
+    displayName: "\u6309\u94AE"
+    prefab: {fileID: 3334580373977955004, guid: a2663e9c92c526d4c930001910c89b99, type: 3}
+    componentValueOverrides: []
+  - entryId: d13739bd929949c88ceb41a1a74ea6ea
+    displayName: "\u66F2\u67C4"
+    prefab: {fileID: 4818210937279545170, guid: 359c5f059de769a43b583dd008ab20ee, type: 3}
+    componentValueOverrides: []
+  - entryId: 16c56a2b8cfc43ae9ab69270626c8de7
+    displayName: "\u57FA\u5EA7"
+    prefab: {fileID: 2053801944299975938, guid: bf9cada29e435d44ab8f327c19d15ee2, type: 3}
+    componentValueOverrides: []
+  - entryId: 212cd7a2ff304a6288b4d850132de143
+    displayName: "\u5E73\u53F0"
+    prefab: {fileID: 4415014238658296268, guid: eb6f308dc267145478ec7fa926b346fc, type: 3}
+    componentValueOverrides: []
+  - entryId: 0fa659ac46b54c40942bb0566aacf593
+    displayName: "\u4E07\u80FD\u65B9\u5757"
+    prefab: {fileID: 625459090113926379, guid: 3a7dcfb64df8540498e46f074315de93, type: 3}
+    componentValueOverrides: []
+  - entryId: 6cbd0f4bf77a4cd98e72fa10691dede0
+    displayName: "\u5CA9\u6D46\u51B7\u5374\u540E\u5F62\u6210\u5E73\u53F0"
+    prefab: {fileID: 3662553476298981817, guid: 38a14cce162a72d46a6ddfeaef560375, type: 3}
+    componentValueOverrides: []
+  - entryId: 87a16d86405b4e9dbe94e5a0ed74624b
+    displayName: "\u85E4\u8513\u6D3E\u751F\u7269"
+    prefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
+    componentValueOverrides: []
+  - entryId: 79d4f8fa82624e0db0ab14bf547baa4c
+    displayName: "\u5B57\u5E55\u5C55\u793A\u9053\u5177"
+    prefab: {fileID: 1531207766737356253, guid: 25886b04ea65c234e8a5db60ec44097d, type: 3}
     componentValueOverrides: []

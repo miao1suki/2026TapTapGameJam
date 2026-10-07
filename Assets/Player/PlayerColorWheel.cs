@@ -11,7 +11,7 @@ namespace Project.Player
 {
     /// <summary>
     /// 玩家颜色选择能力。它只保存玩家当前选中的颜色并提供轮盘 UI；
-    /// 物体的实际效果仍由 InteractionManager 执行。
+    /// 物体的实际效果由目标组件直接执行。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PlayerInteractionSensor))]
@@ -38,7 +38,6 @@ namespace Project.Player
         private GameObject eventSystemObject;
         private RectTransform wheelRoot;
         private Text wheelLabel;
-        private IInteractionTarget pendingTarget;
         private string selectedColorId = string.Empty;
         private string highlightedColorId = string.Empty;
         private readonly List<string> wheelColorIds = new List<string>();
@@ -46,6 +45,7 @@ namespace Project.Player
         private readonly List<Color> wheelBaseColors = new List<Color>();
         private float rangeRadius = -1f;
         private bool wheelOpen;
+        private Vector2 pointerPosition;
 
         private static Sprite circleSprite;
         private static Sprite ringSprite;
@@ -63,29 +63,66 @@ namespace Project.Player
             Debug.Log("[PlayerColorWheel] 当前颜色能力：无", this);
         }
 
-        private void Update()
+        private void OnEnable()
         {
+            EventMgr.OnRoomColorReset += ClearSelectedColor;
+        }
+
+        private void OnDisable()
+        {
+            EventMgr.OnRoomColorReset -= ClearSelectedColor;
+        }
+
+        public void Tick(Vector2 currentPointerPosition)
+        {
+            pointerPosition = currentPointerPosition;
             RefreshRangeIndicator();
-
-            if (GameInput.WasTriggeredThisFrame(
-                    InputActionId.PointerSecondary))
-            {
-                OpenWheel();
-            }
-
             if (wheelOpen)
             {
-                UpdateWheelSelection();
-                if (!GameInput.IsPressed(InputActionId.PointerSecondary) ||
-                    GameInput.WasTriggeredThisFrame(InputActionId.Cancel))
-                {
-                    CommitWheelSelection();
-                }
+                UpdateWheelSelection(pointerPosition);
             }
-            else if (GameInput.WasTriggeredThisFrame(
-                         InputActionId.PointerPrimary))
+        }
+
+        public void UpdateInput(
+            bool holdMode,
+            bool pressedThisFrame,
+            bool releasedThisFrame,
+            bool triggeredThisFrame,
+            Vector2 currentPointerPosition)
+        {
+            Tick(currentPointerPosition);
+
+            if (holdMode)
             {
-                TryUseSelectedAbility();
+                if (pressedThisFrame)
+                {
+                    OpenWheel();
+                }
+
+                if (releasedThisFrame)
+                {
+                    CloseWheel();
+                }
+
+                return;
+            }
+
+            if (pressedThisFrame ||
+                triggeredThisFrame)
+            {
+                ToggleWheel();
+            }
+        }
+
+        public void ToggleWheel()
+        {
+            if (wheelOpen)
+            {
+                CloseWheel();
+            }
+            else
+            {
+                OpenWheel();
             }
         }
 
@@ -143,35 +180,25 @@ namespace Project.Player
                 return;
             }
 
-            sensor?.RefreshTarget();
-            pendingTarget = sensor?.CurrentTarget;
             highlightedColorId = string.Empty;
-            Project.ColorBlocks.ColorBlock colorBlock =
-                pendingTarget as Project.ColorBlocks.ColorBlock;
-            if (colorBlock != null &&
-                !colorBlock.CanUseColorWheel(gameObject))
-            {
-                pendingTarget = null;
-            }
             EnsureCanvas();
             RebuildWheel();
             wheelOpen = true;
             wheelRoot.gameObject.SetActive(true);
             UpdateWheelPosition();
-            UpdateWheelSelection();
+            UpdateWheelSelection(pointerPosition);
         }
 
-        private void CloseWheel()
+        public void CloseWheel()
         {
             wheelOpen = false;
-            pendingTarget = null;
             if (wheelRoot != null)
             {
                 wheelRoot.gameObject.SetActive(false);
             }
         }
 
-        private void CommitWheelSelection()
+        public void CommitWheelSelection()
         {
             if (!wheelOpen)
             {
@@ -186,51 +213,59 @@ namespace Project.Player
             CloseWheel();
         }
 
-        private void TryUseSelectedAbility()
+        public void TryUseSelectedAbility()
         {
-            sensor?.RefreshTarget();
-            if (sensor == null || !sensor.HasTarget)
+            if (EventSystem.current != null &&
+                EventSystem.current.IsPointerOverGameObject())
             {
-                Debug.Log("[PlayerColorWheel] 左键交互失败：范围内没有物体。", this);
                 return;
             }
 
-            IInteractionTarget target = sensor.CurrentTarget;
-            Component targetComponent = target as Component;
+            Camera camera = Camera.main;
+            if (camera == null ||
+                sensor == null ||
+                !sensor.TryGetScreenComponent<IColorApplicationTarget>(
+                    camera,
+                    pointerPosition,
+                    out IColorApplicationTarget colorTarget))
+            {
+                Debug.Log(
+                    "[PlayerColorWheel] 左键交互失败：没有点击到可接收颜色的物体。",
+                    this);
+                return;
+            }
+
+            Component targetComponent = colorTarget as Component;
+            if (!sensor.IsWithinRange(targetComponent))
+            {
+                Debug.Log(
+                    "[PlayerColorWheel] 左键交互失败：点击目标超出交互圈。",
+                    this);
+                return;
+            }
+
             string targetName = targetComponent != null
                 ? targetComponent.gameObject.name
-                : target.GetType().Name;
-            bool success = target.TryInteract(gameObject);
+                : colorTarget.GetType().Name;
+            if (!HasSelectedColor)
+            {
+                Debug.Log(
+                    "[PlayerColorWheel] 左键交互失败：尚未选择颜色。",
+                    targetComponent != null
+                        ? targetComponent.gameObject
+                        : gameObject);
+                return;
+            }
+
+            bool success = colorTarget.ApplyColor(
+                selectedColorId,
+                gameObject);
+
             Debug.Log(
                 success
                     ? $"[PlayerColorWheel] 使用能力“{(HasSelectedColor ? selectedColorId : "无")}”成功与物体交互：{targetName}"
                     : $"[PlayerColorWheel] 使用能力“{(HasSelectedColor ? selectedColorId : "无")}”与物体交互失败：{targetName}",
                 targetComponent != null ? targetComponent.gameObject : gameObject);
-        }
-
-        private void ExecutePendingTarget()
-        {
-            IInteractionTarget target = pendingTarget;
-            pendingTarget = null;
-            if (target == null || sensor == null ||
-                !sensor.IsWithinRange(target) ||
-                !target.CanInteract(gameObject))
-            {
-                CloseWheel();
-                return;
-            }
-
-            Project.ColorBlocks.ColorBlock colorBlock =
-                target as Project.ColorBlocks.ColorBlock;
-            if (colorBlock != null &&
-                !colorBlock.CanUseColorWheel(gameObject))
-            {
-                CloseWheel();
-                return;
-            }
-
-            target.TryInteract(gameObject);
-            CloseWheel();
         }
 
         private void EnsureCanvas()
@@ -367,17 +402,16 @@ namespace Project.Player
             }
         }
 
-        private void UpdateWheelSelection()
+        private void UpdateWheelSelection(Vector2 currentPointerPosition)
         {
             if (!wheelOpen || wheelColorIds.Count == 0 || wheelRoot == null)
             {
                 return;
             }
 
-            Vector2 pointer = GameInput.PointerPosition;
             Vector2 center = RectTransformUtility.WorldToScreenPoint(null,
                 wheelRoot.position);
-            Vector2 delta = pointer - center;
+            Vector2 delta = currentPointerPosition - center;
             if (delta.sqrMagnitude >= WheelSelectionDeadZone * WheelSelectionDeadZone)
             {
                 float angle = Mathf.Atan2(delta.y, delta.x) + Mathf.PI * .5f;

@@ -51,26 +51,51 @@ namespace Project.Player
         private Rigidbody motor;
         private CapsuleCollider capsule;
         private PlayerActionRunner runner;
+        private PlayerInteractionSensor interactionSensor;
+        private PlayerColorWheel colorWheel;
+        private IPlayerCarryTarget carryTarget;
+        private IPlayerPointerDrag pointerDrag;
+        private IInteractionHoldTarget heldInteractionTarget;
         private Vector2 movement;
         private bool sprint;
         private float jumpUntil = -1, groundedUntil = -1;
         private float airborneSince = -1f;
+        private float lastAirTime;
+        private float lastLandingTime = float.NegativeInfinity;
+        private float lastLandingFallDistance;
+        private float lastLandingDownwardSpeed;
+        private float highestAirPosition;
+        private float currentFallDistance;
+        private float lastBounceTime = float.NegativeInfinity;
+        private float bounceDecayMultiplier = 1f;
+        private bool landedThisStep;
         private bool jumpHeld;
         private int lockDepth;
         private float requestedBounceSpeed = -1f;
+        private float requestedJumpBoost = -1f;
+        private Vector3 pendingPlatformDelta;
         private readonly HashSet<int> waterSources = new HashSet<int>();
         private readonly Dictionary<int, float> waterSpeedMultipliers =
             new Dictionary<int, float>();
-        private readonly HashSet<int> fallDamageImmunitySources =
-            new HashSet<int>();
+        private readonly Dictionary<int, Vector2> waterVelocities =
+            new Dictionary<int, Vector2>();
+        private readonly Dictionary<int, float> waterBuoyancies =
+            new Dictionary<int, float>();
+        private readonly Dictionary<int, float> climbSpeedMultipliers =
+            new Dictionary<int, float>();
+        private readonly Dictionary<int, float> climbSlideSpeeds =
+            new Dictionary<int, float>();
+        private readonly Dictionary<int, float> climbFastSlideSpeeds =
+            new Dictionary<int, float>();
         private readonly HashSet<int> climbSources = new HashSet<int>();
+        private readonly HashSet<int> bounceSurfaces =
+            new HashSet<int>();
         private readonly RaycastHit[] groundHits = new RaycastHit[16];
         private static PhysicsMaterial zeroFrictionMaterial;
         public Rigidbody Motor => motor;
         public bool IsGrounded { get; private set; }
         public bool IsControlLocked => lockDepth > 0;
         public bool IsSwimming => waterSources.Count > 0;
-        public bool IsFallDamageImmune => fallDamageImmunitySources.Count > 0;
         public bool IsClimbing =>
             climbSources.Count > 0 &&
             (!IsGrounded || movement.y > .01f);
@@ -90,6 +115,18 @@ namespace Project.Player
         public float AirTime => IsGrounded
             ? 0f
             : Mathf.Max(0f, Time.time - airborneSince);
+        public float LastAirTime => lastAirTime;
+        public float TimeSinceLastLanding =>
+            float.IsNegativeInfinity(lastLandingTime)
+                ? float.PositiveInfinity
+                : Time.time - lastLandingTime;
+        public float LastLandingFallDistance =>
+            lastLandingFallDistance;
+        public float LastLandingDownwardSpeed =>
+            lastLandingDownwardSpeed;
+        public float CurrentFallDistance => currentFallDistance;
+        public bool IsOnBounceSurface => bounceSurfaces.Count > 0;
+        public bool LandedThisStep => landedThisStep;
         public string GravityMode
         {
             get
@@ -117,6 +154,13 @@ namespace Project.Player
             : null;
         public bool IsActionPlaying =>
             runner != null && runner.IsPlaying;
+        public bool IsColorWheelOpen =>
+            colorWheel != null && colorWheel.IsWheelOpen;
+        public bool IsPointerDragActive => pointerDrag != null;
+        public float InteractionScanRadius =>
+            interactionSensor != null
+                ? interactionSensor.ScanRadius
+                : 0f;
         public int ControlLockDepth => lockDepth;
         public event Action<ActSO> ActionStarted;
         public event Action<ActSO> ActionCompleted;
@@ -136,8 +180,19 @@ namespace Project.Player
             motor.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             motor.useGravity = false;
             capsule.sharedMaterial = GetZeroFrictionMaterial();
-            if (!GetComponent<PlayerInteractionSensor>()) gameObject.AddComponent<PlayerInteractionSensor>();
-            if (!GetComponent<PlayerColorWheel>()) gameObject.AddComponent<PlayerColorWheel>();
+            highestAirPosition = transform.position.y;
+            interactionSensor = GetComponent<PlayerInteractionSensor>();
+            if (interactionSensor == null)
+            {
+                interactionSensor =
+                    gameObject.AddComponent<PlayerInteractionSensor>();
+            }
+
+            colorWheel = GetComponent<PlayerColorWheel>();
+            if (colorWheel == null)
+            {
+                colorWheel = gameObject.AddComponent<PlayerColorWheel>();
+            }
         }
         private static PhysicsMaterial GetZeroFrictionMaterial()
         {
@@ -158,11 +213,23 @@ namespace Project.Player
         private void OnDisable()
         {
             if (runner != null) { runner.Completed -= Completed; runner.Stop(); }
+            CancelCarry();
+            CancelPointerDrag();
+            ReleaseHeldInteraction();
             lockDepth = 0; movement = Vector2.zero; jumpUntil = -1;
             jumpHeld = false;
+            requestedJumpBoost = -1f;
+            pendingPlatformDelta = Vector3.zero;
             waterSources.Clear();
             waterSpeedMultipliers.Clear();
-            fallDamageImmunitySources.Clear();
+            waterVelocities.Clear();
+            waterBuoyancies.Clear();
+            bounceSurfaces.Clear();
+            currentFallDistance = 0f;
+            landedThisStep = false;
+            climbSpeedMultipliers.Clear();
+            climbSlideSpeeds.Clear();
+            climbFastSlideSpeeds.Clear();
             climbSources.Clear();
         }
         public void EnterWater(Component source)
@@ -188,7 +255,7 @@ namespace Project.Player
             }
         }
 
-        public void SetFallDamageImmune(Component source, bool value)
+        public void SetWaterVelocity(Component source, Vector2 velocity)
         {
             if (source == null)
             {
@@ -196,18 +263,197 @@ namespace Project.Player
             }
 
             int id = source.GetInstanceID();
-            if (value)
+            if (velocity.sqrMagnitude <= .0001f)
             {
-                fallDamageImmunitySources.Add(id);
+                waterVelocities.Remove(id);
             }
             else
             {
-                fallDamageImmunitySources.Remove(id);
+                waterVelocities[id] = velocity;
+            }
+        }
+
+        public void SetBuoyancy(Component source, float targetRiseSpeed)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            int id = source.GetInstanceID();
+            if (targetRiseSpeed <= 0f)
+            {
+                waterBuoyancies.Remove(id);
+            }
+            else
+            {
+                waterBuoyancies[id] = targetRiseSpeed;
+            }
+        }
+
+        public void SetClimbSpeedMultiplier(
+            Component source,
+            float multiplier)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            int id = source.GetInstanceID();
+            if (multiplier <= 0f)
+            {
+                climbSpeedMultipliers.Remove(id);
+            }
+            else
+            {
+                climbSpeedMultipliers[id] = multiplier;
+            }
+        }
+
+        public void SetClimbSlideSpeed(
+            Component source,
+            float speed)
+        {
+            SetClimbSpeedValue(climbSlideSpeeds, source, speed);
+        }
+
+        public void SetClimbFastSlideSpeed(
+            Component source,
+            float speed)
+        {
+            SetClimbSpeedValue(
+                climbFastSlideSpeeds,
+                source,
+                speed);
+        }
+
+        public void ClearClimbSlideSpeed(Component source)
+        {
+            if (source != null)
+            {
+                climbSlideSpeeds.Remove(source.GetInstanceID());
+            }
+        }
+
+        public void ClearClimbFastSlideSpeed(Component source)
+        {
+            if (source != null)
+            {
+                climbFastSlideSpeeds.Remove(source.GetInstanceID());
             }
         }
 
         public void ApplyVerticalBounce(float verticalSpeed)
         {
+            requestedBounceSpeed = Mathf.Max(
+                requestedBounceSpeed,
+                verticalSpeed);
+        }
+
+        public void ApplyVerticalBounceImmediate(float verticalSpeed)
+        {
+            requestedBounceSpeed = -1f;
+            if (motor == null)
+            {
+                return;
+            }
+
+            Vector3 velocity = motor.linearVelocity;
+            velocity.y = Mathf.Max(velocity.y, verticalSpeed);
+            motor.linearVelocity = velocity;
+            IsGrounded = false;
+            airborneSince = Time.time;
+        }
+
+        public void EnterBounceSurface(Component source)
+        {
+            if (source != null)
+            {
+                bounceSurfaces.Add(source.GetInstanceID());
+            }
+        }
+
+        public void ExitBounceSurface(Component source)
+        {
+            if (source != null)
+            {
+                bounceSurfaces.Remove(source.GetInstanceID());
+            }
+        }
+
+        public bool CanBounce(float minimumInterval)
+        {
+            return Time.time - lastBounceTime >=
+                   Mathf.Max(0f, minimumInterval);
+        }
+
+        public float GetBounceDecay(
+            float decayRate,
+            float resetSeconds)
+        {
+            if (float.IsNegativeInfinity(lastBounceTime) ||
+                Time.time - lastBounceTime >
+                Mathf.Max(.05f, resetSeconds))
+            {
+                return 1f;
+            }
+
+            return bounceDecayMultiplier;
+        }
+
+        public void RegisterBounce(
+            float decayRate,
+            float resetSeconds)
+        {
+            float current = GetBounceDecay(
+                decayRate,
+                resetSeconds);
+            bounceDecayMultiplier = Mathf.Clamp01(
+                current * Mathf.Clamp01(decayRate));
+            lastBounceTime = Time.time;
+        }
+
+        public void ClampUpwardVelocity(float maxUpwardSpeed)
+        {
+            if (motor == null)
+            {
+                return;
+            }
+
+            Vector3 velocity = motor.linearVelocity;
+            if (velocity.y <= maxUpwardSpeed)
+            {
+                return;
+            }
+
+            velocity.y = maxUpwardSpeed;
+            motor.linearVelocity = velocity;
+        }
+
+        public float CalculateVerticalRiseHeight(
+            float initialSpeed,
+            bool jumpHeld)
+        {
+            float gravityMultiplier = jumpHeld
+                ? jumpGravityMultiplier
+                : jumpReleaseGravityMultiplier;
+            float gravity = Mathf.Max(
+                .01f,
+                Mathf.Abs(Physics.gravity.y) * gravityMultiplier);
+            return initialSpeed * initialSpeed / (2f * gravity);
+        }
+
+        public void QueuePlatformDelta(Vector3 delta)
+        {
+            pendingPlatformDelta += delta;
+        }
+
+        public void ApplyJumpBoost(float verticalSpeed)
+        {
+            requestedJumpBoost = Mathf.Max(
+                requestedJumpBoost,
+                verticalSpeed);
             requestedBounceSpeed = Mathf.Max(
                 requestedBounceSpeed,
                 verticalSpeed);
@@ -246,6 +492,228 @@ namespace Project.Player
             movement = Vector2.zero;
             jumpUntil = -1;
             jumpHeld = false;
+            requestedJumpBoost = -1f;
+        }
+
+        public void RefreshInteractionTarget()
+        {
+            interactionSensor?.RefreshTarget();
+        }
+
+        public void UpdateInteraction(
+            bool interactHeld,
+            bool interactTriggered,
+            bool interactionBlocked)
+        {
+            if (heldInteractionTarget != null)
+            {
+                if (interactHeld)
+                {
+                    heldInteractionTarget.HoldInteract(gameObject);
+                }
+                else
+                {
+                    ReleaseHeldInteraction();
+                }
+            }
+
+            if (!interactTriggered ||
+                interactionBlocked ||
+                interactionSensor == null)
+            {
+                return;
+            }
+
+            if (CurrentStateId != PlayerStateId.Normal &&
+                CurrentStateId != PlayerStateId.Swimming)
+            {
+                return;
+            }
+
+            if (interactionSensor.TryInteract() &&
+                interactionSensor.CurrentTarget is
+                    IInteractionHoldTarget holdTarget)
+            {
+                heldInteractionTarget = holdTarget;
+                holdTarget.HoldInteract(gameObject);
+            }
+        }
+
+        private void ReleaseHeldInteraction()
+        {
+            if (heldInteractionTarget == null)
+            {
+                return;
+            }
+
+            heldInteractionTarget.EndInteract(gameObject);
+            heldInteractionTarget = null;
+        }
+
+        public void TickColorWheel(Vector2 pointerPosition)
+        {
+            colorWheel?.Tick(pointerPosition);
+        }
+
+        public void UpdateColorWheelInput(
+            bool holdMode,
+            bool pressedThisFrame,
+            bool releasedThisFrame,
+            bool triggeredThisFrame,
+            Vector2 pointerPosition)
+        {
+            colorWheel?.UpdateInput(
+                holdMode,
+                pressedThisFrame,
+                releasedThisFrame,
+                triggeredThisFrame,
+                pointerPosition);
+        }
+
+        public void ToggleColorWheel()
+        {
+            colorWheel?.ToggleWheel();
+        }
+
+        public void CloseColorWheel()
+        {
+            colorWheel?.CloseWheel();
+        }
+
+        public void CommitColorWheelSelection()
+        {
+            colorWheel?.CommitWheelSelection();
+        }
+
+        public void TryUseSelectedColorAbility()
+        {
+            colorWheel?.TryUseSelectedAbility();
+        }
+
+        public void BeginPointerDrag(IPlayerPointerDrag drag)
+        {
+            if (drag == null || pointerDrag != null)
+            {
+                return;
+            }
+
+            pointerDrag = drag;
+            ClearBufferedInput();
+            colorWheel?.CloseWheel();
+            SetControlLocked(true);
+        }
+
+        public void EndPointerDrag(IPlayerPointerDrag drag)
+        {
+            if (drag == null ||
+                !ReferenceEquals(pointerDrag, drag))
+            {
+                return;
+            }
+
+            pointerDrag = null;
+            SetControlLocked(false);
+        }
+
+        public void UpdatePointerDrag(
+            Vector2 screenPosition,
+            Camera camera)
+        {
+            if (pointerDrag == null || camera == null)
+            {
+                return;
+            }
+
+            pointerDrag.UpdatePointer(
+                camera.ScreenPointToRay(screenPosition));
+        }
+
+        public void UpdateCarry(
+            bool carryHeld,
+            bool carryTriggered,
+            Vector2 screenPosition,
+            Camera camera)
+        {
+            if (carryTarget != null)
+            {
+                if (!carryHeld)
+                {
+                    IPlayerCarryTarget releasedTarget = carryTarget;
+                    carryTarget = null;
+                    releasedTarget.EndCarry(this);
+                    ForceEndPointerDrag();
+                    return;
+                }
+
+                if (camera != null)
+                {
+                    carryTarget.UpdateCarry(
+                        this,
+                        camera.ScreenPointToRay(
+                            screenPosition));
+                }
+
+                return;
+            }
+
+            if (!carryTriggered ||
+                camera == null ||
+                interactionSensor == null)
+            {
+                return;
+            }
+
+            if (interactionSensor.TryGetScreenComponent(
+                    camera,
+                    screenPosition,
+                    out IPlayerCarryTarget target) &&
+                target is Component component &&
+                interactionSensor.IsWithinRange(component) &&
+                target.CanCarry(this))
+            {
+                carryTarget = target;
+                target.BeginCarry(
+                    this,
+                    camera.ScreenPointToRay(screenPosition));
+            }
+        }
+
+        private void CancelPointerDrag()
+        {
+            if (pointerDrag == null)
+            {
+                return;
+            }
+
+            IPlayerPointerDrag drag = pointerDrag;
+            pointerDrag = null;
+            drag.CancelPointerDrag();
+            SetControlLocked(false);
+        }
+
+        private void ForceEndPointerDrag()
+        {
+            if (pointerDrag == null)
+            {
+                return;
+            }
+
+            IPlayerPointerDrag drag = pointerDrag;
+            pointerDrag = null;
+            drag.CancelPointerDrag();
+            SetControlLocked(false);
+        }
+
+        private void CancelCarry()
+        {
+            if (carryTarget == null)
+            {
+                return;
+            }
+
+            IPlayerCarryTarget target = carryTarget;
+            carryTarget = null;
+            target.CancelCarry();
         }
         private float GetSwimSpeedMultiplier()
         {
@@ -258,8 +726,131 @@ namespace Project.Player
             return result;
         }
 
+        private Vector2 GetWaterVelocity()
+        {
+            Vector2 result = Vector2.zero;
+            foreach (Vector2 velocity in waterVelocities.Values)
+            {
+                result += velocity;
+            }
+
+            return result;
+        }
+
+        private float GetBuoyancy()
+        {
+            float result = 0f;
+            foreach (float value in waterBuoyancies.Values)
+            {
+                result = Mathf.Max(result, value);
+            }
+
+            return result;
+        }
+
+        private float GetClimbSpeedMultiplier()
+        {
+            float result = 1f;
+            foreach (float multiplier in
+                     climbSpeedMultipliers.Values)
+            {
+                result = Mathf.Min(result, multiplier);
+            }
+
+            return result;
+        }
+
+        private float GetClimbSlideSpeed()
+        {
+            return GetClimbSpeedValue(
+                climbSlideSpeeds,
+                climbSlideSpeed);
+        }
+
+        private float GetClimbFastSlideSpeed()
+        {
+            return GetClimbSpeedValue(
+                climbFastSlideSpeeds,
+                climbDownSpeed);
+        }
+
+        private static void SetClimbSpeedValue(
+            Dictionary<int, float> speeds,
+            Component source,
+            float speed)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            int id = source.GetInstanceID();
+            speeds[id] = Mathf.Max(0f, speed);
+        }
+
+        private static float GetClimbSpeedValue(
+            Dictionary<int, float> speeds,
+            float fallback)
+        {
+            float result = fallback;
+            foreach (float speed in speeds.Values)
+            {
+                result = Mathf.Min(result, speed);
+            }
+
+            return result;
+        }
+
+        private void TryApplyLandingBounce(
+            float fallDistance,
+            float downwardSpeed,
+            int groundHitCount)
+        {
+            if (!IsGrounded ||
+                fallDistance <= .2f)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                 index < groundHitCount;
+                 index++)
+            {
+                Collider collider = groundHits[index].collider;
+                IPlayerBounceSurface surface = collider != null
+                    ? collider.GetComponentInParent<
+                        IPlayerBounceSurface>()
+                    : null;
+                if (surface == null ||
+                    !surface.TryGetBounceSpeed(
+                        this,
+                        fallDistance,
+                        downwardSpeed,
+                        out float verticalSpeed) ||
+                    verticalSpeed <= 0f)
+                {
+                    continue;
+                }
+
+                requestedBounceSpeed = Mathf.Max(
+                    requestedBounceSpeed,
+                    verticalSpeed);
+                return;
+            }
+        }
+
         private void FixedUpdate()
         {
+            if (pendingPlatformDelta.sqrMagnitude > .000001f)
+            {
+                motor.position += pendingPlatformDelta;
+                pendingPlatformDelta = Vector3.zero;
+            }
+
+            float velocityAtStepStart = motor != null
+                ? motor.linearVelocity.y
+                : 0f;
+            landedThisStep = false;
             bool wasGrounded = IsGrounded;
             IsGrounded = false;
             Bounds bounds = capsule.bounds;
@@ -273,14 +864,55 @@ namespace Project.Player
             if (IsGrounded) groundedUntil = Time.time + coyoteTime;
             if (IsGrounded)
             {
+                if (!wasGrounded)
+                {
+                    lastAirTime = airborneSince >= 0f
+                        ? Time.time - airborneSince
+                        : 0f;
+                    lastLandingTime = Time.time;
+                    lastLandingFallDistance = Mathf.Max(
+                        currentFallDistance,
+                        highestAirPosition - transform.position.y);
+                    lastLandingDownwardSpeed = Mathf.Max(
+                        0f,
+                        -velocityAtStepStart);
+                    TryApplyLandingBounce(
+                        lastLandingFallDistance,
+                        lastLandingDownwardSpeed,
+                        count);
+                    highestAirPosition = transform.position.y;
+                    currentFallDistance = 0f;
+                    landedThisStep = true;
+                    Emit(AchievementSignalIds.PlayerLanded);
+                }
+                else
+                {
+                    highestAirPosition = transform.position.y;
+                }
+
                 airborneSince = -1f;
             }
-            else if (wasGrounded)
+            else
             {
-                airborneSince = Time.time;
-            }
+                if (wasGrounded)
+                {
+                    airborneSince = Time.time;
+                }
 
-            if (IsGrounded && !wasGrounded) Emit(AchievementSignalIds.PlayerLanded);
+                if (airborneSince >= 0f)
+                {
+                    lastAirTime = Mathf.Max(
+                        lastAirTime,
+                        Time.time - airborneSince);
+                }
+
+                highestAirPosition = Mathf.Max(
+                    highestAirPosition,
+                    transform.position.y);
+                currentFallDistance = Mathf.Max(
+                    currentFallDistance,
+                    highestAirPosition - transform.position.y);
+            }
             Vector3 velocity = motor.linearVelocity;
             if (requestedBounceSpeed >= 0f)
             {
@@ -288,6 +920,14 @@ namespace Project.Player
                 requestedBounceSpeed = -1f;
                 IsGrounded = false;
                 airborneSince = Time.time;
+            }
+            if (movement.y < -.1f &&
+                IsOnBounceSurface &&
+                velocity.y > 0f)
+            {
+                velocity.y = 0f;
+                requestedBounceSpeed = -1f;
+                requestedJumpBoost = -1f;
             }
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
             bool jumpRequested = !blocked &&
@@ -300,10 +940,13 @@ namespace Project.Player
 
             if (IsClimbing)
             {
+                float climbMultiplier =
+                    GetClimbSpeedMultiplier();
                 float horizontalTarget = blocked
                     ? 0f
                     : Mathf.Clamp(movement.x, -1f, 1f) *
-                      climbHorizontalSpeed;
+                      climbHorizontalSpeed *
+                      climbMultiplier;
                 float verticalTarget;
                 if (blocked)
                 {
@@ -311,15 +954,24 @@ namespace Project.Player
                 }
                 else if (movement.y > .01f)
                 {
-                    verticalTarget = climbSpeed;
+                    verticalTarget =
+                        climbSpeed * climbMultiplier;
                 }
                 else if (movement.y < -.01f)
                 {
-                    verticalTarget = -climbDownSpeed;
+                    verticalTarget =
+                        -GetClimbFastSlideSpeed() *
+                        climbMultiplier;
+                }
+                else if (jumpHeld)
+                {
+                    verticalTarget = 0f;
                 }
                 else
                 {
-                    verticalTarget = -climbSlideSpeed;
+                    verticalTarget =
+                        -GetClimbSlideSpeed() *
+                        climbMultiplier;
                 }
 
                 velocity.x = Mathf.MoveTowards(
@@ -342,15 +994,24 @@ namespace Project.Player
             }
             if (IsSwimming)
             {
+                Vector2 externalVelocity = GetWaterVelocity();
+                float buoyancy = GetBuoyancy();
                 float horizontalTarget = blocked
                     ? 0f
                     : Mathf.Clamp(movement.x, -1f, 1f) *
-                      swimSpeed * GetSwimSpeedMultiplier();
+                      swimSpeed * GetSwimSpeedMultiplier() +
+                      externalVelocity.x;
                 float verticalTarget = blocked
                     ? 0f
                     : jumpHeld
                         ? swimRiseSpeed
                         : -swimSinkSpeed;
+                if (!blocked)
+                {
+                    verticalTarget += externalVelocity.y +
+                                      buoyancy;
+                }
+
                 velocity.x = Mathf.MoveTowards(
                     velocity.x,
                     horizontalTarget,
@@ -406,7 +1067,18 @@ namespace Project.Player
             velocity.z = 0;
             if (jumpRequested)
             {
-                velocity.y = jumpSpeed * NextJumpBounceService.ConsumeMultiplier();
+                float jumpVelocity =
+                    jumpSpeed *
+                    NextJumpBounceService.ConsumeMultiplier();
+                if (requestedJumpBoost >= 0f)
+                {
+                    jumpVelocity = Mathf.Max(
+                        jumpVelocity,
+                        requestedJumpBoost);
+                    requestedJumpBoost = -1f;
+                }
+
+                velocity.y = jumpVelocity;
                 jumpUntil = groundedUntil = -1; IsGrounded = false;
                 airborneSince = Time.time;
                 Emit(AchievementSignalIds.PlayerJumped);

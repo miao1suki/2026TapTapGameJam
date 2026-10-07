@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Project.ColorBlocks;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -34,6 +35,27 @@ namespace Project.BlockFeatures
         [InspectorName("表现")] Presentation = 12
     }
 
+    public enum BlockFeatureCategory
+    {
+        [InspectorName("机关")] Mechanism = 0,
+        [InspectorName("危险物")] Hazard = 1,
+        [InspectorName("水域")] Water = 2,
+        [InspectorName("植物")] Plant = 3,
+        [InspectorName("移动")] Movement = 4,
+        [InspectorName("反应")] Reaction = 5,
+        [InspectorName("通用")] Utility = 6
+    }
+
+    [Flags]
+    public enum BlockFeatureInteraction
+    {
+        [InspectorName("无")] None = 0,
+        [InspectorName("玩家接触")] PlayerContact = 1,
+        [InspectorName("物体接触")] ObjectContact = 2,
+        [InspectorName("接收颜色")] AppliedColor = 4,
+        [InspectorName("房间重置")] RoomReset = 8
+    }
+
     [AttributeUsage(
         AttributeTargets.Class,
         AllowMultiple = false,
@@ -42,6 +64,10 @@ namespace Project.BlockFeatures
     {
         public string DisplayName { get; set; }
         public string DefaultColorId { get; set; } = string.Empty;
+        public BlockFeatureCategory Category { get; set; } =
+            BlockFeatureCategory.Utility;
+        public BlockFeatureInteraction Interactions { get; set; } =
+            BlockFeatureInteraction.RoomReset;
         public BlockFeaturePhase Phase { get; set; } =
             BlockFeaturePhase.Simulation;
         public int Order { get; set; }
@@ -86,6 +112,8 @@ namespace Project.BlockFeatures
                 attribute.DefaultColorId)
                 ? string.Empty
                 : attribute.DefaultColorId.Trim();
+            Category = attribute.Category;
+            Interactions = attribute.Interactions;
             Phase = attribute.Phase;
             Order = attribute.Order;
             MaxPerBlock = Mathf.Max(1, attribute.MaxPerBlock);
@@ -103,6 +131,8 @@ namespace Project.BlockFeatures
         public Type FeatureType { get; }
         public string DisplayName { get; }
         public string DefaultColorId { get; }
+        public BlockFeatureCategory Category { get; }
+        public BlockFeatureInteraction Interactions { get; }
         public BlockFeaturePhase Phase { get; }
         public int Order { get; }
         public int MaxPerBlock { get; }
@@ -159,6 +189,32 @@ namespace Project.BlockFeatures
 
     public interface IBlockPresentationRequest
     {
+    }
+
+    public interface IPlayerContactReceiver
+    {
+        void OnPlayerEnter(GameObject actor);
+        void OnPlayerExit(GameObject actor);
+        void OnPlayerStay(GameObject actor);
+    }
+
+    public interface IObjectContactReceiver
+    {
+        void OnObjectEnter(GameObject other);
+        void OnObjectExit(GameObject other);
+    }
+
+    public interface IColorReactionReceiver
+    {
+        bool CanReact(GameObject other);
+        void React(GameObject other);
+    }
+
+    public interface IFeatureVisualTarget
+    {
+        Material FeatureMaterial { get; }
+        void SetFeatureMaterial(Material material);
+        void SetFeatureRenderers(Renderer[] renderers);
     }
 
     public enum BlockDebugEventKind
@@ -294,11 +350,42 @@ namespace Project.BlockFeatures
 
     [RequireComponent(typeof(BlockRuntime))]
     public abstract class BlockFeature : MonoBehaviour,
-        IProjectDiscoverySource
+        IProjectDiscoverySource,
+        IRoomColorResettable,
+        IFeatureVisualTarget,
+        IColorApplicationTarget
     {
+        [BlockParameter(
+            Label = "启用专属材质",
+            Group = "表现接口",
+            Order = 100,
+            Tooltip = "开启后，下面的专属材质会覆盖指定的材质目标渲染器。")]
+        [SerializeField] protected bool useFeatureMaterial = true;
+        [BlockParameter(
+            Label = "专属材质",
+            Group = "表现接口",
+            Order = 101,
+            Tooltip = "以后为这个功能道具接入的专属材质；留空时保持原材质。",
+            VisibleWhenField = "useFeatureMaterial",
+            VisibleWhenValue = 1)]
+        [SerializeField] protected Material featureMaterial;
+        [BlockParameter(
+            Label = "材质目标渲染器",
+            Group = "表现接口",
+            Order = 102,
+            Tooltip = "专属材质只覆盖这里指定的 Renderer，避免误改颜色物体本身。",
+            VisibleWhenField = "useFeatureMaterial",
+            VisibleWhenValue = 1)]
+        [SerializeField] protected Renderer[] featureRenderers =
+            Array.Empty<Renderer>();
+
         private BlockContext context;
         private BlockFeatureMetadata metadata;
         private string[] discoveryTags;
+        private float gridCellWorldSize =
+            GridCellSizeUtility.FallbackCellWorldSize;
+        private readonly Dictionary<Renderer, Material> originalMaterials =
+            new Dictionary<Renderer, Material>();
 
         public BlockContext Context => context;
         public BlockFeatureMetadata Metadata =>
@@ -322,6 +409,9 @@ namespace Project.BlockFeatures
             }
         }
         public int DiscoveryOrder => Metadata.Order;
+        public bool IsRoomScoped => true;
+        public Material FeatureMaterial => featureMaterial;
+        protected float GridCellWorldSize => gridCellWorldSize;
 
         private void OnValidate()
         {
@@ -329,6 +419,14 @@ namespace Project.BlockFeatures
             if (!Application.isPlaying)
             {
                 enabled = false;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (context != null)
+            {
+                Detach();
             }
         }
 
@@ -349,8 +447,10 @@ namespace Project.BlockFeatures
                 return;
             }
 
+            gridCellWorldSize = GridCellSizeUtility.Resolve(this);
             context = value;
             OnAttach();
+            ApplyFeatureVisual(true);
         }
 
         internal void Tick(float deltaTime)
@@ -369,6 +469,7 @@ namespace Project.BlockFeatures
             }
 
             OnDetach();
+            ApplyFeatureVisual(false);
             context = null;
         }
 
@@ -392,6 +493,30 @@ namespace Project.BlockFeatures
             }
         }
 
+        public void ResetForRoom()
+        {
+            OnResetForRoom();
+        }
+
+        public virtual bool CanApplyColor(
+            string colorId,
+            GameObject actor)
+        {
+            return isActiveAndEnabled &&
+                   IsAttached &&
+                   ColorRuntimeService.Existing != null &&
+                   !string.IsNullOrWhiteSpace(colorId) &&
+                   ColorRuntimeService.Existing.IsUnlocked(colorId);
+        }
+
+        public virtual bool ApplyColor(
+            string colorId,
+            GameObject actor)
+        {
+            return CanApplyColor(colorId, actor) &&
+                   OnColorApplied(colorId, actor);
+        }
+
         protected virtual void OnAttach()
         {
         }
@@ -402,6 +527,95 @@ namespace Project.BlockFeatures
 
         protected virtual void OnDetach()
         {
+        }
+
+        protected virtual void OnResetForRoom()
+        {
+        }
+
+        protected virtual bool OnColorApplied(
+            string colorId,
+            GameObject actor)
+        {
+            return false;
+        }
+
+        public void SetFeatureMaterial(Material material)
+        {
+            featureMaterial = material;
+            if (context != null)
+            {
+                ApplyFeatureVisual(isActiveAndEnabled);
+            }
+        }
+
+        public void SetFeatureRenderers(Renderer[] renderers)
+        {
+            RestoreFeatureMaterials();
+            featureRenderers = renderers ?? Array.Empty<Renderer>();
+            if (context != null)
+            {
+                ApplyFeatureVisual(isActiveAndEnabled);
+            }
+        }
+
+        protected virtual void ApplyFeatureVisual(bool active)
+        {
+            if (!useFeatureMaterial ||
+                featureRenderers == null ||
+                featureRenderers.Length == 0 ||
+                featureMaterial == null)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                 index < featureRenderers.Length;
+                 index++)
+            {
+                Renderer renderer = featureRenderers[index];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (active)
+                {
+                    if (!originalMaterials.ContainsKey(renderer))
+                    {
+                        originalMaterials.Add(
+                            renderer,
+                            renderer.sharedMaterial);
+                    }
+
+                    renderer.sharedMaterial = featureMaterial;
+                }
+                else if (originalMaterials.TryGetValue(
+                             renderer,
+                             out Material original))
+                {
+                    renderer.sharedMaterial = original;
+                }
+            }
+
+            if (!active)
+            {
+                originalMaterials.Clear();
+            }
+        }
+
+        private void RestoreFeatureMaterials()
+        {
+            foreach (KeyValuePair<Renderer, Material> pair in
+                     originalMaterials)
+            {
+                if (pair.Key != null)
+                {
+                    pair.Key.sharedMaterial = pair.Value;
+                }
+            }
+
+            originalMaterials.Clear();
         }
     }
 }

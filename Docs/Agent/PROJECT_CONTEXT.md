@@ -5,7 +5,7 @@ Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未�
 
 当前是一份从旧项目筛选而来的基础框架，不是旧游戏整体复制。
 保留：启动与多场景生命周期、场景导航、基础玩家控制、输入与重绑定、双端 UI 预设、相机 Manager/跟随/模式转换、成就、Timeline 演出/战斗、表面瓦片工具、方块功能组件契约、不规则精灵切片。
-相机转换可由 PlayerInputDriver 通过 CameraModeSwitch 申请切换；PlayerController 不读取输入，Timeline 演出保持更高优先级。
+相机转换不再由 PlayerInputDriver 申请；Tab/F 的调色动作只控制染色轮盘，E 负责交互目标，鼠标右键负责长按搬运能源方块，左键负责已选颜色的染色。PlayerInputDriver 只调用 PlayerController 命令，PlayerController 不读取输入，Timeline 演出保持更高优先级。
 对话系统尚未开发，不存在可接入的对话模块。
 
 基础迁移时排除：绳/线、梯子、移动平台玩法、视差平台投影碰撞/深度吸附、2D小拼/总拼/3D合并、旧地图代理同步、旧关卡、旧测试脏数据、美术/音效素材、瓦片库与烘焙贴画、QQ bot 运维源码和私密配置。之后由音频成员在新项目单独交付的 `Assets/_Project/Content/Audio` 不属于“旧素材迁移”，已纳入当前仓库。

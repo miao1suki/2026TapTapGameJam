@@ -23,6 +23,7 @@ namespace Project.InputAbstraction
             AddLookAction(map, InputActionId.Look);
             AddButtonAction(map, InputActionId.Jump, "<Keyboard>/space", "<Gamepad>/buttonSouth");
             AddButtonAction(map, InputActionId.Interact, "<Keyboard>/e", "<Gamepad>/buttonWest");
+            AddButtonAction(map, InputActionId.Carry, "<Mouse>/rightButton", "<Gamepad>/buttonNorth");
             AddButtonAction(map, InputActionId.Cancel, "<Keyboard>/escape", "<Gamepad>/buttonEast");
             AddButtonAction(map, InputActionId.Submit, "<Keyboard>/enter", "<Gamepad>/buttonSouth");
             AddButtonAction(map, InputActionId.Pause, "<Keyboard>/escape", "<Gamepad>/start");
@@ -77,6 +78,78 @@ namespace Project.InputAbstraction
             {
                 map.Enable();
             }
+        }
+
+        internal static void EnsureRequiredActions(
+            InputActionAsset asset)
+        {
+            EnsureDefaultMoveBindings(asset);
+            if (asset == null)
+            {
+                return;
+            }
+
+            InputActionMap map = asset.FindActionMap(
+                MapName,
+                false);
+            if (map == null)
+            {
+                return;
+            }
+
+            bool mapWasEnabled = map.enabled;
+            if (mapWasEnabled)
+            {
+                map.Disable();
+            }
+
+            EnsureCarryAction(map);
+
+            if (mapWasEnabled)
+            {
+                map.Enable();
+            }
+        }
+
+        private static void EnsureCarryAction(
+            InputActionMap map)
+        {
+            InputAction carry = map.FindAction(
+                GetName(InputActionId.Carry),
+                false);
+            if (carry == null)
+            {
+                carry = map.AddAction(
+                    GetName(InputActionId.Carry),
+                    InputActionType.Button);
+            }
+
+            EnsureBinding(
+                carry,
+                "<Mouse>/rightButton");
+            EnsureBinding(
+                carry,
+                "<Gamepad>/buttonNorth");
+        }
+
+        private static void EnsureBinding(
+            InputAction action,
+            string path)
+        {
+            for (int index = 0;
+                 index < action.bindings.Count;
+                 index++)
+            {
+                if (string.Equals(
+                        action.bindings[index].effectivePath,
+                        path,
+                        System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+
+            action.AddBinding(path);
         }
 
         private static void AddMoveAction(InputActionMap map, InputActionId id)

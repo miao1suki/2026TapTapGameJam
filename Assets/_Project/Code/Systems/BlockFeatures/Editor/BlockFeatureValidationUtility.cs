@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Project.BlockFeatures;
+using Project.ColorBlocks;
 using UnityEngine;
 
 namespace Project.BlockFeatures.Editor
@@ -103,8 +104,7 @@ namespace Project.BlockFeatures.Editor
                  index < allFeatures.Count;
                  index++)
             {
-                if (allFeatures[index] != null &&
-                    allFeatures[index].enabled)
+                if (allFeatures[index] != null)
                 {
                     features.Add(allFeatures[index]);
                 }
@@ -156,6 +156,10 @@ namespace Project.BlockFeatures.Editor
                     report,
                     features,
                     metadata);
+                ValidateDeclaredInteractions(
+                    report,
+                    feature,
+                    metadata);
                 ValidateConflicts(
                     report,
                     features,
@@ -163,6 +167,49 @@ namespace Project.BlockFeatures.Editor
             }
 
             return report;
+        }
+
+        private static void ValidateDeclaredInteractions(
+            BlockFeatureValidationReport report,
+            BlockFeature feature,
+            BlockFeatureMetadata metadata)
+        {
+            BlockFeatureInteraction interactions =
+                metadata.Interactions;
+            if ((interactions &
+                 BlockFeatureInteraction.RoomReset) == 0)
+            {
+                report.AddError(
+                    $"{metadata.FeatureType.Name} 必须声明 RoomReset，" +
+                    "房间退出时需要清理自身状态。");
+            }
+
+            if ((interactions &
+                 BlockFeatureInteraction.PlayerContact) != 0 &&
+                !(feature is IPlayerContactReceiver))
+            {
+                report.AddError(
+                    $"{metadata.FeatureType.Name} 声明玩家接触，" +
+                    "但未实现 IPlayerContactReceiver。");
+            }
+
+            if ((interactions &
+                 BlockFeatureInteraction.ObjectContact) != 0 &&
+                !(feature is IObjectContactReceiver))
+            {
+                report.AddError(
+                    $"{metadata.FeatureType.Name} 声明物体接触，" +
+                    "但未实现 IObjectContactReceiver。");
+            }
+
+            if ((interactions &
+                 BlockFeatureInteraction.AppliedColor) != 0 &&
+                !(feature is IColorApplicationTarget))
+            {
+                report.AddError(
+                    $"{metadata.FeatureType.Name} 声明接收颜色，" +
+                    "但未实现 IColorApplicationTarget。");
+            }
         }
 
         private static void ValidateRequirements(

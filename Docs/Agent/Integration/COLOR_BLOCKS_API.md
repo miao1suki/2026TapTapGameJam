@@ -1,45 +1,159 @@
-# 可变色方块与颜色属性
-
-颜色系统现在只负责颜色目录、解锁状态、当前颜色属性、局部 HSV 褪色和蓝色水体视觉。物体之间的接触、停留、颜色条件、褪色/恢复和方法调用全部在物体交互管理器的图中配置。
+# 颜色物体 API
 
 ## 状态职责
 
-| 模块 | 负责 | 不负责 |
-|---|---|---|
-| `ColorCatalog` | 类型 ID、名称、Unity 层、编辑识别材质、事件 ID | 交互图 |
-| `ColorRuntimeService` | 解锁集合、方块当前类型、水体视觉聚合和颜色事件 | 玩家选色和物体交互关系 |
-| `ColorBlock` | 基础颜色属性、接触事件收集、交互图方法入口、未解锁视觉 | 交互顺序和条件 |
-| `HSVColorFadeManager` | 逐类型饱和度和过渡时间 | 物体定义和交互连线 |
-| `SelectiveHsvRendererFeature` | 按 Unity 层的局部屏幕空间褪色 | 游戏进度和交互关系 |
-| `ColorKeyPickup` | 玩家触发解锁和 Timeline 相机演出 | 物体交互图配置 |
+| 模块 | 负责 |
+|---|---|
+| `ColorCatalog` | 颜色 ID、显示名、材质、Unity 层、解锁事件 ID |
+| `ColorRuntimeService` | 当前解锁集合、房间重置和颜色物体注册 |
+| `IColorObject` / `ColorObject` | 固定颜色属性、激活状态和视觉 |
+| `BlockAbilityHost` | 启停同一物体上已经存在的固定功能组件 |
+| `HSVColorFadeManager` | 白色失效与原色恢复的饱和度过渡 |
+| `ColorKeyPickup` | 钥匙拾取和颜色组解锁 |
+| `PlayerColorWheel` | 保存当前选色；左键通过屏幕射线选择交互圈内目标 |
+| `IColorApplicationTarget` | 接收固定颜色并执行目标自身逻辑 |
+| `UniversalColorBlock` | 自身显示纯色，并向四个紧邻目标广播颜色 |
 
-`ColorCatalog` 仍保留 `red`、`green`、`blue` 三种属性。三色方块预制体位于 `Assets/_Project/Content/ColorBlocks/Prefabs`，其交互定义位于 `Assets/_Project/Content/Interactions/Definitions`，打开物体交互管理器会自动同步。
+最新定稿以钥匙解锁和固定功能组件为准；万能方块只作为前期代点击入口。
+
+## 功能组件约束
+
+具体玩法组件继承 `BlockFeature`，并声明功能类别和交互类型：
+
+```csharp
+[BlockFeature(
+    DisplayName = "水源功能",
+    DefaultColorId = "blue",
+    Category = BlockFeatureCategory.Water,
+    Interactions =
+        BlockFeatureInteraction.PlayerContact |
+        BlockFeatureInteraction.RoomReset,
+    Writes = new[] { BlockChannel.Water })]
+```
+
+可用的交互接口：
+
+```text
+IPlayerContactReceiver
+IObjectContactReceiver
+IColorReactionReceiver
+IColorApplicationTarget
+IRoomColorResettable
+```
+
+组件类型决定固定形态。不要新增一个枚举让同一组件在水源、水流、气泡柱之间切换。
+
+当前已实现：
+
+```text
+LavaHazardFeature
+EnergyBlockFeature
+MechanismBaseFeature
+ButtonLockFeature
+CrankPlatformFeature
+MovingPlatformFeature
+LiftFeature
+SpikeFeature
+LadderFeature
+
+WaterSourceFeature
+DirectionalCurrentFeature
+BuoyancyColumnFeature
+WaterVisualFeature
+
+ClimbableVineFeature
+BouncePlantFeature
+PlantObstacleFeature
+```
+
+玩家水体推动与浮力通过 `PlayerController` 统一汇入游泳速度计算：
+
+```csharp
+player.SetWaterVelocity(source, new Vector2(4f, 0f));
+player.SetBuoyancy(source, 3.5f);
+```
+
+每个 `BlockFeature` 都实现 `IFeatureVisualTarget`，提供“专属材质”和“材质目标渲染器”接口，后续可按组件接入专属材质，接口会负责在启用/失效时覆盖和恢复原材质。
+
+按格计算的功能组件通过 `IGridCellSizeProvider` 获取关卡编辑器写入的 `CellWorldSize`；`BlockFeature.GridCellWorldSize` 在组件 Attach 时解析并缓存该值，组件自身不再声明“每格大小”字段。
+
+跨色物体反应通过 `BlockFeature` 的 `IColorApplicationTarget` 直接实现；每个具体组件重写 `OnColorApplied`，不再依赖交互图。当前已接入红色清除绿色物、蓝色生长藤蔓、红色替换蓝色物、蓝色作用于岩浆。
+
+每个 `BlockFeature` 也实现 `IColorApplicationTarget`，因此玩家左键和万能方块广播都能直接命中功能组件。`CanApplyColor` 统一检查组件是否已激活和颜色是否已解锁；具体反应写在 `OnColorApplied`。
+
+机关附加接口：
+
+```csharp
+IEnergySource
+IMechanismSignalSource
+IMechanismSignalReceiver
+IInteractionHoldTarget
+```
+
+`EnergyBlockFeature.CanMigrate` 是全游戏能源方块唯一迁移标记。能源方块通过交互圈长按拿起、鼠标网格吸附拖拽、松手放下；按钮使用 `IInteractionTarget`，曲柄使用 `IInteractionHoldTarget`。基座只实现 `IMechanismSignalSource`；移动平台等消费者在自己的 `linkedControls` 中绑定基座、按钮、曲柄，基座不保存机关列表。
 
 ## 运行时调用
 
 ```csharp
-var colors = Project.ColorBlocks.ColorRuntimeService.Instance;
-bool unlocked = colors.IsUnlocked("red");
-bool firstUnlock = colors.Unlock("red");
-colors.ResetProgress();
+ColorRuntimeService colors =
+    ColorRuntimeService.Instance;
 
-Project.ColorBlocks.HSVColorFadeManager.Instance.SetColorFaded("red", false, 1.2f);
+bool unlocked = colors.IsUnlocked("blue");
+colors.Unlock("blue");
+colors.ResetForRoom();
+
+HSVColorFadeManager.Instance.SetColorFaded(
+    "blue",
+    false,
+    1.2f);
 ```
 
-`ColorRuntimeService.Unlock` 会对同色方块触发物体图的 `Manual` 根节点；三色默认图把它连接到恢复颜色节点。没有交互定义的旧场景才使用直接恢复作为兼容兜底。
+## 颜色应用
 
-## 物体交互入口
+目标 B 实现：
 
-`PlayerColorWheel` 只维护玩家选中的已解锁颜色，并在右键轮盘中提供选择。颜色选择不会直接修改物体；选择完成后，目标物体的 `Manual` 图由 `InteractionManager` 执行。`ColorBlock` 在接触开始、结束和停留时向 `InteractionManager` 发送事件。默认三色图提供：
+```csharp
+bool CanApplyColor(string colorId, GameObject actor);
+bool ApplyColor(string colorId, GameObject actor);
+```
 
-- 玩家进入/离开 → `RequirePlayer` → `OnInteractionPlayerEntered/Left(GameObject)`。
-- 物体触碰/停留 → `RequireOtherObject` → 对应方法入口。
-- 手动执行 → 由 `RequirePlayerColor` 读取玩家选色，再执行物体自己的效果；颜色钥匙解锁时的无玩家手动触发仍只走恢复节点。
+玩家选择颜色后：
 
-蓝色水体和绿色攀爬仍由各自 `BlockFeature` 实现，但开关时机由上述图节点调用 `ColorBlock` 方法。策划可以在这些节点后继续连接受到颜色、受到物体、延迟、Timeline、褪色、恢复和脚本方法节点。
+```text
+左键点击屏幕上的 B
+→ 检查 B 是否在交互圈内
+→ B.ApplyColor(selectedColor)
 
-## 相机和渲染
+左键点击屏幕上的万能方块
+→ 检查万能方块是否在交互圈内
+→ UniversalColorBlock 自身显示纯色
+→ 向左右上下四个紧邻目标广播 ApplyColor(selectedColor)
+```
 
-颜色钥匙仍通过 `TimelineCamRig` 和 `CameraControlManager` 演出；不直接操纵 Camera。颜色层上的不透明 Renderer 由 `SelectiveHsvRendererFeature` 处理。蓝水实例由 `ColorRuntimeService` 聚合创建并按 HSV 恢复进度渐显。
+## 新增颜色物体
 
-颜色不再有独立工作台、颜色交互图或颜色管理器入口。请从 `Tools/2026TapTap/物体交互管理器` 编辑具体物体的连线。
+1. 添加 `ColorObject` 并填写固定 `baseColorTypeId`。
+2. 保留预制体自带的 `BlockRuntime` 和 `BlockAbilityHost`。
+3. 在预制体上添加一个或多个具体 `BlockFeature`。
+4. 不添加 Definitions、Catalog 或 GraphView 数据。
+5. 需要接收玩家颜色时实现 `IColorApplicationTarget`；继承 `BlockFeature` 时已经默认实现，只需要按需重写 `OnColorApplied`。
+
+## 房间重置
+
+`ResetForRoom()` 清除解锁集合，使所有 `IColorObject` 失效，并触发 `EventMgr.OnRoomColorReset`。固定物体自身只切回白色；运行时生成物由各自拥有者监听重置并清理。
+
+## 删除边界
+
+不要再新增：
+
+```text
+InteractionManager
+InteractionObject
+InteractionObjectDefinition
+InteractionObjectCatalog
+InteractionGraph
+InteractionNodeKind
+GraphView
+```
+
+完整规范位于 `Assets/_Project/Code/Systems/ColorBlocks/SKILL.md`。

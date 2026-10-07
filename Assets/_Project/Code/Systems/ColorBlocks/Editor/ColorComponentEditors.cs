@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Project.Editor;
-using Project.Interactions.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -65,68 +64,6 @@ namespace Project.ColorBlocks.Editor
                 serializedObject.ApplyModifiedProperties();
             });
             return field;
-        }
-    }
-
-    [CustomEditor(typeof(ColorBlock))]
-    public sealed class ColorBlockEditor : UnityEditor.Editor
-    {
-        public override VisualElement CreateInspectorGUI()
-        {
-            serializedObject.Update();
-            VisualElement root = ProjectInspectorUtility.CreateRoot(
-                serializedObject);
-            root.Add(ProjectInspectorUtility.CreateTitle(
-                "颜色方块"));
-            root.Add(ProjectInspectorUtility.CreateScriptField(
-                serializedObject));
-
-            Foldout color = ProjectInspectorUtility.CreateFoldout(
-                "颜色配置",
-                true);
-            color.Add(ColorInspectorChoices.Create(
-                serializedObject,
-                "baseColorTypeId",
-                "基础颜色"));
-            color.Add(ProjectInspectorUtility.CreateProperty(
-                serializedObject,
-                "targetRenderer",
-                "颜色渲染器",
-                "留空时运行时自动寻找第一个子渲染器。"));
-            color.Add(ProjectInspectorUtility.CreateProperty(
-                serializedObject,
-                "interactionDefinition",
-                "物体交互定义",
-                "同色不同物体可以拥有不同定义；颜色只作为属性。"));
-            root.Add(color);
-
-            ColorBlock block = (ColorBlock)target;
-            Foldout status = ProjectInspectorUtility.CreateFoldout(
-                "当前状态",
-                true);
-            status.Add(ProjectInspectorUtility.CreateReadOnlyRow(
-                "当前颜色",
-                () => block != null
-                    ? block.CurrentColorTypeId
-                    : "无"));
-            status.Add(ProjectInspectorUtility.CreateReadOnlyRow(
-                "水体状态",
-                () => block != null && block.IsActiveWater
-                    ? "水体生效"
-                    : "非水体"));
-            root.Add(status);
-
-            root.Add(ProjectInspectorUtility.CreateHelp(
-                "基础颜色是物体属性；运行时颜色仍由颜色系统维护，交互逻辑由物体交互管理器维护。"));
-            root.Add(new Button(() =>
-            {
-                InteractionManagerWindow.OpenForObject(block.gameObject);
-            })
-            {
-                text = "打开物体交互管理器"
-            });
-            ProjectInspectorUtility.Bind(root, serializedObject);
-            return root;
         }
     }
 
