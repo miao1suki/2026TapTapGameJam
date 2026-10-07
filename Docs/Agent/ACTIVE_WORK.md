@@ -1,5 +1,14 @@
 # 工作状态与交接（每次任务重读）
 
+## 颜色大洗牌 Skill 强制入口
+
+- 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。
+- 范围：把颜色大洗牌之后的固定颜色物体、钥匙解锁、房间重置、万能方块代理、固定形态、直接组件交互和交互图退役规范写入颜色脚本目录，并建立项目级 Skill 入口。
+- 接口：新增 `Assets/_Project/Code/Systems/ColorBlocks/SKILL.md` 作为完整规范；新增 `.agents/skills/taptap-color-gameplay/SKILL.md` 作为发现入口；更新根 `AGENTS.md` 和交互 Skill，要求颜色系统开发前完整读取完整规范。
+- 边界：本记录只建立规范和发现入口，不修改运行时颜色代码、场景或预制体。
+- 验证：文档和 Git 补丁检查；Runtime/Editor 未修改。
+- 交接提交：待提交。
+
 ## 编辑器 Play 模式输入焦点修正
 
 - 日期：2026-10-06；负责人：Codex；分支：`codex/orpheus0829/start-menu-settings`。

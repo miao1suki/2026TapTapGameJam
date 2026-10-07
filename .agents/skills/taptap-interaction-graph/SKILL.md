@@ -13,6 +13,7 @@ description: 在 2026TapTap 中使用物体交互管理器连连看设计、接�
 2. 确认 Unity 为 `6000.3.12f1`，远程为 `https://github.com/miao1suki/2026TapTapGameJam.git`，当前不是 `main`。
 3. 不覆盖别人的未提交改动，不修改用户未保存的场景；脚本、资产和 `.meta` 一起维护。
 4. 先在 `SYSTEM_INDEX.md` 找到现有物体组件契约，再决定复用方法还是新增运行时接口。不要恢复旧颜色工作台、旧颜色交互图或被排除的玩法。
+5. 涉及颜色大洗牌、ColorBlock/ColorObject、万能方块、颜色反应或交互图迁移时，必须先完整读取 `Assets/_Project/Code/Systems/ColorBlocks/SKILL.md`；新颜色功能不得接回交互图。
 
 ## 数据与所有权
 

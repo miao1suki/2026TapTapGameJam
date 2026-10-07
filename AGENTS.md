@@ -10,7 +10,8 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 2. `Docs/Agent/WORKING_AGREEMENTS.md`
 3. `Docs/Agent/ACTIVE_WORK.md`
 4. `Docs/Agent/SYSTEM_INDEX.md`
-5. 做编辑器 UI 时另读 `Docs/Agent/EDITOR_UI_STANDARD.md`。
+5. 开发颜色系统、颜色物体、万能方块、钥匙、房间重置或交互图迁移时，必须先读 `.agents/skills/taptap-color-gameplay/SKILL.md`，并完整读取其中指定的 `Assets/_Project/Code/Systems/ColorBlocks/SKILL.md`。
+6. 做编辑器 UI 时另读 `Docs/Agent/EDITOR_UI_STANDARD.md`。
 
 先验证当前目录是 Unity 项目且 `git remote get-url origin` 为上述仓库；不匹配立即停止写入和推送。
 不在旧项目实现功能，不向旧仓库推送，不复制整个旧 Assets/ProjectSettings。
