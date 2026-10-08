@@ -280,6 +280,11 @@ namespace Project.BlockFeatures
 
         public void GrowTo(int targetCount)
         {
+            if (!CanRunFeature)
+            {
+                return;
+            }
+
             targetCount = Mathf.Clamp(
                 targetCount,
                 0,

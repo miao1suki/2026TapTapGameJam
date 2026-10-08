@@ -228,6 +228,11 @@ namespace Project.BlockFeatures
 
         private void OnCollisionEnter(Collision collision)
         {
+            if (!CanRunFeature)
+            {
+                return;
+            }
+
             PlayerController player = ResolveTopPlayer(collision);
             if (player == null)
             {
@@ -239,7 +244,7 @@ namespace Project.BlockFeatures
 
         private void OnCollisionStay(Collision collision)
         {
-            if (collision == null)
+            if (!CanRunFeature || collision == null)
             {
                 return;
             }

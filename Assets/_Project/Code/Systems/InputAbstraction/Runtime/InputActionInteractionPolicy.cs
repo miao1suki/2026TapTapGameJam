@@ -67,6 +67,8 @@ namespace Project.InputAbstraction
                     return "指针主键";
                 case InputActionId.PointerSecondary:
                     return "指针副键";
+                case InputActionId.Respawn:
+                    return "重生";
                 default:
                     return actionId.ToString();
             }
@@ -138,7 +140,8 @@ namespace Project.InputAbstraction
             InputActionTriggerPolicy policy)
         {
             if (actionId == InputActionId.Interact ||
-                actionId == InputActionId.Carry)
+                actionId == InputActionId.Carry ||
+                actionId == InputActionId.Respawn)
             {
                 return;
             }
@@ -208,7 +211,8 @@ namespace Project.InputAbstraction
                     (int)InputActionTriggerPolicy.ClickOnly,
                     (int)InputActionTriggerPolicy.ClickAndHold);
                 if (actionIds[index] == InputActionId.Interact ||
-                    actionIds[index] == InputActionId.Carry)
+                    actionIds[index] == InputActionId.Carry ||
+                    actionIds[index] == InputActionId.Respawn)
                 {
                     continue;
                 }

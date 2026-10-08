@@ -107,6 +107,11 @@ namespace Project.BlockFeatures
 
         public void SetSignal(bool activeValue, Component source)
         {
+            if (!CanRunFeature)
+            {
+                return;
+            }
+
             active = activeValue;
         }
 

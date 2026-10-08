@@ -37,6 +37,11 @@ namespace Project.BlockFeatures
         protected override void OnPlayerEntered(
             PlayerController player)
         {
+            if (!IsBlueUnlocked())
+            {
+                return;
+            }
+
             player.EnterWater(this);
             ApplyCurrent(player);
         }
@@ -44,6 +49,11 @@ namespace Project.BlockFeatures
         protected override void OnPlayerStayed(
             PlayerController player)
         {
+            if (!IsBlueUnlocked())
+            {
+                return;
+            }
+
             ApplyCurrent(player);
         }
 

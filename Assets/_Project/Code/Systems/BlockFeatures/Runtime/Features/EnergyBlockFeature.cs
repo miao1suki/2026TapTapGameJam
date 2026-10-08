@@ -50,7 +50,7 @@ namespace Project.BlockFeatures
         private int[] originalSortingLayerIds;
         private int[] originalSortingOrders;
 
-        public bool IsEnergyAvailable => isActiveAndEnabled;
+        public bool IsEnergyAvailable => CanRunFeature;
         public bool CanMigrate => canMigrate;
         public bool IsDragging => dragging;
 
@@ -72,7 +72,7 @@ namespace Project.BlockFeatures
 
         public bool CanCarry(PlayerController player)
         {
-            return isActiveAndEnabled &&
+            return CanRunFeature &&
                    canMigrate &&
                    !dragging &&
                    player != null;

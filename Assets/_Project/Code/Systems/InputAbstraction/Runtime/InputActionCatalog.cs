@@ -24,6 +24,11 @@ namespace Project.InputAbstraction
             AddButtonAction(map, InputActionId.Jump, "<Keyboard>/space", "<Gamepad>/buttonSouth");
             AddButtonAction(map, InputActionId.Interact, "<Keyboard>/e", "<Gamepad>/buttonWest");
             AddButtonAction(map, InputActionId.Carry, "<Mouse>/rightButton", "<Gamepad>/buttonNorth");
+            AddButtonAction(
+                map,
+                InputActionId.Respawn,
+                "<Keyboard>/r",
+                "<Gamepad>/rightStickPress");
             AddButtonAction(map, InputActionId.Cancel, "<Keyboard>/escape", "<Gamepad>/buttonEast");
             AddButtonAction(map, InputActionId.Submit, "<Keyboard>/enter", "<Gamepad>/buttonSouth");
             AddButtonAction(map, InputActionId.Pause, "<Keyboard>/escape", "<Gamepad>/start");
@@ -104,6 +109,7 @@ namespace Project.InputAbstraction
             }
 
             EnsureCarryAction(map);
+            EnsureRespawnAction(map);
 
             if (mapWasEnabled)
             {
@@ -130,6 +136,27 @@ namespace Project.InputAbstraction
             EnsureBinding(
                 carry,
                 "<Gamepad>/buttonNorth");
+        }
+
+        private static void EnsureRespawnAction(
+            InputActionMap map)
+        {
+            InputAction respawn = map.FindAction(
+                GetName(InputActionId.Respawn),
+                false);
+            if (respawn == null)
+            {
+                respawn = map.AddAction(
+                    GetName(InputActionId.Respawn),
+                    InputActionType.Button);
+            }
+
+            EnsureBinding(
+                respawn,
+                "<Keyboard>/r");
+            EnsureBinding(
+                respawn,
+                "<Gamepad>/rightStickPress");
         }
 
         private static void EnsureBinding(

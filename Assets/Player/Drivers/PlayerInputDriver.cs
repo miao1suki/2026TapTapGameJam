@@ -53,6 +53,19 @@ namespace Project.Player
             }
 
             player = target;
+            if (target.IsDead)
+            {
+                if (GameInput.WasTriggeredThisFrame(
+                        InputActionId.Respawn))
+                {
+                    target.RequestRespawn();
+                }
+
+                target.ClearBufferedInput();
+                target.SetJumpHeld(false);
+                return;
+            }
+
             target.RefreshInteractionTarget();
             UpdateInteraction(target);
             target.UpdateCarry(

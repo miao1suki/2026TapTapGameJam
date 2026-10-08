@@ -6,6 +6,8 @@ namespace Project.Player
     /// </summary>
     public interface IPlayerBounceSurface
     {
+        bool IsBounceSurfaceAvailable { get; }
+
         bool TryGetBounceSpeed(
             PlayerController player,
             float fallDistance,

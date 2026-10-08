@@ -64,6 +64,7 @@ MonoBehaviour:
   steamVfxPrefab: {fileID: 0}
   steamVfxLifetime: 1.5
   riseSpeed: 7
+  topExitBoostSpeed: 0.75
 --- !u!33 &1208032061682353361
 MeshFilter:
   m_ObjectHideFlags: 0

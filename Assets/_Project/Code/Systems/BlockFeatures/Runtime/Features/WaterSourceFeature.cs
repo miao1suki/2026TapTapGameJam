@@ -24,6 +24,11 @@ namespace Project.BlockFeatures
         protected override void OnPlayerEntered(
             PlayerController player)
         {
+            if (!IsBlueUnlocked())
+            {
+                return;
+            }
+
             player.EnterWater(this);
             player.SetSwimSpeedMultiplier(
                 this,

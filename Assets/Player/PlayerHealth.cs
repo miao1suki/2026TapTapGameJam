@@ -14,6 +14,8 @@ namespace Project.Player
         public float CurrentHealth => currentHealth;
         public bool IsDead => currentHealth <= 0f;
         public event Action<float, float> Changed;
+        public event Action Died;
+        public event Action Revived;
 
         private void Awake()
         {
@@ -45,8 +47,17 @@ namespace Project.Player
         {
             float next = Mathf.Clamp(value, 0f, maxHealth);
             if (Mathf.Approximately(next, currentHealth)) return;
+            bool wasDead = IsDead;
             currentHealth = next;
             Changed?.Invoke(currentHealth, maxHealth);
+            if (!wasDead && IsDead)
+            {
+                Died?.Invoke();
+            }
+            else if (wasDead && !IsDead)
+            {
+                Revived?.Invoke();
+            }
         }
     }
 }

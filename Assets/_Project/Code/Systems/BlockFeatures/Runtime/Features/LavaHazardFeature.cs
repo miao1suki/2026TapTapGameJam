@@ -39,7 +39,9 @@ namespace Project.BlockFeatures
 
         public bool CanReact(GameObject other)
         {
-            if (blueReplacementPrefab == null || other == null)
+            if (!CanRunFeature ||
+                blueReplacementPrefab == null ||
+                other == null)
             {
                 return false;
             }

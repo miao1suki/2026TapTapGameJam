@@ -381,6 +381,7 @@ namespace Project.BlockFeatures
 
         private BlockContext context;
         private BlockFeatureMetadata metadata;
+        private IColorObject colorObject;
         private string[] discoveryTags;
         private float gridCellWorldSize =
             GridCellSizeUtility.FallbackCellWorldSize;
@@ -412,6 +413,24 @@ namespace Project.BlockFeatures
         public bool IsRoomScoped => true;
         public Material FeatureMaterial => featureMaterial;
         protected float GridCellWorldSize => gridCellWorldSize;
+        protected bool CanRunFeature
+        {
+            get
+            {
+                if (!isActiveAndEnabled || context == null)
+                {
+                    return false;
+                }
+
+                if (colorObject == null)
+                {
+                    colorObject = GetComponent<IColorObject>();
+                }
+
+                return colorObject == null ||
+                       colorObject.IsActive;
+            }
+        }
 
         private void OnValidate()
         {
@@ -502,8 +521,7 @@ namespace Project.BlockFeatures
             string colorId,
             GameObject actor)
         {
-            return isActiveAndEnabled &&
-                   IsAttached &&
+            return CanRunFeature &&
                    ColorRuntimeService.Existing != null &&
                    !string.IsNullOrWhiteSpace(colorId) &&
                    ColorRuntimeService.Existing.IsUnlocked(colorId);

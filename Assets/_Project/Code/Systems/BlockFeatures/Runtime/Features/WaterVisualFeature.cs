@@ -91,6 +91,13 @@ namespace Project.BlockFeatures
         private bool steamContinuous;
 
         protected bool HasWaterVisual => waterVisual != null;
+        protected bool IsBlueUnlocked()
+        {
+            ColorRuntimeService service =
+                ColorRuntimeService.Existing;
+            return service != null &&
+                   service.IsUnlocked("blue");
+        }
 
         protected override void OnAttach()
         {

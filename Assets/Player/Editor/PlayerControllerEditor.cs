@@ -144,6 +144,35 @@ namespace Project.Player.Editor
                 "用于地面检测的物理层。"));
             root.Add(jump);
 
+            Foldout death = PlayerInspectorFields.CreateFoldout(
+                "死亡");
+            death.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "deathAction",
+                "死亡动作",
+                "死亡时通过 PlayerActionRunner 播放的 ActSO Timeline；播放结束后保持最后一帧。"));
+            death.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "respawnPoint",
+                "默认复活点",
+                "可选。未设置时会优先使用已注册的复活点；仍无可用复活点时在死亡地点周围随机复活。"));
+            death.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "respawnRandomRadiusBlocks",
+                "随机复活半径（格）",
+                "没有复活点时，在死亡位置周围按关卡格数寻找可落地位置；默认 4 格。"));
+            death.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "respawnRandomAttempts",
+                "随机尝试次数",
+                "随机复活时最多尝试多少个安全位置。"));
+            death.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "respawnSafetyRadius",
+                "复活安全半径",
+                "复活位置检查岩浆时使用的半径。位置会先向下吸附到实体地面。"));
+            root.Add(death);
+
             Foldout debug = PlayerInspectorFields.CreateFoldout(
                 "运行时调试（只读）");
             Label moveDebug = CreateDebugLabel();
@@ -187,6 +216,7 @@ namespace Project.Player.Editor
                     $"垂直速度 {player.VerticalVelocity:0.##}";
                 actionDebug.text =
                     $"状态 {player.CurrentStateId} · " +
+                    $"死亡 {(player.IsDead ? "是" : "否")} · " +
                     $"锁定 {(player.IsControlLocked ? "是" : "否")}" +
                     $"({player.ControlLockDepth}) · " +
                     $"动作 {(player.CurrentAction != null ? player.CurrentAction.name : "无")} · " +

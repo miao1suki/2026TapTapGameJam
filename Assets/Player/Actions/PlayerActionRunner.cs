@@ -56,7 +56,9 @@ namespace Project.Player
             }
         }
 
-        public bool Play(ActSO action)
+        public bool Play(
+            ActSO action,
+            DirectorWrapMode wrapMode = DirectorWrapMode.None)
         {
             if (action == null || action.Timeline == null)
             {
@@ -66,6 +68,7 @@ namespace Project.Player
             Stop();
             CurrentAction = action;
             director.playableAsset = action.Timeline;
+            director.extrapolationMode = wrapMode;
             director.time = 0d;
             director.Play();
             if (director.playableGraph.IsValid())

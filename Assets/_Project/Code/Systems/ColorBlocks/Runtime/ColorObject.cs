@@ -21,6 +21,9 @@ namespace Project.ColorBlocks
 
         private bool active;
         private bool registered;
+        private Collider[] cachedColliders;
+        private bool[] originalTriggerStates;
+        private bool[] originalEnabledStates;
 
         public string BaseColorTypeId => baseColorTypeId;
         public bool IsActive => active;
@@ -35,6 +38,8 @@ namespace Project.ColorBlocks
                 targetRenderer = GetComponentInChildren<Renderer>();
             }
 
+            CacheColliderStates();
+            ApplyCollisionState(active);
             ApplyVisual();
         }
 
@@ -87,6 +92,7 @@ namespace Project.ColorBlocks
         {
             if (active == value)
             {
+                ApplyCollisionState(active);
                 ApplyVisual();
                 return;
             }
@@ -97,8 +103,58 @@ namespace Project.ColorBlocks
                 ApplyLayer();
             }
 
+            ApplyCollisionState(active);
             ApplyVisual();
             ActiveStateChanged?.Invoke(this, active);
+        }
+
+        private void CacheColliderStates()
+        {
+            cachedColliders =
+                GetComponentsInChildren<Collider>(true);
+            originalTriggerStates =
+                new bool[cachedColliders.Length];
+            originalEnabledStates =
+                new bool[cachedColliders.Length];
+            for (int index = 0;
+                 index < cachedColliders.Length;
+                 index++)
+            {
+                Collider collider = cachedColliders[index];
+                originalTriggerStates[index] =
+                    collider != null && collider.isTrigger;
+                originalEnabledStates[index] =
+                    collider != null && collider.enabled;
+            }
+        }
+
+        private void ApplyCollisionState(bool value)
+        {
+            if (cachedColliders == null)
+            {
+                CacheColliderStates();
+            }
+
+            for (int index = 0;
+                 index < cachedColliders.Length;
+                 index++)
+            {
+                Collider collider = cachedColliders[index];
+                if (collider == null)
+                {
+                    continue;
+                }
+
+                if (!value)
+                {
+                    collider.enabled = true;
+                    collider.isTrigger = false;
+                    continue;
+                }
+
+                collider.enabled = originalEnabledStates[index];
+                collider.isTrigger = originalTriggerStates[index];
+            }
         }
 
         private void ApplyVisual()

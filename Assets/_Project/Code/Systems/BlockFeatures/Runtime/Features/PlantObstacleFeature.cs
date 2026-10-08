@@ -29,7 +29,7 @@ namespace Project.BlockFeatures
         private Renderer[] renderers;
         private bool intact;
 
-        public bool IsIntact => intact && isActiveAndEnabled;
+        public bool IsIntact => intact && CanRunFeature;
         public event Action<PlantObstacleFeature, bool> IntactChanged;
 
         protected override void OnAttach()
@@ -42,7 +42,7 @@ namespace Project.BlockFeatures
 
         protected override void OnDetach()
         {
-            SetCollidersEnabled(false);
+            SetCollidersEnabled(true);
             SetRenderersEnabled(true);
         }
 
@@ -72,7 +72,7 @@ namespace Project.BlockFeatures
 
         public bool BreakObstacle(Component source = null)
         {
-            if (!intact)
+            if (!CanRunFeature || !intact)
             {
                 return false;
             }
@@ -85,7 +85,7 @@ namespace Project.BlockFeatures
 
         public void RestoreObstacle()
         {
-            if (intact && IsIntact)
+            if (!CanRunFeature || (intact && IsIntact))
             {
                 return;
             }

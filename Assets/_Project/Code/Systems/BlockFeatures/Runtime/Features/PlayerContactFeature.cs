@@ -64,6 +64,11 @@ namespace Project.BlockFeatures
 
         public void OnPlayerEnter(GameObject actor)
         {
+            if (!CanRunFeature)
+            {
+                return;
+            }
+
             PlayerController player = ResolvePlayer(actor);
             if (player == null)
             {
@@ -99,6 +104,11 @@ namespace Project.BlockFeatures
 
         public void OnPlayerStay(GameObject actor)
         {
+            if (!CanRunFeature)
+            {
+                return;
+            }
+
             PlayerController player = ResolvePlayer(actor);
             if (player == null ||
                 !contacts.ContainsKey(player.GetInstanceID()))

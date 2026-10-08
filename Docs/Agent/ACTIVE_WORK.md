@@ -1,5 +1,24 @@
 # 工作状态与交接（每次任务重读）
 
+## 玩家死亡状态与重生
+
+- 日期：2026-10-08；负责人：Codex；分支：`codex/orpheus0829/扩充道具`。
+- 状态机：`PlayerController` 新增 `PlayerStateId.Death` 和独立死亡锁；死亡期间移动、跳跃、交互、调色、搬运、拖拽和普通动作全部封锁。
+- 死亡动作：`PlayerController` 新增可配置 `ActSO deathAction`，由死亡事件触发现有 `PlayerActionRunner` 播放 Timeline，并强制 `DirectorWrapMode.Hold` 保持最后一帧。
+- 重生输入：新增 `InputActionId.Respawn`，默认键盘 `R`、手柄右摇杆按下，固定仅点击；`PlayerInputDriver` 死亡时只消费重生输入。
+- 重生位置：优先使用 `respawnPoint` 或注册的 `IPlayerRespawnPoint`；没有复活点时在死亡位置周围 `4 格`内随机寻找可落地位置。每次死亡都会更新死亡点，连续死亡以最新死亡点为准。
+- 安全检查：随机点先向下吸附到实体地面，再检测 `LavaHazardFeature`；找不到安全随机点则回退默认复活点。
+- 重生锚：`Respawn_Block` 使用米黄色高对比材质，挂载 `RespawnAnchorFeature` 并通过 `IPlayerRespawnPoint` 注册复活点；道具栏目新增“重生锚”入口。
+- 重生锚状态：组件不可碰撞，按 Unity Tag 检测玩家，支持激活范围与复活随机半径；未激活/已激活材质、激活动画可配置，渲染排序固定为玩家下一层。
+- 颜色物兜底：`ColorObject` 在未解锁状态统一强制碰撞体为实体且关闭功能；解锁后恢复预制体原本的触发/实体状态。所有蓝色水族功能同时二次校验蓝色解锁，避免未解锁仍产生玩家水体状态。
+- 功能组件兜底：`BlockFeature.CanRunFeature` 统一约束“已挂载且同物体颜色对象已激活”，玩家接触、交互、携带和颜色应用入口都走该约束；`IPlayerBounceSurface` 增加可用状态接口，禁止禁用植物通过玩家落地射线绕过。
+- 重生锚校正：不再开局自动激活初始锚点；默认激活半径设为 `0.5` 格，玩家踩到第 N 个锚点时通过 `ActivateThrough` 自动激活主链 `0...N` 的全部锚点；渲染排序每帧同步到玩家排序以下。
+- 气泡柱校正：离开气泡触发器后持续跟踪玩家，只要仍在气泡柱范围内且与任意蓝色水体有重叠就继续上浮；玩家完全出水时增加默认 `0.75` 的“出水额外上推速度”，越出水面后回落，重新碰到水体一点就立即恢复托起。
+- 重生链：严格的单链结构，每个 `RespawnAnchorFeature` 持有 `nextAnchorId`、链表序号和完整链表快照；不包含自定义名字、引领点或树结构。未接入主链的节点不编号，接入后自动显示 `出生点N`；玩家死亡时只从已激活节点中选择链表序号最大的节点。
+- 链表图：Inspector 按钮打开固定尺寸、不可最大化的 `RespawnAnchorChainWindow`，内部改用 Unity 原生 `GraphView + Node + Port + Edge`；打开时自动 `FrameAll` 完整显示所有节点，节点只显示 `N号重生点` 且不可拖动，位置按世界坐标相对关系固定，并在场景内移动重生锚时实时刷新；顶部“节点间距”滑杆只缩放相对距离；连接依靠端口拖拽和原生曲线边，右键连线截断，支持按场景顺序初始化和画布缩放平移。存在主链时只能从最高点继续，且始终只保留一条链；每次连线操作自动标脏并保存场景，Undo 可完整回退。
+- 保存接口：`RespawnAnchorChainRuntime` 提供 `CaptureSaveData`、`TryRestoreSaveData`、`ResetRuntimeState`；`RespawnAnchorChainSaveData` 保存场景名、稳定 `anchorId`、`nextAnchorId`、链表序号、初始标记和激活状态。当前不接文件读写或存档槽。
+- 验证：输入程序集、Runtime 和 Editor 静态编译通过；“重生锚”预制体、材质和栏目引用核对通过；`git diff --check` 通过。
+
 ## 当前规划地图固化为示例地图
 
 - 日期：2026-10-07；负责人：Codex；分支：`codex/orpheus0829/颜色大洗牌`。

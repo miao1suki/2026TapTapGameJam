@@ -52,7 +52,7 @@ namespace Project.BlockFeatures
 
         private bool isOn;
 
-        public bool IsSignalActive => isOn && isActiveAndEnabled;
+        public bool IsSignalActive => isOn && CanRunFeature;
         public event Action<bool> SignalChanged;
 
         protected override void OnAttach()
@@ -69,7 +69,7 @@ namespace Project.BlockFeatures
 
         public bool CanInteract(GameObject interactor)
         {
-            if (!isActiveAndEnabled || interactor == null)
+            if (!CanRunFeature || interactor == null)
             {
                 return false;
             }
@@ -110,6 +110,11 @@ namespace Project.BlockFeatures
 
         public void Toggle()
         {
+            if (!CanRunFeature)
+            {
+                return;
+            }
+
             isOn = !isOn;
             ApplyMaterial();
             SignalChanged?.Invoke(IsSignalActive);
@@ -117,7 +122,7 @@ namespace Project.BlockFeatures
 
         public void SetOn(bool value)
         {
-            if (isOn == value)
+            if (!CanRunFeature || isOn == value)
             {
                 return;
             }

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Project.BlockFeatures;
 using Project.InputAbstraction;
 using UnityEngine;
+using UnityEngine.Playables;
 
 namespace Project.Player
 {
@@ -11,7 +13,8 @@ namespace Project.Player
         Swimming = 1,
         Action = 2,
         Locked = 3,
-        Climbing = 4
+        Climbing = 4,
+        Death = 5
     }
 
     /// <summary>Basic physical motor. No projected platforms, ladders or rope dependencies.</summary>
@@ -48,6 +51,11 @@ namespace Project.Player
         [SerializeField, Min(0)] private float coyoteTime = .12f;
         [SerializeField, Min(0)] private float jumpBufferTime = .12f;
         [SerializeField] private LayerMask groundMask = ~0;
+        [SerializeField] private ActSO deathAction;
+        [SerializeField] private Transform respawnPoint;
+        [SerializeField, Min(1)] private int respawnRandomRadiusBlocks = 4;
+        [SerializeField, Range(1, 128)] private int respawnRandomAttempts = 32;
+        [SerializeField, Min(.05f)] private float respawnSafetyRadius = .45f;
         private Rigidbody motor;
         private CapsuleCollider capsule;
         private PlayerActionRunner runner;
@@ -70,7 +78,14 @@ namespace Project.Player
         private float bounceDecayMultiplier = 1f;
         private bool landedThisStep;
         private bool jumpHeld;
+        private bool dead;
         private int lockDepth;
+        private PlayerHealth health;
+        private Vector3 initialRespawnPosition;
+        private Vector3 deathPosition;
+        private float gridCellWorldSize = 1f;
+        private readonly Collider[] respawnOverlapBuffer =
+            new Collider[32];
         private float requestedBounceSpeed = -1f;
         private float requestedJumpBoost = -1f;
         private Vector3 pendingPlatformDelta;
@@ -94,12 +109,14 @@ namespace Project.Player
         private static PhysicsMaterial zeroFrictionMaterial;
         public Rigidbody Motor => motor;
         public bool IsGrounded { get; private set; }
-        public bool IsControlLocked => lockDepth > 0;
+        public bool IsDead => dead;
+        public bool IsControlLocked => dead || lockDepth > 0;
         public bool IsSwimming => waterSources.Count > 0;
         public bool IsClimbing =>
             climbSources.Count > 0 &&
             (!IsGrounded || movement.y > .01f);
-        public PlayerStateId CurrentStateId => IsControlLocked ? PlayerStateId.Locked :
+        public PlayerStateId CurrentStateId => dead ? PlayerStateId.Death :
+            IsControlLocked ? PlayerStateId.Locked :
             runner != null && runner.IsPlaying ? PlayerStateId.Action :
             IsClimbing ? PlayerStateId.Climbing :
             IsSwimming ? PlayerStateId.Swimming : PlayerStateId.Normal;
@@ -131,6 +148,7 @@ namespace Project.Player
         {
             get
             {
+                if (dead) return "Death";
                 if (IsClimbing) return "Climbing";
                 if (IsSwimming) return "Swimming";
                 if (IsGrounded)
@@ -181,6 +199,14 @@ namespace Project.Player
             motor.useGravity = false;
             capsule.sharedMaterial = GetZeroFrictionMaterial();
             highestAirPosition = transform.position.y;
+            initialRespawnPosition = transform.position;
+            gridCellWorldSize = GridCellSizeUtility.Resolve(this);
+            health = GetComponent<PlayerHealth>();
+            if (health == null)
+            {
+                health = gameObject.AddComponent<PlayerHealth>();
+            }
+
             interactionSensor = GetComponent<PlayerInteractionSensor>();
             if (interactionSensor == null)
             {
@@ -209,9 +235,28 @@ namespace Project.Player
 
             return zeroFrictionMaterial;
         }
-        private void OnEnable() { runner = GetComponent<PlayerActionRunner>(); runner.Completed += Completed; }
+        private void OnEnable()
+        {
+            runner = GetComponent<PlayerActionRunner>();
+            runner.Completed -= Completed;
+            runner.Completed += Completed;
+            health = GetComponent<PlayerHealth>();
+            if (health != null)
+            {
+                health.Died -= OnDied;
+                health.Died += OnDied;
+                health.Revived -= OnRevived;
+                health.Revived += OnRevived;
+            }
+        }
         private void OnDisable()
         {
+            if (health != null)
+            {
+                health.Died -= OnDied;
+                health.Revived -= OnRevived;
+            }
+
             if (runner != null) { runner.Completed -= Completed; runner.Stop(); }
             CancelCarry();
             CancelPointerDrag();
@@ -227,6 +272,7 @@ namespace Project.Player
             bounceSurfaces.Clear();
             currentFallDistance = 0f;
             landedThisStep = false;
+            dead = false;
             climbSpeedMultipliers.Clear();
             climbSlideSpeeds.Clear();
             climbFastSlideSpeeds.Clear();
@@ -234,6 +280,11 @@ namespace Project.Player
         }
         public void EnterWater(Component source)
         {
+            if (dead)
+            {
+                return;
+            }
+
             if (source != null) waterSources.Add(source.GetInstanceID());
         }
 
@@ -257,7 +308,7 @@ namespace Project.Player
 
         public void SetWaterVelocity(Component source, Vector2 velocity)
         {
-            if (source == null)
+            if (dead || source == null)
             {
                 return;
             }
@@ -275,7 +326,7 @@ namespace Project.Player
 
         public void SetBuoyancy(Component source, float targetRiseSpeed)
         {
-            if (source == null)
+            if (dead || source == null)
             {
                 return;
             }
@@ -346,6 +397,11 @@ namespace Project.Player
 
         public void ApplyVerticalBounce(float verticalSpeed)
         {
+            if (dead)
+            {
+                return;
+            }
+
             requestedBounceSpeed = Mathf.Max(
                 requestedBounceSpeed,
                 verticalSpeed);
@@ -353,6 +409,11 @@ namespace Project.Player
 
         public void ApplyVerticalBounceImmediate(float verticalSpeed)
         {
+            if (dead)
+            {
+                return;
+            }
+
             requestedBounceSpeed = -1f;
             if (motor == null)
             {
@@ -446,11 +507,21 @@ namespace Project.Player
 
         public void QueuePlatformDelta(Vector3 delta)
         {
+            if (dead)
+            {
+                return;
+            }
+
             pendingPlatformDelta += delta;
         }
 
         public void ApplyJumpBoost(float verticalSpeed)
         {
+            if (dead)
+            {
+                return;
+            }
+
             requestedJumpBoost = Mathf.Max(
                 requestedJumpBoost,
                 verticalSpeed);
@@ -464,6 +535,11 @@ namespace Project.Player
         }
         public void EnterClimb(Component source)
         {
+            if (dead)
+            {
+                return;
+            }
+
             if (source != null) climbSources.Add(source.GetInstanceID());
         }
         public void ExitClimb(Component source)
@@ -472,19 +548,40 @@ namespace Project.Player
         }
         public void SetMoveInput(Vector2 value)
         {
+            if (dead)
+            {
+                return;
+            }
+
             movement = value;
         }
         public void SetSprintInput(bool value)
         {
+            if (dead)
+            {
+                return;
+            }
+
             sprint = value;
         }
         public void RequestJump()
         {
+            if (dead)
+            {
+                return;
+            }
+
             jumpUntil = Time.time + jumpBufferTime;
             jumpHeld = true;
         }
         public void SetJumpHeld(bool value)
         {
+            if (dead)
+            {
+                jumpHeld = false;
+                return;
+            }
+
             jumpHeld = value;
         }
         public void ClearBufferedInput()
@@ -505,6 +602,12 @@ namespace Project.Player
             bool interactTriggered,
             bool interactionBlocked)
         {
+            if (dead)
+            {
+                ReleaseHeldInteraction();
+                return;
+            }
+
             if (heldInteractionTarget != null)
             {
                 if (interactHeld)
@@ -552,6 +655,11 @@ namespace Project.Player
 
         public void TickColorWheel(Vector2 pointerPosition)
         {
+            if (dead)
+            {
+                return;
+            }
+
             colorWheel?.Tick(pointerPosition);
         }
 
@@ -562,6 +670,11 @@ namespace Project.Player
             bool triggeredThisFrame,
             Vector2 pointerPosition)
         {
+            if (dead)
+            {
+                return;
+            }
+
             colorWheel?.UpdateInput(
                 holdMode,
                 pressedThisFrame,
@@ -572,6 +685,11 @@ namespace Project.Player
 
         public void ToggleColorWheel()
         {
+            if (dead)
+            {
+                return;
+            }
+
             colorWheel?.ToggleWheel();
         }
 
@@ -582,17 +700,27 @@ namespace Project.Player
 
         public void CommitColorWheelSelection()
         {
+            if (dead)
+            {
+                return;
+            }
+
             colorWheel?.CommitWheelSelection();
         }
 
         public void TryUseSelectedColorAbility()
         {
+            if (dead)
+            {
+                return;
+            }
+
             colorWheel?.TryUseSelectedAbility();
         }
 
         public void BeginPointerDrag(IPlayerPointerDrag drag)
         {
-            if (drag == null || pointerDrag != null)
+            if (dead || drag == null || pointerDrag != null)
             {
                 return;
             }
@@ -619,7 +747,7 @@ namespace Project.Player
             Vector2 screenPosition,
             Camera camera)
         {
-            if (pointerDrag == null || camera == null)
+            if (dead || pointerDrag == null || camera == null)
             {
                 return;
             }
@@ -634,6 +762,11 @@ namespace Project.Player
             Vector2 screenPosition,
             Camera camera)
         {
+            if (dead)
+            {
+                return;
+            }
+
             if (carryTarget != null)
             {
                 if (!carryHeld)
@@ -822,6 +955,7 @@ namespace Project.Player
                         IPlayerBounceSurface>()
                     : null;
                 if (surface == null ||
+                    !surface.IsBounceSurfaceAvailable ||
                     !surface.TryGetBounceSpeed(
                         this,
                         fallDistance,
@@ -841,6 +975,13 @@ namespace Project.Player
 
         private void FixedUpdate()
         {
+            if (dead)
+            {
+                motor.linearVelocity = Vector3.zero;
+                motor.angularVelocity = Vector3.zero;
+                return;
+            }
+
             if (pendingPlatformDelta.sqrMagnitude > .000001f)
             {
                 motor.position += pendingPlatformDelta;
@@ -1120,6 +1261,251 @@ namespace Project.Player
             ActionCompleted?.Invoke(action); Emit(AchievementSignalIds.PlayerActionCompleted);
             if (action.DefaultNextAction != null) TryPlayAction(action.DefaultNextAction);
         }
+
+        public void EnterDeath()
+        {
+            if (dead)
+            {
+                return;
+            }
+
+            bool wasLocked = IsControlLocked;
+            deathPosition = transform.position;
+            dead = true;
+            ClearDeathControlState();
+            runner?.Stop();
+            if (deathAction != null &&
+                deathAction.Timeline != null &&
+                runner != null &&
+                runner.Play(deathAction, DirectorWrapMode.Hold))
+            {
+                ActionStarted?.Invoke(deathAction);
+            }
+
+            if (!wasLocked)
+            {
+                ControlLockChanged?.Invoke(true);
+            }
+        }
+
+        public void RequestRespawn()
+        {
+            if (!dead)
+            {
+                return;
+            }
+
+            Vector3 targetPosition;
+            if (PlayerRespawnPointRegistry.TryFindPreferred(
+                    deathPosition,
+                    out IPlayerRespawnPoint registeredPoint))
+            {
+                targetPosition = FindSafeRespawnPosition(
+                    registeredPoint.RespawnPosition,
+                    registeredPoint.RespawnRadiusBlocks,
+                    deathPosition);
+            }
+            else if (respawnPoint != null)
+            {
+                targetPosition = FindSafeRespawnPosition(
+                    respawnPoint.position,
+                    respawnRandomRadiusBlocks,
+                    deathPosition);
+            }
+            else
+            {
+                targetPosition = FindSafeRespawnPosition(
+                    FindRandomRespawnPosition(
+                        deathPosition,
+                        respawnRandomRadiusBlocks),
+                    respawnRandomRadiusBlocks,
+                    initialRespawnPosition);
+            }
+            if (motor != null)
+            {
+                motor.position = targetPosition;
+                motor.linearVelocity = Vector3.zero;
+                motor.angularVelocity = Vector3.zero;
+            }
+
+            if (health != null)
+            {
+                health.ResetHealth();
+            }
+            else
+            {
+                ReviveFromDeath();
+            }
+        }
+
+        private Vector3 FindRandomRespawnPosition(
+            Vector3 origin,
+            float radiusBlocks)
+        {
+            Vector2 offset = UnityEngine.Random.insideUnitCircle *
+                             Mathf.Max(
+                                 .1f,
+                                 radiusBlocks *
+                                 gridCellWorldSize);
+            return origin + new Vector3(
+                offset.x,
+                offset.y,
+                0f);
+        }
+
+        private Vector3 FindSafeRespawnPosition(
+            Vector3 preferred,
+            float radiusBlocks,
+            Vector3 fallback)
+        {
+            if (TryGetGroundedRespawnPosition(
+                    preferred,
+                    out Vector3 groundedPreferred))
+            {
+                return groundedPreferred;
+            }
+
+            if (radiusBlocks > 0f)
+            {
+                for (int index = 0;
+                     index < Mathf.Max(1, respawnRandomAttempts);
+                     index++)
+                {
+                    Vector3 candidate = FindRandomRespawnPosition(
+                        preferred,
+                        radiusBlocks);
+                    if (TryGetGroundedRespawnPosition(
+                            candidate,
+                            out Vector3 groundedCandidate))
+                    {
+                        return groundedCandidate;
+                    }
+                }
+            }
+
+            if (TryGetGroundedRespawnPosition(
+                    fallback,
+                    out Vector3 groundedFallback))
+            {
+                return groundedFallback;
+            }
+
+            return TryGetGroundedRespawnPosition(
+                    initialRespawnPosition,
+                    out Vector3 groundedInitial)
+                ? groundedInitial
+                : initialRespawnPosition;
+        }
+
+        private bool TryGetGroundedRespawnPosition(
+            Vector3 candidate,
+            out Vector3 grounded)
+        {
+            grounded = candidate;
+            float maxDrop = Mathf.Max(
+                gridCellWorldSize,
+                gridCellWorldSize * 6f);
+            if (!Physics.Raycast(
+                    candidate + Vector3.up * .1f,
+                    Vector3.down,
+                    out RaycastHit hit,
+                    maxDrop,
+                    ~0,
+                    QueryTriggerInteraction.Ignore) ||
+                hit.collider == null ||
+                hit.collider.transform.root == transform.root)
+            {
+                return false;
+            }
+
+            float groundOffset = capsule != null
+                ? transform.position.y - capsule.bounds.min.y
+                : 1f;
+            grounded = new Vector3(
+                candidate.x,
+                hit.point.y + groundOffset,
+                candidate.z);
+            return IsRespawnPositionSafe(grounded);
+        }
+
+        private bool IsRespawnPositionSafe(Vector3 position)
+        {
+            int count = Physics.OverlapSphereNonAlloc(
+                position,
+                Mathf.Max(.05f, respawnSafetyRadius),
+                respawnOverlapBuffer,
+                ~0,
+                QueryTriggerInteraction.Collide);
+            for (int index = 0; index < count; index++)
+            {
+                Collider hit = respawnOverlapBuffer[index];
+                if (hit == null ||
+                    hit.transform.root == transform.root)
+                {
+                    continue;
+                }
+
+                if (hit.GetComponentInParent<LavaHazardFeature>() != null)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void OnDied()
+        {
+            EnterDeath();
+        }
+
+        private void OnRevived()
+        {
+            ReviveFromDeath();
+        }
+
+        private void ReviveFromDeath()
+        {
+            if (!dead)
+            {
+                return;
+            }
+
+            dead = false;
+            runner?.Stop();
+            ClearDeathControlState();
+            ControlLockChanged?.Invoke(false);
+        }
+
+        private void ClearDeathControlState()
+        {
+            ClearBufferedInput();
+            sprint = false;
+            groundedUntil = -1f;
+            airborneSince = -1f;
+            requestedBounceSpeed = -1f;
+            requestedJumpBoost = -1f;
+            pendingPlatformDelta = Vector3.zero;
+            waterSources.Clear();
+            waterSpeedMultipliers.Clear();
+            waterVelocities.Clear();
+            waterBuoyancies.Clear();
+            climbSpeedMultipliers.Clear();
+            climbSlideSpeeds.Clear();
+            climbFastSlideSpeeds.Clear();
+            climbSources.Clear();
+            bounceSurfaces.Clear();
+            ReleaseHeldInteraction();
+            CancelCarry();
+            ForceEndPointerDrag();
+            colorWheel?.CloseWheel();
+            if (motor != null)
+            {
+                motor.linearVelocity = Vector3.zero;
+                motor.angularVelocity = Vector3.zero;
+            }
+        }
+
         public void SetControlLocked(bool locked)
         {
             bool previous = IsControlLocked;

@@ -23,6 +23,8 @@
 
 `Carry` 是锁定长按的“搬运”动作，默认键盘鼠标右键、手柄北键；PlayerInputDriver 只把按住状态和指针交给 PlayerController，实际拿起、拖拽和放下由目标实现。
 
+`Respawn` 是固定仅点击的重生动作，默认键盘 `R`、手柄右摇杆按下。玩家死亡时只消费该动作。
+
 ## 公共自动发现
 
 `Project.ProjectDiscovery` 是项目级多态发现入口。需要被自动查找的组件实现
@@ -71,7 +73,8 @@ Timeline使用 `TimelineCamRig.Acquire/Release/SetShotTransform` 通过Manager�
 API：`Motor`、`IsGrounded`、`IsControlLocked`、`CurrentStateId`、`TryPlayAction(ActSO)`、`SetControlLocked(bool)`、`ReceiveTimelineSignal()`。
 控制锁采用引用计数；每次加锁必须同一调用方配对解锁，禁用会清空。
 `PlayerActionRunner` 播放Timeline，动作遵循优先级及 Interruptible，LockMovement只锁基础motor。
-事件：`ActionStarted/ActionCompleted/ControlLockChanged/TimelineSignalReceived`。
+死亡状态由 `PlayerHealth.Died` 驱动，进入 `PlayerStateId.Death` 后封锁普通操作并播放可配置 `deathAction`，Timeline 保持最后一帧。重生优先使用默认复活点或注册的 `IPlayerRespawnPoint`；没有复活点时在死亡位置四格内随机寻找可落地位置，向下吸附到实体地面后再检查岩浆。多个已激活重生点按 `RespawnPriority` 取最大值，重生锚的 `RespawnRadiusBlocks` 控制每个锚点自己的安全随机半径；`IRespawnAnchorChainProvider` / `IRespawnAnchorStateProvider` 提供后续存档所需的链表快照与状态回灌接口，`RespawnAnchorChainRuntime.CaptureSaveData` / `TryRestoreSaveData` 负责整链保存数据读写。
+事件：`ActionStarted/ActionCompleted/ControlLockChanged/TimelineSignalReceived`，`PlayerHealth` 另有 `Died/Revived`。
 `PlayerInteractionSensor` 扫描 `IInteractionTarget` 并消费Interact；没有对话实现。
 游泳状态中，横向输入控制左右游泳；未按跳跃键时按 `swimSinkSpeed` 缓慢下沉，按住跳跃键时按 `swimRiseSpeed` 缓慢上浮，纵向变化由 `swimVerticalAcceleration` 平滑。
 旧梯子、绳网、PlatformRider、投影平台接口已移除，不为兼容示例重新添加。

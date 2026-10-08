@@ -1428,3 +1428,7 @@ MonoBehaviour:
     displayName: "\u5B57\u5E55\u5C55\u793A\u9053\u5177"
     prefab: {fileID: 1531207766737356253, guid: 25886b04ea65c234e8a5db60ec44097d, type: 3}
     componentValueOverrides: []
+  - entryId: 5f6a7b8c9d0e4f1a2b3c4d5e6f708192
+    displayName: "\u91CD\u751F\u951A\u70B9"
+    prefab: {fileID: 661819136492108968, guid: 08cae83af9dea8748a12edda1eb537b9, type: 3}
+    componentValueOverrides: []

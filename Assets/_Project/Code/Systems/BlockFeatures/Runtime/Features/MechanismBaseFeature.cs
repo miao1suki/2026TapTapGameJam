@@ -42,7 +42,7 @@ namespace Project.BlockFeatures
         private bool powered;
         private bool energyDetected;
 
-        public bool IsSignalActive => powered && isActiveAndEnabled;
+        public bool IsSignalActive => powered && CanRunFeature;
         public event Action<bool> SignalChanged;
 
         protected override void OnAttach()

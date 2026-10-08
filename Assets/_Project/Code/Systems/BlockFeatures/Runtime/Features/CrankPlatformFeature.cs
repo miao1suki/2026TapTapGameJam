@@ -73,7 +73,7 @@ namespace Project.BlockFeatures
 
         public float Progress => Mathf.Clamp01(progress);
         public bool IsSignalActive =>
-            progress >= .999f && isActiveAndEnabled;
+            progress >= .999f && CanRunFeature;
         public event Action<bool> SignalChanged;
 
         protected override void OnAttach()
@@ -131,7 +131,7 @@ namespace Project.BlockFeatures
 
         public bool CanInteract(GameObject interactor)
         {
-            if (!isActiveAndEnabled || interactor == null)
+            if (!CanRunFeature || interactor == null)
             {
                 return false;
             }
@@ -169,6 +169,11 @@ namespace Project.BlockFeatures
 
         public void SetSignal(bool active, Component source)
         {
+            if (!CanRunFeature)
+            {
+                return;
+            }
+
             progress = active ? 1f : 0f;
             engaged = false;
             idleStartedAt = Time.time;

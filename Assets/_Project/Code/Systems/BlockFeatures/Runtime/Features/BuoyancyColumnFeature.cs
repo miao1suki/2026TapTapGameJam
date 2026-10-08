@@ -22,6 +22,13 @@ namespace Project.BlockFeatures
             Order = 0)]
         [SerializeField, Min(0f)] private float riseSpeed = 7f;
 
+        [BlockParameter(
+            Label = "出水额外上推速度",
+            Group = "浮力设置",
+            Order = 1,
+            Tooltip = "玩家被推到水面上方时额外增加的向上速度；用于产生越过水面后回落再上浮的效果。")]
+        [SerializeField, Min(0f)] private float topExitBoostSpeed = .75f;
+
         private readonly Collider[] blueOverlapBuffer =
             new Collider[32];
         private readonly List<Vector2> submergedIntervals =
@@ -30,10 +37,17 @@ namespace Project.BlockFeatures
             new Dictionary<int, PlayerController>();
         private readonly List<int> stoppedLiftPlayerIds =
             new List<int>();
+        private readonly HashSet<int> overshootPlayerIds =
+            new HashSet<int>();
 
         protected override void OnPlayerEntered(
             PlayerController player)
         {
+            if (!IsBlueUnlocked())
+            {
+                return;
+            }
+
             player.EnterWater(this);
             TrackPlayer(player);
         }
@@ -41,20 +55,44 @@ namespace Project.BlockFeatures
         protected override void OnPlayerStayed(
             PlayerController player)
         {
+            if (!IsBlueUnlocked())
+            {
+                return;
+            }
+
             TrackPlayer(player);
         }
 
         protected override void OnPlayerExited(
             PlayerController player)
         {
-            // The player can leave the bubble trigger upward while still
-            // inside a column of blue water. OnTick keeps the bubble column
-            // state alive until the player leaves that column.
+            if (player == null)
+            {
+                return;
+            }
+
+            if (IsWithinBubbleColumn(player))
+            {
+                if (!ApplyBubbleState(player))
+                {
+                    ApplyTopExitBoost(player);
+                }
+
+                return;
+            }
+
+            StopLift(player.GetInstanceID());
         }
 
         protected override void OnTick(float deltaTime)
         {
             base.OnTick(deltaTime);
+            if (!IsBlueUnlocked())
+            {
+                StopAllLifts();
+                return;
+            }
+
             stoppedLiftPlayerIds.Clear();
             foreach (KeyValuePair<int, PlayerController> pair in
                      liftedPlayers)
@@ -66,7 +104,10 @@ namespace Project.BlockFeatures
                     continue;
                 }
 
-                ApplyBubbleState(pair.Value);
+                if (!ApplyBubbleState(pair.Value))
+                {
+                    ApplyTopExitBoost(pair.Value);
+                }
             }
 
             for (int index = 0;
@@ -102,6 +143,9 @@ namespace Project.BlockFeatures
                 "上浮推力",
                 riseSpeed));
             values.Add(new BlockDebugValue(
+                "出水额外上推",
+                topExitBoostSpeed));
+            values.Add(new BlockDebugValue(
                 "水体表现",
                 HasWaterVisual ? "已关联" : "未关联"));
         }
@@ -117,18 +161,35 @@ namespace Project.BlockFeatures
             ApplyBubbleState(player);
         }
 
-        private void ApplyBubbleState(PlayerController player)
+        private bool ApplyBubbleState(PlayerController player)
         {
             if (CanLiftPlayer(player))
             {
+                overshootPlayerIds.Remove(
+                    player.GetInstanceID());
                 player.EnterWater(this);
                 player.SetBuoyancy(this, riseSpeed);
-                return;
+                return true;
             }
 
             player.SetBuoyancy(this, 0f);
             player.ExitWater(this);
-            player.ClampUpwardVelocity(0f);
+            return false;
+        }
+
+        private void ApplyTopExitBoost(PlayerController player)
+        {
+            if (player == null ||
+                topExitBoostSpeed <= 0f ||
+                !overshootPlayerIds.Add(
+                    player.GetInstanceID()))
+            {
+                return;
+            }
+
+            player.ApplyVerticalBounceImmediate(
+                player.VerticalVelocity +
+                topExitBoostSpeed);
         }
 
         private void StopAllLifts()
@@ -136,6 +197,7 @@ namespace Project.BlockFeatures
             var players = new List<PlayerController>(
                 liftedPlayers.Values);
             liftedPlayers.Clear();
+            overshootPlayerIds.Clear();
             for (int index = 0; index < players.Count; index++)
             {
                 PlayerController player = players[index];
@@ -159,6 +221,7 @@ namespace Project.BlockFeatures
             }
 
             liftedPlayers.Remove(playerId);
+            overshootPlayerIds.Remove(playerId);
             if (player == null)
             {
                 return;
@@ -259,7 +322,7 @@ namespace Project.BlockFeatures
             }
 
             submergedHeight += intervalEnd - intervalStart;
-            return submergedHeight > bounds.size.y * .5f;
+            return submergedHeight > .01f;
         }
 
         private static int CompareSubmergedIntervals(

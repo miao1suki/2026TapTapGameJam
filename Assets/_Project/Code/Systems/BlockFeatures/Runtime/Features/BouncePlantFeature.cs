@@ -86,8 +86,15 @@ namespace Project.BlockFeatures
         private readonly HashSet<int> jumpBounceLatched =
             new HashSet<int>();
 
+        public bool IsBounceSurfaceAvailable => CanRunFeature;
+
         private void OnCollisionEnter(Collision collision)
         {
+            if (!CanRunFeature)
+            {
+                return;
+            }
+
             PlayerController player = ResolvePlayer(collision);
             if (player == null ||
                 !IsTopContact(collision, player) ||
@@ -101,6 +108,11 @@ namespace Project.BlockFeatures
 
         private void OnCollisionStay(Collision collision)
         {
+            if (!CanRunFeature)
+            {
+                return;
+            }
+
             PlayerController player = ResolvePlayer(collision);
             if (player == null)
             {
