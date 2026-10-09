@@ -118,3 +118,12 @@
 - 接口变更：无。
 - 验证：Unity 版本与仓库远端已确认；Unity 编辑器导入及场景运行待验证。
 - 交接提交：随本次分支提交。
+## 工作区资源与渲染配置推送
+
+- 日期：2026-10-09。
+- 负责人：Codex（按用户要求整理并推送当前工作区改动）。
+- 分支：`codex/ta/water-platform-demo`。
+- 范围：`Assets/ta_source` 新增资源、PC Renderer 与 TagManager 配置、颜色材质、关卡编辑器 TileLibrary、Level_01 场景、`Assets/_Recovery` 场景，以及项目级 `.vscode` 配置。
+- 接口变更：无代码接口变更；渲染配置加入水下捕获和 Stencil Pixel Effect Renderer Features。
+- 验证：Unity `6000.3.12f1`；暂存差异与资源引用待提交前核对；Unity 导入及场景运行未验证。
+- 交接提交：随本次分支提交。
