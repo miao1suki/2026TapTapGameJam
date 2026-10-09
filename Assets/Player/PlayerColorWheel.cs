@@ -9,6 +9,14 @@ using UnityEngine.UI;
 
 namespace Project.Player
 {
+    public interface IPlayerColorWheelView
+    {
+        string HighlightedColorId { get; }
+        void Show();
+        void Hide();
+        void UpdatePointer(Vector2 screenPosition);
+    }
+
     /// <summary>
     /// 玩家颜色选择能力。它只保存玩家当前选中的颜色并提供轮盘 UI；
     /// 物体的实际效果由目标组件直接执行。
@@ -46,6 +54,7 @@ namespace Project.Player
         private float rangeRadius = -1f;
         private bool wheelOpen;
         private Vector2 pointerPosition;
+        private IPlayerColorWheelView externalView;
 
         private static Sprite circleSprite;
         private static Sprite ringSprite;
@@ -55,6 +64,27 @@ namespace Project.Player
         public bool IsWheelOpen => wheelOpen;
 
         public event Action<string> SelectedColorChanged;
+
+        public void BindExternalView(IPlayerColorWheelView view)
+        {
+            if (ReferenceEquals(externalView, view)) return;
+            externalView?.Hide();
+            externalView = view;
+            if (wheelRoot != null) wheelRoot.gameObject.SetActive(false);
+            if (wheelOpen && externalView != null)
+            {
+                externalView.Show();
+                externalView.UpdatePointer(pointerPosition);
+            }
+        }
+
+        public void UnbindExternalView(IPlayerColorWheelView view)
+        {
+            if (!ReferenceEquals(externalView, view)) return;
+            externalView.Hide();
+            externalView = null;
+            wheelOpen = false;
+        }
 
         private void Awake()
         {
@@ -79,7 +109,10 @@ namespace Project.Player
             RefreshRangeIndicator();
             if (wheelOpen)
             {
-                UpdateWheelSelection(pointerPosition);
+                if (externalView != null)
+                    externalView.UpdatePointer(pointerPosition);
+                else
+                    UpdateWheelSelection(pointerPosition);
             }
         }
 
@@ -181,6 +214,13 @@ namespace Project.Player
             }
 
             highlightedColorId = string.Empty;
+            if (externalView != null)
+            {
+                wheelOpen = true;
+                externalView.Show();
+                externalView.UpdatePointer(pointerPosition);
+                return;
+            }
             EnsureCanvas();
             RebuildWheel();
             wheelOpen = true;
@@ -192,6 +232,7 @@ namespace Project.Player
         public void CloseWheel()
         {
             wheelOpen = false;
+            externalView?.Hide();
             if (wheelRoot != null)
             {
                 wheelRoot.gameObject.SetActive(false);
@@ -205,9 +246,12 @@ namespace Project.Player
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(highlightedColorId))
+            string selected = externalView != null
+                ? externalView.HighlightedColorId
+                : highlightedColorId;
+            if (!string.IsNullOrWhiteSpace(selected))
             {
-                TrySelectColor(highlightedColorId);
+                TrySelectColor(selected);
             }
 
             CloseWheel();

@@ -1,5 +1,23 @@
 # 工作状态与交接（每次任务重读）
 
+## 拾取飞行动画
+
+- 日期：2026-10-09；负责人：Codex；分支：`codex/pickup-flight-preview`；范围：新增独立的 DOTween 拾取表现组件与 Pick 场景测试拾取物；不接入背包、奖励、正式拾取判定或输入键位。该分支只推送供协作，等待另一边的拾取物完成后再准备合并 main。
+- 场景：仅追加 `Assets/Scenes/Pick.unity` 的测试物，不改其他成员场景。
+- 对接：预留公开播放入口和完成回调，正式拾取逻辑未来自行决定何时触发及如何结算。
+- 表现：四段 DOTween 三次贝塞尔飞行；先弧线反弹到远离玩家的随机落点，转向头顶时延续一段向外惯性，再短暂慢速靠近、快速收至中心。每个测试球每次触发都生成独立随机双控制点，头顶与玩家中心为精确目标。三个测试球在玩家当前位置附近，触碰仅播放动画。
+- 节奏：修正连续阶段在边界同时减速至零所造成的视觉停顿；该组件每帧只更新位置，不做场景扫描或纹理读回。Pick 轮盘原型在场景初始化时另有一次性的 PSD 纹理读回与拆分，可能导致启动瞬间停顿，不能据此推断拾取动画持续掉帧。实际掉帧仍须 Unity Profiler 核实。
+- 文档：`Docs/Agent/Integration/PICKUP_FLIGHT_API.md` 与 `Docs/Developer/PICKUP_FLIGHT.md`。
+- 验证：三次贝塞尔回旋修正后，使用项目 Unity 6000.3.12f1 的 Roslyn 响应文件完成 Runtime 与 Editor 静态编译，均为 0 错误；三处场景实例引用和 `git diff --check` 已核对。Unity 日志显示测试预制体正常导入；Play Mode 中的实际轨迹、触发范围与帧率仍需本机确认。分支只交付 DOTween 免费版核心及其原始 readme，不包含本机 DOTween Pro。
+
+## Pick 三色轮盘原型
+
+- 日期：2026-10-09；负责人：Codex；范围：在用户新建的 `Assets/Scenes/Pick.unity` 增加原型组件、正式 `RuntimePlayer` 测试实例和测试地面，不改原 `Test` 场景。
+- 数据与输入：原型绑定 `PlayerColorWheel` 作为外部视图；选色走现有 `PlayerInputDriver` 与 `ColorRuntimeService`，不设 `1/2/3` 解锁或 `R` 重置等临时键位。原有 `R` 保留为玩家重生。
+- 表现：直接拆分本地 `轮盘.psd` 原有黑色扇区，不另叠绘扇区；以各块原图可见像素重心等比缩放，指向时硬切白色半透明并使用 DOTween 缓动；未解锁显示问号。
+- 外部参考：`TogetherYear/UV` 链接的网页和 Git 访问均返回仓库不存在，未迁移其源码。本分支只交付 DOTween 免费版；本机 DOTween Pro 不进入 Git。
+- 验证：视觉修正后使用 Unity 6000.3.12f1 自带 Roslyn 再次编译通过（0 错误），`git diff --check` 通过；Pick 场景中的玩家预制体、地面和轮盘资源引用已静态核对。完整 Unity Play Mode 仍需复核。普通 `dotnet build` 因本机生成工程目标为 .NET Framework 4.7.1、DOTween DLL 面向 4.7.2 而失败，不能据此判断 Unity 编辑器编译结果。
+
 ## 玩家死亡状态与重生
 
 - 日期：2026-10-08；负责人：Codex；分支：`codex/orpheus0829/扩充道具`。

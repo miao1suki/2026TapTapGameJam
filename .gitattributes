@@ -21,3 +21,7 @@
 *.flac binary
 *.aif binary
 *.aiff binary
+
+# Keep the unmodified DOTween Free distribution byte-for-byte.
+Assets/Plugins/Demigiant/DOTween/** -text whitespace=-blank-at-eol
+Assets/Plugins/Demigiant/DemiLib/** -text whitespace=-blank-at-eol
