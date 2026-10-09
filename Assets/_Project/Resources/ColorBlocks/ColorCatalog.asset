@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.ColorBlocks.ColorCatalog
   neutralMaterial: {fileID: 2100000, guid: 619b9e9c25b32484b89362142882254c, type: 2}
   blueWaterPrefab: {fileID: 5431656609242072927, guid: 78b64f40e46aa5840960a94f8c65c008, type: 3}
+  greenVinePrefab: {fileID: 3167722994712272321, guid: 59ab577dc98a76843a2b02a668e8717b, type: 3}
   colors:
   - id: red
     displayName: "\u7EA2"

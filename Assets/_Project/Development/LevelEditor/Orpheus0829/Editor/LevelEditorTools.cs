@@ -16,6 +16,8 @@ namespace Project.LevelEditor.Editor
         Paint = 1,
         Erase = 2,
         Player = 3,
+        Merge = 4,
+        Parameters = 5,
     }
 
     internal static class LevelEditorState

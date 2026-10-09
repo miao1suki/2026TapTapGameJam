@@ -193,6 +193,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerController
   moveSpeed: 5
+  climbKickHorizontalSpeed: 5
+  climbKickVerticalSpeed: 10
+  climbKickDetachSeconds: 0.3
   jumpSpeed: 9.899
   sprintMultiplier: 1.5
   coyoteTime: 0.12

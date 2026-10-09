@@ -16,6 +16,7 @@ Shader "Hidden/2026TapTap/SelectiveHSV"
             TEXTURE2D_X(_ColorObjectMask);
             SAMPLER(sampler_ColorObjectMask);
             float _TargetSaturation;
+            float _WhiteAmount;
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 uv = input.texcoord;
@@ -24,7 +25,9 @@ Shader "Hidden/2026TapTap/SelectiveHSV"
                 // HSV: preserve hue and value, reduce only saturation.
                 half value = max(source.r, max(source.g, source.b));
                 half3 grayAtValue = half3(value, value, value);
-                source.rgb = lerp(source.rgb, lerp(grayAtValue, source.rgb, _TargetSaturation), visible);
+                half3 restored = lerp(grayAtValue, source.rgb, _TargetSaturation);
+                restored = lerp(restored, half3(1, 1, 1), saturate(_WhiteAmount));
+                source.rgb = lerp(source.rgb, restored, visible);
                 return source;
             }
             ENDHLSL

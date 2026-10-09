@@ -36,6 +36,11 @@ namespace Project.ColorBlocks.Editor
                 "targetRenderer",
                 "状态渲染器",
                 "留空时运行时自动查找第一个子渲染器。"));
+            config.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "unlockedMaterial",
+                "正式外观材质",
+                "解锁后的实际材质。水体由水体组件提供，此处留空；编辑识别材质不会用于运行时。"));
             root.Add(config);
 
             ColorObject colorObject = (ColorObject)target;

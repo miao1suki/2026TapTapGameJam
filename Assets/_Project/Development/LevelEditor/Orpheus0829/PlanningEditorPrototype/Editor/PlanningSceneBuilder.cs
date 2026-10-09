@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project;
+using Project.BlockFeatures;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
 using Project.SurfaceTiles;
@@ -17,6 +18,17 @@ namespace PlanningEditorPrototype
         private const int RoomGap = 6;
         private const string RoomRootPrefix = "__PlanningRoom_";
         private const string MapRootName = "__PlanningMapGenerated";
+        private const string StagingRootName = "__PlanningMapStaging";
+        internal static bool SuppressSceneUndo { get; set; }
+        private static void RegisterSceneCreation(Object target,string name)
+        {
+            if(!SuppressSceneUndo) Undo.RegisterCreatedObjectUndo(target,name);
+        }
+        private static void DestroySceneObject(Object target)
+        {
+            if(SuppressSceneUndo) Object.DestroyImmediate(target);
+            else Undo.DestroyObjectImmediate(target);
+        }
 
         internal static bool HasGeneratedRoot(PlanningRoom room)
         {
@@ -69,6 +81,7 @@ namespace PlanningEditorPrototype
                 16,
                 16,
                 false,
+                false,
                 out message);
         }
 
@@ -96,6 +109,40 @@ namespace PlanningEditorPrototype
                 document.assemblyPatches,
                 document.worldBlockCellWidth,
                 document.worldBlockCellHeight,
+                true,
+                false,
+                out message);
+        }
+
+        internal static bool TryApplyDocument(
+            PlanningDocument document,
+            out string message)
+        {
+            if (document == null || document.rooms.Count == 0)
+            {
+                message = "世界图里还没有房间。";
+                return false;
+            }
+
+            var names = new HashSet<string>();
+            foreach (PlanningRoom room in document.rooms)
+            {
+                if (room != null && !names.Add(room.name))
+                {
+                    message = $"存在同名房间“{room.name}”，" +
+                              "请先改为唯一名称再应用到场景。";
+                    return false;
+                }
+            }
+
+            return TryBuild(
+                document.name,
+                StagingRootName,
+                document.rooms,
+                document.assemblyPatches,
+                document.worldBlockCellWidth,
+                document.worldBlockCellHeight,
+                true,
                 true,
                 out message);
         }
@@ -133,7 +180,7 @@ namespace PlanningEditorPrototype
             if (root == null)
             {
                 root = new GameObject(MapRootName);
-                Undo.RegisterCreatedObjectUndo(
+                RegisterSceneCreation(
                     root,
                     "创建规划关卡根节点");
                 SceneManager.MoveGameObjectToScene(root, scene);
@@ -150,7 +197,7 @@ namespace PlanningEditorPrototype
             {
                 container = new GameObject(room.name);
                 container.transform.SetParent(root.transform, false);
-                Undo.RegisterCreatedObjectUndo(
+                RegisterSceneCreation(
                     container,
                     room.isConnector
                         ? "创建通道场景容器"
@@ -177,6 +224,7 @@ namespace PlanningEditorPrototype
             int worldBlockCellWidth,
             int worldBlockCellHeight,
             bool connectRooms,
+            bool incremental,
             out string message)
         {
             message = string.Empty;
@@ -193,6 +241,14 @@ namespace PlanningEditorPrototype
                 return false;
             }
 
+            if (FindGeneratedRoot(StagingRootName) != null)
+            {
+                message = "场景中存在未完成的规划临时根节点。" +
+                          "请先检查并处理 __PlanningMapStaging，" +
+                          "工具不会自动删除它。";
+                return false;
+            }
+
             LevelEditorPalette palette =
                 LevelEditorPaletteService.GetOrCreate();
             if (palette == null || palette.Entries.Count == 0)
@@ -205,20 +261,32 @@ namespace PlanningEditorPrototype
                 rooms,
                 worldBlockCellWidth,
                 worldBlockCellHeight);
-            if (layouts.Count == 0)
+            if (layouts.Count == 0 && !incremental)
             {
                 message = "没有可生成的房间详情。";
                 return false;
             }
 
-            DestroyGeneratedRoots();
+            GameObject existingGeneratedRoot =
+                FindGeneratedRoot(MapRootName);
 
             var existingCells = new HashSet<Vector2Int>();
             IReadOnlyList<LevelEditorPlacedBlock> existingBlocks =
                 ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
             for (int index = 0; index < existingBlocks.Count; index++)
             {
-                existingCells.Add(existingBlocks[index].Cell);
+                LevelEditorPlacedBlock block = existingBlocks[index];
+                Transform sceneRoot = block.transform.root;
+                if (sceneRoot != null &&
+                    (sceneRoot.name == MapRootName ||
+                     sceneRoot.name.StartsWith(RoomRootPrefix)))
+                {
+                    continue;
+                }
+
+                for(int x=block.Cell.x;x<block.Cell.x+block.SizeCells.x;x++)
+                    for(int y=block.Cell.y;y<block.Cell.y+block.SizeCells.y;y++)
+                        existingCells.Add(new Vector2Int(x,-y-1));
             }
 
             var occupied = new HashSet<Vector2Int>();
@@ -228,10 +296,9 @@ namespace PlanningEditorPrototype
             int patchCount = 0;
 
             int undoGroup = Undo.GetCurrentGroup();
-            Undo.SetCurrentGroupName("生成规划关卡：" + title);
+            if(!SuppressSceneUndo) Undo.SetCurrentGroupName("生成规划关卡：" + title);
 
-            GameObject root = new GameObject(rootName);
-            Undo.RegisterCreatedObjectUndo(root, "生成规划关卡");
+            GameObject root = new GameObject(StagingRootName);
             SceneManager.MoveGameObjectToScene(root, scene);
             root.transform.position = Vector3.zero;
 
@@ -242,15 +309,14 @@ namespace PlanningEditorPrototype
                 RoomLayout layout = layouts[layoutIndex];
                 GameObject roomRoot = new GameObject(layout.Room.name);
                 roomRoot.transform.SetParent(root.transform, false);
-                Undo.RegisterCreatedObjectUndo(
-                    roomRoot,
-                    "生成规划房间");
 
                 for (int boxIndex = 0;
                      boxIndex < layout.Room.boxes.Count;
                      boxIndex++)
                 {
                     PlanningBox box = layout.Room.boxes[boxIndex];
+                    if (!CanPlaceMerged(box, new Vector2Int(layout.OffsetX,layout.OffsetY),occupied,existingCells))
+                    { skippedCount += box.width*box.height; continue; }
                     for (int y = box.y;
                          y < box.y + box.height;
                          y++)
@@ -275,9 +341,11 @@ namespace PlanningEditorPrototype
                                     palette,
                                     box,
                                     cell,
-                                    roomRoot.transform);
+                                    roomRoot.transform,
+                                    new Vector2Int(x,y));
                             if (placed == null)
                             {
+                                if ((box.isMerged || box.singleInstance || PlanningDoorUtility.IsDoor(box)) && (x != box.x || y != box.y)) continue;
                                 skippedCount++;
                                 continue;
                             }
@@ -293,14 +361,12 @@ namespace PlanningEditorPrototype
                 {
                     GameObject patchRoot = new GameObject("装配图补丁");
                     patchRoot.transform.SetParent(root.transform, false);
-                    Undo.RegisterCreatedObjectUndo(
-                        patchRoot,
-                        "生成装配图补丁");
                     for (int boxIndex = 0;
                          boxIndex < assemblyPatches.Count;
                          boxIndex++)
                     {
                         PlanningBox box = assemblyPatches[boxIndex];
+                        if (!CanPlaceMerged(box,Vector2Int.zero,occupied,existingCells)) continue;
                         for (int y = box.y;
                              y < box.y + box.height;
                              y++)
@@ -315,7 +381,8 @@ namespace PlanningEditorPrototype
                                         new Vector2Int(x, y),
                                         patchRoot.transform,
                                         occupied,
-                                        existingCells))
+                                        existingCells,
+                                        new Vector2Int(x,y)))
                                 {
                                     patchCount++;
                                 }
@@ -354,9 +421,6 @@ namespace PlanningEditorPrototype
                     connectorRoot.transform.SetParent(
                         root.transform,
                         false);
-                    Undo.RegisterCreatedObjectUndo(
-                        connectorRoot,
-                        "生成连接通道");
                     List<Vector2Int> assemblyPath =
                         PlanningLayoutUtility.GetConnectorAssemblyPath(
                             rooms,
@@ -375,6 +439,7 @@ namespace PlanningEditorPrototype
                     {
                         PlanningBox box =
                             connector.boxes[boxIndex];
+                        if (!CanPlaceMerged(box,origin,occupied,existingCells)) continue;
                         for (int y = box.y;
                              y < box.y + box.height;
                              y++)
@@ -392,7 +457,8 @@ namespace PlanningEditorPrototype
                                         cell,
                                         connectorRoot.transform,
                                         occupied,
-                                        existingCells))
+                                        existingCells,
+                                        new Vector2Int(x,y)))
                                 {
                                     connectorCount++;
                                 }
@@ -402,15 +468,43 @@ namespace PlanningEditorPrototype
                 }
             }
 
-            if (placedCount == 0)
+            if (placedCount == 0 && !incremental)
             {
-                Undo.DestroyObjectImmediate(root);
-                Undo.CollapseUndoOperations(undoGroup);
+                Object.DestroyImmediate(root);
+                if(!SuppressSceneUndo) Undo.CollapseUndoOperations(undoGroup);
                 message = "没有生成方块，请检查栏目方块是否可用。";
                 return false;
             }
 
-            Undo.CollapseUndoOperations(undoGroup);
+            int vineChainCount = ConvertVineChains(root.transform);
+            if (incremental)
+            {
+                ReconcileGeneratedRoots(
+                    existingGeneratedRoot,
+                    root,
+                    out int added,
+                    out int removed,
+                    out int preserved);
+                PlanningDoorUtility.BindSceneDoors(FindGeneratedRoot(MapRootName)?.transform, rooms, assemblyPatches);
+                if(!SuppressSceneUndo) Undo.CollapseUndoOperations(undoGroup);
+                EditorSceneManager.MarkSceneDirty(scene);
+                SceneView.RepaintAll();
+                message = $"已应用到场景：新增 {added}，删除 {removed}，" +
+                          $"保留 {preserved} 个原有物体。";
+                if (skippedCount > 0)
+                {
+                    message += $" 跳过 {skippedCount} 个冲突格。";
+                }
+
+                return true;
+            }
+
+            DestroyGeneratedRoots();
+            root.name = rootName;
+            PlanningDoorUtility.BindSceneDoors(root.transform, rooms, assemblyPatches);
+            RegisterSceneCreation(root, "完成规划场景重建");
+
+            if(!SuppressSceneUndo) Undo.CollapseUndoOperations(undoGroup);
             EditorSceneManager.MarkSceneDirty(scene);
             Selection.activeGameObject = root;
             SceneView.RepaintAll();
@@ -424,8 +518,349 @@ namespace PlanningEditorPrototype
             {
                 message += $" 跳过 {skippedCount} 个冲突格。";
             }
+            if (vineChainCount > 0)
+            {
+                message += $" 已整理 {vineChainCount} 条藤蔓。";
+            }
 
             return true;
+        }
+
+        private static void ReconcileGeneratedRoots(
+            GameObject existingRoot,
+            GameObject stagedRoot,
+            out int added,
+            out int removed,
+            out int preserved)
+        {
+            added = 0;
+            removed = 0;
+            preserved = 0;
+            if (existingRoot == null)
+            {
+                added = stagedRoot.GetComponentsInChildren<
+                    LevelEditorPlacedBlock>(true).Length;
+                stagedRoot.name = MapRootName;
+                RegisterSceneCreation(
+                    stagedRoot,
+                    "应用规划场景");
+                return;
+            }
+
+            var desiredContainers = new HashSet<string>();
+            var stagedContainers = new List<Transform>();
+            for (int index = 0; index < stagedRoot.transform.childCount; index++)
+            {
+                stagedContainers.Add(stagedRoot.transform.GetChild(index));
+            }
+
+            foreach (Transform staged in stagedContainers)
+            {
+                if (staged.GetComponentsInChildren<
+                        LevelEditorPlacedBlock>(true).Length == 0)
+                {
+                    continue;
+                }
+
+                desiredContainers.Add(staged.name);
+                Transform existing = FindDirectChild(
+                    existingRoot.transform,
+                    staged.name);
+                if (existing == null)
+                {
+                    added += staged.GetComponentsInChildren<
+                        LevelEditorPlacedBlock>(true).Length;
+                    staged.SetParent(existingRoot.transform, true);
+                    RegisterSceneCreation(
+                        staged.gameObject,
+                        "应用规划房间");
+                    continue;
+                }
+
+                ReconcileContainer(
+                    existing,
+                    staged,
+                    ref added,
+                    ref removed,
+                    ref preserved);
+            }
+
+            var oldContainers = new List<Transform>();
+            for (int index = 0;
+                 index < existingRoot.transform.childCount;
+                 index++)
+            {
+                oldContainers.Add(existingRoot.transform.GetChild(index));
+            }
+
+            foreach (Transform old in oldContainers)
+            {
+                if (desiredContainers.Contains(old.name))
+                {
+                    continue;
+                }
+
+                LevelEditorPlacedBlock[] blocks =
+                    old.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+                int generatedChildCount = 0;
+                foreach (LevelEditorPlacedBlock block in blocks)
+                {
+                    if (block != null && block.transform.parent == old)
+                    {
+                        generatedChildCount++;
+                    }
+                }
+
+                if (generatedChildCount == old.childCount)
+                {
+                    removed += blocks.Length;
+                    DestroySceneObject(old.gameObject);
+                    continue;
+                }
+
+                foreach (LevelEditorPlacedBlock block in blocks)
+                {
+                    if (block != null && block.transform.parent == old)
+                    {
+                        removed += CountPlacedBlocks(block.gameObject);
+                        DestroySceneObject(block.gameObject);
+                    }
+                }
+            }
+
+            Object.DestroyImmediate(stagedRoot);
+        }
+
+        private static void ReconcileContainer(
+            Transform existing,
+            Transform staged,
+            ref int added,
+            ref int removed,
+            ref int preserved)
+        {
+            var oldByCell = new Dictionary<Vector2Int, LevelEditorPlacedBlock>();
+            LevelEditorPlacedBlock[] oldBlocks =
+                existing.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+            foreach (LevelEditorPlacedBlock block in oldBlocks)
+            {
+                if (block.transform.parent == existing)
+                {
+                    oldByCell[block.Cell] = block;
+                }
+            }
+
+            LevelEditorPlacedBlock[] desiredBlocks =
+                staged.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+            foreach (LevelEditorPlacedBlock desired in desiredBlocks)
+            {
+                if (desired == null || desired.transform.parent != staged)
+                {
+                    continue;
+                }
+
+                if (oldByCell.TryGetValue(
+                        desired.Cell,
+                        out LevelEditorPlacedBlock old))
+                {
+                    oldByCell.Remove(desired.Cell);
+                    if (SameGeneratedBlock(old, desired))
+                    {
+                        var oldParts=old.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+                        var desiredParts=desired.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+                        for(int i=0;i<oldParts.Length;i++)
+                            oldParts[i].SetPlanningSource(desiredParts[i].PlanningBoxId,desiredParts[i].PlanningSignature,desiredParts[i].PlanningLocalCell);
+                        preserved += CountPlacedBlocks(old.gameObject);
+                        Object.DestroyImmediate(desired.gameObject);
+                        continue;
+                    }
+
+                    removed += CountPlacedBlocks(old.gameObject);
+                    DestroySceneObject(old.gameObject);
+                }
+
+                added += CountPlacedBlocks(desired.gameObject);
+                desired.transform.SetParent(existing, true);
+                RegisterSceneCreation(
+                    desired.gameObject,
+                    "应用规划物体");
+            }
+
+            foreach (LevelEditorPlacedBlock stale in oldByCell.Values)
+            {
+                if (stale != null)
+                {
+                    removed += CountPlacedBlocks(stale.gameObject);
+                    DestroySceneObject(stale.gameObject);
+                }
+            }
+        }
+
+        private static bool SameGeneratedBlock(
+            LevelEditorPlacedBlock old,
+            LevelEditorPlacedBlock desired)
+        {
+            if (old == null || desired == null ||
+                old.EntryName != desired.EntryName ||
+                old.IsProp != desired.IsProp ||
+                old.CellWorldSize != desired.CellWorldSize ||
+                old.SizeCells != desired.SizeCells ||
+                old.PlanningSignature != desired.PlanningSignature ||
+                PrefabUtility.GetCorrespondingObjectFromSource(
+                    old.gameObject) !=
+                PrefabUtility.GetCorrespondingObjectFromSource(
+                    desired.gameObject))
+            {
+                return false;
+            }
+
+            LevelEditorPlacedBlock[] oldChildren =
+                old.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+            LevelEditorPlacedBlock[] desiredChildren =
+                desired.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+            if (oldChildren.Length != desiredChildren.Length)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < oldChildren.Length; index++)
+            {
+                if (oldChildren[index].Cell != desiredChildren[index].Cell ||
+                    oldChildren[index].PlanningSignature != desiredChildren[index].PlanningSignature ||
+                    oldChildren[index].EntryName !=
+                    desiredChildren[index].EntryName)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static int CountPlacedBlocks(GameObject root)
+        {
+            return root.GetComponentsInChildren<
+                LevelEditorPlacedBlock>(true).Length;
+        }
+
+        private static int ConvertVineChains(Transform generatedRoot)
+        {
+            int chainCount = 0;
+            for (int rootIndex = 0;
+                 rootIndex < generatedRoot.childCount;
+                 rootIndex++)
+            {
+                Transform container = generatedRoot.GetChild(rootIndex);
+                var vines = new Dictionary<Vector2Int, LevelEditorPlacedBlock>();
+                LevelEditorPlacedBlock[] blocks =
+                    container.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+                for (int index = 0; index < blocks.Length; index++)
+                {
+                    LevelEditorPlacedBlock block = blocks[index];
+                    if (block.transform.parent == container &&
+                        block.IsProp &&
+                        block.SizeCells == Vector2Int.one &&
+                        block.GetComponent<ClimbableVineFeature>() is
+                            ClimbableVineFeature feature &&
+                        !(feature is LadderSonFeature) &&
+                        PrefabUtility.GetCorrespondingObjectFromSource(
+                            block.gameObject) != null &&
+                        feature.GrowthSegmentPrefab != null &&
+                        feature.GrowthSegmentPrefab
+                            .GetComponent<LadderSonFeature>() != null)
+                    {
+                        vines[block.Cell] = block;
+                    }
+                }
+
+                foreach (KeyValuePair<Vector2Int, LevelEditorPlacedBlock> pair
+                         in vines)
+                {
+                    if (pair.Value == null)
+                    {
+                        continue;
+                    }
+
+                    Vector2Int cell = pair.Key;
+                    if (vines.TryGetValue(
+                            cell + Vector2Int.down,
+                            out LevelEditorPlacedBlock lower) &&
+                        CanJoinVine(lower, pair.Value))
+                    {
+                        continue;
+                    }
+
+                    LevelEditorPlacedBlock bottom = pair.Value;
+                    ClimbableVineFeature mother =
+                        bottom.GetComponent<ClimbableVineFeature>();
+                    var upperBlocks = new List<LevelEditorPlacedBlock>();
+                    for (Vector2Int next = cell + Vector2Int.up;
+                         vines.TryGetValue(next, out LevelEditorPlacedBlock upper);
+                         next += Vector2Int.up)
+                    {
+                        if (!CanJoinVine(bottom, upper))
+                        {
+                            break;
+                        }
+
+                        upperBlocks.Add(upper);
+                    }
+
+                    if (upperBlocks.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var segments = new List<GameObject>(upperBlocks.Count);
+                    for (int index = 0; index < upperBlocks.Count; index++)
+                    {
+                        LevelEditorPlacedBlock upper = upperBlocks[index];
+                        GameObject segment = PrefabUtility.InstantiatePrefab(
+                            mother.GrowthSegmentPrefab) as GameObject;
+                        if (segment == null)
+                        {
+                            break;
+                        }
+
+                        segment.transform.SetParent(bottom.transform, true);
+                        segment.transform.position = upper.transform.position;
+                        segment.transform.rotation = upper.transform.rotation;
+                        segment.transform.localScale = upper.transform.localScale;
+                        segment.name = $"藤蔓节段 [{upper.Cell.x},{upper.Cell.y}]";
+                        LevelEditorPlacedBlock placed =
+                            segment.GetComponent<LevelEditorPlacedBlock>() ??
+                            segment.AddComponent<LevelEditorPlacedBlock>();
+                        placed.Configure(
+                            upper.Cell,
+                            upper.EntryName,
+                            upper.EntryColor,
+                            false,
+                            true,
+                            upper.CellWorldSize);
+                        placed.SetPlanningSource(upper.PlanningBoxId,upper.PlanningSignature,upper.PlanningLocalCell);
+                        segments.Add(segment);
+                        Object.DestroyImmediate(upper.gameObject);
+                    }
+
+                    mother.ConfigureInitialGrowth(segments);
+                    EditorUtility.SetDirty(mother);
+                    chainCount++;
+                }
+            }
+
+            return chainCount;
+        }
+
+        private static bool CanJoinVine(
+            LevelEditorPlacedBlock lower,
+            LevelEditorPlacedBlock upper)
+        {
+            return lower != null &&
+                   upper != null &&
+                   lower.CellWorldSize == upper.CellWorldSize &&
+                   PrefabUtility.GetCorrespondingObjectFromSource(
+                       lower.gameObject) ==
+                   PrefabUtility.GetCorrespondingObjectFromSource(
+                       upper.gameObject);
         }
 
         private static void GetLayoutStride(
@@ -556,7 +991,7 @@ namespace PlanningEditorPrototype
 
             LevelEditorPlacedBlock placed =
                 instance.GetComponent<LevelEditorPlacedBlock>() ??
-                Undo.AddComponent<LevelEditorPlacedBlock>(instance);
+                instance.AddComponent<LevelEditorPlacedBlock>();
             placed.Configure(
                 sceneCell,
                 entry.DisplayName,
@@ -568,10 +1003,10 @@ namespace PlanningEditorPrototype
             {
                 LevelEditorDecorationService.ApplyToPlacedBlock(
                     instance,
-                    entry);
+                    entry,
+                    false);
             }
 
-            Undo.RegisterCreatedObjectUndo(instance, "生成规划方块");
             return placed;
         }
 
@@ -616,6 +1051,7 @@ namespace PlanningEditorPrototype
             LevelEditorPalette palette,
             PlanningBox box)
         {
+            if (box.propEntryId == PlanningDoorUtility.ButtonEntryId) return PlanningDoorUtility.GetButtonEntry();
             for (int index = 0;
                  index < palette.PropEntries.Count;
                  index++)
@@ -650,14 +1086,15 @@ namespace PlanningEditorPrototype
             Vector2Int cell,
             Transform parent,
             HashSet<Vector2Int> occupied,
-            HashSet<Vector2Int> existingCells)
+            HashSet<Vector2Int> existingCells,
+            Vector2Int localCell)
         {
             if (!occupied.Add(cell) || existingCells.Contains(cell))
             {
                 return false;
             }
 
-            if (PlacePlanningBox(palette, box, cell, parent) == null)
+            if (PlacePlanningBox(palette, box, cell, parent, localCell) == null)
             {
                 return false;
             }
@@ -669,18 +1106,58 @@ namespace PlanningEditorPrototype
             LevelEditorPalette palette,
             PlanningBox box,
             Vector2Int cell,
-            Transform parent)
+            Transform parent,
+            Vector2Int localCell)
         {
+            if ((box.isMerged || box.singleInstance || PlanningDoorUtility.IsDoor(box)) && localCell != new Vector2Int(box.x,box.y)) return null;
+            LevelEditorPlacedBlock placed;
+            IReadOnlyList<LevelEditorComponentValueOverride> defaults;
             if (!string.IsNullOrEmpty(box.propEntryId) ||
                 !string.IsNullOrEmpty(box.propEntryName))
             {
-                return PlacePropBlock(palette, box, cell, parent);
+                placed = PlacePropBlock(palette, box, cell, parent);
+                defaults = FindPropEntry(palette,box)?.ComponentValueOverrides;
             }
+            else
+            {
+                LevelEditorBlockEntry entry = FindEntry(palette, box);
+                placed = entry != null ? PlaceBlock(entry, cell, parent) : null;
+                defaults = entry?.ComponentValueOverrides;
+            }
+            if (placed == null) return null;
+            if (PlanningDoorUtility.IsDoor(box) || box.propEntryId == PlanningDoorUtility.ButtonEntryId)
+            {
+                placed.transform.localScale *= CellSize;
+                if (PlanningDoorUtility.IsDoor(box))
+                {
+                    placed.transform.position -= Vector3.up * CellSize;
+                    placed.Configure(new Vector2Int(cell.x,-cell.y-2),placed.EntryName,placed.EntryColor,false,true,CellSize);
+                    placed.SetSizeCells(new Vector2Int(1,2));
+                }
+            }
+            var values=box.hasComponentOverrides ? box.componentOverrides : defaults;
+            LevelEditorComponentOverrideUtility.ApplyOverrides(placed.gameObject,values,false);
+            if(box.isMerged)
+            {
+                placed.transform.localScale=Vector3.Scale(placed.transform.localScale,new Vector3(box.width,box.height,1));
+                placed.transform.position+=new Vector3((box.width-1)*CellSize*.5f,-(box.height-1)*CellSize*.5f,0);
+                var bottomCell=new Vector2Int(cell.x,-cell.y-box.height);
+                placed.Configure(bottomCell,placed.EntryName,placed.EntryColor,!placed.IsProp && !FindEntry(palette,box).UsesPrefabDirectly,placed.IsProp,CellSize);
+                placed.SetSizeCells(new Vector2Int(box.width,box.height));
+            }
+            // The signature tracks content, not selection or transient scene references.
+            placed.SetPlanningSource(box.id,JsonUtility.ToJson(box)+JsonUtility.ToJson(new OverrideSignature { values = values == null ? new List<LevelEditorComponentValueOverride>() : new List<LevelEditorComponentValueOverride>(values) }),localCell);
+            return placed;
+        }
 
-            LevelEditorBlockEntry entry = FindEntry(palette, box);
-            return entry != null
-                ? PlaceBlock(entry, cell, parent)
-                : null;
+        [System.Serializable] private sealed class OverrideSignature { public List<LevelEditorComponentValueOverride> values; }
+
+        private static bool CanPlaceMerged(PlanningBox box,Vector2Int offset,HashSet<Vector2Int> occupied,HashSet<Vector2Int> external)
+        {
+            if(!box.isMerged && !box.singleInstance && !PlanningDoorUtility.IsDoor(box)) return true;
+            for(int x=box.x;x<box.x+box.width;x++) for(int y=box.y;y<box.y+box.height;y++)
+                if(occupied.Contains(new Vector2Int(x,y)+offset) || external.Contains(new Vector2Int(x,y)+offset)) return false;
+            return true;
         }
 
         private static LevelEditorPlacedBlock PlacePropBlock(
@@ -704,7 +1181,8 @@ namespace PlanningEditorPrototype
 
             LevelEditorComponentOverrideUtility.ApplyOverrides(
                 instance,
-                prop.ComponentValueOverrides);
+                box.hasComponentOverrides ? box.componentOverrides : prop.ComponentValueOverrides,
+                false);
             Vector2Int sceneCell = new Vector2Int(
                 cell.x,
                 -cell.y - 1);
@@ -715,7 +1193,7 @@ namespace PlanningEditorPrototype
                 0f);
             LevelEditorPlacedBlock placed =
                 instance.GetComponent<LevelEditorPlacedBlock>() ??
-                Undo.AddComponent<LevelEditorPlacedBlock>(instance);
+                instance.AddComponent<LevelEditorPlacedBlock>();
             placed.Configure(
                 sceneCell,
                 prop.DisplayName,
@@ -723,7 +1201,6 @@ namespace PlanningEditorPrototype
                 false,
                 true,
                 CellSize);
-            Undo.RegisterCreatedObjectUndo(instance, "生成规划道具");
             return placed;
         }
 
@@ -868,7 +1345,7 @@ namespace PlanningEditorPrototype
 
             for (int index = 0; index < targets.Count; index++)
             {
-                Undo.DestroyObjectImmediate(targets[index]);
+                DestroySceneObject(targets[index]);
             }
         }
 

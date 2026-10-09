@@ -20,11 +20,13 @@ namespace Project.SurfaceTiles.Editor
             return SurfaceTileAuthoringService.MakeSelectedObjectPaintable();
         }
 
-        public static void RefreshPreview(SurfaceTileBlock block)
+        public static void RefreshPreview(
+            SurfaceTileBlock block,
+            bool recordUndo = true)
         {
             if (block != null)
             {
-                SurfaceTileMeshBuilder.RefreshPreview(block);
+                SurfaceTileMeshBuilder.RefreshPreview(block, recordUndo);
             }
         }
 

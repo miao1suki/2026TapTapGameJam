@@ -16,6 +16,18 @@ namespace Project.LevelEditor
         [SerializeField] private bool useEntryColor;
         [SerializeField] private bool hasColorData;
         [SerializeField] private bool isProp;
+        [SerializeField] private string planningBoxId;
+        [SerializeField] private string planningSignature;
+        [SerializeField] private Vector2Int planningLocalCell;
+        public string PlanningBoxId => planningBoxId;
+        public string PlanningSignature => planningSignature;
+        public Vector2Int PlanningLocalCell => planningLocalCell;
+        public void SetPlanningSource(string id, string signature, Vector2Int localCell)
+        {
+            planningBoxId = id;
+            planningSignature = signature;
+            planningLocalCell = localCell;
+        }
 
         public Vector2Int Cell => cell;
         public Vector2Int SizeCells => new Vector2Int(Mathf.Max(1, sizeCells.x), Mathf.Max(1, sizeCells.y));

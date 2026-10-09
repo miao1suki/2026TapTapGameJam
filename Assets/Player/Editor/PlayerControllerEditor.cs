@@ -92,7 +92,22 @@ namespace Project.Player.Editor
                 serializedObject,
                 "climbHorizontalSpeed",
                 "横向离开速度",
-                "攀爬时横向移动，用于主动离开藤蔓区域。"));
+                "按藤蔓外侧方向离开的速度；按内侧方向则上爬。"));
+            climbing.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "climbKickHorizontalSpeed",
+                "蹬藤蔓水平速度",
+                "按住朝藤蔓方向并跳跃时，朝远离藤蔓方向弹出的速度。"));
+            climbing.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "climbKickVerticalSpeed",
+                "蹬藤蔓上升速度",
+                "蹬藤蔓跳跃时的初始上升速度。"));
+            climbing.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "climbKickDetachSeconds",
+                "蹬跳脱离时间",
+                "蹬跳后暂时不重新抓住藤蔓；前半段保持外抛速度。"));
             climbing.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "climbAcceleration",

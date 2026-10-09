@@ -23,6 +23,7 @@ MonoBehaviour:
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
     surfaceTilePlacements: []
+    componentValueOverrides: []
   - entryId: b425a019bb3c476da08cd4065bd77862
     mode: 0
     displayName: "\u767D\u65B9\u5757"
@@ -33,6 +34,7 @@ MonoBehaviour:
     surfaceTileCellSize: 1
     surfaceTileTransparentBase: 0
     surfaceTilePlacements: []
+    componentValueOverrides: []
   - entryId: 9722dbcf660242b187a026605cc52f67
     mode: 0
     displayName: test
@@ -853,7 +855,12 @@ MonoBehaviour:
       anchor: 0
       layer: 0
       offsetCells: {x: 0, y: 0}
+    componentValueOverrides: []
   propEntries:
+  - entryId: mechanism-door-standard
+    displayName: "门"
+    prefab: {fileID: 100000, guid: d0c5eff6ad0b47e3b940089416b08c21, type: 3}
+    componentValueOverrides: []
   - entryId: 3c635d52f11f48f18d4d82a53c65e601
     displayName: "\u7EA2\u8272\u94A5\u5319"
     prefab: {fileID: 6622805535834104132, guid: 83e6e8f43f4f1d54289447a18295ca37, type: 3}
@@ -1379,7 +1386,427 @@ MonoBehaviour:
   - entryId: b1789be1339f4f5b897ef3177788da37
     displayName: "\u85E4\u8513"
     prefab: {fileID: 415088043448545134, guid: 0b9c64b32646e624d930d420a5795b69, type: 3}
-    componentValueOverrides: []
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.BlockAbilityHost
+      componentIndex: 0
+      propertyPath: debugLog
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: useFeatureMaterial
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: featureMaterial
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: allowGrowthFromColor
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: growthSegmentPrefab
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: growInstantly
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: vineParticlePrefab
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.ColorBlocks.ColorObject
+      componentIndex: 0
+      propertyPath: baseColorTypeId
+      valueType: String
+      value: green
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.ColorBlocks.ColorObject
+      componentIndex: 0
+      propertyPath: targetRenderer
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.ColorBlocks.ColorObject
+      componentIndex: 0
+      propertyPath: unlockedMaterial
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Material
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_LayerOverridePriority
+      valueType: Integer
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_IsTrigger
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_ProvidesContacts
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Size
+      valueType: Vector3
+      value: '{"x":1.0,"y":1.0,"z":1.0}'
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Center
+      valueType: Vector3
+      value: '{"x":0.0,"y":0.0,"z":0.0}'
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshFilter
+      componentIndex: 0
+      propertyPath: m_Mesh
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_CastShadows
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ReceiveShadows
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_DynamicOccludee
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_StaticShadowCaster
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MotionVectors
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_LightProbeUsage
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ReflectionProbeUsage
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTracingMode
+      valueType: Integer
+      value: 2
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTraceProcedural
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTracingAccelStructBuildFlagsOverride
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTracingAccelStructBuildFlags
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_SmallMeshCulling
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ForceMeshLod
+      valueType: Integer
+      value: -1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MeshLodSelectionBias
+      valueType: Float
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RenderingLayerMask
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RendererPriority
+      valueType: Integer
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ProbeAnchor
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_LightProbeVolumeOverride
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ScaleInLightmap
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ReceiveGI
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_PreserveUVs
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_IgnoreNormalsForChartDetection
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ImportantGI
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_StitchLightmapSeams
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MinimumChartSize
+      valueType: Integer
+      value: 4
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_AutoUVMaxDistance
+      valueType: Float
+      value: 0.5
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_AutoUVMaxAngle
+      valueType: Float
+      value: 89
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_LightmapParameters
+      valueType: ObjectReference
+      value: 
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MaskInteraction
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.BlockRuntime
+      componentIndex: 0
+      propertyPath: maxDispatchPasses
+      valueType: Integer
+      value: 4
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.BlockRuntime
+      componentIndex: 0
+      propertyPath: maxDebugEvents
+      valueType: Integer
+      value: 128
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: climbSpeedMultiplier
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: climbEnterDistanceGrid
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: naturalSlideSpeed
+      valueType: Float
+      value: 1.2000000476837158
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: fastSlideSpeed
+      valueType: Float
+      value: 4.5
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: maxGrowthBlocks
+      valueType: Integer
+      value: 4
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: growthInterval
+      valueType: Float
+      value: 0.18000000715255737
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: grownParticleTime
+      valueType: Float
+      value: 32.430000305175781
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: visualGrowthDuration
+      valueType: Float
+      value: 2.2999999523162842
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: vineThickness
+      valueType: Float
+      value: 3
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: burnSegmentDuration
+      valueType: Float
+      value: 0.44999998807907104
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: vineWidth
+      valueType: Float
+      value: 1.5
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ClimbableVineFeature
+      componentIndex: 0
+      propertyPath: initialParticleTime
+      valueType: Float
+      value: 30.899999618530273
+      objectReferenceValue: {fileID: 0}
   - entryId: eb7a961c3edb4b2db919a5c209562fed
     displayName: "\u5F39\u6027\u690D\u7269"
     prefab: {fileID: 4048583810825559949, guid: a898ba3a8d320cc4eabeb2d10c7c0336, type: 3}

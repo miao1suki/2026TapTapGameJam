@@ -74,6 +74,7 @@ namespace Project.LevelEditor.Editor
             }
 
             panel.Refresh();
+            panel.RefreshPendingPreviews();
             if (LevelEditorPlayerService.EnforceEditPlane())
             {
                 SceneView.RepaintAll();
@@ -93,10 +94,19 @@ namespace Project.LevelEditor.Editor
 
         private readonly VisualElement panel;
         private readonly VisualElement body;
+        private readonly bool includeContextSections;
+        private readonly Dictionary<Image, GameObject> pendingPropPreviews =
+            new Dictionary<Image, GameObject>();
         private readonly Button editModeButton;
         private readonly FloatField gridSizeField;
         private readonly Button selectButton;
         private readonly Button mergeButton;
+        private readonly Button mergeModeButton;
+        private readonly Button parametersButton;
+        private readonly VisualElement mergeActions;
+        internal System.Action MergePlanningSelection;
+        internal System.Action UnmergePlanningSelection;
+        internal System.Action EditPlanningDefaults;
         private readonly Label mergeStatus;
         private readonly Button paintButton;
         private readonly Button eraseButton;
@@ -121,6 +131,7 @@ namespace Project.LevelEditor.Editor
             VisualElement root,
             bool includeContextSections = true)
         {
+            this.includeContextSections = includeContextSections;
             LevelEditorState.Palette =
                 LevelEditorPaletteService.GetOrCreate();
             LevelEditorState.CellSize = 1f;
@@ -210,16 +221,33 @@ namespace Project.LevelEditor.Editor
             tools.Add(playerToolButton);
             body.Add(tools);
 
+            VisualElement extraTools = Row();
+            mergeModeButton = ActionButton("合并", () => SetTool(LevelEditorTool.Merge));
+            parametersButton = ActionButton("参数", () => SetTool(LevelEditorTool.Parameters));
+            extraTools.Add(mergeModeButton);
+            extraTools.Add(parametersButton);
+            extraTools.style.display=includeContextSections ? DisplayStyle.None : DisplayStyle.Flex;
+            body.Add(extraTools);
+
             VisualElement mergeRow = Row();
-            mergeButton = ActionButton("合并选中方块", () =>
+            mergeActions = mergeRow;
+            mergeButton = ActionButton("合并选中项", () =>
             {
+                if (MergePlanningSelection != null)
+                {
+                    MergePlanningSelection();
+                    return;
+                }
                 if (LevelEditorBlockFactory.MergeSelected(out string result))
                     SceneView.RepaintAll();
                 mergeStatus.text = result;
             });
             mergeRow.Add(mergeButton);
+            mergeButton.tooltip="同种物体组成完整矩形后合并为一个实例。整体使用最先放置物体的参数；解除合并恢复各自原始参数。";
+            if (!includeContextSections)
+                mergeRow.Add(ActionButton("解除合并", () => UnmergePlanningSelection?.Invoke()));
             body.Add(mergeRow);
-            mergeStatus = new Label("选择工具：单击选中，Ctrl 单击增减，拖动框选。 ");
+            mergeStatus = new Label("合并：单击或框选增减选区，同类矩形可合并。参数：点物体编辑，点栏目设置默认值。");
             mergeStatus.style.whiteSpace = WhiteSpace.Normal;
             mergeStatus.style.opacity = .7f;
             body.Add(mergeStatus);
@@ -414,12 +442,48 @@ namespace Project.LevelEditor.Editor
             StyleToolButton(
                 playerToolButton,
                 LevelEditorState.Tool == LevelEditorTool.Player);
-            mergeButton.SetEnabled(LevelEditorBlockFactory.SelectedBlockCount >= 2);
+            StyleToolButton(mergeModeButton, LevelEditorState.Tool == LevelEditorTool.Merge);
+            StyleToolButton(parametersButton, LevelEditorState.Tool == LevelEditorTool.Parameters);
+            mergeActions.style.display = includeContextSections || LevelEditorState.Tool == LevelEditorTool.Merge ? DisplayStyle.Flex : DisplayStyle.None;
+            mergeButton.SetEnabled(MergePlanningSelection != null || LevelEditorBlockFactory.SelectedBlockCount >= 2);
             RefreshPalette();
             RefreshProps();
             paletteScaleLabel.text =
                 $"{Mathf.RoundToInt(LevelEditorState.PaletteScale * 100f)}%";
             refreshing = false;
+        }
+
+        internal void RefreshPendingPreviews()
+        {
+            if (pendingPropPreviews.Count == 0)
+            {
+                return;
+            }
+
+            var completed = new List<Image>();
+            foreach (KeyValuePair<Image, GameObject> pair in
+                     pendingPropPreviews)
+            {
+                if (pair.Value == null || pair.Key.panel == null)
+                {
+                    completed.Add(pair.Key);
+                    continue;
+                }
+
+                Texture2D preview = AssetPreview.GetAssetPreview(pair.Value);
+                if (preview == null)
+                {
+                    continue;
+                }
+
+                pair.Key.image = preview;
+                completed.Add(pair.Key);
+            }
+
+            foreach (Image image in completed)
+            {
+                pendingPropPreviews.Remove(image);
+            }
         }
 
         private static void StyleToolButton(
@@ -607,6 +671,8 @@ namespace Project.LevelEditor.Editor
                 LevelEditorBlockEntry entry = palette.Entries[index];
                 VisualElement cell = new VisualElement();
                 cell.style.width = cardWidth;
+                cell.style.minWidth = cardWidth;
+                cell.style.flexGrow = 1f;
                 cell.style.height = cardHeight;
                 cell.style.marginRight = 6f;
                 cell.style.marginBottom = 6f;
@@ -615,7 +681,9 @@ namespace Project.LevelEditor.Editor
                 {
                     LevelEditorState.SelectedEntryIndex = captured;
                     LevelEditorState.SelectedPropIndex = -1;
-                    LevelEditorState.Tool = LevelEditorTool.Paint;
+                    if (LevelEditorState.Tool == LevelEditorTool.Parameters)
+                        EditPlanningDefaults?.Invoke();
+                    else LevelEditorState.Tool = LevelEditorTool.Paint;
                     SceneView.RepaintAll();
                 })
                 {
@@ -707,6 +775,8 @@ namespace Project.LevelEditor.Editor
         {
             VisualElement cell = new VisualElement();
             cell.style.width = width;
+            cell.style.minWidth = width;
+            cell.style.flexGrow = 1f;
             cell.style.height = height;
             cell.style.marginRight = 6f;
             cell.style.marginBottom = 6f;
@@ -763,6 +833,7 @@ namespace Project.LevelEditor.Editor
             lastPropCount = count;
             lastPropIndex = LevelEditorState.SelectedPropIndex;
             lastPropRevision = LevelEditorState.PaletteRevision;
+            pendingPropPreviews.Clear();
             propList.Clear();
             float scale = Mathf.Clamp(
                 LevelEditorState.PaletteScale,
@@ -772,10 +843,9 @@ namespace Project.LevelEditor.Editor
             float cardHeight = 148f * scale;
             if (propScroll != null)
             {
-                propScroll.style.height = Mathf.Clamp(
-                    cardHeight + 24f,
-                    104f,
-                    240f);
+                propScroll.style.height = includeContextSections
+                    ? Mathf.Clamp(cardHeight + 24f, 104f, 240f)
+                    : 420f;
             }
 
             if (palette != null && count > 0)
@@ -786,6 +856,8 @@ namespace Project.LevelEditor.Editor
                     LevelEditorPropEntry entry = palette.PropEntries[index];
                     VisualElement cell = new VisualElement();
                     cell.style.width = cardWidth;
+                    cell.style.minWidth = cardWidth;
+                    cell.style.flexGrow = 1f;
                     cell.style.height = cardHeight;
                     cell.style.marginRight = 6f;
                     cell.style.marginBottom = 6f;
@@ -794,7 +866,9 @@ namespace Project.LevelEditor.Editor
                     {
                         LevelEditorState.SelectedPropIndex = captured;
                         LevelEditorState.SelectedEntryIndex = -1;
-                        LevelEditorState.Tool = LevelEditorTool.Paint;
+                        if (LevelEditorState.Tool == LevelEditorTool.Parameters)
+                            EditPlanningDefaults?.Invoke();
+                        else LevelEditorState.Tool = LevelEditorTool.Paint;
                         SceneView.RepaintAll();
                     })
                     {
@@ -827,6 +901,8 @@ namespace Project.LevelEditor.Editor
                 Texture2D preview = entry.Prefab != null
                     ? AssetPreview.GetAssetPreview(entry.Prefab)
                     : null;
+                bool awaitingPreview = preview == null &&
+                    entry.Prefab != null;
                 if (preview == null && entry.Prefab != null)
                 {
                     preview = AssetPreview.GetMiniThumbnail(entry.Prefab);
@@ -841,6 +917,10 @@ namespace Project.LevelEditor.Editor
                 image.style.width = 98f * scale;
                 image.style.height = 98f * scale;
                 image.style.marginTop = 6f * scale;
+                if (awaitingPreview)
+                {
+                    pendingPropPreviews[image] = entry.Prefab;
+                }
                 card.Add(image);
                 Label name = new Label(entry.DisplayName);
                 name.style.width = 116f * scale;

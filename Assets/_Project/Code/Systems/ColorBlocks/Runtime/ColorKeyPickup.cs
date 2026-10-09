@@ -242,7 +242,7 @@ namespace Project.ColorBlocks
                 }
             }
 
-            float revealTimeout = Time.unscaledTime + revealDuration + 1f;
+            float revealTimeout = Time.unscaledTime + HSVColorFadeManager.Instance.GetEffectiveDuration(revealDuration) + 1f;
             while (unlocked &&
                    HSVColorFadeManager.Instance.GetSaturation(colorTypeId) < .995f &&
                    Time.unscaledTime < revealTimeout)

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Project.Player;
+using Project.ColorBlocks;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -16,10 +17,11 @@ namespace Project.BlockFeatures
         Category = BlockFeatureCategory.Plant,
         Interactions =
             BlockFeatureInteraction.AppliedColor |
+            BlockFeatureInteraction.ObjectContact |
             BlockFeatureInteraction.RoomReset,
         Writes = new[] { BlockChannel.Growth })]
     public class ClimbableVineFeature : BlockFeature,
-        IVineSegmentAppearance
+        IVineSegmentAppearance, IObjectContactReceiver
     {
         private static readonly int AppearTriggerHash =
             Animator.StringToHash("Appear");
@@ -96,6 +98,9 @@ namespace Project.BlockFeatures
             Tooltip = "逐块生长时，每生成一块后等待的时间。")]
         [SerializeField, Min(0f)] private float growthInterval = .18f;
 
+        [SerializeField] private List<GameObject> initialSegments =
+            new List<GameObject>();
+
         private readonly List<GameObject> spawnedSegments =
             new List<GameObject>();
         private readonly Collider[] proximityBuffer =
@@ -107,14 +112,59 @@ namespace Project.BlockFeatures
         private readonly List<int> exitPlayerIds =
             new List<int>();
         private Coroutine growthRoutine;
+        private int growthTargetCount;
+        [SerializeField, HideInInspector] private ClimbableVineFeature vineRoot;
+        [BlockParameter(Label = "藤蔓粒子预制体", Group = "藤蔓表现", Order = 0, Tooltip = "留空使用颜色目录中的 TA 藤蔓粒子。")]
+        [SerializeField] private GameObject vineParticlePrefab;
+        [BlockParameter(Label = "初始粒子时间", Group = "藤蔓表现", Order = 1)]
+        [SerializeField, Min(0)] private float initialParticleTime = 30.13f;
+        [BlockParameter(Label = "长成粒子时间", Group = "藤蔓表现", Order = 2)]
+        [SerializeField, Min(0)] private float grownParticleTime = 32.43f;
+        [BlockParameter(Label = "生长表现时长", Group = "藤蔓表现", Order = 3)]
+        [SerializeField, Min(.1f)] private float visualGrowthDuration = 2.3f;
+        [BlockParameter(Label = "藤蔓宽度（格）", Group = "藤蔓表现", Order = 4, Tooltip = "控制整束藤蔓的横向范围，不改变攀爬判定。")]
+        [SerializeField, Min(.1f)] private float vineWidth = 1.2f;
+        [BlockParameter(Label = "藤蔓枝条粗细倍率", Group = "藤蔓表现", Order = 5, Tooltip = "放大粒子拖尾宽度，默认为原素材的三倍。")]
+        [SerializeField, Min(.1f)] private float vineThickness = 3f;
+        [BlockParameter(Label = "逐节燃烧时间", Group = "燃烧设置", Order = 0)]
+        [SerializeField, Min(.1f)] private float burnSegmentDuration = .45f;
+        private Coroutine burnRoutine;
+        private bool burning, burned;
+        private GameObject vineVisual;
+        private ParticleSystem vineParticles;
+        private Renderer vineRenderer;
+        private VinePoseCache poseCache;
+        private float visualProgress, visualTarget, visibleCells = 1f, targetCells = 1f;
+        private int lastPose = -1;
+        private float nextWaterContactCheck;
+        public ClimbableVineFeature Root => vineRoot != null ? vineRoot : this;
+        public bool IsBurning => burning;
+        public bool IsBurned => burned;
+
+        protected override void OnAttach()
+        {
+            BindOwnedSegments();
+            burned = false;
+            visualProgress = visualTarget = maxGrowthBlocks > 0 ? Mathf.Clamp01((float)CurrentGrowthBlocks / maxGrowthBlocks) : 0f;
+            visibleCells = targetCells = CurrentGrowthBlocks + 1;
+        }
+
+        public override bool CanApplyColor(string colorId, GameObject actor) =>
+            !Root.burning && !Root.burned && base.CanApplyColor(colorId, actor);
 
         private int PlayerCount => climbingPlayers.Count;
-        public int CurrentGrowthBlocks => spawnedSegments.Count;
+        public int CurrentGrowthBlocks =>
+            initialSegments.Count + spawnedSegments.Count;
         public int MaxGrowthBlocks => maxGrowthBlocks;
+        public GameObject GrowthSegmentPrefab => growthSegmentPrefab;
         public float ClimbSpeedMultiplier => climbSpeedMultiplier;
 
         protected override void OnTick(float deltaTime)
         {
+            if (burned) return;
+            if (Root == this) UpdateVineVisual(deltaTime);
+            if (burning) return;
+            CheckWaterContact();
             RefreshClimbingPlayers();
         }
 
@@ -122,12 +172,19 @@ namespace Project.BlockFeatures
         {
             DisconnectAllPlayers();
             ResetGrowth();
+            RestoreBurnedSegments();
         }
 
         protected override void OnDetach()
         {
             DisconnectAllPlayers();
             ResetGrowth();
+            StopBurn();
+            if (vineVisual != null) Destroy(vineVisual);
+            vineVisual = null;
+            vineParticles = null;
+            vineRenderer = null;
+            lastPose = -1;
         }
 
         protected override bool OnColorApplied(
@@ -139,7 +196,7 @@ namespace Project.BlockFeatures
                     "red",
                     System.StringComparison.OrdinalIgnoreCase))
             {
-                Destroy(gameObject);
+                Root.BeginBurn();
                 return true;
             }
 
@@ -148,14 +205,14 @@ namespace Project.BlockFeatures
                     "blue",
                     System.StringComparison.OrdinalIgnoreCase) ||
                 !CanGrowFromColor ||
-                spawnedSegments.Count >= maxGrowthBlocks)
+                CurrentGrowthBlocks >= maxGrowthBlocks)
             {
                 return false;
             }
 
             GrowTo(growInstantly
                 ? maxGrowthBlocks
-                : spawnedSegments.Count + 1);
+                : CurrentGrowthBlocks + 1);
             return true;
         }
 
@@ -275,12 +332,34 @@ namespace Project.BlockFeatures
 
         public void GrowOne()
         {
-            GrowTo(spawnedSegments.Count + 1);
+            GrowTo(CurrentGrowthBlocks + 1);
+        }
+
+        // Scene generation uses this only for already placed, contiguous vines.
+        // Initial segments are scene objects and survive room resets; only
+        // segments created during play belong to ResetGrowth().
+        public void ConfigureInitialGrowth(
+            IReadOnlyList<GameObject> segments)
+        {
+            initialSegments.Clear();
+            if (segments != null)
+            {
+                for (int index = 0; index < segments.Count; index++)
+                {
+                    if (segments[index] != null)
+                    {
+                        initialSegments.Add(segments[index]);
+                    }
+                }
+            }
+
+            maxGrowthBlocks = initialSegments.Count;
+            BindOwnedSegments();
         }
 
         public void GrowTo(int targetCount)
         {
-            if (!CanRunFeature)
+            if (!CanRunFeature || !CanGrowFromColor || Root.burning || Root.burned)
             {
                 return;
             }
@@ -289,7 +368,8 @@ namespace Project.BlockFeatures
                 targetCount,
                 0,
                 maxGrowthBlocks);
-            if (targetCount <= spawnedSegments.Count)
+            if (growthRoutine != null && targetCount == growthTargetCount) return;
+            if (targetCount <= CurrentGrowthBlocks)
             {
                 return;
             }
@@ -299,13 +379,14 @@ namespace Project.BlockFeatures
                 StopCoroutine(growthRoutine);
                 growthRoutine = null;
             }
+            growthTargetCount = targetCount;
 
             if (growInstantly)
             {
-                while (spawnedSegments.Count < targetCount)
+                while (CurrentGrowthBlocks < targetCount)
                 {
                     if (SpawnSegment(
-                        spawnedSegments.Count,
+                        CurrentGrowthBlocks,
                         false) == null)
                     {
                         break;
@@ -322,6 +403,7 @@ namespace Project.BlockFeatures
 
         public void ResetGrowth()
         {
+            StopBurn();
             if (growthRoutine != null)
             {
                 StopCoroutine(growthRoutine);
@@ -339,6 +421,8 @@ namespace Project.BlockFeatures
             }
 
             spawnedSegments.Clear();
+            visualTarget = maxGrowthBlocks > 0 ? Mathf.Clamp01((float)initialSegments.Count / maxGrowthBlocks) : 0f;
+            targetCells = initialSegments.Count + 1;
         }
 
         public void PlayAppearAnimation()
@@ -404,6 +488,8 @@ namespace Project.BlockFeatures
             values.Add(new BlockDebugValue(
                 "接触玩家",
                 PlayerCount));
+            values.Add(new BlockDebugValue("根系状态", Root.burned ? "已烧毁" : Root.burning ? "燃烧中" : "正常"));
+            values.Add(new BlockDebugValue("所属母根", Root.name));
             values.Add(new BlockDebugValue(
                 "攀爬倍率",
                 climbSpeedMultiplier));
@@ -418,7 +504,7 @@ namespace Project.BlockFeatures
                 fastSlideSpeed));
             values.Add(new BlockDebugValue(
                 "生长块数",
-                $"{spawnedSegments.Count} / {maxGrowthBlocks}"));
+                $"{CurrentGrowthBlocks} / {maxGrowthBlocks}"));
         }
 
         public override void CollectDebugActions(
@@ -428,7 +514,7 @@ namespace Project.BlockFeatures
                 "向上生长一块",
                 GrowOne,
                 Application.isPlaying &&
-                spawnedSegments.Count < maxGrowthBlocks));
+                CurrentGrowthBlocks < maxGrowthBlocks));
             actions.Add(new BlockDebugAction(
                 "清除生长",
                 ResetGrowth,
@@ -438,10 +524,10 @@ namespace Project.BlockFeatures
 
         private IEnumerator GrowRoutine(int targetCount)
         {
-            while (spawnedSegments.Count < targetCount)
+            while (CurrentGrowthBlocks < targetCount)
             {
                 if (SpawnSegment(
-                    spawnedSegments.Count,
+                    CurrentGrowthBlocks,
                     true) == null)
                 {
                     growthRoutine = null;
@@ -478,6 +564,10 @@ namespace Project.BlockFeatures
             segment.transform.rotation = transform.rotation;
             segment.transform.localScale = transform.localScale;
             spawnedSegments.Add(segment);
+            ClimbableVineFeature child = segment.GetComponent<ClimbableVineFeature>();
+            if (child != null) child.vineRoot = this;
+            visualTarget = maxGrowthBlocks > 0 ? Mathf.Clamp01((float)CurrentGrowthBlocks / maxGrowthBlocks) : 0f;
+            targetCells = CurrentGrowthBlocks + 1;
             segment.SetActive(true);
 
             if (playAppearance)
@@ -499,6 +589,166 @@ namespace Project.BlockFeatures
                 spawnedSegments[spawnedSegments.Count - 1]);
         }
 
+        private void BindOwnedSegments()
+        {
+            foreach (GameObject segment in initialSegments)
+            {
+                if (segment == null || segment == gameObject) continue;
+                var child = segment.GetComponent<ClimbableVineFeature>();
+                if (child != null) child.vineRoot = this;
+            }
+        }
+
+        public void OnObjectEnter(GameObject other)
+        {
+            WaterVisualFeature water = other != null ? other.GetComponentInParent<WaterVisualFeature>() : null;
+            if (water != null && water.IsAttached && water.enabled && Root.CanRunFeature && Root.CanGrowFromColor && !Root.burning && !Root.burned)
+                Root.GrowTo(Root.maxGrowthBlocks);
+        }
+        public void OnObjectExit(GameObject other) { }
+
+        private void CheckWaterContact()
+        {
+            if (Time.time < nextWaterContactCheck || Root.CurrentGrowthBlocks >= Root.maxGrowthBlocks) return;
+            nextWaterContactCheck = Time.time + .2f;
+            // Static authored volumes also need contact without requiring a Rigidbody on every map item.
+            int count = Physics.OverlapBoxNonAlloc(transform.position, Vector3.one * GridCellWorldSize * .51f,
+                proximityBuffer, transform.rotation, ~0, QueryTriggerInteraction.Collide);
+            for (int index = 0; index < count; index++)
+                if (proximityBuffer[index] != null) OnObjectEnter(proximityBuffer[index].gameObject);
+        }
+
+        private void UpdateVineVisual(float deltaTime)
+        {
+            if (vineVisual == null)
+            {
+                GameObject prefab = vineParticlePrefab != null ? vineParticlePrefab : ColorRuntimeService.Instance.Catalog?.GreenVinePrefab;
+                if (prefab == null) return;
+                vineVisual = new GameObject("Vine Visual");
+                vineVisual.transform.SetParent(transform, false);
+                GameObject particles = Instantiate(prefab, vineVisual.transform);
+                particles.transform.localPosition = Vector3.zero;
+                particles.transform.localScale = Vector3.one;
+                vineParticles = particles.GetComponent<ParticleSystem>();
+                vineRenderer = particles.GetComponent<Renderer>();
+                if (vineParticles == null || vineRenderer == null)
+                {
+                    Destroy(vineVisual);
+                    vineVisual = null;
+                    return;
+                }
+                poseCache = VinePoseCache.Get(prefab, vineParticles, initialParticleTime, grownParticleTime);
+                var trails = vineParticles.trails;
+                var width = trails.widthOverTrail;
+                if (width.mode == ParticleSystemCurveMode.Constant) width.constant *= vineThickness;
+                else if (width.mode == ParticleSystemCurveMode.TwoConstants)
+                {
+                    width.constantMin *= vineThickness;
+                    width.constantMax *= vineThickness;
+                }
+                else width.curveMultiplier *= vineThickness;
+                trails.widthOverTrail = width;
+                int layer = ColorRuntimeService.Instance.Catalog.Find("green")?.unityLayer ?? gameObject.layer;
+                particles.layer = layer;
+                vineRenderer.renderingLayerMask |= 128u;
+                var properties = new MaterialPropertyBlock();
+                vineRenderer.GetPropertyBlock(properties);
+                properties.SetFloat("_ColorMaskUseVertexAlpha", 1f);
+                Material trailMaterial = (vineRenderer as ParticleSystemRenderer)?.trailMaterial;
+                Texture alphaTexture = trailMaterial != null ? trailMaterial.mainTexture : null;
+                properties.SetTexture("_ColorMaskAlphaTexture", alphaTexture != null ? alphaTexture : Texture2D.whiteTexture);
+                vineRenderer.SetPropertyBlock(properties);
+            }
+            visualProgress = Mathf.MoveTowards(visualProgress, visualTarget, deltaTime / Mathf.Max(.1f, visualGrowthDuration));
+            visibleCells = Mathf.MoveTowards(visibleCells, targetCells, deltaTime * Mathf.Max(1, maxGrowthBlocks) / Mathf.Max(.1f, visualGrowthDuration));
+            int pose = Mathf.RoundToInt(visualProgress * (poseCache.Poses.Length - 1));
+            if (pose != lastPose)
+            {
+                poseCache.Apply(vineParticles, pose);
+                lastPose = pose;
+            }
+            Bounds bounds = poseCache.Poses[pose].Bounds;
+            Vector3 scale = new Vector3(vineWidth / Mathf.Max(.05f, poseCache.FullBounds.size.x),
+                Mathf.Max(.001f, visibleCells) / Mathf.Max(.05f, bounds.size.y),
+                vineWidth / Mathf.Max(.05f, poseCache.FullBounds.size.z));
+            vineVisual.transform.localScale = scale;
+            vineVisual.transform.localPosition = new Vector3(-bounds.center.x * scale.x,
+                -.5f - bounds.min.y * scale.y, -bounds.center.z * scale.z);
+            vineRenderer.enabled = !burned && HSVColorFadeManager.Instance.ShowsUnlockedAppearance("green");
+        }
+
+        public void BeginBurn()
+        {
+            if (Root != this) { Root.BeginBurn(); return; }
+            if (burning || burned || !CanRunFeature) return;
+            burning = true;
+            if (growthRoutine != null) StopCoroutine(growthRoutine);
+            growthRoutine = null;
+            burnRoutine = StartCoroutine(BurnRootRoutine());
+        }
+
+        private IEnumerator BurnRootRoutine()
+        {
+            var owned = new List<ClimbableVineFeature>();
+            foreach (GameObject item in initialSegments) AddOwned(owned, item);
+            foreach (GameObject item in spawnedSegments) AddOwned(owned, item);
+            owned.Add(this);
+            owned.Sort((a, b) => b.transform.position.y.CompareTo(a.transform.position.y));
+            float startProgress = visualProgress;
+            float startCells = visibleCells;
+            for (int index = 0; index < owned.Count; index++)
+            {
+                ClimbableVineFeature segment = owned[index];
+                if (segment == null) continue;
+                segment.burning = true;
+                segment.DisconnectAllPlayers();
+                float elapsed = 0;
+                while (elapsed < burnSegmentDuration)
+                {
+                    elapsed += Time.deltaTime;
+                    float progress = (index + Mathf.Clamp01(elapsed / burnSegmentDuration)) / owned.Count;
+                    visualProgress = visualTarget = Mathf.Lerp(startProgress, 0f, progress);
+                    visibleCells = targetCells = Mathf.Lerp(startCells, .001f, progress);
+                    yield return null;
+                }
+                segment.burned = true;
+                segment.burning = false;
+                foreach (Collider collider in segment.GetComponents<Collider>()) collider.enabled = false;
+                if (segment != this) segment.gameObject.SetActive(false);
+            }
+            burned = true;
+            burning = false;
+            if (vineRenderer != null) vineRenderer.enabled = false;
+            burnRoutine = null;
+        }
+
+        private void AddOwned(List<ClimbableVineFeature> owned, GameObject item)
+        {
+            if (item == null) return;
+            var segment = item.GetComponent<ClimbableVineFeature>();
+            if (segment != null && segment.Root == this && !owned.Contains(segment)) owned.Add(segment);
+        }
+
+        private void StopBurn()
+        {
+            if (burnRoutine != null) StopCoroutine(burnRoutine);
+            burnRoutine = null;
+            burning = false;
+        }
+
+        private void RestoreBurnedSegments()
+        {
+            burned = false;
+            foreach (Collider collider in GetComponents<Collider>()) collider.enabled = true;
+            foreach (GameObject item in initialSegments)
+            {
+                if (item == null) continue;
+                var segment = item.GetComponent<ClimbableVineFeature>();
+                if (segment != null) { segment.burned = false; segment.burning = false; }
+                item.SetActive(true);
+            }
+        }
+
         private static void PlayAppearance(GameObject segment)
         {
             if (segment == null)
@@ -518,6 +768,67 @@ namespace Project.BlockFeatures
                     return;
                 }
             }
+        }
+    }
+
+    // One deterministic simulation per source/time pair; subsequent instances and reverse playback restore snapshots.
+    internal sealed class VinePoseCache
+    {
+        internal sealed class Pose
+        {
+            public ParticleSystem.Particle[] Particles;
+            public ParticleSystem.Trails Trails;
+            public ParticleSystem.PlaybackState Playback;
+            public Bounds Bounds;
+        }
+        private static readonly Dictionary<string, VinePoseCache> caches = new Dictionary<string, VinePoseCache>();
+        public readonly Pose[] Poses = new Pose[72];
+        public Bounds FullBounds;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Clear() => caches.Clear();
+        public static VinePoseCache Get(GameObject prefab, ParticleSystem system, float start, float end)
+        {
+            string key = prefab.GetInstanceID() + ":" + start.ToString("R") + ":" + end.ToString("R");
+            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = system.main;
+            main.playOnAwake = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            main.simulationSpeed = 1f;
+            var trails = system.trails;
+            trails.worldSpace = false;
+            system.useAutoRandomSeed = false;
+            system.randomSeed = 74123;
+            if (caches.TryGetValue(key, out var existing)) { system.Pause(true); return existing; }
+            var cache = new VinePoseCache();
+            system.Simulate(Mathf.Max(0, start), false, true, true);
+            for (int index = 0; index < cache.Poses.Length; index++)
+            {
+                if (index > 0) system.Simulate(Mathf.Max(0, end - start) / (cache.Poses.Length - 1), false, false, true);
+                var pose = new Pose { Particles = new ParticleSystem.Particle[system.particleCount],
+                    Playback = system.GetPlaybackState(), Bounds = new Bounds(Vector3.zero, Vector3.one * .01f) };
+                system.GetParticles(pose.Particles);
+                system.GetTrails(ref pose.Trails);
+                Quaternion rotation = system.transform.localRotation;
+                foreach (var particle in pose.Particles)
+                {
+                    Vector3 position = rotation * particle.position;
+                    pose.Bounds.Encapsulate(position + Vector3.one * particle.GetCurrentSize(system) * .5f);
+                    pose.Bounds.Encapsulate(position - Vector3.one * particle.GetCurrentSize(system) * .5f);
+                }
+                cache.Poses[index] = pose;
+            }
+            system.Pause(true);
+            cache.FullBounds = cache.Poses[cache.Poses.Length - 1].Bounds;
+            caches.Add(key, cache);
+            return cache;
+        }
+        public void Apply(ParticleSystem system, int index)
+        {
+            Pose pose = Poses[index];
+            system.SetPlaybackState(pose.Playback);
+            system.SetParticlesAndTrails(pose.Particles, pose.Trails, pose.Particles.Length);
+            system.Pause(true);
         }
     }
 }

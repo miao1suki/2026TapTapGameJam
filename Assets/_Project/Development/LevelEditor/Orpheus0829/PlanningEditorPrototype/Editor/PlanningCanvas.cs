@@ -35,6 +35,195 @@ namespace PlanningEditorPrototype
         private LevelEditorPalette palette;
         private string selectedRoomId;
         private string selectedBoxId;
+        private readonly HashSet<string> mergeSelection = new HashSet<string>();
+
+        private IEnumerable<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)> AllBoxes()
+        {
+            if (document == null) yield break;
+            foreach (var room in document.rooms)
+                foreach (var box in room.boxes) yield return (room, room.boxes, box);
+            foreach (var box in document.assemblyPatches) yield return (null, document.assemblyPatches, box);
+        }
+
+        private RectInt DisplayRect(PlanningRoom room, PlanningBox box)
+        {
+            if (mode != PlanningCanvasMode.Assembly || room == null)
+                return new RectInt(box.x, box.y, box.width, box.height);
+            GetAssemblyStride(out int sx, out int sy);
+            return GetAssemblyBoxRect(room, box, sx, sy);
+        }
+
+        private static bool SameKind(PlanningBox a, PlanningBox b) =>
+            a.type == b.type && a.paletteEntryId == b.paletteEntryId &&
+            a.paletteEntryName == b.paletteEntryName && a.propEntryId == b.propEntryId && a.propEntryName == b.propEntryName;
+
+        private void CompleteMergeSelection()
+        {
+            var start = CellAt(dragStart);
+            var end = CellAt(dragCurrent);
+            var area = new RectInt(Mathf.Min(start.x, end.x), Mathf.Min(start.y, end.y), Mathf.Abs(start.x-end.x)+1, Mathf.Abs(start.y-end.y)+1);
+            ToggleMergeArea(area);
+        }
+
+        internal void ToggleMergeArea(RectInt area)
+        {
+            var hits = new List<PlanningBox>();
+            PlanningBox kind = null;
+            foreach (var item in AllBoxes())
+                if (mergeSelection.Contains(item.box.id)) { kind = item.box; break; }
+            foreach (var item in AllBoxes())
+            {
+                if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
+                if (!DisplayRect(item.room, item.box).Overlaps(area)) continue;
+                if (kind == null) kind = item.box;
+                if (SameKind(kind, item.box)) hits.Add(item.box);
+            }
+            foreach (var box in hits)
+                if (!mergeSelection.Remove(box.id)) mergeSelection.Add(box.id);
+            StatusChanged?.Invoke($"已选择 {mergeSelection.Count} 项");
+            MarkDirtyRepaint();
+        }
+
+        public void MergeSelectedItems()
+        {
+            var items = new List<PlanningBox>();
+            List<PlanningBox> owner = null;
+            foreach (var item in AllBoxes())
+            {
+                if (!mergeSelection.Contains(item.box.id)) continue;
+                if (item.box.singleInstance || PlanningDoorUtility.IsDoor(item.box) || !string.IsNullOrEmpty(item.box.doorOwnerId))
+                { ValidationFailed?.Invoke("门与绑定按钮不能合并。"); return; }
+                if (owner != null && (owner != item.boxes || !SameKind(items[0], item.box)))
+                { ValidationFailed?.Invoke("请选择同一房间中的同种物体。"); return; }
+                owner = item.boxes;
+                items.Add(item.box);
+            }
+            if (items.Count == 0 || (items.Count == 1 && (items[0].isMerged || items[0].width*items[0].height == 1)))
+            { StatusChanged?.Invoke("请先选择至少两个同种单元格。"); return; }
+            int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
+            var cells = new HashSet<Vector2Int>();
+            foreach (var box in items)
+            {
+                minX = Mathf.Min(minX,box.x); minY = Mathf.Min(minY,box.y);
+                maxX = Mathf.Max(maxX,box.x+box.width); maxY = Mathf.Max(maxY,box.y+box.height);
+                for (int x=box.x; x<box.x+box.width; x++) for (int y=box.y; y<box.y+box.height; y++)
+                    if (!cells.Add(new Vector2Int(x,y))) { ValidationFailed?.Invoke("选区存在重叠物体，请先移除重叠。"); return; }
+            }
+            if ((long)(maxX-minX)*(maxY-minY) != cells.Count)
+            { ValidationFailed?.Invoke("请选满连续矩形，合并不能包含空格。"); return; }
+            var merged = items[0].Clone();
+            merged.id = PlanningDocument.NewId("box"); merged.x=minX; merged.y=minY; merged.width=maxX-minX; merged.height=maxY-minY;
+            merged.isMerged = true; merged.mergeParts = new List<string>();
+            foreach (var item in items)
+            {
+                if (item.isMerged && item.mergeParts != null)
+                {
+                    var parts=new List<PlanningBox>();
+                    int originX=int.MaxValue,originY=int.MaxValue;
+                    foreach(var json in item.mergeParts)
+                    {
+                        var part=JsonUtility.FromJson<PlanningBox>(json);
+                        if(part==null) continue;
+                        originX=Mathf.Min(originX,part.x); originY=Mathf.Min(originY,part.y); parts.Add(part);
+                    }
+                    foreach(var part in parts)
+                    {
+                        part.x+=item.x-originX; part.y+=item.y-originY;
+                        merged.mergeParts.Add(JsonUtility.ToJson(part));
+                    }
+                }
+                else merged.mergeParts.Add(JsonUtility.ToJson(item));
+                owner.Remove(item);
+            }
+            owner.Add(merged); mergeSelection.Clear(); mergeSelection.Add(merged.id);
+            selectedBoxId = merged.id;
+            NotifyDocumentChanged(); SelectionChanged?.Invoke(); MarkDirtyRepaint();
+            StatusChanged?.Invoke("已合并为单个物体。");
+        }
+
+        public void UnmergeSelectedItems()
+        {
+            var selected = new List<(List<PlanningBox> owner, PlanningBox box)>();
+            foreach (var item in AllBoxes())
+                if (mergeSelection.Contains(item.box.id) && item.box.isMerged) selected.Add((item.boxes,item.box));
+            if (selected.Count == 0) { StatusChanged?.Invoke("请选择已合并物体。"); return; }
+            mergeSelection.Clear();
+            foreach (var item in selected)
+            {
+                int ox=int.MaxValue,oy=int.MaxValue;
+                var restored = new List<PlanningBox>();
+                foreach (string json in item.box.mergeParts)
+                {
+                    var part=JsonUtility.FromJson<PlanningBox>(json);
+                    if (part == null) continue;
+                    ox=Mathf.Min(ox,part.x); oy=Mathf.Min(oy,part.y); restored.Add(part);
+                }
+                if (restored.Count == 0) continue;
+                item.owner.Remove(item.box);
+                foreach(var part in restored)
+                {
+                    part.x += item.box.x-ox; part.y += item.box.y-oy;
+                    item.owner.Add(part); mergeSelection.Add(part.id);
+                }
+            }
+            NotifyDocumentChanged(); SelectionChanged?.Invoke(); MarkDirtyRepaint();
+        }
+
+        private void EditParametersAt(Vector2 position)
+        {
+            var cell=CellAt(position);
+            var visibleItems=new List<(PlanningRoom room,List<PlanningBox> boxes,PlanningBox box)>(AllBoxes());
+            visibleItems.Reverse();
+            foreach (var item in visibleItems)
+            {
+                if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
+                if (!DisplayRect(item.room,item.box).Contains(cell)) continue;
+                var box=item.box;
+                var prop=FindPropEntry(box.propEntryId,box.propEntryName);
+                var entry=FindEntry(box.paletteEntryId,box.paletteEntryName);
+                var source=box.type == PlanningDetailType.Prop ? prop?.Prefab : entry?.SourcePrefab;
+                if (source == null) { StatusChanged?.Invoke("此物体没有可配置的预制体组件。"); return; }
+                selectedBoxId=box.id;
+                LevelEditorPropComponentEditorWindow.Open(source,
+                    box.hasComponentOverrides ? box.componentOverrides : box.type == PlanningDetailType.Prop ? prop?.ComponentValueOverrides : entry?.ComponentValueOverrides,
+                    values =>
+                    {
+                        // A stale parameter window must not edit an item removed or restored by history.
+                        foreach (var current in AllBoxes())
+                            if (current.box.id == box.id)
+                            {
+                                current.box.hasComponentOverrides=true;
+                                current.box.componentOverrides=values;
+                                NotifyDocumentChanged(); return;
+                            }
+                    }, "实例参数 · " + (source.name),
+                    PlanningDoorUtility.IsDoor(box) ? () => AddDoorButton(box.id) : (System.Action)null,
+                    "添加门按钮");
+                SelectionChanged?.Invoke(); return;
+            }
+        }
+
+        public void RemoveMissingSceneItems(IReadOnlyList<string> ids, IReadOnlyList<Vector2Int> cells)
+        {
+            bool changed=false;
+            var targets=new List<(List<PlanningBox> owner,PlanningBox box)>();
+            foreach(var item in AllBoxes()) targets.Add((item.boxes,item.box));
+            foreach(var item in targets)
+            {
+                var removed=new HashSet<Vector2Int>();
+                for(int i=0;i<ids.Count;i++) if(ids[i]==item.box.id) removed.Add(cells[i]);
+                if(removed.Count==0) continue;
+                item.owner.Remove(item.box); changed=true;
+                if(item.box.isMerged || item.box.singleInstance || PlanningDoorUtility.IsDoor(item.box)) continue;
+                for(int x=item.box.x;x<item.box.x+item.box.width;x++) for(int y=item.box.y;y<item.box.y+item.box.height;y++)
+                {
+                    if(removed.Contains(new Vector2Int(x,y))) continue;
+                    var part=item.box.Clone(); part.id=PlanningDocument.NewId("box"); part.x=x;part.y=y;part.width=part.height=1;
+                    item.owner.Add(part);
+                }
+            }
+            if(changed) { NotifyDocumentChanged(); MarkDirtyRepaint(); }
+        }
         private Vector2 pan = new Vector2(-90f, -90f);
         private float zoom = 1f;
         private bool isPanning;
@@ -111,6 +300,27 @@ namespace PlanningEditorPrototype
             }
         }
         public float Zoom => zoom;
+        public Vector2 Pan => pan;
+
+        public void RefreshPreviewImages()
+        {
+            UpdateDetailPreviewImages();
+        }
+
+        public void RestoreView(Vector2 savedPan, float savedZoom)
+        {
+            if (float.IsNaN(savedPan.x) || float.IsNaN(savedPan.y) ||
+                float.IsNaN(savedZoom))
+            {
+                return;
+            }
+
+            pan = savedPan;
+            zoom = Mathf.Clamp(savedZoom, MinimumZoom, MaximumZoom);
+            UpdateDetailPreviewImages();
+            UpdatePlayerOverlay();
+            MarkDirtyRepaint();
+        }
 
         public void RefreshPlayerOverlay()
         {
@@ -245,6 +455,21 @@ namespace PlanningEditorPrototype
                             ? block.EntryName
                             : string.Empty
                     };
+                    if (block.GetComponent<Project.Mechanisms.DoorController>() != null)
+                    {
+                        box.propEntryId = PlanningDoorUtility.DoorEntryId;
+                        box.singleInstance = true;
+                        box.height = 2;
+                        box.y -= 1;
+                        if (!string.IsNullOrEmpty(block.PlanningBoxId)) box.id = block.PlanningBoxId;
+                    }
+                    if (block.GetComponent<Project.Mechanisms.DoorButton>() is Project.Mechanisms.DoorButton button)
+                    {
+                        box.propEntryId = PlanningDoorUtility.ButtonEntryId;
+                        box.singleInstance = true;
+                        if (!string.IsNullOrEmpty(block.PlanningBoxId)) box.id = block.PlanningBoxId;
+                        box.doorOwnerId = button.Owner != null ? button.Owner.GetComponent<LevelEditorPlacedBlock>()?.PlanningBoxId : null;
+                    }
                     syncedBoxes.Add(box);
                 }
 
@@ -408,7 +633,7 @@ namespace PlanningEditorPrototype
             for (int index = 0; index < blocks.Length; index++)
             {
                 LevelEditorPlacedBlock block = blocks[index];
-                if (block == null || block.Cell != sceneCell)
+                if (block == null || !block.ContainsCell(sceneCell))
                 {
                     continue;
                 }
@@ -827,10 +1052,11 @@ namespace PlanningEditorPrototype
                 playerDragTarget != null &&
                 LevelEditorState.Player == playerDragTarget)
             {
-                PlanningPlayerUndoUtility.RecordDrag(
-                    playerDragTarget,
-                    playerDragBeforePosition,
-                    playerDragTarget.transform.position);
+                if (playerDragTarget.transform.position != playerDragBeforePosition)
+                {
+                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(playerDragTarget.scene);
+                    NotifyDocumentChanged();
+                }
             }
 
             isDraggingPlayer = false;
@@ -847,6 +1073,7 @@ namespace PlanningEditorPrototype
                 ? document.rooms[0].id
                 : null;
             selectedBoxId = null;
+            mergeSelection.Clear();
             pan = new Vector2(-90f, -90f);
             zoom = 1f;
             UpdateDetailPreviewImages();
@@ -904,6 +1131,7 @@ namespace PlanningEditorPrototype
         {
             mode = value;
             selectedBoxId = null;
+            mergeSelection.Clear();
             if (isDraggingPlayer)
             {
                 EndPlayerPointerDrag(playerPointerId, false);
@@ -942,6 +1170,10 @@ namespace PlanningEditorPrototype
                     return PlanningDetailTool.Erase;
                 case LevelEditorTool.Paint:
                     return PlanningDetailTool.Box;
+                case LevelEditorTool.Merge:
+                    return PlanningDetailTool.Merge;
+                case LevelEditorTool.Parameters:
+                    return PlanningDetailTool.Parameters;
                 default:
                     return PlanningDetailTool.Pan;
             }
@@ -998,6 +1230,7 @@ namespace PlanningEditorPrototype
 
         public void SelectRoom(string roomId, bool focus = false)
         {
+            mergeSelection.Clear();
             selectedRoomId = roomId;
             selectedBoxId = null;
             if (focus)
@@ -1330,9 +1563,9 @@ namespace PlanningEditorPrototype
         {
             pan = new Vector2(
                 contentRect.width * .5f -
-                centerX * GridSize * zoom,
+                centerX * GridSize,
                 contentRect.height * .5f -
-                centerY * GridSize * zoom);
+                centerY * GridSize);
             UpdatePlayerOverlay();
         }
 
@@ -1374,6 +1607,16 @@ namespace PlanningEditorPrototype
             else
             {
                 DrawDetail(context);
+            }
+            if (mode != PlanningCanvasMode.World && GetActiveDetailTool() == PlanningDetailTool.Merge)
+            {
+                foreach(var item in AllBoxes())
+                {
+                    if (!mergeSelection.Contains(item.box.id) || (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId)) continue;
+                    var r=DisplayRect(item.room,item.box);
+                    StrokeRect(context.painter2D, CellRect(r.x,r.y,r.width,r.height),new Color(.3f,.85f,1f),3f);
+                }
+                DrawRectanglePreview(context.painter2D);
             }
         }
 
@@ -1489,6 +1732,7 @@ namespace PlanningEditorPrototype
             }
 
             DrawGrid(painter, .16f);
+            DrawDoorLinks(painter);
             DrawRectanglePreview(painter);
             DrawHoverCell(painter);
         }
@@ -1902,9 +2146,9 @@ namespace PlanningEditorPrototype
                 }
             }
 
+            DrawDoorLinks(painter);
             DrawRectanglePreview(painter);
             DrawHoverCell(painter);
-            UpdateDetailPreviewImages();
         }
 
         private void UpdateDetailPreviewImages()
@@ -1951,11 +2195,11 @@ namespace PlanningEditorPrototype
                 }
 
                 for (int y = box.y;
-                     y < box.y + box.height;
+                     y < box.y + (box.isMerged ? 1 : box.height);
                      y++)
                 {
                     for (int x = box.x;
-                         x < box.x + box.width;
+                         x < box.x + (box.isMerged ? 1 : box.width);
                          x++)
                     {
                         string key = box.id + ":" + x + ":" + y;
@@ -1973,8 +2217,9 @@ namespace PlanningEditorPrototype
                             detailPreviewImages[key] = image;
                         }
 
-                        Rect rect = CellRect(x, y, 1, 1);
+                        Rect rect = CellRect(x, y, box.isMerged ? box.width : 1, box.isMerged ? box.height : 1);
                         image.image = preview;
+                        image.tintColor=mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
                         image.style.left = rect.x;
                         image.style.top = rect.y;
                         image.style.width = rect.width;
@@ -2087,9 +2332,9 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            for (int y = rect.y; y < rect.yMax; y++)
+            for (int y = rect.y; y < (box.isMerged ? rect.y+1 : rect.yMax); y++)
             {
-                for (int x = rect.x; x < rect.xMax; x++)
+                for (int x = rect.x; x < (box.isMerged ? rect.x+1 : rect.xMax); x++)
                 {
                     string key = box.id + ":" + x + ":" + y;
                     if (!detailPreviewImages.TryGetValue(
@@ -2106,8 +2351,9 @@ namespace PlanningEditorPrototype
                         detailPreviewImages[key] = image;
                     }
 
-                    Rect cellRect = CellRect(x, y, 1, 1);
+                    Rect cellRect = CellRect(x, y, box.isMerged ? rect.width : 1, box.isMerged ? rect.height : 1);
                     image.image = preview;
+                    image.tintColor=mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
                     image.style.left = cellRect.x;
                     image.style.top = cellRect.y;
                     image.style.width = cellRect.width;
@@ -2425,6 +2671,11 @@ namespace PlanningEditorPrototype
                     return null;
                 }
 
+                if (box.isMerged)
+                    return LevelEditorDecorationService.GetMergedFrontPreview(null, prop.Prefab,
+                        new Vector2Int(box.width, box.height),
+                        box.hasComponentOverrides ? box.componentOverrides : prop.ComponentValueOverrides);
+
                 Texture2D assetPreview =
                     AssetPreview.GetAssetPreview(prop.Prefab);
                 return assetPreview != null
@@ -2435,6 +2686,10 @@ namespace PlanningEditorPrototype
             LevelEditorBlockEntry entry = FindEntry(
                 box.paletteEntryId,
                 box.paletteEntryName);
+            if (box.isMerged && entry != null)
+                return LevelEditorDecorationService.GetMergedFrontPreview(entry, null,
+                    new Vector2Int(box.width, box.height),
+                    box.hasComponentOverrides ? box.componentOverrides : entry.ComponentValueOverrides);
             return entry != null
                 ? LevelEditorDecorationService
                     .GetEntryFrontPreview(entry, 64)
@@ -2445,6 +2700,7 @@ namespace PlanningEditorPrototype
             string entryId,
             string entryName)
         {
+            if (entryId == PlanningDoorUtility.ButtonEntryId) return PlanningDoorUtility.GetButtonEntry();
             if (palette == null)
             {
                 return null;
@@ -2726,6 +2982,7 @@ namespace PlanningEditorPrototype
                 isDragging = false;
                 hasConnectorStart = false;
                 selectedBoxId = null;
+                mergeSelection.Clear();
                 SelectionChanged?.Invoke();
                 MarkDirtyRepaint();
             }
@@ -3052,6 +3309,7 @@ namespace PlanningEditorPrototype
 
             Vector2Int cell = CellAt(position);
             PlanningDetailTool activeTool = GetActiveDetailTool();
+            if (activeTool == PlanningDetailTool.Parameters) { EditParametersAt(position); return; }
             if (activeTool == PlanningDetailTool.Select)
             {
                 PlanningBox box = FindBoxAt(room, cell.x, cell.y);
@@ -3105,6 +3363,7 @@ namespace PlanningEditorPrototype
         private void CompleteDetailDrag()
         {
             PlanningDetailTool activeTool = GetActiveDetailTool();
+            if (activeTool == PlanningDetailTool.Merge) { CompleteMergeSelection(); return; }
             if (activeTool == PlanningDetailTool.Box)
             {
                 PlanningRoom room = document?.FindRoom(selectedRoomId);
@@ -3142,7 +3401,9 @@ namespace PlanningEditorPrototype
                         maxX - minX + 1,
                         maxY - minY + 1));
                 ApplyDetailSelection(box);
+                if (!PrepareDoorPlacement(room, box, allowed)) return;
                 room.boxes.Add(box);
+                if (PlanningDoorUtility.IsDoor(box)) PlanningDoorUtility.AddButton(room.boxes, box, allowed);
                 selectedBoxId = box.id;
                 NotifyDocumentChanged();
                 SelectionChanged?.Invoke();
@@ -3173,6 +3434,7 @@ namespace PlanningEditorPrototype
                     if (box != null)
                     {
                         CarveBox(room.boxes, box, cell);
+                        NotifyDocumentChanged();
                     }
                 }
 
@@ -3183,6 +3445,7 @@ namespace PlanningEditorPrototype
 
         private void HandleAssemblyPointerDown(Vector2 position)
         {
+            if (GetActiveDetailTool() == PlanningDetailTool.Parameters) { EditParametersAt(position); return; }
             Vector2Int cell = CellAt(position);
             PlanningDetailTool activeTool = GetActiveDetailTool();
             if (activeTool == PlanningDetailTool.Box ||
@@ -3217,6 +3480,7 @@ namespace PlanningEditorPrototype
         private void CompleteAssemblyDrag()
         {
             PlanningDetailTool activeTool = GetActiveDetailTool();
+            if (activeTool == PlanningDetailTool.Merge) { CompleteMergeSelection(); return; }
             BeginDocumentBatch();
             IEnumerable<Vector2Int> cells = BuildAreaCells(
                 assemblyStrokeStart,
@@ -3251,7 +3515,11 @@ namespace PlanningEditorPrototype
                     detailType,
                     new RectInt(local.x, local.y, 1, 1));
                 ApplyDetailSelection(box);
+                RectInt allowed = owner.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
+                if (owner.isConnector) allowed = GetConnectorDetailBounds(owner);
+                if (!PrepareDoorPlacement(owner, box, allowed)) return;
                 owner.boxes.Add(box);
+                if (PlanningDoorUtility.IsDoor(box)) PlanningDoorUtility.AddButton(owner.boxes, box, allowed);
             }
             else
             {
@@ -3272,6 +3540,7 @@ namespace PlanningEditorPrototype
                 box.propEntryName = detailPropEntryName;
                 box.paletteEntryId = string.Empty;
                 box.paletteEntryName = string.Empty;
+                CapturePlacementDefaults(box);
                 return;
             }
 
@@ -3279,6 +3548,74 @@ namespace PlanningEditorPrototype
             box.propEntryName = string.Empty;
             box.paletteEntryId = detailEntryId;
             box.paletteEntryName = detailEntryName;
+            CapturePlacementDefaults(box);
+        }
+
+        private bool PrepareDoorPlacement(PlanningRoom room, PlanningBox box, RectInt allowed)
+        {
+            if (!PlanningDoorUtility.IsDoor(box)) return true;
+            box.width = 1;
+            box.height = 2;
+            box.singleInstance = true;
+            if (!allowed.Contains(new Vector2Int(box.x, box.y)) || !allowed.Contains(new Vector2Int(box.x, box.y + 1)) ||
+                !PlanningDoorUtility.CanPlace(room.boxes, new RectInt(box.x, box.y, 1, 2)))
+            { StatusChanged?.Invoke("门需要连续的 1×2 空格。"); return false; }
+            if (!PlanningDoorUtility.TryFindButtonCell(room.boxes, box, allowed, out _))
+            { StatusChanged?.Invoke("门附近没有可放置按钮的空格。"); return false; }
+            return true;
+        }
+
+        private void AddDoorButton(string doorId)
+        {
+            foreach (var item in AllBoxes())
+            {
+                if (item.box.id != doorId || !PlanningDoorUtility.IsDoor(item.box) || item.room == null) continue;
+                RectInt allowed = item.room.isConnector ? GetConnectorDetailBounds(item.room) :
+                    item.room.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
+                if (PlanningDoorUtility.AddButton(item.boxes, item.box, allowed) == null)
+                { StatusChanged?.Invoke("门附近没有可放置按钮的空格。"); return; }
+                NotifyDocumentChanged(); SelectionChanged?.Invoke(); MarkDirtyRepaint();
+                StatusChanged?.Invoke("已添加门按钮，可在选择模式拖动位置。");
+                return;
+            }
+            StatusChanged?.Invoke("此门已删除，请重新选择。");
+        }
+
+        private void DrawDoorLinks(Painter2D painter)
+        {
+            var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
+            foreach (var item in items)
+            {
+                if (string.IsNullOrEmpty(item.box.doorOwnerId) ||
+                    (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId)) continue;
+                foreach (var door in items)
+                {
+                    if (door.box.id != item.box.doorOwnerId) continue;
+                    RectInt a = DisplayRect(item.room, item.box), b = DisplayRect(door.room, door.box);
+                    Vector2 start = CellRect(a.x, a.y, a.width, a.height).center;
+                    Vector2 end = CellRect(b.x, b.y, b.width, b.height).center;
+                    float length = Vector2.Distance(start, end);
+                    for (float d = 0; d < length; d += 12f)
+                        DrawLine(painter, Vector2.Lerp(start,end,d/length), Vector2.Lerp(start,end,Mathf.Min(d+6f,length)/length),
+                            new Color(1f,.78f,.3f,.9f), 2f);
+                    break;
+                }
+            }
+        }
+
+        private void CapturePlacementDefaults(PlanningBox box)
+        {
+            var values = box.type == PlanningDetailType.Prop
+                ? FindPropEntry(box.propEntryId,box.propEntryName)?.ComponentValueOverrides
+                : FindEntry(box.paletteEntryId,box.paletteEntryName)?.ComponentValueOverrides;
+            box.hasComponentOverrides=true;
+            box.componentOverrides=new List<LevelEditorComponentValueOverride>();
+            if(values != null) foreach(var value in values) if(value != null) box.componentOverrides.Add(value.Clone());
+        }
+
+        public void FreezeExistingDefaults()
+        {
+            foreach(var item in AllBoxes()) if(!item.box.hasComponentOverrides) CapturePlacementDefaults(item.box);
         }
 
         private void EraseAssemblyBox(Vector2Int cell)
@@ -3303,7 +3640,8 @@ namespace PlanningEditorPrototype
                         continue;
                     }
 
-                    CarveBox(owner.boxes, box, cell);
+                    var rect=GetAssemblyBoxRect(owner,box,strideX,strideY);
+                    CarveBox(owner.boxes, box, cell-rect.position+new Vector2Int(box.x,box.y));
                     NotifyDocumentChanged();
                     SelectionChanged?.Invoke();
                     return;
@@ -3460,6 +3798,8 @@ namespace PlanningEditorPrototype
             Vector2Int cell)
         {
             boxes.Remove(box);
+            if (PlanningDoorUtility.IsDoor(box)) boxes.RemoveAll(item => item.doorOwnerId == box.id);
+            if (box.isMerged || box.singleInstance || !string.IsNullOrEmpty(box.doorOwnerId)) return;
             int leftWidth = cell.x - box.x;
             int rightStart = cell.x + 1;
             int rightWidth = box.x + box.width - rightStart;
@@ -3521,6 +3861,8 @@ namespace PlanningEditorPrototype
                 propEntryName = source.propEntryName
             };
             boxes.Add(carved);
+            carved.hasComponentOverrides = source.hasComponentOverrides;
+            carved.componentOverrides = source.Clone().componentOverrides;
         }
 
         private void SelectRoomAt(Vector2Int cell)
@@ -3773,6 +4115,7 @@ namespace PlanningEditorPrototype
 
         private void NotifyDocumentChanged()
         {
+            if (document != null) PlanningDoorUtility.RemoveOrphanButtons(document);
             if (suppressDocumentChanged)
             {
                 pendingDocumentChanged = true;
@@ -3782,6 +4125,57 @@ namespace PlanningEditorPrototype
             DocumentChanged?.Invoke();
             UpdateDetailPreviewImages();
             MarkDirtyRepaint();
+        }
+
+        [MenuItem("Tools/2026TapTap/关卡编辑器/验证规划数据逻辑")]
+        private static void ValidatePlanningOperations()
+        {
+            // Isolated in-memory document: no scene, palette asset or preference is modified.
+            var testDocument = new PlanningDocument();
+            var room = new PlanningRoom("验证");
+            room.cells.Add(new PlanningCell(0,0));
+            testDocument.rooms.Add(room);
+            var first = new PlanningBox(PlanningDetailType.Prop,new RectInt(0,0,1,1)) { propEntryId="test",propEntryName="验证道具",hasComponentOverrides=true };
+            var second = new PlanningBox(PlanningDetailType.Prop,new RectInt(1,0,1,1)) { propEntryId="test",propEntryName="验证道具" };
+            room.boxes.Add(first); room.boxes.Add(second);
+            var testCanvas=new PlanningCanvas();
+            testCanvas.SetDocument(testDocument);
+            testCanvas.SetMode(PlanningCanvasMode.Detail);
+            int changes=0;
+            testCanvas.DocumentChanged+=()=>changes++;
+            testCanvas.ToggleMergeArea(new RectInt(0,0,2,1));
+            testCanvas.ToggleMergeArea(new RectInt(0,0,1,1));
+            Require(testCanvas.mergeSelection.Count==1,"点选取消");
+            testCanvas.ToggleMergeArea(new RectInt(0,0,1,1));
+            testCanvas.MergeSelectedItems();
+            Require(room.boxes.Count==1 && room.boxes[0].isMerged && room.boxes[0].width==2,"道具合并");
+            var merged=room.boxes[0];
+            Require(merged.mergeParts.Count==2 && merged.hasComponentOverrides,"原始数据与独立参数保存");
+            var roundTrip=JsonUtility.FromJson<PlanningDocument>(JsonUtility.ToJson(testDocument));
+            Require(roundTrip.rooms[0].boxes[0].mergeParts.Count==2,"存档往返");
+            merged.x=4; merged.y=3;
+            testCanvas.UnmergeSelectedItems();
+            Require(room.boxes.Count==2 && room.boxes[0].x==4 && room.boxes[1].x==5 && room.boxes[0].y==3,"移动后解除合并");
+            testCanvas.RemoveMissingSceneItems(new []{ room.boxes[0].id },new []{new Vector2Int(4,3)});
+            Require(room.boxes.Count==1,"场景删除回流");
+            room.boxes.Clear(); testCanvas.mergeSelection.Clear();
+            room.boxes.Add(new PlanningBox(PlanningDetailType.Solid,new RectInt(0,0,1,1)));
+            room.boxes.Add(new PlanningBox(PlanningDetailType.Solid,new RectInt(2,0,1,1)));
+            testCanvas.ToggleMergeArea(new RectInt(0,0,3,1));
+            testCanvas.MergeSelectedItems();
+            Require(room.boxes.Count==2 && !room.boxes[0].isMerged,"拒绝空洞选区");
+            room.boxes.Clear(); testCanvas.mergeSelection.Clear();
+            var rectangle=new PlanningBox(PlanningDetailType.Solid,new RectInt(0,0,2,2)) { hasComponentOverrides=true };
+            room.boxes.Add(rectangle);
+            testCanvas.RemoveMissingSceneItems(new []{rectangle.id,rectangle.id},new []{new Vector2Int(0,0),new Vector2Int(1,1)});
+            Require(room.boxes.Count==2 && room.boxes.TrueForAll(b=>b.hasComponentOverrides),"矩形批量删除保留参数");
+            Require(changes==4,"每个数据事务仅通知一次");
+            Debug.Log("关卡编辑器规划验证通过：选择、合并/解除、存档、空洞保护、删除回流与事务通知。");
+        }
+
+        private static void Require(bool condition,string operation)
+        {
+            if(!condition) throw new InvalidOperationException("关卡编辑器验证失败："+operation);
         }
     }
 }

@@ -42,6 +42,12 @@ namespace Project.LevelEditor.Editor
             }
 
             Event evt = Event.current;
+            if(LevelEditorState.Tool == LevelEditorTool.Merge || LevelEditorState.Tool == LevelEditorTool.Parameters)
+            {
+                strokeActive=false;
+                selectionStroke=false;
+                return;
+            }
             if (evt.type == EventType.KeyDown && evt.keyCode == KeyCode.Escape)
             {
                 strokeActive = false;

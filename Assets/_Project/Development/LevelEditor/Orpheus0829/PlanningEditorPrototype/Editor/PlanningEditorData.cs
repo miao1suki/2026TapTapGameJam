@@ -23,7 +23,9 @@ namespace PlanningEditorPrototype
         Select,
         Box,
         Erase,
-        Pan
+        Pan,
+        Merge,
+        Parameters
     }
 
     public enum PlanningDetailType
@@ -79,6 +81,13 @@ namespace PlanningEditorPrototype
         public int y;
         public int width = 1;
         public int height = 1;
+        public bool isMerged;
+        public bool singleInstance;
+        public string doorOwnerId;
+        public List<string> mergeParts = new List<string>();
+        public bool hasComponentOverrides;
+        public List<LevelEditorComponentValueOverride> componentOverrides = new List<LevelEditorComponentValueOverride>();
+        public PlanningBox Clone() => JsonUtility.FromJson<PlanningBox>(JsonUtility.ToJson(this));
         [NonSerialized] public LevelEditorPlacedBlock sceneBlock;
 
         public PlanningBox()
@@ -1390,7 +1399,6 @@ namespace PlanningEditorPrototype
                 if (connector.cells.Count > 0)
                 {
                     UpdateConnectorDetailBounds(connector);
-                    EnsureConnectorBaseLine(connector);
                     continue;
                 }
 
