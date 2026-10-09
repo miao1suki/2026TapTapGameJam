@@ -98,3 +98,23 @@
 - 状态：代码和 URP Renderer Feature 已写入；默认捕获除 Water/UI 外的可见物体。编译、运行与视觉效果仍待 Unity 验证。
 - 交接：水面资源及其接入配置随 `codex/ta/water-platform-demo` 分支提交推送。
 
+
+## 藤蔓 Trail 颜色贴图
+
+- 日期：2026-10-09。
+- 负责人：Codex。
+- 分支：`codex/ta/water-platform-demo`。
+- 范围：`Assets/ta_source/Particle/Grow/Vine_Trail_Color.png` 纯绿色深浅变化纹理及 Unity 导入设置；不修改场景。
+- 接口变更：无；贴图采用双向 Repeat、双线性过滤和 mipmaps，Trail 负责藤蔓形状。
+- 验证：确认 Unity 版本 `6000.3.12f1`、仓库远端正确、PNG 已生成并复制；Unity 导入效果待编辑器确认。
+- 交接提交：随本次分支提交。
+
+## Grow 粒子效果资源
+
+- 日期：2026-10-09。
+- 负责人：Codex（推送）；场景、预制体与材质由用户完成。
+- 分支：`codex/ta/water-platform-demo`。
+- 范围：推送 `Assets/ta_source/Particle/Grow` 下的场景、粒子预制体、材质与藤蔓颜色贴图及其 `.meta`；不包含叶片资源。
+- 接口变更：无。
+- 验证：Unity 版本与仓库远端已确认；Unity 编辑器导入及场景运行待验证。
+- 交接提交：随本次分支提交。
