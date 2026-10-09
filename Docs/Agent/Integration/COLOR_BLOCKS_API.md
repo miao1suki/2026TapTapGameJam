@@ -1,5 +1,25 @@
 # 颜色物体 API
 
+## 外观交接 API
+
+2026-10-09 节奏：`GetEffectiveDuration(duration)` 返回实际时长（默认 5 秒；正数指定时长 ×3；0 不延迟）。钥匙镜头等待使用该时长，其他新入口不要自行按旧的 1.5 秒提前结束演出。
+
+### 像素化与藤蔓根系
+
+颜色 GameObject Layer 不变。水体与母根粒子 Renderer 添加 `renderingLayerMask |= 128u`，独立 LearningPixelPass 先执行学习项目的选择性像素化，再由 SelectiveHsvRendererFeature 的 HSV Pass 按颜色层合成；不在 HSV 内重复像素采样。描边 API 默认关闭，见 PIXELIZATION_API.md。旧 TA 02StencilPixelEffect 停用，PixelEffect 层 12 保留；不能把透明水体改层后期待旧“不透明 + Equal 深度”通道自动适配。
+
+`ClimbableVineFeature.Root` 为唯一母根；`ConfigureInitialGrowth` 与运行时 `SpawnSegment` 写入所有权。`BeginBurn` 无论命中哪一节都转发母根，`IsBurning/IsBurned` 是节段状态，不改固定绿色属性。燃烧只处理该母根列出的预置/生成节段，从高到低逐节暂停攀爬、熄灭碰撞；预置对象不销毁，房间重置恢复，生成对象按既有生命周期清理。万能方块仍走同一 ApplyColor 路径。
+
+粒子表现按 source/time pair 缓存 72 份粒子、PlaybackState 和 Trails 快照，固定随机种子，使用 SetParticlesAndTrails 恢复，初始/长成状态保持暂停；不是负 simulationSpeed。首次源资源模拟到 30.13 秒并预计算 2.3 秒区间，会有一次 CPU/内存开销，需要 Profiler 验证；后续母根共享只读缓存。子节段不重复生成粒子。TA 源预制体不被修改，仅实例改为 local-space/hierarchy scaling，以支持缓存跨母根复用。
+
+透明遮罩使用独立 overrideMaterial，不使用 overrideShader 继承未知源材质属性。默认 `_ColorMaskAlphaTexture` 为白纹理，`_ColorMaskUseVertexAlpha` 为 0；藤蔓 Renderer 的 PropertyBlock 显式配置拖尾 alpha 纹理与顶点 alpha。遮罩裁剪后写 1，避免全屏合成再次乘源 alpha 而漏出未褪色的颜色。每色专用 raster pass 在执行时绑定 source/mask/pixelMask 与浮点值，RenderGraph 显式声明读写资源。`SelectiveHsvRendererFeature.LastExecutedFrame` 供 Inspector 检查通道执行，不代表 GPU 像素验收通过。任意复杂 Shader Graph 位移、透明排序和跨颜色半透明叠加不是对象级隔离，实际水波边缘仍必须 GPU 验收；不能仅凭 C# 编译认定渲染正确。
+
+`SetColorFaded(id, false, duration)` 依次执行基础外观灰阶→纯白、纯白正式外观交接、正式外观恢复。`GetSaturation(id)` 在正式外观恢复结束时到达 1，供镜头演出等待；`GetWhiteAmount(id)` 为屏幕纯白混合量；`ShowsUnlockedAppearance(id)` 决定是否显示正式外观。`AppearanceChanged` 只通知交接、显式设置及重置（重置 ID 为 null），订阅者必须在禁用时解除订阅。重复请求不重启进度，反向请求从当前进度回退；时长为 0 时立即到目标。
+
+`ColorObject` 不在运行时使用 `ColorTypeDefinition.targetMaterial`（编辑识别/钥匙材质）。正式外观优先取 `unlockedMaterial`，其次取已启用功能组件针对状态渲染器配置的专属材质；没有正式材质时交接后隐藏状态渲染器。水体由 `WaterVisualFeature` 在交接时显现，并通过 `InteractiveWater.SetPresentationLayer` 保证运行时生成的水面加入蓝色层。颜色属性和功能激活仍由 ColorRuntimeService / BlockAbilityHost 管理，不由渐变进度修改。
+
+屏幕层通道位于透明渲染后、后处理前。透明层遮罩按几何与场景深度生成，并非每个透明像素的独立对象 ID；多层透明物体重叠时需实际检查遮罩边缘与透出背景。此改动不修改 TA 源材质资产。
+
 ## 状态职责
 
 | 模块 | 负责 |

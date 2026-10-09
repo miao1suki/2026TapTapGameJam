@@ -18,6 +18,10 @@ namespace Project.ColorBlocks
         private string baseColorTypeId = "red";
         [SerializeField, Tooltip("留空时自动查找第一个子渲染器。")]
         private Renderer targetRenderer;
+        [SerializeField, Tooltip("解锁后的正式外观材质。留空时隐藏识别模型，由功能组件提供水体等正式外观。不得指定编辑识别材质。")]
+        private Material unlockedMaterial;
+        private HSVColorFadeManager fadeManager;
+        private BlockFeature[] visualFeatures;
 
         private bool active;
         private bool registered;
@@ -39,6 +43,7 @@ namespace Project.ColorBlocks
             }
 
             CacheColliderStates();
+            visualFeatures = GetComponents<BlockFeature>();
             ApplyCollisionState(active);
             ApplyVisual();
         }
@@ -51,12 +56,17 @@ namespace Project.ColorBlocks
                 return;
             }
 
+            fadeManager = HSVColorFadeManager.Instance;
+            fadeManager.AppearanceChanged += OnAppearanceChanged;
             ColorRuntimeService.Instance.Register(this);
+            ApplyLayer();
             registered = true;
         }
 
         private void OnDisable()
         {
+            if (fadeManager != null) fadeManager.AppearanceChanged -= OnAppearanceChanged;
+            fadeManager = null;
             if (!registered)
             {
                 return;
@@ -64,6 +74,11 @@ namespace Project.ColorBlocks
 
             ColorRuntimeService.Existing?.Unregister(this);
             registered = false;
+        }
+
+        private void OnAppearanceChanged(string colorId)
+        {
+            if (string.IsNullOrEmpty(colorId) || colorId == baseColorTypeId) ApplyVisual();
         }
 
         public void Activate()
@@ -106,6 +121,9 @@ namespace Project.ColorBlocks
             ApplyCollisionState(active);
             ApplyVisual();
             ActiveStateChanged?.Invoke(this, active);
+            // Features may have assigned their own material during activation.
+            // The neutral/real handoff remains owned by this presentation bridge.
+            ApplyVisual();
         }
 
         private void CacheColliderStates()
@@ -159,12 +177,14 @@ namespace Project.ColorBlocks
 
         private void ApplyVisual()
         {
+            // Authoring materials are never promoted into gameplay materials.
+            if (!Application.isPlaying) return;
             if (targetRenderer == null)
             {
                 return;
             }
 
-            ColorRuntimeService service = ColorRuntimeService.Existing;
+            ColorRuntimeService service = ColorRuntimeService.Instance;
             ColorCatalog catalog = service?.Catalog;
             if (catalog == null)
             {
@@ -172,15 +192,24 @@ namespace Project.ColorBlocks
             }
 
             ColorTypeDefinition definition = catalog.Find(baseColorTypeId);
-            Material material = active
-                ? definition?.targetMaterial
-                : catalog.NeutralMaterial;
+            bool showReal = active && HSVColorFadeManager.Instance.ShowsUnlockedAppearance(baseColorTypeId);
+            Material material = showReal ? unlockedMaterial : catalog.NeutralMaterial;
+            if (showReal && material == null && visualFeatures != null)
+            {
+                foreach (BlockFeature feature in visualFeatures)
+                {
+                    if (feature == null || !feature.enabled) continue;
+                    material = feature.GetMaterialForRenderer(targetRenderer);
+                    if (material != null) break;
+                }
+            }
+            if (showReal && material == definition?.targetMaterial) material = null;
             if (material != null)
             {
                 targetRenderer.sharedMaterial = material;
             }
 
-            targetRenderer.enabled = true;
+            targetRenderer.enabled = material != null;
         }
 
         private void ApplyLayer()

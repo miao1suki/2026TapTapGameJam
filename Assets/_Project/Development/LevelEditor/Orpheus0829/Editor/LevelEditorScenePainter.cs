@@ -42,6 +42,12 @@ namespace Project.LevelEditor.Editor
             }
 
             Event evt = Event.current;
+            if(LevelEditorState.Tool == LevelEditorTool.Merge || LevelEditorState.Tool == LevelEditorTool.Parameters)
+            {
+                strokeActive=false;
+                selectionStroke=false;
+                return;
+            }
             if (evt.type == EventType.KeyDown && evt.keyCode == KeyCode.Escape)
             {
                 strokeActive = false;
@@ -160,6 +166,11 @@ namespace Project.LevelEditor.Editor
 
         private static void CompleteStroke()
         {
+            if (IsPlacingDoor())
+            {
+                PaintAt(strokeStart);
+                return;
+            }
             IEnumerable<Vector2Int> cells =
                 BuildAreaCells(strokeStart, strokeEnd);
             foreach (Vector2Int cell in cells)
@@ -347,8 +358,10 @@ namespace Project.LevelEditor.Editor
         private static void DrawHover(Vector2Int cell)
         {
             float size = Mathf.Max(.05f, LevelEditorState.CellSize);
+            bool door = IsPlacingDoor();
+            if (door && strokeActive) cell = strokeStart;
             Vector3 min = new Vector3(cell.x * size, cell.y * size, 0f);
-            Vector3 max = min + new Vector3(size, size, 0f);
+            Vector3 max = min + new Vector3(size, size * (door ? 2f : 1f), 0f);
             Vector3[] corners =
             {
                 new Vector3(min.x, min.y, 0f),
@@ -366,7 +379,24 @@ namespace Project.LevelEditor.Editor
                 corners,
                 color,
                 color * 1.5f);
+            if (door)
+            {
+                Color oldColor = Handles.color;
+                Handles.color = color * 1.5f;
+                Handles.DrawLine(new Vector3(min.x, min.y + size, 0f), new Vector3(max.x, min.y + size, 0f));
+                Handles.color = oldColor;
+            }
             Handles.zTest = previousZTest;
+        }
+
+        private static bool IsPlacingDoor()
+        {
+            if (LevelEditorState.Tool != LevelEditorTool.Paint) return false;
+            var palette = LevelEditorState.Palette;
+            int index = LevelEditorState.SelectedPropIndex;
+            return palette != null && index >= 0 && index < palette.PropEntries.Count &&
+                palette.PropEntries[index].Prefab != null &&
+                palette.PropEntries[index].Prefab.GetComponent<Project.Mechanisms.DoorController>() != null;
         }
 
         private static bool TryGetCell(

@@ -21,11 +21,13 @@ namespace Project.ColorBlocks
     {
         [SerializeField] private Material neutralMaterial;
         [SerializeField] private GameObject blueWaterPrefab;
+        [SerializeField] private GameObject greenVinePrefab;
         [SerializeField] private List<ColorTypeDefinition> colors =
             new List<ColorTypeDefinition>();
 
         public Material NeutralMaterial => neutralMaterial;
         public GameObject BlueWaterPrefab => blueWaterPrefab;
+        public GameObject GreenVinePrefab => greenVinePrefab;
         public IReadOnlyList<ColorTypeDefinition> Colors => colors;
 
         public ColorTypeDefinition Find(string id)

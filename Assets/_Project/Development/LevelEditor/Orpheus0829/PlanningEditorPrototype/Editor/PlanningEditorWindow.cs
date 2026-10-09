@@ -5,6 +5,7 @@ using Project.LevelEditor.Editor;
 using Project.SurfaceTiles.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEditor.ShortcutManagement;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,12 +20,98 @@ namespace PlanningEditorPrototype
             Map
         }
 
-        private const string PreferenceKey =
+        private const string LegacyDocumentPreferenceKey =
             "2026TapTap.PlanningEditorPrototype.Document.SampleV12";
-        private const string CurrentSavePreferenceKey =
+        private const string LegacySavePreferenceKey =
             "2026TapTap.PlanningEditorPrototype.CurrentSavePath";
         private const string CanvasBackgroundPreferenceKey =
             "2026TapTap.PlanningEditorPrototype.CanvasBackground";
+        private string scenePreferenceScope;
+        private int boundSceneHandle;
+        private string PreferenceKey => scenePreferenceScope + ".Document";
+        private string CurrentSavePreferenceKey => scenePreferenceScope + ".SavePath";
+        private string ViewPreferenceKey => scenePreferenceScope + ".View.";
+        private string AutoSyncPreferenceKey => scenePreferenceScope + ".AutoSync";
+        private string BindingMemoryKey => AutoSyncPreferenceKey + ".Bindings." + Hash128.Compute(currentSavePath ?? string.Empty);
+        [System.Serializable] private sealed class BindingRecord
+        {
+            public string id;
+            public Vector2Int cell;
+        }
+        [System.Serializable] private sealed class BindingMemory
+        {
+            public List<BindingRecord> records = new List<BindingRecord>();
+        }
+
+        private string GetScenePreferenceScope()
+        {
+            var scene = SceneManager.GetActiveScene();
+            string sceneId = AssetDatabase.AssetPathToGUID(scene.path);
+            if (string.IsNullOrEmpty(sceneId))
+            {
+                string session = SessionState.GetString("2026TapTap.Planning.Session", string.Empty);
+                if (string.IsNullOrEmpty(session))
+                {
+                    session = System.Guid.NewGuid().ToString("N");
+                    SessionState.SetString("2026TapTap.Planning.Session", session);
+                }
+                sceneId = session + "." + scene.handle;
+            }
+            return "2026TapTap.Planning.Scene." + Hash128.Compute(Application.dataPath) + "." + sceneId;
+        }
+
+        private void RememberAutoSync()
+        {
+            if (!string.IsNullOrEmpty(scenePreferenceScope))
+                EditorPrefs.SetBool(AutoSyncPreferenceKey, autoSync);
+        }
+
+        private void RememberBindings()
+        {
+            var memory = new BindingMemory();
+            foreach (var binding in sceneBindings)
+                memory.records.Add(new BindingRecord { id = binding.id, cell = binding.cell });
+            SessionState.SetString(BindingMemoryKey, JsonUtility.ToJson(memory));
+        }
+
+        private void RestoreAutoSync()
+        {
+            autoSync = EditorPrefs.GetBool(AutoSyncPreferenceKey, false);
+            autoSyncToggle?.SetValueWithoutNotify(autoSync);
+            syncSceneHandle = SceneManager.GetActiveScene().handle;
+            if (!autoSync || EditorApplication.isPlayingOrWillChangePlaymode) return;
+            sceneHasBeenApplied = PlanningSceneBuilder.HasAnyGeneratedRoot();
+            CaptureSceneBindings();
+            // Session memory survives recompilation, but not restarting Unity: unsaved
+            // scene geometry must not be mistaken for objects deliberately deleted.
+            var memory = JsonUtility.FromJson<BindingMemory>(
+                SessionState.GetString(BindingMemoryKey, "{}"));
+            var present = new HashSet<string>();
+            foreach (var binding in sceneBindings) present.Add(binding.id + ":" + binding.cell);
+            var ids = new List<string>();
+            var cells = new List<Vector2Int>();
+            if (memory?.records != null)
+                foreach (var binding in memory.records)
+                    if (!present.Contains(binding.id + ":" + binding.cell))
+                    { ids.Add(binding.id); cells.Add(binding.cell); }
+            if (ids.Count > 0) canvas.RemoveMissingSceneItems(ids, cells);
+            RememberBindings();
+        }
+
+        private void RestoreSceneWorkspace()
+        {
+            scenePreferenceScope = GetScenePreferenceScope();
+            boundSceneHandle = SceneManager.GetActiveScene().handle;
+            LoadDocument();
+            string room = EditorPrefs.GetString(ViewPreferenceKey + "Room", string.Empty);
+            if (document.FindRoom(room) != null) canvas.SelectRoom(room);
+            bool wasReady = viewReady;
+            viewReady = false;
+            SetMode((PlanningCanvasMode)EditorPrefs.GetInt(ViewPreferenceKey + "Mode", (int)PlanningCanvasMode.World));
+            viewReady = wasReady;
+            RestoreCanvasView(mode);
+            RefreshAll();
+        }
 
         private PlanningDocument document;
         private PlanningCanvas canvas;
@@ -60,11 +147,13 @@ namespace PlanningEditorPrototype
         private VisualElement rightPanel;
         private VisualElement worldMapTools;
         private Foldout blockEditorFoldout;
+        private Foldout selectionFoldout;
         private LevelEditorPanel embeddedLevelEditor;
         private bool refreshingLevelContext;
         private double nextLevelEditorRefreshTime;
+        private double nextPreviewRefreshTime;
         private float leftRailWidth = 200f;
-        private float rightPanelWidth = 220f;
+        private float rightPanelWidth = 340f;
         private float topAreaHeight = 110f;
         private Color canvasBackgroundColor =
             new Color(.11f, .13f, .17f);
@@ -73,27 +162,105 @@ namespace PlanningEditorPrototype
         private readonly Stack<string> planningRedo =
             new Stack<string>();
         private string planningSnapshot;
+        [System.Serializable] private sealed class HistoryState
+        {
+            public string document;
+            public string palette;
+            public int playerId;
+            public Vector3 playerPosition;
+        }
+        private sealed class SceneBinding
+        {
+            public LevelEditorPlacedBlock block;
+            public string id;
+            public Vector2Int cell;
+        }
+        private readonly List<SceneBinding> sceneBindings=new List<SceneBinding>();
+        private bool autoSync;
+        private bool syncPending;
+        private bool syncingScene;
+        private bool sceneHasBeenApplied;
+        private int syncSceneHandle;
+        private Toggle autoSyncToggle;
+        private readonly PlanningUndoContext undoContext=new PlanningUndoContext();
+        private readonly PlanningViewContext viewContext = new PlanningViewContext();
+        public sealed class PlanningViewContext : IShortcutContext
+        {
+            internal PlanningEditorWindow window;
+            public bool active
+            {
+                get
+                {
+                    if (window == null || window.canvas == null || focusedWindow != window ||
+                        EditorApplication.isPlayingOrWillChangePlaymode || EditorGUIUtility.editingTextField) return false;
+                    VisualElement focused = window.rootVisualElement.focusController.focusedElement as VisualElement;
+                    return focused == null || (focused is not TextField && focused.GetFirstAncestorOfType<TextField>() == null &&
+                        !focused.ClassListContains("unity-text-input") && focused.GetFirstAncestorOfType<TextElement>() == null);
+                }
+            }
+        }
+        [Shortcut("2026TapTap/关卡编辑器/世界图", typeof(PlanningViewContext), KeyCode.W)]
+        private static void WorldViewShortcut(ShortcutArguments args)
+        {
+            var window = ((PlanningViewContext)args.context).window;
+            window.SetWorkspace(PlanningWorkspaceMode.Map);
+            window.SetMode(PlanningCanvasMode.World);
+        }
+        [Shortcut("2026TapTap/关卡编辑器/房间详情", typeof(PlanningViewContext), KeyCode.R)]
+        private static void RoomViewShortcut(ShortcutArguments args)
+        {
+            var window = ((PlanningViewContext)args.context).window;
+            window.SetWorkspace(PlanningWorkspaceMode.Map);
+            window.SetMode(PlanningCanvasMode.Detail);
+        }
+        public sealed class PlanningUndoContext : IShortcutContext
+        {
+            internal PlanningEditorWindow window;
+            public bool active => window != null && window.canvas != null && !EditorApplication.isPlayingOrWillChangePlaymode;
+        }
+        [Shortcut("2026TapTap/关卡编辑器/撤回",typeof(PlanningUndoContext),KeyCode.Z,ShortcutModifiers.Action)]
+        private static void PlanningUndoShortcut(ShortcutArguments args) => ((PlanningUndoContext)args.context).window.UndoPlanning();
+        [Shortcut("2026TapTap/关卡编辑器/重做",typeof(PlanningUndoContext),KeyCode.Y,ShortcutModifiers.Action)]
+        private static void PlanningRedoShortcut(ShortcutArguments args) => ((PlanningUndoContext)args.context).window.RedoPlanning();
+        [Shortcut("2026TapTap/关卡编辑器/重做 Shift Z",typeof(PlanningUndoContext),KeyCode.Z,ShortcutModifiers.Action|ShortcutModifiers.Shift)]
+        private static void PlanningRedoShiftShortcut(ShortcutArguments args) => ((PlanningUndoContext)args.context).window.RedoPlanning();
         private string savedDocumentSnapshot;
         private bool restoringPlanningDocument;
         private int lastPrunedPaletteRevision = -1;
         private bool worldBlockSettingsUnlocked;
         private PlanningWorkspaceMode workspaceMode;
         private PlanningCanvasMode mode;
+        private bool viewReady;
 
         [MenuItem("Tools/2026TapTap/关卡规划原型/打开融合编辑器")]
         private static void Open()
         {
             PlanningEditorWindow window =
                 GetWindow<PlanningEditorWindow>();
-            window.titleContent = new GUIContent("关卡规划融合原型");
+            window.titleContent = new GUIContent("关卡编辑器");
             window.minSize = new Vector2(980f, 620f);
             window.Show();
             window.Focus();
         }
 
+        [MenuItem("Tools/2026TapTap/关卡编辑器/切换窗口 _m")]
+        private static void ToggleWindow()
+        {
+            PlanningEditorWindow[] windows =
+                Resources.FindObjectsOfTypeAll<PlanningEditorWindow>();
+            if (windows.Length > 0)
+            {
+                windows[0].Close();
+                return;
+            }
+
+            Open();
+        }
+
         public void CreateGUI()
         {
             VisualElement root = rootVisualElement;
+            LevelEditorTypography.Apply(root);
             root.style.flexGrow = 1f;
             root.style.backgroundColor = new Color(.07f, .08f, .1f);
             canvasBackgroundColor = LoadCanvasBackgroundColor();
@@ -184,21 +351,63 @@ namespace PlanningEditorPrototype
                 statusLabel.text = message;
             };
 
+            scenePreferenceScope = GetScenePreferenceScope();
+            boundSceneHandle = SceneManager.GetActiveScene().handle;
             LoadDocument();
+            string lastRoomId = EditorPrefs.GetString(
+                ViewPreferenceKey + "Room",
+                string.Empty);
+            if (!string.IsNullOrEmpty(lastRoomId) &&
+                document.FindRoom(lastRoomId) != null)
+            {
+                canvas.SelectRoom(lastRoomId);
+            }
+
             SetWorkspace(PlanningWorkspaceMode.Map);
-            SetMode(PlanningCanvasMode.World);
+            PlanningCanvasMode lastMode =
+                (PlanningCanvasMode)EditorPrefs.GetInt(
+                    ViewPreferenceKey + "Mode",
+                    (int)PlanningCanvasMode.World);
+            SetMode(lastMode);
+            viewReady = true;
             RefreshAll();
         }
 
         private void OnEnable()
         {
+            undoContext.window=this;
+            ShortcutManager.RegisterContext(undoContext);
+            viewContext.window = this;
+            ShortcutManager.RegisterContext(viewContext);
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
+            EditorApplication.playModeStateChanged -= OnPlanningPlayModeChanged;
+            EditorApplication.playModeStateChanged += OnPlanningPlayModeChanged;
+        }
+
+        private void OnPlanningPlayModeChanged(PlayModeStateChange state)
+        {
+            if (state != PlayModeStateChange.EnteredEditMode || canvas == null) return;
+            // Runtime teardown is not an authoring deletion.
+            CaptureSceneBindings();
+            RememberBindings();
         }
 
         private void OnDisable()
         {
+            ShortcutManager.UnregisterContext(undoContext);
+            ShortcutManager.UnregisterContext(viewContext);
+            viewContext.window = null;
+            undoContext.window=null;
+            SaveCanvasView(mode);
+            if (canvas != null && document != null)
+            {
+                SaveDocument();
+                RememberAutoSync();
+                RememberBindings();
+            }
             EditorApplication.update -= Tick;
+            EditorApplication.playModeStateChanged -= OnPlanningPlayModeChanged;
             if (embeddedLevelEditor == null)
             {
                 return;
@@ -223,10 +432,39 @@ namespace PlanningEditorPrototype
             }
 
             nextLevelEditorRefreshTime = now + .1d;
+            if (!EditorApplication.isPlayingOrWillChangePlaymode &&
+                (boundSceneHandle != SceneManager.GetActiveScene().handle || scenePreferenceScope != GetScenePreferenceScope()))
+            {
+                SaveCanvasView(mode);
+                SaveDocument();
+                RememberAutoSync();
+                RememberBindings();
+                RestoreSceneWorkspace();
+            }
+            if(autoSync && !syncingScene && !EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                if(syncSceneHandle != SceneManager.GetActiveScene().handle)
+                {
+                    autoSync=false; syncPending=false; sceneBindings.Clear();
+                    autoSyncToggle?.SetValueWithoutNotify(false);
+                    statusLabel.text="场景已切换，自动同步已关闭。";
+                }
+                else
+                {
+                    DetectSceneDeletions();
+                    if(syncPending) { syncPending=false; ApplyMapToScene(); }
+                }
+            }
             embeddedLevelEditor.Refresh();
+            embeddedLevelEditor.RefreshPendingPreviews();
             SyncPlanningCanvasPalette();
             PruneMissingPaletteBlocks();
             canvas?.RefreshPlayerOverlay();
+            if (now >= nextPreviewRefreshTime)
+            {
+                nextPreviewRefreshTime = now + .3d;
+                canvas?.RefreshPreviewImages();
+            }
             RefreshLevelContextStatus();
             if (LevelEditorPlayerService.EnforceEditPlane())
             {
@@ -718,14 +956,14 @@ namespace PlanningEditorPrototype
             bar.style.borderBottomWidth = 1f;
             bar.style.borderBottomColor = new Color(.2f, .23f, .3f);
 
-            Label brand = new Label("▚  规划融合原型");
+            Label brand = new Label("▚  关卡编辑器");
             brand.style.unityFontStyleAndWeight = FontStyle.Bold;
             brand.style.fontSize = 14f;
             brand.style.marginRight = 8f;
             bar.Add(brand);
 
             currentSaveLabel = new Label();
-            currentSaveLabel.style.width = 220f;
+            currentSaveLabel.style.width = 170f;
             currentSaveLabel.style.height = 26f;
             currentSaveLabel.style.paddingLeft = 8f;
             currentSaveLabel.style.paddingRight = 8f;
@@ -746,7 +984,22 @@ namespace PlanningEditorPrototype
             bar.Add(currentSaveLabel);
 
             bar.Add(Spacer());
-            bar.Add(TopButton("生成整套场景", GenerateMapToScene));
+            Button apply = TopButton("应用到场景", ApplyMapToScene);
+            apply.tooltip = "默认只增删变化的规划物体；已有且未变化的实例保持原样。";
+            apply.style.backgroundColor = new Color(.16f, .43f, .82f);
+            apply.style.unityFontStyleAndWeight = FontStyle.Bold;
+            apply.style.height = 30f;
+            apply.clicked += apply.Blur;
+            bar.Add(apply);
+            autoSyncToggle=new Toggle("自动同步") { value=autoSync, tooltip="修改后增量同步到当前场景；开关按场景与规划存档分别记忆。" };
+            autoSyncToggle.RegisterValueChangedCallback(evt =>
+            {
+                autoSync=evt.newValue;
+                RememberAutoSync();
+                syncSceneHandle=SceneManager.GetActiveScene().handle;
+                if(autoSync) ApplyMapToScene(); else syncPending=false;
+            });
+            bar.Add(autoSyncToggle);
             Button saveCurrent = TopButton(
                 "保存到当前存档",
                 SaveToCurrentSlot);
@@ -754,7 +1007,7 @@ namespace PlanningEditorPrototype
                 "保存当前规划文档；保存后没有新的未保存改动，" +
                 "且选中方块已经生成到场景时，场景引用定位才可用。";
             bar.Add(saveCurrent);
-            bar.Add(TopButton("修复同步", RepairAndSyncCurrentMap));
+            bar.Add(TopButton("更多 ▾", ShowAdvancedActions));
             bar.Add(TopButton("撤回", UndoPlanning));
             bar.Add(TopButton("重做", RedoPlanning));
             Button saves = TopButton("新建 / 存档", ToggleSaveOverlay);
@@ -762,6 +1015,20 @@ namespace PlanningEditorPrototype
                 "新建空白地图、读取、保存、重命名和导入导出 JSON。";
             bar.Add(saves);
             return bar;
+        }
+
+        private void ShowAdvancedActions()
+        {
+            var menu = new GenericMenu();
+            menu.AddItem(
+                new GUIContent("全量重建场景…"),
+                false,
+                GenerateMapToScene);
+            menu.AddItem(
+                new GUIContent("修复同步…"),
+                false,
+                RepairAndSyncCurrentMap);
+            menu.ShowAsContext();
         }
 
         private VisualElement BuildSaveOverlay()
@@ -889,7 +1156,7 @@ namespace PlanningEditorPrototype
             Foldout worldBlockFoldout = new Foldout
             {
                 text = "世界图区块",
-                value = false
+                value = true
             };
             worldBlockFoldout.style.marginLeft = 6f;
             worldBlockFoldout.style.marginRight = 6f;
@@ -1021,7 +1288,7 @@ namespace PlanningEditorPrototype
             panel.style.borderLeftWidth = 1f;
             panel.style.borderLeftColor = new Color(.2f, .23f, .3f);
 
-            panel.Add(SectionTitle("当前选中"));
+            panel.Add(SectionTitle("编辑工具"));
 
             VisualElement modeRow = Row();
             modeRow.style.paddingLeft = 6f;
@@ -1053,30 +1320,67 @@ namespace PlanningEditorPrototype
             blockEditorFoldout.style.marginLeft = 6f;
             blockEditorFoldout.style.marginRight = 6f;
             blockEditorFoldout.style.marginBottom = 4f;
+            blockEditorFoldout.style.paddingBottom = 8f;
+            blockEditorFoldout.style.borderBottomWidth = 1f;
+            blockEditorFoldout.style.borderBottomColor =
+                new Color(.2f, .23f, .3f);
             blockEditorFoldout.RegisterValueChangedCallback(evt =>
             {
                 if (evt.newValue)
                 {
+                    if (selectionFoldout != null)
+                    {
+                        selectionFoldout.value = false;
+                    }
+
                     EnsureCurrentRoomContainer(false);
                 }
             });
             VisualElement editorHost = new VisualElement();
-            editorHost.style.height = 380f;
-            editorHost.style.minHeight = 300f;
+            editorHost.style.height = 700f;
+            editorHost.style.minHeight = 600f;
+            editorHost.style.marginTop = 6f;
+            editorHost.style.marginBottom = 10f;
             embeddedLevelEditor = new LevelEditorPanel(editorHost, false);
+            embeddedLevelEditor.MergePlanningSelection=()=>canvas?.MergeSelectedItems();
+            embeddedLevelEditor.UnmergePlanningSelection=()=>canvas?.UnmergeSelectedItems();
+            embeddedLevelEditor.EditPlanningDefaults=EditPlacementDefaults;
             blockEditorFoldout.Add(editorHost);
             panel.Add(blockEditorFoldout);
 
+            selectionFoldout = new Foldout
+            {
+                text = "选中项设置",
+                value = false
+            };
+            selectionFoldout.style.marginLeft = 6f;
+            selectionFoldout.style.marginRight = 6f;
+            selectionFoldout.RegisterValueChangedCallback(evt =>
+            {
+                if (evt.newValue)
+                {
+                    blockEditorFoldout.value = false;
+                }
+            });
             inspector = new VisualElement();
             inspector.style.paddingLeft = 8f;
             inspector.style.paddingRight = 8f;
             inspector.style.paddingTop = 4f;
-            panel.Add(inspector);
+            selectionFoldout.Add(inspector);
+            panel.Add(selectionFoldout);
             return panel;
         }
 
         private void LoadDocument()
         {
+            string migrationKey = "2026TapTap.Planning.LegacyAssigned." + Hash128.Compute(Application.dataPath);
+            if (!EditorPrefs.HasKey(PreferenceKey) && !EditorPrefs.HasKey(migrationKey))
+            {
+                // Assign the former global workspace once; never copy it into every scene.
+                EditorPrefs.SetString(PreferenceKey, EditorPrefs.GetString(LegacyDocumentPreferenceKey, string.Empty));
+                EditorPrefs.SetString(CurrentSavePreferenceKey, EditorPrefs.GetString(LegacySavePreferenceKey, string.Empty));
+                EditorPrefs.SetString(migrationKey, scenePreferenceScope);
+            }
             string json = EditorPrefs.GetString(PreferenceKey, string.Empty);
             currentSavePath = EditorPrefs.GetString(
                 CurrentSavePreferenceKey,
@@ -1090,7 +1394,7 @@ namespace PlanningEditorPrototype
 
             if (string.IsNullOrWhiteSpace(json))
             {
-                document = PlanningDocument.CreateDefault();
+                document = new PlanningDocument { name = SceneManager.GetActiveScene().name + "地图" };
             }
             else
             {
@@ -1103,6 +1407,7 @@ namespace PlanningEditorPrototype
             ResetPlanningHistory();
             MarkPlanningSaved();
             RefreshCurrentSaveLabel();
+            RestoreAutoSync();
         }
 
         private static Color LoadCanvasBackgroundColor()
@@ -1145,6 +1450,7 @@ namespace PlanningEditorPrototype
             EditorPrefs.SetString(
                 PreferenceKey,
                 JsonUtility.ToJson(document, true));
+            EditorPrefs.SetString(CurrentSavePreferenceKey, currentSavePath ?? string.Empty);
             if (!string.IsNullOrEmpty(currentSavePath) &&
                 File.Exists(currentSavePath))
             {
@@ -1719,27 +2025,56 @@ namespace PlanningEditorPrototype
 
         private void SetMode(PlanningCanvasMode value)
         {
-            mode = value;
-            canvas?.SetMode(value);
-            if (value == PlanningCanvasMode.Detail &&
-                canvas != null &&
-                !string.IsNullOrEmpty(canvas.SelectedRoomId))
+            if (viewReady)
             {
-                canvas.FocusRoom(canvas.SelectedRoomId);
-            }
-            else if (value == PlanningCanvasMode.World)
-            {
-                canvas?.FocusWorld();
-            }
-            else if (value == PlanningCanvasMode.Assembly)
-            {
-                canvas?.FocusAssembly();
+                SaveCanvasView(mode);
             }
 
-            canvas?.schedule.Execute(FocusCurrentMode).StartingIn(0);
+            mode = value;
+            EditorPrefs.SetInt(ViewPreferenceKey + "Mode", (int)value);
+            canvas?.SetMode(value);
+            canvas?.schedule.Execute(() =>
+            {
+                if (!RestoreCanvasView(value))
+                {
+                    FocusCurrentMode();
+                }
+            }).StartingIn(0);
 
             RefreshModeVisibility();
             RefreshAll();
+        }
+
+        private void SaveCanvasView(PlanningCanvasMode viewMode)
+        {
+            if (canvas == null || !viewReady)
+            {
+                return;
+            }
+
+            string key = ViewPreferenceKey + viewMode + ".";
+            EditorPrefs.SetFloat(key + "X", canvas.Pan.x);
+            EditorPrefs.SetFloat(key + "Y", canvas.Pan.y);
+            EditorPrefs.SetFloat(key + "Zoom", canvas.Zoom);
+            EditorPrefs.SetString(
+                ViewPreferenceKey + "Room",
+                canvas.SelectedRoomId ?? string.Empty);
+        }
+
+        private bool RestoreCanvasView(PlanningCanvasMode viewMode)
+        {
+            string key = ViewPreferenceKey + viewMode + ".";
+            if (canvas == null || !EditorPrefs.HasKey(key + "Zoom"))
+            {
+                return false;
+            }
+
+            canvas.RestoreView(
+                new Vector2(
+                    EditorPrefs.GetFloat(key + "X"),
+                    EditorPrefs.GetFloat(key + "Y")),
+                EditorPrefs.GetFloat(key + "Zoom"));
+            return true;
         }
 
         private void FocusCurrentMode()
@@ -1827,8 +2162,9 @@ namespace PlanningEditorPrototype
             if (PlanningSceneBuilder.HasAnyGeneratedRoot() &&
                 !EditorUtility.DisplayDialog(
                     "重新生成整套场景",
-                    "当前场景里已经有规划生成结果。" +
-                    "重新生成会替换它，是否继续？",
+                    "全量重建会删除规划根节点中的现有物体，" +
+                    "包括手工调整过的实例，然后重新生成。" +
+                    "操作支持 Unity 撤销；建议先保存场景。是否继续？",
                     "重新生成",
                     "取消"))
             {
@@ -1847,6 +2183,109 @@ namespace PlanningEditorPrototype
                 "生成失败",
                 message,
                 "确定");
+        }
+
+        private void ApplyMapToScene()
+        {
+            if(syncingScene || EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (document == null || document.rooms.Count == 0)
+            {
+                statusLabel.text = "世界图里还没有房间。";
+                return;
+            }
+
+            syncingScene=true;
+            PlanningSceneBuilder.SuppressSceneUndo=true;
+            try
+            {
+                if (PlanningSceneBuilder.TryApplyDocument(document, out string message))
+                {
+                    statusLabel.text = message;
+                    sceneHasBeenApplied=true;
+                    syncSceneHandle=SceneManager.GetActiveScene().handle;
+                    CaptureSceneBindings();
+                    RememberBindings();
+                    return;
+                }
+
+                statusLabel.text=message;
+                if(!autoSync) EditorUtility.DisplayDialog("应用失败", message, "确定");
+            }
+            catch(System.Exception exception)
+            {
+                autoSync=false;
+                RememberAutoSync();
+                autoSyncToggle?.SetValueWithoutNotify(false);
+                syncPending=false;
+                statusLabel.text="同步中断，自动同步已关闭。请检查 Console 和临时生成根节点。";
+                Debug.LogException(exception);
+            }
+            finally { syncingScene=false; PlanningSceneBuilder.SuppressSceneUndo=false; }
+        }
+
+        private void CaptureSceneBindings()
+        {
+            sceneBindings.Clear();
+            foreach(var root in SceneManager.GetActiveScene().GetRootGameObjects())
+            {
+                if(root.name != "__PlanningMapGenerated") continue;
+                foreach(var block in root.GetComponentsInChildren<LevelEditorPlacedBlock>(true))
+                    if(!string.IsNullOrEmpty(block.PlanningBoxId))
+                        sceneBindings.Add(new SceneBinding { block=block,id=block.PlanningBoxId,cell=block.PlanningLocalCell });
+            }
+        }
+
+        private void DetectSceneDeletions()
+        {
+            var ids=new List<string>(); var cells=new List<Vector2Int>();
+            foreach(var binding in sceneBindings)
+                if(binding.block == null) { ids.Add(binding.id); cells.Add(binding.cell); }
+            if(ids.Count==0) return;
+            sceneBindings.RemoveAll(b=>b.block==null);
+            canvas.RemoveMissingSceneItems(ids,cells);
+        }
+
+        private void EditPlacementDefaults()
+        {
+            var palette=LevelEditorState.Palette;
+            if(palette == null) return;
+            LevelEditorPropEntry prop=null; LevelEditorBlockEntry block=null;
+            if(LevelEditorState.SelectedPropIndex >= 0 && LevelEditorState.SelectedPropIndex < palette.PropEntries.Count)
+                prop=palette.PropEntries[LevelEditorState.SelectedPropIndex];
+            else if(LevelEditorState.SelectedEntryIndex >= 0 && LevelEditorState.SelectedEntryIndex < palette.Entries.Count)
+                block=palette.Entries[LevelEditorState.SelectedEntryIndex];
+            var source=prop != null ? prop.Prefab : block?.SourcePrefab;
+            if(source==null) { statusLabel.text="此栏目没有可配置的预制体组件。"; return; }
+            string entryId=prop != null ? prop.EntryId : block.EntryId;
+            bool isProp=prop != null;
+            LevelEditorPropComponentEditorWindow.Open(source,prop != null ? prop.ComponentValueOverrides : block.ComponentValueOverrides, values=>
+            {
+                // Resolve again: undo may have recreated the palette's serialized entries.
+                var target=LevelEditorState.Palette;
+                if(target != palette) return;
+                canvas.FreezeExistingDefaults();
+                bool changed=false;
+                if(isProp) foreach(var entry in target.PropEntries)
+                    if(entry.EntryId==entryId) { entry.ReplaceComponentValueOverrides(values); changed=true; break; }
+                if(!isProp) foreach(var entry in target.Entries)
+                    if(entry.EntryId==entryId) { entry.ReplaceComponentValueOverrides(values); changed=true; break; }
+                if(!changed) return;
+                EditorUtility.SetDirty(target); LevelEditorState.MarkPaletteChanged();
+                AssetDatabase.SaveAssetIfDirty(target);
+                OnCanvasDocumentChanged();
+            }, "新放置默认参数 · " + (prop != null ? prop.DisplayName : block.DisplayName));
+        }
+
+        private string CaptureHistory()
+        {
+            var player=LevelEditorState.Player;
+            return JsonUtility.ToJson(new HistoryState
+            {
+                document=document == null ? string.Empty : JsonUtility.ToJson(document),
+                palette=LevelEditorState.Palette == null ? string.Empty : EditorJsonUtility.ToJson(LevelEditorState.Palette),
+                playerId=player == null ? 0 : player.GetInstanceID(),
+                playerPosition=player == null ? Vector3.zero : player.transform.position
+            });
         }
 
         private void RepairAndSyncCurrentMap()
@@ -1894,11 +2333,14 @@ namespace PlanningEditorPrototype
 
         private void ResetPlanningHistory()
         {
+            autoSync=false;
+            autoSyncToggle?.SetValueWithoutNotify(false);
+            syncPending=false;
+            sceneHasBeenApplied=false;
+            sceneBindings.Clear();
             planningUndo.Clear();
             planningRedo.Clear();
-            planningSnapshot = document != null
-                ? JsonUtility.ToJson(document, false)
-                : string.Empty;
+            planningSnapshot = CaptureHistory();
         }
 
         private void RecordPlanningChange()
@@ -1907,18 +2349,22 @@ namespace PlanningEditorPrototype
             {
                 return;
             }
+            string next=CaptureHistory();
+            if(next == planningSnapshot) return;
 
             if (!string.IsNullOrEmpty(planningSnapshot))
             {
                 planningUndo.Push(planningSnapshot);
             }
 
-            planningSnapshot = JsonUtility.ToJson(document, false);
+            planningSnapshot = next;
             planningRedo.Clear();
         }
 
         private void UndoPlanning()
         {
+            if(autoSync && !syncingScene && !EditorApplication.isPlayingOrWillChangePlaymode && syncSceneHandle==SceneManager.GetActiveScene().handle)
+                DetectSceneDeletions();
             if (planningUndo.Count == 0)
             {
                 statusLabel.text = "没有可撤回的规划操作。";
@@ -1951,14 +2397,29 @@ namespace PlanningEditorPrototype
             }
 
             restoringPlanningDocument = true;
-            document = JsonUtility.FromJson<PlanningDocument>(snapshot);
+            syncPending=false;
+            var history=JsonUtility.FromJson<HistoryState>(snapshot);
+            SaveCanvasView(mode);
+            string roomId=canvas.SelectedRoomId;
+            document = JsonUtility.FromJson<PlanningDocument>(history.document);
             document ??= PlanningDocument.CreateDefault();
             document.Normalize();
             canvas.SetDocument(document);
+            if(document.FindRoom(roomId) != null) canvas.SelectRoom(roomId);
+            RestoreCanvasView(mode);
+            if(LevelEditorState.Palette != null && !string.IsNullOrEmpty(history.palette))
+            {
+                EditorJsonUtility.FromJsonOverwrite(history.palette,LevelEditorState.Palette);
+                EditorUtility.SetDirty(LevelEditorState.Palette); LevelEditorState.MarkPaletteChanged();
+                AssetDatabase.SaveAssetIfDirty(LevelEditorState.Palette);
+            }
+            var player=LevelEditorState.Player;
+            if(player != null && player.GetInstanceID()==history.playerId) player.transform.position=history.playerPosition;
             planningSnapshot = snapshot;
             SaveDocument();
             restoringPlanningDocument = false;
             RefreshAll();
+            if(sceneHasBeenApplied && syncSceneHandle==SceneManager.GetActiveScene().handle) ApplyMapToScene();
         }
 
         private void OnCanvasDocumentChanged()
@@ -1967,6 +2428,7 @@ namespace PlanningEditorPrototype
             RecordPlanningChange();
             SaveDocument();
             RefreshAll();
+            if(autoSync && !syncingScene) syncPending=true;
         }
 
         private void OnCanvasSelectionChanged()
@@ -2281,7 +2743,7 @@ namespace PlanningEditorPrototype
             }
 
             document.RefreshConnectorPaths();
-            planningSnapshot = JsonUtility.ToJson(document, false);
+            planningSnapshot = CaptureHistory();
             planningRedo.Clear();
             SaveDocument();
             RefreshAll();
@@ -2549,19 +3011,15 @@ namespace PlanningEditorPrototype
                 SetMode(PlanningCanvasMode.Detail);
             }));
 
-            Foldout generationFoldout = new Foldout
-            {
-                text = "生成到场景",
-                value = false
-            };
-            Button generateButton = TopButton(
-                room.isConnector
-                    ? "生成当前通道到场景"
-                    : "生成当前房间到场景",
-                () => GenerateRoomToScene(room));
-            generateButton.SetEnabled(room.boxes.Count > 0);
-            generationFoldout.Add(generateButton);
-            inspector.Add(generationFoldout);
+            Button applyRoom = TopButton(
+                "应用规划到场景",
+                ApplyMapToScene);
+            applyRoom.tooltip = "只更新发生增删的规划物体，保留未变化的场景实例。";
+            applyRoom.style.height = 30f;
+            applyRoom.style.backgroundColor = new Color(.16f, .43f, .82f);
+            applyRoom.style.unityFontStyleAndWeight = FontStyle.Bold;
+            applyRoom.clicked += applyRoom.Blur;
+            inspector.Add(applyRoom);
 
             Foldout roomActionsFoldout = new Foldout
             {

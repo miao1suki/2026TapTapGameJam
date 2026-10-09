@@ -54,7 +54,8 @@ namespace Project.LevelEditor.Editor
 
         internal static void ApplyToPlacedBlock(
             GameObject target,
-            LevelEditorBlockEntry entry)
+            LevelEditorBlockEntry entry,
+            bool recordUndo = true)
         {
             if (target == null || entry == null ||
                 entry.UsesPrefabDirectly ||
@@ -63,7 +64,7 @@ namespace Project.LevelEditor.Editor
                 return;
             }
 
-            ApplyDecoration(target, entry);
+            ApplyDecoration(target, entry, recordUndo);
         }
 
         internal static Texture2D RenderEntryPreview(
@@ -234,6 +235,43 @@ namespace Project.LevelEditor.Editor
             FrontPreviewCache.Clear();
         }
 
+        [System.Serializable]
+        private sealed class PreviewOverrides
+        {
+            public List<LevelEditorComponentValueOverride> values;
+        }
+
+        internal static Texture2D GetMergedFrontPreview(
+            LevelEditorBlockEntry entry,
+            GameObject propPrefab,
+            Vector2Int sizeCells,
+            IReadOnlyList<LevelEditorComponentValueOverride> overrides)
+        {
+            sizeCells = new Vector2Int(Mathf.Max(1, sizeCells.x), Mathf.Max(1, sizeCells.y));
+            string sourceKey = entry != null
+                ? BuildFrontPreviewKey(entry, 64)
+                : "prop:" + (propPrefab != null ? propPrefab.GetInstanceID() : 0);
+            string key = "merged:" + sourceKey + ":" + sizeCells.x + ":" + sizeCells.y + ":" +
+                Hash128.Compute(JsonUtility.ToJson(new PreviewOverrides
+                {
+                    values = overrides == null ? new List<LevelEditorComponentValueOverride>() :
+                        new List<LevelEditorComponentValueOverride>(overrides)
+                }));
+            if (FrontPreviewCache.TryGetValue(key, out Texture2D cached) && cached != null)
+                return cached;
+
+            if (entry == null)
+            {
+                if (propPrefab == null) return null;
+                entry = new LevelEditorBlockEntry();
+                entry.Configure(propPrefab.name, Color.white, propPrefab, LevelEditorBlockMode.Prefab);
+            }
+
+            Texture2D preview = RenderSimpleFrontPreview(entry, 64, sizeCells, overrides);
+            if (preview != null) FrontPreviewCache[key] = preview;
+            return preview;
+        }
+
         private static string BuildFrontPreviewKey(
             LevelEditorBlockEntry entry,
             int size)
@@ -288,14 +326,21 @@ namespace Project.LevelEditor.Editor
 
         private static Texture2D RenderSimpleFrontPreview(
             LevelEditorBlockEntry entry,
-            int size)
+            int size,
+            Vector2Int? mergedSize = null,
+            IReadOnlyList<LevelEditorComponentValueOverride> overrides = null)
         {
+            Vector2Int cells = mergedSize ?? Vector2Int.one;
+            float resolutionScale = Mathf.Min(1f, 2048f / (size * (float)Mathf.Max(cells.x, cells.y)));
+            int pixelWidth = Mathf.Max(1, Mathf.RoundToInt(size * cells.x * resolutionScale));
+            int pixelHeight = Mathf.Max(1, Mathf.RoundToInt(size * cells.y * resolutionScale));
             GameObject root = new GameObject(
                 "__LevelEditorFrontPreview");
             root.hideFlags = HideFlags.HideAndDontSave;
             root.transform.position = new Vector3(100000f, 0f, 0f);
             RenderTexture target = null;
             Material temporaryMaterial = null;
+            RenderTexture previousTarget = RenderTexture.active;
             try
             {
                 GameObject blockObject = entry.SourcePrefab != null
@@ -312,7 +357,7 @@ namespace Project.LevelEditor.Editor
                 if (entry.SourcePrefab == null)
                 {
                     blockObject.transform.localScale =
-                        Vector3.one * .94f;
+                        Vector3.one * (mergedSize.HasValue ? 1f : .94f);
                     Shader shader = Shader.Find(
                         "Universal Render Pipeline/Unlit");
                     if (shader == null)
@@ -351,6 +396,14 @@ namespace Project.LevelEditor.Editor
                     ApplyRendererColor(blockObject, entry.Color);
                 }
 
+                if (mergedSize.HasValue)
+                {
+                    blockObject.transform.localScale = Vector3.Scale(
+                        blockObject.transform.localScale, new Vector3(cells.x, cells.y, 1f));
+                    ApplyToPlacedBlock(blockObject, entry, false);
+                    LevelEditorComponentOverrideUtility.ApplyOverrides(blockObject, overrides, false);
+                }
+
                 GameObject cameraObject = new GameObject(
                     "__FrontPreviewCamera");
                 cameraObject.transform.SetParent(root.transform, false);
@@ -358,14 +411,15 @@ namespace Project.LevelEditor.Editor
                     new Vector3(0f, 0f, -4f);
                 Camera camera = cameraObject.AddComponent<Camera>();
                 camera.orthographic = true;
-                camera.orthographicSize = .52f;
+                camera.orthographicSize = mergedSize.HasValue ? cells.y * .5f : .52f;
+                camera.aspect = (float)cells.x / cells.y;
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.backgroundColor = Color.clear;
                 camera.cullingMask = ~0;
 
                 target = RenderTexture.GetTemporary(
-                    size,
-                    size,
+                    pixelWidth,
+                    pixelHeight,
                     24,
                     RenderTextureFormat.ARGB32,
                     RenderTextureReadWrite.sRGB);
@@ -374,16 +428,18 @@ namespace Project.LevelEditor.Editor
                 camera.Render();
                 RenderTexture.active = target;
                 Texture2D texture = new Texture2D(
-                    size,
-                    size,
+                    pixelWidth,
+                    pixelHeight,
                     TextureFormat.RGBA32,
                     false,
                     false)
                 {
-                    hideFlags = HideFlags.HideAndDontSave
+                    hideFlags = HideFlags.HideAndDontSave,
+                    filterMode = mergedSize.HasValue ? FilterMode.Point : FilterMode.Bilinear,
+                    wrapMode = TextureWrapMode.Clamp
                 };
                 texture.ReadPixels(
-                    new Rect(0f, 0f, size, size),
+                    new Rect(0f, 0f, pixelWidth, pixelHeight),
                     0,
                     0);
                 texture.Apply(false, false);
@@ -393,6 +449,7 @@ namespace Project.LevelEditor.Editor
             }
             finally
             {
+                RenderTexture.active = previousTarget;
                 if (target != null)
                 {
                     RenderTexture.ReleaseTemporary(target);
@@ -552,25 +609,33 @@ namespace Project.LevelEditor.Editor
 
         private static void ApplyDecoration(
             GameObject target,
-            LevelEditorBlockEntry entry)
+            LevelEditorBlockEntry entry,
+            bool recordUndo = true)
         {
             BoxCollider box = target.GetComponent<BoxCollider>();
             if (box == null)
             {
-                box = Undo.AddComponent<BoxCollider>(target);
+                box = recordUndo
+                    ? Undo.AddComponent<BoxCollider>(target)
+                    : target.AddComponent<BoxCollider>();
             }
 
             SurfaceTileBlock block =
                 target.GetComponent<SurfaceTileBlock>();
             if (block == null)
             {
-                block = Undo.AddComponent<SurfaceTileBlock>(target);
+                block = recordUndo
+                    ? Undo.AddComponent<SurfaceTileBlock>(target)
+                    : target.AddComponent<SurfaceTileBlock>();
             }
 
-            Undo.RecordObject(block, "应用栏目方块贴画");
+            if (recordUndo)
+            {
+                Undo.RecordObject(block, "应用栏目方块贴画");
+            }
             block.EnsureBlockId();
             entry.ApplyDecoration(block);
-            SurfaceTileEditorBridge.RefreshPreview(block);
+            SurfaceTileEditorBridge.RefreshPreview(block, recordUndo);
             EditorUtility.SetDirty(block);
             if (target.scene.IsValid())
             {

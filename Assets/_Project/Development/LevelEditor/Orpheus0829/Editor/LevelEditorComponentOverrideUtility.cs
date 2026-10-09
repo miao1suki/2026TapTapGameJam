@@ -138,7 +138,8 @@ namespace Project.LevelEditor.Editor
 
         public static void ApplyOverrides(
             GameObject root,
-            IReadOnlyList<LevelEditorComponentValueOverride> values)
+            IReadOnlyList<LevelEditorComponentValueOverride> values,
+            bool recordUndo = true)
         {
             if (root == null || values == null)
             {
@@ -164,7 +165,14 @@ namespace Project.LevelEditor.Editor
                     continue;
                 }
 
-                serializedObject.ApplyModifiedProperties();
+                if (recordUndo)
+                {
+                    serializedObject.ApplyModifiedProperties();
+                }
+                else
+                {
+                    serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                }
             }
         }
 

@@ -103,7 +103,7 @@ namespace Project.BlockFeatures
         {
             base.OnAttach();
             ResolveWaterVisual();
-            SetWaterReveal(1f);
+            RefreshWaterPresentation();
         }
 
         protected override void OnDetach()
@@ -116,7 +116,16 @@ namespace Project.BlockFeatures
 
         protected override void OnTick(float deltaTime)
         {
+            RefreshWaterPresentation();
             UpdateSteamReaction(deltaTime);
+        }
+
+        private void RefreshWaterPresentation()
+        {
+            if (waterVisual == null) return;
+            // Keep the neutral model visible until the manager reaches the white handoff.
+            bool visible = HSVColorFadeManager.Instance.ShowsUnlockedAppearance("blue");
+            SetWaterReveal(visible ? 1f : 0f);
         }
 
         protected override bool OnColorApplied(
@@ -157,6 +166,7 @@ namespace Project.BlockFeatures
                     true);
             if (waterVisual != null)
             {
+                ConfigureWaterLayer();
                 return;
             }
 
@@ -198,6 +208,14 @@ namespace Project.BlockFeatures
                 waterScale;
             waterVisual =
                 interactiveWater;
+            ConfigureWaterLayer();
+        }
+
+        private void ConfigureWaterLayer()
+        {
+            ColorTypeDefinition definition = ColorRuntimeService.Instance.Catalog?.Find("blue");
+            if (waterVisual != null && definition != null && definition.unityLayer >= 0 && definition.unityLayer < 32)
+                waterVisual.SetPresentationLayer(definition.unityLayer);
         }
 
         private void DestroySpawnedWaterVisual()

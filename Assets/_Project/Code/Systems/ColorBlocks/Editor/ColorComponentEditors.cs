@@ -141,7 +141,7 @@ namespace Project.ColorBlocks.Editor
             root.Add(ProjectInspectorUtility.CreateScriptField(
                 serializedObject));
             root.Add(ProjectInspectorUtility.CreateHelp(
-                "只负责屏幕 HSV 饱和度，不修改方块属性或材质。"));
+                "管理基础外观变白、纯白交接与正式外观恢复，不修改物体功能状态。"));
 
             Foldout timing = ProjectInspectorUtility.CreateFoldout(
                 "默认渐变",
@@ -152,6 +152,43 @@ namespace Project.ColorBlocks.Editor
                 "默认时间",
                 "未单独指定时长时的颜色渐变时间。"));
             root.Add(timing);
+            timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,
+                "durationMultiplier", "指定时长倍率", "钥匙等入口指定的渐变时长乘以此倍率；立即切换不受影响。"));
+
+            Foldout pipeline = ProjectInspectorUtility.CreateFoldout("渲染状态", true);
+            var pipelineLabel = new Label();
+            var passLabel = new Label();
+            var valuesLabel = new Label();
+            pipeline.Add(pipelineLabel);
+            pipeline.Add(passLabel);
+            pipeline.Add(valuesLabel);
+            root.Add(pipeline);
+            var outline = new Toggle("像素描边");
+            outline.RegisterValueChangedCallback(evt => Project.Pixelization.PixelizationControl.SetOutlineEnabled(evt.newValue));
+            pipeline.Add(outline);
+            void RefreshStatus()
+            {
+                var asset = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
+                outline.SetEnabled(UnityEngine.Application.isPlaying);
+                outline.SetValueWithoutNotify(Project.Pixelization.PixelizationControl.OutlineEnabled);
+                pipelineLabel.text = "当前管线：" + (asset != null ? asset.name : "内置管线");
+                if (!UnityEngine.Application.isPlaying)
+                {
+                    passLabel.text = "全屏通道：待运行";
+                    valuesLabel.text = "";
+                    return;
+                }
+                int frame = SelectiveHsvRendererFeature.LastExecutedFrame;
+                passLabel.text = "全屏通道：" + (frame >= UnityEngine.Time.frameCount - 2 && frame >= 0
+                    ? "运行中" : (UnityEditor.EditorApplication.isPaused ? "暂停" : "未执行"));
+                var manager = target as HSVColorFadeManager;
+                if (manager == null) return;
+                valuesLabel.text = $"红  S {manager.GetSaturation("red"):F2} · 白 {manager.GetWhiteAmount("red"):F2}\n" +
+                    $"绿  S {manager.GetSaturation("green"):F2} · 白 {manager.GetWhiteAmount("green"):F2}\n" +
+                    $"蓝  S {manager.GetSaturation("blue"):F2} · 白 {manager.GetWhiteAmount("blue"):F2}";
+            }
+            RefreshStatus();
+            root.schedule.Execute(RefreshStatus).Every(200);
 
             ProjectInspectorUtility.Bind(root, serializedObject);
             return root;

@@ -29,6 +29,15 @@ namespace Project.LevelEditor
             new List<SurfaceTilePlacement>();
 
         public string EntryId => entryId;
+        [SerializeField] private List<LevelEditorComponentValueOverride> componentValueOverrides = new List<LevelEditorComponentValueOverride>();
+        public IReadOnlyList<LevelEditorComponentValueOverride> ComponentValueOverrides => componentValueOverrides;
+        public void ReplaceComponentValueOverrides(IReadOnlyList<LevelEditorComponentValueOverride> values)
+        {
+            componentValueOverrides.Clear();
+            if (values != null)
+                foreach (var value in values)
+                    if (value != null) componentValueOverrides.Add(value.Clone());
+        }
         public LevelEditorBlockMode Mode => mode;
         public string DisplayName => displayName;
         public Color Color => color;

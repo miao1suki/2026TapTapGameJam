@@ -23,14 +23,16 @@ namespace Project.SurfaceTiles.Editor
         private const float WorldSurfaceBias = 0.003f;
         private const float WorldSeamSafety = 0.001f;
 
-        internal static void RefreshPreview(SurfaceTileBlock block)
+        internal static void RefreshPreview(
+            SurfaceTileBlock block,
+            bool recordUndo = true)
         {
             if (block == null)
             {
                 return;
             }
 
-            EnsureOutput(block);
+            EnsureOutput(block, recordUndo);
             Mesh previous = block.OutputFilter.sharedMesh;
             if (previous != null && !AssetDatabase.Contains(previous) &&
                 previous.name.EndsWith("_Preview"))
@@ -141,7 +143,9 @@ namespace Project.SurfaceTiles.Editor
             return mesh;
         }
 
-        internal static void EnsureOutput(SurfaceTileBlock block)
+        internal static void EnsureOutput(
+            SurfaceTileBlock block,
+            bool recordUndo = true)
         {
             if (block.OutputFilter != null && block.OutputRenderer != null)
             {
@@ -157,23 +161,35 @@ namespace Project.SurfaceTiles.Editor
             else
             {
                 output = new GameObject("__SurfaceTiles");
-                Undo.RegisterCreatedObjectUndo(output, "创建方块贴画输出");
+                if (recordUndo)
+                {
+                    Undo.RegisterCreatedObjectUndo(
+                        output,
+                        "创建方块贴画输出");
+                }
                 output.transform.SetParent(block.transform, false);
             }
 
             MeshFilter filter = output.GetComponent<MeshFilter>();
             if (filter == null)
             {
-                filter = Undo.AddComponent<MeshFilter>(output);
+                filter = recordUndo
+                    ? Undo.AddComponent<MeshFilter>(output)
+                    : output.AddComponent<MeshFilter>();
             }
 
             MeshRenderer renderer = output.GetComponent<MeshRenderer>();
             if (renderer == null)
             {
-                renderer = Undo.AddComponent<MeshRenderer>(output);
+                renderer = recordUndo
+                    ? Undo.AddComponent<MeshRenderer>(output)
+                    : output.AddComponent<MeshRenderer>();
             }
 
-            Undo.RecordObject(block, "绑定方块贴画输出");
+            if (recordUndo)
+            {
+                Undo.RecordObject(block, "绑定方块贴画输出");
+            }
             block.BindOutput(filter, renderer);
         }
 

@@ -16,6 +16,8 @@ namespace Project.LevelEditor.Editor
         Paint = 1,
         Erase = 2,
         Player = 3,
+        Merge = 4,
+        Parameters = 5,
     }
 
     internal static class LevelEditorState
@@ -788,6 +790,11 @@ namespace Project.LevelEditor.Editor
                 false,
                 true,
                 LevelEditorState.CellSize);
+            if (instance.GetComponent<Project.Mechanisms.DoorController>() != null)
+            {
+                instance.transform.localScale *= Mathf.Max(.05f, LevelEditorState.CellSize);
+                placed.SetSizeCells(new Vector2Int(1, 2));
+            }
             Undo.RegisterCreatedObjectUndo(instance, "放置关卡道具");
             MarkDirty(instance.scene);
             Selection.activeGameObject = instance;

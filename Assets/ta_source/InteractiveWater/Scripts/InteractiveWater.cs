@@ -89,6 +89,7 @@ namespace InteractiveWater
         private bool _useSharedSimulation;
         private bool _registeredSharedSimulation;
         private float _reveal = 1f;
+        private int _presentationLayer = -1;
         private static CustomRenderTexture sharedAmbient;
         private static CustomRenderTexture sharedRipple;
         private static Material sharedAmbientMaterial;
@@ -112,8 +113,21 @@ namespace InteractiveWater
         /// <summary>Reveal the actual water surfaces without changing the source material.</summary>
         public void SetReveal(float progress)
         {
-            _reveal = Mathf.Clamp01(progress);
+            progress = Mathf.Clamp01(progress);
+            if (Mathf.Approximately(_reveal, progress)) return;
+            _reveal = progress;
             ApplyReveal();
+        }
+
+        public void SetPresentationLayer(int layer)
+        {
+            if (layer < 0 || layer > 31) return;
+            _presentationLayer = layer;
+            gameObject.layer = layer;
+            if (_topMesh != null) _topMesh.gameObject.layer = layer;
+            if (_frontMesh != null) _frontMesh.gameObject.layer = layer;
+            if (_topMesh != null) _topMesh.GetComponent<Renderer>().renderingLayerMask |= 128u;
+            if (_frontMesh != null) _frontMesh.GetComponent<Renderer>().renderingLayerMask |= 128u;
         }
 
         private void ApplyReveal()
@@ -433,8 +447,10 @@ namespace InteractiveWater
                 bc2d.offset = new Vector2(_topSurfaceSize.x / 2, 0);
             }            
             
-            _topMesh.gameObject.layer = Mathf.RoundToInt(Mathf.Log(_testWaterLayer.value, 2));
+            _topMesh.gameObject.layer = _presentationLayer >= 0 ? _presentationLayer
+                : Mathf.Clamp(Mathf.RoundToInt(Mathf.Log(Mathf.Max(1, _testWaterLayer.value), 2)), 0, 31);
             _frontMesh.gameObject.layer = _topMesh.gameObject.layer;
+            if (_presentationLayer >= 0) SetPresentationLayer(_presentationLayer);
             topMR.sharedMaterial = Application.isPlaying ? _runtimeTopMeshMaterial : _topMeshMaterial;
             topMR.sortingOrder = 0;
             topSG.sortingLayerID = _topMeshSortingLayer;

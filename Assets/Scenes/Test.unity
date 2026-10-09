@@ -199147,6 +199147,7 @@ GameObject:
   - component: {fileID: 700000009}
   - component: {fileID: 700000010}
   - component: {fileID: 700000011}
+  - component: {fileID: 700000012}
   m_Layer: 0
   m_Name: TestPlayer
   m_TagString: Player
@@ -199341,6 +199342,9 @@ MonoBehaviour:
   climbDownSpeed: 4.5
   climbHorizontalSpeed: 2
   climbAcceleration: 12
+  climbKickHorizontalSpeed: 5
+  climbKickVerticalSpeed: 10
+  climbKickDetachSeconds: 0.3
   moveAcceleration: 20
   moveDeceleration: 30
   accelerationResponseCurve:
@@ -199399,6 +199403,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerInputDriver
   actionBindings: []
+--- !u!114 &700000012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 700000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcb114307b334965a2f2df619f114291, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Development.PickWheel.PickWheelPrototype
+  wheelArtwork: {fileID: 21300000, guid: 62e2485dab4fdd1499a2bb796e7c561b, type: 3}
+  pixelFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+  playerWheel: {fileID: 0}
 --- !u!1 &700258441
 GameObject:
   m_ObjectHideFlags: 0

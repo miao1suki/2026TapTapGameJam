@@ -6,6 +6,7 @@ namespace Project.BlockFeatures
         Category = BlockFeatureCategory.Plant,
         Interactions =
             BlockFeatureInteraction.AppliedColor |
+            BlockFeatureInteraction.ObjectContact |
             BlockFeatureInteraction.RoomReset,
         Writes = new[] { BlockChannel.Growth })]
     public sealed class LadderSonFeature : ClimbableVineFeature

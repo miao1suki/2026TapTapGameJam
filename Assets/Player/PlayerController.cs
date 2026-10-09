@@ -37,6 +37,9 @@ namespace Project.Player
         [SerializeField, Min(0)] private float climbDownSpeed = 4.5f;
         [SerializeField, Min(0)] private float climbHorizontalSpeed = 2f;
         [SerializeField, Min(0)] private float climbAcceleration = 12f;
+        [SerializeField, Min(0)] private float climbKickHorizontalSpeed = 5f;
+        [SerializeField, Min(0)] private float climbKickVerticalSpeed = 10f;
+        [SerializeField, Min(0)] private float climbKickDetachSeconds = .3f;
         [SerializeField, Min(0)] private float moveAcceleration = 20;
         [SerializeField, Min(0)] private float moveDeceleration = 30;
         [SerializeField]
@@ -113,6 +116,10 @@ namespace Project.Player
         private readonly Dictionary<int, float> climbFastSlideSpeeds =
             new Dictionary<int, float>();
         private readonly HashSet<int> climbSources = new HashSet<int>();
+        private readonly Dictionary<int, float> climbInwardDirections =
+            new Dictionary<int, float>();
+        private float climbReattachUntil;
+        private float climbKickHorizontalControlUntil;
         private readonly HashSet<int> bounceSurfaces =
             new HashSet<int>();
         private readonly RaycastHit[] groundHits = new RaycastHit[16];
@@ -124,7 +131,9 @@ namespace Project.Player
         public bool IsSwimming => waterSources.Count > 0;
         public bool IsClimbing =>
             climbSources.Count > 0 &&
-            (!IsGrounded || movement.y > .01f);
+            Time.time >= climbReattachUntil &&
+            (!IsGrounded || movement.y > .01f ||
+             movement.x * GetClimbInwardDirection() > .1f);
         public PlayerStateId CurrentStateId => dead ? PlayerStateId.Death :
             IsControlLocked ? PlayerStateId.Locked :
             runner != null && runner.IsPlaying ? PlayerStateId.Action :
@@ -322,6 +331,9 @@ namespace Project.Player
             climbSlideSpeeds.Clear();
             climbFastSlideSpeeds.Clear();
             climbSources.Clear();
+            climbInwardDirections.Clear();
+            climbReattachUntil = 0f;
+            climbKickHorizontalControlUntil = 0f;
         }
         public void EnterWater(Component source)
         {
@@ -609,11 +621,21 @@ namespace Project.Player
                 enteredClimbDuringFall = true;
             }
 
-            if (source != null) climbSources.Add(source.GetInstanceID());
+            if (source != null)
+            {
+                int id = source.GetInstanceID();
+                climbSources.Add(id);
+                float delta = source.transform.position.x - transform.position.x;
+                climbInwardDirections[id] = Mathf.Abs(delta) > .01f
+                    ? Mathf.Sign(delta) : 0f;
+            }
         }
         public void ExitClimb(Component source)
         {
-            if (source != null) climbSources.Remove(source.GetInstanceID());
+            if (source == null) return;
+            int id = source.GetInstanceID();
+            climbSources.Remove(id);
+            climbInwardDirections.Remove(id);
         }
         public void SetMoveInput(Vector2 value)
         {
@@ -962,6 +984,14 @@ namespace Project.Player
             return result;
         }
 
+        private float GetClimbInwardDirection()
+        {
+            foreach (float direction in climbInwardDirections.Values)
+                if (Mathf.Abs(direction) > .01f)
+                    return direction;
+            return 0f;
+        }
+
         private float GetClimbSlideSpeed()
         {
             return GetClimbSpeedValue(
@@ -1152,12 +1182,33 @@ namespace Project.Player
                 requestedJumpBoost = -1f;
             }
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
+            float climbInward = GetClimbInwardDirection();
+            bool climbKickRequested = !blocked && IsClimbing &&
+                                      jumpUntil >= Time.time &&
+                                      movement.x * climbInward > .1f;
             bool jumpRequested = !blocked &&
+                                 !climbKickRequested &&
                                  jumpUntil >= Time.time &&
                                  groundedUntil >= Time.time;
+            if (climbKickRequested)
+            {
+                climbReattachUntil = Time.time + climbKickDetachSeconds;
+                climbKickHorizontalControlUntil = Time.time +
+                    climbKickDetachSeconds * .5f;
+                velocity.x = -climbInward * climbKickHorizontalSpeed;
+                velocity.y = climbKickVerticalSpeed;
+                velocity.z = 0f;
+                jumpUntil = groundedUntil = -1f;
+                IsGrounded = false;
+                airborneSince = Time.time;
+                motor.linearVelocity = velocity;
+                Emit(AchievementSignalIds.PlayerJumped);
+                return;
+            }
             if (jumpRequested)
             {
-                climbSources.Clear();
+                if (climbSources.Count > 0)
+                    climbReattachUntil = Time.time + climbKickDetachSeconds;
             }
 
             if (IsClimbing)
@@ -1166,6 +1217,8 @@ namespace Project.Player
                     GetClimbSpeedMultiplier();
                 float horizontalTarget = blocked
                     ? 0f
+                    : movement.x * climbInward > .1f
+                        ? 0f
                     : Mathf.Clamp(movement.x, -1f, 1f) *
                       climbHorizontalSpeed *
                       climbMultiplier;
@@ -1184,6 +1237,10 @@ namespace Project.Player
                     verticalTarget =
                         -GetClimbFastSlideSpeed() *
                         climbMultiplier;
+                }
+                else if (movement.x * climbInward > .1f)
+                {
+                    verticalTarget = climbSpeed * climbMultiplier;
                 }
                 else if (jumpHeld)
                 {
@@ -1252,7 +1309,7 @@ namespace Project.Player
             {
                 velocity.x = 0;
             }
-            else
+            else if (Time.time >= climbKickHorizontalControlUntil)
             {
                 float targetSpeed = movement.x * moveSpeed *
                                     (sprint ? sprintMultiplier : 1);
@@ -1634,6 +1691,9 @@ namespace Project.Player
             climbSlideSpeeds.Clear();
             climbFastSlideSpeeds.Clear();
             climbSources.Clear();
+            climbInwardDirections.Clear();
+            climbReattachUntil = 0f;
+            climbKickHorizontalControlUntil = 0f;
             bounceSurfaces.Clear();
             enteredWaterDuringFall = false;
             enteredClimbDuringFall = false;

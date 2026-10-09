@@ -412,6 +412,13 @@ namespace Project.BlockFeatures
         public int DiscoveryOrder => Metadata.Order;
         public bool IsRoomScoped => true;
         public Material FeatureMaterial => featureMaterial;
+        public Material GetMaterialForRenderer(Renderer renderer)
+        {
+            if (!useFeatureMaterial || featureMaterial == null || featureRenderers == null) return null;
+            for (int index = 0; index < featureRenderers.Length; index++)
+                if (featureRenderers[index] == renderer) return featureMaterial;
+            return null;
+        }
         protected float GridCellWorldSize => gridCellWorldSize;
         protected bool CanRunFeature
         {

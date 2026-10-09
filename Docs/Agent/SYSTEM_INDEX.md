@@ -1,7 +1,11 @@
 # 系统索引
 
+最近整合说明：[2026-10-09 关卡编辑、门与颜色表现](../Developer/UPDATE_2026-10-09_EDITOR_AND_MECHANISMS.md)。
+
 | 系统 | 源码 | 状态 |
 |---|---|---|
+| 非颜色门与绑定按钮 | `Assets/_Project/Code/Systems/Mechanisms` | 道具门 1×2、自动/追加专属按钮、全部按下后开门、Timeline 镜头；不接收颜色交互。见 Integration/DOOR_API.md 与 Developer/DOORS.md |
+| 学习项目选择性像素化 | `Assets/_Project/Code/Systems/Pixelization` | Rendering Layer 128 / PixelEffect 选择性像素化；描边 API 默认关闭；像素化先于 HSV。见 Integration/PIXELIZATION_API.md |
 | 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 旧功能可用子集，清洁新场景 |
 | 音频资源 | `Assets/_Project/Content/Audio` | 14 首 BGM、16 个 SFX 与同名 `.meta` 已导入；尚未绑定玩法／UI 事件，见 `Integration/AUDIO_HANDOVER.md` |
 | 相机 Manager/跟随/2D3D | `Assets/_Project/Code/Systems/CameraModes` | 旧功能保留；玩家驱动不再申请 2D/3D 切换，Timeline 优先级更高 |

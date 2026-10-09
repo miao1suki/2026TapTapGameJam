@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Project.Editor;
+using Project.BlockFeatures;
 using Project.LevelEditor;
 using Project.Subtitles;
 using Project.Subtitles.Editor;
@@ -19,6 +20,8 @@ namespace Project.LevelEditor.Editor
         private GameObject preview;
         private VisualElement componentList;
         private Label statusLabel;
+        private Action contextAction;
+        private string contextActionLabel;
         private Action<List<LevelEditorComponentValueOverride>>
             onSaved;
         private readonly List<LevelEditorComponentValueOverride>
@@ -30,7 +33,10 @@ namespace Project.LevelEditor.Editor
         internal static void Open(
             GameObject sourcePrefab,
             IReadOnlyList<LevelEditorComponentValueOverride> values,
-            Action<List<LevelEditorComponentValueOverride>> saveCallback)
+            Action<List<LevelEditorComponentValueOverride>> saveCallback,
+            string contextTitle = "物体参数",
+            Action extraAction = null,
+            string extraActionLabel = null)
         {
             if (sourcePrefab == null)
             {
@@ -41,6 +47,8 @@ namespace Project.LevelEditor.Editor
                 GetWindow<LevelEditorPropComponentEditorWindow>();
             window.prefab = sourcePrefab;
             window.onSaved = saveCallback;
+            window.contextAction = extraAction;
+            window.contextActionLabel = extraActionLabel;
             window.draftOverrides.Clear();
             if (values != null)
             {
@@ -54,7 +62,7 @@ namespace Project.LevelEditor.Editor
                 }
             }
 
-            window.titleContent = new GUIContent("道具组件数值");
+            window.titleContent = new GUIContent(contextTitle);
             window.minSize = new Vector2(430f, 560f);
             window.Show();
             window.Focus();
@@ -64,6 +72,7 @@ namespace Project.LevelEditor.Editor
         public void CreateGUI()
         {
             VisualElement root = rootVisualElement;
+            LevelEditorTypography.Apply(root);
             root.style.paddingLeft = 10f;
             root.style.paddingRight = 10f;
             root.style.paddingTop = 8f;
@@ -144,6 +153,8 @@ namespace Project.LevelEditor.Editor
             }
 
             componentList.Clear();
+            if (contextAction != null)
+                componentList.Add(new Button(() => contextAction?.Invoke()) { text = contextActionLabel ?? "添加关联物体" });
             if (prefab == null)
             {
                 componentList.Add(
@@ -175,7 +186,8 @@ namespace Project.LevelEditor.Editor
             Selection.activeGameObject = preview;
             LevelEditorComponentOverrideUtility.ApplyOverrides(
                 preview,
-                draftOverrides);
+                draftOverrides,
+                false);
 
             List<Component> components = new List<Component>(
                 preview.GetComponentsInChildren<Component>(true));
@@ -247,8 +259,11 @@ namespace Project.LevelEditor.Editor
             SerializedProperty iterator =
                 serializedObject.GetIterator();
             bool hasVisibleField = false;
-            while (iterator.NextVisible(true))
+            bool enterChildren = true;
+            var groups = new Dictionary<string, Foldout>();
+            while (iterator.NextVisible(enterChildren))
             {
+                enterChildren = false;
                 if (!CanEditProperty(iterator))
                 {
                     continue;
@@ -264,6 +279,18 @@ namespace Project.LevelEditor.Editor
                     PropComponentPresentation.GetPropertyTooltip(
                         component,
                         property);
+                VisualElement fieldParent = section;
+                BlockParameterAttribute parameter = PropComponentPresentation.GetParameter(component, property);
+                if (parameter != null && !string.IsNullOrWhiteSpace(parameter.Group))
+                {
+                    if (!groups.TryGetValue(parameter.Group, out Foldout group))
+                    {
+                        group = ProjectInspectorUtility.CreateFoldout(parameter.Group, true);
+                        groups.Add(parameter.Group, group);
+                        section.Add(group);
+                    }
+                    fieldParent = group;
+                }
                 if (property.propertyType ==
                         SerializedPropertyType.String &&
                     property.name.EndsWith(
@@ -283,11 +310,11 @@ namespace Project.LevelEditor.Editor
                         statusLabel.text =
                             "组件数值已修改，尚未保存。";
                     });
-                    section.Add(tagField);
+                    fieldParent.Add(tagField);
                     continue;
                 }
 
-                var field = new PropertyField(property.Copy());
+                var field = new PropertyField(property.Copy(), label);
                 field.BindProperty(property);
                 field.label = label;
                 if (!string.IsNullOrWhiteSpace(tooltip))
@@ -303,7 +330,17 @@ namespace Project.LevelEditor.Editor
                         statusLabel.text =
                             "组件数值已修改，尚未保存。";
                     });
-                section.Add(field);
+                fieldParent.Add(field);
+                if (!string.IsNullOrWhiteSpace(tooltip))
+                {
+                    var description = new Label(tooltip);
+                    description.style.whiteSpace = WhiteSpace.Normal;
+                    description.style.fontSize = 11f;
+                    description.style.opacity = .7f;
+                    description.style.marginLeft = 4f;
+                    description.style.marginBottom = 6f;
+                    fieldParent.Add(description);
+                }
             }
 
             if (!hasVisibleField)
@@ -629,6 +666,9 @@ namespace Project.LevelEditor.Editor
                     { "BoxCollider.m_IsTrigger", "作为触发器" },
                     { "SphereCollider.m_Radius", "碰撞体半径" },
                     { "SphereCollider.m_IsTrigger", "作为触发器" },
+                    { "ClimbableVineFeature.allowGrowthFromColor", "允许颜色触发生长" },
+                    { "ClimbableVineFeature.initialSegments", "预置藤蔓节段" },
+                    { "BlockAbilityHost.debugLog", "输出调试日志" },
                     { "SubtitleTrigger.cue.layer", "字幕层级" },
                     { "SubtitleTrigger.cue.text", "字幕文字" },
                     { "SubtitleTrigger.cue.useManagerDefaults", "使用管理器默认样式" },
@@ -668,6 +708,8 @@ namespace Project.LevelEditor.Editor
             private static readonly Dictionary<Type, string>
                 ComponentNames = new Dictionary<Type, string>
                 {
+                    { typeof(Project.Mechanisms.DoorController), "按钮解锁门" },
+                    { typeof(Project.Mechanisms.DoorButton), "门按钮" },
                     { typeof(Transform), "变换" },
                     { typeof(BoxCollider), "盒子碰撞体" },
                     { typeof(SphereCollider), "球体碰撞体" },
@@ -697,6 +739,8 @@ namespace Project.LevelEditor.Editor
                 }
 
                 Type type = component.GetType();
+                if (component is BlockFeature feature)
+                    return feature.Metadata.DisplayName;
                 if (ComponentNames.TryGetValue(type, out string name))
                 {
                     return name;
@@ -711,7 +755,16 @@ namespace Project.LevelEditor.Editor
                 if (type.FullName?.Contains(
                         "DisplayBlockFeature") == true)
                 {
-                    return "Display_Block";
+                    return "文字展示方块";
+                }
+
+                switch (type.Name)
+                {
+                    case "BlockRuntime": return "物体运行配置";
+                    case "BlockAbilityHost": return "固定颜色功能控制";
+                    case "ColorObject": return "颜色物体";
+                    case "ColorKeyPickup": return "颜色钥匙";
+                    case "LevelEditorPlacedBlock": return "网格来源";
                 }
 
                 return ObjectNames.NicifyVariableName(type.Name);
@@ -721,25 +774,42 @@ namespace Project.LevelEditor.Editor
                 Component component,
                 SerializedProperty property)
             {
+                BlockParameterAttribute parameter = GetParameter(component, property);
+                if (!string.IsNullOrWhiteSpace(parameter?.Label)) return parameter.Label;
+                var inspectorName = FindField(component.GetType(), property.name)?.GetCustomAttribute<InspectorNameAttribute>();
+                if (inspectorName != null) return inspectorName.displayName;
                 string key =
                     $"{component.GetType().Name}.{property.propertyPath}";
                 return Labels.TryGetValue(key, out string label)
                     ? label
-                    : ObjectNames.NicifyVariableName(property.name);
+                    : property.displayName;
             }
+
+            private static FieldInfo FindField(Type type, string name)
+            {
+                while (type != null)
+                {
+                    FieldInfo field = type.GetField(name, BindingFlags.Instance |
+                        BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                    if (field != null) return field;
+                    type = type.BaseType;
+                }
+                return null;
+            }
+
+            public static BlockParameterAttribute GetParameter(Component component, SerializedProperty property) =>
+                FindField(component.GetType(), property.name)?.GetCustomAttribute<BlockParameterAttribute>();
 
             public static string GetPropertyTooltip(
                 Component component,
                 SerializedProperty property)
             {
-                FieldInfo field = component.GetType().GetField(
-                    property.name,
-                    BindingFlags.Instance |
-                    BindingFlags.Public |
-                    BindingFlags.NonPublic);
+                BlockParameterAttribute parameter = GetParameter(component, property);
+                if (!string.IsNullOrWhiteSpace(parameter?.Tooltip)) return parameter.Tooltip;
+                FieldInfo field = FindField(component.GetType(), property.name);
                 TooltipAttribute tooltip =
                     field?.GetCustomAttribute<TooltipAttribute>();
-                return tooltip?.tooltip;
+                return tooltip?.tooltip ?? property.tooltip;
             }
         }
     }
