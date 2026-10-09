@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace Project.Development.PickWheel
 {
-    // Pick 场景的外观原型；输入和选色仍由现有玩家轮盘负责。
+    // 正式玩家轮盘外观；输入和选色仍由 PlayerColorWheel 负责。
     public sealed class PickWheelPrototype : MonoBehaviour, IPlayerColorWheelView
     {
         private const float Size = 420f;
@@ -39,10 +39,12 @@ namespace Project.Development.PickWheel
         private void Start()
         {
             if (playerWheel == null)
+                playerWheel = GetComponent<PlayerColorWheel>();
+            if (playerWheel == null)
                 playerWheel = ProjectDiscovery.FindFirst<PlayerColorWheel>();
             if (playerWheel == null)
             {
-                Debug.LogError("[PickWheel] Pick 场景缺少玩家颜色轮盘。", this);
+                Debug.LogError("[PickWheel] 玩家缺少颜色轮盘组件。", this);
                 return;
             }
             playerWheel.SelectedColorChanged += OnSelected;

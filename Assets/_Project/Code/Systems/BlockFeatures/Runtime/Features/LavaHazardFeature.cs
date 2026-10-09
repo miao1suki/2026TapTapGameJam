@@ -30,6 +30,22 @@ namespace Project.BlockFeatures
         protected override void OnPlayerEntered(
             PlayerController player)
         {
+            KillPlayer(player);
+        }
+
+        protected override void OnPlayerStayed(
+            PlayerController player)
+        {
+            KillPlayer(player);
+        }
+
+        private static void KillPlayer(PlayerController player)
+        {
+            if (player == null || player.IsInvulnerable)
+            {
+                return;
+            }
+
             PlayerHealth health = player.GetComponent<PlayerHealth>();
             if (health != null && !health.IsDead)
             {

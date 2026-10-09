@@ -71,9 +71,11 @@ Timeline使用 `TimelineCamRig.Acquire/Release/SetShotTransform` 通过Manager�
 `Project.Player.PlayerController` 只负责马的物理与动作能力：Rigidbody + CapsuleCollider，固定XY平面移动、跳跃、冲刺，普通3D物理碰撞，无投影碰撞或深度校正。
 输入由 `Project.Player.PlayerInputDriver` 读取 GameInput，再通过 `SetMoveInput`、`SetSprintInput`、`RequestJump`、`TryPlayAction` 等命令驱动 PlayerController；`PlayerInputDriver` 同时也是相机模式的 `GameplayAbility` requester。
 API：`Motor`、`IsGrounded`、`IsControlLocked`、`CurrentStateId`、`TryPlayAction(ActSO)`、`SetControlLocked(bool)`、`ReceiveTimelineSignal()`。
+外部演出可通过 `IPlayerControlLockTarget.AcquireControlLock(owner)` 获取引用计数控制锁；释放返回的 `IDisposable` 才解除。锁定期间移动、跳跃、交互、搬运、染色和普通动作输入都会被清空并停止处理。
+掉落物感知范围由“拾取感知半径（格）”配置，并通过 `PickupSenseRadiusBlocks`、`PickupSenseRadiusWorld` 和 `IsWithinPickupSenseRange(worldPosition)` 提供给磁吸拾取流程；该范围按关卡网格格数换算，不使用世界单位直接填写。
 控制锁采用引用计数；每次加锁必须同一调用方配对解锁，禁用会清空。
 `PlayerActionRunner` 播放Timeline，动作遵循优先级及 Interruptible，LockMovement只锁基础motor。
-死亡状态由 `PlayerHealth.Died` 驱动，进入 `PlayerStateId.Death` 后封锁普通操作并播放可配置 `deathAction`，Timeline 保持最后一帧。重生优先使用默认复活点或注册的 `IPlayerRespawnPoint`；没有复活点时在死亡位置四格内随机寻找可落地位置，向下吸附到实体地面后再检查岩浆。多个已激活重生点按 `RespawnPriority` 取最大值，重生锚的 `RespawnRadiusBlocks` 控制每个锚点自己的安全随机半径；`IRespawnAnchorChainProvider` / `IRespawnAnchorStateProvider` 提供后续存档所需的链表快照与状态回灌接口，`RespawnAnchorChainRuntime.CaptureSaveData` / `TryRestoreSaveData` 负责整链保存数据读写。
+死亡状态由 `PlayerHealth.Died` 或致死高度判定进入 `PlayerStateId.Death` 后封锁普通操作并播放可配置 `deathAction`，Timeline 保持最后一帧。游玩角色参数中的“致死高度（格）”控制实际落地时的摔落死亡阈值；落入水中、可用弹性植物或下落期间进入过攀爬会免除。复活后按“复活无敌时间（秒）”忽略伤害和摔落致死；岩浆持续触发致死，因此无敌结束后仍停留在岩浆中会死亡。重生优先使用默认复活点或注册的 `IPlayerRespawnPoint`；没有复活点时在死亡位置四格内随机寻找可落地位置，向下吸附到实体地面后再检查岩浆。多个已激活重生点按 `RespawnPriority` 取最大值，重生锚的 `RespawnRadiusBlocks` 控制每个锚点自己的安全随机半径；`IRespawnAnchorChainProvider` / `IRespawnAnchorStateProvider` 提供后续存档所需的链表快照与状态回灌接口，`RespawnAnchorChainRuntime.CaptureSaveData` / `TryRestoreSaveData` 负责整链保存数据读写。
 事件：`ActionStarted/ActionCompleted/ControlLockChanged/TimelineSignalReceived`，`PlayerHealth` 另有 `Died/Revived`。
 `PlayerInteractionSensor` 扫描 `IInteractionTarget` 并消费Interact；没有对话实现。
 游泳状态中，横向输入控制左右游泳；未按跳跃键时按 `swimSinkSpeed` 缓慢下沉，按住跳跃键时按 `swimRiseSpeed` 缓慢上浮，纵向变化由 `swimVerticalAcceleration` 平滑。

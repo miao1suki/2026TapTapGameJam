@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using Project.Player;
+using Project.Items;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
@@ -8,7 +10,7 @@ namespace Project.ColorBlocks
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class ColorKeyPickup : MonoBehaviour
+    public sealed class ColorKeyPickup : DropItemBase
     {
         [SerializeField] private string colorTypeId = "red";
         [SerializeField] private PlayableDirector cameraDirector;
@@ -17,10 +19,12 @@ namespace Project.ColorBlocks
         [SerializeField, Min(.01f)] private float revealDuration = 1.5f;
         [SerializeField, Min(1f)] private float orthographicZoomOut = 1.6f;
         [SerializeField, Min(0f)] private float cameraReturnDuration = .85f;
-        private bool collected;
+        private PlayerController collectingPlayer;
         private TimelineCamRig activeRig;
         private float originalOrthographicSize;
         private float originalFieldOfView;
+        private float nextPlayerSearchTime;
+        private IDisposable controlLockHandle;
 
         public string ColorTypeId => colorTypeId;
 
@@ -30,10 +34,12 @@ namespace Project.ColorBlocks
             cameraDirector = GetComponent<PlayableDirector>();
         }
 
-        private void OnDisable()
+        protected override void OnDisable()
         {
+            ReleasePlayerControlLock();
+            base.OnDisable();
             ColorRuntimeService manager = ColorRuntimeService.Existing;
-            if (Application.isPlaying && collected && manager != null &&
+            if (Application.isPlaying && CollectionRequested && manager != null &&
                 !manager.IsUnlocked(colorTypeId))
                 manager.Unlock(colorTypeId);
         }
@@ -42,7 +48,53 @@ namespace Project.ColorBlocks
         {
             var player = other.GetComponentInParent<PlayerController>();
             if (player == null) return;
+            if (IsAttracting)
+            {
+                CompleteAttraction();
+                return;
+            }
+
             OnInteractionPlayerEntered(player.gameObject);
+        }
+
+        private void Update()
+        {
+            if (!Application.isPlaying ||
+                CollectionRequested ||
+                AttractionRequested)
+            {
+                return;
+            }
+
+            if (ColorRuntimeService.Instance.IsUnlocked(colorTypeId))
+            {
+                return;
+            }
+
+            if (collectingPlayer == null ||
+                !collectingPlayer.isActiveAndEnabled)
+            {
+                if (Time.unscaledTime < nextPlayerSearchTime)
+                {
+                    return;
+                }
+
+                nextPlayerSearchTime = Time.unscaledTime + .5f;
+                collectingPlayer =
+                    ProjectDiscovery.FindFirst<PlayerController>();
+            }
+
+            if (collectingPlayer == null ||
+                !collectingPlayer.IsWithinPickupSenseRange(
+                    transform.position))
+            {
+                return;
+            }
+
+            if (!TryBeginAttraction(collectingPlayer.gameObject))
+            {
+                collectingPlayer = null;
+            }
         }
 
         /// <summary>
@@ -53,15 +105,92 @@ namespace Project.ColorBlocks
             var player = actor != null
                 ? actor.GetComponentInParent<PlayerController>()
                 : null;
-            if (collected || player == null) return;
+            if (CollectionRequested || IsAttracting || player == null) return;
             if (ColorRuntimeService.Instance.IsUnlocked(colorTypeId)) return;
-            collected = true;
+
+            collectingPlayer = player;
+            if (!TryBeginCollection(player.gameObject))
+            {
+                collectingPlayer = null;
+                return;
+            }
+        }
+
+        protected override void ResetItemState()
+        {
+            base.ResetItemState();
+            ReleasePlayerControlLock();
+            collectingPlayer = null;
+            nextPlayerSearchTime = 0f;
+            var collider = GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.enabled = true;
+                collider.isTrigger = true;
+            }
+
+            foreach (var renderer in GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.enabled = true;
+            }
+        }
+
+        protected override void PlayCollectAnimation(
+            Action onComplete)
+        {
+            bool reportedAnimationComplete = false;
+            bool reportedCameraComplete = false;
+
+            void CompleteVisual()
+            {
+                if (reportedAnimationComplete)
+                {
+                    return;
+                }
+
+                reportedAnimationComplete = true;
+                if (hideOnCollect)
+                    foreach (var renderer in GetComponentsInChildren<Renderer>(true))
+                        renderer.enabled = false;
+                TryFinish();
+            }
+
+            void CompleteCamera()
+            {
+                if (reportedCameraComplete)
+                {
+                    return;
+                }
+
+                reportedCameraComplete = true;
+                TryFinish();
+            }
+
+            void TryFinish()
+            {
+                if (reportedAnimationComplete &&
+                    reportedCameraComplete)
+                {
+                    onComplete?.Invoke();
+                }
+            }
+
+            base.PlayCollectAnimation(CompleteVisual);
+            if (collectingPlayer == null)
+            {
+                CompleteCamera();
+                return;
+            }
+
+            StartCoroutine(CollectWithCamera(CompleteCamera));
+        }
+
+        protected override void OnCollectionStarted()
+        {
+            AcquirePlayerControlLock(collectingPlayer);
             var collider = GetComponent<Collider>();
             if (collider != null) collider.enabled = false;
-            if (hideOnCollect)
-            {
-                foreach (var renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = false;
-            }
+
             bool unlocked = ColorRuntimeService.Instance.Unlock(colorTypeId);
             if (unlocked)
             {
@@ -79,15 +208,19 @@ namespace Project.ColorBlocks
                     $"[ColorBlocks] 钥匙触发入口执行，但 {colorTypeId} 未完成 Unlock。",
                     this);
             }
-            StartCoroutine(CollectWithCamera(player));
         }
 
-        private IEnumerator CollectWithCamera(PlayerController player)
+        protected override void OnCollectionFinished()
+        {
+            ReleasePlayerControlLock();
+        }
+
+        private IEnumerator CollectWithCamera(Action onComplete)
         {
             // 解锁已在触发入口同步完成。镜头 Timeline 不能阻塞颜色恢复；
             // 这里只等待渐显收尾。
             bool unlocked = ColorRuntimeService.Instance.IsUnlocked(colorTypeId);
-            bool hasCameraShot = PlayCameraCutscene(player);
+            bool hasCameraShot = PlayCameraCutscene(collectingPlayer);
             if (hasCameraShot)
             {
                 double duration = cameraDirector.playableAsset.duration;
@@ -117,7 +250,8 @@ namespace Project.ColorBlocks
 
             if (hasCameraShot && cameraDirector != null)
                 cameraDirector.Stop(); // The Timeline rig returns via CameraControlManager.
-            Destroy(gameObject);
+            collectingPlayer = null;
+            onComplete?.Invoke();
         }
 
         private bool PlayCameraCutscene(PlayerController player)
@@ -177,6 +311,23 @@ namespace Project.ColorBlocks
                 Mathf.Lerp(originalOrthographicSize,
                     originalOrthographicSize * orthographicZoomOut, eased),
                 originalFieldOfView);
+        }
+
+        private void AcquirePlayerControlLock(PlayerController player)
+        {
+            ReleasePlayerControlLock();
+            if (player is not IPlayerControlLockTarget lockTarget)
+            {
+                return;
+            }
+
+            controlLockHandle = lockTarget.AcquireControlLock(this);
+        }
+
+        private void ReleasePlayerControlLock()
+        {
+            controlLockHandle?.Dispose();
+            controlLockHandle = null;
         }
 
 #if UNITY_EDITOR

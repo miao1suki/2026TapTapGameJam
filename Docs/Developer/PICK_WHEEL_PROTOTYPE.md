@@ -6,4 +6,4 @@
 
 轮盘直接使用 `Assets/_Project/Resources/UI/轮盘.psd` 原有的三块黑色扇区；运行时按区域拆出同一张图，不再在其上叠绘另一套彩色扇区。每块以自身实际可见像素的重心等比缩放；指向时硬切为白色半透明，缩放使用 DOTween。`PickWheelPrototype` 作为 `PlayerColorWheel` 的外部视图接入，选色、解锁校验及物体染色仍走正式玩家逻辑。Pick 场景还放有供测试玩家站立的地面；原 `Test` 场景不受影响。
 
-当前只在 Pick 场景绑定这套外观，其他场景仍使用原有轮盘；未复制 UV 仓库代码（仓库链接当前无法访问）。分支交付 DOTween 免费版核心及其原始 readme；本机 DOTween Pro 不进入仓库。正式合入前仍须在另一份克隆中复核 Unity 编译与 Play Mode。
+这套外观现已挂在正式 `RuntimePlayer.prefab` 上；使用该预制体的场景自动使用新版轮盘。Pick 场景不再有独立的重复轮盘对象。未复制 UV 仓库代码；项目仅交付 DOTween 免费版核心及其原始 readme，本机 DOTween Pro 不进入仓库。仍须在 Unity Play Mode 中复核正式场景表现。

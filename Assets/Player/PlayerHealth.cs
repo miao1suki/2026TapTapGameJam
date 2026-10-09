@@ -9,6 +9,7 @@ namespace Project.Player
         [SerializeField, Min(1f)] private float maxHealth = 5f;
         [SerializeField, Min(0f)] private float startingHealth = 5f;
         private float currentHealth;
+        private PlayerController controller;
 
         public float MaxHealth => maxHealth;
         public float CurrentHealth => currentHealth;
@@ -19,6 +20,7 @@ namespace Project.Player
 
         private void Awake()
         {
+            controller = GetComponent<PlayerController>();
             currentHealth = Mathf.Clamp(startingHealth, 0f, maxHealth);
             if (currentHealth <= 0f)
             {
@@ -34,7 +36,13 @@ namespace Project.Player
 
         public void TakeDamage(float amount)
         {
-            if (amount <= 0f || IsDead) return;
+            if (amount <= 0f ||
+                IsDead ||
+                (controller != null && controller.IsInvulnerable))
+            {
+                return;
+            }
+
             SetHealth(currentHealth - amount);
         }
 

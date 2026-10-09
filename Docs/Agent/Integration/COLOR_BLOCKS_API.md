@@ -9,7 +9,7 @@
 | `IColorObject` / `ColorObject` | 固定颜色属性、激活状态和视觉 |
 | `BlockAbilityHost` | 启停同一物体上已经存在的固定功能组件 |
 | `HSVColorFadeManager` | 白色失效与原色恢复的饱和度过渡 |
-| `ColorKeyPickup` | 钥匙拾取和颜色组解锁 |
+| `ColorKeyPickup` | 感知范围启动磁吸，碰撞玩家后解锁颜色并隐藏钥匙 |
 | `PlayerColorWheel` | 保存当前选色；左键通过屏幕射线选择交互圈内目标 |
 | `IColorApplicationTarget` | 接收固定颜色并执行目标自身逻辑 |
 | `UniversalColorBlock` | 自身显示纯色，并向四个紧邻目标广播颜色 |

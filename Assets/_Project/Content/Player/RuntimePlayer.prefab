@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 600000002}
   - component: {fileID: 600000003}
   - component: {fileID: 600000005}
+  - component: {fileID: 600000006}
   m_Layer: 0
   m_Name: RuntimePlayer
   m_TagString: Player
@@ -199,6 +200,9 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  lethalFallHeightBlocks: 8
+  respawnInvulnerabilitySeconds: 2
+  pickupSenseRadiusBlocks: 2
 --- !u!114 &600000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -257,3 +261,18 @@ MonoBehaviour:
   rangeColor: {r: 0.55, g: 0.8, b: 1, a: 0.45}
   wheelSize: 280
   wheelButtonSize: 72
+--- !u!114 &600000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4920354666734387426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcb114307b334965a2f2df619f114291, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Development.PickWheel.PickWheelPrototype
+  wheelArtwork: {fileID: 21300000, guid: 62e2485dab4fdd1499a2bb796e7c561b, type: 3}
+  pixelFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+  playerWheel: {fileID: 600000005}

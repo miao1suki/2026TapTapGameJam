@@ -199378,6 +199378,9 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  lethalFallHeightBlocks: 6
+  respawnInvulnerabilitySeconds: 2
+  pickupSenseRadiusBlocks: 2
   deathAction: {fileID: 0}
   respawnPoint: {fileID: 0}
   respawnRandomRadiusBlocks: 10

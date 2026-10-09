@@ -16,6 +16,10 @@ description: 2026TapTap 颜色大洗牌开发规范，覆盖固定颜色物体�
 
 `Assets/_Project/Code/Systems/ColorBlocks/SKILL.md`
 
+新增或修改颜色钥匙、可拾取物或掉落物动画时，还必须读取：
+
+`.agents/skills/taptap-drop-items/SKILL.md`
+
 该文件保存完整目标规范。本文件只负责让 Codex 在项目中发现并进入该规范，不替代完整内容。
 
 ## 适用范围
@@ -58,6 +62,9 @@ description: 2026TapTap 颜色大洗牌开发规范，覆盖固定颜色物体�
 - 万能方块自身显示纯色，并向左右上下四个紧邻的 `IColorApplicationTarget` 广播颜色。
 - 万能方块不是颜色源、不是能力本体、不能搬运。
 - 物体之间的固定反应使用类型安全接口，不经过交互图。
+- 所有可拾取掉落物必须继承 `Project.Items.DropItemBase`；`OnEnable` 只走出现阶段，拾取通过 `TryBeginCollection` 进入收集阶段，收集表现结束后才由基类回收。
+- 掉落物的出现、收集、停止 Tween 必须写在 `DropItemBase` 的动画钩子里，子类只处理具体拾取效果；不得在子类触发入口直接 `Destroy`、`SetActive(false)` 或提前关闭 Renderer。
+- 当前尚未导入 DOTween，禁止引用 `DG.Tweening`；导入后仍只在 `DropItemBase` 中实现动画，不在每个掉落物子类重复写 Tween 生命周期。
 - 高频路径禁止反射、字符串方法调用、全场景扫描和无意义协程。
 - 新增或修改自制组件时，必须提供中文 UI Toolkit Inspector、Foldout、条件显隐和可调试状态。
 
@@ -77,3 +84,4 @@ description: 2026TapTap 颜色大洗牌开发规范，覆盖固定颜色物体�
 - 没有新增 `InteractionManager`、`InteractionObjectDefinition`、GraphView 或反射依赖。
 - 没有运行时颜色切换或同色形态切换。
 - 房间退出后颜色物体、万能方块和生成物全部重置。
+- 新增或修改拾取物时，确认其继承 `DropItemBase`，且没有在子类绕开基类直接销毁或禁用。

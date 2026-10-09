@@ -8,7 +8,8 @@ namespace Project.Pickups
     /// 仅负责拾取物的飞行表现；何时拾取以及奖励结算由调用者决定。
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PickupFlightAnimator : MonoBehaviour
+    public sealed class PickupFlightAnimator : MonoBehaviour,
+        Project.Items.IDropItemCollectionAnimation
     {
         [SerializeField] private Transform visual;
         [SerializeField] private Collider pickupCollider;
@@ -45,8 +46,8 @@ namespace Project.Pickups
 
         private void Awake()
         {
-            if (visual == null && transform.childCount > 0)
-                visual = transform.GetChild(0);
+            if (visual == null)
+                visual = transform.childCount > 0 ? transform.GetChild(0) : transform;
             if (pickupCollider == null)
                 pickupCollider = GetComponent<Collider>();
         }
@@ -168,7 +169,13 @@ namespace Project.Pickups
             if (visual != null)
             {
                 visual.position = GetCenter();
-                visual.gameObject.SetActive(false);
+                if (visual == transform)
+                {
+                    foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
+                        renderer.enabled = false;
+                }
+                else
+                    visual.gameObject.SetActive(false);
             }
             Action callback = completion;
             completion = null;

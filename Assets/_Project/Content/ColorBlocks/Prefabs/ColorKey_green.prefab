@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 4242744025145066753}
   - component: {fileID: 8278887576501728601}
   - component: {fileID: 2062553001105879385}
+  - component: {fileID: 909090909090909090}
   m_Layer: 0
   m_Name: ColorKey_green
   m_TagString: Untagged
@@ -150,3 +151,17 @@ MonoBehaviour:
   revealDuration: 1.5
   orthographicZoomOut: 1.6
   cameraReturnDuration: 0.85
+--- !u!114 &909090909090909090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 491305582336558569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2824d8fd9be48239b63b96834399a04, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Pickups.PickupFlightAnimator
+  visual: {fileID: 2762808876313677899}
+  pickupCollider: {fileID: 2534776528351818420}

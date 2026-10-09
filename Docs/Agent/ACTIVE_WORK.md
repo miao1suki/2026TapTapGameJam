@@ -1,5 +1,13 @@
 # 工作状态与交接（每次任务重读）
 
+## 拾取物与轮盘整合
+
+- 日期：2026-10-09；负责人：Codex；分支：`codex/pickup-flight-preview`；整合 `origin/main` 的 `DropItemBase`、钥匙感知/控制锁及回弹改动，并保留 Pick 飞行与轮盘实现。
+- 掉落物：`DropItemBase` 统一执行出现、磁吸、停止动画，通过 `IDropItemCollectionAnimation` 在收集阶段调用飞行动画；颜色钥匙触碰玩家时立即解锁和锁控制，但外观等飞行结束后再隐藏，镜头与飞行都结束才回收。
+- 轮盘：正式 `RuntimePlayer.prefab` 直接挂载 Pick PSD 轮盘外观，所有使用该玩家预制体的场景继承新版轮盘；Pick 场景移除旧独立轮盘实例。
+- TA：`origin/codex/ta/water-platform-demo` 已是 `origin/main` 的祖先，目前没有额外新提交可合并。
+- 待验证：Unity Play Mode 中的钥匙触发/飞行、相机演出并行及正式场景轮盘表现。
+
 ## 拾取飞行动画
 
 - 日期：2026-10-09；负责人：Codex；分支：`codex/pickup-flight-preview`；范围：新增独立的 DOTween 拾取表现组件与 Pick 场景测试拾取物；不接入背包、奖励、正式拾取判定或输入键位。该分支只推送供协作，等待另一边的拾取物完成后再准备合并 main。
@@ -17,6 +25,28 @@
 - 表现：直接拆分本地 `轮盘.psd` 原有黑色扇区，不另叠绘扇区；以各块原图可见像素重心等比缩放，指向时硬切白色半透明并使用 DOTween 缓动；未解锁显示问号。
 - 外部参考：`TogetherYear/UV` 链接的网页和 Git 访问均返回仓库不存在，未迁移其源码。本分支只交付 DOTween 免费版；本机 DOTween Pro 不进入 Git。
 - 验证：视觉修正后使用 Unity 6000.3.12f1 自带 Roslyn 再次编译通过（0 错误），`git diff --check` 通过；Pick 场景中的玩家预制体、地面和轮盘资源引用已静态核对。完整 Unity Play Mode 仍需复核。普通 `dotnet build` 因本机生成工程目标为 .NET Framework 4.7.1、DOTween DLL 面向 4.7.2 而失败，不能据此判断 Unity 编辑器编译结果。
+## 弹性植物落差回弹比例
+
+- 日期：2026-10-09；负责人：Codex；分支：`修衰落高度和拾取范围`。
+- 公式：回弹高度按 `落差 × 当前回弹比例` 计算，落差越高，比例从“低落差回弹比例”插值到“高落差回弹比例”。
+- 默认：低落差回弹比例 `0.9`，高落差回弹比例 `0.5`，参考高度 `8` 格，最低弹跳高度 `0.3` 格；高落差默认保留至少一半，但不会超过原落差。
+- 衰减：连续弹跳仍乘既有“连续弹跳衰减比例”；最大弹速改为可选安全上限，默认 `0` 表示不限制。
+- 资源：`Green_JumpPlant.prefab` 已更新新参数；`PlayerController` 增加高度反算弹速接口 `CalculateVerticalRiseSpeed`。
+- 验证：Unity 6000.3.12f1 Runtime 与 Editor 静态编译 0 错误，`git diff --check` 通过。
+
+## 掉落物启停生命周期基类
+
+- 日期：2026-10-09；负责人：Codex；分支：`修衰落高度和拾取范围`。
+- 基类：新增 `DropItemBase`，在 `OnEnable` 重置状态并调用出现动画钩子；拾取通过 `TryBeginCollection` 进入收集阶段，收集动画完成后才调用 `RecycleItem`。
+- 磁吸目标：拾取开始时把玩家传给 `DropItemBase.CollectionActor`，基类动画以后可通过 `CollectionTarget` 实现逐渐缩小并追随玩家，Tween 到达玩家后才完成回收。
+- 拾取阶段：玩家进入感知范围只启动磁吸，不结算颜色；钥匙保留碰撞，真正碰到玩家后调用 `CompleteAttraction`，再关闭碰撞、解锁颜色、隐藏钥匙并进入镜头演出。
+- 控制锁：新增 `IPlayerControlLockTarget`，颜色钥匙在拾取动画开始时获取控制锁句柄，动画结束或对象禁用时释放；输入驱动把锁检查前移，锁定期间不再处理交互、搬运、染色、移动、跳跃和普通动作。
+- 玩家感知：`PlayerController` 新增“拾取感知半径（格）”、世界半径换算、XY 平面距离判断和选中物体的 Gizmo 可视化；掉落物以后统一查询玩家范围，不单独配置拾取半径。
+- 颜色钥匙：`ColorKeyPickup` 改为继承 `DropItemBase`，解锁和关闭碰撞仍在拾取开始时立即执行，Renderer 不再提前隐藏，拾取动画完成后才隐藏并销毁。
+- 规则落库：新增独立 `taptap-drop-items` Skill，并同步 `taptap-color-gameplay` 与 `ColorBlocks/SKILL.md`；以后新增拾取物必须继承 `DropItemBase`，Tween 钩子只写在基类，子类不得绕开基类直接销毁或禁用。
+- 对象池约束：`OnDisable` 只负责停止动画和清理；池化掉落物以后应重写 `RecycleItem`，不能在 `OnDisable` 中等待消失动画。
+- 依赖：项目尚未导入 DOTween，当前基类只提供出现、收集、停止动画的稳定钩子；DOTween 导入后在基类钩子内接入，不改变钥匙玩法时序。
+- 验证：Unity 6000.3.12f1 `Project.Shared.Runtime.rsp` 与 `Assembly-CSharp.rsp` 静态编译 0 错误。
 
 ## 玩家死亡状态与重生
 
@@ -26,6 +56,8 @@
 - 重生输入：新增 `InputActionId.Respawn`，默认键盘 `R`、手柄右摇杆按下，固定仅点击；`PlayerInputDriver` 死亡时只消费重生输入。
 - 重生位置：优先使用 `respawnPoint` 或注册的 `IPlayerRespawnPoint`；没有复活点时在死亡位置周围 `4 格`内随机寻找可落地位置。每次死亡都会更新死亡点，连续死亡以最新死亡点为准。
 - 安全检查：随机点先向下吸附到实体地面，再检测 `LavaHazardFeature`；找不到安全随机点则回退默认复活点。
+- 致死高度：`PlayerController` 新增“致死高度（格）”，默认 `8` 格；玩家落地时若本次下落高度大于等于该值，直接进入 `PlayerStateId.Death`，不使用血条。落入水中、落到可用弹性植物或下落期间进入过攀爬状态会免除摔落死亡。
+- 复活保护：`PlayerController` 新增“复活无敌时间（秒）”，默认 `2` 秒；复活后伤害和摔落致死统一忽略，`PlayerHealth.TakeDamage` 也遵循无敌状态。岩浆改为 `OnTriggerStay` 持续致死，无敌结束后仍留在岩浆中会立即死亡。
 - 重生锚：`Respawn_Block` 使用米黄色高对比材质，挂载 `RespawnAnchorFeature` 并通过 `IPlayerRespawnPoint` 注册复活点；道具栏目新增“重生锚”入口。
 - 重生锚状态：组件不可碰撞，按 Unity Tag 检测玩家，支持激活范围与复活随机半径；未激活/已激活材质、激活动画可配置，渲染排序固定为玩家下一层。
 - 颜色物兜底：`ColorObject` 在未解锁状态统一强制碰撞体为实体且关闭功能；解锁后恢复预制体原本的触发/实体状态。所有蓝色水族功能同时二次校验蓝色解锁，避免未解锁仍产生玩家水体状态。
