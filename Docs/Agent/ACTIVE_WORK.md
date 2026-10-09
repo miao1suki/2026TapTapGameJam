@@ -93,4 +93,15 @@
 - 范围：导入开场/主题音乐 \2026 GJ WN OP.mp3\ 到 \Assets/_Project/Content/Audio/Music/\。
 - 接口变更：无（仅音频资源导入）。
 - 验证：文件已复制到正确目录，Git 暂存并提交。
-- 交接提交：\34cf18\。
+- 交接提交：\34cf18\。
+
+## 音频资源整体替换（第二版）
+
+- 日期：2026-10-09。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：替换 `Assets/_Project/Content/Audio/` 下的音乐与音效；移除旧版 14 个音频，导入新版 14 个 BGM、22 个 SFX（玩家动作、上水交互、上色流程、机关循环、拒绝提示）。
+- 接口变更：无（资源替换）。旧 `sfx_ui_button_select`、`sfx_ui_notice_success_*`、`sfx_gp_water_enter_01`、`sfx_gp_water_splash_*` 已移除，接入方需同步更新引用。
+- 文档：同步更新 `Docs/Agent/Integration/AUDIO_HANDOVER.md` 资源清单与接线表。
+- 验证：文件按 Music / SFX 目录归类；Git 审查确认仅音频资源与交接文档变更；本机未运行 Unity 导入与试听。
+- 交接提交：本条目随本次提交。
