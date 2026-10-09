@@ -199,6 +199,9 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
+  lethalFallHeightBlocks: 8
+  respawnInvulnerabilitySeconds: 2
+  pickupSenseRadiusBlocks: 2
 --- !u!114 &600000001
 MonoBehaviour:
   m_ObjectHideFlags: 0

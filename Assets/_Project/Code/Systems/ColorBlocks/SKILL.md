@@ -7,6 +7,54 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 > 2026-10-07 更新：万能方块作为前期辅助代理保留，自身显示纯色，并向左右上下四个紧邻的 `IColorApplicationTarget` 广播同一颜色。当前固定功能组件已落到 `BlockFeatures/Runtime/Features`，并开始通过组件自身的 `IColorApplicationTarget` 接色入口实现三色反应。
 
+## 2026-10-09 掉落物生命周期基类
+
+所有可拾取掉落物统一继承 `Project.Items.DropItemBase`。颜色钥匙和以后新增的钥匙、道具、收集物都必须遵守这一层，不允许各自实现一套启停、销毁和 Tween 生命周期。
+
+固定流程：
+
+```text
+OnEnable
+→ ResetItemState
+→ PlayAppearAnimation
+
+感知范围
+→ TryBeginAttraction
+→ PlayAttractAnimation
+→ 追向 CollectionTarget 并缩小
+→ 真正碰到玩家
+→ CompleteAttraction
+→ TryBeginCollection
+→ OnCollectionStarted
+→ PlayCollectAnimation
+→ 解锁、销毁和其他拾取表现
+→ OnCollectionFinished
+→ RecycleItem
+```
+
+职责约束：
+
+- `OnEnable` 只负责重置掉落物状态和播出现动画。
+- 玩家进入感知范围只启动磁吸，不结算颜色、不销毁钥匙。
+- 磁吸动画通过 `CollectionActor` / `CollectionTarget` 获取玩家目标；颜色钥匙的目标表现是逐渐缩小并追随玩家。
+- 真正碰到玩家后才调用 `CompleteAttraction`，再进入 `TryBeginCollection` 和拾取结算。
+- `OnCollectionStarted` 负责关闭碰撞、解锁颜色、隐藏钥匙并发起镜头演出。
+- `OnCollectionStarted` 通过 `IPlayerControlLockTarget.AcquireControlLock` 锁定玩家全部操作；`OnCollectionFinished` 或对象禁用时必须释放同一句柄。
+- `PlayAppearAnimation`、`PlayAttractAnimation`、`PlayCollectAnimation`、`StopItemAnimations` 是统一动画钩子。DOTween 导入后在这里实现出现、磁吸、收集和清理，不在每个子类里重复写 Tween。
+- `PlayCollectAnimation` 必须保证 `onComplete` 只回调一次，回调完成后才允许基类真正回收物体。
+- 派生类不得在拾取入口直接 `Destroy(gameObject)`、`SetActive(false)` 或提前关闭 Renderer，否则收集动画会不可见。
+- `OnDisable` 只停止动画和清理状态，不能在这里等待消失动画。
+- 对象池掉落物必须重写 `RecycleItem` 走对象池归还；没有对象池时保持默认销毁。
+- 预制体复用时必须恢复 Collider、Renderer、Transform、材质和逻辑状态，不能保留上一次拾取的 `collectionRequested` 状态。
+
+当前未导入 DOTween，因此禁止引用 `DG.Tweening`。基类只保留空动画钩子和生命周期；钥匙的镜头 Timeline 与颜色渐显属于拾取演出，可以和基类收集动画并行，但必须都结束后才回收。
+
+当前接入：
+
+- `ColorKeyPickup` 继承 `DropItemBase`。
+- 玩家进入感知范围后钥匙开始磁吸；真正碰到玩家后才关闭 Collider、解锁颜色并隐藏钥匙。
+- 以后新增掉落物不得直接继承 `MonoBehaviour` 写拾取生命周期。
+
 ## 2026-10-07 点击染色与气泡柱收口
 
 - 左键屏幕射线直接查找 `IColorApplicationTarget`，不再只查找 `IInteractionTarget`。
@@ -49,7 +97,7 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 - 玩家除岩浆外不会死亡或受伤；`PlayerFallDamage` 只负责给弹跳植物计算当前/最近坠落高度，不结算伤害，也不提供摔落免疫。
 - 水泡柱必须可调：最高顶起格数、上浮推力；不使用 LayerMask 检测玩家，玩家识别走 Unity Tag。
 - 水流只有“向左 / 向右”枚举，并暴露推搡速度。
-- 弹性植物必须可调：基础弹跳力度、坠落高度转化比例、最大弹跳力度、最短触发间隔、连续弹跳衰减比例、衰减重置时间和最低弹跳高度（格）。玩家侧管理本次下落高度、最近落地落差和跨植物连续弹跳衰减；玩家真实落地时通过 `IPlayerBounceSurface` 从脚下植物请求弹跳速度并应用。摔落判定只使用玩家记录的真实下落落差，不依赖碰撞回调里的瞬时速度；植物不通过持续碰撞事件猜测摔落，走进高差或同平面接触不会触发；顶面按住 S 会阻止或清零弹跳。触发模式必须是“仅摔落 / 仅跳跃 / 两者都可以”三选一。
+- 弹性植物必须可调：基础弹跳力度、低落差回弹比例、高落差回弹比例、高落差参考高度（格）、最大弹速、最短触发间隔、连续弹跳衰减比例、衰减重置时间和最低弹跳高度（格）。回弹高度按“落差 × 当前回弹比例”计算；落差越高，回弹比例从低落差比例插值到高落差比例，高落差默认最低保留一半，且不会超过原落差。连续弹跳再乘既有衰减。玩家侧管理本次下落高度、最近落地落差和跨植物连续弹跳衰减；玩家真实落地时通过 `IPlayerBounceSurface` 从脚下植物请求弹跳速度并应用。
 - 可攀爬藤蔓必须可调：攀爬倍率、生长物预制体、最大生长块数、瞬间长完 / 逐块出现、生长间隔。母藤蔓生成 `LadderSonFeature` 生长物；生长物继承攀爬和出现动画，但禁用蓝色浇灌生长，只能被红色烧毁。每块高度直接读取关卡编辑器格子世界尺寸，不单独暴露每块高度、出现动画时长或缩放曲线。新块启用时播放自身出现动画，逐块生长时每块都播放，瞬间长完时只让最上方的新块播放。
 - 能源方块迁移规则：能源方块是唯一允许迁移的功能物；玩家在交互范围圈内长按“搬运”键达到可调时长后拿起，方块跟鼠标按网格吸附移动；拖动时无实体、渲染最上层并锁住移动、跳跃、轮盘、染色、动作和新的交互；松手后目标格有物则先回原位，原位也无效时从原位向外寻找合法格。
 - 按钮不是自动回弹按钮，而是拉杆式按钮：点击切换状态，可调初始开启、关闭材质、开启材质、状态渲染器。
@@ -409,7 +457,8 @@ IRoomColorResettable.ResetForRoom
   - 保留白色失效与恢复原色的渐变。
 
 - `ColorKeyPickup`
-  - 保留直接入口。
+  - 保留直接入口并继承 `DropItemBase`。
+  - 拾取开始时立即关闭碰撞和解锁颜色，收集动画完成后才隐藏和回收。
   - 不依赖交互图。
 
 - `InteractiveWater`
@@ -607,6 +656,8 @@ SteamPushReaction
 - 项目中不再存在图类型和 GraphView 入口。
 - 没有 Missing Script、空 GUID、重复定义。
 - 没有高频反射、无意义协程和全场景逐帧扫描。
+- 所有可拾取掉落物继承 `DropItemBase`，且没有在子类绕开基类直接销毁、禁用或提前隐藏 Renderer。
+- 未导入 DOTween 前没有新增 `DG.Tweening` 引用。
 
 ## 最终原则
 

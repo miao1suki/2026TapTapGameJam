@@ -35,34 +35,53 @@ namespace Project.BlockFeatures
         [SerializeField, Min(0f)] private float baseBounceSpeed = 10.5f;
 
         [BlockParameter(
-            Label = "摔落高度转化比例",
+            Label = "低落差回弹比例",
             Group = "弹性设置",
-            Order = 2)]
-        [SerializeField, Min(0f)] private float fallDistanceScale = .7f;
+            Order = 2,
+            Tooltip = "低落差时的回弹高度 / 摔落高度比例。越高回弹越接近原落差。")]
+        [SerializeField, Range(0f, 1f)]
+        private float lowFallReturnHeightRatio = .9f;
 
         [BlockParameter(
             Label = "最大弹跳速度",
             Group = "弹性设置",
-            Order = 3)]
-        [SerializeField, Min(0f)] private float maxBounceSpeed = 16.5f;
+            Order = 3,
+            Tooltip = "弹速安全上限；0 表示不限制，按回弹高度比例计算结果。")]
+        [SerializeField, Min(0f)] private float maxBounceSpeed = 0f;
+
+        [BlockParameter(
+            Label = "高落差回弹比例",
+            Group = "弹性设置",
+            Order = 4,
+            Tooltip = "落差达到参考高度后的最低回弹高度比例；0.5 表示至少回弹摔落高度的一半。")]
+        [SerializeField, Range(0f, 1f)]
+        private float highFallReturnHeightRatio = .5f;
+
+        [BlockParameter(
+            Label = "高落差参考高度（格）",
+            Group = "弹性设置",
+            Order = 5,
+            Tooltip = "摔落高度达到该格数后，回弹比例插值到高落差比例。")]
+        [SerializeField, Min(.1f)]
+        private float highFallReferenceHeightGrid = 8f;
 
         [BlockParameter(
             Label = "最短触发间隔",
             Group = "弹性设置",
-            Order = 4)]
+            Order = 6)]
         [SerializeField, Min(0f)] private float minTriggerInterval = .15f;
 
         [BlockParameter(
             Label = "触发方式",
             Group = "弹性设置",
-            Order = 5)]
+            Order = 7)]
         [SerializeField] private BounceTriggerMode triggerMode =
             BounceTriggerMode.Both;
 
         [BlockParameter(
             Label = "连续弹跳衰减比例",
             Group = "弹性设置",
-            Order = 6,
+            Order = 8,
             Tooltip = "每次连续弹跳后的速度倍率；1 表示不衰减，越小衰减越快。")]
         [SerializeField, Range(0f, 1f)]
         private float repeatedBounceDecay = .85f;
@@ -70,7 +89,7 @@ namespace Project.BlockFeatures
         [BlockParameter(
             Label = "衰减重置时间",
             Group = "弹性设置",
-            Order = 7,
+            Order = 9,
             Tooltip = "多久没有再次触发弹跳后，恢复完整弹速。")]
         [SerializeField, Min(.05f)]
         private float decayResetSeconds = 1.5f;
@@ -78,10 +97,10 @@ namespace Project.BlockFeatures
         [BlockParameter(
             Label = "最低弹跳高度（格）",
             Group = "弹性设置",
-            Order = 8,
+            Order = 10,
             Tooltip = "连续衰减后的预测弹跳高度低于这个值时，不再触发弹跳。")]
         [SerializeField, Min(0f)]
-        private float minimumBounceHeightGrid = 1.5f;
+        private float minimumBounceHeightGrid = .3f;
 
         private readonly HashSet<int> jumpBounceLatched =
             new HashSet<int>();
@@ -182,8 +201,14 @@ namespace Project.BlockFeatures
                 "基础弹跳速度",
                 baseBounceSpeed));
             values.Add(new BlockDebugValue(
-                "摔落转化比例",
-                fallDistanceScale));
+                "低落差回弹比例",
+                lowFallReturnHeightRatio));
+            values.Add(new BlockDebugValue(
+                "高落差回弹比例",
+                highFallReturnHeightRatio));
+            values.Add(new BlockDebugValue(
+                "高落差参考高度",
+                $"{highFallReferenceHeightGrid:0.###} 格"));
             values.Add(new BlockDebugValue(
                 "触发方式",
                 triggerMode == BounceTriggerMode.FallingOnly
@@ -218,13 +243,21 @@ namespace Project.BlockFeatures
                 return false;
             }
 
-            float speed = Mathf.Min(
-                maxBounceSpeed,
-                baseBounceSpeed +
-                fallDistance * fallDistanceScale);
+            float baseHeight = player.CalculateVerticalRiseHeight(
+                baseBounceSpeed,
+                player.JumpHeld);
+            float returnHeight =
+                fallDistance * CalculateFallReturnRatio(fallDistance);
+            float targetHeight = Mathf.Max(
+                baseHeight,
+                returnHeight);
+            float speed = player.CalculateVerticalRiseSpeed(
+                targetHeight,
+                player.JumpHeld);
             speed *= player.GetBounceDecay(
                 repeatedBounceDecay,
                 decayResetSeconds);
+            speed = ClampBounceSpeed(speed);
             float projectedHeight =
                 player.CalculateVerticalRiseHeight(
                     speed,
@@ -257,6 +290,7 @@ namespace Project.BlockFeatures
                           player.GetBounceDecay(
                               repeatedBounceDecay,
                               decayResetSeconds);
+            speed = ClampBounceSpeed(speed);
             float projectedHeight =
                 player.CalculateVerticalRiseHeight(
                     speed,
@@ -273,6 +307,28 @@ namespace Project.BlockFeatures
                 decayResetSeconds);
             player.ApplyJumpBoost(speed);
             return true;
+        }
+
+        private float CalculateFallReturnRatio(float fallDistance)
+        {
+            float referenceHeight = Mathf.Max(
+                .1f,
+                highFallReferenceHeightGrid * GridCellWorldSize);
+            float progress = Mathf.Clamp01(
+                fallDistance / referenceHeight);
+            return Mathf.Lerp(
+                Mathf.Max(
+                    lowFallReturnHeightRatio,
+                    highFallReturnHeightRatio),
+                highFallReturnHeightRatio,
+                progress);
+        }
+
+        private float ClampBounceSpeed(float speed)
+        {
+            return maxBounceSpeed > 0f
+                ? Mathf.Min(maxBounceSpeed, speed)
+                : speed;
         }
 
         private PlayerController ResolvePlayer(Collision collision)

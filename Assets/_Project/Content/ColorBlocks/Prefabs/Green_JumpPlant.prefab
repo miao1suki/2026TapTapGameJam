@@ -55,13 +55,15 @@ MonoBehaviour:
   featureRenderers: []
   playerTag: Player
   baseBounceSpeed: 10.5
-  fallDistanceScale: 0.7
-  maxBounceSpeed: 16.5
+  lowFallReturnHeightRatio: 0.9
+  maxBounceSpeed: 0
+  highFallReturnHeightRatio: 0.5
+  highFallReferenceHeightGrid: 8
   minTriggerInterval: 0.15
   triggerMode: 2
   repeatedBounceDecay: 0.85
   decayResetSeconds: 1.5
-  minimumBounceHeightGrid: 1.5
+  minimumBounceHeightGrid: 0.3
 --- !u!33 &6560251053896500872
 MeshFilter:
   m_ObjectHideFlags: 0

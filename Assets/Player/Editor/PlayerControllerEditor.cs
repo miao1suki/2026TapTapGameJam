@@ -144,8 +144,27 @@ namespace Project.Player.Editor
                 "用于地面检测的物理层。"));
             root.Add(jump);
 
+            Foldout pickup = PlayerInspectorFields.CreateFoldout(
+                "拾取");
+            pickup.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "pickupSenseRadiusBlocks",
+                "拾取感知半径（格）",
+                "以玩家为中心，半径多少格以内的掉落物可以被感知。数值使用关卡网格格数，不使用世界单位。"));
+            root.Add(pickup);
+
             Foldout death = PlayerInspectorFields.CreateFoldout(
                 "死亡");
+            death.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "lethalFallHeightBlocks",
+                "致死高度（格）",
+                "玩家从大于等于该网格高度的位置落到实体地面时直接死亡；落入水中、弹性植物或进入攀爬可免除。0 表示关闭致死高度。"));
+            death.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "respawnInvulnerabilitySeconds",
+                "复活无敌时间（秒）",
+                "复活后暂时免疫伤害和摔落死亡；岩浆持续检测，无敌结束后仍在岩浆中会立即死亡。"));
             death.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "deathAction",
@@ -178,12 +197,15 @@ namespace Project.Player.Editor
             Label moveDebug = CreateDebugLabel();
             Label jumpDebug = CreateDebugLabel();
             Label actionDebug = CreateDebugLabel();
+            Label pickupDebug = CreateDebugLabel();
             debug.Add(new Label("移动"));
             debug.Add(moveDebug);
             debug.Add(new Label("跳跃"));
             debug.Add(jumpDebug);
             debug.Add(new Label("动作与控制"));
             debug.Add(actionDebug);
+            debug.Add(new Label("拾取感知"));
+            debug.Add(pickupDebug);
             root.Add(debug);
             root.schedule.Execute(() =>
             {
@@ -199,6 +221,7 @@ namespace Project.Player.Editor
                     moveDebug.text = "进入 Play Mode 后显示实时数据";
                     jumpDebug.text = "进入 Play Mode 后显示实时数据";
                     actionDebug.text = "进入 Play Mode 后显示实时数据";
+                    pickupDebug.text = "进入 Play Mode 后显示实时数据";
                     return;
                 }
 
@@ -213,7 +236,11 @@ namespace Project.Player.Editor
                     $"离地 {player.AirTime:0.##}s · " +
                     $"Coyote {player.CoyoteRemaining:0.##}s · " +
                     $"Jump Buffer {player.JumpBufferRemaining:0.##}s · " +
-                    $"垂直速度 {player.VerticalVelocity:0.##}";
+                    $"垂直速度 {player.VerticalVelocity:0.##} · " +
+                    $"当前下落 {player.CurrentFallDistance:0.##} · " +
+                    $"上次落地 {player.LastLandingFallDistance:0.##} · " +
+                    $"致死高度 {player.LethalFallHeightWorld:0.##} · " +
+                    $"无敌 {player.InvulnerabilityRemaining:0.##}s";
                 actionDebug.text =
                     $"状态 {player.CurrentStateId} · " +
                     $"死亡 {(player.IsDead ? "是" : "否")} · " +
@@ -221,6 +248,9 @@ namespace Project.Player.Editor
                     $"({player.ControlLockDepth}) · " +
                     $"动作 {(player.CurrentAction != null ? player.CurrentAction.name : "无")} · " +
                     $"播放 {(player.IsActionPlaying ? "是" : "否")}";
+                pickupDebug.text =
+                    $"感知半径 {player.PickupSenseRadiusBlocks:0.##} 格 · " +
+                    $"世界半径 {player.PickupSenseRadiusWorld:0.##}";
             }).Every(100);
 
             HelpBox note = new HelpBox(

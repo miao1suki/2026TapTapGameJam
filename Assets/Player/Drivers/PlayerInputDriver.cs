@@ -66,6 +66,23 @@ namespace Project.Player
                 return;
             }
 
+            if (target.IsPointerDragActive)
+            {
+                target.UpdatePointerDrag(
+                    GameInput.PointerPosition,
+                    Camera.main);
+                target.ClearBufferedInput();
+                target.SetJumpHeld(false);
+                return;
+            }
+
+            if (target.IsControlLocked || Time.timeScale == 0f)
+            {
+                target.ClearBufferedInput();
+                target.SetJumpHeld(false);
+                return;
+            }
+
             target.RefreshInteractionTarget();
             UpdateInteraction(target);
             target.UpdateCarry(
@@ -85,13 +102,6 @@ namespace Project.Player
             }
 
             UpdateColorWheel(target);
-
-            if (target.IsControlLocked || Time.timeScale == 0f)
-            {
-                target.ClearBufferedInput();
-                target.SetJumpHeld(false);
-                return;
-            }
 
             target.SetMoveInput(
                 GameInput.ReadVector2(InputActionId.Move));

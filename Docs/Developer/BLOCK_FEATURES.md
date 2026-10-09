@@ -109,7 +109,7 @@ Green_PlantObstacle PlantObstacleFeature
 - 按钮和曲柄通过 `IInteractionTarget`/`IInteractionHoldTarget` 接入玩家交互键。
 - 移动平台支持横向/纵向路线、游荡格数、时间、端点停留、自动/信号驱动、强制载人、Tag 筛选和多个开关的任一/全部激活规则。
 - 水泡只有上方存在其他蓝色 `ColorObject` 时才提供浮力。
-- 弹性植物的弹跳速度由玩家当前坠落高度换算，相关比例全部可调。
+- 弹性植物的弹跳速度由玩家当前坠落高度和“低/高落差回弹比例”换算，落差越高衰减越大，相关比例全部可调。
 - 所有功能组件都带 `IFeatureVisualTarget`：可配置专属材质和目标 Renderer，后续像水一样接各颜色道具的正式表现。
 
 第二轮校正已生效：

@@ -1,5 +1,28 @@
 # 工作状态与交接（每次任务重读）
 
+## 弹性植物落差回弹比例
+
+- 日期：2026-10-09；负责人：Codex；分支：`修衰落高度和拾取范围`。
+- 公式：回弹高度按 `落差 × 当前回弹比例` 计算，落差越高，比例从“低落差回弹比例”插值到“高落差回弹比例”。
+- 默认：低落差回弹比例 `0.9`，高落差回弹比例 `0.5`，参考高度 `8` 格，最低弹跳高度 `0.3` 格；高落差默认保留至少一半，但不会超过原落差。
+- 衰减：连续弹跳仍乘既有“连续弹跳衰减比例”；最大弹速改为可选安全上限，默认 `0` 表示不限制。
+- 资源：`Green_JumpPlant.prefab` 已更新新参数；`PlayerController` 增加高度反算弹速接口 `CalculateVerticalRiseSpeed`。
+- 验证：Unity 6000.3.12f1 Runtime 与 Editor 静态编译 0 错误，`git diff --check` 通过。
+
+## 掉落物启停生命周期基类
+
+- 日期：2026-10-09；负责人：Codex；分支：`修衰落高度和拾取范围`。
+- 基类：新增 `DropItemBase`，在 `OnEnable` 重置状态并调用出现动画钩子；拾取通过 `TryBeginCollection` 进入收集阶段，收集动画完成后才调用 `RecycleItem`。
+- 磁吸目标：拾取开始时把玩家传给 `DropItemBase.CollectionActor`，基类动画以后可通过 `CollectionTarget` 实现逐渐缩小并追随玩家，Tween 到达玩家后才完成回收。
+- 拾取阶段：玩家进入感知范围只启动磁吸，不结算颜色；钥匙保留碰撞，真正碰到玩家后调用 `CompleteAttraction`，再关闭碰撞、解锁颜色、隐藏钥匙并进入镜头演出。
+- 控制锁：新增 `IPlayerControlLockTarget`，颜色钥匙在拾取动画开始时获取控制锁句柄，动画结束或对象禁用时释放；输入驱动把锁检查前移，锁定期间不再处理交互、搬运、染色、移动、跳跃和普通动作。
+- 玩家感知：`PlayerController` 新增“拾取感知半径（格）”、世界半径换算、XY 平面距离判断和选中物体的 Gizmo 可视化；掉落物以后统一查询玩家范围，不单独配置拾取半径。
+- 颜色钥匙：`ColorKeyPickup` 改为继承 `DropItemBase`，解锁和关闭碰撞仍在拾取开始时立即执行，Renderer 不再提前隐藏，拾取动画完成后才隐藏并销毁。
+- 规则落库：新增独立 `taptap-drop-items` Skill，并同步 `taptap-color-gameplay` 与 `ColorBlocks/SKILL.md`；以后新增拾取物必须继承 `DropItemBase`，Tween 钩子只写在基类，子类不得绕开基类直接销毁或禁用。
+- 对象池约束：`OnDisable` 只负责停止动画和清理；池化掉落物以后应重写 `RecycleItem`，不能在 `OnDisable` 中等待消失动画。
+- 依赖：项目尚未导入 DOTween，当前基类只提供出现、收集、停止动画的稳定钩子；DOTween 导入后在基类钩子内接入，不改变钥匙玩法时序。
+- 验证：Unity 6000.3.12f1 `Project.Shared.Runtime.rsp` 与 `Assembly-CSharp.rsp` 静态编译 0 错误。
+
 ## 玩家死亡状态与重生
 
 - 日期：2026-10-08；负责人：Codex；分支：`codex/orpheus0829/扩充道具`。
@@ -8,6 +31,8 @@
 - 重生输入：新增 `InputActionId.Respawn`，默认键盘 `R`、手柄右摇杆按下，固定仅点击；`PlayerInputDriver` 死亡时只消费重生输入。
 - 重生位置：优先使用 `respawnPoint` 或注册的 `IPlayerRespawnPoint`；没有复活点时在死亡位置周围 `4 格`内随机寻找可落地位置。每次死亡都会更新死亡点，连续死亡以最新死亡点为准。
 - 安全检查：随机点先向下吸附到实体地面，再检测 `LavaHazardFeature`；找不到安全随机点则回退默认复活点。
+- 致死高度：`PlayerController` 新增“致死高度（格）”，默认 `8` 格；玩家落地时若本次下落高度大于等于该值，直接进入 `PlayerStateId.Death`，不使用血条。落入水中、落到可用弹性植物或下落期间进入过攀爬状态会免除摔落死亡。
+- 复活保护：`PlayerController` 新增“复活无敌时间（秒）”，默认 `2` 秒；复活后伤害和摔落致死统一忽略，`PlayerHealth.TakeDamage` 也遵循无敌状态。岩浆改为 `OnTriggerStay` 持续致死，无敌结束后仍留在岩浆中会立即死亡。
 - 重生锚：`Respawn_Block` 使用米黄色高对比材质，挂载 `RespawnAnchorFeature` 并通过 `IPlayerRespawnPoint` 注册复活点；道具栏目新增“重生锚”入口。
 - 重生锚状态：组件不可碰撞，按 Unity Tag 检测玩家，支持激活范围与复活随机半径；未激活/已激活材质、激活动画可配置，渲染排序固定为玩家下一层。
 - 颜色物兜底：`ColorObject` 在未解锁状态统一强制碰撞体为实体且关闭功能；解锁后恢复预制体原本的触发/实体状态。所有蓝色水族功能同时二次校验蓝色解锁，避免未解锁仍产生玩家水体状态。

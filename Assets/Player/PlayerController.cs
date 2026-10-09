@@ -22,7 +22,8 @@ namespace Project.Player
     [DisallowMultipleComponent]
     public sealed class PlayerController :
         MonoBehaviour,
-        IAchievementSignalProvider
+        IAchievementSignalProvider,
+        IPlayerControlLockTarget
     {
         [SerializeField, Min(0)] private float moveSpeed = 5;
         [SerializeField, Min(0)] private float swimSpeed = 3.5f;
@@ -51,6 +52,12 @@ namespace Project.Player
         [SerializeField, Min(0)] private float coyoteTime = .12f;
         [SerializeField, Min(0)] private float jumpBufferTime = .12f;
         [SerializeField] private LayerMask groundMask = ~0;
+        [SerializeField, Min(0f)]
+        private float lethalFallHeightBlocks = 8f;
+        [SerializeField, Min(0f)]
+        private float respawnInvulnerabilitySeconds = 2f;
+        [SerializeField, Min(0f)]
+        private float pickupSenseRadiusBlocks = 2f;
         [SerializeField] private ActSO deathAction;
         [SerializeField] private Transform respawnPoint;
         [SerializeField, Min(1)] private int respawnRandomRadiusBlocks = 4;
@@ -79,6 +86,9 @@ namespace Project.Player
         private bool landedThisStep;
         private bool jumpHeld;
         private bool dead;
+        private bool enteredWaterDuringFall;
+        private bool enteredClimbDuringFall;
+        private float invulnerableUntil;
         private int lockDepth;
         private PlayerHealth health;
         private Vector3 initialRespawnPosition;
@@ -142,8 +152,16 @@ namespace Project.Player
         public float LastLandingDownwardSpeed =>
             lastLandingDownwardSpeed;
         public float CurrentFallDistance => currentFallDistance;
+        public float LethalFallHeightBlocks =>
+            lethalFallHeightBlocks;
+        public float LethalFallHeightWorld =>
+            lethalFallHeightBlocks * gridCellWorldSize;
         public bool IsOnBounceSurface => bounceSurfaces.Count > 0;
         public bool LandedThisStep => landedThisStep;
+        public bool IsInvulnerable =>
+            !dead && Time.time < invulnerableUntil;
+        public float InvulnerabilityRemaining =>
+            Mathf.Max(0f, invulnerableUntil - Time.time);
         public string GravityMode
         {
             get
@@ -179,6 +197,10 @@ namespace Project.Player
             interactionSensor != null
                 ? interactionSensor.ScanRadius
                 : 0f;
+        public float PickupSenseRadiusBlocks =>
+            pickupSenseRadiusBlocks;
+        public float PickupSenseRadiusWorld =>
+            pickupSenseRadiusBlocks * gridCellWorldSize;
         public int ControlLockDepth => lockDepth;
         public event Action<ActSO> ActionStarted;
         public event Action<ActSO> ActionCompleted;
@@ -235,6 +257,26 @@ namespace Project.Player
 
             return zeroFrictionMaterial;
         }
+
+        public bool IsWithinPickupSenseRange(Vector3 worldPosition)
+        {
+            Vector3 offset = worldPosition - transform.position;
+            offset.z = 0f;
+            float radius = Mathf.Max(0f, PickupSenseRadiusWorld);
+            return offset.sqrMagnitude <= radius * radius;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            float cellSize = Application.isPlaying
+                ? gridCellWorldSize
+                : GridCellSizeUtility.Resolve(this);
+            float radius =
+                Mathf.Max(0f, pickupSenseRadiusBlocks * cellSize);
+            Gizmos.color = new Color(0.25f, 0.85f, 1f, 0.8f);
+            Gizmos.DrawWireSphere(transform.position, radius);
+        }
+
         private void OnEnable()
         {
             runner = GetComponent<PlayerActionRunner>();
@@ -273,6 +315,9 @@ namespace Project.Player
             currentFallDistance = 0f;
             landedThisStep = false;
             dead = false;
+            enteredWaterDuringFall = false;
+            enteredClimbDuringFall = false;
+            invulnerableUntil = 0f;
             climbSpeedMultipliers.Clear();
             climbSlideSpeeds.Clear();
             climbFastSlideSpeeds.Clear();
@@ -283,6 +328,11 @@ namespace Project.Player
             if (dead)
             {
                 return;
+            }
+
+            if (!IsGrounded)
+            {
+                enteredWaterDuringFall = true;
             }
 
             if (source != null) waterSources.Add(source.GetInstanceID());
@@ -496,13 +546,27 @@ namespace Project.Player
             float initialSpeed,
             bool jumpHeld)
         {
+            float gravity = GetVerticalGravity(jumpHeld);
+            return initialSpeed * initialSpeed / (2f * gravity);
+        }
+
+        public float CalculateVerticalRiseSpeed(
+            float height,
+            bool jumpHeld)
+        {
+            float gravity = GetVerticalGravity(jumpHeld);
+            return Mathf.Sqrt(
+                Mathf.Max(0f, height) * 2f * gravity);
+        }
+
+        private float GetVerticalGravity(bool jumpHeld)
+        {
             float gravityMultiplier = jumpHeld
                 ? jumpGravityMultiplier
                 : jumpReleaseGravityMultiplier;
-            float gravity = Mathf.Max(
+            return Mathf.Max(
                 .01f,
                 Mathf.Abs(Physics.gravity.y) * gravityMultiplier);
-            return initialSpeed * initialSpeed / (2f * gravity);
         }
 
         public void QueuePlatformDelta(Vector3 delta)
@@ -538,6 +602,11 @@ namespace Project.Player
             if (dead)
             {
                 return;
+            }
+
+            if (!IsGrounded)
+            {
+                enteredClimbDuringFall = true;
             }
 
             if (source != null) climbSources.Add(source.GetInstanceID());
@@ -1017,12 +1086,22 @@ namespace Project.Player
                     lastLandingDownwardSpeed = Mathf.Max(
                         0f,
                         -velocityAtStepStart);
+                    if (ShouldDieFromFall(
+                            lastLandingFallDistance,
+                            count))
+                    {
+                        EnterDeath();
+                        return;
+                    }
+
                     TryApplyLandingBounce(
                         lastLandingFallDistance,
                         lastLandingDownwardSpeed,
                         count);
                     highestAirPosition = transform.position.y;
                     currentFallDistance = 0f;
+                    enteredWaterDuringFall = false;
+                    enteredClimbDuringFall = false;
                     landedThisStep = true;
                     Emit(AchievementSignalIds.PlayerLanded);
                 }
@@ -1038,6 +1117,8 @@ namespace Project.Player
                 if (wasGrounded)
                 {
                     airborneSince = Time.time;
+                    enteredWaterDuringFall = false;
+                    enteredClimbDuringFall = false;
                 }
 
                 if (airborneSince >= 0f)
@@ -1248,6 +1329,56 @@ namespace Project.Player
 
             motor.linearVelocity = velocity;
         }
+
+        private bool ShouldDieFromFall(
+            float fallDistance,
+            int groundHitCount)
+        {
+            if (dead ||
+                lethalFallHeightBlocks <= 0f ||
+                IsInvulnerable ||
+                fallDistance + .001f <
+                lethalFallHeightBlocks * gridCellWorldSize)
+            {
+                return false;
+            }
+
+            if (enteredWaterDuringFall ||
+                enteredClimbDuringFall ||
+                IsSwimming ||
+                IsClimbing)
+            {
+                return false;
+            }
+
+            return !HasAvailableBounceSurface(groundHitCount);
+        }
+
+        private bool HasAvailableBounceSurface(
+            int groundHitCount)
+        {
+            for (int index = 0;
+                 index < groundHitCount;
+                 index++)
+            {
+                Collider collider = groundHits[index].collider;
+                if (collider == null)
+                {
+                    continue;
+                }
+
+                IPlayerBounceSurface surface =
+                    collider.GetComponentInParent<
+                        IPlayerBounceSurface>();
+                if (surface != null &&
+                    surface.IsBounceSurfaceAvailable)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
         public bool TryPlayAction(ActSO action)
         {
             if (IsControlLocked || action == null) return false;
@@ -1336,6 +1467,15 @@ namespace Project.Player
             {
                 ReviveFromDeath();
             }
+
+            if (dead)
+            {
+                ReviveFromDeath();
+            }
+
+            invulnerableUntil =
+                Time.time +
+                Mathf.Max(0f, respawnInvulnerabilitySeconds);
         }
 
         private Vector3 FindRandomRespawnPosition(
@@ -1495,6 +1635,11 @@ namespace Project.Player
             climbFastSlideSpeeds.Clear();
             climbSources.Clear();
             bounceSurfaces.Clear();
+            enteredWaterDuringFall = false;
+            enteredClimbDuringFall = false;
+            currentFallDistance = 0f;
+            highestAirPosition = transform.position.y;
+            invulnerableUntil = 0f;
             ReleaseHeldInteraction();
             CancelCarry();
             ForceEndPointerDrag();
@@ -1512,6 +1657,46 @@ namespace Project.Player
             lockDepth = locked ? lockDepth + 1 : Mathf.Max(0, lockDepth - 1);
             if (previous != IsControlLocked) ControlLockChanged?.Invoke(IsControlLocked);
         }
+
+        public IDisposable AcquireControlLock(object owner)
+        {
+            ReleaseHeldInteraction();
+            CancelCarry();
+            ForceEndPointerDrag();
+            colorWheel?.CloseWheel();
+            ClearBufferedInput();
+            sprint = false;
+            SetControlLocked(true);
+            return new ControlLockHandle(this);
+        }
+
+        private void ReleaseControlLock()
+        {
+            SetControlLocked(false);
+        }
+
+        private sealed class ControlLockHandle : IDisposable
+        {
+            private PlayerController owner;
+
+            public ControlLockHandle(PlayerController owner)
+            {
+                this.owner = owner;
+            }
+
+            public void Dispose()
+            {
+                if (owner == null)
+                {
+                    return;
+                }
+
+                PlayerController current = owner;
+                owner = null;
+                current.ReleaseControlLock();
+            }
+        }
+
         public void ReceiveTimelineSignal() => TimelineSignalReceived?.Invoke();
         private void Emit(string id) => GameplaySignalHub.Emit(id, gameObject);
     }
