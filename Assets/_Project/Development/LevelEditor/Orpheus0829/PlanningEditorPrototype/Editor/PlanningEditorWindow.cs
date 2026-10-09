@@ -260,6 +260,7 @@ namespace PlanningEditorPrototype
         public void CreateGUI()
         {
             VisualElement root = rootVisualElement;
+            LevelEditorTypography.Apply(root);
             root.style.flexGrow = 1f;
             root.style.backgroundColor = new Color(.07f, .08f, .1f);
             canvasBackgroundColor = LoadCanvasBackgroundColor();

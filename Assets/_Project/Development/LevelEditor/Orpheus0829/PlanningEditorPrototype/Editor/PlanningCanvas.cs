@@ -2471,6 +2471,11 @@ namespace PlanningEditorPrototype
             }
 
             Vector2Int start = CellAt(dragStart);
+            if (IsPlacingDoor)
+            {
+                DrawDoorPlacementPreview(painter, start);
+                return;
+            }
             Vector2Int end = CellAt(dragCurrent);
             int minX = Mathf.Min(start.x, end.x);
             int minY = Mathf.Min(start.y, end.y);
@@ -2500,6 +2505,12 @@ namespace PlanningEditorPrototype
                 return;
             }
 
+            if (IsPlacingDoor)
+            {
+                if (!isDragging) DrawDoorPlacementPreview(painter, hoveredCell);
+                return;
+            }
+
             Rect rect = CellRect(hoveredCell.x, hoveredCell.y);
             FillRect(
                 painter,
@@ -2511,6 +2522,37 @@ namespace PlanningEditorPrototype
                 rect,
                 new Color(1f, 1f, 1f, .95f),
                 2f);
+        }
+
+        private bool IsPlacingDoor => mode != PlanningCanvasMode.World &&
+            GetActiveDetailTool() == PlanningDetailTool.Box && detailPropEntryId == PlanningDoorUtility.DoorEntryId;
+
+        private void DrawDoorPlacementPreview(Painter2D painter, Vector2Int cell)
+        {
+            PlanningRoom room = document?.FindRoom(selectedRoomId);
+            Vector2Int local = cell;
+            if (mode == PlanningCanvasMode.Assembly)
+            {
+                GetAssemblyStride(out int sx, out int sy);
+                if (!TryFindAssemblyOwner(cell, sx, sy, out room, out local)) room = null;
+            }
+            bool valid = false;
+            if (room != null)
+            {
+                RectInt allowed = room.isConnector ? GetConnectorDetailBounds(room) :
+                    room.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
+                var door = new PlanningBox(PlanningDetailType.Prop, new RectInt(local.x, local.y, 1, 2))
+                    { propEntryId = PlanningDoorUtility.DoorEntryId };
+                valid = allowed.Contains(local) && allowed.Contains(local + Vector2Int.up) &&
+                    PlanningDoorUtility.CanPlace(room.boxes, new RectInt(local.x, local.y, 1, 2)) &&
+                    PlanningDoorUtility.TryFindButtonCell(room.boxes, door, allowed, out _);
+            }
+            Rect footprint = CellRect(cell.x, cell.y, 1, 2);
+            Color color = valid ? new Color(.35f, .9f, .65f, 1f) : new Color(1f, .35f, .3f, 1f);
+            FillRect(painter, footprint, new Color(color.r, color.g, color.b, .2f), 1f);
+            StrokeRect(painter, footprint, color, 2f);
+            DrawLine(painter, new Vector2(footprint.xMin, footprint.center.y),
+                new Vector2(footprint.xMax, footprint.center.y), color, 1f);
         }
 
         private void DrawEmptyHint(MeshGenerationContext context)
@@ -3378,6 +3420,12 @@ namespace PlanningEditorPrototype
                 int minY = Mathf.Min(start.y, end.y);
                 int maxX = Mathf.Max(start.x, end.x);
                 int maxY = Mathf.Max(start.y, end.y);
+                if (IsPlacingDoor)
+                {
+                    minX = maxX = start.x;
+                    minY = start.y;
+                    maxY = start.y + 1;
+                }
                 RectInt allowed = room.GetLocalAllowedRect(
                     WorldBlockCellWidth,
                     WorldBlockCellHeight);
@@ -3481,6 +3529,11 @@ namespace PlanningEditorPrototype
         {
             PlanningDetailTool activeTool = GetActiveDetailTool();
             if (activeTool == PlanningDetailTool.Merge) { CompleteMergeSelection(); return; }
+            if (IsPlacingDoor)
+            {
+                AddAssemblyBox(assemblyStrokeStart);
+                return;
+            }
             BeginDocumentBatch();
             IEnumerable<Vector2Int> cells = BuildAreaCells(
                 assemblyStrokeStart,

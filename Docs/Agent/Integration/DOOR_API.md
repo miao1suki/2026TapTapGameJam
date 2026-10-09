@@ -13,6 +13,8 @@
 
 PlanningBox 的 `singleInstance` 使 1×2 门只生成一个实例；`doorOwnerId` 保存按钮所属门的规划 ID。DoorEntryId=`mechanism-door-standard`；内部按钮 EntryId=`mechanism-door-owned-button` 不进入 palette。按钮专用 prefab 由 PlanningDoorUtility 解析，不依赖随机生成的入口 ID。
 
+门放置预览按固定 1×2 绘制；详情/装配拖拽都以按下格为上格，一次只创建一扇。Scene 放置器使用世界坐标下格作为根位置，提示向上扩展两格。DoorButton 模型局部中心 y=-0.44、尺寸 (0.6,0.12,0.6)，底面位于所属格底 y=-0.5，根 Trigger 和交互绑定不变。
+
 删除门清理其所属按钮；删除按钮保留门且解除绑定。NotifyDocumentChanged 清理孤儿按钮，新增/保存使用既有规划事务与撤销。增量整合完成后 BindSceneDoors 从 PlanningBoxId 重新解析引用，不能引用 staging 中即将销毁的对象。按钮移动不跟随门作为子物体。
 
 镜头运行时构造 TimelineAsset / CameraTimelineTrack / CameraTimelineClip，保留当前投影和角度，移向门中心后停留，再交还统一相机。自身仅操作门轴，不直接写 Camera。自身持有并清理 director、Timeline、clip、track、临时锚点、Tween 和玩家控制锁；最多等待已有 Timeline 15 秒，超时跳过镜头，不阻塞开门。

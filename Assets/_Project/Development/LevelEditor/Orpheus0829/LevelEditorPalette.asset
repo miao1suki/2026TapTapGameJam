@@ -858,7 +858,7 @@ MonoBehaviour:
     componentValueOverrides: []
   propEntries:
   - entryId: mechanism-door-standard
-    displayName: "门"
+    displayName: "\u95E8"
     prefab: {fileID: 100000, guid: d0c5eff6ad0b47e3b940089416b08c21, type: 3}
     componentValueOverrides: []
   - entryId: 3c635d52f11f48f18d4d82a53c65e601

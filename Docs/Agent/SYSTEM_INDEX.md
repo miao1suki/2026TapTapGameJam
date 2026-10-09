@@ -1,5 +1,7 @@
 # 系统索引
 
+最近整合说明：[2026-10-09 关卡编辑、门与颜色表现](../Developer/UPDATE_2026-10-09_EDITOR_AND_MECHANISMS.md)。
+
 | 系统 | 源码 | 状态 |
 |---|---|---|
 | 非颜色门与绑定按钮 | `Assets/_Project/Code/Systems/Mechanisms` | 道具门 1×2、自动/追加专属按钮、全部按下后开门、Timeline 镜头；不接收颜色交互。见 Integration/DOOR_API.md 与 Developer/DOORS.md |

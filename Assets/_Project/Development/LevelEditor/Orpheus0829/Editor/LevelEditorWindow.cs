@@ -27,6 +27,7 @@ namespace Project.LevelEditor.Editor
         public void CreateGUI()
         {
             VisualElement root = rootVisualElement;
+            LevelEditorTypography.Apply(root);
             root.style.paddingLeft = 10f;
             root.style.paddingRight = 10f;
             root.style.paddingTop = 8f;
