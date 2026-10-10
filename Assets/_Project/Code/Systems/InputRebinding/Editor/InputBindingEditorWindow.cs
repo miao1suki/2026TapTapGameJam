@@ -4,6 +4,8 @@ using Project.InputAbstraction;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.UIElements;
 
 namespace Project.InputRebinding.Editor
@@ -45,6 +47,8 @@ namespace Project.InputRebinding.Editor
         private InputActionRebindingExtensions.RebindingOperation
             keyboardCaptureOperation;
         private KeyboardCaptureSession keyboardCaptureSession;
+        private InputActionId pendingKeyboardRebindAction;
+        private int pendingKeyboardRebindBindingIndex = -1;
         private bool dragging;
         private bool refreshQueued;
         private Vector2 lastPointer;
@@ -65,9 +69,11 @@ namespace Project.InputRebinding.Editor
         {
             EditorApplication.playModeStateChanged +=
                 OnPlayModeStateChanged;
+            InputSystem.onEvent += OnInputSystemEvent;
             ResetService();
             rootVisualElement.RegisterCallback<KeyDownEvent>(
-                OnKeyDown);
+                OnKeyDown,
+                TrickleDown.TrickleDown);
             rootVisualElement.schedule.Execute(
                 () => rootVisualElement.Focus());
         }
@@ -76,8 +82,10 @@ namespace Project.InputRebinding.Editor
         {
             EditorApplication.playModeStateChanged -=
                 OnPlayModeStateChanged;
+            InputSystem.onEvent -= OnInputSystemEvent;
             rootVisualElement.UnregisterCallback<KeyDownEvent>(
-                OnKeyDown);
+                OnKeyDown,
+                TrickleDown.TrickleDown);
             ReleaseService();
         }
 
@@ -99,6 +107,30 @@ namespace Project.InputRebinding.Editor
             }
         }
 
+        private void Update()
+        {
+            if (pendingKeyboardRebindBindingIndex < 0 ||
+                Keyboard.current == null)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                 index < Keyboard.current.allKeys.Count;
+                 index++)
+            {
+                KeyControl key = Keyboard.current.allKeys[index];
+                if (!key.wasPressedThisFrame)
+                {
+                    continue;
+                }
+
+                CompletePendingKeyboardRebind(
+                    ToBindingPath(key.path));
+                return;
+            }
+        }
+
         private void ResetService()
         {
             if (this == null)
@@ -114,6 +146,7 @@ namespace Project.InputRebinding.Editor
 
         private void ReleaseService()
         {
+            CancelPendingKeyboardRebind();
             CancelKeyboardCapture(false);
             if (activeRebind != null)
             {
@@ -853,6 +886,20 @@ namespace Project.InputRebinding.Editor
             InputBindingInfo binding,
             Label display)
         {
+            if (binding.Device == InputBindingDevice.Keyboard)
+            {
+                activeRebind?.Cancel();
+                activeRebind = null;
+                pendingKeyboardRebindAction = actionId;
+                pendingKeyboardRebindBindingIndex =
+                    binding.BindingIndex;
+                display.text = "请按键盘按键…";
+                status.text =
+                    $"正在接听：{InputBindingService.GetActionDisplayName(actionId)}";
+                rootVisualElement.Focus();
+                return;
+            }
+
             display.text = "请按键…";
             InputActionRebindingExtensions.RebindingOperation
                 operation = service.StartRebind(
@@ -875,6 +922,92 @@ namespace Project.InputRebinding.Editor
             }
 
             activeRebind = operation;
+        }
+
+        private void CancelPendingKeyboardRebind()
+        {
+            pendingKeyboardRebindAction = default;
+            pendingKeyboardRebindBindingIndex = -1;
+        }
+
+        private void CompletePendingKeyboardRebind(
+            KeyCode keyCode)
+        {
+            string path = KeyCodeToControlPath(keyCode);
+            if (string.IsNullOrEmpty(path))
+            {
+                status.text = "暂不支持这个键盘按键。";
+                return;
+            }
+
+            CompletePendingKeyboardRebind(path);
+        }
+
+        private void CompletePendingKeyboardRebind(
+            string path)
+        {
+            bool changed = service.SetBindingPath(
+                pendingKeyboardRebindAction,
+                pendingKeyboardRebindBindingIndex,
+                path);
+            CancelPendingKeyboardRebind();
+            status.text = changed
+                ? $"已改为：{GetKeyboardDisplayName(path)}"
+                : "写入绑定失败。";
+            QueueRefresh();
+        }
+
+        private void OnInputSystemEvent(
+            InputEventPtr eventPtr,
+            InputDevice device)
+        {
+            if (pendingKeyboardRebindBindingIndex < 0 ||
+                device is not Keyboard keyboard)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                 index < keyboard.allKeys.Count;
+                 index++)
+            {
+                KeyControl key = keyboard.allKeys[index];
+                if (!key.ReadValueFromEvent(
+                        eventPtr,
+                        out float value) ||
+                    value <= .5f)
+                {
+                    continue;
+                }
+
+                CompletePendingKeyboardRebind(
+                    ToBindingPath(key.path));
+                return;
+            }
+        }
+
+        private static string ToBindingPath(string controlPath)
+        {
+            if (string.IsNullOrWhiteSpace(controlPath))
+            {
+                return null;
+            }
+
+            if (controlPath.StartsWith("/"))
+            {
+                int slash = controlPath.IndexOf(
+                    '/',
+                    1);
+                if (slash > 1)
+                {
+                    return "<" +
+                           controlPath.Substring(1, slash - 1) +
+                           ">" +
+                           controlPath.Substring(slash);
+                }
+            }
+
+            return controlPath;
         }
 
         private void StartKeyboardCapture(
@@ -1011,6 +1144,7 @@ namespace Project.InputRebinding.Editor
                 return;
             }
 
+            CancelPendingKeyboardRebind();
             InputService.EnsureRequiredActions(service.Asset);
             Build();
         }
@@ -1034,6 +1168,13 @@ namespace Project.InputRebinding.Editor
         {
             if (service == null)
             {
+                return;
+            }
+
+            if (pendingKeyboardRebindBindingIndex >= 0)
+            {
+                CompletePendingKeyboardRebind(evt.keyCode);
+                evt.StopImmediatePropagation();
                 return;
             }
 
@@ -1518,6 +1659,76 @@ namespace Project.InputRebinding.Editor
                             return "<Keyboard>/space";
                     }
             }
+        }
+
+        private static string KeyCodeToControlPath(
+            KeyCode keyCode)
+        {
+            if (keyCode >= KeyCode.A && keyCode <= KeyCode.Z)
+            {
+                return "<Keyboard>/" +
+                       char.ToLowerInvariant(
+                           (char)('a' + keyCode - KeyCode.A));
+            }
+
+            if (keyCode >= KeyCode.Alpha0 &&
+                keyCode <= KeyCode.Alpha9)
+            {
+                return "<Keyboard>/" +
+                       (keyCode - KeyCode.Alpha0);
+            }
+
+            if (keyCode >= KeyCode.F1 && keyCode <= KeyCode.F12)
+            {
+                return "<Keyboard>/f" +
+                       (keyCode - KeyCode.F1 + 1);
+            }
+
+            if (keyCode >= KeyCode.Keypad0 &&
+                keyCode <= KeyCode.Keypad9)
+            {
+                return "<Keyboard>/numpad" +
+                       (keyCode - KeyCode.Keypad0);
+            }
+
+            switch (keyCode)
+            {
+                case KeyCode.Space: return "<Keyboard>/space";
+                case KeyCode.Return: return "<Keyboard>/enter";
+                case KeyCode.KeypadEnter: return "<Keyboard>/numpadEnter";
+                case KeyCode.Escape: return "<Keyboard>/escape";
+                case KeyCode.Tab: return "<Keyboard>/tab";
+                case KeyCode.Backspace: return "<Keyboard>/backspace";
+                case KeyCode.Delete: return "<Keyboard>/delete";
+                case KeyCode.Insert: return "<Keyboard>/insert";
+                case KeyCode.Home: return "<Keyboard>/home";
+                case KeyCode.End: return "<Keyboard>/end";
+                case KeyCode.PageUp: return "<Keyboard>/pageUp";
+                case KeyCode.PageDown: return "<Keyboard>/pageDown";
+                case KeyCode.UpArrow: return "<Keyboard>/upArrow";
+                case KeyCode.DownArrow: return "<Keyboard>/downArrow";
+                case KeyCode.LeftArrow: return "<Keyboard>/leftArrow";
+                case KeyCode.RightArrow: return "<Keyboard>/rightArrow";
+                case KeyCode.LeftShift: return "<Keyboard>/leftShift";
+                case KeyCode.RightShift: return "<Keyboard>/rightShift";
+                case KeyCode.LeftControl: return "<Keyboard>/leftCtrl";
+                case KeyCode.RightControl: return "<Keyboard>/rightCtrl";
+                case KeyCode.LeftAlt: return "<Keyboard>/leftAlt";
+                case KeyCode.RightAlt: return "<Keyboard>/rightAlt";
+                case KeyCode.Minus: return "<Keyboard>/minus";
+                case KeyCode.Equals: return "<Keyboard>/equals";
+                case KeyCode.LeftBracket: return "<Keyboard>/leftBracket";
+                case KeyCode.RightBracket: return "<Keyboard>/rightBracket";
+                case KeyCode.Semicolon: return "<Keyboard>/semicolon";
+                case KeyCode.Quote: return "<Keyboard>/quote";
+                case KeyCode.BackQuote: return "<Keyboard>/backquote";
+                case KeyCode.Comma: return "<Keyboard>/comma";
+                case KeyCode.Period: return "<Keyboard>/period";
+                case KeyCode.Slash: return "<Keyboard>/slash";
+                case KeyCode.Backslash: return "<Keyboard>/backslash";
+            }
+
+            return null;
         }
 
         private static string GetKeyboardDisplayName(

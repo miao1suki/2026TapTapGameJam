@@ -26,6 +26,7 @@ namespace Project.GameFlow
         [SerializeField] private GameObject pauseScreen;
         [SerializeField] private GameObject endingScreen;
         [SerializeField] private GameObject loadingScreen;
+        [SerializeField] private EscMenuController escMenu;
 
         [Header("Main menu")]
         [SerializeField] private Button startGameButton;
@@ -44,8 +45,10 @@ namespace Project.GameFlow
         [SerializeField] private Button endingQuitButton;
 
         private GameFlowController flow;
+        private GameSystemSceneRoot systemSceneRoot;
         private bool buttonsBound;
         private bool isPaused;
+        private bool pauseCloseInProgress;
         private Coroutine screenAnimation;
 
         public int InitializationOrder => 100;
@@ -130,10 +133,20 @@ namespace Project.GameFlow
 
         public void TogglePause()
         {
+            if (isPaused &&
+                escMenu != null &&
+                escMenu.TryTriggerCurrentCloseButton())
+            {
+                return;
+            }
+
             SetPaused(!isPaused);
         }
 
-        public void SetPaused(bool value, bool playSound = true)
+        public void SetPaused(
+            bool value,
+            bool playSound = true,
+            bool immediate = false)
         {
             if (value && !IsGameplayScene())
             {
@@ -142,6 +155,11 @@ namespace Project.GameFlow
 
             if (isPaused == value)
             {
+                if (!value && pauseCloseInProgress)
+                {
+                    return;
+                }
+
                 SetActive(pauseScreen, value);
                 return;
             }
@@ -152,12 +170,21 @@ namespace Project.GameFlow
                     ? AchievementSignalIds.GamePaused
                     : AchievementSignalIds.GameResumed,
                 gameObject);
-            Time.timeScale = value ? 0f : 1f;
-            AudioListener.pause = value;
-            SetActive(pauseScreen, value);
             if (value)
             {
-                AnimateScreen(pauseScreen);
+                Time.timeScale = 0f;
+                AudioListener.pause = true;
+                SetActive(pauseScreen, true);
+                escMenu?.PlayOpen();
+            }
+            else if (immediate || escMenu == null)
+            {
+                CompletePauseClose();
+            }
+            else
+            {
+                pauseCloseInProgress = true;
+                escMenu.PlayClose(CompletePauseClose);
             }
 
             Cursor.visible = value;
@@ -177,17 +204,32 @@ namespace Project.GameFlow
 
         private void Awake()
         {
+            if (escMenu == null)
+            {
+                escMenu = GetComponentInChildren<EscMenuController>(true);
+            }
+
+            systemSceneRoot = GetComponentInParent<GameSystemSceneRoot>();
             BindButtons();
         }
 
         private void Update()
         {
             if (IsInitialized &&
+                IsSystemUiSceneAvailable() &&
                 IsGameplayScene() &&
                 GameInput.WasTriggeredThisFrame(InputActionId.Pause))
             {
                 TogglePause();
             }
+        }
+
+        private bool IsSystemUiSceneAvailable()
+        {
+            return systemSceneRoot != null &&
+                   systemSceneRoot.Kind == GameSystemSceneKind.UI &&
+                   gameObject.scene.IsValid() &&
+                   gameObject.scene.isLoaded;
         }
 
         private void OnEnable()
@@ -202,7 +244,7 @@ namespace Project.GameFlow
 
         private void OnDestroy()
         {
-            SetPaused(false, false);
+            SetPaused(false, false, true);
             UnbindFlow();
             UnbindButtons();
         }
@@ -296,13 +338,13 @@ namespace Project.GameFlow
 
         private void OnTransitionStarted(GameFlowSceneId _)
         {
-            SetPaused(false, false);
+            SetPaused(false, false, true);
             SetOnly(loadingScreen, false);
         }
 
         private void OnActiveSceneChanged(GameFlowSceneId sceneId)
         {
-            SetPaused(false, false);
+            SetPaused(false, false, true);
             bool menuLike = sceneId == GameFlowSceneId.MainMenu ||
                             sceneId == GameFlowSceneId.Ending;
             Cursor.visible = menuLike;
@@ -326,6 +368,14 @@ namespace Project.GameFlow
                     SetOnly(gameplayHud);
                     break;
             }
+        }
+
+        private void CompletePauseClose()
+        {
+            pauseCloseInProgress = false;
+            Time.timeScale = 1f;
+            AudioListener.pause = false;
+            SetActive(pauseScreen, false);
         }
 
         private void SetOnly(GameObject target, bool animate = true)

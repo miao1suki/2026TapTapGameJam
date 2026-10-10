@@ -255,6 +255,11 @@ Assets/_Project/Code/Systems/Achievements/Runtime/Resources/
 工具窗口的“应用到游戏逻辑中”会把所有成就数据盒引用写入该目录。运行时管理器
 只读取这个目录，不会直接扫描所有 `AchievementSO`。
 
+编辑器同时提供固定目录自动同步：`AchievementCatalogAutoSync` 会监听
+`Assets/_Project/Content/Data/Global/Achievements` 的增删改，并在进入 Play
+Mode 前重新扫描该目录、更新 `AchievementCatalog.asset`。运行时仍然只读取
+Resources 目录，因此打包后的行为稳定，不依赖 `AssetDatabase`。
+
 ## 存档
 
 默认路径：
