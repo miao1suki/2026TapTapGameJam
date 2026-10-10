@@ -127,3 +127,13 @@
 - 接口变更：无代码接口变更；渲染配置加入水下捕获和 Stencil Pixel Effect Renderer Features。
 - 验证：Unity `6000.3.12f1`；暂存差异与资源引用待提交前核对；Unity 导入及场景运行未验证。
 - 交接提交：随本次分支提交。
+
+## Grow 序列帧动画与效果场景更新
+
+- 日期：2026-10-10。
+- 负责人：Codex（按用户要求整理并推送）。
+- 分支：`codex/ta/water-platform-demo`。
+- 范围：`Assets/ta_source/Particle/Grow` 的新序列帧、动画控制器与 `Animation.unity`；更新 Grow 效果场景取景和像素效果材质；包含对应 TagManager、PC Renderer 与 Unity Recorder 包配置。
+- 接口变更：无运行时代码接口变更。
+- 验证：确认 Unity `6000.3.12f1`、仓库远端与分支；暂存文件引用和差异已核对；Unity 导入及场景运行未验证。
+- 交接提交：随本次分支提交推送。
