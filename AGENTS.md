@@ -25,7 +25,7 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 - Project name: 2026TapTapGameJam
 - Unity version: Unity 6000.3.12f1
 - Active game object:
-  - Name: __PlanningMapGenerated
+  - Name: PauseScreen
   - Tag: Untagged
   - Layer: Default
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->

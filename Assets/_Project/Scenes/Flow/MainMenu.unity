@@ -2874,7 +2874,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
-  m_Color: {r: 0.92, g: 0.98, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2883,7 +2883,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 24
+    m_FontSize: 30
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
@@ -3122,7 +3122,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
-  m_Color: {r: 0.76, g: 0.86, b: 0.92, a: 0.96}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3131,7 +3131,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 16
+    m_FontSize: 26
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
@@ -3141,8 +3141,8 @@ MonoBehaviour:
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
-    m_LineSpacing: 1
-  m_Text: "\u5236\u4F5C\u4EBA\u5458\u540D\u5355\u5F85\u6574\u7406\u3002\n\n\u5F53\u524D\u9875\u9762\u7528\u4E8E\u786E\u8BA4\u680F\u76EE\u3001\u6392\u7248\u548C\u540E\u7EED\u6570\u636E\u63A5\u5165\u4F4D\u7F6E\u3002"
+    m_LineSpacing: 1.1
+  m_Text: "\u961F\u957F-\u7A0B\u5E8F/TA    \u767D\u55B5\u55B5\n\u526F\u961F\u957F-\u4E3B\u7B56\u5212    \u6EBA\u6C34\u7684\u54B8\u9C7C\u541B\n\u7B56\u5212    R\n\u7B56\u5212    <\u6BB5>\n\u7A0B\u5E8F    \u81DE\u65E5\u4E0D\u518D\n\u7F8E\u672F    \u827E\u5C14\u56DB\u6B21\u65B9\n\u7F8E\u672F    \u963F\u826F\nTA    Irotin\n\u97F3\u4E50    BK2049"
 --- !u!222 &850385180
 CanvasRenderer:
   m_ObjectHideFlags: 0

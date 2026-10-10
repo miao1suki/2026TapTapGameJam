@@ -4,12 +4,21 @@
 
 - 日期：2026-10-10；负责人：Codex；分支：`ESC页面雏形`。
 - 范围：直接在 `Assets/_Project/Scenes/Systems/Systems_UI.unity` 的 `PauseScreen` 下写入真实 UGUI 层级；没有保留 Editor 生成菜单或生成器脚本。
-- 主界面：灰色遮罩、缩放入场的 `EscWindow`、竖排“继续游戏 / 设置 / 存档 / 收藏品 / 退出游戏”按钮；按钮支持悬停放大提亮和按下放大，提亮颜色避免覆盖文字。
+- 主界面：灰色遮罩、缩放入场的 `EscWindow`、五段轮盘选项“继续游戏 / 设置 / 收藏品 / 存档 / 退出到主菜单”；当前选项固定停在可见轮盘中部，使用缩放与提亮区分，不通过点击扇区改变选中状态。
 - 子页面：设置页复用 `SettingsPanelController` 数据源并从右侧滑入；存档页复用 `SavePanelController` 并开启保存入口；收藏品页先做花架子；子页面右上角 X 返回主界面。
+- 背景规则：轮盘选项打开的 `SettingsPage / SavePage / CollectionPage` 固定纯黑；设置页内的 `Sound Page / Key Binding Page / Credits Page` 背景 alpha 为 0，只显示其中的控件。
+- 设置页响应式布局：新增 `EscSettingsResponsiveLayout`，按 `SettingsPage` 实际宽高计算统一缩放；内容区左边界按左侧栏目缩放后的右边界动态计算并加 `contentGap`，避免与栏目按钮重叠；底部返回区域锚定真实底边。
+- 存档页响应式布局：新增 `EscSaveResponsiveLayout`，按 `SavePage` 实际宽高缩放标题、状态、存档列表和底部按钮；列表随页面尺寸放大/缩小，新建和返回按钮锚定真实底边。
 - 修正：设置和存档子页隐藏重复的底部返回键；切换页面和返回主界面时清理按钮悬停/按下缩放与提亮；主界面的“退出游戏”改为返回开始游戏界面。
 - ESC：`GameUiRouter` 仅在 Systems_UI 的 UI 系统根存在时响应；暂停动作在子页面会直接触发当前页面 X 的 `Button.onClick` 返回主界面，在主界面才关闭整个 ESC 界面；没有 Systems_UI 场景时不响应。输入继续使用 `InputActionId.Pause` 的映射。
 - 存档：存档页读取会调用 `SaveGameService` 并按 `levelLabel` 尝试切回对应关卡；保存会把当前关卡标签写入选中槽位，完整游戏进度恢复仍待后续游戏进度 API。
 - 设置：继续沿用 `RuntimeSettingsPolicy.ApplyChangesToRuntime`，当前默认预览模式不改变实际游戏设置。
+- 轮盘实现：`EscMenuController` 已切换为左轮轮盘状态机；桌面现有矩形按钮会在初始化时转换为 `EscWheelSectorGraphic` 扇形，整名位随 `WheelPivot` 旋转，文字保持水平；入场只做半圈并逐渐减速，受控切换只走相邻选项最短角度，首尾循环沿当前方向无缝走一格，旧选项的选中效果在转动中逐渐消失、新选项同步增强，滚轮带可调换项间隔，选中项固定回到 `selectedAngle`，确认读取 `InputActionId.Jump`，并支持鼠标左键、鼠标右键。子页面占用右侧区域并为左侧轮盘保留宽度，打开子页面时底部遮罩透明且主轮盘保持激活；子页面退场与轮盘恢复同时开始；原白线占位装饰已关闭。
+- 编译修正：初始化转换为扇形时会移除旧的 `Image`，避免同一 GameObject 同时存在两个 `Graphic` 导致暂停菜单报错；选项文字在运行时从 Inspector 配置同步。
+- 视觉配置：暂停轮盘 Inspector 已暴露整轮材质、扇区默认材质、单扇区覆盖材质、颜料笔画 Sprite/Material；`EscWheelOption.pageColor` 表示每一页选定的主题颜色，并同时用于扇区高亮与颜料过渡。
+- 字体配置：PauseScreen 下所有 UGUI `Text` 保留为布局和动态数据源，渲染层由 `TextSdfMirror` 镜像到 `TextMeshProUGUI` 并统一使用 `Cubic_11 SDF`；轮盘标签默认字号 `32`，通过 SDF `Face Dilate` 加粗笔画并添加黑色描边，字号、笔画粗细、描边颜色和距离均暴露在 Inspector。
+- 收藏品页：新增 `AchievementCollectionPresenter`，直接读取 `AchievementManager.GetAllAchievements()` 构建两列成就长条，新增条目优先填满当前行且单项也保持左上排列；标题与要求使用同一默认字号 `36`，简介保持 `16` 并使用灰色；无素材时默认白色块、纯黑标题和纯黑要求；每条右侧为只读完成图片；`rowMaterial` 暴露块材质，`completedSprite` 暴露达成图片；达成后只覆盖整块灰色遮罩并显示右侧图片，不改变文字、内容或底色；成就要求按成就树跳过已满足叶子、显示当前轮到的未完成条件，并监听 `AchievementProgressChanged` 原位刷新，不重建列表或重置滚动位置；每次进入页面都会重新读取状态。
+- 成就目录：运行时 `AchievementCatalog.asset` 已挂入当前固定目录下的成就；新增 `AchievementCatalogAutoSync`，编辑器导入/删除成就资产或进入 Play Mode 前自动扫描 `Assets/_Project/Content/Data/Global/Achievements` 并同步运行时目录；新增成就不再依赖手动点“应用到游戏逻辑中”。
 
 ## 关卡编辑、门与颜色表现主线整合
 
