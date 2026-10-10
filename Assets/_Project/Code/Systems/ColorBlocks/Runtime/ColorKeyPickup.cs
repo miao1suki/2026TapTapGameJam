@@ -194,9 +194,9 @@ namespace Project.ColorBlocks
             bool unlocked = ColorRuntimeService.Instance.Unlock(colorTypeId);
             if (unlocked)
             {
-                HSVColorFadeManager.Instance.SetColorFaded(
+                ColorAppearanceManager.Instance.Play(
                     colorTypeId,
-                    false,
+                    true,
                     revealDuration);
                 Debug.Log(
                     $"[ColorBlocks] 钥匙触发入口已解锁 {colorTypeId}：材质恢复/水体显现已开始。",
@@ -242,9 +242,9 @@ namespace Project.ColorBlocks
                 }
             }
 
-            float revealTimeout = Time.unscaledTime + HSVColorFadeManager.Instance.GetEffectiveDuration(revealDuration) + 1f;
+            float revealTimeout = Time.unscaledTime + ColorAppearanceManager.Instance.GetEffectiveDuration(revealDuration) + 1f;
             while (unlocked &&
-                   HSVColorFadeManager.Instance.GetSaturation(colorTypeId) < .995f &&
+                   !ColorAppearanceManager.Instance.IsComplete(colorTypeId) &&
                    Time.unscaledTime < revealTimeout)
                 yield return null;
 

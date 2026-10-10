@@ -103,12 +103,13 @@ namespace Project.BlockFeatures
         {
             base.OnAttach();
             ResolveWaterVisual();
-            RefreshWaterPresentation();
+            ColorAppearanceManager.Instance.RegisterWater(waterVisual);
         }
 
         protected override void OnDetach()
         {
             StopSteamReaction();
+            ColorAppearanceManager.Existing?.UnregisterWater(waterVisual);
             SetWaterReveal(0f);
             base.OnDetach();
             DestroySpawnedWaterVisual();
@@ -116,16 +117,7 @@ namespace Project.BlockFeatures
 
         protected override void OnTick(float deltaTime)
         {
-            RefreshWaterPresentation();
             UpdateSteamReaction(deltaTime);
-        }
-
-        private void RefreshWaterPresentation()
-        {
-            if (waterVisual == null) return;
-            // Keep the neutral model visible until the manager reaches the white handoff.
-            bool visible = HSVColorFadeManager.Instance.ShowsUnlockedAppearance("blue");
-            SetWaterReveal(visible ? 1f : 0f);
         }
 
         protected override bool OnColorApplied(
@@ -147,6 +139,7 @@ namespace Project.BlockFeatures
         protected override void OnResetForRoom()
         {
             StopSteamReaction();
+            ColorAppearanceManager.Existing?.UnregisterWater(waterVisual);
             SetWaterReveal(0f);
             DestroySpawnedWaterVisual();
         }
@@ -222,6 +215,9 @@ namespace Project.BlockFeatures
         {
             if (spawnedWaterVisual != null)
             {
+                // Destroy is deferred. A same-frame reattach must not discover this retired instance.
+                spawnedWaterVisual.SetActive(false);
+                spawnedWaterVisual.transform.SetParent(null, true);
                 Destroy(spawnedWaterVisual);
                 spawnedWaterVisual = null;
             }

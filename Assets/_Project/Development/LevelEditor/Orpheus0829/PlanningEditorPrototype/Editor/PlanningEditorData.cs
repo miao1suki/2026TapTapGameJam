@@ -15,7 +15,8 @@ namespace PlanningEditorPrototype
         Key,
         Connector,
         Erase,
-        Pan
+        Pan,
+        Region
     }
 
     public enum PlanningDetailTool
@@ -189,6 +190,8 @@ namespace PlanningEditorPrototype
         public string id;
         public string name;
         public bool isConnector;
+        public bool independentCells;
+        public List<string> connectedRoomIds = new List<string>();
         public string fromRoomId;
         public string toRoomId;
         public int connectorWidth = 4;
@@ -258,6 +261,16 @@ namespace PlanningEditorPrototype
     }
 
     [Serializable]
+    public sealed class PlanningRegion
+    {
+        public string id = PlanningDocument.NewId("region");
+        public string annotation = "新区域";
+        public int x, y, width = 1, height = 1;
+        public string colorHex = "#799BCC";
+        public RectInt Bounds => new RectInt(x, y, width, height);
+    }
+
+    [Serializable]
     public sealed class PlanningDocument
     {
         private const string DefaultMapAssetPath =
@@ -268,6 +281,7 @@ namespace PlanningEditorPrototype
         public int worldBlockCellWidth = 16;
         public int worldBlockCellHeight = 16;
         public List<PlanningRoom> rooms = new List<PlanningRoom>();
+        public List<PlanningRegion> regions = new List<PlanningRegion>();
         public List<PlanningDoor> doors = new List<PlanningDoor>();
         public List<PlanningKey> keys = new List<PlanningKey>();
         public List<PlanningLock> locks = new List<PlanningLock>();
@@ -1350,6 +1364,8 @@ namespace PlanningEditorPrototype
 
         public void Normalize()
         {
+            rooms ??= new List<PlanningRoom>();
+            regions ??= new List<PlanningRegion>();
             worldBlockCellWidth = Mathf.Clamp(
                 worldBlockCellWidth,
                 1,
@@ -1381,142 +1397,7 @@ namespace PlanningEditorPrototype
 
         public void RefreshConnectorPaths()
         {
-            for (int index = 0; index < rooms.Count; index++)
-            {
-                PlanningRoom connector = rooms[index];
-                if (!connector.isConnector)
-                {
-                    continue;
-                }
-
-                PlanningRoom from = FindRoom(connector.fromRoomId);
-                PlanningRoom to = FindRoom(connector.toRoomId);
-                if (from == null || to == null)
-                {
-                    continue;
-                }
-
-                if (connector.cells.Count > 0)
-                {
-                    UpdateConnectorDetailBounds(connector);
-                    continue;
-                }
-
-                connector.cells.Clear();
-                RectInt fromBounds = GetCellBounds(from);
-                RectInt toBounds = GetCellBounds(to);
-                AppendPath(
-                    connector.cells,
-                    new PlanningCell(
-                        Mathf.RoundToInt(fromBounds.center.x),
-                        Mathf.RoundToInt(fromBounds.center.y)),
-                    new PlanningCell(
-                        Mathf.RoundToInt(toBounds.center.x),
-                        Mathf.RoundToInt(toBounds.center.y)));
-                UpdateConnectorDetailBounds(connector);
-                EnsureConnectorBaseLine(connector);
-            }
-        }
-
-        private void EnsureConnectorBaseLine(
-            PlanningRoom connector)
-        {
-            List<Vector2Int> assemblyPath =
-                PlanningLayoutUtility.GetConnectorAssemblyPath(
-                    rooms,
-                    connector,
-                    worldBlockCellWidth,
-                    worldBlockCellHeight);
-            if (assemblyPath.Count == 0)
-            {
-                return;
-            }
-
-            Vector2Int origin = assemblyPath[0];
-            for (int index = 0; index < assemblyPath.Count; index++)
-            {
-                Vector2Int local = new Vector2Int(
-                    assemblyPath[index].x - origin.x,
-                    assemblyPath[index].y - origin.y);
-                if (ContainsBoxCell(connector.boxes, local))
-                {
-                    continue;
-                }
-
-                connector.boxes.Add(new PlanningBox(
-                    PlanningDetailType.Solid,
-                    new RectInt(local.x, local.y, 1, 1))
-                {
-                    label = "基础通道线",
-                    paletteEntryName = "黑方块"
-                });
-            }
-        }
-
-        private static bool ContainsBoxCell(
-            IReadOnlyList<PlanningBox> boxes,
-            Vector2Int cell)
-        {
-            for (int index = 0; index < boxes.Count; index++)
-            {
-                PlanningBox box = boxes[index];
-                if (cell.x >= box.x &&
-                    cell.x < box.x + box.width &&
-                    cell.y >= box.y &&
-                    cell.y < box.y + box.height)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private void UpdateConnectorDetailBounds(
-            PlanningRoom connector)
-        {
-            List<Vector2Int> assemblyPath =
-                PlanningLayoutUtility.GetConnectorAssemblyPath(
-                    rooms,
-                    connector,
-                    worldBlockCellWidth,
-                    worldBlockCellHeight);
-            if (assemblyPath.Count == 0)
-            {
-                connector.detailBoundsX = 0;
-                connector.detailBoundsY = 0;
-                connector.detailBoundsWidth = 1;
-                connector.detailBoundsHeight = 1;
-                return;
-            }
-
-            int minX = int.MaxValue;
-            int minY = int.MaxValue;
-            int maxX = int.MinValue;
-            int maxY = int.MinValue;
-            Vector2Int origin = assemblyPath[0];
-            for (int index = 0;
-                 index < assemblyPath.Count;
-                 index++)
-            {
-                Vector2Int cell = assemblyPath[index];
-                int localX = cell.x - origin.x;
-                int localY = cell.y - origin.y;
-                minX = Mathf.Min(minX, localX);
-                minY = Mathf.Min(minY, localY);
-                maxX = Mathf.Max(maxX, localX + 1);
-                maxY = Mathf.Max(maxY, localY + 1);
-            }
-
-            int padding = Mathf.Max(
-                1,
-                Mathf.CeilToInt(connector.connectorWidth * .5f));
-            connector.detailBoundsX = minX - padding;
-            connector.detailBoundsY = minY - padding;
-            connector.detailBoundsWidth =
-                maxX - minX + padding * 2;
-            connector.detailBoundsHeight =
-                maxY - minY + padding * 2;
+            PlanningWorldUtility.RefreshConnectors(this);
         }
 
         public static void SetConnectorPorts(

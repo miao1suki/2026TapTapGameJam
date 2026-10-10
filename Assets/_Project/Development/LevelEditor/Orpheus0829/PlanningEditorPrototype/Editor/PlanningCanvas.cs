@@ -16,7 +16,7 @@ namespace PlanningEditorPrototype
         Assembly
     }
 
-    public sealed class PlanningCanvas : VisualElement
+    public sealed partial class PlanningCanvas : VisualElement
     {
         private const float BaseGridSize = 26f;
         private const float MinimumZoom = .08f;
@@ -241,8 +241,6 @@ namespace PlanningEditorPrototype
         private Vector2Int assemblyStrokeEnd;
         private bool suppressDocumentChanged;
         private bool pendingDocumentChanged;
-        private bool hasConnectorStart;
-        private Vector2Int connectorStartCell;
         private bool isPlacingRoom;
 
         internal int LastUnassignedSceneBlockCount { get; private set; }
@@ -255,12 +253,12 @@ namespace PlanningEditorPrototype
         private Label playerLabel;
         private Texture2D playerThumbnailTexture;
         private int playerThumbnailSourceId;
-        private bool isDraggingPlayer;
-        private int playerPointerId = -1;
+        private readonly PlanningPlayerDragGesture playerGesture = new PlanningPlayerDragGesture();
+        private bool isDraggingPlayer => playerGesture.IsActive;
+        private int playerPointerId => playerGesture.PointerId;
         private GameObject playerDragTarget;
-        private Vector2 playerDragOffset;
+        private float playerDragCellSize;
         private Vector3 playerDragBeforePosition;
-        private bool playerOverlayClamped;
         private float playerOverlayWidth = 54f;
         private float playerOverlayHeight = 74f;
 
@@ -315,6 +313,7 @@ namespace PlanningEditorPrototype
                 return;
             }
 
+            CancelPointerInteraction();
             pan = savedPan;
             zoom = Mathf.Clamp(savedZoom, MinimumZoom, MaximumZoom);
             UpdateDetailPreviewImages();
@@ -324,11 +323,22 @@ namespace PlanningEditorPrototype
 
         public void RefreshPlayerOverlay()
         {
+            if (isDraggingPlayer && (LevelEditorState.Tool != LevelEditorTool.Player ||
+                EditorApplication.isPlayingOrWillChangePlaymode ||
+                playerDragTarget == null || LevelEditorState.Player != playerDragTarget ||
+                panel == null || !playerOverlay.HasPointerCapture(playerPointerId)))
+                EndPlayerPointerDrag(playerPointerId, true);
             UpdatePlayerOverlay();
+        }
+
+        public void CancelPointerInteraction()
+        {
+            EndPointerAction();
         }
 
         public bool FocusPlayer()
         {
+            CancelPointerInteraction();
             if (!TryGetPlayerPlanPosition(out Vector2 plan))
             {
                 return false;
@@ -400,11 +410,6 @@ namespace PlanningEditorPrototype
                  roomIndex++)
             {
                 PlanningRoom room = document.rooms[roomIndex];
-                if (room.isConnector)
-                {
-                    continue;
-                }
-
                 GameObject parent =
                     PlanningSceneBuilder.FindRoomContainer(room);
                 if (parent == null)
@@ -455,6 +460,7 @@ namespace PlanningEditorPrototype
                             ? block.EntryName
                             : string.Empty
                     };
+                    if (!string.IsNullOrEmpty(block.PlanningBoxId)) box.id = block.PlanningBoxId;
                     if (block.GetComponent<Project.Mechanisms.DoorController>() != null)
                     {
                         box.propEntryId = PlanningDoorUtility.DoorEntryId;
@@ -600,7 +606,6 @@ namespace PlanningEditorPrototype
             PlanningBox box)
         {
             if (room == null ||
-                room.isConnector ||
                 box == null)
             {
                 return null;
@@ -683,7 +688,9 @@ namespace PlanningEditorPrototype
             RegisterCallback<KeyDownEvent>(OnKeyDown);
             RegisterCallback<GeometryChangedEvent>(
                 _ => UpdateDetailPreviewImages());
+            RegisterCallback<DetachFromPanelEvent>(_ => CancelPointerInteraction());
             BuildPlayerOverlay();
+            schedule.Execute(RefreshRegionLabels).Every(100);
         }
 
         private void BuildPlayerOverlay()
@@ -697,7 +704,7 @@ namespace PlanningEditorPrototype
             playerOverlay.style.alignItems = Align.Center;
             playerOverlay.style.justifyContent = Justify.FlexStart;
             playerOverlay.tooltip =
-                "拖动玩家贴纸，位置会同步到场景中的玩家。";
+                "使用玩家工具拖动贴纸，位置同步到场景；视口外的玩家可通过聚焦玩家定位。";
 
             playerThumbnail = new Image
             {
@@ -743,6 +750,11 @@ namespace PlanningEditorPrototype
                 OnPlayerPointerUp);
             playerOverlay.RegisterCallback<PointerCancelEvent>(
                 OnPlayerPointerCancel);
+            playerOverlay.RegisterCallback<PointerCaptureOutEvent>(evt =>
+            {
+                if (isDraggingPlayer && evt.pointerId == playerPointerId)
+                    EndPlayerPointerDrag(evt.pointerId, true);
+            });
             playerOverlay.style.display = DisplayStyle.None;
             Add(playerOverlay);
         }
@@ -753,6 +765,10 @@ namespace PlanningEditorPrototype
             {
                 return;
             }
+
+            playerOverlay.pickingMode = LevelEditorState.Tool == LevelEditorTool.Player &&
+                !EditorApplication.isPlayingOrWillChangePlaymode
+                ? PickingMode.Position : PickingMode.Ignore;
 
             if (!TryGetPlayerPlanPosition(out Vector2 plan))
             {
@@ -803,9 +819,6 @@ namespace PlanningEditorPrototype
                 contentRect.height - halfHeight - 2f);
             float clampedX = Mathf.Clamp(center.x, minX, maxX);
             float clampedY = Mathf.Clamp(center.y, minY, maxY);
-            playerOverlayClamped =
-                !Mathf.Approximately(clampedX, center.x) ||
-                !Mathf.Approximately(clampedY, center.y);
             playerOverlay.style.left = clampedX - halfWidth;
             playerOverlay.style.top = clampedY - halfHeight;
             playerOverlay.style.display = DisplayStyle.Flex;
@@ -863,7 +876,7 @@ namespace PlanningEditorPrototype
             Vector3 position = player.transform.position;
             var globalPlan = new Vector2(
                 position.x,
-                -position.y);
+                -position.y) / Mathf.Max(.05f, LevelEditorState.CellSize);
             if (mode == PlanningCanvasMode.Assembly)
             {
                 plan = globalPlan;
@@ -880,8 +893,8 @@ namespace PlanningEditorPrototype
             {
                 PlanningCell origin = GetConnectorOrigin(room);
                 plan = globalPlan - new Vector2(
-                    origin.x,
-                    origin.y);
+                    origin.x * WorldBlockCellWidth,
+                    origin.y * WorldBlockCellHeight);
                 return true;
             }
 
@@ -897,57 +910,13 @@ namespace PlanningEditorPrototype
             return true;
         }
 
-        private bool TryGetGlobalPlanPosition(
-            Vector2 canvasPosition,
-            out Vector2 globalPlan)
-        {
-            globalPlan = default;
-            if (document == null || mode == PlanningCanvasMode.World)
-            {
-                return false;
-            }
-
-            Vector2 localPlan = ScreenToWorld(canvasPosition);
-            if (mode == PlanningCanvasMode.Assembly)
-            {
-                globalPlan = localPlan;
-                return true;
-            }
-
-            PlanningRoom room = document.FindRoom(selectedRoomId);
-            if (room == null)
-            {
-                return false;
-            }
-
-            if (room.isConnector)
-            {
-                PlanningCell origin = GetConnectorOrigin(room);
-                globalPlan = localPlan + new Vector2(
-                    origin.x,
-                    origin.y);
-                return true;
-            }
-
-            GetAssemblyStride(out int strideX, out int strideY);
-            GetAssemblyRoomOffset(
-                room,
-                strideX,
-                strideY,
-                out int offsetX,
-                out int offsetY,
-                out _);
-            globalPlan = localPlan + new Vector2(offsetX, offsetY);
-            return true;
-        }
-
         private void SetPlayerFromGlobalPlanPosition(
             Vector2 globalPlan,
             bool recordUndo)
         {
             var worldPosition = new Vector3(
-                globalPlan.x,
-                -globalPlan.y,
+                globalPlan.x * playerDragCellSize,
+                -globalPlan.y * playerDragCellSize,
                 0f);
             if (LevelEditorPlayerService.SetPlayerPosition(
                     worldPosition,
@@ -960,31 +929,31 @@ namespace PlanningEditorPrototype
 
         private void OnPlayerPointerDown(PointerDownEvent evt)
         {
-            if (evt.button != 0)
+            if (evt.button != 0 || LevelEditorState.Tool != LevelEditorTool.Player ||
+                EditorApplication.isPlayingOrWillChangePlaymode ||
+                !playerOverlay.worldBound.Contains(evt.position))
             {
                 return;
             }
 
             Vector2 pointerPosition =
                 this.WorldToLocal(evt.position);
-            if (!TryGetGlobalPlanPosition(
-                    pointerPosition,
-                    out Vector2 pointerPlan) ||
-                !TryGetPlayerPlanPosition(out Vector2 playerPlan))
+            if (!TryGetPlayerPlanPosition(out _))
             {
                 return;
             }
 
-            isDraggingPlayer = true;
-            playerPointerId = evt.pointerId;
-            playerDragOffset = playerOverlayClamped
-                ? Vector2.zero
-                : playerPlan - pointerPlan;
+            EndPointerAction();
+            Focus();
             playerDragTarget = LevelEditorState.Player;
             playerDragBeforePosition =
                 playerDragTarget != null
                     ? playerDragTarget.transform.position
                     : Vector3.zero;
+            playerDragCellSize = Mathf.Max(.05f, LevelEditorState.CellSize);
+            playerGesture.Begin(evt.pointerId, pointerPosition,
+                new Vector2(playerDragBeforePosition.x, -playerDragBeforePosition.y) / playerDragCellSize,
+                GridSize);
             PointerCaptureHelper.CapturePointer(
                 playerOverlay,
                 evt.pointerId);
@@ -999,14 +968,22 @@ namespace PlanningEditorPrototype
                 return;
             }
 
+            if (LevelEditorState.Tool != LevelEditorTool.Player ||
+                EditorApplication.isPlayingOrWillChangePlaymode ||
+                playerDragTarget == null || LevelEditorState.Player != playerDragTarget ||
+                !playerOverlay.HasPointerCapture(evt.pointerId) || (evt.pressedButtons & 1) == 0)
+            {
+                EndPlayerPointerDrag(evt.pointerId, true);
+                return;
+            }
+
             Vector2 pointerPosition =
                 this.WorldToLocal(evt.position);
-            if (TryGetGlobalPlanPosition(
-                    pointerPosition,
-                    out Vector2 pointerPlan))
+            if (playerGesture.TryMove(evt.pointerId, playerOverlay.HasPointerCapture(evt.pointerId),
+                    (evt.pressedButtons & 1) != 0, pointerPosition, out Vector2 pointerPlan))
             {
                 SetPlayerFromGlobalPlanPosition(
-                    pointerPlan + playerDragOffset,
+                    pointerPlan,
                     false);
             }
 
@@ -1015,7 +992,7 @@ namespace PlanningEditorPrototype
 
         private void OnPlayerPointerUp(PointerUpEvent evt)
         {
-            if (!isDraggingPlayer ||
+            if (evt.button != 0 || !isDraggingPlayer ||
                 evt.pointerId != playerPointerId)
             {
                 return;
@@ -1033,7 +1010,7 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            EndPlayerPointerDrag(evt.pointerId, false);
+            EndPlayerPointerDrag(evt.pointerId, true);
             evt.StopPropagation();
         }
 
@@ -1041,7 +1018,13 @@ namespace PlanningEditorPrototype
             int pointerId,
             bool recordUndo)
         {
-            if (pointerId >= 0)
+            if (!isDraggingPlayer || pointerId != playerPointerId) return;
+            GameObject target = playerDragTarget;
+            Vector3 beforePosition = playerDragBeforePosition;
+            // Clear ownership before releasing capture: capture-out can be synchronous.
+            playerGesture.End();
+            playerDragTarget = null;
+            if (pointerId >= 0 && playerOverlay.HasPointerCapture(pointerId))
             {
                 PointerCaptureHelper.ReleasePointer(
                     playerOverlay,
@@ -1049,29 +1032,30 @@ namespace PlanningEditorPrototype
             }
 
             if (recordUndo &&
-                playerDragTarget != null &&
-                LevelEditorState.Player == playerDragTarget)
+                !EditorApplication.isPlayingOrWillChangePlaymode && target != null &&
+                LevelEditorState.Player == target)
             {
-                if (playerDragTarget.transform.position != playerDragBeforePosition)
+                if (target.transform.position != beforePosition)
                 {
-                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(playerDragTarget.scene);
+                    UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(target.scene);
                     NotifyDocumentChanged();
                 }
             }
 
-            isDraggingPlayer = false;
-            playerPointerId = -1;
-            playerDragTarget = null;
             UpdatePlayerOverlay();
         }
 
         public void SetDocument(PlanningDocument value)
         {
+            CancelPointerInteraction();
+            worldSelection.Clear();
+            regionSelection.Clear();
             document = value;
             document?.Normalize();
             selectedRoomId = document != null && document.rooms.Count > 0
                 ? document.rooms[0].id
                 : null;
+            if (selectedRoomId != null) worldSelection.Add(selectedRoomId);
             selectedBoxId = null;
             mergeSelection.Clear();
             pan = new Vector2(-90f, -90f);
@@ -1084,8 +1068,8 @@ namespace PlanningEditorPrototype
 
         public void BeginRoomPlacement()
         {
+            SetMapTool(PlanningMapTool.Paint);
             isPlacingRoom = true;
-            hasConnectorStart = false;
             MarkDirtyRepaint();
             StatusChanged?.Invoke(
                 "请点击世界图空白格设置新房间初始点，右键或 Esc 取消。");
@@ -1114,10 +1098,11 @@ namespace PlanningEditorPrototype
             }
 
             var room = new PlanningRoom(
-                "房间 " + (document.rooms.Count + 1));
+                NextRoomName());
             room.cells.Add(new PlanningCell(cell.x, cell.y));
             document.rooms.Add(room);
             selectedRoomId = room.id;
+            worldSelection.Clear(); worldSelection.Add(room.id); regionSelection.Clear(); selectedRegionId = null;
             selectedBoxId = null;
             isPlacingRoom = false;
             NotifyDocumentChanged();
@@ -1129,14 +1114,11 @@ namespace PlanningEditorPrototype
 
         public void SetMode(PlanningCanvasMode value)
         {
+            EndPointerAction();
+            isPlacingRoom = false;
             mode = value;
             selectedBoxId = null;
             mergeSelection.Clear();
-            if (isDraggingPlayer)
-            {
-                EndPlayerPointerDrag(playerPointerId, false);
-            }
-
             UpdateDetailPreviewImages();
             UpdatePlayerOverlay();
             MarkDirtyRepaint();
@@ -1145,15 +1127,17 @@ namespace PlanningEditorPrototype
 
         public void SetMapTool(PlanningMapTool value)
         {
+            EndPointerAction();
+            isPlacingRoom = false;
             mapTool = value;
             isDragging = false;
-            hasConnectorStart = false;
             lastPaintCell = new Vector2Int(int.MinValue, int.MinValue);
             MarkDirtyRepaint();
         }
 
         public void SetDetailTool(PlanningDetailTool value)
         {
+            EndPointerAction();
             detailTool = value;
             isDragging = false;
             lastPaintCell = new Vector2Int(int.MinValue, int.MinValue);
@@ -1228,10 +1212,16 @@ namespace PlanningEditorPrototype
             }
         }
 
-        public void SelectRoom(string roomId, bool focus = false)
+        public void SelectRoom(string roomId, bool focus = false, bool additive = false)
         {
+            if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
+            selectedRegionId = null;
+            if (!additive) { worldSelection.Clear(); regionSelection.Clear(); }
+            bool removed = roomId != null && !worldSelection.Add(roomId) && additive;
+            if (removed) worldSelection.Remove(roomId);
             mergeSelection.Clear();
-            selectedRoomId = roomId;
+            selectedRoomId = removed ? null : roomId;
+            if (removed) foreach (string id in worldSelection) { selectedRoomId = id; break; }
             selectedBoxId = null;
             if (focus)
             {
@@ -1245,9 +1235,27 @@ namespace PlanningEditorPrototype
 
         public void FocusRoom(string roomId)
         {
+            if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
             PlanningRoom room = document?.FindRoom(roomId);
             if (room == null)
             {
+                return;
+            }
+
+            if (mode == PlanningCanvasMode.Assembly)
+            {
+                RectInt assemblyBounds = PlanningWorldUtility.Bounds(room);
+                var fineBounds = new RectInt(assemblyBounds.x * WorldBlockCellWidth, assemblyBounds.y * WorldBlockCellHeight,
+                    assemblyBounds.width * WorldBlockCellWidth, assemblyBounds.height * WorldBlockCellHeight);
+                foreach (var box in room.boxes)
+                {
+                    var r = GetAssemblyBoxRect(room, box, WorldBlockCellWidth, WorldBlockCellHeight);
+                    fineBounds = new RectInt(Mathf.Min(fineBounds.x, r.x), Mathf.Min(fineBounds.y, r.y),
+                        Mathf.Max(fineBounds.xMax, r.xMax) - Mathf.Min(fineBounds.x, r.x),
+                        Mathf.Max(fineBounds.yMax, r.yMax) - Mathf.Min(fineBounds.y, r.y));
+                }
+                ApplyDetailView(fineBounds, fineBounds.center);
+                UpdateDetailPreviewImages(); UpdatePlayerOverlay(); MarkDirtyRepaint();
                 return;
             }
 
@@ -1268,7 +1276,7 @@ namespace PlanningEditorPrototype
             }
 
             RectInt bounds = GetCellSetBounds(cells);
-            Vector2 focus = CalculateDensestCenter(cells, bounds);
+            Vector2 focus = room.boxes.Count == 0 ? bounds.center : CalculateDensestCenter(cells, bounds);
             ApplyDetailView(bounds, focus);
             MarkDirtyRepaint();
         }
@@ -1293,16 +1301,9 @@ namespace PlanningEditorPrototype
                 return cells;
             }
 
-            PlanningCell origin = room.isConnector
-                ? GetConnectorOrigin(room)
-                : new PlanningCell(0, 0);
-            for (int index = 0; index < room.cells.Count; index++)
-            {
-                PlanningCell cell = room.cells[index];
-                cells.Add(new Vector2Int(
-                    cell.x - origin.x,
-                    cell.y - origin.y));
-            }
+            RectInt emptyBounds = room.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
+            cells.Add(emptyBounds.position);
+            cells.Add(new Vector2Int(emptyBounds.xMax - 1, emptyBounds.yMax - 1));
 
             return cells;
         }
@@ -1444,119 +1445,28 @@ namespace PlanningEditorPrototype
 
         public void FocusAssembly()
         {
-            if (document == null)
+            if (document == null) return;
+            bool hasBounds = false;
+            RectInt bounds = default;
+            foreach (var room in document.rooms)
             {
-                return;
+                foreach (var cell in room.cells)
+                    Encapsulate(new RectInt(cell.x * WorldBlockCellWidth, cell.y * WorldBlockCellHeight, WorldBlockCellWidth, WorldBlockCellHeight), ref bounds, ref hasBounds);
+                foreach (var box in room.boxes)
+                    Encapsulate(GetAssemblyBoxRect(room, box, WorldBlockCellWidth, WorldBlockCellHeight), ref bounds, ref hasBounds);
             }
-
-            GetAssemblyStride(out int strideX, out int strideY);
-            float sumX = 0f;
-            float sumY = 0f;
-            int count = 0;
-            for (int roomIndex = 0;
-                 roomIndex < document.rooms.Count;
-                 roomIndex++)
-            {
-                PlanningRoom room = document.rooms[roomIndex];
-                if (room.isConnector)
-                {
-                    GetAssemblyConnectorOrigin(
-                        room,
-                        strideX,
-                        strideY,
-                        out int originX,
-                        out int originY);
-                    if (room.boxes.Count == 0)
-                    {
-                        PlanningCell origin = GetConnectorOrigin(room);
-                        for (int cellIndex = 0;
-                             cellIndex < room.cells.Count;
-                             cellIndex++)
-                        {
-                            PlanningCell cell = room.cells[cellIndex];
-                            sumX += originX + cell.x - origin.x + .5f;
-                            sumY += originY + cell.y - origin.y + .5f;
-                            count++;
-                        }
-                    }
-                    else
-                    {
-                        AccumulateBoxCells(
-                            room.boxes,
-                            originX,
-                            originY,
-                            ref sumX,
-                            ref sumY,
-                            ref count);
-                    }
-
-                    continue;
-                }
-
-                GetAssemblyRoomOffset(
-                    room,
-                    strideX,
-                    strideY,
-                    out int offsetX,
-                    out int offsetY,
-                    out _);
-                AccumulateBoxCells(
-                    room.boxes,
-                    offsetX,
-                    offsetY,
-                    ref sumX,
-                    ref sumY,
-                    ref count);
-            }
-
-            for (int index = 0;
-                 index < document.assemblyPatches.Count;
-                 index++)
-            {
-                PlanningBox box = document.assemblyPatches[index];
-                AccumulateBoxCells(
-                    new[] { box },
-                    0,
-                    0,
-                    ref sumX,
-                    ref sumY,
-                    ref count);
-            }
-
-            if (count > 0)
-            {
-                CenterOn(sumX / count, sumY / count);
-                MarkDirtyRepaint();
-            }
+            foreach (var box in document.assemblyPatches)
+                Encapsulate(new RectInt(box.x, box.y, box.width, box.height), ref bounds, ref hasBounds);
+            if (!hasBounds) return;
+            ApplyDetailView(bounds, bounds.center);
+            UpdateDetailPreviewImages(); UpdatePlayerOverlay(); MarkDirtyRepaint();
         }
 
-        private static void AccumulateBoxCells(
-            IReadOnlyList<PlanningBox> boxes,
-            int offsetX,
-            int offsetY,
-            ref float sumX,
-            ref float sumY,
-            ref int count)
+        private static void Encapsulate(RectInt rect, ref RectInt bounds, ref bool hasBounds)
         {
-            for (int boxIndex = 0;
-                 boxIndex < boxes.Count;
-                 boxIndex++)
-            {
-                PlanningBox box = boxes[boxIndex];
-                for (int y = box.y;
-                     y < box.y + box.height;
-                     y++)
-                {
-                    for (int x = box.x;
-                         x < box.x + box.width;
-                         x++)
-                    {
-                        sumX += offsetX + x + .5f;
-                        sumY += offsetY + y + .5f;
-                        count++;
-                    }
-                }
-            }
+            if (!hasBounds) { bounds = rect; hasBounds = true; return; }
+            int x = Mathf.Min(bounds.x, rect.x), y = Mathf.Min(bounds.y, rect.y);
+            bounds = new RectInt(x, y, Mathf.Max(bounds.xMax, rect.xMax) - x, Mathf.Max(bounds.yMax, rect.yMax) - y);
         }
 
         private void CenterOn(float centerX, float centerY)
@@ -1623,6 +1533,7 @@ namespace PlanningEditorPrototype
         private void DrawAssembly(MeshGenerationContext context)
         {
             Painter2D painter = context.painter2D;
+            DrawAssemblyOwnership(painter);
             DrawGrid(painter);
             GetAssemblyStride(out int strideX, out int strideY);
 
@@ -1774,6 +1685,11 @@ namespace PlanningEditorPrototype
             out int originX,
             out int originY)
         {
+            if (connector.independentCells)
+            {
+                PlanningLayoutUtility.GetConnectorOrigin(connector, strideX, strideY, out originX, out originY);
+                return;
+            }
             List<Vector2Int> path =
                 PlanningLayoutUtility.GetConnectorAssemblyPath(
                     document.rooms,
@@ -1798,84 +1714,15 @@ namespace PlanningEditorPrototype
                 connector);
         }
 
-        private RectInt GetConnectorDetailBounds(
-            PlanningRoom connector)
+        private RectInt GetConnectorDetailBounds(PlanningRoom connector)
         {
-            if (connector.detailBoundsWidth > 0 &&
-                connector.detailBoundsHeight > 0)
-            {
-                return new RectInt(
-                    connector.detailBoundsX,
-                    connector.detailBoundsY,
-                    connector.detailBoundsWidth,
-                    connector.detailBoundsHeight);
-            }
-
-            if (connector.boxes.Count > 0)
-            {
-                int minX = int.MaxValue;
-                int minY = int.MaxValue;
-                int maxX = int.MinValue;
-                int maxY = int.MinValue;
-                for (int index = 0;
-                     index < connector.boxes.Count;
-                     index++)
-                {
-                    PlanningBox box = connector.boxes[index];
-                    minX = Mathf.Min(minX, box.x);
-                    minY = Mathf.Min(minY, box.y);
-                    maxX = Mathf.Max(maxX, box.x + box.width);
-                    maxY = Mathf.Max(maxY, box.y + box.height);
-                }
-
-                int boxPadding = Mathf.Max(
-                    1,
-                    Mathf.CeilToInt(connector.connectorWidth * .5f));
-                return new RectInt(
-                    minX - boxPadding,
-                    minY - boxPadding,
-                    maxX - minX + boxPadding * 2,
-                    maxY - minY + boxPadding * 2);
-            }
-
-            PlanningCell origin = GetConnectorOrigin(connector);
-            int minCellX = int.MaxValue;
-            int minCellY = int.MaxValue;
-            int maxCellX = int.MinValue;
-            int maxCellY = int.MinValue;
-            for (int index = 0;
-                 index < connector.cells.Count;
-                 index++)
-            {
-                PlanningCell cell = connector.cells[index];
-                minCellX = Mathf.Min(minCellX, cell.x - origin.x);
-                minCellY = Mathf.Min(minCellY, cell.y - origin.y);
-                maxCellX = Mathf.Max(
-                    maxCellX,
-                    cell.x - origin.x + 1);
-                maxCellY = Mathf.Max(
-                    maxCellY,
-                    cell.y - origin.y + 1);
-            }
-
-            if (minCellX == int.MaxValue)
-            {
-                return new RectInt(0, 0, 1, 1);
-            }
-
-            int padding = Mathf.Max(
-                1,
-                Mathf.CeilToInt(connector.connectorWidth * .5f));
-            return new RectInt(
-                minCellX - padding,
-                minCellY - padding,
-                maxCellX - minCellX + padding * 2,
-                maxCellY - minCellY + padding * 2);
+            return connector.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
         }
 
         private void DrawWorld(MeshGenerationContext context)
         {
             Painter2D painter = context.painter2D;
+            DrawWorldRegions(painter);
             DrawGrid(painter);
             for (int roomIndex = 0;
                  roomIndex < document.rooms.Count;
@@ -1891,7 +1738,8 @@ namespace PlanningEditorPrototype
                     (roomIndex * .137f) % 1f,
                     .48f,
                     .78f);
-                color.a = room.id == selectedRoomId ? .78f : .5f;
+                bool selected = worldSelection.Contains(room.id) || room.id == selectedRoomId;
+                color.a = selected ? .78f : .5f;
                 for (int cellIndex = 0;
                      cellIndex < room.cells.Count;
                      cellIndex++)
@@ -1902,20 +1750,20 @@ namespace PlanningEditorPrototype
                     StrokeRect(
                         painter,
                         rect,
-                        room.id == selectedRoomId
+                        selected
                             ? Color.white
                             : new Color(0f, 0f, 0f, .55f),
-                        room.id == selectedRoomId ? 2f : 1f);
+                        selected ? 2f : 1f);
                 }
             }
 
             DrawConnectors(painter);
-            DrawConnectorStart(painter);
             DrawDoors(painter);
             DrawKeys(painter);
             DrawRectanglePreview(painter);
             DrawHoverCell(painter);
             DrawRoomPlacementPreview(painter);
+            DrawWorldMovePreview(painter);
         }
 
         private void DrawRoomPlacementPreview(Painter2D painter)
@@ -1936,90 +1784,6 @@ namespace PlanningEditorPrototype
                 rect,
                 new Color(.3f, 1f, .82f, .95f),
                 2f);
-        }
-
-        private void DrawConnectorStart(Painter2D painter)
-        {
-            if (!hasConnectorStart)
-            {
-                return;
-            }
-
-            Rect rect = CellRect(
-                connectorStartCell.x,
-                connectorStartCell.y);
-            FillRect(
-                painter,
-                rect,
-                new Color(.25f, .9f, .78f, .28f),
-                1f);
-            StrokeRect(
-                painter,
-                rect,
-                new Color(.35f, 1f, .88f, .95f),
-                2f);
-        }
-
-        private void DrawConnectors(Painter2D painter)
-        {
-            for (int roomIndex = 0;
-                 roomIndex < document.rooms.Count;
-                 roomIndex++)
-            {
-                PlanningRoom connector = document.rooms[roomIndex];
-                if (!connector.isConnector)
-                {
-                    continue;
-                }
-
-                Color color = connector.id == selectedRoomId
-                    ? new Color(.3f, .9f, .82f, .92f)
-                    : new Color(.2f, .68f, .62f, .72f);
-                List<Vector2> points =
-                    GetWorldConnectorVisualPoints(connector);
-                float width = Mathf.Clamp(
-                    2f + connector.connectorWidth * 1.6f,
-                    3f,
-                    16f);
-                for (int pointIndex = 1;
-                     pointIndex < points.Count;
-                     pointIndex++)
-                {
-                    DrawLine(
-                        painter,
-                        WorldToScreen(points[pointIndex - 1]),
-                        WorldToScreen(points[pointIndex]),
-                        color,
-                        width);
-                }
-
-                if (points.Count == 1)
-                {
-                    DrawLine(
-                        painter,
-                        WorldToScreen(points[0]) -
-                        new Vector2(GridSize * .18f, 0f),
-                        WorldToScreen(points[0]) +
-                        new Vector2(GridSize * .18f, 0f),
-                        color,
-                        width);
-                }
-            }
-        }
-
-        private List<Vector2> GetWorldConnectorVisualPoints(
-            PlanningRoom connector)
-        {
-            var points = new List<Vector2>();
-            for (int index = 0;
-                 index < connector.cells.Count;
-                 index++)
-            {
-                PlanningCell cell = connector.cells[index];
-                points.Add(new Vector2(cell.x + .5f, cell.y + .5f));
-            }
-
-            return points;
         }
 
         private static RectInt GetWorldCellBounds(PlanningRoom room)
@@ -2060,67 +1824,7 @@ namespace PlanningEditorPrototype
 
             Painter2D painter = context.painter2D;
             DrawGrid(painter);
-            if (room.isConnector && room.boxes.Count == 0)
-            {
-                List<Vector2Int> assemblyPath =
-                    PlanningLayoutUtility.GetConnectorAssemblyPath(
-                        document.rooms,
-                        room,
-                        WorldBlockCellWidth,
-                        WorldBlockCellHeight);
-                if (assemblyPath.Count == 0)
-                {
-                    assemblyPath.Add(Vector2Int.zero);
-                }
-
-                Vector2Int origin = assemblyPath[0];
-                for (int index = 1;
-                     index < assemblyPath.Count;
-                     index++)
-                {
-                    Vector2Int previous = assemblyPath[index - 1];
-                    Vector2Int current = assemblyPath[index];
-                    DrawLine(
-                        painter,
-                        CellCenter(
-                            previous.x - origin.x,
-                            previous.y - origin.y),
-                        CellCenter(
-                            current.x - origin.x,
-                            current.y - origin.y),
-                        new Color(.3f, .8f, .72f, .34f),
-                        2f);
-                }
-            }
-
-            if (!room.isConnector)
-            {
-                RectInt allowed = room.GetLocalAllowedRect(
-                    WorldBlockCellWidth,
-                    WorldBlockCellHeight);
-                StrokeRect(
-                    painter,
-                    CellRect(
-                        allowed.x,
-                        allowed.y,
-                        allowed.width,
-                        allowed.height),
-                    new Color(.4f, .78f, 1f, .55f),
-                    2f);
-            }
-            else
-            {
-                RectInt allowed = GetConnectorDetailBounds(room);
-                StrokeRect(
-                    painter,
-                    CellRect(
-                        allowed.x,
-                        allowed.y,
-                        allowed.width,
-                        allowed.height),
-                    new Color(1f, .62f, .25f, .82f),
-                    2f);
-            }
+            DrawDetailOwnership(painter, room);
 
             for (int index = 0; index < room.boxes.Count; index++)
             {
@@ -2465,6 +2169,7 @@ namespace PlanningEditorPrototype
 
         private void DrawRectanglePreview(Painter2D painter)
         {
+            if (mode == PlanningCanvasMode.World && worldMoving) return;
             if (!isDragging)
             {
                 return;
@@ -2816,6 +2521,7 @@ namespace PlanningEditorPrototype
                 return;
             }
 
+            if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
             Vector2 pointer = evt.localMousePosition;
             Vector2 before = ScreenToWorld(pointer);
             zoom = Mathf.Clamp(
@@ -2832,6 +2538,7 @@ namespace PlanningEditorPrototype
 
         private void OnPointerDown(PointerDownEvent evt)
         {
+            if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
             Focus();
             Vector2 position = evt.localPosition;
             UpdateHover(position);
@@ -2850,17 +2557,9 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            if (mode == PlanningCanvasMode.World &&
-                mapTool == PlanningMapTool.Connector &&
-                HandleConnectorPointerDown(position))
-            {
-                evt.StopPropagation();
-                return;
-            }
-
             if (evt.button == 1 ||
                 evt.button == 2 ||
-                mapTool == PlanningMapTool.Pan ||
+                (mode == PlanningCanvasMode.World && mapTool == PlanningMapTool.Pan) ||
                 (mode == PlanningCanvasMode.Detail &&
                  GetActiveDetailTool() == PlanningDetailTool.Pan) ||
                 (mode == PlanningCanvasMode.Assembly &&
@@ -2890,7 +2589,7 @@ namespace PlanningEditorPrototype
                 evt.pointerId);
             if (mode == PlanningCanvasMode.World)
             {
-                HandleWorldPointerDown(position);
+                HandleWorldPointerDown(position, evt.ctrlKey || evt.commandKey || evt.shiftKey);
             }
             else if (mode == PlanningCanvasMode.Assembly)
             {
@@ -2988,6 +2687,8 @@ namespace PlanningEditorPrototype
 
         private void EndPointerAction()
         {
+            if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
+            if (suppressDocumentChanged) EndDocumentBatch();
             if (isPanning && panPointerId >= 0)
             {
                 PointerCaptureHelper.ReleasePointer(
@@ -3007,11 +2708,16 @@ namespace PlanningEditorPrototype
             panPointerId = -1;
             dragPointerId = -1;
             movingBox = null;
+            worldMoving = false;
             lastPaintCell = new Vector2Int(int.MinValue, int.MinValue);
         }
 
         private void OnKeyDown(KeyDownEvent evt)
         {
+            if (mode == PlanningCanvasMode.World && evt.keyCode == KeyCode.Delete)
+            {
+                DeleteWorldSelection(); evt.StopPropagation(); return;
+            }
             if (evt.keyCode == KeyCode.Escape)
             {
                 if (isPlacingRoom)
@@ -3021,251 +2727,14 @@ namespace PlanningEditorPrototype
                     return;
                 }
 
-                isDragging = false;
-                hasConnectorStart = false;
+                EndPointerAction();
                 selectedBoxId = null;
                 mergeSelection.Clear();
+                worldSelection.Clear(); regionSelection.Clear(); selectedRegionId = null;
+                if (mode == PlanningCanvasMode.World) selectedRoomId = null;
                 SelectionChanged?.Invoke();
                 MarkDirtyRepaint();
             }
-        }
-
-        private void HandleWorldPointerDown(Vector2 position)
-        {
-            Vector2Int cell = CellAt(position);
-            switch (mapTool)
-            {
-                case PlanningMapTool.Select:
-                    SelectRoomAt(cell);
-                    break;
-                case PlanningMapTool.Paint:
-                    AddCell(cell);
-                    lastPaintCell = cell;
-                    break;
-                case PlanningMapTool.Erase:
-                    lastPaintCell = cell;
-                    break;
-                case PlanningMapTool.Door:
-                    AddDoor(cell);
-                    break;
-                case PlanningMapTool.Key:
-                    AddKey(cell);
-                    break;
-                case PlanningMapTool.Connector:
-                    break;
-            }
-        }
-
-        private void HandleWorldPointerMove(Vector2 position)
-        {
-            if (mapTool != PlanningMapTool.Paint)
-            {
-                return;
-            }
-
-            Vector2Int cell = CellAt(position);
-            if (cell == lastPaintCell)
-            {
-                return;
-            }
-
-            lastPaintCell = cell;
-            AddCell(cell);
-        }
-
-        private void CompleteWorldDrag()
-        {
-            Vector2Int start = CellAt(dragStart);
-            Vector2Int end = CellAt(dragCurrent);
-            if (mapTool == PlanningMapTool.Connector)
-            {
-                if (start != end)
-                {
-                    AddConnector(start, end);
-                    hasConnectorStart = false;
-                }
-                else
-                {
-                    hasConnectorStart = true;
-                    connectorStartCell = start;
-                }
-
-                MarkDirtyRepaint();
-                return;
-            }
-
-            if (mapTool == PlanningMapTool.Erase)
-            {
-                BeginDocumentBatch();
-                foreach (Vector2Int cell in BuildAreaCells(start, end))
-                {
-                    EraseCell(cell);
-                }
-
-                EndDocumentBatch();
-                return;
-            }
-
-            if (mapTool != PlanningMapTool.Rectangle)
-            {
-                return;
-            }
-
-            PlanningRoom room = GetOrCreateSelectedRoom(
-                Mathf.Min(start.x, end.x),
-                Mathf.Min(start.y, end.y));
-            List<PlanningCell> before = CloneCells(room.cells);
-            int minX = Mathf.Min(start.x, end.x);
-            int minY = Mathf.Min(start.y, end.y);
-            int maxX = Mathf.Max(start.x, end.x);
-            int maxY = Mathf.Max(start.y, end.y);
-            for (int x = minX; x <= maxX; x++)
-            {
-                for (int y = minY; y <= maxY; y++)
-                {
-                    AddCellToRoom(room, x, y);
-                }
-            }
-
-            if (!ValidateConnectivity(room))
-            {
-                room.cells = before;
-                ValidationFailed?.Invoke(
-                    room.isConnector
-                        ? "不允许：矩形修改会断开通道两端。"
-                        : "不允许：矩形修改会断开房间区块。");
-                MarkDirtyRepaint();
-                return;
-            }
-
-            NotifyDocumentChanged();
-        }
-
-        private void AddConnector(Vector2Int start, Vector2Int end)
-        {
-            PlanningRoom fromRoom = FindRoomNearCell(start);
-            PlanningRoom toRoom = FindRoomNearCell(end);
-            if (fromRoom == null ||
-                toRoom == null ||
-                fromRoom == toRoom)
-            {
-                return;
-            }
-
-            PlanningRoom connector = PlanningRoom.CreateConnector(
-                $"通道 {fromRoom.name} → {toRoom.name}",
-                fromRoom.id,
-                toRoom.id);
-            PlanningDocument.SetConnectorPorts(
-                connector,
-                fromRoom,
-                toRoom,
-                new PlanningCell(start.x, start.y),
-                new PlanningCell(end.x, end.y));
-            BuildDefaultConnectorLine(connector);
-            document.rooms.Add(connector);
-            document.RefreshConnectorPaths();
-            if (!ValidateConnectivity(connector))
-            {
-                document.rooms.Remove(connector);
-                ValidationFailed?.Invoke(
-                    "不允许：通道没有真正连接两个房间。");
-                return;
-            }
-
-            selectedRoomId = connector.id;
-            selectedBoxId = null;
-            NotifyDocumentChanged();
-            SelectionChanged?.Invoke();
-        }
-
-        private void BuildDefaultConnectorLine(
-            PlanningRoom connector)
-        {
-            List<Vector2Int> path =
-                PlanningLayoutUtility.GetConnectorAssemblyPath(
-                    document.rooms,
-                    connector,
-                    document.worldBlockCellWidth,
-                    document.worldBlockCellHeight);
-            if (path.Count == 0)
-            {
-                return;
-            }
-
-            Vector2Int origin = path[0];
-            for (int index = 0; index < path.Count; index++)
-            {
-                Vector2Int cell = path[index];
-                var box = new PlanningBox(
-                    PlanningDetailType.Solid,
-                    new RectInt(
-                        cell.x - origin.x,
-                        cell.y - origin.y,
-                        1,
-                        1))
-                {
-                    label = "默认通道线",
-                    paletteEntryName = "黑方块"
-                };
-                connector.boxes.Add(box);
-            }
-        }
-
-        private bool HandleConnectorPointerDown(Vector2 position)
-        {
-            Vector2Int cell = CellAt(position);
-            if (!hasConnectorStart)
-            {
-                connectorStartCell = cell;
-                hasConnectorStart = true;
-                MarkDirtyRepaint();
-                return false;
-            }
-
-            AddConnector(connectorStartCell, cell);
-            hasConnectorStart = false;
-            MarkDirtyRepaint();
-            return true;
-        }
-
-        private PlanningRoom FindRoomNearCell(Vector2Int cell)
-        {
-            PlanningRoom exact = document.FindRoomAt(cell.x, cell.y);
-            if (exact != null)
-            {
-                return exact;
-            }
-
-            PlanningRoom nearest = null;
-            int nearestDistance = 3;
-            for (int roomIndex = 0;
-                 roomIndex < document.rooms.Count;
-                 roomIndex++)
-            {
-                PlanningRoom room = document.rooms[roomIndex];
-                if (room.isConnector)
-                {
-                    continue;
-                }
-
-                for (int cellIndex = 0;
-                     cellIndex < room.cells.Count;
-                     cellIndex++)
-                {
-                    PlanningCell roomCell = room.cells[cellIndex];
-                    int distance =
-                        Mathf.Abs(roomCell.x - cell.x) +
-                        Mathf.Abs(roomCell.y - cell.y);
-                    if (distance < nearestDistance)
-                    {
-                        nearestDistance = distance;
-                        nearest = room;
-                    }
-                }
-            }
-
-            return nearest;
         }
 
         private static void AppendConnectorPath(
@@ -3390,14 +2859,16 @@ namespace PlanningEditorPrototype
             {
                 allowed = GetConnectorDetailBounds(room);
             }
-            movingBox.x = Mathf.Clamp(
+            int targetX = Mathf.Clamp(
                 movingBoxOrigin.x + cellDeltaX,
                 allowed.x,
                 allowed.xMax - movingBox.width);
-            movingBox.y = Mathf.Clamp(
+            int targetY = Mathf.Clamp(
                 movingBoxOrigin.y + cellDeltaY,
                 allowed.y,
                 allowed.yMax - movingBox.height);
+            if (!CanPlaceLocalRect(room, new RectInt(targetX, targetY, movingBox.width, movingBox.height))) return;
+            movingBox.x = targetX; movingBox.y = targetY;
             UpdateDetailPreviewImages();
             MarkDirtyRepaint();
         }
@@ -3450,8 +2921,10 @@ namespace PlanningEditorPrototype
                         maxY - minY + 1));
                 ApplyDetailSelection(box);
                 if (!PrepareDoorPlacement(room, box, allowed)) return;
+                if (!CanPlaceLocalRect(room, new RectInt(box.x, box.y, box.width, box.height)))
+                { StatusChanged?.Invoke("选区超出当前房间或通道占格。"); return; }
                 room.boxes.Add(box);
-                if (PlanningDoorUtility.IsDoor(box)) PlanningDoorUtility.AddButton(room.boxes, box, allowed);
+                if (PlanningDoorUtility.IsDoor(box)) PlanningDoorUtility.AddButton(room.boxes, box, allowed, c => CanPlaceLocalRect(room, new RectInt(c, Vector2Int.one)));
                 selectedBoxId = box.id;
                 NotifyDocumentChanged();
                 SelectionChanged?.Invoke();
@@ -3496,6 +2969,21 @@ namespace PlanningEditorPrototype
             if (GetActiveDetailTool() == PlanningDetailTool.Parameters) { EditParametersAt(position); return; }
             Vector2Int cell = CellAt(position);
             PlanningDetailTool activeTool = GetActiveDetailTool();
+            if (activeTool == PlanningDetailTool.Select)
+            {
+                movingBox = null;
+                var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
+                items.Reverse();
+                foreach (var item in items)
+                {
+                    if (!DisplayRect(item.room, item.box).Contains(cell)) continue;
+                    selectedRoomId = item.room?.id; selectedBoxId = item.box.id;
+                    movingBox = item.box; movingBoxStart = position;
+                    movingBoxOrigin = new Vector2Int(item.box.x, item.box.y);
+                    break;
+                }
+                SelectionChanged?.Invoke();
+            }
             if (activeTool == PlanningDetailTool.Box ||
                 activeTool == PlanningDetailTool.Erase)
             {
@@ -3508,6 +2996,15 @@ namespace PlanningEditorPrototype
         private void HandleAssemblyPointerMove(Vector2 position)
         {
             PlanningDetailTool activeTool = GetActiveDetailTool();
+            if (activeTool == PlanningDetailTool.Select && movingBox != null)
+            {
+                var owner = document.FindRoom(selectedRoomId);
+                Vector2Int delta = CellAt(position) - CellAt(movingBoxStart);
+                Vector2Int target = movingBoxOrigin + delta;
+                if (owner != null && !CanPlaceLocalRect(owner, new RectInt(target.x, target.y, movingBox.width, movingBox.height))) return;
+                movingBox.x = target.x; movingBox.y = target.y;
+                UpdateDetailPreviewImages(); MarkDirtyRepaint(); return;
+            }
             if (activeTool != PlanningDetailTool.Box &&
                 activeTool != PlanningDetailTool.Erase)
             {
@@ -3529,6 +3026,12 @@ namespace PlanningEditorPrototype
         {
             PlanningDetailTool activeTool = GetActiveDetailTool();
             if (activeTool == PlanningDetailTool.Merge) { CompleteMergeSelection(); return; }
+            if (activeTool == PlanningDetailTool.Select)
+            {
+                if (movingBox != null && movingBoxOrigin != new Vector2Int(movingBox.x, movingBox.y)) NotifyDocumentChanged();
+                SelectionChanged?.Invoke(); return;
+            }
+            if (activeTool != PlanningDetailTool.Box && activeTool != PlanningDetailTool.Erase) return;
             if (IsPlacingDoor)
             {
                 AddAssemblyBox(assemblyStrokeStart);
@@ -3568,14 +3071,17 @@ namespace PlanningEditorPrototype
                     detailType,
                     new RectInt(local.x, local.y, 1, 1));
                 ApplyDetailSelection(box);
+                if (!CanPlaceLocalRect(owner, new RectInt(box.x, box.y, box.width, IsPlacingDoor ? 2 : box.height))) return;
+                if (owner.boxes.Exists(b => b.x == box.x && b.y == box.y && SameKind(b, box))) return;
                 RectInt allowed = owner.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
                 if (owner.isConnector) allowed = GetConnectorDetailBounds(owner);
                 if (!PrepareDoorPlacement(owner, box, allowed)) return;
                 owner.boxes.Add(box);
-                if (PlanningDoorUtility.IsDoor(box)) PlanningDoorUtility.AddButton(owner.boxes, box, allowed);
+                if (PlanningDoorUtility.IsDoor(box)) PlanningDoorUtility.AddButton(owner.boxes, box, allowed, c => CanPlaceLocalRect(owner, new RectInt(c, Vector2Int.one)));
             }
             else
             {
+                StatusChanged?.Invoke("请在房间或通道的占格内放置物体；在世界图可扩展占格。");
                 return;
             }
 
@@ -3613,7 +3119,7 @@ namespace PlanningEditorPrototype
             if (!allowed.Contains(new Vector2Int(box.x, box.y)) || !allowed.Contains(new Vector2Int(box.x, box.y + 1)) ||
                 !PlanningDoorUtility.CanPlace(room.boxes, new RectInt(box.x, box.y, 1, 2)))
             { StatusChanged?.Invoke("门需要连续的 1×2 空格。"); return false; }
-            if (!PlanningDoorUtility.TryFindButtonCell(room.boxes, box, allowed, out _))
+            if (!PlanningDoorUtility.TryFindButtonCell(room.boxes, box, allowed, out _, c => CanPlaceLocalRect(room, new RectInt(c, Vector2Int.one))))
             { StatusChanged?.Invoke("门附近没有可放置按钮的空格。"); return false; }
             return true;
         }
@@ -3625,7 +3131,7 @@ namespace PlanningEditorPrototype
                 if (item.box.id != doorId || !PlanningDoorUtility.IsDoor(item.box) || item.room == null) continue;
                 RectInt allowed = item.room.isConnector ? GetConnectorDetailBounds(item.room) :
                     item.room.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
-                if (PlanningDoorUtility.AddButton(item.boxes, item.box, allowed) == null)
+                if (PlanningDoorUtility.AddButton(item.boxes, item.box, allowed, c => CanPlaceLocalRect(item.room, new RectInt(c, Vector2Int.one))) == null)
                 { StatusChanged?.Invoke("门附近没有可放置按钮的空格。"); return; }
                 NotifyDocumentChanged(); SelectionChanged?.Invoke(); MarkDirtyRepaint();
                 StatusChanged?.Invoke("已添加门按钮，可在选择模式拖动位置。");
@@ -3726,112 +3232,6 @@ namespace PlanningEditorPrototype
             }
         }
 
-        private bool TryFindAssemblyOwner(
-            Vector2Int cell,
-            int strideX,
-            int strideY,
-            out PlanningRoom owner,
-            out Vector2Int local)
-        {
-            for (int index = 0; index < document.rooms.Count; index++)
-            {
-                PlanningRoom candidate = document.rooms[index];
-                if (candidate.isConnector)
-                {
-                    continue;
-                }
-
-                GetAssemblyRoomOffset(
-                    candidate,
-                    strideX,
-                    strideY,
-                    out int offsetX,
-                    out int offsetY,
-                    out int maxPlanY);
-                RectInt allowed = candidate.GetLocalAllowedRect(
-                    WorldBlockCellWidth,
-                    WorldBlockCellHeight);
-                var bounds = new RectInt(
-                    offsetX,
-                    offsetY,
-                    allowed.width,
-                    allowed.height);
-                if (!bounds.Contains(cell))
-                {
-                    continue;
-                }
-
-                owner = candidate;
-                local = new Vector2Int(
-                    cell.x - offsetX,
-                    cell.y - offsetY);
-                return true;
-            }
-
-            for (int index = 0; index < document.rooms.Count; index++)
-            {
-                PlanningRoom connector = document.rooms[index];
-                if (!connector.isConnector)
-                {
-                    continue;
-                }
-
-                GetAssemblyConnectorOrigin(
-                    connector,
-                    strideX,
-                    strideY,
-                    out int originX,
-                    out int originY);
-                if (connector.boxes.Count == 0)
-                {
-                    PlanningCell pathOrigin = GetConnectorOrigin(connector);
-                    Vector2Int localCell = new Vector2Int(
-                        cell.x - originX,
-                        cell.y - originY);
-                    for (int cellIndex = 0;
-                         cellIndex < connector.cells.Count;
-                         cellIndex++)
-                    {
-                        PlanningCell pathCell =
-                            connector.cells[cellIndex];
-                        if (pathCell.x - pathOrigin.x == localCell.x &&
-                            pathCell.y - pathOrigin.y == localCell.y)
-                        {
-                            owner = connector;
-                            local = localCell;
-                            return true;
-                        }
-                    }
-                }
-
-                for (int boxIndex = 0;
-                     boxIndex < connector.boxes.Count;
-                     boxIndex++)
-                {
-                    PlanningBox box = connector.boxes[boxIndex];
-                    var bounds = new RectInt(
-                        originX + box.x,
-                        originY + box.y,
-                        box.width,
-                        box.height);
-                    if (!bounds.Contains(cell))
-                    {
-                        continue;
-                    }
-
-                    owner = connector;
-                    local = new Vector2Int(
-                        cell.x - originX,
-                        cell.y - originY);
-                    return true;
-                }
-            }
-
-            owner = null;
-            local = default;
-            return false;
-        }
-
         private static RectInt GetAssemblyBoxRect(
             PlanningRoom owner,
             PlanningBox box,
@@ -3916,107 +3316,6 @@ namespace PlanningEditorPrototype
             boxes.Add(carved);
             carved.hasComponentOverrides = source.hasComponentOverrides;
             carved.componentOverrides = source.Clone().componentOverrides;
-        }
-
-        private void SelectRoomAt(Vector2Int cell)
-        {
-            PlanningRoom room = document.FindRoomAt(cell.x, cell.y) ??
-                                document.FindConnectorAt(cell.x, cell.y);
-            selectedRoomId = room?.id;
-            selectedBoxId = null;
-            SelectionChanged?.Invoke();
-        }
-
-        private void AddCell(Vector2Int cell)
-        {
-            PlanningRoom room = GetOrCreateSelectedRoom(cell.x, cell.y);
-            List<PlanningCell> before = CloneCells(room.cells);
-            AddCellToRoom(room, cell.x, cell.y);
-            if (!ValidateConnectivity(room))
-            {
-                room.cells = before;
-                ValidationFailed?.Invoke(
-                    room.isConnector
-                        ? "不允许：这次修改会断开通道两端。"
-                        : "不允许：房间区块必须保持连通。");
-                return;
-            }
-
-            NotifyDocumentChanged();
-        }
-
-        private void EraseCell(Vector2Int cell)
-        {
-            PlanningRoom room =
-                document.FindRoomAt(cell.x, cell.y) ??
-                document.FindConnectorAt(cell.x, cell.y);
-            if (room == null)
-            {
-                return;
-            }
-
-            List<PlanningCell> before = CloneCells(room.cells);
-            room.cells.RemoveAll(
-                item => item.x == cell.x && item.y == cell.y);
-            if (!ValidateConnectivity(room))
-            {
-                room.cells = before;
-                ValidationFailed?.Invoke(
-                    room.isConnector
-                        ? "不允许：不能断开通道两端。"
-                        : "不允许：房间区块不能断开。");
-                return;
-            }
-
-            NotifyDocumentChanged();
-        }
-
-        private bool ValidateConnectivity(PlanningRoom room)
-        {
-            if (room.isConnector)
-            {
-                return IsConnectorConnected(room);
-            }
-
-            return AreCellsConnected(room.cells);
-        }
-
-        private bool IsConnectorConnected(PlanningRoom connector)
-        {
-            PlanningRoom from = document.FindRoom(connector.fromRoomId);
-            PlanningRoom to = document.FindRoom(connector.toRoomId);
-            if (from == null ||
-                to == null ||
-                connector.cells.Count == 0)
-            {
-                return false;
-            }
-
-            if (!CellInRoom(connector.cells[0], from) ||
-                !CellInRoom(
-                    connector.cells[connector.cells.Count - 1],
-                    to))
-            {
-                return false;
-            }
-
-            return AreCellsConnected(connector.cells);
-        }
-
-        private static bool CellInRoom(
-            PlanningCell cell,
-            PlanningRoom room)
-        {
-            for (int index = 0; index < room.cells.Count; index++)
-            {
-                PlanningCell candidate = room.cells[index];
-                if (candidate.x == cell.x && candidate.y == cell.y)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static bool AreCellsConnected(
@@ -4168,13 +3467,14 @@ namespace PlanningEditorPrototype
 
         private void NotifyDocumentChanged()
         {
-            if (document != null) PlanningDoorUtility.RemoveOrphanButtons(document);
             if (suppressDocumentChanged)
             {
                 pendingDocumentChanged = true;
                 return;
             }
 
+            document?.RefreshConnectorPaths();
+            if (document != null) PlanningDoorUtility.RemoveOrphanButtons(document);
             DocumentChanged?.Invoke();
             UpdateDetailPreviewImages();
             MarkDirtyRepaint();

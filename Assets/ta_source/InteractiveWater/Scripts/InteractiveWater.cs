@@ -134,12 +134,27 @@ namespace InteractiveWater
         {
             if (_runtimeFrontMeshMaterial != null)
             {
-                Color color = _frontMeshMaterial.GetColor(MainColor);
-                color.a *= _reveal;
-                _runtimeFrontMeshMaterial.SetColor(MainColor, color);
+                _runtimeFrontMeshMaterial.SetFloat("_ColorRevealOpacity", _reveal);
             }
             if (_topMesh != null)
-                _topMesh.localScale = Vector3.one * Mathf.Max(.0001f, _reveal);
+            {
+                _topMesh.localScale = Vector3.one;
+                if (_runtimeTopMeshMaterial != null) _runtimeTopMeshMaterial.SetFloat("_ColorRevealOpacity", _reveal);
+                ApplyRevealMask(_topMesh.GetComponent<Renderer>());
+            }
+            if (_frontMesh != null) ApplyRevealMask(_frontMesh.GetComponent<Renderer>());
+        }
+
+        private MaterialPropertyBlock _revealProperties;
+        private void ApplyRevealMask(Renderer target)
+        {
+            if (target == null) return;
+            _revealProperties ??= new MaterialPropertyBlock();
+            target.GetPropertyBlock(_revealProperties);
+            _revealProperties.SetFloat("_ColorRevealOpacity", _reveal);
+            _revealProperties.SetFloat("_ColorMaskGroup", 2f);
+            _revealProperties.SetFloat("_ColorMaskReal", 1f);
+            target.SetPropertyBlock(_revealProperties);
         }
 
         public static int ActiveInstanceCount { get; private set; }

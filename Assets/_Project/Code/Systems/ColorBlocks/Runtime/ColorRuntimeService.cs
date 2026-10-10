@@ -80,9 +80,9 @@ namespace Project.ColorBlocks
                 if (definition != null &&
                     !string.IsNullOrWhiteSpace(definition.id))
                 {
-                    HSVColorFadeManager.Instance.SetColorFaded(
+                    ColorAppearanceManager.Instance.Play(
                         definition.id,
-                        true,
+                        false,
                         0f);
                 }
             }
@@ -124,9 +124,9 @@ namespace Project.ColorBlocks
                 }
             }
 
-            HSVColorFadeManager.Instance.SetColorFaded(
+            ColorAppearanceManager.Instance.Play(
                 typeId,
-                false);
+                true);
             ColorUnlocked?.Invoke(definition);
             EventMgr.RaiseColorUnlocked(definition);
             if (!string.IsNullOrEmpty(definition.unlockEventId))
@@ -180,7 +180,7 @@ namespace Project.ColorBlocks
                 colorObject?.Deactivate();
             }
 
-            HSVColorFadeManager.Instance.ResetAll();
+            ColorAppearanceManager.Instance.ResetAll();
             EventMgr.RaiseRoomColorReset();
         }
 
@@ -236,9 +236,9 @@ namespace Project.ColorBlocks
                 }
             }
 
-            HSVColorFadeManager.Instance.SetColorFaded(
+            ColorAppearanceManager.Instance.Play(
                 typeId,
-                true);
+                false);
             return true;
         }
     }

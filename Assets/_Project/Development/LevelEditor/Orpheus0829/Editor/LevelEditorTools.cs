@@ -182,7 +182,7 @@ namespace Project.LevelEditor.Editor
             bool recordUndo)
         {
             GameObject player = LevelEditorState.Player;
-            if (player == null || !player.scene.IsValid())
+            if (EditorApplication.isPlayingOrWillChangePlaymode || player == null || !player.scene.IsValid())
             {
                 return false;
             }

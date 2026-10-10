@@ -180,6 +180,7 @@ namespace Project.BlockFeatures
             DisconnectAllPlayers();
             ResetGrowth();
             StopBurn();
+            ColorAppearanceManager.Existing?.UnregisterVine(vineRenderer);
             if (vineVisual != null) Destroy(vineVisual);
             vineVisual = null;
             vineParticles = null;
@@ -221,6 +222,11 @@ namespace Project.BlockFeatures
 
         private void RefreshClimbingPlayers()
         {
+            Collider rootCollider = Root.GetComponent<Collider>();
+            float topHeight = (rootCollider != null ? rootCollider.bounds.max.y : Root.transform.position.y + GridCellWorldSize * .5f)
+                + Root.CurrentGrowthBlocks * GridCellWorldSize;
+            foreach (PlayerController climbingPlayer in climbingPlayers.Values)
+                if (climbingPlayer != null) climbingPlayer.SetClimbTopHeight(this, topHeight);
             float range =
                 Mathf.Max(0f, climbEnterDistanceGrid) *
                 GridCellWorldSize;
@@ -255,6 +261,7 @@ namespace Project.BlockFeatures
 
                     climbingPlayers.Add(id, player);
                     player.EnterClimb(this);
+                    player.SetClimbTopHeight(this, topHeight);
                     player.SetClimbSpeedMultiplier(
                         this,
                         climbSpeedMultiplier);
@@ -631,6 +638,7 @@ namespace Project.BlockFeatures
                 particles.transform.localScale = Vector3.one;
                 vineParticles = particles.GetComponent<ParticleSystem>();
                 vineRenderer = particles.GetComponent<Renderer>();
+                if (vineRenderer != null) vineRenderer.enabled = false;
                 if (vineParticles == null || vineRenderer == null)
                 {
                     Destroy(vineVisual);
@@ -658,6 +666,7 @@ namespace Project.BlockFeatures
                 Texture alphaTexture = trailMaterial != null ? trailMaterial.mainTexture : null;
                 properties.SetTexture("_ColorMaskAlphaTexture", alphaTexture != null ? alphaTexture : Texture2D.whiteTexture);
                 vineRenderer.SetPropertyBlock(properties);
+                ColorAppearanceManager.Instance.RegisterVine(vineRenderer);
             }
             visualProgress = Mathf.MoveTowards(visualProgress, visualTarget, deltaTime / Mathf.Max(.1f, visualGrowthDuration));
             visibleCells = Mathf.MoveTowards(visibleCells, targetCells, deltaTime * Mathf.Max(1, maxGrowthBlocks) / Mathf.Max(.1f, visualGrowthDuration));
@@ -674,7 +683,6 @@ namespace Project.BlockFeatures
             vineVisual.transform.localScale = scale;
             vineVisual.transform.localPosition = new Vector3(-bounds.center.x * scale.x,
                 -.5f - bounds.min.y * scale.y, -bounds.center.z * scale.z);
-            vineRenderer.enabled = !burned && HSVColorFadeManager.Instance.ShowsUnlockedAppearance("green");
         }
 
         public void BeginBurn()
@@ -718,6 +726,7 @@ namespace Project.BlockFeatures
             }
             burned = true;
             burning = false;
+            ColorAppearanceManager.Existing?.UnregisterVine(vineRenderer);
             if (vineRenderer != null) vineRenderer.enabled = false;
             burnRoutine = null;
         }

@@ -4,6 +4,9 @@
     "m_ObjectId": "cc4c2cb2e7e44026a42f617ca92dba67",
     "m_Properties": [
         {
+            "m_Id": "768c5564c432dddafb360a05a437612c"
+        },
+        {
             "m_Id": "6953842d6d3841509b48115312feb687"
         },
         {
@@ -60,6 +63,9 @@
         }
     ],
     "m_Nodes": [
+        {
+            "m_Id": "ef02305e7912190e5110e7640d626d73"
+        },
         {
             "m_Id": "53a1287fb9bc4025aeb571432797f269"
         },
@@ -224,6 +230,20 @@
     ],
     "m_StickyNoteDatas": [],
     "m_Edges": [
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "ef02305e7912190e5110e7640d626d73"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "12f10966b057415bb00cbedc91a14b79"
+                },
+                "m_SlotId": 0
+            }
+        },
         {
             "m_OutputSlot": {
                 "m_Node": {
@@ -1954,7 +1974,7 @@
 
 {
     "m_SGVersion": 0,
-    "m_Type": "UnityEditor.Rendering.Universal.ShaderGraph.UniversalSpriteLitSubTarget",
+    "m_Type": "UnityEditor.Rendering.Universal.ShaderGraph.UniversalUnlitSubTarget",
     "m_ObjectId": "2463ac8307f04021a7683a85b847a865"
 }
 
@@ -2695,7 +2715,7 @@
     "m_RefNameGeneratedByDisplayName": "WaterMeshDepth",
     "m_DefaultReferenceName": "_WaterMeshDepth",
     "m_OverrideReferenceName": "",
-    "m_GeneratePropertyBlock": false,
+    "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
     "m_DismissedVersion": 0,
@@ -5879,9 +5899,9 @@
         "m_Id": "2463ac8307f04021a7683a85b847a865"
     },
     "m_AllowMaterialOverride": false,
-    "m_SurfaceType": 0,
+    "m_SurfaceType": 1,
     "m_ZTestMode": 4,
-    "m_ZWriteControl": 0,
+    "m_ZWriteControl": 2,
     "m_AlphaMode": 0,
     "m_RenderFace": 0,
     "m_AlphaClip": false,
@@ -6465,3 +6485,81 @@
     }
 }
 
+{
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "768c5564c432dddafb360a05a437612c",
+    "m_Guid": {
+        "m_GuidSerialized": "a42cd82a-3f01-426c-854c-2858107dacad"
+    },
+    "m_Name": "显现透明度",
+    "m_DefaultRefNameVersion": 1,
+    "m_RefNameGeneratedByDisplayName": "_ColorRevealOpacity",
+    "m_DefaultReferenceName": "_ColorRevealOpacity",
+    "m_OverrideReferenceName": "_ColorRevealOpacity",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": true,
+    "m_Value": 1,
+    "m_FloatType": 1,
+    "m_RangeValues": {
+        "x": 0,
+        "y": 1
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
+    "m_ObjectId": "ef02305e7912190e5110e7640d626d73",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Property",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -752.0000610351562,
+            "y": 565.999755859375,
+            "width": 173.99993896484375,
+            "height": 34.00006103515625
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "51441b95430e837d020733d152494a09"
+        }
+    ],
+    "synonyms": [],
+    "m_Precision": 0,
+    "m_PreviewExpanded": true,
+    "m_DismissedVersion": 0,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_Property": {
+        "m_Id": "768c5564c432dddafb360a05a437612c"
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "51441b95430e837d020733d152494a09",
+    "m_Id": 0,
+    "m_DisplayName": "显现透明度",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Out",
+    "m_StageCapability": 3,
+    "m_Value": 1,
+    "m_DefaultValue": 1,
+    "m_Labels": []
+}

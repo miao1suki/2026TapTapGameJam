@@ -9,11 +9,11 @@
 - `ResetDoor()`：停止自身 Tween / Timeline、释放控制锁、恢复关闭姿态、实体碰撞和按钮初始状态。
 - `StateChanged`：订阅者按生命周期取消订阅。
 - `DoorButton.State / IsPressed / Owner`：只读运行状态和所属门。
-- `DoorButton.TryInteract(actor)`：沿用 IInteractionTarget / E，距离读取 GridCellSizeUtility；一次按下后不回弹。
+- `DoorButton.TryPress(actor)`：供程序主动申请按下，要求 Play Mode、有效玩家、有效绑定和未按下状态；不是输入交互接口。正常玩法由 `OnTriggerEnter/Stay` 检查玩家 CapsuleCollider 脚部高度后调用；不实现 `IInteractionTarget`，E 不选择门按钮。一次按下后不回弹，Stay 支持重置时玩家仍在按钮上。
 
 PlanningBox 的 `singleInstance` 使 1×2 门只生成一个实例；`doorOwnerId` 保存按钮所属门的规划 ID。DoorEntryId=`mechanism-door-standard`；内部按钮 EntryId=`mechanism-door-owned-button` 不进入 palette。按钮专用 prefab 由 PlanningDoorUtility 解析，不依赖随机生成的入口 ID。
 
-门放置预览按固定 1×2 绘制；详情/装配拖拽都以按下格为上格，一次只创建一扇。Scene 放置器使用世界坐标下格作为根位置，提示向上扩展两格。DoorButton 模型局部中心 y=-0.44、尺寸 (0.6,0.12,0.6)，底面位于所属格底 y=-0.5，根 Trigger 和交互绑定不变。
+门放置预览按固定 1×2 绘制；详情/装配拖拽都以按下格为上格，一次只创建一扇。Scene 放置器使用世界坐标下格作为根位置，提示向上扩展两格。DoorButton 模型局部中心 y=-0.44、尺寸 (0.6,0.12,0.6)，底面位于所属格底 y=-0.5。根 Trigger 中心 y=-0.35、尺寸 (0.6,0.3,0.6)，Awake 同步修正旧场景实例；脚部容差按 GridCellSizeUtility 换算，非玩家与玩家辅助 Trigger 不触发。
 
 删除门清理其所属按钮；删除按钮保留门且解除绑定。NotifyDocumentChanged 清理孤儿按钮，新增/保存使用既有规划事务与撤销。增量整合完成后 BindSceneDoors 从 PlanningBoxId 重新解析引用，不能引用 staging 中即将销毁的对象。按钮移动不跟随门作为子物体。
 

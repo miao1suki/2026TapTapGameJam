@@ -56,11 +56,11 @@ namespace Project.Mechanisms.Editor
             var root = ProjectInspectorUtility.CreateRoot(serializedObject);
             root.Add(ProjectInspectorUtility.CreateTitle("门按钮"));
             root.Add(ProjectInspectorUtility.CreateScriptField(serializedObject));
-            var settings = ProjectInspectorUtility.CreateFoldout("交互设置",true);
+            var settings = ProjectInspectorUtility.CreateFoldout("踩踏设置",true);
             var owner = new UnityEditor.UIElements.PropertyField(serializedObject.FindProperty("owner"));
             owner.SetEnabled(false);
             settings.Add(owner);
-            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"interactionRadius","交互距离（格）","玩家靠近后按现有交互键；按下后保持状态。"));
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"footTolerance","脚部容差（格）","玩家脚部进入地面按钮触发区后自动按下；不需要交互键。"));
             settings.Add(new UnityEditor.UIElements.PropertyField(serializedObject.FindProperty("visual")));
             root.Add(settings);
             var state = new Label();

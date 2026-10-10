@@ -13,7 +13,7 @@ using UnityEngine.UIElements;
 
 namespace PlanningEditorPrototype
 {
-    public sealed class PlanningEditorWindow : EditorWindow
+    public sealed partial class PlanningEditorWindow : EditorWindow
     {
         private enum PlanningWorkspaceMode
         {
@@ -303,6 +303,8 @@ namespace PlanningEditorPrototype
             canvas = new PlanningCanvas();
             canvas.DocumentChanged += OnCanvasDocumentChanged;
             canvas.SelectionChanged += OnCanvasSelectionChanged;
+            canvas.WorldItemsRemoved += RemoveOwnedSceneItems;
+            canvas.WorldOwnersRemoving += RemoveOwnerSceneContainers;
             canvas.SetBackgroundColor(canvasBackgroundColor);
             LevelEditorPalette sharedPalette =
                 LevelEditorPaletteService.GetOrCreate();
@@ -387,6 +389,7 @@ namespace PlanningEditorPrototype
 
         private void OnPlanningPlayModeChanged(PlayModeStateChange state)
         {
+            canvas?.CancelPointerInteraction();
             if (state != PlayModeStateChange.EnteredEditMode || canvas == null) return;
             // Runtime teardown is not an authoring deletion.
             CaptureSceneBindings();
@@ -395,6 +398,7 @@ namespace PlanningEditorPrototype
 
         private void OnDisable()
         {
+            canvas?.CancelPointerInteraction();
             ShortcutManager.UnregisterContext(undoContext);
             ShortcutManager.UnregisterContext(viewContext);
             viewContext.window = null;
@@ -416,6 +420,11 @@ namespace PlanningEditorPrototype
             LevelEditorState.EditMode = false;
             SurfaceTileEditorBridge.SetPainting(false);
             LevelEditorViewLock.Exit();
+        }
+
+        private void OnLostFocus()
+        {
+            canvas?.CancelPointerInteraction();
         }
 
         private void Tick()
@@ -1140,23 +1149,26 @@ namespace PlanningEditorPrototype
             return saveOverlay;
         }
 
-        private VisualElement BuildLeftRail()
+        private VisualElement BuildWorldToolPanel()
         {
             ScrollView rail = new ScrollView(ScrollViewMode.Vertical);
             rail.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
-            rail.style.width = leftRailWidth;
-            rail.style.minWidth = 110f;
-            rail.style.maxWidth = 420f;
-            rail.style.flexGrow = 1f;
+            rail.style.width = Length.Percent(100);
+            rail.style.flexGrow = 0f;
             rail.style.flexShrink = 0f;
             rail.style.backgroundColor = new Color(.09f, .105f, .135f);
             rail.style.borderRightWidth = 1f;
             rail.style.borderRightColor = new Color(.2f, .23f, .3f);
+            rail.Add(SectionTitle("世界图搭建"));
+            VisualElement createRow = Row();
+            createRow.Add(TopButton("+ 新增房间", AddRoom));
+            createRow.Add(TopButton("+ 新增通道", () => { canvas.BeginConnectorPlacement(); RefreshToolStyles(); }));
+            rail.Add(createRow);
 
             Foldout worldBlockFoldout = new Foldout
             {
                 text = "世界图区块",
-                value = true
+                value = false
             };
             worldBlockFoldout.style.marginLeft = 6f;
             worldBlockFoldout.style.marginRight = 6f;
@@ -1263,15 +1275,14 @@ namespace PlanningEditorPrototype
             worldToolsFoldout.Add(tools);
             rail.Add(worldToolsFoldout);
 
-            rail.Add(SectionTitle("房间列表"));
-            roomList = ScrollList(190f);
-            rail.Add(roomList);
-            rail.Add(SmallRowButton("+ 新增房间", AddRoom));
-
-            rail.Add(SectionTitle("连接通道"));
-            connectorList = ScrollList(130f);
-            rail.Add(connectorList);
-
+            rail.Add(SmallRowButton("删除选中整体", () => canvas.DeleteWorldSelection()));
+            Label selectionHint = new Label("点选整体 · Ctrl/Shift 多选 · 空白处框选 · 拖动选区移动");
+            selectionHint.style.whiteSpace = WhiteSpace.Normal;
+            selectionHint.style.marginLeft = selectionHint.style.marginRight = 8;
+            selectionHint.style.color = new Color(.65f, .72f, .8f);
+            rail.Add(selectionHint);
+            rail.Add(BuildRegionTools());
+            worldMapTools = rail;
             return rail;
         }
 
@@ -1311,11 +1322,12 @@ namespace PlanningEditorPrototype
             modeRow.Add(detail);
             modeRow.Add(assembly);
             panel.Add(modeRow);
+            panel.Add(BuildWorldToolPanel());
 
             blockEditorFoldout = new Foldout
             {
                 text = "方块 / 道具放置器",
-                value = false
+                value = true
             };
             blockEditorFoldout.style.marginLeft = 6f;
             blockEditorFoldout.style.marginRight = 6f;
@@ -2100,6 +2112,7 @@ namespace PlanningEditorPrototype
 
         private void RefreshModeVisibility()
         {
+            if (selectionFoldout != null) selectionFoldout.value = mode == PlanningCanvasMode.World;
             if (worldMapTools != null)
             {
                 worldMapTools.style.display =
@@ -2110,6 +2123,7 @@ namespace PlanningEditorPrototype
 
             if (blockEditorFoldout != null)
             {
+                if (mode != PlanningCanvasMode.World) blockEditorFoldout.value = true;
                 blockEditorFoldout.style.display =
                     mode == PlanningCanvasMode.World
                         ? DisplayStyle.None
@@ -2188,7 +2202,7 @@ namespace PlanningEditorPrototype
         private void ApplyMapToScene()
         {
             if(syncingScene || EditorApplication.isPlayingOrWillChangePlaymode) return;
-            if (document == null || document.rooms.Count == 0)
+            if (document == null)
             {
                 statusLabel.text = "世界图里还没有房间。";
                 return;
@@ -2297,7 +2311,7 @@ namespace PlanningEditorPrototype
 
             if (!EditorUtility.DisplayDialog(
                     "修复同步",
-                    "将清理失效通道，按端口重算所有通道，" +
+                    "将刷新通道连接名称，" +
                     "并以 Scene 房间容器覆盖对应房间的规划方块。" +
                     "确定继续？",
                     "确认修复",
@@ -2306,10 +2320,7 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            int removedConnectors = document.rooms.RemoveAll(
-                item => item.isConnector &&
-                        (document.FindRoom(item.fromRoomId) == null ||
-                         document.FindRoom(item.toRoomId) == null));
+            int removedConnectors = 0;
             document.Normalize();
             document.RefreshConnectorPaths();
             bool synced = canvas != null &&
@@ -2329,6 +2340,7 @@ namespace PlanningEditorPrototype
         private void AddRoom()
         {
             canvas?.BeginRoomPlacement();
+            RefreshToolStyles();
         }
 
         private void ResetPlanningHistory()
@@ -2435,6 +2447,7 @@ namespace PlanningEditorPrototype
         {
             RefreshRoomList();
             RefreshConnectorList();
+            RefreshRegionList();
             RefreshInspector();
             RefreshSelectedSceneReference();
             RefreshLevelContext();
@@ -2502,6 +2515,7 @@ namespace PlanningEditorPrototype
             }
             RefreshRoomList();
             RefreshConnectorList();
+            RefreshRegionList();
             RefreshInspector();
             RefreshSelectedSceneReference();
             RefreshToolStyles();
@@ -2842,20 +2856,21 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
-                Button button = new Button(() =>
-                {
-                    canvas.SelectRoom(room.id, true);
-                    RefreshInspector();
-                })
+                Button button = new Button()
                 {
                     text = room.name
                 };
+                button.RegisterCallback<ClickEvent>(evt =>
+                {
+                    canvas.SelectRoom(room.id, true, evt.ctrlKey || evt.commandKey || evt.shiftKey);
+                    RefreshInspector();
+                });
                 button.style.unityTextAlign = TextAnchor.MiddleLeft;
                 button.style.marginLeft = 6f;
                 button.style.marginRight = 6f;
                 button.style.marginBottom = 2f;
                 button.style.height = 24f;
-                bool selected = room.id == canvas.SelectedRoomId;
+                bool selected = canvas.IsWorldSelected(room.id);
                 button.style.backgroundColor = selected
                     ? new Color(.18f, .34f, .52f)
                     : new Color(.12f, .15f, .19f);
@@ -2882,28 +2897,22 @@ namespace PlanningEditorPrototype
                 }
 
                 count++;
-                PlanningRoom from = document.FindRoom(
-                    connector.fromRoomId);
-                PlanningRoom to = document.FindRoom(
-                    connector.toRoomId);
-                string route = from != null && to != null
-                    ? $"{from.name} → {to.name}"
-                    : connector.name;
-                connector.name = route;
-                Button button = new Button(() =>
-                {
-                    canvas.SelectRoom(connector.id, true);
-                    RefreshInspector();
-                })
+                string route = connector.name;
+                Button button = new Button()
                 {
                     text = route
                 };
+                button.RegisterCallback<ClickEvent>(evt =>
+                {
+                    canvas.SelectRoom(connector.id, true, evt.ctrlKey || evt.commandKey || evt.shiftKey);
+                    RefreshInspector();
+                });
                 button.style.unityTextAlign = TextAnchor.MiddleLeft;
                 button.style.marginLeft = 6f;
                 button.style.marginRight = 6f;
                 button.style.marginBottom = 2f;
                 button.style.height = 24f;
-                bool selected = connector.id == canvas.SelectedRoomId;
+                bool selected = canvas.IsWorldSelected(connector.id);
                 button.style.backgroundColor = selected
                     ? new Color(.16f, .43f, .42f)
                     : new Color(.12f, .15f, .19f);
@@ -2918,7 +2927,7 @@ namespace PlanningEditorPrototype
 
             if (count == 0)
             {
-                Label empty = new Label("使用“通道”工具从房间拖到房间");
+                Label empty = new Label("在世界图右侧创建通道");
                 empty.style.opacity = .5f;
                 empty.style.marginLeft = 6f;
                 empty.style.whiteSpace = WhiteSpace.Normal;
@@ -2935,6 +2944,10 @@ namespace PlanningEditorPrototype
 
             inspector.Clear();
             RefreshLevelContext();
+            if (mode == PlanningCanvasMode.World && canvas.SelectedRegion != null)
+            {
+                BuildSelectedRegionInspector(); return;
+            }
             if (mode == PlanningCanvasMode.Detail &&
                 canvas.SelectedRoomId == null)
             {
@@ -2965,32 +2978,15 @@ namespace PlanningEditorPrototype
             }
             else
             {
-                PlanningRoom from = document.FindRoom(room.fromRoomId);
-                PlanningRoom to = document.FindRoom(room.toRoomId);
                 TextField routeName = new TextField("通道名")
                 {
                     value =
-                        (from != null ? from.name : "未知房间") +
-                        " → " +
-                        (to != null ? to.name : "未知房间"),
+                        room.name,
                     isReadOnly = true
                 };
                 inspector.Add(routeName);
 
-                IntegerField widthField = new IntegerField("通道宽度")
-                {
-                    value = room.connectorWidth,
-                    isDelayed = true
-                };
-                widthField.RegisterValueChangedCallback(evt =>
-                {
-                    room.connectorWidth = Mathf.Clamp(
-                        evt.newValue,
-                        1,
-                        12);
-                    OnCanvasDocumentChanged();
-                });
-                inspector.Add(widthField);
+                inspector.Add(new Label($"连接房间：{room.connectedRoomIds.Count} 个"));
             }
 
             inspector.Add(new Label(
@@ -3049,15 +3045,9 @@ namespace PlanningEditorPrototype
                     return;
                 }
 
-                document.rooms.Remove(room);
-                document.rooms.RemoveAll(
-                    item => item.isConnector &&
-                            (item.fromRoomId == room.id ||
-                             item.toRoomId == room.id));
-                document.doors.RemoveAll(
-                    door => door.roomId == room.id);
-                document.keys.RemoveAll(
-                    key => key.roomId == room.id);
+                RemoveOwnerSceneContainers(new[] { room });
+                var removed = PlanningWorldUtility.DeleteOwners(document, new HashSet<string> { room.id });
+                RemoveOwnedSceneItems(removed);
                 PlanningRoom next = document.rooms.Find(
                     item => !item.isConnector);
                 canvas.SelectRoom(

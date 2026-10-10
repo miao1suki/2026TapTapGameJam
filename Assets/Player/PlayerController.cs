@@ -40,6 +40,12 @@ namespace Project.Player
         [SerializeField, Min(0)] private float climbKickHorizontalSpeed = 5f;
         [SerializeField, Min(0)] private float climbKickVerticalSpeed = 10f;
         [SerializeField, Min(0)] private float climbKickDetachSeconds = .3f;
+        [SerializeField, Min(0f)] private float climbKickFallProtectionSeconds = 1.2f;
+        [SerializeField, Min(0f)] private float climbKickMaxFallSpeed = 3.5f;
+        [SerializeField, Min(1f)] private float climbTopKickHorizontalMultiplier = 1.5f;
+        [SerializeField, Min(1f)] private float climbTopKickVerticalMultiplier = 1.12f;
+        [SerializeField, Min(0f)] private float environmentLaunchExtraSpeed = 2.5f;
+        [SerializeField, Min(0f)] private float environmentLaunchProtectionSeconds = .2f;
         [SerializeField, Min(0)] private float moveAcceleration = 20;
         [SerializeField, Min(0)] private float moveDeceleration = 30;
         [SerializeField]
@@ -120,6 +126,9 @@ namespace Project.Player
             new Dictionary<int, float>();
         private float climbReattachUntil;
         private float climbKickHorizontalControlUntil;
+        private float climbKickFallProtectionUntil;
+        private float environmentLaunchUntil;
+        private readonly Dictionary<int, float> climbTopHeights = new Dictionary<int, float>();
         private readonly HashSet<int> bounceSurfaces =
             new HashSet<int>();
         private readonly RaycastHit[] groundHits = new RaycastHit[16];
@@ -334,6 +343,8 @@ namespace Project.Player
             climbInwardDirections.Clear();
             climbReattachUntil = 0f;
             climbKickHorizontalControlUntil = 0f;
+            climbKickFallProtectionUntil = environmentLaunchUntil = 0f;
+            climbTopHeights.Clear();
         }
         public void EnterWater(Component source)
         {
@@ -483,7 +494,7 @@ namespace Project.Player
             }
 
             Vector3 velocity = motor.linearVelocity;
-            velocity.y = Mathf.Max(velocity.y, verticalSpeed);
+            ApplyEnvironmentLaunch(ref velocity, verticalSpeed);
             motor.linearVelocity = velocity;
             IsGrounded = false;
             airborneSince = Time.time;
@@ -636,6 +647,38 @@ namespace Project.Player
             int id = source.GetInstanceID();
             climbSources.Remove(id);
             climbInwardDirections.Remove(id);
+            climbTopHeights.Remove(id);
+        }
+
+        public void SetClimbTopHeight(Component source, float worldHeight)
+        {
+            if (source != null && climbSources.Contains(source.GetInstanceID()))
+                climbTopHeights[source.GetInstanceID()] = worldHeight;
+        }
+
+        private bool IsNearClimbTop()
+        {
+            float top = float.NegativeInfinity;
+            foreach (float height in climbTopHeights.Values) top = Mathf.Max(top, height);
+            return !float.IsNegativeInfinity(top) && transform.position.y >= top - gridCellWorldSize;
+        }
+
+        private void ApplyEnvironmentLaunch(ref Vector3 velocity, float verticalSpeed)
+        {
+            ApplyEnvironmentLaunchVelocity(ref velocity, verticalSpeed);
+        }
+
+        private Vector2 GetClimbKickVelocity(float inward, bool nearTop) => new Vector2(
+            (nearTop ? inward * climbTopKickHorizontalMultiplier : -inward) * climbKickHorizontalSpeed,
+            climbKickVerticalSpeed * (nearTop ? climbTopKickVerticalMultiplier : 1f));
+
+        private void ApplyEnvironmentLaunchVelocity(ref Vector3 velocity, float verticalSpeed)
+        {
+            if (verticalSpeed <= 0f) return;
+            // A speed floor is idempotent under sustained steam; do not add velocity each tick.
+            velocity.y = Mathf.Max(velocity.y, verticalSpeed + environmentLaunchExtraSpeed);
+            environmentLaunchUntil = Time.time + environmentLaunchProtectionSeconds;
+            climbReattachUntil = Mathf.Max(climbReattachUntil, environmentLaunchUntil);
         }
         public void SetMoveInput(Vector2 value)
         {
@@ -1168,7 +1211,7 @@ namespace Project.Player
             Vector3 velocity = motor.linearVelocity;
             if (requestedBounceSpeed >= 0f)
             {
-                velocity.y = Mathf.Max(velocity.y, requestedBounceSpeed);
+                ApplyEnvironmentLaunch(ref velocity, requestedBounceSpeed);
                 requestedBounceSpeed = -1f;
                 IsGrounded = false;
                 airborneSince = Time.time;
@@ -1180,6 +1223,7 @@ namespace Project.Player
                 velocity.y = 0f;
                 requestedBounceSpeed = -1f;
                 requestedJumpBoost = -1f;
+                environmentLaunchUntil = 0f;
             }
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
             float climbInward = GetClimbInwardDirection();
@@ -1195,8 +1239,11 @@ namespace Project.Player
                 climbReattachUntil = Time.time + climbKickDetachSeconds;
                 climbKickHorizontalControlUntil = Time.time +
                     climbKickDetachSeconds * .5f;
-                velocity.x = -climbInward * climbKickHorizontalSpeed;
-                velocity.y = climbKickVerticalSpeed;
+                bool nearTop = IsNearClimbTop();
+                Vector2 kickVelocity = GetClimbKickVelocity(climbInward, nearTop);
+                velocity.x = kickVelocity.x;
+                velocity.y = kickVelocity.y;
+                climbKickFallProtectionUntil = Time.time + climbKickFallProtectionSeconds;
                 velocity.z = 0f;
                 jumpUntil = groundedUntil = -1f;
                 IsGrounded = false;
@@ -1271,7 +1318,7 @@ namespace Project.Player
                 motor.linearVelocity = velocity;
                 return;
             }
-            if (IsSwimming)
+            if (IsSwimming && Time.time >= environmentLaunchUntil)
             {
                 Vector2 externalVelocity = GetWaterVelocity();
                 float buoyancy = GetBuoyancy();
@@ -1309,7 +1356,7 @@ namespace Project.Player
             {
                 velocity.x = 0;
             }
-            else if (Time.time >= climbKickHorizontalControlUntil)
+            else if (Time.time >= climbKickHorizontalControlUntil && Time.time >= environmentLaunchUntil)
             {
                 float targetSpeed = movement.x * moveSpeed *
                                     (sprint ? sprintMultiplier : 1);
@@ -1374,6 +1421,10 @@ namespace Project.Player
                         ? jumpGravityMultiplier
                         : jumpReleaseGravityMultiplier
                     : fallGravityMultiplier;
+                if (Time.time < environmentLaunchUntil && velocity.y > 0f)
+                    gravityMultiplier = jumpGravityMultiplier;
+                bool protectedClimbFall = Time.time < climbKickFallProtectionUntil && velocity.y <= 0f;
+                if (protectedClimbFall) gravityMultiplier = Mathf.Min(gravityMultiplier, .65f);
                 velocity.y += Physics.gravity.y *
                               gravityMultiplier *
                               Time.fixedDeltaTime;
@@ -1382,6 +1433,8 @@ namespace Project.Player
                 {
                     velocity.y = -maxFallSpeed;
                 }
+                if (protectedClimbFall && climbKickMaxFallSpeed > 0f)
+                    velocity.y = Mathf.Max(velocity.y, -climbKickMaxFallSpeed);
             }
 
             motor.linearVelocity = velocity;
@@ -1694,6 +1747,8 @@ namespace Project.Player
             climbInwardDirections.Clear();
             climbReattachUntil = 0f;
             climbKickHorizontalControlUntil = 0f;
+            climbKickFallProtectionUntil = environmentLaunchUntil = 0f;
+            climbTopHeights.Clear();
             bounceSurfaces.Clear();
             enteredWaterDuringFall = false;
             enteredClimbDuringFall = false;

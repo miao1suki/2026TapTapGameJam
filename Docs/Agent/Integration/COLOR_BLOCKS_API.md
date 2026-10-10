@@ -1,24 +1,47 @@
 # 颜色物体 API
 
-## 外观交接 API
+## 分类表现与纯 HSV
 
-2026-10-09 节奏：`GetEffectiveDuration(duration)` 返回实际时长（默认 5 秒；正数指定时长 ×3；0 不延迟）。钥匙镜头等待使用该时长，其他新入口不要自行按旧的 1.5 秒提前结束演出。
+`HSVColorFadeManager` 不决定解锁、材质、透明度或物体显隐，也不扫描场景 Renderer。纯 API：
 
-### 像素化与藤蔓根系
+```csharp
+// 参数范围均为 0..1。seconds 是实际秒数，0 在当前调用内写入。
+HSVColorFadeManager.Instance.SetHsv("green", saturation: 0f, whiteAmount: 1f);
+HSVColorFadeManager.Instance.SetHsv("green", saturation: 1f, whiteAmount: 0f, seconds: 3f);
+```
 
-颜色 GameObject Layer 不变。水体与母根粒子 Renderer 添加 `renderingLayerMask |= 128u`，独立 LearningPixelPass 先执行学习项目的选择性像素化，再由 SelectiveHsvRendererFeature 的 HSV Pass 按颜色层合成；不在 HSV 内重复像素采样。描边 API 默认关闭，见 PIXELIZATION_API.md。旧 TA 02StencilPixelEffect 停用，PixelEffect 层 12 保留；不能把透明水体改层后期待旧“不透明 + Equal 深度”通道自动适配。
+`SetColorFaded` 现在只是纯饱和度便利 API，不再驱动外观交接；旧调用者必须改用分类表现入口。自动外观演出运行期间由演出独占同颜色的 HSV 写入；自行编排时不要同时启动自动演出。
 
-`ClimbableVineFeature.Root` 为唯一母根；`ConfigureInitialGrowth` 与运行时 `SpawnSegment` 写入所有权。`BeginBurn` 无论命中哪一节都转发母根，`IsBurning/IsBurned` 是节段状态，不改固定绿色属性。燃烧只处理该母根列出的预置/生成节段，从高到低逐节暂停攀爬、熄灭碰撞；预置对象不销毁，房间重置恢复，生成对象按既有生命周期清理。万能方块仍走同一 ApplyColor 路径。
+`ColorAppearanceManager.Play(id, unlocked, duration)` 管理同颜色组的两阶段流程：前 30% 基础外观变白并由不透明降为透明；零 Alpha 交接；后 70% 正式外观从全白、零 Alpha 恢复到原色、原始透明度。`GetBaseOpacity` / `GetRealOpacity` 提供两种外观的独立 Alpha，`ShowsUnlockedAppearance` 表示阶段，`IsComplete` 供 Timeline 等待。默认 5 秒，正数指定时长乘既有倍率（默认 3），0 立即完成。重复请求不从头开始，反向从当前进度回退。房间重置走 `ColorRuntimeService.ResetForRoom`，同步复原外观与 HSV。
 
-粒子表现按 source/time pair 缓存 72 份粒子、PlaybackState 和 Trails 快照，固定随机种子，使用 SetParticlesAndTrails 恢复，初始/长成状态保持暂停；不是负 simulationSpeed。首次源资源模拟到 30.13 秒并预计算 2.3 秒区间，会有一次 CPU/内存开销，需要 Profiler 验证；后续母根共享只读缓存。子节段不重复生成粒子。TA 源预制体不被修改，仅实例改为 local-space/hierarchy scaling，以支持缓存跨母根复用。
+分类逻辑位于同一管理器：
 
-透明遮罩使用独立 overrideMaterial，不使用 overrideShader 继承未知源材质属性。默认 `_ColorMaskAlphaTexture` 为白纹理，`_ColorMaskUseVertexAlpha` 为 0；藤蔓 Renderer 的 PropertyBlock 显式配置拖尾 alpha 纹理与顶点 alpha。遮罩裁剪后写 1，避免全屏合成再次乘源 alpha 而漏出未褪色的颜色。每色专用 raster pass 在执行时绑定 source/mask/pixelMask 与浮点值，RenderGraph 显式声明读写资源。`SelectiveHsvRendererFeature.LastExecutedFrame` 供 Inspector 检查通道执行，不代表 GPU 像素验收通过。任意复杂 Shader Graph 位移、透明排序和跨颜色半透明叠加不是对象级隔离，实际水波边缘仍必须 GPU 验收；不能仅凭 C# 编译认定渲染正确。
+- 基础方块：`ColorObject` 只在启用、激活和阶段通知时绑定共享运行时材质，常态没有 Update / LateUpdate。不会把编辑识别材质当作正式材质。
+- 水体：`RegisterWater` / `UnregisterWater`；水源、水流、水柱统一调用。管理器在过渡期间批量 `SetReveal`；保留各实例波纹/反射纹理，不能直接共用整份水材质。完成后不继续写入。
+- 藤蔓：`RegisterVine` / `UnregisterVine`；母根在粒子初始化后注册，先隐藏 Renderer，再绑定透明运行时材质和遮罩，最后按当前 Alpha 显示。燃尽/禁用注销，不会被管理器重新打开。生长/燃烧姿态仍由藤蔓功能组件负责，不归 HSV。
+- 普通材质复用接口：`GetSharedMaterial(source, colorId, realAppearance)`，同源/同颜色/同阶段共享一份副本。调用者不得修改返回的共享外观参数。正式材质须支持透明混合与 `_ColorRevealOpacity`；不透明 Shader 单写 Alpha 不能渐显。
 
-`SetColorFaded(id, false, duration)` 依次执行基础外观灰阶→纯白、纯白正式外观交接、正式外观恢复。`GetSaturation(id)` 在正式外观恢复结束时到达 1，供镜头演出等待；`GetWhiteAmount(id)` 为屏幕纯白混合量；`ShowsUnlockedAppearance(id)` 决定是否显示正式外观。`AppearanceChanged` 只通知交接、显式设置及重置（重置 ID 为 null），订阅者必须在禁用时解除订阅。重复请求不重启进度，反向请求从当前进度回退；时长为 0 时立即到目标。
+藤蔓透明 Shader 为 `ColorVineReveal.shader`，通过 Resources 中 `VineReveal.mat` 保留构建引用，不依赖裸 Shader.Find。运行时保留 TA 源纹理及 Tint，使用顶点颜色和纹理 Alpha，源预制体与源材质不改。新建效果需检查独立透明 Shader 是否保留源材质所需的全部效果；此适配仅针对现有白膜藤蔓。
 
-`ColorObject` 不在运行时使用 `ColorTypeDefinition.targetMaterial`（编辑识别/钥匙材质）。正式外观优先取 `unlockedMaterial`，其次取已启用功能组件针对状态渲染器配置的专属材质；没有正式材质时交接后隐藏状态渲染器。水体由 `WaterVisualFeature` 在交接时显现，并通过 `InteractiveWater.SetPresentationLayer` 保证运行时生成的水面加入蓝色层。颜色属性和功能激活仍由 ColorRuntimeService / BlockAbilityHost 管理，不由渐变进度修改。
+遮罩通过一次性 PropertyBlock 记录颜色组和基础/正式角色，并读取管理器的全局 Alpha 判断零透明裁剪；覆盖区域写 1，不重复乘渐显 Alpha。HSV 仍在选择性像素化之后、后处理之前。透明重叠、拖尾 UV、SceneColor 采样和排序必须 GPU 实测；不保证各层透明物体的对象级隔离。
 
-屏幕层通道位于透明渲染后、后处理前。透明层遮罩按几何与场景深度生成，并非每个透明像素的独立对象 ID；多层透明物体重叠时需实际检查遮罩边缘与透出背景。此改动不修改 TA 源材质资产。
+运行时材质缓存按资源种类增长，不按方块数增长；水体因独立纹理仍按实例更新，集中调度不等于零成本。稳定状态不逐帧写外观，不逐帧查场景，不在 MonoBehaviour 构造/字段初始化创建 Unity 原生对象。计数可在“颜色表现管理器”中文 Inspector 查看。
+
+### 水体透明渲染与生命周期
+
+`_WaterMeshDepth` 必须生成材质属性（Generate Property Block），由水体初始化按自身深度设置；不可声明成共享全局值，否则顶面采样可能使用零深度，且不同尺寸水体相互污染。
+
+水面与横截面由 MeshRenderer 渲染，Shader Graph 使用 URP Unlit 透明子目标，不使用 Sprite Lit：后者依赖 SpriteRenderer 的翻转参数、颜色与 Alpha，不能仅修透明度参数解决网格渲染问题。保留波纹、折射、水下颜色、焦散与反射节点，最终 Alpha 保留原水体透明度并乘 `_ColorRevealOpacity`，不得替换为编辑识别材质。注销生成水体时先停用并移出所属物体，再延迟销毁；同帧重新绑定不得发现已预约销毁的旧实例。
+
+## 玩家运动接入
+
+藤蔓用 `SetClimbTopHeight(source, worldHeight)` 更新根系顶部，先 `EnterClimb(source)`；退出与重置清理记录。气泡/蒸汽/弹跳调用既有 `ApplyVerticalBounce` / `ApplyVerticalBounceImmediate`，由 PlayerController 增强向上速度并提供短暂保护，不在功能组件写 Rigidbody、不逐帧累加冲量。顶部向内、中段向外蹬跳，参数见玩家中文 Inspector。
+
+## 像素化与藤蔓根系
+
+颜色普通 Layer 不变；水体与母根 Renderer 使用 `renderingLayerMask |= 128u`，像素化先于 HSV，描边 API 默认关闭，见 PIXELIZATION_API.md。旧 TA 不透明 Equal 深度通道不用于透明水体。
+
+`ClimbableVineFeature.Root` 为唯一母根，红色命中任意节段只沿该根系顶到底逐节燃烧；预置节段休眠以供重置，生成物按生命周期清理。母根共享 30.13→32.43 秒的粒子/拖尾姿态缓存，不使用负模拟速度。首次缓存有 CPU/内存开销，需 Profiler 验证。
 
 ## 状态职责
 

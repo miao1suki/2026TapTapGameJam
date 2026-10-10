@@ -24,18 +24,19 @@ namespace PlanningEditorPrototype
                 if (rect.Overlaps(new RectInt(box.x, box.y, box.width, box.height))) return false;
             return true;
         }
-        internal static bool TryFindButtonCell(List<PlanningBox> boxes, PlanningBox door, RectInt allowed, out Vector2Int cell)
+        internal static bool TryFindButtonCell(List<PlanningBox> boxes, PlanningBox door, RectInt allowed, out Vector2Int cell,
+            System.Func<Vector2Int, bool> cellAllowed = null)
         {
             var preferred = new[] { new Vector2Int(door.x-1,door.y+door.height-1),new Vector2Int(door.x+door.width,door.y+door.height-1) };
             foreach (var candidate in preferred)
-                if (allowed.Contains(candidate) && CanPlace(boxes,new RectInt(candidate,Vector2Int.one)))
+                if (allowed.Contains(candidate) && (cellAllowed == null || cellAllowed(candidate)) && CanPlace(boxes,new RectInt(candidate,Vector2Int.one)))
                 { cell = candidate; return true; }
             for (int radius = 1; radius <= 4; radius++)
             for (int y = door.y + door.height - 1 - radius; y <= door.y + door.height - 1 + radius; y++)
             for (int x = door.x - radius; x <= door.x + radius; x++)
             {
                 cell = new Vector2Int(x,y);
-                if (!allowed.Contains(cell) || new RectInt(door.x,door.y,door.width,door.height).Contains(cell)) continue;
+                if (!allowed.Contains(cell) || (cellAllowed != null && !cellAllowed(cell)) || new RectInt(door.x,door.y,door.width,door.height).Contains(cell)) continue;
                 if (CanPlace(boxes,new RectInt(cell,Vector2Int.one))) return true;
             }
             cell = default;
@@ -51,9 +52,10 @@ namespace PlanningEditorPrototype
                 room.boxes.RemoveAll(box => !string.IsNullOrEmpty(box.doorOwnerId) && !doors.Contains(box.doorOwnerId));
             document.assemblyPatches.RemoveAll(box => !string.IsNullOrEmpty(box.doorOwnerId) && !doors.Contains(box.doorOwnerId));
         }
-        internal static PlanningBox AddButton(List<PlanningBox> boxes, PlanningBox door, RectInt allowed)
+        internal static PlanningBox AddButton(List<PlanningBox> boxes, PlanningBox door, RectInt allowed,
+            System.Func<Vector2Int, bool> cellAllowed = null)
         {
-            if (!TryFindButtonCell(boxes,door,allowed,out var cell)) return null;
+            if (!TryFindButtonCell(boxes,door,allowed,out var cell, cellAllowed)) return null;
             var button = new PlanningBox(PlanningDetailType.Prop,new RectInt(cell,Vector2Int.one))
             {
                 propEntryId = ButtonEntryId, propEntryName = "门按钮", singleInstance = true, doorOwnerId = door.id

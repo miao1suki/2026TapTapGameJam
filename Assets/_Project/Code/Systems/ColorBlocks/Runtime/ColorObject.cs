@@ -20,7 +20,7 @@ namespace Project.ColorBlocks
         private Renderer targetRenderer;
         [SerializeField, Tooltip("解锁后的正式外观材质。留空时隐藏识别模型，由功能组件提供水体等正式外观。不得指定编辑识别材质。")]
         private Material unlockedMaterial;
-        private HSVColorFadeManager fadeManager;
+        private ColorAppearanceManager fadeManager;
         private BlockFeature[] visualFeatures;
 
         private bool active;
@@ -28,7 +28,6 @@ namespace Project.ColorBlocks
         private Collider[] cachedColliders;
         private bool[] originalTriggerStates;
         private bool[] originalEnabledStates;
-
         public string BaseColorTypeId => baseColorTypeId;
         public bool IsActive => active;
         public Renderer TargetRenderer => targetRenderer;
@@ -56,7 +55,7 @@ namespace Project.ColorBlocks
                 return;
             }
 
-            fadeManager = HSVColorFadeManager.Instance;
+            fadeManager = ColorAppearanceManager.Instance;
             fadeManager.AppearanceChanged += OnAppearanceChanged;
             ColorRuntimeService.Instance.Register(this);
             ApplyLayer();
@@ -192,7 +191,7 @@ namespace Project.ColorBlocks
             }
 
             ColorTypeDefinition definition = catalog.Find(baseColorTypeId);
-            bool showReal = active && HSVColorFadeManager.Instance.ShowsUnlockedAppearance(baseColorTypeId);
+            bool showReal = active && ColorAppearanceManager.Instance.ShowsUnlockedAppearance(baseColorTypeId);
             Material material = showReal ? unlockedMaterial : catalog.NeutralMaterial;
             if (showReal && material == null && visualFeatures != null)
             {
@@ -206,10 +205,14 @@ namespace Project.ColorBlocks
             if (showReal && material == definition?.targetMaterial) material = null;
             if (material != null)
             {
-                targetRenderer.sharedMaterial = material;
+                targetRenderer.sharedMaterial = ColorAppearanceManager.Instance.GetSharedMaterial(material, baseColorTypeId, showReal);
             }
 
             targetRenderer.enabled = material != null;
+            var properties = new MaterialPropertyBlock();
+            properties.SetFloat("_ColorMaskGroup", ColorAppearanceManager.GetGroupIndex(baseColorTypeId));
+            properties.SetFloat("_ColorMaskReal", showReal ? 1f : 0f);
+            targetRenderer.SetPropertyBlock(properties);
         }
 
         private void ApplyLayer()

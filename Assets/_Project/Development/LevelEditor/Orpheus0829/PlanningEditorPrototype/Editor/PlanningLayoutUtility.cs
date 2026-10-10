@@ -5,8 +5,6 @@ namespace PlanningEditorPrototype
 {
     internal static class PlanningLayoutUtility
     {
-        private const int RoomGap = 6;
-
         internal static void GetStride(
             IReadOnlyList<PlanningRoom> rooms,
             int worldBlockCellWidth,
@@ -14,27 +12,10 @@ namespace PlanningEditorPrototype
             out int strideX,
             out int strideY)
         {
-            int maxWidth = 1;
-            int maxHeight = 1;
-            for (int index = 0; index < rooms.Count; index++)
-            {
-                PlanningRoom room = rooms[index];
-                if (room == null ||
-                    room.isConnector ||
-                    room.boxes.Count == 0)
-                {
-                    continue;
-                }
-
-                RectInt allowed = room.GetLocalAllowedRect(
-                    worldBlockCellWidth,
-                    worldBlockCellHeight);
-                maxWidth = Mathf.Max(maxWidth, allowed.width);
-                maxHeight = Mathf.Max(maxHeight, allowed.height);
-            }
-
-            strideX = maxWidth + RoomGap;
-            strideY = maxHeight + RoomGap;
+            // One world cell always maps to one fixed-size detail block.
+            // Contents must not change the position of other rooms.
+            strideX = Mathf.Max(1, worldBlockCellWidth);
+            strideY = Mathf.Max(1, worldBlockCellHeight);
         }
 
         internal static RoomLayoutInfo GetRoomLayout(
@@ -120,6 +101,11 @@ namespace PlanningEditorPrototype
         internal static PlanningCell GetConnectorLocalOrigin(
             PlanningRoom connector)
         {
+            if (connector != null && connector.independentCells)
+            {
+                RectInt bounds = PlanningWorldUtility.Bounds(connector);
+                return new PlanningCell(bounds.x, bounds.y);
+            }
             return connector != null &&
                    connector.cells.Count > 0
                 ? connector.cells[0]
@@ -133,6 +119,13 @@ namespace PlanningEditorPrototype
             int worldBlockCellHeight)
         {
             var path = new List<Vector2Int>();
+            if (connector.independentCells)
+            {
+                GetConnectorOrigin(connector, worldBlockCellWidth, worldBlockCellHeight, out int x, out int y);
+                // Compatibility anchor for scene generation; no implicit floor is generated.
+                if (connector.cells.Count > 0) path.Add(new Vector2Int(x, y));
+                return path;
+            }
             PlanningRoom from = FindRoom(rooms, connector.fromRoomId);
             PlanningRoom to = FindRoom(rooms, connector.toRoomId);
             if (from == null || to == null)

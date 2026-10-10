@@ -4,6 +4,8 @@ Shader "Hidden/2026TapTap/ColorObjectMask"
     {
         _ColorMaskAlphaTexture("Alpha Texture", 2D) = "white" {}
         _ColorMaskUseVertexAlpha("Vertex Alpha", Float) = 0
+        _ColorMaskGroup("Color Group", Float) = -1
+        _ColorMaskReal("Real Appearance", Float) = 0
     }
     SubShader
     {
@@ -20,6 +22,8 @@ Shader "Hidden/2026TapTap/ColorObjectMask"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             TEXTURE2D(_ColorMaskAlphaTexture); SAMPLER(sampler_ColorMaskAlphaTexture);
             float _ColorMaskUseVertexAlpha;
+            float _ColorMaskGroup, _ColorMaskReal;
+            float4 _ColorAppearanceBaseAlpha, _ColorAppearanceRealAlpha;
             struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; float4 color : COLOR; };
             struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float alpha : TEXCOORD1; };
             Varyings Vert(Attributes input)
@@ -35,6 +39,10 @@ Shader "Hidden/2026TapTap/ColorObjectMask"
                 half alpha = SAMPLE_TEXTURE2D(_ColorMaskAlphaTexture, sampler_ColorMaskAlphaTexture, input.uv).a * input.alpha;
                 clip(alpha - .01);
                 // The source image is already alpha blended; applying alpha again would leave raw color visible.
+                int group = (int)_ColorMaskGroup;
+                half reveal = group >= 0 && group < 3
+                    ? (_ColorMaskReal > .5 ? _ColorAppearanceRealAlpha[group] : _ColorAppearanceBaseAlpha[group]) : 1;
+                clip(reveal - .001);
                 return half4(1, 1, 1, 1);
             }
             ENDHLSL

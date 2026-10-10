@@ -15,10 +15,27 @@ namespace PlanningEditorPrototype
     {
         private static float CellSize =>
             Mathf.Max(.05f, LevelEditorState.CellSize);
-        private const int RoomGap = 6;
         private const string RoomRootPrefix = "__PlanningRoom_";
         private const string MapRootName = "__PlanningMapGenerated";
         private const string StagingRootName = "__PlanningMapStaging";
+        private static string ContainerName(PlanningRoom room) => room.name + " [" + room.id + "]";
+
+        private static Transform FindOwnedContainer(Transform root, PlanningRoom room)
+        {
+            if (root == null || room == null) return null;
+            var exact = FindDirectChild(root, ContainerName(room));
+            if (exact != null) return exact;
+            string suffix = " [" + room.id + "]";
+            for (int i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                if (child.name.EndsWith(suffix, System.StringComparison.Ordinal)) return child;
+                var blocks = child.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+                foreach (var block in blocks)
+                    if (!string.IsNullOrEmpty(block.PlanningBoxId) && room.boxes.Exists(b => b.id == block.PlanningBoxId)) return child;
+            }
+            return FindDirectChild(root, room.name);
+        }
         internal static bool SuppressSceneUndo { get; set; }
         private static void RegisterSceneCreation(Object target,string name)
         {
@@ -39,7 +56,7 @@ namespace PlanningEditorPrototype
 
             GameObject root = FindGeneratedRoot(MapRootName);
             return root != null &&
-                   FindDirectChild(root.transform, room.name) != null;
+                   FindOwnedContainer(root.transform, room) != null;
         }
 
         internal static bool HasGeneratedRoot(PlanningDocument document)
@@ -118,23 +135,13 @@ namespace PlanningEditorPrototype
             PlanningDocument document,
             out string message)
         {
-            if (document == null || document.rooms.Count == 0)
+            if (document == null)
             {
                 message = "世界图里还没有房间。";
                 return false;
             }
 
-            var names = new HashSet<string>();
-            foreach (PlanningRoom room in document.rooms)
-            {
-                if (room != null && !names.Add(room.name))
-                {
-                    message = $"存在同名房间“{room.name}”，" +
-                              "请先改为唯一名称再应用到场景。";
-                    return false;
-                }
-            }
-
+            document.RefreshConnectorPaths();
             return TryBuild(
                 document.name,
                 StagingRootName,
@@ -155,9 +162,9 @@ namespace PlanningEditorPrototype
             }
 
             GameObject root = FindGeneratedRoot(MapRootName);
-            Transform child = FindDirectChild(
+            Transform child = FindOwnedContainer(
                 root != null ? root.transform : null,
-                room.name);
+                room);
             return child != null ? child.gameObject : null;
         }
 
@@ -187,7 +194,7 @@ namespace PlanningEditorPrototype
                 root.transform.position = Vector3.zero;
             }
 
-            Transform child = FindDirectChild(root.transform, room.name);
+            Transform child = FindOwnedContainer(root.transform, room);
             GameObject container;
             if (child != null)
             {
@@ -195,7 +202,7 @@ namespace PlanningEditorPrototype
             }
             else
             {
-                container = new GameObject(room.name);
+                container = new GameObject(ContainerName(room));
                 container.transform.SetParent(root.transform, false);
                 RegisterSceneCreation(
                     container,
@@ -307,7 +314,7 @@ namespace PlanningEditorPrototype
                  layoutIndex++)
             {
                 RoomLayout layout = layouts[layoutIndex];
-                GameObject roomRoot = new GameObject(layout.Room.name);
+                GameObject roomRoot = new GameObject(ContainerName(layout.Room));
                 roomRoot.transform.SetParent(root.transform, false);
 
                 for (int boxIndex = 0;
@@ -417,7 +424,7 @@ namespace PlanningEditorPrototype
                     }
 
                     GameObject connectorRoot = new GameObject(
-                        connector.name);
+                        ContainerName(connector));
                     connectorRoot.transform.SetParent(
                         root.transform,
                         false);
@@ -568,6 +575,20 @@ namespace PlanningEditorPrototype
                     staged.name);
                 if (existing == null)
                 {
+                    var desiredBlocks = staged.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+                    var ids = new HashSet<string>();
+                    foreach (var block in desiredBlocks) if (!string.IsNullOrEmpty(block.PlanningBoxId)) ids.Add(block.PlanningBoxId);
+                    string suffix = staged.name.LastIndexOf(" [", System.StringComparison.Ordinal) is int start && start >= 0 ? staged.name.Substring(start) : string.Empty;
+                    for (int i = 0; i < existingRoot.transform.childCount && existing == null; i++)
+                    {
+                        var candidate = existingRoot.transform.GetChild(i);
+                        if (suffix.Length > 0 && candidate.name.EndsWith(suffix, System.StringComparison.Ordinal)) existing = candidate;
+                        else foreach (var block in candidate.GetComponentsInChildren<LevelEditorPlacedBlock>(true))
+                            if (ids.Contains(block.PlanningBoxId)) { existing = candidate; break; }
+                    }
+                }
+                if (existing == null)
+                {
                     added += staged.GetComponentsInChildren<
                         LevelEditorPlacedBlock>(true).Length;
                     staged.SetParent(existingRoot.transform, true);
@@ -577,6 +598,7 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
+                existing.name = staged.name;
                 ReconcileContainer(
                     existing,
                     staged,

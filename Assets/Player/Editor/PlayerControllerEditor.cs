@@ -97,7 +97,7 @@ namespace Project.Player.Editor
                 serializedObject,
                 "climbKickHorizontalSpeed",
                 "蹬藤蔓水平速度",
-                "按住朝藤蔓方向并跳跃时，朝远离藤蔓方向弹出的速度。"));
+                "中段向藤蔓外侧蹬出；接近顶部时改为向藤蔓内侧蹬出。"));
             climbing.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "climbKickVerticalSpeed",
@@ -107,13 +107,24 @@ namespace Project.Player.Editor
                 serializedObject,
                 "climbKickDetachSeconds",
                 "蹬跳脱离时间",
-                "蹬跳后暂时不重新抓住藤蔓；前半段保持外抛速度。"));
+                "蹬跳后暂时不重新抓住藤蔓；前半段保持起跳方向速度。"));
             climbing.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "climbAcceleration",
                 "攀爬加速度",
                 "攀爬横纵速度逼近目标速度的加速度。"));
             root.Add(climbing);
+
+            foreach (var field in new[] {
+                new[] { "climbKickFallProtectionSeconds", "蹬跳慢落时间", "蹬藤蔓跳后减轻下落速度的持续时间。" },
+                new[] { "climbKickMaxFallSpeed", "蹬跳下落限速", "慢落期间的最大下落速度，0 不限制。" },
+                new[] { "climbTopKickHorizontalMultiplier", "顶部向内冲量倍率", "最后一块藤蔓处向藤蔓方向起跳的水平速度倍率。" },
+                new[] { "climbTopKickVerticalMultiplier", "顶部起跳速度倍率", "顶部蹬跳的上升速度倍率，帮助越过顶部。" } })
+                climbing.Add(PlayerInspectorFields.Create(serializedObject, field[0], field[1], field[2]));
+            var launch = PlayerInspectorFields.CreateFoldout("环境弹起");
+            launch.Add(PlayerInspectorFields.Create(serializedObject, "environmentLaunchExtraSpeed", "额外喷出速度", "气泡、弹跳和蒸汽沿向上喷出方向增加目标速度；持续请求不会逐帧叠加。"));
+            launch.Add(PlayerInspectorFields.Create(serializedObject, "environmentLaunchProtectionSeconds", "喷出速度保护时间", "短暂避免游泳与普通横向控制立即抵消起跳冲量。"));
+            root.Add(launch);
 
             Foldout jump = PlayerInspectorFields.CreateFoldout(
                 "跳跃");

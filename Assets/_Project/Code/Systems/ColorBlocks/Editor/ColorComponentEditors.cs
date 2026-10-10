@@ -194,4 +194,35 @@ namespace Project.ColorBlocks.Editor
             return root;
         }
     }
+    [CustomEditor(typeof(ColorAppearanceManager))]
+    public sealed class ColorAppearanceManagerEditor : UnityEditor.Editor
+    {
+        public override VisualElement CreateInspectorGUI()
+        {
+            var root = ProjectInspectorUtility.CreateRoot(serializedObject);
+            root.Add(ProjectInspectorUtility.CreateTitle("颜色表现管理器"));
+            root.Add(ProjectInspectorUtility.CreateScriptField(serializedObject));
+            root.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "vineRevealShader", "藤蔓透明着色器",
+                "留空使用内置藤蔓透明表现资源，不修改 TA 源材质。"));
+            var status = ProjectInspectorUtility.CreateFoldout("分类表现", true);
+            var label = new Label();
+            status.Add(label);
+            root.Add(status);
+            void Refresh()
+            {
+                var manager = target as ColorAppearanceManager;
+                if (manager == null) return;
+                label.text = $"共享材质：{manager.SharedMaterialCount} · 水体：{manager.WaterCount} · 藤蔓：{manager.VineCount}\n";
+                foreach (string id in new[] { "red", "green", "blue" })
+                {
+                    string name = id == "red" ? "红" : id == "green" ? "绿" : "蓝";
+                    label.text += $"{name} · 基础外观 {manager.GetBaseOpacity(id):F2} · 正式外观 {manager.GetRealOpacity(id):F2}\n";
+                }
+            }
+            Refresh();
+            root.schedule.Execute(Refresh).Every(200);
+            return root;
+        }
+    }
+
 }
