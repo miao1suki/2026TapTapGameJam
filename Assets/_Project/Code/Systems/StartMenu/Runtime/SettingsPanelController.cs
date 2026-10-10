@@ -28,6 +28,14 @@ namespace Project.StartMenu
 
         public event Action BackRequested;
 
+        public void SetBackButtonVisible(bool value)
+        {
+            if (backButton != null)
+            {
+                backButton.gameObject.SetActive(value);
+            }
+        }
+
         public void BuildStructure()
         {
             if (soundPage != null)

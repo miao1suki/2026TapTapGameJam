@@ -1,5 +1,16 @@
 # 工作状态与交接（每次任务重读）
 
+## ESC 暂停界面雏形
+
+- 日期：2026-10-10；负责人：Codex；分支：`ESC页面雏形`。
+- 范围：直接在 `Assets/_Project/Scenes/Systems/Systems_UI.unity` 的 `PauseScreen` 下写入真实 UGUI 层级；没有保留 Editor 生成菜单或生成器脚本。
+- 主界面：灰色遮罩、缩放入场的 `EscWindow`、竖排“继续游戏 / 设置 / 存档 / 收藏品 / 退出游戏”按钮；按钮支持悬停放大提亮和按下放大，提亮颜色避免覆盖文字。
+- 子页面：设置页复用 `SettingsPanelController` 数据源并从右侧滑入；存档页复用 `SavePanelController` 并开启保存入口；收藏品页先做花架子；子页面右上角 X 返回主界面。
+- 修正：设置和存档子页隐藏重复的底部返回键；切换页面和返回主界面时清理按钮悬停/按下缩放与提亮；主界面的“退出游戏”改为返回开始游戏界面。
+- ESC：`GameUiRouter` 仅在 Systems_UI 的 UI 系统根存在时响应；暂停动作在子页面会直接触发当前页面 X 的 `Button.onClick` 返回主界面，在主界面才关闭整个 ESC 界面；没有 Systems_UI 场景时不响应。输入继续使用 `InputActionId.Pause` 的映射。
+- 存档：存档页读取会调用 `SaveGameService` 并按 `levelLabel` 尝试切回对应关卡；保存会把当前关卡标签写入选中槽位，完整游戏进度恢复仍待后续游戏进度 API。
+- 设置：继续沿用 `RuntimeSettingsPolicy.ApplyChangesToRuntime`，当前默认预览模式不改变实际游戏设置。
+
 ## 关卡编辑、门与颜色表现主线整合
 
 - 日期：2026-10-09；负责人：Codex；来源分支：`codex/editor-mechanisms-pixelization`；目标：`main`，按本次用户要求合并并推送。本条更新下方“仅本地/仅分支、不合并”的旧交付状态，不删除历史记录。
