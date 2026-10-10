@@ -105,3 +105,14 @@
 - 文档：同步更新 `Docs/Agent/Integration/AUDIO_HANDOVER.md` 资源清单与接线表。
 - 验证：文件按 Music / SFX 目录归类；Git 审查确认仅音频资源与交接文档变更；本机未运行 Unity 导入与试听。
 - 交接提交：本条目随本次提交。
+
+## 音频资源第三批（环境声与机关音效）
+
+- 日期：2026-10-10。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：新增 4 个环境声（`amb_env_machine_hum_01`、`amb_env_plant_rustle_01`、`amb_env_water_drip_01`、`amb_env_wind_gust_01`，暂存于 `Music/`）与 6 个音效（开关门、植物生长、蒸汽喷发与循环）；`sfx_gp_paint_acquire_initial.wav` 为同路径修订。
+- 接口变更：无。新增音频提交为 `ee2f0d3`，本次提交只补记文档。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补环境声分区、蒸汽与开关门接线项。
+- 验证：Ableton 导出目录与仓库 45 个音频逐文件 SHA256 一致；未在 Unity 中导入试听，`.meta` 待首次导入生成。
+- 交接提交：本次文档提交。
