@@ -136,4 +136,4 @@
 - 范围：`Assets/ta_source/Particle/Grow` 的新序列帧、动画控制器与 `Animation.unity`；更新 Grow 效果场景取景和像素效果材质；包含对应 TagManager、PC Renderer 与 Unity Recorder 包配置。
 - 接口变更：无运行时代码接口变更。
 - 验证：确认 Unity `6000.3.12f1`、仓库远端与分支；暂存文件引用和差异已核对；Unity 导入及场景运行未验证。
-- 交接提交：随本次分支提交推送。
+- 交接提交：`85f3287`；推送因 GitHub 连接失败待重试。
