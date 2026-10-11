@@ -1147,14 +1147,15 @@ namespace PlanningEditorPrototype
                 defaults = entry?.ComponentValueOverrides;
             }
             if (placed == null) return null;
-            if (PlanningDoorUtility.IsDoor(box) || box.propEntryId == PlanningDoorUtility.ButtonEntryId)
+            if (PlanningDoorUtility.HasFixedFootprint(box.propEntryId) || box.propEntryId == PlanningDoorUtility.ButtonEntryId)
             {
                 placed.transform.localScale *= CellSize;
-                if (PlanningDoorUtility.IsDoor(box))
+                if (PlanningDoorUtility.HasFixedFootprint(box.propEntryId))
                 {
-                    placed.transform.position -= Vector3.up * CellSize;
-                    placed.Configure(new Vector2Int(cell.x,-cell.y-2),placed.EntryName,placed.EntryColor,false,true,CellSize);
-                    placed.SetSizeCells(new Vector2Int(1,2));
+                    var size = PlanningDoorUtility.Footprint(box.propEntryId);
+                    placed.transform.position -= Vector3.up * (size.y - 1) * CellSize;
+                    placed.Configure(new Vector2Int(cell.x,-cell.y-size.y),placed.EntryName,placed.EntryColor,false,true,CellSize);
+                    placed.SetSizeCells(size);
                 }
             }
             var values=box.hasComponentOverrides ? box.componentOverrides : defaults;

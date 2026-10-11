@@ -14,9 +14,17 @@ namespace Project.Mechanisms.Editor
             root.Add(ProjectInspectorUtility.CreateTitle("按钮解锁门"));
             root.Add(ProjectInspectorUtility.CreateScriptField(serializedObject));
             var links = ProjectInspectorUtility.CreateFoldout("模型与绑定", true);
-            foreach (var field in new[] { "hinge", "blockingCollider", "buttons" })
+            foreach (var field in new[] { "hinge", "blockingCollider", "buttons", "hint" })
                 links.Add(new UnityEditor.UIElements.PropertyField(serializedObject.FindProperty(field)));
             root.Add(links);
+            root.Add(new Button(() =>
+            {
+                var door = (DoorController)target;
+                Undo.RecordObject(door, "刷新门绑定");
+                door.SetButtons(door.Buttons);
+                EditorUtility.SetDirty(door);
+            }) { text = "刷新按钮绑定与提示" });
+            root.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"openEuler","开门旋转轴","局部门轴旋转；竖门绕 Y，横门绕 X。"));
             var timing = ProjectInspectorUtility.CreateFoldout("开门与镜头", true);
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"openDuration","开门时间","门绕侧边轴旋转 90°。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraMoveDuration","镜头移动时间","移向门中心。"));
@@ -31,7 +39,7 @@ namespace Project.Mechanisms.Editor
             root.schedule.Execute(() =>
             {
                 if (target is not DoorController door) return;
-                state.text = "状态：" + (door.State == DoorState.Unlocked ? "已解锁" : "未解锁") + " · 按钮 " + door.Buttons.Count;
+                state.text = "状态：" + (door.State == DoorState.Unlocked ? "已解锁" : "未解锁") + " · 按钮 " + door.PressedCount + "/" + door.Buttons.Count;
                 reset.SetEnabled(Application.isPlaying);
             }).Every(200);
             reset.SetEnabled(Application.isPlaying);

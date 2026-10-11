@@ -857,6 +857,18 @@ MonoBehaviour:
       offsetCells: {x: 0, y: 0}
     componentValueOverrides: []
   propEntries:
+  - entryId: mechanism-door-horizontal
+    displayName: 横门
+    prefab: {fileID: 100000, guid: 14e4b6f3152f491e9ec2ced6d851d518, type: 3}
+    componentValueOverrides: []
+  - entryId: mechanism-ladder-front
+    displayName: 正面梯子
+    prefab: {fileID: 100000, guid: fa6d2fe6b4dd4a6f938bb5acd263af2e, type: 3}
+    componentValueOverrides: []
+  - entryId: mechanism-ladder-side
+    displayName: 侧面梯子
+    prefab: {fileID: 100000, guid: d5e3e097fa6c4f04b32866ebc592b58a, type: 3}
+    componentValueOverrides: []
   - entryId: mechanism-door-standard
     displayName: "\u95E8"
     prefab: {fileID: 100000, guid: d0c5eff6ad0b47e3b940089416b08c21, type: 3}

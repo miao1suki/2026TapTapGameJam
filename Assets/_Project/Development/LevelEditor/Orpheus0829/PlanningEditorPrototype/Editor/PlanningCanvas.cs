@@ -461,13 +461,20 @@ namespace PlanningEditorPrototype
                             : string.Empty
                     };
                     if (!string.IsNullOrEmpty(block.PlanningBoxId)) box.id = block.PlanningBoxId;
-                    if (block.GetComponent<Project.Mechanisms.DoorController>() != null)
+                    if (block.GetComponent<Project.Mechanisms.DoorController>() is Project.Mechanisms.DoorController importedDoor)
                     {
-                        box.propEntryId = PlanningDoorUtility.DoorEntryId;
+                        box.propEntryId = importedDoor.IsHorizontal ? PlanningDoorUtility.HorizontalDoorEntryId : PlanningDoorUtility.DoorEntryId;
                         box.singleInstance = true;
-                        box.height = 2;
-                        box.y -= 1;
+                        var footprint = PlanningDoorUtility.Footprint(box.propEntryId);
+                        box.width = footprint.x;
+                        box.height = footprint.y;
+                        box.y -= footprint.y - 1;
                         if (!string.IsNullOrEmpty(block.PlanningBoxId)) box.id = block.PlanningBoxId;
+                    }
+                    if (block.GetComponent<Project.Mechanisms.NeutralLadder>() is Project.Mechanisms.NeutralLadder ladder)
+                    {
+                        box.propEntryId = ladder.SideFacing ? PlanningDoorUtility.SideLadderEntryId : PlanningDoorUtility.FrontLadderEntryId;
+                        box.singleInstance = true; box.height = 2; box.y -= 1;
                     }
                     if (block.GetComponent<Project.Mechanisms.DoorButton>() is Project.Mechanisms.DoorButton button)
                     {
@@ -2230,7 +2237,7 @@ namespace PlanningEditorPrototype
         }
 
         private bool IsPlacingDoor => mode != PlanningCanvasMode.World &&
-            GetActiveDetailTool() == PlanningDetailTool.Box && detailPropEntryId == PlanningDoorUtility.DoorEntryId;
+            GetActiveDetailTool() == PlanningDetailTool.Box && PlanningDoorUtility.HasFixedFootprint(detailPropEntryId);
 
         private void DrawDoorPlacementPreview(Painter2D painter, Vector2Int cell)
         {
@@ -2242,22 +2249,25 @@ namespace PlanningEditorPrototype
                 if (!TryFindAssemblyOwner(cell, sx, sy, out room, out local)) room = null;
             }
             bool valid = false;
+            Vector2Int size = PlanningDoorUtility.Footprint(detailPropEntryId);
             if (room != null)
             {
                 RectInt allowed = room.isConnector ? GetConnectorDetailBounds(room) :
                     room.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
-                var door = new PlanningBox(PlanningDetailType.Prop, new RectInt(local.x, local.y, 1, 2))
-                    { propEntryId = PlanningDoorUtility.DoorEntryId };
-                valid = allowed.Contains(local) && allowed.Contains(local + Vector2Int.up) &&
-                    PlanningDoorUtility.CanPlace(room.boxes, new RectInt(local.x, local.y, 1, 2)) &&
-                    PlanningDoorUtility.TryFindButtonCell(room.boxes, door, allowed, out _);
+                var door = new PlanningBox(PlanningDetailType.Prop, new RectInt(local, size))
+                    { propEntryId = detailPropEntryId };
+                valid = CanPlaceLocalRect(room, new RectInt(local, size)) &&
+                    PlanningDoorUtility.CanPlace(room.boxes, new RectInt(local, size)) &&
+                    (!PlanningDoorUtility.IsDoor(door) || PlanningDoorUtility.TryFindButtonCell(room.boxes, door, allowed, out _, c => CanPlaceLocalRect(room, new RectInt(c, Vector2Int.one))));
             }
-            Rect footprint = CellRect(cell.x, cell.y, 1, 2);
+            Rect footprint = CellRect(cell.x, cell.y, size.x, size.y);
             Color color = valid ? new Color(.35f, .9f, .65f, 1f) : new Color(1f, .35f, .3f, 1f);
             FillRect(painter, footprint, new Color(color.r, color.g, color.b, .2f), 1f);
             StrokeRect(painter, footprint, color, 2f);
-            DrawLine(painter, new Vector2(footprint.xMin, footprint.center.y),
-                new Vector2(footprint.xMax, footprint.center.y), color, 1f);
+            if (size.x > 1)
+                DrawLine(painter, new Vector2(footprint.center.x, footprint.yMin), new Vector2(footprint.center.x, footprint.yMax), color, 1f);
+            else
+                DrawLine(painter, new Vector2(footprint.xMin, footprint.center.y), new Vector2(footprint.xMax, footprint.center.y), color, 1f);
         }
 
         private void DrawEmptyHint(MeshGenerationContext context)
@@ -2893,9 +2903,10 @@ namespace PlanningEditorPrototype
                 int maxY = Mathf.Max(start.y, end.y);
                 if (IsPlacingDoor)
                 {
-                    minX = maxX = start.x;
+                    Vector2Int size = PlanningDoorUtility.Footprint(detailPropEntryId);
+                    minX = start.x; maxX = start.x + size.x - 1;
                     minY = start.y;
-                    maxY = start.y + 1;
+                    maxY = start.y + size.y - 1;
                 }
                 RectInt allowed = room.GetLocalAllowedRect(
                     WorldBlockCellWidth,
@@ -3071,7 +3082,8 @@ namespace PlanningEditorPrototype
                     detailType,
                     new RectInt(local.x, local.y, 1, 1));
                 ApplyDetailSelection(box);
-                if (!CanPlaceLocalRect(owner, new RectInt(box.x, box.y, box.width, IsPlacingDoor ? 2 : box.height))) return;
+                Vector2Int size = IsPlacingDoor ? PlanningDoorUtility.Footprint(detailPropEntryId) : new Vector2Int(box.width, box.height);
+                if (!CanPlaceLocalRect(owner, new RectInt(new Vector2Int(box.x, box.y), size))) return;
                 if (owner.boxes.Exists(b => b.x == box.x && b.y == box.y && SameKind(b, box))) return;
                 RectInt allowed = owner.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
                 if (owner.isConnector) allowed = GetConnectorDetailBounds(owner);
@@ -3112,13 +3124,15 @@ namespace PlanningEditorPrototype
 
         private bool PrepareDoorPlacement(PlanningRoom room, PlanningBox box, RectInt allowed)
         {
-            if (!PlanningDoorUtility.IsDoor(box)) return true;
-            box.width = 1;
-            box.height = 2;
+            if (!PlanningDoorUtility.HasFixedFootprint(box.propEntryId)) return true;
+            Vector2Int size = PlanningDoorUtility.Footprint(box.propEntryId);
+            box.width = size.x;
+            box.height = size.y;
             box.singleInstance = true;
-            if (!allowed.Contains(new Vector2Int(box.x, box.y)) || !allowed.Contains(new Vector2Int(box.x, box.y + 1)) ||
-                !PlanningDoorUtility.CanPlace(room.boxes, new RectInt(box.x, box.y, 1, 2)))
-            { StatusChanged?.Invoke("门需要连续的 1×2 空格。"); return false; }
+            if (!CanPlaceLocalRect(room, new RectInt(box.x, box.y, size.x, size.y)) ||
+                !PlanningDoorUtility.CanPlace(room.boxes, new RectInt(box.x, box.y, size.x, size.y)))
+            { StatusChanged?.Invoke($"物体需要连续的 {size.x}×{size.y} 空格。"); return false; }
+            if (!PlanningDoorUtility.IsDoor(box)) return true;
             if (!PlanningDoorUtility.TryFindButtonCell(room.boxes, box, allowed, out _, c => CanPlaceLocalRect(room, new RectInt(c, Vector2Int.one))))
             { StatusChanged?.Invoke("门附近没有可放置按钮的空格。"); return false; }
             return true;
@@ -3129,6 +3143,10 @@ namespace PlanningEditorPrototype
             foreach (var item in AllBoxes())
             {
                 if (item.box.id != doorId || !PlanningDoorUtility.IsDoor(item.box) || item.room == null) continue;
+                int buttonCount = 0;
+                foreach (var candidate in item.boxes) if (candidate.doorOwnerId == doorId) buttonCount++;
+                if (buttonCount >= Project.Mechanisms.DoorController.MaximumButtons)
+                { StatusChanged?.Invoke("每扇门最多绑定 3 个按钮。"); return; }
                 RectInt allowed = item.room.isConnector ? GetConnectorDetailBounds(item.room) :
                     item.room.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
                 if (PlanningDoorUtility.AddButton(item.boxes, item.box, allowed, c => CanPlaceLocalRect(item.room, new RectInt(c, Vector2Int.one))) == null)

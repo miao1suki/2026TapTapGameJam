@@ -1,0 +1,69 @@
+using System.Collections.Generic;
+using Project.BlockFeatures;
+using Project.Player;
+using UnityEngine;
+
+namespace Project.Mechanisms
+{
+    [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider))]
+    public sealed class NeutralLadder : MonoBehaviour
+    {
+        [BlockParameter(Label = "攀爬倍率", Group = "攀爬", Order = 0)]
+        [SerializeField, Min(.01f)] private float climbMultiplier = 1f;
+        [BlockParameter(Label = "自然下滑速度", Group = "攀爬", Order = 1)]
+        [SerializeField, Min(0)] private float slideSpeed = .5f;
+        [BlockParameter(Label = "加速下滑速度", Group = "攀爬", Order = 2)]
+        [SerializeField, Min(0)] private float fastSlideSpeed = 3f;
+        [SerializeField, InspectorName("侧面梯子")] private bool sideFacing;
+        private BoxCollider area;
+        private readonly Dictionary<Collider, PlayerController> contacts = new();
+        private readonly List<Collider> expired = new();
+        public bool SideFacing => sideFacing;
+        public int ContactCount => contacts.Count;
+
+        private void Awake() { area = GetComponent<BoxCollider>(); area.isTrigger = true; }
+        private void OnTriggerEnter(Collider other) => Track(other);
+        private void OnTriggerStay(Collider other) => Track(other);
+        private void Track(Collider other)
+        {
+            if (!isActiveAndEnabled || other == null || other.isTrigger) return;
+            var player = other.GetComponentInParent<PlayerController>();
+            if (player == null || !player.isActiveAndEnabled) return;
+            contacts[other] = player;
+            player.EnterClimb(this);
+            player.SetClimbTopHeight(this, area.bounds.max.y);
+            player.SetClimbSpeedMultiplier(this, climbMultiplier);
+            player.SetClimbSlideSpeed(this, slideSpeed);
+            player.SetClimbFastSlideSpeed(this, fastSlideSpeed);
+        }
+        private void OnTriggerExit(Collider other) => Forget(other);
+        private void Forget(Collider other)
+        {
+            if (!contacts.TryGetValue(other, out var player)) return;
+            contacts.Remove(other);
+            foreach (var remaining in contacts.Values) if (remaining == player) return;
+            Release(player);
+        }
+        private void FixedUpdate()
+        {
+            expired.Clear();
+            foreach (var pair in contacts)
+                if (pair.Key == null || !pair.Key.enabled || !pair.Key.gameObject.activeInHierarchy ||
+                    pair.Value == null || !pair.Value.isActiveAndEnabled) expired.Add(pair.Key);
+            foreach (var collider in expired) Forget(collider);
+        }
+        private void Release(PlayerController player)
+        {
+            if (player == null) return;
+            player.ExitClimb(this);
+            player.SetClimbSpeedMultiplier(this, 0);
+            player.ClearClimbSlideSpeed(this);
+            player.ClearClimbFastSlideSpeed(this);
+        }
+        private void OnDisable()
+        {
+            foreach (var player in contacts.Values) Release(player);
+            contacts.Clear();
+        }
+    }
+}

@@ -19,6 +19,10 @@ namespace Project.Mechanisms
         [SerializeField, InspectorName("门轴")] private Transform hinge;
         [SerializeField, InspectorName("阻挡碰撞箱")] private Collider blockingCollider;
         [SerializeField, InspectorName("绑定按钮")] private List<DoorButton> buttons = new List<DoorButton>();
+        [SerializeField, InspectorName("提示方块")] private DoorHint hint;
+        [SerializeField, InspectorName("横门")] private bool horizontal;
+        [SerializeField, InspectorName("开门旋转轴")] private Vector3 openEuler = new Vector3(0, 90, 0);
+        public const int MaximumButtons = 3;
         [BlockParameter(Label = "开门时间", Group = "开门", Order = 0)]
         [SerializeField, Min(.01f)] private float openDuration = .6f;
         [BlockParameter(Label = "镜头移动时间", Group = "演出", Order = 0)]
@@ -39,6 +43,8 @@ namespace Project.Mechanisms
         private IDisposable controlLock;
         public DoorState State { get; private set; }
         public IReadOnlyList<DoorButton> Buttons => buttons;
+        public bool IsHorizontal => horizontal;
+        public int PressedCount { get { int count = 0; foreach (var button in buttons) if (button != null && button.IsPressed) count++; return count; } }
         public event Action<DoorState> StateChanged;
 
         private void Awake()
@@ -46,6 +52,7 @@ namespace Project.Mechanisms
             if (blockingCollider == null) blockingCollider = GetComponent<Collider>();
             closedRotation = hinge != null ? hinge.localRotation : Quaternion.identity;
             State = DoorState.Locked;
+            SetButtons(buttons);
         }
         private void OnEnable() { if (Application.isPlaying) EventMgr.OnRoomColorReset += HandleRoomReset; }
         private void OnDisable()
@@ -58,21 +65,51 @@ namespace Project.Mechanisms
         }
         public void SetButtons(IReadOnlyList<DoorButton> values)
         {
-            foreach (var button in buttons) if (button != null && button.Owner == this) button.SetOwner(null);
+            var next = values != null ? new List<DoorButton>(values) : new List<DoorButton>();
+            var previous = buttons.ToArray();
             buttons.Clear();
-            if (values != null) foreach (var button in values)
+            foreach (var button in previous) if (button != null && button.Owner == this) button.SetOwner(null);
+            foreach (var button in next)
                 if (button != null && !buttons.Contains(button)) { buttons.Add(button); button.SetOwner(this); }
+            RefreshHint();
         }
-        public void ForgetButton(DoorButton button) => buttons.Remove(button);
+        private void OnDestroy()
+        {
+            if (!Application.isPlaying) return;
+            var owned = buttons.ToArray();
+            buttons.Clear();
+            foreach (var button in owned)
+                if (button != null && button.Owner == this) { button.SetOwner(null); Destroy(button.gameObject); }
+        }
+        public void ForgetButton(DoorButton button)
+        {
+            if (!buttons.Remove(button)) return;
+            if (button != null && button.Owner == this) button.SetOwner(null);
+            RefreshHint();
+            if (Application.isPlaying) NotifyButtonPressed(null);
+        }
+        public void RefreshHint()
+        {
+            if (hint == null) hint = GetComponentInChildren<DoorHint>(true);
+            if (hint == null)
+            {
+                var item = new GameObject("门提示");
+                item.transform.SetParent(transform, false);
+                item.transform.localPosition = horizontal ? new Vector3(.5f, .8f, -.1f) : new Vector3(0, 1.8f, -.1f);
+                hint = item.AddComponent<DoorHint>();
+            }
+            hint.Bind(this);
+        }
         public void NotifyButtonPressed(GameObject actor)
         {
+            RefreshHint();
             if (!Application.isPlaying || State != DoorState.Locked || buttons.Count == 0) return;
             foreach (var button in buttons) if (button == null || !button.IsPressed) return;
             State = DoorState.Unlocked;
             if (blockingCollider != null) blockingCollider.enabled = false;
             opening?.Kill();
             if (hinge != null)
-                opening = hinge.DOLocalRotateQuaternion(closedRotation * Quaternion.Euler(0, 90, 0), openDuration)
+                opening = hinge.DOLocalRotateQuaternion(closedRotation * Quaternion.Euler(openEuler), openDuration)
                     .SetEase(Ease.OutCubic).SetUpdate(true);
             StateChanged?.Invoke(State);
             shotRoutine = StartCoroutine(PlayDoorShot(actor));
@@ -87,6 +124,7 @@ namespace Project.Mechanisms
             if (hinge != null) hinge.localRotation = closedRotation;
             if (blockingCollider != null) blockingCollider.enabled = true;
             foreach (var button in buttons) if (button != null) button.ResetButton();
+            RefreshHint();
             StateChanged?.Invoke(State);
         }
         private void HandleRoomReset() { if (resetWithRoom) ResetDoor(); }

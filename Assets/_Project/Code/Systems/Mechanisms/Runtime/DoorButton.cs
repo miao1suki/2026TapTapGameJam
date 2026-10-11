@@ -26,7 +26,13 @@ namespace Project.Mechanisms
             pressTrigger.size = new Vector3(.6f, .3f, .6f);
             ResetButton();
         }
-        public void SetOwner(DoorController value) => owner = value;
+        public void SetOwner(DoorController value)
+        {
+            if (owner == value) return;
+            var previous = owner;
+            owner = value;
+            if (previous != null) previous.ForgetButton(this);
+        }
         private void OnDestroy() { if (owner != null) owner.ForgetButton(this); }
         private void OnTriggerEnter(Collider other) => TryPressFromContact(other);
         private void OnTriggerStay(Collider other) => TryPressFromContact(other);
@@ -54,7 +60,7 @@ namespace Project.Mechanisms
             owner.NotifyButtonPressed(actor);
             return true;
         }
-        public void ResetButton() { State = DoorButtonState.Unpressed; ApplyAppearance(); }
+        public void ResetButton() { State = DoorButtonState.Unpressed; ApplyAppearance(); if (owner != null) owner.RefreshHint(); }
         private void ApplyAppearance()
         {
             if (visual == null) visual = GetComponentInChildren<Renderer>();

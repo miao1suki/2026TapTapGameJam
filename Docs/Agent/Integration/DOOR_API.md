@@ -1,5 +1,7 @@
 # 非颜色门 API
 
+新增横门、无色梯子与门提示的接口见 [NEUTRAL_MECHANISMS_API.md](NEUTRAL_MECHANISMS_API.md)。旧竖门 ID 保留，新添加按钮上限为三个。
+
 源码：`Code/Systems/Mechanisms`。DoorController / DoorButton 独立继承 MonoBehaviour，不挂 ColorObject、BlockAbilityHost 或 BlockRuntime，不实现 IColorApplicationTarget。不复用 Red_Button 的开关式信号逻辑。
 
 - `DoorController.State`：Locked / Unlocked，只读。

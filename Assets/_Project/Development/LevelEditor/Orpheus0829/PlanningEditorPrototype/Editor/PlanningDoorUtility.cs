@@ -9,9 +9,15 @@ namespace PlanningEditorPrototype
     internal static class PlanningDoorUtility
     {
         internal const string DoorEntryId = "mechanism-door-standard";
+        internal const string HorizontalDoorEntryId = "mechanism-door-horizontal";
+        internal const string FrontLadderEntryId = "mechanism-ladder-front";
+        internal const string SideLadderEntryId = "mechanism-ladder-side";
         internal const string ButtonEntryId = "mechanism-door-owned-button";
         internal const string ButtonPath = "Assets/_Project/Content/Mechanisms/DoorButton.prefab";
-        internal static bool IsDoor(PlanningBox box) => box != null && box.propEntryId == DoorEntryId;
+        internal static bool IsDoor(PlanningBox box) => box != null && IsDoorEntry(box.propEntryId);
+        internal static bool IsDoorEntry(string id) => id == DoorEntryId || id == HorizontalDoorEntryId;
+        internal static bool HasFixedFootprint(string id) => IsDoorEntry(id) || id == FrontLadderEntryId || id == SideLadderEntryId;
+        internal static Vector2Int Footprint(string id) => id == HorizontalDoorEntryId ? new Vector2Int(2, 1) : new Vector2Int(1, 2);
         internal static LevelEditorPropEntry GetButtonEntry()
         {
             var entry = new LevelEditorPropEntry();
@@ -55,6 +61,9 @@ namespace PlanningEditorPrototype
         internal static PlanningBox AddButton(List<PlanningBox> boxes, PlanningBox door, RectInt allowed,
             System.Func<Vector2Int, bool> cellAllowed = null)
         {
+            int count = 0;
+            foreach (var existing in boxes) if (existing.doorOwnerId == door.id) count++;
+            if (count >= DoorController.MaximumButtons) return null;
             if (!TryFindButtonCell(boxes,door,allowed,out var cell, cellAllowed)) return null;
             var button = new PlanningBox(PlanningDetailType.Prop,new RectInt(cell,Vector2Int.one))
             {

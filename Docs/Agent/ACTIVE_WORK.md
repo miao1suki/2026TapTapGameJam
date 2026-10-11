@@ -1,5 +1,13 @@
 # 工作状态与交接（每次任务重读）
 
+## 无色梯子、门提示与横门
+
+- 日期：2026-10-11；负责人：Codex；分支：`codex/neutral-ladders-door-hints`。已实现，按用户要求提交并推送此分支，不合并、不推 main。
+- 范围：独立无色正面/侧面梯子，复用玩家攀爬 API；门专属提示块、1–3 按钮状态美术配置、按钮增删动态更新；新增横门道具及占格预览，旧竖门 ID/预制体保持兼容。
+- 不修改已保存场景、字体、插件和本地设置，不接入 TapSDK 或导入音频资源包。
+- 验证：项目 Runtime/Editor 静态编译及 diff 检查通过；Unity 6000.3.12f1 隔离项目 35 项 Editor 检查（四 prefab 导入、唯一提示、九状态组合、增删绑定、上限/孤儿清理）和 17 项运行时检查（真实 DOTween 两轴开门、按下/重复/重置、删除按钮与门、梯子多 Collider 与禁用解绑）通过。播放器/镜头协作者在隔离项目为桩，梯子接触通过脚本入口注入，不代表完整 Player 物理手感与 Timeline 已验收。完整关卡编辑器交互、相邻梯子衔接、像素化显示和打包待测试。
+- 文档：Integration/NEUTRAL_MECHANISMS_API.md、Developer/NEUTRAL_MECHANISMS.md。美术配置：Resources/DoorHintStyle.asset，共九个 Sprite 状态；素材未到位使用孔位占位。新梯子不加入颜色层，不修改旧竖门 prefab。
+
 ## 当前进度合并至主线
 
 - 日期：2026-10-10；负责人：Codex；用户已授权将 `codex/world-planning-tools` 合并并推送 main。源功能提交：`ed6625a`，以快进方式整合世界图工具、门按钮、颜色表现解耦、起跳手感及水体恢复修复。
