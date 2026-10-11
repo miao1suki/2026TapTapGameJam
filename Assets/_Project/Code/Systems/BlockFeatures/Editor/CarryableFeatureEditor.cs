@@ -31,6 +31,26 @@ namespace Project.BlockFeatures.Editor
                 "canCarry",
                 "允许搬运",
                 "关闭后即使进入玩家相邻格也不会进入拾取队列。"));
+            config.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "indicatorFont",
+                "搬运提示字体",
+                "第一个可搬运目标正中心的“搬运”字体。"));
+            config.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "indicatorFontSize",
+                "搬运提示字号",
+                "世界空间“搬运”文字的字号。"));
+            config.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "indicatorOffset",
+                "搬运提示偏移",
+                "相对于物体正中心的本地偏移。"));
+            config.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "indicatorOutlineWidth",
+                "搬运提示描边宽度",
+                "白色描边宽度；过大会让黑色字面显得发灰。"));
             root.Add(config);
 
             CarryableFeature feature = target as CarryableFeature;

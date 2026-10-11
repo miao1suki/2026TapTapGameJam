@@ -21,6 +21,7 @@ namespace Project.Player
         bool IsCarryActive { get; }
         bool IsCarryDropAnimating { get; }
         bool IsCarryResetAnimating { get; }
+        void SetCarryIndicator(bool visible);
         bool CanCarry(IPlayerCarryHost player);
         bool BeginCarry(IPlayerCarryHost player);
         void UpdateCarryAnchor(Vector3 anchorWorldPosition);

@@ -1,5 +1,7 @@
 using Project.ColorBlocks;
+using Project.InputAbstraction;
 using Project.Player;
+using TMPro;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -13,10 +15,16 @@ namespace Project.BlockFeatures
         IPlayerCarryTarget
     {
         [SerializeField] private bool canCarry = true;
+        [SerializeField] private TMP_FontAsset indicatorFont;
+        [SerializeField, Min(1f)] private float indicatorFontSize = 2.7f;
+        [SerializeField] private Vector3 indicatorOffset;
+        [SerializeField, Min(0f)] private float indicatorOutlineWidth = .1f;
 
         private CarryTargetMotion carryMotion;
         private IPlayerCarryHost carryPlayer;
         private IColorObject colorObject;
+        private TextMeshPro indicator;
+        private Material indicatorMaterial;
 
         public Transform CarryTransform => transform;
         public bool IsCarryActive =>
@@ -31,6 +39,48 @@ namespace Project.BlockFeatures
             !IsCarryDropAnimating &&
             !IsCarryResetAnimating &&
             (colorObject == null || colorObject.IsActive);
+
+        public void SetCarryIndicator(bool visible)
+        {
+            if (!visible)
+            {
+                if (indicator != null)
+                {
+                    indicator.gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
+            EnsureIndicator();
+            if (indicator == null)
+            {
+                return;
+            }
+
+            indicator.gameObject.SetActive(true);
+            indicator.transform.localPosition = indicatorOffset;
+            indicator.text = InputPromptUtility.UseActionLabels
+                ? "搬运"
+                : InputPromptUtility.FormatKey(
+                    InputActionId.Interact) +
+                  "\n搬运";
+            indicator.font = indicatorFont != null
+                ? indicatorFont
+                : TMP_Settings.defaultFontAsset;
+            indicator.fontSize = indicatorFontSize;
+            indicator.color = Color.black;
+            indicator.fontStyle = FontStyles.Bold;
+            indicator.alignment = TextAlignmentOptions.Center;
+            indicator.textWrappingMode = TextWrappingModes.NoWrap;
+            indicator.sortingLayerID =
+                SortingLayer.layers.Length > 0
+                    ? SortingLayer.layers[
+                        SortingLayer.layers.Length - 1].id
+                    : 0;
+            indicator.sortingOrder = short.MaxValue;
+            ApplyIndicatorOutline();
+        }
 
         private void Awake()
         {
@@ -51,6 +101,16 @@ namespace Project.BlockFeatures
         {
             PlayerCarryTargetRegistry.Unregister(this);
             CancelCarry();
+            SetCarryIndicator(false);
+        }
+
+        private void OnDestroy()
+        {
+            if (indicatorMaterial != null)
+            {
+                Destroy(indicatorMaterial);
+                indicatorMaterial = null;
+            }
         }
 
         public bool CanCarry(IPlayerCarryHost player)
@@ -116,6 +176,61 @@ namespace Project.BlockFeatures
         {
             carryMotion?.Cancel();
             carryPlayer = null;
+        }
+
+        private void EnsureIndicator()
+        {
+            if (indicator != null)
+            {
+                return;
+            }
+
+            GameObject label = new GameObject(
+                "搬运",
+                typeof(TextMeshPro));
+            label.transform.SetParent(transform, false);
+            indicator = label.GetComponent<TextMeshPro>();
+            indicator.raycastTarget = false;
+        }
+
+        private void ApplyIndicatorOutline()
+        {
+            TMP_FontAsset font = indicator.font;
+            if (font == null || font.material == null)
+            {
+                return;
+            }
+
+            if (indicatorMaterial == null)
+            {
+                indicatorMaterial = new Material(font.material);
+                indicator.fontMaterial = indicatorMaterial;
+            }
+
+            indicatorMaterial.SetColor(
+                ShaderUtilities.ID_FaceColor,
+                Color.black);
+            indicatorMaterial.SetColor(
+                ShaderUtilities.ID_OutlineColor,
+                Color.white);
+            indicatorMaterial.SetFloat(
+                ShaderUtilities.ID_OutlineWidth,
+                indicatorOutlineWidth);
+            indicatorMaterial.SetFloat(
+                ShaderUtilities.ID_OutlineSoftness,
+                0f);
+            indicatorMaterial.EnableKeyword("OUTLINE_ON");
+            indicatorMaterial.renderQueue = 5000;
+            indicatorMaterial.SetInt("_ZTestMode", 8);
+            if (indicator.renderer != null)
+            {
+                indicator.renderer.sortingLayerID =
+                    SortingLayer.layers.Length > 0
+                        ? SortingLayer.layers[
+                            SortingLayer.layers.Length - 1].id
+                        : 0;
+                indicator.renderer.sortingOrder = short.MaxValue;
+            }
         }
     }
 }

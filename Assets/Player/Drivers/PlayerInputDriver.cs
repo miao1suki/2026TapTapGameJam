@@ -1,6 +1,6 @@
 using System;
 using Project.InputAbstraction;
-using Project.Subtitles;
+using Project.WordNote;
 using TMPro;
 using UnityEngine;
 
@@ -19,8 +19,14 @@ namespace Project.Player
         [SerializeField] private TMP_FontAsset carryHintFont;
 
         private PlayerController player;
-        private SubtitleStyle carryHintStyle;
+        private WordNoteStyle carryHintStyle;
+        private WordNoteStyle invalidPlacementStyle;
+        private WordNoteStyle respawnHintStyle;
         private bool carryHintVisible;
+        private bool respawnHintVisible;
+        private int carryHintId = -1;
+        private int invalidPlacementId = -1;
+        private int respawnHintId = -1;
 
         private void Awake()
         {
@@ -30,14 +36,17 @@ namespace Project.Player
         private void OnEnable()
         {
             player = GetComponent<PlayerController>();
+            BindCarryEvents();
         }
 
         private void OnDisable()
         {
+            UnbindCarryEvents();
             if (player != null)
             {
                 player.ClearBufferedInput();
                 HideCarryHint();
+                HideRespawnHint();
             }
         }
 
@@ -58,8 +67,13 @@ namespace Project.Player
                 return;
             }
 
-            player = target;
+            if (player != target)
+            {
+                player = target;
+                BindCarryEvents();
+            }
             UpdateCarryHint(target);
+            UpdateRespawnHint(target);
             bool resetTriggered =
                 GameInput.WasTriggeredThisFrame(
                     InputActionId.Respawn);
@@ -68,6 +82,7 @@ namespace Project.Player
                 if (resetTriggered)
                 {
                     target.RequestRespawn();
+                    HideRespawnHint();
                 }
 
                 target.ClearBufferedInput();
@@ -201,6 +216,7 @@ namespace Project.Player
         {
             bool shouldShow =
                 target.IsCarrying &&
+                !target.IsCarryDropAnimating &&
                 !target.IsCarryResetAnimating;
             if (shouldShow == carryHintVisible)
             {
@@ -208,45 +224,77 @@ namespace Project.Player
             }
 
             carryHintVisible = shouldShow;
-            ISubtitleService subtitles =
-                SubtitleServiceRegistry.Current;
-            if (subtitles == null)
+            WordNoteUI wordNote = WordNoteUI.Instance;
+            if (wordNote == null)
             {
                 return;
             }
 
             if (!shouldShow)
             {
-                subtitles.Hide(SubtitleLayer.Bottom);
+                if (carryHintId >= 0)
+                {
+                    wordNote.ExitById(carryHintId, false);
+                    carryHintId = -1;
+                }
                 return;
             }
 
-            carryHintStyle ??= new SubtitleStyle
+            carryHintStyle ??= new WordNoteStyle
             {
                 font = carryHintFont,
                 fontSize = 42f,
-                anchor = SubtitleAnchor.Bottom,
-                normalizedX = .5f,
-                normalizedY = .12f,
-                holdDuration = 999999f,
-                inAnimation = SubtitleAnimation.Fade,
-                outAnimation = SubtitleAnimation.Fade,
-                inDuration = .15f,
-                outDuration = .15f
+                fontColor = WordNoteColor.White,
+                useOutline = true,
+                outlineColor = WordNoteColor.Black,
+                position = WordNotePosition.Bottom,
+                participateInStackLayout = true,
+                displayMode = WordNoteDisplayMode.Persistent,
+                useEnterAnimation = true,
+                enterAnimation = WordNoteAnimation.Fade,
+                enterMotion = new WordNoteMotionSettings
+                {
+                    useCombinedChannels = true,
+                    useFade = true,
+                    duration = .5f,
+                    startAlpha = 0f,
+                    endAlpha = 1f,
+                    startScale = Vector3.one,
+                    endScale = Vector3.one
+                },
+                useExitAnimation = true,
+                exitAnimation = WordNoteAnimation.Fade,
+                exitMotion = new WordNoteMotionSettings
+                {
+                    useCombinedChannels = true,
+                    useFade = true,
+                    duration = .5f,
+                    startAlpha = 1f,
+                    endAlpha = 0f,
+                    startScale = Vector3.one,
+                    endScale = Vector3.one
+                }
             };
-            string dropLeft =
-                InputBindingDisplayUtility.GetPrimaryDisplayString(
-                    InputActionId.DropLeft);
-            string dropRight =
-                InputBindingDisplayUtility.GetPrimaryDisplayString(
-                    InputActionId.DropRight);
-            string reset =
-                InputBindingDisplayUtility.GetPrimaryDisplayString(
-                    InputActionId.Respawn);
-            subtitles.ShowBottom(
-                $"按下 {dropLeft}/{dropRight} 放在自身左/右侧\n" +
-                $"按 {reset} 重置搬运方块",
+            string prompt = BuildCarryPrompt();
+            WordNoteHandle handle = wordNote.Show(
+                prompt,
                 carryHintStyle);
+            carryHintId = handle != null ? handle.Id : -1;
+        }
+
+        private static string BuildCarryPrompt()
+        {
+            if (InputPromptUtility.UseActionLabels)
+            {
+                return "按下放置左侧以放置方块，按下放置右侧以放置方块，按下复活以重置方块";
+            }
+
+            return
+                $"按{InputPromptUtility.FormatKey(InputActionId.DropLeft)}/" +
+                $"{InputPromptUtility.FormatKey(InputActionId.DropRight)}" +
+                "将方块放置在左/右侧，" +
+                $"按{InputPromptUtility.FormatKey(InputActionId.Respawn)}" +
+                "重置方块";
         }
 
         private void HideCarryHint()
@@ -257,8 +305,157 @@ namespace Project.Player
             }
 
             carryHintVisible = false;
-            SubtitleServiceRegistry.Current?.Hide(
-                SubtitleLayer.Bottom);
+            WordNoteUI wordNote = WordNoteUI.Instance;
+            if (wordNote != null && carryHintId >= 0)
+            {
+                wordNote.ExitById(carryHintId, false);
+            }
+
+            carryHintId = -1;
+        }
+
+        private void OnCarryPlacementRejected()
+        {
+            WordNoteUI wordNote = WordNoteUI.Instance;
+            if (wordNote == null)
+            {
+                return;
+            }
+
+            if (invalidPlacementId >= 0)
+            {
+                wordNote.ExitById(invalidPlacementId, false);
+            }
+
+            invalidPlacementStyle ??= new WordNoteStyle
+            {
+                font = carryHintFont,
+                fontSize = 42f,
+                fontColor = WordNoteColor.White,
+                useOutline = true,
+                outlineColor = WordNoteColor.Black,
+                position = WordNotePosition.Bottom,
+                participateInStackLayout = true,
+                displayMode = WordNoteDisplayMode.Timed,
+                displayDuration = 2f,
+                useEnterAnimation = true,
+                enterAnimation = WordNoteAnimation.MoveLeft,
+                enterMotion = new WordNoteMotionSettings
+                {
+                    useCombinedChannels = true,
+                    useFade = true,
+                    useHorizontalMove = true,
+                    horizontalDirection =
+                        WordNoteHorizontalDirection.Left,
+                    horizontalDistance = 140f,
+                    duration = .5f,
+                    startAlpha = 1f,
+                    endAlpha = 1f,
+                    startScale = Vector3.one,
+                    endScale = Vector3.one
+                },
+                useExitAnimation = true,
+                exitAnimation = WordNoteAnimation.MoveRight,
+                exitMotion = new WordNoteMotionSettings
+                {
+                    useCombinedChannels = true,
+                    useFade = true,
+                    useHorizontalMove = true,
+                    horizontalDirection =
+                        WordNoteHorizontalDirection.Right,
+                    horizontalDistance = 140f,
+                    duration = .5f,
+                    startAlpha = 1f,
+                    endAlpha = 1f,
+                    startScale = Vector3.one,
+                    endScale = Vector3.one
+                }
+            };
+            WordNoteHandle handle = wordNote.Show(
+                "位置非法，请留出足够空间",
+                invalidPlacementStyle);
+            invalidPlacementId = handle != null ? handle.Id : -1;
+        }
+
+        private void UpdateRespawnHint(PlayerController target)
+        {
+            bool shouldShow = target.IsDead;
+            if (shouldShow == respawnHintVisible)
+            {
+                return;
+            }
+
+            respawnHintVisible = shouldShow;
+            WordNoteUI wordNote = WordNoteUI.Instance;
+            if (wordNote == null)
+            {
+                return;
+            }
+
+            if (!shouldShow)
+            {
+                HideRespawnHint();
+                return;
+            }
+
+            respawnHintStyle ??= new WordNoteStyle
+            {
+                font = carryHintFont,
+                fontSize = 92f,
+                fontColor = WordNoteColor.White,
+                useOutline = true,
+                outlineColor = WordNoteColor.Black,
+                position = WordNotePosition.Center,
+                participateInStackLayout = false,
+                displayMode = WordNoteDisplayMode.Persistent,
+                useEnterAnimation = false,
+                useExitAnimation = false
+            };
+            WordNoteHandle handle = wordNote.Show(
+                InputPromptUtility.FormatAction(
+                    InputActionId.Respawn,
+                    "复活",
+                    "复活"),
+                respawnHintStyle);
+            respawnHintId = handle != null ? handle.Id : -1;
+        }
+
+        private void HideRespawnHint()
+        {
+            if (!respawnHintVisible && respawnHintId < 0)
+            {
+                return;
+            }
+
+            respawnHintVisible = false;
+            WordNoteUI wordNote = WordNoteUI.Instance;
+            if (wordNote != null && respawnHintId >= 0)
+            {
+                wordNote.ExitById(respawnHintId, false);
+            }
+
+            respawnHintId = -1;
+        }
+
+        private void BindCarryEvents()
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            player.CarryPlacementRejected -= OnCarryPlacementRejected;
+            player.CarryPlacementRejected += OnCarryPlacementRejected;
+        }
+
+        private void UnbindCarryEvents()
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            player.CarryPlacementRejected -= OnCarryPlacementRejected;
         }
 
     }

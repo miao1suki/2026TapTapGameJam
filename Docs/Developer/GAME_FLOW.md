@@ -11,6 +11,8 @@
 正式关卡放 `Assets/_Project/Scenes/Levels/Level_XX`，实验放 `Assets/_Project/Development`，实验不默认参与构建。
 UI是常驻独立场景，编辑关卡时不要复制全屏菜单底板到关卡中。
 
+全局文字提示画布 `WordNote_UI` 位于 `Systems_UI` 的 `__System_UI` 下，和 `GameUI` 同级；由 `WordNoteUI` 维护总队列与九个位置队列，同位置支持纵向堆叠和退场补位，业务脚本通过其公开 API 显示、查询和退场。
+
 2D 关卡编辑器雏形位于 `Assets/_Project/Development/LevelEditor/Orpheus0829`，通过
 `Tools/2026TapTap/关卡编辑器/打开编辑器窗口` 打开。窗口可停靠、拖动和缩放；编辑模式开启后，
 Scene 视图锁定为 XY 正交平面，点击醒目的编辑模式按钮退出后，会主动切回透视 3D Scene 视图。方块栏目可用 `−` / `+`

@@ -90,6 +90,7 @@ namespace Project.Player
         private readonly RaycastHit[] carryRayBuffer =
             new RaycastHit[32];
         private IPlayerCarryTarget selectedCarryTarget;
+        private IPlayerCarryTarget highlightedCarryTarget;
         private float carryPrepareUntil = -1f;
         private bool carryPreparing;
         private bool carryDropAnimating;
@@ -263,6 +264,7 @@ namespace Project.Player
         public event Action<ActSO> ActionCompleted;
         public event Action<bool> ControlLockChanged;
         public event Action TimelineSignalReceived;
+        public event Action CarryPlacementRejected;
         private static readonly string[] Signals = { AchievementSignalIds.PlayerJumped,
             AchievementSignalIds.PlayerLanded, AchievementSignalIds.PlayerActionStarted,
             AchievementSignalIds.PlayerActionCompleted };
@@ -1019,6 +1021,7 @@ namespace Project.Player
         private void BeginCarryPreparation(
             IPlayerCarryTarget target)
         {
+            SetHighlightedCarryTarget(null);
             selectedCarryTarget = target;
             carryQueue.Clear();
             carryPreparing = true;
@@ -1041,6 +1044,7 @@ namespace Project.Player
                     direction,
                     out Vector3Int cell))
             {
+                CarryPlacementRejected?.Invoke();
                 return;
             }
 
@@ -1053,6 +1057,7 @@ namespace Project.Player
                         cell,
                         targetTransform.position.z)))
             {
+                CarryPlacementRejected?.Invoke();
                 return;
             }
 
@@ -1114,6 +1119,7 @@ namespace Project.Player
             selectedCarryTarget?.CancelCarry();
             selectedCarryTarget = null;
             carryQueue.Clear();
+            SetHighlightedCarryTarget(null);
             ReleaseCarryControlLock();
         }
 
@@ -1166,6 +1172,7 @@ namespace Project.Player
                 PlayerCarryTargetRegistry.All;
             if (targets.Count == 0)
             {
+                SetHighlightedCarryTarget(null);
                 return;
             }
 
@@ -1204,6 +1211,24 @@ namespace Project.Player
                     return leftDistance.CompareTo(rightDistance);
                 });
             }
+
+            SetHighlightedCarryTarget(
+                carryQueue.Count > 0
+                    ? carryQueue[0]
+                    : null);
+        }
+
+        private void SetHighlightedCarryTarget(
+            IPlayerCarryTarget target)
+        {
+            if (ReferenceEquals(highlightedCarryTarget, target))
+            {
+                return;
+            }
+
+            highlightedCarryTarget?.SetCarryIndicator(false);
+            highlightedCarryTarget = target;
+            highlightedCarryTarget?.SetCarryIndicator(true);
         }
 
         private static bool IsCardinalNeighbor(
