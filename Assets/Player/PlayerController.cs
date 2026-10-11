@@ -87,6 +87,8 @@ namespace Project.Player
             new List<Vector3Int>();
         private readonly Collider[] carryDropBuffer =
             new Collider[32];
+        private readonly RaycastHit[] carryRayBuffer =
+            new RaycastHit[32];
         private IPlayerCarryTarget selectedCarryTarget;
         private float carryPrepareUntil = -1f;
         private bool carryPreparing;
@@ -1082,6 +1084,7 @@ namespace Project.Player
             {
                 carryResetting = false;
                 carryQueue.Clear();
+                ReleaseCarryControlLock();
                 return;
             }
 
@@ -1251,13 +1254,47 @@ namespace Project.Player
             Vector3Int direction,
             out Vector3Int result)
         {
+            if (HasCarryBlockerInDirection(direction))
+            {
+                result = default;
+                return false;
+            }
+
             GetCarryFootprintCells(carryFootprintBuffer);
+            int minX = int.MaxValue;
+            int maxX = int.MinValue;
+            int minY = int.MaxValue;
+            int maxY = int.MinValue;
             for (int index = 0;
                  index < carryFootprintBuffer.Count;
                  index++)
             {
-                Vector3Int candidate =
-                    carryFootprintBuffer[index] + direction;
+                Vector3Int cell = carryFootprintBuffer[index];
+                minX = Mathf.Min(minX, cell.x);
+                maxX = Mathf.Max(maxX, cell.x);
+                minY = Mathf.Min(minY, cell.y);
+                maxY = Mathf.Max(maxY, cell.y);
+            }
+
+            for (int index = 0;
+                 index < carryFootprintBuffer.Count;
+                 index++)
+            {
+                Vector3Int occupied = carryFootprintBuffer[index];
+                bool onOuterEdge =
+                    direction.x < 0
+                        ? occupied.x == minX
+                        : direction.x > 0
+                            ? occupied.x == maxX
+                            : direction.y < 0
+                                ? occupied.y == minY
+                                : occupied.y == maxY;
+                if (!onOuterEdge)
+                {
+                    continue;
+                }
+
+                Vector3Int candidate = occupied + direction;
                 if (carryFootprintBuffer.Contains(candidate) ||
                     !IsCarryDropCellFree(candidate))
                 {
@@ -1272,6 +1309,46 @@ namespace Project.Player
             return false;
         }
 
+        private bool HasCarryBlockerInDirection(
+            Vector3Int direction)
+        {
+            Vector3 rayDirection = new Vector3(
+                direction.x,
+                direction.y,
+                0f);
+            if (rayDirection.sqrMagnitude < .001f)
+            {
+                return true;
+            }
+
+            rayDirection.Normalize();
+            int count = Physics.RaycastNonAlloc(
+                new Ray(transform.position, rayDirection),
+                carryRayBuffer,
+                gridCellWorldSize * 1.1f,
+                ~0,
+                QueryTriggerInteraction.Collide);
+            for (int index = 0; index < count; index++)
+            {
+                Collider collider = carryRayBuffer[index].collider;
+                if (collider == null ||
+                    collider.transform.root == transform.root)
+                {
+                    continue;
+                }
+
+                if (selectedCarryTarget is Component target &&
+                    collider.transform.root == target.transform.root)
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
         private bool IsCarryDropCellFree(Vector3Int cell)
         {
             Vector3 center = CellToWorld(
@@ -1279,7 +1356,7 @@ namespace Project.Player
                 transform.position.z);
             int count = Physics.OverlapBoxNonAlloc(
                 center,
-                Vector3.one * (gridCellWorldSize * .4f),
+                Vector3.one * (gridCellWorldSize * .49f),
                 carryDropBuffer,
                 Quaternion.identity,
                 ~0,
