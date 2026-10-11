@@ -2,7 +2,7 @@
 
 打开Bootstrap并Play：先初始化Core/Input/Audio/Camera/UI常驻场景，再显示主菜单。
 点击开始进入第一关，终点依次进入第二关、第三关、结束场景；终点Inspector可设置目标或游戏结束。
-当前关卡只有基础测试白膜，非正式关卡；没有绳、梯子、平台机关。玩家A/D或摇杆左右移动、Space或触摸跳跃、Tab/F或手柄Select申请切换2D/3D、ESC暂停。
+当前关卡只有基础测试白膜，非正式关卡；没有绳、梯子、平台机关。玩家 A/D 或摇杆左右移动、Space 或触摸跳跃、Tab 或手柄 Select 开关调色轮盘、F 交互/搬运、Q/E 左右放下、R 复活或重置搬运、ESC 暂停。
 2D/3D模式由 CameraModeController 统一仲裁；Timeline 演出期间保持更高优先级。
 
 菜单 `Tools/2026TapTap/场景/场景导航与关卡入口` 按启动、系统、流程、正式关卡、开发测试分类。

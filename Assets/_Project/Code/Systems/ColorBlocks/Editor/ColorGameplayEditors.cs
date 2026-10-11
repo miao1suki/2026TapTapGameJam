@@ -78,8 +78,9 @@ namespace Project.ColorBlocks.Editor
             root.Add(ProjectInspectorUtility.CreateScriptField(
                 serializedObject));
             root.Add(ProjectInspectorUtility.CreateHelp(
-                "万能方块固定放置。点击后自身显示纯色，并把同一颜色" +
-                "指令广播给左右上下四个紧邻的 IColorApplicationTarget。"));
+                "万能方块可用交互键从相邻格搬起。点击后自身显示纯色，" +
+                "并把同一颜色指令广播给左右上下四个紧邻的" +
+                " IColorApplicationTarget。"));
 
             UniversalColorBlock proxy =
                 (UniversalColorBlock)target;

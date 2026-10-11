@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3196556258283342679}
   - component: {fileID: 8000377855319531453}
   - component: {fileID: 5241255432399886648}
+  - component: {fileID: 900000000000000002}
   m_Layer: 0
   m_Name: Universal_Block
   m_TagString: Untagged
@@ -128,3 +129,16 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &900000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 625459090113926379}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d7f8a1b3c4d5e6f708192a3b4c5d6e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.CarryableFeature
+  canCarry: 1

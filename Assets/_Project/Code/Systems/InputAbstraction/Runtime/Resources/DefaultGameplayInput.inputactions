@@ -147,9 +147,9 @@
           "priority": 0
         },
         {
-          "name": "Carry",
+          "name": "Respawn",
           "type": "Button",
-          "id": "10000000-0000-0000-0000-000000000015",
+          "id": "10000000-0000-0000-0000-000000000016",
           "expectedControlType": "Button",
           "processors": "",
           "interactions": "",
@@ -157,9 +157,19 @@
           "priority": 0
         },
         {
-          "name": "Respawn",
+          "name": "DropLeft",
           "type": "Button",
-          "id": "10000000-0000-0000-0000-000000000016",
+          "id": "10000000-0000-0000-0000-000000000017",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": false,
+          "priority": 0
+        },
+        {
+          "name": "DropRight",
+          "type": "Button",
+          "id": "10000000-0000-0000-0000-000000000018",
           "expectedControlType": "Button",
           "processors": "",
           "interactions": "",
@@ -369,7 +379,7 @@
         {
           "name": "",
           "id": "10000000-0000-0000-0000-000000000118",
-          "path": "<Keyboard>/e",
+          "path": "<Keyboard>/f",
           "interactions": "",
           "processors": "",
           "groups": "Keyboard&Mouse",
@@ -533,17 +543,6 @@
         },
         {
           "name": "",
-          "id": "10000000-0000-0000-0000-000000000133",
-          "path": "<Keyboard>/f",
-          "interactions": "",
-          "processors": "",
-          "groups": "Keyboard&Mouse",
-          "action": "CameraModeSwitch",
-          "isComposite": false,
-          "isPartOfComposite": false
-        },
-        {
-          "name": "",
           "id": "10000000-0000-0000-0000-000000000134",
           "path": "<Gamepad>/select",
           "interactions": "",
@@ -578,22 +577,44 @@
         {
           "name": "",
           "id": "10000000-0000-0000-0000-000000000137",
-          "path": "<Mouse>/rightButton",
+          "path": "<Keyboard>/q",
           "interactions": "",
           "processors": "",
           "groups": "Keyboard&Mouse",
-          "action": "Carry",
+          "action": "DropLeft",
           "isComposite": false,
           "isPartOfComposite": false
         },
         {
           "name": "",
           "id": "10000000-0000-0000-0000-000000000138",
-          "path": "<Gamepad>/buttonNorth",
+          "path": "<Gamepad>/leftTrigger",
           "interactions": "",
           "processors": "",
           "groups": "Gamepad",
-          "action": "Carry",
+          "action": "DropLeft",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "10000000-0000-0000-0000-000000000141",
+          "path": "<Keyboard>/e",
+          "interactions": "",
+          "processors": "",
+          "groups": "Keyboard&Mouse",
+          "action": "DropRight",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "10000000-0000-0000-0000-000000000142",
+          "path": "<Gamepad>/rightTrigger",
+          "interactions": "",
+          "processors": "",
+          "groups": "Gamepad",
+          "action": "DropRight",
           "isComposite": false,
           "isPartOfComposite": false
         },

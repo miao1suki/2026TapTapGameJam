@@ -1,5 +1,17 @@
 # 工作状态与交接（每次任务重读）
 
+## 搬运逻辑重做（静态实现完成，待 PlayMode）
+
+- 日期：2026-10-11；负责人：Codex；分支：`搬运`。
+- 范围：推翻旧的“右键长按 + 鼠标吸附拖拽 + 原位回退”能源搬运；新增共享 `CarryableFeature`，能源方块由自身 `IColorObject.IsActive` 门控，万能方块常态可搬。
+- 玩家链路：输入驱动只读 `F` 交互、`Q/E` 放下并把命令交给 `PlayerController`；玩家按默认 1×1 占格和上下左右紧邻格维护拾取队列，按 `F` 固定首项，冻结 0.1 秒后目标关闭 Collider、置顶并 DOTween 跟随玩家头顶。
+- 携带约束：携带期间只允许移动和冲刺；`Q/E` 只检查玩家占格方向的紧邻格，非法落点保持携带；物体放下动画结束后恢复碰撞和控制。
+- 重置：可搬运物记录拿起前的位置；携带中按“复活/重置搬运”或玩家死亡时，目标 DOTween 回到原位，完成后恢复 Collider、取消携带并释放控制。`Respawn` 的显示名改为“复活/重置搬运”。
+- 提示：携带后通过 `SubtitleManager` 持续显示“按下 左/右放下键 放在自身左/右侧；按 复活/重置键 重置搬运方块”，键名从当前输入映射实时读取。非法位置等其它提示仍留待字幕管理器接入。
+- 输入资产：`Interact` 默认从 `E` 改为 `F`；新增 `DropLeft=Q`、`DropRight=E`，均固定点击；旧 `Carry` 保留枚举兼容但从按键映射显示中隐藏。
+- 接口：搬运目标只依赖 `IPlayerCarryHost`，不直接依赖 `PlayerController`；`CarryableFeature` 与 `CarryTargetMotion` 已挂到 `Red_Battery`、`Universal_Block` 预制体。
+- 验证：使用 Unity 6000.3.12f1 响应文件完成 Runtime、InputAbstraction、InputRebinding、Editor 与测试程序集静态编译，均 0 错误；`git diff --check` 通过。Unity PlayMode、实际鼠标/键盘输入、DOTween 视觉和预制体导入仍需本机复测；当前未提交。
+
 ## ESC 暂停界面雏形
 
 - 日期：2026-10-10；负责人：Codex；分支：`ESC页面雏形`。

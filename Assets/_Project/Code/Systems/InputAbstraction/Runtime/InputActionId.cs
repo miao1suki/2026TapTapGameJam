@@ -22,6 +22,8 @@ namespace Project.InputAbstraction
         PointerSecondary = 13,
         Carry = 14,
         Respawn = 15,
+        DropLeft = 16,
+        DropRight = 17,
     }
 
     public enum InputActionTrigger

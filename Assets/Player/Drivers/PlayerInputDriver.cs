@@ -1,5 +1,7 @@
 using System;
 using Project.InputAbstraction;
+using Project.Subtitles;
+using TMPro;
 using UnityEngine;
 
 namespace Project.Player
@@ -14,8 +16,11 @@ namespace Project.Player
         [SerializeField]
         private PlayerActionBinding[] actionBindings =
             Array.Empty<PlayerActionBinding>();
+        [SerializeField] private TMP_FontAsset carryHintFont;
 
         private PlayerController player;
+        private SubtitleStyle carryHintStyle;
+        private bool carryHintVisible;
 
         private void Awake()
         {
@@ -32,6 +37,7 @@ namespace Project.Player
             if (player != null)
             {
                 player.ClearBufferedInput();
+                HideCarryHint();
             }
         }
 
@@ -53,10 +59,13 @@ namespace Project.Player
             }
 
             player = target;
+            UpdateCarryHint(target);
+            bool resetTriggered =
+                GameInput.WasTriggeredThisFrame(
+                    InputActionId.Respawn);
             if (target.IsDead)
             {
-                if (GameInput.WasTriggeredThisFrame(
-                        InputActionId.Respawn))
+                if (resetTriggered)
                 {
                     target.RequestRespawn();
                 }
@@ -66,11 +75,20 @@ namespace Project.Player
                 return;
             }
 
-            if (target.IsPointerDragActive)
+            bool carryInteractionConsumed =
+                target.UpdateCarryInput(
+                    GameInput.WasTriggeredThisFrame(
+                        InputActionId.Interact),
+                    GameInput.WasTriggeredThisFrame(
+                        InputActionId.DropLeft),
+                    GameInput.WasTriggeredThisFrame(
+                        InputActionId.DropRight),
+                    resetTriggered);
+
+            if (target.IsCarryPreparing ||
+                target.IsCarryDropAnimating ||
+                target.IsCarryResetAnimating)
             {
-                target.UpdatePointerDrag(
-                    GameInput.PointerPosition,
-                    Camera.main);
                 target.ClearBufferedInput();
                 target.SetJumpHeld(false);
                 return;
@@ -83,22 +101,20 @@ namespace Project.Player
                 return;
             }
 
-            target.RefreshInteractionTarget();
-            UpdateInteraction(target);
-            target.UpdateCarry(
-                GameInput.IsPressed(InputActionId.Carry),
-                GameInput.WasTriggeredThisFrame(
-                    InputActionId.Carry),
-                GameInput.PointerPosition,
-                Camera.main);
-            if (target.IsPointerDragActive)
+            if (target.IsCarrying)
             {
-                target.UpdatePointerDrag(
-                    GameInput.PointerPosition,
-                    Camera.main);
-                target.ClearBufferedInput();
+                target.SetMoveInput(
+                    GameInput.ReadVector2(InputActionId.Move));
+                target.SetSprintInput(
+                    GameInput.IsPressed(InputActionId.Sprint));
                 target.SetJumpHeld(false);
                 return;
+            }
+
+            target.RefreshInteractionTarget();
+            if (!carryInteractionConsumed)
+            {
+                UpdateInteraction(target);
             }
 
             UpdateColorWheel(target);
@@ -139,7 +155,7 @@ namespace Project.Player
                 interactHeld,
                 GameInput.WasTriggeredThisFrame(
                     InputActionId.Interact),
-                HasActionBinding(InputActionId.Interact));
+                false);
         }
 
         private void UpdateColorWheel(PlayerController target)
@@ -181,21 +197,68 @@ namespace Project.Player
             }
         }
 
-        private bool HasActionBinding(InputActionId id)
+        private void UpdateCarryHint(PlayerController target)
         {
-            for (int index = 0;
-                 index < actionBindings.Length;
-                 index++)
+            bool shouldShow =
+                target.IsCarrying &&
+                !target.IsCarryResetAnimating;
+            if (shouldShow == carryHintVisible)
             {
-                PlayerActionBinding binding = actionBindings[index];
-                if (binding.inputAction == id &&
-                    binding.action != null)
-                {
-                    return true;
-                }
+                return;
             }
 
-            return false;
+            carryHintVisible = shouldShow;
+            ISubtitleService subtitles =
+                SubtitleServiceRegistry.Current;
+            if (subtitles == null)
+            {
+                return;
+            }
+
+            if (!shouldShow)
+            {
+                subtitles.Hide(SubtitleLayer.Bottom);
+                return;
+            }
+
+            carryHintStyle ??= new SubtitleStyle
+            {
+                font = carryHintFont,
+                fontSize = 42f,
+                anchor = SubtitleAnchor.Bottom,
+                normalizedX = .5f,
+                normalizedY = .12f,
+                holdDuration = 999999f,
+                inAnimation = SubtitleAnimation.Fade,
+                outAnimation = SubtitleAnimation.Fade,
+                inDuration = .15f,
+                outDuration = .15f
+            };
+            string dropLeft =
+                InputBindingDisplayUtility.GetPrimaryDisplayString(
+                    InputActionId.DropLeft);
+            string dropRight =
+                InputBindingDisplayUtility.GetPrimaryDisplayString(
+                    InputActionId.DropRight);
+            string reset =
+                InputBindingDisplayUtility.GetPrimaryDisplayString(
+                    InputActionId.Respawn);
+            subtitles.ShowBottom(
+                $"按下 {dropLeft}/{dropRight} 放在自身左/右侧\n" +
+                $"按 {reset} 重置搬运方块",
+                carryHintStyle);
+        }
+
+        private void HideCarryHint()
+        {
+            if (!carryHintVisible)
+            {
+                return;
+            }
+
+            carryHintVisible = false;
+            SubtitleServiceRegistry.Current?.Hide(
+                SubtitleLayer.Bottom);
         }
 
     }

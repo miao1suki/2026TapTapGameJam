@@ -127,7 +127,7 @@ namespace Project.InputAbstraction.Tests
                 Is.EqualTo(2));
             Assert.That(
                 controller.GetComponentsInChildren<VirtualInputButton>(true).Length,
-                Is.EqualTo(2));
+                Is.EqualTo(4));
             Assert.That(Object.FindFirstObjectByType<InputSystemUIInputModule>(), Is.Not.Null);
             StandaloneInputModule legacyModule =
                 existingEventSystem.GetComponent<StandaloneInputModule>();

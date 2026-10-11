@@ -1482,6 +1482,10 @@ namespace Project.InputRebinding.Editor
                 case InputActionId.Jump:
                     return "空格";
                 case InputActionId.Interact:
+                    return "F";
+                case InputActionId.DropLeft:
+                    return "Q";
+                case InputActionId.DropRight:
                     return "E";
                 case InputActionId.Cancel:
                 case InputActionId.Pause:

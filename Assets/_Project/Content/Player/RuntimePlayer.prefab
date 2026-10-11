@@ -219,6 +219,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerInputDriver
   actionBindings: []
+  carryHintFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
   cameraModeController: {fileID: 0}
   cameraModeTransitionDuration: 0.2
 --- !u!114 &600000002
