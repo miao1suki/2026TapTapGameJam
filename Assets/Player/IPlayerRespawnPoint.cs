@@ -15,6 +15,23 @@ namespace Project.Player
     {
         private static readonly List<IPlayerRespawnPoint> Points =
             new List<IPlayerRespawnPoint>();
+        private static readonly Dictionary<PlayerController, IPlayerRespawnPoint> Bound =
+            new Dictionary<PlayerController, IPlayerRespawnPoint>();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRegistry() { Points.Clear(); Bound.Clear(); }
+
+        public static void Bind(PlayerController player, IPlayerRespawnPoint point)
+        {
+            if (player != null && point != null && point.IsRespawnPointAvailable) Bound[player] = point;
+        }
+
+        public static bool TryFindPreferred(PlayerController player, Vector3 origin, out IPlayerRespawnPoint point)
+        {
+            if (player != null && Bound.TryGetValue(player, out point) &&
+                (!(point is Object obj) || obj != null) && point.IsRespawnPointAvailable) return true;
+            return TryFindPreferred(origin, out point);
+        }
 
         public static void Register(IPlayerRespawnPoint point)
         {

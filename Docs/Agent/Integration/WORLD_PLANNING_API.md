@@ -1,5 +1,7 @@
 # 世界图与装配编辑接入
 
+区域生命周期：增量/全量应用均写入 RoomLifecycleManager、稳定区域 ID 及 RoomResetObject；详见 [ROOM_LIFECYCLE_API.md](ROOM_LIFECYCLE_API.md)。MVMap v1 布局可导入为新存档，保留来源 ID/颜色/备注和不连通片，不转换灰盒或锁规则。已应用规划 JSON 嵌入 Scene 用于首次回读。
+
 模块：`Assets/_Project/Development/LevelEditor/Orpheus0829/PlanningEditorPrototype/Editor`，仅 Editor。
 本模块不控制运行时房间切换、颜色重置或加载规则。
 
@@ -13,7 +15,7 @@
 
 ## 坐标
 
-`strideX = worldBlockCellWidth`，`strideY = worldBlockCellHeight`。房间和通道统一以占格包围盒的左上格乘步长作为装配原点；局部物体矩形加原点得到装配矩形。
+世界、房间、装配统一以房间图的单元格为 1 格；规范化后 `strideX = worldBlockCellWidth = 1`、`strideY = worldBlockCellHeight = 1`。旧步长字段仅用于存档兼容，不再提供修改比例的 UI。房间和通道以世界占格包围盒左上格作为装配原点；局部物体矩形加原点得到装配矩形。
 归属按装配单元格除步长后向下取整查询世界格，负坐标同样生效；不能把带洞房间的包围盒全部视为可放置范围。
 `PlanningWorldUtility.TryAssemblyOwner`、`PlanningLayoutUtility.GetAssemblyBoxRect` 是共用查询入口。独立通道的 `GetConnectorAssemblyPath` 仅返回兼容生成锚点，不生成隐式地板。
 
@@ -33,7 +35,9 @@ Scene 子容器采用 `显示名 [稳定 ID]`，自动改名后按 ID 匹配已�
 
 世界图右侧创建与编辑，左侧只列出房间、通道和区域。装配左侧定位必须使用装配坐标，不复用世界坐标；模式切换不可让世界 Pan 状态拦截详情/装配工具。
 `PlanningCanvas.World.cs` 管世界交互，`PlanningEditorWindow.World.cs` 管列表/区域配置/场景删除，`PlanningWorldUtility.cs` 管数据运算。绘制回调不能增加/删除 UI 元素；注释标签在调度回调更新。
-旧通道迁移仅一次，去除重叠世界占格并重锚已有物体，不重建默认通道线。旧端口字段保留作存档兼容，UI 不再展示无效的线宽配置。固定步长可能改变旧地图的装配间距，升级先另存并检查预览，不自动改写已保存场景。
+`FromPersistentJson`/`Normalize` 按旧步长展开房间/通道占格和区域规划、换算世界门/钥匙标记，再固定步长为 1。先在旧步长下完成旧通道兼容处理，再展开；物体局部矩形、合并原始片段、资产引用、出生点局部坐标和装配补丁不缩放，房间/物体 ID 保留。再次规范化不重复展开。未保存的新文档默认 1；没有步长字段的历史 JSON 按旧默认 16 处理。读取只转换内存副本，首次覆盖旧文件生成 `.before-unified-grid.bak`，场景作用域 EditorPrefs 的原 JSON 保留在 `.BeforeUnifiedGrid` 键中。升级先另存并检查，不自动改写 Scene。
+
+`PaintWorldArea` 在松开指针时一次提交矩形创建/扩展，跳过其他所有者占格并验证结果连通；拒绝操作不留半笔数据。新增房间手势不走旧的按下立即创建单格路径。世界缩小时用连续行段绘制，连接检测使用占格哈希，避免细格展开后产生平方级查询。
 
 ## 验证
 
@@ -44,4 +48,4 @@ Scene 子容器采用 `显示名 [稳定 ID]`，自动改名后按 ID 匹配已�
 - Unity 菜单：`Tools/2026TapTap/关卡编辑器/验证世界图与装配编辑`；隔离内存数据，不生成 Scene。
 - 交互验收：视图定位、世界/装配放置擦除、多选/移动、区域配色与文本、删除后的自定义撤回、自动同步反馈循环；关闭重开及脚本重编译。
 
-本轮静态编译与独立数据断言通过；Unity 菜单和实际窗口交互尚未执行，不把静态验证当作界面已验收。
+统一网格验证入口：`Tools/2026TapTap/关卡编辑器/验证统一网格与旧存档`。Unity 6000.3.12f1 隔离项目验证旧默认地图及本地存档的装配矩形、负坐标、非正方形步长、出生点、重复读取、矩形创建/扩展/擦除事务和旧世界/装配测试。实际窗口拖拽与策划完整场景仍需人工验收；不得把数据断言当作 UI 已验收。

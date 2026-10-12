@@ -92,7 +92,8 @@ namespace Project.ColorBlocks
 
         public void ResetForRoom()
         {
-            SetActive(false);
+            SetActive(ColorRuntimeService.Existing != null &&
+                      ColorRuntimeService.Existing.IsUnlocked(baseColorTypeId));
         }
 
         public void Configure(string colorId, Renderer renderer)

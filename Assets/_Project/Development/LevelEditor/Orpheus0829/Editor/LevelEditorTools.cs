@@ -358,6 +358,7 @@ namespace Project.LevelEditor.Editor
             {
                 EnsureEntryIds(palette);
                 EnsurePropEntryIds(palette);
+                EnsureRespawnEntry(palette);
                 return palette;
             }
 
@@ -373,6 +374,7 @@ namespace Project.LevelEditor.Editor
             palette = ScriptableObject.CreateInstance<LevelEditorPalette>();
             AssetDatabase.CreateAsset(palette, PalettePath);
             AddDefaultEntries(palette);
+            EnsureRespawnEntry(palette);
             EditorUtility.SetDirty(palette);
             AssetDatabase.SaveAssets();
             return palette;
@@ -524,6 +526,15 @@ namespace Project.LevelEditor.Editor
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (prefab != null) AddProp(palette, displayName, prefab);
             else Debug.LogError($"关卡道具栏目缺少颜色钥匙预制体：{path}");
+        }
+
+        private static void EnsureRespawnEntry(LevelEditorPalette palette)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ColorBlocks/Prefabs/Respawn_Block.prefab");
+            if (prefab == null) return;
+            foreach (var entry in palette.PropEntries) if (entry != null && entry.Prefab == prefab) return;
+            var point = new LevelEditorPropEntry(); point.Configure("重生点", prefab);
+            palette.AddProp(point); EditorUtility.SetDirty(palette); AssetDatabase.SaveAssetIfDirty(palette);
         }
 
         private static void EnsureEntryIds(LevelEditorPalette palette)

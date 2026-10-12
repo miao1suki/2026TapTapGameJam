@@ -75,7 +75,12 @@ namespace PlanningEditorPrototype
         internal static void RefreshConnectors(PlanningDocument doc)
         {
             var occupied = new HashSet<Vector2Int>();
-            foreach (var room in doc.rooms) if (!room.isConnector) foreach (var cell in room.cells) occupied.Add(new Vector2Int(cell.x, cell.y));
+            var roomByCell = new Dictionary<Vector2Int, string>();
+            foreach (var room in doc.rooms) if (!room.isConnector) foreach (var cell in room.cells)
+            {
+                var position = new Vector2Int(cell.x, cell.y);
+                occupied.Add(position); roomByCell[position] = room.id;
+            }
             var names = new Dictionary<string, int>();
             foreach (var connector in doc.rooms)
             {
@@ -109,14 +114,17 @@ namespace PlanningEditorPrototype
                 connector.connectedRoomIds ??= new List<string>();
                 connector.connectedRoomIds.Clear();
                 var labels = new List<string>();
+                var adjacentIds = new HashSet<string>();
+                foreach (var cell in connector.cells)
+                {
+                    if (roomByCell.TryGetValue(new Vector2Int(cell.x - 1, cell.y), out string left)) adjacentIds.Add(left);
+                    if (roomByCell.TryGetValue(new Vector2Int(cell.x + 1, cell.y), out string right)) adjacentIds.Add(right);
+                    if (roomByCell.TryGetValue(new Vector2Int(cell.x, cell.y - 1), out string top)) adjacentIds.Add(top);
+                    if (roomByCell.TryGetValue(new Vector2Int(cell.x, cell.y + 1), out string bottom)) adjacentIds.Add(bottom);
+                }
                 foreach (var room in doc.rooms)
                 {
-                    if (room.isConnector) continue;
-                    bool touches = false;
-                    foreach (var cell in connector.cells)
-                        if (Contains(room, cell.x - 1, cell.y) || Contains(room, cell.x + 1, cell.y) ||
-                            Contains(room, cell.x, cell.y - 1) || Contains(room, cell.x, cell.y + 1)) { touches = true; break; }
-                    if (!touches) continue;
+                    if (room.isConnector || !adjacentIds.Contains(room.id)) continue;
                     connector.connectedRoomIds.Add(room.id); labels.Add(room.name);
                 }
                 connector.fromRoomId = labels.Count > 0 ? connector.connectedRoomIds[0] : null;

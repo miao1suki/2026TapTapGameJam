@@ -5,6 +5,8 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 # 颜色大洗牌玩法与组件规范
 
+> 2026-10-12 区域生命周期定稿：Rooms/RoomLifecycleManager 按世界图实际占格管理房间/通道。离开或死亡/R重生仅恢复所属物体的布置状态与位置，保留门、按钮、已拾取钥匙和全局解锁；已解锁物体恢复刚解锁的行为而非白色锁定。ResetForRoom 不清空颜色、不全局广播；仅 ResetProgress 明确清空进度。R 返回最近触碰的锚点，取消携带并恢复区域，不再只是回上一次拿起位置。此条覆盖下文旧房间清锁与搬运重置说明。接入必须读 Docs/Agent/Integration/ROOM_LIFECYCLE_API.md。
+
 > 水体透明渲染：水面/横截面使用 MeshRenderer，Shader Graph 使用 URP Unlit 透明子目标，不使用依赖 SpriteRenderer 翻转/颜色参数的 Sprite Lit。保留原水效节点，透明度只由水体原始 Alpha 与 `_ColorRevealOpacity` 相乘；生成水体注销先停用、移出宿主，再延迟销毁，防止同帧重新绑定误用旧实例。
 
 > 分类表现解耦：`HSVColorFadeManager.SetHsv(id, saturation, whiteAmount, seconds)` 只控制全屏 HSV，不读解锁、不操作材质或 Renderer。`ColorAppearanceManager.Play(id, unlocked, duration)` 统一编排基础方块、水、藤蔓的外观；按源材质/颜色组/基础或正式阶段共享运行时材质，物体只注册、注销，不逐帧写透明度。原生缓存不在组件构造时创建。遮罩只裁剪透明度零值，不再次将 Alpha 乘进 HSV，避免漏出原色。藤蔓在运行时用独立透明拖尾 Shader，保留源纹理/颜色，源资产不变。此条覆盖下文关于 HSV 负责交接、GetOpacity 和自动扫描 Renderer 的旧描述。
@@ -623,15 +625,15 @@ SteamPushReaction
 
 房间重置至少处理：
 
-- 清除当前房间解锁颜色。
-- 所有 `ColorObject` 恢复白色失效。
-- 所有 `ColorObjectFeatureHost` 停用功能。
+- 保留已解锁颜色，按世界图 ID 仅恢复相关区域。
+- 已解锁 ColorObject 保持激活、恢复基础行为与作者位置；未解锁仍失效。
+- BlockAbilityHost 清理临时能力并按当前解锁挂接，不全局停用。
 - 清除硬平台、蒸汽、藤蔓、喷流等生成物。
 - 清除玩家身上的水体、攀爬、击退和临时速度。
 - 清除万能方块转发状态。
 - 不清理永久存档数据，除非策划明确要求。
 
-钥匙是否重新生成、是否要求永久解锁，需要策划确认后单独实现，不要自行猜测。
+门、按钮、已拾取钥匙和锚点不恢复。解锁保留是本次运行的进度，不代表新增跨运行存档。
 
 ## 迁移顺序
 

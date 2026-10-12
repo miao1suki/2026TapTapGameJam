@@ -19,7 +19,7 @@ namespace PlanningEditorPrototype
     public sealed partial class PlanningCanvas : VisualElement
     {
         private const float BaseGridSize = 26f;
-        private const float MinimumZoom = .08f;
+        private const float MinimumZoom = .005f;
         private const float MaximumZoom = 3f;
 
         private Color backgroundColor = new Color(.11f, .13f, .17f);
@@ -353,10 +353,10 @@ namespace PlanningEditorPrototype
         public bool IsPlacingRoom => isPlacingRoom;
 
         private int WorldBlockCellWidth =>
-            document != null ? document.worldBlockCellWidth : 16;
+            document != null ? document.worldBlockCellWidth : 1;
 
         private int WorldBlockCellHeight =>
-            document != null ? document.worldBlockCellHeight : 16;
+            document != null ? document.worldBlockCellHeight : 1;
 
         public bool HasPlanningSelection()
         {
@@ -1079,7 +1079,7 @@ namespace PlanningEditorPrototype
             isPlacingRoom = true;
             MarkDirtyRepaint();
             StatusChanged?.Invoke(
-                "请点击世界图空白格设置新房间初始点，右键或 Esc 取消。");
+                "单击或拖拽框选空白格创建房间，右键或 Esc 取消。");
         }
 
         public void CancelRoomPlacement()
@@ -1745,23 +1745,11 @@ namespace PlanningEditorPrototype
                     (roomIndex * .137f) % 1f,
                     .48f,
                     .78f);
+                if (!string.IsNullOrEmpty(room.sourceColorHex) && ColorUtility.TryParseHtmlString(room.sourceColorHex, out Color importedColor))
+                    color = importedColor;
                 bool selected = worldSelection.Contains(room.id) || room.id == selectedRoomId;
                 color.a = selected ? .78f : .5f;
-                for (int cellIndex = 0;
-                     cellIndex < room.cells.Count;
-                     cellIndex++)
-                {
-                    PlanningCell cell = room.cells[cellIndex];
-                    Rect rect = CellRect(cell.x, cell.y);
-                    FillRect(painter, rect, color, 1f);
-                    StrokeRect(
-                        painter,
-                        rect,
-                        selected
-                            ? Color.white
-                            : new Color(0f, 0f, 0f, .55f),
-                        selected ? 2f : 1f);
-                }
+                DrawWorldOwner(painter, room, color, selected);
             }
 
             DrawConnectors(painter);
@@ -2552,17 +2540,9 @@ namespace PlanningEditorPrototype
             Focus();
             Vector2 position = evt.localPosition;
             UpdateHover(position);
-            if (isPlacingRoom)
+            if (isPlacingRoom && (evt.button == 1 || evt.button == 2))
             {
-                if (evt.button == 0)
-                {
-                    TryPlaceNewRoom(CellAt(position));
-                }
-                else if (evt.button == 1 || evt.button == 2)
-                {
-                    CancelRoomPlacement();
-                }
-
+                CancelRoomPlacement();
                 evt.StopPropagation();
                 return;
             }

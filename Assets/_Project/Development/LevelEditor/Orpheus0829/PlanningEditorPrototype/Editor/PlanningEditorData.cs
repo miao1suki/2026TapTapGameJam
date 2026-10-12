@@ -204,6 +204,10 @@ namespace PlanningEditorPrototype
     [Serializable]
     public sealed class PlanningRoom
     {
+        public string sourceColorHex;
+        public string sourceAreaId;
+        public string sourceNotes;
+        public bool allowDisconnectedCells;
         public string id;
         public string name;
         public bool isConnector;
@@ -295,8 +299,8 @@ namespace PlanningEditorPrototype
             "PlanningEditorPrototype/Editor/DefaultPlanningMap.json";
 
         public string name = "未命名地图";
-        public int worldBlockCellWidth = 16;
-        public int worldBlockCellHeight = 16;
+        public int worldBlockCellWidth = 1;
+        public int worldBlockCellHeight = 1;
         public List<PlanningRoom> rooms = new List<PlanningRoom>();
         public List<PlanningRegion> regions = new List<PlanningRegion>();
         public List<PlanningDoor> doors = new List<PlanningDoor>();
@@ -324,7 +328,8 @@ namespace PlanningEditorPrototype
                 return embedded;
             }
 
-            var document = new PlanningDocument();
+            // The fallback showcase was authored in the legacy coarse coordinate system.
+            var document = new PlanningDocument { worldBlockCellWidth = 16, worldBlockCellHeight = 16 };
             PlanningRoom start = AddRoom(
                 document,
                 "R1 道具大厅",
@@ -374,6 +379,7 @@ namespace PlanningEditorPrototype
                 finalRoom);
             document.playerStartRoomId = start.id;
             document.playerStartLocal = new Vector2(2.5f, 28f);
+            document.Normalize();
             return document;
         }
 
@@ -1410,11 +1416,42 @@ namespace PlanningEditorPrototype
             locks ??= new List<PlanningLock>();
             assemblyPatches ??= new List<PlanningBox>();
             RefreshConnectorPaths();
+            UpgradeWorldGrid();
+        }
+
+        private void UpgradeWorldGrid()
+        {
+            int sx = worldBlockCellWidth, sy = worldBlockCellHeight;
+            if (sx == 1 && sy == 1) return;
+            // Expand ownership, not detail contents: assembly/world-space positions stay fixed.
+            // Legacy connector origins have already been normalized above at the old stride.
+            foreach (var room in rooms)
+            {
+                var expanded = new List<PlanningCell>();
+                var seen = new HashSet<Vector2Int>();
+                foreach (var cell in room.cells)
+                    for (int y = 0; y < sy; y++) for (int x = 0; x < sx; x++)
+                    {
+                        var p = new Vector2Int(checked(cell.x * sx + x), checked(cell.y * sy + y));
+                        if (seen.Add(p)) expanded.Add(new PlanningCell(p.x, p.y));
+                    }
+                room.cells = expanded;
+            }
+            foreach (var door in doors) { door.x = checked(door.x * sx); door.y = checked(door.y * sy); }
+            foreach (var key in keys) { key.x = checked(key.x * sx); key.y = checked(key.y * sy); }
+            foreach (var region in regions)
+            {
+                region.x = checked(region.x * sx); region.y = checked(region.y * sy);
+                region.width = checked(region.width * sx); region.height = checked(region.height * sy);
+            }
+            worldBlockCellWidth = worldBlockCellHeight = 1;
+            RefreshConnectorPaths();
         }
 
         public string ToPersistentJson(bool prettyPrint = false)
         {
             var copy = JsonUtility.FromJson<PlanningDocument>(JsonUtility.ToJson(this));
+            copy.Normalize();
             foreach (var room in copy.rooms)
                 for (int i = 0; i < room.boxes.Count; i++) room.boxes[i] = room.boxes[i].PersistentClone();
             for (int i = 0; i < copy.assemblyPatches.Count; i++)
@@ -1428,7 +1465,13 @@ namespace PlanningEditorPrototype
             // in this editor session. New asset IDs resolve through GlobalObjectId.
             json = System.Text.RegularExpressions.Regex.Replace(json,
                 "\"instanceID\"\\s*:\\s*-?\\d+", "\"instanceID\":0");
-            return JsonUtility.FromJson<PlanningDocument>(json);
+            var document = JsonUtility.FromJson<PlanningDocument>(json);
+            if (document == null) return null;
+            // Files predating explicit stride fields used the legacy 16-detail-cell default.
+            if (!json.Contains("\"worldBlockCellWidth\"")) document.worldBlockCellWidth = 16;
+            if (!json.Contains("\"worldBlockCellHeight\"")) document.worldBlockCellHeight = 16;
+            document.Normalize();
+            return document;
         }
 
         public void RefreshConnectorPaths()

@@ -27,6 +27,14 @@ namespace Project.Items
 
         public bool CollectionRequested => collectionRequested;
         public bool CollectionFinished => collectionFinished;
+        public void CancelAttractionForRoomReset()
+        {
+            if (collectionRequested || collectionFinished) return;
+            StopItemAnimations();
+            attractionRequested = attractionFinished = false;
+            CollectionActor = null;
+            ResetItemState();
+        }
         public bool AttractionRequested => attractionRequested;
         public bool AttractionFinished => attractionFinished;
         public bool IsAttracting =>

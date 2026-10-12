@@ -16,11 +16,11 @@ namespace Project.BlockFeatures.Editor
             VisualElement root = ProjectInspectorUtility.CreateRoot(
                 serializedObject);
             root.Add(ProjectInspectorUtility.CreateTitle(
-                "重生锚"));
+                "重生点"));
             root.Add(ProjectInspectorUtility.CreateScriptField(
                 serializedObject));
             root.Add(ProjectInspectorUtility.CreateHelp(
-                "玩家进入激活范围后会永久激活该锚点。死亡时使用当前已激活链表中序号最大的锚点，并优先选择安全落地点。"));
+                "进入虚线范围后设为当前重生点。再次进入已激活的点也会更新绑定；死亡或重生操作返回最近触碰的点。"));
 
             Foldout activation =
                 ProjectInspectorUtility.CreateFoldout(
@@ -52,6 +52,7 @@ namespace Project.BlockFeatures.Editor
             });
             activation.Add(playerTagField);
             root.Add(activation);
+            root.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "regionId", "所属房间 / 通道", "关卡编辑器应用到场景时自动绑定区域 ID。"));
 
             Foldout respawn =
                 ProjectInspectorUtility.CreateFoldout(
@@ -101,7 +102,7 @@ namespace Project.BlockFeatures.Editor
             Foldout chain =
                 ProjectInspectorUtility.CreateFoldout(
                     "重生点链表",
-                    true);
+                    false);
             var openChainButton = new Button(() =>
                 RespawnAnchorChainWindow.Open(
                     (RespawnAnchorFeature)target))

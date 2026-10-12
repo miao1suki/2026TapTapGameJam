@@ -200,6 +200,15 @@ namespace Project.BlockFeatures
             }
         }
 
+        public void ResetForRoom()
+        {
+            RefreshFeatureBuffer();
+            foreach (BlockFeature feature in features)
+                if (feature != null && feature.IsAttached && !(feature is ButtonLockFeature)) feature.ResetForRoom();
+            if (colorObject == null) runtime?.RefreshFeatureSet(true);
+            else RefreshActivation();
+        }
+
         private static bool ValidateProfile(
             List<BlockFeature> profileFeatures,
             out string message)

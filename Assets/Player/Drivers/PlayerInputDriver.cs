@@ -94,7 +94,7 @@ namespace Project.Player
                     InputActionId.Respawn);
             if (target.IsDead)
             {
-                if (resetTriggered)
+                if (resetTriggered && Time.timeScale > 0f)
                 {
                     target.RequestRespawn();
                     HideRespawnHint();
@@ -105,6 +105,14 @@ namespace Project.Player
                 return;
             }
 
+            if (resetTriggered && Time.timeScale > 0f &&
+                (!target.IsControlLocked || target.IsCarryPreparing || target.IsCarryDropAnimating || target.IsCarryResetAnimating))
+            {
+                target.RequestRespawn();
+                target.ClearBufferedInput();
+                target.SetJumpHeld(false);
+                return;
+            }
             bool carryInteractionConsumed =
                 target.UpdateCarryInput(
                     GameInput.WasTriggeredThisFrame(
@@ -113,7 +121,7 @@ namespace Project.Player
                         InputActionId.DropLeft),
                     GameInput.WasTriggeredThisFrame(
                         InputActionId.DropRight),
-                    resetTriggered);
+                    false);
 
             if (target.IsCarryPreparing ||
                 target.IsCarryDropAnimating ||
@@ -309,7 +317,7 @@ namespace Project.Player
         {
             if (InputPromptUtility.UseActionLabels)
             {
-                return "按下放置左侧以放置方块，按下放置右侧以放置方块，按下复活以重置方块";
+                return "按下放置左侧或放置右侧以放置方块，按下复活以返回重生点";
             }
 
             return
@@ -317,7 +325,7 @@ namespace Project.Player
                 $"{InputPromptUtility.FormatKey(InputActionId.DropRight)}" +
                 "将方块放置在左/右侧，" +
                 $"按{InputPromptUtility.FormatKey(InputActionId.Respawn)}" +
-                "重置方块";
+                "返回重生点";
         }
 
         private void HideCarryHint()

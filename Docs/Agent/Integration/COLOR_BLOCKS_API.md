@@ -185,7 +185,7 @@ bool ApplyColor(string colorId, GameObject actor);
 
 ## 房间重置
 
-`ResetForRoom()` 清除解锁集合，使所有 `IColorObject` 失效，并触发 `EventMgr.OnRoomColorReset`。固定物体自身只切回白色；运行时生成物由各自拥有者监听重置并清理。
+`ResetForRoom()` 只请求当前世界图区域重置，保留 unlocked，不全局触发 OnRoomColorReset。ResetProgress 才明确清空进度并发历史全局事件。接入见 [ROOM_LIFECYCLE_API.md](ROOM_LIFECYCLE_API.md)。
 
 ## 删除边界
 

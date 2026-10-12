@@ -179,6 +179,17 @@ namespace PlanningEditorPrototype
             string path,
             PlanningDocument document)
         {
+            if (File.Exists(path))
+            {
+                string originalJson = File.ReadAllText(path);
+                var original = JsonUtility.FromJson<PlanningDocument>(originalJson);
+                if (original != null && (original.worldBlockCellWidth > 1 || original.worldBlockCellHeight > 1 ||
+                    !originalJson.Contains("\"worldBlockCellWidth\"")))
+                {
+                    string backup = path + ".before-unified-grid.bak";
+                    if (!File.Exists(backup)) File.Copy(path, backup);
+                }
+            }
             File.WriteAllText(
                 path,
                 document.ToPersistentJson(true));

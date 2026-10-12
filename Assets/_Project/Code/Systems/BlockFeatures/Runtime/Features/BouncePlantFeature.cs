@@ -190,7 +190,7 @@ namespace Project.BlockFeatures
                 return false;
             }
 
-            Destroy(gameObject);
+            if (!Project.Rooms.RoomResetObject.HideForReaction(gameObject)) Destroy(gameObject);
             return true;
         }
 

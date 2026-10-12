@@ -95,8 +95,8 @@ namespace PlanningEditorPrototype
                 MapRootName,
                 rooms,
                 new List<PlanningBox>(),
-                16,
-                16,
+                1,
+                1,
                 false,
                 false,
                 out message);
@@ -119,7 +119,7 @@ namespace PlanningEditorPrototype
                 return false;
             }
 
-            return TryBuild(
+            bool success = TryBuild(
                 document.name,
                 MapRootName,
                 document.rooms,
@@ -129,6 +129,8 @@ namespace PlanningEditorPrototype
                 true,
                 false,
                 out message);
+            if (success) StorePlanningDocument(document);
+            return success;
         }
 
         internal static bool TryApplyDocument(
@@ -142,7 +144,7 @@ namespace PlanningEditorPrototype
             }
 
             document.RefreshConnectorPaths();
-            return TryBuild(
+            bool success = TryBuild(
                 document.name,
                 StagingRootName,
                 document.rooms,
@@ -152,6 +154,16 @@ namespace PlanningEditorPrototype
                 true,
                 true,
                 out message);
+            if (success) StorePlanningDocument(document);
+            return success;
+        }
+
+        private static void StorePlanningDocument(PlanningDocument document)
+        {
+            var manager = FindGeneratedRoot(MapRootName)?.GetComponent<Project.Rooms.RoomLifecycleManager>();
+            if (manager == null) return;
+            manager.Configure(new List<Project.Rooms.RoomRegion>(manager.Regions), CellSize, document.ToPersistentJson());
+            EditorUtility.SetDirty(manager);
         }
 
         internal static GameObject FindRoomContainer(PlanningRoom room)
@@ -494,6 +506,7 @@ namespace PlanningEditorPrototype
                     out int preserved);
                 PersistVineLinks(FindGeneratedRoot(MapRootName)?.transform);
                 PlanningDoorUtility.BindSceneDoors(FindGeneratedRoot(MapRootName)?.transform, rooms, assemblyPatches);
+                ConfigureRoomLifecycle(FindGeneratedRoot(MapRootName), rooms, worldBlockCellWidth, worldBlockCellHeight);
                 if(!SuppressSceneUndo) Undo.CollapseUndoOperations(undoGroup);
                 EditorSceneManager.MarkSceneDirty(scene);
                 SceneView.RepaintAll();
@@ -511,6 +524,7 @@ namespace PlanningEditorPrototype
             root.name = rootName;
             PersistVineLinks(root.transform);
             PlanningDoorUtility.BindSceneDoors(root.transform, rooms, assemblyPatches);
+            ConfigureRoomLifecycle(root, rooms, worldBlockCellWidth, worldBlockCellHeight);
             RegisterSceneCreation(root, "完成规划场景重建");
 
             if(!SuppressSceneUndo) Undo.CollapseUndoOperations(undoGroup);
@@ -533,6 +547,39 @@ namespace PlanningEditorPrototype
             }
 
             return true;
+        }
+
+        private static void ConfigureRoomLifecycle(GameObject root, IReadOnlyList<PlanningRoom> rooms, int strideX, int strideY)
+        {
+            if (root == null) return;
+            var regions = new List<Project.Rooms.RoomRegion>();
+            foreach (var room in rooms)
+            {
+                var region = new Project.Rooms.RoomRegion { id = room.id, label = room.name, corridor = room.isConnector };
+                foreach (var cell in room.cells)
+                    for (int x = 0; x < strideX; x++) for (int y = 0; y < strideY; y++)
+                        region.cells.Add(new Vector2Int(cell.x * strideX + x, cell.y * strideY + y));
+                regions.Add(region);
+                Transform container = FindOwnedContainer(root.transform, room);
+                if (container == null) continue;
+                foreach (var placed in container.GetComponentsInChildren<LevelEditorPlacedBlock>(true))
+                {
+                    var member = placed.GetComponent<Project.Rooms.RoomResetObject>() ?? placed.gameObject.AddComponent<Project.Rooms.RoomResetObject>();
+                    member.SetRegion(room.id);
+                    EditorUtility.SetDirty(member);
+                    var anchor = placed.GetComponent<Project.BlockFeatures.RespawnAnchorFeature>();
+                    if (anchor != null)
+                    {
+                        anchor.EnsureRuntimeAnchorId();
+                        anchor.SetRegion(room.id);
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(anchor);
+                        EditorUtility.SetDirty(anchor);
+                    }
+                }
+            }
+            var manager = root.GetComponent<Project.Rooms.RoomLifecycleManager>() ?? root.AddComponent<Project.Rooms.RoomLifecycleManager>();
+            manager.Configure(regions, CellSize, manager.PlanningJson);
+            EditorUtility.SetDirty(manager);
         }
 
         private static void ReconcileGeneratedRoots(

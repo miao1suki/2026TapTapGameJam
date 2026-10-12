@@ -32,11 +32,11 @@ namespace Project.Player.Editor
             root.Add(carryHint);
 
             HelpBox note = new HelpBox(
-                "本组件是默认玩家马夫；调色由 Tab 开关轮盘，" +
+                "调色由 Tab 开关轮盘，" +
                 "交互/拾取由 F 处理，Q/E 放下左手侧/右手侧，" +
                 "左键负责已选颜色的染色。" +
-                "“复活/重置搬运”默认键盘 R、手柄右摇杆按下，" +
-                "死亡时复活，携带中按下则让物体飞回原位。" +
+                "重生默认使用键盘 R、手柄右摇杆按下，" +
+                "存活或死亡均可返回最近触碰的重生点，并恢复相关区域物体。" +
                 "其他驱动可以调用同一套 PlayerController 命令。",
                 HelpBoxMessageType.Info);
             note.style.marginTop = 6;

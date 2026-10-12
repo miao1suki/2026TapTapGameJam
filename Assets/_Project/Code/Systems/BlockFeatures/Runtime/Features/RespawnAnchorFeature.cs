@@ -21,10 +21,13 @@ namespace Project.BlockFeatures
         private List<RespawnAnchorChainEntry> chainSnapshot =
             new List<RespawnAnchorChainEntry>();
 
+        [BlockParameter(Label = "复活高度（格）", Group = "复活设置", Order = 0)]
         [SerializeField, Min(0f)]
         private float respawnHeightBlocks = 1f;
+        [BlockParameter(Label = "安全查找半径（格）", Group = "复活设置", Order = 1)]
         [SerializeField, Min(0f)]
         private float respawnRadiusBlocks;
+        [BlockParameter(Label = "激活半径（格）", Group = "激活设置", Order = 0)]
         [SerializeField, Min(0f)]
         private float activationRadiusBlocks = .5f;
         [SerializeField] private string playerTag = "Player";
@@ -36,6 +39,10 @@ namespace Project.BlockFeatures
         private float activationAnimationDuration;
 
         private bool activated;
+        private bool playerInside;
+        [SerializeField] private string regionId;
+        public string RegionId => regionId;
+        public void SetRegion(string id) => regionId = id;
         private Coroutine activationRoutine;
         private static readonly Dictionary<string, GameObject>
             PlayerCache = new Dictionary<string, GameObject>(
@@ -194,10 +201,17 @@ namespace Project.BlockFeatures
 
         private void OnEnable()
         {
+            playerInside = false;
             EnsureRuntimeAnchorId();
             ResolveTargetRenderer();
             RespawnAnchorChainRuntime.Register(this);
             PlayerRespawnPointRegistry.Register(this);
+        }
+
+        private void Start()
+        {
+            var manager = Project.Rooms.RoomLifecycleManager.ForScene(gameObject.scene);
+            if (manager != null && string.IsNullOrEmpty(regionId)) regionId = manager.FindRegion(transform.position);
         }
 
         private void OnDisable()
@@ -234,7 +248,7 @@ namespace Project.BlockFeatures
                 ApplySortingOrder(player);
             }
 
-            if (activated || !hasPlayer)
+            if (!hasPlayer)
             {
                 return;
             }
@@ -248,11 +262,13 @@ namespace Project.BlockFeatures
             Vector2 playerPosition = new Vector2(
                 player.transform.position.x,
                 player.transform.position.y);
-            if ((playerPosition - anchorPosition).sqrMagnitude <=
-                radius * radius)
+            bool inside = (playerPosition - anchorPosition).sqrMagnitude <= radius * radius;
+            if (inside && !playerInside)
             {
                 RespawnAnchorChainRuntime.ActivateThrough(this);
+                PlayerRespawnPointRegistry.Bind(player.GetComponent<PlayerController>(), this);
             }
+            playerInside = inside;
         }
 
         private Renderer ResolveTargetRenderer()

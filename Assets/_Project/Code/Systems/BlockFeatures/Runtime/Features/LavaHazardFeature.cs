@@ -47,6 +47,7 @@ namespace Project.BlockFeatures
             }
 
             PlayerHealth health = player.GetComponent<PlayerHealth>();
+            if (health == null) { player.EnterDeath(); return; }
             if (health != null && !health.IsDead)
             {
                 health.TakeDamage(health.MaxHealth);
@@ -103,11 +104,11 @@ namespace Project.BlockFeatures
                 return false;
             }
 
-            Instantiate(
+            GameObject replacement = Instantiate(
                 blueReplacementPrefab,
                 transform.position,
                 transform.rotation);
-            Destroy(gameObject);
+            if (!Project.Rooms.RoomResetObject.HideForReaction(gameObject, replacement)) Destroy(gameObject);
             return true;
         }
 

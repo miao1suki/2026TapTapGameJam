@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project.ColorBlocks
 {
     /// <summary>
-    /// Owns room-scoped color unlock state and fixed color object activation.
+    /// Owns session color unlock progress and fixed color object activation.
     /// Gameplay visuals and reactions belong to object feature components.
     /// </summary>
     [DefaultExecutionOrder(-1000)]
@@ -173,6 +173,11 @@ namespace Project.ColorBlocks
 
         public void ResetForRoom()
         {
+            Project.Rooms.RoomLifecycleManager.ResetCurrentRooms();
+        }
+
+        public void ResetProgress()
+        {
             unlocked.Clear();
             foreach (IColorObject colorObject in
                      new List<IColorObject>(colorObjects))
@@ -182,11 +187,6 @@ namespace Project.ColorBlocks
 
             ColorAppearanceManager.Instance.ResetAll();
             EventMgr.RaiseRoomColorReset();
-        }
-
-        public void ResetProgress()
-        {
-            ResetForRoom();
         }
 
         internal void Register(IColorObject colorObject)

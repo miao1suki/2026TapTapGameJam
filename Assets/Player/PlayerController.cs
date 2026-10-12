@@ -2045,14 +2045,18 @@ namespace Project.Player
 
         public void RequestRespawn()
         {
-            if (!dead)
-            {
-                return;
-            }
-
-            ResetCarry();
+            if (!dead) deathPosition = transform.position;
+            PrepareForRoomReset();
+            runner?.Stop();
+            ClearDeathControlState();
+            Vector3 requestedPosition = initialRespawnPosition;
+            if (PlayerRespawnPointRegistry.TryFindPreferred(this, deathPosition, out IPlayerRespawnPoint boundPoint))
+                requestedPosition = boundPoint.RespawnPosition;
+            else if (respawnPoint != null) requestedPosition = respawnPoint.position;
+            Project.Rooms.RoomLifecycleManager.BeforeRespawn(this, requestedPosition);
             Vector3 targetPosition;
             if (PlayerRespawnPointRegistry.TryFindPreferred(
+                    this,
                     deathPosition,
                     out IPlayerRespawnPoint registeredPoint))
             {
@@ -2071,9 +2075,7 @@ namespace Project.Player
             else
             {
                 targetPosition = FindSafeRespawnPosition(
-                    FindRandomRespawnPosition(
-                        deathPosition,
-                        respawnRandomRadiusBlocks),
+                    initialRespawnPosition,
                     respawnRandomRadiusBlocks,
                     initialRespawnPosition);
             }
@@ -2083,6 +2085,8 @@ namespace Project.Player
                 motor.linearVelocity = Vector3.zero;
                 motor.angularVelocity = Vector3.zero;
             }
+            transform.position = targetPosition;
+            Physics.SyncTransforms();
 
             if (health != null)
             {
@@ -2271,13 +2275,20 @@ namespace Project.Player
             highestAirPosition = transform.position.y;
             invulnerableUntil = 0f;
             ReleaseHeldInteraction();
-            ResetCarry();
+            CancelCarryState();
             colorWheel?.CloseWheel();
             if (motor != null)
             {
                 motor.linearVelocity = Vector3.zero;
                 motor.angularVelocity = Vector3.zero;
             }
+        }
+
+        public void PrepareForRoomReset()
+        {
+            pendingPlatformDelta = Vector3.zero;
+            ReleaseHeldInteraction();
+            CancelCarryState();
         }
 
         public void SetControlLocked(bool locked)

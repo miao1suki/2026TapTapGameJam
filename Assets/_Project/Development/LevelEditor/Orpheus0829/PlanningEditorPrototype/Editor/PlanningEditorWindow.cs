@@ -117,10 +117,6 @@ namespace PlanningEditorPrototype
         private PlanningCanvas canvas;
         private Label currentSaveLabel;
         private ColorField canvasBackgroundField;
-        private IntegerField worldBlockWidthField;
-        private IntegerField worldBlockHeightField;
-        private Button worldBlockUnlockButton;
-        private Button worldBlockApplyButton;
         private ObjectField playerContextField;
         private Label contextStatusLabel;
         private VisualElement inspector;
@@ -227,7 +223,6 @@ namespace PlanningEditorPrototype
         private string savedDocumentSnapshot;
         private bool restoringPlanningDocument;
         private int lastPrunedPaletteRevision = -1;
-        private bool worldBlockSettingsUnlocked;
         private PlanningWorkspaceMode workspaceMode;
         private PlanningCanvasMode mode;
         private bool viewReady;
@@ -1165,66 +1160,11 @@ namespace PlanningEditorPrototype
             createRow.Add(TopButton("+ 新增通道", () => { canvas.BeginConnectorPlacement(); RefreshToolStyles(); }));
             rail.Add(createRow);
 
-            Foldout worldBlockFoldout = new Foldout
-            {
-                text = "世界图区块",
-                value = false
-            };
-            worldBlockFoldout.style.marginLeft = 6f;
-            worldBlockFoldout.style.marginRight = 6f;
-            worldBlockFoldout.style.marginBottom = 4f;
-            worldBlockFoldout.style.borderLeftWidth = 3f;
-            worldBlockFoldout.style.borderLeftColor =
-                new Color(1f, .62f, .38f);
-            worldBlockFoldout.RegisterValueChangedCallback(evt =>
-            {
-                if (!evt.newValue)
-                {
-                    LockWorldBlockSettings();
-                }
-            });
-
-            worldBlockWidthField = new IntegerField("区块宽")
-            {
-                value = document?.worldBlockCellWidth ?? 16,
-                isDelayed = true
-            };
-            worldBlockHeightField = new IntegerField("区块高")
-            {
-                value = document?.worldBlockCellHeight ?? 16,
-                isDelayed = true
-            };
-            worldBlockWidthField.SetEnabled(false);
-            worldBlockHeightField.SetEnabled(false);
-            worldBlockFoldout.Add(worldBlockWidthField);
-            worldBlockFoldout.Add(worldBlockHeightField);
-
-            Label worldBlockWarning = new Label(
-                "警告：修改后地图比例、边界和生成结果会重算。" +
-                "必须先解锁，再确认应用。");
-            worldBlockWarning.style.whiteSpace = WhiteSpace.Normal;
-            worldBlockWarning.style.color = new Color(1f, .62f, .38f);
-            worldBlockWarning.style.fontSize = 11f;
-            worldBlockWarning.style.marginLeft = 4f;
-            worldBlockWarning.style.marginRight = 4f;
-            worldBlockWarning.style.marginTop = 4f;
-            worldBlockFoldout.Add(worldBlockWarning);
-
-            VisualElement worldBlockActions = Row();
-            worldBlockUnlockButton = TopButton(
-                "解锁修改",
-                ToggleWorldBlockUnlock);
-            worldBlockApplyButton = TopButton(
-                "应用并重算",
-                ApplyWorldBlockSettings);
-            worldBlockApplyButton.SetEnabled(false);
-            worldBlockActions.Add(worldBlockUnlockButton);
-            worldBlockActions.Add(worldBlockApplyButton);
-            worldBlockActions.Add(TopButton(
-                "取消",
-                LockWorldBlockSettings));
-            worldBlockFoldout.Add(worldBlockActions);
-            rail.Add(worldBlockFoldout);
+            var gridInfo = new Label("统一网格 · 世界 / 房间 / 装配 1:1");
+            gridInfo.style.marginLeft = gridInfo.style.marginRight = 8f;
+            gridInfo.style.marginBottom = 8f;
+            gridInfo.tooltip = "各视图的一格均对应房间图的一格。拖拽框选创建房间或通道；擦除工具支持框选。";
+            rail.Add(gridInfo);
 
             rail.Add(SectionTitle("世界图内容"));
             canvasBackgroundField = new ColorField("画布背景")
@@ -1385,8 +1325,14 @@ namespace PlanningEditorPrototype
 
         private void LoadDocument()
         {
+            string embeddedJson = string.Empty;
+            foreach (GameObject root in SceneManager.GetActiveScene().GetRootGameObjects())
+            {
+                var source = root.GetComponent<Project.Rooms.RoomLifecycleManager>();
+                if (source != null && !string.IsNullOrWhiteSpace(source.PlanningJson)) { embeddedJson = source.PlanningJson; break; }
+            }
             string migrationKey = "2026TapTap.Planning.LegacyAssigned." + Hash128.Compute(Application.dataPath);
-            if (!EditorPrefs.HasKey(PreferenceKey) && !EditorPrefs.HasKey(migrationKey))
+            if (string.IsNullOrWhiteSpace(embeddedJson) && !EditorPrefs.HasKey(PreferenceKey) && !EditorPrefs.HasKey(migrationKey))
             {
                 // Assign the former global workspace once; never copy it into every scene.
                 EditorPrefs.SetString(PreferenceKey, EditorPrefs.GetString(LegacyDocumentPreferenceKey, string.Empty));
@@ -1394,6 +1340,7 @@ namespace PlanningEditorPrototype
                 EditorPrefs.SetString(migrationKey, scenePreferenceScope);
             }
             string json = EditorPrefs.GetString(PreferenceKey, string.Empty);
+            if (string.IsNullOrWhiteSpace(json)) json = embeddedJson;
             currentSavePath = EditorPrefs.GetString(
                 CurrentSavePreferenceKey,
                 string.Empty);
@@ -1410,6 +1357,8 @@ namespace PlanningEditorPrototype
             }
             else
             {
+                if (!EditorPrefs.HasKey(PreferenceKey + ".BeforeUnifiedGrid"))
+                    EditorPrefs.SetString(PreferenceKey + ".BeforeUnifiedGrid", json);
                 document = PlanningDocument.FromPersistentJson(json);
                 document ??= PlanningDocument.CreateDefault();
             }
@@ -1867,7 +1816,9 @@ namespace PlanningEditorPrototype
 
             try
             {
-                PlanningDocument imported = PlanningSaveStore.Read(path);
+                string input = File.ReadAllText(path);
+                PlanningDocument imported = PlanningMVMapImporter.IsMVMap(input)
+                    ? PlanningMVMapImporter.Read(input) : PlanningSaveStore.Read(path);
                 if (saveNameField != null &&
                     !string.IsNullOrWhiteSpace(saveNameField.value))
                 {
@@ -1884,7 +1835,9 @@ namespace PlanningEditorPrototype
                 saveNameField?.SetValueWithoutNotify(string.Empty);
                 saveOverlay.style.display = DisplayStyle.None;
                 statusLabel.text =
-                    $"已导入并保存为“{document.name}”。";
+                    PlanningMVMapImporter.IsMVMap(input)
+                        ? $"已导入“{document.name}”区域布局；不包含灰盒物体。"
+                        : $"已导入并保存为“{document.name}”。";
             }
             catch (System.Exception exception)
             {
@@ -1979,9 +1932,7 @@ namespace PlanningEditorPrototype
 
                 exported.name =
                     Path.GetFileNameWithoutExtension(path);
-                File.WriteAllText(
-                    path,
-                    exported.ToPersistentJson(true));
+                PlanningSaveStore.Save(path, exported);
                 saveOverlayStatus.text = "已导出：" + path;
             }
             catch (System.Exception exception)
@@ -2064,7 +2015,7 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            string key = ViewPreferenceKey + viewMode + ".";
+            string key = ViewPreferenceKey + viewMode + (viewMode == PlanningCanvasMode.World ? ".UnifiedGrid." : ".");
             EditorPrefs.SetFloat(key + "X", canvas.Pan.x);
             EditorPrefs.SetFloat(key + "Y", canvas.Pan.y);
             EditorPrefs.SetFloat(key + "Zoom", canvas.Zoom);
@@ -2075,7 +2026,7 @@ namespace PlanningEditorPrototype
 
         private bool RestoreCanvasView(PlanningCanvasMode viewMode)
         {
-            string key = ViewPreferenceKey + viewMode + ".";
+            string key = ViewPreferenceKey + viewMode + (viewMode == PlanningCanvasMode.World ? ".UnifiedGrid." : ".");
             if (canvas == null || !EditorPrefs.HasKey(key + "Zoom"))
             {
                 return false;
@@ -2506,19 +2457,6 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            if (!worldBlockSettingsUnlocked)
-            {
-                worldBlockWidthField?.SetValueWithoutNotify(
-                    document.worldBlockCellWidth);
-                worldBlockHeightField?.SetValueWithoutNotify(
-                    document.worldBlockCellHeight);
-            }
-            RefreshRoomList();
-            RefreshConnectorList();
-            RefreshRegionList();
-            RefreshInspector();
-            RefreshSelectedSceneReference();
-            RefreshToolStyles();
             if (statusLabel != null)
             {
                 statusLabel.text =
@@ -2531,98 +2469,6 @@ namespace PlanningEditorPrototype
             canvas.MarkDirtyRepaint();
         }
 
-        private void ToggleWorldBlockUnlock()
-        {
-            if (document == null)
-            {
-                return;
-            }
-
-            worldBlockSettingsUnlocked = !worldBlockSettingsUnlocked;
-            worldBlockWidthField?.SetEnabled(
-                worldBlockSettingsUnlocked);
-            worldBlockHeightField?.SetEnabled(
-                worldBlockSettingsUnlocked);
-            worldBlockUnlockButton.text =
-                worldBlockSettingsUnlocked ? "锁定" : "解锁修改";
-            worldBlockApplyButton?.SetEnabled(
-                worldBlockSettingsUnlocked);
-            statusLabel.text = worldBlockSettingsUnlocked
-                ? "已解锁世界图区块尺寸，请谨慎修改。"
-                : "世界图区块尺寸已锁定。";
-        }
-
-        private void LockWorldBlockSettings()
-        {
-            worldBlockSettingsUnlocked = false;
-            if (document != null)
-            {
-                worldBlockWidthField?.SetValueWithoutNotify(
-                    document.worldBlockCellWidth);
-                worldBlockHeightField?.SetValueWithoutNotify(
-                    document.worldBlockCellHeight);
-            }
-
-            worldBlockWidthField?.SetEnabled(false);
-            worldBlockHeightField?.SetEnabled(false);
-            worldBlockApplyButton?.SetEnabled(false);
-            if (worldBlockUnlockButton != null)
-            {
-                worldBlockUnlockButton.text = "解锁修改";
-            }
-        }
-
-        private void ApplyWorldBlockSettings()
-        {
-            if (document == null)
-            {
-                return;
-            }
-
-            if (!worldBlockSettingsUnlocked)
-            {
-                statusLabel.text = "请先解锁世界图区块尺寸。";
-                return;
-            }
-
-            int width = Mathf.Clamp(
-                worldBlockWidthField?.value ?? 16,
-                1,
-                64);
-            int height = Mathf.Clamp(
-                worldBlockHeightField?.value ?? 16,
-                1,
-                64);
-            if (width == document.worldBlockCellWidth &&
-                height == document.worldBlockCellHeight)
-            {
-                return;
-            }
-
-            if (!EditorUtility.DisplayDialog(
-                    "重算世界图区块尺寸",
-                    "修改区块尺寸会导致地图比例、房间边界、" +
-                    "通道边界和生成结果整体重算。" +
-                    "可能产生重大错误，确定继续？",
-                    "确认重算",
-                    "取消"))
-            {
-                worldBlockWidthField?.SetValueWithoutNotify(
-                    document.worldBlockCellWidth);
-                worldBlockHeightField?.SetValueWithoutNotify(
-                    document.worldBlockCellHeight);
-                return;
-            }
-
-            document.worldBlockCellWidth = width;
-            document.worldBlockCellHeight = height;
-            RecordPlanningChange();
-            SaveDocument();
-            RefreshAll();
-            statusLabel.text =
-                $"世界图区块已重算：{width} × {height}";
-            LockWorldBlockSettings();
-        }
 
         private void RefreshLevelContext()
         {

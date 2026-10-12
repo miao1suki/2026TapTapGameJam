@@ -28,7 +28,7 @@ namespace PlanningEditorPrototype
         {
             SelectRoom(null);
             SetMapTool(PlanningMapTool.Connector);
-            StatusChanged?.Invoke("在空白格绘制通道；选择已有通道后可继续扩展。");
+            StatusChanged?.Invoke("单击或拖拽框选空白格创建通道；选中通道后可继续扩展。");
         }
 
         public void SelectRegion(string id, bool focus = false, bool additive = false)
@@ -94,8 +94,7 @@ namespace PlanningEditorPrototype
             }
             else if (mapTool == PlanningMapTool.Paint || mapTool == PlanningMapTool.Connector)
             {
-                BeginDocumentBatch();
-                PaintWorldCell(cell, mapTool == PlanningMapTool.Connector);
+                // Commit once on release so a rectangle is one history/sync transaction.
                 lastPaintCell = cell;
             }
             else if (mapTool == PlanningMapTool.Door) AddDoor(cell);
@@ -110,12 +109,7 @@ namespace PlanningEditorPrototype
                 worldMoveDelta = cell - CellAt(dragStart);
                 return;
             }
-            if ((mapTool != PlanningMapTool.Paint && mapTool != PlanningMapTool.Connector) || cell == lastPaintCell) return;
-            // Manhattan interpolation prevents holes when the mouse crosses several cells per event.
-            var path = new List<PlanningCell>();
-            AppendConnectorPath(path, lastPaintCell, cell);
-            foreach (var point in path) PaintWorldCell(new Vector2Int(point.x, point.y), mapTool == PlanningMapTool.Connector);
-            lastPaintCell = cell;
+            // Paint/connector/erase display a marquee; dragging does not mutate the document.
         }
 
         private void CompleteWorldDrag()
@@ -124,8 +118,8 @@ namespace PlanningEditorPrototype
             var area = new RectInt(Mathf.Min(start.x, end.x), Mathf.Min(start.y, end.y), Mathf.Abs(start.x - end.x) + 1, Mathf.Abs(start.y - end.y) + 1);
             if (mapTool == PlanningMapTool.Paint || mapTool == PlanningMapTool.Connector)
             {
-                HandleWorldPointerMove(dragCurrent);
-                EndDocumentBatch(); return;
+                PaintWorldArea(area, mapTool == PlanningMapTool.Connector);
+                return;
             }
             if (mapTool == PlanningMapTool.Select)
             {
@@ -163,10 +157,48 @@ namespace PlanningEditorPrototype
             if (mapTool == PlanningMapTool.Erase) { EraseWorldArea(area); return; }
             if (mapTool == PlanningMapTool.Rectangle)
             {
-                BeginDocumentBatch();
-                foreach (var point in BuildAreaCells(start, end)) PaintWorldCell(point, false);
-                EndDocumentBatch();
+                PaintWorldArea(area, false);
             }
+        }
+
+        private void PaintWorldArea(RectInt area, bool connector)
+        {
+            var owner = isPlacingRoom ? null : document.FindRoom(selectedRoomId);
+            if (owner != null && owner.isConnector != connector) owner = null;
+            // A click/drag beginning on an existing matching owner extends that owner.
+            var first = PlanningWorldUtility.OwnerAt(document, CellAt(dragStart));
+            if (!isPlacingRoom && owner == null && first != null && first.isConnector == connector) owner = first;
+            var blocked = new HashSet<Vector2Int>();
+            foreach (var room in document.rooms)
+                if (room != owner) foreach (var cell in room.cells) blocked.Add(new Vector2Int(cell.x, cell.y));
+            var cells = owner != null ? CloneCells(owner.cells) : new List<PlanningCell>();
+            var existing = new HashSet<Vector2Int>();
+            foreach (var cell in cells) existing.Add(new Vector2Int(cell.x, cell.y));
+            int before = cells.Count;
+            for (int y = area.y; y < area.yMax; y++) for (int x = area.x; x < area.xMax; x++)
+            {
+                var p = new Vector2Int(x, y);
+                if (!blocked.Contains(p) && existing.Add(p)) cells.Add(new PlanningCell(x, y));
+            }
+            if (cells.Count == before) return;
+            if (!(owner?.allowDisconnectedCells ?? false) && !AreCellsConnected(cells))
+            {
+                StatusChanged?.Invoke("未创建：区域需与选中房间或通道连通，且不能覆盖其他区域。");
+                return;
+            }
+            if (owner == null)
+            {
+                owner = new PlanningRoom(connector ? "未连接通道" : NextRoomName())
+                    { isConnector = connector, independentCells = connector };
+                document.rooms.Add(owner);
+            }
+            Vector2Int oldOrigin = PlanningWorldUtility.Bounds(owner).position;
+            bool hadCells = owner.cells.Count > 0;
+            owner.cells = cells;
+            if (hadCells) PlanningWorldUtility.Reanchor(document, owner, oldOrigin);
+            isPlacingRoom = false;
+            SelectRoom(owner.id);
+            NotifyDocumentChanged();
         }
 
         private void PaintWorldCell(Vector2Int cell, bool connector)
@@ -187,7 +219,7 @@ namespace PlanningEditorPrototype
             }
             Vector2Int oldOrigin = PlanningWorldUtility.Bounds(owner).position;
             owner.cells.Add(new PlanningCell(cell.x, cell.y));
-            if (!AreCellsConnected(owner.cells))
+            if (!owner.allowDisconnectedCells && !AreCellsConnected(owner.cells))
             {
                 owner.cells.RemoveAt(owner.cells.Count - 1);
                 if (created) document.rooms.Remove(owner);
@@ -215,7 +247,7 @@ namespace PlanningEditorPrototype
                 var origin = PlanningWorldUtility.Bounds(owner).position;
                 if (owner.cells.RemoveAll(c => area.Contains(new Vector2Int(c.x, c.y))) == 0) continue;
                 if (owner.cells.Count == 0) { delete.Add(owner.id); changed = true; continue; }
-                if (!AreCellsConnected(owner.cells))
+                if (!owner.allowDisconnectedCells && !AreCellsConnected(owner.cells))
                 {
                     owner.cells = before;
                     StatusChanged?.Invoke("擦除未执行：剩余区块需要保持连通。"); continue;
@@ -268,12 +300,28 @@ namespace PlanningEditorPrototype
             {
                 if (!room.isConnector) continue;
                 bool selected = worldSelection.Contains(room.id) || room.id == selectedRoomId;
-                foreach (var cell in room.cells)
-                {
-                    Rect rect = CellRect(cell.x, cell.y);
-                    FillRect(painter, rect, new Color(.2f, .8f, .78f, selected ? .8f : .55f), 1f);
-                    StrokeRect(painter, rect, selected ? Color.white : new Color(.12f, .4f, .4f), selected ? 2f : 1f);
-                }
+                DrawWorldOwner(painter, room, new Color(.2f, .8f, .78f, selected ? .8f : .55f), selected);
+            }
+        }
+
+        private void DrawWorldOwner(Painter2D painter, PlanningRoom room, Color color, bool selected)
+        {
+            // At overview zoom, draw contiguous row spans instead of thousands of tiny outlines.
+            var cells = new HashSet<Vector2Int>();
+            foreach (var cell in room.cells) cells.Add(new Vector2Int(cell.x, cell.y));
+            foreach (var cell in cells)
+            {
+                if (cells.Contains(cell + Vector2Int.left)) continue;
+                int end = cell.x + 1;
+                while (cells.Contains(new Vector2Int(end, cell.y))) end++;
+                Rect span = CellRect(cell.x, cell.y, end - cell.x, 1);
+                if (span.xMax < 0 || span.yMax < 0 || span.xMin > resolvedStyle.width || span.yMin > resolvedStyle.height) continue;
+                FillRect(painter, span, color, 0f);
+                if (GridSize < 10f) continue;
+                int min = Mathf.Max(cell.x, CellAt(Vector2.zero).x);
+                int max = Mathf.Min(end, CellAt(new Vector2(resolvedStyle.width, resolvedStyle.height)).x + 1);
+                for (int x = min; x < max; x++)
+                    StrokeRect(painter, CellRect(x, cell.y), selected ? Color.white : new Color(0f, 0f, 0f, .45f), 1f);
             }
         }
 
@@ -379,13 +427,13 @@ namespace PlanningEditorPrototype
                 // An earlier world Pan selection must not swallow assembly Paint/Erase input.
                 canvas.SetMapTool(PlanningMapTool.Pan); canvas.SetMode(PlanningCanvasMode.Assembly);
                 Project.LevelEditor.Editor.LevelEditorState.Tool = Project.LevelEditor.Editor.LevelEditorTool.Paint;
-                canvas.AddAssemblyBox(new Vector2Int(64, 32));
+                canvas.AddAssemblyBox(new Vector2Int(4, 2));
                 Require(connector.boxes.Count == 1 && connector.boxes[0].x == 0, "空通道装配绘制");
-                canvas.AddAssemblyBox(new Vector2Int(64, 32));
+                canvas.AddAssemblyBox(new Vector2Int(4, 2));
                 Require(connector.boxes.Count == 1, "重复绘制不产生重叠副本");
-                canvas.EraseAssemblyBox(new Vector2Int(64, 32));
+                canvas.EraseAssemblyBox(new Vector2Int(4, 2));
                 Require(connector.boxes.Count == 0, "通道装配擦除");
-                canvas.AddAssemblyBox(new Vector2Int(48, 32));
+                canvas.AddAssemblyBox(new Vector2Int(3, 2));
                 Require(room.boxes.Count == 1 && room.boxes[0].x == 0, "空房间装配绘制");
             }
             finally { Project.LevelEditor.Editor.LevelEditorState.Tool = tool; }
@@ -401,6 +449,96 @@ namespace PlanningEditorPrototype
             Require(doc.FindRoom(connector.id) != null && doc.FindRoom(other.id) != null, "删除不连带移除相邻通道和房间");
             Require(connector.connectedRoomIds.Count == 1 && connector.name.Contains("未连接"), "删除刷新一端连接名");
             Debug.Log("世界图与装配编辑验证通过：占格、事务、多选、绘制/擦除、存档与删除所有权。");
+        }
+
+        [MenuItem("Tools/2026TapTap/关卡编辑器/验证统一网格与旧存档")]
+        public static void VerifyUnifiedGrid()
+        {
+            int checks = 0;
+            void Check(bool value, string message) { Require(value, message); checks++; }
+            void CheckMigration(string json)
+            {
+                var old = JsonUtility.FromJson<PlanningDocument>(json);
+                old.RefreshConnectorPaths();
+                int sx = old.worldBlockCellWidth, sy = old.worldBlockCellHeight;
+                var expected = new Dictionary<string, RectInt>();
+                foreach (var room in old.rooms) foreach (var box in room.boxes)
+                    expected.Add(box.id, PlanningLayoutUtility.GetAssemblyBoxRect(room, box, sx, sy));
+                var upgraded = PlanningDocument.FromPersistentJson(json);
+                Check(upgraded.worldBlockCellWidth == 1 && upgraded.worldBlockCellHeight == 1, "统一步长");
+                Check(upgraded.rooms.Count == old.rooms.Count, "房间数不变");
+                foreach (var room in old.rooms)
+                {
+                    var newRoom = upgraded.FindRoom(room.id);
+                    var before = PlanningWorldUtility.Bounds(room); var after = PlanningWorldUtility.Bounds(newRoom);
+                    Check(room.cells.Count == 0 ? newRoom.cells.Count == 0 :
+                        after == new RectInt(before.x * sx, before.y * sy, before.width * sx, before.height * sy),
+                        "边界位置和尺寸：" + room.name + " before=" + before + " stride=" + sx + "/" + sy + " after=" + after);
+                    foreach (var box in newRoom.boxes)
+                        Check(PlanningLayoutUtility.GetAssemblyBoxRect(newRoom, box, 1, 1) == expected[box.id], "内部物体装配坐标");
+                }
+                Check(upgraded.playerStartRoomId == old.playerStartRoomId && upgraded.playerStartLocal == old.playerStartLocal, "出生点所属和局部坐标");
+                string once = upgraded.ToPersistentJson();
+                Check(PlanningDocument.FromPersistentJson(once).ToPersistentJson() == once, "多次读取不重复展开");
+            }
+            var legacy = new PlanningDocument { worldBlockCellWidth = 16, worldBlockCellHeight = 8 };
+            var room = new PlanningRoom("测试房间"); room.cells.Add(new PlanningCell(-2, -1)); room.cells.Add(new PlanningCell(-1, -1));
+            room.boxes.Add(new PlanningBox { id = "box_keep", x = 3, y = 2, width = 4, height = 2 });
+            legacy.rooms.Add(room); legacy.playerStartRoomId = room.id; legacy.playerStartLocal = new Vector2(4.5f, 2f);
+            legacy.regions.Add(new PlanningRegion { x = -3, y = -2, width = 4, height = 3 });
+            legacy.doors.Add(new PlanningDoor(room.id, -2, -1, 0));
+            legacy.keys.Add(new PlanningKey("测试钥匙", room.id, -1, -1));
+            legacy.assemblyPatches.Add(new PlanningBox { id = "patch_keep", x = 45, y = -12, width = 3, height = 2 });
+            string original = JsonUtility.ToJson(legacy);
+            CheckMigration(original);
+            var migrated = PlanningDocument.FromPersistentJson(original);
+            Check(migrated.FindRoom(room.id).cells.Count == 256, "非正方形步长与负坐标展开");
+            Check(migrated.regions[0].Bounds == new RectInt(-48, -16, 64, 24), "区域规划转换");
+            Check(migrated.doors[0].x == -32 && migrated.doors[0].y == -8 && migrated.doors[0].id == legacy.doors[0].id, "世界门标记转换和 ID");
+            Check(migrated.keys[0].x == -16 && migrated.keys[0].y == -8 && migrated.keys[0].id == legacy.keys[0].id, "世界钥匙标记转换和 ID");
+            Check(migrated.assemblyPatches[0].x == 45 && migrated.assemblyPatches[0].y == -12 && migrated.assemblyPatches[0].width == 3, "全局补丁不缩放");
+            string noStride = System.Text.RegularExpressions.Regex.Replace(original, "\"worldBlockCell(?:Width|Height)\":\\d+,", "");
+            Check(PlanningDocument.FromPersistentJson(noStride).FindRoom(room.id).cells.Count == 512, "无步长字段的旧格式");
+            string defaultPath = "Assets/_Project/Development/LevelEditor/Orpheus0829/PlanningEditorPrototype/Editor/DefaultPlanningMap.json";
+            CheckMigration(System.IO.File.ReadAllText(defaultPath));
+            if (System.IO.Directory.Exists(PlanningSaveStore.SaveFolder))
+                foreach (string path in System.IO.Directory.GetFiles(PlanningSaveStore.SaveFolder, "*.json"))
+                {
+                    string saved = System.IO.File.ReadAllText(path);
+                    CheckMigration(saved);
+                    PlanningSaveStore.Read(path);
+                    Check(System.IO.File.ReadAllText(path) == saved, "读取不改写原存档");
+                }
+            string temporary = System.IO.Path.Combine("Library", "UnifiedGridChecks", Guid.NewGuid().ToString("N") + ".json");
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(temporary));
+            System.IO.File.WriteAllText(temporary, original);
+            var loaded = PlanningSaveStore.Read(temporary);
+            Check(System.IO.File.ReadAllText(temporary) == original, "旧文件读取只改内存");
+            PlanningSaveStore.Save(temporary, loaded);
+            string backup = temporary + ".before-unified-grid.bak";
+            Check(System.IO.File.ReadAllText(backup) == original && PlanningSaveStore.Read(temporary).worldBlockCellWidth == 1, "旧文件覆盖前备份");
+            PlanningSaveStore.Save(temporary, loaded);
+            Check(System.IO.File.ReadAllText(backup) == original, "重复保存不覆盖备份");
+
+            var doc = new PlanningDocument(); var canvas = new PlanningCanvas(); canvas.SetDocument(doc);
+            canvas.SetMode(PlanningCanvasMode.World); int events = 0; canvas.DocumentChanged += () => events++;
+            canvas.BeginRoomPlacement(); canvas.PaintWorldArea(new RectInt(0, 0, 4, 3), false);
+            var placed = doc.rooms[0];
+            Check(placed.cells.Count == 12 && events == 1 && !canvas.isPlacingRoom, "框选创建为单步事务");
+            canvas.PaintWorldArea(new RectInt(4, 0, 2, 3), false);
+            Check(placed.cells.Count == 18 && events == 2, "连续矩形扩展");
+            canvas.PaintWorldArea(new RectInt(20, 0, 2, 3), false);
+            Check(placed.cells.Count == 18 && events == 2, "断开的区域不破坏原房间");
+            canvas.BeginConnectorPlacement(); canvas.PaintWorldArea(new RectInt(6, 0, 2, 3), true);
+            var corridor = doc.rooms[1];
+            Check(corridor.cells.Count == 6 && corridor.connectedRoomIds.Contains(placed.id), "框选通道与连接检测");
+            canvas.EraseWorldArea(new RectInt(7, 0, 1, 3));
+            Check(corridor.cells.Count == 3 && events == 4, "框选擦除为单步事务");
+            canvas.EraseWorldArea(new RectInt(0, 0, 8, 3));
+            Check(doc.rooms.Count == 0, "全区域擦除允许删除最后房间和通道");
+            ValidateWorldAndAssemblyEditing();
+            System.IO.File.WriteAllText("Library/UnifiedGridVerification.txt", "PASS " + checks);
+            Debug.Log("统一网格与旧存档验证通过：" + checks + " 项断言。");
         }
     }
 }

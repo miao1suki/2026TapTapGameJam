@@ -1,10 +1,27 @@
 # 工作状态与交接（每次任务重读）
 
+## MVMap 试导入、区域重生与重置
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/world-grid-one-to-one`；实现完成，按用户要求仅提交/推送分支，不合并 main。
+- 世界图真实占格作为房间/通道边界；最近进入范围的重生点优先，存活 R 与死亡可重生。区域离开/重生仅恢复所属物体，保留门、按钮、已拾取钥匙和全局颜色解锁；已解锁物体回到刚解锁的基础行为、布置位置。
+- 将 MVMap 主稿的 65 区域 / 17,281 格导入独立测试场景，外部一格对应房间一格；保留外部 ID、颜色、备注与不连通片，不猜长条区域为通道，不凭空生成关卡内容。
+- 保留并不提交用户 Pick 场景、像素字体、DOTween Pro 与 PackageManagerSettings；不升级 Unity/Packages/管线。
+- 验证：Unity 6000.3.12f1 全项目隔离编译和 47 项 EditMode 回归通过；34,958 项导入/持久化/真实占格及规划增量应用断言、22 项真实 PlayMode 断言、1,292 项统一网格迁移断言通过。窗口手势、完整 Game 外观和打包尚未人工验收；验证环境有 Unity Editor Search 索引异常，未计作玩法运行错误。
+- 说明：Developer/ROOM_RESPAWN_AND_RESET.md、Integration/ROOM_LIFECYCLE_API.md。旧场景需在编辑器再应用一次并保存以写入区域；没有世界图数据不猜边界。新 Scene 内嵌地图，首开可回读；钥匙与锚点绑定的跨运行存档未新增。
+
+## 世界图统一单元格与框选搭建
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/world-grid-one-to-one`。
+- 修改前已整合并推送 main 至 cc1176c，包含旧任务、最新交互链条、音频及导入元数据；过期 TA 大改管线分支未直接覆盖现有管线。
+- 当前范围：世界/房间/装配以房间图单元格为统一 1:1 坐标，旧存档按原步长展开世界占格、不缩放内部内容；世界图拖拽矩形创建/擦除。与本次 MVMap/重生版本一起提交并推送分支，暂不合并 main。
+- 验证：Unity 6000.3.12f1 隔离全项目编译、47 项 EditMode 测试通过；统一网格验证 1292 项断言通过，包含旧默认图及本地“测试1”存档、内部装配矩形、负坐标、非方形步长、重复载入、首次保存备份、矩形事务与既有装配编辑。实际 UI 手势、现有完整 Scene 与打包未人工验收。
+- MVMap：后续任务已实现布局试导入，见本文件上方“MVMap 试导入、区域重生与重置”；不改写策划源文件，不转换灰盒及锁规则。
+
 ## 藤蔓持久化链接与独立 UI 启动
 
 - 日期：2026-10-12；负责人：Codex；当前分支：`codex/neutral-ladders-door-hints`。
 - 最新 main（c94fb60）已合入当前分支，保留最新暂停/主菜单接线。字体按用户授权备份至 Library/UserAssetBackup/VineBootstrap-20261012 后采用远程版本；Pick、插件与本地设置不动。
-- 范围：规划参数资产引用持久化、旧 JSON 不信任数字 ID、稳定增量签名、母藤蔓/节段同步与 prefab override 持久化；退役 Bootstrap 场景与强制启动入口，保留设置/存档/暂停/开始菜单。实现完成，功能改动仍仅本地，未提交/推送。
+- 范围：规划参数资产引用持久化、旧 JSON 不信任数字 ID、稳定增量签名、母藤蔓/节段同步与 prefab override 持久化；退役 Bootstrap 场景与强制启动入口，保留设置/存档/暂停/开始菜单。2026-10-12 已整合推送至 main，提交 7c97bf0，后续整合点 cc1176c。
 - UI：完整开始菜单与共享暂停界面提取至 Content/UI/MainMenuUI.prefab、SharedGameUI.prefab，内部组件/物体引用不指向原场景；保留原场景界面，MainMenu 独立 __GameFlow 根为完整流程入口。InputBindingBootstrap 是输入重绑定初始化，不随场景 Bootstrap 删除。
 - 排查：只读检查用户 Pick 副本，11 个母藤蔓全部缺失 growthSegmentPrefab，0 子节段；1 个水功能物的 waterPrefab 有效。公共 JSON 引用风险覆盖水 prefab、材质/Mesh、粒子、字体与 Timeline 资产，不影响枚举/数值或 Unity 原生 GUID/fileID 引用。未替用户保存 Pick；从所属规划图重新应用可修复旧生成藤蔓。
 - 验证：Unity 6000.3.12f1 全项目隔离编译通过；599 项资源往返/水方向枚举/规划文档/藤蔓组链、无改动增量保留、场景保存重载及 UI 内部引用断言通过，其中 56 个非空资源字段覆盖当前颜色预制体；7 项 GameFlow Editor 测试和 1 项主菜单→暂停→123关→结束 PlayMode 测试通过。批处理 nographics 不代表窗口视觉、用户关卡手感或打包验收；完整 Pick 尚待用户测试。说明：Developer/PLANNING_REFERENCES_AND_VINES.md、GAME_FLOW.md、Integration/FOUNDATION_API.md。

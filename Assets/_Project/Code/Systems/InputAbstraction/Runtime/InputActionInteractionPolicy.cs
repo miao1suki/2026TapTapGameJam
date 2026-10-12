@@ -73,7 +73,7 @@ namespace Project.InputAbstraction
                 case InputActionId.PointerSecondary:
                     return "指针副键";
                 case InputActionId.Respawn:
-                    return "复活/重置搬运";
+                    return "重生";
                 default:
                     return actionId.ToString();
             }
