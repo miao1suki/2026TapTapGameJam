@@ -42,7 +42,8 @@ namespace Project.WordNote
         [InspectorName("上方淡入淡出")] FadeMoveUp = 8,
         [InspectorName("下方淡入淡出")] FadeMoveDown = 9,
         [InspectorName("缩放")] Scale = 10,
-        [InspectorName("缩放淡入淡出")] FadeScale = 11
+        [InspectorName("缩放淡入淡出")] FadeScale = 11,
+        [InspectorName("打字机")] Typewriter = 12
     }
 
     public enum WordNoteColor
@@ -93,6 +94,8 @@ namespace Project.WordNote
             WordNoteVerticalDirection.Down;
         [Min(0f)] public float verticalDistance = 80f;
         public bool useScale;
+        public bool useTypewriter;
+        [Min(1f)] public float typewriterCharactersPerSecond = 20f;
         [Min(0f)] public float duration = .25f;
         public Vector2 startPosition;
         public Vector2 endPosition;
@@ -118,6 +121,9 @@ namespace Project.WordNote
                 verticalDirection = verticalDirection,
                 verticalDistance = verticalDistance,
                 useScale = useScale,
+                useTypewriter = useTypewriter,
+                typewriterCharactersPerSecond =
+                    typewriterCharactersPerSecond,
                 startPosition = startPosition,
                 endPosition = endPosition,
                 startAlpha = startAlpha,
@@ -136,6 +142,7 @@ namespace Project.WordNote
     {
         public TMP_FontAsset font;
         [Min(1f)] public float fontSize = 42f;
+        public bool richText = true;
         public WordNoteColor fontColor = WordNoteColor.Yellow;
         public bool useOutline;
         public WordNoteColor outlineColor = WordNoteColor.Blue;
@@ -179,6 +186,7 @@ namespace Project.WordNote
             {
                 font = font,
                 fontSize = fontSize,
+                richText = richText,
                 fontColor = fontColor,
                 useOutline = useOutline,
                 outlineColor = outlineColor,
@@ -673,6 +681,7 @@ namespace Project.WordNote
                     ? defaultFont
                     : TMP_Settings.defaultFontAsset;
             text.fontSize = style.fontSize;
+            text.richText = style.richText;
             text.color = ResolveColor(style.fontColor);
             text.text = message.Content;
             text.alignment = TextAlignmentOptions.Center;
@@ -821,6 +830,26 @@ namespace Project.WordNote
                 out Vector3 startScale,
                 out Vector3 endScale);
             float duration = Mathf.Max(0f, motion.duration);
+            bool typewriter =
+                motion.useTypewriter ||
+                animation == WordNoteAnimation.Typewriter;
+            if (typewriter)
+            {
+                duration = Mathf.Max(
+                    .01f,
+                    (message.Content != null
+                        ? message.Content.Length
+                        : 0) /
+                    Mathf.Max(
+                        1f,
+                        motion.typewriterCharactersPerSecond));
+                ApplyTypewriter(
+                    view,
+                    message.Content,
+                    0f,
+                    entering);
+            }
+
             if (duration <= 0f)
             {
                 ApplyVisual(
@@ -853,6 +882,14 @@ namespace Project.WordNote
                                 startScale,
                                 endScale,
                                 ease));
+                        if (typewriter)
+                        {
+                            ApplyTypewriter(
+                                view,
+                                message.Content,
+                                progress,
+                                entering);
+                        }
                     },
                     1f,
                     duration)
@@ -880,6 +917,39 @@ namespace Project.WordNote
                 message.StackOffset + endPosition,
                 endAlpha,
                 endScale);
+            if (typewriter)
+            {
+                ApplyTypewriter(
+                    view,
+                    message.Content,
+                    1f,
+                    entering);
+            }
+        }
+
+        private static void ApplyTypewriter(
+            WordNoteView view,
+            string fullText,
+            float progress,
+            bool entering)
+        {
+            if (view == null || view.Text == null)
+            {
+                return;
+            }
+
+            string text = fullText ?? string.Empty;
+            float clamped = Mathf.Clamp01(progress);
+            int visibleCount = entering
+                ? Mathf.CeilToInt(text.Length * clamped)
+                : Mathf.FloorToInt(text.Length * (1f - clamped));
+            visibleCount = Mathf.Clamp(
+                visibleCount,
+                0,
+                text.Length);
+            view.Text.text = visibleCount <= 0
+                ? string.Empty
+                : text.Substring(0, visibleCount);
         }
 
         private static void ResolveMotion(
@@ -1040,6 +1110,7 @@ namespace Project.WordNote
                 ? font
                 : TMP_Settings.defaultFontAsset;
             view.Text.fontSize = message.Style.fontSize;
+            view.Text.richText = message.Style.richText;
             view.Text.color = ResolveColor(message.Style.fontColor);
             view.Text.text = message.Content;
             ApplyOutline(view, message.Style);

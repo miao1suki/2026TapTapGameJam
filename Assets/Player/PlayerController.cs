@@ -1357,13 +1357,8 @@ namespace Project.Player
             {
                 Collider collider = carryRayBuffer[index].collider;
                 if (collider == null ||
-                    collider.transform.root == transform.root)
-                {
-                    continue;
-                }
-
-                if (selectedCarryTarget is Component target &&
-                    collider.transform.root == target.transform.root)
+                    BelongsToPlayer(collider.transform) ||
+                    BelongsToSelectedCarryTarget(collider.transform))
                 {
                     continue;
                 }
@@ -1376,6 +1371,11 @@ namespace Project.Player
 
         private bool IsCarryDropCellFree(Vector3Int cell)
         {
+            if (IsCarryCellOccupiedByPlacedBlock(cell))
+            {
+                return false;
+            }
+
             Vector3 center = CellToWorld(
                 cell,
                 transform.position.z);
@@ -1390,13 +1390,8 @@ namespace Project.Player
             {
                 Collider collider = carryDropBuffer[index];
                 if (collider == null ||
-                    collider.transform.root == transform.root)
-                {
-                    continue;
-                }
-
-                if (selectedCarryTarget is Component target &&
-                    collider.transform.root == target.transform.root)
+                    BelongsToPlayer(collider.transform) ||
+                    BelongsToSelectedCarryTarget(collider.transform))
                 {
                     continue;
                 }
@@ -1424,6 +1419,64 @@ namespace Project.Player
             }
 
             return true;
+        }
+
+        private bool IsCarryCellOccupiedByPlacedBlock(
+            Vector3Int cell)
+        {
+            Vector2Int gridCell = new Vector2Int(cell.x, cell.y);
+            IReadOnlyList<Project.LevelEditor.LevelEditorPlacedBlock>
+                blocks =
+                    ProjectDiscovery.FindAll<
+                        Project.LevelEditor.LevelEditorPlacedBlock>(
+                        true);
+            for (int index = 0; index < blocks.Count; index++)
+            {
+                Project.LevelEditor.LevelEditorPlacedBlock block =
+                    blocks[index];
+                if (block == null ||
+                    !block.isActiveAndEnabled ||
+                    block.gameObject.scene != gameObject.scene ||
+                    !block.ContainsCell(gridCell))
+                {
+                    continue;
+                }
+
+                if (BelongsToPlayer(block.transform) ||
+                    BelongsToSelectedCarryTarget(block.transform))
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool BelongsToPlayer(Transform candidate)
+        {
+            if (candidate == null)
+            {
+                return false;
+            }
+
+            return candidate == transform ||
+                   candidate.IsChildOf(transform);
+        }
+
+        private bool BelongsToSelectedCarryTarget(
+            Transform candidate)
+        {
+            if (candidate == null ||
+                selectedCarryTarget is not Component target ||
+                target == null)
+            {
+                return false;
+            }
+
+            return candidate == target.transform ||
+                   candidate.IsChildOf(target.transform);
         }
 
         private Vector3Int WorldToCell(Vector3 position)

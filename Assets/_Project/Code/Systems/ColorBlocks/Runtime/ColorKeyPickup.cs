@@ -240,16 +240,22 @@ namespace Project.ColorBlocks
                     UpdateCameraLens(1f);
                     cameraDirector.Pause();
                 }
+
+                if (cameraDirector != null)
+                {
+                    cameraDirector.Stop(); // Start the return transition immediately.
+                    ReleasePlayerControlLock();
+                }
             }
 
+            // The color reveal may finish during the camera return; it must not
+            // keep player input locked.
             float revealTimeout = Time.unscaledTime + ColorAppearanceManager.Instance.GetEffectiveDuration(revealDuration) + 1f;
             while (unlocked &&
                    !ColorAppearanceManager.Instance.IsComplete(colorTypeId) &&
                    Time.unscaledTime < revealTimeout)
                 yield return null;
 
-            if (hasCameraShot && cameraDirector != null)
-                cameraDirector.Stop(); // The Timeline rig returns via CameraControlManager.
             collectingPlayer = null;
             onComplete?.Invoke();
         }

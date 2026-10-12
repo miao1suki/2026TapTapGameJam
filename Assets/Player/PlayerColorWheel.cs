@@ -34,6 +34,10 @@ namespace Project.Player
         [SerializeField, Min(8)] private int rangeDashCount = 32;
         [SerializeField] private Color rangeColor =
             new Color(.55f, .8f, 1f, .45f);
+        [SerializeField, Min(.1f)] private float rangePulsePeriod = 2.4f;
+        [SerializeField, Min(.05f)] private float rangeFadeDuration = .5f;
+        [SerializeField, Range(0f, 1f)] private float rangeMinAlpha = .18f;
+        [SerializeField, Range(0f, 1f)] private float rangeMaxAlpha = .62f;
         [SerializeField, Min(100f)] private float wheelSize = 280f;
         [SerializeField, Min(32f)] private float wheelButtonSize = 72f;
 
@@ -52,6 +56,8 @@ namespace Project.Player
         private readonly List<Image> wheelColorImages = new List<Image>();
         private readonly List<Color> wheelBaseColors = new List<Color>();
         private float rangeRadius = -1f;
+        private float rangeFade;
+        private bool rangeVisible;
         private bool wheelOpen;
         private Vector2 pointerPosition;
         private IPlayerColorWheelView externalView;
@@ -64,6 +70,9 @@ namespace Project.Player
         public bool IsWheelOpen => wheelOpen;
 
         public event Action<string> SelectedColorChanged;
+        public event Action ColorApplicationSucceeded;
+        public event Action ColorApplicationOutOfRange;
+        public event Action ColorApplicationRejected;
 
         public void BindExternalView(IPlayerColorWheelView view)
         {
@@ -106,6 +115,7 @@ namespace Project.Player
         public void Tick(Vector2 currentPointerPosition)
         {
             pointerPosition = currentPointerPosition;
+            RefreshCursorVisibility();
             RefreshRangeIndicator();
             if (wheelOpen)
             {
@@ -185,11 +195,14 @@ namespace Project.Player
             if (string.Equals(selectedColorId, colorId,
                     StringComparison.OrdinalIgnoreCase))
             {
+                RefreshCursorVisibility();
                 return;
             }
 
             selectedColorId = colorId ?? string.Empty;
+            RefreshCursorVisibility();
             SelectedColorChanged?.Invoke(selectedColorId);
+            RefreshRangeIndicator();
             Debug.Log(
                 $"[PlayerColorWheel] 颜色能力切换成功：{selectedColorId}",
                 this);
@@ -197,13 +210,31 @@ namespace Project.Player
 
         public void ClearSelectedColor()
         {
-            if (string.IsNullOrEmpty(selectedColorId))
+            bool hadSelectedColor =
+                !string.IsNullOrEmpty(selectedColorId);
+            selectedColorId = string.Empty;
+            RefreshCursorVisibility();
+
+            if (!hadSelectedColor)
             {
                 return;
             }
 
-            selectedColorId = string.Empty;
             SelectedColorChanged?.Invoke(selectedColorId);
+            RefreshRangeIndicator();
+        }
+
+        private void RefreshCursorVisibility()
+        {
+            // ESC/菜单会用 Time.timeScale = 0 暂停；暂停期间由 UI 决定鼠标显隐。
+            if (Time.timeScale <= 0f)
+            {
+                return;
+            }
+
+            bool shouldShow = HasSelectedColor;
+            Cursor.visible = shouldShow;
+            Cursor.lockState = CursorLockMode.None;
         }
 
         private void OpenWheel()
@@ -265,17 +296,68 @@ namespace Project.Player
                 return;
             }
 
+            if (!HasSelectedColor)
+            {
+                Debug.Log(
+                    "[PlayerColorWheel] 左键交互失败：尚未选择颜色。",
+                    this);
+                return;
+            }
+
             Camera camera = Camera.main;
-            if (camera == null ||
-                sensor == null ||
-                !sensor.TryGetScreenComponent<IColorApplicationTarget>(
+            if (camera == null || sensor == null)
+            {
+                Debug.Log(
+                    "[PlayerColorWheel] 左键交互失败：缺少相机或交互传感器。",
+                    this);
+                ColorApplicationRejected?.Invoke();
+                return;
+            }
+
+            if (!sensor.TryGetScreenHit(
+                    camera,
+                    pointerPosition,
+                    out RaycastHit screenHit))
+            {
+                if (TryGetPointerWorldPoint(
+                        camera,
+                        out Vector3 pointerWorldPoint) &&
+                    !IsWorldPointWithinInteractionRange(
+                        pointerWorldPoint))
+                {
+                    Debug.Log(
+                        "[PlayerColorWheel] 左键交互失败：点击位置超出交互圈。",
+                        this);
+                    ColorApplicationOutOfRange?.Invoke();
+                    return;
+                }
+
+                Debug.Log(
+                    "[PlayerColorWheel] 左键交互失败：没有点击到物体。",
+                    this);
+                ColorApplicationRejected?.Invoke();
+                return;
+            }
+
+            if (!IsWorldPointWithinInteractionRange(
+                    screenHit.point))
+            {
+                Debug.Log(
+                    "[PlayerColorWheel] 左键交互失败：点击位置超出交互圈。",
+                    this);
+                ColorApplicationOutOfRange?.Invoke();
+                return;
+            }
+
+            if (!sensor.TryGetScreenComponent<IColorApplicationTarget>(
                     camera,
                     pointerPosition,
                     out IColorApplicationTarget colorTarget))
             {
                 Debug.Log(
-                    "[PlayerColorWheel] 左键交互失败：没有点击到可接收颜色的物体。",
+                    "[PlayerColorWheel] 左键交互失败：点击到的物体不能接收颜色。",
                     this);
+                ColorApplicationRejected?.Invoke();
                 return;
             }
 
@@ -285,31 +367,67 @@ namespace Project.Player
                 Debug.Log(
                     "[PlayerColorWheel] 左键交互失败：点击目标超出交互圈。",
                     this);
+                ColorApplicationOutOfRange?.Invoke();
                 return;
             }
 
             string targetName = targetComponent != null
                 ? targetComponent.gameObject.name
                 : colorTarget.GetType().Name;
-            if (!HasSelectedColor)
-            {
-                Debug.Log(
-                    "[PlayerColorWheel] 左键交互失败：尚未选择颜色。",
-                    targetComponent != null
-                        ? targetComponent.gameObject
-                        : gameObject);
-                return;
-            }
 
             bool success = colorTarget.ApplyColor(
                 selectedColorId,
                 gameObject);
+            if (success)
+            {
+                ClearSelectedColor();
+                ColorApplicationSucceeded?.Invoke();
+            }
+            else
+            {
+                ColorApplicationRejected?.Invoke();
+            }
 
             Debug.Log(
                 success
                     ? $"[PlayerColorWheel] 使用能力“{(HasSelectedColor ? selectedColorId : "无")}”成功与物体交互：{targetName}"
                     : $"[PlayerColorWheel] 使用能力“{(HasSelectedColor ? selectedColorId : "无")}”与物体交互失败：{targetName}",
                 targetComponent != null ? targetComponent.gameObject : gameObject);
+        }
+
+        private bool TryGetPointerWorldPoint(
+            Camera camera,
+            out Vector3 worldPoint)
+        {
+            worldPoint = default;
+            if (camera == null)
+            {
+                return false;
+            }
+
+            Ray ray = camera.ScreenPointToRay(pointerPosition);
+            Plane gameplayPlane =
+                new Plane(Vector3.forward, transform.position);
+            if (!gameplayPlane.Raycast(ray, out float enter))
+            {
+                return false;
+            }
+
+            worldPoint = ray.GetPoint(enter);
+            return true;
+        }
+
+        private bool IsWorldPointWithinInteractionRange(
+            Vector3 worldPoint)
+        {
+            if (sensor == null)
+            {
+                return false;
+            }
+
+            float range = sensor.ScanRadius;
+            return (worldPoint - transform.position).sqrMagnitude <=
+                   range * range;
         }
 
         private void EnsureCanvas()
@@ -561,6 +679,9 @@ namespace Project.Player
                 }
                 rangeDashes.Add(line);
             }
+
+            rangeRoot.SetActive(false);
+            rangeFade = 0f;
         }
 
         private void RefreshRangeIndicator()
@@ -570,31 +691,70 @@ namespace Project.Player
                 return;
             }
 
-            float radius = Mathf.Max(.1f, sensor.ScanRadius);
-            if (Mathf.Abs(radius - rangeRadius) < .001f)
+            bool targetVisible = HasSelectedColor;
+            float fadeStep =
+                Time.unscaledDeltaTime /
+                Mathf.Max(.05f, rangeFadeDuration);
+            rangeFade = targetVisible
+                ? Mathf.MoveTowards(rangeFade, 1f, fadeStep)
+                : Mathf.MoveTowards(rangeFade, 0f, fadeStep);
+            bool shouldBeActive = targetVisible || rangeFade > .001f;
+            if (rangeRoot != null &&
+                rangeVisible != shouldBeActive)
+            {
+                rangeVisible = shouldBeActive;
+                rangeRoot.SetActive(shouldBeActive);
+            }
+
+            if (!shouldBeActive)
             {
                 return;
             }
 
-            rangeRadius = radius;
-            int count = rangeDashes.Count;
-            float step = Mathf.PI * 2f / count;
-            for (int index = 0; index < count; index++)
+            float radius = Mathf.Max(.1f, sensor.ScanRadius);
+            if (Mathf.Abs(radius - rangeRadius) >= .001f)
             {
-                float begin = index * step;
-                float end = begin + step * .62f;
-                rangeDashes[index].SetPosition(
-                    0,
-                    new Vector3(
-                        Mathf.Cos(begin) * radius,
-                        Mathf.Sin(begin) * radius,
-                        0f));
-                rangeDashes[index].SetPosition(
-                    1,
-                    new Vector3(
-                        Mathf.Cos(end) * radius,
-                        Mathf.Sin(end) * radius,
-                        0f));
+                rangeRadius = radius;
+                int count = rangeDashes.Count;
+                float step = Mathf.PI * 2f / count;
+                for (int index = 0; index < count; index++)
+                {
+                    float begin = index * step;
+                    float end = begin + step * .62f;
+                    rangeDashes[index].SetPosition(
+                        0,
+                        new Vector3(
+                            Mathf.Cos(begin) * radius,
+                            Mathf.Sin(begin) * radius,
+                            0f));
+                    rangeDashes[index].SetPosition(
+                        1,
+                        new Vector3(
+                            Mathf.Cos(end) * radius,
+                            Mathf.Sin(end) * radius,
+                            0f));
+                }
+            }
+
+            float pulsePhase =
+                (Time.unscaledTime % rangePulsePeriod) /
+                rangePulsePeriod;
+            float pulse = (Mathf.Sin(
+                pulsePhase * Mathf.PI * 2f -
+                Mathf.PI * .5f) + 1f) * .5f;
+            float alpha = Mathf.Lerp(
+                rangeMinAlpha,
+                rangeMaxAlpha,
+                pulse) *
+                Mathf.SmoothStep(0f, 1f, rangeFade);
+            Color pulseColor = rangeColor;
+            pulseColor.a = alpha;
+            for (int index = 0;
+                 index < rangeDashes.Count;
+                 index++)
+            {
+                rangeDashes[index].startColor = pulseColor;
+                rangeDashes[index].endColor = pulseColor;
             }
         }
 

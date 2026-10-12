@@ -1,4 +1,5 @@
 using System;
+using Project.ColorBlocks;
 using Project.InputAbstraction;
 using Project.WordNote;
 using TMPro;
@@ -19,29 +20,37 @@ namespace Project.Player
         [SerializeField] private TMP_FontAsset carryHintFont;
 
         private PlayerController player;
+        private PlayerColorWheel colorWheel;
         private WordNoteStyle carryHintStyle;
-        private WordNoteStyle invalidPlacementStyle;
+        private WordNoteStyle bottomFeedbackStyle;
         private WordNoteStyle respawnHintStyle;
+        private WordNoteStyle colorSelectionStyle;
         private bool carryHintVisible;
         private bool respawnHintVisible;
         private int carryHintId = -1;
         private int invalidPlacementId = -1;
         private int respawnHintId = -1;
+        private int colorSelectionHintId = -1;
+        private int colorDyeFeedbackId = -1;
 
         private void Awake()
         {
             player = GetComponent<PlayerController>();
+            colorWheel = GetComponent<PlayerColorWheel>();
         }
 
         private void OnEnable()
         {
             player = GetComponent<PlayerController>();
+            colorWheel = GetComponent<PlayerColorWheel>();
             BindCarryEvents();
+            BindColorWheelEvents();
         }
 
         private void OnDisable()
         {
             UnbindCarryEvents();
+            UnbindColorWheelEvents();
             if (player != null)
             {
                 player.ClearBufferedInput();
@@ -71,6 +80,12 @@ namespace Project.Player
             {
                 player = target;
                 BindCarryEvents();
+                BindColorWheelEvents();
+            }
+
+            if (colorWheel == null)
+            {
+                BindColorWheelEvents();
             }
             UpdateCarryHint(target);
             UpdateRespawnHint(target);
@@ -256,6 +271,10 @@ namespace Project.Player
                 {
                     useCombinedChannels = true,
                     useFade = true,
+                    useHorizontalMove = true,
+                    horizontalDirection =
+                        WordNoteHorizontalDirection.Left,
+                    horizontalDistance = 140f,
                     duration = .5f,
                     startAlpha = 0f,
                     endAlpha = 1f,
@@ -268,6 +287,10 @@ namespace Project.Player
                 {
                     useCombinedChannels = true,
                     useFade = true,
+                    useHorizontalMove = true,
+                    horizontalDirection =
+                        WordNoteHorizontalDirection.Right,
+                    horizontalDistance = 140f,
                     duration = .5f,
                     startAlpha = 1f,
                     endAlpha = 0f,
@@ -327,7 +350,51 @@ namespace Project.Player
                 wordNote.ExitById(invalidPlacementId, false);
             }
 
-            invalidPlacementStyle ??= new WordNoteStyle
+            WordNoteHandle handle = wordNote.Show(
+                "位置非法，请留出足够空间",
+                GetBottomFeedbackStyle());
+            invalidPlacementId = handle != null ? handle.Id : -1;
+        }
+
+        private void OnColorApplicationSucceeded()
+        {
+            ShowColorDyeFeedback("染色成功");
+        }
+
+        private void OnColorApplicationRejected()
+        {
+            ShowColorDyeFeedback("这个物体好像不能与这个颜色反应");
+        }
+
+        private void OnColorApplicationOutOfRange()
+        {
+            ShowColorDyeFeedback("无法触碰到这个物体");
+        }
+
+        private void ShowColorDyeFeedback(string content)
+        {
+            WordNoteUI wordNote = WordNoteUI.Instance;
+            if (wordNote == null)
+            {
+                return;
+            }
+
+            if (colorDyeFeedbackId >= 0)
+            {
+                wordNote.ExitById(colorDyeFeedbackId, false);
+                colorDyeFeedbackId = -1;
+            }
+
+            WordNoteHandle handle = wordNote.Show(
+                content,
+                GetBottomFeedbackStyle());
+            colorDyeFeedbackId =
+                handle != null ? handle.Id : -1;
+        }
+
+        private WordNoteStyle GetBottomFeedbackStyle()
+        {
+            bottomFeedbackStyle ??= new WordNoteStyle
             {
                 font = carryHintFont,
                 fontSize = 42f,
@@ -371,10 +438,7 @@ namespace Project.Player
                     endScale = Vector3.one
                 }
             };
-            WordNoteHandle handle = wordNote.Show(
-                "位置非法，请留出足够空间",
-                invalidPlacementStyle);
-            invalidPlacementId = handle != null ? handle.Id : -1;
+            return bottomFeedbackStyle;
         }
 
         private void UpdateRespawnHint(PlayerController target)
@@ -456,6 +520,131 @@ namespace Project.Player
             }
 
             player.CarryPlacementRejected -= OnCarryPlacementRejected;
+        }
+
+        private void BindColorWheelEvents()
+        {
+            if (colorWheel == null)
+            {
+                colorWheel = GetComponent<PlayerColorWheel>();
+            }
+
+            if (colorWheel == null)
+            {
+                return;
+            }
+
+            colorWheel.SelectedColorChanged -=
+                OnSelectedColorChanged;
+            colorWheel.SelectedColorChanged +=
+                OnSelectedColorChanged;
+            colorWheel.ColorApplicationSucceeded -=
+                OnColorApplicationSucceeded;
+            colorWheel.ColorApplicationSucceeded +=
+                OnColorApplicationSucceeded;
+            colorWheel.ColorApplicationOutOfRange -=
+                OnColorApplicationOutOfRange;
+            colorWheel.ColorApplicationOutOfRange +=
+                OnColorApplicationOutOfRange;
+            colorWheel.ColorApplicationRejected -=
+                OnColorApplicationRejected;
+            colorWheel.ColorApplicationRejected +=
+                OnColorApplicationRejected;
+        }
+
+        private void UnbindColorWheelEvents()
+        {
+            if (colorWheel == null)
+            {
+                return;
+            }
+
+            colorWheel.SelectedColorChanged -=
+                OnSelectedColorChanged;
+            colorWheel.ColorApplicationSucceeded -=
+                OnColorApplicationSucceeded;
+            colorWheel.ColorApplicationOutOfRange -=
+                OnColorApplicationOutOfRange;
+            colorWheel.ColorApplicationRejected -=
+                OnColorApplicationRejected;
+        }
+
+        private void OnSelectedColorChanged(string colorId)
+        {
+            WordNoteUI wordNote = WordNoteUI.Instance;
+            if (wordNote == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(colorId))
+            {
+                return;
+            }
+
+            if (colorSelectionHintId >= 0)
+            {
+                wordNote.ExitById(colorSelectionHintId, false);
+                colorSelectionHintId = -1;
+            }
+
+            ColorTypeDefinition definition =
+                ColorRuntimeService.Existing?.Catalog?.Find(
+                    colorId);
+            string colorName =
+                definition != null &&
+                !string.IsNullOrWhiteSpace(definition.displayName)
+                    ? definition.displayName
+                    : colorId;
+            colorSelectionStyle ??= new WordNoteStyle
+            {
+                font = carryHintFont,
+                fontSize = 42f,
+                fontColor = WordNoteColor.White,
+                useOutline = true,
+                outlineColor = WordNoteColor.Black,
+                position = WordNotePosition.Bottom,
+                participateInStackLayout = true,
+                displayMode = WordNoteDisplayMode.Timed,
+                displayDuration = 2f,
+                useEnterAnimation = true,
+                enterAnimation = WordNoteAnimation.Fade,
+                enterMotion = new WordNoteMotionSettings
+                {
+                    useCombinedChannels = true,
+                    useFade = true,
+                    useHorizontalMove = true,
+                    horizontalDirection =
+                        WordNoteHorizontalDirection.Left,
+                    horizontalDistance = 140f,
+                    duration = .5f,
+                    startAlpha = 0f,
+                    endAlpha = 1f,
+                    startScale = Vector3.one,
+                    endScale = Vector3.one
+                },
+                useExitAnimation = true,
+                exitAnimation = WordNoteAnimation.Fade,
+                exitMotion = new WordNoteMotionSettings
+                {
+                    useCombinedChannels = true,
+                    useFade = true,
+                    useHorizontalMove = true,
+                    horizontalDirection =
+                        WordNoteHorizontalDirection.Right,
+                    horizontalDistance = 140f,
+                    duration = .5f,
+                    startAlpha = 1f,
+                    endAlpha = 0f,
+                    startScale = Vector3.one,
+                    endScale = Vector3.one
+                }
+            };
+            WordNoteHandle handle = wordNote.Show(
+                $"当前选择<color=#{ColorUtility.ToHtmlStringRGB(definition != null ? definition.swatch : Color.white)}>{colorName}色</color>",
+                colorSelectionStyle);
+            colorSelectionHintId =
+                handle != null ? handle.Id : -1;
         }
 
     }

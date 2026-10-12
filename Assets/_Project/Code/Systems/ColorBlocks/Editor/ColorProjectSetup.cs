@@ -117,8 +117,17 @@ namespace Project.ColorBlocks.Editor
                     if (clip.asset is CameraTimelineClip cameraClip)
                     {
                         cameraClip.cameraMoveMode = CamMoveMode.SmoothLerp;
-                        cameraClip.cameraTargetLocalPos = new Vector3(0, 3, -9);
-                        cameraClip.lockLookAtPlayer = true;
+                        cameraClip.cameraTargetLocalPos = new Vector3(0, 1, -10);
+                        cameraClip.cameraTargetEuler = Vector3.zero;
+                        cameraClip.lockLookAtPlayer = false;
+                        cameraClip.modeRequest =
+                            TimelineCameraModeRequest.Side2D;
+                        cameraClip.overrideSide2DYaw = true;
+                        cameraClip.side2DYawDegrees = 0f;
+                        cameraClip.constrainOrthographicAxes = true;
+                        cameraClip.allowPositionX = true;
+                        cameraClip.allowPositionY = true;
+                        cameraClip.allowPositionZ = false;
                     }
                 }
                 var pickup = GameObject.CreatePrimitive(PrimitiveType.Sphere);

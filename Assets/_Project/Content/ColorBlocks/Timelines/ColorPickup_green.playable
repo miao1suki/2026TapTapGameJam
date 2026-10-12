@@ -184,11 +184,11 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  cameraTargetLocalPos: {x: 0, y: 3, z: -9}
+  cameraTargetLocalPos: {x: 0, y: 1, z: -10}
   cameraTargetEuler: {x: 0, y: 0, z: 0}
-  lockLookAtPlayer: 1
-  modeRequest: 0
-  overrideSide2DYaw: 0
+  lockLookAtPlayer: 0
+  modeRequest: 1
+  overrideSide2DYaw: 1
   side2DYawDegrees: 0
   projectionTransitionDuration: 0.4
   turnTiming: 0
@@ -218,7 +218,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  constrainOrthographicAxes: 0
+  constrainOrthographicAxes: 1
   allowPositionX: 1
   allowPositionY: 1
   allowPositionZ: 0

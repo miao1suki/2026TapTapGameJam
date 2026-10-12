@@ -82,6 +82,7 @@ TopRight
 - `duration`：动画时长。
 - `startSpeed` / `endSpeed`：初末速度。
 - `easePower`：变速比例。
+- `useTypewriter` / `typewriterCharactersPerSecond`：打字机逐字出现/消失及速度。
 
 所有动画使用 DOTween 和 `SetUpdate(true)`，暂停 `Time.timeScale` 不阻塞界面消息。
 
@@ -94,6 +95,12 @@ TopRight
 ```
 
 描边开关是 `WordNoteStyle.useOutline`。
+
+`WordNoteStyle.richText` 控制 TMP 富文本；局部着色使用：
+
+```csharp
+<color=#RRGGBB>文字</color>
+```
 
 ## 设备化按键文案
 
@@ -125,3 +132,5 @@ InputPromptUtility.FormatAction(
 - `PlayerInputDriver` 持有搬运提示的 ID，退出搬运状态时统一关闭。
 - 复活提示位于 `Center`，长期驻留、无动画、大字号、白字黑描边，按下复活后关闭。
 - 可搬运物候选提示位于物体正中心，黑字白描边，当前字号为 `2.7` 并使用细描边；电脑/手柄显示当前交互键后换行显示“搬运”，每行居中，手机只显示“搬运”。渲染层级必须高于场景和玩家。
+- 选色提示位于 `Bottom`，文本为 `当前选择X色`，显示 `2` 秒，显隐与左移组合入场、显隐与右移组合退场，各 `0.5` 秒，白字黑描边；颜色名取 `ColorCatalog.displayName`，颜色词用对应 `swatch` 富文本着色。
+- 染色反馈位于 `Bottom`，无效目标显示 `这个物体好像不能与这个颜色反应`，超出交互范围显示 `无法触碰到这个物体`，成功显示 `染色成功`；三条都与非法放置提示共用显示 `2` 秒、显隐与左移组合入场、显隐与右移组合退场、白字黑描边和同位置堆叠规则。
