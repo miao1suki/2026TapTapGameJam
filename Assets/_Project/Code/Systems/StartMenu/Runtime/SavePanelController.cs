@@ -14,9 +14,71 @@ namespace Project.StartMenu
         [SerializeField] private Transform slotList;
         [SerializeField] private Button backButton;
         [SerializeField] private Button createSlotButton;
+        [SerializeField] private bool allowSaving;
         private bool buttonsBound;
 
         public event Action BackRequested;
+        public event Action<string> LoadRequested;
+        public event Action<string> SaveRequested;
+
+        public void SetBackButtonVisible(bool value)
+        {
+            if (backButton != null)
+            {
+                backButton.gameObject.SetActive(value);
+            }
+        }
+
+        public void SetAllowSaving(bool value)
+        {
+            allowSaving = value;
+        }
+
+        public void SetStatus(string value)
+        {
+            if (statusText != null)
+            {
+                statusText.text = value;
+            }
+        }
+
+        public string LoadSlot(string slotId)
+        {
+            SaveGameData data = SaveGameService.Load(slotId);
+            if (data == null)
+            {
+                SetStatus("读取失败：存档不存在。");
+                return null;
+            }
+
+            SetStatus($"已读取存档：{data.levelLabel}");
+            return data.levelLabel;
+        }
+
+        public bool SaveCurrentToSlot(
+            string slotId,
+            string levelLabel,
+            string customDataJson)
+        {
+            SaveGameData data = SaveGameService.Load(slotId);
+            if (data == null)
+            {
+                data = new SaveGameData
+                {
+                    slotId = slotId,
+                    schemaVersion = 1,
+                };
+            }
+
+            data.levelLabel = levelLabel;
+            data.customDataJson = customDataJson ?? "{}";
+            bool saved = SaveGameService.Save(data);
+            SetStatus(saved
+                ? $"已保存到：{data.displayName}"
+                : "保存失败。");
+            Refresh();
+            return saved;
+        }
 
         public void BuildStructure()
         {
@@ -205,13 +267,27 @@ namespace Project.StartMenu
                 actions,
                 "读取",
                 new Vector2(80f, 28f),
-                () => statusText.text =
-                    $"已选择存档：{slot.displayName}（游戏进度接入待定）",
+                () => RequestLoad(slot),
                 new Color(.19f, .48f, .72f, .96f));
             LayoutElement loadElement =
                 load.gameObject.AddComponent<LayoutElement>();
             loadElement.preferredWidth = 80f;
             loadElement.preferredHeight = 28f;
+
+            if (allowSaving)
+            {
+                Button save = StartMenuUiFactory.CreateButton(
+                    "Save",
+                    actions,
+                    "保存",
+                    new Vector2(80f, 28f),
+                    () => RequestSave(slot),
+                    new Color(.24f, .56f, .42f, .96f));
+                LayoutElement saveElement =
+                    save.gameObject.AddComponent<LayoutElement>();
+                saveElement.preferredWidth = 80f;
+                saveElement.preferredHeight = 28f;
+            }
 
             Button delete = StartMenuUiFactory.CreateButton(
                 "Delete",
@@ -229,6 +305,28 @@ namespace Project.StartMenu
                 delete.gameObject.AddComponent<LayoutElement>();
             deleteElement.preferredWidth = 80f;
             deleteElement.preferredHeight = 28f;
+        }
+
+        private void RequestLoad(SaveSlotInfo slot)
+        {
+            if (LoadRequested != null)
+            {
+                LoadRequested.Invoke(slot.slotId);
+                return;
+            }
+
+            SetStatus($"已选择存档：{slot.displayName}（游戏进度接入待定）");
+        }
+
+        private void RequestSave(SaveSlotInfo slot)
+        {
+            if (SaveRequested != null)
+            {
+                SaveRequested.Invoke(slot.slotId);
+                return;
+            }
+
+            SetStatus($"已选择存档：{slot.displayName}（当前进度接入待定）");
         }
 
         private static void ClearChildren(Transform parent)

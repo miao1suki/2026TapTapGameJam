@@ -179,6 +179,20 @@ namespace Project.Player.Editor
                 "以玩家为中心，半径多少格以内的掉落物可以被感知。数值使用关卡网格格数，不使用世界单位。"));
             root.Add(pickup);
 
+            Foldout carry = PlayerInspectorFields.CreateFoldout(
+                "搬运");
+            carry.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "carryPrepareSeconds",
+                "搬起固定时间（秒）",
+                "选中相邻格目标后，玩家暂时不能移动的时间。"));
+            carry.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "carryFootprintCells",
+                "玩家占格尺寸",
+                "玩家在网格上的占格尺寸；默认 1×1，并用于相邻格和左右放下检测。"));
+            root.Add(carry);
+
             Foldout death = PlayerInspectorFields.CreateFoldout(
                 "死亡");
             death.Add(PlayerInspectorFields.Create(
@@ -224,6 +238,7 @@ namespace Project.Player.Editor
             Label jumpDebug = CreateDebugLabel();
             Label actionDebug = CreateDebugLabel();
             Label pickupDebug = CreateDebugLabel();
+            Label carryDebug = CreateDebugLabel();
             debug.Add(new Label("移动"));
             debug.Add(moveDebug);
             debug.Add(new Label("跳跃"));
@@ -232,6 +247,8 @@ namespace Project.Player.Editor
             debug.Add(actionDebug);
             debug.Add(new Label("拾取感知"));
             debug.Add(pickupDebug);
+            debug.Add(new Label("搬运"));
+            debug.Add(carryDebug);
             root.Add(debug);
             root.schedule.Execute(() =>
             {
@@ -248,6 +265,7 @@ namespace Project.Player.Editor
                     jumpDebug.text = "进入 Play Mode 后显示实时数据";
                     actionDebug.text = "进入 Play Mode 后显示实时数据";
                     pickupDebug.text = "进入 Play Mode 后显示实时数据";
+                    carryDebug.text = "进入 Play Mode 后显示实时数据";
                     return;
                 }
 
@@ -277,6 +295,12 @@ namespace Project.Player.Editor
                 pickupDebug.text =
                     $"感知半径 {player.PickupSenseRadiusBlocks:0.##} 格 · " +
                     $"世界半径 {player.PickupSenseRadiusWorld:0.##}";
+                carryDebug.text =
+                    $"队列 {player.CarryQueueCount} · " +
+                    $"准备 {(player.IsCarryPreparing ? "是" : "否")} · " +
+                    $"携带 {(player.IsCarrying ? "是" : "否")} · " +
+                    $"放下动画 {(player.IsCarryDropAnimating ? "是" : "否")} · " +
+                    $"复位动画 {(player.IsCarryResetAnimating ? "是" : "否")}";
             }).Every(100);
 
             HelpBox note = new HelpBox(

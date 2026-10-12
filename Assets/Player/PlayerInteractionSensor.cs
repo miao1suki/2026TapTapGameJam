@@ -84,13 +84,12 @@ namespace Project.Player
             return true;
         }
 
-        public bool TryGetScreenComponent<T>(
+        public bool TryGetScreenHit(
             Camera camera,
             Vector2 screenPosition,
-            out T target)
-            where T : class
+            out RaycastHit hit)
         {
-            target = null;
+            hit = default;
             if (camera == null)
             {
                 return false;
@@ -103,28 +102,43 @@ namespace Project.Player
                 Mathf.Infinity,
                 interactionMask.value,
                 QueryTriggerInteraction.Collide);
-            Collider nearestCollider = null;
             float nearestDistance = float.MaxValue;
+            bool found = false;
             for (int index = 0; index < count; index++)
             {
-                RaycastHit hit = screenRaycastBuffer[index];
-                if (hit.collider == null ||
-                    hit.distance >= nearestDistance)
+                RaycastHit candidate = screenRaycastBuffer[index];
+                if (candidate.collider == null ||
+                    candidate.distance >= nearestDistance)
                 {
                     continue;
                 }
 
-                nearestDistance = hit.distance;
-                nearestCollider = hit.collider;
+                nearestDistance = candidate.distance;
+                hit = candidate;
+                found = true;
             }
 
-            if (nearestCollider == null)
+            return found;
+        }
+
+        public bool TryGetScreenComponent<T>(
+            Camera camera,
+            Vector2 screenPosition,
+            out T target)
+            where T : class
+        {
+            target = null;
+            if (!TryGetScreenHit(
+                    camera,
+                    screenPosition,
+                    out RaycastHit hit) ||
+                hit.collider == null)
             {
                 return false;
             }
 
             MonoBehaviour[] behaviours =
-                nearestCollider.GetComponentsInParent<MonoBehaviour>();
+                hit.collider.GetComponentsInParent<MonoBehaviour>();
             for (int index = 0; index < behaviours.Length; index++)
             {
                 if (behaviours[index] is T candidate)

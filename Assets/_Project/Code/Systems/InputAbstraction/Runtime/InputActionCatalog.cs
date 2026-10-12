@@ -22,8 +22,9 @@ namespace Project.InputAbstraction
             AddMoveAction(map, InputActionId.Navigate);
             AddLookAction(map, InputActionId.Look);
             AddButtonAction(map, InputActionId.Jump, "<Keyboard>/space", "<Gamepad>/buttonSouth");
-            AddButtonAction(map, InputActionId.Interact, "<Keyboard>/e", "<Gamepad>/buttonWest");
-            AddButtonAction(map, InputActionId.Carry, "<Mouse>/rightButton", "<Gamepad>/buttonNorth");
+            AddButtonAction(map, InputActionId.Interact, "<Keyboard>/f", "<Gamepad>/buttonWest");
+            AddButtonAction(map, InputActionId.DropLeft, "<Keyboard>/q", "<Gamepad>/leftTrigger");
+            AddButtonAction(map, InputActionId.DropRight, "<Keyboard>/e", "<Gamepad>/rightTrigger");
             AddButtonAction(
                 map,
                 InputActionId.Respawn,
@@ -39,7 +40,6 @@ namespace Project.InputAbstraction
                 map,
                 InputActionId.CameraModeSwitch,
                 "<Keyboard>/tab",
-                "<Keyboard>/f",
                 "<Gamepad>/select");
             AddButtonAction(map, InputActionId.PointerPrimary, "<Mouse>/leftButton");
             AddButtonAction(map, InputActionId.PointerSecondary, "<Mouse>/rightButton");
@@ -108,7 +108,8 @@ namespace Project.InputAbstraction
                 map.Disable();
             }
 
-            EnsureCarryAction(map);
+            EnsureInteractBindings(map);
+            EnsureDropBindings(map);
             EnsureRespawnAction(map);
 
             if (mapWasEnabled)
@@ -117,25 +118,65 @@ namespace Project.InputAbstraction
             }
         }
 
-        private static void EnsureCarryAction(
+        private static void EnsureInteractBindings(
             InputActionMap map)
         {
-            InputAction carry = map.FindAction(
-                GetName(InputActionId.Carry),
+            InputAction interact = map.FindAction(
+                GetName(InputActionId.Interact),
                 false);
-            if (carry == null)
+            if (interact == null)
             {
-                carry = map.AddAction(
-                    GetName(InputActionId.Carry),
+                interact = map.AddAction(
+                    GetName(InputActionId.Interact),
                     InputActionType.Button);
             }
 
             EnsureBinding(
-                carry,
-                "<Mouse>/rightButton");
+                interact,
+                "<Keyboard>/f");
             EnsureBinding(
-                carry,
-                "<Gamepad>/buttonNorth");
+                interact,
+                "<Gamepad>/buttonWest");
+
+            InputAction colorWheel = map.FindAction(
+                GetName(InputActionId.CameraModeSwitch),
+                false);
+            if (colorWheel != null)
+            {
+                EnsureBinding(
+                    colorWheel,
+                    "<Keyboard>/tab");
+            }
+        }
+
+        private static void EnsureDropBindings(
+            InputActionMap map)
+        {
+            InputAction dropLeft = map.FindAction(
+                GetName(InputActionId.DropLeft),
+                false);
+            if (dropLeft == null)
+            {
+                dropLeft = map.AddAction(
+                    GetName(InputActionId.DropLeft),
+                    InputActionType.Button);
+            }
+
+            EnsureBinding(dropLeft, "<Keyboard>/q");
+            EnsureBinding(dropLeft, "<Gamepad>/leftTrigger");
+
+            InputAction dropRight = map.FindAction(
+                GetName(InputActionId.DropRight),
+                false);
+            if (dropRight == null)
+            {
+                dropRight = map.AddAction(
+                    GetName(InputActionId.DropRight),
+                    InputActionType.Button);
+            }
+
+            EnsureBinding(dropRight, "<Keyboard>/e");
+            EnsureBinding(dropRight, "<Gamepad>/rightTrigger");
         }
 
         private static void EnsureRespawnAction(

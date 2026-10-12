@@ -67,6 +67,20 @@ namespace Project.InputAbstraction.Editor
                 InputActionId.Interact,
                 new Vector2(1f, 0f),
                 new Vector2(-300f, 350f));
+            CreateButton(
+                "DropLeftButton",
+                "放下左",
+                mobileRoot,
+                InputActionId.DropLeft,
+                new Vector2(1f, 0f),
+                new Vector2(-300f, 220f));
+            CreateButton(
+                "DropRightButton",
+                "放下右",
+                mobileRoot,
+                InputActionId.DropRight,
+                new Vector2(1f, 0f),
+                new Vector2(-105f, 220f));
 
             PlatformUILayoutController controller =
                 canvasObject.GetComponent<PlatformUILayoutController>();

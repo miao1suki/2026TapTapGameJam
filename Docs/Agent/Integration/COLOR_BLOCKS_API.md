@@ -109,6 +109,8 @@ BouncePlantFeature
 PlantObstacleFeature
 ```
 
+另有共享搬运组件 `CarryableFeature`，它不切换颜色形态；能源方块实例由同物体颜色对象门控，万能方块实例常态可搬运。
+
 玩家水体推动与浮力通过 `PlayerController` 统一汇入游泳速度计算：
 
 ```csharp
@@ -133,7 +135,7 @@ IMechanismSignalReceiver
 IInteractionHoldTarget
 ```
 
-`EnergyBlockFeature.CanMigrate` 是全游戏能源方块唯一迁移标记。能源方块通过交互圈长按拿起、鼠标网格吸附拖拽、松手放下；按钮使用 `IInteractionTarget`，曲柄使用 `IInteractionHoldTarget`。基座只实现 `IMechanismSignalSource`；移动平台等消费者在自己的 `linkedControls` 中绑定基座、按钮、曲柄，基座不保存机关列表。
+能源方块和万能方块共用 `CarryableFeature`。玩家按默认 1×1 占格检测上下左右紧邻目标并维护拾取队列，按 `F` 固定队列首项，0.1 秒后目标关闭 Collider、置顶并通过 DOTween 移到玩家头顶；携带期间只能移动和冲刺。`Q/E` 分别请求左/右放下，只检查玩家占格方向的紧邻格。携带中按“复活/重置搬运”或玩家死亡时，目标记录并飞回拿起前的原始位置，结束后恢复 Collider 和玩家控制。能源方块的 `CarryableFeature` 受同物体 `IColorObject.IsActive` 门控，万能方块常态可搬。按钮使用 `IInteractionTarget`，曲柄使用 `IInteractionHoldTarget`；基座只实现 `IMechanismSignalSource`。
 
 ## 运行时调用
 

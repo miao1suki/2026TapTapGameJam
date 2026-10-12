@@ -6,7 +6,6 @@ namespace Project.BlockFeatures
     public interface IEnergySource
     {
         bool IsEnergyAvailable { get; }
-        bool CanMigrate { get; }
     }
 
     public interface IMechanismSignalSource

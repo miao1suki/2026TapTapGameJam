@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using Project.BlockFeatures;
-using Project.InputAbstraction;
 using UnityEngine;
 
 namespace Project.ColorBlocks
@@ -18,7 +17,6 @@ namespace Project.ColorBlocks
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class UniversalColorBlock : MonoBehaviour,
-        IInteractionTarget,
         IColorApplicationTarget,
         IRoomColorResettable
     {
@@ -80,27 +78,6 @@ namespace Project.ColorBlocks
             }
         }
 
-        public bool CanInteract(GameObject interactor)
-        {
-            return isActiveAndEnabled &&
-                   ColorRuntimeService.Existing != null;
-        }
-
-        public bool TryInteract(GameObject interactor)
-        {
-            Project.Player.PlayerColorWheel wheel =
-                interactor != null
-                    ? interactor.GetComponentInParent<
-                        Project.Player.PlayerColorWheel>()
-                    : null;
-            if (wheel == null || !wheel.HasSelectedColor)
-            {
-                return false;
-            }
-
-            return ApplyColor(wheel.SelectedColorId, interactor);
-        }
-
         public bool CanApplyColor(
             string colorId,
             GameObject actor)
@@ -155,6 +132,7 @@ namespace Project.ColorBlocks
             currentColorId = string.Empty;
             SetPureStatusColor(Color.white);
         }
+
 
         private void ResolveStatusRenderer()
         {

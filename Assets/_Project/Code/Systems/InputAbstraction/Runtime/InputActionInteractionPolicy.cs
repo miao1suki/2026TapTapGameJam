@@ -14,7 +14,8 @@ namespace Project.InputAbstraction
 
         public static bool CanShowInBindingUI(InputActionId actionId)
         {
-            return actionId != InputActionId.Look;
+            return actionId != InputActionId.Look &&
+                   actionId != InputActionId.Carry;
         }
 
         public static InputActionId[] GetVisibleActions()
@@ -48,7 +49,11 @@ namespace Project.InputAbstraction
                 case InputActionId.Interact:
                     return "交互";
                 case InputActionId.Carry:
-                    return "搬运";
+                    return "搬运（旧）";
+                case InputActionId.DropLeft:
+                    return "放下（左）";
+                case InputActionId.DropRight:
+                    return "放下（右）";
                 case InputActionId.Cancel:
                     return "取消";
                 case InputActionId.Submit:
@@ -68,7 +73,7 @@ namespace Project.InputAbstraction
                 case InputActionId.PointerSecondary:
                     return "指针副键";
                 case InputActionId.Respawn:
-                    return "重生";
+                    return "复活/重置搬运";
                 default:
                     return actionId.ToString();
             }
@@ -115,6 +120,12 @@ namespace Project.InputAbstraction
                 return InputActionTriggerPolicy.HoldOnly;
             }
 
+            if (actionId == InputActionId.DropLeft ||
+                actionId == InputActionId.DropRight)
+            {
+                return InputActionTriggerPolicy.ClickOnly;
+            }
+
             if (actionId == InputActionId.Interact)
             {
                 return InputActionTriggerPolicy.ClickAndHold;
@@ -141,6 +152,8 @@ namespace Project.InputAbstraction
         {
             if (actionId == InputActionId.Interact ||
                 actionId == InputActionId.Carry ||
+                actionId == InputActionId.DropLeft ||
+                actionId == InputActionId.DropRight ||
                 actionId == InputActionId.Respawn)
             {
                 return;
@@ -212,6 +225,8 @@ namespace Project.InputAbstraction
                     (int)InputActionTriggerPolicy.ClickAndHold);
                 if (actionIds[index] == InputActionId.Interact ||
                     actionIds[index] == InputActionId.Carry ||
+                    actionIds[index] == InputActionId.DropLeft ||
+                    actionIds[index] == InputActionId.DropRight ||
                     actionIds[index] == InputActionId.Respawn)
                 {
                     continue;

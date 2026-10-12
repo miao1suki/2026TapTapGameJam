@@ -8,6 +8,17 @@ namespace Project.StartMenu
     [DisallowMultipleComponent]
     public sealed class SettingsPanelController : MonoBehaviour
     {
+        private const string CreditsText =
+            "队长-程序/TA    白喵喵\n" +
+            "副队长-主策划    溺水的咸鱼君\n" +
+            "策划    R\n" +
+            "策划    <段>\n" +
+            "程序    臾日不再\n" +
+            "美术    艾尔四次方\n" +
+            "美术    阿良\n" +
+            "TA    Irotin\n" +
+            "音乐    BK2049";
+
         [SerializeField] private Button soundTabButton;
         [SerializeField] private Button keyBindingTabButton;
         [SerializeField] private Button creditsTabButton;
@@ -27,6 +38,14 @@ namespace Project.StartMenu
         private bool buttonsBound;
 
         public event Action BackRequested;
+
+        public void SetBackButtonVisible(bool value)
+        {
+            if (backButton != null)
+            {
+                backButton.gameObject.SetActive(value);
+            }
+        }
 
         public void BuildStructure()
         {
@@ -139,6 +158,7 @@ namespace Project.StartMenu
                 BuildStructure();
             }
 
+            StyleCreditsPage();
             BindButtons();
         }
 
@@ -365,9 +385,9 @@ namespace Project.StartMenu
                 "Title",
                 page.transform,
                 "制作人员",
-                24,
+                30,
                 TextAnchor.UpperLeft,
-                new Color(.92f, .98f, 1f, 1f));
+                Color.white);
             StartMenuUiFactory.SetTopLeft(
                 title.rectTransform,
                 new Vector2(24f, -22f),
@@ -376,17 +396,67 @@ namespace Project.StartMenu
             Text body = StartMenuUiFactory.CreateText(
                 "Body",
                 page.transform,
-                "制作人员名单待整理。\n\n当前页面用于确认栏目、排版和后续数据接入位置。",
-                16,
+                CreditsText,
+                26,
                 TextAnchor.UpperLeft,
-                new Color(.76f, .86f, .92f, .96f));
+                Color.white);
             body.horizontalOverflow = HorizontalWrapMode.Wrap;
             body.verticalOverflow = VerticalWrapMode.Truncate;
             StartMenuUiFactory.SetTopLeft(
                 body.rectTransform,
                 new Vector2(24f, -76f),
-                new Vector2(760f, 210f));
+                new Vector2(820f, 340f));
+            ApplyCreditsOutline(title);
+            ApplyCreditsOutline(body);
             return page.gameObject;
+        }
+
+        private void StyleCreditsPage()
+        {
+            if (creditsPage == null)
+            {
+                return;
+            }
+
+            Text title = creditsPage.transform
+                .Find("Title")
+                ?.GetComponent<Text>();
+            Text body = creditsPage.transform
+                .Find("Body")
+                ?.GetComponent<Text>();
+            if (title != null)
+            {
+                title.fontSize = 30;
+                title.color = Color.white;
+                ApplyCreditsOutline(title);
+            }
+
+            if (body != null)
+            {
+                body.fontSize = 26;
+                body.color = Color.white;
+                body.text = CreditsText;
+                body.rectTransform.sizeDelta = new Vector2(820f, 340f);
+                ApplyCreditsOutline(body);
+            }
+        }
+
+        private static void ApplyCreditsOutline(Text text)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            Outline outline = text.GetComponent<Outline>();
+            if (outline == null)
+            {
+                outline = text.gameObject.AddComponent<Outline>();
+            }
+
+            outline.effectColor = Color.black;
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+            outline.useGraphicAlpha = true;
         }
 
         private static void SetTabColor(Button button, bool selected)

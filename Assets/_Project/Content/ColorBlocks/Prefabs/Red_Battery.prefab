@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 8699724821407516943}
   - component: {fileID: 2395657376977643182}
   - component: {fileID: 3159548297628459178}
+  - component: {fileID: 900000000000000002}
   m_Layer: 8
   m_Name: Red_Battery
   m_TagString: Untagged
@@ -53,9 +54,6 @@ MonoBehaviour:
   useFeatureMaterial: 1
   featureMaterial: {fileID: 0}
   featureRenderers: []
-  canMigrate: 1
-  holdDurationSeconds: 0.8
-  fallbackSearchRadiusBlocks: 4
 --- !u!33 &5822065923537761863
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -175,3 +173,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.BlockAbilityHost
   debugLog: 0
+--- !u!114 &900000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2887393928276365968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d7f8a1b3c4d5e6f708192a3b4c5d6e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.CarryableFeature
+  canCarry: 1
+  indicatorFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+  indicatorFontSize: 2.7
+  indicatorOffset: {x: 0, y: 0, z: 0}
+  indicatorOutlineWidth: 0.1

@@ -12,6 +12,7 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 4. `Docs/Agent/SYSTEM_INDEX.md`
 5. 开发颜色系统、颜色物体、万能方块、钥匙、房间重置或交互图迁移时，必须先读 `.agents/skills/taptap-color-gameplay/SKILL.md`，并完整读取其中指定的 `Assets/_Project/Code/Systems/ColorBlocks/SKILL.md`。
 6. 做编辑器 UI 时另读 `Docs/Agent/EDITOR_UI_STANDARD.md`。
+7. 修改玩家屏幕提示、按键说明、搬运提示、复活提示或 `WordNote_UI` 时，必须先读 `.agents/skills/taptap-word-note/SKILL.md`，并完整读取其中指定的 `Assets/_Project/Code/Systems/WordNote/SKILL.md`。
 
 先验证当前目录是 Unity 项目且 `git remote get-url origin` 为上述仓库；不匹配立即停止写入和推送。
 不在旧项目实现功能，不向旧仓库推送，不复制整个旧 Assets/ProjectSettings。
@@ -25,7 +26,7 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 - Project name: 2026TapTapGameJam
 - Unity version: Unity 6000.3.12f1
 - Active game object:
-  - Name: __PlanningMapGenerated
+  - Name: PauseScreen
   - Tag: Untagged
   - Layer: Default
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->

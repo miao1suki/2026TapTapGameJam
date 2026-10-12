@@ -23,7 +23,8 @@ namespace Project.Player
     public sealed class PlayerController :
         MonoBehaviour,
         IAchievementSignalProvider,
-        IPlayerControlLockTarget
+        IPlayerControlLockTarget,
+        IPlayerCarryHost
     {
         [SerializeField, Min(0)] private float moveSpeed = 5;
         [SerializeField, Min(0)] private float swimSpeed = 3.5f;
@@ -67,6 +68,9 @@ namespace Project.Player
         private float respawnInvulnerabilitySeconds = 2f;
         [SerializeField, Min(0f)]
         private float pickupSenseRadiusBlocks = 2f;
+        [SerializeField, Min(0f)] private float carryPrepareSeconds = .1f;
+        [SerializeField] private Vector2Int carryFootprintCells =
+            Vector2Int.one;
         [SerializeField] private ActSO deathAction;
         [SerializeField] private Transform respawnPoint;
         [SerializeField, Min(1)] private int respawnRandomRadiusBlocks = 4;
@@ -77,8 +81,21 @@ namespace Project.Player
         private PlayerActionRunner runner;
         private PlayerInteractionSensor interactionSensor;
         private PlayerColorWheel colorWheel;
-        private IPlayerCarryTarget carryTarget;
-        private IPlayerPointerDrag pointerDrag;
+        private readonly List<IPlayerCarryTarget> carryQueue =
+            new List<IPlayerCarryTarget>();
+        private readonly List<Vector3Int> carryFootprintBuffer =
+            new List<Vector3Int>();
+        private readonly Collider[] carryDropBuffer =
+            new Collider[32];
+        private readonly RaycastHit[] carryRayBuffer =
+            new RaycastHit[32];
+        private IPlayerCarryTarget selectedCarryTarget;
+        private IPlayerCarryTarget highlightedCarryTarget;
+        private float carryPrepareUntil = -1f;
+        private bool carryPreparing;
+        private bool carryDropAnimating;
+        private bool carryResetting;
+        private bool carryControlLockActive;
         private IInteractionHoldTarget heldInteractionTarget;
         private Vector2 movement;
         private bool sprint;
@@ -210,7 +227,30 @@ namespace Project.Player
             runner != null && runner.IsPlaying;
         public bool IsColorWheelOpen =>
             colorWheel != null && colorWheel.IsWheelOpen;
-        public bool IsPointerDragActive => pointerDrag != null;
+        public bool IsCarrying =>
+            selectedCarryTarget != null &&
+            selectedCarryTarget.IsCarryActive;
+        public bool IsCarryPreparing => carryPreparing;
+        public bool IsCarryDropAnimating => carryDropAnimating;
+        public bool IsCarryResetAnimating => carryResetting;
+        public bool IsCarryBusy =>
+            carryPreparing || carryDropAnimating || carryResetting;
+        public int CarryQueueCount => carryQueue.Count;
+        public Vector3 CarryAnchorWorldPosition
+        {
+            get
+            {
+                float top = capsule != null
+                    ? capsule.bounds.max.y
+                    : transform.position.y;
+                return new Vector3(
+                    transform.position.x,
+                    top + gridCellWorldSize * .5f,
+                    transform.position.z);
+            }
+        }
+        public Vector3 CarryCenterWorldPosition =>
+            transform.position;
         public float InteractionScanRadius =>
             interactionSensor != null
                 ? interactionSensor.ScanRadius
@@ -224,6 +264,7 @@ namespace Project.Player
         public event Action<ActSO> ActionCompleted;
         public event Action<bool> ControlLockChanged;
         public event Action TimelineSignalReceived;
+        public event Action CarryPlacementRejected;
         private static readonly string[] Signals = { AchievementSignalIds.PlayerJumped,
             AchievementSignalIds.PlayerLanded, AchievementSignalIds.PlayerActionStarted,
             AchievementSignalIds.PlayerActionCompleted };
@@ -260,6 +301,22 @@ namespace Project.Player
                 colorWheel = gameObject.AddComponent<PlayerColorWheel>();
             }
         }
+
+        private void LateUpdate()
+        {
+            TickCarryState();
+            if (selectedCarryTarget == null ||
+                carryPreparing ||
+                carryDropAnimating ||
+                carryResetting)
+            {
+                return;
+            }
+
+            selectedCarryTarget.UpdateCarryAnchor(
+                CarryAnchorWorldPosition);
+        }
+
         private static PhysicsMaterial GetZeroFrictionMaterial()
         {
             if (zeroFrictionMaterial == null)
@@ -318,8 +375,7 @@ namespace Project.Player
             }
 
             if (runner != null) { runner.Completed -= Completed; runner.Stop(); }
-            CancelCarry();
-            CancelPointerDrag();
+            CancelCarryState();
             ReleaseHeldInteraction();
             lockDepth = 0; movement = Vector2.zero; jumpUntil = -1;
             jumpHeld = false;
@@ -852,135 +908,593 @@ namespace Project.Player
             colorWheel?.TryUseSelectedAbility();
         }
 
-        public void BeginPointerDrag(IPlayerPointerDrag drag)
+        public bool UpdateCarryInput(
+            bool interactTriggered,
+            bool dropLeftTriggered,
+            bool dropRightTriggered,
+            bool resetTriggered)
         {
-            if (dead || drag == null || pointerDrag != null)
-            {
-                return;
-            }
-
-            pointerDrag = drag;
-            ClearBufferedInput();
-            colorWheel?.CloseWheel();
-            SetControlLocked(true);
-        }
-
-        public void EndPointerDrag(IPlayerPointerDrag drag)
-        {
-            if (drag == null ||
-                !ReferenceEquals(pointerDrag, drag))
-            {
-                return;
-            }
-
-            pointerDrag = null;
-            SetControlLocked(false);
-        }
-
-        public void UpdatePointerDrag(
-            Vector2 screenPosition,
-            Camera camera)
-        {
-            if (dead || pointerDrag == null || camera == null)
-            {
-                return;
-            }
-
-            pointerDrag.UpdatePointer(
-                camera.ScreenPointToRay(screenPosition));
-        }
-
-        public void UpdateCarry(
-            bool carryHeld,
-            bool carryTriggered,
-            Vector2 screenPosition,
-            Camera camera)
-        {
+            TickCarryState();
             if (dead)
             {
-                return;
+                CancelCarryState();
+                return false;
             }
 
-            if (carryTarget != null)
+            if (selectedCarryTarget != null)
             {
-                if (!carryHeld)
+                if (resetTriggered)
                 {
-                    IPlayerCarryTarget releasedTarget = carryTarget;
-                    carryTarget = null;
-                    releasedTarget.EndCarry(this);
-                    ForceEndPointerDrag();
+                    ResetCarry();
+                    return true;
+                }
+
+                if (carryPreparing ||
+                    carryDropAnimating ||
+                    carryResetting)
+                {
+                    return true;
+                }
+
+                if (dropLeftTriggered)
+                {
+                    TryDropCarry(Vector3Int.left);
+                }
+                else if (dropRightTriggered)
+                {
+                    TryDropCarry(Vector3Int.right);
+                }
+
+                return true;
+            }
+
+            if (Time.timeScale <= 0f)
+            {
+                return false;
+            }
+
+            if (IsControlLocked)
+            {
+                return false;
+            }
+
+            RefreshCarryQueue();
+            if (!interactTriggered || carryQueue.Count == 0)
+            {
+                return false;
+            }
+
+            BeginCarryPreparation(carryQueue[0]);
+            return true;
+        }
+
+        private void TickCarryState()
+        {
+            if (carryPreparing)
+            {
+                if (Time.time < carryPrepareUntil)
+                {
                     return;
                 }
 
-                if (camera != null)
+                carryPreparing = false;
+                if (!CanContinueCarry(selectedCarryTarget) ||
+                    !selectedCarryTarget.BeginCarry(this))
                 {
-                    carryTarget.UpdateCarry(
-                        this,
-                        camera.ScreenPointToRay(
-                            screenPosition));
+                    CancelCarryState();
+                    return;
+                }
+
+                ReleaseCarryControlLock();
+                return;
+            }
+
+            if (carryDropAnimating)
+            {
+                if (selectedCarryTarget == null ||
+                    !selectedCarryTarget.IsCarryDropAnimating)
+                {
+                    FinishCarryDrop();
                 }
 
                 return;
             }
 
-            if (!carryTriggered ||
-                camera == null ||
-                interactionSensor == null)
+            if (carryResetting)
+            {
+                if (selectedCarryTarget == null ||
+                    !selectedCarryTarget.IsCarryResetAnimating)
+                {
+                    FinishCarryReset();
+                }
+
+                return;
+            }
+
+            if (selectedCarryTarget != null &&
+                !CanContinueCarry(selectedCarryTarget))
+            {
+                CancelCarryState();
+            }
+        }
+
+        private void BeginCarryPreparation(
+            IPlayerCarryTarget target)
+        {
+            SetHighlightedCarryTarget(null);
+            selectedCarryTarget = target;
+            carryQueue.Clear();
+            carryPreparing = true;
+            carryPrepareUntil =
+                Time.time + Mathf.Max(0f, carryPrepareSeconds);
+            AcquireCarryControlLock();
+        }
+
+        private void TryDropCarry(Vector3Int direction)
+        {
+            if (selectedCarryTarget == null ||
+                carryPreparing ||
+                carryDropAnimating ||
+                carryResetting)
             {
                 return;
             }
 
-            if (interactionSensor.TryGetScreenComponent(
-                    camera,
-                    screenPosition,
-                    out IPlayerCarryTarget target) &&
-                target is Component component &&
-                interactionSensor.IsWithinRange(component) &&
-                target.CanCarry(this))
+            if (!TryResolveCarryDropCell(
+                    direction,
+                    out Vector3Int cell))
             {
-                carryTarget = target;
-                target.BeginCarry(
+                CarryPlacementRejected?.Invoke();
+                return;
+            }
+
+            Transform targetTransform =
+                selectedCarryTarget.CarryTransform;
+            if (targetTransform == null ||
+                !selectedCarryTarget.BeginCarryDrop(
                     this,
-                    camera.ScreenPointToRay(screenPosition));
+                    CellToWorld(
+                        cell,
+                        targetTransform.position.z)))
+            {
+                CarryPlacementRejected?.Invoke();
+                return;
             }
+
+            carryDropAnimating = true;
+            AcquireCarryControlLock();
         }
 
-        private void CancelPointerDrag()
+        private void FinishCarryDrop()
         {
-            if (pointerDrag == null)
+            carryDropAnimating = false;
+            selectedCarryTarget = null;
+            carryQueue.Clear();
+            ReleaseCarryControlLock();
+            ClearBufferedInput();
+        }
+
+        private void FinishCarryReset()
+        {
+            carryResetting = false;
+            selectedCarryTarget = null;
+            carryQueue.Clear();
+            ReleaseCarryControlLock();
+            ClearBufferedInput();
+        }
+
+        private void ResetCarry()
+        {
+            if (selectedCarryTarget == null)
+            {
+                carryResetting = false;
+                carryQueue.Clear();
+                ReleaseCarryControlLock();
+                return;
+            }
+
+            if (carryResetting)
             {
                 return;
             }
 
-            IPlayerPointerDrag drag = pointerDrag;
-            pointerDrag = null;
-            drag.CancelPointerDrag();
+            carryPreparing = false;
+            carryDropAnimating = false;
+            if (!selectedCarryTarget.BeginCarryReset(this))
+            {
+                CancelCarryState();
+                return;
+            }
+
+            carryResetting = true;
+            AcquireCarryControlLock();
+        }
+
+        private void CancelCarryState()
+        {
+            carryPreparing = false;
+            carryDropAnimating = false;
+            carryResetting = false;
+            carryPrepareUntil = -1f;
+            selectedCarryTarget?.CancelCarry();
+            selectedCarryTarget = null;
+            carryQueue.Clear();
+            SetHighlightedCarryTarget(null);
+            ReleaseCarryControlLock();
+        }
+
+        private void AcquireCarryControlLock()
+        {
+            if (carryControlLockActive)
+            {
+                return;
+            }
+
+            carryControlLockActive = true;
+            ReleaseHeldInteraction();
+            colorWheel?.CloseWheel();
+            ClearBufferedInput();
+            SetControlLocked(true);
+        }
+
+        private void ReleaseCarryControlLock()
+        {
+            if (!carryControlLockActive)
+            {
+                return;
+            }
+
+            carryControlLockActive = false;
             SetControlLocked(false);
         }
 
-        private void ForceEndPointerDrag()
+        private bool CanContinueCarry(IPlayerCarryTarget target)
         {
-            if (pointerDrag == null)
+            if (target == null)
             {
-                return;
+                return false;
             }
 
-            IPlayerPointerDrag drag = pointerDrag;
-            pointerDrag = null;
-            drag.CancelPointerDrag();
-            SetControlLocked(false);
+            if (target is Component component &&
+                (component == null ||
+                 !component.gameObject.activeInHierarchy))
+            {
+                return false;
+            }
+
+            return target.CanCarry(this);
         }
 
-        private void CancelCarry()
+        private void RefreshCarryQueue()
         {
-            if (carryTarget == null)
+            carryQueue.Clear();
+            IReadOnlyList<IPlayerCarryTarget> targets =
+                PlayerCarryTargetRegistry.All;
+            if (targets.Count == 0)
+            {
+                SetHighlightedCarryTarget(null);
+                return;
+            }
+
+            GetCarryFootprintCells(carryFootprintBuffer);
+            for (int index = 0; index < targets.Count; index++)
+            {
+                IPlayerCarryTarget target = targets[index];
+                if (target == null ||
+                    target.CarryTransform == null ||
+                    !target.CanCarry(this))
+                {
+                    continue;
+                }
+
+                Vector3Int cell = WorldToCell(
+                    target.CarryTransform.position);
+                if (IsCardinalNeighbor(
+                        carryFootprintBuffer,
+                        cell))
+                {
+                    carryQueue.Add(target);
+                }
+            }
+
+            if (carryQueue.Count > 1)
+            {
+                Vector3 playerPosition = transform.position;
+                carryQueue.Sort((left, right) =>
+                {
+                    float leftDistance =
+                        (left.CarryTransform.position - playerPosition)
+                        .sqrMagnitude;
+                    float rightDistance =
+                        (right.CarryTransform.position - playerPosition)
+                        .sqrMagnitude;
+                    return leftDistance.CompareTo(rightDistance);
+                });
+            }
+
+            SetHighlightedCarryTarget(
+                carryQueue.Count > 0
+                    ? carryQueue[0]
+                    : null);
+        }
+
+        private void SetHighlightedCarryTarget(
+            IPlayerCarryTarget target)
+        {
+            if (ReferenceEquals(highlightedCarryTarget, target))
             {
                 return;
             }
 
-            IPlayerCarryTarget target = carryTarget;
-            carryTarget = null;
-            target.CancelCarry();
+            highlightedCarryTarget?.SetCarryIndicator(false);
+            highlightedCarryTarget = target;
+            highlightedCarryTarget?.SetCarryIndicator(true);
+        }
+
+        private static bool IsCardinalNeighbor(
+            IReadOnlyList<Vector3Int> occupiedCells,
+            Vector3Int targetCell)
+        {
+            for (int index = 0;
+                 index < occupiedCells.Count;
+                 index++)
+            {
+                Vector3Int delta =
+                    targetCell - occupiedCells[index];
+                if (Mathf.Abs(delta.x) + Mathf.Abs(delta.y) == 1)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void GetCarryFootprintCells(
+            List<Vector3Int> result)
+        {
+            result.Clear();
+            int width = Mathf.Max(1, carryFootprintCells.x);
+            int height = Mathf.Max(1, carryFootprintCells.y);
+            float epsilon = gridCellWorldSize * .001f;
+            Vector3 center = transform.position;
+            Vector3 halfExtents = new Vector3(
+                width * gridCellWorldSize * .5f,
+                height * gridCellWorldSize * .5f,
+                0f);
+            Vector3Int min = WorldToCell(
+                center - halfExtents + Vector3.one * epsilon);
+            Vector3Int max = WorldToCell(
+                center + halfExtents - Vector3.one * epsilon);
+            for (int x = min.x; x <= max.x; x++)
+            {
+                for (int y = min.y; y <= max.y; y++)
+                {
+                    result.Add(new Vector3Int(x, y, 0));
+                }
+            }
+        }
+
+        private bool TryResolveCarryDropCell(
+            Vector3Int direction,
+            out Vector3Int result)
+        {
+            if (HasCarryBlockerInDirection(direction))
+            {
+                result = default;
+                return false;
+            }
+
+            GetCarryFootprintCells(carryFootprintBuffer);
+            int minX = int.MaxValue;
+            int maxX = int.MinValue;
+            int minY = int.MaxValue;
+            int maxY = int.MinValue;
+            for (int index = 0;
+                 index < carryFootprintBuffer.Count;
+                 index++)
+            {
+                Vector3Int cell = carryFootprintBuffer[index];
+                minX = Mathf.Min(minX, cell.x);
+                maxX = Mathf.Max(maxX, cell.x);
+                minY = Mathf.Min(minY, cell.y);
+                maxY = Mathf.Max(maxY, cell.y);
+            }
+
+            for (int index = 0;
+                 index < carryFootprintBuffer.Count;
+                 index++)
+            {
+                Vector3Int occupied = carryFootprintBuffer[index];
+                bool onOuterEdge =
+                    direction.x < 0
+                        ? occupied.x == minX
+                        : direction.x > 0
+                            ? occupied.x == maxX
+                            : direction.y < 0
+                                ? occupied.y == minY
+                                : occupied.y == maxY;
+                if (!onOuterEdge)
+                {
+                    continue;
+                }
+
+                Vector3Int candidate = occupied + direction;
+                if (carryFootprintBuffer.Contains(candidate) ||
+                    !IsCarryDropCellFree(candidate))
+                {
+                    continue;
+                }
+
+                result = candidate;
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
+
+        private bool HasCarryBlockerInDirection(
+            Vector3Int direction)
+        {
+            Vector3 rayDirection = new Vector3(
+                direction.x,
+                direction.y,
+                0f);
+            if (rayDirection.sqrMagnitude < .001f)
+            {
+                return true;
+            }
+
+            rayDirection.Normalize();
+            int count = Physics.RaycastNonAlloc(
+                new Ray(transform.position, rayDirection),
+                carryRayBuffer,
+                gridCellWorldSize * 1.1f,
+                ~0,
+                QueryTriggerInteraction.Collide);
+            for (int index = 0; index < count; index++)
+            {
+                Collider collider = carryRayBuffer[index].collider;
+                if (collider == null ||
+                    BelongsToPlayer(collider.transform) ||
+                    BelongsToSelectedCarryTarget(collider.transform))
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsCarryDropCellFree(Vector3Int cell)
+        {
+            if (IsCarryCellOccupiedByPlacedBlock(cell))
+            {
+                return false;
+            }
+
+            Vector3 center = CellToWorld(
+                cell,
+                transform.position.z);
+            int count = Physics.OverlapBoxNonAlloc(
+                center,
+                Vector3.one * (gridCellWorldSize * .49f),
+                carryDropBuffer,
+                Quaternion.identity,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+            for (int index = 0; index < count; index++)
+            {
+                Collider collider = carryDropBuffer[index];
+                if (collider == null ||
+                    BelongsToPlayer(collider.transform) ||
+                    BelongsToSelectedCarryTarget(collider.transform))
+                {
+                    continue;
+                }
+
+                return false;
+            }
+
+            IReadOnlyList<IPlayerCarryTarget> targets =
+                PlayerCarryTargetRegistry.All;
+            for (int index = 0; index < targets.Count; index++)
+            {
+                IPlayerCarryTarget target = targets[index];
+                if (target == null ||
+                    ReferenceEquals(target, selectedCarryTarget) ||
+                    target.CarryTransform == null ||
+                    !target.CanCarry(this))
+                {
+                    continue;
+                }
+
+                if (WorldToCell(target.CarryTransform.position) == cell)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool IsCarryCellOccupiedByPlacedBlock(
+            Vector3Int cell)
+        {
+            Vector2Int gridCell = new Vector2Int(cell.x, cell.y);
+            IReadOnlyList<Project.LevelEditor.LevelEditorPlacedBlock>
+                blocks =
+                    ProjectDiscovery.FindAll<
+                        Project.LevelEditor.LevelEditorPlacedBlock>(
+                        true);
+            for (int index = 0; index < blocks.Count; index++)
+            {
+                Project.LevelEditor.LevelEditorPlacedBlock block =
+                    blocks[index];
+                if (block == null ||
+                    !block.isActiveAndEnabled ||
+                    block.gameObject.scene != gameObject.scene ||
+                    !block.ContainsCell(gridCell))
+                {
+                    continue;
+                }
+
+                if (BelongsToPlayer(block.transform) ||
+                    BelongsToSelectedCarryTarget(block.transform))
+                {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool BelongsToPlayer(Transform candidate)
+        {
+            if (candidate == null)
+            {
+                return false;
+            }
+
+            return candidate == transform ||
+                   candidate.IsChildOf(transform);
+        }
+
+        private bool BelongsToSelectedCarryTarget(
+            Transform candidate)
+        {
+            if (candidate == null ||
+                selectedCarryTarget is not Component target ||
+                target == null)
+            {
+                return false;
+            }
+
+            return candidate == target.transform ||
+                   candidate.IsChildOf(target.transform);
+        }
+
+        private Vector3Int WorldToCell(Vector3 position)
+        {
+            return new Vector3Int(
+                Mathf.FloorToInt(position.x / gridCellWorldSize),
+                Mathf.FloorToInt(position.y / gridCellWorldSize),
+                0);
+        }
+
+        private Vector3 CellToWorld(
+            Vector3Int cell,
+            float z)
+        {
+            return new Vector3(
+                (cell.x + .5f) * gridCellWorldSize,
+                (cell.y + .5f) * gridCellWorldSize,
+                z);
         }
         private float GetSwimSpeedMultiplier()
         {
@@ -1536,6 +2050,7 @@ namespace Project.Player
                 return;
             }
 
+            ResetCarry();
             Vector3 targetPosition;
             if (PlayerRespawnPointRegistry.TryFindPreferred(
                     deathPosition,
@@ -1724,7 +2239,7 @@ namespace Project.Player
             dead = false;
             runner?.Stop();
             ClearDeathControlState();
-            ControlLockChanged?.Invoke(false);
+            ControlLockChanged?.Invoke(IsControlLocked);
         }
 
         private void ClearDeathControlState()
@@ -1756,8 +2271,7 @@ namespace Project.Player
             highestAirPosition = transform.position.y;
             invulnerableUntil = 0f;
             ReleaseHeldInteraction();
-            CancelCarry();
-            ForceEndPointerDrag();
+            ResetCarry();
             colorWheel?.CloseWheel();
             if (motor != null)
             {
@@ -1776,8 +2290,7 @@ namespace Project.Player
         public IDisposable AcquireControlLock(object owner)
         {
             ReleaseHeldInteraction();
-            CancelCarry();
-            ForceEndPointerDrag();
+            CancelCarryState();
             colorWheel?.CloseWheel();
             ClearBufferedInput();
             sprint = false;

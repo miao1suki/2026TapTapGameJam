@@ -50,6 +50,7 @@ namespace Project.Achievements
 
         public event Action<AchievementSO> AchievementUnlocked;
         public event Action<AchievementSO> AchievementLocked;
+        public event Action<AchievementSO> AchievementProgressChanged;
 
         private void Awake()
         {
@@ -454,6 +455,8 @@ namespace Project.Achievements
                 return false;
             }
 
+            AchievementProgressChanged?.Invoke(achievement);
+
             if (condition.Mode !=
                 AchievementConditionMode.Trigger)
             {
@@ -577,6 +580,118 @@ namespace Project.Achievements
                     achievement,
                     false)
                 ?.GetCondition(conditionId, false);
+        }
+
+        public string GetCurrentRequirementText(
+            int achievementId)
+        {
+            if (!achievementsById.TryGetValue(
+                    achievementId,
+                    out AchievementSO achievement))
+            {
+                return string.Empty;
+            }
+
+            AchievementRuntimeState state =
+                GetRuntimeState(achievement, false);
+            if (state == null || state.IsUnlocked)
+            {
+                return string.Empty;
+            }
+
+            string rootNodeId = achievement.RootNodeId;
+            if (string.IsNullOrWhiteSpace(rootNodeId) &&
+                achievement.Conditions.Count > 0)
+            {
+                rootNodeId =
+                    achievement.Conditions[0].ConditionId;
+            }
+
+            AchievementConditionDefinition condition =
+                FindCurrentCondition(
+                    achievement,
+                    state,
+                    rootNodeId,
+                    new Dictionary<string, bool>(
+                        StringComparer.Ordinal),
+                    new HashSet<string>(
+                        StringComparer.Ordinal));
+            if (condition == null)
+            {
+                return string.Empty;
+            }
+
+            return achievement.GetConditionText(
+                condition.ConditionId,
+                state.GetCondition(
+                    condition.ConditionId,
+                    false));
+        }
+
+        private static AchievementConditionDefinition
+            FindCurrentCondition(
+                AchievementSO achievement,
+                AchievementRuntimeState state,
+                string nodeId,
+                Dictionary<string, bool> memo,
+                HashSet<string> visiting)
+        {
+            if (string.IsNullOrWhiteSpace(nodeId) ||
+                !visiting.Add(nodeId))
+            {
+                return null;
+            }
+
+            AchievementConditionDefinition condition =
+                achievement.FindCondition(nodeId);
+            if (condition != null)
+            {
+                return condition;
+            }
+
+            AchievementLogicNodeDefinition logicNode =
+                achievement.FindLogicNode(nodeId);
+            if (logicNode == null)
+            {
+                return null;
+            }
+
+            IReadOnlyList<string> inputs =
+                logicNode.InputNodeIds;
+            AchievementConditionDefinition firstLeaf = null;
+            for (int index = 0;
+                 index < inputs.Count;
+                 index++)
+            {
+                string inputId = inputs[index];
+                bool satisfied = EvaluateNode(
+                    achievement,
+                    state,
+                    inputId,
+                    memo,
+                    new HashSet<string>(
+                        StringComparer.Ordinal));
+                AchievementConditionDefinition child =
+                    FindCurrentCondition(
+                        achievement,
+                        state,
+                        inputId,
+                        memo,
+                        visiting);
+                if (firstLeaf == null && child != null)
+                {
+                    firstLeaf = child;
+                }
+
+                if (!satisfied && child != null)
+                {
+                    visiting.Remove(nodeId);
+                    return child;
+                }
+            }
+
+            visiting.Remove(nodeId);
+            return firstLeaf;
         }
 
         private AchievementRuntimeState GetRuntimeState(

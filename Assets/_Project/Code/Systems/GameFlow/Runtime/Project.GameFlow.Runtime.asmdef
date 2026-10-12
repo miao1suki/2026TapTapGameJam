@@ -2,12 +2,15 @@
   "name": "Project.GameFlow.Runtime",
   "rootNamespace": "Project.GameFlow",
   "references": [
+    "Project.Achievements.Runtime",
     "Project.Audio.Runtime",
     "Project.CameraModes.Runtime",
     "Project.InputAbstraction.Runtime",
     "Project.Shared.Runtime",
     "Project.StartMenu.Runtime",
-    "Unity.UGUI"
+    "Unity.UGUI",
+    "Unity.TextMeshPro",
+    "Unity.InputSystem"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

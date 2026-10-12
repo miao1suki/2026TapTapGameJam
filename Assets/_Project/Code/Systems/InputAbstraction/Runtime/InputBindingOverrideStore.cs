@@ -6,7 +6,7 @@ namespace Project.InputAbstraction
     public static class InputBindingOverrideStore
     {
         private const string PreferenceKey =
-            "2026TapTap.InputBindings.Asset.v3";
+            "2026TapTap.InputBindings.Asset.v4";
 
         public static void Apply(InputActionAsset asset)
         {

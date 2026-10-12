@@ -356,6 +356,27 @@ namespace Project.InputRebinding
             ApplyChange(before);
         }
 
+        public bool SetBindingPath(
+            InputActionId actionId,
+            int bindingIndex,
+            string path)
+        {
+            if (!CanModifyBinding(actionId) ||
+                string.IsNullOrWhiteSpace(path) ||
+                !TryGetAction(actionId, out InputAction action) ||
+                bindingIndex < 0 ||
+                bindingIndex >= action.bindings.Count)
+            {
+                return false;
+            }
+
+            HistorySnapshot before = CaptureSnapshot();
+            action.ApplyBindingOverride(bindingIndex, path);
+            BakeBindingPath(action, bindingIndex);
+            ApplyChange(before);
+            return true;
+        }
+
         public void SetTriggerPolicy(
             InputActionId actionId,
             InputActionTriggerPolicy policy)

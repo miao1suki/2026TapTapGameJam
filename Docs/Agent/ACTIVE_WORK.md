@@ -7,6 +7,68 @@
 - 不修改已保存场景、字体、插件和本地设置，不接入 TapSDK 或导入音频资源包。
 - 验证：项目 Runtime/Editor 静态编译及 diff 检查通过；Unity 6000.3.12f1 隔离项目 35 项 Editor 检查（四 prefab 导入、唯一提示、九状态组合、增删绑定、上限/孤儿清理）和 17 项运行时检查（真实 DOTween 两轴开门、按下/重复/重置、删除按钮与门、梯子多 Collider 与禁用解绑）通过。播放器/镜头协作者在隔离项目为桩，梯子接触通过脚本入口注入，不代表完整 Player 物理手感与 Timeline 已验收。完整关卡编辑器交互、相邻梯子衔接、像素化显示和打包待测试。
 - 文档：Integration/NEUTRAL_MECHANISMS_API.md、Developer/NEUTRAL_MECHANISMS.md。美术配置：Resources/DoorHintStyle.asset，共九个 Sprite 状态；素材未到位使用孔位占位。新梯子不加入颜色层，不修改旧竖门 prefab。
+## 表现优化：搬运落点占用修复
+
+- 日期：2026-10-12；负责人：Codex；分支：`表现优化`。
+- 范围：修复搬运放下时可落入已有方块/道具网格的问题；目标格判定新增 `LevelEditorPlacedBlock.ContainsCell` 网格占用检查，并跳过玩家和当前搬运物自身的格子。
+- 行为：物理 Collider 继续作为补充检测，但同格已有网格物体时直接判非法，不再出现方块重合。
+- 根因：规划场景中的方块、道具共享同一个 `__PlanningMapGenerated` 根，旧逻辑用 `transform.root` 忽略当前搬运物时会连同整张地图一起忽略。
+- 修正：改为只忽略玩家自身层级和当前搬运物自身层级，不再按共同根跳过地图方块。
+- 同步表现：`PlayerColorWheel` 的交互范围圈改为仅在持有选中颜色时显示，并以可调周期和透明度持续慢速呼吸；无选色时完全隐藏。
+- 交互收口：范围圈出现/退场改为呼吸淡入淡出并最终 alpha 为 0；颜色成功应用一次后自动清除当前选色。
+- 鼠标状态：游戏内默认隐藏鼠标；持有待用颜色时显示，颜色成功应用或选色清空后隐藏；ESC/菜单暂停时保留鼠标，暂停期间不被颜色系统覆盖。
+- 染色反馈：持有待用颜色时点击无效目标显示 `这个物体好像不能与这个颜色反应`，目标超出交互范围显示 `无法触碰到这个物体`，成功应用后显示 `染色成功`；均复用非法放置提示的 2 秒下方提示与左入右出动画。
+- 范围判定顺序：左键先按鼠标世界命中点判断是否超出交互圈，再判断物体能否接收颜色，避免圈外普通物体误报为不能反应。
+- 圈外判定：空气和实体统一按交互圈距离判断；只要点击点在圈外都显示无法触碰。空气通过玩家所在世界平面换算点击点，实体使用射线命中点。
+- 消息扩展：`WordNoteUI` 新增加打字机入退场通道、可调打字速度和 `richText` 样式开关；玩家选择颜色后显示 `当前选择X色`，位置居中下方、存活 `2` 秒、显隐结合左入右出、白字黑描边，颜色名读取颜色目录显示名并用对应色卡着色。
+- 钥匙 Timeline：红、绿、蓝三条拾取演出改为强制正交 2D、固定前方朝向，机位 `(0, 1, -10)`，关闭看向角色并锁住相机纵深，只保留平面平移和推拉缩放，避免露出 3D 场景侧壁。
+- 操控解锁：颜色钥匙前段 Timeline 到达揭示进度后立即启动相机回位并释放玩家控制锁；颜色渐显、拾取视觉和回收继续并行收尾，不再延迟输入解锁。
+- 验证：Runtime / Editor 静态编译 0 错误，`git diff --check` 通过；尚未 PlayMode 复测。
+
+## 搬运逻辑重做（静态实现完成，待 PlayMode）
+
+- 日期：2026-10-11；负责人：Codex；分支：`搬运`。
+- 范围：推翻旧的“右键长按 + 鼠标吸附拖拽 + 原位回退”能源搬运；新增共享 `CarryableFeature`，能源方块由自身 `IColorObject.IsActive` 门控，万能方块常态可搬。
+- 玩家链路：输入驱动只读 `F` 交互、`Q/E` 放下并把命令交给 `PlayerController`；玩家按默认 1×1 占格和上下左右紧邻格维护拾取队列，按 `F` 固定首项，冻结 0.1 秒后目标关闭 Collider、置顶并 DOTween 跟随玩家头顶。
+- 携带约束：携带期间只允许移动和冲刺；`Q/E` 只检查玩家占格方向的紧邻格，非法落点保持携带；物体放下动画结束后恢复碰撞和控制。
+- 墙体检测：左右放下先沿玩家中心向目标方向做 `1.1` 格射线；忽略玩家与当前搬运物，命中任何其它 Collider 直接判非法，防止单层薄墙被目标格检测绕过。
+- 重置：可搬运物记录拿起前的位置；携带中按“复活/重置搬运”或玩家死亡时，目标 DOTween 回到原位，完成后恢复 Collider、取消携带并释放控制。`Respawn` 的显示名改为“复活/重置搬运”。
+- 提示：携带后通过 `WordNoteUI` 在下方分区持续显示“按 左/右放下键 将方块放置在左/右侧，按 复活/重置键 重置方块”，参与堆叠，显隐各 `0.5` 秒；非法落点也进入下方分区，显示“位置非法，请留出足够空间”并存活 `2` 秒，显隐与左移组合入场、显隐与右移组合退场，各 `0.5` 秒。两条都使用白字黑描边。
+- 组合动画：`WordNoteUI` 的入退场支持显隐、水平移动、竖直移动、缩放四条独立组合通道；方向、距离、时长、初末速度和变速比例都可编辑。
+- 输入资产：`Interact` 默认从 `E` 改为 `F`；新增 `DropLeft=Q`、`DropRight=E`，均固定点击；旧 `Carry` 保留枚举兼容但从按键映射显示中隐藏。
+- 接口：搬运目标只依赖 `IPlayerCarryHost`，不直接依赖 `PlayerController`；`CarryableFeature` 与 `CarryTargetMotion` 已挂到 `Red_Battery`、`Universal_Block` 预制体。
+- 验证：使用 Unity 6000.3.12f1 响应文件完成 Runtime、InputAbstraction、InputRebinding、Editor 与测试程序集静态编译，均 0 错误；`git diff --check` 通过。Unity PlayMode、实际鼠标/键盘输入、DOTween 视觉和预制体导入仍需本机复测；当前未提交。
+
+## WordNote 全局文字提示
+
+- 日期：2026-10-11；负责人：Codex；分支：`搬运`。
+- 范围：在 `Systems_UI` 的 `__System_UI` 下新增与 `GameUI` 同级的 `WordNote_UI` Canvas，挂载 `WordNoteUI`。
+- 接口：维护一个总队列和九个位置队列；支持驻留、定时、转瞬即逝、按 ID 强制退场、按位置退场、全屏退场和立即消失。
+- 动画：所有条目使用 DOTween 的入场/退场；支持原位显隐、左右/上下移动、淡入淡出移动和缩放，并暴露初末位置、透明度、缩放、速度、时长及变速参数。
+- 堆叠：同一位置可同时显示多条消息，公共 `stackSpacing` 控制上下间距；前一条结束后，后一条通过 DOTween 补位。消息可单独关闭“参与堆叠排序”，此时固定占第一格且不影响其他消息。
+- 颜色：字体色和描边色提供红、橙、黄、绿、青、蓝、紫、白、黑；描边开关、宽度和柔化参数暴露在 Inspector。
+- 默认字体：玩家屏幕文字提示默认使用 `Cubic_11 SDF`。
+- 验证：新增运行时代码与 Editor Inspector 静态编译通过；未进行 PlayMode 视觉验收，当前未提交。
+
+## ESC 暂停界面雏形
+
+- 日期：2026-10-10；负责人：Codex；分支：`ESC页面雏形`。
+- 范围：直接在 `Assets/_Project/Scenes/Systems/Systems_UI.unity` 的 `PauseScreen` 下写入真实 UGUI 层级；没有保留 Editor 生成菜单或生成器脚本。
+- 主界面：灰色遮罩、缩放入场的 `EscWindow`、五段轮盘选项“继续游戏 / 设置 / 收藏品 / 存档 / 退出到主菜单”；当前选项固定停在可见轮盘中部，使用缩放与提亮区分，不通过点击扇区改变选中状态。
+- 子页面：设置页复用 `SettingsPanelController` 数据源并从右侧滑入；存档页复用 `SavePanelController` 并开启保存入口；收藏品页先做花架子；子页面右上角 X 返回主界面。
+- 背景规则：轮盘选项打开的 `SettingsPage / SavePage / CollectionPage` 固定纯黑；设置页内的 `Sound Page / Key Binding Page / Credits Page` 背景 alpha 为 0，只显示其中的控件。
+- 设置页响应式布局：新增 `EscSettingsResponsiveLayout`，按 `SettingsPage` 实际宽高计算统一缩放；内容区左边界按左侧栏目缩放后的右边界动态计算并加 `contentGap`，避免与栏目按钮重叠；底部返回区域锚定真实底边。
+- 存档页响应式布局：新增 `EscSaveResponsiveLayout`，按 `SavePage` 实际宽高缩放标题、状态、存档列表和底部按钮；列表随页面尺寸放大/缩小，新建和返回按钮锚定真实底边。
+- 修正：设置和存档子页隐藏重复的底部返回键；切换页面和返回主界面时清理按钮悬停/按下缩放与提亮；主界面的“退出游戏”改为返回开始游戏界面。
+- ESC：`GameUiRouter` 仅在 Systems_UI 的 UI 系统根存在时响应；暂停动作在子页面会直接触发当前页面 X 的 `Button.onClick` 返回主界面，在主界面才关闭整个 ESC 界面；没有 Systems_UI 场景时不响应。输入继续使用 `InputActionId.Pause` 的映射。
+- 存档：存档页读取会调用 `SaveGameService` 并按 `levelLabel` 尝试切回对应关卡；保存会把当前关卡标签写入选中槽位，完整游戏进度恢复仍待后续游戏进度 API。
+- 设置：继续沿用 `RuntimeSettingsPolicy.ApplyChangesToRuntime`，当前默认预览模式不改变实际游戏设置。
+- 轮盘实现：`EscMenuController` 已切换为左轮轮盘状态机；桌面现有矩形按钮会在初始化时转换为 `EscWheelSectorGraphic` 扇形，整名位随 `WheelPivot` 旋转，文字保持水平；入场只做半圈并逐渐减速，受控切换只走相邻选项最短角度，首尾循环沿当前方向无缝走一格，旧选项的选中效果在转动中逐渐消失、新选项同步增强，滚轮带可调换项间隔，选中项固定回到 `selectedAngle`，确认读取 `InputActionId.Jump`，并支持鼠标左键、鼠标右键。子页面占用右侧区域并为左侧轮盘保留宽度，打开子页面时底部遮罩透明且主轮盘保持激活；子页面退场与轮盘恢复同时开始；原白线占位装饰已关闭。
+- 编译修正：初始化转换为扇形时会移除旧的 `Image`，避免同一 GameObject 同时存在两个 `Graphic` 导致暂停菜单报错；选项文字在运行时从 Inspector 配置同步。
+- 视觉配置：暂停轮盘 Inspector 已暴露整轮材质、扇区默认材质、单扇区覆盖材质、颜料笔画 Sprite/Material；`EscWheelOption.pageColor` 表示每一页选定的主题颜色，并同时用于扇区高亮与颜料过渡。
+- 字体配置：PauseScreen 下所有 UGUI `Text` 保留为布局和动态数据源，渲染层由 `TextSdfMirror` 镜像到 `TextMeshProUGUI` 并统一使用 `Cubic_11 SDF`；轮盘标签默认字号 `32`，通过 SDF `Face Dilate` 加粗笔画并添加黑色描边，字号、笔画粗细、描边颜色和距离均暴露在 Inspector。
+- 收藏品页：新增 `AchievementCollectionPresenter`，直接读取 `AchievementManager.GetAllAchievements()` 构建两列成就长条，新增条目优先填满当前行且单项也保持左上排列；标题与要求使用同一默认字号 `36`，简介保持 `16` 并使用灰色；无素材时默认白色块、纯黑标题和纯黑要求；每条右侧为只读完成图片；`rowMaterial` 暴露块材质，`completedSprite` 暴露达成图片；达成后只覆盖整块灰色遮罩并显示右侧图片，不改变文字、内容或底色；成就要求按成就树跳过已满足叶子、显示当前轮到的未完成条件，并监听 `AchievementProgressChanged` 原位刷新，不重建列表或重置滚动位置；每次进入页面都会重新读取状态。
+- 成就目录：运行时 `AchievementCatalog.asset` 已挂入当前固定目录下的成就；新增 `AchievementCatalogAutoSync`，编辑器导入/删除成就资产或进入 Play Mode 前自动扫描 `Assets/_Project/Content/Data/Global/Achievements` 并同步运行时目录；新增成就不再依赖手动点“应用到游戏逻辑中”。
 
 ## 当前进度合并至主线
 
