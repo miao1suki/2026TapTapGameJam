@@ -850,3 +850,12 @@
 - 蓝色钥匙链路诊断补充：将解锁与 `SetColorFaded(false)` 前移到 `OnInteractionPlayerEntered` 的同步入口，并在物体图触发、方法调用、Unlock 成功/失败和钥匙入口处增加诊断日志；确认 `Publisher socket is null` 来自 `com.merry-yellow.code-assist` 的本地 MQTT 编辑器插件，不属于运行时交互图。Computer Use 当前未返回可控 Unity 窗口，Runtime/Editor 静态编译仍为 0 错误。
 - 颜色目录反序列化修复：`ColorTypeDefinition` 补齐 Unity 所需的 `[Serializable]`，修复 `ColorCatalog.asset` 虽含 red/green/blue 但运行时 `Find("blue")` 为空的问题；钥匙解锁链路待 Unity 重载脚本后实测。
 - 未完成：未合并 `main`、未推送；需要在 Unity 内放置红蓝绿方块与锚点，确认藤蔓增长视觉、HUD、输入轮盘和水体状态，并在验收后更新本条记录。当前 Computer Use 未返回可控 Unity 原生窗口，只能以 Editor.log 和静态编译作为本轮证据。
+
+## TA 交互预览链条初版
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/ta/link-effect-preview`。
+- 范围：仅新增 `Assets/ta_source/LinkEffect` 中的链条预览资源，并在 `Assets/Scenes/Test.unity` 的 TestPlayer 和测试目标上接线。
+- 接口：独立组件读取玩家现有选色与交互范围；新增可选 `ILinkEffectPreviewTarget` 供测试或后续目标声明预览状态与锚点，不修改 PlayerInteractionSensor、PlayerController、颜色物体或输入接口。
+- 表现：一份 URP Unlit Shader/材质按色卡显示红绿蓝链节；可行时完整流动，不可行时断续变暗。TestPlayer 未选色时启用红色测试色，旁边红色测试目标用于即刻预览。
+- 验证：Unity 6000.3.12f1 编辑器已导入新增脚本、Shader 和材质，Runtime/Editor 程序集重载完成；Test 场景新增 YAML 对象 ID 无重复，新增脚本与材质 GUID 引用核对通过。实际重载 Test 场景并进入 Play Mode，确认角色与红色测试目标之间显示红色链条；运行时把测试色改为 blue 后，链条切换为较暗的蓝色断续显示。退出 Play Mode 后测试色恢复为场景预设的 red。
+- 边界：保留工作区已有的 Renderer、字体、PixelEffect、GivingColor 等改动，不纳入本任务提交。
