@@ -859,3 +859,27 @@
 - 表现：一份 URP Unlit Shader/材质按色卡显示红绿蓝链节；可行时完整流动，不可行时断续变暗。TestPlayer 未选色时启用红色测试色，旁边红色测试目标用于即刻预览。
 - 验证：Unity 6000.3.12f1 编辑器已导入新增脚本、Shader 和材质，Runtime/Editor 程序集重载完成；Test 场景新增 YAML 对象 ID 无重复，新增脚本与材质 GUID 引用核对通过。实际重载 Test 场景并进入 Play Mode，确认角色与红色测试目标之间显示红色链条；运行时把测试色改为 blue 后，链条切换为较暗的蓝色断续显示。退出 Play Mode 后测试色恢复为场景预设的 red。
 - 边界：保留工作区已有的 Renderer、字体、PixelEffect、GivingColor 等改动，不纳入本任务提交。
+- 验证：文件已复制到正确目录，Git 暂存并提交。
+- 交接提交：\34cf18\。
+
+## 音频资源整体替换（第二版）
+
+- 日期：2026-10-09。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：替换 `Assets/_Project/Content/Audio/` 下的音乐与音效；移除旧版 14 个音频，导入新版 14 个 BGM、22 个 SFX（玩家动作、上水交互、上色流程、机关循环、拒绝提示）。
+- 接口变更：无（资源替换）。旧 `sfx_ui_button_select`、`sfx_ui_notice_success_*`、`sfx_gp_water_enter_01`、`sfx_gp_water_splash_*` 已移除，接入方需同步更新引用。
+- 文档：同步更新 `Docs/Agent/Integration/AUDIO_HANDOVER.md` 资源清单与接线表。
+- 验证：文件按 Music / SFX 目录归类；Git 审查确认仅音频资源与交接文档变更；本机未运行 Unity 导入与试听。
+- 交接提交：本条目随本次提交。
+
+## 音频资源第三批（环境声与机关音效）
+
+- 日期：2026-10-10。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：新增 4 个环境声（`amb_env_machine_hum_01`、`amb_env_plant_rustle_01`、`amb_env_water_drip_01`、`amb_env_wind_gust_01`，暂存于 `Music/`）与 6 个音效（开关门、植物生长、蒸汽喷发与循环）；`sfx_gp_paint_acquire_initial.wav` 为同路径修订。
+- 接口变更：无。新增音频提交为 `ee2f0d3`，本次提交只补记文档。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补环境声分区、蒸汽与开关门接线项。
+- 验证：Ableton 导出目录与仓库 45 个音频逐文件 SHA256 一致；未在 Unity 中导入试听，`.meta` 待首次导入生成。
+- 交接提交：本次文档提交。
