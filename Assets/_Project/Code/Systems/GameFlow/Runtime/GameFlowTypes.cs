@@ -43,30 +43,4 @@ namespace Project.GameFlow
         }
     }
 
-    public static class GameFlowLaunchOverride
-    {
-        private static bool hasRequest;
-        private static GameFlowSceneId requestedScene;
-
-        public static void Set(GameFlowSceneId sceneId)
-        {
-            requestedScene = sceneId;
-            hasRequest = true;
-        }
-
-        public static bool TryConsume(out GameFlowSceneId sceneId)
-        {
-            sceneId = requestedScene;
-            bool result = hasRequest;
-            hasRequest = false;
-            return result;
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Reset()
-        {
-            hasRequest = false;
-            requestedScene = default;
-        }
-    }
 }

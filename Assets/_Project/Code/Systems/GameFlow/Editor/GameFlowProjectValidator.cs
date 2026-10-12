@@ -33,11 +33,6 @@ namespace Project.GameFlow.Editor
             }
             else
             {
-                if (catalog.BootstrapScenePath != GameFlowSceneScaffolder.BootstrapPath)
-                {
-                    errors.Add("Scene Catalog 的 Bootstrap 路径不正确。");
-                }
-
                 if (catalog.PersistentScenePaths.Count !=
                     GameFlowSceneScaffolder.PersistentScenePaths.Length)
                 {
@@ -86,7 +81,7 @@ namespace Project.GameFlow.Editor
             if (errors.Count == 0)
             {
                 builder.Append(
-                    "游戏流程场景配置检查通过：Bootstrap 为构建入口，" +
+                    "游戏流程场景配置检查通过：主菜单为构建入口，" +
                     "系统场景和流程场景均已纳入 Build Settings。");
                 report = builder.ToString();
                 return true;

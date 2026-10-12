@@ -1410,7 +1410,7 @@ namespace PlanningEditorPrototype
             }
             else
             {
-                document = JsonUtility.FromJson<PlanningDocument>(json);
+                document = PlanningDocument.FromPersistentJson(json);
                 document ??= PlanningDocument.CreateDefault();
             }
 
@@ -1461,7 +1461,7 @@ namespace PlanningEditorPrototype
 
             EditorPrefs.SetString(
                 PreferenceKey,
-                JsonUtility.ToJson(document, true));
+                document.ToPersistentJson(true));
             EditorPrefs.SetString(CurrentSavePreferenceKey, currentSavePath ?? string.Empty);
             if (!string.IsNullOrEmpty(currentSavePath) &&
                 File.Exists(currentSavePath))
@@ -1981,7 +1981,7 @@ namespace PlanningEditorPrototype
                     Path.GetFileNameWithoutExtension(path);
                 File.WriteAllText(
                     path,
-                    JsonUtility.ToJson(exported, true));
+                    exported.ToPersistentJson(true));
                 saveOverlayStatus.text = "已导出：" + path;
             }
             catch (System.Exception exception)

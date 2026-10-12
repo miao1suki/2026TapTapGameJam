@@ -4,6 +4,8 @@
 
 世界图编辑：独立通道占格、整体多选移动、区域规划与装配归属；见 [WORLD_PLANNING_API.md](Integration/WORLD_PLANNING_API.md)。2026-10-10 已整合至 main，窗口操作待验收。
 
+规划道具参数、存档资源引用与藤蔓链接：[PLANNING_REFERENCES_AND_VINES.md](../Developer/PLANNING_REFERENCES_AND_VINES.md)。参数资产使用 GlobalObjectId，旧失效 ID 不覆盖 prefab 默认值；母根与节段记录序列化所有权并在增量同步完成后校验。当前本地修复待实际关卡测试，未推送。
+
 颜色表现：`ColorAppearanceManager` 集中管理基础方块、水、藤蔓的透明交接与共享运行时材质；`HSVColorFadeManager.SetHsv` 只控制全屏饱和度/白化，不控制物体和材质。水体采用 URP Unlit 透明网格 Shader，深度为实例材质参数。接入见 [COLOR_BLOCKS_API.md](Integration/COLOR_BLOCKS_API.md)；隔离水体 GPU 渐显/重置检查通过，完整 Game 与打包待验收，2026-10-10 已整合至 main。
 
 | 系统 | 源码 | 状态 |
@@ -11,7 +13,7 @@
 | 非颜色门与绑定按钮 | `Assets/_Project/Code/Systems/Mechanisms` | 道具门 1×2、自动/追加专属按钮、玩家踩踏按钮、全部按下后开门、Timeline 镜头；不使用 E、不接收颜色交互。见 Integration/DOOR_API.md 与 Developer/DOORS.md |
 | 无色梯子、横门与门提示 | `Assets/_Project/Code/Systems/Mechanisms` | 正面/侧面梯子复用攀爬；独立横门 2×1；每门唯一提示按总数/已按数量更新，新绑定上限三个。见 Integration/NEUTRAL_MECHANISMS_API.md 与 Developer/NEUTRAL_MECHANISMS.md；本地开发待验收 |
 | 学习项目选择性像素化 | `Assets/_Project/Code/Systems/Pixelization` | Rendering Layer 128 / PixelEffect 选择性像素化；描边 API 默认关闭；像素化先于 HSV。见 Integration/PIXELIZATION_API.md |
-| 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 旧功能可用子集，清洁新场景 |
+| 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | MainMenu 为流程入口，Bootstrap 退役；当前场景直接 Play。开始/暂停界面独立 prefab 在 Content/UI，原界面业务与动画保留 |
 | 音频资源 | `Assets/_Project/Content/Audio` | 14 首 BGM、16 个 SFX 与同名 `.meta` 已导入；尚未绑定玩法／UI 事件，见 `Integration/AUDIO_HANDOVER.md` |
 | 相机 Manager/跟随/2D3D | `Assets/_Project/Code/Systems/CameraModes` | 旧功能保留；玩家驱动不再申请 2D/3D 切换，Timeline 优先级更高 |
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |

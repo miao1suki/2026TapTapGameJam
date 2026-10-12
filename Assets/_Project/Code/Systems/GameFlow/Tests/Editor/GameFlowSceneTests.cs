@@ -14,9 +14,6 @@ namespace Project.GameFlow.Tests
                     GameFlowSceneScaffolder.CatalogPath);
 
             Assert.That(catalog, Is.Not.Null);
-            Assert.That(
-                catalog.BootstrapScenePath,
-                Is.EqualTo(GameFlowSceneScaffolder.BootstrapPath));
             Assert.That(catalog.PersistentScenePaths.Count, Is.EqualTo(5));
             Assert.That(catalog.FlowScenes.Count, Is.EqualTo(5));
             Assert.That(catalog.TryGet(GameFlowSceneId.MainMenu, out _), Is.True);

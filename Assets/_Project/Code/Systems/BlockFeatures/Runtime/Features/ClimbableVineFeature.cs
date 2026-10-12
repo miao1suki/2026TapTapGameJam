@@ -143,7 +143,7 @@ namespace Project.BlockFeatures
 
         protected override void OnAttach()
         {
-            BindOwnedSegments();
+            RestoreInitialGrowthLinks();
             burned = false;
             visualProgress = visualTarget = maxGrowthBlocks > 0 ? Mathf.Clamp01((float)CurrentGrowthBlocks / maxGrowthBlocks) : 0f;
             visibleCells = targetCells = CurrentGrowthBlocks + 1;
@@ -362,6 +362,33 @@ namespace Project.BlockFeatures
 
             maxGrowthBlocks = initialSegments.Count;
             BindOwnedSegments();
+        }
+
+        // The serialized hierarchy is the authoritative identity of prebuilt segments.
+        // Rebind once on attachment, not by per-frame proximity/world searches.
+        public void RestoreInitialGrowthLinks()
+        {
+            if (this is LadderSonFeature)
+            {
+                ClimbableVineFeature parent = transform.parent != null
+                    ? transform.parent.GetComponent<ClimbableVineFeature>() : null;
+                if (parent != null && !(parent is LadderSonFeature)) vineRoot = parent;
+                return;
+            }
+
+            var children = new List<GameObject>();
+            for (int index = 0; index < transform.childCount; index++)
+            {
+                GameObject child = transform.GetChild(index).gameObject;
+                if (child.GetComponent<LadderSonFeature>() != null) children.Add(child);
+            }
+            if (children.Count > 0)
+            {
+                children.Sort((left, right) => left.transform.position.y.CompareTo(right.transform.position.y));
+                ConfigureInitialGrowth(children);
+            }
+            else if (initialSegments.Count > 0) ConfigureInitialGrowth(null);
+            else BindOwnedSegments();
         }
 
         public void GrowTo(int targetCount)

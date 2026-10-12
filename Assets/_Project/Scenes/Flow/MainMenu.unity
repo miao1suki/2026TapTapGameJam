@@ -323,6 +323,7 @@ MonoBehaviour:
   slotList: {fileID: 1018537401}
   backButton: {fileID: 1639746270}
   createSlotButton: {fileID: 1080700972}
+  allowSaving: 0
 --- !u!114 &111475064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3142,7 +3143,10 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1.1
-  m_Text: "\u961F\u957F-\u7A0B\u5E8F/TA    \u767D\u55B5\u55B5\n\u526F\u961F\u957F-\u4E3B\u7B56\u5212    \u6EBA\u6C34\u7684\u54B8\u9C7C\u541B\n\u7B56\u5212    R\n\u7B56\u5212    <\u6BB5>\n\u7A0B\u5E8F    \u81DE\u65E5\u4E0D\u518D\n\u7F8E\u672F    \u827E\u5C14\u56DB\u6B21\u65B9\n\u7F8E\u672F    \u963F\u826F\nTA    Irotin\n\u97F3\u4E50    BK2049"
+  m_Text: "\u961F\u957F-\u7A0B\u5E8F/TA    \u767D\u55B5\u55B5\n\u526F\u961F\u957F-\u4E3B\u7B56\u5212   
+    \u6EBA\u6C34\u7684\u54B8\u9C7C\u541B\n\u7B56\u5212    R\n\u7B56\u5212    <\u6BB5>\n\u7A0B\u5E8F   
+    \u81DE\u65E5\u4E0D\u518D\n\u7F8E\u672F    \u827E\u5C14\u56DB\u6B21\u65B9\n\u7F8E\u672F   
+    \u963F\u826F\nTA    Irotin\n\u97F3\u4E50    BK2049"
 --- !u!222 &850385180
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -5860,6 +5864,53 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1459816507}
   m_CullTransparentMesh: 1
+--- !u!1 &1484442336
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1484442338}
+  - component: {fileID: 1484442337}
+  m_Layer: 0
+  m_Name: __GameFlow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1484442337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1484442336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2dec078d18adc9c46b92c3061258e7d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Project.GameFlow.Runtime::Project.GameFlow.GameFlowController
+  catalog: {fileID: 11400000, guid: a38416ffd62667148b6b9d0116ec0819, type: 2}
+  initialScene: 0
+  initializeOnStart: 1
+--- !u!4 &1484442338
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1484442336}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1500740667
 GameObject:
   m_ObjectHideFlags: 0
@@ -8692,3 +8743,4 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 605731371}
+  - {fileID: 1484442338}

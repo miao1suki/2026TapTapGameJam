@@ -9,12 +9,10 @@ namespace Project.GameFlow
         menuName = "2026TapTap/Game Flow/Scene Catalog")]
     public sealed class GameSceneCatalog : ScriptableObject
     {
-        [SerializeField] private string bootstrapScenePath;
         [SerializeField] private string[] persistentScenePaths = Array.Empty<string>();
         [SerializeField] private GameFlowSceneEntry[] flowScenes =
             Array.Empty<GameFlowSceneEntry>();
 
-        public string BootstrapScenePath => bootstrapScenePath;
         public IReadOnlyList<string> PersistentScenePaths => persistentScenePaths;
         public IReadOnlyList<GameFlowSceneEntry> FlowScenes => flowScenes;
 
@@ -69,11 +67,9 @@ namespace Project.GameFlow
         }
 
         public void Configure(
-            string valueBootstrapScenePath,
             IEnumerable<string> valuePersistentScenePaths,
             IEnumerable<GameFlowSceneEntry> valueFlowScenes)
         {
-            bootstrapScenePath = Normalize(valueBootstrapScenePath);
             persistentScenePaths = valuePersistentScenePaths != null
                 ? new List<string>(valuePersistentScenePaths).ConvertAll(Normalize).ToArray()
                 : Array.Empty<string>();

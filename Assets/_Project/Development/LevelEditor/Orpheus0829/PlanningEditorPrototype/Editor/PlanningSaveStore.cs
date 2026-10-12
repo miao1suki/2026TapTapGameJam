@@ -73,7 +73,7 @@ namespace PlanningEditorPrototype
             }
 
             PlanningDocument document =
-                JsonUtility.FromJson<PlanningDocument>(
+                PlanningDocument.FromPersistentJson(
                     File.ReadAllText(path));
             if (document == null)
             {
@@ -181,7 +181,7 @@ namespace PlanningEditorPrototype
         {
             File.WriteAllText(
                 path,
-                JsonUtility.ToJson(document, true));
+                document.ToPersistentJson(true));
         }
 
         private static string GetUniqueName(

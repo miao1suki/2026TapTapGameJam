@@ -4,11 +4,12 @@
 
 ## 启动与流程
 
-`Project.GameFlow.GameFlowController` 管理 Bootstrap、常驻系统与一个活动流程场景，使用 catalog 路径，不硬编码 SceneManager 到处卸载场景。
-`GameSceneCatalog` 保存启动、系统列表与 MainMenu/Level01/02/03/Ending 映射。
+`Project.GameFlow.GameFlowController` 从 MainMenu 场景的独立根启动，并跨流程场景保留；管理共享系统与一个活动流程场景，使用 catalog 路径。没有 Bootstrap 场景、强制 Play 入口或全局自动启动注入。
+`GameSceneCatalog.Configure(persistentPaths, flowEntries)` 保存系统列表与 MainMenu/Level01/02/03/Ending 映射。
 `LevelSceneContext.Configure/SetPlayerPrefab/SetPlayerSpawn/Activate` 在自己的场景生成一个玩家并连接跟随目标。
 `LevelGoal.Configure(nextScene, endsGame, delay)` / `BeginCompletion` 提供流程跳转；出生点 `PlayerSpawnPoint`。
 `GameSystemSceneRoot` 按 `IGameSystemService.InitializationOrder` 初始化子服务。系统不放进关卡复制。
+它可在独立场景自动初始化，与流程控制器并发申请初始化时等待同一过程，避免重复执行。UI 复用 prefab 见 Developer/GAME_FLOW.md；保留原菜单业务与动画，不从生成器覆盖设计好的界面。
 `GameUiRouter.StartGame/SetPaused` 负责主菜单与暂停；UI场景常驻，关卡中主菜单全屏底板不激活。
 `GameAudioService` 提供基础音源，具体音频素材不迁移；不假定旧生成音频仍存在。
 初始化工具 `TapTapFoundationSetup.Generate` 创建清洁基础场景与普通白膜，不含旧机关。
@@ -133,5 +134,5 @@ Shader位于 `Assets/_Project/Rendering/Shaders/SurfaceTiles`，名称前缀2026
 ## 验证
 
 EditMode覆盖相机、输入、重绑定、流程配置和贴画/切片。
-PlayMode覆盖Bootstrap、唯一Camera/AudioListener/EventSystem、主菜单、暂停、123关与Ending。
+PlayMode覆盖主菜单入口、唯一Camera/AudioListener/EventSystem、暂停、123关与Ending。
 修改玩法motor应另测普通地面移动跳跃与打包，不用旧绳梯测试场景代替。

@@ -1,5 +1,14 @@
 # 工作状态与交接（每次任务重读）
 
+## 藤蔓持久化链接与独立 UI 启动
+
+- 日期：2026-10-12；负责人：Codex；当前分支：`codex/neutral-ladders-door-hints`。
+- 最新 main（c94fb60）已合入当前分支，保留最新暂停/主菜单接线。字体按用户授权备份至 Library/UserAssetBackup/VineBootstrap-20261012 后采用远程版本；Pick、插件与本地设置不动。
+- 范围：规划参数资产引用持久化、旧 JSON 不信任数字 ID、稳定增量签名、母藤蔓/节段同步与 prefab override 持久化；退役 Bootstrap 场景与强制启动入口，保留设置/存档/暂停/开始菜单。实现完成，功能改动仍仅本地，未提交/推送。
+- UI：完整开始菜单与共享暂停界面提取至 Content/UI/MainMenuUI.prefab、SharedGameUI.prefab，内部组件/物体引用不指向原场景；保留原场景界面，MainMenu 独立 __GameFlow 根为完整流程入口。InputBindingBootstrap 是输入重绑定初始化，不随场景 Bootstrap 删除。
+- 排查：只读检查用户 Pick 副本，11 个母藤蔓全部缺失 growthSegmentPrefab，0 子节段；1 个水功能物的 waterPrefab 有效。公共 JSON 引用风险覆盖水 prefab、材质/Mesh、粒子、字体与 Timeline 资产，不影响枚举/数值或 Unity 原生 GUID/fileID 引用。未替用户保存 Pick；从所属规划图重新应用可修复旧生成藤蔓。
+- 验证：Unity 6000.3.12f1 全项目隔离编译通过；599 项资源往返/水方向枚举/规划文档/藤蔓组链、无改动增量保留、场景保存重载及 UI 内部引用断言通过，其中 56 个非空资源字段覆盖当前颜色预制体；7 项 GameFlow Editor 测试和 1 项主菜单→暂停→123关→结束 PlayMode 测试通过。批处理 nographics 不代表窗口视觉、用户关卡手感或打包验收；完整 Pick 尚待用户测试。说明：Developer/PLANNING_REFERENCES_AND_VINES.md、GAME_FLOW.md、Integration/FOUNDATION_API.md。
+
 ## 无色梯子、门提示与横门
 
 - 日期：2026-10-11；负责人：Codex；分支：`codex/neutral-ladders-door-hints`。已实现，按用户要求提交并推送此分支，不合并、不推 main。

@@ -492,6 +492,7 @@ namespace PlanningEditorPrototype
                     out int added,
                     out int removed,
                     out int preserved);
+                PersistVineLinks(FindGeneratedRoot(MapRootName)?.transform);
                 PlanningDoorUtility.BindSceneDoors(FindGeneratedRoot(MapRootName)?.transform, rooms, assemblyPatches);
                 if(!SuppressSceneUndo) Undo.CollapseUndoOperations(undoGroup);
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -508,6 +509,7 @@ namespace PlanningEditorPrototype
 
             DestroyGeneratedRoots();
             root.name = rootName;
+            PersistVineLinks(root.transform);
             PlanningDoorUtility.BindSceneDoors(root.transform, rooms, assemblyPatches);
             RegisterSceneCreation(root, "完成规划场景重建");
 
@@ -764,6 +766,17 @@ namespace PlanningEditorPrototype
                 LevelEditorPlacedBlock>(true).Length;
         }
 
+        private static void PersistVineLinks(Transform generatedRoot)
+        {
+            if (generatedRoot == null) return;
+            foreach (ClimbableVineFeature vine in generatedRoot.GetComponentsInChildren<ClimbableVineFeature>(true))
+            {
+                vine.RestoreInitialGrowthLinks();
+                PrefabUtility.RecordPrefabInstancePropertyModifications(vine);
+                EditorUtility.SetDirty(vine);
+            }
+        }
+
         private static int ConvertVineChains(Transform generatedRoot)
         {
             int chainCount = 0;
@@ -864,6 +877,13 @@ namespace PlanningEditorPrototype
                     }
 
                     mother.ConfigureInitialGrowth(segments);
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(mother);
+                    foreach (GameObject segment in segments)
+                    {
+                        var child = segment.GetComponent<LadderSonFeature>();
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(child);
+                        EditorUtility.SetDirty(child);
+                    }
                     EditorUtility.SetDirty(mother);
                     chainCount++;
                 }
@@ -1169,7 +1189,8 @@ namespace PlanningEditorPrototype
                 placed.SetSizeCells(new Vector2Int(box.width,box.height));
             }
             // The signature tracks content, not selection or transient scene references.
-            placed.SetPlanningSource(box.id,JsonUtility.ToJson(box)+JsonUtility.ToJson(new OverrideSignature { values = values == null ? new List<LevelEditorComponentValueOverride>() : new List<LevelEditorComponentValueOverride>(values) }),localCell);
+            PlanningBox signatureBox = box.PersistentClone();
+            placed.SetPlanningSource(box.id,JsonUtility.ToJson(signatureBox)+JsonUtility.ToJson(new OverrideSignature { values = LevelEditorComponentOverrideUtility.PersistentValues(values) }),localCell);
             return placed;
         }
 

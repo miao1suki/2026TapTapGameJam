@@ -86,7 +86,7 @@ public static class TapTapFoundationSetup
         }
         EditorSceneManager.SaveScene(uiScene);
         AssetDatabase.SaveAssets();
-        EditorSceneManager.OpenScene(GameFlowSceneScaffolder.BootstrapPath);
+        EditorSceneManager.OpenScene(GameFlowSceneScaffolder.MainMenuPath);
         Debug.Log("2026TapTap foundation initialized. Legacy gameplay/art excluded.");
     }
     private static GameObject Cube(string name, Transform parent, Vector3 position, Vector3 scale)

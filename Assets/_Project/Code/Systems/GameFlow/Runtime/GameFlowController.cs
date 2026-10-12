@@ -67,6 +67,7 @@ namespace Project.GameFlow
             }
 
             instance = this;
+            DontDestroyOnLoad(gameObject);
             StartupCameraGuard.CreateIfNeeded(transform);
         }
 
@@ -89,11 +90,7 @@ namespace Project.GameFlow
             InitializationCompleted?.Invoke();
             IsTransitioning = false;
 
-            GameFlowSceneId firstScene = GameFlowLaunchOverride.TryConsume(
-                out GameFlowSceneId requested)
-                ? requested
-                : initialScene;
-            yield return TransitionRoutine(firstScene);
+            yield return TransitionRoutine(initialScene);
         }
 
         private void OnDestroy()

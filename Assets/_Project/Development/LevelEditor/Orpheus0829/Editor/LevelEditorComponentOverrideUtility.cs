@@ -7,6 +7,26 @@ namespace Project.LevelEditor.Editor
 {
     internal static class LevelEditorComponentOverrideUtility
     {
+        public static List<LevelEditorComponentValueOverride> PersistentValues(
+            IReadOnlyList<LevelEditorComponentValueOverride> values)
+        {
+            var result = new List<LevelEditorComponentValueOverride>();
+            if (values == null) return result;
+            foreach (var item in values)
+            {
+                if (item == null) continue;
+                string text = item.Value;
+                if (item.ValueType == "ObjectReference" && string.IsNullOrEmpty(text) &&
+                    item.ObjectReferenceValue != null && EditorUtility.IsPersistent(item.ObjectReferenceValue))
+                    text = GlobalObjectId.GetGlobalObjectIdSlow(item.ObjectReferenceValue).ToString();
+                var copy = new LevelEditorComponentValueOverride();
+                copy.Configure(item.ComponentPath, item.ComponentTypeName, item.ComponentIndex,
+                    item.PropertyPath, item.ValueType, text, null);
+                result.Add(copy);
+            }
+            return result;
+        }
+
         public static bool IsSupported(
             SerializedProperty property)
         {
@@ -44,6 +64,10 @@ namespace Project.LevelEditor.Editor
             {
                 return false;
             }
+
+            if (component is Project.BlockFeatures.ClimbableVineFeature &&
+                (property.propertyPath == "vineRoot" ||
+                 property.propertyPath.StartsWith("initialSegments", StringComparison.Ordinal))) return false;
 
             string text = string.Empty;
             UnityEngine.Object objectValue = null;
@@ -92,6 +116,12 @@ namespace Project.LevelEditor.Editor
                     break;
                 case SerializedPropertyType.ObjectReference:
                     objectValue = property.objectReferenceValue;
+                    // JsonUtility persists Object references as session-local instance IDs.
+                    // Persist asset identity separately so plans survive editor restarts/clones.
+                    text = objectValue == null ? "reference:null" :
+                        EditorUtility.IsPersistent(objectValue)
+                            ? GlobalObjectId.GetGlobalObjectIdSlow(objectValue).ToString()
+                            : "reference:local";
                     break;
             }
 
@@ -149,6 +179,10 @@ namespace Project.LevelEditor.Editor
             for (int index = 0; index < values.Count; index++)
             {
                 LevelEditorComponentValueOverride value = values[index];
+                if (value != null &&
+                    (value.PropertyPath == "vineRoot" || value.PropertyPath.StartsWith("initialSegments", StringComparison.Ordinal)) &&
+                    (value.ComponentTypeName == "Project.BlockFeatures.ClimbableVineFeature" ||
+                     value.ComponentTypeName == "Project.BlockFeatures.LadderSonFeature")) continue;
                 Component component = FindComponent(root, value);
                 if (component == null || component is Transform)
                 {
@@ -427,8 +461,22 @@ namespace Project.LevelEditor.Editor
                             };
                         break;
                     case SerializedPropertyType.ObjectReference:
-                        property.objectReferenceValue =
-                            value.ObjectReferenceValue;
+                        if (value.Value == "reference:null")
+                            property.objectReferenceValue = null;
+                        else if (GlobalObjectId.TryParse(value.Value, out GlobalObjectId assetId))
+                        {
+                            UnityEngine.Object resolved = GlobalObjectId.GlobalObjectIdentifierToObjectSlow(assetId);
+                            if (resolved == null) return false;
+                            property.objectReferenceValue = resolved;
+                        }
+                        else
+                        {
+                            // Old plans cannot distinguish explicit null from an expired ID.
+                            // Keep prefab defaults; never inject another scene's instance link.
+                            if (value.ObjectReferenceValue == null ||
+                                !EditorUtility.IsPersistent(value.ObjectReferenceValue)) return false;
+                            property.objectReferenceValue = value.ObjectReferenceValue;
+                        }
                         break;
                     default:
                         return false;

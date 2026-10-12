@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e60e4ef9f9bc4f94db77490d7239d71c, type: 3}
   m_Name: GameSceneCatalog
   m_EditorClassIdentifier: Project.GameFlow.Runtime::Project.GameFlow.GameSceneCatalog
-  bootstrapScenePath: Assets/_Project/Scenes/Bootstrap/Bootstrap.unity
   persistentScenePaths:
   - Assets/_Project/Scenes/Systems/Systems_Core.unity
   - Assets/_Project/Scenes/Systems/Systems_Input.unity

@@ -97,6 +97,7 @@ namespace Project.GameFlow
             BindFlow();
             SetPaused(false, false);
             SetOnly(loadingScreen, false);
+            if (Flow() == null && IsGameplayScene()) SetOnly(gameplayHud);
             IsInitialized = true;
             yield break;
         }
@@ -263,7 +264,8 @@ namespace Project.GameFlow
         {
             if (flow == null || !flow.ActiveSceneId.HasValue)
             {
-                return false;
+                // Shared UI also supports a level opened directly, without a launch scene.
+                return flow == null && ProjectDiscovery.FindFirst<StartMenuController>(true) == null;
             }
 
             GameFlowSceneId id = flow.ActiveSceneId.Value;

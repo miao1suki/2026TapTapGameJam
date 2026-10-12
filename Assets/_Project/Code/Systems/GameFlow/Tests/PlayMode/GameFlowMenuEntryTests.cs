@@ -9,10 +9,8 @@ using UnityEngine.TestTools;
 
 namespace Project.GameFlow.Tests
 {
-    public sealed class GameFlowBootstrapTests
+    public sealed class GameFlowMenuEntryTests
     {
-        private const string BootstrapPath =
-            "Assets/_Project/Scenes/Bootstrap/Bootstrap.unity";
         private const string MainMenuPath =
             "Assets/_Project/Scenes/Flow/MainMenu.unity";
 
@@ -26,11 +24,10 @@ namespace Project.GameFlow.Tests
         };
 
         [UnityTest]
-        public IEnumerator Bootstrap_LoadsSystemsAndMainMenuWithoutDuplicates()
+        public IEnumerator MainMenu_LoadsSystemsWithoutDuplicates()
         {
-            GameFlowLaunchOverride.Set(GameFlowSceneId.MainMenu);
             yield return SceneManager.LoadSceneAsync(
-                BootstrapPath,
+                MainMenuPath,
                 LoadSceneMode.Additive);
 
             const int maximumFrames = 300;
@@ -46,10 +43,9 @@ namespace Project.GameFlow.Tests
             }
 
             GameFlowController flow = GameFlowController.Instance;
-            Assert.That(flow, Is.Not.Null, "Bootstrap 未创建 GameFlowController。");
+            Assert.That(flow, Is.Not.Null, "主菜单未创建 GameFlowController。");
             Assert.That(flow.IsInitialized, Is.True, "系统场景未完成初始化。");
             Assert.That(flow.ActiveSceneId, Is.EqualTo(GameFlowSceneId.MainMenu));
-            Assert.That(SceneManager.GetSceneByPath(BootstrapPath).isLoaded, Is.True);
             Assert.That(SceneManager.GetSceneByPath(MainMenuPath).isLoaded, Is.True);
             for (int index = 0; index < PersistentPaths.Length; index++)
             {
@@ -112,6 +108,7 @@ namespace Project.GameFlow.Tests
             Assert.That(Time.timeScale, Is.EqualTo(0f));
             Assert.That(router.PauseScreen.activeSelf, Is.True);
             router.SetPaused(false, false);
+            yield return new WaitForSecondsRealtime(1f);
             Assert.That(Time.timeScale, Is.EqualTo(1f));
 
             yield return CompleteCurrentLevel(flow, GameFlowSceneId.Level02);

@@ -122,7 +122,7 @@ namespace PlanningEditorPrototype
                     int originX=int.MaxValue,originY=int.MaxValue;
                     foreach(var json in item.mergeParts)
                     {
-                        var part=JsonUtility.FromJson<PlanningBox>(json);
+                        var part=PlanningBox.FromPersistentJson(json);
                         if(part==null) continue;
                         originX=Mathf.Min(originX,part.x); originY=Mathf.Min(originY,part.y); parts.Add(part);
                     }
@@ -154,7 +154,7 @@ namespace PlanningEditorPrototype
                 var restored = new List<PlanningBox>();
                 foreach (string json in item.box.mergeParts)
                 {
-                    var part=JsonUtility.FromJson<PlanningBox>(json);
+                    var part=PlanningBox.FromPersistentJson(json);
                     if (part == null) continue;
                     ox=Mathf.Min(ox,part.x); oy=Mathf.Min(oy,part.y); restored.Add(part);
                 }

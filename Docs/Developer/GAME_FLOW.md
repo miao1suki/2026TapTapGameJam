@@ -1,15 +1,17 @@
 # 运行与场景
 
-打开Bootstrap并Play：先初始化Core/Input/Audio/Camera/UI常驻场景，再显示主菜单。
+完整流程打开 `Assets/_Project/Scenes/Flow/MainMenu.unity` 并 Play；主菜单中的独立 `__GameFlow` 加载 Core/Input/Audio/Camera/UI 共享场景，之后负责关卡切换。Bootstrap 场景已退役，不再强制切换 Play 入口。
 点击开始进入第一关，终点依次进入第二关、第三关、结束场景；终点Inspector可设置目标或游戏结束。
 当前关卡只有基础测试白膜，非正式关卡；没有绳、梯子、平台机关。玩家 A/D 或摇杆左右移动、Space 或触摸跳跃、Tab 或手柄 Select 开关调色轮盘、F 交互/搬运、Q/E 左右放下、R 复活或重置搬运、ESC 暂停。
 2D/3D模式由 CameraModeController 统一仲裁；Timeline 演出期间保持更高优先级。
 
 菜单 `Tools/2026TapTap/场景/场景导航与关卡入口` 按启动、系统、流程、正式关卡、开发测试分类。
-窗口中可选择正式流程启动或直接当前场景调试。正式启动从Bootstrap；当前场景模式补齐系统并激活关卡。
+Play 始终运行当前打开的场景，不自动换场景、不自动生成测试玩家。需要完整流程时打开主菜单；独立调试场景自行保留玩家/相机，按需叠加打开 Systems_Input、Systems_UI 等共享系统。
 生成出生点/终点时先打开自己的关卡。每人自己建场景，不使用旧地图总拼同步。
 正式关卡放 `Assets/_Project/Scenes/Levels/Level_XX`，实验放 `Assets/_Project/Development`，实验不默认参与构建。
 UI是常驻独立场景，编辑关卡时不要复制全屏菜单底板到关卡中。
+
+已经接线的界面另保存为 `Assets/_Project/Content/UI/MainMenuUI.prefab`（开始/设置/存档）和 `SharedGameUI.prefab`（暂停/收藏品/设置/存档/HUD/提示）。用于在独立场景复用已有设计，不应与原 UI 场景重复加载。SharedGameUI 自带服务初始化，不要求 GameFlowController；暂停遵循现有输入映射。需要交互时场景必须有且仅有一个 EventSystem（共享输入场景提供）。独立调试下暂停可用，菜单跳转/流程存档读取仍要求 GameFlowController 和 catalog。
 
 全局文字提示画布 `WordNote_UI` 位于 `Systems_UI` 的 `__System_UI` 下，和 `GameUI` 同级；由 `WordNoteUI` 维护总队列与九个位置队列，同位置支持纵向堆叠和退场补位，业务脚本通过其公开 API 显示、查询和退场。
 

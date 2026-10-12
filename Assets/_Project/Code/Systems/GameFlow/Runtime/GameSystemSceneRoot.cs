@@ -16,9 +16,15 @@ namespace Project.GameFlow
     {
         [SerializeField] private GameSystemSceneKind kind;
         [SerializeField, HideInInspector] private bool initialized;
+        private bool initializing;
 
         public GameSystemSceneKind Kind => kind;
         public bool IsInitialized => initialized;
+
+        private IEnumerator Start()
+        {
+            yield return InitializeServices();
+        }
 
         public void Configure(GameSystemSceneKind valueKind)
         {
@@ -33,6 +39,12 @@ namespace Project.GameFlow
             }
 
             MonoBehaviour[] behaviours = GetComponentsInChildren<MonoBehaviour>(true);
+            if (initializing)
+            {
+                while (initializing) yield return null;
+                yield break;
+            }
+            initializing = true;
             List<IGameSystemService> services = new List<IGameSystemService>();
             for (int index = 0; index < behaviours.Length; index++)
             {
@@ -53,6 +65,7 @@ namespace Project.GameFlow
             }
 
             initialized = true;
+            initializing = false;
         }
     }
 

@@ -18,8 +18,6 @@ namespace Project.GameFlow.Editor
     {
         public const string CatalogPath =
             "Assets/_Project/Content/GameFlow/GameSceneCatalog.asset";
-        public const string BootstrapPath =
-            "Assets/_Project/Scenes/Bootstrap/Bootstrap.unity";
         public const string CorePath =
             "Assets/_Project/Scenes/Systems/Systems_Core.unity";
         public const string InputPath =
@@ -52,13 +50,12 @@ namespace Project.GameFlow.Editor
 
         public static readonly string[] CanonicalBuildScenePaths =
         {
-            BootstrapPath,
+            MainMenuPath,
             CorePath,
             InputPath,
             AudioPath,
             CameraPath,
             UiPath,
-            MainMenuPath,
             Level01Path,
             Level02Path,
             Level03Path,
@@ -75,13 +72,17 @@ namespace Project.GameFlow.Editor
             }
 
             GameSceneCatalog catalog = CreateOrUpdateCatalog();
-            CreateSceneIfMissing(BootstrapPath, () => BuildBootstrap(catalog));
             CreateSceneIfMissing(CorePath, () => BuildSystemRoot(GameSystemSceneKind.Core));
             CreateSceneIfMissing(InputPath, BuildInputScene);
             CreateSceneIfMissing(AudioPath, BuildAudioScene);
             CreateSceneIfMissing(CameraPath, BuildCameraScene);
             CreateSceneIfMissing(UiPath, BuildUiScene);
-            CreateSceneIfMissing(MainMenuPath, () => BuildFlowScene(GameFlowSceneId.MainMenu));
+            CreateSceneIfMissing(MainMenuPath, () =>
+            {
+                BuildFlowScene(GameFlowSceneId.MainMenu);
+                new GameObject("__GameFlow").AddComponent<GameFlowController>()
+                    .Configure(catalog, GameFlowSceneId.MainMenu);
+            });
             CreateSceneIfMissing(Level01Path, () => BuildLevelScene(GameFlowSceneId.Level01));
             CreateSceneIfMissing(Level02Path, () => BuildLevelScene(GameFlowSceneId.Level02));
             CreateSceneIfMissing(Level03Path, () => BuildLevelScene(GameFlowSceneId.Level03));
@@ -108,7 +109,7 @@ namespace Project.GameFlow.Editor
             }
 
             Debug.Log(
-                "游戏流程场景骨架已就绪：Bootstrap + 5 个常驻系统场景 + " +
+                "游戏流程场景骨架已就绪：5 个共享系统场景 + " +
                 "主菜单 + 3 个关卡 + 结束演出。\n" + report);
         }
 
@@ -123,7 +124,6 @@ namespace Project.GameFlow.Editor
             }
 
             catalog.Configure(
-                BootstrapPath,
                 PersistentScenePaths,
                 new[]
                 {
@@ -135,13 +135,6 @@ namespace Project.GameFlow.Editor
                 });
             EditorUtility.SetDirty(catalog);
             return catalog;
-        }
-
-        private static void BuildBootstrap(GameSceneCatalog catalog)
-        {
-            GameObject root = new GameObject("__Bootstrap");
-            GameFlowController controller = root.AddComponent<GameFlowController>();
-            controller.Configure(catalog, GameFlowSceneId.MainMenu);
         }
 
         private static GameSystemSceneRoot BuildSystemRoot(GameSystemSceneKind kind)

@@ -89,6 +89,23 @@ namespace PlanningEditorPrototype
         public bool hasComponentOverrides;
         public List<LevelEditorComponentValueOverride> componentOverrides = new List<LevelEditorComponentValueOverride>();
         public PlanningBox Clone() => JsonUtility.FromJson<PlanningBox>(JsonUtility.ToJson(this));
+        public static PlanningBox FromPersistentJson(string json)
+        {
+            json = System.Text.RegularExpressions.Regex.Replace(json,
+                "\"instanceID\"\\s*:\\s*-?\\d+", "\"instanceID\":0");
+            return JsonUtility.FromJson<PlanningBox>(json);
+        }
+        public PlanningBox PersistentClone()
+        {
+            var copy = Clone();
+            copy.componentOverrides = Project.LevelEditor.Editor.LevelEditorComponentOverrideUtility.PersistentValues(componentOverrides);
+            for (int i = 0; i < copy.mergeParts.Count; i++)
+            {
+                var part = FromPersistentJson(copy.mergeParts[i]);
+                if (part != null) copy.mergeParts[i] = JsonUtility.ToJson(part.PersistentClone());
+            }
+            return copy;
+        }
         [NonSerialized] public LevelEditorPlacedBlock sceneBlock;
 
         public PlanningBox()
@@ -371,7 +388,7 @@ namespace PlanningEditorPrototype
 
             try
             {
-                return JsonUtility.FromJson<PlanningDocument>(asset.text);
+                return FromPersistentJson(asset.text);
             }
             catch (Exception)
             {
@@ -1393,6 +1410,25 @@ namespace PlanningEditorPrototype
             locks ??= new List<PlanningLock>();
             assemblyPatches ??= new List<PlanningBox>();
             RefreshConnectorPaths();
+        }
+
+        public string ToPersistentJson(bool prettyPrint = false)
+        {
+            var copy = JsonUtility.FromJson<PlanningDocument>(JsonUtility.ToJson(this));
+            foreach (var room in copy.rooms)
+                for (int i = 0; i < room.boxes.Count; i++) room.boxes[i] = room.boxes[i].PersistentClone();
+            for (int i = 0; i < copy.assemblyPatches.Count; i++)
+                copy.assemblyPatches[i] = copy.assemblyPatches[i].PersistentClone();
+            return JsonUtility.ToJson(copy, prettyPrint);
+        }
+
+        public static PlanningDocument FromPersistentJson(string json)
+        {
+            // Never let an old file resolve a saved numeric ID to an unrelated object
+            // in this editor session. New asset IDs resolve through GlobalObjectId.
+            json = System.Text.RegularExpressions.Regex.Replace(json,
+                "\"instanceID\"\\s*:\\s*-?\\d+", "\"instanceID\":0");
+            return JsonUtility.FromJson<PlanningDocument>(json);
         }
 
         public void RefreshConnectorPaths()

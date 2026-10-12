@@ -67,7 +67,7 @@ namespace Project.GameFlow.Editor
 
             AddCategory(scroll, "启动入口", new[]
             {
-                GameFlowSceneScaffolder.BootstrapPath,
+                GameFlowSceneScaffolder.MainMenuPath,
             });
             AddCategory(scroll, "常驻系统", GameFlowSceneScaffolder.PersistentScenePaths);
             AddCategory(scroll, "流程界面", new[]
@@ -146,36 +146,13 @@ namespace Project.GameFlow.Editor
             panel.style.borderBottomLeftRadius = 6f;
             panel.style.borderBottomRightRadius = 6f;
 
-            Toggle formal = new Toggle("Play 时使用正式 Bootstrap 流程")
-            {
-                value = GameFlowEditorPlayBridge.UseFormalFlow,
-            };
-            formal.style.unityFontStyleAndWeight = FontStyle.Bold;
-            panel.Add(formal);
-
             Label help = new Label();
             help.style.whiteSpace = WhiteSpace.Normal;
             help.style.color = new Color(0.65f, 0.72f, 0.82f);
             help.style.marginTop = 4f;
             panel.Add(help);
 
-            void RefreshHelp(bool useFormal)
-            {
-                help.text = useFormal
-                    ? "正式流程：从 Bootstrap 启动，加载全部常驻系统，再进入当前打开的正式关卡；用于完整联调与打包前检查。"
-                    : "直接调试：从当前场景启动。正式关卡仍会自动补齐系统、玩家和相机；普通测试场景保持原样。";
-                panel.style.borderLeftColor = useFormal
-                    ? new Color(0.2f, 0.72f, 1f)
-                    : new Color(1f, 0.65f, 0.2f);
-                panel.style.borderLeftWidth = 4f;
-            }
-
-            formal.RegisterValueChangedCallback(evt =>
-            {
-                GameFlowEditorPlayBridge.UseFormalFlow = evt.newValue;
-                RefreshHelp(evt.newValue);
-            });
-            RefreshHelp(formal.value);
+            help.text = "Play 从当前打开的场景运行。完整流程从主菜单进入；单场景调试可叠加打开共享系统场景。";
             parent.Add(panel);
         }
 
