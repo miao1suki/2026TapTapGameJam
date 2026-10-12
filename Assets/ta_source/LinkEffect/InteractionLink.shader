@@ -4,9 +4,10 @@ Shader "2026TapTap/Interaction Link"
     {
         _LinkColor("Link Color", Color) = (1,0.08,0.08,1)
         _Feasible("Feasible", Range(0,1)) = 1
-        _LinkCount("Link Count", Float) = 8
-        _Opacity("Opacity", Range(0,1)) = 1
-        _FlowSpeed("Flow Speed", Float) = 1.5
+        _Opacity("Opacity", Range(0,1)) = 0.68
+        _PixelSize("Pixel Size", Range(1,16)) = 5
+        _NoiseStrength("Noise Strength", Range(0,1)) = 0.55
+        _FlickerSpeed("Flicker Speed", Range(0,20)) = 7
     }
     SubShader
     {
@@ -26,9 +27,10 @@ Shader "2026TapTap/Interaction Link"
             CBUFFER_START(UnityPerMaterial)
             float4 _LinkColor;
             float _Feasible;
-            float _LinkCount;
             float _Opacity;
-            float _FlowSpeed;
+            float _PixelSize;
+            float _NoiseStrength;
+            float _FlickerSpeed;
             CBUFFER_END
 
             struct Attributes
@@ -44,6 +46,11 @@ Shader "2026TapTap/Interaction Link"
                 half4 color : COLOR;
             };
 
+            float Hash(float2 cell)
+            {
+                return frac(sin(dot(cell, float2(127.1, 311.7))) * 43758.5453);
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -55,22 +62,21 @@ Shader "2026TapTap/Interaction Link"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                float links = max(2.0, _LinkCount);
-                float along = input.uv.x * links - _Time.y * _FlowSpeed;
-                float localX = frac(along) - 0.5;
-                float localY = (input.uv.y - 0.5) * 2.0;
-                float oval = length(float2(localX / 0.46, localY / 0.74));
-                float ring = 1.0 - smoothstep(0.08, 0.20, abs(oval - 0.74));
-                float core = (1.0 - smoothstep(0.0, 0.45, abs(localY))) * 0.12;
-                float pulse = 0.72 + 0.28 * sin(input.uv.x * 17.0 - _Time.y * 7.0);
-                float broken = step(0.5, frac(floor(along) * 0.5));
-                float visible = lerp(broken, 1.0, saturate(_Feasible));
-                float strength = lerp(0.42, 1.0, saturate(_Feasible));
-                float alpha = saturate((ring * pulse + core) * visible *
-                    strength * _Opacity * input.color.a);
-                clip(alpha - 0.01);
-                return half4(_LinkColor.rgb * input.color.rgb *
-                    (0.85 + 0.35 * pulse), alpha * _LinkColor.a);
+                // Screen-space cells keep the grain square and visibly pixelated.
+                float2 cell = floor(input.positionCS.xy / max(1.0, _PixelSize));
+                float tick = floor(_Time.y * _FlickerSpeed);
+                float noise = Hash(cell + float2(tick * 13.0, tick * 7.0));
+                float slowNoise = Hash(cell * 0.37 + float2(17.0, 41.0));
+                float cross = abs(input.uv.y * 2.0 - 1.0);
+                float edge = 0.83 + (slowNoise - 0.5) * _NoiseStrength * 0.55;
+                float band = 1.0 - step(edge, cross);
+                float grain = lerp(0.38, 1.0, noise);
+                float gaps = lerp(step(0.34, slowNoise), 1.0, saturate(_Feasible));
+                float strength = lerp(0.38, 1.0, saturate(_Feasible));
+                float alpha = band * grain * gaps * strength * _Opacity * input.color.a;
+                clip(alpha - 0.015);
+                return half4(_LinkColor.rgb * input.color.rgb,
+                    saturate(alpha * _LinkColor.a));
             }
             ENDHLSL
         }

@@ -21,8 +21,9 @@ Material:
     m_Ints: []
     m_Floats:
     - _Feasible: 1
-    - _FlowSpeed: 1.5
-    - _LinkCount: 8
-    - _Opacity: 1
+    - _FlickerSpeed: 7
+    - _NoiseStrength: 0.55
+    - _Opacity: 0.68
+    - _PixelSize: 5
     m_Colors:
     - _LinkColor: {r: 1, g: 0.08, b: 0.08, a: 1}

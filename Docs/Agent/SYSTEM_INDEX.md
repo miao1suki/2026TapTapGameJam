@@ -21,7 +21,7 @@
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |
 | 基础玩家 | `Assets/Player` | `PlayerController` 仅保留马能力，`PlayerInputDriver` 负责默认输入；不含旧玩法 |
-| TA 交互预览链条 | `Assets/ta_source/LinkEffect` | 独立扫描玩家交互半径内最近的 `IInteractionTarget`，按玩家当前选色绘制 URP 链节；Test 场景含红色测试目标，接入和测试说明见目录 README |
+| TA 交互像素连线预览 | `Assets/ta_source/LinkEffect` | 只读扫描玩家检测圈内的 F 交互、实际接色功能和可搬运物；按当前选色与目标状态绘制透明像素噪波线。Test 场景只保留玩家上的预览组件，接入说明见目录 README |
 | 掉落物与拾取飞行 | `Assets/_Project/Code/Shared/Runtime/DropItemBase.cs`、`Assets/_Project/Code/Systems/PickupPresentation` | 基类负责感知后的磁吸、收集生命周期；颜色钥匙触碰结算并播放 DOTween 四段飞行与镜头；Pick 场景保留测试物 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
 | 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、块材质和达成图片 |
