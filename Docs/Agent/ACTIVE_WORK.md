@@ -843,3 +843,11 @@
 - 表现：一份 URP Unlit Shader/材质按色卡显示红绿蓝链节；可行时完整流动，不可行时断续变暗。TestPlayer 未选色时启用红色测试色，旁边红色测试目标用于即刻预览。
 - 验证：Unity 6000.3.12f1 编辑器已导入新增脚本、Shader 和材质，Runtime/Editor 程序集重载完成；Test 场景新增 YAML 对象 ID 无重复，新增脚本与材质 GUID 引用核对通过。实际重载 Test 场景并进入 Play Mode，确认角色与红色测试目标之间显示红色链条；运行时把测试色改为 blue 后，链条切换为较暗的蓝色断续显示。退出 Play Mode 后测试色恢复为场景预设的 red。
 - 边界：保留工作区已有的 Renderer、字体、PixelEffect、GivingColor 等改动，不纳入本任务提交。
+
+## TA 交互预览识别与像素噪波改造
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/ta/link-effect-preview`。
+- 范围：只修改 `Assets/ta_source/LinkEffect` 的目标识别与视觉资源，并从 `Assets/Scenes/Test.unity` 移除上次新增的 `LinkEffect_Red_TestTarget`；保留既有 TestPlayer 挂载，不改原有玩法脚本和场景元素。
+- 实现：只读扫描 `IInteractionTarget`、`IColorApplicationTarget` 与 `PlayerCarryTargetRegistry`，排除只有基类空实现的染色功能；按颜色处理类型、目标现态、母藤蔓剩余生长量及子节段类型判断可行性。多个碰撞体按物体合并。Shader 改为带透明度、像素格噪波和断边的线条，不再绘制链节。
+- 验证：Unity 6000.3.12f1 已重新导入脚本与 Shader，Test 场景可进入并退出 Play Mode；Console 为 0 错误、0 警告，场景层级确认旧测试方块已消失。未在本轮对每一种真实目标逐一做画面操作验证。
+- 交接：仅提交 LinkEffect 目录、Test 场景中本组件参数与旧测试方块移除、此记录及系统索引；工作区已有 Renderer、字体、PixelEffect、GivingColor 改动保留原样。
