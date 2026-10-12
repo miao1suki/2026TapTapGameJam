@@ -1,5 +1,19 @@
 # 工作状态与交接（每次任务重读）
 
+## 最新进度整合（2026-10-12）
+
+- 用户授权整合最新进度至 main；任务源为 codex/world-grid-one-to-one，TA 新提交为 e18507d（交互目标识别与像素链条）。包含统一世界图、MVMap 试导入、区域重生/重置、当前重生点外观和旧标准流程场景退役。
+- 保留用户未提交的 Pick、字体、DOTween Pro 和 PackageManagerSettings，不纳入本次提交；不引入已过期 TA 水体管线实验分支。
+- 整合前验证：56 项 EditMode、25 项真实运行态重生断言、1 项独立菜单 PlayMode 通过。合入 TA 后再次编译与回归；视觉和打包仍需人工验收。
+
+## 当前重生点外观与退役场景清理
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/world-grid-one-to-one`；本地开发，不自动提交或推送。
+- 范围：重生点默认半径 0.5→1.5 格，自有测试 Scene 1.25→1.5 格；当前绑定与历史激活分离，只有当前点使用青色材质，换点恢复旧点外观，并提供 IsCurrent / CurrentChanged 美术接口。不改用户 Pick。
+- 用户确认旧标准流程整体退役：移除五个 Systems 场景、旧三关和 Ending（含 .meta），清空 catalog/构建引用；导航改为列出实际场景，旧生成菜单撤下且生成入口拒绝重新生成。MainMenu 保留原 UI、改为独立 Camera/EventSystem，移除旧流程根。Content/UI 两个 prefab 原样保留，跨场景开始/返回等待新流程接线。
+- 恢复：删除前 Scene 副本位于 Library/RetiredStandardScenesBackup；Git 历史同样可恢复。空 Levels/Systems 目录仅为未来关卡组织保留，不包含旧场景。
+- 验证：Unity 6000.3.12f1 全项目编译、56 项 EditMode 回归、25 项真实 PlayMode 重生断言和 1 项主菜单独立 PlayMode 测试通过（唯一 Camera/AudioListener/EventSystem，无旧系统自动加载）。完整 Game 画面/手感/构建未人工验收。不自动提交或推送。
+
 ## MVMap 试导入、区域重生与重置
 
 - 日期：2026-10-12；负责人：Codex；分支：`codex/world-grid-one-to-one`；实现完成，按用户要求仅提交/推送分支，不合并 main。

@@ -10,6 +10,7 @@ namespace Project.BlockFeatures
     public sealed class RespawnAnchorFeature :
         MonoBehaviour,
         IPlayerRespawnPoint,
+        IPlayerRespawnBindingListener,
         IRespawnAnchorChainProvider,
         IRespawnAnchorStateProvider
     {
@@ -29,7 +30,7 @@ namespace Project.BlockFeatures
         private float respawnRadiusBlocks;
         [BlockParameter(Label = "激活半径（格）", Group = "激活设置", Order = 0)]
         [SerializeField, Min(0f)]
-        private float activationRadiusBlocks = .5f;
+        private float activationRadiusBlocks = 1.5f;
         [SerializeField] private string playerTag = "Player";
         [SerializeField] private Renderer targetRenderer;
         [SerializeField] private Material inactiveMaterial;
@@ -40,6 +41,20 @@ namespace Project.BlockFeatures
 
         private bool activated;
         private bool playerInside;
+        private readonly HashSet<PlayerController> boundPlayers = new HashSet<PlayerController>();
+        public bool IsCurrent => boundPlayers.Count > 0;
+        public event Action<bool> CurrentChanged;
+
+        public void OnRespawnBindingChanged(PlayerController player, bool current)
+        {
+            bool previous = IsCurrent;
+            if (current) boundPlayers.Add(player); else boundPlayers.Remove(player);
+            if (previous == IsCurrent) return;
+            if (activationRoutine != null) { StopCoroutine(activationRoutine); activationRoutine = null; }
+            ApplyVisualState();
+            if (IsCurrent) PlayActivationAnimation();
+            CurrentChanged?.Invoke(IsCurrent);
+        }
         [SerializeField] private string regionId;
         public string RegionId => regionId;
         public void SetRegion(string id) => regionId = id;
@@ -107,13 +122,15 @@ namespace Project.BlockFeatures
             activated = true;
             RespawnAnchorChainRuntime.Invalidate();
             ApplyVisualState();
-            PlayActivationAnimation();
             return true;
         }
 
         public bool ActivateForDebug()
         {
-            return Activate();
+            bool changed = Activate();
+            if (TryGetPlayer(playerTag, out GameObject player))
+                PlayerRespawnPointRegistry.Bind(player.GetComponent<PlayerController>(), this);
+            return changed;
         }
 
         public void EnsureRuntimeAnchorId()
@@ -202,10 +219,12 @@ namespace Project.BlockFeatures
         private void OnEnable()
         {
             playerInside = false;
+            boundPlayers.Clear();
             EnsureRuntimeAnchorId();
             ResolveTargetRenderer();
             RespawnAnchorChainRuntime.Register(this);
             PlayerRespawnPointRegistry.Register(this);
+            ApplyVisualState();
         }
 
         private void Start()
@@ -289,7 +308,7 @@ namespace Project.BlockFeatures
                 return;
             }
 
-            Material material = activated
+            Material material = IsCurrent
                 ? activatedMaterial
                 : inactiveMaterial;
             if (material != null)
@@ -373,6 +392,7 @@ namespace Project.BlockFeatures
 
             clip.SampleAnimation(gameObject, clip.length);
             activationRoutine = null;
+            ApplyVisualState();
         }
 
         private static bool TryGetPlayer(

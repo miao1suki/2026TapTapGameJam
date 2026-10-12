@@ -29,6 +29,8 @@
 
 `PlayerRespawnPointRegistry.Bind(player, point)` 记录最近触碰。`TryFindPreferred(player, origin, out point)` 优先此绑定，旧链表优先级仅是无绑定的兼容后备。绑定为本次运行，未新增跨运行存档协议。
 
+默认触发半径 1.5 格。`RespawnAnchorFeature.IsCurrent` 与历史 `IsActivated` 分离，只有当前点使用 activatedMaterial；新绑定通知旧点恢复 inactiveMaterial。`CurrentChanged(bool)` 供美术表现监听，`IPlayerRespawnBindingListener.OnRespawnBindingChanged(player, current)` 是注册表的类型安全回调；禁用点会取消绑定。历史链激活不会点亮非当前点，重复绑定同一点不重复播放动画。
+
 `ColorRuntimeService.ResetForRoom` 只请求区域重置，保留 unlocked，不发全局 OnRoomColorReset。仅 `ResetProgress` 明确清空颜色；历史事件用于显式进度重置，不用于房间移动。
 
 ## 验证

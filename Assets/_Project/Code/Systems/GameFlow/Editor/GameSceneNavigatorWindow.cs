@@ -31,6 +31,7 @@ namespace Project.GameFlow.Editor
         {
             minSize = new Vector2(520f, 640f);
             VisualElement root = rootVisualElement;
+            root.Clear();
             root.style.backgroundColor = new Color(0.045f, 0.06f, 0.085f, 1f);
             root.style.paddingLeft = 12f;
             root.style.paddingRight = 12f;
@@ -52,6 +53,7 @@ namespace Project.GameFlow.Editor
                 text = "检查配置",
             };
             header.Add(validate);
+            header.Add(new Button(CreateGUI) { text = "刷新列表" });
             root.Add(header);
 
             currentSceneLabel = new Label();
@@ -65,24 +67,16 @@ namespace Project.GameFlow.Editor
             scroll.style.flexGrow = 1f;
             root.Add(scroll);
 
-            AddCategory(scroll, "启动入口", new[]
+            AddCategory(scroll, "主菜单", new[]
             {
                 GameFlowSceneScaffolder.MainMenuPath,
             });
-            AddCategory(scroll, "常驻系统", GameFlowSceneScaffolder.PersistentScenePaths);
-            AddCategory(scroll, "流程界面", new[]
-            {
-                GameFlowSceneScaffolder.MainMenuPath,
-                GameFlowSceneScaffolder.EndingPath,
-            });
-            AddCategory(scroll, "正式关卡", new[]
-            {
-                GameFlowSceneScaffolder.Level01Path,
-                GameFlowSceneScaffolder.Level02Path,
-                GameFlowSceneScaffolder.Level03Path,
-            });
+            var projectScenes = new List<string>();
+            AddScenesInFolder(projectScenes, "Assets/_Project/Scenes");
+            projectScenes.Remove(GameFlowSceneScaffolder.MainMenuPath);
+            projectScenes.Sort(StringComparer.OrdinalIgnoreCase);
+            if (projectScenes.Count > 0) AddCategory(scroll, "项目场景", projectScenes);
             AddCategory(scroll, "开发与测试", FindDevelopmentScenes());
-            AddAuthoringPanel(scroll);
 
             EditorSceneManager.activeSceneChangedInEditMode -= OnActiveSceneChanged;
             EditorSceneManager.activeSceneChangedInEditMode += OnActiveSceneChanged;
@@ -152,7 +146,7 @@ namespace Project.GameFlow.Editor
             help.style.marginTop = 4f;
             panel.Add(help);
 
-            help.text = "Play 从当前打开的场景运行。完整流程从主菜单进入；单场景调试可叠加打开共享系统场景。";
+            help.text = "Play 运行当前打开的场景。各场景独立配置玩家、相机及所需服务；主菜单和暂停界面可通过预制体复用。";
             parent.Add(panel);
         }
 

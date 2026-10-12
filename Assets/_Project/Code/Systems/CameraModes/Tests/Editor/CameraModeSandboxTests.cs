@@ -10,7 +10,7 @@ namespace Project.CameraModes.Tests
     public sealed class CameraModeSandboxTests
     {
         private const string ScenePath =
-            "Assets/_Project/Scenes/Systems/Systems_Camera.unity";
+            "Assets/_Project/Development/RoomLifecycleTests/RoomRespawnTest.unity";
 
         [Test]
         public void SandboxScene_HasConfiguredControllerAndIsNotInBuildSettings()
@@ -26,7 +26,7 @@ namespace Project.CameraModes.Tests
             Assert.That(
                 EditorBuildSettings.scenes.Any(item =>
                     string.Equals(item.path, ScenePath, StringComparison.OrdinalIgnoreCase)),
-                Is.True);
+                Is.False);
         }
     }
 }

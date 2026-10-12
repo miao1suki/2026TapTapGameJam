@@ -17,7 +17,7 @@ Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未�
 - `Assets/_Project/Code/Systems/<Feature>`：功能源码，Runtime/Editor/Tests 分开。
 - `Assets/Player`：基础玩家及 Timeline 动作适配。
 - `Assets/GJ_Tools/TimelineTools3D`：保留的旧 Timeline 工具（兼容路径）。
-- `Assets/_Project/Scenes/Systems`、`Flow`：共享系统、流程；从 MainMenu 开始完整流程，Bootstrap 已退役，Play 不强制换场景。
+- `Assets/_Project/Scenes/Flow/MainMenu.unity`：独立菜单预览，不自动加载系统或旧三关。旧五个 Systems 场景、Level_01～03 和 Ending 已整体退役；功能代码和 Content/UI 的菜单/暂停预制体保留，正式关卡流程等待新接线。Play 不强制换场景。
 - `Assets/_Project/Scenes/Levels/Level_XX`：按关卡组织，不按人员职位。
 - `Assets/_Project/Development/<Feature>/<AuthorOrTask>`：独立实验；不默认加入正式构建。
 - `Assets/_Project/Content`：正式流程的 prefab、catalog 和配置。

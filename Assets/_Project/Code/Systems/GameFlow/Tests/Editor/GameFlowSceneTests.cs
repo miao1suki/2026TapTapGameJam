@@ -1,85 +1,61 @@
 using NUnit.Framework;
 using Project.GameFlow.Editor;
 using UnityEditor;
+using UnityEngine;
 
 namespace Project.GameFlow.Tests
 {
     public sealed class GameFlowSceneTests
     {
         [Test]
-        public void Catalog_ContainsCanonicalScenes()
+        public void Catalog_NoLongerReferencesRetiredFlow()
         {
-            GameSceneCatalog catalog =
-                AssetDatabase.LoadAssetAtPath<GameSceneCatalog>(
-                    GameFlowSceneScaffolder.CatalogPath);
-
+            var catalog = AssetDatabase.LoadAssetAtPath<GameSceneCatalog>(GameFlowSceneScaffolder.CatalogPath);
             Assert.That(catalog, Is.Not.Null);
-            Assert.That(catalog.PersistentScenePaths.Count, Is.EqualTo(5));
-            Assert.That(catalog.FlowScenes.Count, Is.EqualTo(5));
-            Assert.That(catalog.TryGet(GameFlowSceneId.MainMenu, out _), Is.True);
-            Assert.That(catalog.TryGet(GameFlowSceneId.Level01, out _), Is.True);
-            Assert.That(catalog.TryGet(GameFlowSceneId.Level02, out _), Is.True);
-            Assert.That(catalog.TryGet(GameFlowSceneId.Level03, out _), Is.True);
-            Assert.That(catalog.TryGet(GameFlowSceneId.Ending, out _), Is.True);
+            Assert.That(catalog.PersistentScenePaths.Count, Is.Zero);
+            Assert.That(catalog.FlowScenes.Count, Is.Zero);
         }
 
         [Test]
-        public void BuildSettings_ContainsOnlyCanonicalScenesInOrder()
+        public void BuildSettings_ReferencesExistingScenesOnly()
         {
-            EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
-            Assert.That(
-                scenes.Length,
-                Is.EqualTo(GameFlowSceneScaffolder.CanonicalBuildScenePaths.Length));
-            for (int index = 0; index < scenes.Length; index++)
-            {
-                Assert.That(scenes[index].enabled, Is.True);
-                Assert.That(
-                    scenes[index].path,
-                    Is.EqualTo(
-                        GameFlowSceneScaffolder.CanonicalBuildScenePaths[index]));
-            }
+            Assert.That(EditorBuildSettings.scenes.Length, Is.GreaterThan(0));
+            foreach (var scene in EditorBuildSettings.scenes)
+                Assert.That(AssetDatabase.LoadAssetAtPath<SceneAsset>(scene.path), Is.Not.Null, scene.path);
         }
 
         [Test]
-        public void Validator_AcceptsGeneratedProject()
+        public void Validator_AcceptsIndependentScenes()
         {
-            bool valid = GameFlowProjectValidator.Validate(out string report);
-            Assert.That(valid, Is.True, report);
+            Assert.That(GameFlowProjectValidator.Validate(out string report), Is.True, report);
+        }
+
+        [TestCase("Assets/_Project/Content/UI/MainMenuUI.prefab")]
+        [TestCase("Assets/_Project/Content/UI/SharedGameUI.prefab")]
+        [TestCase("Assets/_Project/Content/Player/RuntimePlayer.prefab")]
+        public void IndependentPrefabs_ArePreserved(string path)
+        {
+            Assert.That(AssetDatabase.LoadAssetAtPath<GameObject>(path), Is.Not.Null);
+        }
+
+        [TestCase(GameFlowSceneScaffolder.CorePath)]
+        [TestCase(GameFlowSceneScaffolder.InputPath)]
+        [TestCase(GameFlowSceneScaffolder.AudioPath)]
+        [TestCase(GameFlowSceneScaffolder.CameraPath)]
+        [TestCase(GameFlowSceneScaffolder.UiPath)]
+        [TestCase(GameFlowSceneScaffolder.Level01Path)]
+        [TestCase(GameFlowSceneScaffolder.Level02Path)]
+        [TestCase(GameFlowSceneScaffolder.Level03Path)]
+        [TestCase(GameFlowSceneScaffolder.EndingPath)]
+        public void RetiredScenes_AreAbsent(string path)
+        {
+            Assert.That(AssetDatabase.LoadAssetAtPath<SceneAsset>(path), Is.Null);
         }
 
         [Test]
-        public void PlayablePrototype_HasPlayerPrefabAndLevelScenes()
+        public void RetiredGenerator_CannotRecreateScenes()
         {
-            Assert.That(
-                AssetDatabase.LoadAssetAtPath<UnityEngine.GameObject>(
-                    "Assets/_Project/Content/Player/RuntimePlayer.prefab"),
-                Is.Not.Null);
-            Assert.That(
-                AssetDatabase.LoadAssetAtPath<SceneAsset>(
-                    GameFlowSceneScaffolder.Level01Path),
-                Is.Not.Null);
-            Assert.That(
-                AssetDatabase.LoadAssetAtPath<SceneAsset>(
-                    GameFlowSceneScaffolder.Level02Path),
-                Is.Not.Null);
-            Assert.That(
-                AssetDatabase.LoadAssetAtPath<SceneAsset>(
-                    GameFlowSceneScaffolder.Level03Path),
-                Is.Not.Null);
-        }
-
-        [TestCase(GameFlowSceneId.Level01, GameFlowSceneScaffolder.Level01Path)]
-        [TestCase(GameFlowSceneId.Level02, GameFlowSceneScaffolder.Level02Path)]
-        [TestCase(GameFlowSceneId.Level03, GameFlowSceneScaffolder.Level03Path)]
-        public void Catalog_MapsLevelPathBackToId(
-            GameFlowSceneId expected,
-            string path)
-        {
-            GameSceneCatalog catalog =
-                AssetDatabase.LoadAssetAtPath<GameSceneCatalog>(
-                    GameFlowSceneScaffolder.CatalogPath);
-            Assert.That(catalog.TryGetIdForPath(path, out GameFlowSceneId actual), Is.True);
-            Assert.That(actual, Is.EqualTo(expected));
+            Assert.Throws<System.NotSupportedException>(() => GameFlowSceneScaffolder.Generate());
         }
     }
 }

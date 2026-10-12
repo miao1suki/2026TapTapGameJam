@@ -200,7 +200,7 @@ namespace Project.Rooms.Editor
             var anchor = item.GetComponent<RespawnAnchorFeature>();
             anchor.EnsureRuntimeAnchorId(); anchor.SetRegion(owner);
             var serialized = new SerializedObject(anchor);
-            serialized.FindProperty("activationRadiusBlocks").floatValue = 1.25f;
+            serialized.FindProperty("activationRadiusBlocks").floatValue = 1.5f;
             serialized.FindProperty("respawnHeightBlocks").floatValue = .5f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             PrefabUtility.RecordPrefabInstancePropertyModifications(anchor);
@@ -273,6 +273,12 @@ namespace Project.Rooms.Editor
                 }
                 if (phase == 1)
                 {
+                    var current = GameObject.Find("重生点 A2").GetComponent<RespawnAnchorFeature>();
+                    var old = GameObject.Find("重生点 A1").GetComponent<RespawnAnchorFeature>();
+                    Check(current.IsCurrent && !old.IsCurrent && old.IsActivated, "current checkpoint separate from visited history");
+                    Check(current.TargetRenderer.sharedMaterial == current.ActivatedMaterial &&
+                        old.TargetRenderer.sharedMaterial == old.InactiveMaterial, "only current checkpoint uses current material");
+                    Check(Mathf.Approximately(current.ActivationRadiusBlocks, 1.5f), "expanded checkpoint radius");
                     Check(PlayerRespawnPointRegistry.TryFindPreferred(player, player.transform.position, out var anchor) &&
                         ((Component)anchor).name == "重生点 A2", "latest checkpoint activation: player=" + player.transform.position + "; point=" + (anchor as Component)?.name);
                     var a = GameObject.Find("可搬运测试块 A"); var b = GameObject.Find("可搬运测试块 B");

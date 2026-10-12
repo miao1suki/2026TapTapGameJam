@@ -11,12 +11,7 @@ namespace Project.GameFlow.Editor
     {
         public static void RebuildScene()
         {
-            UnityEngine.SceneManagement.Scene scene =
-                EditorSceneManager.NewScene(
-                    NewSceneSetup.EmptyScene,
-                    NewSceneMode.Single);
-            BuildCurrentScene();
-            EditorSceneManager.SaveScene(scene, GameFlowSceneScaffolder.UiPath);
+            throw new System.NotSupportedException("旧共享 UI 场景已退役。请使用 Content/UI 中的界面预制体。");
         }
 
         public static void BuildCurrentScene()

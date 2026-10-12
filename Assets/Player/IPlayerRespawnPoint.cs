@@ -23,7 +23,18 @@ namespace Project.Player
 
         public static void Bind(PlayerController player, IPlayerRespawnPoint point)
         {
-            if (player != null && point != null && point.IsRespawnPointAvailable) Bound[player] = point;
+            if (player == null || point == null || !point.IsRespawnPointAvailable) return;
+            Bound.TryGetValue(player, out IPlayerRespawnPoint previous);
+            if (ReferenceEquals(previous, point)) return;
+            Bound[player] = point;
+            NotifyBinding(previous, player, false);
+            NotifyBinding(point, player, true);
+        }
+
+        private static void NotifyBinding(IPlayerRespawnPoint point, PlayerController player, bool current)
+        {
+            if (point is Object obj && obj == null) return;
+            if (point is IPlayerRespawnBindingListener listener) listener.OnRespawnBindingChanged(player, current);
         }
 
         public static bool TryFindPreferred(PlayerController player, Vector3 origin, out IPlayerRespawnPoint point)
@@ -46,6 +57,14 @@ namespace Project.Player
             if (point != null)
             {
                 Points.Remove(point);
+                var players = new List<PlayerController>();
+                foreach (var pair in Bound)
+                    if (ReferenceEquals(pair.Value, point)) players.Add(pair.Key);
+                foreach (var player in players)
+                {
+                    Bound.Remove(player);
+                    NotifyBinding(point, player, false);
+                }
             }
         }
 
@@ -198,5 +217,10 @@ namespace Project.Player
 
             return point != null;
         }
+    }
+
+    public interface IPlayerRespawnBindingListener
+    {
+        void OnRespawnBindingChanged(PlayerController player, bool current);
     }
 }

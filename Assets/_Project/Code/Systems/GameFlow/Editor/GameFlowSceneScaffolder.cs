@@ -62,55 +62,9 @@ namespace Project.GameFlow.Editor
             EndingPath,
         };
 
-        [MenuItem("Tools/2026TapTap/游戏流程/创建或修复标准场景骨架", priority = 10)]
         public static void Generate()
         {
-            EnsureFolderForAsset(CatalogPath);
-            for (int index = 0; index < CanonicalBuildScenePaths.Length; index++)
-            {
-                EnsureFolderForAsset(CanonicalBuildScenePaths[index]);
-            }
-
-            GameSceneCatalog catalog = CreateOrUpdateCatalog();
-            CreateSceneIfMissing(CorePath, () => BuildSystemRoot(GameSystemSceneKind.Core));
-            CreateSceneIfMissing(InputPath, BuildInputScene);
-            CreateSceneIfMissing(AudioPath, BuildAudioScene);
-            CreateSceneIfMissing(CameraPath, BuildCameraScene);
-            CreateSceneIfMissing(UiPath, BuildUiScene);
-            CreateSceneIfMissing(MainMenuPath, () =>
-            {
-                BuildFlowScene(GameFlowSceneId.MainMenu);
-                new GameObject("__GameFlow").AddComponent<GameFlowController>()
-                    .Configure(catalog, GameFlowSceneId.MainMenu);
-            });
-            CreateSceneIfMissing(Level01Path, () => BuildLevelScene(GameFlowSceneId.Level01));
-            CreateSceneIfMissing(Level02Path, () => BuildLevelScene(GameFlowSceneId.Level02));
-            CreateSceneIfMissing(Level03Path, () => BuildLevelScene(GameFlowSceneId.Level03));
-            CreateSceneIfMissing(EndingPath, () => BuildFlowScene(GameFlowSceneId.Ending));
-
-            EditorBuildSettings.scenes = Array.ConvertAll(
-                CanonicalBuildScenePaths,
-                path => new EditorBuildSettingsScene(path, true));
-            catalog = AssetDatabase.LoadAssetAtPath<GameSceneCatalog>(CatalogPath);
-            if (catalog == null)
-            {
-                throw new InvalidOperationException(
-                    $"场景生成后无法重新载入 Scene Catalog：{CatalogPath}");
-            }
-
-            EditorUtility.SetDirty(catalog);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            GameFlowEditorPlayBridge.ApplyStartScenePreference();
-
-            if (!GameFlowProjectValidator.Validate(out string report))
-            {
-                throw new InvalidOperationException(report);
-            }
-
-            Debug.Log(
-                "游戏流程场景骨架已就绪：5 个共享系统场景 + " +
-                "主菜单 + 3 个关卡 + 结束演出。\n" + report);
+            throw new NotSupportedException("旧标准场景流程已退役。请自行创建关卡并复用 Content/UI 中的主菜单与暂停界面。");
         }
 
         private static GameSceneCatalog CreateOrUpdateCatalog()

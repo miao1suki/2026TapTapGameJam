@@ -81,15 +81,15 @@ namespace Project.BlockFeatures.Editor
             visual.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "inactiveMaterial",
-                "未激活材质"));
+                "非当前材质", "尚未绑定或已切换到其他重生点时使用。"));
             visual.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "activatedMaterial",
-                "已激活材质"));
+                "当前重生点材质", "仅当前绑定点使用；离开范围不取消绑定。"));
             visual.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "activationAnimation",
-                "激活动画"));
+                "绑定动画"));
             visual.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "activationAnimationDuration",
@@ -127,6 +127,9 @@ namespace Project.BlockFeatures.Editor
                     "运行时调试",
                     false);
             debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "当前绑定",
+                () => feature.IsCurrent ? "是" : "否"));
+            debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "当前可用",
                 () => feature.IsRespawnPointAvailable
                     ? "是"
@@ -142,7 +145,7 @@ namespace Project.BlockFeatures.Editor
             {
                 activateButton.SetEnabled(
                     Application.isPlaying &&
-                    !feature.IsActivated);
+                    !feature.IsCurrent);
             }).Every(100);
             root.Add(debug);
 

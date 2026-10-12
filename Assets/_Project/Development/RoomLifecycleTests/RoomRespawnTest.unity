@@ -387,7 +387,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 900000000000000002, guid: 08cae83af9dea8748a12edda1eb537b9, type: 3}
       propertyPath: activationRadiusBlocks
-      value: 1.25
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 7351994602470600800, guid: 08cae83af9dea8748a12edda1eb537b9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -681,7 +681,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 900000000000000002, guid: 08cae83af9dea8748a12edda1eb537b9, type: 3}
       propertyPath: activationRadiusBlocks
-      value: 1.25
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 7351994602470600800, guid: 08cae83af9dea8748a12edda1eb537b9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -775,7 +775,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 900000000000000002, guid: 08cae83af9dea8748a12edda1eb537b9, type: 3}
       propertyPath: activationRadiusBlocks
-      value: 1.25
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 7351994602470600800, guid: 08cae83af9dea8748a12edda1eb537b9, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1057,7 +1057,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 900000000000000002, guid: 08cae83af9dea8748a12edda1eb537b9, type: 3}
       propertyPath: activationRadiusBlocks
-      value: 1.25
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 7351994602470600800, guid: 08cae83af9dea8748a12edda1eb537b9, type: 3}
       propertyPath: m_LocalPosition.x
