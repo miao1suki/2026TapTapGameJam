@@ -29,11 +29,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c1081b09b54c484a939f4425736077b, type: 3}
   m_Name: Selective HSV Color Fade
   m_EditorClassIdentifier: Assembly-CSharp::Project.ColorBlocks.SelectiveHsvRendererFeature
-  m_Active: 1
+  m_Active: 0
   maskShader: {fileID: 4800000, guid: 8ee65bbba22e0d44badef7158f05082e, type: 3}
   fadeShader: {fileID: 4800000, guid: 79e7908908e6596468a6c2e0dbcd2ef8, type: 3}
   pixelShader: {fileID: 4800000, guid: 725db4f9b9314976927e406b30f14188, type: 3}
-  pixelSize: 15
+  pixelSize: 2.8
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -105,7 +105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b00045f12942b46c698459096c89274e, type: 3}
   m_Name: 02StencilPixelEffect
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.FullScreenPassRendererFeature
-  m_Active: 0
+  m_Active: 1
   injectionPoint: 450
   fetchColorBuffer: 1
   requirements: 0

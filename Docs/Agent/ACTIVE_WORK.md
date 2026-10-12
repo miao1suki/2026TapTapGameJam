@@ -1,5 +1,19 @@
 # 工作状态与交接（每次任务重读）
 
+## 用户要求推送当前全部工作区改动
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/ta/link-effect-preview`。
+- 范围：按用户此前“所有改动都推上去”的授权，将工作区内 Test 场景、PC Renderer 设置、字体资源、LinkEffect 源码/Shader/材质/文档、StencilPixelEffect 材质、GivingColor 目录元数据及相关交接文档一并纳入；`.vscode` 属于本机编辑器配置，按仓库规则排除。
+- 交付边界：只推送当前任务分支，不直接推 `main`，由整合者后续合并。
+- 验证：Unity 6000.3.12f1 Runtime C# 静态编译通过；暂存差异检查通过。Shader 导入与实际 Game 画面尚未复核。
+
+## TA 交互连线场景接入说明
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/ta/link-effect-preview`。
+- 范围：新增面向程序的场景挂载说明 `Assets/ta_source/LinkEffect/连接效果使用说明.md`，说明玩家根物体挂载方式、Inspector 必要引用、材质与检测层配置、测试场景参考；不改场景或运行时代码。
+- 验证：仓库根目录与 `origin` 地址已核对；文档与系统索引链接已检查；`git diff --check` 通过。
+- 交接：仅本地改动，不提交或推送。
+
 ## 表现优化：搬运落点占用修复
 
 - 日期：2026-10-12；负责人：Codex；分支：`表现优化`。
@@ -851,3 +865,44 @@
 - 实现：只读扫描 `IInteractionTarget`、`IColorApplicationTarget` 与 `PlayerCarryTargetRegistry`，排除只有基类空实现的染色功能；按颜色处理类型、目标现态、母藤蔓剩余生长量及子节段类型判断可行性。多个碰撞体按物体合并。Shader 改为带透明度、像素格噪波和断边的线条，不再绘制链节。
 - 验证：Unity 6000.3.12f1 已重新导入脚本与 Shader，Test 场景可进入并退出 Play Mode；Console 为 0 错误、0 警告，场景层级确认旧测试方块已消失。未在本轮对每一种真实目标逐一做画面操作验证。
 - 交接：仅提交 LinkEffect 目录、Test 场景中本组件参数与旧测试方块移除、此记录及系统索引；工作区已有 Renderer、字体、PixelEffect、GivingColor 改动保留原样。
+
+## TA 交互预览染色判定与树枝线修正
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/ta/link-effect-preview`；本轮只在本地修改，不提交或推送。
+- 范围：仅修改 `Assets/ta_source/LinkEffect` 的目标扫描与 Shader；不改玩家、颜色物、原有场景元素或渲染管线。
+- 目标：让选色后的预览与 `PlayerColorWheel` 的实际接色结果一致，包含藤蔓红/蓝反应；Shader 绘制自然树枝轮廓并对整体轮廓像素化。
+- 实现：按屏幕命中的首个接色组件和各 `OnColorApplied` 的实际返回条件筛选目标，选色时不再把 F 专用物体画成染色目标；母藤蔓、子节段的红色反应及母藤蔓可生长时的蓝色反应均被覆盖。被锁定控制或搬运时隐藏连线。Shader 用连续的树枝主干与枝杈生成轮廓，并按屏幕像素格统一采样轮廓和纹理，不从中间挖透明洞；未改 Renderer/Pipeline 配置。
+- 验证：Unity 6000.3.12f1 随附 Roslyn 使用项目响应文件完成 Runtime C# 编译，0 错误；本轮文件 `git diff --check` 通过。Unity batchmode 在导入前退出，Shader 的编辑器导入和实际画面仍待打开 Unity 复核。
+
+## TA 交互预览紫色材质修复
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/ta/link-effect-preview`；仅本地修改，不提交或推送。
+- 原因：Unity `Editor.log` 明确报告 `InteractionLink.shader` 第 54 行 `point` 为意外标记，后续第 56 行 `floor` 也因解析失败报错；Shader 编译失败使连线呈紫色。
+- 修复：仅将噪波函数的参数 `point` 改名为 `samplePosition` 并同步其引用。树枝形状、像素化逻辑和渲染管线均未改动。
+- 验证：对照日志与源码确认触发错误的保留字已移除；待 Unity 重新导入后查看 Console 和实际连线画面。
+- 边界：仅保留本地改动，未提交或推送；原有 Renderer、PixelEffect、GivingColor 与本地 `.vscode` 变动未纳入本轮。
+
+## TA 三色引导线表现
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/ta/link-effect-preview`。
+- 范围：仅编辑 `Assets/ta_source/LinkEffect` 的 Shader、独立预览组件及其 Inspector/说明；红色火焰和火星、蓝色主干与环绕水纹、绿色嫩枝与短芽。每个新目标的连线从玩家端向目标端逐渐延伸。
+- 实现：预览组件按颜色 ID 传入 Shader 风格；按目标实例缓存出现时间并以可调 `revealDuration` 平滑推进遮罩。扫描顺序变化不重播，离开检测范围或切换颜色时重置。Shader 共用屏幕像素采样，红线绘制黄芯橙身红边和流动火星，蓝线绘制主干及两条相位交替的浅蓝水纹，绿线绘制细枝、短分枝和随进度长出的嫩叶；无色目标保留中性色枝干。
+- 验证：Unity 6000.3.12f1 的项目响应文件完成 Runtime C# 编译，0 错误；Windows SDK DXC 对从 Shader 提取的顶点与片元 HLSL 编译均为 0 错误。Unity batchmode 在项目导入前以退出码 1 结束，尚未获得 Unity Shader 导入或 Game 画面的复核结果。
+- 边界：不改原有玩法脚本、Test 场景元素或渲染管线；本轮保持本地改动，不提交或推送。
+
+## TA 材质链条粗细参数
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/ta/link-effect-preview`。
+- 范围：在 `InteractionLink` 材质 Inspector 增加“链条粗细”，并使运行中的 LineRenderer 使用这个材质值；不修改 Test 场景元素或渲染管线。
+- 实现：Shader 属性 `_LineThickness` 默认 `0.2`，材质资产显式保存该值。预览组件每帧读取共享材质属性并赋给 LineRenderer.widthMultiplier，材质 Inspector 改值会直接影响 Play Mode 的实际线宽；移除组件端重复的宽度字段，避免两个控制入口不一致。
+- 验证：项目 Runtime C# 响应文件编译 0 错误；Windows SDK DXC 顶点与片元 HLSL 编译均 0 错误；本任务文件 `git diff --check` 通过。Unity 游戏画面尚未复核。
+- 交接：仅本地改动，不提交或推送。
+
+## TA 三色链条自然化与范围约束
+
+- 日期：2026-10-12；负责人：Codex；分支：`codex/ta/link-effect-preview`。
+- 范围：修改 `Assets/ta_source/LinkEffect` 的 Shader、目标显示状态、Inspector 与文档，并只调整 Test 场景里现有 LinkEffect 组件参数；不改原有场景元素、玩法脚本或渲染管线。
+- 实现：只在选中 red/green/blue 时显示，检测按 `PlayerInteractionSensor` 扫描半径逐帧复核，绘制控制点限制在同一检测圆内。目标离圈/失效后短暂像素溶解；玩家清除选色时立即隐藏。材质面板只保留有效的粗细、像素大小、噪波幅度和效果速度，脚本接管的属性隐藏。红蓝线整条由透明淡入，绿色从玩家端按长度生长；绿线加粗并沿线生成四条轻微随机弯曲、末端回钩的短枝，叶片与小花随枝条成长。火星密度降低，水纹随机断续，线头两端柔和收尖；路径抖动使用材质噪波强度与效果速度。Shader 从 LineRenderer 曲线读取逐段累计的实际长度，图案用固定世界尺寸与间距生成，线变长时增加图案数量而非拉伸原图案。
+- 追加调整：蓝线外围环绕和扩散波纹恢复为可选表现，由材质“水纹外围效果强度”独立控制，值为 0 时只显示中央主干；组件 Inspector 明确显示“线条生成时长（秒）”，共同控制红蓝淡入和绿线生长，并用 `FormerlySerializedAs` 保留原场景中的旧时长值。
+- 验证：Runtime C# 编译 0 错误；限定任务文件的 `git diff --check` 通过。当前 Shader 调整后尚未完成 Unity 导入编译或 Game 画面复核。
+- 交接：仅本地改动，不提交或推送。
