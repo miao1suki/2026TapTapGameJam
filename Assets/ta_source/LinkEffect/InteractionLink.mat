@@ -29,12 +29,13 @@ Material:
     - _Feasible: 1
     - _FlickerSpeed: 16.9
     - _LineLength: 1
-    - _LineThickness: 0.442
+    - _LineThickness: 0.565
     - _NoiseStrength: 1
     - _Opacity: 0.68
     - _PixelSize: 2.5
     - _RevealProgress: 1
     - _Style: 0
+    - _WaterEffectStrength: 0.945
     m_Colors:
     - _LinkColor: {r: 1, g: 0.08, b: 0.08, a: 1}
   m_BuildTextureStacks: []

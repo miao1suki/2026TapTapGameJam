@@ -17,6 +17,7 @@
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |
 | 基础玩家 | `Assets/Player` | `PlayerController` 仅保留马能力，`PlayerInputDriver` 负责默认输入；不含旧玩法 |
 | TA 交互像素连线预览 | `Assets/ta_source/LinkEffect` | 仅红绿蓝染色选中时，在 PlayerInteractionSensor 圆形范围内只读预览可接色目标；红蓝整线淡入、绿线带四条噪波弯枝逐段生长；蓝线外围水纹有独立强度参数，Shader 按实际线长生成火星、叶花，不拉伸图案；具备溶解退场。Test 场景只保留玩家上的预览组件；场景接入见 [连接效果使用说明.md](../../Assets/ta_source/LinkEffect/连接效果使用说明.md) |
+| TA 染色覆盖效果 | `Assets/ta_source/GivingColor` | 独立 URP 透明覆盖 Shader 读取原材质纹理 Alpha，按红色燃烧、蓝色四次叠染、绿色逐级分叉播放；材质 Inspector 可调速度、噪波和像素化。只在玩家染色成功后短暂显示，完成后渐隐并露出原玩法改色结果；不覆盖水与岩浆生成的深蓝固体块，不覆盖蒸汽和植物反应。开局能力、解锁及目标原颜色由原程序管理；Test 场景文件不作接线修改；见 [使用说明.md](../../Assets/ta_source/GivingColor/使用说明.md) |
 | 掉落物与拾取飞行 | `Assets/_Project/Code/Shared/Runtime/DropItemBase.cs`、`Assets/_Project/Code/Systems/PickupPresentation` | 基类负责感知后的磁吸、收集生命周期；颜色钥匙触碰结算并播放 DOTween 四段飞行与镜头；Pick 场景保留测试物 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
 | 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、块材质和达成图片 |
