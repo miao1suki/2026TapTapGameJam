@@ -55,8 +55,6 @@ namespace TaSource.LinkEffect
 
         private sealed class LinkVisualState
         {
-            public Component Target;
-            public Collider TargetCollider;
             public Vector3 Source;
             public Vector3 Destination;
             public Color Tint;
@@ -80,10 +78,6 @@ namespace TaSource.LinkEffect
         private PlayerController player;
         private float nextScanTime;
         private string previousColorId = string.Empty;
-#if UNITY_EDITOR
-        private bool diagnosticLogging = true;
-        private float nextDiagnosticTime;
-#endif
 
         public string CurrentTargetName => candidates.Count > 0 && candidates[0].Component != null
             ? candidates[0].Component.gameObject.name : "无";
@@ -181,6 +175,10 @@ namespace TaSource.LinkEffect
                 Collider hit = overlapBuffer[hitIndex];
                 if (hit == null || !hit.enabled || !hit.gameObject.activeInHierarchy ||
                     hit.transform.IsChildOf(transform)) continue;
+                // Ripple/mouse-preview colliders belong to presentation, not
+                // to the enclosing color target's gameplay interaction volume.
+                if (hit.GetComponentInParent<InteractiveWater.InteractiveWater>() != null)
+                    continue;
                 float distanceSqr = (hit.ClosestPoint(rangeCenter) -
                     rangeCenter).sqrMagnitude;
                 if (distanceSqr > radius * radius) continue;
@@ -258,10 +256,6 @@ namespace TaSource.LinkEffect
 
         private void DrawLines()
         {
-#if UNITY_EDITOR
-            bool reportTargets = diagnosticLogging && Time.unscaledTime >= nextDiagnosticTime;
-            if (reportTargets) nextDiagnosticTime = Time.unscaledTime + 3f;
-#endif
             Color tint = ResolveColor(ActiveColorId);
             float style = IsColor(ActiveColorId, "red") ? 1f
                 : IsColor(ActiveColorId, "blue") ? 2f
@@ -299,8 +293,6 @@ namespace TaSource.LinkEffect
                 }
 
                 state.SeenThisFrame = true;
-                state.Target = candidate.Component;
-                state.TargetCollider = candidate.Collider;
                 state.Source = source;
                 state.Destination = destination;
                 state.Tint = tint;
@@ -311,9 +303,6 @@ namespace TaSource.LinkEffect
                     (generationDuration > 0f ? generationDuration : .55f));
                 DrawLine(EnsureLine(visible), state, lineThickness, noiseStrength,
                     effectSpeed, 0f, rangeCenter, rangeRadius);
-#if UNITY_EDITOR
-                if (reportTargets) ReportTarget(state, lines[visible], rangeCenter, rangeRadius, false);
-#endif
                 visible++;
             }
 
@@ -333,9 +322,6 @@ namespace TaSource.LinkEffect
                 if (visible >= maxLinks) continue;
                 DrawLine(EnsureLine(visible), state, lineThickness, noiseStrength,
                     effectSpeed, dissolve, rangeCenter, rangeRadius);
-#if UNITY_EDITOR
-                if (reportTargets) ReportTarget(state, lines[visible], rangeCenter, rangeRadius, true);
-#endif
                 visible++;
             }
             for (int index = 0; index < staleRevealKeys.Count; index++)
@@ -343,69 +329,6 @@ namespace TaSource.LinkEffect
             for (int index = visible; index < lines.Count; index++) lines[index].enabled = false;
             VisibleLinkCount = visible;
         }
-
-#if UNITY_EDITOR
-        [ContextMenu("诊断/立即记录连线目标")]
-        private void RequestDiagnosticSnapshot()
-        {
-            diagnosticLogging = true;
-            nextDiagnosticTime = 0f;
-        }
-
-        [ContextMenu("诊断/关闭连线日志")]
-        private void DisableDiagnosticLogging() => diagnosticLogging = false;
-
-        private void ReportTarget(LinkVisualState state, LineRenderer line,
-            Vector3 center, float radius, bool fading)
-        {
-            Component target = state.Target;
-            Collider hit = state.TargetCollider;
-            Vector3 end = line.GetPosition(line.positionCount - 1);
-            Vector3 nearest = hit != null ? hit.ClosestPoint(center) : state.Destination;
-            Vector3 offset = new Vector3(0f, 0f, cameraFacingOffset);
-            float endpointGap = hit != null
-                ? Vector3.Distance(end - offset, hit.ClosestPoint(end - offset)) : 0f;
-            var details = new System.Text.StringBuilder();
-            if (target != null)
-            {
-                Renderer[] renderers = target.GetComponentsInChildren<Renderer>(true);
-                int enabledCount = 0;
-                foreach (Renderer renderer in renderers)
-                {
-                    if (renderer.enabled && renderer.gameObject.activeInHierarchy) enabledCount++;
-                    if (details.Length > 1800) continue;
-                    details.Append($"\n  外观={DiagnosticPath(renderer.transform)} enabled={renderer.enabled}" +
-                        $" active={renderer.gameObject.activeInHierarchy} bounds={renderer.bounds}");
-                    foreach (Material material in renderer.sharedMaterials)
-                        if (material != null) details.Append($" 材质={material.name}");
-                }
-                details.Insert(0, $"外观启用数={enabledCount}/{renderers.Length}");
-            }
-            Debug.Log($"[LinkDiagnostic] {(fading ? "退场残线" : "当前连接")} scene={gameObject.scene.name}" +
-                $" color={ActiveColorId} time={Time.time:F2}\n" +
-                $"玩家={DiagnosticPath(transform)} position={transform.position:F3} 起点={state.Source:F3}\n" +
-                $"目标={DiagnosticPath(target != null ? target.transform : null)}" +
-                $" 类型={(target != null ? target.GetType().Name : "已销毁")} id={(target != null ? target.GetInstanceID() : 0)}\n" +
-                $"碰撞体={DiagnosticPath(hit != null ? hit.transform : null)}" +
-                $" 类型={(hit != null ? hit.GetType().Name : "无")}" +
-                $" trigger={(hit != null && hit.isTrigger)} bounds={(hit != null ? hit.bounds.ToString() : "无")}\n" +
-                $"最近碰撞点={nearest:F3} 计算线尾={state.Destination:F3} 实际线尾={end:F3}" +
-                $" 范围={radius:F3} 线尾脱离碰撞体距离(扣显示偏移)={endpointGap:F4}\n{details}",
-                target != null ? target : this);
-        }
-
-        private static string DiagnosticPath(Transform node)
-        {
-            if (node == null) return "已销毁/无";
-            string path = node.name;
-            while (node.parent != null)
-            {
-                node = node.parent;
-                path = node.name + "/" + path;
-            }
-            return path;
-        }
-#endif
 
         private bool TryGetLineEndpoints(Candidate candidate, Vector3 rangeCenter,
             float rangeRadius, out Vector3 source, out Vector3 destination)

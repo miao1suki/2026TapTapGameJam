@@ -1,5 +1,15 @@
 # 工作状态与交接（每次任务重读）
 
+## 连线修复发布与最新 TA 整合
+
+- 2026-10-13；Codex；用户确认连接已正常，要求删除诊断并合并推送。移除 InteractionLinkEffect 临时日志/目标引用/诊断菜单，保留水体尺寸与表现碰撞过滤修复；整合最新 TA 分支 bef0737 的染色和蒸汽资源、使用文档，验证后推送 main。用户未提交 Pick 布局、DOTween Pro 插件与本机 PackageManager 设置不纳入提交。
+
+## 水体合并与空气连线修复
+
+- 2026-10-13；Codex；按 Pick 实际日志修复 Water Visual 继承22单位宽 Trigger、随四格水块缩放成88单位的问题。范围为 InteractiveWater 的方块模式碰撞尺寸和 InteractionLinkEffect 的特效子碰撞过滤；全场景共享修复，不重写 Pick/Test/Gaming 布局，不改红平台信号规则或万能方块接色。仅本地开发，验证后交用户测试，不推送。
+- 已应用主项目。隔离真实 Play Mode 9项断言通过：四格宽合并水、2D/3D尺寸、远处无连线、人为恢复旧巨型 Trigger 后仍拒绝、靠近水体保留合法连线且使用玩法根 Collider。不以 Renderer.enabled 排除共享母根粒子的藤蔓节段。日志 Library/Integration20261013/WaterAirLinkVerification.log；窗口画面/打包仍待验收。
+- 项目四个 EditMode 程序集57项回归全部通过，0失败；git diff --check通过；Pick与修改前备份SHA256一致。修复只保留本地未提交，未推送。
+
 ## Pick 空目标连线诊断
 
 - 2026-10-13；Codex；用户反馈第一房间正常，通道右侧和第二房间连到空气，要求日志查真实目标。仅为 InteractionLinkEffect 增加编辑器 Play Mode 三秒节流日志，目标路径、Collider/Trigger、外观、线尾与退场状态完整记录；组件右键可关闭/请求记录，构建不包含诊断。不改变目标判定、不排除万能方块、不保存用户 Pick 场景。待异常位置复现确认对象。

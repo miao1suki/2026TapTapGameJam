@@ -106,8 +106,29 @@ namespace InteractiveWater
                 Mathf.Clamp(Mathf.CeilToInt(_topSurfaceSize.y * 8f) + 1, 2, 33));
             _useSharedSimulation = true;
             _testRipplesWithMouse = false;
+            SynchronizeBlockColliders();
             SimplePlanarReflection reflection = GetComponent<SimplePlanarReflection>();
             if (reflection != null) reflection.enabled = false;
+        }
+
+        private void SynchronizeBlockColliders()
+        {
+            // This collider only generates surface ripples. The owning gameplay
+            // object supplies the full water-volume and interaction collider.
+            if (TryGetComponent(out BoxCollider surface))
+            {
+                surface.size = new Vector3(_topSurfaceSize.x, .2f, _topSurfaceSize.y);
+                surface.center = new Vector3(_topSurfaceSize.x * .5f, 0f, _topSurfaceSize.y * .5f);
+            }
+            if (TryGetComponent(out BoxCollider2D surface2D))
+            {
+                surface2D.size = new Vector2(_topSurfaceSize.x, .02f);
+                surface2D.offset = new Vector2(_topSurfaceSize.x * .5f, 0f);
+            }
+            // A mesh collider inherited from the TA mouse-preview prefab must
+            // not remain active after switching to gameplay block mode.
+            if (_topMesh != null && _topMesh.TryGetComponent(out BoxCollider mousePreview))
+                mousePreview.enabled = false;
         }
 
         /// <summary>Reveal the actual water surfaces without changing the source material.</summary>
@@ -461,6 +482,7 @@ namespace InteractiveWater
                 bc2d.size = new Vector2(_topSurfaceSize.x, 0.02f);
                 bc2d.offset = new Vector2(_topSurfaceSize.x / 2, 0);
             }            
+            if (_useSharedSimulation) SynchronizeBlockColliders();
             
             _topMesh.gameObject.layer = _presentationLayer >= 0 ? _presentationLayer
                 : Mathf.Clamp(Mathf.RoundToInt(Mathf.Log(Mathf.Max(1, _testWaterLayer.value), 2)), 0, 31);

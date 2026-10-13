@@ -202,3 +202,7 @@ GraphView
 ```
 
 完整规范位于 `Assets/_Project/Code/Systems/ColorBlocks/SKILL.md`。
+
+## 水体碰撞与交互范围
+
+`InteractiveWater.ConfigureBlockVolume` 在方块模式中同步水面3D/2D波纹 Trigger 的尺寸与中心，并禁用遗留鼠标预览碰撞体；父级按合并宽高缩放时，碰撞随真实局部水面尺寸缩放，不保留 TA 原始22单位宽度。玩法水体的体积/颜色交互仍由 WaterVisualFeature 所属对象 Collider 定义，不能用特效内部水面 Trigger 代替。InteractionLinkEffect 排除 InteractiveWater 子树的表现 Collider，避免跨房间产生虚假接色连线；普通墙体、万能代理和藤蔓链规则不变。
