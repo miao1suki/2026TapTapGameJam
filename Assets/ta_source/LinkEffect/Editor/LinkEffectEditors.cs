@@ -33,18 +33,15 @@ namespace TaSource.LinkEffect.EditorUI
 
             Foldout visual = new Foldout { text = "像素线表现", value = true };
             Add(visual, "linkMaterial", "像素线材质");
-            Add(visual, "width", "线条宽度");
             Add(visual, "curveSegments", "曲线段数");
             Add(visual, "arcHeight", "弧度高度");
             Add(visual, "waveHeight", "摆动幅度");
             Add(visual, "cameraFacingOffset", "朝相机偏移");
             Add(visual, "opacity", "透明度");
+            PropertyField generationTime = Add(visual, "generationDuration", "线条生成时长（秒）");
+            generationTime.tooltip = "红、蓝线整条淡入的时长；绿线从玩家端沿长度生长的时长。";
+            Add(visual, "dissolveDuration", "断开溶解时间（秒）");
             root.Add(visual);
-
-            Foldout testing = new Foldout { text = "测试设置", value = false };
-            Add(testing, "previewWhenNoColor", "无选色时启用测试色");
-            PropertyField testColor = Add(testing, "previewColorId", "测试颜色 ID");
-            root.Add(testing);
 
             Foldout state = new Foldout { text = "运行状态（只读）", value = true };
             Label stateText = new Label();
@@ -53,9 +50,6 @@ namespace TaSource.LinkEffect.EditorUI
             root.schedule.Execute(() =>
             {
                 if (target == null) return;
-                testColor.style.display = serializedObject
-                    .FindProperty("previewWhenNoColor").boolValue
-                    ? DisplayStyle.Flex : DisplayStyle.None;
                 if (targets.Length != 1)
                 {
                     stateText.text = "多选时不显示运行状态";

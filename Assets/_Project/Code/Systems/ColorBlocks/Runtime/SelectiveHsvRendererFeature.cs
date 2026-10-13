@@ -17,6 +17,7 @@ namespace Project.ColorBlocks
         [SerializeField] private Shader fadeShader;
         [SerializeField, InspectorName("学习项目像素化 Shader")] private Shader pixelShader;
         [SerializeField, Range(1,64), InspectorName("像素块大小")] private float pixelSize = 15f;
+        [SerializeField, InspectorName("启用内置像素化")] private bool useLearningPixelization = true;
         private sealed class MaskData
         {
             public RendererListHandle renderers;
@@ -174,8 +175,11 @@ namespace Project.ColorBlocks
         {
             if (Application.isPlaying && pass != null && renderingData.cameraData.cameraType == CameraType.Game)
             {
-                pixelPass?.Prepare();
-                if (pixelPass != null) renderer.EnqueuePass(pixelPass);
+                if (useLearningPixelization && pixelPass != null)
+                {
+                    pixelPass.Prepare();
+                    renderer.EnqueuePass(pixelPass);
+                }
                 renderer.EnqueuePass(pass);
             }
         }
