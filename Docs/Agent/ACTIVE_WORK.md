@@ -1,9 +1,14 @@
 # 工作状态与交接（每次任务重读）
 
+## Pick 空目标连线诊断
+
+- 2026-10-13；Codex；用户反馈第一房间正常，通道右侧和第二房间连到空气，要求日志查真实目标。仅为 InteractionLinkEffect 增加编辑器 Play Mode 三秒节流日志，目标路径、Collider/Trigger、外观、线尾与退场状态完整记录；组件右键可关闭/请求记录，构建不包含诊断。不改变目标判定、不排除万能方块、不保存用户 Pick 场景。待异常位置复现确认对象。
+- 验证：隔离 Unity 6000.3.12f1 编译/场景检查通过；诊断夹具确认目标路径、Collider、Renderer、线尾与退场字段，并复现范围裁切使端点脱离碰撞体的边界情况（0.03065 世界单位）。这不等于确认 Pick 截图根因；完整复现需读取实际位置日志。结果在 Library/Integration20261013/LinkDiagnosticVerification.log，用户 Pick 与备份 SHA256 一致。
+
 ## 最新音频、正式场景与本地机关整合
 
 - 2026-10-13；Codex；用户要求拉取并合并。整合远程 main 59da0ee（音频、统一字体、MainMenu→Gaming）及音频分支 480de74；一并保存本地已验证的绿块碰撞/搬运、红块供能、独立曲柄多平台与跳跃改动。保留本地 Pick、像素字体、插件和本机设置；字体冲突单独询问。此次未要求推送。
-- 分析范围：游戏 UI 实际挂载、RuntimePlayer 与 Player(暂定) 的配置区别、TA 连线白块目标判定。不改变连线玩法规则；合并后验证编译与相关回归。验证结果与合并提交后续补充。
+- 已完成本地整合提交 2f4891d（main）与 1d8d870（音频）。字体按用户确认备份至 Library/Integration20261013/Cubic_11-local.asset 后使用远程字体；Pick 完整备份并校验未改。隔离 Unity 通过57项项目 EditMode、28项曲柄规划、43项玩法断言及 MainMenu/Gaming/Test/Pick 的 UI/玩家/缺失脚本检查。UI 与玩家说明见 Docs/Developer/UI_PLAYER_AND_LINK_AUDIT.md；窗口画面、手感及打包未人工验收。未推送。
 
 ## 独立曲柄与多平台绑定
 

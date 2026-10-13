@@ -1,5 +1,7 @@
 # 系统索引
 
+当前 UI 挂载、两套玩家配置与 TA 白块连线判定：[UI_PLAYER_AND_LINK_AUDIT.md](../Developer/UI_PLAYER_AND_LINK_AUDIT.md)。
+
 - 独立曲柄与多平台：平台侧持久绑定、自动配套创建、同控制器平台合并/解除与重建引用。见 [机关 API](Integration/MECHANISM_SIGNAL_API.md) 与 [策划操作](../Developer/MECHANISMS_AND_JUMP.md)。
 
 红块供能与平台：旧能源兼容替换为固定红色 ContactCube，任意已解锁红块可供能任意基座。移动平台信号驱动，曲柄通电制动/载人快降；参数模式可点击绑定，地图存稳定 ID + 相对格，Scene 显示青色路线与粉色绑定。新增无色单向平台和有材质无碰撞隐藏块。玩家1×1、普通上升4格，弹性植物3/8格及一次搬运4格跳跃。见 [机关信号 API](Integration/MECHANISM_SIGNAL_API.md)、[机关与跳跃](../Developer/MECHANISMS_AND_JUMP.md)。
@@ -38,7 +40,7 @@
 | 字幕管理器与触发展示 | `Assets/_Project/Code/Systems/Subtitles` | `SubtitleManager` 统一管理屏幕字幕；`DisplayBlockFeature` 提供世界空间显示方块文字、方块九宫格定位和玩家上下排序；`SubtitleTrigger` 支持重复激发 |
 | 全局文字提示与字体 | `Assets/_Project/Code/Systems/WordNote`、`.agents/skills/taptap-typography/SKILL.md` | `WordNote_UI` 常驻 Canvas，支持九个位置队列、堆叠、七色描边和按 ID 清理；所有游戏内 UGUI/TMP 文本统一使用 `Assets/Test字体/[可商用]Cubic‑11 俐方体 11 号/Cubic_11 SDF.asset`，开始菜单通过 `StartMenuTypography`，暂停界面通过 `EscMenuController` 的 SDF 镜像 |
 | 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；世界图/详情/装配图、方块/道具栏目、玩家贴纸与拖拽同步、矩形多选与单块合并、组件模板、贴画、场景生成和本地存档；方块栏目只做地图墙壁，颜色玩法物体全部走道具栏目；图定义、交互按钮和交互目录同步已移除 |
-| 固定颜色物体/钥匙/房间重置 | `Assets/_Project/Code/Systems/ColorBlocks` | `ColorObject`、`ColorRuntimeService`、钥匙解锁、房间重置和 HSV 渐变；`Content/ColorBlocks/Prefabs` 使用 `Red_*`、`Blue_*`、`Green_*` 道具预制体；万能方块和染色应用链已按最新定稿退役 |
+| 固定颜色物体/钥匙/房间重置 | `Assets/_Project/Code/Systems/ColorBlocks` | `ColorObject`、`ColorRuntimeService`、钥匙解锁、房间重置和 HSV 渐变；`Content/ColorBlocks/Prefabs` 使用 `Red_*`、`Blue_*`、`Green_*` 道具预制体；Universal_Block 白色代理及直接接色链仍保留，通用旧交互图退役 |
 | 颜色物玩法组件 | `Assets/_Project/Code/Systems/Interactions` | 旧交互图和旧功能组件已删除；仅保留必要的锚点等非图玩法代码。当前固定功能组件位于 `BlockFeatures/Runtime/Features`，玩家血条 HUD 已移除 |
 | 交互水面 | `Assets/ta_source/InteractiveWater` | TA 独立预制体保留独立波纹/反射资源；当前已无颜色系统自动生成水体，后续由具体水源、水流和气泡柱组件按固定形态接入 |
 
