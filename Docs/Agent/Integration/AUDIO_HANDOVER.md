@@ -60,6 +60,11 @@
 | `sfx_gp_paint_select.wav` | 选色 / 上色确认 |
 | `sfx_gp_block_paint_complete.wav` | 方块上色完成 |
 | `sfx_gp_crank_turn_loop.wav` | 曲柄 / 机关转动，循环 |
+| `sfx_gp_block_pickup_01.wav` | 方块拾取 |
+| `sfx_gp_block_drop_01.wav` | 方块放下 / 落地 |
+| `sfx_gp_lava_cool.wav` | 岩浆冷却（遇水 / 降温） |
+| `sfx_gp_platform_move_loop.wav` | 平台移动，循环 |
+| `sfx_notice_confirm.wav` | 操作确认提示 |
 | `sfx_notice_deny.wav` | 操作被拒绝提示 |
 
 路径均为 `Assets/_Project/Content/Audio/SFX/`。
@@ -95,14 +100,17 @@ GameAudioService.PlaySound(clip, volumeScale: 1f);
 | 获得上色能力 | `sfx_gp_paint_acquire_initial` | `PlaySound` |
 | 选色 / 上色完成 | `sfx_gp_paint_select` / `sfx_gp_block_paint_complete` | `PlaySound` |
 | 曲柄机关转动 | `sfx_gp_crank_turn_loop` | `PlaySound` 循环播放 |
-| 非法操作提示 | `sfx_notice_deny` | `PlaySound` |
+| 拾取 / 放下方块 | `sfx_gp_block_pickup_01` / `sfx_gp_block_drop_01` | `PlaySound` |
+| 岩浆遇水冷却 | `sfx_gp_lava_cool` | `PlaySound` 冷却触发时 |
+| 移动平台 | `sfx_gp_platform_move_loop` | 平台启动时循环播放，停止时停 |
+| 操作确认 / 拒绝 | `sfx_notice_confirm` / `sfx_notice_deny` | `PlaySound` |
 
 ## 待验证项
 
 - [ ] Unity 导入检查：在 Unity 6000.3.12f1 中确认所有音频正确导入，无报错
 - [ ] `.meta` 文件：首次导入后在 Unity 中生成，与音频文件一并提交
 - [ ] 试听验证：逐条试听，确认音质与循环点衔接自然
-- [ ] 环境声与 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop` 的循环点确认
+- [ ] 环境声与 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop`、`sfx_gp_platform_move_loop` 的循环点确认
 - [ ] 打包检查：确认音频压缩设置与项目打包配置一致
 
 ## 未解决问题

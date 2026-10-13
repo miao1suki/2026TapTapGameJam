@@ -116,3 +116,14 @@
 - 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补环境声分区、蒸汽与开关门接线项。
 - 验证：Ableton 导出目录与仓库 45 个音频逐文件 SHA256 一致；未在 Unity 中导入试听，`.meta` 待首次导入生成。
 - 交接提交：本次文档提交。
+
+## 音频资源第四批（方块、岩浆与平台音效）
+
+- 日期：2026-10-13。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：新增 5 个音效：`sfx_notice_confirm`、`sfx_gp_block_pickup_01`、`sfx_gp_block_drop_01`、`sfx_gp_lava_cool`、`sfx_gp_platform_move_loop`。
+- 接口变更：无。音频提交为 `5eddb21`、`97b6c9e`；本次提交只补记文档。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补清单行与拾取/放下、岩浆冷却、平台循环、确认提示接线项。
+- 验证：远端分支与本地一致；未在 Unity 中导入试听，`.meta` 待首次导入生成。
+- 交接提交：本次文档提交。
