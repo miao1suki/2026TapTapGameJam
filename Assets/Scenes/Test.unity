@@ -95658,7 +95658,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.CameraModes.Runtime::Project.CameraModes.CameraControlManager
   outputCamera: {fileID: 330585545}
   focusTarget: {fileID: 700000002}
-  fallbackFocusPoint: {x: 0, y: 1, z: 0}
+  fallbackFocusPoint: {x: 2.5, y: -28, z: 0}
   useUnscaledTime: 1
 --- !u!114 &330585550
 MonoBehaviour:
@@ -204051,7 +204051,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7c51b1fea354081accd951dcb5fd10b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TaSource.LinkEffect.InteractionLinkEffect
   sensor: {fileID: 700000009}
   colorWheel: {fileID: 0}
@@ -204065,11 +204065,11 @@ MonoBehaviour:
     m_Bits: 4294967295
   previewWhenNoColor: 0
   previewColorId: red
+  maxLinks: 16
   width: 0.2
   curveSegments: 12
   arcHeight: 0.08
   waveHeight: 0.02
-  maxLinks: 16
   cameraFacingOffset: -0.18
   opacity: 0.68
 --- !u!1 &700258441
