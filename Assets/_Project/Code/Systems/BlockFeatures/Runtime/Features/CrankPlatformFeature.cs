@@ -7,17 +7,45 @@ using UnityEngine;
 namespace Project.BlockFeatures
 {
     [BlockFeature(
-        DisplayName = "曲柄平台",
+        DisplayName = "曲柄",
         DefaultColorId = "red",
         Category = BlockFeatureCategory.Mechanism,
         Interactions = BlockFeatureInteraction.RoomReset,
         Provides = new[] { typeof(IMechanismSignalSource) },
-        Writes = new[] { BlockChannel.Power, BlockChannel.Motion })]
+        Writes = new[] { BlockChannel.Power })]
     public sealed class CrankPlatformFeature : BlockFeature,
         IInteractionTarget,
         IInteractionHoldTarget,
         IMechanismSignalSource
     {
+        [BlockParameter(Label = "载人下降倍率", Group = "平台", Order = 2)]
+        [SerializeField, Min(1f)] private float loadedDescentMultiplier = 3f;
+        [BlockParameter(Label = "制动基座", Group = "平台", Order = 3, Tooltip = "基座通电时停止升降，包括玩家操作。")]
+        [SerializeField] private MechanismBaseFeature brakeBase;
+        private readonly HashSet<MovingPlatformFeature> platforms = new HashSet<MovingPlatformFeature>();
+        public MechanismBaseFeature BrakeBase => brakeBase;
+        public IReadOnlyCollection<MovingPlatformFeature> Platforms => platforms;
+        // Compatibility for legacy callers. New callers use Platforms/BindCrank.
+        public Transform LiftPlatform
+        {
+            get { foreach (var platform in platforms) if (platform != null) return platform.transform; return null; }
+        }
+        public bool HasStandingPlayer
+        {
+            get
+            {
+                foreach (var platform in platforms)
+                    if (platform != null && platform.IsDriveAvailable && platform.HasStandingPlayer) return true;
+                return false;
+            }
+        }
+        public bool IsDriveAvailable => CanRunFeature;
+        [SerializeField, HideInInspector] private bool initialPlatformCreated;
+        public bool InitialPlatformCreated => initialPlatformCreated;
+        public void MarkInitialPlatformCreated() => initialPlatformCreated = true;
+        public void RegisterPlatform(MovingPlatformFeature platform) { if (platform != null) platforms.Add(platform); }
+        public void UnregisterPlatform(MovingPlatformFeature platform) { if (platform != null) platforms.Remove(platform); }
+        public void BindBase(MechanismBaseFeature source) => brakeBase = source;
         [BlockParameter(
             Label = "每秒转动进度",
             Group = "曲柄设置",
@@ -97,6 +125,7 @@ namespace Project.BlockFeatures
 
         protected override void OnTick(float deltaTime)
         {
+            if (brakeBase != null && brakeBase.IsSignalActive) return;
             bool wasComplete = IsSignalActive;
             if (engaged)
             {
@@ -109,7 +138,7 @@ namespace Project.BlockFeatures
                      Time.time - idleStartedAt >=
                      idleDelayBeforeRebound)
             {
-                progress -= reboundProgressPerSecond * deltaTime;
+                progress -= reboundProgressPerSecond * (HasStandingPlayer ? loadedDescentMultiplier : 1f) * deltaTime;
                 PlayClip(reboundAnimation);
             }
 
@@ -127,6 +156,7 @@ namespace Project.BlockFeatures
             idleStartedAt = Time.time;
             playingClip = null;
             SignalChanged?.Invoke(false);
+            foreach (var platform in platforms) if (platform != null) platform.SnapToCrankProgress();
         }
 
         public bool CanInteract(GameObject interactor)
@@ -175,6 +205,7 @@ namespace Project.BlockFeatures
             }
 
             progress = active ? 1f : 0f;
+            foreach (var platform in platforms) if (platform != null) platform.SnapToCrankProgress();
             engaged = false;
             idleStartedAt = Time.time;
             SignalChanged?.Invoke(IsSignalActive);
@@ -183,6 +214,8 @@ namespace Project.BlockFeatures
         public override void CollectDebugValues(
             List<BlockDebugValue> values)
         {
+            values.Add(new BlockDebugValue("平台载人", HasStandingPlayer ? "有人" : "无人"));
+            values.Add(new BlockDebugValue("绑定平台数", platforms.Count));
             values.Add(new BlockDebugValue(
                 "曲柄进度",
                 $"{Progress:P0}"));
@@ -219,5 +252,6 @@ namespace Project.BlockFeatures
             playingClip = clip;
             animator.Play(clip.name, 0, 0f);
         }
+
     }
 }

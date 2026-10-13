@@ -1,0 +1,109 @@
+using System.Collections.Generic;
+using Project.BlockFeatures;
+using Project.LevelEditor;
+using UnityEditor;
+using UnityEngine;
+
+namespace PlanningEditorPrototype
+{
+    internal static class PlanningMechanismUtility
+    {
+        internal const string LiftEntryId = "mechanism-crank-lift";
+        internal const string LiftPath = "Assets/_Project/Content/ColorBlocks/Prefabs/Red_CrankLift.prefab";
+        internal static void RemoveMissingLinks(IEnumerable<PlanningBox> boxes)
+        {
+            var all = new List<PlanningBox>(boxes);
+            var ids = new HashSet<string>(); foreach (var box in all) ids.Add(box.id);
+            foreach (var box in all)
+            {
+                if (!string.IsNullOrEmpty(box.crankOwnerId) && !ids.Contains(box.crankOwnerId)) box.crankOwnerId = null;
+                if (!string.IsNullOrEmpty(box.mechanismBaseId) && !ids.Contains(box.mechanismBaseId))
+                { box.mechanismBaseId = null; box.mechanismBaseCellOffset = default; }
+            }
+        }
+        internal static bool IsLift(GameObject prefab) => prefab != null && prefab.GetComponent<MovingPlatformFeature>() is MovingPlatformFeature p && p.IsCrankControlled;
+        internal static bool CanMerge(IReadOnlyList<PlanningBox> items)
+        {
+            if (items.Count == 0) return false;
+            var first = items[0];
+            foreach (var item in items)
+                if ((item.crankOwnerId ?? "") != (first.crankOwnerId ?? "") ||
+                    (item.mechanismBaseId ?? "") != (first.mechanismBaseId ?? "") ||
+                    !string.IsNullOrEmpty(item.mechanismBaseId) && item.mechanismBaseCellOffset != first.mechanismBaseCellOffset) return false;
+            return true;
+        }
+        internal static void RemapMergedSources(IReadOnlyList<PlanningBox> originals, PlanningBox merged, IEnumerable<PlanningBox> consumers)
+        {
+            foreach (var consumer in consumers) foreach (var original in originals)
+            {
+                if (consumer.mechanismBaseId == original.id)
+                {
+                    consumer.mechanismBaseId = merged.id;
+                    consumer.mechanismBaseCellOffset += new Vector2Int(original.x - merged.x, original.y - merged.y);
+                }
+                if (consumer.crankOwnerId == original.id) consumer.crankOwnerId = merged.id;
+            }
+        }
+        internal static bool IsConsumer(GameObject prefab) => prefab != null && (prefab.GetComponent<MovingPlatformFeature>() != null || prefab.GetComponent<CrankPlatformFeature>() != null);
+        internal static void RemapCarvedSource(PlanningBox original, IReadOnlyList<PlanningBox> parts, IEnumerable<PlanningBox> consumers)
+        {
+            foreach (var consumer in consumers)
+            {
+                if (consumer.crankOwnerId == original.id) consumer.crankOwnerId = parts.Count == 1 ? parts[0].id : null;
+                if (consumer.mechanismBaseId != original.id) continue;
+                Vector2Int target = new Vector2Int(original.x, original.y) + consumer.mechanismBaseCellOffset;
+                consumer.mechanismBaseId = null;
+                foreach (var part in parts)
+                {
+                    if (!new RectInt(part.x, part.y, part.width, part.height).Contains(target)) continue;
+                    consumer.mechanismBaseId = part.id;
+                    consumer.mechanismBaseCellOffset = target - new Vector2Int(part.x, part.y);
+                    break;
+                }
+            }
+        }
+        internal static void BindScene(Transform root, IReadOnlyList<PlanningRoom> rooms, IReadOnlyList<PlanningBox> patches)
+        {
+            if (root == null) return;
+            var links = new Dictionary<string, PlanningBox>();
+            foreach (var room in rooms) if (room != null) foreach (var box in room.boxes) links[box.id] = box;
+            foreach (var box in patches) links[box.id] = box;
+            var sources = new Dictionary<string, MechanismBaseFeature>();
+            var cranks = new Dictionary<string, CrankPlatformFeature>();
+            var placed = root.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
+            foreach (var item in placed)
+            {
+                var source = item.GetComponent<MechanismBaseFeature>();
+                if (source != null && !string.IsNullOrEmpty(item.PlanningBoxId)) sources[item.PlanningBoxId + ":" + item.PlanningLocalCell] = source;
+                var crank = item.GetComponent<CrankPlatformFeature>();
+                if (crank != null && !string.IsNullOrEmpty(item.PlanningBoxId))
+                { cranks[item.PlanningBoxId] = crank; crank.MarkInitialPlatformCreated(); EditorUtility.SetDirty(crank); }
+            }
+            foreach (var item in placed)
+            {
+                if (string.IsNullOrEmpty(item.PlanningBoxId) || !links.TryGetValue(item.PlanningBoxId, out var box)) continue;
+                MechanismBaseFeature source = null;
+                if (!string.IsNullOrEmpty(box.mechanismBaseId) && links.TryGetValue(box.mechanismBaseId, out var baseBox))
+                {
+                    Vector2Int sourceCell = new Vector2Int(baseBox.x,baseBox.y) + (baseBox.isMerged ? Vector2Int.zero : box.mechanismBaseCellOffset);
+                    sources.TryGetValue(baseBox.id + ":" + sourceCell,out source);
+                }
+                var platform = item.GetComponent<MovingPlatformFeature>();
+                var crank = item.GetComponent<CrankPlatformFeature>();
+                if (platform != null)
+                {
+                    if (platform.IsCrankControlled || !string.IsNullOrEmpty(box.crankOwnerId))
+                    {
+                        CrankPlatformFeature controller = null;
+                        if (!string.IsNullOrEmpty(box.crankOwnerId)) cranks.TryGetValue(box.crankOwnerId, out controller);
+                        platform.BindCrank(controller);
+                    }
+                    else platform.BindBase(source);
+                    EditorUtility.SetDirty(platform);
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(platform);
+                }
+                if (crank != null) { crank.BindBase(source); EditorUtility.SetDirty(crank); PrefabUtility.RecordPrefabInstancePropertyModifications(crank); }
+            }
+        }
+    }
+}

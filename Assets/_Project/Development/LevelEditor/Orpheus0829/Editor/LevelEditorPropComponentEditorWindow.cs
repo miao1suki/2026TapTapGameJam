@@ -22,6 +22,10 @@ namespace Project.LevelEditor.Editor
         private Label statusLabel;
         private Action contextAction;
         private string contextActionLabel;
+        private Action secondaryAction;
+        private string secondaryActionLabel;
+        private Action thirdAction;
+        private string thirdActionLabel;
         private Action<List<LevelEditorComponentValueOverride>>
             onSaved;
         private readonly List<LevelEditorComponentValueOverride>
@@ -36,7 +40,11 @@ namespace Project.LevelEditor.Editor
             Action<List<LevelEditorComponentValueOverride>> saveCallback,
             string contextTitle = "物体参数",
             Action extraAction = null,
-            string extraActionLabel = null)
+            string extraActionLabel = null,
+            Action secondary = null,
+            string secondaryLabel = null,
+            Action third = null,
+            string thirdLabel = null)
         {
             if (sourcePrefab == null)
             {
@@ -49,6 +57,10 @@ namespace Project.LevelEditor.Editor
             window.onSaved = saveCallback;
             window.contextAction = extraAction;
             window.contextActionLabel = extraActionLabel;
+            window.secondaryAction = secondary;
+            window.secondaryActionLabel = secondaryLabel;
+            window.thirdAction = third;
+            window.thirdActionLabel = thirdLabel;
             window.draftOverrides.Clear();
             if (values != null)
             {
@@ -155,6 +167,10 @@ namespace Project.LevelEditor.Editor
             componentList.Clear();
             if (contextAction != null)
                 componentList.Add(new Button(() => contextAction?.Invoke()) { text = contextActionLabel ?? "添加关联物体" });
+            if (secondaryAction != null)
+                componentList.Add(new Button(() => secondaryAction?.Invoke()) { text = secondaryActionLabel ?? "解除关联" });
+            if (thirdAction != null)
+                componentList.Add(new Button(() => thirdAction?.Invoke()) { text = thirdActionLabel ?? "解除关联" });
             if (prefab == null)
             {
                 componentList.Add(

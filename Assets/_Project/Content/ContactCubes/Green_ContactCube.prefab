@@ -68,6 +68,10 @@ GameObject:
   - component: {fileID: 141030310494224963}
   - component: {fileID: 2576747018173199644}
   - component: {fileID: 8442352184101056303}
+  - component: {fileID: 114889900001}
+  - component: {fileID: 4359705688173037917}
+  - component: {fileID: 3195523597800811407}
+  - component: {fileID: 3186403931338429061}
   m_Layer: 0
   m_Name: Green_ContactCube
   m_TagString: Untagged
@@ -182,6 +186,65 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Rooms.RoomResetObject
   regionId: 
+--- !u!114 &114889900001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2627544791425459532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d7f8a1b3c4d5e6f708192a3b4c5d6e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.CarryableFeature
+  canCarry: 1
+  indicatorFont: {fileID: 0}
+  indicatorFontSize: 2.7
+  indicatorOffset: {x: 0, y: 0, z: 0}
+  indicatorOutlineWidth: 0.1
+--- !u!114 &4359705688173037917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2627544791425459532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c43941cf8ab4bc88b090f383688bf85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.BlockRuntime
+  maxDispatchPasses: 4
+  maxDebugEvents: 128
+--- !u!114 &3195523597800811407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2627544791425459532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c3e4d5f60784219a8b9c0d1e2f34567, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.BlockAbilityHost
+  debugLog: 0
+--- !u!114 &3186403931338429061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2627544791425459532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b7c9d1e2f3a4b5c8d6e7f8091a2b3c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.ColorBlocks.ColorObject
+  baseColorTypeId: green
+  targetRenderer: {fileID: 7485444491667675743}
+  unlockedMaterial: {fileID: 2100000, guid: 7dcee3f2506f72b408cbebe26754ad75, type: 2}
 --- !u!1 &6023677376529070689
 GameObject:
   m_ObjectHideFlags: 0

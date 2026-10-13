@@ -23,6 +23,7 @@ namespace Project.BlockFeatures
         private CarryTargetMotion carryMotion;
         private IPlayerCarryHost carryPlayer;
         private IColorObject colorObject;
+        private ICarryMotionParticipant motionParticipant;
         private TextMeshPro indicator;
         private Material indicatorMaterial;
 
@@ -85,6 +86,7 @@ namespace Project.BlockFeatures
         private void Awake()
         {
             colorObject = GetComponent<IColorObject>();
+            motionParticipant = GetComponent<ICarryMotionParticipant>();
         }
 
         private void OnEnable()
@@ -121,7 +123,7 @@ namespace Project.BlockFeatures
                 return false;
             }
 
-            return true;
+            return carryPlayer == null || ReferenceEquals(carryPlayer, player);
         }
 
         public bool BeginCarry(IPlayerCarryHost player)
@@ -131,11 +133,14 @@ namespace Project.BlockFeatures
                 return false;
             }
 
-            carryMotion ??= new CarryTargetMotion(transform);
+            if (IsCarryActive) return false;
+            carryMotion ??= new CarryTargetMotion(transform, OnCarryRestored);
+            motionParticipant?.SetCarrySuspended(true);
             if (!carryMotion.BeginCarry(
                     player.CarryAnchorWorldPosition,
                     player.CarryCenterWorldPosition))
             {
+                motionParticipant?.SetCarrySuspended(false);
                 return false;
             }
 
@@ -159,6 +164,8 @@ namespace Project.BlockFeatures
                 return false;
             }
 
+            if (motionParticipant != null && !motionParticipant.CanPlaceCarriedAt(worldPosition)) return false;
+
             return carryMotion != null &&
                    carryMotion.BeginDrop(worldPosition);
         }
@@ -177,6 +184,12 @@ namespace Project.BlockFeatures
         public void CancelCarry()
         {
             carryMotion?.Cancel();
+            carryPlayer = null;
+        }
+
+        private void OnCarryRestored()
+        {
+            motionParticipant?.SetCarrySuspended(false);
             carryPlayer = null;
         }
 

@@ -506,6 +506,7 @@ namespace PlanningEditorPrototype
                     out int preserved);
                 PersistVineLinks(FindGeneratedRoot(MapRootName)?.transform);
                 PlanningDoorUtility.BindSceneDoors(FindGeneratedRoot(MapRootName)?.transform, rooms, assemblyPatches);
+                PlanningMechanismUtility.BindScene(FindGeneratedRoot(MapRootName)?.transform, rooms, assemblyPatches);
                 ConfigureRoomLifecycle(FindGeneratedRoot(MapRootName), rooms, worldBlockCellWidth, worldBlockCellHeight);
                 if(!SuppressSceneUndo) Undo.CollapseUndoOperations(undoGroup);
                 EditorSceneManager.MarkSceneDirty(scene);
@@ -524,6 +525,7 @@ namespace PlanningEditorPrototype
             root.name = rootName;
             PersistVineLinks(root.transform);
             PlanningDoorUtility.BindSceneDoors(root.transform, rooms, assemblyPatches);
+            PlanningMechanismUtility.BindScene(root.transform, rooms, assemblyPatches);
             ConfigureRoomLifecycle(root, rooms, worldBlockCellWidth, worldBlockCellHeight);
             RegisterSceneCreation(root, "完成规划场景重建");
 

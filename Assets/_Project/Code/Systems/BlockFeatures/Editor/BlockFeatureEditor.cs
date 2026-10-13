@@ -55,6 +55,17 @@ namespace Project.BlockFeatures.Editor
             root.Add(contract);
 
             AddParameterGroups(root, feature);
+            if (feature is MovingPlatformFeature || feature is CrankPlatformFeature)
+            {
+                var bind = new Button(() => MechanismPreview.BeginPick(feature)) { text = feature is MovingPlatformFeature p && p.IsCrankControlled ? "在 Scene 中选择曲柄" : "在 Scene 中选择基座" };
+                bind.SetEnabled(!Application.isPlaying && feature.gameObject.scene.IsValid());
+                root.Add(bind);
+                if (feature is CrankPlatformFeature controller)
+                {
+                    var add = new Button(() => CrankPlatformAuthoring.AddPlatform(controller)) { text = "添加升降平台" };
+                    add.SetEnabled(!Application.isPlaying && controller.gameObject.scene.IsValid()); root.Add(add);
+                }
+            }
             AddRuntimeDebug(root, feature);
 
             ProjectInspectorUtility.Bind(root, serializedObject);

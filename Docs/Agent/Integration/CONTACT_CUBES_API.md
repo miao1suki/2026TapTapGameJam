@@ -4,9 +4,10 @@
 
 ## 所有权
 
-- 三种固定身份，没有 ColorObject / BlockFeature / IColorApplicationTarget，不受钥匙、HSV、玩家点击染色或万能方块改色。不自动挂 CarryableFeature；搬起、放下、黏住留给后续程序。预制体已有动态 Rigidbody、重力和 ContactCubeMotion，限制 Z 位移和旋转，适配横版运动。
+- 三种固定身份，不实现 IColorApplicationTarget，不接受玩家点击染色或万能方块改色。预制体挂 ColorObject，仅用于基础色钥匙门控、共享外观/HSV 与搬运激活；初始未解锁，解锁对应颜色后才参与反应、搬运和供能。身份不会随解锁改变。三个预制体均挂 CarryableFeature，使用既有玩家搬运流程；黏住尚未接入。预制体已有动态 Rigidbody、重力和 ContactCubeMotion，限制 Z 位移和旋转，适配横版运动。
 - ContactCube 只拥有状态、长度、实体子物体尺寸及反应水柱；不能由移动程序缩放根物体表达生长。根坐标是原始一格中心，增长保留此锚点。尺寸读取 GridCellSizeUtility，一体模型/BoxCollider 伸长，不生成节段。不可把它组为旧藤蔓母根。
 - 固定类型字段只供预制体作者配置，不提供运行时切色 API。Length、State、ColorId、GrowthDirection 只读，LengthChanged / StateChanged 提供状态通知。
+- `IsUnlocked` 只读。红块实现 `IEnergySource.IsEnergyAvailable`，需已解锁、实体启用且未处于搬运动画；任意红块可供能任意基座，不持久绑定特定红块。旧 Red_Battery 预制体保留 GUID，但已替换为红色 ContactCube 及运动/重置组件；新放置统一使用 Red_ContactCube。
 
 ## 有限状态机
 
@@ -27,11 +28,13 @@
 
 `ContactCube.PushRequested(Component source, Vector3 velocity, float deltaTime)`：每个物理步发出速度请求；离开水柱时发出零速度。ContactCubeMotion 按 source 保存并相加速度源，统一写方块 Rigidbody。反应组件不写根位移。后续如替换运动控制器，先禁用 ContactCubeMotion，不能同时运行两个刚体写入者。
 
-落稳需要竖直速度小于容差且下方有非玩家支撑；跳到顶点不会误判落稳。空中忽略与玩家的实体碰撞；落稳恢复原碰撞关系并锁水平/竖直位移，玩家可站立但不能推动。有水柱速度源时解除落稳锁。水平喷出初始默认 0.25 秒关闭重力，持续喷射不无限续期；之后恢复重力。IsSettled / GravityProtected / IsSuspended 只读。
+落稳需要竖直速度小于容差且下方有非玩家支撑；已落稳且无水柱时，只要支撑仍存在便保留锁定，避免接触抖动解除锁定。支撑通过固定厚度底部探针，不随伸长高度扩大底部间隙。红/蓝空中忽略玩家实体碰撞，落稳恢复；绿块及伸长部分始终保持实体碰撞，没有水柱时始终锁水平位置，落稳同时锁竖直位置，玩家不能推走且可以站立。有效水柱速度源可释放移动锁。水平喷出初始默认 0.25 秒关闭重力，持续喷射不无限续期；之后恢复重力。IsSettled / GravityProtected / IsSuspended 只读。
 
-搬运程序调用 `ContactCubeMotion.SuspendMotion(true)` 取得持有期间位姿控制，放下调用 false。持有者还需禁用实体碰撞箱以暂停接触反应，放下恢复；不得用缩放根物体表达长度。房间重置解除挂起并清空速度源。
+`CarryableFeature` 通过可选 `ICarryMotionParticipant` 对接 ContactCubeMotion：`SetCarrySuspended(true)` 立即清除接触/水柱，保留长度，清除速度并挂起刚体；CarryTargetMotion 独占动画位姿并关闭 Collider。放下/复位动画完成或 Cancel 时回调解除挂起，同步 Rigidbody 姿态、恢复重力与碰撞。房间重置先 Cancel，再恢复作者姿态/长度；不能同时运行两个刚体写入者。
 
-绿色横向长出部分挂 HorizontalCubeVine：落稳后，上方脚部接触或下方头部接触会续租玩家横向攀附；原始一格不挂附，脱离自动清除。`PlayerController.SetHorizontalVineSurface(Component source, float rootY, float speed)` / `ClearHorizontalVineSurface(source)` 只发送目标高度和移动速度，由玩家自己的物理步处理。新增状态 HorizontalClimbing=6，不改原枚举编号和输入键位；左右缓行、维持高度、禁止跳跃。租约超时、来源禁用、玩家重置都会清除。
+`CanPlaceCarriedAt(worldPosition)` 校验平移后的完整实体 OBB，含伸长绿块，不只检查根的一格；拒绝墙体、玩家实体及查询缓冲溢出的落点。来源房间校验仍由 CarryableFeature 调用 CanPlaceInAuthoredRegion，区域根中心规则不变。玩家选择目标沿用根格相邻规则，未新增按长块任意节段拾取。输入、提示和头顶飞行动画全部复用原搬运系统。
+
+绿色实体挂 HorizontalCubeVine：母块与伸长实体落稳后两侧可通过 EnterClimb/ExitClimb 攀爬，顶部高度随生长更新；横向长出部分上方脚部接触或下方头部接触会续租玩家横向攀附，原始一格不进入横向攀附，脱离自动清除。`PlayerController.SetHorizontalVineSurface(Component source, float rootY, float speed)` / `ClearHorizontalVineSurface(source)` 只发送目标高度和移动速度，由玩家自己的物理步处理。新增状态 HorizontalClimbing=6，不改原枚举编号和输入键位；左右缓行、维持高度、禁止跳跃。租约超时、来源禁用、玩家重置都会清除。
 
 其他受推对象可实现 `ICubeJetPushReceiver.SetCubeJetVelocity(source, velocity, deltaTime)`。零值表示解除该来源。玩家已有适配走 EnterWater/SetWaterVelocity/ExitWater，由 PlayerController 在自己的物理步处理水柱推动，不写玩家 Transform 或刚体。
 

@@ -858,15 +858,15 @@ MonoBehaviour:
     componentValueOverrides: []
   propEntries:
   - entryId: mechanism-door-horizontal
-    displayName: 横门
+    displayName: "\u6A2A\u95E8"
     prefab: {fileID: 100000, guid: 14e4b6f3152f491e9ec2ced6d851d518, type: 3}
     componentValueOverrides: []
   - entryId: mechanism-ladder-front
-    displayName: 正面梯子
+    displayName: "\u6B63\u9762\u68AF\u5B50"
     prefab: {fileID: 100000, guid: fa6d2fe6b4dd4a6f938bb5acd263af2e, type: 3}
     componentValueOverrides: []
   - entryId: mechanism-ladder-side
-    displayName: 侧面梯子
+    displayName: "\u4FA7\u9762\u68AF\u5B50"
     prefab: {fileID: 100000, guid: d5e3e097fa6c4f04b32866ebc592b58a, type: 3}
     componentValueOverrides: []
   - entryId: mechanism-door-standard
@@ -1832,8 +1832,8 @@ MonoBehaviour:
     prefab: {fileID: 7110465426434250175, guid: ad383514508251042915872143a0be7a, type: 3}
     componentValueOverrides: []
   - entryId: 1b9aae04512d422c827d95dd1f66ba45
-    displayName: "\u80FD\u6E90\u5FEB"
-    prefab: {fileID: 2887393928276365968, guid: 144ab52273b074d43ac5dd4fd22497e7, type: 3}
+    displayName: "\u7EA2\u8272\u63A5\u89E6\u65B9\u5757"
+    prefab: {fileID: 630833966408236530, guid: 083ee0b1803ce38418a31577ce656080, type: 3}
     componentValueOverrides: []
   - entryId: ce4252f60fa240bfafb4d340ece01941
     displayName: "\u6309\u94AE"
@@ -1882,4 +1882,16 @@ MonoBehaviour:
   - entryId: 40c723eddd5d45e9b97dfa1da8d41f41
     displayName: "\u84DD\u8272\u63A5\u89E6\u65B9\u5757"
     prefab: {fileID: 1958407274735133751, guid: 85e8a34344c867f41a03ff0694978909, type: 3}
+    componentValueOverrides: []
+  - entryId: a6ec8d1c0f0c4d7fb9851a46a3ca6c49
+    displayName: "\u5355\u5411\u5E73\u53F0"
+    prefab: {fileID: 7331628839969253367, guid: e45eeb89d3062084cb3d921e904d1d23, type: 3}
+    componentValueOverrides: []
+  - entryId: 87f9dd48434a4d8b8195cdccaa0fdadb
+    displayName: "\u9690\u85CF\u65B9\u5757"
+    prefab: {fileID: 6440947888353882045, guid: 3d028052e497944488e5affd700c8fe8, type: 3}
+    componentValueOverrides: []
+  - entryId: mechanism-crank-lift
+    displayName: "\u66F2\u67C4\u5347\u964D\u5E73\u53F0"
+    prefab: {fileID: 7739181587855239415, guid: 345e96e5b9e82e141846a84c86549f71, type: 3}
     componentValueOverrides: []

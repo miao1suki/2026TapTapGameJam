@@ -13,7 +13,8 @@ namespace Project.BlockFeatures
     public enum MovingPlatformDriveMode
     {
         [InspectorName("自动游荡")] Automatic = 0,
-        [InspectorName("按钮操控")] SignalControlled = 1
+        [InspectorName("信号驱动")] SignalControlled = 1,
+        [InspectorName("曲柄联动")] CrankControlled = 2
     }
 
     public enum PlatformSignalLogic
@@ -23,11 +24,12 @@ namespace Project.BlockFeatures
     }
 
     [BlockFeature(
-        DisplayName = "自动移动平台",
+        DisplayName = "移动平台",
         DefaultColorId = "red",
         Category = BlockFeatureCategory.Movement,
         Interactions = BlockFeatureInteraction.RoomReset,
         Writes = new[] { BlockChannel.Motion })]
+    [DefaultExecutionOrder(-150)]
     public sealed class MovingPlatformFeature : BlockFeature
     {
         [BlockParameter(
@@ -74,7 +76,30 @@ namespace Project.BlockFeatures
             Group = "控制设置",
             Order = 0)]
         [SerializeField] private MovingPlatformDriveMode driveMode =
-            MovingPlatformDriveMode.Automatic;
+            MovingPlatformDriveMode.SignalControlled;
+
+        [BlockParameter(Label = "控制曲柄", Group = "控制目标", Order = 0,
+            Tooltip = "多个平台可绑定同一个曲柄，按各自路线和距离同步升降。",
+            VisibleWhenField = "driveMode", VisibleWhenValue = (int)MovingPlatformDriveMode.CrankControlled)]
+        [SerializeField] private CrankPlatformFeature crankController;
+        public CrankPlatformFeature CrankController => crankController;
+        public bool IsCrankControlled => driveMode == MovingPlatformDriveMode.CrankControlled;
+        public bool IsDriveAvailable => CanRunFeature;
+        public bool HasStandingPlayer { get { RefreshStandingPlayers(); return carriedPlayers.Count > 0; } }
+        public void BindCrank(CrankPlatformFeature source)
+        {
+            if (crankController != null) crankController.UnregisterPlatform(this);
+            UnsubscribeControls();
+            driveMode = MovingPlatformDriveMode.CrankControlled;
+            linkedControls = System.Array.Empty<MonoBehaviour>();
+            crankController = source;
+            if (Application.isPlaying && source != null) source.RegisterPlatform(this);
+        }
+        public void SnapToCrankProgress()
+        {
+            if (IsAttached && IsCrankControlled && crankController != null)
+                transform.localPosition = origin + GetOffset() * crankController.Progress;
+        }
 
         [BlockParameter(
             Label = "初始启动",
@@ -118,6 +143,19 @@ namespace Project.BlockFeatures
         private float progress;
         private int travelDirection = 1;
         private float holdRemaining;
+        public bool IsMoving => CanRunFeature && active;
+        public Vector3 PreviewStart => Application.isPlaying ? transform.parent != null ? transform.parent.TransformPoint(origin) : origin : transform.position;
+        public Vector3 PreviewEnd => PreviewStart + (transform.parent != null ? transform.parent.TransformVector(GetOffset()) : GetOffset());
+        public IReadOnlyList<MonoBehaviour> LinkedControls => linkedControls;
+        public void BindBase(MechanismBaseFeature source)
+        {
+            if (crankController != null) crankController.UnregisterPlatform(this);
+            crankController = null;
+            UnsubscribeControls();
+            driveMode = MovingPlatformDriveMode.SignalControlled;
+            linkedControls = source != null ? new MonoBehaviour[] { source } : System.Array.Empty<MonoBehaviour>();
+            if (Application.isPlaying) { SubscribeControls(); EvaluateLinkedControls(); }
+        }
 
         protected override void OnAttach()
         {
@@ -129,18 +167,41 @@ namespace Project.BlockFeatures
                      startsActive;
             carriedPlayers.Clear();
             SubscribeControls();
+            if (IsCrankControlled && crankController != null) crankController.RegisterPlatform(this);
             EvaluateLinkedControls();
         }
 
         protected override void OnDetach()
         {
             UnsubscribeControls();
+            if (crankController != null) crankController.UnregisterPlatform(this);
             carriedPlayers.Clear();
             RestoreOrigin();
         }
 
         protected override void OnTick(float deltaTime)
         {
+            EvaluateLinkedControls();
+        }
+
+        private void FixedUpdate()
+        {
+            if (CanRunFeature) TickMotion(Time.fixedDeltaTime);
+        }
+
+        private void TickMotion(float deltaTime)
+        {
+            if (IsCrankControlled)
+            {
+                active = crankController != null && crankController.IsDriveAvailable;
+                if (!active) return;
+                Vector3 desiredPosition = origin + GetOffset() * crankController.Progress;
+                Vector3 motion = desiredPosition - transform.localPosition;
+                RefreshStandingPlayers();
+                transform.localPosition = desiredPosition;
+                CarryPlayers(transform.parent != null ? transform.parent.TransformVector(motion) : motion);
+                return;
+            }
             EvaluateLinkedControls();
             if (!active)
             {
@@ -157,6 +218,7 @@ namespace Project.BlockFeatures
 
             float travel = Mathf.Max(.05f, travelDuration);
             float hold = Mathf.Max(0f, holdAtEnds);
+            float previousProgress = progress;
             progress += travelDirection *
                         (deltaTime / travel);
             if (progress >= 1f)
@@ -182,12 +244,15 @@ namespace Project.BlockFeatures
             Vector3 delta = desired - before;
             if (reverseOnBlock && IsBlockedAlong(delta))
             {
+                progress = previousProgress;
+                holdRemaining = 0f;
                 travelDirection *= -1;
                 return;
             }
 
+            RefreshStandingPlayers();
             transform.localPosition = desired;
-            CarryPlayers(delta);
+            CarryPlayers(transform.parent != null ? transform.parent.TransformVector(delta) : delta);
         }
 
         protected override void OnResetForRoom()
@@ -318,7 +383,7 @@ namespace Project.BlockFeatures
             {
                 RaycastHit hit = platformHitBuffer[index];
                 if (hit.collider == null ||
-                    hit.collider.transform.root == transform.root ||
+                    hit.collider.transform.IsChildOf(transform) ||
                     IsCarriedPlayer(hit.collider))
                 {
                     continue;
@@ -353,6 +418,27 @@ namespace Project.BlockFeatures
                 }
 
                 player.QueuePlatformDelta(delta);
+            }
+        }
+
+        private void RefreshStandingPlayers()
+        {
+            carriedPlayers.Clear();
+            Collider surface = GetComponent<Collider>();
+            if (surface == null || !surface.enabled || surface.isTrigger) return;
+            Bounds top = surface.bounds;
+            float tolerance = GridCellWorldSize * .12f;
+            foreach (PlayerController player in PlayerController.ActivePlayers)
+            {
+                if (player == null || player.gameObject.scene != gameObject.scene || player.VerticalVelocity > .1f || !player.CompareTag(carryPlayerTag)) continue;
+                Collider body = player.GetComponent<Collider>();
+                if (body == null || !body.enabled || Physics.GetIgnoreCollision(surface, body)) continue;
+                Bounds bounds = body.bounds;
+                Vector3 physicsOffset = player.Motor.position - player.transform.position;
+                float feet = bounds.min.y + physicsOffset.y;
+                Vector3 center = bounds.center + physicsOffset;
+                if (Mathf.Abs(feet - top.max.y) <= tolerance && center.x >= top.min.x - tolerance && center.x <= top.max.x + tolerance &&
+                    center.z >= top.min.z - tolerance && center.z <= top.max.z + tolerance) carriedPlayers.Add(player);
             }
         }
 
@@ -470,12 +556,12 @@ namespace Project.BlockFeatures
 
         private void EvaluateLinkedControls()
         {
-            if (driveMode != MovingPlatformDriveMode.SignalControlled ||
-                linkedControls == null ||
-                linkedControls.Length == 0)
+            if (driveMode != MovingPlatformDriveMode.SignalControlled)
             {
                 return;
             }
+
+            if (linkedControls == null || linkedControls.Length == 0) { active = false; return; }
 
             int activeCount = 0;
             int sourceCount = 0;

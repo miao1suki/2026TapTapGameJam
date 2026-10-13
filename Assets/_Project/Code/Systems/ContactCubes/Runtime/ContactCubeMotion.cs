@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Project.ContactCubes
 {
     [DisallowMultipleComponent, DefaultExecutionOrder(-100), RequireComponent(typeof(ContactCube), typeof(Rigidbody))]
-    public sealed class ContactCubeMotion : MonoBehaviour, IRoomColorResettable
+    public sealed class ContactCubeMotion : MonoBehaviour, IRoomColorResettable, ICarryMotionParticipant
     {
         [SerializeField, Min(0), InspectorName("水平喷出重力保护（秒）")] private float launchGravityGrace = .25f;
         [SerializeField, Min(.001f), InspectorName("落稳竖直速度容差")] private float settleVelocity = .08f;
@@ -28,6 +28,7 @@ namespace Project.ContactCubes
         {
             body = GetComponent<Rigidbody>(); cube = GetComponent<ContactCube>(); shape = GetComponentInChildren<BoxCollider>();
             baseConstraints = body.constraints;
+            if (shape != null) shape.isTrigger = false;
         }
         private void OnEnable() { if (cube == null) cube = GetComponent<ContactCube>(); cube.PushRequested += OnPush; }
         private void OnPush(Component source, Vector3 velocity, float dt)
@@ -39,8 +40,38 @@ namespace Project.ContactCubes
         public void SuspendMotion(bool suspended)
         {
             IsSuspended = suspended; velocities.Clear(); hadHorizontalPush = false;
-            if (suspended) { body.isKinematic = true; body.useGravity = false; IsSettled = false; }
-            else { body.isKinematic = false; body.useGravity = true; body.constraints = baseConstraints; }
+            gravityProtectedUntil = 0;
+            if (suspended)
+            {
+                if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+                body.isKinematic = true; body.useGravity = false; IsSettled = false;
+                RestorePlayerCollision();
+            }
+            else
+            {
+                body.position = transform.position; body.rotation = transform.rotation;
+                body.isKinematic = false; body.useGravity = true; body.constraints = baseConstraints;
+                body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero;
+            }
+        }
+        public void SetCarrySuspended(bool suspended)
+        {
+            cube.SetCarrySuspended(suspended);
+            SuspendMotion(suspended);
+        }
+        public bool CanPlaceCarriedAt(Vector3 worldPosition)
+        {
+            if (shape == null) return false;
+            Transform t = shape.transform;
+            Vector3 center = t.TransformPoint(shape.center) + worldPosition - transform.position;
+            Vector3 scale = t.lossyScale;
+            Vector3 half = Vector3.Scale(shape.size * .49f,
+                new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+            int count = Physics.OverlapBoxNonAlloc(center, half, nearby, t.rotation, ~0, QueryTriggerInteraction.Ignore);
+            if (count == nearby.Length) return false;
+            for (int i = 0; i < count; i++)
+                if (nearby[i] != null && !nearby[i].transform.IsChildOf(transform)) return false;
+            return true;
         }
         private void FixedUpdate()
         {
@@ -57,9 +88,17 @@ namespace Project.ContactCubes
             }
             hadHorizontalPush = horizontal;
             body.useGravity = !GravityProtected;
-            IsSettled = !GravityProtected && Mathf.Abs(body.linearVelocity.y) <= settleVelocity && HasSupport();
             bool flowing = flow.sqrMagnitude > .0001f;
-            body.constraints = baseConstraints | (IsSettled && !flowing ? RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionY : RigidbodyConstraints.None);
+            bool supported = HasSupport();
+            IsSettled = !GravityProtected && supported &&
+                (IsSettled && !flowing || Mathf.Abs(body.linearVelocity.y) <= settleVelocity);
+            // Green remains a solid climbing surface even while its shape changes.
+            // Only an explicit jet/carry command may release its horizontal position.
+            RigidbodyConstraints locks = IsSettled && !flowing
+                ? RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionY
+                : RigidbodyConstraints.None;
+            if (cube.Color == CubeColor.Green && !flowing) locks |= RigidbodyConstraints.FreezePositionX;
+            body.constraints = baseConstraints | locks;
             if (flowing)
             {
                 Vector3 velocity = body.linearVelocity;
@@ -72,11 +111,14 @@ namespace Project.ContactCubes
         }
         private bool HasSupport()
         {
-            Transform frame = shape.transform;
-            Vector3 scale = frame.lossyScale;
-            Vector3 half = Vector3.Scale(shape.size * .48f, new Vector3(Mathf.Abs(scale.x),Mathf.Abs(scale.y),Mathf.Abs(scale.z)));
-            int count = Physics.BoxCastNonAlloc(frame.TransformPoint(shape.center) + Vector3.up * .025f, half, Vector3.down, supportHits,
-                frame.rotation, .1f, ~0, QueryTriggerInteraction.Ignore);
+            Bounds bounds = shape.bounds;
+            // A constant-width bottom probe: shrinking the entire tall box by a
+            // percentage leaves an ever-larger gap and loses support as it grows.
+            Vector3 half = new Vector3(Mathf.Max(.005f,bounds.extents.x-.01f), .01f,
+                Mathf.Max(.005f,bounds.extents.z-.01f));
+            Vector3 origin = new Vector3(bounds.center.x,bounds.min.y+.035f,bounds.center.z);
+            int count = Physics.BoxCastNonAlloc(origin, half, Vector3.down, supportHits,
+                Quaternion.identity, .1f, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
                 Collider hit = supportHits[i].collider;
@@ -97,12 +139,13 @@ namespace Project.ContactCubes
                     playerPairs.Add(hit, Physics.GetIgnoreCollision(shape, hit));
             }
             foreach (var pair in playerPairs)
-                if (pair.Key != null) Physics.IgnoreCollision(shape, pair.Key, pair.Value || !IsSettled);
+                if (pair.Key != null) Physics.IgnoreCollision(shape, pair.Key,
+                    cube.Color == CubeColor.Green ? false : pair.Value || !IsSettled);
         }
         public void ResetForRoom()
         {
             velocities.Clear(); gravityProtectedUntil = 0; hadHorizontalPush = false; IsSettled = false;
-            SuspendMotion(false); body.linearVelocity = Vector3.zero;
+            SetCarrySuspended(false); body.linearVelocity = Vector3.zero;
             RestorePlayerCollision();
         }
         private void RestorePlayerCollision()

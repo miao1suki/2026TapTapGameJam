@@ -85,6 +85,10 @@ namespace PlanningEditorPrototype
         public bool isMerged;
         public bool singleInstance;
         public string doorOwnerId;
+        public string mechanismBaseId;
+        public Vector2Int mechanismBaseCellOffset;
+        public string crankOwnerId;
+        public bool initialCrankPlatformCreated;
         public List<string> mergeParts = new List<string>();
         public bool hasComponentOverrides;
         public List<LevelEditorComponentValueOverride> componentOverrides = new List<LevelEditorComponentValueOverride>();

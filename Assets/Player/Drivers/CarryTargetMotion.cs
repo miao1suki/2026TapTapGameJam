@@ -9,6 +9,7 @@ namespace Project.Player
     internal sealed class CarryTargetMotion
     {
         private readonly Transform root;
+        private readonly System.Action restored;
 
         private Collider[] colliders;
         private bool[] colliderStates;
@@ -27,9 +28,10 @@ namespace Project.Player
         public bool IsDropAnimating { get; private set; }
         public bool IsResetAnimating { get; private set; }
 
-        public CarryTargetMotion(Transform root)
+        public CarryTargetMotion(Transform root, System.Action restored = null)
         {
             this.root = root;
+            this.restored = restored;
         }
 
         public bool BeginCarry(
@@ -295,6 +297,7 @@ namespace Project.Player
             {
                 root.SetSiblingIndex(originalSiblingIndex);
             }
+            restored?.Invoke();
         }
 
         private static Vector3 Cubic(

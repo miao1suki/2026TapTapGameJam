@@ -53,6 +53,9 @@ MonoBehaviour:
   useFeatureMaterial: 1
   featureMaterial: {fileID: 0}
   featureRenderers: []
+  loadedDescentMultiplier: 3
+  brakeBase: {fileID: 0}
+  initialPlatformCreated: 0
   progressPerSecond: 0.35
   reboundWhenIdle: 1
   idleDelayBeforeRebound: 0.5
@@ -152,6 +155,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.ColorBlocks.ColorObject
   baseColorTypeId: red
   targetRenderer: {fileID: 3938954330987678989}
+  unlockedMaterial: {fileID: 2100000, guid: b02857fb895818a4dbc9daf5c0ad3494, type: 2}
 --- !u!114 &8065271327096789215
 MonoBehaviour:
   m_ObjectHideFlags: 0

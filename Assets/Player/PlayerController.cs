@@ -27,6 +27,20 @@ namespace Project.Player
         IPlayerControlLockTarget,
         IPlayerCarryHost
     {
+        private static readonly HashSet<PlayerController> activePlayers = new HashSet<PlayerController>();
+        public static IEnumerable<PlayerController> ActivePlayers => activePlayers;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetPlayerRegistry() => activePlayers.Clear();
+        [SerializeField, Min(.1f), InspectorName("普通跳跃上升（格）")]
+        private float jumpRiseCells = 4f;
+        private float carryPlantJumpCells;
+        public bool CanCarryPlantJump => carryPlantJumpCells > 0f && IsCarrying && !IsCarryBusy;
+        public void GrantCarryPlantJump(float cells) { if (IsCarrying) carryPlantJumpCells = Mathf.Max(.1f, cells); }
+        public float CalculateGridRiseSpeed(float cells)
+        {
+            float g = GetVerticalGravity(true);
+            return Mathf.Sqrt(2f * g * Mathf.Max(0f, cells) * gridCellWorldSize) + g * Time.fixedDeltaTime * .5f;
+        }
         [SerializeField, Min(0)] private float moveSpeed = 5;
         [SerializeField, Min(0)] private float swimSpeed = 3.5f;
         [SerializeField, Min(0)] private float swimAcceleration = 12f;
@@ -53,10 +67,7 @@ namespace Project.Player
         [SerializeField]
         private AnimationCurve accelerationResponseCurve =
             AnimationCurve.Linear(0f, 1f, 1f, 1f);
-        [SerializeField, Min(0)] private float jumpSpeed = 9.899f;
         [SerializeField, Min(0)] private float jumpGravityMultiplier = 1.7f;
-        [SerializeField, Min(0)]
-        private float jumpReleaseGravityMultiplier = 2.8f;
         [SerializeField, Min(0)] private float fallGravityMultiplier = 2.5f;
         [SerializeField, Min(0)] private float maxFallSpeed = 25f;
         [SerializeField, Min(0)] private float sprintMultiplier = 1.5f;
@@ -124,6 +135,7 @@ namespace Project.Player
         private readonly Collider[] respawnOverlapBuffer =
             new Collider[32];
         private float requestedBounceSpeed = -1f;
+        private bool bounceHasExactHeight;
         private float requestedJumpBoost = -1f;
         private Vector3 pendingPlatformDelta;
         private readonly HashSet<int> waterSources = new HashSet<int>();
@@ -302,6 +314,9 @@ namespace Project.Player
             highestAirPosition = transform.position.y;
             initialRespawnPosition = transform.position;
             gridCellWorldSize = GridCellSizeUtility.Resolve(this);
+            capsule.radius = gridCellWorldSize * .5f / Mathf.Max(.001f, Mathf.Abs(transform.lossyScale.x));
+            capsule.height = gridCellWorldSize / Mathf.Max(.001f, Mathf.Abs(transform.lossyScale.y));
+            carryFootprintCells = Vector2Int.one;
             health = GetComponent<PlayerHealth>();
             if (health == null)
             {
@@ -374,6 +389,7 @@ namespace Project.Player
 
         private void OnEnable()
         {
+            activePlayers.Add(this);
             runner = GetComponent<PlayerActionRunner>();
             runner.Completed -= Completed;
             runner.Completed += Completed;
@@ -388,6 +404,7 @@ namespace Project.Player
         }
         private void OnDisable()
         {
+            activePlayers.Remove(this);
             if (health != null)
             {
                 health.Died -= OnDied;
@@ -661,9 +678,7 @@ namespace Project.Player
 
         private float GetVerticalGravity(bool jumpHeld)
         {
-            float gravityMultiplier = jumpHeld
-                ? jumpGravityMultiplier
-                : jumpReleaseGravityMultiplier;
+            float gravityMultiplier = jumpGravityMultiplier;
             return Mathf.Max(
                 .01f,
                 Mathf.Abs(Physics.gravity.y) * gravityMultiplier);
@@ -1042,6 +1057,7 @@ namespace Project.Player
         private void BeginCarryPreparation(
             IPlayerCarryTarget target)
         {
+            carryPlantJumpCells = 0f;
             SetHighlightedCarryTarget(null);
             selectedCarryTarget = target;
             carryQueue.Clear();
@@ -1088,6 +1104,7 @@ namespace Project.Player
 
         private void FinishCarryDrop()
         {
+            carryPlantJumpCells = 0f;
             carryDropAnimating = false;
             selectedCarryTarget = null;
             carryQueue.Clear();
@@ -1133,6 +1150,7 @@ namespace Project.Player
 
         private void CancelCarryState()
         {
+            carryPlantJumpCells = 0f;
             carryPreparing = false;
             carryDropAnimating = false;
             carryResetting = false;
@@ -1646,6 +1664,7 @@ namespace Project.Player
                 requestedBounceSpeed = Mathf.Max(
                     requestedBounceSpeed,
                     verticalSpeed);
+                bounceHasExactHeight = surface is BouncePlantFeature;
                 return;
             }
         }
@@ -1775,7 +1794,8 @@ namespace Project.Player
             Vector3 velocity = motor.linearVelocity;
             if (requestedBounceSpeed >= 0f)
             {
-                ApplyEnvironmentLaunch(ref velocity, requestedBounceSpeed);
+                if (bounceHasExactHeight) { velocity.y = requestedBounceSpeed; bounceHasExactHeight = false; }
+                else ApplyEnvironmentLaunch(ref velocity, requestedBounceSpeed);
                 requestedBounceSpeed = -1f;
                 IsGrounded = false;
                 airborneSince = Time.time;
@@ -1795,6 +1815,7 @@ namespace Project.Player
                                       jumpUntil >= Time.time &&
                                       movement.x * climbInward > .1f;
             bool jumpRequested = !blocked &&
+                                 (!IsCarrying || CanCarryPlantJump) &&
                                  !climbKickRequested &&
                                  jumpUntil >= Time.time &&
                                  groundedUntil >= Time.time;
@@ -1958,8 +1979,9 @@ namespace Project.Player
             if (jumpRequested)
             {
                 float jumpVelocity =
-                    jumpSpeed *
+                    CalculateGridRiseSpeed(IsCarrying ? carryPlantJumpCells : jumpRiseCells) *
                     NextJumpBounceService.ConsumeMultiplier();
+                if (IsCarrying) carryPlantJumpCells = 0f;
                 if (requestedJumpBoost >= 0f)
                 {
                     jumpVelocity = Mathf.Max(
@@ -1980,11 +2002,7 @@ namespace Project.Player
             }
             else
             {
-                float gravityMultiplier = velocity.y > 0f
-                    ? jumpHeld
-                        ? jumpGravityMultiplier
-                        : jumpReleaseGravityMultiplier
-                    : fallGravityMultiplier;
+                float gravityMultiplier = velocity.y > 0f ? jumpGravityMultiplier : fallGravityMultiplier;
                 if (Time.time < environmentLaunchUntil && velocity.y > 0f)
                     gravityMultiplier = jumpGravityMultiplier;
                 bool protectedClimbFall = Time.time < climbKickFallProtectionUntil && velocity.y <= 0f;
@@ -2096,6 +2114,7 @@ namespace Project.Player
         public void RequestRespawn()
         {
             if (!dead) deathPosition = transform.position;
+            carryPlantJumpCells = 0f;
             PrepareForRoomReset();
             runner?.Stop();
             ClearDeathControlState();

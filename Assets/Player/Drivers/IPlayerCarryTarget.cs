@@ -3,6 +3,13 @@ using UnityEngine;
 
 namespace Project.Player
 {
+    /// <summary>Optional handoff for targets whose physics/reactions must pause during carry animation.</summary>
+    public interface ICarryMotionParticipant
+    {
+        void SetCarrySuspended(bool suspended);
+        bool CanPlaceCarriedAt(Vector3 worldPosition);
+    }
+
     /// <summary>
     /// 玩家提供给搬运目标的只读命令口，避免目标直接依赖 PlayerController。
     /// </summary>

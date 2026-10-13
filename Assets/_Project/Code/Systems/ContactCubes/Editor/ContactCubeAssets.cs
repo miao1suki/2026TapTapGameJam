@@ -41,6 +41,13 @@ namespace Project.ContactCubes.Editor
                 so.FindProperty("jetMaterial").objectReferenceValue = jet;
                 so.ApplyModifiedPropertiesWithoutUndo();
                 root.AddComponent<ContactCubeMotion>();
+                root.AddComponent<Project.BlockFeatures.CarryableFeature>();
+                var colorObject = root.AddComponent<Project.ColorBlocks.ColorObject>();
+                var colorSettings = new SerializedObject(colorObject);
+                colorSettings.FindProperty("baseColorTypeId").stringValue = color == CubeColor.Red ? "red" : color == CubeColor.Blue ? "blue" : "green";
+                colorSettings.FindProperty("targetRenderer").objectReferenceValue = visual.GetComponent<Renderer>();
+                colorSettings.FindProperty("unlockedMaterial").objectReferenceValue = material;
+                colorSettings.ApplyModifiedPropertiesWithoutUndo();
                 if (color == CubeColor.Green) root.AddComponent<HorizontalCubeVine>();
                 root.AddComponent<RoomResetObject>();
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root, folder + "/" + name + ".prefab");

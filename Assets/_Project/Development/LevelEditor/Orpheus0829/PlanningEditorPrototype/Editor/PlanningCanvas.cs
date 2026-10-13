@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Project;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
@@ -35,6 +36,8 @@ namespace PlanningEditorPrototype
         private LevelEditorPalette palette;
         private string selectedRoomId;
         private string selectedBoxId;
+        private string bindingConsumerId;
+        private bool pickingCrank;
         private readonly HashSet<string> mergeSelection = new HashSet<string>();
 
         private IEnumerable<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)> AllBoxes()
@@ -54,8 +57,8 @@ namespace PlanningEditorPrototype
         }
 
         private static bool SameKind(PlanningBox a, PlanningBox b) =>
-            a.type == b.type && a.paletteEntryId == b.paletteEntryId &&
-            a.paletteEntryName == b.paletteEntryName && a.propEntryId == b.propEntryId && a.propEntryName == b.propEntryName;
+            a.type == b.type && (a.paletteEntryId ?? "") == (b.paletteEntryId ?? "") &&
+            (a.paletteEntryName ?? "") == (b.paletteEntryName ?? "") && (a.propEntryId ?? "") == (b.propEntryId ?? "") && (a.propEntryName ?? "") == (b.propEntryName ?? "");
 
         private void CompleteMergeSelection()
         {
@@ -111,6 +114,8 @@ namespace PlanningEditorPrototype
             }
             if ((long)(maxX-minX)*(maxY-minY) != cells.Count)
             { ValidationFailed?.Invoke("请选满连续矩形，合并不能包含空格。"); return; }
+            if (!PlanningMechanismUtility.CanMerge(items))
+            { ValidationFailed?.Invoke("控制器绑定不同，请先绑定同一曲柄或基座再合并。"); return; }
             var merged = items[0].Clone();
             merged.id = PlanningDocument.NewId("box"); merged.x=minX; merged.y=minY; merged.width=maxX-minX; merged.height=maxY-minY;
             merged.isMerged = true; merged.mergeParts = new List<string>();
@@ -135,7 +140,9 @@ namespace PlanningEditorPrototype
                 else merged.mergeParts.Add(JsonUtility.ToJson(item));
                 owner.Remove(item);
             }
-            owner.Add(merged); mergeSelection.Clear(); mergeSelection.Add(merged.id);
+            owner.Add(merged);
+            PlanningMechanismUtility.RemapMergedSources(items, merged, AllBoxes().Select(item => item.box));
+            mergeSelection.Clear(); mergeSelection.Add(merged.id);
             selectedBoxId = merged.id;
             NotifyDocumentChanged(); SelectionChanged?.Invoke(); MarkDirtyRepaint();
             StatusChanged?.Invoke("已合并为单个物体。");
@@ -163,8 +170,12 @@ namespace PlanningEditorPrototype
                 foreach(var part in restored)
                 {
                     part.x += item.box.x-ox; part.y += item.box.y-oy;
+                    part.crankOwnerId = item.box.crankOwnerId;
+                    part.mechanismBaseId = item.box.mechanismBaseId;
+                    part.mechanismBaseCellOffset = item.box.mechanismBaseCellOffset;
                     item.owner.Add(part); mergeSelection.Add(part.id);
                 }
+                PlanningMechanismUtility.RemapCarvedSource(item.box, restored, AllBoxes().Select(value => value.box));
             }
             NotifyDocumentChanged(); SelectionChanged?.Invoke(); MarkDirtyRepaint();
         }
@@ -197,8 +208,11 @@ namespace PlanningEditorPrototype
                                 NotifyDocumentChanged(); return;
                             }
                     }, "实例参数 · " + (source.name),
-                    PlanningDoorUtility.IsDoor(box) ? () => AddDoorButton(box.id) : (System.Action)null,
-                    "添加门按钮");
+                    PlanningDoorUtility.IsDoor(box) ? () => AddDoorButton(box.id) : IsCrankBox(box) ? () => AddCrankPlatform(box.id) : PlanningMechanismUtility.IsConsumer(source) ? () => BeginBaseBinding(box.id) : (System.Action)null,
+                    PlanningDoorUtility.IsDoor(box) ? "添加门按钮" : IsCrankBox(box) ? "添加升降平台" : PlanningMechanismUtility.IsLift(source) ? "绑定曲柄" : "绑定基座",
+                    IsCrankBox(box) ? () => BeginBaseBinding(box.id) : PlanningMechanismUtility.IsConsumer(source) ? () => ClearBaseBinding(box.id) : (System.Action)null,
+                    IsCrankBox(box) ? "绑定制动基座" : PlanningMechanismUtility.IsLift(source) ? "解除曲柄绑定" : "解除基座绑定",
+                    IsCrankBox(box) ? () => ClearBaseBinding(box.id) : (System.Action)null,"解除制动基座绑定");
                 SelectionChanged?.Invoke(); return;
             }
         }
@@ -461,7 +475,25 @@ namespace PlanningEditorPrototype
                             : string.Empty
                     };
                     if (!string.IsNullOrEmpty(block.PlanningBoxId)) box.id = block.PlanningBoxId;
-                    if (block.GetComponent<Project.Mechanisms.DoorController>() is Project.Mechanisms.DoorController importedDoor)
+                    var authored = room.boxes.Find(value => value.id == block.PlanningBoxId);
+                    if (authored != null && (authored.isMerged || authored.singleInstance || authored.width * authored.height == 1))
+                    {
+                        box = authored.Clone(); box.sceneBlock = block;
+                        box.x = globalPlanX - offsetX; box.y = globalPlanY - offsetY - (box.height - 1);
+                    }
+                    if (block.GetComponent<Project.BlockFeatures.CrankPlatformFeature>() is Project.BlockFeatures.CrankPlatformFeature importedCrank)
+                    {
+                        box.singleInstance = true; box.initialCrankPlatformCreated = importedCrank.InitialPlatformCreated;
+                    }
+                    if (block.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() is Project.BlockFeatures.MovingPlatformFeature importedPlatform && importedPlatform.IsCrankControlled)
+                    {
+                        box.propEntryId = PlanningMechanismUtility.LiftEntryId;
+                        box.crankOwnerId = importedPlatform.CrankController != null ? importedPlatform.CrankController.GetComponent<LevelEditorPlacedBlock>()?.PlanningBoxId : null;
+                        box.width = block.SizeCells.x; box.height = block.SizeCells.y;
+                        box.y = globalPlanY - offsetY - (box.height - 1);
+                        box.isMerged = block.SizeCells != Vector2Int.one;
+                    }
+                    if (authored == null && block.GetComponent<Project.Mechanisms.DoorController>() is Project.Mechanisms.DoorController importedDoor)
                     {
                         box.propEntryId = importedDoor.IsHorizontal ? PlanningDoorUtility.HorizontalDoorEntryId : PlanningDoorUtility.DoorEntryId;
                         box.singleInstance = true;
@@ -471,7 +503,7 @@ namespace PlanningEditorPrototype
                         box.y -= footprint.y - 1;
                         if (!string.IsNullOrEmpty(block.PlanningBoxId)) box.id = block.PlanningBoxId;
                     }
-                    if (block.GetComponent<Project.Mechanisms.NeutralLadder>() is Project.Mechanisms.NeutralLadder ladder)
+                    if (authored == null && block.GetComponent<Project.Mechanisms.NeutralLadder>() is Project.Mechanisms.NeutralLadder ladder)
                     {
                         box.propEntryId = ladder.SideFacing ? PlanningDoorUtility.SideLadderEntryId : PlanningDoorUtility.FrontLadderEntryId;
                         box.singleInstance = true; box.height = 2; box.y -= 1;
@@ -540,7 +572,8 @@ namespace PlanningEditorPrototype
                     a.y != b.y ||
                     a.width != b.width ||
                     a.height != b.height ||
-                    a.paletteEntryName != b.paletteEntryName)
+                    a.paletteEntryName != b.paletteEntryName || a.propEntryName != b.propEntryName ||
+                    a.crankOwnerId != b.crankOwnerId || a.mechanismBaseId != b.mechanismBaseId)
                 {
                     return false;
                 }
@@ -1059,6 +1092,7 @@ namespace PlanningEditorPrototype
             regionSelection.Clear();
             document = value;
             document?.Normalize();
+            EnsureInitialCrankPlatforms();
             selectedRoomId = document != null && document.rooms.Count > 0
                 ? document.rooms[0].id
                 : null;
@@ -1199,6 +1233,7 @@ namespace PlanningEditorPrototype
         public void SetPalette(LevelEditorPalette value)
         {
             palette = value;
+            EnsureInitialCrankPlatforms();
             UpdateDetailPreviewImages();
             MarkDirtyRepaint();
         }
@@ -2540,6 +2575,14 @@ namespace PlanningEditorPrototype
             Focus();
             Vector2 position = evt.localPosition;
             UpdateHover(position);
+            if (!string.IsNullOrEmpty(bindingConsumerId))
+            {
+                if (evt.button == 1) { bindingConsumerId = null; StatusChanged?.Invoke("已取消绑定。"); evt.StopPropagation(); return; }
+                if (evt.button == 0)
+                {
+                    BindBaseAt(CellAt(position)); evt.StopPropagation(); return;
+                }
+            }
             if (isPlacingRoom && (evt.button == 1 || evt.button == 2))
             {
                 CancelRoomPlacement();
@@ -3104,6 +3147,14 @@ namespace PlanningEditorPrototype
 
         private bool PrepareDoorPlacement(PlanningRoom room, PlanningBox box, RectInt allowed)
         {
+            if (IsCrankBox(box))
+            {
+                box.width = box.height = 1; box.singleInstance = true;
+                if (!CanPlaceLocalRect(room, new RectInt(box.x,box.y,1,1)) ||
+                    !PlanningDoorUtility.CanPlace(room.boxes,new RectInt(box.x,box.y,1,1)) || !TryFindCrankPlatformCell(room,box,out _))
+                { StatusChanged?.Invoke("曲柄及附近升降平台需要空格。"); return false; }
+                return true;
+            }
             if (!PlanningDoorUtility.HasFixedFootprint(box.propEntryId)) return true;
             Vector2Int size = PlanningDoorUtility.Footprint(box.propEntryId);
             box.width = size.x;
@@ -3140,6 +3191,7 @@ namespace PlanningEditorPrototype
 
         private void DrawDoorLinks(Painter2D painter)
         {
+            DrawMechanismLinks(painter);
             var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
             foreach (var item in items)
             {
@@ -3158,6 +3210,83 @@ namespace PlanningEditorPrototype
                     break;
                 }
             }
+        }
+
+        private void BeginBaseBinding(string id)
+        {
+            bindingConsumerId = id;
+            pickingCrank = AllBoxes().Any(item => item.box.id == id && PlanningMechanismUtility.IsLift(FindPropEntry(item.box.propEntryId,item.box.propEntryName)?.Prefab));
+            StatusChanged?.Invoke(pickingCrank ? "点击曲柄完成绑定，右键取消。" : "点击基座完成绑定，右键取消。");
+        }
+        private void ClearBaseBinding(string id)
+        {
+            foreach (var item in AllBoxes()) if (item.box.id == id)
+            {
+                if (PlanningMechanismUtility.IsLift(FindPropEntry(item.box.propEntryId,item.box.propEntryName)?.Prefab)) item.box.crankOwnerId = null;
+                else item.box.mechanismBaseId = null;
+                NotifyDocumentChanged(); MarkDirtyRepaint(); StatusChanged?.Invoke("已解除绑定。"); return;
+            }
+        }
+        private void BindBaseAt(Vector2Int cell)
+        {
+            PlanningBox consumer = null, selected = null;
+            Vector2Int selectedOffset = default;
+            foreach (var item in AllBoxes())
+            {
+                if (item.box.id == bindingConsumerId) consumer = item.box;
+                if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
+                if (DisplayRect(item.room, item.box).Contains(cell) && (pickingCrank ? IsCrankBox(item.box) : FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.Prefab?.GetComponent<Project.BlockFeatures.MechanismBaseFeature>() != null))
+                { selected = item.box; selectedOffset = cell - DisplayRect(item.room,item.box).position; }
+            }
+            if (consumer == null) { bindingConsumerId = null; return; }
+            if (selected == null) { StatusChanged?.Invoke(pickingCrank ? "请选择曲柄。" : "请选择基座。跨房间绑定可在装配图操作。"); return; }
+            if (pickingCrank) consumer.crankOwnerId = selected.id;
+            else { consumer.mechanismBaseId = selected.id; consumer.mechanismBaseCellOffset = selectedOffset; }
+            bindingConsumerId = null;
+            NotifyDocumentChanged(); MarkDirtyRepaint(); StatusChanged?.Invoke("已完成绑定。");
+        }
+        private void DrawMechanismLinks(Painter2D painter)
+        {
+            var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
+            foreach (var item in items)
+            {
+                if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
+                var prefab = FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.Prefab;
+                if (!PlanningMechanismUtility.IsConsumer(prefab)) continue;
+                RectInt rect = DisplayRect(item.room, item.box);
+                Vector2 start = CellRect(rect.x, rect.y, rect.width, rect.height).center;
+                Component feature = prefab.GetComponent<Project.BlockFeatures.MovingPlatformFeature>();
+                bool crank = feature == null;
+                if (crank) feature = prefab.GetComponent<Project.BlockFeatures.CrankPlatformFeature>();
+                var serialized = new SerializedObject(feature);
+                float distance = crank ? 0 : serialized.FindProperty("travelBlocks").intValue;
+                int route = crank ? 1 : serialized.FindProperty("route").enumValueIndex;
+                var values = item.box.hasComponentOverrides ? item.box.componentOverrides : FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.ComponentValueOverrides;
+                if (values != null) foreach (var value in values)
+                {
+                    if (value == null || value.ComponentTypeName != feature.GetType().AssemblyQualifiedName && value.ComponentTypeName != feature.GetType().FullName) continue;
+                    if (!crank && value.PropertyPath == "travelBlocks" && float.TryParse(value.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float d)) distance = d;
+                    if (value.PropertyPath == "route" && int.TryParse(value.Value, out int r)) route = r;
+                }
+                Dashed(painter, start, start + (route == 0 ? Vector2.right : Vector2.up * -1f) * distance * GridSize, new Color(.3f,.9f,1f,.85f));
+                foreach (var controller in items) if (controller.box.id == item.box.crankOwnerId)
+                {
+                    RectInt target = DisplayRect(controller.room,controller.box);
+                    Dashed(painter,start,CellRect(target.x,target.y,target.width,target.height).center,new Color(1f,.78f,.3f,.9f));
+                    break;
+                }
+                foreach (var source in items) if (source.box.id == item.box.mechanismBaseId)
+                {
+                    RectInt b = DisplayRect(source.room, source.box);
+                    Dashed(painter, start, CellRect(b.x+item.box.mechanismBaseCellOffset.x,b.y+item.box.mechanismBaseCellOffset.y,1,1).center, new Color(1f,.45f,.8f,.9f));
+                    break;
+                }
+            }
+        }
+        private static void Dashed(Painter2D painter, Vector2 start, Vector2 end, Color color)
+        {
+            float length = Vector2.Distance(start,end);
+            for (float d = 0; d < length; d += 12f) DrawLine(painter, Vector2.Lerp(start,end,d/length), Vector2.Lerp(start,end,Mathf.Min(d+6,length)/length), color, 2f);
         }
 
         private void CapturePlacementDefaults(PlanningBox box)
@@ -3243,14 +3372,19 @@ namespace PlanningEditorPrototype
                 strideY);
         }
 
-        private static void CarveBox(
+        private void CarveBox(
             List<PlanningBox> boxes,
             PlanningBox box,
             Vector2Int cell)
         {
             boxes.Remove(box);
             if (PlanningDoorUtility.IsDoor(box)) boxes.RemoveAll(item => item.doorOwnerId == box.id);
-            if (box.isMerged || box.singleInstance || !string.IsNullOrEmpty(box.doorOwnerId)) return;
+            if (box.isMerged || box.singleInstance || !string.IsNullOrEmpty(box.doorOwnerId))
+            {
+                PlanningMechanismUtility.RemapCarvedSource(box, Array.Empty<PlanningBox>(), AllBoxes().Select(item => item.box));
+                return;
+            }
+            int firstPartIndex = boxes.Count;
             int leftWidth = cell.x - box.x;
             int rightStart = cell.x + 1;
             int rightWidth = box.x + box.width - rightStart;
@@ -3286,6 +3420,7 @@ namespace PlanningEditorPrototype
                 bottomStart,
                 1,
                 bottomHeight);
+            PlanningMechanismUtility.RemapCarvedSource(box, boxes.GetRange(firstPartIndex, boxes.Count-firstPartIndex), AllBoxes().Select(item => item.box));
         }
 
         private static void AddCarvedBox(
@@ -3309,7 +3444,11 @@ namespace PlanningEditorPrototype
                 paletteEntryId = source.paletteEntryId,
                 paletteEntryName = source.paletteEntryName,
                 propEntryId = source.propEntryId,
-                propEntryName = source.propEntryName
+                propEntryName = source.propEntryName,
+                mechanismBaseId = source.mechanismBaseId,
+                mechanismBaseCellOffset = source.mechanismBaseCellOffset,
+                crankOwnerId = source.crankOwnerId,
+                initialCrankPlatformCreated = source.initialCrankPlatformCreated
             };
             boxes.Add(carved);
             carved.hasComponentOverrides = source.hasComponentOverrides;
@@ -3472,7 +3611,9 @@ namespace PlanningEditorPrototype
             }
 
             document?.RefreshConnectorPaths();
+            EnsureInitialCrankPlatforms();
             if (document != null) PlanningDoorUtility.RemoveOrphanButtons(document);
+            PlanningMechanismUtility.RemoveMissingLinks(AllBoxes().Select(item => item.box));
             DocumentChanged?.Invoke();
             UpdateDetailPreviewImages();
             MarkDirtyRepaint();

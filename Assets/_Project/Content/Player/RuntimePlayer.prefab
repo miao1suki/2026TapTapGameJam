@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 600000003}
   - component: {fileID: 600000005}
   - component: {fileID: 600000006}
+  - component: {fileID: 8165965474420280685}
   m_Layer: 0
   m_Name: RuntimePlayer
   m_TagString: Player
@@ -50,7 +51,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4920354666734387426}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: 2060fa11ed0595c47a506b701bdcc6cd, type: 2}
 --- !u!136 &2061642134399160434
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -71,7 +72,7 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
-  m_Height: 2
+  m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &9068908698598090765
@@ -192,11 +193,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dddc053236d4bf24ea1633d36577e43e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerController
+  jumpRiseCells: 4
   moveSpeed: 5
+  swimSpeed: 3.5
+  swimAcceleration: 12
+  swimRiseSpeed: 1.5
+  swimSinkSpeed: 0.8
+  swimVerticalAcceleration: 4
+  climbSpeed: 3
+  climbSlideSpeed: 1.2
+  climbDownSpeed: 4.5
+  climbHorizontalSpeed: 2
+  climbAcceleration: 12
   climbKickHorizontalSpeed: 5
   climbKickVerticalSpeed: 10
   climbKickDetachSeconds: 0.3
-  jumpSpeed: 9.899
+  climbKickFallProtectionSeconds: 1.2
+  climbKickMaxFallSpeed: 3.5
+  climbTopKickHorizontalMultiplier: 1.5
+  climbTopKickVerticalMultiplier: 1.12
+  environmentLaunchExtraSpeed: 2.5
+  environmentLaunchProtectionSeconds: 0.2
+  moveAcceleration: 20
+  moveDeceleration: 30
+  accelerationResponseCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  jumpGravityMultiplier: 1.7
+  fallGravityMultiplier: 2.5
+  maxFallSpeed: 25
   sprintMultiplier: 1.5
   coyoteTime: 0.12
   jumpBufferTime: 0.12
@@ -206,6 +252,13 @@ MonoBehaviour:
   lethalFallHeightBlocks: 8
   respawnInvulnerabilitySeconds: 2
   pickupSenseRadiusBlocks: 2
+  carryPrepareSeconds: 0.1
+  carryFootprintCells: {x: 1, y: 1}
+  deathAction: {fileID: 0}
+  respawnPoint: {fileID: 0}
+  respawnRandomRadiusBlocks: 4
+  respawnRandomAttempts: 32
+  respawnSafetyRadius: 0.45
 --- !u!114 &600000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -220,8 +273,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerInputDriver
   actionBindings: []
   carryHintFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
-  cameraModeController: {fileID: 0}
-  cameraModeTransitionDuration: 0.2
 --- !u!114 &600000002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -263,6 +314,10 @@ MonoBehaviour:
   rangeLineWidth: 0.035
   rangeDashCount: 32
   rangeColor: {r: 0.55, g: 0.8, b: 1, a: 0.45}
+  rangePulsePeriod: 2.4
+  rangeFadeDuration: 0.5
+  rangeMinAlpha: 0.18
+  rangeMaxAlpha: 0.62
   wheelSize: 280
   wheelButtonSize: 72
 --- !u!114 &600000006
@@ -275,8 +330,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dcb114307b334965a2f2df619f114291, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.Development.PickWheel.PickWheelPrototype
   wheelArtwork: {fileID: 21300000, guid: 62e2485dab4fdd1499a2bb796e7c561b, type: 3}
   pixelFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
   playerWheel: {fileID: 600000005}
+--- !u!114 &8165965474420280685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4920354666734387426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f1a2b3c4d5e6f708198a9b0c1d2e3f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerInteractionSensor
+  scanRadius: 5
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295

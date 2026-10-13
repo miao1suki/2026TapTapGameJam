@@ -82,7 +82,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   reverseOnBlock: 1
-  driveMode: 0
+  driveMode: 1
   startsActive: 1
   linkedControls: []
   carryPlayerTag: Player
@@ -179,6 +179,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.ColorBlocks.ColorObject
   baseColorTypeId: red
   targetRenderer: {fileID: 8274454387447511702}
+  unlockedMaterial: {fileID: 2100000, guid: b02857fb895818a4dbc9daf5c0ad3494, type: 2}
 --- !u!114 &8640021984269843927
 MonoBehaviour:
   m_ObjectHideFlags: 0

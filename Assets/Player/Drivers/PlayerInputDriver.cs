@@ -145,7 +145,8 @@ namespace Project.Player
                     GameInput.ReadVector2(InputActionId.Move));
                 target.SetSprintInput(
                     GameInput.IsPressed(InputActionId.Sprint));
-                target.SetJumpHeld(false);
+                target.SetJumpHeld(GameInput.IsPressed(InputActionId.Jump));
+                if (target.CanCarryPlantJump && GameInput.WasPressedThisFrame(InputActionId.Jump)) target.RequestJump();
                 return;
             }
 

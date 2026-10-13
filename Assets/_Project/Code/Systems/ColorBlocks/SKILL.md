@@ -5,9 +5,15 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 # 颜色大洗牌玩法与组件规范
 
+> 2026-10-13 曲柄拆分：CrankPlatformFeature 保留脚本身份但只做独立曲柄控制器，不带平台子物体、不写平台 Transform。新建曲柄配套创建独立 Red_CrankLift，消费者 MovingPlatformFeature.BindCrank 以自己的作者位置、路线/距离跟随共享进度；支持一曲柄多平台，任一载人加快整组下降，曲柄绑定基座通电制动。规划绑定 crankOwnerId 是持久对象 ID，合并要求相同绑定，合并/解除及增量重建重新解析，不存 instanceID。曲柄不可合并，平台合并成一个模型与一套逻辑。此条覆盖下文曲柄自带升降平台的旧说明。
+
+> 2026-10-13 机关与跳跃定稿：三色 ContactCube 现在挂 ColorObject 接入钥匙/HSV/搬运门控，初始未解锁，解锁对应色才参与接触反应；仍不是玩家点击染色目标。红块实现 IEnergySource，任意已解锁红块可供能任意基座，旧 Red_Battery 保留 GUID 并替换为红块。移动平台默认信号驱动，绑定基座；曲柄平台通电制动、按住交互升高、空载慢降/载人快降。地图绑定存基础对象 ID 与相对格偏移，不存 instanceID。玩家默认一格宽高，普通跳跃上升4格（第1格中心到第5格中心）；植物普通3格，落差超过4格且按住跳跃为8格，搬运时站到植物获得一次4格跳跃。此条覆盖下文接触方块不受钥匙及携带一律禁跳的旧规则。接入读 Docs/Agent/Integration/MECHANISM_SIGNAL_API.md。
+
+> 2026-10-13 绿接触方块实体规则：ContactCube.Green 及其一体伸长部分始终与玩家碰撞，没有水柱命令时锁水平位移，落稳锁竖直位移；母块及长出实体两侧可攀爬，横向长出部分保留上下攀附禁跳。底部支撑检测不可按整体高度比例缩小。此条覆盖绿块空中忽略玩家的旧规则；红/蓝仍保持原有空中规则。
+
 > 2026-10-13 门按钮模式：DoorButton 默认 Latched（一次按下保持），R/离区保留；Held（持续压住）在最后重量离开、禁用、R/离区时恢复未按下并重评估门。玩家和 ContactCube 可压下。含持续按钮的门在信号不齐时关闭，不清除其他保持按钮进度。门本身仍由区域持久策略保留，不直接 ResetDoor 清空保持按钮。三色方块按编辑器布置根位姿恢复，不以落地/搬运位置重采样。这条覆盖下文所有按钮一律持久的旧描述。
 
-> 2026-10-13 独立接触方块例外：ContactCubes 中的红/绿/蓝三个固定类型道具不属于 ColorObject 解锁组，不接收玩家点击染色，不能挂 BlockFeature 或 IColorApplicationTarget。彼此只走有限接触状态机（绿蓝增长、绿红缩短、红蓝同时锁长、红蓝水柱），对既有颜色物体仍通过其接色契约转发。反应只发推动请求，ContactCubeMotion 已统一负责重力/水柱运动/落稳锁定/空中碰撞；搬运与黏住待接入，不得并行写刚体。横向长出部分通过玩家 API 攀附。接入先读 Docs/Agent/Integration/CONTACT_CUBES_API.md，不套旧万能方块规则。
+> 2026-10-13 独立接触方块例外：ContactCubes 中的红/绿/蓝是三个固定类型道具，ColorObject 仅桥接钥匙解锁与外观，不接收玩家点击染色，不能挂 IColorApplicationTarget 或生长等旧 BlockFeature。彼此只走有限接触状态机（绿蓝增长、绿红缩短、红蓝同时锁长、红蓝水柱），对既有颜色物体仍通过其接色契约转发。反应只发推动请求，ContactCubeMotion 已统一负责重力/水柱运动/落稳锁定/空中碰撞；搬运已通过 CarryableFeature + ICarryMotionParticipant 接入，动画期间挂起运动和反应，完整实体校验落点；黏住待接入，不得并行写刚体。横向长出部分通过玩家 API 攀附。接入先读 Docs/Agent/Integration/CONTACT_CUBES_API.md，不套旧万能方块规则。
 
 > 2026-10-12 区域生命周期定稿：Rooms/RoomLifecycleManager 按世界图实际占格管理房间/通道。离开或死亡/R重生仅恢复所属物体的布置状态与位置，保留门、按钮、已拾取钥匙和全局解锁；已解锁物体恢复刚解锁的行为而非白色锁定。ResetForRoom 不清空颜色、不全局广播；仅 ResetProgress 明确清空进度。R 返回最近触碰的锚点，取消携带并恢复区域，不再只是回上一次拿起位置。此条覆盖下文旧房间清锁与搬运重置说明。接入必须读 Docs/Agent/Integration/ROOM_LIFECYCLE_API.md。
 

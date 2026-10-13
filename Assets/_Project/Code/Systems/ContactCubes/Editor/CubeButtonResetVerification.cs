@@ -45,12 +45,18 @@ namespace Project.ContactCubes.Editor
                 if (!EditorApplication.isPlaying || EditorApplication.isPaused || (phase != 0 && Time.time < deadline)) return;
                 if (phase == 0)
                 {
+                    Project.ColorBlocks.ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                     var floor = GameObject.CreatePrimitive(PrimitiveType.Cube); floor.transform.position = new Vector3(20,-.5f,0); floor.transform.localScale = new Vector3(44,1,4);
                     manager = new GameObject("区域管理").AddComponent<RoomLifecycleManager>();
                     var a = new RoomRegion { id = "a" }; var b = new RoomRegion { id = "b" };
                     for (int x = 0; x < 40; x++) for (int y = 0; y < 10; y++) (x < 20 ? a : b).cells.Add(new Vector2Int(x,-y-1));
                     manager.Configure(new List<RoomRegion> { a,b },1,"");
-                    player = Spawn("Assets/_Project/Content/Player/RuntimePlayer.prefab",new Vector3(1,2,0)).GetComponent<PlayerController>();
+                    // Keep the full random respawn search inside region A; a
+                    // region-exit reset must not race the later pressure fixture.
+                    player = Spawn("Assets/_Project/Content/Player/RuntimePlayer.prefab",new Vector3(2,2,0)).GetComponent<PlayerController>();
+                    var respawnSettings = new SerializedObject(player);
+                    respawnSettings.FindProperty("respawnRandomRadiusBlocks").intValue = 1;
+                    respawnSettings.ApplyModifiedPropertiesWithoutUndo();
                     player.GetComponent<PlayerInputDriver>().enabled = false; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
                     cubes = new ContactCube[3];
                     for (int i = 0; i < 3; i++) cubes[i] = Spawn($"Assets/_Project/Content/ContactCubes/{(CubeColor)i}_ContactCube.prefab",new Vector3(3+i*2,3,0)).GetComponent<ContactCube>();
@@ -127,7 +133,10 @@ namespace Project.ContactCubes.Editor
                 }
                 if (phase == 9)
                 {
-                    Check(held.IsPressed,"held repress before region exit");
+                    // Editor update can observe the deadline before the next
+                    // physics pressure query. Wait for that query, with a limit.
+                    if (!held.IsPressed && Time.time < deadline+.5f) return;
+                    Check(held.IsPressed,"held repress before region exit; cube="+cubes[0].transform.position+", feet="+cubes[0].GetComponentInChildren<BoxCollider>().bounds.min.y+", player="+player.transform.position+", region="+manager.CurrentRegionId);
                     player.transform.position = player.Motor.position = new Vector3(25,2,0); manager.UpdatePlayerRegion(player);
                     Check(!held.IsPressed && door.State == DoorState.Locked,"region exit resets held button");
                     Check(latch.IsPressed,"region exit preserves latched progress");

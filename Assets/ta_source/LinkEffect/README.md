@@ -4,6 +4,8 @@
 
 `InteractionLinkEffect` 已挂在 `Assets/Scenes/Test.unity` 的 `TestPlayer` 上。它只读取现有组件的状态，不调用 `TryInteract`、`ApplyColor` 或搬运命令，也不修改玩家、方块或渲染管线脚本。上次新增的红色测试方块已移除。
 
+`Assets/Scenes/Pick.unity` 的原测试玩家同样接入当前三色连线配置，保持原关卡布局与轮盘。选择可用颜色并靠近能响应它的目标即可显示效果；固定身份的 ContactCube 不是可染色目标，不会显示染色连线。
+
 ## 识别范围
 
 - 只有玩家当前选中红、绿或蓝染色状态时显示预览；无颜色、颜色状态结束、玩家控制锁定或搬运中时立即隐藏。

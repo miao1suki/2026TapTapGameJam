@@ -130,19 +130,14 @@ namespace Project.Player.Editor
                 "跳跃");
             jump.Add(PlayerInspectorFields.Create(
                 serializedObject,
-                "jumpSpeed",
-                "跳跃速度",
-                "跳跃瞬间应用的上向速度。"));
+                "jumpRiseCells",
+                "跳跃上升（格）",
+                "玩家中心相对起跳位置的最高上升格数。4 表示从第1格中心到第5格中心。"));
             jump.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "jumpGravityMultiplier",
                 "上升重力倍率",
-                "按住跳跃键上升时的重力倍率，越大上升越短。"));
-            jump.Add(PlayerInspectorFields.Create(
-                serializedObject,
-                "jumpReleaseGravityMultiplier",
-                "松键上升重力倍率",
-                "上升中松开跳跃键后的重力倍率，用于短跳。"));
+                "控制上升节奏；起跳速度自动配合目标高度，松键不改变目标高度。"));
             jump.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "fallGravityMultiplier",

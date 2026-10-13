@@ -9,9 +9,9 @@ namespace Project.ContactCubes
     public enum CubeColor { [InspectorName("红")] Red, [InspectorName("绿")] Green, [InspectorName("蓝")] Blue }
     public enum CubeReactionState { [InspectorName("静止")] Idle, [InspectorName("生长")] Growing, [InspectorName("缩短")] Shrinking, [InspectorName("锁长")] Locked }
 
-    // Deliberately NOT IColorApplicationTarget, ColorObject or BlockFeature.
+    // Fixed identity; keys unlock abilities, never player-click recoloring.
     [DisallowMultipleComponent]
-    public sealed class ContactCube : MonoBehaviour, IRoomColorResettable
+    public sealed class ContactCube : MonoBehaviour, IRoomColorResettable, IEnergySource
     {
         [SerializeField, InspectorName("固定类型")] private CubeColor color;
         [SerializeField, InspectorName("实体碰撞箱")] private BoxCollider shape;
@@ -34,8 +34,16 @@ namespace Project.ContactCubes
         private float cellSize = 1f;
         private Vector3 localGrowthDirection = Vector3.right;
         private ContactCube selectedBlue;
+        private bool carrySuspended;
+        public void SetCarrySuspended(bool suspended)
+        {
+            carrySuspended = suspended;
+            if (suspended) ClearContacts();
+        }
         public CubeColor Color => color;
         public string ColorId => color == CubeColor.Red ? "red" : color == CubeColor.Blue ? "blue" : "green";
+        public bool IsUnlocked => ColorRuntimeService.Existing != null && ColorRuntimeService.Existing.IsUnlocked(ColorId);
+        public bool IsEnergyAvailable => isActiveAndEnabled && IsUnlocked && color == CubeColor.Red && !carrySuspended && shape != null && shape.enabled;
         public int Length { get; private set; }
         public int MaximumLength => maximumLength;
         public CubeReactionState State { get; private set; }
@@ -49,7 +57,7 @@ namespace Project.ContactCubes
         private void Awake() { cellSize = GridCellSizeUtility.Resolve(this); ResetForRoom(); }
         private void FixedUpdate()
         {
-            if (shape == null || !shape.enabled) { ClearContacts(); return; }
+            if (!IsUnlocked || carrySuspended || shape == null || !shape.enabled) { ClearContacts(); return; }
             ScanContacts();
             TickReaction(Time.fixedDeltaTime);
             UpdateJets();
@@ -71,7 +79,7 @@ namespace Project.ContactCubes
                 Collider hit = hits[i];
                 if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<CubeWaterJet>() != null) continue;
                 ContactCube cube = hit.GetComponentInParent<ContactCube>();
-                if (cube != null) { if (cube != this && cube.isActiveAndEnabled) neighbours.Add(cube); continue; }
+                if (cube != null) { if (cube != this && cube.isActiveAndEnabled && cube.IsUnlocked && !cube.carrySuspended) neighbours.Add(cube); continue; }
                 foreach (MonoBehaviour component in hit.GetComponentsInParent<MonoBehaviour>())
                 {
                     if (!component.isActiveAndEnabled || !(component is IColorApplicationTarget target)) continue;
