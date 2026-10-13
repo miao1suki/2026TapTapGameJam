@@ -61,7 +61,7 @@ MonoBehaviour:
   steamPushSpeed: 10
   steamDuration: 2
   steamHeightBlocks: 3
-  steamVfxPrefab: {fileID: 0}
+  steamVfxPrefab: {fileID: 7168448403015618791, guid: 5c05b0b9d432471d95b9328ade2ded49, type: 3}
   steamVfxLifetime: 1.5
   riseSpeed: 7
   topExitBoostSpeed: 0.75
