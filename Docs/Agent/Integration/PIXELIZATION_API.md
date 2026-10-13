@@ -1,5 +1,13 @@
 # 像素化接入
 
+## 当前 PC 管线（2026-10-13）
+
+PC_Renderer 使用 TA 的 `02StencilPixelEffect`（事件 450），材质 `StencilPixelEffect.mat` 的 `_PixelSize=42.8`、`_Strength=0.986`；Selective HSV Color Fade 同时启用，在事件 551 读取像素化后的画面。该 Feature 的 `useLearningPixelization=false`，不重复运行下述 LearningPixelPass；其中 `pixelSize=2.8` 仅保留 TA 配置，在内置阶段关闭时不影响画面。
+
+TA 的 Stencil 路径沿用 `01visibleStencil` 的 PixelEffect 普通层遮罩；下述 Rendering Layer 128 与描边 API 属于内置 LearningPixelPass，不控制 TA 的 Stencil Shader。其他 Renderer 未改动，仍保留内置路径。切换实现时必须同步选择遮罩方式，不要为像素化覆盖颜色物体的 HSV 普通层。
+
+## 内置 LearningPixelPass
+
 ```csharp
 using Project.Pixelization;
 
