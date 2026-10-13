@@ -152,6 +152,8 @@ namespace Project.BlockFeatures
             IPlayerCarryHost player,
             Vector3 worldPosition)
         {
+            var member = GetComponent<Project.Rooms.RoomResetObject>();
+            if (member != null && member.Manager != null && !member.Manager.CanPlaceInAuthoredRegion(member,worldPosition)) return false;
             if (player == null || carryPlayer != player)
             {
                 return false;

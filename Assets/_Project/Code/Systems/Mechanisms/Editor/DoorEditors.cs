@@ -30,7 +30,7 @@ namespace Project.Mechanisms.Editor
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraMoveDuration","镜头移动时间","移向门中心。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraHoldDuration","镜头停留时间","门附近的停留时间。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraReturnDuration","镜头返回时间","平滑交还玩家跟随相机。"));
-            timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"resetWithRoom","房间重置时关门","响应房间重置事件，恢复门与按钮的初始状态。"));
+            timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"resetWithRoom","全局进度重置时关门","仅响应显式进度清空；不改变 R 或离开房间的按钮模式规则。"));
             root.Add(timing);
             var state = new Label();
             root.Add(state);
@@ -68,7 +68,8 @@ namespace Project.Mechanisms.Editor
             var owner = new UnityEditor.UIElements.PropertyField(serializedObject.FindProperty("owner"));
             owner.SetEnabled(false);
             settings.Add(owner);
-            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"footTolerance","脚部容差（格）","玩家脚部进入地面按钮触发区后自动按下；不需要交互键。"));
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"mode","触发模式","一次按下保持：保存已按进度；持续压住：松开、重生或离开房间时取消触发。"));
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"footTolerance","脚部容差（格）","玩家脚部或三色接触方块底面压入触发区后按下。"));
             settings.Add(new UnityEditor.UIElements.PropertyField(serializedObject.FindProperty("visual")));
             root.Add(settings);
             var state = new Label();

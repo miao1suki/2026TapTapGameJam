@@ -31,7 +31,7 @@ namespace Project.Mechanisms
         [SerializeField, Min(0)] private float cameraHoldDuration = 1.2f;
         [BlockParameter(Label = "镜头返回时间", Group = "演出", Order = 2)]
         [SerializeField, Min(0)] private float cameraReturnDuration = .7f;
-        [BlockParameter(Label = "房间重置时关门", Group = "重置", Order = 0)]
+        [BlockParameter(Label = "全局进度重置时关门", Group = "重置", Order = 0)]
         [SerializeField] private bool resetWithRoom = true;
         private Quaternion closedRotation;
         private Tween opening;
@@ -103,8 +103,19 @@ namespace Project.Mechanisms
         public void NotifyButtonPressed(GameObject actor)
         {
             RefreshHint();
-            if (!Application.isPlaying || State != DoorState.Locked || buttons.Count == 0) return;
-            foreach (var button in buttons) if (button == null || !button.IsPressed) return;
+            if (!Application.isPlaying || buttons.Count == 0) return;
+            bool allPressed = true, hasHeld = false;
+            foreach (var button in buttons)
+            {
+                if (button == null || !button.IsPressed) allPressed = false;
+                if (button != null && button.Mode == DoorButtonMode.Held) hasHeld = true;
+            }
+            if (!allPressed)
+            {
+                if (hasHeld && State == DoorState.Unlocked) CloseFromPressureRelease();
+                return;
+            }
+            if (State != DoorState.Locked) return;
             State = DoorState.Unlocked;
             if (blockingCollider != null) blockingCollider.enabled = false;
             opening?.Kill();
@@ -113,6 +124,16 @@ namespace Project.Mechanisms
                     .SetEase(Ease.OutCubic).SetUpdate(true);
             StateChanged?.Invoke(State);
             shotRoutine = StartCoroutine(PlayDoorShot(actor));
+        }
+        private void CloseFromPressureRelease()
+        {
+            opening?.Kill();
+            if (shotRoutine != null) StopCoroutine(shotRoutine);
+            shotRoutine = null; CleanupShot();
+            State = DoorState.Locked;
+            if (blockingCollider != null) blockingCollider.enabled = true;
+            if (hinge != null) opening = hinge.DOLocalRotateQuaternion(closedRotation,openDuration).SetEase(Ease.OutCubic).SetUpdate(true);
+            StateChanged?.Invoke(State);
         }
         public void ResetDoor()
         {

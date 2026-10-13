@@ -12,16 +12,21 @@
 - `CurrentRegionId`、`RegionChanged(previous, next)`：当前区域及变化。
 - `ResetRegion(id)`：只恢复该区，快照遍历与重入保护；先全部恢复姿态，再恢复状态。
 - `Register(member)`：动态作者对象生成完成后显式注册；临时反应产物不成为新永久作者对象。
+- `CanPlaceInAuthoredRegion(member, worldPosition)`：三色方块/搬运程序在放下前校验目标是否仍属于布置区域。尚未绑定区域时不猜测边界。
 - `ForScene(scene)`：每场景一个管理器，当前支持一个游戏玩家；跨 Scene 常驻玩家/多人需专门扩展。
 - `BeforeRespawn(player, destination)`：来源和目标区域复位，相同时仅一次，由 PlayerController 调用。
 
 规划物体自动添加 RoomResetObject。手工物体可添加，区域 ID 留空则按初始位置识别。启动时也识别规划方块、BlockRuntime、万能方块、可搬运物及掉落物。原始姿态/碰撞只捕获一次，搬运不改变区域身份。
 
+三色方块及 CarryableFeature 在注册时加入区域内物品表。LateUpdate 只检查这张表（不扫描墙体或场景），按物体根中心检查所属区域；跨房间、跨通道或区域外即恢复布置位姿/状态，挂起或携带中的物品同时取消玩家携带。玩家切区先取消携带并恢复整个来源区。CarryableFeature.BeginCarryDrop 也先拒绝跨区目的地；新搬运程序应调用上述校验，不能通过重新 Register/SetRegion 将携带物改属新区域。
+
 新组件实现 `IRoomColorResettable`，或 BlockFeature 的 `OnResetForRoom`，清理协程、临时产物、接触缓存和交互状态。BlockAbilityHost 恢复后按仍保留的颜色激活状态挂接。不要逐帧注册或扫描。
 
 不要 Destroy 应可恢复的作者对象：`RoomResetObject.HideForReaction(original, replacement)` 休眠原对象、记录临时替代物供重置清理。无区域管理器时返回 false，调用者可沿用旧销毁行为。预置藤蔓节段不销毁。
 
-门、按钮、门提示、锚点及 CollectionRequested 的颜色钥匙不恢复。DropItemBase.CancelAttractionForRoomReset 仅取消未结算磁吸/出现动画，不中断已开始收集的钥匙。
+门、一次按下保持模式的门按钮、门提示、锚点及 CollectionRequested 的颜色钥匙不恢复。持续压住模式的门按钮参与区域重置，取消按下状态并重新评估门；若释放持续信号，门关闭，但其他保持按钮的进度保留。DropItemBase.CancelAttractionForRoomReset 仅取消未结算磁吸/出现动画，不中断已开始收集的钥匙。
+
+三色接触方块的 RoomResetObject 在 Awake（早于重力/反应）捕获编辑器布置根位姿；归属保留为布置区域，不跟随搬运或水柱迁移。R 入口通过 BeforeRespawn 恢复来源和重生目标区域，RestorePose 后 RestoreState 清除速度/水柱/长度/攀附缓存。基础位姿不会在落地、搬运或按钮接触后重采样。
 
 ## 输入与颜色
 

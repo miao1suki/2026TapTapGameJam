@@ -27,6 +27,7 @@ namespace Project.Rooms
         [SerializeField, TextArea, HideInInspector] private string planningJson;
         private readonly Dictionary<Vector2Int, string> owners = new Dictionary<Vector2Int, string>();
         private readonly Dictionary<string, List<RoomResetObject>> members = new Dictionary<string, List<RoomResetObject>>();
+        private readonly List<RoomResetObject> confinedItems = new List<RoomResetObject>();
         private string currentRegionId;
         private bool resetting;
         public string CurrentRegionId => currentRegionId;
@@ -66,6 +67,8 @@ namespace Project.Rooms
                     RegisterObject(item.gameObject);
                 foreach (CarryableFeature item in root.GetComponentsInChildren<CarryableFeature>(true))
                     RegisterObject(item.gameObject);
+                foreach (Project.Mechanisms.DoorButton button in root.GetComponentsInChildren<Project.Mechanisms.DoorButton>(true))
+                    RegisterObject(button.gameObject);
                 foreach (RoomResetObject member in root.GetComponentsInChildren<RoomResetObject>(true))
                     Register(member);
             }
@@ -110,13 +113,38 @@ namespace Project.Rooms
             member.Bind(this, owner);
             if (!members.TryGetValue(owner, out var list)) members[owner] = list = new List<RoomResetObject>();
             if (!list.Contains(member)) list.Add(member);
+            if ((member.GetComponent<Project.ContactCubes.ContactCube>() != null || member.GetComponent<CarryableFeature>() != null) && !confinedItems.Contains(member))
+                confinedItems.Add(member);
         }
+
+        public bool CanPlaceInAuthoredRegion(RoomResetObject member, Vector3 position) =>
+            member == null || member.Manager != this || string.IsNullOrEmpty(member.RegionId) || FindRegion(position) == member.RegionId;
 
         private void LateUpdate()
         {
-            if (player == null || Time.timeScale <= 0f) return;
-            if (autoRespawnOnDeath && player.IsDead) { player.RequestRespawn(); return; }
-            UpdatePlayerRegion(player);
+            if (Time.timeScale <= 0f) return;
+            if (player != null)
+            {
+                if (autoRespawnOnDeath && player.IsDead) player.RequestRespawn();
+                else UpdatePlayerRegion(player);
+            }
+            EnforceItemBoundaries();
+        }
+
+        private void EnforceItemBoundaries()
+        {
+            if (resetting) return;
+            // Only registered movable items; never scan the scene or wall geometry per frame.
+            for (int i = confinedItems.Count - 1; i >= 0; i--)
+            {
+                var member = confinedItems[i];
+                if (member == null) { confinedItems.RemoveAt(i); continue; }
+                if (!member.gameObject.activeInHierarchy || CanPlaceInAuthoredRegion(member,member.transform.position)) continue;
+                var carry = member.GetComponent<CarryableFeature>();
+                var motion = member.GetComponent<Project.ContactCubes.ContactCubeMotion>();
+                if ((carry != null && carry.IsCarryActive) || (motion != null && motion.IsSuspended)) player?.PrepareForRoomReset();
+                member.RestorePose(); member.RestoreState(); Physics.SyncTransforms();
+            }
         }
 
         public void UpdatePlayerRegion(PlayerController target)

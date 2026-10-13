@@ -43,6 +43,8 @@
 
 预制体有 RoomResetObject，规划生成按既有区域绑定。ResetForRoom 清空接触/水柱/计时并恢复初始长度、初始轴，位置由 RoomResetObject 统一恢复。不清除钥匙进度，不销毁作者方块。
 
+原始根位姿在 Awake、重力前捕获，不随落地/搬运重采样。RoomLifecycleManager 按固定布置区域约束方块根中心，越界恢复原位置原状态；玩家跨区取消携带。后续搬运程序放下前调用 CanPlaceInAuthoredRegion，不得把搬运目的区域写成新的 RegionId。
+
 ## 验证
 
 ContactCubeAssets.Build 与 ContactCubeVerification.Run 只用于 Library/FlowRetirementProbe 隔离项目，不覆盖用户场景。nographics 验证不代替真实画面/打包验收。

@@ -2,7 +2,7 @@
 
 独立三色接触方块：`Code/Systems/ContactCubes`，道具栏目三个 ContactCube 预制体，不是玩家染色目标；绿块四态长度反应、红蓝水柱、既有颜色目标转发。动态重力、落稳锁定、空中玩家碰撞隔离、喷出保护和横向绿块上下攀附已接入；搬运/黏住待接。API：[CONTACT_CUBES_API.md](Integration/CONTACT_CUBES_API.md)，策划：[CONTACT_CUBES.md](../Developer/CONTACT_CUBES.md)。
 
-区域重生与重置：`Code/Systems/Rooms`，最近触碰锚点优先、存活 R / 死亡重生，按世界图格子分区恢复。门、按钮、钥匙、解锁保留；接入 [ROOM_LIFECYCLE_API.md](Integration/ROOM_LIFECYCLE_API.md)，使用 [ROOM_RESPAWN_AND_RESET.md](../Developer/ROOM_RESPAWN_AND_RESET.md)。两个独立测试 Scene 在 Development/RoomLifecycleTests。
+区域重生与重置：`Code/Systems/Rooms`，最近触碰锚点优先、存活 R / 死亡重生，按世界图格子分区恢复。三色/可搬运方块限于布置区域，跨区放下拒绝、越界回位，玩家离区取消携带。门、保持按钮、钥匙、解锁保留；持续按钮重置并重评估门。接入 [ROOM_LIFECYCLE_API.md](Integration/ROOM_LIFECYCLE_API.md)，使用 [ROOM_RESPAWN_AND_RESET.md](../Developer/ROOM_RESPAWN_AND_RESET.md)。两个独立测试 Scene 在 Development/RoomLifecycleTests。
 
 最近整合说明：[2026-10-09 关卡编辑、门与颜色表现](../Developer/UPDATE_2026-10-09_EDITOR_AND_MECHANISMS.md)。
 
