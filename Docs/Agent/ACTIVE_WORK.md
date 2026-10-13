@@ -3,6 +3,7 @@
 ## 连线修复发布与最新 TA 整合
 
 - 2026-10-13；Codex；用户确认连接已正常，要求删除诊断并合并推送。移除 InteractionLinkEffect 临时日志/目标引用/诊断菜单，保留水体尺寸与表现碰撞过滤修复；整合最新 TA 分支 bef0737 的染色和蒸汽资源、使用文档，验证后推送 main。用户未提交 Pick 布局、DOTween Pro 插件与本机 PackageManager 设置不纳入提交。
+- 完成修复提交352420d与TA合并ccba6db，唯一文档索引冲突同时保留双方有效记录。合并后Unity6000.3.12f1隔离编译、9项水体PlayMode与57项项目EditMode回归全部通过；连线模块已无LinkDiagnostic/诊断菜单。此次发布含先前本地main的机关/曲柄、正式场景/字体、音频整合提交；未合并旧交互图退役实验及旧水平台管线实验分支。窗口新增TA视觉、完整流程与打包未人工验收。验证日志Library/Integration20261013/MergedWaterFix.log及MergedEditMode.xml。
 
 ## 水体合并与空气连线修复
 
