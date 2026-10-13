@@ -281,7 +281,7 @@ namespace Project.StartMenu
             Text hint = StartMenuUiFactory.CreateText(
                 "Hint",
                 page.transform,
-                "当前只提供全局静音，后续 BGM 与 SFX 音量分类继续扩展。",
+                "总音量同时影响音乐与音效；背景音乐和音效分开控制，修改立即生效。",
                 14,
                 TextAnchor.MiddleLeft,
                 new Color(.64f, .75f, .82f, 1f));

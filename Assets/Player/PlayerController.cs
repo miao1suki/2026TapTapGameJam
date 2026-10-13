@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.Audio;
 using Project.BlockFeatures;
 using Project.InputAbstraction;
 using UnityEngine;
@@ -28,6 +29,9 @@ namespace Project.Player
         IPlayerCarryHost
     {
         [SerializeField, Min(0)] private float moveSpeed = 5;
+        [SerializeField, Min(.05f)] private float landFootstepInterval = .38f;
+        [SerializeField, Min(.05f)] private float waterFootstepInterval = .46f;
+        [SerializeField, Min(.05f)] private float climbSoundInterval = .5f;
         [SerializeField, Min(0)] private float swimSpeed = 3.5f;
         [SerializeField, Min(0)] private float swimAcceleration = 12f;
         [SerializeField, Min(0)] private float swimRiseSpeed = 1.5f;
@@ -125,6 +129,7 @@ namespace Project.Player
             new Collider[32];
         private float requestedBounceSpeed = -1f;
         private float requestedJumpBoost = -1f;
+        private float nextMovementSoundTime;
         private Vector3 pendingPlatformDelta;
         private readonly HashSet<int> waterSources = new HashSet<int>();
         private readonly Dictionary<int, float> waterSpeedMultipliers =
@@ -430,12 +435,17 @@ namespace Project.Player
                 return;
             }
 
+            bool wasInWater = waterSources.Count > 0;
             if (!IsGrounded)
             {
                 enteredWaterDuringFall = true;
             }
 
             if (source != null) waterSources.Add(source.GetInstanceID());
+            if (!wasInWater && waterSources.Count > 0)
+            {
+                AudioCuePlayer.Play(AudioCueIds.PlayerWaterEnter);
+            }
         }
 
         public void SetSwimSpeedMultiplier(Component source, float multiplier)
@@ -642,6 +652,45 @@ namespace Project.Player
             motor.linearVelocity = velocity;
         }
 
+        private void UpdateMovementAudio()
+        {
+            if (Time.time < nextMovementSoundTime)
+            {
+                return;
+            }
+
+            float horizontalSpeed = Mathf.Abs(motor.linearVelocity.x);
+            bool moving = horizontalSpeed > .15f ||
+                          Mathf.Abs(movement.x) > .1f;
+            if (!moving)
+            {
+                return;
+            }
+
+            if (IsClimbing)
+            {
+                nextMovementSoundTime =
+                    Time.time + climbSoundInterval;
+                AudioCuePlayer.Play(AudioCueIds.PlayerClimb, .65f);
+                return;
+            }
+
+            if (IsSwimming)
+            {
+                nextMovementSoundTime =
+                    Time.time + waterFootstepInterval;
+                AudioCuePlayer.Play(AudioCueIds.PlayerSwim, .65f);
+                return;
+            }
+
+            if (IsGrounded)
+            {
+                nextMovementSoundTime =
+                    Time.time + landFootstepInterval;
+                AudioCuePlayer.Play(AudioCueIds.FootstepsLand, .55f);
+            }
+        }
+
         public float CalculateVerticalRiseHeight(
             float initialSpeed,
             bool jumpHeld)
@@ -695,7 +744,17 @@ namespace Project.Player
         }
         public void ExitWater(Component source)
         {
-            if (source != null) waterSources.Remove(source.GetInstanceID());
+            if (source == null)
+            {
+                return;
+            }
+
+            bool wasInWater = waterSources.Count > 0;
+            waterSources.Remove(source.GetInstanceID());
+            if (wasInWater && waterSources.Count == 0)
+            {
+                AudioCuePlayer.Play(AudioCueIds.PlayerWaterExit);
+            }
         }
         public void EnterClimb(Component source)
         {
@@ -704,6 +763,7 @@ namespace Project.Player
                 return;
             }
 
+            bool wasClimbing = climbSources.Count > 0;
             if (!IsGrounded)
             {
                 enteredClimbDuringFall = true;
@@ -716,6 +776,11 @@ namespace Project.Player
                 float delta = source.transform.position.x - transform.position.x;
                 climbInwardDirections[id] = Mathf.Abs(delta) > .01f
                     ? Mathf.Sign(delta) : 0f;
+            }
+
+            if (!wasClimbing && climbSources.Count > 0)
+            {
+                AudioCuePlayer.Play(AudioCueIds.PlayerClimb);
             }
         }
         public void ExitClimb(Component source)
@@ -1814,6 +1879,7 @@ namespace Project.Player
                 airborneSince = Time.time;
                 motor.linearVelocity = velocity;
                 Emit(AchievementSignalIds.PlayerJumped);
+                AudioCuePlayer.Play(AudioCueIds.PlayerJump);
                 return;
             }
             if (jumpRequested)
@@ -1972,6 +2038,7 @@ namespace Project.Player
                 jumpUntil = groundedUntil = -1; IsGrounded = false;
                 airborneSince = Time.time;
                 Emit(AchievementSignalIds.PlayerJumped);
+                AudioCuePlayer.Play(AudioCueIds.PlayerJump);
             }
 
             if (IsGrounded && velocity.y < 0f)
@@ -2001,6 +2068,7 @@ namespace Project.Player
                     velocity.y = Mathf.Max(velocity.y, -climbKickMaxFallSpeed);
             }
 
+            UpdateMovementAudio();
             motor.linearVelocity = velocity;
         }
 
@@ -2095,6 +2163,7 @@ namespace Project.Player
 
         public void RequestRespawn()
         {
+            bool wasDead = dead;
             if (!dead) deathPosition = transform.position;
             PrepareForRoomReset();
             runner?.Stop();
@@ -2137,6 +2206,10 @@ namespace Project.Player
             }
             transform.position = targetPosition;
             Physics.SyncTransforms();
+            if (wasDead)
+            {
+                AudioCuePlayer.Play(AudioCueIds.PlayerRespawn);
+            }
 
             if (health != null)
             {
@@ -2275,6 +2348,7 @@ namespace Project.Player
 
         private void OnDied()
         {
+            AudioCuePlayer.Play(AudioCueIds.PlayerDie);
             EnterDeath();
         }
 

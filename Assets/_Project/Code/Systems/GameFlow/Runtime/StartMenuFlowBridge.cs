@@ -38,7 +38,7 @@ namespace Project.GameFlow
                 return;
             }
 
-            flow.RequestTransition(GameFlowSceneId.Level01);
+            flow.RequestTransition(GameFlowSceneId.Gaming);
         }
     }
 }

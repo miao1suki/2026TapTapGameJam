@@ -1,5 +1,30 @@
 # 工作状态与交接（每次任务重读）
 
+## MainMenu → Gaming 正式场景流程
+
+- 日期：2026-10-13；负责人：Codex；分支：`音乐`。
+- 场景：正式序列固定为 `Assets/_Project/Scenes/Start/MainMenu.unity` → `Assets/_Project/Scenes/Playing/Gaming.unity`；新增 `.agents/skills/taptap-scene-flow/SKILL.md` 并在 `AGENTS.md` 建立强制阅读入口。
+- 接线：MainMenu 新增 `__GameFlow` 与 `GameFlowController`，`StartMenuPrototype` 增加 `StartMenuFlowBridge`；`GameSceneCatalog` 只登记 MainMenu/Gaming；Gaming 的 Main Camera 增加 `CameraControlManager`、`CameraModeController`、`CameraFollowController` 和 `LevelSceneContext`，自动把 `Player(暂定)` 接为随行目标；`SharedGameUI.prefab` 已放入 Gaming。
+- 兜底：`GameSceneCatalog` 移到 `Content/GameFlow/Resources`，`GameFlowController` 在场景引用为空时通过 `Resources.Load` 自动补回目录；进入 MainMenu 时若缺少流程根或开始菜单桥，也会由运行时自动补齐，避免旧内存场景导致空引用和无法跳转。
+- 验证：GameFlow Runtime、GameFlow Editor、编辑器测试、PlayMode 测试和 Assembly-CSharp 静态编译通过；场景 ID 无重复；未提交。
+
+## 开始菜单统一 Cubic 字体与全局 Typography Skill
+
+- 日期：2026-10-13；负责人：Codex；分支：`音乐`。
+- 范围：开始菜单场景与 `MainMenuUI.prefab` 的 `StartMenuController.uiSdfFont` 统一指向 `Cubic_11 SDF`；`TextSdfMirror` 移到 `Project.Shared.Runtime`，开始菜单新增 `StartMenuTypography`，所有场景内和运行时生成的 UGUI 文本自动挂 SDF 镜像。
+- 标题：主菜单显示名和 Unity `productName` 统一改为“形之彩”。
+- 规则：新增 `.agents/skills/taptap-typography/SKILL.md`，并在根 `AGENTS.md` 要求后续修改任何游戏内文字、UGUI/TMP、HUD、字幕、提示、成就、设置或动态文本时先读取该 skill。
+- 验证：共享、GameFlow、StartMenu、GameFlow Editor 与 Assembly-CSharp 静态编译通过，`git diff --check` 通过；Unity 画面字体效果待复验。
+
+## 音乐分支：音频目录、音量分流与玩法接线
+
+- 日期：2026-10-13；负责人：Codex；分支：`音乐`。
+- 范围：扩建 `AudioManager`、`GameAudioService`，新增 `AudioCatalog` 与 `AudioCuePlayer`，不改场景、AudioMixer、Timeline。
+- 新增：45 个现有音频登记为 37 个 Cue；音频按 `Music` / `SoundEffect` 分为两条实际音量总线路；开始界面和 ESC 设置的三个滑杆直接控制运行时总音量、音乐和音效，不再受预览布尔拦截；循环音效按 owner 起停。
+- 已接：开始菜单 BGM；玩家跳跃、脚步、游泳、攀爬、入水、出水、死亡、重生；开关门；曲柄循环；蒸汽喷发/循环；藤蔓生长；颜色钥匙获得；选色、上色成功和非法提示。
+- 未接：区域环境音淡入淡出、各关卡 BGM 选曲、正式 UI 点击音；当前保留程序生成占位音。
+- 验证：`Project.Audio.Runtime`、`Project.GameFlow.Runtime`、`Project.StartMenu.Runtime`、`Project.GameFlow.Editor` 与 `Assembly-CSharp` 响应文件静态编译均 0 错误；`AudioCatalog` 45 个 Clip GUID 与仓库音频一致，`git diff --check` 通过；Unity 内试听与完整 PlayMode 待验收。
+
 ## 最新交互连线、接触方块与管线整合（2026-10-13）
 
 - 用户授权合入 cafb424、最新 main 和接触方块任务并推送 main；采用 TA 的 Stencil 像素化及像素大小，重新启用 HSV，关闭当前 PC 管线内重复的旧像素化阶段。执行顺序为像素化后 HSV。

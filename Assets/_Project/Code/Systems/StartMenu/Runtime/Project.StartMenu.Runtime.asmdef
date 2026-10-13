@@ -9,6 +9,7 @@
     "Project.Settings.Runtime",
     "Project.Shared.Runtime",
     "Unity.InputSystem",
+    "Unity.TextMeshPro",
     "Unity.UGUI"
   ],
   "includePlatforms": [],

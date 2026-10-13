@@ -17,7 +17,7 @@ namespace Project.GameFlow.Editor
     public static class GameFlowSceneScaffolder
     {
         public const string CatalogPath =
-            "Assets/_Project/Content/GameFlow/GameSceneCatalog.asset";
+            "Assets/_Project/Content/GameFlow/Resources/GameSceneCatalog.asset";
         public const string CorePath =
             "Assets/_Project/Scenes/Systems/Systems_Core.unity";
         public const string InputPath =
@@ -29,7 +29,9 @@ namespace Project.GameFlow.Editor
         public const string UiPath =
             "Assets/_Project/Scenes/Systems/Systems_UI.unity";
         public const string MainMenuPath =
-            "Assets/_Project/Scenes/Flow/MainMenu.unity";
+            "Assets/_Project/Scenes/Start/MainMenu.unity";
+        public const string GamingPath =
+            "Assets/_Project/Scenes/Playing/Gaming.unity";
         public const string Level01Path =
             "Assets/_Project/Scenes/Levels/Level_01/Level_01.unity";
         public const string Level02Path =
@@ -51,15 +53,7 @@ namespace Project.GameFlow.Editor
         public static readonly string[] CanonicalBuildScenePaths =
         {
             MainMenuPath,
-            CorePath,
-            InputPath,
-            AudioPath,
-            CameraPath,
-            UiPath,
-            Level01Path,
-            Level02Path,
-            Level03Path,
-            EndingPath,
+            GamingPath,
         };
 
         public static void Generate()
@@ -78,14 +72,11 @@ namespace Project.GameFlow.Editor
             }
 
             catalog.Configure(
-                PersistentScenePaths,
+                Array.Empty<string>(),
                 new[]
                 {
                     new GameFlowSceneEntry(GameFlowSceneId.MainMenu, MainMenuPath, false),
-                    new GameFlowSceneEntry(GameFlowSceneId.Level01, Level01Path, true),
-                    new GameFlowSceneEntry(GameFlowSceneId.Level02, Level02Path, true),
-                    new GameFlowSceneEntry(GameFlowSceneId.Level03, Level03Path, true),
-                    new GameFlowSceneEntry(GameFlowSceneId.Ending, EndingPath, false),
+                    new GameFlowSceneEntry(GameFlowSceneId.Gaming, GamingPath, true),
                 });
             EditorUtility.SetDirty(catalog);
             return catalog;

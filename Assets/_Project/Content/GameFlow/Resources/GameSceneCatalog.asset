@@ -13,4 +13,10 @@ MonoBehaviour:
   m_Name: GameSceneCatalog
   m_EditorClassIdentifier: Project.GameFlow.Runtime::Project.GameFlow.GameSceneCatalog
   persistentScenePaths: []
-  flowScenes: []
+  flowScenes:
+  - id: 0
+    scenePath: Assets/_Project/Scenes/Start/MainMenu.unity
+    gameplay: 0
+  - id: 10
+    scenePath: Assets/_Project/Scenes/Playing/Gaming.unity
+    gameplay: 1

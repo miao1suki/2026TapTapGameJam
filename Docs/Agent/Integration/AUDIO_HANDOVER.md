@@ -1,8 +1,8 @@
 # 音频资源交接说明
 
 当前仓库：`https://github.com/miao1suki/2026TapTapGameJam.git`。
-分支：`codex/codex/taptap-music`。
-音频文件位于 `Assets/_Project/Content/Audio/`，命名按 RVSA 规范（`snake_case`、类别前缀、受控词表）。仓库目前只有 `Music/` 与 `SFX/` 两个目录，`amb_` 前缀的环境声暂存于 `Music/`。
+分支：`音乐`。
+音频文件位于 `Assets/_Project/Content/Audio/`，命名按 RVSA 规范（`snake_case`、类别前缀、受控词表）。资源目录为 `Music/`、`SFX/`，运行时 Cue 目录为 `Resources/AudioCatalog.asset`；`amb_` 前缀的环境声暂存于 `Music/`。
 
 ## 资源清单
 
@@ -15,7 +15,7 @@
 | `amb_env_water_drip_01.wav` | 滴水声，潮湿 / 洞穴区域底噪 |
 | `amb_env_wind_gust_01.wav` | 阵风声，开阔 / 高处区域底噪 |
 
-循环属性未在文件名标注，需整合时确认。
+循环属性已登记到 `AudioCatalog`，Unity 内仍需实际试听循环点。
 
 ### BGM — 音乐
 
@@ -66,36 +66,46 @@
 
 ## 运行时接入
 
-当前项目提供的播放接口位于 `GameAudioService`：
+`AudioCatalog.asset` 把 45 个音频登记为 37 个 Cue。代码不直接依赖文件名，而是传入稳定的 `AudioCueIds`：
 
 ```csharp
-// 播放音乐（传入 AudioClip，是否循环）
-GameAudioService.PlayMusic(clip, loop: true);
+using Project.Audio;
 
-// 播放音效（传入 AudioClip，音量倍率 0–1）
-GameAudioService.PlaySound(clip, volumeScale: 1f);
+AudioCuePlayer.Play(AudioCueIds.PlayerJump);
+AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
+AudioCuePlayer.PlayLoop(AudioCueIds.SteamLoop, this);
+AudioCuePlayer.StopLoop(this);
 ```
 
-### 预期接线
+`AudioCuePlayer` 是玩法侧的统一入口；`GameAudioService` 也提供 `PlayCue`、`PlayCueLoop`、`StopLoop`、`IsLoopPlaying` 和 `GetLoop`。如需在 Inspector 中指定非默认目录，可给 `GameAudioService` 设置 `audioCatalog`；留空时自动读取 `Resources/AudioCatalog`。
 
-| 触发时机 | 文件 | 建议调用 |
+通道规则：
+
+- `Music`：开始菜单、区域 BGM、氛围音乐，受总音量和背景音乐滑杆影响。
+- `SoundEffect`：玩家动作、UI、机关、环境 SFX，受总音量和音效滑杆影响。
+- 循环 SFX 使用 owner 管理，owner 推荐传组件实例，避免同一机关叠音。
+- 当前全部为 2D 声音，不使用 `spatialBlend`、距离衰减或 3D 跟随。
+
+### 已接事件
+
+| 触发时机 | Cue | 入口 |
 |---|---|---|
-| 开场场景加载 / 标题画面 | `bgm_wn_01_opening` | `PlayMusic(clip, loop: true)` |
-| 常驻氛围层 | `bgm_ambient_loop_01` | `PlayMusic(clip, loop: true)` |
-| 区域环境音 | `amb_env_machine_hum_01` / `amb_env_plant_rustle_01` / `amb_env_water_drip_01` / `amb_env_wind_gust_01` | 按区域进入 / 离开淡入淡出 |
-| 玩家跳跃 / 落地 | `sfx_gp_plr_jump` / `sfx_footstep_land_walk_*` | `PlaySound` |
-| 玩家在地面 / 水中移动 | `sfx_footstep_land_walk_*` / `sfx_footstep_water_walk_*` | `PlaySound` 随机变体 |
-| 玩家攀爬 | `sfx_gp_plr_climb_01~02` | `PlaySound` 随机变体 |
-| 玩家入水 / 出水 | `sfx_gp_plr_water_enter` / `sfx_gp_plr_water_exit` | `PlaySound` 状态切换瞬间 |
-| 玩家游泳 | `sfx_gp_plr_swim_01~03` | `PlaySound` 随机变体 |
-| 玩家死亡 / 重生 | `sfx_gp_plr_die` / `sfx_gp_plr_respawn` | `PlaySound` |
-| 开关门 | `sfx_gp_door_open` / `sfx_gp_door_close` | `PlaySound` 状态切换瞬间 |
-| 植物机关生长 | `sfx_gp_plant_grow` | `PlaySound` |
-| 蒸汽机关 | `sfx_gp_steam_burst` / `sfx_gp_steam_loop` | 喷发用 `PlaySound`；持续段循环播放 |
-| 获得上色能力 | `sfx_gp_paint_acquire_initial` | `PlaySound` |
-| 选色 / 上色完成 | `sfx_gp_paint_select` / `sfx_gp_block_paint_complete` | `PlaySound` |
-| 曲柄机关转动 | `sfx_gp_crank_turn_loop` | `PlaySound` 循环播放 |
-| 非法操作提示 | `sfx_notice_deny` | `PlaySound` |
+| 开始菜单出现 | `music.menu.opening` | `StartMenuController.OnEnable` |
+| 进入非菜单流程 | `music.ambient.loop` | `GameAudioService.HandleActiveSceneChanged` |
+| 玩家跳跃 | `sfx.player.jump` | `PlayerController` 实际跳跃分支 |
+| 玩家落地脚步 | `sfx.footsteps.land` | `PlayerController` 固定帧移动检测 |
+| 玩家游泳 | `sfx.player.swim` | `PlayerController` 固定帧移动检测 |
+| 玩家攀爬 | `sfx.player.climb` | `PlayerController` 进入及移动检测 |
+| 玩家入水 / 出水 | `sfx.player.water_enter` / `sfx.player.water_exit` | `PlayerController` 水域状态切换 |
+| 玩家死亡 / 重生 | `sfx.player.die` / `sfx.player.respawn` | `PlayerController.OnDied` / `RequestRespawn` |
+| 开关门 | `sfx.door.open` / `sfx.door.close` | `DoorController` 状态切换 |
+| 曲柄转动 | `sfx.crank.turn_loop` | `CrankPlatformFeature` 按住循环 |
+| 蒸汽喷发 / 持续 | `sfx.steam.burst` / `sfx.steam.loop` | `WaterVisualFeature.TriggerSteamReaction` |
+| 藤蔓生长 | `sfx.plant.grow` | `ClimbableVineFeature.GrowTo` |
+| 获得颜色 | `sfx.paint.acquire` | `ColorKeyPickup.OnCollectionStarted` |
+| 选色 / 上色成功 / 非法 | `sfx.paint.select` / `sfx.paint.complete` / `sfx.notice.deny` | `PlayerColorWheel` |
+
+环境区域音、非菜单 BGM 切换和 UI 点击目前仍保留占位音，等关卡正式进入区域规划后再接。
 
 ## 待验证项
 
@@ -104,6 +114,9 @@ GameAudioService.PlaySound(clip, volumeScale: 1f);
 - [ ] 试听验证：逐条试听，确认音质与循环点衔接自然
 - [ ] 环境声与 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop` 的循环点确认
 - [ ] 打包检查：确认音频压缩设置与项目打包配置一致
+- [x] 播放接口扩展：随机变体、按 owner 循环、停止/查询循环音接口已加入 `AudioManager` 和 `GameAudioService`
+- [x] Cue 目录：45 个音频登记为 37 个 Cue，Music / SoundEffect 通道已分流
+- [x] 运行时接线：玩家动作、门、曲柄、蒸汽、藤蔓、颜色钥匙与选色反馈已接入
 
 ## 未解决问题
 
@@ -111,7 +124,7 @@ GameAudioService.PlaySound(clip, volumeScale: 1f);
 - `bgm_wn_01_opening` 的分段词不在 RVSA 允许的 `intro` / `loop` / `tail` 三件套内，后续如做正式交付建议改为 `bgm_wn_01_intro`
 - 早期版本移除的 `sfx_ui_button_select`、`sfx_ui_notice_success_*`、`sfx_gp_water_enter_01`、`sfx_gp_water_splash_*` 已不在仓库，接入方需使用新命名
 - 部分音效的导入压缩与音量需在 Unity 中实测后微调
-- 音频系统的接线（场景引用、AudioMixer 路由、3D 空间化）由整合者完成，本分支不包含场景修改
+- 不启用 3D 空间化；后续若需要空间音，必须先更新本交接和 skill 再改架构
 
 ---
 

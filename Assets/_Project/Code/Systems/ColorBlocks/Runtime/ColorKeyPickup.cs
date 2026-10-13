@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Project.Audio;
 using Project.Player;
 using Project.Items;
 using UnityEngine;
@@ -194,6 +195,7 @@ namespace Project.ColorBlocks
             bool unlocked = ColorRuntimeService.Instance.Unlock(colorTypeId);
             if (unlocked)
             {
+                AudioCuePlayer.Play(AudioCueIds.PaintAcquire, .9f);
                 ColorAppearanceManager.Instance.Play(
                     colorTypeId,
                     true,

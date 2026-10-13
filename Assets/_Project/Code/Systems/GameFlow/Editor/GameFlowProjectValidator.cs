@@ -32,7 +32,7 @@ namespace Project.GameFlow.Editor
             }
             if (seen.Count == 0) errors.Add("未配置启用的构建场景。");
             report = errors.Count == 0
-                ? "场景配置检查通过。当前未使用固定的共享系统与三关流程。"
+                ? "场景配置检查通过。当前流程为 MainMenu → Gaming。"
                 : "场景配置检查失败：\n- " + string.Join("\n- ", errors);
             return errors.Count == 0;
         }

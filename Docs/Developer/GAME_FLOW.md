@@ -1,8 +1,8 @@
 # 运行与场景
 
-各关卡独立运行，Play 始终从当前打开的场景开始，不强制跳转、不自动创建玩家。场景自行配置玩家、相机、输入及其他服务，输入重绑定初始化组件仍可使用。
+正式入口是 `Assets/_Project/Scenes/Start/MainMenu.unity`，开始游戏后进入 `Assets/_Project/Scenes/Playing/Gaming.unity`。不再使用 Bootstrap、旧 Systems 场景、旧 Level_01～03 或 Ending。
 
-旧标准流程已经整体退役：五个 Systems 场景、旧 Level_01～03 和 Ending 已移除，默认 GameSceneCatalog 清空。MainMenu.unity 保留已有界面及独立 Camera/EventSystem，作为菜单预览；不再自动加载系统或进入第一关。新关卡的开始、结束与菜单返回逻辑等待新接线。
+MainMenu 的 `__GameFlow` 根持有 `GameFlowController`，开始按钮通过 `StartMenuFlowBridge` 请求 Gaming。Gaming 的 Main Camera 挂 `CameraControlManager`、`CameraModeController`、`CameraFollowController` 和 `LevelSceneContext`；`LevelSceneContext` 会按 `Player` Tag 找到玩家并接为相机随行目标。暂停与共享界面来自 `Content/UI/SharedGameUI.prefab`。
 
 菜单 `Tools/2026TapTap/场景/场景导航与关卡入口` 显示实际存在的主菜单、项目场景、开发测试场景，不再列出旧系统与固定三关。新增场景后可点击“刷新列表”。
 
