@@ -1056,3 +1056,14 @@
 - 追加调整：蓝线外围环绕和扩散波纹恢复为可选表现，由材质“水纹外围效果强度”独立控制，值为 0 时只显示中央主干；组件 Inspector 明确显示“线条生成时长（秒）”，共同控制红蓝淡入和绿线生长，并用 `FormerlySerializedAs` 保留原场景中的旧时长值。
 - 验证：Runtime C# 编译 0 错误；限定任务文件的 `git diff --check` 通过。当前 Shader 调整后尚未完成 Unity 导入编译或 Game 画面复核。
 - 交接：仅本地改动，不提交或推送。
+
+## 音频资源第四批（方块、岩浆与平台音效）
+
+- 日期：2026-10-13。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：新增 5 个音效：`sfx_notice_confirm`、`sfx_gp_block_pickup_01`、`sfx_gp_block_drop_01`、`sfx_gp_lava_cool`、`sfx_gp_platform_move_loop`。
+- 接口变更：无。音频提交为 `5eddb21`、`97b6c9e`；本次提交只补记文档。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补清单行与拾取/放下、岩浆冷却、平台循环、确认提示接线项。
+- 验证：远端分支与本地一致；未在 Unity 中导入试听，`.meta` 待首次导入生成。
+- 交接提交：本次文档提交。
