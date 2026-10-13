@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using Project.Audio;
 using Project.BlockFeatures;
 using Project.CameraModes;
 using Project.Player;
@@ -123,6 +124,7 @@ namespace Project.Mechanisms
                 opening = hinge.DOLocalRotateQuaternion(closedRotation * Quaternion.Euler(openEuler), openDuration)
                     .SetEase(Ease.OutCubic).SetUpdate(true);
             StateChanged?.Invoke(State);
+            AudioCuePlayer.Play(AudioCueIds.DoorOpen, .9f);
             shotRoutine = StartCoroutine(PlayDoorShot(actor));
         }
         private void CloseFromPressureRelease()
@@ -134,6 +136,7 @@ namespace Project.Mechanisms
             if (blockingCollider != null) blockingCollider.enabled = true;
             if (hinge != null) opening = hinge.DOLocalRotateQuaternion(closedRotation,openDuration).SetEase(Ease.OutCubic).SetUpdate(true);
             StateChanged?.Invoke(State);
+            AudioCuePlayer.Play(AudioCueIds.DoorClose, .85f);
         }
         public void ResetDoor()
         {

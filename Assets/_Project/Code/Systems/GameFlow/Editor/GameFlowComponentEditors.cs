@@ -338,16 +338,15 @@ namespace Project.GameFlow.Editor
                 serializedObject,
                 "游戏音频服务");
             Foldout sources = GameFlowInspectorUi.Foldout(
-                "音源");
+                "音频目录");
             sources.Add(GameFlowInspectorUi.Property(
                 serializedObject,
-                "musicSource",
-                "音乐音源"));
-            sources.Add(GameFlowInspectorUi.Property(
-                serializedObject,
-                "soundEffectSource",
-                "音效音源"));
+                "audioCatalog",
+                "声音目录"));
             root.Add(sources);
+            root.Add(GameFlowInspectorUi.Help(
+                "留空时自动读取 Resources/AudioCatalog。所有声音统一走音频管理器，" +
+                "开始界面和暂停界面的滑杆分别控制总音量、背景音乐和音效。"));
 
             GameAudioService service =
                 (GameAudioService)target;

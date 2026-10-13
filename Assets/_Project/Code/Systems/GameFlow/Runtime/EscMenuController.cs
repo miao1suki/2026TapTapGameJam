@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using Project.InputAbstraction;
 using Project.StartMenu;
+using Project.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -1125,7 +1126,7 @@ namespace Project.GameFlow
 
             GameFlowSceneId sceneId =
                 GameFlowController.Instance?.ActiveSceneId ??
-                GameFlowSceneId.Level01;
+                GameFlowSceneId.Gaming;
             savePanel.SaveCurrentToSlot(
                 slotId,
                 LevelLabel(sceneId),
@@ -1136,9 +1137,9 @@ namespace Project.GameFlow
             string label,
             out GameFlowSceneId sceneId)
         {
-            if (label == "关卡 1")
+            if (label == "Gaming")
             {
-                sceneId = GameFlowSceneId.Level01;
+                sceneId = GameFlowSceneId.Gaming;
                 return true;
             }
 
@@ -1162,8 +1163,8 @@ namespace Project.GameFlow
         {
             switch (id)
             {
-                case GameFlowSceneId.Level01:
-                    return "关卡 1";
+                case GameFlowSceneId.Gaming:
+                    return "Gaming";
                 case GameFlowSceneId.Level02:
                     return "关卡 2";
                 case GameFlowSceneId.Level03:

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Project.Audio;
 using Project.Player;
 using Project.ColorBlocks;
 using UnityEngine;
@@ -408,6 +409,7 @@ namespace Project.BlockFeatures
                 return;
             }
 
+            AudioCuePlayer.Play(AudioCueIds.PlantGrow, .8f);
             if (growthRoutine != null)
             {
                 StopCoroutine(growthRoutine);

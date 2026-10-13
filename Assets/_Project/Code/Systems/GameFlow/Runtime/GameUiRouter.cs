@@ -106,7 +106,7 @@ namespace Project.GameFlow
         {
             PlayClick();
             SetPaused(false, false);
-            Flow()?.RequestTransition(GameFlowSceneId.Level01);
+            Flow()?.RequestTransition(GameFlowSceneId.Gaming);
             GameplaySignalHub.Emit(
                 AchievementSignalIds.GameStarted,
                 gameObject);
@@ -269,7 +269,7 @@ namespace Project.GameFlow
             }
 
             GameFlowSceneId id = flow.ActiveSceneId.Value;
-            return id == GameFlowSceneId.Level01 ||
+            return id == GameFlowSceneId.Gaming ||
                    id == GameFlowSceneId.Level02 ||
                    id == GameFlowSceneId.Level03;
         }
@@ -439,8 +439,8 @@ namespace Project.GameFlow
         {
             switch (id)
             {
-                case GameFlowSceneId.Level01:
-                    return "关卡 1";
+                case GameFlowSceneId.Gaming:
+                    return "Gaming";
                 case GameFlowSceneId.Level02:
                     return "关卡 2";
                 case GameFlowSceneId.Level03:

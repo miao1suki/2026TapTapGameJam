@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using InteractiveWater;
+using Project.Audio;
 using Project.ColorBlocks;
 using Project.Player;
 using UnityEngine;
@@ -228,13 +229,21 @@ namespace Project.BlockFeatures
         private void TriggerSteamReaction()
         {
             StopSteamReaction();
-            SpawnSteamVfx();
-            ApplySteamPush();
             steamContinuous =
                 steamMode == SteamReactionMode.Continuous;
             steamRemainingSeconds = steamContinuous
                 ? Mathf.Max(.05f, steamDuration)
                 : Mathf.Max(.05f, steamVfxLifetime);
+            AudioCuePlayer.Play(AudioCueIds.SteamBurst, .9f);
+            if (steamContinuous)
+            {
+                AudioCuePlayer.PlayLoop(
+                    AudioCueIds.SteamLoop,
+                    this,
+                    .85f);
+            }
+            SpawnSteamVfx();
+            ApplySteamPush();
         }
 
         private void UpdateSteamReaction(float deltaTime)
@@ -254,6 +263,7 @@ namespace Project.BlockFeatures
                 steamRemainingSeconds - deltaTime);
             if (steamRemainingSeconds <= 0f)
             {
+                StopSteamAudio();
                 DestroySteamVfx();
             }
         }
@@ -262,7 +272,13 @@ namespace Project.BlockFeatures
         {
             steamRemainingSeconds = 0f;
             steamContinuous = false;
+            StopSteamAudio();
             DestroySteamVfx();
+        }
+
+        private void StopSteamAudio()
+        {
+            AudioCuePlayer.StopLoop(this);
         }
 
         private void SpawnSteamVfx()

@@ -7,6 +7,7 @@ namespace Project.StartMenu
     public static class StartMenuUiFactory
     {
         public static Font DefaultFont =>
+            StartMenuTypography.SourceFont ??
             Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         public static RectTransform CreateRect(
@@ -46,6 +47,7 @@ namespace Project.StartMenu
             text.alignment = alignment;
             text.color = color ?? Color.white;
             text.raycastTarget = false;
+            StartMenuTypography.Apply(text);
             return text;
         }
 

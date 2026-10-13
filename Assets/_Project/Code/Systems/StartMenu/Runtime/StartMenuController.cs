@@ -1,5 +1,7 @@
 using System;
+using Project.Audio;
 using Project.Saving;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,6 +25,11 @@ namespace Project.StartMenu
         [SerializeField] private SettingsPanelController settingsController;
         [SerializeField] private SavePanelController saveController;
         [SerializeField] private Text statusText;
+        [Header("Typography")]
+        [Tooltip("Cubic_11 SDF字体资产")]
+        [SerializeField] private TMP_FontAsset uiSdfFont;
+        [Tooltip("Cubic_11 TTF源字体，供运行时生成文本和编辑器布局使用")]
+        [SerializeField] private Font uiFont;
         private bool buttonsBound;
         private int lastScreenWidth;
         private int lastScreenHeight;
@@ -69,6 +76,7 @@ namespace Project.StartMenu
                 savePanel = BuildSavePanel(canvas.transform).gameObject;
             }
 
+            ApplyTypography();
             ShowMain();
         }
 
@@ -87,6 +95,17 @@ namespace Project.StartMenu
             ApplyAdaptiveCanvasScale();
             BindButtons();
             BindSubPanels();
+            ApplyTypography();
+            if (statusText != null)
+            {
+                statusText.text =
+                    "音量设置已生效；按键映射与存档仍为界面预览，尚未接入实际控制逻辑。";
+            }
+        }
+
+        private void OnEnable()
+        {
+            AudioCuePlayer.Play(AudioCueIds.MusicMenuOpening);
         }
 
         private void OnDestroy()
@@ -117,6 +136,13 @@ namespace Project.StartMenu
             lastScreenWidth = Screen.width;
             lastScreenHeight = Screen.height;
             ConfigureCanvasScaler(canvas);
+        }
+
+        private void ApplyTypography()
+        {
+            StartMenuTypography.Configure(uiSdfFont, uiFont);
+            StartMenuTypography.ApplyTo(
+                canvas != null ? canvas.transform : transform);
         }
 
         public void ShowMain()
@@ -229,7 +255,7 @@ namespace Project.StartMenu
             Text title = StartMenuUiFactory.CreateText(
                 "Title Placeholder",
                 panel.transform,
-                "游戏标题占位",
+                "形之彩",
                 62,
                 TextAnchor.MiddleLeft,
                 new Color(.94f, .98f, 1f, 1f));
@@ -270,7 +296,7 @@ namespace Project.StartMenu
             statusText = StartMenuUiFactory.CreateText(
                 "Status",
                 panel.transform,
-                "当前设置、按键映射与存档仅用于界面预览，尚未接入实际控制逻辑。",
+                "音量设置已生效；按键映射与存档仍为界面预览，尚未接入实际控制逻辑。",
                 14,
                 TextAnchor.MiddleLeft,
                 new Color(.7f, .82f, .9f, .92f));

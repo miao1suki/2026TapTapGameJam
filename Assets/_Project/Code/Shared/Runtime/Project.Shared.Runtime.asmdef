@@ -1,7 +1,10 @@
 {
   "name": "Project.Shared.Runtime",
   "rootNamespace": "Project",
-  "references": [],
+  "references": [
+    "Unity.TextMeshPro",
+    "Unity.UGUI"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

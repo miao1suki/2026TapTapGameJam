@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Project.GameFlow
+namespace Project.UI
 {
     [DisallowMultipleComponent]
     public sealed class TextSdfMirror : MonoBehaviour
@@ -55,6 +55,10 @@ namespace Project.GameFlow
             if (material != null)
             {
                 target.fontSharedMaterial = material;
+            }
+            else if (font.material != null)
+            {
+                target.fontSharedMaterial = font.material;
             }
 
             target.raycastTarget = false;

@@ -4,7 +4,7 @@
 
 ## 启动与流程
 
-2026-10-12 当前规则：旧五个常驻系统场景、三关及 Ending 已删除，MainMenu 的流程根已移除，默认 GameSceneCatalog 为空；下面的流程 API 仅为保留代码，当前没有已配置的完整游戏启动流程。`GameFlowSceneScaffolder.Generate` 与旧 UI 场景重建已禁用，不得重新生成退役场景。独立界面使用 Content/UI/MainMenuUI.prefab 与 SharedGameUI.prefab，各关卡自行配置服务和 EventSystem。主菜单开始/暂停返回菜单的跨场景跳转等待后续新流程接线。
+当前正式场景序列为 `Assets/_Project/Scenes/Start/MainMenu.unity` → `Assets/_Project/Scenes/Playing/Gaming.unity`。MainMenu 持有 `GameFlowController` 和 `StartMenuFlowBridge`，Gaming 持有 `LevelSceneContext`、玩家与玩法相机；暂停界面使用 `Content/UI/SharedGameUI.prefab`。Bootstrap、旧 Systems、三关和 Ending 流程已删除，`GameFlowSceneScaffolder.Generate` 保持禁用。
 
 `Project.GameFlow.GameFlowController` 从 MainMenu 场景的独立根启动，并跨流程场景保留；管理共享系统与一个活动流程场景，使用 catalog 路径。没有 Bootstrap 场景、强制 Play 入口或全局自动启动注入。
 `GameSceneCatalog.Configure(persistentPaths, flowEntries)` 保存系统列表与 MainMenu/Level01/02/03/Ending 映射。

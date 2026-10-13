@@ -6,7 +6,8 @@ namespace Project.GameFlow
     public enum GameFlowSceneId
     {
         MainMenu = 0,
-        Level01 = 10,
+        Gaming = 10,
+        Level01 = Gaming,
         Level02 = 20,
         Level03 = 30,
         Ending = 100

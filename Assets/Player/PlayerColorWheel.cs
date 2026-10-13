@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.Audio;
 using Project.ColorBlocks;
 using Project.InputAbstraction;
 using UnityEngine;
@@ -203,6 +204,7 @@ namespace Project.Player
             RefreshCursorVisibility();
             SelectedColorChanged?.Invoke(selectedColorId);
             RefreshRangeIndicator();
+            AudioCuePlayer.Play(AudioCueIds.PaintSelect, .85f);
             Debug.Log(
                 $"[PlayerColorWheel] 颜色能力切换成功：{selectedColorId}",
                 this);
@@ -301,6 +303,7 @@ namespace Project.Player
                 Debug.Log(
                     "[PlayerColorWheel] 左键交互失败：尚未选择颜色。",
                     this);
+                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                 return;
             }
 
@@ -311,6 +314,7 @@ namespace Project.Player
                     "[PlayerColorWheel] 左键交互失败：缺少相机或交互传感器。",
                     this);
                 ColorApplicationRejected?.Invoke();
+                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                 return;
             }
 
@@ -329,6 +333,7 @@ namespace Project.Player
                         "[PlayerColorWheel] 左键交互失败：点击位置超出交互圈。",
                         this);
                     ColorApplicationOutOfRange?.Invoke();
+                    AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                     return;
                 }
 
@@ -336,6 +341,7 @@ namespace Project.Player
                     "[PlayerColorWheel] 左键交互失败：没有点击到物体。",
                     this);
                 ColorApplicationRejected?.Invoke();
+                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                 return;
             }
 
@@ -346,6 +352,7 @@ namespace Project.Player
                     "[PlayerColorWheel] 左键交互失败：点击位置超出交互圈。",
                     this);
                 ColorApplicationOutOfRange?.Invoke();
+                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                 return;
             }
 
@@ -358,6 +365,7 @@ namespace Project.Player
                     "[PlayerColorWheel] 左键交互失败：点击到的物体不能接收颜色。",
                     this);
                 ColorApplicationRejected?.Invoke();
+                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                 return;
             }
 
@@ -368,6 +376,7 @@ namespace Project.Player
                     "[PlayerColorWheel] 左键交互失败：点击目标超出交互圈。",
                     this);
                 ColorApplicationOutOfRange?.Invoke();
+                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                 return;
             }
 
@@ -382,10 +391,12 @@ namespace Project.Player
             {
                 ClearSelectedColor();
                 ColorApplicationSucceeded?.Invoke();
+                AudioCuePlayer.Play(AudioCueIds.PaintComplete, .9f);
             }
             else
             {
                 ColorApplicationRejected?.Invoke();
+                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
             }
 
             Debug.Log(

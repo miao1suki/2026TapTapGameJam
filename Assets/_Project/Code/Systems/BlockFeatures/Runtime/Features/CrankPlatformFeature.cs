@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.Audio;
 using Project.InputAbstraction;
 using Project.Player;
 using UnityEngine;
@@ -95,6 +96,7 @@ namespace Project.BlockFeatures
         [SerializeField] private Animator animator;
 
         private bool engaged;
+        private bool crankAudioPlaying;
         private float progress;
         private float idleStartedAt;
         private AnimationClip playingClip;
@@ -118,6 +120,7 @@ namespace Project.BlockFeatures
 
         protected override void OnDetach()
         {
+            StopCrankAudio();
             engaged = false;
             progress = 0f;
             playingClip = null;
@@ -125,21 +128,36 @@ namespace Project.BlockFeatures
 
         protected override void OnTick(float deltaTime)
         {
-            if (brakeBase != null && brakeBase.IsSignalActive) return;
+            if (brakeBase != null && brakeBase.IsSignalActive)
+            {
+                StopCrankAudio();
+                return;
+            }
             bool wasComplete = IsSignalActive;
             if (engaged)
             {
+                if (!crankAudioPlaying)
+                {
+                    crankAudioPlaying = AudioCuePlayer.PlayLoop(
+                        AudioCueIds.CrankTurnLoop,
+                        this,
+                        .85f);
+                }
                 progress += progressPerSecond * deltaTime;
                 idleStartedAt = Time.time;
                 PlayClip(turningAnimation);
             }
-            else if (reboundWhenIdle &&
-                     progress > 0f &&
-                     Time.time - idleStartedAt >=
-                     idleDelayBeforeRebound)
+            else
             {
-                progress -= reboundProgressPerSecond * (HasStandingPlayer ? loadedDescentMultiplier : 1f) * deltaTime;
-                PlayClip(reboundAnimation);
+                StopCrankAudio();
+                if (reboundWhenIdle &&
+                    progress > 0f &&
+                    Time.time - idleStartedAt >=
+                    idleDelayBeforeRebound)
+                {
+                    progress -= reboundProgressPerSecond * (HasStandingPlayer ? loadedDescentMultiplier : 1f) * deltaTime;
+                    PlayClip(reboundAnimation);
+                }
             }
 
             progress = Mathf.Clamp01(progress);
@@ -151,6 +169,7 @@ namespace Project.BlockFeatures
 
         protected override void OnResetForRoom()
         {
+            StopCrankAudio();
             engaged = false;
             progress = 0f;
             idleStartedAt = Time.time;
@@ -253,5 +272,15 @@ namespace Project.BlockFeatures
             animator.Play(clip.name, 0, 0f);
         }
 
+        private void StopCrankAudio()
+        {
+            if (!crankAudioPlaying)
+            {
+                return;
+            }
+
+            crankAudioPlaying = false;
+            AudioCuePlayer.StopLoop(this);
+        }
     }
 }

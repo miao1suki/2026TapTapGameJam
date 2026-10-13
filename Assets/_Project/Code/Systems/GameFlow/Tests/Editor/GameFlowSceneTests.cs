@@ -13,7 +13,15 @@ namespace Project.GameFlow.Tests
             var catalog = AssetDatabase.LoadAssetAtPath<GameSceneCatalog>(GameFlowSceneScaffolder.CatalogPath);
             Assert.That(catalog, Is.Not.Null);
             Assert.That(catalog.PersistentScenePaths.Count, Is.Zero);
-            Assert.That(catalog.FlowScenes.Count, Is.Zero);
+            Assert.That(catalog.FlowScenes.Count, Is.EqualTo(2));
+            Assert.That(
+                catalog.TryGet(GameFlowSceneId.MainMenu, out var menu),
+                Is.True);
+            Assert.That(menu.ScenePath, Is.EqualTo(GameFlowSceneScaffolder.MainMenuPath));
+            Assert.That(
+                catalog.TryGet(GameFlowSceneId.Gaming, out var gaming),
+                Is.True);
+            Assert.That(gaming.ScenePath, Is.EqualTo(GameFlowSceneScaffolder.GamingPath));
         }
 
         [Test]
@@ -33,6 +41,7 @@ namespace Project.GameFlow.Tests
         [TestCase("Assets/_Project/Content/UI/MainMenuUI.prefab")]
         [TestCase("Assets/_Project/Content/UI/SharedGameUI.prefab")]
         [TestCase("Assets/_Project/Content/Player/RuntimePlayer.prefab")]
+        [TestCase("Assets/_Project/Content/Player/Player(暂定).prefab")]
         public void IndependentPrefabs_ArePreserved(string path)
         {
             Assert.That(AssetDatabase.LoadAssetAtPath<GameObject>(path), Is.Not.Null);

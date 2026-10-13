@@ -9,82 +9,166 @@ namespace Project.GameFlow
     {
         [SerializeField] private AudioSource musicSource;
         [SerializeField] private AudioSource soundEffectSource;
+        [SerializeField] private AudioCatalog audioCatalog;
 
         private static GameAudioService instance;
         private AudioClip uiClickClip;
         private AudioClip pauseClip;
         private AudioClip levelCompleteClip;
         private AudioManager audioManager;
+        private GameFlowController flowController;
 
         public static GameAudioService Instance => instance;
         public int InitializationOrder => 0;
         public bool IsInitialized { get; private set; }
-        public AudioSource MusicSource => musicSource;
-        public AudioSource SoundEffectSource => soundEffectSource;
-
-        public void Configure(AudioSource music, AudioSource soundEffects)
+        public AudioCatalog Catalog
         {
+            get => ResolveCatalog();
+            set => audioCatalog = value;
+        }
+
+        public AudioSource MusicSource =>
+            EnsureAudioManager()?.MusicSource;
+        public AudioSource SoundEffectSource =>
+            EnsureAudioManager()?.SoundEffectSource;
+
+        public void Configure(
+            AudioSource music,
+            AudioSource soundEffects)
+        {
+            // Kept for existing scene/prefab serialization. Playback now
+            // funnels through AudioManager so both volume buses are shared.
             musicSource = music;
             soundEffectSource = soundEffects;
         }
 
         public IEnumerator Initialize()
         {
-            EnsureSources();
-            audioManager = AudioManager.EnsureInstance();
-            if (audioManager != null)
+            audioManager = EnsureAudioManager();
+            flowController = GameFlowController.Instance;
+            if (flowController != null)
             {
-                audioManager.VolumesChanged -= ApplyVolumes;
-                audioManager.VolumesChanged += ApplyVolumes;
-                ApplyVolumes();
+                flowController.ActiveSceneChanged -=
+                    HandleActiveSceneChanged;
+                flowController.ActiveSceneChanged +=
+                    HandleActiveSceneChanged;
+                if (flowController.ActiveSceneId.HasValue)
+                {
+                    HandleActiveSceneChanged(
+                        flowController.ActiveSceneId.Value);
+                }
             }
+
             IsInitialized = true;
             yield break;
         }
 
         public void PlayMusic(AudioClip clip, bool loop = true)
         {
-            EnsureSources();
-            musicSource.clip = clip;
-            musicSource.loop = loop;
-            if (clip != null)
-            {
-                musicSource.Play();
-            }
+            EnsureAudioManager()?.PlayMusic(clip, loop);
         }
 
         public void StopMusic()
         {
-            musicSource?.Stop();
+            EnsureAudioManager()?.StopMusic();
         }
 
         public void PlaySound(AudioClip clip, float volume = 1f)
         {
-            if (clip == null)
-            {
-                return;
-            }
+            EnsureAudioManager()?.PlaySound(clip, volume);
+        }
 
-            EnsureSources();
-            soundEffectSource.PlayOneShot(clip, Mathf.Clamp01(volume));
+        public void PlaySound(AudioClip[] clips, float volume = 1f)
+        {
+            EnsureAudioManager()?.PlaySound(clips, volume);
+        }
+
+        public bool PlayCue(
+            string cueId,
+            float volumeScale = 1f)
+        {
+            return AudioCuePlayer.Play(
+                ResolveCatalog(),
+                cueId,
+                volumeScale);
+        }
+
+        public bool PlayCueLoop(
+            string cueId,
+            object owner,
+            float volumeScale = 1f)
+        {
+            return AudioCuePlayer.PlayLoop(
+                ResolveCatalog(),
+                cueId,
+                owner,
+                volumeScale);
+        }
+
+        public AudioSource PlayLoop(
+            object owner,
+            AudioClip clip,
+            float volume = 1f,
+            bool ignoreListenerPause = false,
+            AudioChannel channel = AudioChannel.SoundEffect)
+        {
+            return EnsureAudioManager()?.PlayLoop(
+                owner,
+                clip,
+                volume,
+                ignoreListenerPause,
+                channel);
+        }
+
+        public bool IsLoopPlaying(object owner)
+        {
+            return EnsureAudioManager()?.IsLoopPlaying(owner) ?? false;
+        }
+
+        public AudioSource GetLoop(object owner)
+        {
+            return EnsureAudioManager()?.GetLoop(owner);
+        }
+
+        public void StopLoop(object owner)
+        {
+            EnsureAudioManager()?.StopLoop(owner);
+        }
+
+        public void StopAllLoops()
+        {
+            EnsureAudioManager()?.StopAllLoops();
         }
 
         public void PlayUiClick()
         {
-            uiClickClip ??= CreateTone("UI_Click", 620f, 0.055f, 0.22f);
+            uiClickClip ??= CreateTone(
+                "UI_Click",
+                620f,
+                0.055f,
+                0.22f);
             PlaySound(uiClickClip, 0.7f);
         }
 
         public void PlayPause()
         {
-            pauseClip ??= CreateTone("UI_Pause", 360f, 0.09f, 0.2f);
+            pauseClip ??= CreateTone(
+                "UI_Pause",
+                360f,
+                0.09f,
+                0.2f);
             PlaySound(pauseClip, 0.65f);
         }
 
         public void PlayLevelComplete()
         {
             levelCompleteClip ??=
-                CreateTone("Level_Complete", 840f, 0.22f, 0.24f, 1.45f);
+                CreateTone(
+                    "Level_Complete",
+                    840f,
+                    0.22f,
+                    0.24f,
+                    1.45f);
             PlaySound(levelCompleteClip, 0.85f);
         }
 
@@ -97,15 +181,16 @@ namespace Project.GameFlow
             }
 
             instance = this;
-            EnsureSources();
+            EnsureAudioManager();
         }
 
         private void OnDestroy()
         {
-            if (audioManager != null)
+            if (flowController != null)
             {
-                audioManager.VolumesChanged -= ApplyVolumes;
-                audioManager = null;
+                flowController.ActiveSceneChanged -=
+                    HandleActiveSceneChanged;
+                flowController = null;
             }
 
             if (instance == this)
@@ -114,45 +199,33 @@ namespace Project.GameFlow
             }
         }
 
-        private void ApplyVolumes()
+        private AudioCatalog ResolveCatalog()
+        {
+            return audioCatalog != null
+                ? audioCatalog
+                : AudioCatalog.LoadDefault();
+        }
+
+        private AudioManager EnsureAudioManager()
         {
             if (audioManager == null)
+            {
+                audioManager = AudioManager.EnsureInstance();
+            }
+
+            return audioManager;
+        }
+
+        private void HandleActiveSceneChanged(GameFlowSceneId sceneId)
+        {
+            if (sceneId == GameFlowSceneId.MainMenu)
             {
                 return;
             }
 
-            AudioListener.volume = audioManager.MasterVolume;
-            if (musicSource != null)
-            {
-                musicSource.volume = audioManager.MusicVolume;
-            }
-
-            if (soundEffectSource != null)
-            {
-                soundEffectSource.volume = audioManager.EffectsVolume;
-            }
-        }
-
-        private void EnsureSources()
-        {
-            if (musicSource == null)
-            {
-                GameObject music = new GameObject("Music");
-                music.transform.SetParent(transform, false);
-                musicSource = music.AddComponent<AudioSource>();
-                musicSource.playOnAwake = false;
-                musicSource.loop = true;
-            }
-
-            if (soundEffectSource == null)
-            {
-                GameObject soundEffects = new GameObject("SoundEffects");
-                soundEffects.transform.SetParent(transform, false);
-                soundEffectSource = soundEffects.AddComponent<AudioSource>();
-                soundEffectSource.playOnAwake = false;
-            }
-
-            soundEffectSource.ignoreListenerPause = true;
+            AudioCuePlayer.Play(
+                ResolveCatalog(),
+                AudioCueIds.MusicAmbientLoop);
         }
 
         private static AudioClip CreateTone(

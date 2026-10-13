@@ -9,12 +9,19 @@ namespace Project.GameFlow
         menuName = "2026TapTap/Game Flow/Scene Catalog")]
     public sealed class GameSceneCatalog : ScriptableObject
     {
+        public const string ResourcePath = "GameSceneCatalog";
+
         [SerializeField] private string[] persistentScenePaths = Array.Empty<string>();
         [SerializeField] private GameFlowSceneEntry[] flowScenes =
             Array.Empty<GameFlowSceneEntry>();
 
         public IReadOnlyList<string> PersistentScenePaths => persistentScenePaths;
         public IReadOnlyList<GameFlowSceneEntry> FlowScenes => flowScenes;
+
+        public static GameSceneCatalog LoadDefault()
+        {
+            return Resources.Load<GameSceneCatalog>(ResourcePath);
+        }
 
         public bool TryGet(
             GameFlowSceneId id,

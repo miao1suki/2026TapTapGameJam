@@ -1,0 +1,282 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39a1e3a471e8424b89079ec85dd9b7c1, type: 3}
+  m_Name: AudioCatalog
+  m_EditorClassIdentifier: Project.Audio.Runtime::Project.Audio.AudioCatalog
+  cues:
+  - cueId: music.menu.opening
+    displayName: Main Menu Opening
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: f41e4798b872668439a27311c5124d98, type: 3}
+    volumeScale: 0.7
+    loop: 1
+  - cueId: music.ambient.loop
+    displayName: Ambient Loop
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: 8017fc2bd0389ce46a8c8eee052b72ca, type: 3}
+    volumeScale: 0.55
+    loop: 1
+  - cueId: music.atmosphere.a_minor
+    displayName: Atmosphere A Minor
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: 2e147b7d718b77345887ec2676b96d88, type: 3}
+    volumeScale: 0.7
+    loop: 0
+  - cueId: music.atmosphere.d_sharp_minor
+    displayName: Atmosphere D Sharp Minor
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: 0de0c6d76bfd3a041b5e23606d6abef7, type: 3}
+    volumeScale: 0.7
+    loop: 0
+  - cueId: music.atmosphere.e_minor
+    displayName: Atmosphere E Minor
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: 165f0c1391423344ba4ee6775241ef7e, type: 3}
+    volumeScale: 0.7
+    loop: 1
+  - cueId: music.atmosphere.f_minor
+    displayName: Atmosphere F Minor
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: 2d8a21e31376c374e87bfc1ded479b8c, type: 3}
+    volumeScale: 0.7
+    loop: 1
+  - cueId: music.banjo
+    displayName: Banjo
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: 1a680a6f6e8858b4c86fb559661b3b78, type: 3}
+    volumeScale: 0.65
+    loop: 0
+  - cueId: music.choices
+    displayName: Choices
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: 64399eff0913ad4499cda574da9fc44c, type: 3}
+    volumeScale: 0.65
+    loop: 0
+  - cueId: music.keyboard
+    displayName: Keyboard
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: 377719c4e7045b7429ff533c57de8154, type: 3}
+    volumeScale: 0.65
+    loop: 0
+  - cueId: music.music_box
+    displayName: Music Box
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: f4c31e0e47c28e648a2a8dd3068e9e6f, type: 3}
+    volumeScale: 0.7
+    loop: 0
+  - cueId: music.sad_piano
+    displayName: Sad Piano
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: e670f88787363b84da2667551c9ba296, type: 3}
+    volumeScale: 0.7
+    loop: 0
+  - cueId: music.vocal_chop
+    displayName: Vocal Chop
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: 66aa602f15126544785c3a2e60cbbc84, type: 3}
+    volumeScale: 0.6
+    loop: 1
+  - cueId: music.wake_up
+    displayName: Wake Up
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: cd9327a093259be419f67a79b4f12065, type: 3}
+    volumeScale: 0.7
+    loop: 1
+  - cueId: music.alien_sacrifice
+    displayName: Alien Sacrifice
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: d29d77c105be5b1498234d1cd2cf7b75, type: 3}
+    volumeScale: 0.65
+    loop: 0
+  - cueId: ambience.machine_hum
+    displayName: Machine Hum
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 097100c636c79e243bcb2756767c5b4d, type: 3}
+    volumeScale: 0.45
+    loop: 1
+  - cueId: ambience.plant_rustle
+    displayName: Plant Rustle
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 23da941c9aff4554f9e5228f3d4ca342, type: 3}
+    volumeScale: 0.45
+    loop: 1
+  - cueId: ambience.water_drip
+    displayName: Water Drip
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 48b8770cdaac8cc4b98690a1bfd18b57, type: 3}
+    volumeScale: 0.45
+    loop: 1
+  - cueId: ambience.wind_gust
+    displayName: Wind Gust
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 1f234fe8e2e3f1a4a9d36967393bb89b, type: 3}
+    volumeScale: 0.45
+    loop: 1
+  - cueId: sfx.footsteps.land
+    displayName: Land Footsteps
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 53d2fa922e3f59c4e82256c7c0e0df51, type: 3}
+    - {fileID: 8300000, guid: 6858ecfb93ea34849b80bbe157870ea1, type: 3}
+    - {fileID: 8300000, guid: 30ef5929db9fd474faea3a93fa81df0f, type: 3}
+    volumeScale: 0.65
+    loop: 0
+  - cueId: sfx.footsteps.water
+    displayName: Water Footsteps
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: a7805dab7545a6043839507370ba2f63, type: 3}
+    - {fileID: 8300000, guid: 3df21c841f1e46d46a77db110b41d9d6, type: 3}
+    - {fileID: 8300000, guid: 94a38420bc3ad2c4aa37fee14c293bdd, type: 3}
+    - {fileID: 8300000, guid: fbfe4c8c81cb9d143b562cf98036cd3c, type: 3}
+    volumeScale: 0.65
+    loop: 0
+  - cueId: sfx.player.jump
+    displayName: Player Jump
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: ef16f3eec8d36594cbeedf070759153d, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.player.climb
+    displayName: Player Climb
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 20c91a6f74979cd449969c740e8cd2bb, type: 3}
+    - {fileID: 8300000, guid: db023e675cf08ac40a9080d80d70476f, type: 3}
+    volumeScale: 0.7
+    loop: 0
+  - cueId: sfx.player.die
+    displayName: Player Die
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 0242e439920054040b37749549f50a82, type: 3}
+    volumeScale: 0.9
+    loop: 0
+  - cueId: sfx.player.respawn
+    displayName: Player Respawn
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 5da877fe38761454984c6f3bf06665af, type: 3}
+    volumeScale: 0.85
+    loop: 0
+  - cueId: sfx.player.swim
+    displayName: Player Swim
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 216eb9134ce15c24ca773986f5c9e023, type: 3}
+    - {fileID: 8300000, guid: 7ca61d4c8052a2340a282d6a2b64b84e, type: 3}
+    - {fileID: 8300000, guid: b800e6bf585802f4996c6361954bcf96, type: 3}
+    volumeScale: 0.7
+    loop: 0
+  - cueId: sfx.player.water_enter
+    displayName: Player Water Enter
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 5d7fbe78ceeefc943ae2481d12ffd8fa, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.player.water_exit
+    displayName: Player Water Exit
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 9fe6b06ad4f8cde44bfc5374908558f3, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.door.open
+    displayName: Door Open
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: dcb3858c4c964b247b39851a6c04f54d, type: 3}
+    volumeScale: 0.85
+    loop: 0
+  - cueId: sfx.door.close
+    displayName: Door Close
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 148fade5ef935ef47a562ef80d3bff05, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.plant.grow
+    displayName: Plant Grow
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: ff8c715d0766d374b8922cdaa10bfb2f, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.steam.burst
+    displayName: Steam Burst
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 8e2120f56e3b54543bf2cd292ad41738, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.steam.loop
+    displayName: Steam Loop
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 1f776b22ba88bb3489f4bee715ce233c, type: 3}
+    volumeScale: 0.7
+    loop: 1
+  - cueId: sfx.paint.acquire
+    displayName: Paint Acquire
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 401b878e0f0a95741a24cfddf0b06be8, type: 3}
+    volumeScale: 0.85
+    loop: 0
+  - cueId: sfx.paint.select
+    displayName: Paint Select
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 4f2d5f492f132a148828eaaf8702340a, type: 3}
+    volumeScale: 0.75
+    loop: 0
+  - cueId: sfx.paint.complete
+    displayName: Paint Complete
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 7f4dd3cdb73e8e74aacf625a827784cf, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.crank.turn_loop
+    displayName: Crank Turn Loop
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: cd886537a37d150479379013b90de9bf, type: 3}
+    volumeScale: 0.75
+    loop: 1
+  - cueId: sfx.notice.deny
+    displayName: Notice Deny
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: e8cd517c20088f54cbe63da34e60e0ea, type: 3}
+    volumeScale: 0.75
+    loop: 0

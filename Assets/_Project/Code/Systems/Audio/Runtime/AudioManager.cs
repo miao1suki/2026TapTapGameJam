@@ -1,5 +1,5 @@
 using System;
-using Project.Settings;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Project.Audio
@@ -16,31 +16,28 @@ namespace Project.Audio
         [SerializeField, Range(0f, 1f)] private float masterVolume = 1f;
         [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
         [SerializeField, Range(0f, 1f)] private float effectsVolume = 1f;
-        private float previewMasterVolume = 1f;
-        private float previewMusicVolume = 1f;
-        private float previewEffectsVolume = 1f;
+        private float musicVolumeScale = 1f;
+        private readonly Dictionary<object, LoopPlayback> loopPlaybacks =
+            new Dictionary<object, LoopPlayback>();
+        private readonly List<object> staleLoopOwners =
+            new List<object>();
+
+        private sealed class LoopPlayback
+        {
+            public AudioSource Source;
+            public AudioChannel Channel;
+            public float VolumeScale;
+        }
 
         private static AudioManager instance;
 
         public static AudioManager Instance => EnsureInstance();
         public static AudioManager Existing => instance;
-        public float MasterVolume => RuntimeSettingsPolicy.IsPreviewOnly
-            ? previewMasterVolume
-            : masterVolume;
-        public float MusicVolume => RuntimeSettingsPolicy.IsPreviewOnly
-            ? previewMusicVolume
-            : musicVolume;
-        public float EffectsVolume => RuntimeSettingsPolicy.IsPreviewOnly
-            ? previewEffectsVolume
-            : effectsVolume;
-        public float EffectiveMusicVolume =>
-            RuntimeSettingsPolicy.IsPreviewOnly
-                ? previewMasterVolume * previewMusicVolume
-                : masterVolume * musicVolume;
-        public float EffectiveEffectsVolume =>
-            RuntimeSettingsPolicy.IsPreviewOnly
-                ? previewMasterVolume * previewEffectsVolume
-                : masterVolume * effectsVolume;
+        public float MasterVolume => masterVolume;
+        public float MusicVolume => musicVolume;
+        public float EffectsVolume => effectsVolume;
+        public float EffectiveMusicVolume => masterVolume * musicVolume;
+        public float EffectiveEffectsVolume => masterVolume * effectsVolume;
         public AudioSource MusicSource => musicSource;
         public AudioSource SoundEffectSource => soundEffectSource;
 
@@ -74,12 +71,6 @@ namespace Project.Audio
         public void SetMasterVolume(float value)
         {
             float next = Mathf.Clamp01(value);
-            if (RuntimeSettingsPolicy.IsPreviewOnly)
-            {
-                previewMasterVolume = next;
-                return;
-            }
-
             if (Mathf.Approximately(masterVolume, next))
             {
                 return;
@@ -95,12 +86,6 @@ namespace Project.Audio
         public void SetMusicVolume(float value)
         {
             float next = Mathf.Clamp01(value);
-            if (RuntimeSettingsPolicy.IsPreviewOnly)
-            {
-                previewMusicVolume = next;
-                return;
-            }
-
             if (Mathf.Approximately(musicVolume, next))
             {
                 return;
@@ -116,12 +101,6 @@ namespace Project.Audio
         public void SetEffectsVolume(float value)
         {
             float next = Mathf.Clamp01(value);
-            if (RuntimeSettingsPolicy.IsPreviewOnly)
-            {
-                previewEffectsVolume = next;
-                return;
-            }
-
             if (Mathf.Approximately(effectsVolume, next))
             {
                 return;
@@ -137,13 +116,26 @@ namespace Project.Audio
         public void PlayMusic(AudioClip clip, bool loop = true, float volume = 1f)
         {
             EnsureSources();
+            musicVolumeScale = Mathf.Clamp01(volume);
+            if (clip != null &&
+                musicSource.clip == clip &&
+                musicSource.isPlaying)
+            {
+                musicSource.loop = loop;
+                ApplyMusicVolume();
+                return;
+            }
+
             musicSource.clip = clip;
             musicSource.loop = loop;
-            musicSource.volume = Mathf.Clamp01(
-                volume * (masterVolume * musicVolume));
+            ApplyMusicVolume();
             if (clip != null)
             {
                 musicSource.Play();
+            }
+            else
+            {
+                musicSource.Stop();
             }
         }
 
@@ -161,6 +153,119 @@ namespace Project.Audio
 
             EnsureSources();
             soundEffectSource.PlayOneShot(clip, Mathf.Clamp01(volume));
+        }
+
+        public void PlaySound(AudioClip[] clips, float volume = 1f)
+        {
+            PlaySound(PickRandomClip(clips), volume);
+        }
+
+        public AudioSource PlayLoop(
+            object owner,
+            AudioClip clip,
+            float volume = 1f,
+            bool ignoreListenerPause = false,
+            AudioChannel channel = AudioChannel.SoundEffect)
+        {
+            if (owner == null || clip == null)
+            {
+                return null;
+            }
+
+            StopLoop(owner);
+            AudioSource source = CreateLoopSource();
+            source.clip = clip;
+            source.loop = true;
+            source.spatialBlend = 0f;
+            source.ignoreListenerPause = ignoreListenerPause;
+            var playback = new LoopPlayback
+            {
+                Source = source,
+                Channel = channel,
+                VolumeScale = Mathf.Clamp01(volume)
+            };
+            loopPlaybacks[owner] = playback;
+            ApplyLoopVolume(playback);
+            source.Play();
+            return source;
+        }
+
+        public bool IsLoopPlaying(object owner)
+        {
+            return owner != null &&
+                   loopPlaybacks.TryGetValue(
+                       owner,
+                       out LoopPlayback playback) &&
+                   playback.Source != null &&
+                   playback.Source.isPlaying;
+        }
+
+        public AudioSource GetLoop(object owner)
+        {
+            if (owner != null &&
+                loopPlaybacks.TryGetValue(
+                    owner,
+                    out LoopPlayback playback))
+            {
+                return playback.Source;
+            }
+
+            return null;
+        }
+
+        public void StopLoop(object owner)
+        {
+            if (owner == null ||
+                !loopPlaybacks.TryGetValue(
+                    owner,
+                    out LoopPlayback playback))
+            {
+                return;
+            }
+
+            loopPlaybacks.Remove(owner);
+            DestroyLoop(playback);
+        }
+
+        public void StopAllLoops()
+        {
+            foreach (LoopPlayback playback in loopPlaybacks.Values)
+            {
+                DestroyLoop(playback);
+            }
+
+            loopPlaybacks.Clear();
+        }
+
+        private void Update()
+        {
+            if (loopPlaybacks.Count == 0)
+            {
+                return;
+            }
+
+            staleLoopOwners.Clear();
+            foreach (KeyValuePair<object, LoopPlayback> pair in
+                     loopPlaybacks)
+            {
+                LoopPlayback playback = pair.Value;
+                bool ownerAlive = pair.Key is UnityEngine.Object unityOwner
+                    ? unityOwner != null
+                    : pair.Key != null;
+                if (!ownerAlive ||
+                    playback == null ||
+                    playback.Source == null)
+                {
+                    staleLoopOwners.Add(pair.Key);
+                }
+            }
+
+            for (int index = 0;
+                 index < staleLoopOwners.Count;
+                 index++)
+            {
+                StopLoop(staleLoopOwners[index]);
+            }
         }
 
         private void Awake()
@@ -181,9 +286,6 @@ namespace Project.Audio
             effectsVolume = PlayerPrefs.GetFloat(
                 EffectsVolumePreference,
                 effectsVolume);
-            previewMasterVolume = masterVolume;
-            previewMusicVolume = musicVolume;
-            previewEffectsVolume = effectsVolume;
             EnsureSources();
             ApplyVolumes();
             if (Application.isPlaying)
@@ -222,17 +324,90 @@ namespace Project.Audio
             soundEffectSource.ignoreListenerPause = true;
         }
 
+        private AudioSource CreateLoopSource()
+        {
+            GameObject loop = new GameObject("Loop Source");
+            loop.transform.SetParent(transform, false);
+            AudioSource source = loop.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            return source;
+        }
+
+        private void ApplyLoopVolume(LoopPlayback playback)
+        {
+            if (playback == null || playback.Source == null)
+            {
+                return;
+            }
+
+            playback.Source.volume = Mathf.Clamp01(
+                playback.VolumeScale *
+                (playback.Channel == AudioChannel.Music
+                    ? musicVolume
+                    : effectsVolume));
+        }
+
+        private static AudioClip PickRandomClip(AudioClip[] clips)
+        {
+            if (clips == null || clips.Length == 0)
+            {
+                return null;
+            }
+
+            int start = UnityEngine.Random.Range(0, clips.Length);
+            for (int offset = 0; offset < clips.Length; offset++)
+            {
+                AudioClip clip = clips[
+                    (start + offset) % clips.Length];
+                if (clip != null)
+                {
+                    return clip;
+                }
+            }
+
+            return null;
+        }
+
+        private static void DestroyLoop(LoopPlayback playback)
+        {
+            if (playback?.Source == null)
+            {
+                return;
+            }
+
+            playback.Source.Stop();
+            if (Application.isPlaying)
+            {
+                Destroy(playback.Source.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(playback.Source.gameObject);
+            }
+        }
+
         private void ApplyVolumes()
         {
             AudioListener.volume = masterVolume;
-            if (musicSource != null)
-            {
-                musicSource.volume = musicVolume;
-            }
+            ApplyMusicVolume();
 
             if (soundEffectSource != null)
             {
                 soundEffectSource.volume = effectsVolume;
+            }
+
+            foreach (LoopPlayback playback in loopPlaybacks.Values)
+            {
+                ApplyLoopVolume(playback);
+            }
+        }
+
+        private void ApplyMusicVolume()
+        {
+            if (musicSource != null)
+            {
+                musicSource.volume = Mathf.Clamp01(
+                    musicVolume * musicVolumeScale);
             }
         }
     }

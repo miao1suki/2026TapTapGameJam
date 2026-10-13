@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Project.StartMenu;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -25,6 +26,15 @@ namespace Project.GameFlow
         public event Action InitializationCompleted;
         public event Action<GameFlowSceneId> TransitionStarted;
         public event Action<GameFlowSceneId> ActiveSceneChanged;
+
+        [RuntimeInitializeOnLoadMethod(
+            RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void InstallSceneFlowBootstrap()
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            EnsureSceneFlow(SceneManager.GetActiveScene());
+        }
 
         public void Configure(
             GameSceneCatalog valueCatalog,
@@ -80,6 +90,11 @@ namespace Project.GameFlow
 
             if (catalog == null)
             {
+                catalog = GameSceneCatalog.LoadDefault();
+            }
+
+            if (catalog == null)
+            {
                 Debug.LogError("GameFlowController 缺少 GameSceneCatalog。", this);
                 yield break;
             }
@@ -99,6 +114,63 @@ namespace Project.GameFlow
             {
                 instance = null;
             }
+        }
+
+        private static void HandleSceneLoaded(
+            Scene scene,
+            LoadSceneMode mode)
+        {
+            EnsureSceneFlow(scene);
+        }
+
+        private static void EnsureSceneFlow(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return;
+            }
+
+            StartMenuController menu = null;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int index = 0; index < roots.Length; index++)
+            {
+                menu = roots[index]
+                    .GetComponentInChildren<StartMenuController>(true);
+                if (menu != null)
+                {
+                    break;
+                }
+            }
+
+            if (menu == null)
+            {
+                return;
+            }
+
+            if (menu.GetComponent<StartMenuFlowBridge>() == null)
+            {
+                menu.gameObject.AddComponent<StartMenuFlowBridge>();
+            }
+
+            if (instance != null)
+            {
+                return;
+            }
+
+            GameSceneCatalog sceneCatalog =
+                GameSceneCatalog.LoadDefault();
+            if (sceneCatalog == null)
+            {
+                return;
+            }
+
+            GameObject flowRoot = new GameObject("__GameFlow");
+            GameFlowController controller =
+                flowRoot.AddComponent<GameFlowController>();
+            controller.Configure(
+                sceneCatalog,
+                GameFlowSceneId.MainMenu,
+                true);
         }
 
         private IEnumerator LoadPersistentScenes()

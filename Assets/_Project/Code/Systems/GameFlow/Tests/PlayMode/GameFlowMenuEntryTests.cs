@@ -10,14 +10,14 @@ namespace Project.GameFlow.Tests
     public sealed class GameFlowMenuEntryTests
     {
         [UnityTest]
-        public IEnumerator MainMenu_DoesNotLaunchRetiredFlow()
+        public IEnumerator MainMenu_LoadsOnlyCurrentFlow()
         {
-            const string path = "Assets/_Project/Scenes/Flow/MainMenu.unity";
+            const string path = "Assets/_Project/Scenes/Start/MainMenu.unity";
             yield return SceneManager.LoadSceneAsync(path, LoadSceneMode.Additive);
             yield return null;
             var scene = SceneManager.GetSceneByPath(path);
             Assert.That(scene.isLoaded, Is.True);
-            Assert.That(GameFlowController.Instance, Is.Null);
+            Assert.That(GameFlowController.Instance, Is.Not.Null);
             int cameras = 0, events = 0, listeners = 0, canvases = 0;
             foreach (var root in scene.GetRootGameObjects())
             {
