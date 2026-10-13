@@ -14,7 +14,8 @@ namespace Project.Player
         Action = 2,
         Locked = 3,
         Climbing = 4,
-        Death = 5
+        Death = 5,
+        HorizontalClimbing = 6
     }
 
     /// <summary>Basic physical motor. No projected platforms, ladders or rope dependencies.</summary>
@@ -155,6 +156,23 @@ namespace Project.Player
         public bool IsDead => dead;
         public bool IsControlLocked => dead || lockDepth > 0;
         public bool IsSwimming => waterSources.Count > 0;
+        private struct HorizontalVineSurface
+        {
+            public Component source;
+            public float rootY, speed, renewed;
+        }
+        private readonly Dictionary<int, HorizontalVineSurface> horizontalVines = new Dictionary<int, HorizontalVineSurface>();
+        private readonly List<int> expiredHorizontalVines = new List<int>();
+        public bool IsHorizontalClimbing => horizontalVines.Count > 0;
+        public void SetHorizontalVineSurface(Component source, float rootY, float speed)
+        {
+            if (source == null || dead) return;
+            horizontalVines[source.GetInstanceID()] = new HorizontalVineSurface { source = source, rootY = rootY, speed = speed, renewed = Time.fixedTime };
+        }
+        public void ClearHorizontalVineSurface(Component source)
+        {
+            if (source != null) horizontalVines.Remove(source.GetInstanceID());
+        }
         public bool IsClimbing =>
             climbSources.Count > 0 &&
             Time.time >= climbReattachUntil &&
@@ -163,6 +181,7 @@ namespace Project.Player
         public PlayerStateId CurrentStateId => dead ? PlayerStateId.Death :
             IsControlLocked ? PlayerStateId.Locked :
             runner != null && runner.IsPlaying ? PlayerStateId.Action :
+            IsHorizontalClimbing ? PlayerStateId.HorizontalClimbing :
             IsClimbing ? PlayerStateId.Climbing :
             IsSwimming ? PlayerStateId.Swimming : PlayerStateId.Normal;
         public Vector2 MoveInput => movement;
@@ -202,6 +221,7 @@ namespace Project.Player
             get
             {
                 if (dead) return "Death";
+                if (IsHorizontalClimbing) return "HorizontalClimbing";
                 if (IsClimbing) return "Climbing";
                 if (IsSwimming) return "Swimming";
                 if (IsGrounded)
@@ -382,6 +402,7 @@ namespace Project.Player
             requestedJumpBoost = -1f;
             pendingPlatformDelta = Vector3.zero;
             waterSources.Clear();
+            horizontalVines.Clear();
             waterSpeedMultipliers.Clear();
             waterVelocities.Clear();
             waterBuoyancies.Clear();
@@ -756,7 +777,7 @@ namespace Project.Player
         }
         public void RequestJump()
         {
-            if (dead)
+            if (dead || IsHorizontalClimbing)
             {
                 return;
             }
@@ -1629,6 +1650,33 @@ namespace Project.Player
             }
         }
 
+        private bool TickHorizontalVine()
+        {
+            expiredHorizontalVines.Clear();
+            HorizontalVineSurface? chosen = null;
+            foreach (var pair in horizontalVines)
+            {
+                var surface = pair.Value;
+                if (surface.source == null || !surface.source.gameObject.activeInHierarchy ||
+                    (surface.source is Behaviour behaviour && !behaviour.isActiveAndEnabled) || Time.fixedTime - surface.renewed > .08f)
+                    expiredHorizontalVines.Add(pair.Key);
+                else if (!chosen.HasValue || Mathf.Abs(surface.rootY - motor.position.y) < Mathf.Abs(chosen.Value.rootY - motor.position.y)) chosen = surface;
+            }
+            foreach (int id in expiredHorizontalVines) horizontalVines.Remove(id);
+            if (!chosen.HasValue) return false;
+            jumpUntil = groundedUntil = -1; jumpHeld = false; requestedBounceSpeed = -1; requestedJumpBoost = -1;
+            bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
+            if (blocked) return false;
+            HorizontalVineSurface selected = chosen.Value;
+            Vector3 velocity = motor.linearVelocity;
+            velocity.x = Mathf.Clamp(movement.x, -1, 1) * selected.speed;
+            velocity.y = Mathf.Clamp((selected.rootY - motor.position.y) / Time.fixedDeltaTime, -3f, 3f);
+            velocity.z = 0;
+            motor.linearVelocity = velocity;
+            IsGrounded = false; enteredClimbDuringFall = true; highestAirPosition = motor.position.y;
+            return true;
+        }
+
         private void FixedUpdate()
         {
             if (dead)
@@ -1644,6 +1692,8 @@ namespace Project.Player
                 pendingPlatformDelta = Vector3.zero;
             }
 
+            if (TickHorizontalVine()) return;
+
             float velocityAtStepStart = motor != null
                 ? motor.linearVelocity.y
                 : 0f;
@@ -1656,7 +1706,7 @@ namespace Project.Player
             int count = Physics.SphereCastNonAlloc(origin, radius, Vector3.down, groundHits,
                 .13f, groundMask, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
-                if (groundHits[i].collider.attachedRigidbody != motor && groundHits[i].normal.y > .5f && motor.linearVelocity.y <= .1f)
+                if (groundHits[i].collider.attachedRigidbody != motor && !Physics.GetIgnoreCollision(capsule, groundHits[i].collider) && groundHits[i].normal.y > .5f && motor.linearVelocity.y <= .1f)
                     IsGrounded = true;
             if (IsGrounded) groundedUntil = Time.time + coyoteTime;
             if (IsGrounded)
@@ -2256,6 +2306,7 @@ namespace Project.Player
             requestedJumpBoost = -1f;
             pendingPlatformDelta = Vector3.zero;
             waterSources.Clear();
+            horizontalVines.Clear();
             waterSpeedMultipliers.Clear();
             waterVelocities.Clear();
             waterBuoyancies.Clear();

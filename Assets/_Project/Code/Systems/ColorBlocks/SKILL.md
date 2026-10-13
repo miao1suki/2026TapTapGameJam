@@ -5,6 +5,8 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 # 颜色大洗牌玩法与组件规范
 
+> 2026-10-13 独立接触方块例外：ContactCubes 中的红/绿/蓝三个固定类型道具不属于 ColorObject 解锁组，不接收玩家点击染色，不能挂 BlockFeature 或 IColorApplicationTarget。彼此只走有限接触状态机（绿蓝增长、绿红缩短、红蓝同时锁长、红蓝水柱），对既有颜色物体仍通过其接色契约转发。反应只发推动请求，ContactCubeMotion 已统一负责重力/水柱运动/落稳锁定/空中碰撞；搬运与黏住待接入，不得并行写刚体。横向长出部分通过玩家 API 攀附。接入先读 Docs/Agent/Integration/CONTACT_CUBES_API.md，不套旧万能方块规则。
+
 > 2026-10-12 区域生命周期定稿：Rooms/RoomLifecycleManager 按世界图实际占格管理房间/通道。离开或死亡/R重生仅恢复所属物体的布置状态与位置，保留门、按钮、已拾取钥匙和全局解锁；已解锁物体恢复刚解锁的行为而非白色锁定。ResetForRoom 不清空颜色、不全局广播；仅 ResetProgress 明确清空进度。R 返回最近触碰的锚点，取消携带并恢复区域，不再只是回上一次拿起位置。此条覆盖下文旧房间清锁与搬运重置说明。接入必须读 Docs/Agent/Integration/ROOM_LIFECYCLE_API.md。
 
 > 水体透明渲染：水面/横截面使用 MeshRenderer，Shader Graph 使用 URP Unlit 透明子目标，不使用依赖 SpriteRenderer 翻转/颜色参数的 Sprite Lit。保留原水效节点，透明度只由水体原始 Alpha 与 `_ColorRevealOpacity` 相乘；生成水体注销先停用、移出宿主，再延迟销毁，防止同帧重新绑定误用旧实例。
