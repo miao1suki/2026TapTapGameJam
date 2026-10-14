@@ -79,8 +79,6 @@ namespace Project.GameFlow
         [SerializeField, Range(-180f, 180f)] private float selectedAngle;
         [SerializeField, Range(.5f, 1.5f)] private float selectedScale = 1.08f;
         [SerializeField, Range(.5f, 1.5f)] private float unselectedScale = .94f;
-        [SerializeField, Range(0f, 1f)] private float selectedWhiten = .38f;
-        [SerializeField, Range(0f, 1f)] private float unselectedAlpha = .62f;
         [SerializeField, Range(.1f, 1f)] private float dimAlpha = .5f;
         [SerializeField, Range(.5f, 1f)] private float dimScale = .88f;
         [SerializeField] private Vector2 occupyOffset = new Vector2(-100f, 0f);
@@ -208,12 +206,14 @@ namespace Project.GameFlow
             }
 
             float vertical = GameInput.ReadVector2(InputActionId.Move).y;
+            float uiVertical = GameInput.ReadVector2(InputActionId.Navigate).y;
+            if (Mathf.Abs(uiVertical) > Mathf.Abs(vertical)) vertical = uiVertical;
             if (Mathf.Abs(vertical) > .55f)
             {
                 if (!moveLatched)
                 {
                     moveLatched = true;
-                    MoveSelection(vertical > 0f ? -1 : 1);
+                    MoveSelection(vertical > 0f ? 1 : -1);
                 }
             }
             else if (Mathf.Abs(vertical) < .25f)
@@ -227,19 +227,22 @@ namespace Project.GameFlow
                 float scroll = Mouse.current.scroll.ReadValue().y;
                 if (Mathf.Abs(scroll) > .1f)
                 {
-                    MoveSelection(scroll > 0f ? -1 : 1);
+                    MoveSelection(scroll > 0f ? 1 : -1);
                     scrollReadyTime =
                         Time.unscaledTime + scrollStepInterval;
                 }
             }
 
             bool confirmPressed =
-                GameInput.WasTriggeredThisFrame(InputActionId.Jump);
+                GameInput.WasTriggeredThisFrame(InputActionId.Jump) ||
+                GameInput.WasTriggeredThisFrame(InputActionId.Submit);
             if (!confirmPressed && Mouse.current != null)
             {
-                confirmPressed =
+                confirmPressed = (UnityEngine.EventSystems.EventSystem.current == null ||
+                    !UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) &&
+                    (
                     Mouse.current.leftButton.wasPressedThisFrame ||
-                    Mouse.current.rightButton.wasPressedThisFrame;
+                    Mouse.current.rightButton.wasPressedThisFrame);
             }
 
             if (confirmPressed)
@@ -398,9 +401,28 @@ namespace Project.GameFlow
                     continue;
                 }
 
+                int selectedIndex = index;
                 wheelButtons[index].onClick.RemoveAllListeners();
-                wheelButtons[index].interactable = false;
+                wheelButtons[index].interactable = true;
+                wheelButtons[index].onClick.AddListener(() =>
+                {
+                    if (!isOpen || IsSubPageOpen || !wheelInputReady) return;
+                    SetSelection(selectedIndex, false);
+                    ConfirmCurrentOption();
+                });
             }
+            if (mainPage != null)
+            {
+                var gesture = mainPage.GetComponent<EscWheelTouchNavigation>();
+                if (gesture == null) gesture = mainPage.AddComponent<EscWheelTouchNavigation>();
+                gesture.Configure(this);
+            }
+        }
+
+        public void NavigateWheel(int direction)
+        {
+            if (!isOpen || IsSubPageOpen || !wheelInputReady || direction == 0) return;
+            MoveSelection(direction > 0 ? 1 : -1);
         }
 
         private void EnsureSectorGraphics()
@@ -410,6 +432,17 @@ namespace Project.GameFlow
                 return;
             }
 
+            var artwork = GameUiArtwork.Load();
+            if (artwork != null && artwork.panelBackground != null)
+            {
+                foreach (GameObject page in new[] { settingsPage, savePage, collectionPage })
+                {
+                    var pageImage = page != null ? page.GetComponent<Image>() : null;
+                    if (pageImage == null) continue;
+                    pageImage.sprite = artwork.panelBackground;
+                    pageImage.color = Color.white;
+                }
+            }
             Graphic decorationGraphic = wheelDecoration != null
                 ? wheelDecoration.GetComponent<Graphic>()
                 : null;
@@ -417,6 +450,7 @@ namespace Project.GameFlow
             {
                 decorationGraphic.material = wheelMaterial;
             }
+            if (decorationGraphic != null && artwork != null) decorationGraphic.enabled = false;
 
             float angleStep = options.Count > 0
                 ? 360f / options.Count
@@ -427,6 +461,16 @@ namespace Project.GameFlow
                 if (button == null)
                 {
                     continue;
+                }
+
+                if (artwork != null && index < options.Count)
+                {
+                    int action = (int)options[index].action;
+                    if (artwork.pauseIcons != null && action < artwork.pauseIcons.Length && artwork.pauseIcons[action] != null)
+                    {
+                        ConfigureArtworkButton(button, artwork.pauseIcons[action], index * angleStep, options[index].label);
+                        continue;
+                    }
                 }
 
                 Image oldImage = button.GetComponent<Image>();
@@ -497,6 +541,37 @@ namespace Project.GameFlow
                     labelRect.sizeDelta = new Vector2(300f, 74f);
                     label.transform.rotation = Quaternion.identity;
                 }
+            }
+        }
+
+        private void ConfigureArtworkButton(Button button, Sprite sprite, float angle, string title)
+        {
+            var oldSector = button.GetComponent<EscWheelSectorGraphic>();
+            if (oldSector != null) DestroyImmediate(oldSector);
+            var oldIcon = button.transform.Find("Menu Icon");
+            if (oldIcon != null) DestroyImmediate(oldIcon.gameObject);
+            var image = button.GetComponent<Image>();
+            if (image == null) image = button.gameObject.AddComponent<Image>();
+            image.sprite = sprite;
+            image.material = null;
+            image.color = Color.white;
+            image.preserveAspect = true;
+            image.raycastTarget = true;
+            button.targetGraphic = image;
+            button.transition = Selectable.Transition.None;
+            var rect = image.rectTransform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f,.5f);
+            float radians = angle * Mathf.Deg2Rad;
+            rect.anchoredPosition = new Vector2(Mathf.Cos(radians),Mathf.Sin(radians))*245f;
+            rect.sizeDelta = new Vector2(220,260);
+            Text label = button.GetComponentInChildren<Text>(true);
+            if (label != null)
+            {
+                label.text = title;
+                label.fontSize = Mathf.RoundToInt(wheelLabelFontSize);
+                label.rectTransform.anchorMin = label.rectTransform.anchorMax = label.rectTransform.pivot = new Vector2(.5f,.5f);
+                label.rectTransform.anchoredPosition = new Vector2(0,-155);
+                label.rectTransform.sizeDelta = new Vector2(300,74);
             }
         }
 
@@ -774,32 +849,25 @@ namespace Project.GameFlow
                 Color baseColor = buttonIndex < options.Count
                     ? options[buttonIndex].pageColor
                     : Color.white;
-                Color selectedColor = Color.Lerp(
-                    baseColor,
-                    Color.white,
-                    selectedWhiten);
-                Color displayColor = Color.Lerp(
-                    baseColor,
-                    selectedColor,
-                    selectedAmount);
+                if (button.targetGraphic is Image) baseColor = Color.white;
                 Graphic graphic = button.targetGraphic;
                 if (graphic != null)
                 {
-                    graphic.color = new Color(
-                        displayColor.r,
-                        displayColor.g,
-                        displayColor.b,
-                        Mathf.Lerp(
-                            unselectedAlpha,
-                            1f,
-                            selectedAmount));
+                    graphic.color = new Color(baseColor.r, baseColor.g, baseColor.b, 1f);
                 }
 
-                button.transform.localScale = Vector3.one *
-                    Mathf.Lerp(
+                float scale = Mathf.Lerp(
                         unselectedScale,
                         selectedScale,
                         selectedAmount);
+                button.transform.localScale = Vector3.one * scale;
+                if (button.targetGraphic is Image && buttonIndex < options.Count)
+                {
+                    // Scale the artwork about the wheel centre, like the original radial sector mesh.
+                    float angle = buttonIndex * 360f / options.Count * Mathf.Deg2Rad;
+                    ((RectTransform)button.transform).anchoredPosition =
+                        new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (245f * scale);
+                }
             }
         }
 
@@ -1189,11 +1257,15 @@ namespace Project.GameFlow
                     continue;
                 }
 
+                if (button.targetGraphic is Image) button.transform.rotation = Quaternion.identity;
+
                 Text label = button.GetComponentInChildren<Text>(true);
                 if (label != null)
                 {
                     label.transform.rotation = Quaternion.identity;
                 }
+                var icon = button.transform.Find("Menu Icon");
+                if (icon != null) icon.rotation = Quaternion.identity;
             }
         }
 

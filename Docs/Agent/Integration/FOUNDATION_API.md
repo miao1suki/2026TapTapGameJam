@@ -12,8 +12,8 @@
 `LevelGoal.Configure(nextScene, endsGame, delay)` / `BeginCompletion` 提供流程跳转；出生点 `PlayerSpawnPoint`。
 `GameSystemSceneRoot` 按 `IGameSystemService.InitializationOrder` 初始化子服务。系统不放进关卡复制。
 它可在独立场景自动初始化，与流程控制器并发申请初始化时等待同一过程，避免重复执行。UI 复用 prefab 见 Developer/GAME_FLOW.md；保留原菜单业务与动画，不从生成器覆盖设计好的界面。
-`GameUiRouter.StartGame/SetPaused` 负责主菜单与暂停；UI场景常驻，关卡中主菜单全屏底板不激活。
-`GameAudioService` 提供基础音源，具体音频素材不迁移；不假定旧生成音频仍存在。
+`GameUiRouter.StartGame/SetPaused`负责主菜单与暂停；共享UI随玩法场景存在，关卡中不激活主菜单全屏底板。离开/重载/销毁时使用`SetPaused(false, false, true)`立即恢复全局时间和音频；即使已开始关闭动画，立即清理仍须执行。
+`GameAudioService`由现有持久`GameFlowController`根安装并初始化，注册真实场景切换事件，不依赖旧系统场景。当前音频目录为新仓库成员交付资源；进入Gaming播放`music.atmosphere.e_minor`，菜单播放原开场音乐。
 初始化工具 `TapTapFoundationSetup.Generate` 创建清洁基础场景与普通白膜，不含旧机关。
 
 ## 输入
@@ -67,6 +67,8 @@ Renderer，同时保留 Collider。需要单独覆盖样式时，关闭
 禁用/销毁时释放自己的句柄；不由外部协程同时插值实际Camera。Manager统一处理输出过渡和抢占。
 模式请求实现 `ICameraViewModeRequester`，调用 `CameraModeController.RequestMode(requester, mode, [yaw], [transition])`，持有并释放请求句柄。
 `CameraFollowController.SetTarget` 设置角色目标；模式控制与跟随解耦。
+
+目标可实现 `ICameraFollowRelocationSource.CameraFollowRelocated`，重定位完成后发送通知。PlayerController在死亡/主动重生完成后发送；跟随组件自动订阅，保持当前焦点并平滑追至新位置，追赶期间忽略大距离吸附、死区和瞬移观察提前量。也可直接调用 `NotifyTargetRelocated()`，不修改实际Camera。显式 `Snap()` / `SetTarget(target, true)` 仍立即定位；暂停不推进追赶，切换目标和禁用会解绑事件。
 Timeline使用 `TimelineCamRig.Acquire/Release/SetShotTransform` 通过Manager接管；保留旧演出API，不给玩家自动开放手动视角切换。
 
 ## 玩家（基础子集）

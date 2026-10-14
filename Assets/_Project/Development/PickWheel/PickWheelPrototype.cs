@@ -2,6 +2,7 @@ using System;
 using DG.Tweening;
 using Project.ColorBlocks;
 using Project.Player;
+using Project.StartMenu;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,7 +14,7 @@ namespace Project.Development.PickWheel
     {
         private const float Size = 420f;
         private static readonly string[] Ids = { "red", "green", "blue" };
-        private static readonly float[] Angles = { 90f, 330f, 210f };
+        private static readonly float[] Angles = { 330f, 90f, 210f };
         [SerializeField] private Sprite wheelArtwork;
         [SerializeField] private TMP_FontAsset pixelFont;
         [SerializeField] private PlayerColorWheel playerWheel;
@@ -27,6 +28,7 @@ namespace Project.Development.PickWheel
         private readonly Sprite[] highlightedSectors = new Sprite[3];
         private readonly Vector2[] sectorCenters = new Vector2[3];
         private int hovered = -1;
+        private bool usesSharedArtwork;
         public string HighlightedColorId => hovered >= 0 ? Ids[hovered] : string.Empty;
 
         private void Awake()
@@ -75,6 +77,7 @@ namespace Project.Development.PickWheel
 
         private void OnDestroy()
         {
+            if (usesSharedArtwork) return;
             foreach (Sprite sprite in artworkSectors)
             {
                 if (sprite == null) continue;
@@ -136,12 +139,21 @@ namespace Project.Development.PickWheel
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = .5f;
             root = Rect("三色轮盘", canvasObject.transform, Size);
-            if (wheelArtwork == null)
+            var art = GameUiArtwork.Load();
+            usesSharedArtwork = art != null && art.abilitySectors?.Length == 3 &&
+                art.abilityHighlights?.Length == 3 && art.abilityPivots?.Length == 3;
+            if (!usesSharedArtwork && wheelArtwork == null)
             {
                 Debug.LogError("[PickWheel] 未指定轮盘原图。", this);
                 return;
             }
-            SplitArtwork();
+            if (usesSharedArtwork)
+            {
+                Array.Copy(art.abilitySectors, artworkSectors, 3);
+                Array.Copy(art.abilityHighlights, highlightedSectors, 3);
+                Array.Copy(art.abilityPivots, sectorCenters, 3);
+            }
+            else SplitArtwork();
             for (int i = 0; i < 3; i++)
             {
                 Image image = NewImage(Ids[i] + " 原图扇区", root, artworkSectors[i], Size);
@@ -161,7 +173,7 @@ namespace Project.Development.PickWheel
             }
             centerLabel = NewLabel("当前颜色", root, 156f);
             centerLabel.fontSize = 21f;
-            centerLabel.color = new Color(.13f, .15f, .2f, 1f);
+            centerLabel.color = Color.white;
         }
 
         private static RectTransform Rect(string name, Transform parent, float size)
@@ -268,7 +280,7 @@ namespace Project.Development.PickWheel
         {
             Texture2D texture = new Texture2D(width, height,
                 TextureFormat.RGBA32, false);
-            texture.filterMode = FilterMode.Bilinear;
+            texture.filterMode = FilterMode.Point;
             texture.SetPixels32(pixels);
             texture.Apply(false, true);
             return Sprite.Create(texture, new Rect(0, 0, width, height),

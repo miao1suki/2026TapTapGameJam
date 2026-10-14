@@ -101,6 +101,13 @@ namespace Project.GameFlow
 
             IsTransitioning = true;
             yield return LoadPersistentScenes();
+            // Flow-scoped services survive menu/gameplay round trips without legacy system scenes.
+            GameAudioService audio = GameAudioService.Instance;
+            if (audio == null)
+            {
+                audio = gameObject.AddComponent<GameAudioService>();
+            }
+            yield return audio.Initialize();
             IsInitialized = true;
             InitializationCompleted?.Invoke();
             IsTransitioning = false;

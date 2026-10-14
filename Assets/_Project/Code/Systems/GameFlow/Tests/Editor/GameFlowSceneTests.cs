@@ -2,11 +2,42 @@ using NUnit.Framework;
 using Project.GameFlow.Editor;
 using UnityEditor;
 using UnityEngine;
+using System.Reflection;
 
 namespace Project.GameFlow.Tests
 {
     public sealed class GameFlowSceneTests
     {
+        [TestCase(false, true)]
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        public void ImmediateUnpause_RestoresGlobalsEvenDuringPendingClose(bool paused, bool closing)
+        {
+            float previousScale = Time.timeScale;
+            bool previousAudioPause = AudioListener.pause;
+            var root = new GameObject("Pause cleanup regression");
+            try
+            {
+                var router = root.AddComponent<GameUiRouter>();
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(GameUiRouter).GetField("isPaused", flags).SetValue(router, paused);
+                typeof(GameUiRouter).GetField("pauseCloseInProgress", flags).SetValue(router, closing);
+                Time.timeScale = 0f;
+                AudioListener.pause = true;
+                router.SetPaused(false, false, true);
+                Assert.That(Time.timeScale, Is.EqualTo(1f));
+                Assert.That(AudioListener.pause, Is.False);
+                Assert.That(router.IsPaused, Is.False);
+                Assert.That(typeof(GameUiRouter).GetField("pauseCloseInProgress", flags).GetValue(router), Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Time.timeScale = previousScale;
+                AudioListener.pause = previousAudioPause;
+            }
+        }
+
         [Test]
         public void Catalog_NoLongerReferencesRetiredFlow()
         {

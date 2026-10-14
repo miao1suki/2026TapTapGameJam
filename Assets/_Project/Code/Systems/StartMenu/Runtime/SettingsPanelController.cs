@@ -243,6 +243,8 @@ namespace Project.StartMenu
             effectsVolumeText.text = VolumePercent(manager.EffectsVolume);
         }
 
+        public void ShowCredits() => ShowPage(2);
+
         private void ShowPage(int index)
         {
             if (soundPage == null || keyBindingPage == null || creditsPage == null)

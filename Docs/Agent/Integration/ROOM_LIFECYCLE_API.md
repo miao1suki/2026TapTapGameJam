@@ -32,6 +32,8 @@
 
 `PlayerInputDriver -> PlayerController.RequestRespawn()` 是已有 Respawn 动作入口，存活时也可请求。保持键位，不直接读 Keyboard。取消携带、清理玩家临时状态，恢复房间后再寻找安全落点，同步 Rigidbody 与 Transform。
 
+死亡自动重生先检查 `PlayerController.CanAutomaticallyRespawn`，等待精灵死亡动画和配置的死亡Timeline表现时间完成，不在死亡当帧调用重生。主动 `RequestRespawn()` 不受此等待限制；暂停不会推进死亡播放或自动重生时间。重复死亡不会重置等待，手动复活后旧等待条件立即失效，无异步延迟回调。
+
 `PlayerRespawnPointRegistry.Bind(player, point)` 记录最近触碰。`TryFindPreferred(player, origin, out point)` 优先此绑定，旧链表优先级仅是无绑定的兼容后备。绑定为本次运行，未新增跨运行存档协议。
 
 默认触发半径 1.5 格。`RespawnAnchorFeature.IsCurrent` 与历史 `IsActivated` 分离，只有当前点使用 activatedMaterial；新绑定通知旧点恢复 inactiveMaterial。`CurrentChanged(bool)` 供美术表现监听，`IPlayerRespawnBindingListener.OnRespawnBindingChanged(player, current)` 是注册表的类型安全回调；禁用点会取消绑定。历史链激活不会点亮非当前点，重复绑定同一点不重复播放动画。

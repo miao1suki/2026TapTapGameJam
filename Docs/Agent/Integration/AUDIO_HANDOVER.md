@@ -17,6 +17,10 @@
 
 循环属性已登记到 `AudioCatalog`，Unity 内仍需实际试听循环点。
 
+正式进入Gaming后，`GameAudioService.HandleActiveSceneChanged`播放`music.atmosphere.e_minor`（`bgm_atmosphere_emin_02_loop.mp3`），复用现有Music音量总线及循环配置。主菜单仍使用原开场音乐，不改其他Cue。
+
+该服务由`GameFlowController.Start`安装到现有持久流程根并初始化，注册实际`ActiveSceneChanged`事件。仅修改Cue或直接调用私有播放方法不能验证真实入口；验收须从MainMenu按钮进入Gaming，再从暂停返回并重新进入，检查实际MusicSource与时间缩放。
+
 ### BGM — 音乐
 
 | 文件 | 用途 | 循环 |

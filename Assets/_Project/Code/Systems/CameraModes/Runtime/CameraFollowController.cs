@@ -69,6 +69,9 @@ namespace Project.CameraModes
         private Vector3 velocity;
         private Vector3 previousTargetPosition;
         private bool hasFocus;
+        private bool recoveringFromRelocation;
+        private Transform boundRelocationTarget;
+        private ICameraFollowRelocationSource relocationSource;
         private CameraViewModeRequestHandle requestedModeHandle;
 
         public Transform Target => target;
@@ -100,6 +103,7 @@ namespace Project.CameraModes
         private void OnEnable()
         {
             ResolveReferences();
+            BindRelocationSource();
             if (requestOnEnable && modeController != null)
             {
                 if (requestedMode == CameraViewMode.Side2D)
@@ -117,6 +121,7 @@ namespace Project.CameraModes
 
         private void OnDisable()
         {
+            UnbindRelocationSource();
             if (requestedModeHandle.IsValid)
             {
                 requestedModeHandle.Release(true);
@@ -126,6 +131,7 @@ namespace Project.CameraModes
 
         private void LateUpdate()
         {
+            if (target != boundRelocationTarget) BindRelocationSource();
             if (cameraManager == null || target == null)
             {
                 return;
@@ -140,12 +146,13 @@ namespace Project.CameraModes
             Vector3 desiredFocus = ResolveDesiredFocus();
             Vector3 targetDelta = target.position - previousTargetPosition;
             previousTargetPosition = target.position;
-            desiredFocus += new Vector3(
-                targetDelta.x * lookAhead.x,
-                targetDelta.y * lookAhead.y,
-                0f);
+            if (!recoveringFromRelocation)
+                desiredFocus += new Vector3(
+                    targetDelta.x * lookAhead.x,
+                    targetDelta.y * lookAhead.y,
+                    0f);
 
-            if (!hasFocus || Vector3.Distance(desiredFocus, currentFocus) > teleportDistance)
+            if (!hasFocus || (!recoveringFromRelocation && Vector3.Distance(desiredFocus, currentFocus) > teleportDistance))
             {
                 currentFocus = desiredFocus;
                 velocity = Vector3.zero;
@@ -154,25 +161,28 @@ namespace Project.CameraModes
             else
             {
                 Vector3 delta = desiredFocus - currentFocus;
-                if (Mathf.Abs(delta.x) <= deadZone.x)
+                if (!recoveringFromRelocation && Mathf.Abs(delta.x) <= deadZone.x)
                 {
                     delta.x = 0f;
                 }
-                if (Mathf.Abs(delta.y) <= deadZone.y)
+                if (!recoveringFromRelocation && Mathf.Abs(delta.y) <= deadZone.y)
                 {
                     delta.y = 0f;
                 }
 
                 desiredFocus = currentFocus + delta;
-                currentFocus = damping <= 0f
+                float smoothTime = recoveringFromRelocation ? Mathf.Max(.12f, damping) : damping;
+                currentFocus = smoothTime <= 0f
                     ? desiredFocus
                     : Vector3.SmoothDamp(
                         currentFocus,
                         desiredFocus,
                         ref velocity,
-                        damping,
+                        smoothTime,
                         Mathf.Infinity,
                         deltaTime);
+                if (recoveringFromRelocation && (desiredFocus - currentFocus).sqrMagnitude < .000001f)
+                    recoveringFromRelocation = false;
             }
 
             cameraManager.SetFocusPoint(currentFocus);
@@ -191,6 +201,8 @@ namespace Project.CameraModes
         public void SetTarget(Transform followTarget, bool snap = false)
         {
             target = followTarget;
+            recoveringFromRelocation = false;
+            BindRelocationSource();
             previousTargetPosition = target != null ? target.position : Vector3.zero;
             if (snap && target != null)
             {
@@ -408,10 +420,40 @@ namespace Project.CameraModes
                 return;
             }
 
+            recoveringFromRelocation = false;
             currentFocus = ResolveDesiredFocus();
             velocity = Vector3.zero;
             hasFocus = true;
             cameraManager?.SetFocusPoint(currentFocus, true);
+        }
+
+        public void NotifyTargetRelocated()
+        {
+            if (target == null) return;
+            recoveringFromRelocation = hasFocus;
+            velocity = Vector3.zero;
+            previousTargetPosition = target.position;
+        }
+
+        private void BindRelocationSource()
+        {
+            UnbindRelocationSource();
+            boundRelocationTarget = target;
+            if (!isActiveAndEnabled || target == null) return;
+            foreach (MonoBehaviour component in target.GetComponents<MonoBehaviour>())
+            {
+                if (!(component is ICameraFollowRelocationSource source)) continue;
+                relocationSource = source;
+                relocationSource.CameraFollowRelocated += NotifyTargetRelocated;
+                break;
+            }
+        }
+
+        private void UnbindRelocationSource()
+        {
+            if (relocationSource != null) relocationSource.CameraFollowRelocated -= NotifyTargetRelocated;
+            relocationSource = null;
+            boundRelocationTarget = null;
         }
 
         private CameraViewMode ResolveMode()

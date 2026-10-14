@@ -125,7 +125,10 @@ namespace Project.Rooms
             if (Time.timeScale <= 0f) return;
             if (player != null)
             {
-                if (autoRespawnOnDeath && player.IsDead) player.RequestRespawn();
+                if (player.IsDead)
+                {
+                    if (autoRespawnOnDeath && player.CanAutomaticallyRespawn) player.RequestRespawn();
+                }
                 else UpdatePlayerRegion(player);
             }
             EnforceItemBoundaries();

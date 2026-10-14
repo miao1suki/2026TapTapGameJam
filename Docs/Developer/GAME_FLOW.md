@@ -4,6 +4,10 @@
 
 MainMenu 的 `__GameFlow` 根持有 `GameFlowController`，开始按钮通过 `StartMenuFlowBridge` 请求 Gaming。Gaming 的 Main Camera 挂 `CameraControlManager`、`CameraModeController`、`CameraFollowController` 和 `LevelSceneContext`；`LevelSceneContext` 会按 `Player` Tag 找到玩家并接为相机随行目标。暂停与共享界面来自 `Content/UI/SharedGameUI.prefab`。
 
+流程根在初始化时安装并初始化`GameAudioService`，随流程根跨场景保留。进入Gaming切换到Atmosphere E Minor循环音乐，返回菜单沿用菜单音乐。不要依靠已退役的Audio系统场景启动音乐切换。
+
+返回菜单、重载及场景切换会立即释放暂停，恢复`Time.timeScale = 1`与`AudioListener.pause = false`；普通继续游戏仍保留暂停收尾动画。卸载UI时同样清理，关闭动画被打断不会让下一次进入游戏冻结。
+
 菜单 `Tools/2026TapTap/场景/场景导航与关卡入口` 显示实际存在的主菜单、项目场景、开发测试场景，不再列出旧系统与固定三关。新增场景后可点击“刷新列表”。
 
 已接线界面保存在 `Assets/_Project/Content/UI/MainMenuUI.prefab`（开始/设置/存档）和 `SharedGameUI.prefab`（暂停/收藏品/设置/存档/HUD/提示）。美术、内部引用及动画保留，可放到自己的关卡。SharedGameUI 自带服务初始化及 EventSystem；场景必须仅有一个 EventSystem，勿重复添加。独立暂停仍走原输入映射，跨场景菜单跳转和流程存档读取需后续配置新的流程控制器/catalog。

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Project.CameraModes
@@ -11,5 +12,11 @@ namespace Project.CameraModes
     public interface ICameraFollowTarget
     {
         Transform CameraFollowTransform { get; }
+    }
+
+    /// <summary>Notifies followers to catch up smoothly after a gameplay relocation.</summary>
+    public interface ICameraFollowRelocationSource
+    {
+        event Action CameraFollowRelocated;
     }
 }

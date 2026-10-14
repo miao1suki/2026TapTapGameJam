@@ -95,7 +95,7 @@ namespace Project.GameFlow
         {
             BindButtons();
             BindFlow();
-            SetPaused(false, false);
+            SetPaused(false, false, true);
             SetOnly(loadingScreen, false);
             if (Flow() == null && IsGameplayScene()) SetOnly(gameplayHud);
             IsInitialized = true;
@@ -115,14 +115,14 @@ namespace Project.GameFlow
         public void OpenMainMenu()
         {
             PlayClick();
-            SetPaused(false, false);
+            SetPaused(false, false, true);
             Flow()?.ReturnToMainMenu();
         }
 
         public void ReloadLevel()
         {
             PlayClick();
-            SetPaused(false, false);
+            SetPaused(false, false, true);
             Flow()?.ReloadActiveScene();
         }
 
@@ -156,6 +156,13 @@ namespace Project.GameFlow
 
             if (isPaused == value)
             {
+                // A closing animation can be interrupted by unloading this UI. Immediate
+                // cleanup must still restore global simulation/audio even if isPaused is false.
+                if (!value && immediate)
+                {
+                    CompletePauseClose();
+                    return;
+                }
                 if (!value && pauseCloseInProgress)
                 {
                     return;

@@ -26,7 +26,8 @@ namespace Project.Player
         MonoBehaviour,
         IAchievementSignalProvider,
         IPlayerControlLockTarget,
-        IPlayerCarryHost
+        IPlayerCarryHost,
+        Project.CameraModes.ICameraFollowRelocationSource
     {
         private static readonly HashSet<PlayerController> activePlayers = new HashSet<PlayerController>();
         public static IEnumerable<PlayerController> ActivePlayers => activePlayers;
@@ -135,6 +136,8 @@ namespace Project.Player
         private PlayerHealth health;
         private Vector3 initialRespawnPosition;
         private Vector3 deathPosition;
+        private PlayerSpritePresentation spritePresentation;
+        private float automaticRespawnReadyAt;
         private float gridCellWorldSize = 1f;
         private readonly Collider[] respawnOverlapBuffer =
             new Collider[32];
@@ -171,6 +174,10 @@ namespace Project.Player
         public Rigidbody Motor => motor;
         public bool IsGrounded { get; private set; }
         public bool IsDead => dead;
+        public event Action CameraFollowRelocated;
+        public bool CanAutomaticallyRespawn => dead && Time.time >= automaticRespawnReadyAt &&
+            (spritePresentation == null || !spritePresentation.isActiveAndEnabled ||
+             spritePresentation.DeathAnimationDuration <= 0f || spritePresentation.IsDeathAnimationComplete);
         public bool IsControlLocked => dead || lockDepth > 0;
         public bool IsSwimming => waterSources.Count > 0;
         private struct HorizontalVineSurface
@@ -340,6 +347,8 @@ namespace Project.Player
             {
                 colorWheel = gameObject.AddComponent<PlayerColorWheel>();
             }
+            PlayerSpritePresentation.Ensure(this);
+            spritePresentation = GetComponent<PlayerSpritePresentation>();
         }
 
         private void LateUpdate()
@@ -2163,6 +2172,11 @@ namespace Project.Player
             bool wasLocked = IsControlLocked;
             deathPosition = transform.position;
             dead = true;
+            float presentationSeconds = spritePresentation != null && spritePresentation.isActiveAndEnabled
+                ? spritePresentation.DeathAnimationDuration : 0f;
+            float timelineSeconds = deathAction != null && deathAction.Timeline != null
+                ? (float)deathAction.Timeline.duration : 0f;
+            automaticRespawnReadyAt = Time.time + Mathf.Max(.7f, presentationSeconds, timelineSeconds);
             ClearDeathControlState();
             runner?.Stop();
             if (deathAction != null &&
@@ -2247,6 +2261,7 @@ namespace Project.Player
             invulnerableUntil =
                 Time.time +
                 Mathf.Max(0f, respawnInvulnerabilitySeconds);
+            CameraFollowRelocated?.Invoke();
         }
 
         private Vector3 FindRandomRespawnPosition(

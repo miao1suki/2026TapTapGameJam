@@ -26,6 +26,7 @@ namespace Project.Rooms.Editor
         private static int phase;
         private static double started;
         private static int nextFrame;
+        private static float deathStartedAt;
         private static readonly List<string> errors = new List<string>();
 
         private static void Check(bool valid, string message)
@@ -303,8 +304,12 @@ namespace Project.Rooms.Editor
                     Vector3 collectedPose = key.transform.position;
                     manager.ResetRegion("test_room_a");
                     Check(key.CollectionRequested && key.transform.position == collectedPose, "collected key state is not reset");
-                    player.EnterDeath(); phase++; nextFrame = Time.frameCount + 4; return;
+                    player.EnterDeath(); deathStartedAt = Time.time;
+                    Check(!player.CanAutomaticallyRespawn, "death animation is not skipped");
+                    phase++; nextFrame = Time.frameCount + 4; return;
                 }
+                if (player.IsDead) return;
+                Check(Time.time - deathStartedAt >= .7f, "death presentation wait completed");
                 Check(!player.IsDead && Mathf.Abs(player.Motor.position.x - 21.5f) < .01f, "death auto respawn");
                 Check(errors.Count == 0, "runtime errors: " + string.Join("\n", errors));
                 File.WriteAllText("Library/RoomPlayVerification.txt", $"PASS {checks} runtime assertions; no runtime errors.");

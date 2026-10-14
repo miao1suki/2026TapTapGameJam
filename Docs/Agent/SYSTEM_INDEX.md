@@ -1,5 +1,9 @@
 # 系统索引
 
+游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标和设置背景，预裁切产物位于`Art/Generated/GameUI`。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
+
+主角像素表现：`Assets/Player/PlayerSpritePresentation.cs`，7套动作35帧，读取现有玩家状态；独立1×1格外观、不新增碰撞体，死亡优先、演出冻结与复活恢复。两份玩家预制体已接线，裸PlayerController运行时自动补齐。接入/维护见 [PLAYER_SPRITE_PRESENTATION.md](../Developer/PLAYER_SPRITE_PRESENTATION.md)。
+
 MVMap 物体试导入：新源图73区域/2450格，临时颜色/形状映射，精确保留几何、藤蔓稳定组链和门按钮绑定；测试 Scene 与共享存档在 Development/RoomLifecycleTests，不改正式关卡。旧 AnchorPoint 入口退役，重生点与植物障碍保留。见 [转换 API](Integration/MVMAP_OBJECT_IMPORT_API.md)、[使用说明](../Developer/MVMAP_OBJECT_IMPORT.md)及[映射报告](../Developer/MVMAP_OBJECT_MAPPING.md)。
 
 当前 UI 挂载、两套玩家配置与 TA 白块连线判定：[UI_PLAYER_AND_LINK_AUDIT.md](../Developer/UI_PLAYER_AND_LINK_AUDIT.md)。

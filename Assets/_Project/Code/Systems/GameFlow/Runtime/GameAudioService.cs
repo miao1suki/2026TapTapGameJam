@@ -225,7 +225,7 @@ namespace Project.GameFlow
 
             AudioCuePlayer.Play(
                 ResolveCatalog(),
-                AudioCueIds.MusicAmbientLoop);
+                AudioCueIds.MusicAtmosphereEMinor);
         }
 
         private static AudioClip CreateTone(

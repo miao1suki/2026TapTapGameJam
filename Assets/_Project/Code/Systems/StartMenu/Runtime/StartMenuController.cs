@@ -19,6 +19,9 @@ namespace Project.StartMenu
         [SerializeField] private Button startButton;
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button quitButton;
+        [SerializeField] private Button creditsButton;
+        [SerializeField, Min(0f), InspectorName("背景横移速度（每秒屏宽）")] private float backgroundScrollSpeed = .025f;
+        private float backgroundOffset;
         [SerializeField] private Button continueButton;
         [SerializeField] private Button selectSaveButton;
         [SerializeField] private Button startBackButton;
@@ -77,6 +80,7 @@ namespace Project.StartMenu
             }
 
             ApplyTypography();
+            ApplyArtwork();
             ShowMain();
         }
 
@@ -96,6 +100,7 @@ namespace Project.StartMenu
             BindButtons();
             BindSubPanels();
             ApplyTypography();
+            ApplyArtwork();
             if (statusText != null)
             {
                 statusText.text =
@@ -123,6 +128,11 @@ namespace Project.StartMenu
 
         private void Update()
         {
+            if (background != null && background.texture != null)
+            {
+                backgroundOffset = Mathf.Repeat(backgroundOffset - Time.unscaledDeltaTime * backgroundScrollSpeed, 1f);
+                background.uvRect = new Rect(backgroundOffset, 0f, 1f, 1f);
+            }
             if (canvas != null &&
                 (lastScreenWidth != Screen.width ||
                  lastScreenHeight != Screen.height))
@@ -148,6 +158,94 @@ namespace Project.StartMenu
         public void ShowMain()
         {
             SetOnly(mainPanel);
+        }
+
+        public void ApplyArtwork()
+        {
+            var art = GameUiArtwork.Load();
+            if (art == null) return;
+            if (background != null && art.menuBackground != null)
+            {
+                background.texture = art.menuBackground;
+                background.color = Color.white;
+            }
+            if (mainPanel != null)
+            {
+                var panel = mainPanel.GetComponent<Image>();
+                if (panel != null) panel.color = Color.clear;
+                foreach (string name in new[] { "Title Placeholder", "Subtitle", "Status" })
+                {
+                    var child = mainPanel.transform.Find(name);
+                    if (child != null) child.gameObject.SetActive(false);
+                }
+                var menu = mainPanel.transform.Find("Main Buttons") as RectTransform;
+                if (menu != null)
+                {
+                    StartMenuUiFactory.Stretch(menu);
+                    var layout = menu.GetComponent<VerticalLayoutGroup>();
+                    if (layout != null)
+                    {
+                        layout.enabled = false;
+                    }
+                    if (creditsButton == null)
+                    {
+                        var existing = menu.Find("Credits");
+                        creditsButton = existing != null ? existing.GetComponent<Button>() :
+                            StartMenuUiFactory.CreateButton("Credits", menu, "制作人员", new Vector2(448,180), null);
+                    }
+                }
+            }
+            ApplyButtonArtwork(startButton, art.startButton, new Vector2(6,21));
+            ApplyButtonArtwork(creditsButton, art.creditsButton, new Vector2(5,77));
+            ApplyButtonArtwork(settingsButton, art.settingsButton, new Vector2(4,125));
+            ApplyButtonArtwork(quitButton, art.quitButton, new Vector2(72,125));
+            if (Application.isPlaying && creditsButton != null)
+            {
+                creditsButton.onClick.RemoveListener(ShowCredits);
+                creditsButton.onClick.AddListener(ShowCredits);
+            }
+            ApplyPanelArtwork(settingsPanel, art.panelBackground);
+            ApplyPanelArtwork(savePanel, art.panelBackground);
+            ApplyPanelArtwork(startChoicePanel, art.panelBackground);
+            if (settingsPanel != null)
+            {
+                foreach (Transform child in settingsPanel.GetComponentsInChildren<Transform>(true))
+                    if (child.name == "Hint" || child.name == "Status") child.gameObject.SetActive(false);
+            }
+        }
+
+        private void ShowCredits()
+        {
+            ShowSettings();
+            settingsController?.ShowCredits();
+        }
+
+        private static void ApplyButtonArtwork(Button button, Sprite sprite, Vector2 topLeft)
+        {
+            if (button == null || sprite == null) return;
+            var image = button.GetComponent<Image>();
+            if (image == null) return;
+            image.sprite = sprite;
+            image.color = Color.white;
+            image.preserveAspect = true;
+            StartMenuUiFactory.SetTopLeft(image.rectTransform,
+                new Vector2(topLeft.x * 4, -topLeft.y * 4), sprite.rect.size * 4);
+            foreach (Text label in button.GetComponentsInChildren<Text>(true))
+                label.gameObject.SetActive(false);
+            var layout = button.GetComponent<LayoutElement>();
+            if (layout != null)
+            {
+                layout.ignoreLayout = true;
+            }
+        }
+
+        private static void ApplyPanelArtwork(GameObject panel, Sprite sprite)
+        {
+            if (panel == null || sprite == null) return;
+            var image = panel.GetComponent<Image>();
+            if (image == null) return;
+            image.sprite = null;
+            image.color = Color.clear;
         }
 
         private void RequestStartGame()
@@ -225,13 +323,10 @@ namespace Project.StartMenu
                 return;
             }
 
-            float widthScale = Screen.width / 1280f;
-            float heightScale = Screen.height / 720f;
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
-            scaler.scaleFactor = Mathf.Clamp(
-                Mathf.Min(widthScale, heightScale),
-                1f,
-                2.5f);
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1280f,720f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = .5f;
         }
 
         private static RawImage BuildBackground(Transform parent)

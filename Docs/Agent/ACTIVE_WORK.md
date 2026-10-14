@@ -1,5 +1,31 @@
 # 工作状态与交接（每次任务重读）
 
+## UI美术绑定与水中玩家渲染
+
+- 2026-10-14发布：用户授权本版合并并推送main。包含主角精灵/死亡等待/重生相机、水下角色兼容、菜单与转盘美术、Atmosphere E Minor及正式往返暂停修复，代码、生成资源与说明一起发布；用户Pick场景、本地DOTween Pro及PackageManager本机设置不纳入。远程main核对仍772faac，无需引入其他待整合分支；保留全部本地未纳入内容。验证为60项EditMode、场景往返PlayMode1项及真实按钮往返3次通过，Unity保持6000.3.12f1。提交完成后以Git提交信息为发布凭据。
+
+- 2026-10-14正式往返修复：隔离真实MainMenu按钮流程复现首次/再次进入仍播放开场曲、GameAudioService不存在；暂停返回菜单后timeScale=0/audioPaused=true残留。GameFlowController现于持久流程根安装并初始化GameAudioService；GameUiRouter返回/重载/初始化采用立即释放，状态相等时也执行强制清理，解决关闭Tween被卸载打断。保留普通Resume动画，不恢复旧常驻场景，不修改Pick/菜单布局/颜色玩法。三次真实按钮往返均切换Atmosphere E Minor且玩家物理正常、返回timeScale=1/audioPaused=false；新增3项EditMode回归及原有57项全通过。正式PlayMode回归1/1通过（编辑器测试Runner覆盖构建列表，显式预载Scene，再验证实际流程激活、两次进入/暂停/返回及关闭动画中再次返回；正常加载器路径由前述真实按钮Harness验证）。未提交未推送。日志Library/MenuRoundTripBaseline.log、MenuRoundTripFixed.log、MenuRoundTripEditMode.xml、MenuRoundTripPlayMode.xml。
+
+- 2026-10-14暂停与音乐调整：进入玩法改为music.atmosphere.e_minor，沿用目录循环及Music总线；主菜单不变。暂停所有选项取消白化和半透明，保持原素材颜色/不透明，凸出、缩放、旋转与能力轮盘表现不变。删除仅为暂停白化新增的材质实例逻辑与生成引用，相关Shader/材质移至Library/RemovedPauseWhiten-20261014备份，不保留无用Assets。隔离PlayMode验证音乐Cue资源匹配及循环、暂停选中/未选中/打断后原色不透明、凸出缩放、能力轮盘及导航通过，日志Library/PauseOpaqueMusicVerification.log；git diff --check通过，Pick SHA256不变。仅修改相应代码/共享UI配置与文档，不修改Pick布局，不提交不推送；当前窗口听感待验收。
+
+- 2026-10-14转盘效果审计：fetch后main仍772faac；以另一位程序59da0ee/630da79原版暂停表现为基线，恢复美术替换后削弱的径向凸出及像素白化。新增WheelArtwork.shader、共享材质引用及每项运行时实例，沿用1.08/0.94缩放、0.38白化、0.62透明度、OutCubic和快速打断；颜色能力原0.84缩小/0.58白色硬切未修改。保留此前确认的导航方向、移动端支持及美术替换，不回退占位几何。隔离PlayMode检查凸出/白化/透明度/Shader编译/快速切换/能力恢复与导航通过，57项EditMode通过；Pick未改，不提交不推送。详情见GAME_UI_ARTWORK.md，日志Library/WheelEffectsVerification.log、WheelEffectsProjectEditMode.xml。
+
+- 2026-10-14视觉修正：按320×180参考统一菜单按钮与背景缩放；所有主菜单子页共享连续滚动背景；三色扇区改用像素连通区域切分，修复边界错色。清理误放于Generated根目录的旧生成切片，恢复GameUI目录唯一GUID引用；旧产物和被替换UI资产备份于Library/UiArtworkCorrection-20261014。ESC上下方向反转，同时接入Navigate/Submit、可点击按钮与触摸滑动，不改操作绑定。隔离GPU、扇区像素数及键鼠/手柄/触摸方向验证通过，项目EditMode57/57通过；Pick SHA256不变，git diff --check通过。当前窗口与实机触摸仍待验收，未推送。
+
+- 2026-10-14；本地开发。保留MainMenu→Gaming正式流程、输入和统一像素字体；绑定开始菜单、三色能力轮盘、暂停/设置界面的现有美术，复用现有业务。检查精灵玩家与水下底图、透明队列/深度的兼容性，以GPU对比确认水覆盖而非简单置顶。仅修改对应源码、资源及MainMenu/共享UI资产，Pick布局及本地插件保持，不推送。
+- 已应用：GameUiArtwork共享资源、预裁切PNG、开始/设置背景与按钮、暂停图标、三色轮盘及扇区重心缩放。遵循场景流程与字体skill，不改输入或启动链。截图检查完成；旧透明Shader水下不可辨像素0，新裁剪/深度Shader可辨5223像素，其中4039受水混合。UI和水的GPU日志在Library；说明见Docs/Developer/GAME_UI_ARTWORK.md。Pick SHA256仍为ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35，未推送。当前窗口及打包待验收。
+- 根据视觉反馈修正：暂停美术块直接替换扇区并关闭旧底盘；主菜单按原图布局新增现有制作人员页入口，设置/退出并排，隐藏旧标题占位。按钮完整边界加2像素透明余量，背景生成独立Repeat纹理并从左向右循环滚动。GPU复验通过，检查无旧扇区残留及Repeat/UV运动；四项目程序集EditMode57/57通过。原UI资产备份于Library/UiArtworkOriginals-20261014。
+
+## 主角像素表现绑定
+
+- 重生相机平滑回位已应用：保留首次定位与显式Snap；PlayerController通过相机模块ICameraFollowRelocationSource通知跟随组件，死亡/主动重生后暂不使用大距离硬吸附、死区或瞬移观察提前量，平滑追到新位置，暂停冻结。相机输出仍仅由Manager负责；换目标/禁用解绑，显式Snap可打断追赶。遵循场景流程skill，不改正式流程或场景，未推送。
+- 隔离真实PlayMode11项检查通过，含30单位跨距、实际Manager相机连续输出、暂停、重复R、显式Snap及旧目标解绑；项目四程序集EditMode57/57通过，0失败。日志Library/PlayerRespawnCameraVerification.log及PlayerRespawnCameraProjectEditMode.xml。此前未筛选的SDK/包测试不作为项目验收（1608项含196失败）；项目测试均通过。Pick SHA256未变，git diff --check通过，窗口手感/打包待验收。
+- 死亡流程已修复：房间管理器同帧自动复活抢占动画，现通过PlayerController.CanAutomaticallyRespawn等待完整精灵死亡动画及配置的死亡Timeline时长，默认至少0.7秒；R主动重生仍即时。无协程或延迟回调，重复死亡不重启等待，暂停冻结，复活后旧条件失效。遵循颜色玩法skill的区域重置/解锁持久约定，不改场景或碰撞，未推送。
+- 隔离真实PlayMode覆盖死亡首帧可见、完整播放后自动复活、暂停、重复死亡、R打断、第二次死亡和禁用表现组件后备；已有区域重生27项断言通过且无运行错误。日志Library/PlayerDeathVerification.log及PlayerDeathRoomRegression.log；Pick SHA256未变，git diff --check通过。窗口及打包仍待验收。
+- 外观微调：精灵默认下移0.08格，可在中文Inspector中调整；两份预制体及运行时自动绑定统一生效。碰撞箱、物理与Pick场景不变。隔离复验102项资源/动画/Shader检查与15项PlayMode检查通过，新增偏移与碰撞独立断言；日志Library/PlayerSpriteOffsetVerification.log。未推送。
+- 2026-10-14；Codex；本地已完成7套主角动作/35帧切片及只读玩家表现层。沿用PlayerController状态、速度与接地数据，死亡优先、演出/锁定暂停自动动画、切状态立即打断、复活恢复。精灵画布1×1格，保持现有碰撞、物理、输入、关卡布局不变；两份玩家预制体已绑定，裸场景玩家运行时自动接入。不覆盖用户Pick场景和插件，未提交或推送。
+- Unity6000.3.12f1隔离验证通过102项资源/动画/URP精灵Shader编译检查、14项真实PlayMode检查及57项既有EditMode回归。两个玩家预制体的CapsuleCollider/BoxCollider序列化内容与任务前一致，Pick SHA256未变，git diff --check通过。Shader支持SpriteRenderer左右翻转与颜色，不改TA管线。日志Library/PlayerSpriteVerification7.log、PlayerSpriteEditMode.xml；实际窗口视觉与打包未人工验收。使用与接入见Docs/Developer/PLAYER_SPRITE_PRESENTATION.md。
+
 ## 新美术导入参数整理
 
 - 2026-10-14；Codex；已在主项目配置 `Assets/_Project/Resources/26TAPTAP` 的26张图片。按原图长边选择不小于原尺寸的最小二次幂上限：32～2048；游戏像素图启用 Point、禁用 Mipmap 与有损压缩，Clamp、NPOT None、Read/Write关闭。21张序列/素材板为 Sprite Multiple，玩家单帧与独立菜单背景共2张为 Sprite Single，2张索引与1张组合菜单参考为 Default。不切片，Multiple 的 Sprite 列表暂为空；PPU保持原值，待实际接入决定。不改原图/GUID/场景/玩法/TA 管线/视频。

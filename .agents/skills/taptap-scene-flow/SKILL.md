@@ -17,6 +17,7 @@ description: 2026TapTap 正式场景流程规范；修改启动、MainMenu、Gam
 - 是唯一启动入口。
 - `__GameFlow` 根持有 `GameFlowController`，引用 `Assets/_Project/Content/GameFlow/Resources/GameSceneCatalog.asset`。
 - `StartMenuPrototype` 持有 `StartMenuController` 和 `StartMenuFlowBridge`。
+- `GameFlowController` 在流程根安装并初始化 `GameAudioService`，音频切换服务随流程根保留；不依赖旧 Audio 系统场景。玩法入口播放 `music.atmosphere.e_minor`。
 - 开始游戏必须通过 `StartMenuFlowBridge` 请求 `GameFlowSceneId.Gaming`。
 - `GameSceneCatalog` 只登记 MainMenu 与 Gaming 两个流程场景。
 - 运行时存在兜底：catalog 为空时从 `Resources/GameSceneCatalog` 加载，缺少流程根或桥接组件时自动补齐；场景文件仍必须保持正确接线。
@@ -33,6 +34,7 @@ description: 2026TapTap 正式场景流程规范；修改启动、MainMenu、Gam
 - `CameraFollowController.target` 和 `CameraControlManager.focusTarget` 直接指向 `Player(暂定)`；`LevelSceneContext.Activate()` 仍负责在流程进入 Gaming 时按 `Player` Tag 复核并切换到 Side2D。
 - 暂停界面使用 `Assets/_Project/Content/UI/SharedGameUI.prefab`，作为 Gaming 的根级 PrefabInstance 放入。
 - 不重复添加 Camera、AudioListener 或 EventSystem；场景中三者各保留一份。
+- 返回主菜单、重载、流程切换和 UI 销毁须立即清理暂停；即使暂停关闭动画尚未结束、`isPaused` 已为 false，也必须恢复时间缩放及音频。不要依赖即将卸载对象的 Tween 回调恢复全局状态。
 
 ## 修改规则
 

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 915216056999b084dae02d687201693d, type: 3}
+  m_Name: GameUiArtwork
+  m_EditorClassIdentifier: Project.StartMenu.Runtime::Project.StartMenu.GameUiArtwork
+  menuBackground: {fileID: 2800000, guid: 89ff5dff7d4ff9440a2fc78f8d29411f, type: 3}
+  panelBackground: {fileID: 21300000, guid: fe70b9f0dad448f4392b28760e800d59, type: 3}
+  startButton: {fileID: 21300000, guid: 883ad5ce96c16e24f9ae5d10d6e55b51, type: 3}
+  settingsButton: {fileID: 21300000, guid: 9bdefc965cf3dee47ba84c78e2bc20c1, type: 3}
+  quitButton: {fileID: 21300000, guid: 57c78f259c652904dac929f8927d8a3f, type: 3}
+  creditsButton: {fileID: 21300000, guid: 45f1009114db6674d83c9e5979f4f018, type: 3}
+  pauseIcons:
+  - {fileID: 21300000, guid: b5241aa86712f9b499ab96f1dbe15fa0, type: 3}
+  - {fileID: 21300000, guid: 6c21506e39fbe1b44b8603ebe11f3be8, type: 3}
+  - {fileID: 21300000, guid: bdb57557e73b54b4e8feafb9247b217f, type: 3}
+  - {fileID: 21300000, guid: ff97af32b1410854685ea6e9179ce870, type: 3}
+  - {fileID: 21300000, guid: b2246f94109d52f40a77e78b428fae62, type: 3}
+  abilitySectors:
+  - {fileID: 21300000, guid: 8a1287ceeb726134298a5caf3776a51a, type: 3}
+  - {fileID: 21300000, guid: d30563377bae1424eb75694e7b9f0b3c, type: 3}
+  - {fileID: 21300000, guid: 33b8576be8c32404aa7bfdd486c32fd5, type: 3}
+  abilityHighlights:
+  - {fileID: 21300000, guid: fc32f5b8396a0f8449f54ff217789f89, type: 3}
+  - {fileID: 21300000, guid: 0f02e27977aed734cbddf760c0f15798, type: 3}
+  - {fileID: 21300000, guid: 26f50575f58f8434ca78af4730eb5a3d, type: 3}
+  abilityPivots:
+  - {x: 0.74699676, y: 0.36751217}
+  - {x: 0.484375, y: 0.82126915}
+  - {x: 0.22175324, y: 0.36751217}
