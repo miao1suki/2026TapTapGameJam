@@ -1,5 +1,11 @@
 # 工作状态与交接（每次任务重读）
 
+## 新美术导入参数整理
+
+- 2026-10-14；Codex；已在主项目配置 `Assets/_Project/Resources/26TAPTAP` 的26张图片。按原图长边选择不小于原尺寸的最小二次幂上限：32～2048；游戏像素图启用 Point、禁用 Mipmap 与有损压缩，Clamp、NPOT None、Read/Write关闭。21张序列/素材板为 Sprite Multiple，玩家单帧与独立菜单背景共2张为 Sprite Single，2张索引与1张组合菜单参考为 Default。不切片，Multiple 的 Sprite 列表暂为空；PPU保持原值，待实际接入决定。不改原图/GUID/场景/玩法/TA 管线/视频。
+- 静态校验26张图上限均覆盖原始分辨率，所有原图SHA256与GUID保持不变，参数二次检查无差异，git diff --check通过。运行中的Unity由自身资源刷新接收.meta变化；本次未启动独立编译或验证Game画面。
+- 用户授权合并推送后重新 fetch：远程main仍为2877058，正式音频与TA进度均已纳入；未整合的旧交互图交接/旧水平台实验分支不重复引入。本次main提交新增24张PNG、2张索引JPEG、1段演示MP4及对应.meta/目录.meta和上述导入配置。用户Pick场景、本地DOTween Pro插件与PackageManager设置不纳入发布。
+
 ## MVMap 物体试导入与遗留锚点清理
 
 - 2026-10-14；Codex；codex/mvmap-gameplay-import。用户确认保留植物障碍，删除无调用的 AnchorPoint；不删除 Respawn_Block 重生点或藤蔓。替换 Development/RoomLifecycleTests 的旧 MVMap 源图、测试场景及对应规划存档，按临时颜色/形状映射导入新图。正式 Gaming、RoomRespawnTest、用户 Pick、插件与本机设置不修改。验证后按用户授权合入 main 并推送。
