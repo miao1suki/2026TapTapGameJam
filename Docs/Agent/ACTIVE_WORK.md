@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## TA 连接预览起点高度适配
+
+- 日期：2026-10-14；负责人：Codex；分支：`codex/ta/link-origin-height`。
+- 范围：将 `InteractionLinkEffect` 无锚点时的本地发射偏移 Y 从 `0.9` 调为 `0.5` 世界单位，避免角色缩放压低纵向起点；同步 `Player(暂定).prefab` 中的序列化值。Test 和 Gaming 场景继承 Prefab，不改场景文件。
+- 边界：未改 `PlayerInteractionSensor` 的相机屏幕射线、点击位置、交互扫描中心/半径或染色玩法判定；只调整连接视觉的发射点。
+- 验证：核对 `Player(暂定).prefab` 上 `sourceAnchor` 为空，Test 场景没有单独覆盖 `sourceOffset`；`git diff --check` 通过。未运行 Unity / Play Mode。
+
 ## 新美术导入参数整理
 
 - 2026-10-14；Codex；已在主项目配置 `Assets/_Project/Resources/26TAPTAP` 的26张图片。按原图长边选择不小于原尺寸的最小二次幂上限：32～2048；游戏像素图启用 Point、禁用 Mipmap 与有损压缩，Clamp、NPOT None、Read/Write关闭。21张序列/素材板为 Sprite Multiple，玩家单帧与独立菜单背景共2张为 Sprite Single，2张索引与1张组合菜单参考为 Default。不切片，Multiple 的 Sprite 列表暂为空；PPU保持原值，待实际接入决定。不改原图/GUID/场景/玩法/TA 管线/视频。
