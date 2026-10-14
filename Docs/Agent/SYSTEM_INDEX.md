@@ -1,5 +1,7 @@
 # 系统索引
 
+网格美术试用版：`Code/Systems/GridArt`，独立美术资产、八邻格四象限自动边角、多格装饰、多层XY视差与持久化分块Mesh；关卡编辑器“网格美术”入口共享格尺寸、只读已应用的场景轮廓，不改玩法存档。独立测试在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
+
 游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标和设置背景，预裁切产物位于`Art/Generated/GameUI`。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
 
 主角像素表现：`Assets/Player/PlayerSpritePresentation.cs`，7套动作35帧，读取现有玩家状态；独立1×1格外观、不新增碰撞体，死亡优先、演出冻结与复活恢复。两份玩家预制体已接线，裸PlayerController运行时自动补齐。接入/维护见 [PLAYER_SPRITE_PRESENTATION.md](../Developer/PLAYER_SPRITE_PRESENTATION.md)。

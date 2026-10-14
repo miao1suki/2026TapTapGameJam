@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## 美术网格试用版
+
+- 2026-10-14：核对tail.png、SurfaceTiles与现有1:1关卡网格；新增独立GridArt模块（UI Toolkit、自动边角、多层视差、持久化分块网格），只增加美术入口，不改玩法存档、Pick或现有场景。沿用taptap-editor-ui规范，参考Unity RuleTile/Tiled/LDtk；缺失内拐角明确提示，不擅自推断美术含义。用户授权推送开发分支 `codex/ui/grid-art-editor`，暂不合并 main。
+
+- 已应用本地源码与独立测试资产：关卡编辑器新增“网格美术”，继承格尺寸并显示Scene已应用物体的只读参考轮廓；支持框选/笔刷/擦除、多格装饰、可见/锁定/排序、中文瓦片库Inspector、按Scene记忆美术图和按资产记忆视角。自动地形以八邻格选四象限外角/边/内角，缺图提示；运行时直接引用分块Mesh/材质和原图，只更新背景层Transform。三层示例在Development/GridArt/TileArtTrial，无玩家、不加入构建。原tail.png与旧开发彩色库不修改。
+- 隔离EditMode共73项通过（含12项GridArt），GPU/Play检查：保存后真实渲染、无碰撞、分层视差/像素吸附/往返无漂移、重复应用保留手工子对象、UI Toolkit纹理画布；日志Library/GridArtTests.log、GridArtEditMode.xml、GridArtGpu.log。原始示意图NPOT重采样导致边角取样偏移已修复；示例已核对截图。文档GRID_ART.md和Integration/GRID_ART_API.md含实际素材限制、操作、接口及扩展边界。Pick SHA256保持ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35；现有暂停本地进度、字体和插件不纳入本次提交。推送前重新验证73项通过；源码、独立测试场景及生成资产、接入文档一起交付。Unity保持6000.3.12f1，用户主窗口鼠标操作与正式场景美术仍待验收。
+
 ## UI美术绑定与水中玩家渲染
 
 - 2026-10-14发布：用户授权本版合并并推送main。包含主角精灵/死亡等待/重生相机、水下角色兼容、菜单与转盘美术、Atmosphere E Minor及正式往返暂停修复，代码、生成资源与说明一起发布；用户Pick场景、本地DOTween Pro及PackageManager本机设置不纳入。远程main核对仍772faac，无需引入其他待整合分支；保留全部本地未纳入内容。验证为60项EditMode、场景往返PlayMode1项及真实按钮往返3次通过，Unity保持6000.3.12f1。提交完成后以Git提交信息为发布凭据。
