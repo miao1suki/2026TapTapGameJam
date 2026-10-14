@@ -30,7 +30,7 @@ namespace TaSource.LinkEffect
         [SerializeField] private ColorCatalog colorCatalog;
         [SerializeField] private Material linkMaterial;
         [SerializeField] private Transform sourceAnchor;
-        [SerializeField] private Vector3 sourceOffset = new Vector3(0f, .5f, 0f);
+        [SerializeField] private Vector3 sourceOffset = new Vector3(0f, .3f, 0f);
         [SerializeField, Min(.01f)] private float scanInterval = .12f;
         [SerializeField] private LayerMask targetMask = ~0;
         [SerializeField, Range(1, 32)] private int maxLinks = 16;

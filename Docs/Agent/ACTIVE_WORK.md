@@ -3,7 +3,7 @@
 ## TA 连接预览起点高度适配
 
 - 日期：2026-10-14；负责人：Codex；分支：`codex/ta/link-origin-height`。
-- 范围：将 `InteractionLinkEffect` 无锚点时的本地发射偏移 Y 从 `0.9` 调为 `0.5` 世界单位，避免角色缩放压低纵向起点；同步 `Player(暂定).prefab` 中的序列化值。Test 和 Gaming 场景继承 Prefab，不改场景文件。
+- 范围：将 `InteractionLinkEffect` 无锚点时的本地发射偏移 Y 从 `0.9` 调为 `0.5`、再下调至 `0.3` 世界单位，避免角色缩放压低纵向起点；同步 `Player(暂定).prefab` 中的序列化值。Test 和 Gaming 场景继承 Prefab，不改场景文件。
 - 边界：未改 `PlayerInteractionSensor` 的相机屏幕射线、点击位置、交互扫描中心/半径或染色玩法判定；只调整连接视觉的发射点。
 - 验证：核对 `Player(暂定).prefab` 上 `sourceAnchor` 为空，Test 场景没有单独覆盖 `sourceOffset`；`git diff --check` 通过。未运行 Unity / Play Mode。
 
