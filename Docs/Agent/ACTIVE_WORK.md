@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## MVMap 物体试导入与遗留锚点清理
+
+- 2026-10-14；Codex；codex/mvmap-gameplay-import。用户确认保留植物障碍，删除无调用的 AnchorPoint；不删除 Respawn_Block 重生点或藤蔓。替换 Development/RoomLifecycleTests 的旧 MVMap 源图、测试场景及对应规划存档，按临时颜色/形状映射导入新图。正式 Gaming、RoomRespawnTest、用户 Pick、插件与本机设置不修改。验证后按用户授权合入 main 并推送。
+- 新源图73个物体区域/2450格，名称均为 Room 数字，未指定颜色17处；推测映射需策划确认。外部物体区域不等于运行时房间，测试暂用单一区域，不凭颜色猜房间重置边界。旧资产备份 Library/MVMapReplacement20261013。
+- 已生成并同步134个实例，Scene GUID保留；共享存档MVMapObjects.planning.json与Scene内嵌数据一致。23格藤蔓为一母根22节段，黄门绑定两个临时推测按钮；无源图钥匙，不增测试键位，可用现有运行态调试解锁。主项目旧导入场景作用域缓存已备份清理；本地其他测试1存档不动。
+- Unity6000.3.12f1隔离验证：2624项转换/精确几何/稳定ID/场景重载/增量保留/引用断言、10项真实PlayMode解锁与R回归、57项项目EditMode全部通过，0编译错误，既有CrankPlatformAuthoring废弃API警告仍存在。源图2450格无重叠、无额外填充；Pick SHA256与任务前一致。日志Library/MVMapReplacement20261013；窗口实际交互、全图通行、最终映射及打包未人工验收。说明MVMAP_OBJECT_IMPORT.md、MVMAP_OBJECT_MAPPING.md及MVMAP_OBJECT_IMPORT_API.md。
+
 ## 连线修复发布与最新 TA 整合
 
 - 2026-10-13；Codex；用户确认连接已正常，要求删除诊断并合并推送。移除 InteractionLinkEffect 临时日志/目标引用/诊断菜单，保留水体尺寸与表现碰撞过滤修复；整合最新 TA 分支 bef0737 的染色和蒸汽资源、使用文档，验证后推送 main。用户未提交 Pick 布局、DOTween Pro 插件与本机 PackageManager 设置不纳入提交。

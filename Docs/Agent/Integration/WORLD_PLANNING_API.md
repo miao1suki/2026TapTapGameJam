@@ -2,6 +2,8 @@
 
 区域生命周期：增量/全量应用均写入 RoomLifecycleManager、稳定区域 ID 及 RoomResetObject；详见 [ROOM_LIFECYCLE_API.md](ROOM_LIFECYCLE_API.md)。MVMap v1 布局可导入为新存档，保留来源 ID/颜色/备注和不连通片，不转换灰盒或锁规则。已应用规划 JSON 嵌入 Scene 用于首次回读。
 
+独立 MVMap 物体试导入不改变上述布局模式；使用明确转换接口及配套规划存档，见 [MVMAP_OBJECT_IMPORT_API.md](MVMAP_OBJECT_IMPORT_API.md)。外部物体块不当作运行时房间。
+
 模块：`Assets/_Project/Development/LevelEditor/Orpheus0829/PlanningEditorPrototype/Editor`，仅 Editor。
 本模块不控制运行时房间切换、颜色重置或加载规则。
 

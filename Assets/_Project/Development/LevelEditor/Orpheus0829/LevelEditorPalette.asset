@@ -1379,10 +1379,6 @@ MonoBehaviour:
       valueType: Float
       value: 24
       objectReferenceValue: {fileID: 0}
-  - entryId: 7a1b2c3d4e5f60718293a4b5c6d7e8f9
-    displayName: "\u951A\u70B9"
-    prefab: {fileID: 810000001, guid: b7c0d1e2f30456789abcdeffedcba987, type: 3}
-    componentValueOverrides: []
   - entryId: 234025e375b248bfbb8ac4dca60021fa
     displayName: "\u6C34\u6E90"
     prefab: {fileID: 4491574534968212122, guid: 6dea163cbd3a49e4ca6f35776ac003fc, type: 3}

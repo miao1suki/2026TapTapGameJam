@@ -603,7 +603,6 @@ namespace PlanningEditorPrototype
             AddProp(start, "04b7a2d6735b4d0cbce343ab1293d6e0", "蓝色钥匙", "蓝色钥匙", 8, 28);
 
             AddProp(start, "06e690b71b634be2909b6fecd7ecb627", "字幕激发(测试)", "字幕激发测试", 14, 28);
-            AddProp(start, "7a1b2c3d4e5f60718293a4b5c6d7e8f9", "锚点", "锚点", 18, 28);
             AddProp(start, "8b88592971284aea9d1616569675b69b", "字幕展示道具", "Display_Block", 22, 28);
             AddProp(start, "0fa659ac46b54c40942bb0566aacf593", "万能方块", "万能方块", 26, 28);
 

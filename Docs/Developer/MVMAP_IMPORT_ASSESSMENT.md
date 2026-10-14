@@ -1,6 +1,6 @@
 # MVMap 存档转换评估
 
-2026-10-12 已试实现 v1 布局导入并生成独立 MVMapImportTest Scene，外部一格对应房间图一格，保留不连通片、来源 ID/颜色/归属/备注。不转换 detail 灰盒；含外部门/锁/钥匙的文件暂拒绝。外部源文件未改写。用法见 [ROOM_RESPAWN_AND_RESET.md](ROOM_RESPAWN_AND_RESET.md)。下文保留完整格式分析，未来类型映射仍未实现。
+普通 MVMap v1 导入保持布局模式，不转换 detail 灰盒；含外部门/锁/钥匙的文件暂拒绝。2026-10-14 新测试源图增加独立的临时颜色/形状物体转换，替换旧 MVMapImportTest Scene 和共享规划存档，见 [物体试导入](MVMAP_OBJECT_IMPORT.md)。下文是旧“主稿”的格式评估，不是当前测试图的映射结果。
 
 ## 样本
 
