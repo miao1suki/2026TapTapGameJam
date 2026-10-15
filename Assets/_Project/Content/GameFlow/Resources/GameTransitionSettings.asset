@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e8b1c1a86e64f27af8d52a5bcf59d3e, type: 3}
+  m_Name: GameTransitionSettings
+  m_EditorClassIdentifier: Project.GameFlow.Runtime::Project.GameFlow.GameTransitionSettings
+  font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 3}
+  revealShader: {fileID: 4800000, guid: 7d3dd20b5be740f0b06e2bc119b20333, type: 3}
+  loadingText: "\u52A0\u8F7D\u4E2D\u2026\u2026"
+  loadingFontSize: 120
+  loadingTextColor: {r: 1, g: 1, b: 1, a: 1}
+  loadingOutlineColor: {r: 0, g: 0, b: 0, a: 1}
+  loadingOutlineWidth: 0.22
+  loadingTextFadeDuration: 0.2
+  appRevealCenter: 0
+  appRevealViewportCenter: {x: 0.5, y: 0.5}
+  appRevealSpeed: 0.72
+  appRevealSoftness: 0
+  menuContentSlideDistance: 1600
+  menuContentSlideDuration: 0.45
+  menuContentSlideEase: 8
+  gameplayRevealSpeed: 0.78
+  gameplayRevealSoftness: 0
+  gameplayRevealHoldSeconds: 0.5
+  backgroundRevealColor: {r: 1, g: 1, b: 1, a: 1}
+  menuReturnCoverSpeed: 0.72
+  menuReturnCoverSoftness: 0
+  menuReturnCoverHoldSeconds: 0.5
+  menuBackgroundSlideDuration: 0.55
+  menuBackgroundSlideEase: 9
+  menuContentReturnDuration: 0.45
+  menuContentReturnEase: 9
+  minimumDisplaySeconds: 2
+  preRevealBlackSeconds: 0.5
+  exitCoverSpeed: 0.72
+  exitHoldSeconds: 1
