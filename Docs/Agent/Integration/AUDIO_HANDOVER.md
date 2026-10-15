@@ -4,6 +4,8 @@
 分支：`音乐`。
 音频文件位于 `Assets/_Project/Content/Audio/`，命名按 RVSA 规范（`snake_case`、类别前缀、受控词表）。资源目录为 `Music/`、`SFX/`，运行时 Cue 目录为 `Resources/AudioCatalog.asset`；`amb_` 前缀的环境声暂存于 `Music/`。
 
+第一版音频制作已完成，共 63 个文件：环境声 6、BGM 14、SFX 43。
+
 ## 资源清单
 
 ### AMB — 环境声（暂存于 Music/）
@@ -14,6 +16,8 @@
 | `amb_env_plant_rustle_01.wav` | 植物枝叶摩擦，植被区域底噪 |
 | `amb_env_water_drip_01.wav` | 滴水声，潮湿 / 洞穴区域底噪 |
 | `amb_env_wind_gust_01.wav` | 阵风声，开阔 / 高处区域底噪 |
+| `amb_env_room_loop.wav` | 房间底噪，循环 |
+| `amb_env_water_flow_loop.wav` | 水流环境声，循环 |
 
 循环属性已登记到 `AudioCatalog`，Unity 内仍需实际试听循环点。
 
@@ -49,29 +53,78 @@
 | `sfx_footstep_land_walk_01~03.wav` | 陆地行走脚步，3 个变体 |
 | `sfx_footstep_water_walk_01~04.wav` | 水中行走脚步，4 个变体 |
 | `sfx_gp_plr_jump.wav` | 玩家跳跃 |
-| `sfx_gp_plr_climb_01.wav` / `_02.wav` | 玩家攀爬，2 个变体 |
+| `sfx_gp_plr_climb_01.wav` / `_02.wav` | 玩家攀爬（通用 / 岩石），2 个变体 |
+| `sfx_gp_plr_climb_vine.wav` | 玩家攀爬藤蔓 |
 | `sfx_gp_plr_die.wav` | 玩家死亡 |
 | `sfx_gp_plr_respawn.wav` | 玩家重生 |
 | `sfx_gp_plr_swim_01~03.wav` | 玩家游泳，3 个变体 |
 | `sfx_gp_plr_water_enter.wav` | 玩家入水 |
 | `sfx_gp_plr_water_exit.wav` | 玩家出水 |
+| `sfx_gp_plr_buoy_enter.wav` | 玩家进入浮力状态 |
+| `sfx_gp_plr_buoy_exit.wav` | 玩家离开浮力状态 |
+| `sfx_gp_plr_impact_01.wav` | 玩家受击 / 撞击 |
 | `sfx_gp_door_open.wav` | 开门 |
 | `sfx_gp_door_close.wav` | 关门 |
-| `sfx_gp_plant_grow.wav` | 植物生长 |
+| `sfx_gp_button_press.wav` | 按钮按下 |
+| `sfx_gp_button_release.wav` | 按钮回弹 |
+| `sfx_gp_machine_start.wav` | 机器启动 |
+| `sfx_gp_machine_stop.wav` | 机器停止 |
+| `sfx_gp_crank_turn_loop.wav` | 曲柄 / 机关转动，循环 |
 | `sfx_gp_steam_burst.wav` | 蒸汽喷发（瞬时） |
 | `sfx_gp_steam_loop.wav` | 蒸汽持续（循环） |
+| `sfx_gp_bubble_loop.wav` | 气泡上浮，循环 |
+| `sfx_gp_platform_move_loop.wav` | 平台移动，循环 |
+| `sfx_gp_plant_grow.wav` | 植物生长 |
+| `sfx_gp_plant_burn.wav` | 植物燃烧 |
+| `sfx_gp_lava_cool.wav` | 岩浆冷却（遇水 / 降温） |
+| `sfx_gp_block_pickup_01.wav` | 方块拾取 |
+| `sfx_gp_block_drop_01.wav` | 方块放下 / 落地 |
 | `sfx_gp_paint_acquire_initial.wav` | 首次获得上色能力（同路径修订） |
 | `sfx_gp_paint_select.wav` | 选色 / 上色确认 |
 | `sfx_gp_block_paint_complete.wav` | 方块上色完成 |
-| `sfx_gp_crank_turn_loop.wav` | 曲柄 / 机关转动，循环 |
-| `sfx_gp_block_pickup_01.wav` | 方块拾取 |
-| `sfx_gp_block_drop_01.wav` | 方块放下 / 落地 |
-| `sfx_gp_lava_cool.wav` | 岩浆冷却（遇水 / 降温） |
-| `sfx_gp_platform_move_loop.wav` | 平台移动，循环 |
 | `sfx_notice_confirm.wav` | 操作确认提示 |
 | `sfx_notice_deny.wav` | 操作被拒绝提示 |
+| `sfx_notice_puzzle_complete.wav` | 解谜完成提示 |
+| `sfx_notice_secret_reveal.wav` | 隐藏要素揭示提示 |
 
 路径均为 `Assets/_Project/Content/Audio/SFX/`。
+
+## 响度标准
+
+`Music/` 下 20 个文件于 2026-10-15 统一做了一次响度归一化。处理方式为 ffmpeg `loudnorm` 两遍测量 + 线性增益，只调整整体电平，不压缩动态。
+
+| 指标 | 目标 |
+|---|---|
+| 综合响度（integrated） | -28 LUFS |
+| True Peak | ≤ -3 dBTP |
+| 处理方式 | 线性归一化，保持原始动态范围 |
+
+实测结果：全部落在 -28.55 ~ -27.56 LUFS；True Peak 最大值 -5.73 dBTP，无一越线。
+
+| 文件 | LUFS | True Peak (dBTP) |
+|---|---|---|
+| `bgm_wn_01_opening.wav` | -28.01 | -16.97 |
+| `bgm_ambient_loop_01.mp3` | -28.00 | -16.15 |
+| `bgm_atmosphere_amin_03.mp3` | -28.01 | -14.12 |
+| `bgm_atmosphere_dsmin_02.mp3` | -28.02 | -16.85 |
+| `bgm_atmosphere_emin_02_loop.mp3` | -28.00 | -15.60 |
+| `bgm_atmosphere_fmin_02_loop.mp3` | -28.00 | -16.64 |
+| `bgm_banjo_01.mp3` | -28.00 | -10.01 |
+| `bgm_choices_01.mp3` | -28.00 | -13.20 |
+| `bgm_kb280_01.mp3` | -28.00 | -12.76 |
+| `bgm_music_box_01.mp3` | -28.00 | -9.48 |
+| `bgm_robot_sad_piano_01.mp3` | -28.00 | -10.53 |
+| `bgm_vocal_chop_01.mp3` | -28.00 | -15.59 |
+| `bgm_wake_up_01_loop.mp3` | -28.50 | -13.07 |
+| `bgm_alien_sacrifice_01.mp3` | -28.55 | -11.21 |
+| `amb_env_machine_hum_01.wav` | -28.00 | -15.82 |
+| `amb_env_plant_rustle_01.wav` | -28.00 | -5.73 |
+| `amb_env_room_loop.wav` | -28.00 | -11.65 |
+| `amb_env_water_drip_01.wav` | -28.22 | -5.73 |
+| `amb_env_water_flow_loop.wav` | -27.56 | -11.75 |
+| `amb_env_wind_gust_01.wav` | -27.68 | -10.42 |
+
+环境声与 BGM 目前共用同一目标值。若实际混音中环境声需要垫在音乐之下，应单独设更低的目标并重新归一化，不要在场景里用音量倍率找平衡。
 
 ## 运行时接入
 
@@ -122,30 +175,38 @@ AudioCuePlayer.StopLoop(this);
 |---|---|---|
 | 开场场景加载 / 标题画面 | `bgm_wn_01_opening` | `PlayMusic(clip, loop: true)` |
 | 常驻氛围层 | `bgm_ambient_loop_01` | `PlayMusic(clip, loop: true)` |
-| 区域环境音 | `amb_env_machine_hum_01` / `amb_env_plant_rustle_01` / `amb_env_water_drip_01` / `amb_env_wind_gust_01` | 按区域进入 / 离开淡入淡出 |
+| 区域环境音 | `amb_env_machine_hum_01` / `amb_env_plant_rustle_01` / `amb_env_water_drip_01` / `amb_env_wind_gust_01` / `amb_env_room_loop` / `amb_env_water_flow_loop` | 按区域进入 / 离开淡入淡出 |
 | 玩家跳跃 / 落地 | `sfx_gp_plr_jump` / `sfx_footstep_land_walk_*` | `PlaySound` |
 | 玩家在地面 / 水中移动 | `sfx_footstep_land_walk_*` / `sfx_footstep_water_walk_*` | `PlaySound` 随机变体 |
 | 玩家攀爬 | `sfx_gp_plr_climb_01~02` | `PlaySound` 随机变体 |
+| 玩家攀爬藤蔓 | `sfx_gp_plr_climb_vine` | 攀附藤蔓时播放 |
 | 玩家入水 / 出水 | `sfx_gp_plr_water_enter` / `sfx_gp_plr_water_exit` | `PlaySound` 状态切换瞬间 |
 | 玩家游泳 | `sfx_gp_plr_swim_01~03` | `PlaySound` 随机变体 |
+| 玩家浮力进出 | `sfx_gp_plr_buoy_enter` / `sfx_gp_plr_buoy_exit` | `PlaySound` 状态切换瞬间 |
+| 玩家受击 / 撞击 | `sfx_gp_plr_impact_01` | `PlaySound` |
 | 玩家死亡 / 重生 | `sfx_gp_plr_die` / `sfx_gp_plr_respawn` | `PlaySound` |
 | 开关门 | `sfx_gp_door_open` / `sfx_gp_door_close` | `PlaySound` 状态切换瞬间 |
-| 植物机关生长 | `sfx_gp_plant_grow` | `PlaySound` |
+| 按钮按下 / 回弹 | `sfx_gp_button_press` / `sfx_gp_button_release` | `PlaySound` |
+| 机器启动 / 停止 | `sfx_gp_machine_start` / `sfx_gp_machine_stop` | `PlaySound` |
+| 曲柄机关转动 | `sfx_gp_crank_turn_loop` | `PlaySound` 循环播放 |
 | 蒸汽机关 | `sfx_gp_steam_burst` / `sfx_gp_steam_loop` | 喷发用 `PlaySound`；持续段循环播放 |
+| 水下气泡 | `sfx_gp_bubble_loop` | 潜入水中循环播放，出水停止 |
+| 移动平台 | `sfx_gp_platform_move_loop` | 平台启动时循环播放，停止时停 |
+| 植物机关生长 / 燃烧 | `sfx_gp_plant_grow` / `sfx_gp_plant_burn` | `PlaySound` |
+| 岩浆遇水冷却 | `sfx_gp_lava_cool` | `PlaySound` 冷却触发时 |
+| 拾取 / 放下方块 | `sfx_gp_block_pickup_01` / `sfx_gp_block_drop_01` | `PlaySound` |
 | 获得上色能力 | `sfx_gp_paint_acquire_initial` | `PlaySound` |
 | 选色 / 上色完成 | `sfx_gp_paint_select` / `sfx_gp_block_paint_complete` | `PlaySound` |
-| 曲柄机关转动 | `sfx_gp_crank_turn_loop` | `PlaySound` 循环播放 |
-| 拾取 / 放下方块 | `sfx_gp_block_pickup_01` / `sfx_gp_block_drop_01` | `PlaySound` |
-| 岩浆遇水冷却 | `sfx_gp_lava_cool` | `PlaySound` 冷却触发时 |
-| 移动平台 | `sfx_gp_platform_move_loop` | 平台启动时循环播放，停止时停 |
 | 操作确认 / 拒绝 | `sfx_notice_confirm` / `sfx_notice_deny` | `PlaySound` |
+| 解谜完成 / 隐藏要素揭示 | `sfx_notice_puzzle_complete` / `sfx_notice_secret_reveal` | `PlaySound` |
 
 ## 待验证项
 
 - [ ] Unity 导入检查：在 Unity 6000.3.12f1 中确认所有音频正确导入，无报错
 - [ ] `.meta` 文件：首次导入后在 Unity 中生成，与音频文件一并提交
 - [ ] 试听验证：逐条试听，确认音质与循环点衔接自然
-- [ ] 环境声与 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop`、`sfx_gp_platform_move_loop` 的循环点确认
+- [ ] 替换后整体平衡确认：-28 LUFS 在游戏内与 UI / SFX 的相对关系
+- [ ] 循环点确认：四个未标注的环境声，以及 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop`、`sfx_gp_platform_move_loop`、`sfx_gp_bubble_loop`
 - [ ] 打包检查：确认音频压缩设置与项目打包配置一致
 - [x] 播放接口扩展：随机变体、按 owner 循环、停止/查询循环音接口已加入 `AudioManager` 和 `GameAudioService`
 - [x] Cue 目录：45 个音频登记为 37 个 Cue，Music / SoundEffect 通道已分流

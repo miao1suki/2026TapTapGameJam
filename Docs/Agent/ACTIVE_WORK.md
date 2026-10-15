@@ -1202,3 +1202,38 @@
 - 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补清单行与拾取/放下、岩浆冷却、平台循环、确认提示接线项。
 - 验证：远端分支与本地一致；未在 Unity 中导入试听，`.meta` 待首次导入生成。
 - 交接提交：本次文档提交。
+
+## 音频第一版完成（第五批：环境声与机关音效补齐）
+
+- 日期：2026-10-14。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：新增 2 个环境声（`amb_env_room_loop`、`amb_env_water_flow_loop`）与 11 个音效（按钮、机器启停、植物燃烧、浮力进出、受击、气泡循环，以及解谜完成与隐藏要素提示）。
+- 里程碑：第一版音频制作完成，仓库现有 63 个音频文件（环境声 6、BGM 14、SFX 43）。
+- 接口变更：无。音频提交为 `3d2f6d6`，本次提交只补记文档。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 重写清单与接线表，覆盖全部 63 个文件。
+- 验证：文档与仓库音频逐文件比对，无遗漏；未在 Unity 中导入试听，`.meta` 待首次导入生成。
+- 交接提交：本次文档提交。
+
+## 音频修订（脚步声与攀爬，新增藤蔓音效）
+
+- 日期：2026-10-15。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：同路径修订 `sfx_footstep_land_walk_01~03`（陆地脚步）与 `sfx_gp_plr_climb_01~02`（玩家攀爬）；新增 `sfx_gp_plr_climb_vine`。
+- 接口变更：无。修订沿用原路径与原文件名，引用与 GUID 不受影响；音频提交为 `34007fc`。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补藤蔓攀爬的清单行与接线项。
+- 验证：远端分支与本地一致；本次未在 Unity 中试听。
+- 交接提交：本次文档提交。
+
+## 音频响度统一（-28 LUFS）
+
+- 日期：2026-10-15。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：`Music/` 下 20 个文件（环境声 6、BGM 14）统一响度。用 ffmpeg loudnorm 两遍测量 + 线性归一化，目标 -28 LUFS、True Peak ≤ -3 dBTP。
+- 结果：实测落在 -28.55 ~ -27.56 LUFS，True Peak 最大 -5.73 dBTP。
+- 接口变更：无。文件名与路径不变，引用与 GUID 不受影响。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 新增「响度标准」一节，含逐文件实测值。
+- 验证：替换后逐文件 SHA256 与归一化产物一致；未在 Unity 中试听。
+- 交接提交：本条目随本次提交。
