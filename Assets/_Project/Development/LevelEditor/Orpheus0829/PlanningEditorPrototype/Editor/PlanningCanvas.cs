@@ -514,6 +514,7 @@ namespace PlanningEditorPrototype
                         box.singleInstance = true;
                         if (!string.IsNullOrEmpty(block.PlanningBoxId)) box.id = block.PlanningBoxId;
                         box.doorOwnerId = button.Owner != null ? button.Owner.GetComponent<LevelEditorPlacedBlock>()?.PlanningBoxId : null;
+                        if (box.doorButtonOrder <= 0) box.doorButtonOrder = button.BindingIndex + 1;
                     }
                     syncedBoxes.Add(box);
                 }
@@ -573,7 +574,8 @@ namespace PlanningEditorPrototype
                     a.width != b.width ||
                     a.height != b.height ||
                     a.paletteEntryName != b.paletteEntryName || a.propEntryName != b.propEntryName ||
-                    a.crankOwnerId != b.crankOwnerId || a.mechanismBaseId != b.mechanismBaseId)
+                    a.crankOwnerId != b.crankOwnerId || a.mechanismBaseId != b.mechanismBaseId ||
+                    a.doorOwnerId != b.doorOwnerId || a.doorButtonOrder != b.doorButtonOrder)
                 {
                     return false;
                 }

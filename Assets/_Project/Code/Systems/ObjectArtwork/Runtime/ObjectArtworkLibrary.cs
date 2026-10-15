@@ -12,7 +12,8 @@ namespace Project.ObjectArtwork
         [InspectorName("红色钥匙")] RedKey, [InspectorName("绿色钥匙")] GreenKey,
         [InspectorName("蓝色钥匙")] BlueKey, [InspectorName("单向平台")] OneWayPlatform,
         [InspectorName("红色按钮")] RedButton, [InspectorName("正面梯子")] LadderFront,
-        [InspectorName("侧面梯子")] LadderSide, [InspectorName("岩浆")] Lava
+        [InspectorName("侧面梯子")] LadderSide, [InspectorName("岩浆")] Lava,
+        [InspectorName("绿色门按钮")] GreenDoorButton, [InspectorName("蓝色门按钮")] BlueDoorButton
     }
     [System.Serializable]
     public sealed class MechanismArtworkEntry
@@ -40,6 +41,15 @@ namespace Project.ObjectArtwork
         public float vineIdleFrameSeconds = 1f / 12f;
         public MechanismArtworkEntry[] mechanisms = System.Array.Empty<MechanismArtworkEntry>();
         public Sprite[] doorIndicators = System.Array.Empty<Sprite>();
+        public Sprite[] doorWhiteIndicators = System.Array.Empty<Sprite>();
+        public Sprite doorClosed;
+
+        public static MechanismArtworkKind DoorButtonKind(int index) => index == 1
+            ? MechanismArtworkKind.GreenDoorButton : index == 2 ? MechanismArtworkKind.BlueDoorButton : MechanismArtworkKind.DoorButton;
+
+        // Three symbols keep their authored locations; shorter lists remain centered.
+        public static Vector3 DoorIndicatorOffset(int index, int count) => new Vector3(0f,
+            count == 2 ? (index == 0 ? 5f : -13f) / 16f : 0f, -.001f);
 
         public MechanismArtworkEntry Find(MechanismArtworkKind kind)
         {

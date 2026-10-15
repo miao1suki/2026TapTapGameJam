@@ -139,7 +139,10 @@ namespace Project.BlockFeatures
             Initialize();
             if (!initialized || visual == null) return;
             if (runtimeMaterial != Application.isPlaying) BindMaterial();
+            if (button != null) kind = ObjectArtworkLibrary.DoorButtonKind(button.BindingIndex);
             var entry = artwork.Find(kind);
+            if (entry == null || entry.frames == null || entry.frames.Length == 0) entry = artwork.Find(MechanismArtworkKind.DoorButton);
+            if (entry == null || entry.frames == null || entry.frames.Length == 0) return;
             bool real = !Application.isPlaying || colorObject == null || ColorAppearanceManager.Instance.ShowsUnlockedAppearance(colorObject.BaseColorTypeId);
             foreach (var model in placeholders)
                 if (model != null && (!Application.isPlaying || colorObject == null || real || model != colorObject.TargetRenderer)) model.enabled = false;
@@ -167,7 +170,7 @@ namespace Project.BlockFeatures
                 frame = ObjectArtworkLibrary.Frame(elapsed, entry.frameSeconds, entry.frames.Length, true);
             }
             previousPosition = transform.position;
-            var sprite = entry.frames[Mathf.Clamp(frame, 0, entry.frames.Length - 1)];
+            var sprite = door != null && artwork.doorClosed != null ? artwork.doorClosed : entry.frames[Mathf.Clamp(frame, 0, entry.frames.Length - 1)];
             if (visual.sprite != sprite || mask == null)
             {
                 visual.sprite = sprite;
@@ -184,8 +187,12 @@ namespace Project.BlockFeatures
             {
                 for (int i = 0; i < indicators.Length; i++)
                 {
-                    indicators[i].sprite = i < artwork.doorIndicators.Length ? artwork.doorIndicators[i] : null;
-                    indicators[i].enabled = visual.enabled && openProgress <= .001f && i < door.Buttons.Count && door.Buttons[i] != null && door.Buttons[i].IsPressed;
+                    bool pressed = Application.isPlaying && i < door.Buttons.Count && door.Buttons[i] != null && door.Buttons[i].IsPressed;
+                    var frames = pressed ? artwork.doorIndicators : artwork.doorWhiteIndicators;
+                    indicators[i].sprite = i < frames.Length ? frames[i] : null;
+                    indicators[i].transform.localPosition = ObjectArtworkLibrary.DoorIndicatorOffset(i, door.Buttons.Count);
+                    indicators[i].gameObject.layer = gameObject.layer;
+                    indicators[i].enabled = visual.enabled && openProgress < .999f && i < door.Buttons.Count && door.Buttons[i] != null;
                 }
                 // Door artwork now owns the prompt; preserve the hint's binding/state component.
                 if (hint == null) hint = GetComponentInChildren<DoorHint>();
@@ -228,6 +235,12 @@ namespace Project.BlockFeatures
                 float width = horizontal ? size.y : size.x, height = horizontal ? size.x : size.y;
                 if (button != null || redButton != null) { width = 1f; height = 1f; }
                 visual.transform.localScale = new Vector3(width / sprite.bounds.size.x, height / sprite.bounds.size.y, 1);
+                if (door != null && artwork.doorClosed != null)
+                {
+                    var localScale = visual.transform.localScale;
+                    localScale.x *= Mathf.Cos(openProgress * Mathf.PI * .5f);
+                    visual.transform.localScale = localScale;
+                }
                 // Bottom-pivot sprites fit the complete footprint, including the door's two cells.
                 visual.transform.localPosition = horizontal ? new Vector3(center.x + size.x * .5f, center.y, center.z - size.z * .5f - .015f)
                     : new Vector3(center.x, (button != null ? -.5f : center.y - size.y * .5f), center.z - size.z * .5f - .015f);

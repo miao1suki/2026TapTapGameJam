@@ -3,6 +3,12 @@ using UnityEngine;
 
 namespace Project.Player
 {
+    /// <summary>Optional solid-volume constraint. Only the player's physics owner applies the result.</summary>
+    public interface IPlayerCarryCollisionTarget
+    {
+        Vector3 ConstrainCarryDisplacement(Vector3 anchor, Vector3 displacement, float skin);
+    }
+
     /// <summary>Optional handoff for targets whose physics/reactions must pause during carry animation.</summary>
     public interface ICarryMotionParticipant
     {

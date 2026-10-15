@@ -147,7 +147,7 @@ MonoBehaviour:
   featureMaterial: {fileID: 0}
   featureRenderers: []
   playerTag: Player
-  normalRiseCells: 3
+  normalRiseCells: 8
   highFallThresholdCells: 4
   highRiseCells: 8
   carryRiseCells: 4

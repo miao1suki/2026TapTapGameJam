@@ -4,6 +4,8 @@
 
 ## 所有权与资源
 
+- 浮力柱 `topExitRiseCells` 默认3格，替代旧的 `topExitBoostSpeed` 额外速度字段。出水使用 `PlayerController.ApplyGridRiseImmediate(cells)`：按玩家单元格尺寸/重力计算上升速度，保留水平速度，不叠加环境额外加速或先前上浮速度；同次出水只触发一次。其他使用 `ApplyVerticalBounceImmediate(speed)` 的机关保持原有额外加速行为。
+
 - WaterSourceFeature、DirectionalCurrentFeature、BuoyancyColumnFeature 继续拥有水域/推力/玩家接触和红色蒸汽反应，不在表现脚本重新实现玩法。
 - `GameplayWaterPresentation` 只在初始化、体积/相邻水体变化、方向/密度/速度变化时重建；注册表限当前 Scene。按 Collider 世界边界和 `GridCellSizeUtility` 定义大小，缓存每格尺寸；大块最多3种后片Mesh和1个前片Mesh，不为每格创建GameObject。
 - 相邻判断使用全部已激活水族体积：最上沿Surface，下一行Body，更深Interior。面片在XY平面，当前横版相机从-Z观察；不承诺旧四视角视差玩法。

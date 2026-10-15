@@ -13,7 +13,7 @@ namespace Project.BlockFeatures
         [BlockParameter(Label = "玩家标签", Group = "弹跳", Order = 0)]
         [SerializeField] private string playerTag = "Player";
         [BlockParameter(Label = "普通回弹高度（格）", Group = "弹跳", Order = 1)]
-        [SerializeField, Min(.1f)] private float normalRiseCells = 3f;
+        [SerializeField, Min(.1f)] private float normalRiseCells = 8f;
         [BlockParameter(Label = "高跳落差门槛（格）", Group = "弹跳", Order = 2, Tooltip = "落差超过门槛，且落地时按住跳跃，触发高跳。")]
         [SerializeField, Min(0f)] private float highFallThresholdCells = 4f;
         [BlockParameter(Label = "高跳高度（格）", Group = "弹跳", Order = 3)]

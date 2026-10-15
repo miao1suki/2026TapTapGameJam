@@ -24,11 +24,11 @@ namespace Project.BlockFeatures
         [SerializeField, Min(0f)] private float riseSpeed = 7f;
 
         [BlockParameter(
-            Label = "出水额外上推速度",
+            Label = "出水喷出高度（格）",
             Group = "浮力设置",
             Order = 1,
-            Tooltip = "玩家被推到水面上方时额外增加的向上速度；用于产生越过水面后回落再上浮的效果。")]
-        [SerializeField, Min(0f)] private float topExitBoostSpeed = .75f;
+            Tooltip = "离开浮力区后继续上升的高度，按单元格尺寸和玩家重力计算，不累加原有上浮速度。")]
+        [SerializeField, Min(0f)] private float topExitRiseCells = 3f;
 
         private readonly Collider[] blueOverlapBuffer =
             new Collider[32];
@@ -152,8 +152,8 @@ namespace Project.BlockFeatures
                 "上浮推力",
                 riseSpeed));
             values.Add(new BlockDebugValue(
-                "出水额外上推",
-                topExitBoostSpeed));
+                "出水喷出高度（格）",
+                topExitRiseCells));
             values.Add(new BlockDebugValue(
                 "水体表现",
                 HasWaterVisual ? "已关联" : "未关联"));
@@ -191,16 +191,14 @@ namespace Project.BlockFeatures
         private void ApplyTopExitBoost(PlayerController player)
         {
             if (player == null ||
-                topExitBoostSpeed <= 0f ||
+                topExitRiseCells <= 0f ||
                 !overshootPlayerIds.Add(
                     player.GetInstanceID()))
             {
                 return;
             }
 
-            player.ApplyVerticalBounceImmediate(
-                player.VerticalVelocity +
-                topExitBoostSpeed);
+            player.ApplyGridRiseImmediate(topExitRiseCells);
         }
 
         private void StopAllLifts()

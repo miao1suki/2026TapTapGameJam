@@ -56,7 +56,10 @@ namespace Project.BlockFeatures.Editor
                 }
             }
             Add(MechanismArtworkKind.Door, "门80ms每帧.png", 16, 32, 4, 64, 32);
-            Add(MechanismArtworkKind.DoorButton, "按钮80ms每帧.png", 16, 16, 2, 32);
+            Add(MechanismArtworkKind.DoorButton, "按钮80ms每帧.png", 16, 16, 2);
+            Add(MechanismArtworkKind.GreenDoorButton, "蓝绿按钮80ms每帧.png", 16, 16, 2);
+            Add(MechanismArtworkKind.BlueDoorButton, "蓝绿按钮80ms每帧.png", 16, 16, 2, 32);
+            SliceMechanism(Source + "蓝绿按钮80ms每帧.png", 16, 16, Vector4.zero);
             Add(MechanismArtworkKind.RedButton, "按钮80ms每帧.png", 16, 16, 2);
             Add(MechanismArtworkKind.Crank, "曲柄40ms每帧.png", 16, 16, 28);
             Add(MechanismArtworkKind.CrankPlatform, "移动平台80ms每帧.png", 48, 16, 6, top: 11, cropHeight: 5, border: new Vector4(8,0,8,0));
@@ -96,18 +99,40 @@ namespace Project.BlockFeatures.Editor
                 output.SetPixels32(new Color32[48 * 32]);
                 for (int i = 0; i < 3; i++)
                 {
-                    // Source top-to-bottom: green arrow, red diamond, blue arrow.
+                    // Binding order is red, green, blue, independent of the symbols' vertical locations.
                     for (int y = 0; y < 32; y++) for (int x = 0; x < 16; x++)
                     {
                         Color pixel = image.Texture.GetPixel(x, y);
-                        bool belongs = i == 0 ? pixel.g > pixel.r && pixel.g > pixel.b
-                            : i == 1 ? pixel.r > pixel.g && pixel.r > pixel.b : pixel.b > pixel.r && pixel.b > pixel.g;
+                        bool belongs = i == 0 ? pixel.r > pixel.g && pixel.r > pixel.b
+                            : i == 1 ? pixel.g > pixel.r && pixel.g > pixel.b : pixel.b > pixel.r && pixel.b > pixel.g;
                         if (belongs) output.SetPixel(i * 16 + x, y, pixel);
                     }
                 }
                 string path = Generated + "/Door Indicators.png";
                 File.WriteAllBytes(path, output.EncodeToPNG()); UnityEngine.Object.DestroyImmediate(output); AssetDatabase.ImportAsset(path);
                 library.doorIndicators = SliceMechanism(path, 16, 32, Vector4.zero);
+                var white = new Texture2D(48, 32, TextureFormat.RGBA32, false);
+                var closed = new Texture2D(16, 32, TextureFormat.RGBA32, false);
+                var closedPixels = image.Texture.GetPixels(64, 0, 16, 32);
+                ClearBlackBackground(closedPixels);
+                white.SetPixels32(new Color32[48 * 32]);
+                for (int y = 0; y < 32; y++) for (int x = 0; x < 16; x++)
+                {
+                    Color pixel = image.Texture.GetPixel(x, y);
+                    int channel = pixel.r > pixel.g && pixel.r > pixel.b ? 0
+                        : pixel.g > pixel.r && pixel.g > pixel.b ? 1
+                        : pixel.b > pixel.r && pixel.b > pixel.g ? 2 : -1;
+                    if (pixel.a <= 0 || channel < 0) continue;
+                    white.SetPixel(channel * 16 + x, y, new Color(1f, 1f, 1f, pixel.a));
+                    closedPixels[y * 16 + x] = Color.clear;
+                }
+                closed.SetPixels(closedPixels);
+                string whitePath = Generated + "/Door White Indicators.png", closedPath = Generated + "/Door Closed.png";
+                File.WriteAllBytes(whitePath, white.EncodeToPNG()); File.WriteAllBytes(closedPath, closed.EncodeToPNG());
+                UnityEngine.Object.DestroyImmediate(white); UnityEngine.Object.DestroyImmediate(closed);
+                AssetDatabase.ImportAsset(whitePath); AssetDatabase.ImportAsset(closedPath);
+                library.doorWhiteIndicators = SliceMechanism(whitePath, 16, 32, Vector4.zero);
+                library.doorClosed = SliceMechanism(closedPath, 16, 32, Vector4.zero)[0];
             }
             library.mechanisms = entries.ToArray(); EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
             foreach (string folder in new[] { "Assets/_Project/Content/Mechanisms", "Assets/_Project/Content/ContactCubes", "Assets/_Project/Content/ColorBlocks/Prefabs" })
@@ -294,7 +319,14 @@ namespace Project.BlockFeatures.Editor
             settings.spriteMeshType = SpriteMeshType.FullRect; importer.SetTextureSettings(settings);
             importer.filterMode = FilterMode.Point; importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed; importer.npotScale = TextureImporterNPOTScale.None;
-            importer.wrapMode = TextureWrapMode.Clamp; importer.maxTextureSize = Mathf.NextPowerOfTwo(textureWidth);
+            importer.wrapMode = TextureWrapMode.Clamp; importer.maxTextureSize = Mathf.Max(32, Mathf.NextPowerOfTwo(Mathf.Max(textureWidth, textureHeight)));
+            importer.alphaIsTransparency = true;
+            foreach (var target in new[] { "Standalone", "Android", "iPhone" })
+            {
+                var platform = importer.GetPlatformTextureSettings(target);
+                platform.overridden = false;
+                importer.SetPlatformTextureSettings(platform);
+            }
             var data = new SpriteMetaData[textureWidth / width];
             for (int index = 0; index < data.Length; index++) data[index] = new SpriteMetaData {
                 name = prefix + "_" + index.ToString("D2"), rect = new Rect(index * width, 0, width, height),

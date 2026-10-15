@@ -255,6 +255,16 @@ MonoBehaviour:
     - {fileID: 1284647483036081791, guid: ef3837466db1ddd4cab78ea9b6d66923, type: 3}
     - {fileID: -3826572569901313554, guid: ef3837466db1ddd4cab78ea9b6d66923, type: 3}
     frameSeconds: 0.08
+  - kind: 16
+    frames:
+    - {fileID: 1284647483036081791, guid: a76d68fe89e420e4ab299362498d7f5e, type: 3}
+    - {fileID: -3826572569901313554, guid: a76d68fe89e420e4ab299362498d7f5e, type: 3}
+    frameSeconds: 0.08
+  - kind: 17
+    frames:
+    - {fileID: 1284647483036081791, guid: eab1f2a1ad73b1445bc8d376a86cc981, type: 3}
+    - {fileID: -3826572569901313554, guid: eab1f2a1ad73b1445bc8d376a86cc981, type: 3}
+    frameSeconds: 0.08
   - kind: 12
     frames:
     - {fileID: 1284647483036081791, guid: a6a8761dc81be114d876db2bd589230b, type: 3}
@@ -355,3 +365,8 @@ MonoBehaviour:
   - {fileID: 1284647483036081791, guid: f0667e8d7daeb5247aa3fc58cc48f4b7, type: 3}
   - {fileID: -3826572569901313554, guid: f0667e8d7daeb5247aa3fc58cc48f4b7, type: 3}
   - {fileID: -6287503803897879949, guid: f0667e8d7daeb5247aa3fc58cc48f4b7, type: 3}
+  doorWhiteIndicators:
+  - {fileID: 1284647483036081791, guid: 705154ea97c90e64982f5afb351f293f, type: 3}
+  - {fileID: -3826572569901313554, guid: 705154ea97c90e64982f5afb351f293f, type: 3}
+  - {fileID: -6287503803897879949, guid: 705154ea97c90e64982f5afb351f293f, type: 3}
+  doorClosed: {fileID: 1284647483036081791, guid: a29278c9cc69e9546beaa6de8a10b04c, type: 3}

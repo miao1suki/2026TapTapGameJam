@@ -1,5 +1,9 @@
 # 系统索引
 
+玩家搬运体积约束：头顶方块按实际实体扫掠限制玩家物理位移，支持长块、冲刺与反向离开；搬运提示统一字体且不继承合并拉伸。Pick 已补 WordNote_UI，Test/Gaming 沿用各自现有组件。见 [搬运 API](Integration/PLAYER_CARRY_API.md)、[使用说明](../Developer/PLAYER_CARRY.md)。
+
+门按钮三色美术按创建/绑定顺序红、绿、蓝；门内白色图案按按钮数量显示、按各按钮独立点亮，全部按下后保留可配置0.8秒展示再开门，有Timeline时先到门附近。规划存档保存按钮创建次序，重建不按Hierarchy排序；按钮仍为无色踩踏机关。见 [门使用说明](../Developer/DOORS.md)、[接入API](Integration/DOOR_API.md)。
+
 正式水族已替换为TA像素水面/水中/水下自动分区与透明折射板；定向水流四向气泡、浮力柱向上连通水域气泡，继续共享蓝色HSV/透明交接与原玩法/区域重置。无需重建场景。见 [玩法水体API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[使用说明](../Developer/GAMEPLAY_PIXEL_WATER.md)。旧独立波纹水保留作资源和后备路径，不再默认生成。
 
 Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全文/在线入口、设置查看与撤回；最低 Android 7.1 不变，不启用 Bootstrap。见 [开发说明](../Developer/ANDROID_PRIVACY.md) 与 [接入 API](Integration/ANDROID_PRIVACY_API.md)。
@@ -24,7 +28,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 
 - 独立曲柄与多平台：平台侧持久绑定、自动配套创建、同控制器平台合并/解除与重建引用。见 [机关 API](Integration/MECHANISM_SIGNAL_API.md) 与 [策划操作](../Developer/MECHANISMS_AND_JUMP.md)。
 
-红块供能与平台：旧能源兼容替换为固定红色 ContactCube，任意已解锁红块可供能任意基座。移动平台信号驱动，曲柄通电制动/载人快降；参数模式可点击绑定，地图存稳定 ID + 相对格，Scene 显示青色路线与粉色绑定。新增无色单向平台和有材质无碰撞隐藏块。玩家1×1、普通上升4格，弹性植物3/8格及一次搬运4格跳跃。见 [机关信号 API](Integration/MECHANISM_SIGNAL_API.md)、[机关与跳跃](../Developer/MECHANISMS_AND_JUMP.md)。
+红块供能与平台：旧能源兼容替换为固定红色 ContactCube，任意已解锁红块可供能任意基座。移动平台信号驱动，曲柄通电制动/载人快降；参数模式可点击绑定，地图存稳定 ID + 相对格，Scene 显示青色路线与粉色绑定。新增无色单向平台和有材质无碰撞隐藏块。玩家1×1、普通上升4格，弹性植物8格及一次搬运4格跳跃，摔死门槛10格，气泡柱出水上升3格。见 [机关信号 API](Integration/MECHANISM_SIGNAL_API.md)、[机关与跳跃](../Developer/MECHANISMS_AND_JUMP.md)。
 
 独立三色接触方块：`Code/Systems/ContactCubes`，道具栏目三个 ContactCube 预制体，不是玩家染色目标；绿块四态长度反应、红蓝水柱、既有颜色目标转发。动态重力、落稳锁定、红蓝空中玩家碰撞隔离和喷出保护；绿块始终实体，母体及伸长部分侧面可攀爬、横向伸长部分上下攀附已接入。搬运已复用 CarryableFeature/玩家现有输入，通过 ICarryMotionParticipant 挂起刚体与反应、完整实体校验放下；黏住待接。API：[CONTACT_CUBES_API.md](Integration/CONTACT_CUBES_API.md)，策划：[CONTACT_CUBES.md](../Developer/CONTACT_CUBES.md)。
 

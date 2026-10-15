@@ -1,5 +1,31 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-15 门美术、搬运与高度调整整合
+
+- 按用户授权提交并整合至 main；fetch 后 origin/main 仍为 f5d1618，无新增主线提交。远程未合入的旧TA实验分支混有退役场景/管线改动，本轮不作为新功能整包合入；当前已使用的TA资源保持不变。
+- 范围：门三色按钮/独立图案与延迟开门、搬运实体阻挡与统一提示、Pick新增WordNote_UI、高度8/10/4/3。Pick只暂存本轮新增提示节点，用户关卡布局/连线测试改动保持本地；字体缓存、PackageManagerSettings、DOTweenPro和临时ICON不提交。
+- 既有门/搬运Play验证及本轮高度14项通过；整合前重新运行140/140项EditMode通过（Library/MergeDoorCarryTests.xml），暂存内容diff检查通过。Unity版本不变，未重新打包。
+
+## 2026-10-15 弹跳、落差与气泡柱高度
+
+- 在当前分支调整普通植物回弹8格、搬运植物跳跃4格、摔死门槛10格、气泡柱出水上升3格；不改普通跳跃和触发/区域重置规则。保留此前所有本地改动，不提交推送。
+- 气泡柱由额外速度改为明确的出水高度参数，按玩家重力与单元格尺寸换算；同步有效玩家/植物预制体与旧测试玩家落差覆盖。
+- 已完成；Unity6000.3.12f1隔离编译及14项参数/实际刚体速度断言通过（Library/HeightTuning.log），检查两种玩家预制体、植物普通/高跳/搬运、气泡重复触发及不累加环境加速。git diff --check通过；未重新打包，未声明完整关卡手感验收。
+
+## 2026-10-15 搬运实体阻挡与测试场景提示
+
+- 当前分支 codex/art/door-button-feedback；保留未提交门美术及用户场景/字体/插件。新增搬运物实体扫掠，由玩家物理入口裁剪位移，不恢复搬运刚体推挤。排查并统一搬运中心提示字体、大小及合并物体缩放，Pick 接入既有 WordNote 提示，不重复添加暂停/输入系统。不提交推送。
+- 已完成：搬运物完整 OBB 扫掠接入玩家所有移动入口与平台位移；三色 ContactCube 补统一字体，中心提示消除合并拉伸、随设备刷新。Pick 仅新增 WordNote_UI，排除本次新增节点后文件 SHA256 与任务前完全一致（ED2BEF7D…AA35）。Test/Gaming 不改布局，复用原组件。
+- Unity6000.3.12f1 隔离140/140项EditMode、20项真实物理搬运断言及3场景接线通过（Library/CarryRegressionTests.xml、CarryCollisionPlay.log）；Pick实际GPU/Play14项提示验证通过（Library/PickCarryHints.log），消息样式由现有业务处理器触发，截图Library/PickCarryHints.png。没有重新打包或安卓真机验收；当前仅本地待用户测试。
+- 原有 ContactCubeCarryVerification 的58项三色搬运/完整落点/放下/区域复位实际Play回归再次通过（Library/CarryExistingRegression.log）；无新增运行时Debug日志。
+
+## 2026-10-15 门按钮三色美术与延迟开门
+
+- 分支 codex/art/door-button-feedback；接入新增蓝绿按钮图，配置像素导入和16×16切片。门按钮依绑定顺序红/绿/蓝，门内白色图案按实际按钮数显示，独立响应对应按钮；全部按下后保留可配置的图案展示时间再开门。保留踩踏触发、保持/持续模式、重置与Timeline相机所有权。
+- 已应用到当前项目：新原图4帧16×16切片、Point/FullRect/无Mip无压缩/上限64，保留原图与GUID；门图案数量匹配1/2/3按钮、各自独立点亮，红/绿/蓝按钮不参与颜色能力。Timeline先到门附近再展示0.8秒，等待时保持阻挡，暂停冻结；持续信号释放、重置、禁用取消等待。创建次序持久化，反向读取场景也保留顺序。
+- Unity6000.3.12f1隔离140/140项EditMode、27项真实GPU/Play（含Timeline及暂停）、12项规划保存/乱序/删除/旧存档兼容、39项实际压力/R/离区重置断言通过。日志Library/DoorButtonFinalTests.xml、DoorButtonCamera.log、DoorPlanning.log、DoorPressureRegression.log；实际像素截图Library/FlowRetirementProbe/Library/DoorButtons-*.png。未重新打包/安卓真机验收。
+- 不改用户Pick布局（SHA256仍ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35）、字体、插件和其他本机配置。源码/资源/预制体已在主项目，不提交、不推送，等待用户测试。
+
 ## 2026-10-15 玩法水体接入TA像素面片与定向气泡
 
 - 已接入：WaterVisualFeature 的默认表现切换为 TA 水面/水中/水下分区，保留原游泳、水流、浮力、蒸汽、解锁与区域重置；定向水流和浮力柱自动添加对应流向气泡，排序为水后片→角色/气泡→透明扰动板。水面按相邻水族体积识别，合并块按格平铺，水和气泡继续共享蓝色透明渐显材质。

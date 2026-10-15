@@ -292,7 +292,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.CarryableFeature
   canCarry: 1
-  indicatorFont: {fileID: 0}
+  indicatorFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
   indicatorFontSize: 2.7
   indicatorOffset: {x: 0, y: 0, z: 0}
   indicatorOutlineWidth: 0.1

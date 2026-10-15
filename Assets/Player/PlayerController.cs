@@ -80,7 +80,7 @@ namespace Project.Player
         [SerializeField, Min(0)] private float jumpBufferTime = .12f;
         [SerializeField] private LayerMask groundMask = ~0;
         [SerializeField, Min(0f)]
-        private float lethalFallHeightBlocks = 8f;
+        private float lethalFallHeightBlocks = 10f;
         [SerializeField, Min(0f)]
         private float respawnInvulnerabilitySeconds = 2f;
         [SerializeField, Min(0f)]
@@ -603,6 +603,13 @@ namespace Project.Player
         }
 
         public void ApplyVerticalBounceImmediate(float verticalSpeed)
+            => ApplyVerticalLaunchImmediate(verticalSpeed, false);
+
+        /// <summary>Launch to a grid-relative height without adding environmental speed bonuses.</summary>
+        public void ApplyGridRiseImmediate(float cells)
+            => ApplyVerticalLaunchImmediate(CalculateGridRiseSpeed(cells), true);
+
+        private void ApplyVerticalLaunchImmediate(float verticalSpeed, bool exactSpeed)
         {
             if (dead)
             {
@@ -617,6 +624,7 @@ namespace Project.Player
 
             Vector3 velocity = motor.linearVelocity;
             ApplyEnvironmentLaunch(ref velocity, verticalSpeed);
+            if (exactSpeed) velocity.y = verticalSpeed;
             motor.linearVelocity = velocity;
             IsGrounded = false;
             airborneSince = Time.time;
@@ -1777,7 +1785,7 @@ namespace Project.Player
             velocity.x = Mathf.Clamp(movement.x, -1, 1) * selected.speed;
             velocity.y = Mathf.Clamp((selected.rootY - motor.position.y) / Time.fixedDeltaTime, -3f, 3f);
             velocity.z = 0;
-            motor.linearVelocity = velocity;
+            motor.linearVelocity = ConstrainCarryVelocity(velocity);
             IsGrounded = false; enteredClimbDuringFall = true; highestAirPosition = motor.position.y;
             return true;
         }
@@ -1793,7 +1801,7 @@ namespace Project.Player
 
             if (pendingPlatformDelta.sqrMagnitude > .000001f)
             {
-                motor.position += pendingPlatformDelta;
+                motor.position += ConstrainCarryDisplacement(pendingPlatformDelta);
                 pendingPlatformDelta = Vector3.zero;
             }
 
@@ -1929,7 +1937,7 @@ namespace Project.Player
                 jumpUntil = groundedUntil = -1f;
                 IsGrounded = false;
                 airborneSince = Time.time;
-                motor.linearVelocity = velocity;
+                motor.linearVelocity = ConstrainCarryVelocity(velocity);
                 Emit(AchievementSignalIds.PlayerJumped);
                 AudioCuePlayer.Play(AudioCueIds.PlayerJump);
                 return;
@@ -1997,7 +2005,7 @@ namespace Project.Player
                     climbAcceleration * Time.fixedDeltaTime);
                 velocity.z = 0f;
                 jumpUntil = -1f;
-                motor.linearVelocity = velocity;
+                motor.linearVelocity = ConstrainCarryVelocity(velocity);
                 return;
             }
             if (IsSwimming && Time.time >= environmentLaunchUntil)
@@ -2031,7 +2039,7 @@ namespace Project.Player
                     Time.fixedDeltaTime);
                 velocity.z = 0f;
                 jumpUntil = -1f;
-                motor.linearVelocity = velocity;
+                motor.linearVelocity = ConstrainCarryVelocity(velocity);
                 return;
             }
             if (blocked)
@@ -2118,8 +2126,19 @@ namespace Project.Player
             }
 
             UpdateMovementAudio();
-            motor.linearVelocity = velocity;
+            motor.linearVelocity = ConstrainCarryVelocity(velocity);
         }
+
+        private Vector3 ConstrainCarryDisplacement(Vector3 displacement)
+        {
+            if (!IsCarrying || IsCarryBusy || !(selectedCarryTarget is IPlayerCarryCollisionTarget solid))
+                return displacement;
+            Vector3 physicsAnchor = CarryAnchorWorldPosition + motor.position - transform.position;
+            return solid.ConstrainCarryDisplacement(physicsAnchor, displacement, gridCellWorldSize * .01f);
+        }
+
+        private Vector3 ConstrainCarryVelocity(Vector3 velocity) =>
+            ConstrainCarryDisplacement(velocity * Time.fixedDeltaTime) / Time.fixedDeltaTime;
 
         private bool ShouldPlayLandingImpact()
         {

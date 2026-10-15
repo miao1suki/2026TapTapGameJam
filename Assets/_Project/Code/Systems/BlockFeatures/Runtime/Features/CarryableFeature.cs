@@ -2,6 +2,7 @@ using Project.ColorBlocks;
 using Project.Audio;
 using Project.InputAbstraction;
 using Project.Player;
+using Project.WordNote;
 using TMPro;
 using UnityEngine;
 
@@ -13,7 +14,7 @@ namespace Project.BlockFeatures
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CarryableFeature : MonoBehaviour,
-        IPlayerCarryTarget
+        IPlayerCarryTarget, IPlayerCarryCollisionTarget
     {
         [SerializeField] private bool canCarry = true;
         [SerializeField] private TMP_FontAsset indicatorFont;
@@ -27,6 +28,9 @@ namespace Project.BlockFeatures
         private ICarryMotionParticipant motionParticipant;
         private TextMeshPro indicator;
         private Material indicatorMaterial;
+        private TMP_FontAsset indicatorMaterialFont;
+        private float appliedOutlineWidth = -1f;
+        private Collider[] indicatorShapes;
 
         public Transform CarryTransform => transform;
         public bool IsCarryActive =>
@@ -61,7 +65,7 @@ namespace Project.BlockFeatures
             }
 
             indicator.gameObject.SetActive(true);
-            indicator.transform.localPosition = indicatorOffset;
+            RefreshIndicatorPose();
             indicator.text = InputPromptUtility.UseActionLabels
                 ? "搬运"
                 : InputPromptUtility.FormatKey(
@@ -69,12 +73,13 @@ namespace Project.BlockFeatures
                   "\n搬运";
             indicator.font = indicatorFont != null
                 ? indicatorFont
-                : TMP_Settings.defaultFontAsset;
+                : WordNoteUI.Instance != null ? WordNoteUI.Instance.DefaultFont : TMP_Settings.defaultFontAsset;
             indicator.fontSize = indicatorFontSize;
             indicator.color = Color.black;
             indicator.fontStyle = FontStyles.Bold;
             indicator.alignment = TextAlignmentOptions.Center;
             indicator.textWrappingMode = TextWrappingModes.NoWrap;
+            indicator.overflowMode = TextOverflowModes.Overflow;
             indicator.sortingLayerID =
                 SortingLayer.layers.Length > 0
                     ? SortingLayer.layers[
@@ -82,6 +87,32 @@ namespace Project.BlockFeatures
                     : 0;
             indicator.sortingOrder = short.MaxValue;
             ApplyIndicatorOutline();
+        }
+
+        private void LateUpdate()
+        {
+            // Only the queue head has a visible label. Re-evaluate bindings/device while it remains selected.
+            if (indicator != null && indicator.gameObject.activeSelf) SetCarryIndicator(true);
+        }
+
+        private void RefreshIndicatorPose()
+        {
+            indicatorShapes ??= GetComponentsInChildren<Collider>(true);
+            Bounds bounds = default;
+            bool found = false;
+            foreach (Collider shape in indicatorShapes)
+            {
+                if (shape == null || !shape.enabled || shape.isTrigger || !shape.gameObject.activeInHierarchy) continue;
+                if (!found) { bounds = shape.bounds; found = true; }
+                else bounds.Encapsulate(shape.bounds);
+            }
+            indicator.transform.position = (found ? bounds.center : transform.position) + transform.TransformVector(indicatorOffset);
+            indicator.transform.rotation = Quaternion.identity;
+            Vector3 scale = transform.lossyScale;
+            indicator.transform.localScale = new Vector3(
+                1f / Mathf.Max(.0001f, Mathf.Abs(scale.x)),
+                1f / Mathf.Max(.0001f, Mathf.Abs(scale.y)),
+                1f / Mathf.Max(.0001f, Mathf.Abs(scale.z)));
         }
 
         private void Awake()
@@ -139,7 +170,8 @@ namespace Project.BlockFeatures
             motionParticipant?.SetCarrySuspended(true);
             if (!carryMotion.BeginCarry(
                     player.CarryAnchorWorldPosition,
-                    player.CarryCenterWorldPosition))
+                    player.CarryCenterWorldPosition,
+                    (player as Component)?.transform))
             {
                 motionParticipant?.SetCarrySuspended(false);
                 return false;
@@ -154,6 +186,9 @@ namespace Project.BlockFeatures
         {
             carryMotion?.UpdateAnchor(anchorWorldPosition);
         }
+
+        public Vector3 ConstrainCarryDisplacement(Vector3 anchor, Vector3 displacement, float skin) =>
+            carryMotion != null ? carryMotion.ConstrainDisplacement(anchor, displacement, skin) : displacement;
 
         public bool BeginCarryDrop(
             IPlayerCarryHost player,
@@ -220,11 +255,21 @@ namespace Project.BlockFeatures
                 return;
             }
 
+            if (indicatorMaterial != null && indicatorMaterialFont != font)
+            {
+                Destroy(indicatorMaterial);
+                indicatorMaterial = null;
+            }
             if (indicatorMaterial == null)
             {
                 indicatorMaterial = new Material(font.material);
                 indicator.fontMaterial = indicatorMaterial;
+                indicatorMaterialFont = font;
+                appliedOutlineWidth = -1f;
             }
+
+            if (Mathf.Approximately(appliedOutlineWidth, indicatorOutlineWidth)) return;
+            appliedOutlineWidth = indicatorOutlineWidth;
 
             indicatorMaterial.SetColor(
                 ShaderUtilities.ID_FaceColor,
@@ -241,6 +286,7 @@ namespace Project.BlockFeatures
             indicatorMaterial.EnableKeyword("OUTLINE_ON");
             indicatorMaterial.renderQueue = 5000;
             indicatorMaterial.SetInt("_ZTestMode", 8);
+            indicator.UpdateMeshPadding();
             if (indicator.renderer != null)
             {
                 indicator.renderer.sortingLayerID =
