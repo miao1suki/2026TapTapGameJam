@@ -30,7 +30,7 @@ namespace TaSource.LinkEffect
         [SerializeField] private ColorCatalog colorCatalog;
         [SerializeField] private Material linkMaterial;
         [SerializeField] private Transform sourceAnchor;
-        [SerializeField] private Vector3 sourceOffset = new Vector3(0f, .9f, 0f);
+        [SerializeField] private Vector3 sourceOffset = new Vector3(0f, .3f, 0f);
         [SerializeField, Min(.01f)] private float scanInterval = .12f;
         [SerializeField] private LayerMask targetMask = ~0;
         [SerializeField, Range(1, 32)] private int maxLinks = 16;
@@ -334,7 +334,11 @@ namespace TaSource.LinkEffect
             float rangeRadius, out Vector3 source, out Vector3 destination)
         {
             source = sourceAnchor != null
-                ? sourceAnchor.position : transform.TransformPoint(sourceOffset);
+                ? sourceAnchor.position
+                : transform.position
+                  + transform.TransformVector(
+                      new Vector3(sourceOffset.x, 0f, sourceOffset.z))
+                  + transform.up * sourceOffset.y;
             destination = candidate.Collider != null
                 ? candidate.Collider.ClosestPoint(rangeCenter)
                 : candidate.Component.transform.position;

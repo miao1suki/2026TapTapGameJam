@@ -118,6 +118,12 @@
 - 外观微调：精灵默认下移0.08格，可在中文Inspector中调整；两份预制体及运行时自动绑定统一生效。碰撞箱、物理与Pick场景不变。隔离复验102项资源/动画/Shader检查与15项PlayMode检查通过，新增偏移与碰撞独立断言；日志Library/PlayerSpriteOffsetVerification.log。未推送。
 - 2026-10-14；Codex；本地已完成7套主角动作/35帧切片及只读玩家表现层。沿用PlayerController状态、速度与接地数据，死亡优先、演出/锁定暂停自动动画、切状态立即打断、复活恢复。精灵画布1×1格，保持现有碰撞、物理、输入、关卡布局不变；两份玩家预制体已绑定，裸场景玩家运行时自动接入。不覆盖用户Pick场景和插件，未提交或推送。
 - Unity6000.3.12f1隔离验证通过102项资源/动画/URP精灵Shader编译检查、14项真实PlayMode检查及57项既有EditMode回归。两个玩家预制体的CapsuleCollider/BoxCollider序列化内容与任务前一致，Pick SHA256未变，git diff --check通过。Shader支持SpriteRenderer左右翻转与颜色，不改TA管线。日志Library/PlayerSpriteVerification7.log、PlayerSpriteEditMode.xml；实际窗口视觉与打包未人工验收。使用与接入见Docs/Developer/PLAYER_SPRITE_PRESENTATION.md。
+## TA 连接预览起点高度适配
+
+- 日期：2026-10-14；负责人：Codex；分支：`codex/ta/link-origin-height`。
+- 范围：将 `InteractionLinkEffect` 无锚点时的本地发射偏移 Y 从 `0.9` 调为 `0.5`、再下调至 `0.3` 世界单位，避免角色缩放压低纵向起点；同步 `Player(暂定).prefab` 中的序列化值。Test 和 Gaming 场景继承 Prefab，不改场景文件。
+- 边界：未改 `PlayerInteractionSensor` 的相机屏幕射线、点击位置、交互扫描中心/半径或染色玩法判定；只调整连接视觉的发射点。
+- 验证：核对 `Player(暂定).prefab` 上 `sourceAnchor` 为空，Test 场景没有单独覆盖 `sourceOffset`；`git diff --check` 通过。未运行 Unity / Play Mode。
 
 ## 新美术导入参数整理
 

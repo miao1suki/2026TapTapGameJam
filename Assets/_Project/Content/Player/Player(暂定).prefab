@@ -501,7 +501,7 @@ MonoBehaviour:
   colorCatalog: {fileID: 11400000, guid: 43b61e3889b18c04dac8919fd6603572, type: 2}
   linkMaterial: {fileID: 2100000, guid: 01a8ab61e63d424b8f01a313dc4f98e2, type: 2}
   sourceAnchor: {fileID: 0}
-  sourceOffset: {x: 0, y: 0.9, z: 0}
+  sourceOffset: {x: 0, y: 0.3, z: 0}
   scanInterval: 0.12
   targetMask:
     serializedVersion: 2
