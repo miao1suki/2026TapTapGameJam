@@ -86,6 +86,7 @@ namespace TaSource.LinkEffect
         public bool IsLinkVisible => VisibleLinkCount > 0;
         public int DetectedTargetCount => candidates.Count;
         public int VisibleLinkCount { get; private set; }
+        public Material LinkMaterial => linkMaterial;
 
         private void Awake()
         {
@@ -440,8 +441,7 @@ namespace TaSource.LinkEffect
             string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
         private static bool IsSupportedColor(string colorId) =>
-            IsColor(colorId, "red") || IsColor(colorId, "green") ||
-            IsColor(colorId, "blue");
+            IsColor(colorId, "red") || IsColor(colorId, "blue");
 
         private void HideLines()
         {

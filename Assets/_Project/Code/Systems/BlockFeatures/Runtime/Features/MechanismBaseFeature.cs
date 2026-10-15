@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.GreenHook;
 using Project.Audio;
 using UnityEngine;
 
@@ -13,7 +14,8 @@ namespace Project.BlockFeatures
         Provides = new[] { typeof(IMechanismSignalSource) },
         Writes = new[] { BlockChannel.Power })]
     public sealed class MechanismBaseFeature : BlockFeature,
-        IMechanismSignalSource
+        IMechanismSignalSource,
+        IGreenHookTarget
     {
         [BlockParameter(
             Label = "检测左方",
@@ -44,6 +46,11 @@ namespace Project.BlockFeatures
         private bool energyDetected;
 
         public bool IsSignalActive => powered && CanRunFeature;
+        public GreenHookMotionMode GreenHookMotionMode =>
+            GreenHookMotionMode.PullPlayer;
+        public Transform GreenHookTransform => transform;
+        public bool CanBeGreenHooked(GameObject actor) =>
+            CanRunFeature;
         public event Action<bool> SignalChanged;
 
         protected override void OnAttach()

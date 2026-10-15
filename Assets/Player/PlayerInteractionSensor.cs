@@ -89,6 +89,19 @@ namespace Project.Player
             Vector2 screenPosition,
             out RaycastHit hit)
         {
+            return TryGetScreenHit(
+                camera,
+                screenPosition,
+                out hit,
+                QueryTriggerInteraction.Collide);
+        }
+
+        public bool TryGetScreenHit(
+            Camera camera,
+            Vector2 screenPosition,
+            out RaycastHit hit,
+            QueryTriggerInteraction triggerInteraction)
+        {
             hit = default;
             if (camera == null)
             {
@@ -101,7 +114,7 @@ namespace Project.Player
                 screenRaycastBuffer,
                 Mathf.Infinity,
                 interactionMask.value,
-                QueryTriggerInteraction.Collide);
+                triggerInteraction);
             float nearestDistance = float.MaxValue;
             bool found = false;
             for (int index = 0; index < count; index++)

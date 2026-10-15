@@ -19,7 +19,15 @@ namespace Project.WordNote
         [InspectorName("下方右侧")] BottomRight = 5,
         [InspectorName("上方")] Top = 6,
         [InspectorName("上方左侧")] TopLeft = 7,
-        [InspectorName("上方右侧")] TopRight = 8
+        [InspectorName("上方右侧")] TopRight = 8,
+        [InspectorName("最左侧")] MiddleLeftEdge = 9
+    }
+
+    public enum WordNoteTextAlignment
+    {
+        [InspectorName("居中")] Center = 0,
+        [InspectorName("靠左")] Left = 1,
+        [InspectorName("靠右")] Right = 2
     }
 
     public enum WordNoteDisplayMode
@@ -66,6 +74,12 @@ namespace Project.WordNote
         [InspectorName("显示中")] Showing = 2,
         [InspectorName("退场中")] Exiting = 3,
         [InspectorName("已结束")] Finished = 4
+    }
+
+    public enum WordNoteRequestSource
+    {
+        [InspectorName("API 调用")] Api = 0,
+        [InspectorName("Timeline 申请")] Timeline = 1
     }
 
     public enum WordNoteHorizontalDirection
@@ -146,6 +160,8 @@ namespace Project.WordNote
         public WordNoteColor fontColor = WordNoteColor.Yellow;
         public bool useOutline;
         public WordNoteColor outlineColor = WordNoteColor.Blue;
+        public WordNoteTextAlignment textAlignment =
+            WordNoteTextAlignment.Center;
         public WordNotePosition position = WordNotePosition.Center;
         public bool participateInStackLayout = true;
         public WordNoteDisplayMode displayMode =
@@ -190,6 +206,7 @@ namespace Project.WordNote
                 fontColor = fontColor,
                 useOutline = useOutline,
                 outlineColor = outlineColor,
+                textAlignment = textAlignment,
                 position = position,
                 participateInStackLayout = participateInStackLayout,
                 displayMode = displayMode,
@@ -211,6 +228,7 @@ namespace Project.WordNote
     internal sealed class WordNoteMessage
     {
         public int Id;
+        public WordNoteRequestSource Source;
         public string Content;
         public WordNoteStyle Style;
         public WordNoteMessageState State;
@@ -246,6 +264,7 @@ namespace Project.WordNote
         }
 
         public int Id => message.Id;
+        public WordNoteRequestSource Source => message.Source;
         public string Content => message.Content;
         public WordNotePosition Position => message.Style.position;
         public bool ParticipatesInStackLayout =>
@@ -267,6 +286,11 @@ namespace Project.WordNote
         public bool ForceDisappear()
         {
             return owner.ExitById(Id, false);
+        }
+
+        public bool Release(bool playExitAnimation = true)
+        {
+            return owner.ExitById(Id, playExitAnimation);
         }
     }
 
@@ -389,6 +413,27 @@ namespace Project.WordNote
             string content,
             WordNoteStyle style)
         {
+            return ShowInternal(
+                content,
+                style,
+                WordNoteRequestSource.Api);
+        }
+
+        public WordNoteHandle RequestTimeline(
+            string content,
+            WordNoteStyle style = null)
+        {
+            return ShowInternal(
+                content,
+                style,
+                WordNoteRequestSource.Timeline);
+        }
+
+        private WordNoteHandle ShowInternal(
+            string content,
+            WordNoteStyle style,
+            WordNoteRequestSource source)
+        {
             if (string.IsNullOrWhiteSpace(content))
             {
                 return null;
@@ -403,6 +448,7 @@ namespace Project.WordNote
             var message = new WordNoteMessage
             {
                 Id = nextId++,
+                Source = source,
                 Content = content.Trim(),
                 Style = resolvedStyle,
                 State = WordNoteMessageState.Queued,
@@ -619,6 +665,8 @@ namespace Project.WordNote
                 builder.Append(message.Style.position);
                 builder.Append(' ');
                 builder.Append(message.State);
+                builder.Append(" src=");
+                builder.Append(message.Source);
                 builder.Append(" y=");
                 builder.Append(message.StackOffset.y.ToString("0"));
             }
@@ -671,6 +719,7 @@ namespace Project.WordNote
             rect.sizeDelta = new Vector2(
                 canvasReferenceWidth * .68f,
                 canvasReferenceHeight * .2f);
+            rect.pivot = GetPositionPivot(style.position);
             rect.anchoredPosition = message.StackOffset;
             rect.localScale = Vector3.one;
 
@@ -685,7 +734,8 @@ namespace Project.WordNote
             text.richText = style.richText;
             text.color = ResolveColor(style.fontColor);
             text.text = message.Content;
-            text.alignment = TextAlignmentOptions.Center;
+            text.alignment = ResolveTextAlignment(
+                style.textAlignment);
             text.raycastTarget = false;
             text.textWrappingMode = TextWrappingModes.Normal;
             text.overflowMode = TextOverflowModes.Overflow;
@@ -1112,6 +1162,8 @@ namespace Project.WordNote
                 : TMP_Settings.defaultFontAsset;
             view.Text.fontSize = message.Style.fontSize;
             view.Text.richText = message.Style.richText;
+            view.Text.alignment = ResolveTextAlignment(
+                message.Style.textAlignment);
             view.Text.color = ResolveColor(message.Style.fontColor);
             view.Text.text = message.Content;
             ApplyOutline(view, message.Style);
@@ -1332,6 +1384,8 @@ namespace Project.WordNote
         {
             switch (position)
             {
+                case WordNotePosition.MiddleLeftEdge:
+                    return new Vector2(.02f, .5f);
                 case WordNotePosition.MiddleLeft:
                     return new Vector2(.12f, .5f);
                 case WordNotePosition.MiddleRight:
@@ -1350,6 +1404,28 @@ namespace Project.WordNote
                     return new Vector2(.88f, .88f);
                 default:
                     return new Vector2(.5f, .5f);
+            }
+        }
+
+        private static Vector2 GetPositionPivot(
+            WordNotePosition position)
+        {
+            return position == WordNotePosition.MiddleLeftEdge
+                ? new Vector2(0f, .5f)
+                : new Vector2(.5f, .5f);
+        }
+
+        private static TextAlignmentOptions ResolveTextAlignment(
+            WordNoteTextAlignment alignment)
+        {
+            switch (alignment)
+            {
+                case WordNoteTextAlignment.Left:
+                    return TextAlignmentOptions.Left;
+                case WordNoteTextAlignment.Right:
+                    return TextAlignmentOptions.Right;
+                default:
+                    return TextAlignmentOptions.Center;
             }
         }
 

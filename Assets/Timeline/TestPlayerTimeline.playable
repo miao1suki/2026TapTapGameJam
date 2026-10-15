@@ -16,7 +16,7 @@ MonoBehaviour:
   m_AnimClip: {fileID: 0}
   m_Locked: 0
   m_Muted: 0
-  m_CustomPlayableFullTypename: 
+  m_CustomPlayableFullTypename:
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
   m_Children: []
@@ -120,6 +120,29 @@ MonoBehaviour:
   endTime: 0
   useRepeatScan: 0
   scanInterval: 0.1
+--- !u!114 &-4559407704913720006
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0f85f12c28fb4f859b9b8cf9bdd931a2, type: 3}
+  m_Name: Dialogue Track
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueTrack
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename:
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips: []
+  m_Markers:
+    m_Objects: []
 --- !u!114 &-2149857951607403469
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -155,7 +178,7 @@ MonoBehaviour:
   m_AnimClip: {fileID: 0}
   m_Locked: 0
   m_Muted: 0
-  m_CustomPlayableFullTypename: 
+  m_CustomPlayableFullTypename:
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
   m_Children: []
@@ -249,6 +272,7 @@ MonoBehaviour:
   - {fileID: 889000441716165081}
   - {fileID: 4690677983914536631}
   - {fileID: -1927641723794055078}
+  - {fileID: -4559407704913720006}
   m_FixedDuration: 0
   m_EditorSettings:
     m_Framerate: 60
@@ -414,7 +438,7 @@ MonoBehaviour:
   m_AnimClip: {fileID: 0}
   m_Locked: 0
   m_Muted: 0
-  m_CustomPlayableFullTypename: 
+  m_CustomPlayableFullTypename:
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
   m_Children: []
@@ -621,7 +645,7 @@ MonoBehaviour:
   m_AnimClip: {fileID: 0}
   m_Locked: 0
   m_Muted: 0
-  m_CustomPlayableFullTypename: 
+  m_CustomPlayableFullTypename:
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
   m_Children: []

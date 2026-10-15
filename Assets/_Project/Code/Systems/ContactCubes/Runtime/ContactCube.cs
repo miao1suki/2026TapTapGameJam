@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Project.BlockFeatures;
 using Project.ColorBlocks;
+using Project.GreenHook;
 using UnityEngine;
 
 namespace Project.ContactCubes
@@ -11,7 +12,9 @@ namespace Project.ContactCubes
 
     // Fixed identity; keys unlock abilities, never player-click recoloring.
     [DisallowMultipleComponent]
-    public sealed class ContactCube : MonoBehaviour, IRoomColorResettable, IEnergySource
+    public sealed class ContactCube : MonoBehaviour,
+        IRoomColorResettable,
+        IEnergySource
     {
         [SerializeField, InspectorName("固定类型")] private CubeColor color;
         [SerializeField, InspectorName("实体碰撞箱")] private BoxCollider shape;
@@ -35,6 +38,7 @@ namespace Project.ContactCubes
         private Vector3 localGrowthDirection = Vector3.right;
         private ContactCube selectedBlue;
         private bool carrySuspended;
+        private bool hookSuspended;
         public void SetCarrySuspended(bool suspended)
         {
             carrySuspended = suspended;
@@ -43,7 +47,8 @@ namespace Project.ContactCubes
         public CubeColor Color => color;
         public string ColorId => color == CubeColor.Red ? "red" : color == CubeColor.Blue ? "blue" : "green";
         public bool IsUnlocked => ColorRuntimeService.Existing != null && ColorRuntimeService.Existing.IsUnlocked(ColorId);
-        public bool IsEnergyAvailable => isActiveAndEnabled && IsUnlocked && color == CubeColor.Red && !carrySuspended && shape != null && shape.enabled;
+        public bool IsEnergyAvailable => isActiveAndEnabled && IsUnlocked && color == CubeColor.Red && !carrySuspended && !hookSuspended && shape != null && shape.enabled;
+        public bool IsHookSuspended => hookSuspended;
         public int Length { get; private set; }
         public int MaximumLength => maximumLength;
         public CubeReactionState State { get; private set; }
@@ -57,10 +62,24 @@ namespace Project.ContactCubes
         private void Awake() { cellSize = GridCellSizeUtility.Resolve(this); ResetForRoom(); }
         private void FixedUpdate()
         {
-            if (!IsUnlocked || carrySuspended || shape == null || !shape.enabled) { ClearContacts(); return; }
+            if (!IsUnlocked || carrySuspended || hookSuspended ||
+                shape == null || !shape.enabled)
+            {
+                ClearContacts();
+                return;
+            }
             ScanContacts();
             TickReaction(Time.fixedDeltaTime);
             UpdateJets();
+        }
+
+        public void SetHookSuspended(bool suspended)
+        {
+            hookSuspended = suspended;
+            if (suspended)
+            {
+                ClearContacts();
+            }
         }
         private void ScanContacts()
         {

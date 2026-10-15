@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Project.Audio;
 using Project.BlockFeatures;
+using Project.GreenHook;
 using Project.InputAbstraction;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -98,6 +99,8 @@ namespace Project.Player
         private PlayerActionRunner runner;
         private PlayerInteractionSensor interactionSensor;
         private PlayerColorWheel colorWheel;
+        private Component greenHookMotionSource;
+        private Vector2 greenHookVelocity;
         private readonly List<IPlayerCarryTarget> carryQueue =
             new List<IPlayerCarryTarget>();
         private readonly List<Vector3Int> carryFootprintBuffer =
@@ -282,6 +285,8 @@ namespace Project.Player
         public bool IsCarryResetAnimating => carryResetting;
         public bool IsCarryBusy =>
             carryPreparing || carryDropAnimating || carryResetting;
+        public bool IsGreenHookActive =>
+            greenHookMotionSource != null;
         public int CarryQueueCount => carryQueue.Count;
         public Vector3 CarryAnchorWorldPosition
         {
@@ -349,6 +354,10 @@ namespace Project.Player
             if (colorWheel == null)
             {
                 colorWheel = gameObject.AddComponent<PlayerColorWheel>();
+            }
+            if (GetComponent<GreenHookAbility>() == null)
+            {
+                gameObject.AddComponent<GreenHookAbility>();
             }
             PlayerSpritePresentation.Ensure(this);
             spritePresentation = GetComponent<PlayerSpritePresentation>();
@@ -512,6 +521,58 @@ namespace Project.Player
             else
             {
                 waterVelocities[id] = velocity;
+            }
+        }
+
+        public void BeginGreenHookPull(Component source)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            greenHookMotionSource = source;
+            greenHookVelocity = Vector2.zero;
+            if (motor != null)
+            {
+                motor.linearVelocity = Vector3.zero;
+                motor.angularVelocity = Vector3.zero;
+            }
+            IsGrounded = false;
+            airborneSince = Time.time;
+            highestAirPosition = transform.position.y;
+        }
+
+        public void SetGreenHookPullVelocity(
+            Component source,
+            Vector2 velocity)
+        {
+            if (source == null ||
+                !ReferenceEquals(greenHookMotionSource, source))
+            {
+                return;
+            }
+
+            greenHookVelocity = velocity;
+        }
+
+        public void EndGreenHookPull(Component source)
+        {
+            if (source == null ||
+                !ReferenceEquals(greenHookMotionSource, source))
+            {
+                return;
+            }
+
+            greenHookMotionSource = null;
+            greenHookVelocity = Vector2.zero;
+            if (motor != null)
+            {
+                Vector3 velocity = motor.linearVelocity;
+                velocity.x = 0f;
+                velocity.y = 0f;
+                velocity.z = 0f;
+                motor.linearVelocity = velocity;
             }
         }
 
@@ -1799,6 +1860,18 @@ namespace Project.Player
                 return;
             }
 
+            if (greenHookMotionSource != null)
+            {
+                Vector3 hookVelocity = new Vector3(
+                    greenHookVelocity.x,
+                    greenHookVelocity.y,
+                    0f);
+                motor.linearVelocity = hookVelocity;
+                motor.angularVelocity = Vector3.zero;
+                IsGrounded = false;
+                return;
+            }
+
             if (pendingPlatformDelta.sqrMagnitude > .000001f)
             {
                 motor.position += ConstrainCarryDisplacement(pendingPlatformDelta);
@@ -2455,6 +2528,7 @@ namespace Project.Player
 
         private void ClearDeathControlState()
         {
+            GetComponent<GreenHookAbility>()?.CancelHook();
             ClearBufferedInput();
             sprint = false;
             groundedUntil = -1f;
@@ -2496,6 +2570,7 @@ namespace Project.Player
 
         public void PrepareForRoomReset()
         {
+            GetComponent<GreenHookAbility>()?.CancelHook();
             pendingPlatformDelta = Vector3.zero;
             ReleaseHeldInteraction();
             CancelCarryState();

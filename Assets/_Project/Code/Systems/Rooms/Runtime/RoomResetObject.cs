@@ -28,6 +28,10 @@ namespace Project.Rooms
         private readonly List<GameObject> replacements = new List<GameObject>();
         public string RegionId => regionId;
         public RoomLifecycleManager Manager => manager;
+        public Vector3 AuthoredWorldPosition =>
+            originalParent != null
+                ? originalParent.TransformPoint(originalPosition)
+                : originalPosition;
         public bool Persistent => GetComponent<DoorController>() != null || (GetComponent<DoorButton>() is DoorButton button && button.Persistent) ||
                                   GetComponent<DoorHint>() != null || GetComponent<ButtonLockFeature>() != null ||
                                   (GetComponent<ColorKeyPickup>() is ColorKeyPickup key && key.CollectionRequested) ||

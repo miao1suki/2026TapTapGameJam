@@ -21,6 +21,8 @@ description: 2026TapTap 玩家屏幕提示与设备化按键文案规范，适�
 - 不要把新的全局提示 Canvas 放进关卡、Bootstrap 或临时脚本创建的 Canvas。
 - 不要为此新增第二个 `EventSystem`。
 - `WordNoteUI` 维护一个总队列、九个位置队列，并为每条消息创建独立文本视口。
+- Timeline 对话轨道通过 `WordNoteUI.RequestTimeline` 申请消息，和普通 API 共用同一画布与队列，只额外记录 `Timeline` 来源。
+- `MiddleLeftEdge` 表示屏幕最左侧；文字对齐可以独立选择居中、靠左或靠右，白字黑边使用字体颜色与描边颜色组合。
 
 ## 设备文案规则
 

@@ -242,7 +242,7 @@ MonoBehaviour:
   hideOnCollect: 1
   revealAtTimelineProgress: 0.98
   revealDuration: 1.5
-  orthographicZoomOut: 1.6
+  orthographicZoomOut: 1.04
   cameraReturnDuration: 0.85
 --- !u!114 &909090909090909090
 MonoBehaviour:

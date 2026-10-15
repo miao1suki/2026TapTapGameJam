@@ -102,8 +102,6 @@ namespace Project.ColorBlocks.Editor
             EnsureFolder(TimelineFolder);
             foreach (var color in catalog.Colors)
             {
-                var pickupPath = PrefabFolder + "/ColorKey_" + color.id + ".prefab";
-                if (AssetDatabase.LoadAssetAtPath<GameObject>(pickupPath) != null) continue;
                 var timelinePath = TimelineFolder + "/ColorPickup_" + color.id + ".playable";
                 var timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(timelinePath);
                 if (timeline == null)
@@ -130,6 +128,9 @@ namespace Project.ColorBlocks.Editor
                         cameraClip.allowPositionZ = false;
                     }
                 }
+
+                var pickupPath = PrefabFolder + "/ColorKey_" + color.id + ".prefab";
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(pickupPath) != null) continue;
                 var pickup = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 try
                 {

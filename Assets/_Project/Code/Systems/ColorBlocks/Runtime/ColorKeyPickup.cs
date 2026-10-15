@@ -19,7 +19,7 @@ namespace Project.ColorBlocks
         [SerializeField] private bool hideOnCollect = true;
         [SerializeField, Range(0.5f, 1f)] private float revealAtTimelineProgress = .98f;
         [SerializeField, Min(.01f)] private float revealDuration = 1.5f;
-        [SerializeField, Min(1f)] private float orthographicZoomOut = 1.6f;
+        [SerializeField, Min(1f)] private float orthographicZoomOut = 1.04f;
         [SerializeField, Min(0f)] private float cameraReturnDuration = .85f;
         private PlayerController collectingPlayer;
         private TimelineCamRig activeRig;
@@ -293,12 +293,16 @@ namespace Project.ColorBlocks
             rig.target = player.transform;
             bool hasCameraTrack = false;
             if (cameraDirector.playableAsset is TimelineAsset timeline)
+            {
                 foreach (var track in timeline.GetOutputTracks())
+                {
                     if (track is CameraTimelineTrack)
                     {
                         cameraDirector.SetGenericBinding(track, rig);
                         hasCameraTrack = true;
                     }
+                }
+            }
             if (!hasCameraTrack)
             {
                 Debug.LogWarning("[ColorBlocks] 颜色钥匙 Timeline 缺少相机轨。", this);
