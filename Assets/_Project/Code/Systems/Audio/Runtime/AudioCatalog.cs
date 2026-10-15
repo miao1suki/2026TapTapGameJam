@@ -168,6 +168,8 @@ namespace Project.Audio
         public const string ButtonRelease = "sfx.button.release";
         public const string PlayerDie = "sfx.player.die";
         public const string PlayerRespawn = "sfx.player.respawn";
+        public const string CheckpointUnlock = "sfx.checkpoint.unlock";
+        public const string CheckpointSwitch = "sfx.checkpoint.switch";
         public const string PlayerSwim = "sfx.player.swim";
         public const string PlayerWaterEnter = "sfx.player.water_enter";
         public const string PlayerWaterExit = "sfx.player.water_exit";

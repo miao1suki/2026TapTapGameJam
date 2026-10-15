@@ -47,7 +47,7 @@ namespace Project.BlockFeatures
 
         public bool IsSignalActive => powered && CanRunFeature;
         public GreenHookMotionMode GreenHookMotionMode =>
-            GreenHookMotionMode.PullPlayer;
+            GreenHookMotionMode.PullTarget;
         public Transform GreenHookTransform => transform;
         public bool CanBeGreenHooked(GameObject actor) =>
             CanRunFeature;
@@ -55,6 +55,12 @@ namespace Project.BlockFeatures
 
         protected override void OnAttach()
         {
+            if (GetComponent<GreenHookBodyMotion>() == null)
+            {
+                var body = GetComponent<Rigidbody>();
+                if (body == null) { body = gameObject.AddComponent<Rigidbody>(); body.isKinematic = true; body.useGravity = false; }
+                gameObject.AddComponent<GreenHookBodyMotion>();
+            }
             powered = false;
             energyDetected = false;
             ScanForEnergy();

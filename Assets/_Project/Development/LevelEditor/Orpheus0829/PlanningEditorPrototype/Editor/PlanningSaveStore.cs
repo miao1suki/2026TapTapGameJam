@@ -125,7 +125,8 @@ namespace PlanningEditorPrototype
 
         internal static void Save(
             string path,
-            PlanningDocument document)
+            PlanningDocument document,
+            string persistentJson = null)
         {
             if (document == null)
             {
@@ -134,7 +135,7 @@ namespace PlanningEditorPrototype
 
             EnsureSaveFolder();
             document.name = NormalizeName(document.name);
-            Write(path, document);
+            Write(path, document, persistentJson);
         }
 
         internal static string Rename(
@@ -207,21 +208,25 @@ namespace PlanningEditorPrototype
 
         private static void Write(
             string path,
-            PlanningDocument document)
+            PlanningDocument document,
+            string persistentJson = null)
         {
+            string originalJson = null;
             if (File.Exists(path))
             {
-                string originalJson = File.ReadAllText(path);
-                var original = JsonUtility.FromJson<PlanningDocument>(originalJson);
-                if (original != null && (original.worldBlockCellWidth > 1 || original.worldBlockCellHeight > 1 ||
-                    !originalJson.Contains("\"worldBlockCellWidth\"")))
+                originalJson = File.ReadAllText(path);
+                // Only the stride header is needed for the one-time legacy backup.
+                // Deserializing every cell and every component override here stalls each brush stroke.
+                bool unified = System.Text.RegularExpressions.Regex.IsMatch(originalJson, "\"worldBlockCellWidth\"\\s*:\\s*1\\s*[,}]") &&
+                    System.Text.RegularExpressions.Regex.IsMatch(originalJson, "\"worldBlockCellHeight\"\\s*:\\s*1\\s*[,}]");
+                if (!unified)
                 {
                     string backup = path + ".before-unified-grid.bak";
                     if (!File.Exists(backup)) File.Copy(path, backup);
                 }
             }
-            string json = document.ToPersistentJson(true);
-            if (File.Exists(path) && File.ReadAllText(path) == json) return;
+            string json = persistentJson ?? document.ToPersistentJson(true);
+            if (originalJson == json) return;
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
             bool created = !File.Exists(path);
             string temporary = path + ".writing";

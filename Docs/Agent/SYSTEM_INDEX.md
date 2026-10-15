@@ -1,5 +1,9 @@
 # 系统索引
 
+编辑器响应与攀爬衔接：预览缓存/分层容器/视口裁剪、合并持久化与连续编辑延后落盘；蹬跳上升期间不被攀爬状态重新接管，适用于藤蔓、梯子与绿色接触方块。重生点首次激活/返回已激活点两种提示声已接线，见 [ROOM_LIFECYCLE_API](Integration/ROOM_LIFECYCLE_API.md) 和 [AUDIO_HANDOVER](Integration/AUDIO_HANDOVER.md)。
+
+绿钩子最新规则：红蓝接触方块/基座每物理步优先拉物，受阻转拉玩家并重评估；绿色接触方块/生长体、藤蔓、弹性植物为荡绳锚点。成功挂接不自动脱钩，现有跳跃/交互主动结束。见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。无色收集品与四向尖刺已加入道具栏目，见 [使用说明](../Developer/WORLD_ITEMS.md)、[接入](Integration/WORLD_ITEMS_API.md)。
+
 关卡协作：共享项目存档、Scene 同名规划文件、片段追加导入/区域导出、水与物品同格分层、整房间内容移动。使用 [LEVEL_EDITOR_COLLABORATION.md](../Developer/LEVEL_EDITOR_COLLABORATION.md)，接入 [PLANNING_COLLABORATION_API.md](Integration/PLANNING_COLLABORATION_API.md)。
 
 玩家搬运体积约束：头顶方块按实际实体扫掠限制玩家物理位移，支持长块、冲刺与反向离开；搬运提示统一字体且不继承合并拉伸。Pick 已补 WordNote_UI，Test/Gaming 沿用各自现有组件。见 [搬运 API](Integration/PLAYER_CARRY_API.md)、[使用说明](../Developer/PLAYER_CARRY.md)。
@@ -73,7 +77,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；世界图/详情/装配图、方块/道具栏目、玩家贴纸与拖拽同步、矩形多选与单块合并、组件模板、贴画、场景生成和本地存档；方块栏目只做地图墙壁，颜色玩法物体全部走道具栏目；图定义、交互按钮和交互目录同步已移除 |
 | 固定颜色物体/钥匙/房间重置 | `Assets/_Project/Code/Systems/ColorBlocks` | `ColorObject`、`ColorRuntimeService`、钥匙解锁、房间重置和 HSV 渐变；`Content/ColorBlocks/Prefabs` 使用 `Red_*`、`Blue_*`、`Green_*` 道具预制体；Universal_Block 白色代理及直接接色链仍保留，通用旧交互图退役 |
 | 颜色物玩法组件 | `Assets/_Project/Code/Systems/Interactions` | 旧交互图及无调用 AnchorPoint 已退役；固定功能组件位于 `BlockFeatures/Runtime/Features`，米黄色重生点使用 RespawnAnchorFeature，不依赖旧 AnchorPoint |
-| 绿色钩子 | `Assets/_Project/Code/Systems/GreenHook` | 绿色选色改为玩家身上的待机藤蔓头；点击有效目标后按四向吸附伸出，ContactCube 拉向玩家，基座/藤蔓/弹性植物拉动玩家；可穿物体但不能跨房间。接入见 [GREEN_HOOK_API.md](Integration/GREEN_HOOK_API.md) |
+| 绿色钩子 | `Assets/_Project/Code/Systems/GreenHook` | 四向发射、逐物理步目标优先拉取/受阻回退、绿色固定物体荡绳；成功挂接由玩家主动结束，房间和控制锁保持隔离。见 [GREEN_HOOK_API.md](Integration/GREEN_HOOK_API.md) |
 | 交互水面 | `Assets/ta_source/InteractiveWater`、`Assets/ta_source/Newwater/Prefabs` | TA 独立预制体保留独立波纹/反射资源；像素水提供三种双面片预制体和独立材质，透明物体后复制相机颜色、专用绘制折射滤镜，噪波只改片元屏幕采样 UV；每个实例可运行时调整滤镜色彩、折射强度和时间变化，前片自动贴合后片宽高/变换。场景和接入方式见 `Developer/PIXEL_WATER.md`、`Integration/PIXEL_WATER_API.md`；无颜色系统自动生成水体 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。

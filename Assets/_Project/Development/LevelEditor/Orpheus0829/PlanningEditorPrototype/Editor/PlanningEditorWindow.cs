@@ -175,6 +175,8 @@ namespace PlanningEditorPrototype
         private readonly List<SceneBinding> sceneBindings=new List<SceneBinding>();
         private bool autoSync;
         private bool syncPending;
+        private bool documentSavePending;
+        private double documentSaveAt;
         private bool syncingScene;
         private bool sceneHasBeenApplied;
         private int syncSceneHandle;
@@ -386,6 +388,7 @@ namespace PlanningEditorPrototype
         private void OnPlanningPlayModeChanged(PlayModeStateChange state)
         {
             canvas?.CancelPointerInteraction();
+            if (state == PlayModeStateChange.ExitingEditMode && documentSavePending) SaveDocument();
             if (state != PlayModeStateChange.EnteredEditMode || canvas == null) return;
             // Runtime teardown is not an authoring deletion.
             CaptureSceneBindings();
@@ -438,6 +441,11 @@ namespace PlanningEditorPrototype
             }
 
             nextLevelEditorRefreshTime = now + .1d;
+            if (documentSavePending && now >= documentSaveAt && !EditorApplication.isPlayingOrWillChangePlaymode && !syncPending)
+            {
+                try { SaveDocument(); }
+                catch (System.IO.IOException exception) { documentSavePending = false; Debug.LogError(exception.Message); }
+            }
             if (!EditorApplication.isPlayingOrWillChangePlaymode &&
                 (boundSceneHandle != SceneManager.GetActiveScene().handle || scenePreferenceScope != GetScenePreferenceScope()))
             {
@@ -1438,16 +1446,18 @@ namespace PlanningEditorPrototype
             SaveCanvasBackgroundColor();
         }
 
-        private void SaveDocument()
+        private void SaveDocument() => SaveDocument(null);
+
+        private void SaveDocument(string preparedJson)
         {
             if (document == null)
             {
                 return;
             }
 
-            EditorPrefs.SetString(
-                PreferenceKey,
-                document.ToPersistentJson(true));
+            documentSavePending = false;
+            string persistentJson = preparedJson ?? document.ToPersistentJson(true);
+            EditorPrefs.SetString(PreferenceKey, persistentJson);
             EditorPrefs.SetString(CurrentSavePreferenceKey, currentSavePath ?? string.Empty);
             PlanningSharedSaveUtility.VerifySceneCopy(SceneManager.GetActiveScene(), document);
             if (!string.IsNullOrEmpty(currentSavePath) &&
@@ -1461,7 +1471,7 @@ namespace PlanningEditorPrototype
             {
                 PlanningSaveStore.Save(
                     currentSavePath,
-                    document);
+                    document, persistentJson);
             }
 
             var scene = SceneManager.GetActiveScene();
@@ -1470,7 +1480,7 @@ namespace PlanningEditorPrototype
                 string paired = PlanningSharedSaveUtility.SceneSavePath(scene.path);
                 if (string.IsNullOrEmpty(currentSavePath) || paired == null ||
                     !string.Equals(Path.GetFullPath(currentSavePath), paired, System.StringComparison.OrdinalIgnoreCase))
-                    PlanningSharedSaveUtility.SaveSceneCopy(scene, document);
+                    PlanningSharedSaveUtility.SaveSceneCopy(scene, document, persistentJson);
                 if (!string.IsNullOrEmpty(paired) && File.Exists(paired))
                 {
                     if (string.IsNullOrEmpty(currentSavePath)) currentSavePath = paired;
@@ -2230,8 +2240,9 @@ namespace PlanningEditorPrototype
             PlanningSceneBuilder.SuppressSceneUndo=true;
             try
             {
-                if (PlanningSceneBuilder.TryApplyDocument(document, out string message))
+                if (PlanningSceneBuilder.TryApplyDocument(document, out string message, out string persistentJson))
                 {
+                    SaveDocument(persistentJson);
                     statusLabel.text = message;
                     sceneHasBeenApplied=true;
                     syncSceneHandle=SceneManager.GetActiveScene().handle;
@@ -2457,7 +2468,10 @@ namespace PlanningEditorPrototype
             canvas.CapturePlayerStart();
             document.RefreshConnectorPaths();
             RecordPlanningChange();
-            SaveDocument();
+            // History stays immediate; batch disk persistence after the input burst.
+            // Closing/switching scene, saving the Scene and explicit save/apply still flush synchronously.
+            documentSavePending = true;
+            documentSaveAt = EditorApplication.timeSinceStartup + .35d;
             RefreshAll();
             if(autoSync && !syncingScene) syncPending=true;
         }

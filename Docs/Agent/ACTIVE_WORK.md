@@ -2,6 +2,23 @@
 
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
 
+## 2026-10-15 编辑器响应、攀爬蹬跳与重生点音频
+
+- 本轮按用户授权完成后整合推送，包含下方此前未交付的绿钩子、收集品与四向尖刺。保留本地 Pick 场景及存档、动态字体、插件和项目设置，不将这些用户未交付的改动混入提交。
+- 编辑器：同一调色板/选择不重复刷新；缩略图缓存、仅重试待生成图片、裁掉视口外预览；水与物品独立显示容器，避免逐图片排序/反复移至顶层。存档复用持久化 JSON，避免重复整图反序列化；连续修改结束 0.35 秒后落盘，应用场景、关窗、切场景及进 Play 前仍执行保存，保留外部更新冲突保护与自定义撤回。
+- 隔离项目使用本地 Pick 存档（6400 区域格/120 项）同条件采样：修改保存约 159.7 → 23.0 ms，持久化 JSON 38.4 → 13.3 ms，不变调色板刷新 1.63 → 0.004 ms。数字为本机诊断，不作为所有地图的性能保证。
+- 公共蹬跳：旧脱离计时到期可能仍在上升，持续攀爬接触会重新接管速度；现在蹬跳上升阶段受保护，到顶点再允许攀爬。藤蔓、梯子、绿色接触块共用修复。带渲染 400 帧采样未复现大 CPU 峰值；不将状态速度突变冒称为已捕获的 CPU 卡顿。移除藤蔓卸载时非法脱离正在销毁父节点的操作。
+- 重生点首次解锁与切回已解锁分别接 `sfx_gp_checkpoint_active_01/02`；当前点重复进入、R 重生和链式补解锁不重复播放。音频交接与区域 API 文档同步。
+- 最终隔离验证：三类蹬跳上升保护/顶点重新攀爬、重生点绑定与双音效目录通过；协作地图36项、UI Toolkit窗口及延后保存9项、旧存档/统一网格1284项、绿钩子物理49项、道具与存档11项、相关EditMode140/140通过。日志 Library/GameplayPerformanceAfter.log、ResponsivenessCollaboration.log、ResponsivenessWindowFinal.log、ResponsivenessUnifiedGrid.log、ResponsivenessHook.log、ResponsivenessProps.log、ResponsivenessRegression.xml。未重新打包、未进行安卓/手柄真机或用户当前窗口手感验收；Pick SHA256 05C74E1A64F415E529677827DA64D113C869BAF44507C3732D46B5DBE3019747 保持不变。
+
+## 2026-10-15 绿钩子判定与无色道具
+
+- 分支 codex/gameplay/green-hook-and-props；修复物理步拉取判定，目标优先、受阻转玩家并持续重评估；基座接可拉运动，绿色固定锚点采用手动结束的荡绳。新增可推动收集品与四向无色尖刺，道具参数、存档、区域重置沿用既有链路。
+- 用户确认绳索不自动脱钩；仅主动结束或死亡/重生/离区/目标失效清理。保留 Pick、插件与设置，本轮先本地验证，不提交推送。
+- 已完成：红蓝接触块/基座逐物理步扫掠、物体优先/受阻拉玩家/重新评估，恢复钩中物与玩家碰撞，绿色接触块/生长体及藤蔓/弹性植物手动结束荡绳；接触、受阻、超时不自动断开。沿用 Jump/Interact 主动脱钩，R 重生可取消，额外演出锁暂停运动；荡绳保留脱钩动量，锚点保存为点击位置的局部坐标。
+- 已加入收集品与四向无色尖刺的白膜预制体、道具栏目及中文 UI Toolkit Inspector。收集品走 DropItemBase/PickupFlightAnimator，支持三色块/基座物理推挤、区域位置/收集复位；无默认计分，提供完成事件。新增动画复位契约避免 R 中断飞行后残留回调。尖刺用凸三角柱 Trigger，尊重复活无敌。没有改 Pick/Test/Gaming 布局。
+- Unity6000.3.12f1隔离验证：最终真实刚体步进49项、道具Inspector/水中放置/增量身份/存档与片段导入11项、相关EditMode140/140通过；日志Library/GreenHookFinalPhysics.log、GreenHookEditorVerification.log、GreenHookRegression.xml。skill校验、git diff --check通过。Pick SHA256保持5BC02B3664C5B1F16F929EBBBD83A87805A76CA74B46CDD0D5DF3758179555F0。未重新打包、未进行手柄/安卓真机手感验收、未提交/合并/推送。说明与skill已同步手动脱钩规则：GREEN_HOOK_API、GREEN_HOOK、WORLD_ITEMS_API、WORLD_ITEMS。
+
 ## 2026-10-15 协作编辑器整合
 
 - 用户要求先整合并推送此前已完成的协作地图功能；绿色钩子问题排查、收集品与四向尖刺本轮暂缓，不宣称已修复。

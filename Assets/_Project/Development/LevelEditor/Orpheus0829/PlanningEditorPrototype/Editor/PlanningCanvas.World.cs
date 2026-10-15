@@ -294,9 +294,11 @@ namespace PlanningEditorPrototype
         private bool CanPlaceLocalRect(PlanningRoom owner, RectInt rect)
         {
             Vector2Int origin = PlanningWorldUtility.Bounds(owner).position;
+            var occupied = new HashSet<Vector2Int>();
+            foreach (var cell in owner.cells) occupied.Add(new Vector2Int(cell.x, cell.y));
             for (int x = rect.x; x < rect.xMax; x++) for (int y = rect.y; y < rect.yMax; y++)
-                if (!PlanningWorldUtility.Contains(owner, origin.x + Mathf.FloorToInt((float)x / WorldBlockCellWidth),
-                    origin.y + Mathf.FloorToInt((float)y / WorldBlockCellHeight))) return false;
+                if (!occupied.Contains(new Vector2Int(origin.x + Mathf.FloorToInt((float)x / WorldBlockCellWidth),
+                    origin.y + Mathf.FloorToInt((float)y / WorldBlockCellHeight)))) return false;
             return true;
         }
 
@@ -351,6 +353,7 @@ namespace PlanningEditorPrototype
                 foreach (var cell in room.cells)
                 {
                     Rect rect = CellRect(cell.x * WorldBlockCellWidth, cell.y * WorldBlockCellHeight, WorldBlockCellWidth, WorldBlockCellHeight);
+                    if (!rect.Overlaps(contentRect)) continue;
                     FillRect(painter, rect, color, 0f);
                     StrokeRect(painter, rect, new Color(color.r, color.g, color.b, .4f), 1f);
                 }
@@ -364,6 +367,7 @@ namespace PlanningEditorPrototype
             foreach (var cell in room.cells)
             {
                 Rect rect = CellRect((cell.x - origin.x) * WorldBlockCellWidth, (cell.y - origin.y) * WorldBlockCellHeight, WorldBlockCellWidth, WorldBlockCellHeight);
+                if (!rect.Overlaps(contentRect)) continue;
                 FillRect(painter, rect, color, 0f);
                 StrokeRect(painter, rect, new Color(color.r, color.g, color.b, .55f), 1f);
             }

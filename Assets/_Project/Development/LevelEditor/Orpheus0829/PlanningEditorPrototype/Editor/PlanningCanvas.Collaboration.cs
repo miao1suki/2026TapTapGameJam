@@ -92,13 +92,6 @@ namespace PlanningEditorPrototype
                 .Reverse().OrderBy(item => PlanningWaterLayerUtility.IsWater(item.box, palette) ? 1 : 0);
         }
 
-        private void OrderPreviewLayers()
-        {
-            var water = new HashSet<string>(AllBoxes().Where(item => PlanningWaterLayerUtility.IsWater(item.box, palette)).Select(item => item.box.id));
-            foreach (var pair in detailPreviewImages.OrderBy(pair => water.Contains(pair.Key.Split(':')[0]) ? 0 : 1))
-                if (pair.Value.style.display.value == DisplayStyle.Flex) pair.Value.BringToFront();
-        }
-
         private void DrawTransferPreview(Painter2D painter)
         {
             if (importPreview == null) return;

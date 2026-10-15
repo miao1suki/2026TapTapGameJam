@@ -13,7 +13,7 @@ namespace Project.ContactCubes
     public sealed class ContactCubeMotion : MonoBehaviour,
         IRoomColorResettable,
         ICarryMotionParticipant,
-        IGreenHookTarget
+        IGreenHookTarget, IGreenHookMotion
     {
         [SerializeField, Min(0), InspectorName("水平喷出重力保护（秒）")] private float launchGravityGrace = .25f;
         [SerializeField, Min(.001f), InspectorName("落稳竖直速度容差")] private float settleVelocity = .08f;
@@ -34,7 +34,7 @@ namespace Project.ContactCubes
         public bool GravityProtected => Time.time < gravityProtectedUntil;
         public bool IsSuspended { get; private set; }
         public GreenHookMotionMode GreenHookMotionMode =>
-            GreenHookMotionMode.PullTarget;
+            cube != null && cube.Color == CubeColor.Green ? GreenHookMotionMode.Swing : GreenHookMotionMode.PullTarget;
         public Transform GreenHookTransform => transform;
         public Vector3 GreenHookPosition =>
             body != null ? body.position : transform.position;
@@ -102,6 +102,7 @@ namespace Project.ContactCubes
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
             cube.SetHookSuspended(true);
+            RestorePlayerCollision();
         }
 
         public void SetGreenHookVelocity(Vector3 velocity)
@@ -111,6 +112,8 @@ namespace Project.ContactCubes
                 return;
             }
 
+            body.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ |
+                (velocity.sqrMagnitude < .000001f ? RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionY : RigidbodyConstraints.None);
             body.linearVelocity = new Vector3(
                 velocity.x,
                 velocity.y,
@@ -142,7 +145,7 @@ namespace Project.ContactCubes
             cube?.SetHookSuspended(false);
             if (body != null)
             {
-                Vector3 finalPosition = transform.position;
+                Vector3 finalPosition = body.position;
                 separationDirection.z = 0f;
                 if (separationDistance > 0f &&
                     separationDirection.sqrMagnitude > .0001f)

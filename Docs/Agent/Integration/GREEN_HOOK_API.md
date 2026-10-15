@@ -1,84 +1,48 @@
 # 绿色钩子接入 API
 
-源码目录：`Assets/_Project/Code/Systems/GreenHook`。
+源码：`Assets/_Project/Code/Systems/GreenHook`。2026-10-15 更新：成功挂接后不自动脱钩，覆盖旧的接触结束、停滞结束和超时结束规则。
 
-## 玩家入口
+## 输入与控制所有权
 
-`PlayerColorWheel.TryUseSelectedAbility()` 在选中绿色时调用
-`GreenHookAbility.TryLaunch`。操作输入仍由 `PlayerInputDriver` 通过
-`PlayerController.TryUseSelectedColorAbility()` 转发，不在输入层增加特殊按键。
+绿色能力仍由 `PlayerColorWheel → GreenHookAbility.TryLaunch` 发射，距离沿用 `PlayerInteractionSensor.ScanRadius`，吸附四向。未命中才原速收回。伸出阶段按线段检测目标，避免低帧率直接跨过小物体。
 
-```text
-绿色选中
-→ PlayerColorWheel.Tick 更新待机藤蔓头
-→ 左键点击有效目标
-→ GreenHookAbility.TryLaunch
-→ 锁控制、伸藤
-→ 命中目标：拉动、清理
-→ 未命中：原速收回、解除限制
-```
+已挂接时 `PlayerInputDriver` 先通过 `PlayerController.UpdateGreenHookInput(move, release)` 分发输入，再处理普通控制锁。现有 Jump 或 Interact 动作主动脱钩；键鼠、手柄、触摸都沿用原动作映射，不增设硬编码按键。Respawn 仍可返回重生点。
 
-## 目标契约
+`PlayerController.CanDriveGreenHook` 只在钩子持有唯一控制锁时成立；叠加 Timeline 等控制锁后暂停运动和主动操作，不绕过高优先级控制。暂停时不处理脱钩输入。死亡、重生、离区、目标销毁/禁用会取消连接并释放同一锁句柄。
 
-目标实现 `Project.GreenHook.IGreenHookTarget`：
+## 目标与运动契约
 
-```csharp
-GreenHookMotionMode GreenHookMotionMode { get; }
-Transform GreenHookTransform { get; }
-bool CanBeGreenHooked(GameObject actor);
-```
+`IGreenHookTarget` 定义目标资格、根 Transform 和模式：
 
-当前实现：
+| 模式 | 当前对象 | 行为 |
+| --- | --- | --- |
+| PullTarget | 红/蓝 ContactCube、机关基座 | 每物理步优先尝试拉物，物体受阻则拉玩家；下个物理步仍优先检查物体 |
+| Swing | 绿色 ContactCube（含一体生长部分）、ClimbableVineFeature、BouncePlantFeature | 点击位置作为锚点并随目标变换；保留重力与切向输入并限制最大绳长，不把锚点拉走 |
+| PullPlayer | 保留扩展契约 | 直接拉玩家，接触/受阻后保持挂接 |
 
-- `ContactCubeMotion`：`PullTarget`，物块向玩家移动。
-- `ContactCubeMotion` 先执行 `PullTarget`；连续物理步没有真实位移时才切换拉玩家。
-- 位移检测读取 `Rigidbody.position`，切换为拉玩家时清零方块速度并冻结，两个对象不会同时移动。
-- 拉玩家模式下不再调用方块网格校准，`ContactCube` 保持原位置。
-- 钩子视觉终点使用目标有效碰撞体的包围盒中心；接触和路径阻挡仍使用碰撞体表面与带厚度的路径检测。
-- 目标接触玩家时立即结束拉动，并沿两者连线做最小分离，避免玩家和目标碰撞体重叠。
-- `MechanismBaseFeature`：`PullPlayer`，玩家向基座移动。
-- `ClimbableVineFeature`：`PullPlayer`，玩家向藤蔓移动。
-- `BouncePlantFeature`：`PullPlayer`，玩家向弹性植物移动。
-
-## 玩家运动接口
-
-`PlayerController` 提供仅供 `GreenHookAbility` 使用的钩子运动状态：
+需要实际移动的对象实现 `IGreenHookMotion`：
 
 ```csharp
-BeginGreenHookPull(Component source)
-SetGreenHookPullVelocity(Component source, Vector2 velocity)
-EndGreenHookPull(Component source)
+Vector3 GreenHookPosition { get; }
+void BeginGreenHookPull();
+void SetGreenHookVelocity(Vector3 velocity);
+void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separationDistance);
 ```
 
-钩子运行期间，`PlayerController.FixedUpdate` 使用钩子速度并且不执行普通重力、
-移动和跳跃流程。控制锁同时阻止交互、染色和搬运。
+`ContactCubeMotion` 接管自身刚体并暂停接触反应，入钩时恢复玩家碰撞对；`GreenHookBodyMotion` 为基座接管刚体，结束后恢复原运动类型、重力、约束。基座没有迁移成 ContactCube，不改变信号契约。旧场景通过 MechanismBaseFeature.OnAttach 自动补齐运动组件，无需全量重建。
 
-## 目标运动
+只有一个对象收到非零拉动速度；拉玩家时目标被冻结，重新可拉时先停玩家再动目标。碰到彼此后速度归零，但保持连接，直到主动结束。主动脱钩不执行跨房间搜索或位置吸附；荡绳脱钩保留当前动量。
 
-`ContactCubeMotion` 提供：
+## 物理、边界与性能
 
-```csharp
-BeginGreenHookPull()
-SetGreenHookVelocity(Vector3 velocity)
-EndGreenHookPull()
-```
+钩子以执行顺序 -50 在 PlayerController 固定更新前提交速度。`GreenHookPhysics.FreeDistance` 对下一步实体包围盒作无分配扫掠，忽略平行地面支撑、触发器、自身与拉动对端，尊重碰撞矩阵。不再用渲染帧 Transform 位移/累计停滞时间推断受阻。
 
-钩子期间 `ContactCubeMotion` 停止自身固定更新，`ContactCube` 停止接触反应。
-结束时恢复 Rigidbody 重力、约束和接触反应。
+可推动收集品不直接视作墙；最多八层推挤检查，收集品顶住墙时仍会阻挡。缓冲区饱和或超过深度上限保守停止。钩子线可以穿墙，玩家与被拉物仍受物理实体阻挡。
 
-## 房间边界
+启动与每个挂接物理步检查 `RoomLifecycleManager.FindRegion`，沿路径以不大于四分之一格采样，始终限定于发射所属区域。没有区域管理器的独立开发场景可测试。禁止将“绳索可穿墙”误写成角色/物品穿墙。
 
-`GreenHookAbility.IsPathWithinRoom` 使用 `RoomLifecycleManager.ForScene` 和
-`FindRegion`，从玩家位置到矫正后的落点以及目标点逐格检查。没有区域管理器的开发
-场景允许运行；正式场景必须保持同一区域归属。
+目标/玩家碰撞体在启动时缓存，不每个物理步重新分配层级数组。新增加/移除实体碰撞体的目标需重新挂接以刷新缓存；已有生长体修改同一碰撞体尺寸无需刷新。
 
-## 表现约束
+## 验证入口
 
-- `InteractionLinkEffect` 只负责红、蓝预览，不再绘制绿色预览连线。
-- 绿色待机头和正式钩子复用 `InteractionLink.mat` 的绿色藤蔓样式。
-- 出藤点默认在玩家身体偏上位置；正式钩子默认 `10.44 格/秒`。
-- 待机头一格、透明度 `50%`；正式钩子使用独立 `LineRenderer` 和绿色样式。
-- 钩子结束使用材质溶解退场，不留下第二条预览线。
-- `ContactCube` 拉动结束后只执行一次位置校准；房间归属、关卡占用、可搬运物占用
-  和物理碰撞任一不通过就跳过候选格。优先范围失败时扫描当前房间全部格子，
-  仍无合法格才回到作者格，最终位置必须对齐格子中心。
+`Project.GreenHook.Editor.GreenHookVerification.Run` 仅允许隔离的 FlowRetirementProbe 项目，使用真实 Physics.Simulate 验证拉物优先、受阻回退/重评估、插值、长时间不脱钩、控制锁、荡绳、基座、收集品推挤、四向尖刺与房间边界。不要在成员当前 Scene 内运行此入口。

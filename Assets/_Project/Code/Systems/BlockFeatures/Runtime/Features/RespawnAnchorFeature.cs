@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Project.Audio;
 using Project.Player;
 using UnityEngine;
 
@@ -127,9 +128,21 @@ namespace Project.BlockFeatures
 
         public bool ActivateForDebug()
         {
-            bool changed = Activate();
             if (TryGetPlayer(playerTag, out GameObject player))
-                PlayerRespawnPointRegistry.Bind(player.GetComponent<PlayerController>(), this);
+                return ActivateForPlayer(player.GetComponent<PlayerController>());
+            return Activate();
+        }
+
+        public bool ActivateForPlayer(PlayerController player)
+        {
+            if (player == null || !isActiveAndEnabled) return false;
+            bool wasActivated = activated;
+            bool wasCurrent = boundPlayers.Contains(player);
+            RespawnAnchorChainRuntime.ActivateThrough(this);
+            PlayerRespawnPointRegistry.Bind(player, this);
+            bool changed = !wasCurrent && boundPlayers.Contains(player);
+            if (changed && Application.isPlaying)
+                AudioCuePlayer.Play(wasActivated ? AudioCueIds.CheckpointSwitch : AudioCueIds.CheckpointUnlock);
             return changed;
         }
 
@@ -285,8 +298,7 @@ namespace Project.BlockFeatures
             bool inside = (playerPosition - anchorPosition).sqrMagnitude <= radius * radius;
             if (inside && !playerInside)
             {
-                RespawnAnchorChainRuntime.ActivateThrough(this);
-                PlayerRespawnPointRegistry.Bind(player.GetComponent<PlayerController>(), this);
+                ActivateForPlayer(player.GetComponent<PlayerController>());
             }
             playerInside = inside;
         }

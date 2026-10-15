@@ -9,6 +9,11 @@ namespace Project.Items
         bool Play(Transform collector, Action onComplete);
     }
 
+    public interface IDropItemCollectionReset
+    {
+        void ResetCollectionAnimation();
+    }
+
     /// <summary>
     /// Shared lifecycle for collectible world items.
     /// Appearing and collection are explicit phases so pooled items can be
@@ -65,13 +70,20 @@ namespace Project.Items
 
         protected virtual void OnEnable()
         {
+            ResetForReuse();
+            PlayAppearAnimation();
+        }
+
+        public void ResetForReuse()
+        {
+            StopItemAnimations();
+            GetComponent<IDropItemCollectionReset>()?.ResetCollectionAnimation();
             collectionRequested = false;
             collectionFinished = false;
             attractionRequested = false;
             attractionFinished = false;
             CollectionActor = null;
             ResetItemState();
-            PlayAppearAnimation();
         }
 
         protected virtual void OnDisable()
