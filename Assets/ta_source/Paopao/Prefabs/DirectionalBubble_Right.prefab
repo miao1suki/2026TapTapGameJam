@@ -63,7 +63,10 @@ MonoBehaviour:
   flowDirection: 2
   lengthInCells: 6
   worldUnitsPerCell: 1
-  crossAxisSpreadInCells: 0.16
+  bubbleDensityPerCell: 1.25
+  bubblesPerFlowSlice: 2
+  interweaveAmount: 0.65
+  streamWidthInCells: 0.8
   speedInCellsPerSecond: 1.1
   minimumScale: 0.72
   maximumScale: 1

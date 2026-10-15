@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -22,7 +23,14 @@ namespace Project.WaterBubbles
 
         private const float MinLengthInCells = 1f;
         private const float MaxLengthInCells = 10f;
-        private const float ParticleDensityPerCell = 1.25f;
+        private const float MinDensityPerCell = 0.2f;
+        private const float MaxDensityPerCell = 3f;
+        private const float MaxWidthInCells = 4f;
+        private const float MinSpeedInCellsPerSecond = 0.1f;
+        private const float MaxSpeedInCellsPerSecond = 5f;
+        private const int MaxFlowSlices = 31;
+        private const int MaxBubblesPerFlowSlice = 6;
+        private const int MaxParticlePoolSize = MaxFlowSlices * MaxBubblesPerFlowSlice;
 
         [SerializeField, InspectorName("流动方向"), Tooltip("泡泡沿该方向移动；此组件只负责视觉表现。")]
         private FlowDirection flowDirection = FlowDirection.Up;
@@ -33,10 +41,19 @@ namespace Project.WaterBubbles
         [SerializeField, Min(0.01f), InspectorName("每格世界单位"), Tooltip("当前关卡中一个格对应的世界单位长度。")]
         private float worldUnitsPerCell = 1f;
 
-        [SerializeField, Min(0f), InspectorName("横向随机范围（格）"), Tooltip("泡泡相对主流线的轻微随机偏移。")]
-        private float crossAxisSpreadInCells = 0.16f;
+        [SerializeField, Range(MinDensityPerCell, MaxDensityPerCell), InspectorName("泡泡密度（排/格）"), Tooltip("沿流向每格的泡泡排数；排数越多，流向上的泡泡位置越密。")]
+        private float bubbleDensityPerCell = 1.25f;
 
-        [SerializeField, Min(0.01f), InspectorName("流速（格/秒）"), Tooltip("泡泡沿流向循环移动的基准速度。")]
+        [SerializeField, Range(1, MaxBubblesPerFlowSlice), InspectorName("每个流向位置泡泡数"), Tooltip("同一横向截面上的泡泡数量；上流时对应同一高度。")]
+        private int bubblesPerFlowSlice = 2;
+
+        [SerializeField, Range(0f, 1f), InspectorName("交错程度"), Tooltip("控制同一截面的泡泡前后错位和横向随机扰动。")]
+        private float interweaveAmount = 0.65f;
+
+        [SerializeField, FormerlySerializedAs("crossAxisSpreadInCells"), Range(0f, MaxWidthInCells), InspectorName("泡泡流宽度（格）"), Tooltip("泡泡在主流线两侧随机分布的总宽度；0 时收拢在主流线上。")]
+        private float streamWidthInCells = 0.8f;
+
+        [SerializeField, Range(MinSpeedInCellsPerSecond, MaxSpeedInCellsPerSecond), InspectorName("流动速度（格/秒）"), Tooltip("泡泡沿流向循环移动的基准速度。")]
         private float speedInCellsPerSecond = 1.1f;
 
         [SerializeField, Min(0.01f), InspectorName("起点尺寸倍率")]
@@ -82,6 +99,7 @@ namespace Project.WaterBubbles
             set
             {
                 lengthInCells = Mathf.Clamp(value, MinLengthInCells, MaxLengthInCells);
+                EnsureRuntimeRendererCapacity();
                 RefreshPreviewIfEditing();
             }
         }
@@ -90,6 +108,59 @@ namespace Project.WaterBubbles
         {
             get => worldUnitsPerCell;
             set => worldUnitsPerCell = Mathf.Max(0.01f, value);
+        }
+
+        /// <summary>Longitudinal flow slices per grid cell.</summary>
+        public float DensityPerCell
+        {
+            get => bubbleDensityPerCell;
+            set
+            {
+                bubbleDensityPerCell = Mathf.Clamp(value, MinDensityPerCell, MaxDensityPerCell);
+                EnsureRuntimeRendererCapacity();
+                RefreshPreviewIfEditing();
+            }
+        }
+
+        /// <summary>Number of bubbles grouped at each position along the flow.</summary>
+        public int BubblesPerFlowSlice
+        {
+            get => bubblesPerFlowSlice;
+            set
+            {
+                bubblesPerFlowSlice = Mathf.Clamp(value, 1, MaxBubblesPerFlowSlice);
+                EnsureRuntimeRendererCapacity();
+                RefreshPreviewIfEditing();
+            }
+        }
+
+        /// <summary>How much bubbles within a flow slice stagger and spread apart.</summary>
+        public float InterweaveAmount
+        {
+            get => interweaveAmount;
+            set
+            {
+                interweaveAmount = Mathf.Clamp01(value);
+                RefreshPreviewIfEditing();
+            }
+        }
+
+        /// <summary>Total width of the randomized stream in grid cells.</summary>
+        public float StreamWidthInCells
+        {
+            get => streamWidthInCells;
+            set
+            {
+                streamWidthInCells = Mathf.Clamp(value, 0f, MaxWidthInCells);
+                RefreshPreviewIfEditing();
+            }
+        }
+
+        /// <summary>Base movement speed in grid cells per second.</summary>
+        public float SpeedInCellsPerSecond
+        {
+            get => speedInCellsPerSecond;
+            set => speedInCellsPerSecond = Mathf.Clamp(value, MinSpeedInCellsPerSecond, MaxSpeedInCellsPerSecond);
         }
 
         public void RefreshBubblePool()
@@ -104,7 +175,9 @@ namespace Project.WaterBubbles
 
             bubbleRenderers = childRenderers.ToArray();
             variations = CreateVariations(bubbleRenderers.Length);
-            if (!Application.isPlaying)
+            if (Application.isPlaying)
+                EnsureRendererCapacity(GetActiveParticleCount());
+            else
                 RefreshEditorPreview();
         }
 
@@ -112,6 +185,11 @@ namespace Project.WaterBubbles
         {
             lengthInCells = Mathf.Clamp(lengthInCells, MinLengthInCells, MaxLengthInCells);
             worldUnitsPerCell = Mathf.Max(0.01f, worldUnitsPerCell);
+            bubbleDensityPerCell = Mathf.Clamp(bubbleDensityPerCell, MinDensityPerCell, MaxDensityPerCell);
+            bubblesPerFlowSlice = Mathf.Clamp(bubblesPerFlowSlice, 1, MaxBubblesPerFlowSlice);
+            interweaveAmount = Mathf.Clamp01(interweaveAmount);
+            streamWidthInCells = Mathf.Clamp(streamWidthInCells, 0f, MaxWidthInCells);
+            speedInCellsPerSecond = Mathf.Clamp(speedInCellsPerSecond, MinSpeedInCellsPerSecond, MaxSpeedInCellsPerSecond);
             RefreshBubblePool();
         }
 
@@ -126,6 +204,11 @@ namespace Project.WaterBubbles
         {
             lengthInCells = Mathf.Clamp(lengthInCells, MinLengthInCells, MaxLengthInCells);
             worldUnitsPerCell = Mathf.Max(0.01f, worldUnitsPerCell);
+            bubbleDensityPerCell = Mathf.Clamp(bubbleDensityPerCell, MinDensityPerCell, MaxDensityPerCell);
+            bubblesPerFlowSlice = Mathf.Clamp(bubblesPerFlowSlice, 1, MaxBubblesPerFlowSlice);
+            interweaveAmount = Mathf.Clamp01(interweaveAmount);
+            streamWidthInCells = Mathf.Clamp(streamWidthInCells, 0f, MaxWidthInCells);
+            speedInCellsPerSecond = Mathf.Clamp(speedInCellsPerSecond, MinSpeedInCellsPerSecond, MaxSpeedInCellsPerSecond);
             minimumScale = Mathf.Max(0.01f, minimumScale);
             maximumScale = Mathf.Max(minimumScale, maximumScale);
 
@@ -141,6 +224,9 @@ namespace Project.WaterBubbles
 
                 bubbleRenderers = childRenderers.ToArray();
             }
+
+            if (Application.isPlaying)
+                EnsureRendererCapacity(GetActiveParticleCount());
 
             if (!Application.isPlaying)
             {
@@ -167,6 +253,7 @@ namespace Project.WaterBubbles
                 variations = CreateVariations(bubbleRenderers.Length);
 
             var activeCount = GetActiveParticleCount();
+            var flowSliceCount = GetFlowSliceCount();
             var direction = DirectionVector;
             var perpendicular = new Vector2(-direction.y, direction.x);
             var distance = lengthInCells * worldUnitsPerCell;
@@ -183,9 +270,8 @@ namespace Project.WaterBubbles
                     continue;
 
                 var variation = variations[i];
-                var travelRate = speedInCellsPerSecond * variation.speedMultiplier / Mathf.Max(lengthInCells, MinLengthInCells);
-                var progress = Mathf.Repeat(variation.phase + Time.time * travelRate, 1f);
-                ApplyBubble(renderer, variation, progress, direction, perpendicular, distance);
+                var progress = GetFlowProgress(i, variation, flowSliceCount, Time.time);
+                ApplyBubble(renderer, i, variation, progress, direction, perpendicular, distance);
             }
         }
 
@@ -202,6 +288,7 @@ namespace Project.WaterBubbles
 
             variations = CreateVariations(bubbleRenderers.Length);
             var activeCount = GetActiveParticleCount();
+            var flowSliceCount = GetFlowSliceCount();
             var direction = DirectionVector;
             var perpendicular = new Vector2(-direction.y, direction.x);
             var distance = lengthInCells * worldUnitsPerCell;
@@ -217,18 +304,30 @@ namespace Project.WaterBubbles
                 if (!isActive)
                     continue;
 
-                // Keep the editor preview ordered from small at the source to large at the tail.
                 var variation = variations[i];
-                var progress = activeCount <= 1
-                    ? 0.5f
-                    : Mathf.Clamp01((i + 0.5f + (variation.phase - 0.5f) * 0.28f) / activeCount);
-                ApplyBubble(renderer, variation, progress, direction, perpendicular, distance);
+                var progress = GetFlowProgress(i, variation, flowSliceCount, 0f);
+                ApplyBubble(renderer, i, variation, progress, direction, perpendicular, distance);
             }
         }
 
-        private void ApplyBubble(SpriteRenderer renderer, ParticleVariation variation, float progress, Vector2 direction, Vector2 perpendicular, float distance)
+        private float GetFlowProgress(int particleIndex, ParticleVariation variation, int flowSliceCount, float elapsedTime)
         {
-            var crossOffset = variation.lateralOffset * crossAxisSpreadInCells * worldUnitsPerCell;
+            var flowSliceIndex = particleIndex / bubblesPerFlowSlice;
+            var baseProgress = (flowSliceIndex + 0.5f) / flowSliceCount;
+            var stagger = (variation.phase * 2f - 1f) * interweaveAmount * 0.4f / flowSliceCount;
+            var travelRate = speedInCellsPerSecond * variation.speedMultiplier / Mathf.Max(lengthInCells, MinLengthInCells);
+            return Mathf.Repeat(baseProgress + stagger + elapsedTime * travelRate, 1f);
+        }
+
+        private void ApplyBubble(SpriteRenderer renderer, int particleIndex, ParticleVariation variation, float progress, Vector2 direction, Vector2 perpendicular, float distance)
+        {
+            var laneIndex = particleIndex % bubblesPerFlowSlice;
+            var laneCenter = bubblesPerFlowSlice <= 1
+                ? 0f
+                : Mathf.Lerp(-0.5f, 0.5f, laneIndex / (float)(bubblesPerFlowSlice - 1));
+            var jitterRange = bubblesPerFlowSlice <= 1 ? 0.5f : 0.2f / (bubblesPerFlowSlice - 1);
+            var lateralOffset = Mathf.Clamp(laneCenter + variation.lateralOffset * interweaveAmount * jitterRange, -0.5f, 0.5f);
+            var crossOffset = lateralOffset * streamWidthInCells * worldUnitsPerCell;
             var localPosition = direction * (progress * distance) + perpendicular * crossOffset;
             renderer.transform.localPosition = new Vector3(localPosition.x, localPosition.y, 0f);
 
@@ -270,11 +369,41 @@ namespace Project.WaterBubbles
 
         private int GetActiveParticleCount()
         {
-            if (bubbleRenderers == null || bubbleRenderers.Length == 0)
-                return 0;
+            return Mathf.Min(GetFlowSliceCount() * bubblesPerFlowSlice, MaxParticlePoolSize);
+        }
 
-            var requestedCount = Mathf.RoundToInt(lengthInCells * ParticleDensityPerCell + 1f);
-            return Mathf.Clamp(requestedCount, 2, bubbleRenderers.Length);
+        private int GetFlowSliceCount()
+        {
+            var requestedCount = Mathf.RoundToInt(lengthInCells * bubbleDensityPerCell + 1f);
+            return Mathf.Clamp(requestedCount, 2, MaxFlowSlices);
+        }
+
+        private void EnsureRuntimeRendererCapacity()
+        {
+            if (Application.isPlaying)
+                EnsureRendererCapacity(GetActiveParticleCount());
+        }
+
+        private void EnsureRendererCapacity(int requiredCount)
+        {
+            if (bubbleRenderers == null)
+                bubbleRenderers = Array.Empty<SpriteRenderer>();
+
+            if (bubbleRenderers.Length >= requiredCount)
+                return;
+
+            var renderers = new System.Collections.Generic.List<SpriteRenderer>(bubbleRenderers);
+            for (var i = renderers.Count; i < requiredCount; i++)
+            {
+                var bubbleObject = new GameObject($"Bubble_{i + 1:00}");
+                bubbleObject.transform.SetParent(transform, false);
+                var renderer = bubbleObject.AddComponent<SpriteRenderer>();
+                renderer.enabled = false;
+                renderers.Add(renderer);
+            }
+
+            bubbleRenderers = renderers.ToArray();
+            variations = CreateVariations(bubbleRenderers.Length);
         }
 
         private Vector2 DirectionVector
