@@ -53,10 +53,10 @@ namespace Project.GreenHook
         [SerializeField, Range(0f, 1f)] private float idleOpacity = .5f;
         [SerializeField, Range(0f, 1f)] private float hookOpacity = .9f;
         [SerializeField, Min(.05f)]
-        private float growthSpeedCellsPerSecond = 5.22f;
+        private float growthSpeedCellsPerSecond = 10.44f;
         [SerializeField, Min(0f)]
         private float hookCatchRadiusCells = .5f;
-        [SerializeField, Min(.05f)] private float pullSpeed = 4f;
+        [SerializeField, Min(.05f)] private float pullSpeed = 8f;
         [SerializeField, Min(0f)] private float contactPadding = .05f;
         [SerializeField, Min(.01f)] private float blockedSeconds = .25f;
         [SerializeField, Min(.0001f)] private float minimumProgress = .002f;
@@ -91,14 +91,10 @@ namespace Project.GreenHook
         private float retractDuration;
         private float pullingElapsed;
         private float blockedElapsed;
-        private float lastDistance;
+        private Vector3 lastActorPosition;
         private float finishElapsed;
         private bool ownsFallbackMaterial;
         private bool pullingPlayer;
-        private bool targetMoved;
-        private Vector3 targetStartPosition;
-        private RaycastHit[] targetPathHits =
-            new RaycastHit[32];
 
         public bool IsHookActive => phase != HookPhase.None;
         public bool IsExtending => phase == HookPhase.Extending;
@@ -174,7 +170,8 @@ namespace Project.GreenHook
             if (!sensor.TryGetScreenHit(
                     camera,
                     screenPosition,
-                    out RaycastHit screenHit))
+                    out RaycastHit screenHit,
+                    QueryTriggerInteraction.Ignore))
             {
                 if (TryGetPointerWorldPoint(
                         camera,
@@ -193,9 +190,8 @@ namespace Project.GreenHook
                 return GreenHookLaunchResult.OutOfRange;
             }
 
-            if (!sensor.TryGetScreenComponent<IGreenHookTarget>(
-                    camera,
-                    screenPosition,
+            if (!TryResolveHookTarget(
+                    screenHit,
                     out IGreenHookTarget foundTarget) ||
                 foundTarget == null ||
                 !foundTarget.CanBeGreenHooked(gameObject))
@@ -297,7 +293,7 @@ namespace Project.GreenHook
             if (maximumPullSeconds > 0f &&
                 pullingElapsed >= maximumPullSeconds)
             {
-                FinishHook(targetMoved);
+                FinishHook(true, false);
                 return;
             }
 
@@ -308,51 +304,37 @@ namespace Project.GreenHook
             float distance = DistanceToPlayer(targetSurfacePoint);
             if (IsTouchingPlayer(targetSurfacePoint, distance))
             {
-                FinishHook(targetMoved, true);
+                FinishHook(true, true);
                 return;
             }
 
-            bool targetMotionMode =
-                target.GreenHookMotionMode ==
-                GreenHookMotionMode.PullTarget;
-            if (targetMotionMode && !pullingPlayer)
-            {
-                if (IsTargetPathBlocked(targetCenter))
-                {
-                    pullingPlayer = true;
-                    blockedElapsed = 0f;
-                    lastDistance = distance;
-                }
-
-                if (targetTransform.position != targetStartPosition &&
-                    (targetTransform.position - targetStartPosition)
-                    .sqrMagnitude > .0004f)
-                {
-                    targetMoved = true;
-                }
-            }
-
-            if (distance >= lastDistance - minimumProgress)
-            {
-                blockedElapsed += deltaTime;
-            }
-            else
+            Vector3 actorPosition = pullingPlayer
+                ? player.transform.position
+                : targetMotion != null
+                    ? targetMotion.GreenHookPosition
+                    : targetTransform.position;
+            if ((actorPosition - lastActorPosition).sqrMagnitude >
+                minimumProgress * minimumProgress)
             {
                 blockedElapsed = 0f;
             }
-            lastDistance = distance;
+            else
+            {
+                blockedElapsed += deltaTime;
+            }
+            lastActorPosition = actorPosition;
 
             if (blockedElapsed >= blockedSeconds)
             {
-                if (targetMotionMode && !pullingPlayer)
+                if (!pullingPlayer &&
+                    target.GreenHookMotionMode ==
+                        GreenHookMotionMode.PullTarget)
                 {
-                    pullingPlayer = true;
-                    blockedElapsed = 0f;
-                    lastDistance = distance;
+                    SwitchToPlayerPull();
                 }
                 else
                 {
-                    FinishHook(targetMoved, false);
+                    FinishHook(true, false);
                     return;
                 }
             }
@@ -366,7 +348,7 @@ namespace Project.GreenHook
             }
 
             toTarget.Normalize();
-            if (targetMotionMode && !pullingPlayer)
+            if (!pullingPlayer)
             {
                 targetMotion?.SetGreenHookVelocity(
                     -toTarget * pullSpeed);
@@ -379,61 +361,17 @@ namespace Project.GreenHook
             }
         }
 
-        private bool IsTargetPathBlocked(Vector3 targetPoint)
+        private void SwitchToPlayerPull()
         {
-            if (targetTransform == null || player == null)
+            if (pullingPlayer)
             {
-                return true;
+                return;
             }
 
-            Vector3 playerPoint = GetPlayerCenter();
-            Vector3 delta = playerPoint - targetPoint;
-            delta.z = 0f;
-            float distance = delta.magnitude;
-            if (distance <= .0001f)
-            {
-                return false;
-            }
-
-            Vector3 direction = delta / distance;
-            float radius = Mathf.Max(
-                .01f,
-                GridCellSizeUtility.Resolve(this) * .45f);
-            int count;
-            do
-            {
-                count = Physics.SphereCastNonAlloc(
-                    targetPoint,
-                    radius,
-                    direction,
-                    targetPathHits,
-                    distance,
-                    ~0,
-                    QueryTriggerInteraction.Collide);
-                if (count < targetPathHits.Length ||
-                    targetPathHits.Length >= 256)
-                {
-                    break;
-                }
-
-                targetPathHits =
-                    new RaycastHit[targetPathHits.Length * 2];
-            } while (true);
-
-            for (int index = 0; index < count; index++)
-            {
-                Collider hit = targetPathHits[index].collider;
-                if (hit == null ||
-                    hit.transform.IsChildOf(targetTransform) ||
-                    hit.transform.IsChildOf(player.transform))
-                {
-                    continue;
-                }
-
-                return true;
-            }
-
-            return false;
+            pullingPlayer = true;
+            blockedElapsed = 0f;
+            lastActorPosition = player.transform.position;
+            targetMotion?.SetGreenHookVelocity(Vector3.zero);
         }
 
         private void BeginHook(
@@ -452,7 +390,6 @@ namespace Project.GreenHook
             retractDuration = 0f;
             pullingElapsed = 0f;
             blockedElapsed = 0f;
-            lastDistance = float.MaxValue;
             finishElapsed = 0f;
             phase = HookPhase.Extending;
 
@@ -514,15 +451,44 @@ namespace Project.GreenHook
             pullingPlayer =
                 target.GreenHookMotionMode ==
                 GreenHookMotionMode.PullPlayer;
-            targetMoved = false;
-            targetStartPosition = targetTransform != null
-                ? targetTransform.position
-                : transform.position;
-            targetMotion?.BeginGreenHookPull();
-            lastDistance = DistanceToPlayer(
-                GetTargetPoint(
-                    targetTransform,
-                    player.transform.position));
+            if (!pullingPlayer)
+            {
+                targetMotion?.BeginGreenHookPull();
+            }
+            blockedElapsed = 0f;
+            lastActorPosition = pullingPlayer
+                ? player.transform.position
+                : targetMotion != null
+                    ? targetMotion.GreenHookPosition
+                    : targetTransform.position;
+        }
+
+        private bool TryResolveHookTarget(
+            RaycastHit hit,
+            out IGreenHookTarget target)
+        {
+            target = null;
+            if (hit.collider == null)
+            {
+                return false;
+            }
+
+            MonoBehaviour[] behaviours =
+                hit.collider.GetComponentsInParent<MonoBehaviour>(true);
+            for (int index = 0; index < behaviours.Length; index++)
+            {
+                if (!(behaviours[index] is IGreenHookTarget candidate) ||
+                    !(behaviours[index] is Behaviour behaviour) ||
+                    !behaviour.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
+                target = candidate;
+                return true;
+            }
+
+            return false;
         }
 
         private void BeginRetracting()
@@ -655,7 +621,7 @@ namespace Project.GreenHook
                 }
 
                 targetMotion.EndGreenHookPull(
-                    snapTargetToGrid,
+                    snapTargetToGrid && !pullingPlayer,
                     separationDirection,
                     separateFromPlayer
                         ? Mathf.Max(.05f, contactPadding * 1.5f)

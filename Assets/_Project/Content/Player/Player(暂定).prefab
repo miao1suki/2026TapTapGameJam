@@ -553,8 +553,8 @@ MonoBehaviour:
   idleLengthCells: 1
   idleOpacity: 0.5
   hookOpacity: 0.9
-  growthSpeedCellsPerSecond: 5.22
-  pullSpeed: 4
+  growthSpeedCellsPerSecond: 10.44
+  pullSpeed: 8
   contactPadding: 0.05
   blockedSeconds: 0.25
   minimumProgress: 0.002

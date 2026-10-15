@@ -17,8 +17,7 @@ namespace Project.ContactCubes
     {
         [SerializeField, Min(0), InspectorName("水平喷出重力保护（秒）")] private float launchGravityGrace = .25f;
         [SerializeField, Min(.001f), InspectorName("落稳竖直速度容差")] private float settleVelocity = .08f;
-        [SerializeField, Min(0), InspectorName("绿钩子吸附搜索半径（格）")] private int greenHookSnapSearchRadius = 2;
-        [SerializeField, Min(.1f), InspectorName("绿钩子吸附重试时间（秒）")] private float greenHookSnapRetrySeconds = 1.25f;
+        [SerializeField, Min(0), InspectorName("绿钩子优先搜索半径（格）")] private int greenHookSnapSearchRadius = 2;
         private Rigidbody body;
         private ContactCube cube;
         private BoxCollider shape;
@@ -31,15 +30,14 @@ namespace Project.ContactCubes
         private float gravityProtectedUntil;
         private bool hadHorizontalPush;
         private bool greenHookActive;
-        private bool greenHookSnapPending;
-        private bool greenHookSnapAttempted;
-        private float greenHookSnapDeadline;
         public bool IsSettled { get; private set; }
         public bool GravityProtected => Time.time < gravityProtectedUntil;
         public bool IsSuspended { get; private set; }
         public GreenHookMotionMode GreenHookMotionMode =>
             GreenHookMotionMode.PullTarget;
         public Transform GreenHookTransform => transform;
+        public Vector3 GreenHookPosition =>
+            body != null ? body.position : transform.position;
         public bool CanBeGreenHooked(GameObject actor) =>
             isActiveAndEnabled &&
             cube != null &&
@@ -65,9 +63,6 @@ namespace Project.ContactCubes
         {
             IsSuspended = suspended; velocities.Clear(); hadHorizontalPush = false;
             gravityProtectedUntil = 0;
-            greenHookSnapPending = false;
-            greenHookSnapAttempted = false;
-            greenHookSnapDeadline = 0f;
             if (suspended)
             {
                 if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
@@ -95,16 +90,15 @@ namespace Project.ContactCubes
             }
 
             greenHookActive = true;
-            greenHookSnapPending = false;
-            greenHookSnapAttempted = false;
-            greenHookSnapDeadline = 0f;
             velocities.Clear();
             gravityProtectedUntil = 0f;
             hadHorizontalPush = false;
             IsSettled = false;
             body.isKinematic = false;
             body.useGravity = false;
-            body.constraints = baseConstraints;
+            body.constraints =
+                RigidbodyConstraints.FreezeRotation |
+                RigidbodyConstraints.FreezePositionZ;
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
             cube.SetHookSuspended(true);
@@ -122,6 +116,7 @@ namespace Project.ContactCubes
                 velocity.y,
                 0f);
         }
+
 
         public void EndGreenHookPull()
         {
@@ -144,11 +139,6 @@ namespace Project.ContactCubes
             }
 
             greenHookActive = false;
-            greenHookSnapPending = snapToGrid;
-            greenHookSnapAttempted = false;
-            greenHookSnapDeadline = snapToGrid
-                ? Time.time + greenHookSnapRetrySeconds
-                : 0f;
             cube?.SetHookSuspended(false);
             if (body != null)
             {
@@ -168,6 +158,11 @@ namespace Project.ContactCubes
                 body.constraints = baseConstraints;
                 body.linearVelocity = Vector3.zero;
                 body.angularVelocity = Vector3.zero;
+            }
+            Physics.SyncTransforms();
+            if (snapToGrid)
+            {
+                CalibrateToNearestGridCell();
             }
         }
         public bool CanPlaceCarriedAt(Vector3 worldPosition)
@@ -223,7 +218,6 @@ namespace Project.ContactCubes
                 velocity.z = 0; body.linearVelocity = velocity;
             }
             RefreshPlayerCollision();
-            TryApplyGreenHookSnap();
         }
         private bool HasSupport()
         {
@@ -264,9 +258,6 @@ namespace Project.ContactCubes
             {
                 EndGreenHookPull(false);
             }
-            greenHookSnapPending = false;
-            greenHookSnapAttempted = false;
-            greenHookSnapDeadline = 0f;
             velocities.Clear(); gravityProtectedUntil = 0; hadHorizontalPush = false; IsSettled = false;
             SetCarrySuspended(false); body.linearVelocity = Vector3.zero;
             RestorePlayerCollision();
@@ -282,46 +273,42 @@ namespace Project.ContactCubes
             {
                 EndGreenHookPull(false);
             }
-            greenHookSnapPending = false;
-            greenHookSnapAttempted = false;
-            greenHookSnapDeadline = 0f;
             if (cube != null) cube.PushRequested -= OnPush;
             velocities.Clear(); RestorePlayerCollision();
             if (body != null) { body.useGravity = true; body.constraints = baseConstraints; }
         }
 
-        private void TryApplyGreenHookSnap()
+        private void CalibrateToNearestGridCell()
         {
-            if (!greenHookSnapPending ||
-                greenHookSnapAttempted ||
-                body == null ||
-                shape == null)
+            if (body == null || shape == null)
             {
                 return;
             }
 
-            bool settled =
-                body.IsSleeping() ||
-                Mathf.Abs(body.linearVelocity.y) <= settleVelocity;
-            if (!settled && Time.time < greenHookSnapDeadline)
+            Vector3 position;
+            RoomResetObject member =
+                GetComponent<RoomResetObject>();
+            if (TryFindNearestGridPosition(out position))
+            {
+                // The resolver already guarantees that the target cell is
+                // legal, in-room, unoccupied, and physically clear.
+            }
+            else if (member != null)
+            {
+                // A full room lookup can still fail only in malformed data.
+                // Returning to the authored cell keeps the object on-grid.
+                position = member.AuthoredWorldPosition;
+            }
+            else
             {
                 return;
             }
 
-            // Run the expensive grid search only once. Retry wait frames only
-            // perform the cheap stable-velocity check above.
-            greenHookSnapAttempted = true;
-            greenHookSnapPending = false;
-            if (TryFindNearestGridPosition(out Vector3 position))
-            {
-                body.position = position;
-                body.rotation = transform.rotation;
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
-                Physics.SyncTransforms();
-            }
-
-            greenHookSnapDeadline = 0f;
+            body.position = position;
+            body.rotation = transform.rotation;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            Physics.SyncTransforms();
         }
 
         private bool TryFindNearestGridPosition(
@@ -397,6 +384,68 @@ namespace Project.ContactCubes
                         }
                     }
                 }
+
+                if (!found)
+                {
+                    string regionId = member != null
+                        ? member.RegionId
+                        : manager.FindRegion(transform.position);
+                    RoomRegion region = null;
+                    for (int index = 0;
+                         index < manager.Regions.Count;
+                         index++)
+                    {
+                        RoomRegion candidateRegion =
+                            manager.Regions[index];
+                        if (candidateRegion != null &&
+                            candidateRegion.id == regionId)
+                        {
+                            region = candidateRegion;
+                            break;
+                        }
+                    }
+
+                    if (region != null)
+                    {
+                        for (int index = 0;
+                             index < region.cells.Count;
+                             index++)
+                        {
+                            Vector2Int gridCell =
+                                region.cells[index];
+                            Vector3 candidate =
+                                manager.transform.TransformPoint(
+                                    new Vector3(
+                                        (gridCell.x + .5f) * cellSize,
+                                        (-gridCell.y - .5f) * cellSize,
+                                        local.z));
+                            if (!manager.CanPlaceInAuthoredRegion(
+                                    member,
+                                    candidate) ||
+                                occupiedCells.Contains(gridCell) ||
+                                !CanSnapAt(candidate))
+                            {
+                                continue;
+                            }
+
+                            float distance =
+                                (candidate - transform.position)
+                                .sqrMagnitude;
+                            if (distance < bestDistance)
+                            {
+                                bestDistance = distance;
+                                result = candidate;
+                                found = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!found && member != null)
+                {
+                    result = member.AuthoredWorldPosition;
+                    found = true;
+                }
             }
             else
             {
@@ -409,6 +458,11 @@ namespace Project.ContactCubes
                     (cellY + .5f) * cellSize,
                     transform.position.z);
                 found = CanSnapAt(result);
+                if (!found && member != null)
+                {
+                    result = member.AuthoredWorldPosition;
+                    found = true;
+                }
             }
 
             return found;

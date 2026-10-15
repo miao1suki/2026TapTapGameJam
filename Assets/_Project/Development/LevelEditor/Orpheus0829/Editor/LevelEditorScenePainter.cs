@@ -9,6 +9,8 @@ namespace Project.LevelEditor.Editor
     [InitializeOnLoad]
     internal static class LevelEditorScenePainter
     {
+        private const string ShowMapGridPreferenceKey =
+            "2026TapTap.LevelEditor.ShowMapGrid";
         private static Vector2Int lastCell = new Vector2Int(int.MinValue, int.MinValue);
         private static bool strokeActive;
         private static Vector2Int strokeStart;
@@ -16,6 +18,20 @@ namespace Project.LevelEditor.Editor
         private static bool selectionStroke;
         private static bool selectionAdditive;
         private static bool selectionDragged;
+
+        internal static bool ShowMapGrid
+        {
+            get => EditorPrefs.GetBool(
+                ShowMapGridPreferenceKey,
+                false);
+            set
+            {
+                EditorPrefs.SetBool(
+                    ShowMapGridPreferenceKey,
+                    value);
+                SceneView.RepaintAll();
+            }
+        }
 
         static LevelEditorScenePainter()
         {
@@ -25,17 +41,30 @@ namespace Project.LevelEditor.Editor
 
         private static void OnSceneGUI(SceneView sceneView)
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode ||
-                !LevelEditorState.EditMode)
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
+                if (ShowMapGrid)
+                {
+                    DrawGrid(sceneView);
+                }
                 lastCell = new Vector2Int(int.MinValue, int.MinValue);
                 selectionStroke = false;
                 strokeActive = false;
                 return;
             }
 
-            LevelEditorViewLock.Tick(sceneView);
-            DrawGrid(sceneView);
+            if (LevelEditorState.EditMode)
+            {
+                LevelEditorViewLock.Tick(sceneView);
+            }
+            if (LevelEditorState.EditMode || ShowMapGrid)
+            {
+                DrawGrid(sceneView);
+            }
+            if (!LevelEditorState.EditMode)
+            {
+                return;
+            }
             if (SurfaceTileEditorBridge.IsPainting)
             {
                 return;
@@ -270,7 +299,7 @@ namespace Project.LevelEditor.Editor
 
         private static void DrawSelectionArea(Vector2Int start, Vector2Int end)
         {
-            float size = Mathf.Max(.05f, LevelEditorState.CellSize);
+            float size = ResolveGridCellSize();
             float left = Mathf.Min(start.x, end.x) * size;
             float right = (Mathf.Max(start.x, end.x) + 1) * size;
             float bottom = Mathf.Min(start.y, end.y) * size;
@@ -325,12 +354,13 @@ namespace Project.LevelEditor.Editor
             CompareFunction previousZTest = Handles.zTest;
             Color previousColor = Handles.color;
             Handles.zTest = CompareFunction.Always;
-            Handles.color = new Color(0.28f, 0.62f, 0.85f, 0.28f);
+            Handles.color = new Color(0.26f, 0.76f, 1f, 0.62f);
 
             int lineCount = 0;
             for (float x = left; x <= right && lineCount < 260; x += size)
             {
-                Handles.DrawLine(
+                Handles.DrawAAPolyLine(
+                    1.8f,
                     new Vector3(x, bottom, 0f),
                     new Vector3(x, top, 0f));
                 lineCount++;
@@ -338,21 +368,29 @@ namespace Project.LevelEditor.Editor
 
             for (float y = bottom; y <= top && lineCount < 520; y += size)
             {
-                Handles.DrawLine(
+                Handles.DrawAAPolyLine(
+                    1.8f,
                     new Vector3(left, y, 0f),
                     new Vector3(right, y, 0f));
                 lineCount++;
             }
 
-            Handles.color = new Color(0.35f, 0.84f, 1f, 0.72f);
-            Handles.DrawLine(
+            Handles.color = new Color(0.58f, 0.96f, 1f, 0.95f);
+            Handles.DrawAAPolyLine(
+                2.6f,
                 new Vector3(0f, bottom, 0f),
                 new Vector3(0f, top, 0f));
-            Handles.DrawLine(
+            Handles.DrawAAPolyLine(
+                2.6f,
                 new Vector3(left, 0f, 0f),
                 new Vector3(right, 0f, 0f));
             Handles.zTest = previousZTest;
             Handles.color = previousColor;
+        }
+
+        private static float ResolveGridCellSize()
+        {
+            return Mathf.Max(.05f, LevelEditorState.CellSize);
         }
 
         private static void DrawHover(Vector2Int cell)

@@ -67,8 +67,8 @@ namespace Project.GreenHook.Editor
             movement.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "minimumProgress",
-                "有效接近量",
-                "单个物理步需要减少的距离，低于该值会累计受阻时间。"));
+                "有效位移量",
+                "单个物理步内物体或玩家至少移动该距离，低于该值会累计受阻时间。"));
             movement.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "maximumPullSeconds",
