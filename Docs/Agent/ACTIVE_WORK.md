@@ -139,3 +139,14 @@
 - 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 重写清单与接线表，覆盖全部 63 个文件。
 - 验证：文档与仓库音频逐文件比对，无遗漏；未在 Unity 中导入试听，`.meta` 待首次导入生成。
 - 交接提交：本次文档提交。
+
+## 音频修订（脚步声与攀爬，新增藤蔓音效）
+
+- 日期：2026-10-15。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：同路径修订 `sfx_footstep_land_walk_01~03`（陆地脚步）与 `sfx_gp_plr_climb_01~02`（玩家攀爬）；新增 `sfx_gp_plr_climb_vine`。
+- 接口变更：无。修订沿用原路径与原文件名，引用与 GUID 不受影响；音频提交为 `34007fc`。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补藤蔓攀爬的清单行与接线项。
+- 验证：远端分支与本地一致；本次未在 Unity 中试听。
+- 交接提交：本次文档提交。

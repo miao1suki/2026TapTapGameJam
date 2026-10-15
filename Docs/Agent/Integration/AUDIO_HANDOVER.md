@@ -49,7 +49,8 @@
 | `sfx_footstep_land_walk_01~03.wav` | 陆地行走脚步，3 个变体 |
 | `sfx_footstep_water_walk_01~04.wav` | 水中行走脚步，4 个变体 |
 | `sfx_gp_plr_jump.wav` | 玩家跳跃 |
-| `sfx_gp_plr_climb_01.wav` / `_02.wav` | 玩家攀爬，2 个变体 |
+| `sfx_gp_plr_climb_01.wav` / `_02.wav` | 玩家攀爬（通用 / 岩石），2 个变体 |
+| `sfx_gp_plr_climb_vine.wav` | 玩家攀爬藤蔓 |
 | `sfx_gp_plr_die.wav` | 玩家死亡 |
 | `sfx_gp_plr_respawn.wav` | 玩家重生 |
 | `sfx_gp_plr_swim_01~03.wav` | 玩家游泳，3 个变体 |
@@ -106,6 +107,7 @@ GameAudioService.PlaySound(clip, volumeScale: 1f);
 | 玩家跳跃 / 落地 | `sfx_gp_plr_jump` / `sfx_footstep_land_walk_*` | `PlaySound` |
 | 玩家在地面 / 水中移动 | `sfx_footstep_land_walk_*` / `sfx_footstep_water_walk_*` | `PlaySound` 随机变体 |
 | 玩家攀爬 | `sfx_gp_plr_climb_01~02` | `PlaySound` 随机变体 |
+| 玩家攀爬藤蔓 | `sfx_gp_plr_climb_vine` | 攀附藤蔓时播放 |
 | 玩家入水 / 出水 | `sfx_gp_plr_water_enter` / `sfx_gp_plr_water_exit` | `PlaySound` 状态切换瞬间 |
 | 玩家游泳 | `sfx_gp_plr_swim_01~03` | `PlaySound` 随机变体 |
 | 玩家浮力进出 | `sfx_gp_plr_buoy_enter` / `sfx_gp_plr_buoy_exit` | `PlaySound` 状态切换瞬间 |
