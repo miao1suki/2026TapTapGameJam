@@ -114,6 +114,7 @@ GameObject:
   - component: {fileID: 600000006}
   - component: {fileID: 8165965474420280685}
   - component: {fileID: 6181711691059543081}
+  - component: {fileID: 8610000000000000002}
   m_Layer: 0
   m_Name: RuntimePlayer
   m_TagString: Player
@@ -465,3 +466,37 @@ MonoBehaviour:
   hidePlaceholder: 1
   faceCamera: 1
   verticalOffsetCells: -0.08
+--- !u!114 &8610000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4920354666734387426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b9d4c3e1f604289a2b3c4d5e6f70813, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.GreenHook.GreenHookAbility
+  sensor: {fileID: 8165965474420280685}
+  colorWheel: {fileID: 600000005}
+  player: {fileID: 5389332024260687448}
+  linkEffect: {fileID: 0}
+  hookMaterial: {fileID: 2100000, guid: 01a8ab61e63d424b8f01a313dc4f98e2, type: 2}
+  idleLengthCells: 1
+  idleOpacity: 0.5
+  hookOpacity: 0.9
+  growthSpeedCellsPerSecond: 5.22
+  pullSpeed: 4
+  contactPadding: 0.05
+  blockedSeconds: 0.25
+  minimumProgress: 0.002
+  maximumPullSeconds: 10
+  finishDissolveSeconds: 0.18
+  sourceOffset: {x: 0, y: 0.75, z: 0}
+  cameraFacingOffset: -0.18
+  curveSegments: 12
+  arcHeight: 0.08
+  waveHeight: 0.055
+  noiseStrength: 0.75
+  effectSpeed: 7

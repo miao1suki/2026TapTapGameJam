@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.GreenHook;
 using Project.Player;
 using UnityEngine;
 
@@ -8,7 +9,9 @@ namespace Project.BlockFeatures
 
     [BlockFeature(DisplayName = "弹性植物", DefaultColorId = "green", Category = BlockFeatureCategory.Plant,
         Interactions = BlockFeatureInteraction.AppliedColor | BlockFeatureInteraction.RoomReset, Writes = new[] { BlockChannel.Motion })]
-    public sealed class BouncePlantFeature : BlockFeature, IPlayerBounceSurface
+    public sealed class BouncePlantFeature : BlockFeature,
+        IPlayerBounceSurface,
+        IGreenHookTarget
     {
         [BlockParameter(Label = "玩家标签", Group = "弹跳", Order = 0)]
         [SerializeField] private string playerTag = "Player";
@@ -23,6 +26,11 @@ namespace Project.BlockFeatures
         [BlockParameter(Label = "触发间隔（秒）", Group = "弹跳", Order = 4)]
         [SerializeField, Min(.05f)] private float minTriggerInterval = .15f;
         public bool IsBounceSurfaceAvailable => CanRunFeature;
+        public GreenHookMotionMode GreenHookMotionMode =>
+            GreenHookMotionMode.PullPlayer;
+        public Transform GreenHookTransform => transform;
+        public bool CanBeGreenHooked(GameObject actor) =>
+            CanRunFeature;
         public event System.Action BounceTriggered;
         public event System.Action AppearanceReset;
 

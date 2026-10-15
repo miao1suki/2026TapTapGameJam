@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Project.Audio;
 using Project.ColorBlocks;
+using Project.GreenHook;
 using Project.InputAbstraction;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -62,6 +63,7 @@ namespace Project.Player
         private bool wheelOpen;
         private Vector2 pointerPosition;
         private IPlayerColorWheelView externalView;
+        private GreenHookAbility greenHook;
 
         private static Sprite circleSprite;
         private static Sprite ringSprite;
@@ -116,6 +118,13 @@ namespace Project.Player
         public void Tick(Vector2 currentPointerPosition)
         {
             pointerPosition = currentPointerPosition;
+            if (greenHook == null)
+            {
+                greenHook = GetComponent<GreenHookAbility>();
+            }
+            greenHook?.Tick(
+                pointerPosition,
+                IsSelected("green") && !wheelOpen);
             RefreshCursorVisibility();
             RefreshRangeIndicator();
             if (wheelOpen)
@@ -306,6 +315,18 @@ namespace Project.Player
                 return;
             }
 
+            if (IsSelected("green"))
+            {
+                GreenHookAbility hook = greenHook != null
+                    ? greenHook
+                    : GetComponent<GreenHookAbility>();
+                GreenHookLaunchResult result = hook != null
+                    ? hook.TryLaunch(pointerPosition, true)
+                    : GreenHookLaunchResult.Rejected;
+                HandleGreenHookResult(result);
+                return;
+            }
+
             Camera camera = Camera.main;
             if (camera == null || sensor == null)
             {
@@ -403,6 +424,27 @@ namespace Project.Player
                     ? $"[PlayerColorWheel] 使用能力“{(HasSelectedColor ? selectedColorId : "无")}”成功与物体交互：{targetName}"
                     : $"[PlayerColorWheel] 使用能力“{(HasSelectedColor ? selectedColorId : "无")}”与物体交互失败：{targetName}",
                 targetComponent != null ? targetComponent.gameObject : gameObject);
+        }
+
+        private void HandleGreenHookResult(
+            GreenHookLaunchResult result)
+        {
+            switch (result)
+            {
+                case GreenHookLaunchResult.Success:
+                    ClearSelectedColor();
+                    ColorApplicationSucceeded?.Invoke();
+                    AudioCuePlayer.Play(AudioCueIds.PaintComplete, .9f);
+                    break;
+                case GreenHookLaunchResult.OutOfRange:
+                    ColorApplicationOutOfRange?.Invoke();
+                    AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
+                    break;
+                case GreenHookLaunchResult.Rejected:
+                    ColorApplicationRejected?.Invoke();
+                    AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
+                    break;
+            }
         }
 
         private bool TryGetPointerWorldPoint(

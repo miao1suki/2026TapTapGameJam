@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Project.Audio;
 using Project.Player;
 using Project.ColorBlocks;
+using Project.GreenHook;
 using Project.ObjectArtwork;
 using UnityEngine;
 
@@ -23,7 +24,9 @@ namespace Project.BlockFeatures
             BlockFeatureInteraction.RoomReset,
         Writes = new[] { BlockChannel.Growth })]
     public class ClimbableVineFeature : BlockFeature,
-        IVineSegmentAppearance, IObjectContactReceiver
+        IVineSegmentAppearance,
+        IObjectContactReceiver,
+        IGreenHookTarget
     {
         private static readonly int AppearTriggerHash =
             Animator.StringToHash("Appear");
@@ -147,6 +150,11 @@ namespace Project.BlockFeatures
         public ClimbableVineFeature Root => vineRoot != null ? vineRoot : this;
         public bool IsBurning => burning;
         public bool IsBurned => burned;
+        public GreenHookMotionMode GreenHookMotionMode =>
+            GreenHookMotionMode.PullPlayer;
+        public Transform GreenHookTransform => Root.transform;
+        public bool CanBeGreenHooked(GameObject actor) =>
+            CanRunFeature && !Root.burning && !Root.burned;
 
         protected override void OnAttach()
         {
