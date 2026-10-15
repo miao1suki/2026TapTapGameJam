@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using DG.Tweening;
 using Project.Audio;
 using Project.Saving;
 using TMPro;
@@ -16,6 +18,8 @@ namespace Project.StartMenu
         [SerializeField] private GameObject startChoicePanel;
         [SerializeField] private GameObject settingsPanel;
         [SerializeField] private GameObject savePanel;
+        [SerializeField] private RectTransform menuContentRoot;
+        [SerializeField] private CanvasGroup menuContentCanvasGroup;
         [SerializeField] private Button startButton;
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button quitButton;
@@ -34,13 +38,26 @@ namespace Project.StartMenu
         [Tooltip("Cubic_11 TTF源字体，供运行时生成文本和编辑器布局使用")]
         [SerializeField] private Font uiFont;
         private bool buttonsBound;
+        private bool backgroundScrollEnabled = true;
+        private static bool externalBackgroundScrollPaused;
         private int lastScreenWidth;
         private int lastScreenHeight;
 
         public event Action StartGameRequested;
+        public event Action ExitGameRequested;
 
         public Canvas Canvas => canvas;
         public RawImage Background => background;
+        public Transform StartButtonTransform =>
+            startButton != null ? startButton.transform : null;
+        public RectTransform MenuContentRoot => EnsureMenuContentRoot();
+
+        [RuntimeInitializeOnLoadMethod(
+            RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetExternalBackgroundScrollPause()
+        {
+            externalBackgroundScrollPaused = false;
+        }
 
         public void BuildView()
         {
@@ -81,6 +98,7 @@ namespace Project.StartMenu
 
             ApplyTypography();
             ApplyArtwork();
+            EnsureMenuContentRoot();
             ShowMain();
         }
 
@@ -101,6 +119,7 @@ namespace Project.StartMenu
             BindSubPanels();
             ApplyTypography();
             ApplyArtwork();
+            EnsureMenuContentRoot();
             if (statusText != null)
             {
                 statusText.text =
@@ -128,7 +147,19 @@ namespace Project.StartMenu
 
         private void Update()
         {
-            if (background != null && background.texture != null)
+            if (!Cursor.visible)
+            {
+                Cursor.visible = true;
+            }
+            if (Cursor.lockState != CursorLockMode.None)
+            {
+                Cursor.lockState = CursorLockMode.None;
+            }
+
+            if (backgroundScrollEnabled &&
+                !externalBackgroundScrollPaused &&
+                background != null &&
+                background.texture != null)
             {
                 backgroundOffset = Mathf.Repeat(backgroundOffset - Time.unscaledDeltaTime * backgroundScrollSpeed, 1f);
                 background.uvRect = new Rect(backgroundOffset, 0f, 1f, 1f);
@@ -158,6 +189,102 @@ namespace Project.StartMenu
         public void ShowMain()
         {
             SetOnly(mainPanel);
+        }
+
+        public void SetBackgroundScrollEnabled(bool value)
+        {
+            backgroundScrollEnabled = value;
+        }
+
+        public static void SetExternalBackgroundScrollPaused(bool value)
+        {
+            externalBackgroundScrollPaused = value;
+        }
+
+        public void SetBackgroundVisible(bool value)
+        {
+            if (background != null)
+            {
+                background.gameObject.SetActive(value);
+            }
+        }
+
+        public void SyncBackgroundState(RawImage source)
+        {
+            if (source == null || background == null)
+            {
+                return;
+            }
+
+            background.texture = source.texture;
+            background.color = source.color;
+            background.uvRect = source.uvRect;
+            backgroundOffset = source.uvRect.x;
+        }
+
+        public IEnumerator SlideMenuContentOutAsync(
+            float distance,
+            float duration,
+            Ease ease)
+        {
+            RectTransform root = EnsureMenuContentRoot();
+            CanvasGroup group = EnsureMenuContentCanvasGroup(root);
+            root.gameObject.SetActive(true);
+            Vector2 start = root.anchoredPosition;
+            Tween move = DOTween.To(
+                    () => root.anchoredPosition.x,
+                    value => root.anchoredPosition = new Vector2(
+                        value,
+                        root.anchoredPosition.y),
+                    start.x + distance,
+                    Mathf.Max(.01f, duration))
+                .SetEase(ease)
+                .SetUpdate(true);
+            Tween fade = DOTween.To(
+                    () => group.alpha,
+                    value => group.alpha = value,
+                    0f,
+                    Mathf.Max(.01f, duration))
+                .SetEase(ease)
+                .SetUpdate(true);
+            Sequence sequence = DOTween.Sequence()
+                .SetUpdate(true)
+                .Join(move)
+                .Join(fade);
+            yield return sequence.WaitForCompletion();
+        }
+
+        public IEnumerator SlideMenuContentInAsync(
+            float distance,
+            float duration,
+            Ease ease)
+        {
+            RectTransform root = EnsureMenuContentRoot();
+            CanvasGroup group = EnsureMenuContentCanvasGroup(root);
+            root.gameObject.SetActive(true);
+            root.anchoredPosition = new Vector2(distance, 0f);
+            group.alpha = 0f;
+            Tween move = DOTween.To(
+                    () => root.anchoredPosition.x,
+                    value => root.anchoredPosition = new Vector2(
+                        value,
+                        root.anchoredPosition.y),
+                    0f,
+                    Mathf.Max(.01f, duration))
+                .SetEase(ease)
+                .SetUpdate(true);
+            Tween fade = DOTween.To(
+                    () => group.alpha,
+                    value => group.alpha = value,
+                    1f,
+                    Mathf.Max(.01f, duration))
+                .SetEase(ease)
+                .SetUpdate(true);
+            Sequence sequence = DOTween.Sequence()
+                .SetUpdate(true)
+                .Join(move)
+                .Join(fade);
+            yield return sequence.WaitForCompletion();
         }
 
         public void ApplyArtwork()
@@ -290,7 +417,8 @@ namespace Project.StartMenu
 
         public void QuitGame()
         {
-            Application.Quit();
+            Action exitRequested = ExitGameRequested;
+            exitRequested?.Invoke();
         }
 
         private Canvas BuildCanvas()
@@ -503,6 +631,74 @@ namespace Project.StartMenu
             selectSaveButton?.onClick.AddListener(SelectSave);
             startBackButton?.onClick.AddListener(ShowMain);
             buttonsBound = true;
+        }
+
+        private RectTransform EnsureMenuContentRoot()
+        {
+            if (menuContentRoot != null)
+            {
+                return menuContentRoot;
+            }
+
+            Transform parent = canvas != null ? canvas.transform : transform;
+            if (parent != null)
+            {
+                menuContentRoot = parent.Find("Safe Content")
+                    as RectTransform;
+                if (menuContentRoot != null)
+                {
+                    return menuContentRoot;
+                }
+            }
+
+            GameObject rootObject = new GameObject(
+                "StartMenuContent",
+                typeof(RectTransform),
+                typeof(CanvasGroup));
+            rootObject.transform.SetParent(parent, false);
+            menuContentRoot =
+                rootObject.GetComponent<RectTransform>();
+            StartMenuUiFactory.Stretch(menuContentRoot);
+            menuContentCanvasGroup =
+                rootObject.GetComponent<CanvasGroup>();
+            menuContentRoot.SetAsLastSibling();
+
+            GameObject[] panels =
+            {
+                mainPanel,
+                startChoicePanel,
+                settingsPanel,
+                savePanel
+            };
+            for (int index = 0; index < panels.Length; index++)
+            {
+                if (panels[index] != null)
+                {
+                    panels[index].transform.SetParent(
+                        menuContentRoot,
+                        false);
+                }
+            }
+
+            return menuContentRoot;
+        }
+
+        private CanvasGroup EnsureMenuContentCanvasGroup(
+            RectTransform root)
+        {
+            if (menuContentCanvasGroup == null ||
+                menuContentCanvasGroup.gameObject != root.gameObject)
+            {
+                menuContentCanvasGroup =
+                    root.GetComponent<CanvasGroup>();
+                if (menuContentCanvasGroup == null)
+                {
+                    menuContentCanvasGroup =
+                        root.gameObject.AddComponent<CanvasGroup>();
+                }
+            }
+
+            return menuContentCanvasGroup;
         }
 
         private void BindSubPanels()

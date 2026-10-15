@@ -1,5 +1,19 @@
 # 工作状态与交接（每次任务重读）
 
+## 统一加载过渡：App 进入 / MainMenu → Gaming / Gaming → MainMenu
+
+- 日期：2026-10-15；负责人：Codex；分支：`界面切换与绿色染色`。
+- 范围：`GameSceneLoader` 统一管理 App 黑屏扩散、MainMenu 内容右移、加载文字、Gaming 玩家中心扩散、返回菜单背景与 UI 回场；新增 `GameTransitionOverlay`、`GameTransitionSettings` 和 `GameTransitionReveal` UI Shader。
+- 参数：App 默认以屏幕正中心扩散；所有扩散前保持 0.5 秒全黑且边缘无柔化；加载文字使用 `Cubic_11 SDF`、120 号白字黑边，显示至少 2 秒；加载期间冻结背景滚动；玩家输入锁保持到 Gaming 黑屏扩散完全结束。
+- 修正：黑屏层级置于背景副本下方，避免背景图被遮住；StartMenu 增加全局外部滚动冻结；加载文字同时从 `GameTransitionSettings` 和 `StartMenuController.SdfFont` 解析字体，避免运行时字体丢失。
+- 追加修正：MainMenu 的 `__GameFlow/Game Transition Overlay` 现在直接序列化引用 `Cubic_11 SDF` 和 `GameTransitionSettings`；App 黑屏开始扩散时立即恢复背景滚动；返回 MainMenu 不再先铺全屏黑，背景直接覆盖 Gaming 画面滑入；加载文字先消失、背景再移出黑屏；SharedGameUI 的旧加载文字同步引用 Cubie 并放大到 120。
+- 退出过渡：开始菜单“退出游戏”不再直接调用 `Application.Quit`，改由 `StartMenuFlowBridge` 请求 `GameSceneLoader`；黑屏从边缘向屏幕正中心反向缩圈，完全吞噬后保持 1 秒再退出。退出速度与保持时长在 `GameTransitionSettings` 中可调，重复点击有请求保护。
+- 白屏修复：过渡遮罩不再只依赖运行时 `Shader.Find`；`GameTransitionSettings.asset` 直接序列化引用 `GameTransitionReveal` Shader，黑屏 `RawImage` 同时使用黑色和白色纹理兜底，避免构建或资源回退时遮罩显示成纯白。
+- 返回主菜单追加：Gaming→MainMenu 现在先以当前玩家屏幕位置为中心收黑，黑屏完整覆盖后保持 0.5 秒，再启动菜单背景回场；收黑速度、柔化和保持时长均在 `GameTransitionSettings` 中可调。
+- 主菜单鼠标兜底：`StartMenuController` 在 MainMenu 存活期间每帧检查并恢复 `Cursor.visible = true`、`Cursor.lockState = CursorLockMode.None`，避免从染色或玩法阶段返回后鼠标仍被隐藏。
+- 清理：SharedGameUI 里旧的 `LoadingScreen/LoadingBadge/Label` 整棵树已物理删除，`GameUiRouter.loadingScreen` 置空，避免右下角蓝色旧加载字与统一过渡重叠。
+- 验证：StartMenu Runtime、GameFlow Runtime、GameFlow Editor、编辑器测试、PlayMode 测试与 Assembly-CSharp 静态编译通过；实际 Unity 画面与手感待用户验收。
+
 ## 2026-10-15 当前进度整合
 
 - 用户授权合并推送：整合网格美术编辑器、六分暂停轮盘、重生点/弹性植物美术、MVMap标注地图及共享规划存档、双平台触摸/安全区与气泡柱修复。以最新 origin/main 为基线验证后合入 main；保留 Unity6000.3.12f1、Android7.1 最低版本。隐私接入已按用户要求完全撤回，不随本次提交。

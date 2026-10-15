@@ -19,6 +19,7 @@ namespace Project.GameFlow
             if (menu != null)
             {
                 menu.StartGameRequested += OnStartGameRequested;
+                menu.ExitGameRequested += OnExitGameRequested;
             }
         }
 
@@ -27,6 +28,7 @@ namespace Project.GameFlow
             if (menu != null)
             {
                 menu.StartGameRequested -= OnStartGameRequested;
+                menu.ExitGameRequested -= OnExitGameRequested;
             }
         }
 
@@ -39,6 +41,11 @@ namespace Project.GameFlow
             }
 
             flow.RequestTransition(GameFlowSceneId.Gaming);
+        }
+
+        private void OnExitGameRequested()
+        {
+            GameSceneLoader.Instance.RequestApplicationQuit();
         }
     }
 }

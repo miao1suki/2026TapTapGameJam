@@ -13,6 +13,7 @@
 `GameSystemSceneRoot` 按 `IGameSystemService.InitializationOrder` 初始化子服务。系统不放进关卡复制。
 它可在独立场景自动初始化，与流程控制器并发申请初始化时等待同一过程，避免重复执行。UI 复用 prefab 见 Developer/GAME_FLOW.md；保留原菜单业务与动画，不从生成器覆盖设计好的界面。
 `GameUiRouter.StartGame/SetPaused`负责主菜单与暂停；共享UI随玩法场景存在，关卡中不激活主菜单全屏底板。离开/重载/销毁时使用`SetPaused(false, false, true)`立即恢复全局时间和音频；即使已开始关闭动画，立即清理仍须执行。
+`GameSceneLoader` 现统一管理 App 黑屏扩散、MainMenu→Gaming 的菜单退场/加载文字/玩家中心扩散、Gaming→MainMenu 的玩家中心收黑/0.5 秒保持/背景回场/UI 回场，以及开始菜单退出前的反向缩圈。过渡配置见 `Content/GameFlow/Resources/GameTransitionSettings.asset`，其中直接引用 `UI/GameTransitionReveal` Shader，避免构建剥离后遮罩回退成白色。退出按钮通过 `StartMenuController.ExitGameRequested` 与 `StartMenuFlowBridge` 转发请求，不直接退出。`StartMenuController` 在 MainMenu 生命周期内持续保证鼠标可见且 `lockState` 为 `None`。
 `GameAudioService`由现有持久`GameFlowController`根安装并初始化，注册真实场景切换事件，不依赖旧系统场景。当前音频目录为新仓库成员交付资源；进入Gaming播放`music.atmosphere.e_minor`，菜单播放原开场音乐。
 初始化工具 `TapTapFoundationSetup.Generate` 创建清洁基础场景与普通白膜，不含旧机关。
 

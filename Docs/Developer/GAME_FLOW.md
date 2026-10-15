@@ -4,6 +4,16 @@
 
 MainMenu 的 `__GameFlow` 根持有 `GameFlowController`，开始按钮通过 `StartMenuFlowBridge` 请求 Gaming。Gaming 的 Main Camera 挂 `CameraControlManager`、`CameraModeController`、`CameraFollowController` 和 `LevelSceneContext`；`LevelSceneContext` 会按 `Player` Tag 找到玩家并接为相机随行目标。暂停与共享界面来自 `Content/UI/SharedGameUI.prefab`。
 
+正式加载过渡由 `GameSceneLoader` 统一驱动：
+
+- 进入 App：黑屏从开始按钮中心向外扩散。
+- 进入 Gaming：菜单内容和背景滚动冻结，加载文字显示，Gaming 以玩家为中心扩散揭示。
+- 返回 MainMenu：先以当前玩家为中心收黑，黑屏保持 0.5 秒，然后滚动背景从右侧回场，加载文字显示，菜单内容从右侧回场。
+- 退出游戏：主菜单按钮只发请求，黑屏从屏幕外反向缩圈吞噬画面，保持 1 秒后再退出。
+- 加载期间冻结菜单背景滚动；进入 Gaming 后玩家控制锁保持到黑屏扩散完成。
+
+MainMenu 场景存活期间每帧保证鼠标可见且不处于锁定状态，避免从玩法切回时继承染色或搬运阶段的隐藏鼠标状态。
+
 流程根在初始化时安装并初始化`GameAudioService`，随流程根跨场景保留。进入Gaming切换到Atmosphere E Minor循环音乐，返回菜单沿用菜单音乐。不要依靠已退役的Audio系统场景启动音乐切换。
 
 返回菜单、重载及场景切换会立即释放暂停，恢复`Time.timeScale = 1`与`AudioListener.pause = false`；普通继续游戏仍保留暂停收尾动画。卸载UI时同样清理，关闭动画被打断不会让下一次进入游戏冻结。

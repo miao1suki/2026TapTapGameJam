@@ -79,6 +79,12 @@ namespace Project.GameFlow
             instance = this;
             DontDestroyOnLoad(gameObject);
             StartupCameraGuard.CreateIfNeeded(transform);
+            StartMenuController.SetExternalBackgroundScrollPaused(true);
+            if (!GameSceneLoader.Instance.AppEntryPlayed)
+            {
+                GameSceneLoader.Instance.TransitionOverlay
+                    .ShowBlackImmediate();
+            }
         }
 
         private IEnumerator Start()
@@ -112,7 +118,18 @@ namespace Project.GameFlow
             InitializationCompleted?.Invoke();
             IsTransitioning = false;
 
+            GameSceneLoader loader = GameSceneLoader.Instance;
+            if (!loader.AppEntryPlayed)
+            {
+                loader.TransitionOverlay.ShowBlackImmediate();
+            }
+
             yield return TransitionRoutine(initialScene);
+            if (!loader.AppEntryPlayed)
+            {
+                yield return loader.PlayAppEntryReveal(
+                    ProjectDiscovery.FindFirst<StartMenuController>(true));
+            }
         }
 
         private void OnDestroy()
@@ -236,6 +253,23 @@ namespace Project.GameFlow
             IsTransitioning = true;
             TransitionStarted?.Invoke(target);
             string targetPath = entry.ScenePath;
+            StartMenuController menu =
+                ProjectDiscovery.FindFirst<StartMenuController>(true);
+            bool isInitialTransition = !activeSceneId.HasValue;
+            if (!isInitialTransition && target == GameFlowSceneId.Gaming)
+            {
+                yield return GameSceneLoader.Instance
+                    .PrepareGameplayTransition(menu);
+            }
+            else if (!isInitialTransition &&
+                     target == GameFlowSceneId.MainMenu)
+            {
+                Transform player = FindPlayerInScene(
+                    SceneManager.GetActiveScene());
+                yield return GameSceneLoader.Instance
+                    .PrepareMenuReturnTransition(player);
+            }
+
             Scene targetScene = SceneManager.GetSceneByPath(targetPath);
             bool reloadingCurrent = activeSceneId.HasValue &&
                                     activeSceneId.Value == target &&
@@ -257,7 +291,8 @@ namespace Project.GameFlow
                 AsyncOperation load =
                     GameSceneLoader.Instance.LoadSceneAsync(
                         targetPath,
-                        LoadSceneMode.Additive);
+                        LoadSceneMode.Additive,
+                        false);
                 if (load == null)
                 {
                     Debug.LogError($"无法加载流程场景：{targetPath}", this);
@@ -300,6 +335,22 @@ namespace Project.GameFlow
 
             ActivateFlowScene(targetScene);
 
+            if (!isInitialTransition &&
+                target == GameFlowSceneId.Gaming)
+            {
+                Transform player = FindPlayerInScene(targetScene);
+                yield return GameSceneLoader.Instance
+                    .FinishGameplayTransition(player);
+            }
+            else if (!isInitialTransition &&
+                     target == GameFlowSceneId.MainMenu)
+            {
+                yield return GameSceneLoader.Instance
+                    .FinishMenuReturnTransition(
+                        ProjectDiscovery.FindFirst<StartMenuController>(
+                            true));
+            }
+
             activeSceneId = target;
             IsTransitioning = false;
             ActiveSceneChanged?.Invoke(target);
@@ -318,6 +369,22 @@ namespace Project.GameFlow
                     return;
                 }
             }
+        }
+
+        private static Transform FindPlayerInScene(Scene scene)
+        {
+            GameObject[] players =
+                GameObject.FindGameObjectsWithTag("Player");
+            for (int index = 0; index < players.Length; index++)
+            {
+                if (players[index] != null &&
+                    players[index].scene == scene)
+                {
+                    return players[index].transform;
+                }
+            }
+
+            return null;
         }
 
         private static GameSystemSceneRoot FindSystemRoot(Scene scene)
