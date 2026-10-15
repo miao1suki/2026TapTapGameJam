@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -22,7 +23,11 @@ namespace Project.WaterBubbles
 
         private const float MinLengthInCells = 1f;
         private const float MaxLengthInCells = 10f;
-        private const float ParticleDensityPerCell = 1.25f;
+        private const float MinDensityPerCell = 0.2f;
+        private const float MaxDensityPerCell = 1.5f;
+        private const float MaxWidthInCells = 4f;
+        private const float MinSpeedInCellsPerSecond = 0.1f;
+        private const float MaxSpeedInCellsPerSecond = 5f;
 
         [SerializeField, InspectorName("流动方向"), Tooltip("泡泡沿该方向移动；此组件只负责视觉表现。")]
         private FlowDirection flowDirection = FlowDirection.Up;
@@ -33,10 +38,13 @@ namespace Project.WaterBubbles
         [SerializeField, Min(0.01f), InspectorName("每格世界单位"), Tooltip("当前关卡中一个格对应的世界单位长度。")]
         private float worldUnitsPerCell = 1f;
 
-        [SerializeField, Min(0f), InspectorName("横向随机范围（格）"), Tooltip("泡泡相对主流线的轻微随机偏移。")]
-        private float crossAxisSpreadInCells = 0.16f;
+        [SerializeField, Range(MinDensityPerCell, MaxDensityPerCell), InspectorName("泡泡密度（个/格）"), Tooltip("每格目标泡泡数量；最终数量受预制体内泡泡池容量限制。")]
+        private float bubbleDensityPerCell = 1.25f;
 
-        [SerializeField, Min(0.01f), InspectorName("流速（格/秒）"), Tooltip("泡泡沿流向循环移动的基准速度。")]
+        [SerializeField, FormerlySerializedAs("crossAxisSpreadInCells"), Range(0f, MaxWidthInCells), InspectorName("泡泡流宽度（格）"), Tooltip("泡泡在主流线两侧随机分布的总宽度；0 时收拢在主流线上。")]
+        private float streamWidthInCells = 0.32f;
+
+        [SerializeField, Range(MinSpeedInCellsPerSecond, MaxSpeedInCellsPerSecond), InspectorName("流动速度（格/秒）"), Tooltip("泡泡沿流向循环移动的基准速度。")]
         private float speedInCellsPerSecond = 1.1f;
 
         [SerializeField, Min(0.01f), InspectorName("起点尺寸倍率")]
@@ -92,6 +100,35 @@ namespace Project.WaterBubbles
             set => worldUnitsPerCell = Mathf.Max(0.01f, value);
         }
 
+        /// <summary>Target bubbles per grid cell, limited by the prefab's renderer pool.</summary>
+        public float DensityPerCell
+        {
+            get => bubbleDensityPerCell;
+            set
+            {
+                bubbleDensityPerCell = Mathf.Clamp(value, MinDensityPerCell, MaxDensityPerCell);
+                RefreshPreviewIfEditing();
+            }
+        }
+
+        /// <summary>Total width of the randomized stream in grid cells.</summary>
+        public float StreamWidthInCells
+        {
+            get => streamWidthInCells;
+            set
+            {
+                streamWidthInCells = Mathf.Clamp(value, 0f, MaxWidthInCells);
+                RefreshPreviewIfEditing();
+            }
+        }
+
+        /// <summary>Base movement speed in grid cells per second.</summary>
+        public float SpeedInCellsPerSecond
+        {
+            get => speedInCellsPerSecond;
+            set => speedInCellsPerSecond = Mathf.Clamp(value, MinSpeedInCellsPerSecond, MaxSpeedInCellsPerSecond);
+        }
+
         public void RefreshBubblePool()
         {
             var renderers = GetComponentsInChildren<SpriteRenderer>(true);
@@ -112,6 +149,9 @@ namespace Project.WaterBubbles
         {
             lengthInCells = Mathf.Clamp(lengthInCells, MinLengthInCells, MaxLengthInCells);
             worldUnitsPerCell = Mathf.Max(0.01f, worldUnitsPerCell);
+            bubbleDensityPerCell = Mathf.Clamp(bubbleDensityPerCell, MinDensityPerCell, MaxDensityPerCell);
+            streamWidthInCells = Mathf.Clamp(streamWidthInCells, 0f, MaxWidthInCells);
+            speedInCellsPerSecond = Mathf.Clamp(speedInCellsPerSecond, MinSpeedInCellsPerSecond, MaxSpeedInCellsPerSecond);
             RefreshBubblePool();
         }
 
@@ -126,6 +166,9 @@ namespace Project.WaterBubbles
         {
             lengthInCells = Mathf.Clamp(lengthInCells, MinLengthInCells, MaxLengthInCells);
             worldUnitsPerCell = Mathf.Max(0.01f, worldUnitsPerCell);
+            bubbleDensityPerCell = Mathf.Clamp(bubbleDensityPerCell, MinDensityPerCell, MaxDensityPerCell);
+            streamWidthInCells = Mathf.Clamp(streamWidthInCells, 0f, MaxWidthInCells);
+            speedInCellsPerSecond = Mathf.Clamp(speedInCellsPerSecond, MinSpeedInCellsPerSecond, MaxSpeedInCellsPerSecond);
             minimumScale = Mathf.Max(0.01f, minimumScale);
             maximumScale = Mathf.Max(minimumScale, maximumScale);
 
@@ -228,7 +271,7 @@ namespace Project.WaterBubbles
 
         private void ApplyBubble(SpriteRenderer renderer, ParticleVariation variation, float progress, Vector2 direction, Vector2 perpendicular, float distance)
         {
-            var crossOffset = variation.lateralOffset * crossAxisSpreadInCells * worldUnitsPerCell;
+            var crossOffset = variation.lateralOffset * streamWidthInCells * 0.5f * worldUnitsPerCell;
             var localPosition = direction * (progress * distance) + perpendicular * crossOffset;
             renderer.transform.localPosition = new Vector3(localPosition.x, localPosition.y, 0f);
 
@@ -273,7 +316,7 @@ namespace Project.WaterBubbles
             if (bubbleRenderers == null || bubbleRenderers.Length == 0)
                 return 0;
 
-            var requestedCount = Mathf.RoundToInt(lengthInCells * ParticleDensityPerCell + 1f);
+            var requestedCount = Mathf.RoundToInt(lengthInCells * bubbleDensityPerCell + 1f);
             return Mathf.Clamp(requestedCount, 2, bubbleRenderers.Length);
         }
 

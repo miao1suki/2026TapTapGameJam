@@ -1519,7 +1519,8 @@ MonoBehaviour:
   flowDirection: 1
   lengthInCells: 6
   worldUnitsPerCell: 1
-  crossAxisSpreadInCells: 0.16
+  bubbleDensityPerCell: 1.25
+  streamWidthInCells: 0.32
   speedInCellsPerSecond: 1.1
   minimumScale: 0.72
   maximumScale: 1
