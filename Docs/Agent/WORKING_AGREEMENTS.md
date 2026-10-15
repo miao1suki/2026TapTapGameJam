@@ -16,3 +16,7 @@ Editor UI 必须 UI Toolkit；场景 HUD 可拖动、折叠、关闭和重新打
 完成时验证编译；修改 Runtime 时运行相关测试，并在风险匹配时验证打包。
 提交说明列出变更、验证、未验证项目与阻塞。文档随代码一起提交。
 Git 忽略目录中放本地日志/验证产物；凭据不得进入项目，包括未跟踪文件。
+
+## 关卡协作存档
+
+关卡场景必须连同同名 `.planning.json` 及双方 `.meta` 提交，不能只上传生成后的 Scene；旧 Library 存档需先存到项目目录。每人维护独立小地图，整合者通过“协作与片段”导入当前大地图，不直接手工混改一个 JSON。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`；新克隆执行 `git config core.hooksPath .githooks`，已有 hook 则组合调用，不覆盖原 hook。操作和依赖交付见 [关卡协作说明](../Developer/LEVEL_EDITOR_COLLABORATION.md) 与 [接入约定](Integration/PLANNING_COLLABORATION_API.md)。

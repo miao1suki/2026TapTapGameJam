@@ -119,6 +119,7 @@ namespace PlanningEditorPrototype
                 return false;
             }
 
+            PlanningSharedSaveUtility.VerifySceneCopy(SceneManager.GetActiveScene(), document);
             bool success = TryBuild(
                 document.name,
                 MapRootName,
@@ -144,6 +145,7 @@ namespace PlanningEditorPrototype
             }
 
             document.RefreshConnectorPaths();
+            PlanningSharedSaveUtility.VerifySceneCopy(SceneManager.GetActiveScene(), document);
             bool success = TryBuild(
                 document.name,
                 StagingRootName,
@@ -164,6 +166,7 @@ namespace PlanningEditorPrototype
             if (manager == null) return;
             manager.Configure(new List<Project.Rooms.RoomRegion>(manager.Regions), CellSize, document.ToPersistentJson());
             EditorUtility.SetDirty(manager);
+            PlanningSharedSaveUtility.SaveSceneCopy(manager.gameObject.scene, document);
         }
 
         internal static GameObject FindRoomContainer(PlanningRoom room)
@@ -290,6 +293,7 @@ namespace PlanningEditorPrototype
                 FindGeneratedRoot(MapRootName);
 
             var existingCells = new HashSet<Vector2Int>();
+            var existingWaterCells = new HashSet<Vector2Int>();
             IReadOnlyList<LevelEditorPlacedBlock> existingBlocks =
                 ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
             for (int index = 0; index < existingBlocks.Count; index++)
@@ -303,12 +307,14 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
+                var externalLayer = block.GetComponent<Project.BlockFeatures.WaterVisualFeature>() != null ? existingWaterCells : existingCells;
                 for(int x=block.Cell.x;x<block.Cell.x+block.SizeCells.x;x++)
                     for(int y=block.Cell.y;y<block.Cell.y+block.SizeCells.y;y++)
-                        existingCells.Add(new Vector2Int(x,-y-1));
+                        externalLayer.Add(new Vector2Int(x,-y-1));
             }
 
             var occupied = new HashSet<Vector2Int>();
+            var occupiedWater = new HashSet<Vector2Int>();
             int placedCount = 0;
             int skippedCount = 0;
             int connectorCount = 0;
@@ -334,7 +340,10 @@ namespace PlanningEditorPrototype
                      boxIndex++)
                 {
                     PlanningBox box = layout.Room.boxes[boxIndex];
-                    if (!CanPlaceMerged(box, new Vector2Int(layout.OffsetX,layout.OffsetY),occupied,existingCells))
+                    bool water = PlanningWaterLayerUtility.IsWater(box, palette);
+                    var layer = water ? occupiedWater : occupied;
+                    var external = water ? existingWaterCells : existingCells;
+                    if (!CanPlaceMerged(box, new Vector2Int(layout.OffsetX,layout.OffsetY),layer,external))
                     { skippedCount += box.width*box.height; continue; }
                     for (int y = box.y;
                          y < box.y + box.height;
@@ -348,8 +357,8 @@ namespace PlanningEditorPrototype
                             var cell = new Vector2Int(
                                 layout.OffsetX + x,
                                 sceneY);
-                            if (!occupied.Add(cell) ||
-                                existingCells.Contains(cell))
+                            if (!layer.Add(cell) ||
+                                external.Contains(cell))
                             {
                                 skippedCount++;
                                 continue;
@@ -385,7 +394,10 @@ namespace PlanningEditorPrototype
                          boxIndex++)
                     {
                         PlanningBox box = assemblyPatches[boxIndex];
-                        if (!CanPlaceMerged(box,Vector2Int.zero,occupied,existingCells)) continue;
+                        bool patchWater = PlanningWaterLayerUtility.IsWater(box, palette);
+                        var patchLayer = patchWater ? occupiedWater : occupied;
+                        var patchExternal = patchWater ? existingWaterCells : existingCells;
+                        if (!CanPlaceMerged(box,Vector2Int.zero,patchLayer,patchExternal)) continue;
                         for (int y = box.y;
                              y < box.y + box.height;
                              y++)
@@ -399,8 +411,8 @@ namespace PlanningEditorPrototype
                                         box,
                                         new Vector2Int(x, y),
                                         patchRoot.transform,
-                                        occupied,
-                                        existingCells,
+                                        patchLayer,
+                                        patchExternal,
                                         new Vector2Int(x,y)))
                                 {
                                     patchCount++;
@@ -458,7 +470,10 @@ namespace PlanningEditorPrototype
                     {
                         PlanningBox box =
                             connector.boxes[boxIndex];
-                        if (!CanPlaceMerged(box,origin,occupied,existingCells)) continue;
+                        bool connectorWater = PlanningWaterLayerUtility.IsWater(box, palette);
+                        var connectorLayer = connectorWater ? occupiedWater : occupied;
+                        var connectorExternal = connectorWater ? existingWaterCells : existingCells;
+                        if (!CanPlaceMerged(box,origin,connectorLayer,connectorExternal)) continue;
                         for (int y = box.y;
                              y < box.y + box.height;
                              y++)
@@ -475,8 +490,8 @@ namespace PlanningEditorPrototype
                                         box,
                                         cell,
                                         connectorRoot.transform,
-                                        occupied,
-                                        existingCells,
+                                        connectorLayer,
+                                        connectorExternal,
                                         new Vector2Int(x,y)))
                                 {
                                     connectorCount++;
@@ -711,14 +726,16 @@ namespace PlanningEditorPrototype
             ref int removed,
             ref int preserved)
         {
-            var oldByCell = new Dictionary<Vector2Int, LevelEditorPlacedBlock>();
+            var oldByCell = new Dictionary<(string id, Vector2Int cell), Queue<LevelEditorPlacedBlock>>();
             LevelEditorPlacedBlock[] oldBlocks =
                 existing.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
             foreach (LevelEditorPlacedBlock block in oldBlocks)
             {
                 if (block.transform.parent == existing)
                 {
-                    oldByCell[block.Cell] = block;
+                    var key = (block.PlanningBoxId ?? string.Empty, block.Cell);
+                    if (!oldByCell.TryGetValue(key, out var bucket)) oldByCell[key] = bucket = new Queue<LevelEditorPlacedBlock>();
+                    bucket.Enqueue(block);
                 }
             }
 
@@ -731,11 +748,10 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
-                if (oldByCell.TryGetValue(
-                        desired.Cell,
-                        out LevelEditorPlacedBlock old))
+                var desiredKey = (desired.PlanningBoxId ?? string.Empty, desired.Cell);
+                if (oldByCell.TryGetValue(desiredKey, out var candidates) && candidates.Count > 0)
                 {
-                    oldByCell.Remove(desired.Cell);
+                    LevelEditorPlacedBlock old = candidates.Dequeue();
                     if (SameGeneratedBlock(old, desired))
                     {
                         var oldParts=old.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
@@ -758,7 +774,8 @@ namespace PlanningEditorPrototype
                     "应用规划物体");
             }
 
-            foreach (LevelEditorPlacedBlock stale in oldByCell.Values)
+            foreach (var bucket in oldByCell.Values)
+            foreach (LevelEditorPlacedBlock stale in bucket)
             {
                 if (stale != null)
                 {

@@ -183,8 +183,7 @@ namespace PlanningEditorPrototype
         private void EditParametersAt(Vector2 position)
         {
             var cell=CellAt(position);
-            var visibleItems=new List<(PlanningRoom room,List<PlanningBox> boxes,PlanningBox box)>(AllBoxes());
-            visibleItems.Reverse();
+            var visibleItems = HitOrder();
             foreach (var item in visibleItems)
             {
                 if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
@@ -1553,6 +1552,7 @@ namespace PlanningEditorPrototype
             if (mode == PlanningCanvasMode.World)
             {
                 DrawWorld(context);
+                DrawTransferPreview(context.painter2D);
             }
             else if (mode == PlanningCanvasMode.Assembly)
             {
@@ -1858,9 +1858,8 @@ namespace PlanningEditorPrototype
             DrawGrid(painter);
             DrawDetailOwnership(painter, room);
 
-            for (int index = 0; index < room.boxes.Count; index++)
+            foreach (var box in room.boxes.OrderBy(b => PlanningWaterLayerUtility.IsWater(b, palette) ? 0 : 1))
             {
-                PlanningBox box = room.boxes[index];
                 Rect rect = CellRect(box.x, box.y, box.width, box.height);
                 Texture2D preview = GetBoxPreview(box);
                 if (preview == null)
@@ -1919,16 +1918,11 @@ namespace PlanningEditorPrototype
             }
 
             var active = new HashSet<string>();
-            for (int boxIndex = 0;
-                 boxIndex < room.boxes.Count;
-                 boxIndex++)
+            foreach (PlanningBox box in room.boxes.OrderBy(b => PlanningWaterLayerUtility.IsWater(b, palette) ? 0 : 1))
             {
-                PlanningBox box = room.boxes[boxIndex];
                 Texture2D preview = GetBoxPreview(box);
-                if (preview == null)
-                {
-                    continue;
-                }
+                bool fallback = preview == null;
+                preview ??= Texture2D.whiteTexture;
 
                 for (int y = box.y;
                      y < box.y + (box.isMerged ? 1 : box.height);
@@ -1955,12 +1949,15 @@ namespace PlanningEditorPrototype
 
                         Rect rect = CellRect(x, y, box.isMerged ? box.width : 1, box.isMerged ? box.height : 1);
                         image.image = preview;
-                        image.tintColor=mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
+                        image.tintColor = fallback ? ColorForBox(box) :
+                            mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
                         image.style.left = rect.x;
                         image.style.top = rect.y;
                         image.style.width = rect.width;
                         image.style.height = rect.height;
                         image.style.display = DisplayStyle.Flex;
+                        if (PlanningWaterLayerUtility.IsWater(box, palette)) image.tintColor = new Color(.65f, .85f, 1f, .55f);
+                        image.BringToFront();
                         active.Add(key);
                     }
                 }
@@ -1974,6 +1971,7 @@ namespace PlanningEditorPrototype
                 }
             }
 
+            OrderPreviewLayers();
             UpdatePlayerOverlay();
         }
 
@@ -2055,6 +2053,7 @@ namespace PlanningEditorPrototype
                     pair.Value.style.display = DisplayStyle.None;
                 }
             }
+            OrderPreviewLayers();
         }
 
         private void AddPreviewImage(
@@ -2063,10 +2062,8 @@ namespace PlanningEditorPrototype
             HashSet<string> active)
         {
             Texture2D preview = GetBoxPreview(box);
-            if (preview == null)
-            {
-                return;
-            }
+            bool fallback = preview == null;
+            preview ??= Texture2D.whiteTexture;
 
             for (int y = rect.y; y < (box.isMerged ? rect.y+1 : rect.yMax); y++)
             {
@@ -2089,12 +2086,15 @@ namespace PlanningEditorPrototype
 
                     Rect cellRect = CellRect(x, y, box.isMerged ? rect.width : 1, box.isMerged ? rect.height : 1);
                     image.image = preview;
-                    image.tintColor=mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
+                    image.tintColor = fallback ? ColorForBox(box) :
+                        mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
                     image.style.left = cellRect.x;
                     image.style.top = cellRect.y;
                     image.style.width = cellRect.width;
                     image.style.height = cellRect.height;
                     image.style.display = DisplayStyle.Flex;
+                    if (PlanningWaterLayerUtility.IsWater(box, palette)) image.tintColor = new Color(.65f, .85f, 1f, .55f);
+                    image.BringToFront();
                     active.Add(key);
                 }
             }
@@ -3008,8 +3008,7 @@ namespace PlanningEditorPrototype
             if (activeTool == PlanningDetailTool.Select)
             {
                 movingBox = null;
-                var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
-                items.Reverse();
+                var items = HitOrder();
                 foreach (var item in items)
                 {
                     if (!DisplayRect(item.room, item.box).Contains(cell)) continue;
@@ -3308,53 +3307,11 @@ namespace PlanningEditorPrototype
 
         private void EraseAssemblyBox(Vector2Int cell)
         {
-            GetAssemblyStride(out int strideX, out int strideY);
-            for (int roomIndex = 0;
-                 roomIndex < document.rooms.Count;
-                 roomIndex++)
+            foreach (var item in HitOrder())
             {
-                PlanningRoom owner = document.rooms[roomIndex];
-                for (int boxIndex = owner.boxes.Count - 1;
-                     boxIndex >= 0;
-                     boxIndex--)
-                {
-                    PlanningBox box = owner.boxes[boxIndex];
-                    if (!GetAssemblyBoxRect(
-                            owner,
-                            box,
-                            strideX,
-                            strideY).Contains(cell))
-                    {
-                        continue;
-                    }
-
-                    var rect=GetAssemblyBoxRect(owner,box,strideX,strideY);
-                    CarveBox(owner.boxes, box, cell-rect.position+new Vector2Int(box.x,box.y));
-                    NotifyDocumentChanged();
-                    SelectionChanged?.Invoke();
-                    return;
-                }
-            }
-
-            for (int index = document.assemblyPatches.Count - 1;
-                 index >= 0;
-                 index--)
-            {
-                PlanningBox box = document.assemblyPatches[index];
-                RectInt rect = new RectInt(
-                    box.x,
-                    box.y,
-                    box.width,
-                    box.height);
-                if (!rect.Contains(cell))
-                {
-                    continue;
-                }
-
-                CarveBox(
-                    document.assemblyPatches,
-                    box,
-                    cell);
+                var rect = DisplayRect(item.room, item.box);
+                if (!rect.Contains(cell)) continue;
+                CarveBox(item.boxes, item.box, cell - rect.position + new Vector2Int(item.box.x, item.box.y));
                 NotifyDocumentChanged();
                 SelectionChanged?.Invoke();
                 return;
@@ -3586,14 +3543,16 @@ namespace PlanningEditorPrototype
             room.cells.Add(new PlanningCell(x, y));
         }
 
-        private static PlanningBox FindBoxAt(
+        private PlanningBox FindBoxAt(
             PlanningRoom room,
             int x,
             int y)
         {
-            for (int index = room.boxes.Count - 1; index >= 0; index--)
+            var ordered = room.boxes.OrderBy(b => PlanningWaterLayerUtility.IsWater(b, palette) ? 0 : 1).ToList();
+            for (int index = ordered.Count - 1; index >= 0; index--)
             {
-                PlanningBox box = room.boxes[index];
+                PlanningBox box = ordered[index];
+                if (editWaterLayer && !PlanningWaterLayerUtility.IsWater(box, palette)) continue;
                 if (x >= box.x && x < box.x + box.width &&
                     y >= box.y && y < box.y + box.height)
                 {

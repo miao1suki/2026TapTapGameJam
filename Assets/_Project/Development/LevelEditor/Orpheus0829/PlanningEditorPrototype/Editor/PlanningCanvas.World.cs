@@ -116,6 +116,12 @@ namespace PlanningEditorPrototype
         {
             Vector2Int start = CellAt(dragStart), end = CellAt(dragCurrent);
             var area = new RectInt(Mathf.Min(start.x, end.x), Mathf.Min(start.y, end.y), Mathf.Abs(start.x - end.x) + 1, Mathf.Abs(start.y - end.y) + 1);
+            if (mapTool == PlanningMapTool.ExportArea)
+            {
+                ExportAreaSelected?.Invoke(area);
+                SetMapTool(PlanningMapTool.Select);
+                return;
+            }
             if (mapTool == PlanningMapTool.Paint || mapTool == PlanningMapTool.Connector)
             {
                 PaintWorldArea(area, mapTool == PlanningMapTool.Connector);
@@ -128,8 +134,8 @@ namespace PlanningEditorPrototype
                     Vector2Int delta = end - start;
                     if (delta != Vector2Int.zero)
                     {
-                        if (PlanningWorldUtility.TryMove(document, worldSelection, regionSelection, delta)) NotifyDocumentChanged();
-                        else StatusChanged?.Invoke("无法移动：目标位置与未选中的房间或通道重叠。");
+                        if (MoveWorldSelection(delta)) NotifyDocumentChanged();
+                        else StatusChanged?.Invoke("无法移动：目标区域重叠，或装配物体跨越选中与未选中房间。");
                     }
                 }
                 else if (start != end)

@@ -22,9 +22,9 @@ namespace PlanningEditorPrototype
             Path.GetFullPath(
                 Path.Combine(
                     Application.dataPath,
-                    "..",
-                    "Library",
-                    FolderName));
+                    "_Project", "Content", "LevelMaps"));
+
+        internal static string LegacySaveFolder => Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Library", FolderName));
 
         internal static List<PlanningSaveInfo> LoadAll()
         {
@@ -32,11 +32,11 @@ namespace PlanningEditorPrototype
             try
             {
                 string folder = EnsureSaveFolder();
-                string[] files = Directory.GetFiles(
-                    folder,
-                    "*.json",
-                    SearchOption.TopDirectoryOnly);
-                for (int index = 0; index < files.Length; index++)
+                var files = new List<string>(Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories));
+                if (Directory.Exists(LegacySaveFolder)) files.AddRange(Directory.GetFiles(LegacySaveFolder, "*.json"));
+                string sceneSave = PlanningSharedSaveUtility.SceneSavePath(SceneManager.GetActiveScene().path);
+                if (!string.IsNullOrEmpty(sceneSave) && File.Exists(sceneSave) && !files.Contains(sceneSave)) files.Add(sceneSave);
+                for (int index = 0; index < files.Count; index++)
                 {
                     string path = files[index];
                     try
@@ -90,9 +90,9 @@ namespace PlanningEditorPrototype
                     path);
             }
 
-            PlanningDocument document =
-                PlanningDocument.FromPersistentJson(
-                    File.ReadAllText(path));
+            string json = File.ReadAllText(path);
+            if (!json.Contains("\"rooms\"")) throw new InvalidDataException("不是关卡规划存档，请选择包含房间数据的 JSON。");
+            PlanningDocument document = PlanningDocument.FromPersistentJson(json);
             if (document == null)
             {
                 throw new InvalidDataException(
@@ -146,6 +146,9 @@ namespace PlanningEditorPrototype
                 NormalizeName(requestedName),
                 path);
             document.name = name;
+            // Scene-paired filenames are stable even when the display name changes.
+            if (path.EndsWith(".planning.json", StringComparison.OrdinalIgnoreCase))
+            { Write(path, document); return path; }
             string renamedPath = GetUniquePath(name, path);
             if (string.Equals(
                     path,
@@ -156,8 +159,15 @@ namespace PlanningEditorPrototype
                 return path;
             }
 
-            Write(renamedPath, document);
-            File.Delete(path);
+            string assetPath = PlanningSharedSaveUtility.AssetPath(path);
+            string targetAsset = PlanningSharedSaveUtility.AssetPath(renamedPath);
+            if (assetPath != null && targetAsset != null)
+            {
+                string error = AssetDatabase.MoveAsset(assetPath, targetAsset);
+                if (!string.IsNullOrEmpty(error)) throw new IOException(error);
+                Write(renamedPath, document);
+            }
+            else { Write(renamedPath, document); File.Delete(path); }
             return renamedPath;
         }
 
@@ -165,7 +175,9 @@ namespace PlanningEditorPrototype
         {
             if (!string.IsNullOrEmpty(path) && File.Exists(path))
             {
-                File.Delete(path);
+                string assetPath = PlanningSharedSaveUtility.AssetPath(path);
+                if (assetPath != null) AssetDatabase.MoveAssetToTrash(assetPath);
+                else File.Delete(path);
             }
         }
 
@@ -208,9 +220,21 @@ namespace PlanningEditorPrototype
                     if (!File.Exists(backup)) File.Copy(path, backup);
                 }
             }
-            File.WriteAllText(
-                path,
-                document.ToPersistentJson(true));
+            string json = document.ToPersistentJson(true);
+            if (File.Exists(path) && File.ReadAllText(path) == json) return;
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
+            bool created = !File.Exists(path);
+            string temporary = path + ".writing";
+            try
+            {
+                File.WriteAllText(temporary, json, new System.Text.UTF8Encoding(false));
+                if (File.Exists(path)) File.Replace(temporary, path, null);
+                else File.Move(temporary, path);
+            }
+            finally { if (File.Exists(temporary)) File.Delete(temporary); }
+            string asset = PlanningSharedSaveUtility.AssetPath(path);
+            if (created && asset != null)
+                EditorApplication.delayCall += () => { if (File.Exists(path)) AssetDatabase.ImportAsset(asset); };
         }
 
         private static string GetUniqueName(

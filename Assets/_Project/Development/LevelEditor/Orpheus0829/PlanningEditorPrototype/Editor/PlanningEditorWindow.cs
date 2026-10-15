@@ -100,6 +100,7 @@ namespace PlanningEditorPrototype
 
         private void RestoreSceneWorkspace()
         {
+            fragmentSource = null;
             scenePreferenceScope = GetScenePreferenceScope();
             boundSceneHandle = SceneManager.GetActiveScene().handle;
             LoadDocument();
@@ -401,7 +402,8 @@ namespace PlanningEditorPrototype
             SaveCanvasView(mode);
             if (canvas != null && document != null)
             {
-                SaveDocument();
+                try { SaveDocument(); }
+                catch (System.IO.IOException exception) { Debug.LogError(exception.Message); }
                 RememberAutoSync();
                 RememberBindings();
             }
@@ -1222,6 +1224,7 @@ namespace PlanningEditorPrototype
             selectionHint.style.color = new Color(.65f, .72f, .8f);
             rail.Add(selectionHint);
             rail.Add(BuildRegionTools());
+            rail.Add(BuildCollaborationTools());
             worldMapTools = rail;
             return rail;
         }
@@ -1262,6 +1265,11 @@ namespace PlanningEditorPrototype
             modeRow.Add(detail);
             modeRow.Add(assembly);
             panel.Add(modeRow);
+            var waterEditing = new Toggle("仅操作水层") { tooltip = "仅选择和擦除水层；关闭时优先操作水上的物品。" };
+            waterEditing.style.marginLeft = 8;
+            waterEditing.style.marginBottom = 8;
+            waterEditing.RegisterValueChangedCallback(evt => canvas?.SetWaterEditing(evt.newValue));
+            panel.Add(waterEditing);
             panel.Add(BuildWorldToolPanel());
 
             blockEditorFoldout = new Foldout
@@ -1344,6 +1352,15 @@ namespace PlanningEditorPrototype
             currentSavePath = EditorPrefs.GetString(
                 CurrentSavePreferenceKey,
                 string.Empty);
+            string paired = PlanningSharedSaveUtility.SceneSavePath(SceneManager.GetActiveScene().path);
+            if (!string.IsNullOrEmpty(paired) && File.Exists(paired))
+            {
+                string sharedJson = File.ReadAllText(paired);
+                string hash = Hash128.Compute(sharedJson).ToString();
+                if (string.IsNullOrWhiteSpace(json) || EditorPrefs.GetString(PreferenceKey + ".SharedHash", "") != hash)
+                    json = sharedJson;
+                if (string.IsNullOrEmpty(currentSavePath) || !File.Exists(currentSavePath)) currentSavePath = paired;
+            }
             // Team-shared maps are project assets, not machine-local Library slots.
             // Recover their binding on a fresh clone without overriding unsaved workspace data.
             if (string.IsNullOrEmpty(currentSavePath) && !string.IsNullOrWhiteSpace(embeddedJson))
@@ -1387,6 +1404,7 @@ namespace PlanningEditorPrototype
             ResetPlanningHistory();
             MarkPlanningSaved();
             RefreshCurrentSaveLabel();
+            PlanningSharedSaveUtility.ObserveSceneCopy(SceneManager.GetActiveScene());
             RestoreAutoSync();
         }
 
@@ -1431,6 +1449,13 @@ namespace PlanningEditorPrototype
                 PreferenceKey,
                 document.ToPersistentJson(true));
             EditorPrefs.SetString(CurrentSavePreferenceKey, currentSavePath ?? string.Empty);
+            PlanningSharedSaveUtility.VerifySceneCopy(SceneManager.GetActiveScene(), document);
+            if (!string.IsNullOrEmpty(currentSavePath) &&
+                Path.GetFullPath(currentSavePath).StartsWith(PlanningSaveStore.LegacySaveFolder + Path.DirectorySeparatorChar, System.StringComparison.OrdinalIgnoreCase))
+            {
+                currentSavePath = PlanningSaveStore.Create(document);
+                EditorPrefs.SetString(CurrentSavePreferenceKey, currentSavePath);
+            }
             if (!string.IsNullOrEmpty(currentSavePath) &&
                 File.Exists(currentSavePath))
             {
@@ -1439,7 +1464,30 @@ namespace PlanningEditorPrototype
                     document);
             }
 
+            var scene = SceneManager.GetActiveScene();
+            if (scene.handle == boundSceneHandle && !EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                string paired = PlanningSharedSaveUtility.SceneSavePath(scene.path);
+                if (string.IsNullOrEmpty(currentSavePath) || paired == null ||
+                    !string.Equals(Path.GetFullPath(currentSavePath), paired, System.StringComparison.OrdinalIgnoreCase))
+                    PlanningSharedSaveUtility.SaveSceneCopy(scene, document);
+                if (!string.IsNullOrEmpty(paired) && File.Exists(paired))
+                {
+                    if (string.IsNullOrEmpty(currentSavePath)) currentSavePath = paired;
+                    EditorPrefs.SetString(CurrentSavePreferenceKey, currentSavePath);
+                    EditorPrefs.SetString(PreferenceKey + ".SharedHash", Hash128.Compute(File.ReadAllText(paired)).ToString());
+                    PlanningSharedSaveUtility.ObserveSceneCopy(scene);
+                }
+            }
+
             RefreshCurrentSaveLabel();
+        }
+
+        internal static PlanningDocument DocumentForScene(int handle)
+        {
+            foreach (var window in Resources.FindObjectsOfTypeAll<PlanningEditorWindow>())
+                if (window.boundSceneHandle == handle && window.document != null) return window.document;
+            return null;
         }
 
         private void MarkPlanningSaved()
@@ -2406,6 +2454,7 @@ namespace PlanningEditorPrototype
 
         private void OnCanvasDocumentChanged()
         {
+            canvas.CapturePlayerStart();
             document.RefreshConnectorPaths();
             RecordPlanningChange();
             SaveDocument();
@@ -2486,6 +2535,7 @@ namespace PlanningEditorPrototype
             }
 
             canvas.MarkDirtyRepaint();
+            RefreshImportPreview();
         }
 
 

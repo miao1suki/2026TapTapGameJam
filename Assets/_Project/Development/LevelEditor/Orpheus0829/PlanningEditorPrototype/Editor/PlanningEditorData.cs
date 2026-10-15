@@ -16,7 +16,8 @@ namespace PlanningEditorPrototype
         Connector,
         Erase,
         Pan,
-        Region
+        Region,
+        ExportArea
     }
 
     public enum PlanningDetailTool
@@ -1303,7 +1304,7 @@ namespace PlanningEditorPrototype
         {
             position = default;
             PlanningRoom startRoom = FindRoom(playerStartRoomId);
-            if (startRoom == null || startRoom.isConnector)
+            if (startRoom == null)
             {
                 return false;
             }
@@ -1319,8 +1320,9 @@ namespace PlanningEditorPrototype
                     startRoom,
                     strideX,
                     strideY);
-            float globalX = layout.OffsetX + playerStartLocal.x;
-            float globalY = layout.OffsetY + playerStartLocal.y;
+            var origin = PlanningWorldUtility.Bounds(startRoom).position;
+            float globalX = (startRoom.isConnector ? origin.x : layout.OffsetX) + playerStartLocal.x;
+            float globalY = (startRoom.isConnector ? origin.y : layout.OffsetY) + playerStartLocal.y;
             position = new Vector3(globalX, -globalY, 0f);
             return true;
         }

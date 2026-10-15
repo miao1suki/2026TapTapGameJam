@@ -22,6 +22,8 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 交付或更新音乐、音效资源的成员还须读取 `.agents/skills/taptap-audio-worker/SKILL.md`。
 任务结束更新相关功能文档和 `ACTIVE_WORK.md` 中自己的交接记录；不得覆盖其他人的记录。
 
+关卡交付必须包含可编辑存档：场景及 `.meta`、同名 `.planning.json` 及 `.meta`、新增资源依赖一起提交，不能只提交生成后的场景。存档不得只留在 Library；提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`。小关卡通过“协作与片段”导出/导入，操作见 `Docs/Developer/LEVEL_EDITOR_COLLABORATION.md`。
+
 维护源码、场景和 `.meta` 一起提交。不得提交私钥、凭据、Library、Temp、Logs、Builds 或本地用户设置。
 多人各自创建自己的场景，不采用旧地图总拼、代理同步或对象锁方案。
 <!-- UNITY CODE ASSIST INSTRUCTIONS START -->

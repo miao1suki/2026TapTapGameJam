@@ -27,7 +27,7 @@ namespace PlanningEditorPrototype
         internal static bool CanPlace(List<PlanningBox> boxes, RectInt rect)
         {
             foreach (var box in boxes)
-                if (rect.Overlaps(new RectInt(box.x, box.y, box.width, box.height))) return false;
+                if (!PlanningWaterLayerUtility.IsWater(box) && rect.Overlaps(new RectInt(box.x, box.y, box.width, box.height))) return false;
             return true;
         }
         internal static bool TryFindButtonCell(List<PlanningBox> boxes, PlanningBox door, RectInt allowed, out Vector2Int cell,

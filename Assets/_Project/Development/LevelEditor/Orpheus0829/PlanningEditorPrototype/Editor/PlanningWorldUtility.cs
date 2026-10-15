@@ -25,7 +25,7 @@ namespace PlanningEditorPrototype
             Vector2Int origin = Bounds(room).position;
             Vector2Int delta = new Vector2Int((oldOrigin.x - origin.x) * doc.worldBlockCellWidth,
                 (oldOrigin.y - origin.y) * doc.worldBlockCellHeight);
-            foreach (var box in room.boxes) { box.x += delta.x; box.y += delta.y; }
+            foreach (var box in room.boxes) PlanningFragmentUtility.ShiftBox(box, delta);
             if (doc.playerStartRoomId == room.id) doc.playerStartLocal += (Vector2)delta;
         }
 
@@ -39,6 +39,21 @@ namespace PlanningEditorPrototype
             foreach (var room in doc.rooms)
                 if (owners.Contains(room.id)) foreach (var cell in room.cells)
                     if (!occupied.Add(new Vector2Int(cell.x, cell.y) + delta)) return false;
+            var selectedCells = new HashSet<Vector2Int>();
+            foreach (var room in doc.rooms)
+                if (owners.Contains(room.id)) foreach (var cell in room.cells) selectedCells.Add(new Vector2Int(cell.x, cell.y));
+            var patches = new List<PlanningBox>();
+            foreach (var patch in doc.assemblyPatches)
+            {
+                bool inside = false, outside = false;
+                for (int y = patch.y; y < patch.y + patch.height; y++)
+                    for (int x = patch.x; x < patch.x + patch.width; x++)
+                        if (selectedCells.Contains(new Vector2Int(x, y))) inside = true; else outside = true;
+                // A global merged object cannot be split silently between moved and stationary owners.
+                if (inside && outside) return false;
+                if (inside) patches.Add(patch);
+            }
+            foreach (var patch in patches) PlanningFragmentUtility.ShiftBox(patch, delta);
             foreach (var room in doc.rooms)
                 if (owners.Contains(room.id)) foreach (var cell in room.cells) { cell.x += delta.x; cell.y += delta.y; }
             foreach (var door in doc.doors) if (owners.Contains(door.roomId)) { door.x += delta.x; door.y += delta.y; }

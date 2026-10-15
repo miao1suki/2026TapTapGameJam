@@ -1,5 +1,7 @@
 # 系统索引
 
+关卡协作：共享项目存档、Scene 同名规划文件、片段追加导入/区域导出、水与物品同格分层、整房间内容移动。使用 [LEVEL_EDITOR_COLLABORATION.md](../Developer/LEVEL_EDITOR_COLLABORATION.md)，接入 [PLANNING_COLLABORATION_API.md](Integration/PLANNING_COLLABORATION_API.md)。
+
 玩家搬运体积约束：头顶方块按实际实体扫掠限制玩家物理位移，支持长块、冲刺与反向离开；搬运提示统一字体且不继承合并拉伸。Pick 已补 WordNote_UI，Test/Gaming 沿用各自现有组件。见 [搬运 API](Integration/PLAYER_CARRY_API.md)、[使用说明](../Developer/PLAYER_CARRY.md)。
 
 门按钮三色美术按创建/绑定顺序红、绿、蓝；门内白色图案按按钮数量显示、按各按钮独立点亮，全部按下后保留可配置0.8秒展示再开门，有Timeline时先到门附近。规划存档保存按钮创建次序，重建不按Hierarchy排序；按钮仍为无色踩踏机关。见 [门使用说明](../Developer/DOORS.md)、[接入API](Integration/DOOR_API.md)。
