@@ -1,251 +1,210 @@
 using Project.Editor;
+using Project.WordNote;
 using UnityEditor;
-using UnityEditor.UIElements;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 [CustomEditor(typeof(DialogueTimelineClip))]
 public sealed class DialogueTimelineClipInspector : Editor
 {
-    private VisualElement typewriterSettings;
-    private VisualElement textStyleSettings;
-    private VisualElement bubbleSettings;
-    private VisualElement riseSettings;
-    private VisualElement fadeSettings;
-
     public override VisualElement CreateInspectorGUI()
     {
         VisualElement root = ProjectInspectorUtility.CreateRoot(
             serializedObject);
-        root.Add(ProjectInspectorUtility.CreateTitle("对话气泡轨道"));
+        root.Add(ProjectInspectorUtility.CreateTitle("对话轨道"));
         root.Add(ProjectInspectorUtility.CreateScriptField(
             serializedObject));
         root.Add(ProjectInspectorUtility.CreateHelp(
-            "绑定角色 Transform 后，片段播放时会在角色头上创建气泡。" +
-            "气泡、文字、动画参数全部可在下方调整。"));
+            "轨道直接向 WordNote_UI 申请使用权，消息与原 API 共用同一个画布和位置队列；轨道不需要绑定对象。"));
 
-        Foldout textGroup = ProjectInspectorUtility.CreateFoldout(
+        Foldout content = ProjectInspectorUtility.CreateFoldout(
             "文本内容",
             true);
-        textGroup.Add(ProjectInspectorUtility.CreateProperty(
+        content.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "dialogueText",
             "对话内容",
-            "气泡中显示的完整文本，支持 TMP 富文本。"));
-        textGroup.Add(ProjectInspectorUtility.CreateProperty(
+            "完整文本，支持 WordNote 的富文本格式。"));
+        root.Add(content);
+
+        Foldout style = ProjectInspectorUtility.CreateFoldout(
+            "WordNote 样式",
+            true);
+        style.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "font",
+            "style.font",
             "字体",
-            "必须使用 Cubic_11 SDF；留空时读取默认配置。"));
-
-        textStyleSettings = new VisualElement();
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
+            "留空时继承 WordNote_UI 的默认字体。"));
+        style.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "fontSize",
-            "基础字号"));
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
+            "style.fontSize",
+            "字号"));
+        style.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "autoSizeText",
-            "自动缩放文字"));
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "minFontSize",
-            "自动缩放最小字号"));
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "lineSpacing",
-            "行距"));
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "alignment",
-            "对齐方式"));
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "textColor",
-            "文字颜色"));
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "richText",
+            "style.richText",
             "允许富文本"));
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
+        style.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "enableTextOutline",
+            "style.fontColor",
+            "字体颜色"));
+        style.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "style.useOutline",
             "启用描边"));
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
+        style.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "textOutlineColor",
+            "style.outlineColor",
             "描边颜色"));
-        textStyleSettings.Add(ProjectInspectorUtility.CreateProperty(
+        style.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "textOutlineWidth",
-            "描边宽度"));
-        textGroup.Add(textStyleSettings);
+            "style.textAlignment",
+            "文字对齐"));
+        style.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "style.position",
+            "显示位置"));
+        style.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "style.participateInStackLayout",
+            "参与堆叠排序"));
+        style.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "style.displayMode",
+            "显示模式"));
+        style.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "style.displayDuration",
+            "显示时长",
+            "仅“显示一段时间”模式使用。"));
+        root.Add(style);
 
-        textGroup.Add(ProjectInspectorUtility.CreateProperty(
+        Foldout enter = ProjectInspectorUtility.CreateFoldout(
+            "入场动画",
+            true);
+        enter.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "revealTextByCharacters",
-            "逐个显示文字"));
-        typewriterSettings = new VisualElement();
-        typewriterSettings.Add(ProjectInspectorUtility.CreateProperty(
+            "style.useEnterAnimation",
+            "启用入场动画"));
+        enter.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "typewriterStartDelay",
-            "上浮后等待"));
-        typewriterSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "charactersPerSecond",
-            "每秒字符数"));
-        textGroup.Add(typewriterSettings);
-        root.Add(textGroup);
+            "style.enterAnimation",
+            "入场动画类型"));
+        AddMotionFields(enter, "style.enterMotion", true);
+        root.Add(enter);
 
-        Foldout appearanceGroup =
-            ProjectInspectorUtility.CreateFoldout(
-                "气泡外观",
-                true);
-        appearanceGroup.Add(ProjectInspectorUtility.CreateProperty(
+        Foldout exit = ProjectInspectorUtility.CreateFoldout(
+            "出场动画",
+            true);
+        exit.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "bubbleSprite",
-            "气泡 Sprite",
-            "留空时读取 DialogueBubbleDefaults。"));
-        appearanceGroup.Add(ProjectInspectorUtility.CreateProperty(
+            "style.useExitAnimation",
+            "启用出场动画"));
+        exit.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "bubbleMaterial",
-            "气泡材质",
-            "留空时读取 DialogueBubbleDefaults。"));
-        bubbleSettings = new VisualElement();
-        bubbleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "bubbleTint",
-            "气泡染色"));
-        bubbleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "bubbleSize",
-            "气泡大小"));
-        bubbleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "textPadding",
-            "文字留白"));
-        bubbleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "preserveAspect",
-            "保持原始比例"));
-        bubbleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "sliced",
-            "九宫格缩放"));
-        bubbleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "sortingLayerName",
-            "排序层"));
-        bubbleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "sortingOrder",
-            "排序序号"));
-        bubbleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "followBinding",
-            "跟随绑定物体"));
-        bubbleSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "faceCamera",
-            "朝向主相机"));
-        appearanceGroup.Add(bubbleSettings);
-        root.Add(appearanceGroup);
-
-        Foldout motionGroup =
-            ProjectInspectorUtility.CreateFoldout(
-                "浮现与退场",
-                false);
-        riseSettings = new VisualElement();
-        riseSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "startLocalOffset",
-            "起始本地偏移"));
-        riseSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "endLocalOffset",
-            "结束本地偏移"));
-        riseSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "riseDuration",
-            "上浮时长"));
-        riseSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "riseCurve",
-            "上浮曲线"));
-        riseSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "startScale",
-            "起始缩放"));
-        riseSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "endScale",
-            "结束缩放"));
-        motionGroup.Add(riseSettings);
-
-        fadeSettings = new VisualElement();
-        fadeSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "fadeInDuration",
-            "淡入时长"));
-        fadeSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "fadeInCurve",
-            "淡入曲线"));
-        fadeSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "fadeOutDuration",
-            "淡出时长"));
-        fadeSettings.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "fadeOutCurve",
-            "淡出曲线"));
-        motionGroup.Add(fadeSettings);
-        root.Add(motionGroup);
+            "style.exitAnimation",
+            "出场动画类型"));
+        AddMotionFields(exit, "style.exitMotion", false);
+        root.Add(exit);
 
         root.Add(ProjectInspectorUtility.CreateHelp(
-            "默认配置资源位于 Resources/UI/DialogueBubbleDefaults。" +
-            "轨道未指定素材时会自动使用该资源，并强制读取项目字体。",
+            "Timeline 片段结束时只释放本次申请的消息句柄；其他 WordNote API 消息继续留在原队列中。",
             HelpBoxMessageType.Info));
 
-        serializedObject.Update();
         ProjectInspectorUtility.Bind(root, serializedObject);
-        root.TrackSerializedObjectValue(
-            serializedObject,
-            _ => RefreshVisibility());
-        RefreshVisibility();
         return root;
     }
 
-    private void RefreshVisibility()
+    private void AddMotionFields(
+        VisualElement parent,
+        string path,
+        bool entering)
     {
-        SetDisplay(
-            typewriterSettings,
-            serializedObject
-                .FindProperty("revealTextByCharacters")
-                .boolValue);
-        SetDisplay(
-            textStyleSettings,
-            true);
-        SetDisplay(
-            bubbleSettings,
-            true);
-        SetDisplay(
-            riseSettings,
-            true);
-        SetDisplay(
-            fadeSettings,
-            true);
-    }
-
-    private static void SetDisplay(
-        VisualElement element,
-        bool visible)
-    {
-        if (element != null)
-        {
-            element.style.display = visible
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
-        }
+        parent.Add(ProjectInspectorUtility.CreateHelp(
+            entering
+                ? "入场参数与 WordNoteMotionSettings 一致。"
+                : "出场参数与 WordNoteMotionSettings 一致。"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".duration",
+            "动画时长"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".useCombinedChannels",
+            "使用组合通道"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".useFade",
+            "显隐"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".useHorizontalMove",
+            "水平移动"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".horizontalDirection",
+            "水平方向"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".horizontalDistance",
+            "水平距离"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".useVerticalMove",
+            "竖直移动"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".verticalDirection",
+            "竖直方向"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".verticalDistance",
+            "竖直距离"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".useScale",
+            "缩放"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".startScale",
+            "起始缩放"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".endScale",
+            "结束缩放"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".useTypewriter",
+            "打字机"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".typewriterCharactersPerSecond",
+            "每秒字符数"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".startPosition",
+            "起始位置"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".endPosition",
+            "结束位置"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".startAlpha",
+            "起始透明度"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".endAlpha",
+            "结束透明度"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".startSpeed",
+            "起始速度"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".endSpeed",
+            "结束速度"));
+        parent.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            path + ".easePower",
+            "变速比例"));
     }
 }

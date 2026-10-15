@@ -293,12 +293,16 @@ namespace Project.ColorBlocks
             rig.target = player.transform;
             bool hasCameraTrack = false;
             if (cameraDirector.playableAsset is TimelineAsset timeline)
+            {
                 foreach (var track in timeline.GetOutputTracks())
+                {
                     if (track is CameraTimelineTrack)
                     {
                         cameraDirector.SetGenericBinding(track, rig);
                         hasCameraTrack = true;
                     }
+                }
+            }
             if (!hasCameraTrack)
             {
                 Debug.LogWarning("[ColorBlocks] 颜色钥匙 Timeline 缺少相机轨。", this);

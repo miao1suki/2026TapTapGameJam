@@ -33,6 +33,18 @@ WordNoteUI.Instance.ShowPersistent(
     "长期消息");
 ```
 
+Timeline 专用申请入口：
+
+```csharp
+WordNoteHandle handle =
+    WordNoteUI.Instance.RequestTimeline(
+        "Timeline 消息",
+        style);
+handle.Release();
+```
+
+`RequestTimeline` 与普通 `Show` 共用同一个 Canvas、总队列和九个位置队列，只把来源标记为 `Timeline`。片段结束时必须释放本次句柄，不能清理其他 API 消息。
+
 新消息先进入总队列，再进入对应位置队列。
 
 ## 消息状态和 ID
@@ -95,6 +107,7 @@ TopRight
 ```
 
 描边开关是 `WordNoteStyle.useOutline`。
+文字对齐由 `WordNoteStyle.textAlignment` 控制，可选居中、靠左、靠右；`WordNotePosition.MiddleLeftEdge` 表示屏幕最左侧。
 
 `WordNoteStyle.richText` 控制 TMP 富文本；局部着色使用：
 

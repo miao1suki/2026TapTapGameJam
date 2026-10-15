@@ -2,11 +2,17 @@
 
 ## Timeline 对话轨道
 
-- 日期：2026-10-15；负责人：Codex；分支：`钩子`。
-- 范围：在 `Assets/GJ_Tools/TimelineTools3D/AboutTimeline` 新增对话轨道、对话片段、运行时气泡与中文 UI Toolkit Inspector；同时把 `Assets/_Project/Art/Generated/GameUI/SpeechBubble` 的气泡图做成可复用 Sprite 材质与默认配置。
-- 行为：轨道绑定角色 Transform，片段播放时在角色头上自下向上浮现气泡；文字按可调速度逐字显示；支持气泡偏移、升降曲线、缩放、显隐、字号、描边、排序层、跟随与朝向相机等参数。
-- 接口：不改玩家、绿色钩子、颜色系统或其他 Timeline 轨道；对话轨道通过绑定 Transform 自行创建和销毁运行时气泡，不依赖新玩法状态。
-- 状态：已完成。运行时与编辑器程序集静态编译通过；Unity Play Mode 画面和手感待用户验收。
+- 日期：2026-10-15；负责人：Codex；分支：`对话气泡`。
+- 范围：在 `Assets/GJ_Tools/TimelineTools3D/AboutTimeline` 新增对话轨道、对话片段和中文 UI Toolkit Inspector；轨道不绑定对象，直接向常驻 `WordNote_UI` 申请使用权。
+- 行为：Timeline 片段开始后通过 `WordNoteUI.RequestTimeline` 创建消息，与普通 API 调用共用总队列、位置队列、Canvas、堆叠和动画；片段结束时释放本次 Timeline 句柄。
+- 参数：片段直接使用 `WordNoteStyle`，包括字体、字号、颜色、描边、位置、显示模式、堆叠、入退场动画、组合通道、打字机和完整运动参数。
+- 状态：已完成。世界空间气泡、气泡图和独立 Canvas 已移除；Runtime 与 Editor 程序集静态编译通过。
+
+### 2026-10-15 三色钥匙测试片段清理
+
+- 日期：2026-10-15；负责人：Codex；分支：`对话气泡`。
+- 范围：删除三把颜色钥匙 `ColorPickup_*.playable` 中的临时对话测试轨，以及 `ColorProjectSetup` 自动补测试轨的逻辑；保留对话轨道模块本身，供后续按需添加。
+- 验证：Runtime 与 Editor 程序集静态编译通过，三条 Timeline 的对话轨、WordNote 参数和对象 ID 已检查；Unity Play Mode 实际显示待验收。
 
 ## 绿色钩子
 

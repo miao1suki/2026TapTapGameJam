@@ -1,3 +1,4 @@
+using Project.WordNote;
 using UnityEngine;
 using UnityEngine.Playables;
 
@@ -5,15 +6,15 @@ public class DialogueBehaviour : PlayableBehaviour
 {
     public DialogueTimelineClip clip;
 
-    private DialogueBubbleView view;
-    private Transform binding;
+    private WordNoteHandle handle;
+    private bool attempted;
 
     public override void OnBehaviourPlay(
         Playable playable,
         FrameData info)
     {
-        DisposeView();
-        binding = null;
+        ResetMessage();
+        TryShow();
     }
 
     public override void ProcessFrame(
@@ -21,69 +22,63 @@ public class DialogueBehaviour : PlayableBehaviour
         FrameData info,
         object playerData)
     {
-        Transform currentBinding = playerData as Transform;
-        if (clip == null || currentBinding == null)
+        if (!attempted || handle == null)
         {
-            DisposeView();
-            binding = null;
-            return;
+            TryShow();
         }
-
-        if (view == null || binding != currentBinding)
-        {
-            DisposeView();
-            binding = currentBinding;
-            view = DialogueBubbleView.Create(
-                currentBinding,
-                clip);
-        }
-
-        if (view == null)
-        {
-            return;
-        }
-
-        view.UpdateView(
-            (float)playable.GetTime(),
-            (float)playable.GetDuration());
     }
 
     public override void OnBehaviourPause(
         Playable playable,
         FrameData info)
     {
-        DisposeView();
-        binding = null;
+        CloseMessage();
     }
 
     public override void OnGraphStop(Playable playable)
     {
-        DisposeView();
-        binding = null;
+        CloseMessage();
     }
 
     public override void OnPlayableDestroy(Playable playable)
     {
-        DisposeView();
-        binding = null;
+        CloseMessage();
     }
 
-    private void DisposeView()
+    private void TryShow()
     {
-        if (view == null)
+        if (attempted ||
+            clip == null ||
+            string.IsNullOrWhiteSpace(clip.dialogueText))
         {
             return;
         }
 
-        if (Application.isPlaying)
+        WordNoteUI ui = WordNoteUI.Instance;
+        if (ui == null)
         {
-            Object.Destroy(view.gameObject);
-        }
-        else
-        {
-            Object.DestroyImmediate(view.gameObject);
+            return;
         }
 
-        view = null;
+        attempted = true;
+        handle = ui.RequestTimeline(
+            clip.dialogueText,
+            clip.BuildStyle());
+    }
+
+    private void ResetMessage()
+    {
+        handle = null;
+        attempted = false;
+    }
+
+    private void CloseMessage()
+    {
+        if (handle != null)
+        {
+            handle.Release();
+        }
+
+        ResetMessage();
     }
 }

@@ -5,34 +5,26 @@
 - `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Track/DialogueTrack.cs`
 - `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Clip/DialogueTimelineClip.cs`
 - `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Behavior/DialogueBehaviour.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Runtime/DialogueBubbleView.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Runtime/DialogueBubbleDefaults.cs`
-- `Assets/_Project/Resources/UI/DialogueBubbleDefaults.asset`
+- `Assets/_Project/Code/Systems/WordNote/Runtime/WordNoteUI.cs`
 
 ## 绑定契约
 
-`DialogueTrack` 绑定 `Transform`。`DialogueBehaviour` 在片段播放时从 Playable 的绑定对象创建 `DialogueBubbleView`，不要求目标物体挂载额外 Host，也不修改玩家、颜色系统或绿色钩子状态。
+`DialogueTrack` 不绑定任何对象。`DialogueBehaviour` 在片段开始时调用：
 
-运行时气泡对象只在片段存活期间创建，片段停止、Graph 停止或对象销毁时同步清理。
+```csharp
+WordNoteUI.Instance.RequestTimeline(content, style)
+```
 
-## 默认资源
+该方法与普通 `Show` API 共用同一个 `WordNote_UI` 实例、总队列、九个位置队列、堆叠和动画系统，只把来源标记为 `Timeline`。
 
-片段字段为空时按以下顺序解析：
+片段暂停、结束、Graph 停止或 Playable 销毁时，行为调用 `WordNoteHandle.Release()`，只释放本次 Timeline 申请的消息。
 
-1. `DialogueTimelineClip` 上的 Sprite、Material、TMP_FontAsset。
-2. `DialogueBubbleDefaults` 中的同名默认引用。
+## 参数
 
-默认配置资源位于 `Assets/_Project/Resources/UI/DialogueBubbleDefaults.asset`，字体固定指向项目 `Cubic_11 SDF`。若默认配置缺少 Sprite 或字体，组件会输出警告并跳过显示，不会退回 Unity 默认字体。
-
-## 参数边界
-
-- `riseDuration` 只控制气泡位移、缩放与淡入的并行动画。
-- `typewriterStartDelay` 从 `riseDuration` 结束后才开始计时，保证气泡先浮现、再等待、最后逐字显示。
-- `DialogueBubbleView` 只负责表现层；不发送成就、交互、房间或颜色信号。
-- 需要接入玩法时，应由外部 Timeline/ActSO 或事件层驱动，不在气泡运行时组件内建立跨功能依赖。
+`DialogueTimelineClip.style` 直接使用 `Project.WordNote.WordNoteStyle`，不维护第二套气泡参数。字体为空时继承 `WordNoteUI.defaultFont`，仍遵守项目 `Cubic_11 SDF` 字体规范。
 
 ## 验证
 
 - Runtime 与 Editor 程序集静态编译通过。
-- 资源 GUID、材质引用、默认字体引用与 `.meta` 已核对。
-- 未在 Unity Play Mode 中实际验收动画节奏和画面层级。
+- 对话轨道不再创建世界空间对象、Sprite 或独立 Canvas。
+- `WordNote_UI` 同时保留 API 调用和 Timeline 申请两种来源。
