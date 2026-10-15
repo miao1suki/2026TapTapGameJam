@@ -7,6 +7,20 @@ namespace Project.Audio
     {
         private static readonly HashSet<string> MissingCueWarnings =
             new HashSet<string>();
+        private static int lastConfirmationFrame = -1;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetConfirmationFrame() => lastConfirmationFrame = -1;
+
+        public static bool PlayUiConfirm(AudioCatalog catalog = null, float volumeScale = 1f)
+        {
+            // A UI action can pass through both a button and its flow router.
+            if (lastConfirmationFrame == Time.frameCount) return true;
+            bool played = Play(catalog != null ? catalog : AudioCatalog.LoadDefault(),
+                AudioCueIds.NoticeConfirm, volumeScale);
+            if (played) lastConfirmationFrame = Time.frameCount;
+            return played;
+        }
 
         public static bool Play(
             string cueId,

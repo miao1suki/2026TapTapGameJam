@@ -23,6 +23,8 @@ namespace Project.Player
         private Vector3 playerCenter;
         private Tween tween;
         private bool movingToCarrier;
+        private Transform carrier;
+        private readonly RaycastHit[] carryHits = new RaycastHit[128];
 
         public bool IsCarrying { get; private set; }
         public bool IsDropAnimating { get; private set; }
@@ -36,7 +38,8 @@ namespace Project.Player
 
         public bool BeginCarry(
             Vector3 anchorWorldPosition,
-            Vector3 playerWorldCenter)
+            Vector3 playerWorldCenter,
+            Transform carrierTransform = null)
         {
             if (root == null || IsCarrying || IsResetAnimating)
             {
@@ -44,6 +47,7 @@ namespace Project.Player
             }
 
             CacheTargets();
+            carrier = carrierTransform;
             originalPosition = root.position;
             originalScale = root.localScale;
             originalSiblingIndex = root.GetSiblingIndex();
@@ -124,6 +128,79 @@ namespace Project.Player
             }
 
             root.position = currentAnchor;
+        }
+
+        public Vector3 ConstrainDisplacement(Vector3 anchor, Vector3 displacement, float skin)
+        {
+            if (!IsCarrying || IsDropAnimating || IsResetAnimating || colliders == null)
+                return displacement;
+
+            // Query the intended head pose, not the interpolated render pose or pickup Tween.
+            anchor.z = originalPosition.z;
+            Vector3 offset = anchor - root.position;
+            Vector3 result = Vector3.zero;
+            for (int axis = 0; axis < 3; axis++)
+            {
+                float distance = Mathf.Abs(displacement[axis]);
+                if (distance < .000001f) continue;
+                Vector3 direction = Vector3.zero;
+                direction[axis] = Mathf.Sign(displacement[axis]);
+                float allowed = distance;
+                for (int index = 0; index < colliders.Length; index++)
+                {
+                    Collider shape = colliders[index];
+                    if (!colliderStates[index] || shape == null || shape.isTrigger ||
+                        !shape.gameObject.activeInHierarchy) continue;
+                    Vector3 center, extents;
+                    Quaternion rotation;
+                    if (shape is BoxCollider box)
+                    {
+                        center = box.transform.TransformPoint(box.center);
+                        Vector3 scale = box.transform.lossyScale;
+                        extents = Vector3.Scale(box.size * .5f,
+                            new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+                        rotation = box.transform.rotation;
+                    }
+                    else
+                    {
+                        // Non-box authored shapes use a conservative local mesh/primitive envelope.
+                        Bounds local;
+                        if (shape is SphereCollider sphere)
+                            local = new Bounds(sphere.center, Vector3.one * sphere.radius * 2f);
+                        else if (shape is CapsuleCollider capsule)
+                        {
+                            Vector3 size = Vector3.one * capsule.radius * 2f;
+                            size[capsule.direction] = Mathf.Max(capsule.height, size[capsule.direction]);
+                            local = new Bounds(capsule.center, size);
+                        }
+                        else if (shape is MeshCollider mesh && mesh.sharedMesh != null)
+                            local = mesh.sharedMesh.bounds;
+                        else continue;
+                        center = shape.transform.TransformPoint(local.center);
+                        Vector3 scale = shape.transform.lossyScale;
+                        extents = Vector3.Scale(local.extents,
+                            new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+                        rotation = shape.transform.rotation;
+                    }
+                    // Slightly inset tangential faces so a resting floor doesn't block sideways motion.
+                    extents = Vector3.Max(extents - Vector3.one * skin * .25f, Vector3.one * .0001f);
+                    int count = Physics.BoxCastNonAlloc(center + offset + result, extents, direction,
+                        carryHits, rotation, distance + skin, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+                    if (count == carryHits.Length) allowed = 0f; // Never tunnel when a dense query overflows.
+                    for (int hitIndex = 0; hitIndex < count; hitIndex++)
+                    {
+                        RaycastHit hit = carryHits[hitIndex];
+                        Collider other = hit.collider;
+                        if (other == null || other.transform.IsChildOf(root) ||
+                            (carrier != null && other.transform.IsChildOf(carrier)) ||
+                            Physics.GetIgnoreLayerCollision(shape.gameObject.layer, other.gameObject.layer) ||
+                            Vector3.Dot(hit.normal, direction) >= -.001f) continue;
+                        allowed = Mathf.Min(allowed, Mathf.Max(0f, hit.distance - skin));
+                    }
+                }
+                result[axis] = direction[axis] * allowed;
+            }
+            return result;
         }
 
         public bool BeginDrop(Vector3 worldPosition)
@@ -217,26 +294,16 @@ namespace Project.Player
 
         private void CacheTargets()
         {
-            if (colliders == null)
+            // A reset or growth can replace/resize authored shapes between two pickups.
+            colliders = root.GetComponentsInChildren<Collider>(true);
+            colliderStates = new bool[colliders.Length];
+            for (int index = 0; index < colliders.Length; index++)
             {
-                colliders = root.GetComponentsInChildren<Collider>(true);
-                colliderStates = new bool[colliders.Length];
-                for (int index = 0;
-                     index < colliders.Length;
-                     index++)
-                {
-                    colliderStates[index] =
-                        colliders[index] != null &&
-                        colliders[index].enabled;
-                }
+                colliderStates[index] = colliders[index] != null && colliders[index].enabled;
             }
-
-            if (renderers == null)
-            {
-                renderers = root.GetComponentsInChildren<Renderer>(true);
-                sortingLayerIds = new int[renderers.Length];
-                sortingOrders = new int[renderers.Length];
-            }
+            renderers = root.GetComponentsInChildren<Renderer>(true);
+            sortingLayerIds = new int[renderers.Length];
+            sortingOrders = new int[renderers.Length];
         }
 
         private void SetCollidersEnabled(bool enabled)

@@ -343,6 +343,7 @@ namespace Project.WordNote
         private int nextId = 1;
 
         public static WordNoteUI Instance { get; private set; }
+        public TMP_FontAsset DefaultFont => defaultFont != null ? defaultFont : TMP_Settings.defaultFontAsset;
         public IReadOnlyList<WordNoteHandle> TotalQueue =>
             BuildHandleList(totalQueue);
         public int AliveCount => totalQueue.Count;

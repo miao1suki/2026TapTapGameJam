@@ -41,7 +41,8 @@ namespace Project.ColorBlocks
                 new ShaderTagId("UniversalForwardOnly"),
                 new ShaderTagId("SRPDefaultUnlit"),
                 new ShaderTagId("UniversalGBuffer"),
-                new ShaderTagId("Always")
+                new ShaderTagId("Always"),
+                new ShaderTagId("PixelWaterRefraction")
             };
 
             private readonly Material maskMaterial;

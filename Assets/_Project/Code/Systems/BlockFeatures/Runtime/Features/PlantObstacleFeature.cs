@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.Audio;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -78,6 +79,7 @@ namespace Project.BlockFeatures
             }
 
             intact = false;
+            AudioCuePlayer.Play(AudioCueIds.PlantBurn);
             ApplyState();
             IntactChanged?.Invoke(this, false);
             return true;

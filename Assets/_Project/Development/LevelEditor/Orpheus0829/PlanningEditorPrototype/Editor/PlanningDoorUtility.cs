@@ -62,12 +62,19 @@ namespace PlanningEditorPrototype
             System.Func<Vector2Int, bool> cellAllowed = null)
         {
             int count = 0;
-            foreach (var existing in boxes) if (existing.doorOwnerId == door.id) count++;
+            int lastOrder = 0;
+            foreach (var existing in boxes) if (existing.doorOwnerId == door.id)
+            {
+                count++;
+                if (existing.doorButtonOrder <= 0) existing.doorButtonOrder = lastOrder + 1;
+                lastOrder = Mathf.Max(lastOrder, existing.doorButtonOrder);
+            }
             if (count >= DoorController.MaximumButtons) return null;
             if (!TryFindButtonCell(boxes,door,allowed,out var cell, cellAllowed)) return null;
             var button = new PlanningBox(PlanningDetailType.Prop,new RectInt(cell,Vector2Int.one))
             {
-                propEntryId = ButtonEntryId, propEntryName = "门按钮", singleInstance = true, doorOwnerId = door.id
+                propEntryId = ButtonEntryId, propEntryName = "门按钮", singleInstance = true, doorOwnerId = door.id,
+                doorButtonOrder = lastOrder + 1
             };
             boxes.Add(button);
             return button;
@@ -76,23 +83,32 @@ namespace PlanningEditorPrototype
         {
             if (root == null) return;
             var owners = new Dictionary<string,string>();
+            var orderedBoxes = new List<PlanningBox>();
             foreach (var room in rooms) if (room != null) foreach (var box in room.boxes)
-                if (!string.IsNullOrEmpty(box.doorOwnerId)) owners[box.id] = box.doorOwnerId;
-            foreach (var box in patches) if (!string.IsNullOrEmpty(box.doorOwnerId)) owners[box.id] = box.doorOwnerId;
+                if (!string.IsNullOrEmpty(box.doorOwnerId)) { owners[box.id] = box.doorOwnerId; orderedBoxes.Add(box); }
+            foreach (var box in patches) if (!string.IsNullOrEmpty(box.doorOwnerId)) { owners[box.id] = box.doorOwnerId; orderedBoxes.Add(box); }
             var doors = new Dictionary<string,DoorController>();
-            var buttons = new List<LevelEditorPlacedBlock>();
+            var buttons = new Dictionary<string,DoorButton>();
             foreach (var placed in root.GetComponentsInChildren<LevelEditorPlacedBlock>(true))
             {
                 var door = placed.GetComponent<DoorController>();
                 if (door != null && !string.IsNullOrEmpty(placed.PlanningBoxId)) doors[placed.PlanningBoxId] = door;
-                if (placed.GetComponent<DoorButton>() != null) buttons.Add(placed);
+                if (placed.GetComponent<DoorButton>() != null && !string.IsNullOrEmpty(placed.PlanningBoxId)) buttons[placed.PlanningBoxId] = placed.GetComponent<DoorButton>();
             }
             foreach (var pair in doors)
             {
                 var linked = new List<DoorButton>();
-                foreach (var placed in buttons)
-                    if (owners.TryGetValue(placed.PlanningBoxId,out var owner) && owner == pair.Key)
-                        linked.Add(placed.GetComponent<DoorButton>());
+                var ordered = orderedBoxes.FindAll(box => owners[box.id] == pair.Key);
+                // Legacy saves recover document order, never hierarchy/temporary instance order.
+                int lastOrder = 0;
+                foreach (var box in ordered)
+                {
+                    if (box.doorButtonOrder <= 0) box.doorButtonOrder = lastOrder + 1;
+                    lastOrder = Mathf.Max(lastOrder, box.doorButtonOrder);
+                }
+                ordered.Sort((a,b) => a.doorButtonOrder.CompareTo(b.doorButtonOrder));
+                foreach (var box in ordered)
+                    if (buttons.TryGetValue(box.id, out var button)) linked.Add(button);
                 pair.Value.SetButtons(linked);
                 EditorUtility.SetDirty(pair.Value);
                 foreach (var button in linked) EditorUtility.SetDirty(button);

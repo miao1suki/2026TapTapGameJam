@@ -85,6 +85,7 @@ namespace PlanningEditorPrototype
         public bool isMerged;
         public bool singleInstance;
         public string doorOwnerId;
+        public int doorButtonOrder;
         public string mechanismBaseId;
         public Vector2Int mechanismBaseCellOffset;
         public string crankOwnerId;

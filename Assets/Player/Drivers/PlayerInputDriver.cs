@@ -247,12 +247,13 @@ namespace Project.Player
                 return;
             }
 
-            carryHintVisible = shouldShow;
             WordNoteUI wordNote = WordNoteUI.Instance;
             if (wordNote == null)
             {
                 return;
             }
+
+            carryHintVisible = shouldShow;
 
             if (!shouldShow)
             {
@@ -458,12 +459,13 @@ namespace Project.Player
                 return;
             }
 
-            respawnHintVisible = shouldShow;
             WordNoteUI wordNote = WordNoteUI.Instance;
             if (wordNote == null)
             {
                 return;
             }
+
+            respawnHintVisible = shouldShow;
 
             if (!shouldShow)
             {

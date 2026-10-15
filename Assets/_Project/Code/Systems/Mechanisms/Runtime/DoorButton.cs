@@ -31,6 +31,15 @@ namespace Project.Mechanisms
         public bool Persistent => mode == DoorButtonMode.Latched;
         public DoorButtonState State { get; private set; }
         public bool IsPressed => State == DoorButtonState.Pressed;
+        public int BindingIndex
+        {
+            get
+            {
+                if (owner != null) for (int index = 0; index < owner.Buttons.Count; index++)
+                    if (owner.Buttons[index] == this) return index;
+                return 0;
+            }
+        }
         private void Awake()
         {
             pressTrigger = GetComponent<BoxCollider>();

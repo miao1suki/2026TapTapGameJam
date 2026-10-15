@@ -26,6 +26,8 @@ namespace Project.Mechanisms
         public const int MaximumButtons = 3;
         [BlockParameter(Label = "开门时间", Group = "开门", Order = 0)]
         [SerializeField, Min(.01f)] private float openDuration = .6f;
+        [BlockParameter(Label = "图案展示时间", Group = "开门", Order = 1)]
+        [SerializeField, Min(0f)] private float unlockDelay = .8f;
         [BlockParameter(Label = "镜头移动时间", Group = "演出", Order = 0)]
         [SerializeField, Min(.1f)] private float cameraMoveDuration = 1f;
         [BlockParameter(Label = "镜头停留时间", Group = "演出", Order = 1)]
@@ -42,8 +44,12 @@ namespace Project.Mechanisms
         private TimelineAsset ownedTimeline;
         private PlayableDirector director;
         private IDisposable controlLock;
+        private bool pendingOpen;
+        private float pendingOpenRemaining;
         public DoorState State { get; private set; }
         public float OpenDuration => openDuration;
+        public float UnlockDelay => unlockDelay;
+        public bool IsWaitingToOpen => pendingOpen;
         public IReadOnlyList<DoorButton> Buttons => buttons;
         public bool IsHorizontal => horizontal;
         public int PressedCount { get { int count = 0; foreach (var button in buttons) if (button != null && button.IsPressed) count++; return count; } }
@@ -56,9 +62,15 @@ namespace Project.Mechanisms
             State = DoorState.Locked;
             SetButtons(buttons);
         }
-        private void OnEnable() { if (Application.isPlaying) EventMgr.OnRoomColorReset += HandleRoomReset; }
+        private void OnEnable()
+        {
+            if (!Application.isPlaying) return;
+            EventMgr.OnRoomColorReset += HandleRoomReset;
+            NotifyButtonPressed(null);
+        }
         private void OnDisable()
         {
+            pendingOpen = false;
             EventMgr.OnRoomColorReset -= HandleRoomReset;
             opening?.Kill();
             if (shotRoutine != null) StopCoroutine(shotRoutine);
@@ -74,6 +86,7 @@ namespace Project.Mechanisms
             foreach (var button in next)
                 if (button != null && !buttons.Contains(button)) { buttons.Add(button); button.SetOwner(this); }
             RefreshHint();
+            if (Application.isPlaying && isActiveAndEnabled) NotifyButtonPressed(null);
         }
         private void OnDestroy()
         {
@@ -105,28 +118,48 @@ namespace Project.Mechanisms
         public void NotifyButtonPressed(GameObject actor)
         {
             RefreshHint();
-            if (!Application.isPlaying || buttons.Count == 0) return;
-            bool allPressed = true, hasHeld = false;
+            if (!Application.isPlaying || !isActiveAndEnabled) return;
+            bool allPressed = buttons.Count > 0, hasHeld = false;
             foreach (var button in buttons)
             {
-                if (button == null || !button.IsPressed) allPressed = false;
+                if (button == null || !button.isActiveAndEnabled || !button.IsPressed) allPressed = false;
                 if (button != null && button.Mode == DoorButtonMode.Held) hasHeld = true;
             }
             if (!allPressed)
             {
-                if (hasHeld && State == DoorState.Unlocked) CloseFromPressureRelease();
+                if (pendingOpen) CancelPendingOpen();
+                if ((hasHeld || buttons.Count == 0) && State == DoorState.Unlocked) CloseFromPressureRelease();
                 return;
             }
-            if (State != DoorState.Locked) return;
+            if (State != DoorState.Locked || pendingOpen) return;
+            pendingOpen = true;
+            pendingOpenRemaining = Mathf.Max(0f, unlockDelay);
+            shotRoutine = StartCoroutine(PlayDoorShot(actor));
+        }
+        private void Update()
+        {
+            if (!pendingOpen || Time.deltaTime <= 0f) return;
+            foreach (var button in buttons)
+                if (button == null || !button.isActiveAndEnabled || !button.IsPressed) { CancelPendingOpen(); return; }
+            if (buttons.Count == 0) { CancelPendingOpen(); return; }
+            pendingOpenRemaining -= Time.deltaTime;
+            if (pendingOpenRemaining > 0f) return;
+            pendingOpen = false;
             State = DoorState.Unlocked;
             if (blockingCollider != null) blockingCollider.enabled = false;
             opening?.Kill();
             if (hinge != null)
                 opening = hinge.DOLocalRotateQuaternion(closedRotation * Quaternion.Euler(openEuler), openDuration)
-                    .SetEase(Ease.OutCubic).SetUpdate(true);
+                    .SetEase(Ease.OutCubic);
             StateChanged?.Invoke(State);
             AudioCuePlayer.Play(AudioCueIds.DoorOpen, .9f);
-            shotRoutine = StartCoroutine(PlayDoorShot(actor));
+        }
+        private void CancelPendingOpen()
+        {
+            pendingOpen = false;
+            if (shotRoutine != null) StopCoroutine(shotRoutine);
+            shotRoutine = null;
+            CleanupShot();
         }
         private void CloseFromPressureRelease()
         {
@@ -135,12 +168,13 @@ namespace Project.Mechanisms
             shotRoutine = null; CleanupShot();
             State = DoorState.Locked;
             if (blockingCollider != null) blockingCollider.enabled = true;
-            if (hinge != null) opening = hinge.DOLocalRotateQuaternion(closedRotation,openDuration).SetEase(Ease.OutCubic).SetUpdate(true);
+            if (hinge != null) opening = hinge.DOLocalRotateQuaternion(closedRotation,openDuration).SetEase(Ease.OutCubic);
             StateChanged?.Invoke(State);
             AudioCuePlayer.Play(AudioCueIds.DoorClose, .85f);
         }
         public void ResetDoor()
         {
+            pendingOpen = false;
             opening?.Kill();
             if (shotRoutine != null) StopCoroutine(shotRoutine);
             shotRoutine = null;
@@ -159,8 +193,10 @@ namespace Project.Mechanisms
             if (manager == null) { shotRoutine = null; yield break; }
             rig = manager.GetComponent<TimelineCamRig>() ?? manager.gameObject.AddComponent<TimelineCamRig>();
             float deadline = Time.unscaledTime + 15f;
-            while (rig != null && rig.isPlayingAnim && Time.unscaledTime < deadline) yield return null;
-            if (rig == null || rig.isPlayingAnim) { shotRoutine = null; yield break; }
+            while (pendingOpen && rig != null && rig.isPlayingAnim && Time.unscaledTime < deadline) yield return null;
+            if (!pendingOpen || rig == null || rig.isPlayingAnim) { shotRoutine = null; yield break; }
+            // Let the camera arrive before timing the completed door patterns.
+            if (pendingOpen) pendingOpenRemaining = cameraMoveDuration + Mathf.Max(0f, unlockDelay);
             var player = actor != null ? actor.GetComponentInParent<PlayerController>() : null;
             if (player is IPlayerControlLockTarget lockTarget) controlLock = lockTarget.AcquireControlLock(this);
             previousAnchor = rig.target;
@@ -177,26 +213,26 @@ namespace Project.Mechanisms
             track.restoreOriginOnEnd = true;
             var clip = track.CreateClip<CameraTimelineClip>();
             clip.start = 0;
-            clip.duration = cameraMoveDuration + cameraHoldDuration;
+            clip.duration = cameraMoveDuration + Mathf.Max(0f, unlockDelay) + openDuration + cameraHoldDuration;
             var asset = (CameraTimelineClip)clip.asset;
             asset.cameraMoveMode = CamMoveMode.SmoothLerp;
             asset.lockLookAtPlayer = false;
             asset.cameraTargetLocalPos = Quaternion.Inverse(planar) * offset;
             asset.cameraTargetEuler = (Quaternion.Inverse(planar) * state.rotation).eulerAngles;
             asset.useMotionCurve = true;
-            float arrival = cameraMoveDuration / (cameraMoveDuration + cameraHoldDuration);
+            float arrival = cameraMoveDuration / (float)clip.duration;
             asset.motionCurve = new AnimationCurve(new Keyframe(0, 0, 0, 0), new Keyframe(arrival, 1, 0, 0));
             if (arrival < 1) asset.motionCurve.AddKey(new Keyframe(1, 1, 0, 0));
             director = gameObject.AddComponent<PlayableDirector>();
             director.playOnAwake = false;
-            director.timeUpdateMode = DirectorUpdateMode.UnscaledGameTime;
+            director.timeUpdateMode = DirectorUpdateMode.GameTime;
             director.extrapolationMode = DirectorWrapMode.None;
             director.playableAsset = ownedTimeline;
             director.SetGenericBinding(track, rig);
             rig.SetReturnDurationForCurrentShot(cameraReturnDuration);
             director.Play();
-            deadline = Time.unscaledTime + (float)clip.duration + 1f;
-            while (director != null && director.state == PlayState.Playing && Time.unscaledTime < deadline) yield return null;
+            deadline = Time.time + (float)clip.duration + 1f;
+            while (director != null && director.state == PlayState.Playing && Time.time < deadline) yield return null;
             if (director != null) director.Stop();
             float returnDeadline = Time.unscaledTime + cameraReturnDuration;
             while (Time.unscaledTime < returnDeadline) yield return null;

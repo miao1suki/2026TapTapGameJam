@@ -61,6 +61,8 @@ namespace Project.ContactCubes.Editor
                     cubes = new ContactCube[3];
                     for (int i = 0; i < 3; i++) cubes[i] = Spawn($"Assets/_Project/Content/ContactCubes/{(CubeColor)i}_ContactCube.prefab",new Vector3(3+i*2,3,0)).GetComponent<ContactCube>();
                     door = Spawn("Assets/_Project/Content/Mechanisms/Door.prefab",new Vector3(15,.5f,0)).GetComponent<DoorController>();
+                    // This fixture checks pressure/reset edges; delayed presentation has its own regression.
+                    var doorSettings = new SerializedObject(door); doorSettings.FindProperty("unlockDelay").floatValue = 0f; doorSettings.ApplyModifiedPropertiesWithoutUndo();
                     latch = Spawn("Assets/_Project/Content/Mechanisms/DoorButton.prefab",new Vector3(10,.5f,0)).GetComponent<DoorButton>();
                     held = Spawn("Assets/_Project/Content/Mechanisms/DoorButton.prefab",new Vector3(12,.5f,0)).GetComponent<DoorButton>();
                     var settings = new SerializedObject(held); settings.FindProperty("mode").enumValueIndex = (int)DoorButtonMode.Held; settings.ApplyModifiedPropertiesWithoutUndo();

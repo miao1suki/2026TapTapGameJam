@@ -1,5 +1,7 @@
 # 像素水预制体接入
 
+关卡玩法自动接线见 [GAMEPLAY_PIXEL_WATER_API.md](GAMEPLAY_PIXEL_WATER_API.md)。下文保留独立TA预制体用法；正式水族使用blue Layer，专属折射LightMode现已不再限定Water Layer。
+
 ## 可用资源
 
 - `Assets/ta_source/Newwater/Prefabs/PixelWater_Surface.prefab`

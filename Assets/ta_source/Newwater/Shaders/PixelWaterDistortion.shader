@@ -8,6 +8,7 @@ Shader "Custom/Pixel Water/Screen Distortion"
         _DistortionVariation ("Distortion Strength Variation", Range(0, 1)) = 0.75
         _DistortionChangeSpeed ("Distortion Change Speed", Range(0, 4)) = 0.9
         _Opacity ("Water Filter Opacity", Range(0, 1)) = 0.9
+        _ColorRevealOpacity ("Color Reveal", Range(0, 1)) = 1
         _Tint ("Subtle Water Tint", Color) = (0.72, 0.92, 1, 1)
         _TintStrength ("Tint Strength", Range(0, 0.25)) = 0.1
     }
@@ -51,6 +52,7 @@ Shader "Custom/Pixel Water/Screen Distortion"
                 float _DistortionVariation;
                 float _DistortionChangeSpeed;
                 float _Opacity;
+                float _ColorRevealOpacity;
                 float4 _Tint;
                 float _TintStrength;
             CBUFFER_END
@@ -99,6 +101,7 @@ Shader "Custom/Pixel Water/Screen Distortion"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                clip(_Opacity * _ColorRevealOpacity - 0.001);
 
                 float2 screenUV = GetNormalizedScreenSpaceUV(input.positionCS);
                 float time = _Time.y * _AnimationSpeed;
@@ -114,7 +117,7 @@ Shader "Custom/Pixel Water/Screen Distortion"
                     _PixelWaterSceneColor, sampler_PixelWaterSceneColor, refractedUV).rgb;
                 refractedColor = lerp(refractedColor, (half3)_Tint.rgb, _TintStrength);
 
-                return half4(refractedColor, _Opacity);
+                return half4(refractedColor, _Opacity * _ColorRevealOpacity);
             }
             ENDHLSL
         }

@@ -377,6 +377,7 @@ namespace Project.StartMenu
 
         private void RequestStartGame()
         {
+            AudioCuePlayer.PlayUiConfirm();
             if (StartGameRequested != null)
             {
                 StartGameRequested.Invoke();
@@ -393,17 +394,20 @@ namespace Project.StartMenu
 
         public void ShowSettings()
         {
+            AudioCuePlayer.PlayUiConfirm();
             SetOnly(settingsPanel);
         }
 
         public void ShowSave()
         {
+            AudioCuePlayer.PlayUiConfirm();
             SetOnly(savePanel);
             saveController?.Refresh();
         }
 
         public void ContinueLastGame()
         {
+            AudioCuePlayer.PlayUiConfirm();
             SaveSlotInfo last = SaveGameService.GetMostRecentSlot();
             statusText.text = last == null
                 ? "没有可继续的存档。"
@@ -417,6 +421,7 @@ namespace Project.StartMenu
 
         public void QuitGame()
         {
+            AudioCuePlayer.PlayUiConfirm();
             Action exitRequested = ExitGameRequested;
             exitRequested?.Invoke();
         }

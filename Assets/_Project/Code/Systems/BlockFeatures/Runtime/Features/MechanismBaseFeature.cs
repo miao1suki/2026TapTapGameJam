@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Project.GreenHook;
+using Project.Audio;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -152,6 +153,8 @@ namespace Project.BlockFeatures
             }
 
             powered = value;
+            if (Application.isPlaying)
+                AudioCuePlayer.Play(value ? AudioCueIds.MachineStart : AudioCueIds.MachineStop);
             SignalChanged?.Invoke(IsSignalActive);
         }
     }

@@ -36,6 +36,14 @@ namespace Project.BlockFeatures
             Order = 1)]
         [SerializeField, Min(0f)] private float currentSpeed = 4f;
 
+        public Vector2 VisualFlowDirection => flowDirection switch
+        {
+            CurrentFlowDirection.Left => Vector2.left,
+            CurrentFlowDirection.Up => Vector2.up,
+            CurrentFlowDirection.Down => Vector2.down,
+            _ => Vector2.right
+        };
+
         protected override void OnPlayerEntered(
             PlayerController player)
         {

@@ -26,7 +26,47 @@
 - 受阻判定修正：不再用“与玩家距离未缩短”判断物体受阻，改为检测方块或玩家单个物理步内是否真实位移；距离远但持续运动不会误切换成拉玩家。
 - 接入：`PlayerColorWheel` 绿色分支转到 `GreenHookAbility`；`InteractionLinkEffect` 仅保留红蓝预览；两份正式玩家预制体已挂载绿钩子组件；`PlayerController`、`ContactCubeMotion` 增加钩子运动生命周期。
 - 验证：Assembly-CSharp Runtime 与 Editor 静态编译通过；待 Unity 内实际手感、房间边界和两种拉动方向验收。
+## 2026-10-15 门美术、搬运与高度调整整合
 
+- 按用户授权提交并整合至 main；fetch 后 origin/main 仍为 f5d1618，无新增主线提交。远程未合入的旧TA实验分支混有退役场景/管线改动，本轮不作为新功能整包合入；当前已使用的TA资源保持不变。
+- 范围：门三色按钮/独立图案与延迟开门、搬运实体阻挡与统一提示、Pick新增WordNote_UI、高度8/10/4/3。Pick只暂存本轮新增提示节点，用户关卡布局/连线测试改动保持本地；字体缓存、PackageManagerSettings、DOTweenPro和临时ICON不提交。
+- 既有门/搬运Play验证及本轮高度14项通过；整合前重新运行140/140项EditMode通过（Library/MergeDoorCarryTests.xml），暂存内容diff检查通过。Unity版本不变，未重新打包。
+
+## 2026-10-15 弹跳、落差与气泡柱高度
+
+- 在当前分支调整普通植物回弹8格、搬运植物跳跃4格、摔死门槛10格、气泡柱出水上升3格；不改普通跳跃和触发/区域重置规则。保留此前所有本地改动，不提交推送。
+- 气泡柱由额外速度改为明确的出水高度参数，按玩家重力与单元格尺寸换算；同步有效玩家/植物预制体与旧测试玩家落差覆盖。
+- 已完成；Unity6000.3.12f1隔离编译及14项参数/实际刚体速度断言通过（Library/HeightTuning.log），检查两种玩家预制体、植物普通/高跳/搬运、气泡重复触发及不累加环境加速。git diff --check通过；未重新打包，未声明完整关卡手感验收。
+
+## 2026-10-15 搬运实体阻挡与测试场景提示
+
+- 当前分支 codex/art/door-button-feedback；保留未提交门美术及用户场景/字体/插件。新增搬运物实体扫掠，由玩家物理入口裁剪位移，不恢复搬运刚体推挤。排查并统一搬运中心提示字体、大小及合并物体缩放，Pick 接入既有 WordNote 提示，不重复添加暂停/输入系统。不提交推送。
+- 已完成：搬运物完整 OBB 扫掠接入玩家所有移动入口与平台位移；三色 ContactCube 补统一字体，中心提示消除合并拉伸、随设备刷新。Pick 仅新增 WordNote_UI，排除本次新增节点后文件 SHA256 与任务前完全一致（ED2BEF7D…AA35）。Test/Gaming 不改布局，复用原组件。
+- Unity6000.3.12f1 隔离140/140项EditMode、20项真实物理搬运断言及3场景接线通过（Library/CarryRegressionTests.xml、CarryCollisionPlay.log）；Pick实际GPU/Play14项提示验证通过（Library/PickCarryHints.log），消息样式由现有业务处理器触发，截图Library/PickCarryHints.png。没有重新打包或安卓真机验收；当前仅本地待用户测试。
+- 原有 ContactCubeCarryVerification 的58项三色搬运/完整落点/放下/区域复位实际Play回归再次通过（Library/CarryExistingRegression.log）；无新增运行时Debug日志。
+
+## 2026-10-15 门按钮三色美术与延迟开门
+
+- 分支 codex/art/door-button-feedback；接入新增蓝绿按钮图，配置像素导入和16×16切片。门按钮依绑定顺序红/绿/蓝，门内白色图案按实际按钮数显示，独立响应对应按钮；全部按下后保留可配置的图案展示时间再开门。保留踩踏触发、保持/持续模式、重置与Timeline相机所有权。
+- 已应用到当前项目：新原图4帧16×16切片、Point/FullRect/无Mip无压缩/上限64，保留原图与GUID；门图案数量匹配1/2/3按钮、各自独立点亮，红/绿/蓝按钮不参与颜色能力。Timeline先到门附近再展示0.8秒，等待时保持阻挡，暂停冻结；持续信号释放、重置、禁用取消等待。创建次序持久化，反向读取场景也保留顺序。
+- Unity6000.3.12f1隔离140/140项EditMode、27项真实GPU/Play（含Timeline及暂停）、12项规划保存/乱序/删除/旧存档兼容、39项实际压力/R/离区重置断言通过。日志Library/DoorButtonFinalTests.xml、DoorButtonCamera.log、DoorPlanning.log、DoorPressureRegression.log；实际像素截图Library/FlowRetirementProbe/Library/DoorButtons-*.png。未重新打包/安卓真机验收。
+- 不改用户Pick布局（SHA256仍ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35）、字体、插件和其他本机配置。源码/资源/预制体已在主项目，不提交、不推送，等待用户测试。
+
+## 2026-10-15 玩法水体接入TA像素面片与定向气泡
+
+- 已接入：WaterVisualFeature 的默认表现切换为 TA 水面/水中/水下分区，保留原游泳、水流、浮力、蒸汽、解锁与区域重置；定向水流和浮力柱自动添加对应流向气泡，排序为水后片→角色/气泡→透明扰动板。水面按相邻水族体积识别，合并块按格平铺，水和气泡继续共享蓝色透明渐显材质。
+- 不重建或覆盖用户Pick场景、字体、插件与本机设置；既有音频修改一并验证后按本次授权提交整合。Unity版本不变。当前分支codex/audio/gameplay-cues，远程main基线dbbb803，fetch后无新提交。
+- 验证：132/132 EditMode（Library/PixelWaterFinalTests.xml）；PC实际GPU/Play44项、Mobile渲染配置实际GPU/Play46项通过，覆盖水下玩家可见/折射、真实HSV白化、水面邻接、四向泡泡、渐显、区域重置和8次连续重置无重复捕获板。正式Gaming21项检查通过，9个水族体积全量自动接线、3组气泡、无旧模拟水。日志Library/PixelWaterGameplayGpuFinal.log、PixelWaterGameplayMobileGpu.log、PixelWaterGaming.log。移动管线为桌面GPU验证，未进行本轮Android真机/重新打包，不声明完整关卡人工验收。
+- UI Toolkit配置Inspector、策划说明GAMEPLAY_PIXEL_WATER、接入API、系统索引及颜色Skill均已更新。主窗口不重载关卡，Pick文件SHA256保持ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35。
+- 新水体接入后的41项音频Play回归通过（Library/PixelWaterAudioRegression.log），包含死亡与曲柄停止声。本次将此前仅本地的音频接线与水体表现一起整合至main并推送；旧记录中的“不提交推送”为当时状态。
+
+## 2026-10-15 剩余玩法音效接线
+
+- 补齐死亡统一入口与曲柄停止声：`EnterDeath` 死亡防重后播放PlayerDie，OnDied不再额外播放；曲柄循环转停止时播放MachineStop，重置/卸载静默清理。隔离实际Play检查41项通过，日志Library/DeathCrankAudioPlay.log；仍仅本地修改，不提交推送。
+- 分支：`codex/audio/gameplay-cues`；已完成本地接入，不提交推送。接入搬运、平台、基座、气泡/浮力、植物燃烧、岩浆冷却/玩家触岩浆、UI确认；撞击仅用于下落至少6格的落地。解谜完成/发现秘密仍待触发点。
+- 保留复活默认2秒无敌，不改输入、关卡存档或用户Pick/字体/插件设置；循环声遵守停止、禁用、区域重置清理。
+- 新增12个Cue，目录60个Clip引用/52个Cue。UI确认同帧去重；气泡禁用退出回调禁止重新注册浮力/声音。落地判定兼容物理接触帧竖直速度已归零，不新增落差伤害。
+- 隔离125项EditMode、32项真实Play检查通过；主项目Pick SHA256仍ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35。未重新打包/人工试听，水体既存禁用SetParent日志不在本轮修复范围。接入表AUDIO_HANDOVER与开发说明GAMEPLAY_AUDIO已更新。
 ## 2026-10-15 按钮压力统一与最新进度整合
 
 - 用户授权合并并推送本轮及此前已完成的美术、隐私入口进度；保留本地 Pick、字体缓存、插件和本机设置，不纳入提交。

@@ -4,7 +4,7 @@
 
 `MechanismArtworkPresentation.Ensure(owner)` 补齐支持的物体，`RefreshScene(scene)` 在场景加载时补旧实例；正式Prefab已持久绑定，动态实例继承组件。不要通过重建Scene/规划存档接入美术。组件只读机关状态，不写引用、物理或重置逻辑。
 
-`ObjectArtworkLibrary.Find(kind)` 返回帧组；`ProgressFrame(progress,count)` 用于曲柄双向取帧。曲柄读实际 `Progress`，不可另建计时Tween或松开就跳首帧。门读取 `State` 与只读 `OpenDuration`，支持中断倒放；三个独立颜色遮罩按绑定顺序为绿/红/蓝，只关联按钮。精灵独立于旧旋转门轴。
+`ObjectArtworkLibrary.Find(kind)` 返回帧组；`ProgressFrame(progress,count)`用于曲柄双向取帧。曲柄读实际Progress，不另建计时Tween。门读取State与OpenDuration，支持中断倒放；doorClosed为空门框，doorIndicators/doorWhiteIndicators为红/绿/蓝顺序的彩色/白色独立图案，按实际按钮数显示。DoorButtonKind(BindingIndex)选择三色按钮帧组，新枚举追加、不重编号旧资产。精灵沿开门进度收窄模拟转轴，不修改作者碰撞或机关状态。
 
 子节点BoxCollider换算到根本地空间作为显示范围，不修改碰撞。绿色生长/重置后更新铺图范围，平台顶边对齐支撑面，Tiled左右边界保留端头和像素密度。缓存格尺寸接口，不逐帧扫描场景/读图/实例化材质。颜色精灵复用集中共享材质和原HSV遮罩，只在正式阶段隐藏占位Mesh，不能提前隐藏基础阶段；钥匙始终显示对应颜色核心。
 

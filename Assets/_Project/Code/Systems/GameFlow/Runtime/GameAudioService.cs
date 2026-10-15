@@ -142,6 +142,7 @@ namespace Project.GameFlow
 
         public void PlayUiClick()
         {
+            if (AudioCuePlayer.PlayUiConfirm(ResolveCatalog(), .7f)) return;
             uiClickClip ??= CreateTone(
                 "UI_Click",
                 620f,
@@ -152,6 +153,7 @@ namespace Project.GameFlow
 
         public void PlayPause()
         {
+            if (AudioCuePlayer.PlayUiConfirm(ResolveCatalog(), .65f)) return;
             pauseClip ??= CreateTone(
                 "UI_Pause",
                 360f,

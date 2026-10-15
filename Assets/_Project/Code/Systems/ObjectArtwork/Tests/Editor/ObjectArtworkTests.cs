@@ -5,6 +5,66 @@ namespace Project.ObjectArtwork.Tests
 {
     public sealed class ObjectArtworkTests
     {
+        [Test] public void OriginalGreenBlueButtonSheetIsFourPixelPerfectFrames()
+        {
+            const string path = "Assets/_Project/Resources/26TAPTAP/物体道具/蓝绿按钮80ms每帧.png";
+            var importer = (UnityEditor.TextureImporter)UnityEditor.AssetImporter.GetAtPath(path);
+            Assert.AreEqual(UnityEditor.TextureImporterType.Sprite, importer.textureType);
+            Assert.AreEqual(UnityEditor.SpriteImportMode.Multiple, importer.spriteImportMode);
+            Assert.AreEqual(FilterMode.Point, importer.filterMode); Assert.IsFalse(importer.mipmapEnabled);
+            Assert.AreEqual(UnityEditor.TextureImporterCompression.Uncompressed, importer.textureCompression);
+            Assert.AreEqual(64, importer.maxTextureSize); Assert.AreEqual(16, importer.spritePixelsPerUnit);
+            var sprites = System.Array.FindAll(UnityEditor.AssetDatabase.LoadAllAssetsAtPath(path), item => item is Sprite);
+            Assert.AreEqual(4, sprites.Length);
+            foreach (Sprite sprite in sprites) Assert.AreEqual(new Vector2(16,16), sprite.rect.size);
+        }
+        [TestCase(0, MechanismArtworkKind.DoorButton)]
+        [TestCase(1, MechanismArtworkKind.GreenDoorButton)]
+        [TestCase(2, MechanismArtworkKind.BlueDoorButton)]
+        public void DoorButtonsUseRedGreenBlueBindingOrder(int index, MechanismArtworkKind expected) =>
+            Assert.AreEqual(expected, ObjectArtworkLibrary.DoorButtonKind(index));
+
+        [TestCase(MechanismArtworkKind.DoorButton, 0)]
+        [TestCase(MechanismArtworkKind.GreenDoorButton, 1)]
+        [TestCase(MechanismArtworkKind.BlueDoorButton, 2)]
+        public void ButtonClipsHaveTwoUnmixedSixteenPixelFrames(MechanismArtworkKind kind, int dominant)
+        {
+            var clip = ObjectArtworkLibrary.Load().Find(kind);
+            Assert.NotNull(clip); Assert.AreEqual(2, clip.frames.Length);
+            var source = new Texture2D(2, 2);
+            try
+            {
+                source.LoadImage(System.IO.File.ReadAllBytes(UnityEditor.AssetDatabase.GetAssetPath(clip.frames[0])));
+                foreach (var sprite in clip.frames) Assert.AreEqual(new Vector2(16,16), sprite.rect.size);
+                int colored = 0;
+                foreach (var pixel in source.GetPixels())
+                {
+                    if (pixel.a <= 0 || Mathf.Max(pixel.r,pixel.g,pixel.b)-Mathf.Min(pixel.r,pixel.g,pixel.b) < .01f) continue;
+                    colored++;
+                    Assert.That(pixel[dominant], Is.GreaterThan(pixel[(dominant + 1) % 3]));
+                    Assert.That(pixel[dominant], Is.GreaterThan(pixel[(dominant + 2) % 3]));
+                }
+                Assert.That(colored, Is.GreaterThan(0));
+            }
+            finally { Object.DestroyImmediate(source); }
+        }
+
+        [Test] public void DoorHasBlankFrameAndIndependentWhiteSymbols()
+        {
+            var library = ObjectArtworkLibrary.Load();
+            Assert.NotNull(library.doorClosed); Assert.AreEqual(3, library.doorWhiteIndicators.Length);
+            var texture = new Texture2D(2, 2);
+            try
+            {
+                texture.LoadImage(System.IO.File.ReadAllBytes(UnityEditor.AssetDatabase.GetAssetPath(library.doorClosed)));
+                Assert.AreEqual(0, texture.GetPixel(8,16).a, "Closed door frame must not contain a baked white/red center symbol.");
+                foreach (var sprite in library.doorWhiteIndicators) Assert.NotNull(sprite);
+                Assert.AreEqual(0f, ObjectArtworkLibrary.DoorIndicatorOffset(0,1).y);
+                Assert.That(ObjectArtworkLibrary.DoorIndicatorOffset(0,2).y, Is.GreaterThan(0));
+                Assert.That(ObjectArtworkLibrary.DoorIndicatorOffset(1,2).y, Is.LessThan(0));
+            }
+            finally { Object.DestroyImmediate(texture); }
+        }
         [TestCase("Door")]
         [TestCase("LadderFront")]
         [TestCase("LadderSide")]

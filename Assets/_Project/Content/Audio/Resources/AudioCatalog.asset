@@ -301,3 +301,87 @@ MonoBehaviour:
     - {fileID: 8300000, guid: e8cd517c20088f54cbe63da34e60e0ea, type: 3}
     volumeScale: 0.75
     loop: 0
+  - cueId: sfx.notice.confirm
+    displayName: UI Confirm
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 9b9eb1b5c9534d7469ca22d63bca5db0, type: 3}
+    volumeScale: 0.75
+    loop: 0
+  - cueId: sfx.block.pickup
+    displayName: Block Pickup
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: caf4b25ba9a665345bde4b0b531ade73, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.block.drop
+    displayName: Block Drop
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 91b584c7d17413b498a4bdfaa903826a, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.platform.move_loop
+    displayName: Platform Movement
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 42d4bb5064816dc45981245844a4ba3a, type: 3}
+    volumeScale: 0.75
+    loop: 1
+  - cueId: sfx.machine.start
+    displayName: Base Power On
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: cec5d117a5adf204aa634d76c194def2, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.machine.stop
+    displayName: Base Power Off
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: b1993cc4e9afa4c4589309bf6f61fc0a, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.bubble.loop
+    displayName: Bubble Lift
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 480c34f195f91af45946a152ee05dbfe, type: 3}
+    volumeScale: 0.75
+    loop: 1
+  - cueId: sfx.player.buoy_enter
+    displayName: Buoyancy Enter
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: c03bece3ac62dea4b80da8e328b4fe7f, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.player.buoy_exit
+    displayName: Buoyancy Exit
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 06d6a21daa7d6784198409432b19f675, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.player.impact
+    displayName: Heavy Landing
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 4851128ed0d207a4eaa00ad0ff9d5b27, type: 3}
+    volumeScale: 0.85
+    loop: 0
+  - cueId: sfx.plant.burn
+    displayName: Plant Burn
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 875e7e5dfe9686b4c8cda0c1fd2c3310, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.lava.cool
+    displayName: Lava Contact And Cooling
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 789cebd4b53688e44b77b310f3da9b74, type: 3}
+    volumeScale: 0.85
+    loop: 0

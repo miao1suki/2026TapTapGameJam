@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project.ColorBlocks;
+using Project.Audio;
 using Project.Player;
 using UnityEngine;
 
@@ -23,11 +24,11 @@ namespace Project.BlockFeatures
         [SerializeField, Min(0f)] private float riseSpeed = 7f;
 
         [BlockParameter(
-            Label = "出水额外上推速度",
+            Label = "出水喷出高度（格）",
             Group = "浮力设置",
             Order = 1,
-            Tooltip = "玩家被推到水面上方时额外增加的向上速度；用于产生越过水面后回落再上浮的效果。")]
-        [SerializeField, Min(0f)] private float topExitBoostSpeed = .75f;
+            Tooltip = "离开浮力区后继续上升的高度，按单元格尺寸和玩家重力计算，不累加原有上浮速度。")]
+        [SerializeField, Min(0f)] private float topExitRiseCells = 3f;
 
         private readonly Collider[] blueOverlapBuffer =
             new Collider[32];
@@ -39,6 +40,9 @@ namespace Project.BlockFeatures
             new List<int>();
         private readonly HashSet<int> overshootPlayerIds =
             new HashSet<int>();
+        private readonly HashSet<int> buoyantPlayerIds = new HashSet<int>();
+        private bool bubbleAudioPlaying;
+        private bool disconnecting;
 
         protected override void OnPlayerEntered(
             PlayerController player)
@@ -66,7 +70,7 @@ namespace Project.BlockFeatures
         protected override void OnPlayerExited(
             PlayerController player)
         {
-            if (player == null)
+            if (player == null || disconnecting)
             {
                 return;
             }
@@ -120,8 +124,13 @@ namespace Project.BlockFeatures
 
         protected override void OnDetach()
         {
-            StopAllLifts();
-            base.OnDetach();
+            disconnecting = true;
+            try
+            {
+                StopAllLifts();
+                base.OnDetach();
+            }
+            finally { disconnecting = false; }
         }
 
         protected override void OnResetForRoom()
@@ -143,8 +152,8 @@ namespace Project.BlockFeatures
                 "上浮推力",
                 riseSpeed));
             values.Add(new BlockDebugValue(
-                "出水额外上推",
-                topExitBoostSpeed));
+                "出水喷出高度（格）",
+                topExitRiseCells));
             values.Add(new BlockDebugValue(
                 "水体表现",
                 HasWaterVisual ? "已关联" : "未关联"));
@@ -169,10 +178,12 @@ namespace Project.BlockFeatures
                     player.GetInstanceID());
                 player.EnterWater(this);
                 player.SetBuoyancy(this, riseSpeed);
+                SetBubbleAudio(player.GetInstanceID(), true);
                 return true;
             }
 
             player.SetBuoyancy(this, 0f);
+            SetBubbleAudio(player.GetInstanceID(), false);
             player.ExitWater(this);
             return false;
         }
@@ -180,20 +191,20 @@ namespace Project.BlockFeatures
         private void ApplyTopExitBoost(PlayerController player)
         {
             if (player == null ||
-                topExitBoostSpeed <= 0f ||
+                topExitRiseCells <= 0f ||
                 !overshootPlayerIds.Add(
                     player.GetInstanceID()))
             {
                 return;
             }
 
-            player.ApplyVerticalBounceImmediate(
-                player.VerticalVelocity +
-                topExitBoostSpeed);
+            player.ApplyGridRiseImmediate(topExitRiseCells);
         }
 
         private void StopAllLifts()
         {
+            buoyantPlayerIds.Clear();
+            StopBubbleAudio();
             var players = new List<PlayerController>(
                 liftedPlayers.Values);
             liftedPlayers.Clear();
@@ -213,6 +224,7 @@ namespace Project.BlockFeatures
 
         private void StopLift(int playerId)
         {
+            SetBubbleAudio(playerId, false);
             if (!liftedPlayers.TryGetValue(
                     playerId,
                     out PlayerController player))
@@ -233,6 +245,7 @@ namespace Project.BlockFeatures
 
         private bool CanLiftPlayer(PlayerController player)
         {
+            if (player == null || player.IsDead) return false;
             Collider playerCollider =
                 player.GetComponent<Collider>();
             if (playerCollider == null ||
@@ -334,6 +347,22 @@ namespace Project.BlockFeatures
             Vector2 right)
         {
             return left.x.CompareTo(right.x);
+        }
+
+        private void SetBubbleAudio(int playerId, bool active)
+        {
+            if (active) buoyantPlayerIds.Add(playerId);
+            else buoyantPlayerIds.Remove(playerId);
+            if (buoyantPlayerIds.Count == 0) StopBubbleAudio();
+            else if (!bubbleAudioPlaying)
+                bubbleAudioPlaying = AudioCuePlayer.PlayLoop(AudioCueIds.BubbleLoop, this, .6f);
+        }
+
+        private void StopBubbleAudio()
+        {
+            if (!bubbleAudioPlaying) return;
+            bubbleAudioPlaying = false;
+            AudioManager.Existing?.StopLoop(this);
         }
 
         private bool IsWithinBubbleColumn(

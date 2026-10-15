@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project.ColorBlocks;
+using Project.Audio;
 using Project.Player;
 using UnityEngine;
 
@@ -30,7 +31,9 @@ namespace Project.BlockFeatures
         protected override void OnPlayerEntered(
             PlayerController player)
         {
-            KillPlayer(player);
+            if (player != null && !player.IsDead)
+                AudioCuePlayer.Play(AudioCueIds.LavaCool);
+            KillPlayer(player, false);
         }
 
         protected override void OnPlayerStayed(
@@ -39,17 +42,23 @@ namespace Project.BlockFeatures
             KillPlayer(player);
         }
 
-        private static void KillPlayer(PlayerController player)
+        private static void KillPlayer(PlayerController player, bool playSound = true)
         {
-            if (player == null || player.IsInvulnerable)
+            if (player == null || player.IsDead || player.IsInvulnerable)
             {
                 return;
             }
 
             PlayerHealth health = player.GetComponent<PlayerHealth>();
-            if (health == null) { player.EnterDeath(); return; }
+            if (health == null)
+            {
+                if (playSound) AudioCuePlayer.Play(AudioCueIds.LavaCool);
+                player.EnterDeath();
+                return;
+            }
             if (health != null && !health.IsDead)
             {
+                if (playSound) AudioCuePlayer.Play(AudioCueIds.LavaCool);
                 health.TakeDamage(health.MaxHealth);
             }
         }
@@ -108,6 +117,7 @@ namespace Project.BlockFeatures
                 blueReplacementPrefab,
                 transform.position,
                 transform.rotation);
+            AudioCuePlayer.Play(AudioCueIds.LavaCool);
             if (!Project.Rooms.RoomResetObject.HideForReaction(gameObject, replacement)) Destroy(gameObject);
             return true;
         }

@@ -64,7 +64,9 @@ namespace Project.BlockFeatures.Editor
             root.Add(vine);
             var mechanisms = ProjectInspectorUtility.CreateFoldout("机关与道具", false);
             mechanisms.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "mechanisms", "物体动画"));
-            mechanisms.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "doorIndicators", "门按钮标记（绿、红、蓝）"));
+            mechanisms.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "doorClosed", "门框"));
+            mechanisms.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "doorIndicators", "已按图案（红、绿、蓝）"));
+            mechanisms.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "doorWhiteIndicators", "未按图案（红、绿、蓝对应）"));
             root.Add(mechanisms);
             var materials = ProjectInspectorUtility.CreateFoldout("材质", false);
             materials.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "neutralSpriteMaterial", "无色物体材质"));
