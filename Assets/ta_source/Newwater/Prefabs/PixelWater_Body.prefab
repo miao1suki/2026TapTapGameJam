@@ -27,8 +27,8 @@ Transform:
   m_GameObject: {fileID: 4173339588209765471}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.15}
-  m_LocalScale: {x: 1, y: 1.0625, z: 1}
+  m_LocalPosition: {x: 0, y: 0.03125, z: -0.15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4112295850702741957}
@@ -66,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a0f5324abde9b1f42ad27f795cdc7fa6, type: 2}
+  - {fileID: 2100000, guid: bde5328a7ad14ff29288239840803a0b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4112295850702741957}
   - component: {fileID: 1814670011683867584}
+  - component: {fileID: 5091244112834209037}
   m_Layer: 0
   m_Name: PixelWater_Body
   m_TagString: Untagged
@@ -227,3 +228,26 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &5091244112834209037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5557607584822536375}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c32dd1ad7274c9287dc275a7b197c4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InteractiveWater.PixelWaterFilterController
+  backingSprite: {fileID: 1865802857294712472}
+  filterRenderer: {fileID: 5020853216915696646}
+  filterBoundsInsetsPixels: {x: 0, y: 1, z: 0, w: 0}
+  waterTint: {r: 0.72, g: 0.92, b: 1, a: 1}
+  tintStrength: 0.1
+  distortionStrength: 0.004
+  distortionTimeVariation: 0.75
+  distortionChangeSpeed: 0.9
+  noiseScale: 6
+  noiseFlowSpeed: 0.9
+  opacity: 0.9

@@ -118,8 +118,8 @@ Transform:
   m_GameObject: {fileID: 1691747966958849506}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -0.15}
-  m_LocalScale: {x: 1, y: 1.0625, z: 1}
+  m_LocalPosition: {x: 0, y: 0.03125, z: -0.15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4860669812853377746}
@@ -157,7 +157,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a0f5324abde9b1f42ad27f795cdc7fa6, type: 2}
+  - {fileID: 2100000, guid: ff514bbbae9c43cc9ec5d5d3b62a5135, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -191,6 +191,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4860669812853377746}
   - component: {fileID: 2666366300376361137}
+  - component: {fileID: 4180034499322011001}
   m_Layer: 0
   m_Name: PixelWater_Surface
   m_TagString: Untagged
@@ -227,3 +228,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c98cb5b8baaf40ccb51a30f94c0cad0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InteractiveWater.WaterUnderlayCaptureRequester
+--- !u!114 &4180034499322011001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7127888233962424821}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c32dd1ad7274c9287dc275a7b197c4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InteractiveWater.PixelWaterFilterController
+  backingSprite: {fileID: 3317588878369459179}
+  filterRenderer: {fileID: 509777595288064604}
+  filterBoundsInsetsPixels: {x: 0, y: 1, z: 0, w: 0}
+  waterTint: {r: 0.72, g: 0.92, b: 1, a: 1}
+  tintStrength: 0.1
+  distortionStrength: 0.004
+  distortionTimeVariation: 0.75
+  distortionChangeSpeed: 0.9
+  noiseScale: 6
+  noiseFlowSpeed: 0.9
+  opacity: 0.9

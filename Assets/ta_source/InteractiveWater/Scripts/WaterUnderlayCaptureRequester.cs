@@ -4,7 +4,7 @@ using UnityEngine;
 namespace InteractiveWater
 {
     /// <summary>
-    /// Requests the shared underlay capture while a standalone cross-section water panel is active.
+    /// Requests the post-transparent scene-color copy and refraction draw for active pixel-water panels.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class WaterUnderlayCaptureRequester : MonoBehaviour

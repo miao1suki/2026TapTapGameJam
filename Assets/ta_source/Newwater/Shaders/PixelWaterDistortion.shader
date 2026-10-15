@@ -4,10 +4,12 @@ Shader "Custom/Pixel Water/Screen Distortion"
     {
         _DistortionStrength ("Screen Distortion", Range(0, 0.02)) = 0.004
         _NoiseScale ("Noise Scale", Range(0.5, 32)) = 6
-        _AnimationSpeed ("Animation Speed", Range(0, 2)) = 0.25
-        _Opacity ("Refraction Coverage", Range(0, 1)) = 1
+        _AnimationSpeed ("Noise Flow Speed", Range(0, 4)) = 0.9
+        _DistortionVariation ("Distortion Strength Variation", Range(0, 1)) = 0.75
+        _DistortionChangeSpeed ("Distortion Change Speed", Range(0, 4)) = 0.9
+        _Opacity ("Water Filter Opacity", Range(0, 1)) = 0.9
         _Tint ("Subtle Water Tint", Color) = (0.72, 0.92, 1, 1)
-        _TintStrength ("Tint Strength", Range(0, 0.25)) = 0.04
+        _TintStrength ("Tint Strength", Range(0, 0.25)) = 0.1
     }
 
     SubShader
@@ -23,9 +25,11 @@ Shader "Custom/Pixel Water/Screen Distortion"
         Pass
         {
             Name "PixelWaterScreenDistortion"
-            Tags { "LightMode" = "UniversalForward" }
+            // Drawn only by WaterUnderlayRendererFeature after transparent objects have rendered.
+            Tags { "LightMode" = "PixelWaterRefraction" }
 
             Blend SrcAlpha OneMinusSrcAlpha
+            ColorMask RGB
             ZWrite Off
             ZTest LEqual
             Cull Off
@@ -37,13 +41,15 @@ Shader "Custom/Pixel Water/Screen Distortion"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            TEXTURE2D_X(_WaterUnderlayTexture);
-            SAMPLER(sampler_WaterUnderlayTexture);
+            TEXTURE2D_X(_PixelWaterSceneColor);
+            SAMPLER(sampler_PixelWaterSceneColor);
 
             CBUFFER_START(UnityPerMaterial)
                 float _DistortionStrength;
                 float _NoiseScale;
                 float _AnimationSpeed;
+                float _DistortionVariation;
+                float _DistortionChangeSpeed;
                 float _Opacity;
                 float4 _Tint;
                 float _TintStrength;
@@ -84,6 +90,7 @@ Shader "Custom/Pixel Water/Screen Distortion"
             {
                 Varyings output = (Varyings)0;
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                // Keep the filter quad rigid. Refraction is fragment-only screen-space sampling.
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv;
                 return output;
@@ -98,11 +105,13 @@ Shader "Custom/Pixel Water/Screen Distortion"
                 float2 noiseUV = input.uv * _NoiseScale;
                 float xWave = ValueNoise(noiseUV + float2(time, time * 0.37));
                 float yWave = ValueNoise(noiseUV + float2(-time * 0.29, time + 17.0));
-                float2 offset = (float2(xWave, yWave) * 2.0 - 1.0) * _DistortionStrength;
+                float strengthNoise = ValueNoise(float2(_Time.y * _DistortionChangeSpeed, 23.41));
+                float strengthMultiplier = lerp(1.0 - _DistortionVariation, 1.0 + _DistortionVariation, strengthNoise);
+                float2 offset = (float2(xWave, yWave) * 2.0 - 1.0) * _DistortionStrength * strengthMultiplier;
 
                 float2 refractedUV = saturate(screenUV + offset);
                 half3 refractedColor = SAMPLE_TEXTURE2D_X(
-                    _WaterUnderlayTexture, sampler_WaterUnderlayTexture, refractedUV).rgb;
+                    _PixelWaterSceneColor, sampler_PixelWaterSceneColor, refractedUV).rgb;
                 refractedColor = lerp(refractedColor, (half3)_Tint.rgb, _TintStrength);
 
                 return half4(refractedColor, _Opacity);
