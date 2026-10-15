@@ -162,3 +162,14 @@
 - 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 新增「响度标准」一节，含逐文件实测值。
 - 验证：替换后逐文件 SHA256 与归一化产物一致；未在 Unity 中试听。
 - 交接提交：本条目随本次提交。
+
+## 音频新增（重生点激活音效）
+
+- 日期：2026-10-15。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：新增 `sfx_gp_checkpoint_active_01.wav`（新解锁重生点激活）与 `sfx_gp_checkpoint_active_02.wav`（已解锁重生点再次激活）。
+- 接口变更：无。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补资源清单与运行时接线说明。
+- 验证：文件已放入 `Assets/_Project/Content/Audio/SFX/`；未在 Unity 中试听。
+- 交接提交：本次提交。

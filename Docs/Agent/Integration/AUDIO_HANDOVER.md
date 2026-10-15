@@ -74,6 +74,8 @@
 | `sfx_gp_plant_burn.wav` | 植物燃烧 |
 | `sfx_gp_lava_cool.wav` | 岩浆冷却（遇水 / 降温） |
 | `sfx_gp_block_pickup_01.wav` | 方块拾取 |
+| `sfx_gp_checkpoint_active_01.wav` | 新解锁的重生点激活 |
+| `sfx_gp_checkpoint_active_02.wav` | 已解锁重生点再次激活 |
 | `sfx_gp_block_drop_01.wav` | 方块放下 / 落地 |
 | `sfx_gp_paint_acquire_initial.wav` | 首次获得上色能力（同路径修订） |
 | `sfx_gp_paint_select.wav` | 选色 / 上色确认 |
@@ -160,6 +162,8 @@ GameAudioService.PlaySound(clip, volumeScale: 1f);
 | 植物机关生长 / 燃烧 | `sfx_gp_plant_grow` / `sfx_gp_plant_burn` | `PlaySound` |
 | 岩浆遇水冷却 | `sfx_gp_lava_cool` | `PlaySound` 冷却触发时 |
 | 拾取 / 放下方块 | `sfx_gp_block_pickup_01` / `sfx_gp_block_drop_01` | `PlaySound` |
+| 新解锁重生点 | `sfx_gp_checkpoint_active_01` | 解锁并激活新重生点时播放 |
+| 已解锁重生点 | `sfx_gp_checkpoint_active_02` | 再次激活已解锁重生点时播放 |
 | 获得上色能力 | `sfx_gp_paint_acquire_initial` | `PlaySound` |
 | 选色 / 上色完成 | `sfx_gp_paint_select` / `sfx_gp_block_paint_complete` | `PlaySound` |
 | 操作确认 / 拒绝 | `sfx_notice_confirm` / `sfx_notice_deny` | `PlaySound` |
