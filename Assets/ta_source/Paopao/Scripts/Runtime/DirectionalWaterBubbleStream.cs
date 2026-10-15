@@ -18,7 +18,8 @@ namespace Project.WaterBubbles
         {
             Up = 0,
             Left = 1,
-            Right = 2
+            Right = 2,
+            Down = 3
         }
 
         private const float MinLengthInCells = 1f;
@@ -416,6 +417,8 @@ namespace Project.WaterBubbles
                         return Vector2.left;
                     case FlowDirection.Right:
                         return Vector2.right;
+                    case FlowDirection.Down:
+                        return Vector2.down;
                     default:
                         return Vector2.up;
                 }

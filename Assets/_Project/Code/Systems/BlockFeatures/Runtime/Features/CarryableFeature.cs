@@ -1,4 +1,5 @@
 using Project.ColorBlocks;
+using Project.Audio;
 using Project.InputAbstraction;
 using Project.Player;
 using TMPro;
@@ -145,6 +146,7 @@ namespace Project.BlockFeatures
             }
 
             carryPlayer = player;
+            AudioCuePlayer.Play(AudioCueIds.BlockPickup);
             return true;
         }
 
@@ -166,8 +168,10 @@ namespace Project.BlockFeatures
 
             if (motionParticipant != null && !motionParticipant.CanPlaceCarriedAt(worldPosition)) return false;
 
-            return carryMotion != null &&
-                   carryMotion.BeginDrop(worldPosition);
+            bool started = carryMotion != null &&
+                           carryMotion.BeginDrop(worldPosition);
+            if (started) AudioCuePlayer.Play(AudioCueIds.BlockDrop);
+            return started;
         }
 
         public bool BeginCarryReset(IPlayerCarryHost player)

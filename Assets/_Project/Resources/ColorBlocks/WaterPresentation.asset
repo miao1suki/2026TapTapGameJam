@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83c743251f94400fa6bc3c2a661ffda1, type: 3}
+  m_Name: WaterPresentation
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BlockFeatures.WaterPresentationSettings
+  tiles:
+  - {fileID: 21300000, guid: 25078f5a7a1bb1148905936d9c927d71, type: 3}
+  - {fileID: 21300000, guid: 23f9553168d60d94da038df408c63316, type: 3}
+  - {fileID: 21300000, guid: 9ed8fb791d4a28a4080c1b6884ed18b4, type: 3}
+  tileMaterials:
+  - {fileID: 2100000, guid: 51ef26dc1c2a4b66bca8d652efad6001, type: 2}
+  - {fileID: 2100000, guid: 51ef26dc1c2a4b66bca8d652efad6002, type: 2}
+  - {fileID: 2100000, guid: 51ef26dc1c2a4b66bca8d652efad6003, type: 2}
+  filterMaterial: {fileID: 2100000, guid: bde5328a7ad14ff29288239840803a0b, type: 2}
+  bubblePrefab: {fileID: 5389669744870251895, guid: 7ae5458a6f3f3e74fbe6c7d5149cc36e, type: 3}
+  bubbleMaterial: {fileID: 2100000, guid: 51ef26dc1c2a4b66bca8d652efad6004, type: 2}

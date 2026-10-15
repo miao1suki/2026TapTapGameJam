@@ -5,6 +5,8 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 # 颜色大洗牌玩法与组件规范
 
+> 2026-10-15 玩法水体表现：WaterVisualFeature默认使用Resources/ColorBlocks/WaterPresentation，按相邻体积生成TA水面/水中/水下面片与前方透明折射板，不生成旧InteractiveWater顶板/波纹。水、气泡均用ColorAppearanceManager共享材质渐显，保留blue Layer；PixelWaterRefraction专属通道不限定Water Layer，并纳入HSV遮罩。定向水流自动四向气泡，浮力柱沿上方连通水域向上，普通水域不加流向气泡。旧waterPrefab等字段只作缺配置后备。此条覆盖下文旧水体默认生成说明。接入先读Docs/Agent/Integration/GAMEPLAY_PIXEL_WATER_API.md。
+
 > 2026-10-14 标注图水流：DirectionalCurrentFeature 增加向上/向下，保留 Left=0、Right=1 的旧存档值，Up=2、Down=3；定向水流仍是同一固定功能的方向参数，不是水域/气泡柱形态切换。编辑器规划参数必须持久保存方向。
 
 > 2026-10-13 曲柄拆分：CrankPlatformFeature 保留脚本身份但只做独立曲柄控制器，不带平台子物体、不写平台 Transform。新建曲柄配套创建独立 Red_CrankLift，消费者 MovingPlatformFeature.BindCrank 以自己的作者位置、路线/距离跟随共享进度；支持一曲柄多平台，任一载人加快整组下降，曲柄绑定基座通电制动。规划绑定 crankOwnerId 是持久对象 ID，合并要求相同绑定，合并/解除及增量重建重新解析，不存 instanceID。曲柄不可合并，平台合并成一个模型与一套逻辑。此条覆盖下文曲柄自带升降平台的旧说明。

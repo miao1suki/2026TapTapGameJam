@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DG.Tweening;
+using Project.Audio;
 using Project.InputAbstraction;
 using Project.StartMenu;
 using Project.UI;
@@ -919,6 +920,7 @@ namespace Project.GameFlow
             }
 
             EscWheelOption option = options[currentIndex];
+            AudioCuePlayer.PlayUiConfirm();
             switch (option.action)
             {
                 case EscWheelAction.Continue:
@@ -1209,7 +1211,11 @@ namespace Project.GameFlow
             }
 
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => action?.Invoke());
+            button.onClick.AddListener(() =>
+            {
+                AudioCuePlayer.PlayUiConfirm();
+                action?.Invoke();
+            });
         }
 
         private void LoadSlot(string slotId)

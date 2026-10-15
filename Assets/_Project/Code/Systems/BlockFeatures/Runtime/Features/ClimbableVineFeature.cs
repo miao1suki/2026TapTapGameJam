@@ -783,6 +783,7 @@ namespace Project.BlockFeatures
             if (Root != this) { Root.BeginBurn(); return; }
             if (burning || burned || !CanRunFeature) return;
             burning = true;
+            AudioCuePlayer.Play(AudioCueIds.PlantBurn);
             if (growthRoutine != null) StopCoroutine(growthRoutine);
             growthRoutine = null;
             burnRoutine = StartCoroutine(BurnRootRoutine());

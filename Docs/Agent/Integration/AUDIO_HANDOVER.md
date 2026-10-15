@@ -128,7 +128,7 @@
 
 ## 运行时接入
 
-`AudioCatalog.asset` 把 48 个音频登记为 40 个 Cue。代码不直接依赖文件名，而是传入稳定的 `AudioCueIds`：
+`AudioCatalog.asset` 把 60 个音频登记为 52 个 Cue。代码不直接依赖文件名，而是传入稳定的 `AudioCueIds`：
 
 ```csharp
 using Project.Audio;
@@ -161,15 +161,25 @@ AudioCuePlayer.StopLoop(this);
 | 玩家攀爬藤蔓 | `sfx.player.climb_vine` | `PlayerController` 按当前攀附源区分，重生/退出清理 |
 | 按钮踩下 / 回弹 | `sfx.button.press` / `sfx.button.release` | `DoorButton` / `ButtonLockFeature` 实际状态变化，持续压住不重复播放 |
 | 玩家入水 / 出水 | `sfx.player.water_enter` / `sfx.player.water_exit` | `PlayerController` 水域状态切换 |
-| 玩家死亡 / 重生 | `sfx.player.die` / `sfx.player.respawn` | `PlayerController.OnDied` / `RequestRespawn` |
+| 玩家死亡 / 重生 | `sfx.player.die` / `sfx.player.respawn` | `PlayerController.EnterDeath` 统一死亡入口去重，兼容生命值事件和直接调用；`RequestRespawn` 播放重生声 |
 | 开关门 | `sfx.door.open` / `sfx.door.close` | `DoorController` 状态切换 |
 | 曲柄转动 | `sfx.crank.turn_loop` | `CrankPlatformFeature` 实际向上转动时循环，达到上限/松开/制动/重置停止 |
+| 曲柄停止 | `sfx.machine.stop` | 实际转动后的松开、上限或制动播放一次；房间重置和卸载仅静默清理循环 |
 | 蒸汽喷发 / 持续 | `sfx.steam.burst` / `sfx.steam.loop` | `WaterVisualFeature.TriggerSteamReaction` |
 | 藤蔓生长 | `sfx.plant.grow` | `ClimbableVineFeature.GrowTo` |
 | 获得颜色 | `sfx.paint.acquire` | `ColorKeyPickup.OnCollectionStarted` |
 | 选色 / 上色成功 / 非法 | `sfx.paint.select` / `sfx.paint.complete` / `sfx.notice.deny` | `PlayerColorWheel` |
+| 搬起 / 放下方块 | `sfx.block.pickup` / `sfx.block.drop` | `CarryableFeature` 成功开始搬起/放下时；非法或重复请求、R复原不播放 |
+| 基座通电 / 断电 | `sfx.machine.start` / `sfx.machine.stop` | `MechanismBaseFeature` 检测红色能源后的实际状态边沿；持续接触不重复播放 |
+| 平台实际移动 | `sfx.platform.move_loop` | `MovingPlatformFeature.FixedUpdate` 按实际世界位移判断，兼容信号/自动/曲柄；停留、阻挡、断电、重置、禁用停止 |
+| 气泡柱实际托举玩家 | `sfx.bubble.loop` | `BuoyancyColumnFeature` 按有浮力玩家集合启停；与蒸汽使用不同owner，离开、死亡、重置、禁用清理 |
+| 浮力进入 / 退出 | `sfx.player.buoy_enter` / `sfx.player.buoy_exit` | `PlayerController.SetBuoyancy` 总体浮力源由无到有/由有到无；持续设置同一源不重复 |
+| 至少6格下落后落地 | `sfx.player.impact` | `PlayerController` 真实落地分支，读取实际格尺寸；排除本次途中游泳/攀爬，不新增伤害 |
+| 藤蔓 / 植物障碍燃烧 | `sfx.plant.burn` | `ClimbableVineFeature.BeginBurn` 每根一次；`PlantObstacleFeature.BreakObstacle` 成功时 |
+| 岩浆冷却 / 玩家碰岩浆 | `sfx.lava.cool` | `LavaHazardFeature` 成功蓝色替换、存活玩家进入；无敌期间进入也有声音，Stay仅在保护结束真正死亡时补播，死亡后不重复 |
+| 主菜单 / 暂停菜单确认 | `sfx.notice.confirm` | `AudioCuePlayer.PlayUiConfirm` 同帧去重；`GameAudioService`、`StartMenuController`、`EscMenuController` 共用，按键/手柄/触摸走同一入口 |
 
-环境区域音、非菜单 BGM 切换和 UI 点击目前仍保留占位音，等关卡正式进入区域规划后再接。
+环境区域音及其余 BGM 暂不自动播放。解谜完成与发现秘密等待实际触发器；水中步行4个变体已登记但尚无独立浅水步行事件，游泳使用游泳Cue。本轮不改变玩家默认复活/R后的2秒无敌。
 
 ### 资源使用建议（未全部接线）
 
@@ -211,7 +221,7 @@ AudioCuePlayer.StopLoop(this);
 - [ ] 循环点确认：四个未标注的环境声，以及 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop`、`sfx_gp_platform_move_loop`、`sfx_gp_bubble_loop`
 - [ ] 打包检查：确认音频压缩设置与项目打包配置一致
 - [x] 播放接口扩展：随机变体、按 owner 循环、停止/查询循环音接口已加入 `AudioManager` 和 `GameAudioService`
-- [x] Cue 目录：48 个音频登记为 40 个 Cue，Music / SoundEffect 通道已分流；新补齐资源已导入，按钮压力与藤蔓攀爬已接线
+- [x] Cue 目录：60 个音频登记为 52 个 Cue，Music / SoundEffect 通道已分流；新增12个玩法/确认Cue已接线
 - [x] 运行时接线：玩家动作、门、曲柄、蒸汽、藤蔓、颜色钥匙与选色反馈已接入
 
 ## 未解决问题

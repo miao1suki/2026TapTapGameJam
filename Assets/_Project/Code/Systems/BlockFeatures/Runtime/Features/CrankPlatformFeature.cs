@@ -120,7 +120,7 @@ namespace Project.BlockFeatures
 
         protected override void OnDetach()
         {
-            StopCrankAudio();
+            StopCrankAudio(false);
             engaged = false;
             progress = 0f;
             playingClip = null;
@@ -172,7 +172,7 @@ namespace Project.BlockFeatures
 
         protected override void OnResetForRoom()
         {
-            StopCrankAudio();
+            StopCrankAudio(false);
             engaged = false;
             progress = 0f;
             idleStartedAt = Time.time;
@@ -275,7 +275,7 @@ namespace Project.BlockFeatures
             animator.Play(clip.name, 0, 0f);
         }
 
-        private void StopCrankAudio()
+        private void StopCrankAudio(bool playStopSound = true)
         {
             if (!crankAudioPlaying)
             {
@@ -284,6 +284,10 @@ namespace Project.BlockFeatures
 
             crankAudioPlaying = false;
             AudioCuePlayer.StopLoop(this);
+            if (playStopSound)
+            {
+                AudioCuePlayer.Play(AudioCueIds.MachineStop);
+            }
         }
     }
 }

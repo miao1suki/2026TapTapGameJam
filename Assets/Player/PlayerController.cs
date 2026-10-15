@@ -523,6 +523,7 @@ namespace Project.Player
             }
 
             int id = source.GetInstanceID();
+            bool wasBuoyant = waterBuoyancies.Count > 0;
             if (targetRiseSpeed <= 0f)
             {
                 waterBuoyancies.Remove(id);
@@ -531,6 +532,9 @@ namespace Project.Player
             {
                 waterBuoyancies[id] = targetRiseSpeed;
             }
+            bool isBuoyant = waterBuoyancies.Count > 0;
+            if (wasBuoyant != isBuoyant)
+                AudioCuePlayer.Play(isBuoyant ? AudioCueIds.PlayerBuoyEnter : AudioCueIds.PlayerBuoyExit);
         }
 
         public void SetClimbSpeedMultiplier(
@@ -1826,6 +1830,8 @@ namespace Project.Player
                     lastLandingDownwardSpeed = Mathf.Max(
                         0f,
                         -velocityAtStepStart);
+                    if (ShouldPlayLandingImpact())
+                        AudioCuePlayer.Play(AudioCueIds.PlayerImpact);
                     if (ShouldDieFromFall(
                             lastLandingFallDistance,
                             count))
@@ -2115,6 +2121,14 @@ namespace Project.Player
             motor.linearVelocity = velocity;
         }
 
+        private bool ShouldPlayLandingImpact()
+        {
+            // Physics may already have resolved vertical speed to zero on the contact frame.
+            return lastLandingFallDistance + .001f >= 6f * gridCellWorldSize &&
+                   !enteredWaterDuringFall && !enteredClimbDuringFall &&
+                   !IsSwimming && !IsClimbing;
+        }
+
         private bool ShouldDieFromFall(
             float fallDistance,
             int groundHitCount)
@@ -2188,6 +2202,7 @@ namespace Project.Player
             bool wasLocked = IsControlLocked;
             deathPosition = transform.position;
             dead = true;
+            AudioCuePlayer.Play(AudioCueIds.PlayerDie);
             float presentationSeconds = spritePresentation != null && spritePresentation.isActiveAndEnabled
                 ? spritePresentation.DeathAnimationDuration : 0f;
             float timelineSeconds = deathAction != null && deathAction.Timeline != null
@@ -2398,7 +2413,6 @@ namespace Project.Player
 
         private void OnDied()
         {
-            AudioCuePlayer.Play(AudioCueIds.PlayerDie);
             EnterDeath();
         }
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project.Player;
+using Project.Audio;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -143,6 +144,7 @@ namespace Project.BlockFeatures
         private float progress;
         private int travelDirection = 1;
         private float holdRemaining;
+        private bool movementAudioPlaying;
         public bool IsMoving => CanRunFeature && active;
         public Vector3 PreviewStart => Application.isPlaying ? transform.parent != null ? transform.parent.TransformPoint(origin) : origin : transform.position;
         public Vector3 PreviewEnd => PreviewStart + (transform.parent != null ? transform.parent.TransformVector(GetOffset()) : GetOffset());
@@ -173,6 +175,7 @@ namespace Project.BlockFeatures
 
         protected override void OnDetach()
         {
+            SetMovementAudio(false);
             UnsubscribeControls();
             if (crankController != null) crankController.UnregisterPlatform(this);
             carriedPlayers.Clear();
@@ -186,7 +189,16 @@ namespace Project.BlockFeatures
 
         private void FixedUpdate()
         {
+            Vector3 before = transform.position;
             if (CanRunFeature) TickMotion(Time.fixedDeltaTime);
+            SetMovementAudio(CanRunFeature && (transform.position - before).sqrMagnitude > .00000001f);
+        }
+
+        private void SetMovementAudio(bool moving)
+        {
+            if (movementAudioPlaying == moving) return;
+            movementAudioPlaying = moving && AudioCuePlayer.PlayLoop(AudioCueIds.PlatformMoveLoop, this, .65f);
+            if (!moving) AudioManager.Existing?.StopLoop(this);
         }
 
         private void TickMotion(float deltaTime)
@@ -257,6 +269,7 @@ namespace Project.BlockFeatures
 
         protected override void OnResetForRoom()
         {
+            SetMovementAudio(false);
             progress = 0f;
             travelDirection = 1;
             holdRemaining = 0f;

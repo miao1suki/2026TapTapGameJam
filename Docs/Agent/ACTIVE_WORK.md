@@ -1,5 +1,21 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-15 玩法水体接入TA像素面片与定向气泡
+
+- 已接入：WaterVisualFeature 的默认表现切换为 TA 水面/水中/水下分区，保留原游泳、水流、浮力、蒸汽、解锁与区域重置；定向水流和浮力柱自动添加对应流向气泡，排序为水后片→角色/气泡→透明扰动板。水面按相邻水族体积识别，合并块按格平铺，水和气泡继续共享蓝色透明渐显材质。
+- 不重建或覆盖用户Pick场景、字体、插件与本机设置；既有音频修改一并验证后按本次授权提交整合。Unity版本不变。当前分支codex/audio/gameplay-cues，远程main基线dbbb803，fetch后无新提交。
+- 验证：132/132 EditMode（Library/PixelWaterFinalTests.xml）；PC实际GPU/Play44项、Mobile渲染配置实际GPU/Play46项通过，覆盖水下玩家可见/折射、真实HSV白化、水面邻接、四向泡泡、渐显、区域重置和8次连续重置无重复捕获板。正式Gaming21项检查通过，9个水族体积全量自动接线、3组气泡、无旧模拟水。日志Library/PixelWaterGameplayGpuFinal.log、PixelWaterGameplayMobileGpu.log、PixelWaterGaming.log。移动管线为桌面GPU验证，未进行本轮Android真机/重新打包，不声明完整关卡人工验收。
+- UI Toolkit配置Inspector、策划说明GAMEPLAY_PIXEL_WATER、接入API、系统索引及颜色Skill均已更新。主窗口不重载关卡，Pick文件SHA256保持ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35。
+- 新水体接入后的41项音频Play回归通过（Library/PixelWaterAudioRegression.log），包含死亡与曲柄停止声。本次将此前仅本地的音频接线与水体表现一起整合至main并推送；旧记录中的“不提交推送”为当时状态。
+
+## 2026-10-15 剩余玩法音效接线
+
+- 补齐死亡统一入口与曲柄停止声：`EnterDeath` 死亡防重后播放PlayerDie，OnDied不再额外播放；曲柄循环转停止时播放MachineStop，重置/卸载静默清理。隔离实际Play检查41项通过，日志Library/DeathCrankAudioPlay.log；仍仅本地修改，不提交推送。
+- 分支：`codex/audio/gameplay-cues`；已完成本地接入，不提交推送。接入搬运、平台、基座、气泡/浮力、植物燃烧、岩浆冷却/玩家触岩浆、UI确认；撞击仅用于下落至少6格的落地。解谜完成/发现秘密仍待触发点。
+- 保留复活默认2秒无敌，不改输入、关卡存档或用户Pick/字体/插件设置；循环声遵守停止、禁用、区域重置清理。
+- 新增12个Cue，目录60个Clip引用/52个Cue。UI确认同帧去重；气泡禁用退出回调禁止重新注册浮力/声音。落地判定兼容物理接触帧竖直速度已归零，不新增落差伤害。
+- 隔离125项EditMode、32项真实Play检查通过；主项目Pick SHA256仍ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35。未重新打包/人工试听，水体既存禁用SetParent日志不在本轮修复范围。接入表AUDIO_HANDOVER与开发说明GAMEPLAY_AUDIO已更新。
+
 ## 2026-10-15 按钮压力统一与最新进度整合
 
 - 用户授权合并并推送本轮及此前已完成的美术、隐私入口进度；保留本地 Pick、字体缓存、插件和本机设置，不纳入提交。

@@ -181,5 +181,17 @@ namespace Project.Audio
         public const string PaintComplete = "sfx.paint.complete";
         public const string CrankTurnLoop = "sfx.crank.turn_loop";
         public const string NoticeDeny = "sfx.notice.deny";
+        public const string NoticeConfirm = "sfx.notice.confirm";
+        public const string BlockPickup = "sfx.block.pickup";
+        public const string BlockDrop = "sfx.block.drop";
+        public const string PlatformMoveLoop = "sfx.platform.move_loop";
+        public const string MachineStart = "sfx.machine.start";
+        public const string MachineStop = "sfx.machine.stop";
+        public const string BubbleLoop = "sfx.bubble.loop";
+        public const string PlayerBuoyEnter = "sfx.player.buoy_enter";
+        public const string PlayerBuoyExit = "sfx.player.buoy_exit";
+        public const string PlayerImpact = "sfx.player.impact";
+        public const string PlantBurn = "sfx.plant.burn";
+        public const string LavaCool = "sfx.lava.cool";
     }
 }

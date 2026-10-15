@@ -138,7 +138,9 @@ namespace InteractiveWater
                 var lights = frameData.Get<UniversalLightData>();
                 var drawing = RenderingUtils.CreateDrawingSettings(
                     ShaderTags, rendering, camera, lights, SortingCriteria.CommonTransparent);
-                var filtering = new FilteringSettings(RenderQueueRange.transparent, 1 << 4);
+                // The unique LightMode isolates the panels. Allow color-group Layers so HSV
+                // can still identify the refraction area without replacing its Unity Layer.
+                var filtering = new FilteringSettings(RenderQueueRange.transparent);
                 var waterPanels = graph.CreateRendererList(
                     new RendererListParams(rendering.cullResults, drawing, filtering));
 

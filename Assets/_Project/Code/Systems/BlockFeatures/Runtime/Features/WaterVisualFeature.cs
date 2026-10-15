@@ -19,25 +19,35 @@ namespace Project.BlockFeatures
     public abstract class WaterVisualFeature : PlayerContactFeature
     {
         [BlockParameter(
-            Label = "水体预制体",
-            Group = "水体表现",
+            Label = "旧版后备预制体",
+            Group = "旧版水体后备",
             Order = 0,
-            Tooltip = "留空时使用 ColorCatalog 的 blueWaterPrefab。")]
+            Tooltip = "仅在像素水体配置缺失时使用；留空时取颜色目录的后备资源。")]
         [SerializeField] private GameObject waterPrefab;
 
         [BlockParameter(
             Label = "水体本地偏移",
-            Group = "水体表现",
+            Group = "旧版水体后备",
             Order = 1)]
         [SerializeField] private Vector3 waterLocalOffset =
             Vector3.zero;
 
         [BlockParameter(
             Label = "水体缩放",
-            Group = "水体表现",
+            Group = "旧版水体后备",
             Order = 2)]
         [SerializeField] private Vector3 waterScale =
             Vector3.one;
+
+        [BlockParameter(Label = "显示流向气泡", Group = "流向气泡", Order = 0)]
+        [SerializeField] private bool showFlowBubbles = true;
+        [BlockParameter(Label = "气泡密度（排/格）", Group = "流向气泡", Order = 1)]
+        [SerializeField, Range(.2f, 3f)] private float flowBubbleDensity = 1.1f;
+        [BlockParameter(Label = "气泡速度（格/秒）", Group = "流向气泡", Order = 2)]
+        [SerializeField, Range(.1f, 5f)] private float flowBubbleSpeed = 1.4f;
+        public bool ShowFlowBubbles => showFlowBubbles;
+        public float FlowBubbleDensity => flowBubbleDensity;
+        public float FlowBubbleSpeed => flowBubbleSpeed;
 
         [BlockParameter(
             Label = "蒸汽触发方式",
@@ -83,6 +93,7 @@ namespace Project.BlockFeatures
 
         private InteractiveWater.InteractiveWater waterVisual;
         private GameObject spawnedWaterVisual;
+        private GameplayWaterPresentation pixelWaterVisual;
         private readonly Collider[] steamOverlapBuffer =
             new Collider[32];
         private readonly HashSet<int> steamPlayerIds =
@@ -91,7 +102,7 @@ namespace Project.BlockFeatures
         private float steamRemainingSeconds;
         private bool steamContinuous;
 
-        protected bool HasWaterVisual => waterVisual != null;
+        protected bool HasWaterVisual => waterVisual != null || pixelWaterVisual != null;
         protected bool IsBlueUnlocked()
         {
             ColorRuntimeService service =
@@ -155,6 +166,15 @@ namespace Project.BlockFeatures
 
         private void ResolveWaterVisual()
         {
+            WaterPresentationSettings settings = WaterPresentationSettings.Load();
+            if (settings != null && settings.IsValid)
+            {
+                spawnedWaterVisual = new GameObject("Pixel Water Visual");
+                spawnedWaterVisual.transform.SetParent(transform, false);
+                pixelWaterVisual = spawnedWaterVisual.AddComponent<GameplayWaterPresentation>();
+                pixelWaterVisual.Initialize(this, settings);
+                return;
+            }
             waterVisual =
                 GetComponentInChildren<InteractiveWater.InteractiveWater>(
                     true);
@@ -218,12 +238,14 @@ namespace Project.BlockFeatures
             {
                 // Destroy is deferred. A same-frame reattach must not discover this retired instance.
                 spawnedWaterVisual.SetActive(false);
-                spawnedWaterVisual.transform.SetParent(null, true);
+                // Keep the inactive child attached until deferred destruction; changing parents
+                // during a hierarchy disable is rejected by Unity.
                 Destroy(spawnedWaterVisual);
                 spawnedWaterVisual = null;
             }
 
             waterVisual = null;
+            pixelWaterVisual = null;
         }
 
         private void TriggerSteamReaction()
