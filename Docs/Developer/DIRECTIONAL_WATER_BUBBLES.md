@@ -6,11 +6,11 @@
 
 | 方向 | 预制体 |
 |---|---|
-| 向上 | `Assets/_Project/Content/WaterBubbles/Prefabs/DirectionalBubble_Up.prefab` |
-| 向左 | `Assets/_Project/Content/WaterBubbles/Prefabs/DirectionalBubble_Left.prefab` |
-| 向右 | `Assets/_Project/Content/WaterBubbles/Prefabs/DirectionalBubble_Right.prefab` |
+| 向上 | `Assets/ta_source/Paopao/Prefabs/DirectionalBubble_Up.prefab` |
+| 向左 | `Assets/ta_source/Paopao/Prefabs/DirectionalBubble_Left.prefab` |
+| 向右 | `Assets/ta_source/Paopao/Prefabs/DirectionalBubble_Right.prefab` |
 
-六张小图来自 `Assets/ta_source/Paopao/0-5 (3).png` 里的空心泡泡序列，按原像素裁出并作为 Point 过滤、16 PPU、无压缩的 Sprite 导入。原图不修改；生成预设只依赖 `Content/WaterBubbles/Sprites` 下的六张裁切图。
+运行脚本位于 `Assets/ta_source/Paopao/Scripts/Runtime/DirectionalWaterBubbleStream.cs`。六张小图来自 `Assets/ta_source/Paopao/0-5 (3).png` 里的空心泡泡序列，按原像素裁出并作为 Point 过滤、16 PPU、无压缩的 Sprite 导入。原图不修改；生成预设只依赖 `Assets/ta_source/Paopao/Sprites` 下的六张裁切图。
 
 ## 调整与运行
 
@@ -27,4 +27,4 @@
 
 ## 独立测试场景
 
-`Assets/_Project/Development/WaterBubbles/WaterBubblesTest.unity` 并列展示上、左、右三种预制体，各自设置为 6 格；点击 Play 可观察泡泡从小到大沿流向循环的效果。此场景不属于正式场景流程，也没有加入 Build Settings。
+`Assets/ta_source/Paopao/TestScene/WaterBubblesTest.unity` 并列展示上、左、右三种预制体，各自设置为 6 格；点击 Play 可观察泡泡从小到大沿流向循环的效果。此场景不属于正式场景流程，也没有加入 Build Settings。

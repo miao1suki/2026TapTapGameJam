@@ -3,9 +3,9 @@
 ## 定向水流泡泡辅助特效
 
 - 日期：2026-10-15；负责人：Codex；工作分支：`codex/codex/pixel-water-fit-bounds`。
-- 范围：从 `Assets/ta_source/Paopao/0-5 (3).png` 原样提取六个逐级变大的空心泡泡像素图，制作视觉专用的定向泡泡流脚本、向上/向左/向右三个预制体，以及 `Assets/_Project/Development/WaterBubbles/WaterBubblesTest.unity` 独立测试场景。长度以格为单位提供 1–10 的线性 Inspector 滑杆；粒子沿方向循环移动，源头较小、尾端较大，并有轻微速度、横向位置和缩放随机性。
-- 边界：新增资源收纳至 `Assets/_Project/Content/WaterBubbles`；不修改正式场景、`Blue_WaterWay`、水流施力与碰撞逻辑或源图；测试场景只展示三种视觉预设。
-- 状态：完成。Unity 6000.3.12f1 当前编辑器已导入预设与测试场景，`Project.WaterBubbles.Runtime` 程序集编译成功；静态核对通过三种方向值、每个预设 16 个 SpriteRenderer、零碰撞体、测试场景引用三种预设及六张 Sprite 的 Point/16 PPU/无压缩导入设置。未在 Play 模式人工复核动画或打包。
+- 范围：从 `Assets/ta_source/Paopao/0-5 (3).png` 原样提取六个逐级变大的空心泡泡像素图，制作视觉专用的定向泡泡流脚本、向上/向左/向右三个预制体，以及 `Assets/ta_source/Paopao/TestScene/WaterBubblesTest.unity` 独立测试场景。长度以格为单位提供 1–10 的线性 Inspector 滑杆；粒子沿方向循环移动，源头较小、尾端较大，并有轻微速度、横向位置和缩放随机性。
+- 边界：所有新增运行资产（脚本、预制体、切片图和测试场景）收纳在 `Assets/ta_source/Paopao`；不修改正式场景、`Blue_WaterWay`、水流施力与碰撞逻辑或源图；测试场景只展示三种视觉预设。功能说明仍按仓库规范保存在 `Docs/Developer`。
+- 状态：完成。运行资产已统一归档至 `Assets/ta_source/Paopao`，移动保留原 `.meta` GUID；Unity 6000.3.12f1 当前编辑器此前已成功编译 `Project.WaterBubbles.Runtime` 程序集。静态核对通过三种方向值、每个预设 16 个 SpriteRenderer、零碰撞体、测试场景引用三种预设及六张 Sprite 的 Point/16 PPU/无压缩导入设置。未在 Play 模式人工复核动画或打包。
 
 ## 像素水面双面片预制体
 
