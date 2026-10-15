@@ -151,7 +151,7 @@ namespace Project.BlockFeatures
         public bool IsBurning => burning;
         public bool IsBurned => burned;
         public GreenHookMotionMode GreenHookMotionMode =>
-            GreenHookMotionMode.PullPlayer;
+            GreenHookMotionMode.Swing;
         public Transform GreenHookTransform => Root.transform;
         public bool CanBeGreenHooked(GameObject actor) =>
             CanRunFeature && !Root.burning && !Root.burned;
@@ -201,7 +201,6 @@ namespace Project.BlockFeatures
             if (vineVisual != null)
             {
                 vineVisual.SetActive(false);
-                vineVisual.transform.SetParent(null, true);
                 Destroy(vineVisual);
             }
             vineVisual = null;

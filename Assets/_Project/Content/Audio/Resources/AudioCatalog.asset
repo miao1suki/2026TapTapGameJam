@@ -385,3 +385,17 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 789cebd4b53688e44b77b310f3da9b74, type: 3}
     volumeScale: 0.85
     loop: 0
+  - cueId: sfx.checkpoint.unlock
+    displayName: Checkpoint First Activation
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 5bd7360e9d6051a468c38357fc3265c0, type: 3}
+    volumeScale: 1
+    loop: 0
+  - cueId: sfx.checkpoint.switch
+    displayName: Checkpoint Reactivation
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 186cbd78ed1283241a066adf4252fedb, type: 3}
+    volumeScale: 1
+    loop: 0

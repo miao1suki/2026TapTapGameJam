@@ -9,7 +9,7 @@ namespace Project.Pickups
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PickupFlightAnimator : MonoBehaviour,
-        Project.Items.IDropItemCollectionAnimation
+        Project.Items.IDropItemCollectionAnimation, Project.Items.IDropItemCollectionReset
     {
         [SerializeField] private Transform visual;
         [SerializeField] private Collider pickupCollider;
@@ -36,6 +36,9 @@ namespace Project.Pickups
         private Vector3 recoilDirection;
         private Vector3 lastCenter;
         private Action completion;
+        private bool capturedVisual;
+        private Vector3 initialVisualPosition, initialVisualScale;
+        private Quaternion initialVisualRotation;
 
         public bool IsPlaying { get; private set; }
 
@@ -50,6 +53,32 @@ namespace Project.Pickups
                 visual = transform.childCount > 0 ? transform.GetChild(0) : transform;
             if (pickupCollider == null)
                 pickupCollider = GetComponent<Collider>();
+            CaptureVisual();
+        }
+
+        private void CaptureVisual()
+        {
+            if (capturedVisual || visual == null) return;
+            capturedVisual = true;
+            initialVisualPosition = visual.localPosition;
+            initialVisualRotation = visual.localRotation;
+            initialVisualScale = visual.localScale;
+        }
+
+        public void ResetCollectionAnimation()
+        {
+            OnDisable();
+            if (visual == null) visual = transform.childCount > 0 ? transform.GetChild(0) : transform;
+            CaptureVisual();
+            if (visual == null) return;
+            if (visual != transform)
+            {
+                visual.localPosition = initialVisualPosition;
+                visual.localRotation = initialVisualRotation;
+                visual.localScale = initialVisualScale;
+                visual.gameObject.SetActive(true);
+            }
+            foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true)) renderer.enabled = true;
         }
 
         /// <summary>

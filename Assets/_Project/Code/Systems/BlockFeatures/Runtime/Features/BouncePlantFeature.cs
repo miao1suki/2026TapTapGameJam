@@ -27,7 +27,7 @@ namespace Project.BlockFeatures
         [SerializeField, Min(.05f)] private float minTriggerInterval = .15f;
         public bool IsBounceSurfaceAvailable => CanRunFeature;
         public GreenHookMotionMode GreenHookMotionMode =>
-            GreenHookMotionMode.PullPlayer;
+            GreenHookMotionMode.Swing;
         public Transform GreenHookTransform => transform;
         public bool CanBeGreenHooked(GameObject actor) =>
             CanRunFeature;

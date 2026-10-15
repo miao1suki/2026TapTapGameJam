@@ -105,6 +105,19 @@ namespace Project.Player
                 return;
             }
 
+            if (target.IsGreenHookActive)
+            {
+                if (Time.timeScale > 0f && target.CanDriveGreenHook)
+                {
+                    if (resetTriggered) target.RequestRespawn();
+                    else target.UpdateGreenHookInput(GameInput.ReadVector2(InputActionId.Move),
+                        GameInput.WasTriggeredThisFrame(InputActionId.Jump) ||
+                        GameInput.WasTriggeredThisFrame(InputActionId.Interact));
+                }
+                target.SetJumpHeld(false);
+                return;
+            }
+
             if (resetTriggered && Time.timeScale > 0f &&
                 (!target.IsControlLocked || target.IsCarryPreparing || target.IsCarryDropAnimating || target.IsCarryResetAnimating))
             {

@@ -24,12 +24,12 @@ namespace PlanningEditorPrototype
                 ? "Assets/" + full.Substring(root.Length).Replace('\\', '/') : null;
         }
 
-        internal static void SaveSceneCopy(Scene scene, PlanningDocument document)
+        internal static void SaveSceneCopy(Scene scene, PlanningDocument document, string persistentJson = null)
         {
             string path = SceneSavePath(scene.path);
             if (path == null) { pendingDocuments[scene.handle] = document; return; }
             VerifySceneCopy(scene, document);
-            PlanningSaveStore.Save(path, document);
+            PlanningSaveStore.Save(path, document, persistentJson);
             ObserveSceneCopy(scene);
             pendingDocuments.Remove(scene.handle);
         }

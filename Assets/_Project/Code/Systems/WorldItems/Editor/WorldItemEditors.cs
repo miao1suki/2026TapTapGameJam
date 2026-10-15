@@ -1,0 +1,60 @@
+using Project.Editor;
+using Project.GreenHook;
+using Project.Items;
+using UnityEditor;
+using UnityEngine.UIElements;
+
+namespace Project.WorldItems.Editor
+{
+    [CustomEditor(typeof(CollectiblePickup)), CanEditMultipleObjects]
+    public sealed class CollectiblePickupEditor : UnityEditor.Editor
+    {
+        public override VisualElement CreateInspectorGUI()
+        {
+            var root = ProjectInspectorUtility.CreateRoot(serializedObject);
+            root.Add(ProjectInspectorUtility.CreateTitle("收集品"));
+            root.Add(ProjectInspectorUtility.CreateScriptField(serializedObject));
+            var settings = ProjectInspectorUtility.CreateFoldout("收集设置");
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "itemId", "收集品编号"));
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "amount", "数量"));
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "onCollected", "收集完成"));
+            root.Add(settings);
+            var state = ProjectInspectorUtility.CreateFoldout("运行状态", false);
+            state.Add(ProjectInspectorUtility.CreateReadOnlyRow("状态", () => target is CollectiblePickup item ?
+                item.CollectionFinished ? "已收集" : item.CollectionRequested ? "收集中" : "可收集" : "未选择"));
+            root.Add(state);
+            root.Add(ProjectInspectorUtility.CreateHelp("接触玩家后播放拾取动画，可被三色方块和移动中的基座推动。重生或离开所属区域时复原。"));
+            ProjectInspectorUtility.Bind(root, serializedObject); return root;
+        }
+    }
+
+    [CustomEditor(typeof(NeutralSpike)), CanEditMultipleObjects]
+    public sealed class NeutralSpikeEditor : UnityEditor.Editor
+    {
+        public override VisualElement CreateInspectorGUI()
+        {
+            var root = ProjectInspectorUtility.CreateRoot(serializedObject);
+            root.Add(ProjectInspectorUtility.CreateTitle("无色尖刺"));
+            root.Add(ProjectInspectorUtility.CreateScriptField(serializedObject));
+            root.Add(ProjectInspectorUtility.CreateHelp("触碰尖刺区域使玩家死亡；复活保护期间不生效。不接收染色，不改变底层墙壁碰撞。方向由预制体设置。"));
+            return root;
+        }
+    }
+
+    [CustomEditor(typeof(GreenHookBodyMotion)), CanEditMultipleObjects]
+    public sealed class GreenHookBodyMotionEditor : UnityEditor.Editor
+    {
+        public override VisualElement CreateInspectorGUI()
+        {
+            var root = ProjectInspectorUtility.CreateRoot(serializedObject);
+            root.Add(ProjectInspectorUtility.CreateTitle("钩子物理运动"));
+            root.Add(ProjectInspectorUtility.CreateScriptField(serializedObject));
+            var state = ProjectInspectorUtility.CreateFoldout("运行状态");
+            state.Add(ProjectInspectorUtility.CreateReadOnlyRow("运动状态", () =>
+                target is GreenHookBodyMotion motion && motion.IsHookMoving ? "钩子接管" : "原始物理配置"));
+            root.Add(state);
+            root.Add(ProjectInspectorUtility.CreateHelp("仅在绿钩子拉取期间接管刚体；结束后恢复重力、约束和运动类型。"));
+            return root;
+        }
+    }
+}

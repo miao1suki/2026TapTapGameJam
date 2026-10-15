@@ -115,8 +115,8 @@ namespace PlanningEditorPrototype
             var canvas = new PlanningCanvas(); canvas.SetDocument(doc); canvas.SetPalette(palette); canvas.SetMode(PlanningCanvasMode.Assembly);
             var images = (Dictionary<string, UnityEngine.UIElements.Image>)typeof(PlanningCanvas)
                 .GetField("detailPreviewImages", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(canvas);
-            Check(canvas.IndexOf(images.First(p => p.Key.StartsWith("water:")).Value) <
-                canvas.IndexOf(images.First(p => p.Key.StartsWith("item:")).Value), "preview draws water below foreground regardless of authoring order");
+            Check(canvas.IndexOf(images.First(p => p.Key.StartsWith("water:")).Value.parent) <
+                canvas.IndexOf(images.First(p => p.Key.StartsWith("item:")).Value.parent), "preview draws water below foreground regardless of authoring order");
             var erase = typeof(PlanningCanvas).GetMethod("EraseAssemblyBox", BindingFlags.Instance | BindingFlags.NonPublic);
             erase.Invoke(canvas, new object[] { Vector2Int.zero });
             Check(room.boxes.Count == 1 && room.boxes[0].id == waterBox.id, "default erase removes foreground, not water");
@@ -187,6 +187,14 @@ namespace PlanningEditorPrototype
                     Check(((PlanningDocument)Get("document")).rooms.Count == 2, "custom editor redo import");
                     var paired = PlanningSharedSaveUtility.SceneSavePath(UnityEngine.SceneManagement.SceneManager.GetActiveScene().path);
                     Check(File.Exists(paired) && PlanningSaveStore.Read(paired).rooms.Count == 2, "workspace changes persist paired save");
+                    ((PlanningDocument)Get("document")).name = "Deferred save probe";
+                    Invoke("OnCanvasDocumentChanged");
+                    Check((bool)Get("documentSavePending") && PlanningSaveStore.Read(paired).name != "Deferred save probe",
+                        "editing records history without immediate disk write");
+                    Set("documentSaveAt", 0d); Set("nextLevelEditorRefreshTime", 0d);
+                    Invoke("Tick");
+                    Check(!(bool)Get("documentSavePending") && PlanningSaveStore.Read(paired).name == "Deferred save probe",
+                        "idle tick flushes pending document to shared save");
                     RectInt exported = default;
                     canvas.ExportAreaSelected += rect => exported = rect;
                     canvas.BeginAreaExport();

@@ -5,7 +5,8 @@ namespace Project.GreenHook
     public enum GreenHookMotionMode
     {
         PullTarget = 0,
-        PullPlayer = 1
+        PullPlayer = 1,
+        Swing = 2
     }
 
     public enum GreenHookLaunchResult
@@ -22,5 +23,13 @@ namespace Project.GreenHook
         GreenHookMotionMode GreenHookMotionMode { get; }
         Transform GreenHookTransform { get; }
         bool CanBeGreenHooked(GameObject actor);
+    }
+
+    public interface IGreenHookMotion
+    {
+        Vector3 GreenHookPosition { get; }
+        void BeginGreenHookPull();
+        void SetGreenHookVelocity(Vector3 velocity);
+        void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separationDistance);
     }
 }

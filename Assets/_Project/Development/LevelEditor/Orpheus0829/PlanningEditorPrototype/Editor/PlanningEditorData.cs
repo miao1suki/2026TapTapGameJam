@@ -104,13 +104,17 @@ namespace PlanningEditorPrototype
         public PlanningBox PersistentClone()
         {
             var copy = Clone();
-            copy.componentOverrides = Project.LevelEditor.Editor.LevelEditorComponentOverrideUtility.PersistentValues(componentOverrides);
-            for (int i = 0; i < copy.mergeParts.Count; i++)
-            {
-                var part = FromPersistentJson(copy.mergeParts[i]);
-                if (part != null) copy.mergeParts[i] = JsonUtility.ToJson(part.PersistentClone());
-            }
+            copy.PreparePersistentValues();
             return copy;
+        }
+        internal void PreparePersistentValues()
+        {
+            componentOverrides = Project.LevelEditor.Editor.LevelEditorComponentOverrideUtility.PersistentValues(componentOverrides);
+            for (int i = 0; i < mergeParts.Count; i++)
+            {
+                var part = FromPersistentJson(mergeParts[i]);
+                if (part != null) { part.PreparePersistentValues(); mergeParts[i] = JsonUtility.ToJson(part); }
+            }
         }
         [NonSerialized] public LevelEditorPlacedBlock sceneBlock;
 
@@ -1459,9 +1463,9 @@ namespace PlanningEditorPrototype
             var copy = JsonUtility.FromJson<PlanningDocument>(JsonUtility.ToJson(this));
             copy.Normalize();
             foreach (var room in copy.rooms)
-                for (int i = 0; i < room.boxes.Count; i++) room.boxes[i] = room.boxes[i].PersistentClone();
+                for (int i = 0; i < room.boxes.Count; i++) room.boxes[i].PreparePersistentValues();
             for (int i = 0; i < copy.assemblyPatches.Count; i++)
-                copy.assemblyPatches[i] = copy.assemblyPatches[i].PersistentClone();
+                copy.assemblyPatches[i].PreparePersistentValues();
             return JsonUtility.ToJson(copy, prettyPrint);
         }
 

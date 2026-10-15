@@ -543,6 +543,22 @@ namespace Project.Player
             highestAirPosition = transform.position.y;
         }
 
+        public bool CanDriveGreenHook => !dead && greenHookMotionSource != null && lockDepth == 1;
+
+        public void UpdateGreenHookInput(Vector2 move, bool release)
+        {
+            if (CanDriveGreenHook && greenHookMotionSource is GreenHookAbility hook)
+                hook.DriveInput(move, release);
+        }
+
+        public void RestoreGreenHookReleaseVelocity(Vector2 velocity)
+        {
+            if (dead || greenHookMotionSource != null || motor == null) return;
+            motor.linearVelocity = new Vector3(velocity.x, velocity.y, 0f);
+            highestAirPosition = motor.position.y;
+            airborneSince = Time.time;
+        }
+
         public void SetGreenHookPullVelocity(
             Component source,
             Vector2 velocity)
@@ -2005,6 +2021,9 @@ namespace Project.Player
                 Vector2 kickVelocity = GetClimbKickVelocity(climbInward, nearTop);
                 velocity.x = kickVelocity.x;
                 velocity.y = kickVelocity.y;
+                // A contact trigger may remain active after the detach timer expires.
+                // Keep the ascending kick ballistic instead of re-entering climbing mid-air.
+                protectBounceFromClimbing = true;
                 climbKickFallProtectionUntil = Time.time + climbKickFallProtectionSeconds;
                 velocity.z = 0f;
                 jumpUntil = groundedUntil = -1f;

@@ -130,7 +130,7 @@
 
 ## 运行时接入
 
-`AudioCatalog.asset` 把 60 个音频登记为 52 个 Cue。代码不直接依赖文件名，而是传入稳定的 `AudioCueIds`：
+`AudioCatalog.asset` 把 60 个音频登记为 54 个 Cue。代码不直接依赖文件名，而是传入稳定的 `AudioCueIds`：
 
 ```csharp
 using Project.Audio;
@@ -164,6 +164,7 @@ AudioCuePlayer.StopLoop(this);
 | 按钮踩下 / 回弹 | `sfx.button.press` / `sfx.button.release` | `DoorButton` / `ButtonLockFeature` 实际状态变化，持续压住不重复播放 |
 | 玩家入水 / 出水 | `sfx.player.water_enter` / `sfx.player.water_exit` | `PlayerController` 水域状态切换 |
 | 玩家死亡 / 重生 | `sfx.player.die` / `sfx.player.respawn` | `PlayerController.EnterDeath` 统一死亡入口去重，兼容生命值事件和直接调用；`RequestRespawn` 播放重生声 |
+| 重生点首次解锁 / 切换至已解锁点 | `sfx.checkpoint.unlock` / `sfx.checkpoint.switch` | `RespawnAnchorFeature.ActivateForPlayer`；依据激活前历史状态选声，重复绑定当前点不播放，链式补激活其他点静默，R 原地重生不播放 |
 | 开关门 | `sfx.door.open` / `sfx.door.close` | `DoorController` 状态切换 |
 | 曲柄转动 | `sfx.crank.turn_loop` | `CrankPlatformFeature` 实际向上转动时循环，达到上限/松开/制动/重置停止 |
 | 曲柄停止 | `sfx.machine.stop` | 实际转动后的松开、上限或制动播放一次；房间重置和卸载仅静默清理循环 |
@@ -225,7 +226,7 @@ AudioCuePlayer.StopLoop(this);
 - [ ] 循环点确认：四个未标注的环境声，以及 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop`、`sfx_gp_platform_move_loop`、`sfx_gp_bubble_loop`
 - [ ] 打包检查：确认音频压缩设置与项目打包配置一致
 - [x] 播放接口扩展：随机变体、按 owner 循环、停止/查询循环音接口已加入 `AudioManager` 和 `GameAudioService`
-- [x] Cue 目录：60 个音频登记为 52 个 Cue，Music / SoundEffect 通道已分流；新增12个玩法/确认Cue已接线
+- [x] Cue 目录：60 个音频登记为 54 个 Cue，Music / SoundEffect 通道已分流；玩法/确认及两种重生点激活 Cue 已接线
 - [x] 运行时接线：玩家动作、门、曲柄、蒸汽、藤蔓、颜色钥匙与选色反馈已接入
 
 ## 未解决问题

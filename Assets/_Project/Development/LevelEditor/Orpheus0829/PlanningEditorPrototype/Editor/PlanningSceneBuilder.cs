@@ -137,7 +137,11 @@ namespace PlanningEditorPrototype
         internal static bool TryApplyDocument(
             PlanningDocument document,
             out string message)
+            => TryApplyDocument(document, out message, out _);
+
+        internal static bool TryApplyDocument(PlanningDocument document, out string message, out string persistentJson)
         {
+            persistentJson = null;
             if (document == null)
             {
                 message = "世界图里还没有房间。";
@@ -156,17 +160,19 @@ namespace PlanningEditorPrototype
                 true,
                 true,
                 out message);
-            if (success) StorePlanningDocument(document);
+            if (success) persistentJson = StorePlanningDocument(document);
             return success;
         }
 
-        private static void StorePlanningDocument(PlanningDocument document)
+        private static string StorePlanningDocument(PlanningDocument document)
         {
             var manager = FindGeneratedRoot(MapRootName)?.GetComponent<Project.Rooms.RoomLifecycleManager>();
-            if (manager == null) return;
-            manager.Configure(new List<Project.Rooms.RoomRegion>(manager.Regions), CellSize, document.ToPersistentJson());
+            if (manager == null) return null;
+            string persistentJson = document.ToPersistentJson(true);
+            manager.Configure(new List<Project.Rooms.RoomRegion>(manager.Regions), CellSize, persistentJson);
             EditorUtility.SetDirty(manager);
-            PlanningSharedSaveUtility.SaveSceneCopy(manager.gameObject.scene, document);
+            PlanningSharedSaveUtility.SaveSceneCopy(manager.gameObject.scene, document, persistentJson);
+            return persistentJson;
         }
 
         internal static GameObject FindRoomContainer(PlanningRoom room)

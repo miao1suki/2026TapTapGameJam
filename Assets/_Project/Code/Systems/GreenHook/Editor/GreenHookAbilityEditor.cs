@@ -59,21 +59,9 @@ namespace Project.GreenHook.Editor
                 "contactPadding",
                 "接触停止距离",
                 "碰撞体距离小于该值后视为已经接触。"));
-            movement.Add(ProjectInspectorUtility.CreateProperty(
-                serializedObject,
-                "blockedSeconds",
-                "受阻确认时间",
-                "持续没有接近目标超过该时间后结束钩子。"));
-            movement.Add(ProjectInspectorUtility.CreateProperty(
-                serializedObject,
-                "minimumProgress",
-                "有效位移量",
-                "单个物理步内物体或玩家至少移动该距离，低于该值会累计受阻时间。"));
-            movement.Add(ProjectInspectorUtility.CreateProperty(
-                serializedObject,
-                "maximumPullSeconds",
-                "最长拉动时间",
-                "0 表示不设置时间上限。"));
+            movement.Add(ProjectInspectorUtility.CreateHelp("挂接后保持连接，跳跃或交互键主动脱钩。物体受阻时拉近玩家；绿色固定物体作为荡绳锚点。"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingAcceleration", "荡绳加速度"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingSpeedLimit", "荡绳速度上限"));
             root.Add(movement);
 
             Foldout visual = ProjectInspectorUtility.CreateFoldout(
@@ -125,7 +113,7 @@ namespace Project.GreenHook.Editor
                 "钩子状态",
                 () => ability == null
                     ? "无"
-                    : ability.IsExtending
+                    : ability.IsSwinging ? "荡绳中" : ability.IsExtending
                         ? "伸出中"
                         : ability.IsRetracting
                             ? "收回中"

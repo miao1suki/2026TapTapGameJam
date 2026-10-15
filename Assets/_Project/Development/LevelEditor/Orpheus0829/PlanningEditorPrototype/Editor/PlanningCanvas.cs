@@ -315,6 +315,9 @@ namespace PlanningEditorPrototype
 
         public void RefreshPreviewImages()
         {
+            if (pendingBoxPreviews.Count == 0) return;
+            foreach (string id in pendingBoxPreviews) boxPreviewCache.Remove(id);
+            pendingBoxPreviews.Clear();
             UpdateDetailPreviewImages();
         }
 
@@ -730,6 +733,7 @@ namespace PlanningEditorPrototype
             RegisterCallback<GeometryChangedEvent>(
                 _ => UpdateDetailPreviewImages());
             RegisterCallback<DetachFromPanelEvent>(_ => CancelPointerInteraction());
+            BuildPreviewLayers();
             BuildPlayerOverlay();
             schedule.Execute(RefreshRegionLabels).Every(100);
         }
@@ -1092,6 +1096,7 @@ namespace PlanningEditorPrototype
             worldSelection.Clear();
             regionSelection.Clear();
             document = value;
+            InvalidatePreviewData();
             document?.Normalize();
             EnsureInitialCrankPlatforms();
             selectedRoomId = document != null && document.rooms.Count > 0
@@ -1213,6 +1218,7 @@ namespace PlanningEditorPrototype
 
         public void SetDetailEntry(string entryId, string entryName)
         {
+            if (detailEntryId == entryId && detailEntryName == entryName && string.IsNullOrEmpty(detailPropEntryId)) return;
             detailEntryId = entryId;
             detailEntryName = entryName;
             detailPropEntryId = string.Empty;
@@ -1223,6 +1229,7 @@ namespace PlanningEditorPrototype
 
         public void SetDetailProp(string entryId, string entryName)
         {
+            if (detailPropEntryId == entryId && detailPropEntryName == entryName && string.IsNullOrEmpty(detailEntryId)) return;
             detailPropEntryId = entryId;
             detailPropEntryName = entryName;
             detailEntryId = string.Empty;
@@ -1233,7 +1240,10 @@ namespace PlanningEditorPrototype
 
         public void SetPalette(LevelEditorPalette value)
         {
+            if (palette == value && previewPaletteRevision == LevelEditorState.PaletteRevision) return;
             palette = value;
+            previewPaletteRevision = LevelEditorState.PaletteRevision;
+            InvalidatePreviewData();
             EnsureInitialCrankPlatforms();
             UpdateDetailPreviewImages();
             MarkDirtyRepaint();
@@ -1918,60 +1928,11 @@ namespace PlanningEditorPrototype
             }
 
             var active = new HashSet<string>();
-            foreach (PlanningBox box in room.boxes.OrderBy(b => PlanningWaterLayerUtility.IsWater(b, palette) ? 0 : 1))
+            foreach (PlanningBox box in room.boxes)
             {
-                Texture2D preview = GetBoxPreview(box);
-                bool fallback = preview == null;
-                preview ??= Texture2D.whiteTexture;
-
-                for (int y = box.y;
-                     y < box.y + (box.isMerged ? 1 : box.height);
-                     y++)
-                {
-                    for (int x = box.x;
-                         x < box.x + (box.isMerged ? 1 : box.width);
-                         x++)
-                    {
-                        string key = box.id + ":" + x + ":" + y;
-                        if (!detailPreviewImages.TryGetValue(
-                                key,
-                                out Image image))
-                        {
-                            image = new Image
-                            {
-                                pickingMode = PickingMode.Ignore,
-                                scaleMode = ScaleMode.StretchToFill
-                            };
-                            image.style.position = Position.Absolute;
-                            Add(image);
-                            detailPreviewImages[key] = image;
-                        }
-
-                        Rect rect = CellRect(x, y, box.isMerged ? box.width : 1, box.isMerged ? box.height : 1);
-                        image.image = preview;
-                        image.tintColor = fallback ? ColorForBox(box) :
-                            mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
-                        image.style.left = rect.x;
-                        image.style.top = rect.y;
-                        image.style.width = rect.width;
-                        image.style.height = rect.height;
-                        image.style.display = DisplayStyle.Flex;
-                        if (PlanningWaterLayerUtility.IsWater(box, palette)) image.tintColor = new Color(.65f, .85f, 1f, .55f);
-                        image.BringToFront();
-                        active.Add(key);
-                    }
-                }
+                AddPreviewImage(box, new RectInt(box.x, box.y, box.width, box.height), active);
             }
-
-            foreach (var pair in detailPreviewImages)
-            {
-                if (!active.Contains(pair.Key))
-                {
-                    pair.Value.style.display = DisplayStyle.None;
-                }
-            }
-
-            OrderPreviewLayers();
+            RemoveUnusedPreviewImages(active);
             UpdatePlayerOverlay();
         }
 
@@ -2046,14 +2007,7 @@ namespace PlanningEditorPrototype
                     active);
             }
 
-            foreach (var pair in detailPreviewImages)
-            {
-                if (!active.Contains(pair.Key))
-                {
-                    pair.Value.style.display = DisplayStyle.None;
-                }
-            }
-            OrderPreviewLayers();
+            RemoveUnusedPreviewImages(active);
         }
 
         private void AddPreviewImage(
@@ -2061,13 +2015,22 @@ namespace PlanningEditorPrototype
             RectInt rect,
             HashSet<string> active)
         {
+            if (!PreviewVisible(rect)) return;
             Texture2D preview = GetBoxPreview(box);
             bool fallback = preview == null;
             preview ??= Texture2D.whiteTexture;
-
-            for (int y = rect.y; y < (box.isMerged ? rect.y+1 : rect.yMax); y++)
+            bool water = PlanningWaterLayerUtility.IsWater(box, palette);
+            VisualElement layer = water ? waterPreviewLayer : objectPreviewLayer;
+            int startX = rect.x, startY = rect.y, endX = rect.xMax, endY = rect.yMax;
+            if (!box.isMerged && contentRect.width > 0f && contentRect.height > 0f)
             {
-                for (int x = rect.x; x < (box.isMerged ? rect.x+1 : rect.xMax); x++)
+                Vector2 topLeft = ScreenToWorld(contentRect.min), bottomRight = ScreenToWorld(contentRect.max);
+                startX = Mathf.Max(startX, Mathf.FloorToInt(topLeft.x)); startY = Mathf.Max(startY, Mathf.FloorToInt(topLeft.y));
+                endX = Mathf.Min(endX, Mathf.CeilToInt(bottomRight.x)); endY = Mathf.Min(endY, Mathf.CeilToInt(bottomRight.y));
+            }
+            for (int y = startY; y < (box.isMerged ? startY+1 : endY); y++)
+            {
+                for (int x = startX; x < (box.isMerged ? startX+1 : endX); x++)
                 {
                     string key = box.id + ":" + x + ":" + y;
                     if (!detailPreviewImages.TryGetValue(
@@ -2080,9 +2043,10 @@ namespace PlanningEditorPrototype
                             scaleMode = ScaleMode.StretchToFill
                         };
                         image.style.position = Position.Absolute;
-                        Add(image);
+                        layer.Add(image);
                         detailPreviewImages[key] = image;
                     }
+                    else if (image.parent != layer) layer.Add(image);
 
                     Rect cellRect = CellRect(x, y, box.isMerged ? rect.width : 1, box.isMerged ? rect.height : 1);
                     image.image = preview;
@@ -2093,8 +2057,7 @@ namespace PlanningEditorPrototype
                     image.style.width = cellRect.width;
                     image.style.height = cellRect.height;
                     image.style.display = DisplayStyle.Flex;
-                    if (PlanningWaterLayerUtility.IsWater(box, palette)) image.tintColor = new Color(.65f, .85f, 1f, .55f);
-                    image.BringToFront();
+                    if (water) image.tintColor = new Color(.65f, .85f, 1f, .55f);
                     active.Add(key);
                 }
             }
@@ -2442,6 +2405,14 @@ namespace PlanningEditorPrototype
 
         private Texture2D GetBoxPreview(PlanningBox box)
         {
+            if (boxPreviewCache.TryGetValue(box.id, out var cached)) return cached;
+            Texture2D preview = ResolveBoxPreview(box);
+            boxPreviewCache[box.id] = preview;
+            return preview;
+        }
+
+        private Texture2D ResolveBoxPreview(PlanningBox box)
+        {
             if (!string.IsNullOrEmpty(box.propEntryId) ||
                 !string.IsNullOrEmpty(box.propEntryName))
             {
@@ -2460,6 +2431,7 @@ namespace PlanningEditorPrototype
 
                 Texture2D assetPreview =
                     AssetPreview.GetAssetPreview(prop.Prefab);
+                if (assetPreview == null) pendingBoxPreviews.Add(box.id);
                 return assetPreview != null
                     ? assetPreview
                     : AssetPreview.GetMiniThumbnail(prop.Prefab);
@@ -3572,6 +3544,7 @@ namespace PlanningEditorPrototype
             }
 
             document?.RefreshConnectorPaths();
+            InvalidatePreviewData();
             EnsureInitialCrankPlatforms();
             if (document != null) PlanningDoorUtility.RemoveOrphanButtons(document);
             PlanningMechanismUtility.RemoveMissingLinks(AllBoxes().Select(item => item.box));
