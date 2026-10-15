@@ -32,7 +32,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 
 颜色表现：`ColorAppearanceManager` 集中管理基础方块、水、藤蔓的透明交接与共享运行时材质；`HSVColorFadeManager.SetHsv` 只控制全屏饱和度/白化，不控制物体和材质。水体采用 URP Unlit 透明网格 Shader，深度为实例材质参数。接入见 [COLOR_BLOCKS_API.md](Integration/COLOR_BLOCKS_API.md)；隔离水体 GPU 渐显/重置检查通过，完整 Game 与打包待验收，2026-10-10 已整合至 main。
 
-定向水流泡泡表现：`Assets/ta_source/Paopao/Scripts/Runtime/DirectionalWaterBubbleStream.cs` 与同目录资源提供向上、向左、向右三种视觉预制体，泡泡从源头小尺寸沿方向移动并逐渐增大；长度 1–10 格、密度 0.2–1.5 个/格、流宽 0–4 格、流速 0.1–5 格/秒均可线性调节；不施力、不接管水流玩法。沙盒在 `Assets/ta_source/Paopao/TestScene/WaterBubblesTest.unity`，使用说明见 [DIRECTIONAL_WATER_BUBBLES.md](../Developer/DIRECTIONAL_WATER_BUBBLES.md)。
+定向水流泡泡表现：`Assets/ta_source/Paopao/Scripts/Runtime/DirectionalWaterBubbleStream.cs` 与同目录资源提供向上、向左、向右三种视觉预制体，泡泡从源头小尺寸沿方向移动并逐渐增大；长度 1–10 格、流向排数 0.2–3 排/格、每个位置 1–6 颗及交错程度 0–1、流宽 0–4 格、流速 0.1–5 格/秒均可调；不施力、不接管水流玩法。沙盒在 `Assets/ta_source/Paopao/TestScene/WaterBubblesTest.unity`，使用说明见 [DIRECTIONAL_WATER_BUBBLES.md](../Developer/DIRECTIONAL_WATER_BUBBLES.md)。
 
 | 系统 | 源码 | 状态 |
 |---|---|---|

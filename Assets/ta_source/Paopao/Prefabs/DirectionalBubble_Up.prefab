@@ -883,7 +883,9 @@ MonoBehaviour:
   lengthInCells: 6
   worldUnitsPerCell: 1
   bubbleDensityPerCell: 1.25
-  streamWidthInCells: 0.32
+  bubblesPerFlowSlice: 2
+  interweaveAmount: 0.65
+  streamWidthInCells: 0.8
   speedInCellsPerSecond: 1.1
   minimumScale: 0.72
   maximumScale: 1
