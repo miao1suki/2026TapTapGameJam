@@ -1,0 +1,14 @@
+{
+  "name": "Project.WaterBubbles.Runtime",
+  "rootNamespace": "Project.WaterBubbles",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

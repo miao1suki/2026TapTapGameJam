@@ -89,27 +89,108 @@ namespace InteractiveWater
             }
         }
 
+        /// <summary>
+        /// Copies the completed transparent scene and redraws only pixel-water filter panels.
+        /// The panels sample this copy while writing into camera color, so the sampled image
+        /// includes the character and the water's rear sprite without sampling the panel itself.
+        /// </summary>
+        private sealed class PixelWaterRefractionPass : ScriptableRenderPass
+        {
+            private static readonly int SceneColorId = Shader.PropertyToID("_PixelWaterSceneColor");
+            private static readonly List<ShaderTagId> ShaderTags = new()
+            {
+                new ShaderTagId("PixelWaterRefraction")
+            };
+
+            private sealed class PassData
+            {
+                public TextureHandle sceneColor;
+                public RendererListHandle waterPanels;
+            }
+
+            public PixelWaterRefractionPass()
+            {
+                renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
+                requiresIntermediateTexture = true;
+            }
+
+            public override void RecordRenderGraph(RenderGraph graph, ContextContainer frameData)
+            {
+                var resources = frameData.Get<UniversalResourceData>();
+                if (resources.isActiveTargetBackBuffer) return;
+
+                var source = resources.activeColorTexture;
+                if (!source.IsValid()) return;
+
+                var sceneColorDescription = graph.GetTextureDesc(source);
+                sceneColorDescription.name = "Pixel Water Scene Color";
+                sceneColorDescription.depthBufferBits = DepthBits.None;
+                sceneColorDescription.msaaSamples = MSAASamples.None;
+                sceneColorDescription.clearBuffer = false;
+                sceneColorDescription.useMipMap = false;
+                sceneColorDescription.autoGenerateMips = false;
+                var sceneColor = graph.CreateTexture(sceneColorDescription);
+                graph.AddBlitPass(source, sceneColor, Vector2.one, Vector2.zero,
+                    passName: "Copy scene for pixel water refraction");
+
+                var rendering = frameData.Get<UniversalRenderingData>();
+                var camera = frameData.Get<UniversalCameraData>();
+                var lights = frameData.Get<UniversalLightData>();
+                var drawing = RenderingUtils.CreateDrawingSettings(
+                    ShaderTags, rendering, camera, lights, SortingCriteria.CommonTransparent);
+                var filtering = new FilteringSettings(RenderQueueRange.transparent, 1 << 4);
+                var waterPanels = graph.CreateRendererList(
+                    new RendererListParams(rendering.cullResults, drawing, filtering));
+
+                using (var builder = graph.AddRasterRenderPass<PassData>(
+                    "Draw pixel water refraction filters", out var passData))
+                {
+                    passData.sceneColor = sceneColor;
+                    passData.waterPanels = waterPanels;
+                    builder.UseTexture(sceneColor, AccessFlags.Read);
+                    builder.UseRendererList(waterPanels);
+                    builder.SetRenderAttachment(source, 0, AccessFlags.ReadWrite);
+                    if (resources.activeDepthTexture.IsValid())
+                        builder.SetRenderAttachmentDepth(resources.activeDepthTexture, AccessFlags.Read);
+                    builder.AllowGlobalStateModification(true);
+                    builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
+                    {
+                        context.cmd.SetGlobalTexture(SceneColorId, data.sceneColor);
+                        context.cmd.DrawRendererList(data.waterPanels);
+                    });
+                }
+            }
+        }
+
         private CapturePass pass;
+        private PixelWaterRefractionPass pixelWaterPass;
 
         public override void Create()
         {
             var shader = albedoShader ? albedoShader : Shader.Find("Hidden/InteractiveWater/UnderwaterAlbedo");
             pass = shader ? new CapturePass(shader, captureLayers) : null;
+            pixelWaterPass = new PixelWaterRefractionPass();
         }
 
         protected override void Dispose(bool disposing)
         {
             pass = null;
+            pixelWaterPass = null;
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (pass == null) return;
             var camera = renderingData.cameraData.camera;
-            if (renderingData.cameraData.cameraType == CameraType.SceneView ||
-                (renderingData.cameraData.cameraType == CameraType.Game &&
-                 camera && camera.CompareTag("MainCamera") && InteractiveWater.ActiveInstanceCount > 0))
+            var isSceneView = renderingData.cameraData.cameraType == CameraType.SceneView;
+            var isMainGameCamera = renderingData.cameraData.cameraType == CameraType.Game &&
+                                   camera && camera.CompareTag("MainCamera");
+
+            if (pass != null && (isSceneView || (isMainGameCamera && InteractiveWater.ActiveInstanceCount > 0)))
                 renderer.EnqueuePass(pass);
+
+            if (pixelWaterPass != null && WaterUnderlayCaptureRequester.HasActiveRequests &&
+                (isSceneView || isMainGameCamera))
+                renderer.EnqueuePass(pixelWaterPass);
         }
     }
 }

@@ -38,6 +38,8 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 
 颜色表现：`ColorAppearanceManager` 集中管理基础方块、水、藤蔓的透明交接与共享运行时材质；`HSVColorFadeManager.SetHsv` 只控制全屏饱和度/白化，不控制物体和材质。水体采用 URP Unlit 透明网格 Shader，深度为实例材质参数。接入见 [COLOR_BLOCKS_API.md](Integration/COLOR_BLOCKS_API.md)；隔离水体 GPU 渐显/重置检查通过，完整 Game 与打包待验收，2026-10-10 已整合至 main。
 
+定向水流泡泡表现：`Assets/ta_source/Paopao/Scripts/Runtime/DirectionalWaterBubbleStream.cs` 与同目录资源提供向上、向左、向右三种视觉预制体，泡泡从源头小尺寸沿方向移动并逐渐增大，长度可在 1–10 格线性调节；不施力、不接管水流玩法。沙盒在 `Assets/ta_source/Paopao/TestScene/WaterBubblesTest.unity`，使用说明见 [DIRECTIONAL_WATER_BUBBLES.md](../Developer/DIRECTIONAL_WATER_BUBBLES.md)。
+
 | 系统 | 源码 | 状态 |
 |---|---|---|
 | 非颜色门与绑定按钮 | `Assets/_Project/Code/Systems/Mechanisms` | 道具门 1×2、自动/追加专属按钮、玩家踩踏按钮、全部按下后开门、Timeline 镜头；不使用 E、不接收颜色交互。见 Integration/DOOR_API.md 与 Developer/DOORS.md |
@@ -63,7 +65,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；世界图/详情/装配图、方块/道具栏目、玩家贴纸与拖拽同步、矩形多选与单块合并、组件模板、贴画、场景生成和本地存档；方块栏目只做地图墙壁，颜色玩法物体全部走道具栏目；图定义、交互按钮和交互目录同步已移除 |
 | 固定颜色物体/钥匙/房间重置 | `Assets/_Project/Code/Systems/ColorBlocks` | `ColorObject`、`ColorRuntimeService`、钥匙解锁、房间重置和 HSV 渐变；`Content/ColorBlocks/Prefabs` 使用 `Red_*`、`Blue_*`、`Green_*` 道具预制体；Universal_Block 白色代理及直接接色链仍保留，通用旧交互图退役 |
 | 颜色物玩法组件 | `Assets/_Project/Code/Systems/Interactions` | 旧交互图及无调用 AnchorPoint 已退役；固定功能组件位于 `BlockFeatures/Runtime/Features`，米黄色重生点使用 RespawnAnchorFeature，不依赖旧 AnchorPoint |
-| 交互水面 | `Assets/ta_source/InteractiveWater` | TA 独立预制体保留独立波纹/反射资源；当前已无颜色系统自动生成水体，后续由具体水源、水流和气泡柱组件按固定形态接入 |
+| 交互水面 | `Assets/ta_source/InteractiveWater`、`Assets/ta_source/Newwater/Prefabs` | TA 独立预制体保留独立波纹/反射资源；像素水提供三种双面片预制体和独立材质，透明物体后复制相机颜色、专用绘制折射滤镜，噪波只改片元屏幕采样 UV；每个实例可运行时调整滤镜色彩、折射强度和时间变化，前片自动贴合后片宽高/变换。场景和接入方式见 `Developer/PIXEL_WATER.md`、`Integration/PIXEL_WATER_API.md`；无颜色系统自动生成水体 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。
 开发者：[运行与场景](../Developer/GAME_FLOW.md)、[贴画与切片](../Developer/SURFACE_TILES.md)、[旧成就与Timeline](../Developer/LEGACY_SYSTEMS.md)。

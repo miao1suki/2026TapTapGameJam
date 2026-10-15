@@ -40,6 +40,19 @@
 - 主菜单鼠标兜底：`StartMenuController` 在 MainMenu 存活期间每帧检查并恢复 `Cursor.visible = true`、`Cursor.lockState = CursorLockMode.None`，避免从染色或玩法阶段返回后鼠标仍被隐藏。
 - 清理：SharedGameUI 里旧的 `LoadingScreen/LoadingBadge/Label` 整棵树已物理删除，`GameUiRouter.loadingScreen` 置空，避免右下角蓝色旧加载字与统一过渡重叠。
 - 验证：StartMenu Runtime、GameFlow Runtime、GameFlow Editor、编辑器测试、PlayMode 测试与 Assembly-CSharp 静态编译通过；实际 Unity 画面与手感待用户验收。
+## 定向水流泡泡辅助特效
+
+- 日期：2026-10-15；负责人：Codex；工作分支：`codex/codex/pixel-water-fit-bounds`。
+- 范围：从 `Assets/ta_source/Paopao/0-5 (3).png` 原样提取六个逐级变大的空心泡泡像素图，制作视觉专用的定向泡泡流脚本、向上/向左/向右三个预制体，以及 `Assets/ta_source/Paopao/TestScene/WaterBubblesTest.unity` 独立测试场景。长度以格为单位提供 1–10 的线性 Inspector 滑杆；粒子沿方向循环移动，源头较小、尾端较大，并有轻微速度、横向位置和缩放随机性。
+- 边界：所有新增运行资产（脚本、预制体、切片图和测试场景）收纳在 `Assets/ta_source/Paopao`；不修改正式场景、`Blue_WaterWay`、水流施力与碰撞逻辑或源图；测试场景只展示三种视觉预设。功能说明仍按仓库规范保存在 `Docs/Developer`。
+- 状态：完成。运行资产已统一归档至 `Assets/ta_source/Paopao`，移动保留原 `.meta` GUID；Unity 6000.3.12f1 当前编辑器此前已成功编译 `Project.WaterBubbles.Runtime` 程序集。静态核对通过三种方向值、每个预设 16 个 SpriteRenderer、零碰撞体、测试场景引用三种预设及六张 Sprite 的 Point/16 PPU/无压缩导入设置。未在 Play 模式人工复核动画或打包。
+
+## 像素水面双面片预制体
+
+- 日期：2026-10-15；负责人：Codex；交付分支：`codex/codex/pixel-water-fit-bounds`。
+- 范围：从 `Assets/ta_source/Newwater/0-5 (3).png` 切出表面、主体和内部三种蓝色像素水片，分别制作三个可复用预制体及独立测试场景。每个预制体只有后方像素水图面片和前方透明扰动面片；前片保持方正固定，只以片元噪波偏移屏幕采样 UV 折射后方画面，不做顶点位移。正交与 3D 视图均通过 Z 间距和排序层确定后片/角色/前片顺序。
+- 边界：保留源图原样；不接入 InteractiveWater 顶面、碰撞波纹、反射相机或原有颜色水体玩法，不修改正式场景或 ProjectSettings/URP 配置。旧交互水保留透明物体前的底图捕获；像素水新增透明物体后的相机颜色复制和专用折射绘制，以确保角色进入取样画面。三个预设分别使用独立材质参数；`PixelWaterFilterController` 将前片的正交投影范围与后片 Sprite 自动对齐；已确认三张切片底部各有一行全透明像素，前片边界配置为去掉该行并上移半像素，避免滤镜板突出。控制器还提供运行时颜色、折射强度、噪波流速和时间变化幅度/速度调节。
+- 状态：三个预制体、独立材质、片元折射 Shader 和自动移动角色的沙盒场景已创建；新增长期同步面片和运行时折射参数控制器，源图保留不变。静态核对确认每个预制体恰有两张视觉面片、Shader 顶点路径不位移、噪波只改变屏幕采样坐标，三种前片各引用一份独立材质。Unity 6000.3.12f1 已安装，但本轮批处理启动因 LicensingClient 通道拒绝连接以退出码 1 结束，未得到导入或编译结果；透明折射和角色穿越的 Game 视图效果尚未验收。最新交接修正了底部透明像素造成的滤镜板突出：三种前片裁去一行透明边并上移半像素，与水图可见范围对齐。按用户最新指示，本轮将当前水效果提交并推送至上述新分支；Unity 导入、编译和画面验证仍待后续完成，不视作已验收。
 
 ## 2026-10-15 当前进度整合
 
