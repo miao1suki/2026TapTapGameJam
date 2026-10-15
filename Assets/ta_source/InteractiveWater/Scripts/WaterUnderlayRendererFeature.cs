@@ -108,7 +108,8 @@ namespace InteractiveWater
             var camera = renderingData.cameraData.camera;
             if (renderingData.cameraData.cameraType == CameraType.SceneView ||
                 (renderingData.cameraData.cameraType == CameraType.Game &&
-                 camera && camera.CompareTag("MainCamera") && InteractiveWater.ActiveInstanceCount > 0))
+                 camera && camera.CompareTag("MainCamera") &&
+                 (InteractiveWater.ActiveInstanceCount > 0 || WaterUnderlayCaptureRequester.HasActiveRequests)))
                 renderer.EnqueuePass(pass);
         }
     }
