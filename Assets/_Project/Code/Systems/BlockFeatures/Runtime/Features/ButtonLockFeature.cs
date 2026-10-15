@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Project.Mechanisms;
+using Project.Audio;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -80,7 +81,12 @@ namespace Project.BlockFeatures
 
         private void FixedUpdate()
         {
-            if (!CanRunFeature || pressTrigger == null || !pressTrigger.enabled) return;
+            if (!CanRunFeature) return;
+            if (pressTrigger == null || !pressTrigger.enabled)
+            {
+                if (mode == DoorButtonMode.Held) SetOn(false);
+                return;
+            }
             if (mode == DoorButtonMode.Latched && isOn) return;
             bool pressed = DoorButton.FindPressureActor(pressTrigger,
                 footTolerance * GridCellWorldSize, ref contacts) != null;
@@ -90,6 +96,14 @@ namespace Project.BlockFeatures
         // Kept for source compatibility; buttons are never keyboard interaction targets.
         public bool CanInteract(GameObject interactor) => false;
         public bool TryInteract(GameObject interactor) => false;
+
+        protected override void OnDetach()
+        {
+            if (mode != DoorButtonMode.Held || !isOn) return;
+            isOn = false;
+            ApplyMaterial();
+            SignalChanged?.Invoke(false);
+        }
 
         protected override void OnResetForRoom()
         {
@@ -106,9 +120,7 @@ namespace Project.BlockFeatures
                 return;
             }
 
-            isOn = !isOn;
-            ApplyMaterial();
-            SignalChanged?.Invoke(IsSignalActive);
+            SetOn(!isOn);
         }
 
         public void SetOn(bool value)
@@ -119,6 +131,7 @@ namespace Project.BlockFeatures
             }
 
             isOn = value;
+            if (Application.isPlaying) AudioCuePlayer.Play(value ? AudioCueIds.ButtonPress : AudioCueIds.ButtonRelease);
             ApplyMaterial();
             SignalChanged?.Invoke(IsSignalActive);
         }

@@ -877,7 +877,7 @@ namespace Project.LevelEditor.Editor
                             if (previous.Prefab == entry.Prefab && previous.DisplayName == entry.DisplayName &&
                                 previous.ComponentValueOverrides.Count == 0) { duplicate = true; break; }
                         }
-                    if (duplicate && captured != LevelEditorState.SelectedPropIndex) continue;
+                    if (duplicate) continue;
                     VisualElement cell = new VisualElement();
                     cell.style.width = cardWidth;
                     cell.style.minWidth = cardWidth;

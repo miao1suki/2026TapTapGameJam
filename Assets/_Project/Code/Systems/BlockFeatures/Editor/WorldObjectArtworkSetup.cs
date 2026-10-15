@@ -46,7 +46,7 @@ namespace Project.BlockFeatures.Editor
                     for (int i = 0; i < count; i++)
                     {
                         var pixels = source.GetPixels(start + i * (stride > 0 ? stride : width), source.height - top - h, width, h);
-                        if (kind == MechanismArtworkKind.Door) ClearConnectedBlackBackground(pixels, width, h);
+                        if (kind == MechanismArtworkKind.Door) ClearBlackBackground(pixels);
                         output.SetPixels(i * width, 0, width, h, pixels);
                     }
                     string path = Generated + "/" + kind + ".png";
@@ -76,7 +76,7 @@ namespace Project.BlockFeatures.Editor
                     for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++)
                         output.SetPixel(x, y, image.Texture.GetPixel(448 + x * 4, image.Texture.height - 512 + y * 4));
                     var pixels = output.GetPixels();
-                    ClearConnectedBlackBackground(pixels, 16, 16);
+                    ClearBlackBackground(pixels);
                     output.SetPixels(pixels);
                     string path = Generated + "/" + kind + ".png";
                     File.WriteAllBytes(path, output.EncodeToPNG()); UnityEngine.Object.DestroyImmediate(output); AssetDatabase.ImportAsset(path);
@@ -128,29 +128,13 @@ namespace Project.BlockFeatures.Editor
             public ImageScope(Texture2D texture) => Texture = texture;
             public void Dispose() => UnityEngine.Object.DestroyImmediate(Texture);
         }
-        public static void ClearConnectedBlackBackground(Color[] pixels, int width, int height)
+        public static void ClearBlackBackground(Color[] pixels)
         {
-            var visited = new bool[pixels.Length];
-            var queue = new System.Collections.Generic.Queue<int>();
-            void Visit(int x, int y)
-            {
-                if (x < 0 || x >= width || y < 0 || y >= height) return;
-                int index = y * width + x;
-                if (visited[index]) return;
-                Color color = pixels[index];
-                if (color.a > .01f && (color.r > .025f || color.g > .025f || color.b > .025f)) return;
-                visited[index] = true;
-                queue.Enqueue(index);
-            }
-            for (int x = 0; x < width; x++) { Visit(x, 0); Visit(x, height - 1); }
-            for (int y = 0; y < height; y++) { Visit(0, y); Visit(width - 1, y); }
-            while (queue.Count > 0)
-            {
-                int index = queue.Dequeue();
-                pixels[index] = Color.clear;
-                int x = index % width, y = index / width;
-                Visit(x - 1, y); Visit(x + 1, y); Visit(x, y - 1); Visit(x, y + 1);
-            }
+            // These monochrome source sheets encode empty space as opaque black,
+            // including enclosed ladder gaps and the interior of the door frame.
+            for (int index = 0; index < pixels.Length; index++)
+                if (pixels[index].r <= .025f && pixels[index].g <= .025f && pixels[index].b <= .025f)
+                    pixels[index] = Color.clear;
         }
         private static Sprite[] SliceMechanism(string path, int width, int height, Vector4 border)
         {

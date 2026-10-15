@@ -2,6 +2,7 @@ using Project.BlockFeatures;
 using Project.Player;
 using Project.ContactCubes;
 using Project.ColorBlocks;
+using Project.Audio;
 using UnityEngine;
 
 namespace Project.Mechanisms
@@ -100,6 +101,7 @@ namespace Project.Mechanisms
         {
             if (IsPressed == value) return;
             State = value ? DoorButtonState.Pressed : DoorButtonState.Unpressed;
+            if (Application.isPlaying) AudioCuePlayer.Play(value ? AudioCueIds.ButtonPress : AudioCueIds.ButtonRelease);
             ApplyAppearance();
             if (owner != null) owner.NotifyButtonPressed(actor);
         }

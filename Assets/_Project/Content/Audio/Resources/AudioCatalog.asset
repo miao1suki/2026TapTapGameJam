@@ -273,6 +273,27 @@ MonoBehaviour:
     - {fileID: 8300000, guid: cd886537a37d150479379013b90de9bf, type: 3}
     volumeScale: 0.75
     loop: 1
+  - cueId: sfx.player.climb_vine
+    displayName: Vine Climb
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: 46b7966fb41741dfbbf060192c25239a, type: 3}
+    volumeScale: 0.75
+    loop: 0
+  - cueId: sfx.button.press
+    displayName: Button Press
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: b52e21187252489891667fa7729ab386, type: 3}
+    volumeScale: 0.8
+    loop: 0
+  - cueId: sfx.button.release
+    displayName: Button Release
+    channel: 1
+    clips:
+    - {fileID: 8300000, guid: c07d669a31f440f7922660af853385b4, type: 3}
+    volumeScale: 0.8
+    loop: 0
   - cueId: sfx.notice.deny
     displayName: Notice Deny
     channel: 1

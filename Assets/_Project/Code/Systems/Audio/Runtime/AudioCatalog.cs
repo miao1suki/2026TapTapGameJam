@@ -163,6 +163,9 @@ namespace Project.Audio
         public const string FootstepsWater = "sfx.footsteps.water";
         public const string PlayerJump = "sfx.player.jump";
         public const string PlayerClimb = "sfx.player.climb";
+        public const string PlayerClimbVine = "sfx.player.climb_vine";
+        public const string ButtonPress = "sfx.button.press";
+        public const string ButtonRelease = "sfx.button.release";
         public const string PlayerDie = "sfx.player.die";
         public const string PlayerRespawn = "sfx.player.respawn";
         public const string PlayerSwim = "sfx.player.swim";

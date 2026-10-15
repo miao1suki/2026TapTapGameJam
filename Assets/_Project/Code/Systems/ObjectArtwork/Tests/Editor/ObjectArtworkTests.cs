@@ -5,6 +5,24 @@ namespace Project.ObjectArtwork.Tests
 {
     public sealed class ObjectArtworkTests
     {
+        [TestCase("Door")]
+        [TestCase("LadderFront")]
+        [TestCase("LadderSide")]
+        public void MechanismBackgroundIsTransparent(string name)
+        {
+            var texture = new Texture2D(2, 2);
+            try
+            {
+                Assert.IsTrue(texture.LoadImage(System.IO.File.ReadAllBytes(
+                    "Assets/_Project/Art/Generated/ObjectArtwork/" + name + ".png")));
+                Assert.That(texture.GetPixel(0, 0).a, Is.Zero);
+                Assert.That(System.Array.Exists(texture.GetPixels(), pixel => pixel.a > .9f), Is.True);
+                Assert.That(System.Array.Exists(texture.GetPixels(), pixel => pixel.a > .01f &&
+                    pixel.r <= .025f && pixel.g <= .025f && pixel.b <= .025f), Is.False,
+                    "Door interiors and gaps between ladder rungs must also be transparent.");
+            }
+            finally { Object.DestroyImmediate(texture); }
+        }
         [TestCase(0f, 0)] [TestCase(.5f, 14)] [TestCase(1f, 27)]
         [TestCase(-1f, 0)] [TestCase(2f, 27)]
         public void CrankFramesScrubTheSamePathInBothDirections(float progress, int expected) =>

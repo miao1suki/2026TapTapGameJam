@@ -161,6 +161,7 @@ namespace Project.Player
         private readonly Dictionary<int, float> climbFastSlideSpeeds =
             new Dictionary<int, float>();
         private readonly HashSet<int> climbSources = new HashSet<int>();
+        private readonly HashSet<int> vineClimbSources = new HashSet<int>();
         private readonly Dictionary<int, float> climbInwardDirections =
             new Dictionary<int, float>();
         private float climbReattachUntil;
@@ -451,6 +452,7 @@ namespace Project.Player
             climbSlideSpeeds.Clear();
             climbFastSlideSpeeds.Clear();
             climbSources.Clear();
+            vineClimbSources.Clear();
             climbInwardDirections.Clear();
             climbReattachUntil = 0f;
             climbKickHorizontalControlUntil = 0f;
@@ -700,7 +702,7 @@ namespace Project.Player
             {
                 nextMovementSoundTime =
                     Time.time + climbSoundInterval;
-                AudioCuePlayer.Play(AudioCueIds.PlayerClimb, .65f);
+                AudioCuePlayer.Play(vineClimbSources.Count > 0 ? AudioCueIds.PlayerClimbVine : AudioCueIds.PlayerClimb, .65f);
                 return;
             }
 
@@ -800,6 +802,7 @@ namespace Project.Player
             {
                 int id = source.GetInstanceID();
                 climbSources.Add(id);
+                if (source is ClimbableVineFeature) vineClimbSources.Add(id);
                 float delta = source.transform.position.x - transform.position.x;
                 climbInwardDirections[id] = Mathf.Abs(delta) > .01f
                     ? Mathf.Sign(delta) : 0f;
@@ -807,7 +810,7 @@ namespace Project.Player
 
             if (!wasClimbing && climbSources.Count > 0)
             {
-                AudioCuePlayer.Play(AudioCueIds.PlayerClimb);
+                AudioCuePlayer.Play(vineClimbSources.Count > 0 ? AudioCueIds.PlayerClimbVine : AudioCueIds.PlayerClimb);
             }
         }
         public void ExitClimb(Component source)
@@ -815,6 +818,7 @@ namespace Project.Player
             if (source == null) return;
             int id = source.GetInstanceID();
             climbSources.Remove(id);
+            vineClimbSources.Remove(id);
             climbInwardDirections.Remove(id);
             climbTopHeights.Remove(id);
         }
@@ -2434,6 +2438,7 @@ namespace Project.Player
             climbSlideSpeeds.Clear();
             climbFastSlideSpeeds.Clear();
             climbSources.Clear();
+            vineClimbSources.Clear();
             climbInwardDirections.Clear();
             climbReattachUntil = 0f;
             climbKickHorizontalControlUntil = 0f;

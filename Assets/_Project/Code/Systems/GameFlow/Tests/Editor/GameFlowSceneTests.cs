@@ -8,6 +8,14 @@ namespace Project.GameFlow.Tests
 {
     public sealed class GameFlowSceneTests
     {
+        [Test]
+        public void RedButtonDoesNotRegisterKeyboardInteraction()
+        {
+            var buttonType = System.Type.GetType("Project.BlockFeatures.ButtonLockFeature, Assembly-CSharp");
+            Assert.NotNull(buttonType);
+            foreach (var contract in buttonType.GetInterfaces())
+                Assert.AreNotEqual("IInteractionTarget", contract.Name);
+        }
         [TestCase(200f, 5)]
         [TestCase(-200f, 1)]
         public void PauseTouchSwipeUsesReversedVerticalDirection(float distance, int expected)

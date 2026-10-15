@@ -4,9 +4,11 @@
 
 - 用户授权合并并推送本轮及此前已完成的美术、隐私入口进度；保留本地 Pick、字体缓存、插件和本机设置，不纳入提交。
 - 按钮统一为玩家脚部/三色接触方块底部压力触发，ButtonLockFeature 不再注册 IInteractionTarget。门按钮与红色按钮共用压力检测；一次保持与持续压住遵守原重置约定。
-- 门与梯子生成图移除与边缘连通的黑色背景，保留封闭黑色细节；原始素材不修改。曲柄达到上限即停循环音，角色精灵跟随插值后的 Transform，避免物理帧与相机插值错位。
+- 门与梯子专用白色线稿生成图移除黑底，包括门框内部与梯档之间封闭空隙；不对其他物体全局抠黑，原始素材不修改。曲柄达到上限即停循环音，角色精灵跟随插值后的 Transform，避免物理帧与相机插值错位。
 - 重复红色接触块为旧能源条目迁移后的同一预制体；道具栏去重显示，保留存档条目 ID 和索引。
-- 正在整合 main 的场景转场、音频分支的实录补齐和响度更新，并进行隔离验证。
+- 已整合 main 场景转场、音频实录补齐及响度更新、TA 像素水/定向气泡测试资源和连线起点修正；关卡水不自动替换为新实验方案。新增按钮按下/回弹与藤蔓攀爬 Cue，补齐有效音频资源 meta。
+- 隔离最终106/106项EditMode通过，23项实际Play压力/状态/停音/音频/透明底/精灵对齐检查通过；门/梯生成图剩余不透明黑像素为0。MainMenu→Gaming→暂停返回三轮通过，音乐为atmosphere E minor、timeScale与玩家物理正常。日志Library/PressureIntegrationFinalTests.xml、PressureIntegrationFinalPlay.log、PressureIntegrationMenu.log；两份颜色skill验证通过。
+- 用户主窗口不重载场景，Pick SHA256保持ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35。未重新打包/真机；水禁用期间旧SetParent日志及加载时重复EventSystem/AudioListener提示另记于UPDATE_2026-10-15_INTEGRATION.md，未声明整关无警告。
 
 ## 2026-10-15 弹跳/钥匙回归与 Android 原生隐私入口
 
