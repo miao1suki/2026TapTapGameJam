@@ -21,7 +21,7 @@ namespace Project.GameFlow
             accumulated += data.position.y - previous.y; previous = data.position;
             float threshold = Mathf.Clamp(Screen.height * .06f,32f,128f);
             if (Mathf.Abs(accumulated) < threshold) return;
-            controller?.NavigateWheel(accumulated > 0 ? 1 : -1);
+            controller?.NavigateWheel(accumulated > 0 ? -1 : 1);
             accumulated = 0;
         }
         public void OnEndDrag(PointerEventData data) { accumulated = 0; }

@@ -159,7 +159,16 @@ namespace Project.StartMenu
             }
 
             StyleCreditsPage();
+            EnsurePrivacyButton();
             BindButtons();
+        }
+
+        private void EnsurePrivacyButton()
+        {
+            if (categoryList == null || categoryList.Find("Privacy Policy") != null) return;
+            Button privacy = StartMenuUiFactory.CreateButton("Privacy Policy", categoryList, "隐私政策",
+                new Vector2(190f, 48f), Project.Privacy.AndroidPrivacyPolicy.ShowPolicy);
+            AddCategorySize(privacy);
         }
 
         private void OnEnable()

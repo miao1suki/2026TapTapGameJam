@@ -143,6 +143,7 @@ namespace Project.Player
             new Collider[32];
         private float requestedBounceSpeed = -1f;
         private bool bounceHasExactHeight;
+        private bool protectBounceFromClimbing;
         private float requestedJumpBoost = -1f;
         private float nextMovementSoundTime;
         private Vector3 pendingPlatformDelta;
@@ -187,7 +188,7 @@ namespace Project.Player
         }
         private readonly Dictionary<int, HorizontalVineSurface> horizontalVines = new Dictionary<int, HorizontalVineSurface>();
         private readonly List<int> expiredHorizontalVines = new List<int>();
-        public bool IsHorizontalClimbing => horizontalVines.Count > 0;
+        public bool IsHorizontalClimbing => !protectBounceFromClimbing && horizontalVines.Count > 0;
         public void SetHorizontalVineSurface(Component source, float rootY, float speed)
         {
             if (source == null || dead) return;
@@ -198,6 +199,7 @@ namespace Project.Player
             if (source != null) horizontalVines.Remove(source.GetInstanceID());
         }
         public bool IsClimbing =>
+            !protectBounceFromClimbing &&
             climbSources.Count > 0 &&
             Time.time >= climbReattachUntil &&
             (!IsGrounded || movement.y > .01f ||
@@ -440,6 +442,7 @@ namespace Project.Player
             bounceSurfaces.Clear();
             currentFallDistance = 0f;
             landedThisStep = false;
+            protectBounceFromClimbing = false;
             dead = false;
             enteredWaterDuringFall = false;
             enteredClimbDuringFall = false;
@@ -1745,6 +1748,7 @@ namespace Project.Player
 
         private bool TickHorizontalVine()
         {
+            if (protectBounceFromClimbing) return false;
             expiredHorizontalVines.Clear();
             HorizontalVineSurface? chosen = null;
             foreach (var pair in horizontalVines)
@@ -1785,6 +1789,8 @@ namespace Project.Player
                 pendingPlatformDelta = Vector3.zero;
             }
 
+            if (protectBounceFromClimbing && motor.linearVelocity.y <= 0f)
+                protectBounceFromClimbing = false;
             if (TickHorizontalVine()) return;
 
             float velocityAtStepStart = motor != null
@@ -1868,7 +1874,13 @@ namespace Project.Player
             Vector3 velocity = motor.linearVelocity;
             if (requestedBounceSpeed >= 0f)
             {
-                if (bounceHasExactHeight) { velocity.y = requestedBounceSpeed; bounceHasExactHeight = false; }
+                if (bounceHasExactHeight)
+                {
+                    velocity.y = requestedBounceSpeed;
+                    bounceHasExactHeight = false;
+                    // Keep the authored bounce until its apex; nearby vines may still register contact.
+                    protectBounceFromClimbing = true;
+                }
                 else ApplyEnvironmentLaunch(ref velocity, requestedBounceSpeed);
                 requestedBounceSpeed = -1f;
                 IsGrounded = false;
@@ -2429,6 +2441,7 @@ namespace Project.Player
             climbTopHeights.Clear();
             bounceSurfaces.Clear();
             enteredWaterDuringFall = false;
+            protectBounceFromClimbing = false;
             enteredClimbDuringFall = false;
             currentFallDistance = 0f;
             highestAirPosition = transform.position.y;

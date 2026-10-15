@@ -868,6 +868,16 @@ namespace Project.LevelEditor.Editor
                 {
                     int captured = index;
                     LevelEditorPropEntry entry = palette.PropEntries[index];
+                    // Retain saved entry IDs/indices, but show identical migrated defaults only once.
+                    bool duplicate = false;
+                    if (entry.ComponentValueOverrides.Count == 0)
+                        for (int earlier = 0; earlier < index; earlier++)
+                        {
+                            var previous = palette.PropEntries[earlier];
+                            if (previous.Prefab == entry.Prefab && previous.DisplayName == entry.DisplayName &&
+                                previous.ComponentValueOverrides.Count == 0) { duplicate = true; break; }
+                        }
+                    if (duplicate && captured != LevelEditorState.SelectedPropIndex) continue;
                     VisualElement cell = new VisualElement();
                     cell.style.width = cardWidth;
                     cell.style.minWidth = cardWidth;

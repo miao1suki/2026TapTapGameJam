@@ -101,7 +101,7 @@ namespace Project.Player
             if (!suspended && state != PlayerStateId.Death && Mathf.Abs(player.MoveInput.x) > .05f)
                 visual.flipX = player.MoveInput.x < 0f;
             if (capsule != null)
-                visual.transform.position = capsule.bounds.center + Vector3.up * (verticalOffsetCells * cellWorldSize);
+                visual.transform.position = transform.TransformPoint(capsule.center) + Vector3.up * (verticalOffsetCells * cellWorldSize);
             float cell = cellWorldSize;
             Vector3 parentScale = transform.lossyScale;
             visual.transform.localScale = new Vector3(cell / Mathf.Max(.001f, Mathf.Abs(parentScale.x)),

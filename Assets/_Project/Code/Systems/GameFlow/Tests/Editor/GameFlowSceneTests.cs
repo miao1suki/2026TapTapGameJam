@@ -8,6 +8,30 @@ namespace Project.GameFlow.Tests
 {
     public sealed class GameFlowSceneTests
     {
+        [TestCase(200f, 5)]
+        [TestCase(-200f, 1)]
+        public void PauseTouchSwipeUsesReversedVerticalDirection(float distance, int expected)
+        {
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/UI/SharedGameUI.prefab");
+            var root = Object.Instantiate(source);
+            var events = new GameObject("Swipe test events");
+            try
+            {
+                var controller = root.GetComponentInChildren<EscMenuController>(true);
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                typeof(EscMenuController).GetField("isOpen", flags).SetValue(controller, true);
+                typeof(EscMenuController).GetField("wheelInputReady", flags).SetValue(controller, true);
+                typeof(EscMenuController).GetField("currentIndex", flags).SetValue(controller, 0);
+                var touch = events.AddComponent<EscWheelTouchNavigation>(); touch.Configure(controller);
+                var system = events.AddComponent<UnityEngine.EventSystems.EventSystem>();
+                var data = new UnityEngine.EventSystems.PointerEventData(system) { pointerId = 5, position = Vector2.zero };
+                touch.OnBeginDrag(data);
+                data.position = new Vector2(0, distance); touch.OnDrag(data);
+                Assert.AreEqual(expected, typeof(EscMenuController).GetField("currentIndex", flags).GetValue(controller));
+                touch.OnEndDrag(data);
+            }
+            finally { Object.DestroyImmediate(root); Object.DestroyImmediate(events); }
+        }
         [Test]
         public void PauseWheel_UsesSixSpacedSectorsWithExternalPivot()
         {

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Project.InputAbstraction;
-using Project.Player;
+using Project.Mechanisms;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -14,7 +13,6 @@ namespace Project.BlockFeatures
         Provides = new[] { typeof(IMechanismSignalSource) },
         Writes = new[] { BlockChannel.Power })]
     public sealed class ButtonLockFeature : BlockFeature,
-        IInteractionTarget,
         IMechanismSignalSource
     {
         [BlockParameter(
@@ -44,20 +42,33 @@ namespace Project.BlockFeatures
         [SerializeField] private Renderer targetRenderer;
 
         [BlockParameter(
-            Label = "交互检测半径（格）",
+            Label = "脚部容差（格）",
             Group = "按钮设置",
             Order = 4,
-            Tooltip = "以按钮为中心检测玩家距离；1 表示一格，0.5 表示半格。")]
-        [SerializeField, Min(0f)] private float interactionRadiusGrid = 1f;
+            Tooltip = "玩家脚部或三色方块底部进入按钮表面时触发。")]
+        [SerializeField, Min(0f)] private float footTolerance = .15f;
+
+        [BlockParameter(Label = "触发模式", Group = "按钮设置", Order = 5)]
+        [SerializeField] private DoorButtonMode mode;
 
         private bool isOn;
+        private bool initialized;
+        private BoxCollider pressTrigger;
+        private Collider[] contacts = new Collider[16];
 
         public bool IsSignalActive => isOn && CanRunFeature;
         public event Action<bool> SignalChanged;
 
         protected override void OnAttach()
         {
-            isOn = startsOn;
+            if (!initialized) { isOn = startsOn; initialized = true; }
+            pressTrigger = GetComponent<BoxCollider>();
+            if (pressTrigger != null)
+            {
+                pressTrigger.isTrigger = true;
+                pressTrigger.center = new Vector3(0f, -.35f, 0f);
+                pressTrigger.size = new Vector3(.6f, .3f, .6f);
+            }
             if (targetRenderer == null)
             {
                 targetRenderer =
@@ -67,42 +78,22 @@ namespace Project.BlockFeatures
             ApplyMaterial();
         }
 
-        public bool CanInteract(GameObject interactor)
+        private void FixedUpdate()
         {
-            if (!CanRunFeature || interactor == null)
-            {
-                return false;
-            }
-
-            PlayerController player =
-                interactor.GetComponentInParent<PlayerController>();
-            if (player == null)
-            {
-                return false;
-            }
-
-            float radius =
-                Mathf.Max(0f, interactionRadiusGrid) *
-                GridCellWorldSize;
-            return Vector3.Distance(
-                       transform.position,
-                       player.transform.position) <=
-                   radius;
+            if (!CanRunFeature || pressTrigger == null || !pressTrigger.enabled) return;
+            if (mode == DoorButtonMode.Latched && isOn) return;
+            bool pressed = DoorButton.FindPressureActor(pressTrigger,
+                footTolerance * GridCellWorldSize, ref contacts) != null;
+            if (pressed || mode == DoorButtonMode.Held) SetOn(pressed);
         }
 
-        public bool TryInteract(GameObject interactor)
-        {
-            if (!CanInteract(interactor))
-            {
-                return false;
-            }
-
-            Toggle();
-            return true;
-        }
+        // Kept for source compatibility; buttons are never keyboard interaction targets.
+        public bool CanInteract(GameObject interactor) => false;
+        public bool TryInteract(GameObject interactor) => false;
 
         protected override void OnResetForRoom()
         {
+            if (mode == DoorButtonMode.Latched) return;
             isOn = startsOn;
             ApplyMaterial();
             SignalChanged?.Invoke(IsSignalActive);
@@ -144,8 +135,8 @@ namespace Project.BlockFeatures
                     ? onMaterial != null ? onMaterial.name : "未设置"
                     : offMaterial != null ? offMaterial.name : "未设置"));
             values.Add(new BlockDebugValue(
-                "交互检测半径",
-                $"{interactionRadiusGrid:0.###} 格"));
+                "触发模式",
+                mode == DoorButtonMode.Latched ? "一次按下保持" : "持续压住"));
         }
 
         public override void CollectDebugActions(

@@ -51,6 +51,13 @@ namespace Project.Mechanisms
         {
             if (Persistent && IsPressed) return;
             if (pressTrigger == null || !pressTrigger.enabled) { if (!Persistent) SetPressed(false, null); return; }
+            GameObject actor = FindPressureActor(pressTrigger, footTolerance * GridCellSizeUtility.Resolve(this), ref contacts);
+            if (actor != null) TryPress(actor);
+            else if (!Persistent) SetPressed(false,null);
+        }
+
+        internal static GameObject FindPressureActor(BoxCollider pressTrigger, float tolerance, ref Collider[] contacts)
+        {
             Transform frame = pressTrigger.transform;
             Vector3 scale = frame.lossyScale;
             Vector3 half = Vector3.Scale(pressTrigger.size * .5f, new Vector3(Mathf.Abs(scale.x),Mathf.Abs(scale.y),Mathf.Abs(scale.z)));
@@ -61,14 +68,12 @@ namespace Project.Mechanisms
                 if (count < contacts.Length) break;
                 System.Array.Resize(ref contacts,contacts.Length * 2);
             } while (contacts.Length <= 4096);
-            GameObject actor = null;
             for (int i = 0; i < count; i++)
-                if (TryGetPressureActor(contacts[i],out actor)) break;
-            if (actor != null) TryPress(actor);
-            else if (!Persistent) SetPressed(false,null);
+                if (TryGetPressureActor(contacts[i], pressTrigger, tolerance, out var actor)) return actor;
+            return null;
         }
 
-        private bool TryGetPressureActor(Collider other, out GameObject actor)
+        private static bool TryGetPressureActor(Collider other, BoxCollider pressTrigger, float tolerance, out GameObject actor)
         {
             actor = null;
             if (other == null || other.isTrigger || !other.enabled) return false;
@@ -80,7 +85,6 @@ namespace Project.Mechanisms
             if (actor == null || feetCollider == null || !feetCollider.enabled) { actor = null; return false; }
             float feetY = feetCollider.bounds.min.y;
             Bounds area = pressTrigger.bounds;
-            float tolerance = footTolerance * GridCellSizeUtility.Resolve(this);
             if (feetY < area.min.y - tolerance || feetY > area.max.y + tolerance) { actor = null; return false; }
             return true;
         }

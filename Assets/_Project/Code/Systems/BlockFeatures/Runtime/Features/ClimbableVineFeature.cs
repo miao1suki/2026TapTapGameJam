@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Project.Audio;
 using Project.Player;
 using Project.ColorBlocks;
+using Project.ObjectArtwork;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -115,17 +116,17 @@ namespace Project.BlockFeatures
         private Coroutine growthRoutine;
         private int growthTargetCount;
         [SerializeField, HideInInspector] private ClimbableVineFeature vineRoot;
-        [BlockParameter(Label = "藤蔓粒子预制体", Group = "藤蔓表现", Order = 0, Tooltip = "留空使用颜色目录中的 TA 藤蔓粒子。")]
+        [BlockParameter(Label = "藤蔓粒子预制体", Group = "粒子备用", Order = 0, Tooltip = "仅缺少序列帧配置时使用；留空使用颜色目录中的粒子。")]
         [SerializeField] private GameObject vineParticlePrefab;
-        [BlockParameter(Label = "初始粒子时间", Group = "藤蔓表现", Order = 1)]
+        [BlockParameter(Label = "初始粒子时间", Group = "粒子备用", Order = 1)]
         [SerializeField, Min(0)] private float initialParticleTime = 30.13f;
-        [BlockParameter(Label = "长成粒子时间", Group = "藤蔓表现", Order = 2)]
+        [BlockParameter(Label = "长成粒子时间", Group = "粒子备用", Order = 2)]
         [SerializeField, Min(0)] private float grownParticleTime = 32.43f;
         [BlockParameter(Label = "生长表现时长", Group = "藤蔓表现", Order = 3)]
         [SerializeField, Min(.1f)] private float visualGrowthDuration = 2.3f;
         [BlockParameter(Label = "藤蔓宽度（格）", Group = "藤蔓表现", Order = 4, Tooltip = "控制整束藤蔓的横向范围，不改变攀爬判定。")]
         [SerializeField, Min(.1f)] private float vineWidth = 1.2f;
-        [BlockParameter(Label = "藤蔓枝条粗细倍率", Group = "藤蔓表现", Order = 5, Tooltip = "放大粒子拖尾宽度，默认为原素材的三倍。")]
+        [BlockParameter(Label = "藤蔓枝条粗细倍率", Group = "粒子备用", Order = 5, Tooltip = "仅调整备用粒子的拖尾宽度，不改变序列帧。")]
         [SerializeField, Min(.1f)] private float vineThickness = 3f;
         [BlockParameter(Label = "逐节燃烧时间", Group = "燃烧设置", Order = 0)]
         [SerializeField, Min(.1f)] private float burnSegmentDuration = .45f;
@@ -137,6 +138,11 @@ namespace Project.BlockFeatures
         private VinePoseCache poseCache;
         private float visualProgress, visualTarget, visibleCells = 1f, targetCells = 1f;
         private int lastPose = -1;
+        [BlockParameter(Label = "序列帧美术配置", Group = "藤蔓表现", Order = 0, Tooltip = "留空使用 Resources/ObjectArtwork/Objects；整条母藤蔓共用一套序列帧。")]
+        [SerializeField] private ObjectArtworkLibrary sequenceArtwork;
+        private SpriteRenderer sequenceRenderer;
+        private MaterialPropertyBlock sequenceMask;
+        private float sequenceIdleTime;
         private float nextWaterContactCheck;
         public ClimbableVineFeature Root => vineRoot != null ? vineRoot : this;
         public bool IsBurning => burning;
@@ -174,6 +180,8 @@ namespace Project.BlockFeatures
             DisconnectAllPlayers();
             ResetGrowth();
             RestoreBurnedSegments();
+            if (Root == this && vineRenderer != null)
+                ColorAppearanceManager.Instance.RegisterVine(vineRenderer);
         }
 
         protected override void OnDetach()
@@ -182,10 +190,18 @@ namespace Project.BlockFeatures
             ResetGrowth();
             StopBurn();
             ColorAppearanceManager.Existing?.UnregisterVine(vineRenderer);
-            if (vineVisual != null) Destroy(vineVisual);
+            if (vineVisual != null)
+            {
+                vineVisual.SetActive(false);
+                vineVisual.transform.SetParent(null, true);
+                Destroy(vineVisual);
+            }
             vineVisual = null;
             vineParticles = null;
             vineRenderer = null;
+            sequenceRenderer = null;
+            sequenceMask = null;
+            sequenceIdleTime = 0f;
             lastPose = -1;
         }
 
@@ -656,6 +672,7 @@ namespace Project.BlockFeatures
 
         private void UpdateVineVisual(float deltaTime)
         {
+            if (UpdateVineSequence(deltaTime)) return;
             if (vineVisual == null)
             {
                 GameObject prefab = vineParticlePrefab != null ? vineParticlePrefab : ColorRuntimeService.Instance.Catalog?.GreenVinePrefab;
@@ -712,6 +729,53 @@ namespace Project.BlockFeatures
             vineVisual.transform.localScale = scale;
             vineVisual.transform.localPosition = new Vector3(-bounds.center.x * scale.x,
                 -.5f - bounds.min.y * scale.y, -bounds.center.z * scale.z);
+        }
+
+        private bool UpdateVineSequence(float deltaTime)
+        {
+            if (sequenceArtwork == null) sequenceArtwork = ObjectArtworkLibrary.Load();
+            if (sequenceArtwork == null || sequenceArtwork.vineGrowth.Length == 0) return false;
+            if (vineVisual == null)
+            {
+                vineVisual = new GameObject("Vine Visual");
+                vineVisual.transform.SetParent(transform, false);
+                sequenceRenderer = vineVisual.AddComponent<SpriteRenderer>();
+                sequenceRenderer.enabled = false;
+                sequenceRenderer.sharedMaterial = sequenceArtwork.colorSpriteMaterial;
+                vineVisual.layer = ColorRuntimeService.Instance.Catalog?.Find("green")?.unityLayer ?? gameObject.layer;
+                sequenceRenderer.renderingLayerMask |= 128u;
+                vineRenderer = sequenceRenderer;
+                sequenceMask = new MaterialPropertyBlock();
+                ColorAppearanceManager.Instance.RegisterVine(sequenceRenderer);
+                lastPose = -1;
+            }
+            if (sequenceRenderer == null) return false;
+            visualProgress = Mathf.MoveTowards(visualProgress, visualTarget, deltaTime / Mathf.Max(.1f, visualGrowthDuration));
+            visibleCells = Mathf.MoveTowards(visibleCells, targetCells,
+                deltaTime * Mathf.Max(1, maxGrowthBlocks) / Mathf.Max(.1f, visualGrowthDuration));
+            bool idle = !burning && Mathf.Approximately(visualProgress, visualTarget);
+            sequenceIdleTime = idle ? sequenceIdleTime + deltaTime : 0f;
+            int index = sequenceArtwork.VineFrame(visualProgress, sequenceIdleTime, idle);
+            Sprite frame = sequenceArtwork.vineGrowth[index];
+            if (frame == null) return true;
+            if (index != lastPose)
+            {
+                sequenceRenderer.sprite = frame;
+                sequenceMask.Clear();
+                sequenceMask.SetFloat("_ColorMaskGroup", 1f);
+                sequenceMask.SetFloat("_ColorMaskReal", 1f);
+                sequenceMask.SetFloat("_ColorMaskUseVertexAlpha", 1f);
+                sequenceMask.SetTexture("_ColorMaskAlphaTexture", frame.texture);
+                sequenceRenderer.SetPropertyBlock(sequenceMask);
+                lastPose = index;
+            }
+            // Atlas sprites are trimmed to their visible height and keep one common X range.
+            // Fit the whole root once, not one independent animation per gameplay segment.
+            vineVisual.transform.localScale = new Vector3(
+                vineWidth / Mathf.Max(.001f, frame.bounds.size.x),
+                Mathf.Max(.001f, visibleCells) / Mathf.Max(.001f, frame.bounds.size.y), 1f);
+            vineVisual.transform.localPosition = new Vector3(0f, -.5f, -.51f);
+            return true;
         }
 
         public void BeginBurn()

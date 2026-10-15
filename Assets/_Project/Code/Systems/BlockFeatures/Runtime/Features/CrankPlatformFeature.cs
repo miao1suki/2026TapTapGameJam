@@ -136,7 +136,9 @@ namespace Project.BlockFeatures
             bool wasComplete = IsSignalActive;
             if (engaged)
             {
-                if (!crankAudioPlaying)
+                bool isTurning = progress < 1f && progressPerSecond > 0f && deltaTime > 0f;
+                if (!isTurning) StopCrankAudio();
+                else if (!crankAudioPlaying)
                 {
                     crankAudioPlaying = AudioCuePlayer.PlayLoop(
                         AudioCueIds.CrankTurnLoop,
@@ -161,6 +163,7 @@ namespace Project.BlockFeatures
             }
 
             progress = Mathf.Clamp01(progress);
+            if (progress >= 1f) StopCrankAudio();
             if (wasComplete != IsSignalActive)
             {
                 SignalChanged?.Invoke(IsSignalActive);

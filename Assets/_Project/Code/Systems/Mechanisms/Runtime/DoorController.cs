@@ -43,6 +43,7 @@ namespace Project.Mechanisms
         private PlayableDirector director;
         private IDisposable controlLock;
         public DoorState State { get; private set; }
+        public float OpenDuration => openDuration;
         public IReadOnlyList<DoorButton> Buttons => buttons;
         public bool IsHorizontal => horizontal;
         public int PressedCount { get { int count = 0; foreach (var button in buttons) if (button != null && button.IsPressed) count++; return count; } }

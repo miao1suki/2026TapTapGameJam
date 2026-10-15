@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.miao1suki.shapeofcolor.privacy">
+  <application android:name="com.miao1suki.shapeofcolor.privacy.PrivacyApplication">
+    <activity android:name="com.miao1suki.shapeofcolor.privacy.PrivacyActivity"
+        android:exported="true" android:process=":privacy" android:taskAffinity="com.miao1suki.shapeofcolor.privacy"
+        android:excludeFromRecents="true" android:screenOrientation="userLandscape"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>

@@ -1,5 +1,33 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-15 按钮压力统一与最新进度整合
+
+- 用户授权合并并推送本轮及此前已完成的美术、隐私入口进度；保留本地 Pick、字体缓存、插件和本机设置，不纳入提交。
+- 按钮统一为玩家脚部/三色接触方块底部压力触发，ButtonLockFeature 不再注册 IInteractionTarget。门按钮与红色按钮共用压力检测；一次保持与持续压住遵守原重置约定。
+- 门与梯子生成图移除与边缘连通的黑色背景，保留封闭黑色细节；原始素材不修改。曲柄达到上限即停循环音，角色精灵跟随插值后的 Transform，避免物理帧与相机插值错位。
+- 重复红色接触块为旧能源条目迁移后的同一预制体；道具栏去重显示，保留存档条目 ID 和索引。
+- 正在整合 main 的场景转场、音频分支的实录补齐和响度更新，并进行隔离验证。
+
+## 2026-10-15 弹跳/钥匙回归与 Android 原生隐私入口
+
+- 已实现：弹性植物上升阶段保护（竖向/横向攀爬不覆盖回弹）；钥匙隐藏状态由美术脚本遵守，完整拾取仍等待演出。Gaming 原位保留邻藤蔓实测上升2.999998格，钥匙完成飞行后2294帧保持隐藏，日志 Library/PrivacyGameplayRegression.log。
+- 原生隐私：PrivacyGate.androidlib 独立进程入口、离线完整政策、同意版本哈希、拒绝退出、设置查看/撤回；attachBaseContext 拦截未同意时的直接恢复入口。切换为 Activity（非GameActivity）是接入前置入口所需，最低API25与Unity版本不变。使用游戏自身common-privacy页，未创建外部网站、未改政策法律事实。
+- 构建验证：隔离工程 MainMenu/Gaming 安卓开发包成功，0错误6警告；APK唯一Launcher为PrivacyActivity，UnityPlayerActivity exported=false，PrivacyApplication已合并；仅INTERNET权限，离线正文/项目字体均在APK内。测试包 Library/PrivacyGateChecks/Android/形之彩.apk，构建日志Library/PrivacyAndroidBuild2.log。初次构建缺默认35工具链后已在插件明确使用Unity自带36工具链，不安装SDK、不接受额外许可。
+- 最终4/4项AndroidPrivacyTests通过（Unity入口/元数据、缺入口拒构建、Provider拒构建、原生进程与政策正文）；结果Library/PrivacyFocusedTestsFinal.xml。git diff --check通过。
+- 尚未安卓真机验收/隐私检测；当前无连接设备，Android7.1最近任务恢复及撤回停止游戏仍需真机验证。政策内注册/实名/TapSDK等内容需负责人按实际行为核对。说明与API见ANDROID_PRIVACY。Pick哈希不变，无场景/Unity版本变更，无提交推送。
+- 当前范围：修复弹性植物回弹被邻近攀爬覆盖、钥匙收集完毕被美术脚本再次显示；恢复 Unity 启动前的原生隐私授权。Android 保持最低 7.1，政策使用游戏自身 TapTap common-privacy 地址；不恢复 Bootstrap、不改 Pick、不提交推送。
+- 诊断证据：Gaming 的 Prop [72,28] 已发 BounceTriggered，但 Prop [71,28] 的藤蔓攀爬分支清除向上速度；隔离禁用邻根后正常回弹。钥匙 CompleteVisual 关闭 Renderer 后被 MechanismArtworkPresentation.LateUpdate 重新开启。
+
+## 2026-10-15 物体美术接入
+
+- 续作范围：仅反转暂停轮盘触摸上下滑动；接入用途明确的门/按钮/曲柄/移动平台、三色接触方块与颜色钥匙素材。曲柄按实际进度正放/回弹倒放，门三色标记为按钮提示而非能力色。尺寸沿用原碰撞与单元格，合并重复/九宫格，保留未交付的水序列帧现状。待确认的梯子素材不擅自使用。不提交推送。
+- 续作已应用：17份现有Prefab加机关精灵表现，门内绿/红/蓝按按钮绑定次序点亮；按颜色分离标记，避免邻色漏入。曲柄28帧读真实进度，松开后按原回弹等待/速度倒放；平台中段Tiled、端头保留且顶面对齐碰撞。接触块伸长/区域重置跟随尺寸，钥匙保持对应颜色；梯子按用户指出的tail第四行H形瓦片，未使用误认的九宫格边框；静态岩浆接入，水保持原TA方案。Game未解锁基础Mesh与正式精灵继续走集中HSV/透明交接。中文UI Toolkit Inspector和接入/使用文档已更新。
+- 续作验证：隔离Unity6000.3.12f1，98/98项EditMode通过（含触摸上下反向及曲柄双向帧）；真实GPU/Play32项检查通过（锁定基础外观/真实精灵渐显中间透明、钥匙、门提示/开关重置、按钮触发帧循环、曲柄松开倒放、合并平台顶面对齐、接触块伸长/重置）。日志Library/MechanismArtworkTests.xml/log、MechanismArtworkGpu.log，截图在FlowRetirementProbe/Library/MechanismArtworkClosed/Open.png。应用前Prefab/Objects备份Library/MechanismArtworkBeforeBind。Pick SHA256仍ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35，未改碰撞/玩法存档/其他本地文件。未重新打包、未安卓真机验收、未提交推送。
+- 范围：弹性植物底部贴格、TA 藤蔓192帧接入。用户确认水尚未交付，本轮仅做藤蔓、保留现有水效果。保留颜色解锁、集中 HSV/共享透明材质、生长燃烧和区域重置。分支 codex/art/ta-sequence-visuals，仅本地测试，不提交推送。
+- 不覆盖 Pick、字体缓存、插件、临时 ICON 或本机设置；不修改玩法场景存档。TA 分支只取藤蔓序列帧资源，不合并其旧代码/管线/场景设置。
+- 已应用源码、TA原序列帧和12页图集及Objects配置至主项目；植物底部贴原碰撞体底边，宽度/合并重复和原碰撞不变。藤蔓整根一个SpriteRenderer，默认24→160帧生长、末32帧循环，按当前总高度适配；烧毁后区域重置重新登记，禁用同帧挂接不残留旧表现。没有逐帧复制材质或运行粒子模拟。
+- Unity6000.3.12f1隔离89项EditMode及真实GPU/Play检查通过（渐显中间透明、母根生长/子链、末段循环、逆向燃烧、烧毁重置、禁用重启、共享材质池、植物贴地/合并宽度/碰撞）。日志Library/VineSequenceBuild.log、VineSequenceGpu.log、VineSequenceTests.log/xml；文档OBJECT_ARTWORK及API已更新。Pick SHA256仍ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35。未重新打包，完整关卡/安卓真机与用户主窗口视觉待验收；未提交、未推送。
+
 ## 2026-10-15 当前进度整合
 
 - 用户授权合并推送：整合网格美术编辑器、六分暂停轮盘、重生点/弹性植物美术、MVMap标注地图及共享规划存档、双平台触摸/安全区与气泡柱修复。以最新 origin/main 为基线验证后合入 main；保留 Unity6000.3.12f1、Android7.1 最低版本。隐私接入已按用户要求完全撤回，不随本次提交。

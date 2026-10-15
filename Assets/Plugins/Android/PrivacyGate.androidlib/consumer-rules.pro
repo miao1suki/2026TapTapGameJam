@@ -1,0 +1,1 @@
+-keep class com.miao1suki.shapeofcolor.privacy.PrivacyConsent { public *; }

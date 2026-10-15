@@ -13,6 +13,7 @@ namespace Project.ColorBlocks
     [RequireComponent(typeof(Collider))]
     public sealed class ColorKeyPickup : DropItemBase
     {
+        public bool IsCollectionVisualComplete { get; private set; }
         [SerializeField] private string colorTypeId = "red";
         [SerializeField] private PlayableDirector cameraDirector;
         [SerializeField] private bool hideOnCollect = true;
@@ -120,6 +121,7 @@ namespace Project.ColorBlocks
         protected override void ResetItemState()
         {
             base.ResetItemState();
+            IsCollectionVisualComplete = false;
             ReleasePlayerControlLock();
             collectingPlayer = null;
             nextPlayerSearchTime = 0f;
@@ -150,6 +152,7 @@ namespace Project.ColorBlocks
                 }
 
                 reportedAnimationComplete = true;
+                IsCollectionVisualComplete = hideOnCollect;
                 if (hideOnCollect)
                     foreach (var renderer in GetComponentsInChildren<Renderer>(true))
                         renderer.enabled = false;

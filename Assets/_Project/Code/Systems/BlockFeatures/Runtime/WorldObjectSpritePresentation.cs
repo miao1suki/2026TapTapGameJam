@@ -131,7 +131,7 @@ namespace Project.BlockFeatures
                 visual.tileMode = SpriteTileMode.Continuous;
                 Vector2 tiles = new Vector2(Mathf.Abs(authorScale.x * size.x) / cell, Mathf.Abs(authorScale.y * size.y) / cell);
                 if (visual.size != tiles) visual.size = tiles;
-                float bottom = center.y + size.y * .5f - (Mathf.Max(0f, tiles.y - 1f) + artwork.plantIdleTop) * cell / Mathf.Max(.001f, Mathf.Abs(authorScale.y));
+                float bottom = center.y - size.y * .5f;
                 SetLayout(ObjectArtworkLibrary.TileScale(authorScale, cell),
                     new Vector3(center.x, bottom, center.z - size.z * .5f - depthOffsetCells * cell / Mathf.Max(.001f, Mathf.Abs(authorScale.z))));
                 visual.enabled = isActiveAndEnabled && frame != null && (!Application.isPlaying || colorObject == null || colorObject.IsActive);

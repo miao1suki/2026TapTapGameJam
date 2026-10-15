@@ -179,6 +179,14 @@ namespace Project.ColorBlocks
             if (renderer == null || vines.ContainsKey(renderer)) return;
             renderer.enabled = false;
             var originals = renderer.sharedMaterials;
+            if (renderer is SpriteRenderer sprite)
+            {
+                sprite.sharedMaterial = GetSharedMaterial(sprite.sharedMaterial, id, true);
+                vines.Add(renderer, new VineTarget { id = id, originals = originals });
+                ApplyHsvForRegistration(id);
+                renderer.enabled = GetRealOpacity(id) > .001f;
+                return;
+            }
             var materials = new Material[originals.Length];
             var properties = new MaterialPropertyBlock();
             for (int i = 0; i < originals.Length; i++)
