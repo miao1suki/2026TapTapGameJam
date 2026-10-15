@@ -150,8 +150,12 @@ namespace Project.InputAbstraction
             return value.ReadValue<Vector2>();
         }
 
-        public Vector2 PointerPosition => Mouse.current?.position.ReadValue() ?? Vector2.zero;
-        public Vector2 PointerDelta => Mouse.current?.delta.ReadValue() ?? Vector2.zero;
+        public Vector2 PointerPosition => ActiveDeviceMode == InputDeviceMode.Touch && Touchscreen.current != null
+            ? Touchscreen.current.primaryTouch.position.ReadValue()
+            : Mouse.current?.position.ReadValue() ?? Vector2.zero;
+        public Vector2 PointerDelta => ActiveDeviceMode == InputDeviceMode.Touch && Touchscreen.current != null
+            ? Touchscreen.current.primaryTouch.delta.ReadValue()
+            : Mouse.current?.delta.ReadValue() ?? Vector2.zero;
         internal InputActionAsset Asset => asset;
 
         internal bool EnsureEnabled()

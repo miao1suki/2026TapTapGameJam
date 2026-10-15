@@ -41,7 +41,7 @@ namespace Project.InputAbstraction
                 InputActionId.CameraModeSwitch,
                 "<Keyboard>/tab",
                 "<Gamepad>/select");
-            AddButtonAction(map, InputActionId.PointerPrimary, "<Mouse>/leftButton");
+            AddButtonAction(map, InputActionId.PointerPrimary, "<Mouse>/leftButton", "<Touchscreen>/primaryTouch/press");
             AddButtonAction(map, InputActionId.PointerSecondary, "<Mouse>/rightButton");
             return asset;
         }
@@ -111,6 +111,14 @@ namespace Project.InputAbstraction
             EnsureInteractBindings(map);
             EnsureDropBindings(map);
             EnsureRespawnAction(map);
+            InputAction pointer = map.FindAction(GetName(InputActionId.PointerPrimary), false);
+            if (pointer != null)
+            {
+                bool hasTouch = false;
+                foreach (var binding in pointer.bindings)
+                    if (binding.path == "<Touchscreen>/primaryTouch/press") hasTouch = true;
+                if (!hasTouch) pointer.AddBinding("<Touchscreen>/primaryTouch/press");
+            }
 
             if (mapWasEnabled)
             {

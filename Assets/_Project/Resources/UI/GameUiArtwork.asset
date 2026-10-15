@@ -24,6 +24,11 @@ MonoBehaviour:
   - {fileID: 21300000, guid: bdb57557e73b54b4e8feafb9247b217f, type: 3}
   - {fileID: 21300000, guid: ff97af32b1410854685ea6e9179ce870, type: 3}
   - {fileID: 21300000, guid: b2246f94109d52f40a77e78b428fae62, type: 3}
+  - {fileID: 21300000, guid: 91970f5ae5a256e40ade7075fad1eb5d, type: 3}
+  pauseSectorPivot: {x: -0.21875, y: 0.6052632}
+  pauseSectorAngle: 60
+  pauseSectorPixelScale: 9
+  pauseSectorSpacing: 64
   abilitySectors:
   - {fileID: 21300000, guid: 8a1287ceeb726134298a5caf3776a51a, type: 3}
   - {fileID: 21300000, guid: d30563377bae1424eb75694e7b9f0b3c, type: 3}

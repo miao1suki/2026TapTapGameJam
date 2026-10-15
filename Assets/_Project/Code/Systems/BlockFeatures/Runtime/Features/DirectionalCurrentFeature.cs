@@ -7,7 +7,9 @@ namespace Project.BlockFeatures
     public enum CurrentFlowDirection
     {
         [InspectorName("向左")] Left = 0,
-        [InspectorName("向右")] Right = 1
+        [InspectorName("向右")] Right = 1,
+        [InspectorName("向上")] Up = 2,
+        [InspectorName("向下")] Down = 3
     }
 
     [BlockFeature(
@@ -72,10 +74,13 @@ namespace Project.BlockFeatures
 
         private void ApplyCurrent(PlayerController player)
         {
-            Vector3 localDirection =
-                flowDirection == CurrentFlowDirection.Left
-                    ? Vector3.left
-                    : Vector3.right;
+            Vector3 localDirection = flowDirection switch
+            {
+                CurrentFlowDirection.Left => Vector3.left,
+                CurrentFlowDirection.Up => Vector3.up,
+                CurrentFlowDirection.Down => Vector3.down,
+                _ => Vector3.right
+            };
             Vector3 worldDirection = transform.TransformDirection(
                 localDirection);
             worldDirection.z = 0f;
@@ -100,9 +105,13 @@ namespace Project.BlockFeatures
                 PlayerCount));
             values.Add(new BlockDebugValue(
                 "当前流向",
-                flowDirection == CurrentFlowDirection.Left
-                    ? "向左"
-                    : "向右"));
+                flowDirection switch
+                {
+                    CurrentFlowDirection.Left => "向左",
+                    CurrentFlowDirection.Up => "向上",
+                    CurrentFlowDirection.Down => "向下",
+                    _ => "向右"
+                }));
             values.Add(new BlockDebugValue(
                 "水流速度",
                 currentSpeed));

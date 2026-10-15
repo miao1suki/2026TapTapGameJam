@@ -55,6 +55,16 @@ namespace Project.InputAbstraction
             VirtualInputState.ReleaseOwner(GetInstanceID());
         }
 
+        private void OnApplicationFocus(bool focused)
+        {
+            if (!focused) Release();
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused) Release();
+        }
+
         private void Release()
         {
             activePointerId = int.MinValue;

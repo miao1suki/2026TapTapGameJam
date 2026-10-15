@@ -19,6 +19,7 @@ namespace Project.GameFlow
         Save = 2,
         Collection = 3,
         Quit = 4,
+        Credits = 5,
     }
 
     [Serializable]
@@ -306,7 +307,8 @@ namespace Project.GameFlow
                     new Vector3(0f, 0f, selectedAngle),
                     spinDuration,
                     RotateMode.Fast)
-                .SetEase(Ease.OutQuart));
+                .SetEase(Ease.OutQuart)
+                .OnUpdate(KeepWheelLabelsUpright));
             sequence.OnComplete(() =>
             {
                 wheelAngle = selectedAngle;
@@ -433,6 +435,13 @@ namespace Project.GameFlow
             }
 
             var artwork = GameUiArtwork.Load();
+            EnsureCreditsOption(artwork);
+            if (artwork != null && wheelPivot != null && wheelPivot.parent is RectTransform viewport &&
+                Mathf.Approximately(viewport.anchorMin.x, viewport.anchorMax.x))
+            {
+                float labelExtent = artwork.pauseSectorSpacing + 350f * artwork.pauseSectorPixelScale / 8f + 110f;
+                viewport.sizeDelta = new Vector2(Mathf.Max(viewport.sizeDelta.x, labelExtent * selectedScale + 32f), viewport.sizeDelta.y);
+            }
             if (artwork != null && artwork.panelBackground != null)
             {
                 foreach (GameObject page in new[] { settingsPage, savePage, collectionPage })
@@ -452,7 +461,7 @@ namespace Project.GameFlow
             }
             if (decorationGraphic != null && artwork != null) decorationGraphic.enabled = false;
 
-            float angleStep = options.Count > 0
+            float angleStep = artwork != null ? artwork.pauseSectorAngle : options.Count > 0
                 ? 360f / options.Count
                 : 72f;
             for (int index = 0; index < wheelButtons.Length; index++)
@@ -544,6 +553,27 @@ namespace Project.GameFlow
             }
         }
 
+        private void EnsureCreditsOption(GameUiArtwork artwork)
+        {
+            if (artwork == null || artwork.pauseIcons == null || artwork.pauseIcons.Length < 6 ||
+                settingsPage == null || wheelButtons == null || wheelButtons.Length == 0) return;
+            foreach (var option in options)
+                if (option.action == EscWheelAction.Credits) return;
+            var template = wheelButtons[wheelButtons.Length - 1];
+            if (template == null) return;
+            var button = Instantiate(template, template.transform.parent);
+            button.name = "Credits Sector";
+            options.Add(new EscWheelOption
+            {
+                label = "制作名单",
+                action = EscWheelAction.Credits,
+                pageColor = new Color(.15f, .65f, .8f),
+                panel = settingsPage,
+            });
+            Array.Resize(ref wheelButtons, wheelButtons.Length + 1);
+            wheelButtons[wheelButtons.Length - 1] = button;
+        }
+
         private void ConfigureArtworkButton(Button button, Sprite sprite, float angle, string title)
         {
             var oldSector = button.GetComponent<EscWheelSectorGraphic>();
@@ -557,21 +587,27 @@ namespace Project.GameFlow
             image.color = Color.white;
             image.preserveAspect = true;
             image.raycastTarget = true;
+            image.alphaHitTestMinimumThreshold = sprite.texture.isReadable ? .1f : 0f;
             button.targetGraphic = image;
             button.transition = Selectable.Transition.None;
             var rect = image.rectTransform;
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f,.5f);
+            var artwork = GameUiArtwork.Load();
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+            rect.pivot = artwork.pauseSectorPivot;
             float radians = angle * Mathf.Deg2Rad;
-            rect.anchoredPosition = new Vector2(Mathf.Cos(radians),Mathf.Sin(radians))*245f;
-            rect.sizeDelta = new Vector2(220,260);
+            rect.anchoredPosition = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)) * artwork.pauseSectorSpacing;
+            rect.localRotation = Quaternion.Euler(0f, 0f, angle);
+            rect.sizeDelta = sprite.rect.size * artwork.pauseSectorPixelScale;
             Text label = button.GetComponentInChildren<Text>(true);
             if (label != null)
             {
                 label.text = title;
                 label.fontSize = Mathf.RoundToInt(wheelLabelFontSize);
-                label.rectTransform.anchorMin = label.rectTransform.anchorMax = label.rectTransform.pivot = new Vector2(.5f,.5f);
-                label.rectTransform.anchoredPosition = new Vector2(0,-155);
-                label.rectTransform.sizeDelta = new Vector2(300,74);
+                label.rectTransform.anchorMin = label.rectTransform.anchorMax = rect.pivot;
+                label.rectTransform.pivot = new Vector2(.5f, .5f);
+                label.rectTransform.anchoredPosition = new Vector2(350f * artwork.pauseSectorPixelScale / 8f, 0f);
+                label.rectTransform.sizeDelta = new Vector2(220f, 60f);
+                label.transform.rotation = Quaternion.identity;
             }
         }
 
@@ -735,7 +771,8 @@ namespace Project.GameFlow
             }
 
             currentIndex = Mathf.Clamp(index, 0, options.Count - 1);
-            float angleStep = 360f / options.Count;
+            var artwork = GameUiArtwork.Load();
+            float angleStep = artwork != null ? artwork.pauseSectorAngle : 360f / options.Count;
             wheelAngle = animate && stepDirection != 0
                 ? wheelAngle - stepDirection * angleStep
                 : selectedAngle - currentIndex * angleStep;
@@ -783,13 +820,15 @@ namespace Project.GameFlow
                         snapDuration,
                         RotateMode.Fast)
                     .SetEase(Ease.OutCubic)
-                    .SetUpdate(true);
+                    .SetUpdate(true)
+                    .OnUpdate(KeepWheelLabelsUpright);
             }
             else
             {
                 wheelPivot.localEulerAngles =
                     new Vector3(0f, 0f, wheelAngle);
                 RefreshWheelVisuals();
+                KeepWheelLabelsUpright();
             }
         }
 
@@ -863,10 +902,11 @@ namespace Project.GameFlow
                 button.transform.localScale = Vector3.one * scale;
                 if (button.targetGraphic is Image && buttonIndex < options.Count)
                 {
-                    // Scale the artwork about the wheel centre, like the original radial sector mesh.
-                    float angle = buttonIndex * 360f / options.Count * Mathf.Deg2Rad;
+                    // Scale radial spacing with the artwork, retaining wheel-centred protrusion.
+                    var artwork = GameUiArtwork.Load();
+                    float angle = buttonIndex * artwork.pauseSectorAngle * Mathf.Deg2Rad;
                     ((RectTransform)button.transform).anchoredPosition =
-                        new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (245f * scale);
+                        new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (artwork.pauseSectorSpacing * scale);
                 }
             }
         }
@@ -886,6 +926,11 @@ namespace Project.GameFlow
                     break;
                 case EscWheelAction.Quit:
                     router?.OpenMainMenu();
+                    break;
+                case EscWheelAction.Credits:
+                    PlayWheelOccupy();
+                    OpenPage(settingsPage, option.pageColor);
+                    settingsPanel?.ShowCredits();
                     break;
                 default:
                     PlayWheelOccupy();
@@ -1256,8 +1301,6 @@ namespace Project.GameFlow
                 {
                     continue;
                 }
-
-                if (button.targetGraphic is Image) button.transform.rotation = Quaternion.identity;
 
                 Text label = button.GetComponentInChildren<Text>(true);
                 if (label != null)

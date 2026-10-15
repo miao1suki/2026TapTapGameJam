@@ -143,6 +143,45 @@ namespace Project.InputAbstraction.Tests
             }
         }
 
+        [Test]
+        public void DirectionButtons_CombineAxesAndCancelOpposites()
+        {
+            VirtualInputState.SetVector(1, InputActionId.Move, Vector2.right);
+            VirtualInputState.SetVector(2, InputActionId.Move, Vector2.up);
+            Assert.That(VirtualInputState.ReadVector(InputActionId.Move), Is.EqualTo(new Vector2(1, 1).normalized));
+            VirtualInputState.SetVector(3, InputActionId.Move, Vector2.left);
+            Assert.That(VirtualInputState.ReadVector(InputActionId.Move), Is.EqualTo(Vector2.up));
+            VirtualInputState.ReleaseOwner(2);
+            Assert.That(VirtualInputState.ReadVector(InputActionId.Move), Is.EqualTo(Vector2.zero));
+        }
+
+        [Test]
+        public void TouchDirection_ReleaseOnlyMatchingPointer()
+        {
+            var obj = new GameObject("Direction", typeof(RectTransform), typeof(VirtualDirectionButton));
+            var direction = obj.GetComponent<VirtualDirectionButton>();
+            direction.Configure(Vector2.up);
+            direction.OnPointerDown(new PointerEventData(null) { pointerId = 3 });
+            direction.OnPointerUp(new PointerEventData(null) { pointerId = 4 });
+            Assert.That(VirtualInputState.ReadVector(InputActionId.Move), Is.EqualTo(Vector2.up));
+            direction.OnPointerUp(new PointerEventData(null) { pointerId = 3 });
+            Assert.That(VirtualInputState.ReadVector(InputActionId.Move), Is.EqualTo(Vector2.zero));
+            Object.DestroyImmediate(obj);
+        }
+
+        [Test]
+        public void SafeArea_NormalizesInsetAnchorsWithoutLeavingOffsets()
+        {
+            var obj = new GameObject("Safe", typeof(RectTransform), typeof(ScreenSafeArea));
+            obj.GetComponent<ScreenSafeArea>().Apply(new Rect(80, 20, 2200, 1020), new Vector2(2400, 1080));
+            var rect = (RectTransform)obj.transform;
+            Assert.That(rect.anchorMin.x, Is.EqualTo(80f / 2400).Within(.00001f));
+            Assert.That(rect.anchorMax.y, Is.EqualTo(1040f / 1080).Within(.00001f));
+            Assert.That(rect.offsetMin, Is.EqualTo(Vector2.zero));
+            Assert.That(rect.offsetMax, Is.EqualTo(Vector2.zero));
+            Object.DestroyImmediate(obj);
+        }
+
         private sealed class FakeInputSource : IInputSource
         {
             public bool Pressed;

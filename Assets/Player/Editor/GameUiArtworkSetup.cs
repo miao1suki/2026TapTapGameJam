@@ -36,12 +36,7 @@ namespace Project.Player.Editor
             asset.quitButton = CropPadded(menu, "Quit Button", 74, 127, 58, 30);
             asset.creditsButton = CropPadded(menu, "Credits Button", 7, 79, 108, 41);
             UnityEngine.Object.DestroyImmediate(menu);
-            var icons = Read("1-4菜单.png");
-            asset.pauseIcons = new Sprite[5];
-            int[] positions = {176, 112, 80, 16, 48};
-            for (int i = 0; i < positions.Length; i++)
-                asset.pauseIcons[i] = Crop(icons, "Pause Icon " + i, positions[i], 22, 32, 38);
-            UnityEngine.Object.DestroyImmediate(icons);
+            BuildPauseSprites(asset);
             var wheelSheet = Read("Image_765784931964749.png");
             var wheel = wheelSheet.GetPixels(313, wheelSheet.height - 39 - 64, 64, 64);
             asset.abilitySectors = new Sprite[3]; asset.abilityHighlights = new Sprite[3];
@@ -68,6 +63,38 @@ namespace Project.Player.Editor
             UnityEngine.Object.DestroyImmediate(wheelSheet);
             EditorUtility.SetDirty(asset); AssetDatabase.SaveAssets();
             ApplySavedViews();
+        }
+
+        public static void BuildPauseArtwork()
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<GameUiArtwork>("Assets/_Project/Resources/UI/GameUiArtwork.asset");
+            if (asset == null) throw new InvalidOperationException("Missing shared UI artwork.");
+            BuildPauseSprites(asset);
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssets();
+            ApplySavedPauseView();
+        }
+
+        private static void BuildPauseSprites(GameUiArtwork asset)
+        {
+            var icons = Read("1-4菜单.png");
+            try
+            {
+                asset.pauseIcons = new Sprite[6];
+                int[] positions = {176, 112, 80, 16, 48, 144};
+                for (int i = 0; i < positions.Length; i++)
+                {
+                    var sprite = Crop(icons, "Pause Icon " + i, positions[i], 22, 32, 38);
+                    var importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(sprite));
+                    importer.isReadable = true;
+                    importer.SaveAndReimport();
+                    asset.pauseIcons[i] = AssetDatabase.LoadAssetAtPath<Sprite>(AssetDatabase.GetAssetPath(sprite));
+                }
+                asset.pauseSectorPivot = new Vector2(-7f / 32f, 23f / 38f);
+                asset.pauseSectorAngle = 60f;
+                asset.pauseSectorPixelScale = 9f;
+            }
+            finally { UnityEngine.Object.DestroyImmediate(icons); }
         }
         private static Texture2D Read(string file)
         {
@@ -150,6 +177,11 @@ namespace Project.Player.Editor
                         controller.ApplyArtwork();
                 EditorSceneManager.SaveScene(scene);
             }
+            ApplySavedPauseView();
+        }
+
+        private static void ApplySavedPauseView()
+        {
             string prefab = "Assets/_Project/Content/UI/SharedGameUI.prefab";
             var ui = PrefabUtility.LoadPrefabContents(prefab);
             try

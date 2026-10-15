@@ -211,6 +211,7 @@ namespace Project.BlockFeatures
 
         private void Awake()
         {
+            WorldObjectSpritePresentation.Ensure(gameObject);
             EnsureRuntimeAnchorId();
             ResolveTargetRenderer();
             ApplyVisualState();

@@ -27,6 +27,17 @@ namespace Project.InputAbstraction
         public static bool HasGamepad => Source.HasGamepad;
         public static bool HasTouch => Source.HasTouch;
 
+        public static bool IsPointerOverUi()
+        {
+            var system = UnityEngine.EventSystems.EventSystem.current;
+            if (system == null) return false;
+            var hits = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+            system.RaycastAll(new UnityEngine.EventSystems.PointerEventData(system) { position = PointerPosition }, hits);
+            foreach (var hit in hits)
+                if (hit.module is UnityEngine.UI.GraphicRaycaster) return true;
+            return false;
+        }
+
         public static bool IsPressed(InputActionId action) =>
             Source.IsActionPressed(action);
 

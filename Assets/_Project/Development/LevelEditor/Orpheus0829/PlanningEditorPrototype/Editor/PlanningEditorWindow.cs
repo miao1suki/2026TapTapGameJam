@@ -1344,6 +1344,25 @@ namespace PlanningEditorPrototype
             currentSavePath = EditorPrefs.GetString(
                 CurrentSavePreferenceKey,
                 string.Empty);
+            // Team-shared maps are project assets, not machine-local Library slots.
+            // Recover their binding on a fresh clone without overriding unsaved workspace data.
+            if (string.IsNullOrEmpty(currentSavePath) && !string.IsNullOrWhiteSpace(embeddedJson))
+            {
+                string folder = Path.GetDirectoryName(SceneManager.GetActiveScene().path);
+                if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder))
+                    foreach (string path in Directory.GetFiles(folder, "*.planning.json"))
+                    {
+                        try
+                        {
+                            if (PlanningSaveStore.Read(path).ToPersistentJson() !=
+                                PlanningDocument.FromPersistentJson(embeddedJson).ToPersistentJson()) continue;
+                            currentSavePath = Path.GetFullPath(path);
+                            EditorPrefs.SetString(CurrentSavePreferenceKey, currentSavePath);
+                            break;
+                        }
+                        catch { /* A broken neighbouring map is not this scene's save. */ }
+                    }
+            }
             if (!string.IsNullOrEmpty(currentSavePath) &&
                 !File.Exists(currentSavePath))
             {

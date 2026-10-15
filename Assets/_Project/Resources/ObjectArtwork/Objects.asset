@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 620a4b4488a04aaa998963a642b4f432, type: 3}
+  m_Name: Objects
+  m_EditorClassIdentifier: Project.ObjectArtwork.Runtime::Project.ObjectArtwork.ObjectArtworkLibrary
+  respawnLocked: {fileID: -5829880595034901999, guid: 54cce73fb330c4a40b38edc9a34434f3, type: 3}
+  respawnUsed: {fileID: 5485803015128394397, guid: 54cce73fb330c4a40b38edc9a34434f3, type: 3}
+  respawnCurrent:
+  - {fileID: -9014103075649743943, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: -5909751852627958306, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 5753140120164350327, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 347046501888577096, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: -3926155151986755517, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 8545383679237989020, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: -8127844743687177002, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 2484074231158132266, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 4797947936458573096, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 2768742477444184263, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 5774669087344111515, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: -4487843018205110345, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 3418647327600152994, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: -1992735977390787733, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 6914522562928810971, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 1212680554440498718, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 7572856733844587870, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  - {fileID: 6286022137082530423, guid: 4502a8a1e0e8e0244a2e341a64592d92, type: 3}
+  plantBounce:
+  - {fileID: -5392128129411121306, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
+  - {fileID: -826483003341223748, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
+  - {fileID: -5436311149637234303, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
+  - {fileID: 7238530054953613067, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
+  - {fileID: -5539269187273655995, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
+  - {fileID: -3899164701299856617, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
+  neutralSpriteMaterial: {fileID: 2100000, guid: 6f3b43c614931a441a1add6a105f460f, type: 2}
+  colorSpriteMaterial: {fileID: 2100000, guid: f346b369988561a469bb65d54f8be33c, type: 2}
+  respawnFrameSeconds: 0.08
+  plantFrameSeconds: 0.08
+  plantIdleFrame: 5
+  plantIdleTop: 0.8125

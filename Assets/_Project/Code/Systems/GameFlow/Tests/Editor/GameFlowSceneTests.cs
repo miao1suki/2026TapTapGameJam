@@ -8,6 +8,35 @@ namespace Project.GameFlow.Tests
 {
     public sealed class GameFlowSceneTests
     {
+        [Test]
+        public void PauseWheel_UsesSixSpacedSectorsWithExternalPivot()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/UI/SharedGameUI.prefab");
+            var controller = prefab.GetComponentInChildren<EscMenuController>(true);
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var type = typeof(EscMenuController);
+            var pivot = (RectTransform)type.GetField("wheelPivot", flags).GetValue(controller);
+            var buttons = (UnityEngine.UI.Button[])type.GetField("wheelButtons", flags).GetValue(controller);
+            Assert.That(buttons.Length, Is.EqualTo(6));
+            Assert.That(pivot.anchorMin.x, Is.Zero);
+            Assert.That(((RectTransform)pivot.parent).sizeDelta.x, Is.GreaterThanOrEqualTo(640f));
+            for (int index = 0; index < buttons.Length; index++)
+            {
+                var rect = (RectTransform)buttons[index].transform;
+                Assert.That(rect.anchoredPosition.magnitude, Is.EqualTo(64f).Within(.01f));
+                Assert.That(rect.sizeDelta, Is.EqualTo(new Vector2(288f, 342f)));
+                float positionAngle = Mathf.Atan2(rect.anchoredPosition.y, rect.anchoredPosition.x) * Mathf.Rad2Deg;
+                Assert.That(Mathf.Abs(Mathf.DeltaAngle(positionAngle, index * 60f)), Is.LessThan(.01f));
+                Assert.That(rect.pivot.x, Is.LessThan(0f));
+                Assert.That(Mathf.Abs(Mathf.DeltaAngle(rect.localEulerAngles.z, index * 60f)), Is.LessThan(.01f));
+                var image = (UnityEngine.UI.Image)buttons[index].targetGraphic;
+                Assert.That(image.sprite.texture.isReadable, Is.True);
+            }
+            var options = (System.Collections.Generic.List<EscWheelOption>)type.GetField("options", flags).GetValue(controller);
+            Assert.That(options[5].action, Is.EqualTo(EscWheelAction.Credits));
+            Assert.That(options[5].panel, Is.EqualTo(type.GetField("settingsPage", flags).GetValue(controller)));
+        }
+
         [TestCase(false, true)]
         [TestCase(false, false)]
         [TestCase(true, false)]

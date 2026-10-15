@@ -292,8 +292,7 @@ namespace Project.Player
 
         public void TryUseSelectedAbility()
         {
-            if (EventSystem.current != null &&
-                EventSystem.current.IsPointerOverGameObject())
+            if (Project.InputAbstraction.GameInput.IsPointerOverUi())
             {
                 return;
             }

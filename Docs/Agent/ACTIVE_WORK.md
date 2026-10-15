@@ -1,5 +1,29 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-15 当前进度整合
+
+- 用户授权合并推送：整合网格美术编辑器、六分暂停轮盘、重生点/弹性植物美术、MVMap标注地图及共享规划存档、双平台触摸/安全区与气泡柱修复。以最新 origin/main 为基线验证后合入 main；保留 Unity6000.3.12f1、Android7.1 最低版本。隐私接入已按用户要求完全撤回，不随本次提交。
+- 本地 Pick 场景、字体自动缓存、DOTweenPro 与 Examples、临时 ICON、PackageManager 本机序列化变化不纳入此次功能整合，不清理、不覆盖。Builds/Library 测试包与日志不提交。
+- 整合前 Unity6000.3.12f1 隔离复验六个项目测试程序集83/83通过，待提交的功能源码/场景/资源与已验证快照一致；新增资源meta齐全，git diff --cached --check通过。此前双平台构建与气泡/多指/菜单往返验证记录沿用，未重新打包。安卓真机、完整通关和平台隐私审核不在通过范围。更新说明 Docs/Developer/UPDATE_2026-10-15.md。
+
+## 气泡柱与双平台测试包
+
+- 2026-10-14：修复合并长气泡柱下半段上浮；沿现有 GameInput 增加安卓方向、跳跃、冲刺、交互与左右放下触摸控制；主菜单和暂停界面适配安全区及不同屏幕比例。仅 MainMenu / Gaming 打出 Windows 与安卓测试包，游戏名称与 APK 均使用“形之彩”。保留现有本地场景/字体/插件与未提交功能；未授权提交、推送或合并。
+- 已应用到主项目：SharedGameUI 的持久化 Mobile Gameplay Canvas、MainMenu 安全区/Expand 缩放，横屏自动旋转及正式安卓包名。气泡柱改用 Collider 下边界并以玩家半身浸没判定；UI 触摸边沿在下一帧统一可读，修复早执行玩家驱动漏读一次动作。未更改 PC 键位。真实两根气泡上下段均上浮、多指移动/冲刺/跳跃与暂停释放、三次 MainMenu 往返通过；83/83 编辑测试，413 安全区/字体/动作/无重叠断言通过。PC 实际 D3D11 启动无运行异常。
+- Unity6000.3.12f1隔离快照构建 Windows 与 Android ARM64 IL2CPP Development 包成功，均只含 MainMenu/Gaming，位于 Builds/形之彩-20261014；APK 标签“形之彩”、包名com.miao1suki.shapeofcolor、minSdk25、文件形之彩.apk。构建存在现有 Shader/URP 剥离提示但0错误；尚未安卓真机、完整通关验收。文档 Docs/Developer/ANDROID_AND_PC_TEST_BUILDS.md；未提交未推送，主窗口不切换构建目标、Pick 文件原 SHA256 不变。
+
+## 标注地图可编辑重建
+
+- 2026-10-14：使用策划 map.mvmap (3).json 与标注图，仅重建图内范围至 Development/RoomLifecycleTests/MVMapImportTest；替换旧源图/物体/存档，保留 Scene GUID，备份至 Library/AnnotatedMap20261014。紫色只作三区房间划分；白墙、水域、定向水流、气泡柱、单向平台、三按钮绑定一门按标注制作。全部通过 PlanningDocument、参数覆盖和 PlanningSceneBuilder 应用，提供共享规划存档并检查实际窗口回读。Pick、正式关卡和未提交美术进度不覆盖；未授权提交/推送。
+- 本地已生成79个可编辑实例/1570玩法格，3个紫色范围房间＋独立未划分区；两处下流水流（最右按用户确认由气泡改为下流）、两处上喷气泡、左/上/左转弯水流、一门三按钮（2保持/1持续）、6格单向平台和可编辑测试重生点。深蓝起点不作墙，额外未明确标记只存规划注释。新增水流上下方向，保持旧枚举0/1；共享存档首开绑定/显示修复，不改原增量算法或全局其他场景缓存。
+- Unity6000.3.12f1隔离9592项几何/实际生成占格/稳定ID/重载/增量/参数/真实窗口存档往返断言、19项Play解锁/流向/三按钮开关门/房间与R重置、80项EditMode全部通过；GPU核对全图与实际UI Toolkit装配画布。检测并修复重生点外观网格接口缓存在域重载时的空引用。日志Library/AnnotatedMapBuild.log、AnnotatedMapPlay.log、AnnotatedMapTests.log、AnnotatedMapEditMode.xml及FlowRetirementProbe/Library/AnnotatedMap*。旧Scene/源图/存档/本机绑定已备份，Pick SHA256仍ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35；完整通关与打包未验收。未提交、未推送。
+- 主Unity已安全打开MVMapImportTest与关卡编辑器（初始装配全图），本机绑定指向项目内共享JSON；应用后的Scene与存档SHA256和验证副本一致，一次性打开标记已消费。没有强行丢弃未保存Scene或退出Play。
+
+## 重生点与弹性植物美术
+
+- 2026-10-14：本地接入重生点未激活/已激活非当前/当前动画与弹性植物六帧素材；保持重生链、区域重置、绿色解锁、弹跳参数和作者碰撞不变。合并植物按格重复而非拉伸单株，正式表现走已有绿色 HSV/共享材质透明链。更新对应预制体并为旧实例提供兼容，不覆盖 Pick 场景或其他本地进度；本轮不提交不推送。
+- 已应用主项目源码、两份预制体、Resources/ObjectArtwork配置、Art/Generated/ObjectArtwork切片；原图未修改。80项EditMode通过（新增7项），隔离真实Play/GPU验证三态重生点/重绑/动画、未解锁基础外观、绿色共享渐显材质与全屏白化阶段、4×1合并比例和原碰撞不变、实际弹跳/回静止/重置。当前Scene打开/资源导入时补外观，不自动保存，不重建关卡；Pick文件SHA256仍ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35。日志Library/ObjectArtworkBuild.log、ObjectArtworkTests.log、ObjectArtworkEditMode.xml、ObjectArtworkGpu.log；主窗口手感与打包待验收，未提交未推送。
+
 ## 美术网格试用版
 
 - 2026-10-14：核对tail.png、SurfaceTiles与现有1:1关卡网格；新增独立GridArt模块（UI Toolkit、自动边角、多层视差、持久化分块网格），只增加美术入口，不改玩法存档、Pick或现有场景。沿用taptap-editor-ui规范，参考Unity RuleTile/Tiled/LDtk；缺失内拐角明确提示，不擅自推断美术含义。用户授权推送开发分支 `codex/ui/grid-art-editor`，暂不合并 main。
@@ -8,6 +32,14 @@
 - 隔离EditMode共73项通过（含12项GridArt），GPU/Play检查：保存后真实渲染、无碰撞、分层视差/像素吸附/往返无漂移、重复应用保留手工子对象、UI Toolkit纹理画布；日志Library/GridArtTests.log、GridArtEditMode.xml、GridArtGpu.log。原始示意图NPOT重采样导致边角取样偏移已修复；示例已核对截图。文档GRID_ART.md和Integration/GRID_ART_API.md含实际素材限制、操作、接口及扩展边界。Pick SHA256保持ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35；现有暂停本地进度、字体和插件不纳入本次提交。推送前重新验证73项通过；源码、独立测试场景及生成资产、接入文档一起交付。Unity保持6000.3.12f1，用户主窗口鼠标操作与正式场景美术仍待验收。
 
 ## UI美术绑定与水中玩家渲染
+
+- 2026-10-14暂停尺寸微调完成：按用户反馈将径向间距48→64，像素缩放8→9（尺寸增加12.5%），文字半径同比调整；裁切宽度依据文字半径和最大缩放自动扩展，避免右侧文字被截。保持60°及既有功能/动画，共享UI已应用主项目。隔离GPU/Play逐一检查六项选中后的不透明像素不重叠，画面/文字/名单/循环/键鼠手柄触摸通过，61项EditMode通过；最终日志Library/PauseSizingMaskVerification.log、PauseSizingMaskEditMode.xml，git diff --check通过，Pick SHA256未变。不动Pick或玩家，未提交未推送。
+
+- 2026-10-14暂停扇形间距修正完成：零径向间距未考虑阴影/选中放大，导致相邻扇形挤压；增加48 UI单位可调径向间距并随缩放一起偏移，保留60°方向和素材外圆心。共享预制体已重新生成并应用主项目。隔离GPU/Play逐一验证六项选中状态，对所有不透明像素进行相邻扇形Alpha命中检查，未发现重叠；循环/打断/名单/键鼠手柄触摸验证通过，61项EditMode通过。日志Library/PauseSpacingVerification.log、PauseSpacingEditMode.xml。只修改暂停布局/配置/共享预制体及验证，沿用场景流程和统一字体skill，不动其他UI、Pick或玩家；Pick SHA256未变，git diff --check通过，未提交未推送。
+
+- 2026-10-14暂停扇形拼接完成：六块32×38素材按共同圆心（−7/32、23/38）零位移旋转0～300°，每步60°首尾循环，保留左侧轮盘位置及1.08/0.94圆心缩放凸出；图片随盘转、文字独立保持正向。用户确认新增制作名单，复用SettingsPanelController名单页并保持旧枚举值；旧五项实例初始化补齐第六项，不重复添加。六张小图可读Alpha用于透明留白命中剔除，原图不改。BuildPauseArtwork仅生成暂停切片/配置/共享UI，已将隔离生成资产应用主项目，未动Pick及颜色能力轮盘。61项EditMode通过，隔离GPU/Play验证覆盖共同圆心、六扇形方向、连续打断、正向文字、循环导航、键鼠/手柄/触摸、制作名单入口及实体/透明像素命中；日志Library/PauseSectorReleaseCheck.log、PauseSectorEditMode.xml，完整几何检查图在Library/FlowRetirementProbe/Library/PauseFullSectorGeometry.png（仅验证临时居中，产品仍在左侧）。Pick SHA256未变，git diff --check通过。遵循taptap-scene-flow与taptap-typography规范沿用现有流程/字体/输入；未提交未推送，主窗口实际视觉待用户验收。
+
+- 2026-10-14暂停轮盘试版已撤回：用户验收后要求恢复上一版。已移除60°/居中轴心/首尾停止相关改动及试版测试、使用说明，暂停控制器、共享UI预制体和原测试恢复为05f02c3发布版本；原72°、左侧轴心、循环导航及选中凸出保留。Pick场景、本地插件和本机设置不动；未提交未推送，不应继续应用已撤回的试版。
 
 - 2026-10-14发布：用户授权本版合并并推送main。包含主角精灵/死亡等待/重生相机、水下角色兼容、菜单与转盘美术、Atmosphere E Minor及正式往返暂停修复，代码、生成资源与说明一起发布；用户Pick场景、本地DOTween Pro及PackageManager本机设置不纳入。远程main核对仍772faac，无需引入其他待整合分支；保留全部本地未纳入内容。验证为60项EditMode、场景往返PlayMode1项及真实按钮往返3次通过，Unity保持6000.3.12f1。提交完成后以Git提交信息为发布凭据。
 

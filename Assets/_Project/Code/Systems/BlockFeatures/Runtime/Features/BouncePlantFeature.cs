@@ -23,6 +23,11 @@ namespace Project.BlockFeatures
         [BlockParameter(Label = "触发间隔（秒）", Group = "弹跳", Order = 4)]
         [SerializeField, Min(.05f)] private float minTriggerInterval = .15f;
         public bool IsBounceSurfaceAvailable => CanRunFeature;
+        public event System.Action BounceTriggered;
+        public event System.Action AppearanceReset;
+
+        protected override void OnAttach() => WorldObjectSpritePresentation.Ensure(gameObject);
+        protected override void OnResetForRoom() => AppearanceReset?.Invoke();
 
         public float GetRiseCells(float fallCells, bool jumpHeld) => fallCells > highFallThresholdCells && jumpHeld ? highRiseCells : normalRiseCells;
         public bool TryGetBounceSpeed(PlayerController player, float fallDistance, float downwardSpeed, out float verticalSpeed)
@@ -32,6 +37,7 @@ namespace Project.BlockFeatures
             float cells = GetRiseCells(fallDistance / GridCellWorldSize, player.JumpHeld);
             verticalSpeed = player.CalculateGridRiseSpeed(cells);
             player.RegisterBounce(1f, minTriggerInterval);
+            BounceTriggered?.Invoke();
             return true;
         }
 
@@ -57,6 +63,7 @@ namespace Project.BlockFeatures
         }
         protected override void OnDetach()
         {
+            AppearanceReset?.Invoke();
             foreach (var player in PlayerController.ActivePlayers) if (player != null) player.ExitBounceSurface(this);
         }
         protected override bool OnColorApplied(string colorId, GameObject actor)

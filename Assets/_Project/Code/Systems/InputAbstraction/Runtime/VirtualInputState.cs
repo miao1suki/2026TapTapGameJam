@@ -77,11 +77,13 @@ namespace Project.InputAbstraction
 
             if (isPressed)
             {
-                PressFrames[action] = Time.frameCount;
+                // UI pointer events run after the early gameplay driver (-100).
+                // Publish each edge on the next frame so every consumer observes it exactly once.
+                PressFrames[action] = Time.frameCount + 1;
             }
             else
             {
-                ReleaseFrames[action] = Time.frameCount;
+                ReleaseFrames[action] = Time.frameCount + 1;
             }
 
             MarkActivity();
@@ -107,7 +109,7 @@ namespace Project.InputAbstraction
 
                 if (wasPressed && entry.Value.Count == 0)
                 {
-                    ReleaseFrames[entry.Key] = Time.frameCount;
+                    ReleaseFrames[entry.Key] = Time.frameCount + 1;
                 }
 
                 MarkActivity();
@@ -121,16 +123,13 @@ namespace Project.InputAbstraction
                 return Vector2.zero;
             }
 
-            Vector2 strongest = Vector2.zero;
+            Vector2 combined = Vector2.zero;
             foreach (Vector2 value in owners.Values)
             {
-                if (value.sqrMagnitude > strongest.sqrMagnitude)
-                {
-                    strongest = value;
-                }
+                combined += value;
             }
 
-            return strongest;
+            return Vector2.ClampMagnitude(combined, 1f);
         }
 
         internal static bool IsPressed(InputActionId action)

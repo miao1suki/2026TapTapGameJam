@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEditor;
+using UnityEngine.SceneManagement;
 using UnityEngine;
 
 namespace PlanningEditorPrototype
@@ -60,6 +62,22 @@ namespace PlanningEditorPrototype
 
             result.Sort((left, right) =>
                 right.LastWriteTime.CompareTo(left.LastWriteTime));
+            // A shared project save bound to this scene is also a selectable save slot.
+            string scope = "2026TapTap.Planning.Scene." + Hash128.Compute(Application.dataPath) + "." +
+                AssetDatabase.AssetPathToGUID(SceneManager.GetActiveScene().path);
+            string shared = EditorPrefs.GetString(scope + ".SavePath", string.Empty);
+            if (!string.IsNullOrEmpty(shared) && File.Exists(shared) &&
+                !result.Exists(s => string.Equals(System.IO.Path.GetFullPath(s.Path),
+                    System.IO.Path.GetFullPath(shared), StringComparison.OrdinalIgnoreCase)))
+            {
+                try
+                {
+                    var doc = Read(shared);
+                    result.Insert(0, new PlanningSaveInfo { Path = shared, Name = doc.name,
+                        LastWriteTime = File.GetLastWriteTime(shared) });
+                }
+                catch { /* Invalid shared saves must not prevent opening local saves. */ }
+            }
             return result;
         }
 

@@ -242,7 +242,11 @@ namespace Project.BlockFeatures
             }
 
             Bounds bounds = playerCollider.bounds;
-            if (transform.position.y >= bounds.center.y)
+            Collider columnCollider = GetComponent<Collider>();
+            float columnBottom = columnCollider != null
+                ? columnCollider.bounds.min.y
+                : transform.position.y - GridCellWorldSize * .5f;
+            if (columnBottom >= bounds.center.y)
             {
                 return false;
             }
@@ -322,7 +326,7 @@ namespace Project.BlockFeatures
             }
 
             submergedHeight += intervalEnd - intervalStart;
-            return submergedHeight > .01f;
+            return submergedHeight > bounds.size.y * .5f;
         }
 
         private static int CompareSubmergedIntervals(
@@ -344,14 +348,17 @@ namespace Project.BlockFeatures
             }
 
             Bounds bounds = playerCollider.bounds;
-            if (bounds.max.y <= transform.position.y)
+            Collider bubbleCollider = GetComponent<Collider>();
+            float columnBottom = bubbleCollider != null
+                ? bubbleCollider.bounds.min.y
+                : transform.position.y - GridCellWorldSize * .5f;
+            if (bounds.max.y <= columnBottom)
             {
                 return false;
             }
 
             Vector3 offset =
                 player.transform.position - transform.position;
-            Collider bubbleCollider = GetComponent<Collider>();
             if (bubbleCollider == null)
             {
                 float fallbackRadius =
@@ -367,8 +374,8 @@ namespace Project.BlockFeatures
                 bubbleBounds.extents.x + bounds.extents.x;
             float overlapZ =
                 bubbleBounds.extents.z + bounds.extents.z;
-            return Mathf.Abs(offset.x) <= overlapX &&
-                   Mathf.Abs(offset.z) <= overlapZ;
+            return Mathf.Abs(bounds.center.x - bubbleBounds.center.x) <= overlapX &&
+                   Mathf.Abs(bounds.center.z - bubbleBounds.center.z) <= overlapZ;
         }
     }
 }
