@@ -9,6 +9,7 @@
 - 已整合 main 场景转场、音频实录补齐及响度更新、TA 像素水/定向气泡测试资源和连线起点修正；关卡水不自动替换为新实验方案。新增按钮按下/回弹与藤蔓攀爬 Cue，补齐有效音频资源 meta。
 - 隔离最终106/106项EditMode通过，23项实际Play压力/状态/停音/音频/透明底/精灵对齐检查通过；门/梯生成图剩余不透明黑像素为0。MainMenu→Gaming→暂停返回三轮通过，音乐为atmosphere E minor、timeScale与玩家物理正常。日志Library/PressureIntegrationFinalTests.xml、PressureIntegrationFinalPlay.log、PressureIntegrationMenu.log；两份颜色skill验证通过。
 - 用户主窗口不重载场景，Pick SHA256保持ED2BEF7DFF48F25C89D6A6097C17E20C02489CDFA526D032A3CE485114F4AA35。未重新打包/真机；水禁用期间旧SetParent日志及加载时重复EventSystem/AudioListener提示另记于UPDATE_2026-10-15_INTEGRATION.md，未声明整关无警告。
+- 最后同步 TA 19c5524（气泡密度/宽度/速度及多列交错控制），完整快照再次106/106测试通过，结果Library/PressureMergedTests.xml；两份颜色skill通过quick_validate。最新main基线5c8d0e8，整合者验证后合入main并推送。
 
 ## 2026-10-15 弹跳/钥匙回归与 Android 原生隐私入口
 
