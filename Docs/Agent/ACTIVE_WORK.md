@@ -6,6 +6,9 @@
 
 - 用户要求先整合并推送此前已完成的协作地图功能；绿色钩子问题排查、收集品与四向尖刺本轮暂缓，不宣称已修复。
 - 整合最新 main 与音频新增的重生点素材；保留本机 Pick 布局、字体备份、插件和 PackageManager 设置，不将其混入提交。合并后重新运行协作与相关回归验证。
+- main 基线 eb32836（含绿色钩子与 Timeline 对话）；音频分支 1f1fc7e 的两条重生点声音补齐 Unity 生成的 meta，本次仅整合资源，尚未接线激活回调。Gaming 从本次主线场景内置数据生成同名 `.planning.json`，9个区域，不改变场景布局。
+- 合并后 Unity6000.3.12f1 隔离验证：协作数据36项、UI Toolkit窗口导入/撤回/区域导出7项、统一网格/旧存档1284项、相关EditMode140/140通过；日志Library/CollaborationMergeData.log、CollaborationMergedWindow.log、CollaborationMergedGrid.log、CollaborationMergedRegression.xml。未重新打包、未进行真实多人Git往返或绿色钩子手感验收。
+- 本地字体合并前完整备份：Library/GitMergeBackups/collaboration-20261015/Cubic_11 SDF.local.asset；使用远程字体。Pick文件SHA256在整合前后均为5BC02B3664C5B1F16F929EBBBD83A87805A76CA74B46CDD0D5DF3758179555F0。下方较早条目中的“未提交/推送”为当时状态，本次按用户授权整合交付。
 
 ## 2026-10-15 协作地图与片段交换
 
@@ -1347,3 +1350,14 @@
 - 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 新增「响度标准」一节，含逐文件实测值。
 - 验证：替换后逐文件 SHA256 与归一化产物一致；未在 Unity 中试听。
 - 交接提交：本条目随本次提交。
+
+## 音频新增（重生点激活音效）
+
+- 日期：2026-10-15。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：新增 `sfx_gp_checkpoint_active_01.wav`（新解锁重生点激活）与 `sfx_gp_checkpoint_active_02.wav`（已解锁重生点再次激活）。
+- 接口变更：无。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补资源清单与运行时接线说明。
+- 验证：文件已放入 `Assets/_Project/Content/Audio/SFX/`；未在 Unity 中试听。
+- 交接提交：本次提交。
