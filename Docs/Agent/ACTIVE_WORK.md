@@ -150,3 +150,15 @@
 - 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补藤蔓攀爬的清单行与接线项。
 - 验证：远端分支与本地一致；本次未在 Unity 中试听。
 - 交接提交：本次文档提交。
+
+## 音频响度统一（-28 LUFS）
+
+- 日期：2026-10-15。
+- 负责人：Codex。
+- 分支：`codex/codex/taptap-music`。
+- 范围：`Music/` 下 20 个文件（环境声 6、BGM 14）统一响度。用 ffmpeg loudnorm 两遍测量 + 线性归一化，目标 -28 LUFS、True Peak ≤ -3 dBTP。
+- 结果：实测落在 -28.55 ~ -27.56 LUFS，True Peak 最大 -5.73 dBTP。
+- 接口变更：无。文件名与路径不变，引用与 GUID 不受影响。
+- 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 新增「响度标准」一节，含逐文件实测值。
+- 验证：替换后逐文件 SHA256 与归一化产物一致；未在 Unity 中试听。
+- 交接提交：本条目随本次提交。

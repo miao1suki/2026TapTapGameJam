@@ -85,6 +85,43 @@
 
 路径均为 `Assets/_Project/Content/Audio/SFX/`。
 
+## 响度标准
+
+`Music/` 下 20 个文件于 2026-10-15 统一做了一次响度归一化。处理方式为 ffmpeg `loudnorm` 两遍测量 + 线性增益，只调整整体电平，不压缩动态。
+
+| 指标 | 目标 |
+|---|---|
+| 综合响度（integrated） | -28 LUFS |
+| True Peak | ≤ -3 dBTP |
+| 处理方式 | 线性归一化，保持原始动态范围 |
+
+实测结果：全部落在 -28.55 ~ -27.56 LUFS；True Peak 最大值 -5.73 dBTP，无一越线。
+
+| 文件 | LUFS | True Peak (dBTP) |
+|---|---|---|
+| `bgm_wn_01_opening.wav` | -28.01 | -16.97 |
+| `bgm_ambient_loop_01.mp3` | -28.00 | -16.15 |
+| `bgm_atmosphere_amin_03.mp3` | -28.01 | -14.12 |
+| `bgm_atmosphere_dsmin_02.mp3` | -28.02 | -16.85 |
+| `bgm_atmosphere_emin_02_loop.mp3` | -28.00 | -15.60 |
+| `bgm_atmosphere_fmin_02_loop.mp3` | -28.00 | -16.64 |
+| `bgm_banjo_01.mp3` | -28.00 | -10.01 |
+| `bgm_choices_01.mp3` | -28.00 | -13.20 |
+| `bgm_kb280_01.mp3` | -28.00 | -12.76 |
+| `bgm_music_box_01.mp3` | -28.00 | -9.48 |
+| `bgm_robot_sad_piano_01.mp3` | -28.00 | -10.53 |
+| `bgm_vocal_chop_01.mp3` | -28.00 | -15.59 |
+| `bgm_wake_up_01_loop.mp3` | -28.50 | -13.07 |
+| `bgm_alien_sacrifice_01.mp3` | -28.55 | -11.21 |
+| `amb_env_machine_hum_01.wav` | -28.00 | -15.82 |
+| `amb_env_plant_rustle_01.wav` | -28.00 | -5.73 |
+| `amb_env_room_loop.wav` | -28.00 | -11.65 |
+| `amb_env_water_drip_01.wav` | -28.22 | -5.73 |
+| `amb_env_water_flow_loop.wav` | -27.56 | -11.75 |
+| `amb_env_wind_gust_01.wav` | -27.68 | -10.42 |
+
+环境声与 BGM 目前共用同一目标值。若实际混音中环境声需要垫在音乐之下，应单独设更低的目标并重新归一化，不要在场景里用音量倍率找平衡。
+
 ## 运行时接入
 
 当前项目提供的播放接口位于 `GameAudioService`：
@@ -133,6 +170,7 @@ GameAudioService.PlaySound(clip, volumeScale: 1f);
 - [ ] Unity 导入检查：在 Unity 6000.3.12f1 中确认所有音频正确导入，无报错
 - [ ] `.meta` 文件：首次导入后在 Unity 中生成，与音频文件一并提交
 - [ ] 试听验证：逐条试听，确认音质与循环点衔接自然
+- [ ] 替换后整体平衡确认：-28 LUFS 在游戏内与 UI / SFX 的相对关系
 - [ ] 循环点确认：四个未标注的环境声，以及 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop`、`sfx_gp_platform_move_loop`、`sfx_gp_bubble_loop`
 - [ ] 打包检查：确认音频压缩设置与项目打包配置一致
 
