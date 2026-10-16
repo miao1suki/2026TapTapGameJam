@@ -1361,3 +1361,10 @@
 - 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补资源清单与运行时接线说明。
 - 验证：文件已放入 `Assets/_Project/Content/Audio/SFX/`；未在 Unity 中试听。
 - 交接提交：本次提交。
+
+## 2026-10-16 正式关卡进度提交
+
+- 用户授权将当前正式关卡与场景进度提交并推送至 `main`。
+- 范围：`Assets/_Project/Scenes/Playing/Gaming.unity`、同名 `Gaming.planning.json` 及 `.meta`、`Assets/_Project/Content/LevelMaps/正式关卡.json` 及 `.meta`。这些文件作为后续正式关卡的持续基线。
+- 排除：Unity 自动生成的 Cubic-11 字体缓存，不属于关卡进度；未纳入提交。
+- 验证：提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，确认场景与可编辑规划存档成对存在；Unity 6000.3.12f1 已打开项目，完整 Play Mode/打包验收仍待后续。
