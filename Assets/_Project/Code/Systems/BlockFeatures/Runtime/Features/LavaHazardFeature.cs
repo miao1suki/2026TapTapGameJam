@@ -25,6 +25,13 @@ namespace Project.BlockFeatures
             Tooltip = "蓝色物体作用于岩浆后替换成的 GameObject。")]
         [SerializeField] private GameObject blueReplacementPrefab;
 
+        [BlockParameter(
+            Label = "冷却蒸汽特效",
+            Group = "蓝交互",
+            Order = 1,
+            Tooltip = "蓝色成功作用于岩浆并生成固体块时播放的一次性蒸汽表现。")]
+        [SerializeField] private GameObject blueReactionSteamPrefab;
+
         public GameObject BlueReplacementPrefab =>
             blueReplacementPrefab;
 
@@ -117,9 +124,51 @@ namespace Project.BlockFeatures
                 blueReplacementPrefab,
                 transform.position,
                 transform.rotation);
+            SpawnCoolingSteam(replacement);
             AudioCuePlayer.Play(AudioCueIds.LavaCool);
             if (!Project.Rooms.RoomResetObject.HideForReaction(gameObject, replacement)) Destroy(gameObject);
             return true;
+        }
+
+        private void SpawnCoolingSteam(GameObject replacement)
+        {
+            if (replacement == null || blueReactionSteamPrefab == null)
+            {
+                return;
+            }
+
+            Vector3 origin = GetCoolingSteamOrigin(replacement);
+            GameObject steam = Instantiate(
+                blueReactionSteamPrefab,
+                origin,
+                Quaternion.identity,
+                replacement.transform);
+            steam.name = $"{replacement.name} 冷却蒸汽";
+        }
+
+        private static Vector3 GetCoolingSteamOrigin(GameObject replacement)
+        {
+            Collider collider = replacement.GetComponentInChildren<Collider>();
+            if (collider != null)
+            {
+                Bounds bounds = collider.bounds;
+                return new Vector3(
+                    bounds.center.x,
+                    bounds.max.y + 0.02f,
+                    bounds.center.z);
+            }
+
+            Renderer renderer = replacement.GetComponentInChildren<Renderer>();
+            if (renderer != null)
+            {
+                Bounds bounds = renderer.bounds;
+                return new Vector3(
+                    bounds.center.x,
+                    bounds.max.y + 0.02f,
+                    bounds.center.z);
+            }
+
+            return replacement.transform.position + Vector3.up * 0.52f;
         }
 
         public override void CollectDebugValues(
@@ -132,6 +181,11 @@ namespace Project.BlockFeatures
                 "蓝交互替换",
                 blueReplacementPrefab != null
                     ? blueReplacementPrefab.name
+                    : "未设置"));
+            values.Add(new BlockDebugValue(
+                "冷却蒸汽",
+                blueReactionSteamPrefab != null
+                    ? blueReactionSteamPrefab.name
                     : "未设置"));
         }
     }

@@ -148,6 +148,7 @@ MonoBehaviour:
   featureRenderers: []
   playerTag: Player
   blueReplacementPrefab: {fileID: 3662553476298981817, guid: 38a14cce162a72d46a6ddfeaef560375, type: 3}
+  blueReactionSteamPrefab: {fileID: 7168448403015618791, guid: 9913d44c3ca04e06b428a9ee0438e62d, type: 3}
 --- !u!33 &2039794326874919609
 MeshFilter:
   m_ObjectHideFlags: 0

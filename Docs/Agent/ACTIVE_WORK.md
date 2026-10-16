@@ -2,6 +2,16 @@
 
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
 
+## 2026-10-16 TA 岩浆冷却蒸汽表现
+
+- 范围：新增 `Assets/ta_source/Steam` 独立像素蒸汽 Shader、材质、运行时粒子组件、预制体和 UI Toolkit Inspector；保留原 `Assets/ta_source/SteamEfect` 文件不变。
+- 表现：蓝色成功替换红色岩浆后，在固体块顶部生成浅蓝白雾团，缓慢上浮、横向轻柔展开，约 1.2 秒消散；默认上升不到一格高度，像素化只作用于新材质。
+- 接入：`Red_Lava.prefab` 将新预制体交给 `LavaHazardFeature`；蒸汽作为替代固体块子级生成，区域重置清理替代块时一起清理。接色判定、冷却音效、岩浆复位和固体块生成逻辑保持既有职责。
+- 文档：`Assets/ta_source/Steam/README.md`、`Docs/Developer/LAVA_COOLING_STEAM_EFFECT.md`、`Docs/Developer/PROJECT_SETUP.md` 与本索引。
+- 验证：`git diff --check`、新增文本尾随空白检查、8 个 Steam 资源 GUID 唯一性及 Red_Lava→蒸汽 Prefab→脚本/材质→Shader 引用核对通过。当前机器没有 Unity Editor 安装路径，Unity 命令是启动器且不接受 `-version`，因此未能编译或做 Game 画面验收，未运行运行时测试。
+- 后续调整：蒸汽发射点在运行时对齐到主镜头可见的冷却块上部表面，三个粒子层排序提高，确保雾气覆盖黑曜石表面；保留 Shader 深度测试，使更近的场景物体仍可遮住蒸汽。已同步更新效果说明、项目交接表和索引。
+- 交接：新分支 `codex/ta/lava-cooling-steam-burn` 包含现有植物燃烧效果、Burn 参数调整和岩浆冷却蒸汽表现。当前以本地 `3b8f482` 为基线；尝试获取最新 `origin/main` 时 GitHub 连接被重置，分支同步由整合者处理。
+
 ## 2026-10-16 TA 植物燃烧溶解效果
 
 - 范围：在 `Assets/ta_source/Burn` 新增独立植物燃烧 Shader、运行时材质切换器和共享配置；接入藤蔓、弹性植物、植物障碍的既有红色成功反应。

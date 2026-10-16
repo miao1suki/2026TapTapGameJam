@@ -86,6 +86,7 @@ Build Settings 中的启用场景顺序由 `ProjectSettings/EditorBuildSettings.
 |---|---|---|---|---|
 | `dye_feedback`；`GivingColorEffectController`、`GivingColorEffectTarget` | `Assets/ta_source/GivingColor/GivingColorEffectController.cs`；`GivingColorEffectTarget.cs`；Shader `GivingColorDye.shader`；材质 `Resources/GivingColorDye.mat`；完整步骤见 [`使用说明.md`](../../Assets/ta_source/GivingColor/使用说明.md) | 有 `PlayerColorWheel` 和 `PlayerInteractionSensor` 的场景会在加载后自动创建运行时监听器；无需改场景或玩家预制体。手动添加 Controller 仅用于需要在 Inspector 配置时长等参数。成功的允许目标会临时添加 `GivingColorEffectTarget`。 | 仅响应玩家原染色接口报告成功后的事件；使用成功染色目标、选中色和点击位置播放一次短暂覆盖。红色为燃烧扩散，蓝色为多次水彩叠染，绿色为分叉生长；完成后覆盖层渐隐，显露玩法系统设置的最终外观。 | 调 `GivingColorDye.mat`：红/蓝/绿速度各为 0.25–4 倍、像素化、红橙边宽、三色独立噪波。无需改原 Renderer/材质。排除水体蒸汽反应、植物反应、藤蔓/植物生长、岩浆与水反应生成的深蓝固体。不得触碰开局能力、解锁、接色判定或物体最终颜色逻辑。 |
 | `steam_burst`；`SteamBurstEffect`、`steamVfxPrefab` | `Assets/ta_source/SteamEfect/SteamBurstEffect.cs`；`SteamBurst.shader`；`SteamBurst.mat`；`SteamBurst.prefab`；完整参数见 [`README.md`](../../Assets/ta_source/SteamEfect/README.md) | 蒸汽脚本挂在一次性 `SteamBurst.prefab` 上。`Blue_WaterSource`、`Blue_WaterWay`、`Blue_WaterBubble` 三个蓝色水体预制体的 `WaterVisualFeature.steamVfxPrefab` 已引用它；水体在 Collider 顶面中心实例化。Test 场景的既有对应物体从这些预制体继承配置。 | 水体收到红色染色反应时由现有水体逻辑实例化；仅做向上喷发并在约 0.82 秒内消散的视觉。推力、反应时间和是否触发仍属于原 `WaterVisualFeature` 逻辑。 | 调 `SteamBurst.mat`：效果大小 0.5–3（默认 1.6）、喷发高度 0.5–4（默认 1）、雾气浓度（默认 0.92，影响不透明度和粒子数）、像素化程度 0–1（默认 0.1）。`SteamBurstEffect` Inspector 可调生命周期、水格尺寸和三层粒子数。不要为了蒸汽改染色解锁或水体反应判定。 |
+| `lava_cooling_steam`；`CoolingSteamEffect`、`blueReactionSteamPrefab` | `Assets/ta_source/Steam/CoolingSteamEffect.cs`；`CoolingSteam.shader`；`CoolingSteam.mat`；`CoolingSteam.prefab`；完整说明见 [`LAVA_COOLING_STEAM_EFFECT.md`](LAVA_COOLING_STEAM_EFFECT.md) | `Red_Lava.prefab` 的 `LavaHazardFeature` 引用 `CoolingSteam.prefab`。蓝色替换岩浆时，在固体替换块 Collider 顶部附近生成蒸汽并以替换块为父级；运行时发射点对齐到主镜头可见表面，粒子排序高于默认层级。房间重置清理替换块时同时清理特效。 | 蓝色成功作用于岩浆时播放一次低速上浮雾团，覆盖固体块上部表面并表现蒸发；仍被更靠近镜头的物体遮挡，约 1.2 秒消散。仅表现冷却结果，不控制接色、碰撞、音频或固体块生成。 | `CoolingSteam.mat` 可调雾团大小、浓度、上浮速度、流动、边缘与像素化；`CoolingSteamEffect` Inspector 可调生命周期、方块尺寸和各层粒子数。默认上升幅度不到一个方块高度。 |
 | `target_link_preview`；`InteractionLinkEffect` | `Assets/ta_source/LinkEffect/InteractionLinkEffect.cs`；材质 `InteractionLink.mat`；完整接入步骤见 [`连接效果使用说明.md`](../../Assets/ta_source/LinkEffect/连接效果使用说明.md) | 挂在玩家根物体（与 `PlayerController`、`PlayerInteractionSensor` 同对象）。引用 Sensor、`PlayerColorWheel`、`ColorCatalog` 和连线材质；部分同对象组件可自动查找。运行时线条由组件创建，不给目标物逐个挂脚本。 | 玩家选中红/绿/蓝时，只对交互范围和目标 Layer 内、能够响应当前颜色的目标显示预览。它只读检测可行性；实际点击染色仍走原玩家染色流程。 | 组件 Inspector 可调线条生成时长、断开溶解时间、起点锚点/偏移和目标 Layer；`InteractionLink.mat` 可调链条粗细、像素大小、枝条噪波、效果速度和蓝色水纹外围强度。Test 场景已有 `TestPlayer` 接入配置可作参照。不得从连线组件执行或替代染色。 |
 
 ### 面向 AI 的模块调用约定
@@ -105,6 +106,12 @@ steam_burst:
   configured_by: WaterVisualFeature.steamVfxPrefab
   trigger_owner: existing_water_reaction
   visual_lifetime_seconds: 0.82
+lava_cooling_steam:
+  entry: Project.Steam.CoolingSteamEffect
+  prefab: Assets/ta_source/Steam/CoolingSteam.prefab
+  configured_by: LavaHazardFeature.blueReactionSteamPrefab
+  trigger_owner: existing_lava_blue_reaction
+  visual_lifetime_seconds: 1.2
 target_link_preview:
   entry: InteractionLinkEffect
   mount: player_root
@@ -114,6 +121,8 @@ target_link_preview:
 ```
 
 `Assets/Scenes/Test.unity` 当前用于调试连线预览（`TestPlayer` 上已有 `InteractionLinkEffect`）。染色覆盖通过运行时自动监听接入，不要求在 Test 场景保存组件；蒸汽则随三个蓝色水体预制体字段接入。不要为展示这些效果而改写 Test 场景、能力获取步骤或原玩法组件。需要改任何一个效果时，先读上表对应的模块说明，并检查该目录源码、Prefab/材质引用和本地工作区差异。
+
+岩浆冷却蒸汽通过 `Red_Lava.prefab` 的 `LavaHazardFeature` 字段接入；新放置或继承该预制体配置的岩浆都会使用此表现，无需改动 `Test.unity`。
 
 - 如需求明确要求保护原程序逻辑和场景、只新增隔离组件，使用 `.agents/skills/taptap-readonly-extension/SKILL.md`。
 
