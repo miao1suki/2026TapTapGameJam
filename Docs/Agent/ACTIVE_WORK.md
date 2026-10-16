@@ -1368,3 +1368,10 @@
 - 范围：`Assets/_Project/Scenes/Playing/Gaming.unity`、同名 `Gaming.planning.json` 及 `.meta`、`Assets/_Project/Content/LevelMaps/正式关卡.json` 及 `.meta`。这些文件作为后续正式关卡的持续基线。
 - 排除：Unity 自动生成的 Cubic-11 字体缓存，不属于关卡进度；未纳入提交。
 - 验证：提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，确认场景与可编辑规划存档成对存在；Unity 6000.3.12f1 已打开项目，完整 Play Mode/打包验收仍待后续。
+
+## 2026-10-16 正式关卡当前进度分支交付
+
+- 用户确认以当前恢复的 `Gaming` 场景作为正式关卡，按协作标准提交到独立分支 `codex/formal-level-progress`，不直接修改 `main`。
+- 范围：`Assets/_Project/Scenes/Playing/Gaming.unity`、同名 `Gaming.planning.json` 及 `.meta`、`Assets/_Project/Content/LevelMaps/正式关卡.json` 及 `.meta`；作为后续正式关卡基线。
+- 排除：Unity 自动生成的 Cubic-11 字体缓存，不纳入关卡提交。
+- 验证：提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`；Unity 6000.3.12f1 Play Mode、打包和真实协作往返仍待后续验收。
