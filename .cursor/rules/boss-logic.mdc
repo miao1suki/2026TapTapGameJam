@@ -1,0 +1,12 @@
+---
+description: Boss scene-specific scripts live under Assets/Boss_Logic
+globs: Assets/Boss_Logic/**,Assets/_Project/Scenes/Boss.unity,Assets/_Project/Scenes/Boss.planning.json
+alwaysApply: false
+---
+
+# Boss 场景逻辑归属
+
+- Boss 场景的专属运行时逻辑、组件、Editor 工具和测试脚本必须放在 `Assets/Boss_Logic`。
+- 新建 Boss 专属脚本时，不要放到 `Assets/_Project/Code/Systems`、`Assets/Player` 或其他共享目录。
+- Boss 场景和 `Boss.planning.json` 只引用 `Assets/Boss_Logic` 下的专属脚本。
+- 公共框架、输入、相机、颜色、WordNote 等共享系统保持原目录；只有 Boss 专属实现进入 `Assets/Boss_Logic`。

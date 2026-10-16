@@ -73,6 +73,9 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
 | 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、块材质和达成图片 |
 | Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本；新增对话轨道，不需要绑定对象，直接向常驻 `WordNote_UI` 申请同一画布中的消息。使用见 [对话轨道](../Developer/TIMELINE_DIALOGUE.md)，接入见 [API](Integration/TIMELINE_DIALOGUE_API.md) |
+| 玩家 / Boss Timeline 轨道 | `Assets/GJ_Tools/TimelineTools3D/AboutTimeline` | `PlayerTimelineTrack` 与 `BossTimelineTrack` 支持显式绑定或按 Tag 查找角色，驱动位移、跳跃、玩家输入锁和 Boss 追击状态。使用见 [玩家与 Boss 轨道](../Developer/TIMELINE_ACTOR_TRACKS.md)，接入见 [API](Integration/TIMELINE_ACTOR_TRACKS_API.md) |
+| 通用接触触发道具 | `Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/ContactTimelineTrigger.cs` | 独立 MonoBehaviour，挂在有 Collider 的道具上后自动隐藏 Renderer，通过 Trigger/Collision 接触播放绑定 Timeline；支持玩家、任意碰撞体或 Tag 筛选，不依赖颜色系统。使用见 [接触触发](../Developer/CONTACT_TIMELINE.md)，接入见 [API](Integration/CONTACT_TIMELINE_API.md) |
+| Boss 追击控制器 | `Assets/Boss_Logic/BossController.cs`、`BossAnimationDriver.cs` | 分离控制逻辑和动画：Chase/Hit/Death 三状态，支持目标标签追击、受击、死亡；动画桥可选，无 Animator 不影响逻辑。使用见 [Boss 控制器](../Developer/BOSS_CONTROLLER.md)，接入见 [API](Integration/BOSS_CONTROLLER_API.md) |
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
 | 颜色物功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 提供固定形态、生命周期、信号、命令与调试；`BlockAbilityHost` 只按固定颜色组启停预制体已有组件；`CarryableFeature` 是能源方块和万能方块共用的独立搬运组件，能源由 `IColorObject` 门控，万能方块常态可搬 |
 | 公共自动发现、掉落物生命周期与 Inspector 基础 | `Assets/_Project/Code/Shared` | `ProjectDiscovery` 统一多态组件/标签/类型发现；`DropItemBase` 统一掉落物出现、收集、停止动画和回收生命周期；项目自制组件使用 UI Toolkit Inspector、中文标签和 Foldout 分区 |

@@ -1,5 +1,37 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-16 Boss 入场序列与角色 Timeline 轨道
+
+- 分支：`Boss`；范围：`Assets/Boss_Logic`、`Assets/GJ_Tools/TimelineTools3D/AboutTimeline`、`Boss(暂定)` 预制体、`Boss` 场景接线。
+- Boss：`BossController` 新增 Jump 状态，可配置跳跃持续时间、弧高、冷却、转向和落地清速；提供 `RequestJump`、`RequestJumpTo`、`CancelJump`、`TeleportTo`。受击/死亡/禁用会安全取消跳跃。
+- Timeline：新增 `BossIntroTrack` / `BossIntroClip`，资源 `Assets/_Project/Content/Boss/Timelines/BossIntro.playable`，负责生成或复用 Boss、平滑运镜、站立、向右下小跳和结束后开启追击；Boss 使用编辑模式玩家位置 `(-9.4, -32.1, 0)` 作为固定出生点，不跟随运行时玩家。
+- 工具轨道：新增 `PlayerTimelineTrack` 与 `BossTimelineTrack`，可显式绑定或按 `Player` / `Boss` Tag 查找角色；支持瞬移、曲线位移、弧线跳跃、玩家输入锁和 Boss 追击状态。
+- 片段 Inspector：玩家/Boss Timeline 片段改为中文分区，并新增顶部“本片段操作”选择器；玩家可选择位移、移动输入、冲刺、按住跳跃、请求跳跃、锁控制或自定义，Boss 可选择位移、追击、死亡或自定义，只显示对应参数。标签项使用 Unity TagField，并提供读取场景同 Tag 角色位置到目标坐标的快捷操作。
+- 接触触发器：新增“播放期间申请玩家控制锁”选项，通过 `IPlayerControlLockTarget` 接口申请并在 Timeline 停止、重置、禁用时释放，不持有具体玩家引用。
+- 场景：`Prop [0,41]` 已接 `BossIntro.playable`；`ContactTimelineTrigger.timeline` 与 `PlayableDirector.m_PlayableAsset` 同时写入 PrefabInstance 覆盖，并把同一对象引用同步到 `Boss.planning.json` 和 `Content/LevelMaps/Boss.json` 的 `componentOverrides`。
+
+## 2026-10-16 Boss 追击控制器与动画分离
+
+- 分支：`Boss`；源码：`Assets/Boss_Logic/BossController.cs`、`Assets/Boss_Logic/BossAnimationDriver.cs`。
+- 范围：在 `Boss(暂定)` 预制体上挂 Rigidbody、BossController 和可选 BossAnimationDriver；实现 Chase、Hit、Death 三状态，目标标签使用 Unity TagField，并增加启用追击开关。
+- 分离：控制器只处理目标追击、受击硬直、扣值、死亡和 Rigidbody；动画桥只订阅状态并转发 Animator/UnityEvent，没有 Animator 时动作逻辑仍可运行。
+- 验证：Runtime 与 Editor 程序集静态编译通过。
+
+## 2026-10-16 规划片段空存档预览修复
+
+- 现象：正常编辑时 `PlanningFragmentUtility.Bounds` 对空片段抛 `InvalidDataException`，导致导入预览刷新中断。
+- 修复：新增 `TryBounds`，Canvas 预览在片段为空或没有房间/通道时清空导入边界和预览，不再绘制；`FocusImportPreview`/`DrawTransferPreview` 增加空边界保护。
+- 验证：Editor 程序集静态编译通过，`git diff --check` 通过。
+
+## 2026-10-16 通用非颜色接触 Timeline 组件
+
+- 分支：`Boss`；源码：`Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/ContactTimelineTrigger.cs`。
+- 范围：新增可挂任意道具的独立 MonoBehaviour，不绑定 Boss 场景、不依赖 `ColorObject`、BlockRuntime 或 BlockAbilityHost；激活时隐藏 Renderer，保留 Collider，按 Trigger/Collision 接触播放绑定的 Timeline。
+- 预制体：`Assets/_Project/Content/ColorBlocks/Prefabs/ContactTimeline_Block.prefab`，1×1 白块外观，仅挂基础视觉、Collider、PlayableDirector 与 ContactTimelineTrigger。
+- 参数：Timeline 资源、直接编辑所挂 Collider 的启用/Trigger/BoxCollider 尺寸与中心、任意碰撞体/仅玩家/指定 Tag 筛选、只触发一次/可重复触发、重复冷却、重复接触重新开始、自动隐藏、触发后销毁。
+- 调试显示：Inspector 顶部显示当前触发模式，触发规则独立分区，调试区显示剩余冷却。
+- 验证：Runtime 与 Editor 程序集静态编译通过，`git diff --check` 通过。
+
 ## 2026-10-16 双阶段颜色解锁与标准玩家
 
 - 首次同色钥匙只解锁场景物体，第二次解锁玩家能力；两套状态独立，R/离区保留，显式新游戏清空。整理唯一标准玩家预制体，同步已有场景实例及相机/编辑器引用；新建空存档在世界原点创建并绑定标准玩家。用户随后授权整合到main并推送，包含本分支此前已推送的攀爬/移动端改进及后续搬运中心修复。
@@ -36,6 +68,11 @@
 - Unity6000.3.12f1隔离验证：朝向曲柄/拾取、转向、稳定选择、完整尺寸/红色虚线/启停注册、轮盘取消等22项通过；原搬运物理20项通过；相关EditMode140/140通过。当前源码Windows开发包实际完成3轮MainMenu→Gaming→MainMenu，游戏错误0、重复EventSystem警告0。日志Library/FacingInteractionVerification.log、FacingCarryCollision.log、FacingRegression.xml、MenuReturnBuild.log、MenuReturnPlayer.log。安卓未重新打包与真机验证；测试包仅Library隔离目录，不代替正式交付。Pick SHA256保持05C74E1A64F415E529677827DA64D113C869BAF44507C3732D46B5DBE3019747；未提交/合并/推送。
 
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
+
+## 2026-10-16 Boss 场景脚本归属
+
+- 分支：`Boss`；规则：Boss 场景专属运行时逻辑、组件、Editor 工具和测试脚本统一放在 `Assets/Boss_Logic`。
+- 边界：Boss 场景与 `Boss.planning.json` 只引用该目录中的 Boss 专属脚本；公共框架、输入、相机、颜色、WordNote 等共享系统保持原归属。
 
 ## Boss 场景相机与 WordNote
 

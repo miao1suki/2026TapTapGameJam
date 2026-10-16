@@ -91,6 +91,43 @@ public static class TimelineHelpTextTracks
             "· circleVariableSpeed 与 circleStartAngSpeed / circleEndAngSpeed：角速度是否变速。\n\n" +
             "");
 
+        TimelineHelpText.Register(map, typeof(PlayerTimelineTrack), "PlayerTimelineTrack · 玩家轨道",
+            "【这是什么】\n" +
+            "控制玩家的 Timeline 轨道。轨道绑定可以为空，片段会按 Unity Tag 查找玩家，" +
+            "默认 Tag 为 Player。\n\n" +
+            "【怎么用】\n" +
+            "1) 添加 PlayerTimelineTrack；\n" +
+            "2) 可绑定玩家 Transform，也可留空；\n" +
+            "3) 创建片段并配置位移、跳跃、输入和锁定参数。\n\n" +
+            "绑定对象存在时优先使用绑定；绑定为空时按片段上的 actorTag 查找角色。\n\n");
+
+        TimelineHelpText.Register(map, typeof(PlayerTimelineClip), "PlayerTimelineClip · 玩家片段",
+            "【这是什么】\n" +
+            "扣在 PlayerTimelineTrack 上的玩家控制片段，可驱动角色位置、输入和跳跃。\n\n" +
+            "【运动】\n" +
+            "支持无、瞬移、平滑移动、弧线跳跃；目标默认取片段挂载物体加偏移，" +
+            "也可改为世界坐标。\n\n" +
+            "【玩家输入】\n" +
+            "可设置移动输入、冲刺、按住跳跃、请求跳跃和跳跃增强速度；" +
+            "可直接锁住玩家控制，并在片段结束时恢复进入前的输入状态。\n\n");
+
+        TimelineHelpText.Register(map, typeof(BossTimelineTrack), "BossTimelineTrack · Boss 轨道",
+            "【这是什么】\n" +
+            "控制 Boss 的 Timeline 轨道。轨道绑定可以为空，片段会按 Unity Tag 查找 Boss，" +
+            "默认 Tag 为 Boss。\n\n" +
+            "【怎么用】\n" +
+            "1) 添加 BossTimelineTrack；\n" +
+            "2) 可绑定 Boss Transform，也可留空；\n" +
+            "3) 创建片段并配置位移、跳跃、追击开关和结束行为。\n\n");
+
+        TimelineHelpText.Register(map, typeof(BossTimelineClip), "BossTimelineClip · Boss 片段",
+            "【这是什么】\n" +
+            "扣在 BossTimelineTrack 上的控制片段。运动模式与玩家轨一致，" +
+            "弧线跳跃默认调用 BossController 的 Jump 状态。\n\n" +
+            "【Boss 状态】\n" +
+            "可设置片段开始时和结束时的追击开关，也可选择片段结束时杀死 Boss。" +
+            "动画仍由 BossAnimationDriver 订阅状态，不在 Timeline 里直接写 Animator。\n\n");
+
 
         TimelineHelpText.Register(map, typeof(CameraTimelineTrack), "CameraTimelineTrack · 相机运镜轨道",
             "【这是什么】\n" +

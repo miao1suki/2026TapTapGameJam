@@ -54,31 +54,67 @@ namespace PlanningEditorPrototype
         public void SetWaterEditing(bool value) { editWaterLayer = value; MarkDirtyRepaint(); }
         public void SetImportPreview(PlanningDocument source, Vector2Int anchor, bool valid)
         {
-            if (importPreview != source)
+            importPreview = source;
+            importAnchor = anchor;
+            importValid = valid;
+            importSpans.Clear();
+
+            if (source == null ||
+                !PlanningFragmentUtility.TryBounds(
+                    source,
+                    out importBounds))
             {
-                importSpans.Clear();
-                if (source != null)
-                {
-                    importBounds = PlanningFragmentUtility.Bounds(source);
-                    foreach (var row in source.rooms.SelectMany(r => r.cells).GroupBy(c => c.y))
-                    {
-                        var columns = row.Select(c => c.x).Distinct().OrderBy(x => x).ToArray();
-                        int start = columns[0], end = start + 1;
-                        foreach (int x in columns.Skip(1))
-                        {
-                            if (x == end) { end++; continue; }
-                            importSpans.Add(new RectInt(start, row.Key, end - start, 1)); start = x; end = x + 1;
-                        }
-                        importSpans.Add(new RectInt(start, row.Key, end - start, 1));
-                    }
-                }
+                importBounds = default;
+                MarkDirtyRepaint();
+                return;
             }
-            importPreview = source; importAnchor = anchor; importValid = valid; MarkDirtyRepaint();
+
+            foreach (var row in source.rooms
+                         .SelectMany(r => r.cells)
+                         .GroupBy(c => c.y))
+            {
+                var columns = row.Select(c => c.x)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToArray();
+                int start = columns[0];
+                int end = start + 1;
+                foreach (int x in columns.Skip(1))
+                {
+                    if (x == end)
+                    {
+                        end++;
+                        continue;
+                    }
+
+                    importSpans.Add(new RectInt(
+                        start,
+                        row.Key,
+                        end - start,
+                        1));
+                    start = x;
+                    end = x + 1;
+                }
+
+                importSpans.Add(new RectInt(
+                    start,
+                    row.Key,
+                    end - start,
+                    1));
+            }
+
+            MarkDirtyRepaint();
         }
 
         public void FocusImportPreview()
         {
-            if (importPreview == null) return;
+            if (importPreview == null ||
+                importBounds.width <= 0 ||
+                importBounds.height <= 0)
+            {
+                return;
+            }
+
             CenterOn(importAnchor.x + importBounds.width * .5f, importAnchor.y + importBounds.height * .5f);
         }
 
@@ -96,7 +132,12 @@ namespace PlanningEditorPrototype
 
         private void DrawTransferPreview(Painter2D painter)
         {
-            if (importPreview == null) return;
+            if (importPreview == null ||
+                importBounds.width <= 0 ||
+                importBounds.height <= 0)
+            {
+                return;
+            }
             Vector2Int shift = importAnchor - importBounds.position;
             var color = importValid ? new Color(.25f, 1f, .6f, .8f) : new Color(1f, .3f, .25f, .8f);
             foreach (var span in importSpans)
