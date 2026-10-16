@@ -238,7 +238,7 @@ namespace Project.GameFlow
         private void Update()
         {
             if (hudPlatform != GameInput.PlatformMode) RefreshPlatformHud();
-            if (MobileControlLayout.IsEditing) return;
+            if (MobileControlLayout.IsEditing || Project.Privacy.AndroidPrivacyPolicy.IsShowing) return;
             if (IsInitialized &&
                 IsSystemUiSceneAvailable() &&
                 IsGameplayScene() &&

@@ -5,10 +5,10 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.Html;
-import android.text.method.LinkMovementMethod;
+import android.text.SpannableString;
+import android.text.style.URLSpan;
 import android.view.Gravity;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -34,13 +34,16 @@ public final class PrivacyActivity extends Activity {
         TextView introduction = label("请阅读《形之彩隐私政策》。同意后才会启动 Unity 引擎及游戏；不同意将退出游戏。未满14周岁的玩家请由监护人阅读并同意。", 15);
         panel.addView(introduction);
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true);
-        TextView policy = label("", 15); policy.setTextIsSelectable(true); policy.setMovementMethod(LinkMovementMethod.getInstance());
+        TextView policy = label("", 15); policy.setTextIsSelectable(true);
         boolean loaded = false;
-        try { policy.setText(Html.fromHtml(PrivacyConsent.policy(this), Html.FROM_HTML_MODE_LEGACY)); loaded = true; }
+        try {
+            SpannableString text = new SpannableString(Html.fromHtml(PrivacyConsent.policy(this), Html.FROM_HTML_MODE_LEGACY));
+            for (URLSpan link : text.getSpans(0, text.length(), URLSpan.class)) text.removeSpan(link);
+            policy.setText(text); loaded = true;
+        }
         catch (Exception ignored) { policy.setText("隐私政策未能载入，请退出后重新安装。未经同意不会启动游戏。"); }
         scroll.addView(policy); panel.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
         LinearLayout buttons = new LinearLayout(this); buttons.setGravity(Gravity.CENTER);
-        Button online = button("查看在线政策"); online.setOnClickListener(view -> openOnline()); buttons.addView(online, equalWidth());
         if (review) {
             Button revoke = button("撤回同意并退出");
             revoke.setOnClickListener(view -> new android.app.AlertDialog.Builder(this)
@@ -71,11 +74,6 @@ public final class PrivacyActivity extends Activity {
         } catch (ActivityNotFoundException error) {
             launching = false; Toast.makeText(this, "游戏入口不可用，请重新安装", Toast.LENGTH_LONG).show();
         }
-    }
-
-    private void openOnline() {
-        try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(PrivacyConsent.POLICY_URL))); }
-        catch (ActivityNotFoundException error) { Toast.makeText(this, "未找到浏览器，可直接阅读上方完整政策", Toast.LENGTH_LONG).show(); }
     }
 
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }

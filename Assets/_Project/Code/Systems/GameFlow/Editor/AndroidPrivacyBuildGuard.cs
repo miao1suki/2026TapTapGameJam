@@ -15,6 +15,7 @@ namespace Project.GameFlow.Editor
         public const string Gate = "com.miao1suki.shapeofcolor.privacy.PrivacyActivity";
         public const string App = "com.miao1suki.shapeofcolor.privacy.PrivacyApplication";
         public const string UnityActivity = "com.unity3d.player.UnityPlayerActivity";
+        public const string PolicyAsset = "Assets/_Project/Resources/Privacy/privacy-policy.txt";
         static readonly XNamespace Android = "http://schemas.android.com/apk/res/android";
         public int callbackOrder => 10000;
 
@@ -23,7 +24,7 @@ namespace Project.GameFlow.Editor
             if (report.summary.platform != BuildTarget.Android) return;
             if (PlayerSettings.Android.applicationEntry != AndroidApplicationEntry.Activity)
                 throw new BuildFailedException("原生隐私入口要求 Android Application Entry 为 Activity，不能直接启动 GameActivity。");
-            var policy = File.ReadAllText("Assets/Plugins/Android/PrivacyGate.androidlib/assets/privacy-policy.html");
+            var policy = File.ReadAllText(PolicyAsset);
             if (!policy.Contains("形之彩隐私政策") || !policy.Contains("Unity3D SDK") || !policy.Contains("如何联系我们"))
                 throw new BuildFailedException("隐私政策正文不完整，停止安卓构建。");
         }
@@ -62,6 +63,7 @@ namespace Project.GameFlow.Editor
                 .SingleOrDefault(file => file.EndsWith("/Cubic_11.ttf", StringComparison.OrdinalIgnoreCase));
             if (font == null) throw new BuildFailedException("缺少项目统一字体 Cubic_11.ttf。");
             Directory.CreateDirectory(Path.Combine(module, "assets"));
+            File.Copy(PolicyAsset, Path.Combine(module, "assets/privacy-policy.html"), true);
             File.Copy(font, Path.Combine(module, "assets/privacy-font.ttf"), true);
             UnityEngine.Debug.Log("[PrivacyGate] Native consent launcher installed; Unity is not exported. Policy/font are offline assets.");
         }

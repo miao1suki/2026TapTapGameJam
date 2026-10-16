@@ -26,6 +26,8 @@
 
 ## 构建与验证
 
+2026-10-16 离线规则更新：以下开发包仅保留为历史产物，不是比赛离线包，不应继续分发。当前构建脚本改为 `BuildOptions.None`、关闭调试发现/遥测，由 `ContestOfflineBuildGuard` 阻止开发构建并移除 Android 网络权限。本次未重新构建；详见 [比赛离线版本](OFFLINE_BUILD.md)。
+
 2026-10-16 贴墙放置修复版（最新）：`Builds/形之彩-20261016-贴墙放置修复/Android/形之彩.apk`（102.65MiB），以及`形之彩-Windows.zip`（107.45MiB，解压后运行形之彩.exe，保留全部依赖）。两端均仅MainMenu/Gaming，源码基于cdde143，不含本地未交付关卡和插件。修复贴另一侧墙时放下误拒绝；玩家由控制器平滑让位，不再瞬移，保留真实阻挡和区域重置。
 
 Android构建0错误/4旧Shader警告，Windows构建0错误/2旧Shader警告。171项项目编辑检查与151项运行检查通过，含真实Gaming现有红块、白墙、玩家指令与R复位。APK签名、原生隐私入口、ARM64、Android7.1/API25核对通过，仍需手机手感和隐私流程真机验收。日志`Library/CarryWallAndroidBuildFinal.log`、`CarryWallWindowsBuild.log`、`CarryWallProjectTests.xml`及`CarryRelease-*.log`。APK SHA256 `4DAB8DE00EF0ABB8769C1A9EE60D723F3C576C1DE1A344767E59FE0E4555C0B1`；Windows ZIP SHA256 `302DE46785B141CB9278E7BE37B7D07596987186916D1BBEB2CE1FB8F9E2F8E6`。旧包保留。

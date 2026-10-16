@@ -18,7 +18,7 @@
 
 正式水族已替换为TA像素水面/水中/水下自动分区与透明折射板；定向水流四向气泡、浮力柱向上连通水域气泡，继续共享蓝色HSV/透明交接与原玩法/区域重置。无需重建场景。见 [玩法水体API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[使用说明](../Developer/GAMEPLAY_PIXEL_WATER.md)。旧独立波纹水保留作资源和后备路径，不再默认生成。
 
-Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全文/在线入口、设置查看与撤回；最低 Android 7.1 不变，不启用 Bootstrap。见 [开发说明](../Developer/ANDROID_PRIVACY.md) 与 [接入 API](Integration/ANDROID_PRIVACY_API.md)。
+Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全文、设置查看与撤回，无在线入口；最低 Android 7.1 不变，不启用 Bootstrap。见 [开发说明](../Developer/ANDROID_PRIVACY.md) 与 [接入 API](Integration/ANDROID_PRIVACY_API.md)。比赛版本禁止非 TapTap SDK 联网，当前无 TapTap SDK，完全离线构建；必须阅读 [离线规则](../Developer/OFFLINE_BUILD.md)，不得使用开发构建或恢复网络权限。
 
 物体美术新增 `MechanismArtworkPresentation`：门及按钮三色提示、曲柄进度正反帧、移动平台、三色接触方块/钥匙、梯子及静态岩浆；沿用原碰撞、格尺寸与集中颜色表现。安卓暂停只反转触摸上下滑动，不改变键鼠手柄。见 [物体美术](../Developer/OBJECT_ARTWORK.md) 与 [接入API](Integration/OBJECT_ARTWORK_API.md)。
 

@@ -1,5 +1,17 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-16 触控布局点击与比赛离线约束
+
+- 排查 Android 触控布局入口、选中、拖动、缩放和保存的实际指针链路；保留既有布局数据和手柄映射。
+- 比赛期间禁止非 TapTap SDK 的运行时联网，检查旧 APK、构建选项、合并 Manifest、遥测及隐私政策在线入口。当前尚未接入 TapTap SDK，按完全离线构建；后续 SDK 须另行审计，不借例外开启其他联网功能。
+- 沿用 codex/ui/mobile-left-controls-spacing；保留用户 Pick、字体、插件及未交付规划。隔离工程验证，只推送本分支，不合并、不打包、不切主 Unity 平台。
+- 已定位并修复：暂停设置与触控布局原 Canvas 排序均为1000，实际 Raycast 顶部命中 SettingsPage/Sound Page，截走布局按键事件。布局改为30000独立模态层（低于转场32767）；拖动以pressPosition计算，修正首段移动被吞掉。保存格式和既有布局不变。
+- 旧贴墙修复APK实际仅有INTERNET、debuggable=true，未发现附近设备/Wi-Fi/蓝牙权限或自写扫描业务代码。旧脚本使用Development，是可疑来源，未通过真机日志确认具体弹窗原因。当前PC/Android构建改为None，关闭调试/Profiler；关闭Unity提交统计、Analytics/Ads启动、Diagnostics及异常上报，构建守卫拒绝重新开启。最高优先级launcher移除网络/LAN/Wi-Fi/蓝牙权限，禁止明文及调试。
+- 隐私入口保留，移除原生在线按钮/URLSpan与桌面OpenURL；桌面新增Cubic_11离线全文模态阅读。唯一政策源迁至Resources/Privacy/privacy-policy.txt，Git blob与原HTML完全相同，Android构建钩子复制到生成模块；未改写法律条款。离线规则已写入根AGENTS、WORKING_AGREEMENTS、SYSTEM_INDEX和Developer/OFFLINE_BUILD.md，SDK例外须另行专项审计。
+- 验证：Unity6000.3.12f1隔离编译通过，GameFlow/Input编辑测试95/95；真实Touchscreen运行2/2（暂停设置入口、选中、首段拖动、放大、取消、保存应用及离线全文/返回），正式菜单→Gaming→暂停回菜单重复往返1/1通过。日志Library/OfflineFinalEditTests.xml、OfflineFinalPointerTests.xml、OfflineRoundTripTests.xml。最初运行发现拖动首段位移丢失，修复后全数通过。
+- 已在既有生成Gradle工程运行真实Release Manifest合并与原生Java编译（--offline，15任务成功），合并Manifest权限0项、debuggable=false、API25、唯一PrivacyActivity Launcher和非导出Unity活动；文件在Library/FlowRetirementProbe/Library/Bee/Android/Prj/IL2CPP/Gradle/launcher/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml。防御性移除不存在权限产生合并警告，SDK只读目录/原生废弃API旧警告不影响完成。没有生成新APK，未声称真机网络抓包或比赛合规认证；旧包不能作为本次离线包。
+- 本轮未编辑或暂存Scene/规划、字体、插件和PackageManagerSettings。检测到任务期间Pick由其他编辑流程继续更新（当前SHA256 B00C18CE4C738D6CF80F7EF82A5FAE3C16A2326E9DB9D3291BF7202E77223D4B），原样保留，不恢复或提交；主Unity保持打开、未切平台。
+
 ## 2026-10-16 手机方向键间距与暂停入口
 
 - 本轮仅调整移动端默认布局：拉开左手右键/下键的触摸区域，暂停移至左上安全区；保留已保存的自定义布局、原输入映射、多指操作及暂停轮盘本身的交互。使用Git分支工作、统一字体与暂停UI约定，不修改字体或轮盘样式。

@@ -37,7 +37,7 @@ namespace Project.GameFlow.Tests
             Assert.AreEqual(AndroidPrivacyBuildGuard.Gate, (string)activity.Attribute(Android + "name"));
             Assert.AreEqual(":privacy", (string)activity.Attribute(Android + "process"));
             Assert.AreEqual(AndroidPrivacyBuildGuard.App, (string)manifest.Descendants("application").Single().Attribute(Android + "name"));
-            string policy = File.ReadAllText("Assets/Plugins/Android/PrivacyGate.androidlib/assets/privacy-policy.html");
+            string policy = File.ReadAllText(AndroidPrivacyBuildGuard.PolicyAsset);
             foreach (string part in new[] { "形之彩隐私政策", "Unity3D SDK", "如何联系我们", "2565553717@qq.com" }) Assert.That(policy, Does.Contain(part));
             Assert.That(policy, Does.Not.Contain("<script"));
             Assert.That(policy, Does.Not.Contain("<iframe"));

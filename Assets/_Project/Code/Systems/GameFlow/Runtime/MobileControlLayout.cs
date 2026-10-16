@@ -81,6 +81,8 @@ namespace Project.GameFlow
 
     public sealed class MobileControlLayoutEditor : MonoBehaviour
     {
+        // Modal above pause/settings (1000) and hints (1200), below scene transitions (32767).
+        public const int SortingOrder = 30000;
         private MobileGameplayControls preview;
         private RectTransform selected;
         private TextMeshProUGUI title;
@@ -92,7 +94,7 @@ namespace Project.GameFlow
         public void Build(TMP_FontAsset value)
         {
             font = value;
-            var canvas = GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 1000;
+            var canvas = GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = SortingOrder;
             var scaler = GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280, 720); scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             var background = new GameObject("背景", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
@@ -187,7 +189,7 @@ namespace Project.GameFlow
         public void OnBeginDrag(PointerEventData e)
         {
             if (pointer != int.MinValue) return;
-            pointer = e.pointerId; RectTransformUtility.ScreenPointToLocalPointInRectangle(area, e.position, e.pressEventCamera, out var point);
+            pointer = e.pointerId; RectTransformUtility.ScreenPointToLocalPointInRectangle(area, e.pressPosition, e.pressEventCamera, out var point);
             offset = (Vector2)item.localPosition - point;
         }
         public void OnDrag(PointerEventData e)
