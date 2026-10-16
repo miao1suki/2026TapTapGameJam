@@ -82,7 +82,7 @@ namespace Project.StartMenu
                 new Vector2(470f, 34f));
 
             keyboardMouseTab = CreateTab(tabs, "键盘&鼠标");
-            gamepadTab = CreateTab(tabs, "控制器");
+            gamepadTab = CreateTab(tabs, "手柄");
             touchTab = CreateTab(tabs, "触屏");
 
             statusText = StartMenuUiFactory.CreateText(
@@ -174,6 +174,7 @@ namespace Project.StartMenu
 
             service = InputBindingService.CreateFromInputService(
                 RuntimeSettingsPolicy.ApplyChangesToRuntime);
+            service.Changed -= QueueRefresh;
             service.Changed += QueueRefresh;
         }
 
@@ -185,6 +186,8 @@ namespace Project.StartMenu
             }
 
             EnsureService();
+            service.Changed -= QueueRefresh;
+            service.Changed += QueueRefresh;
             EnsureValidDeviceFilter();
             ClearChildren(rowList);
             int shown = 0;
@@ -224,8 +227,15 @@ namespace Project.StartMenu
             }
 
             UpdateTabVisuals();
+            if (gamepadTab != null) gamepadTab.GetComponentInChildren<Text>().text = "手柄";
+            if (resetAllButton != null) resetAllButton.GetComponentInChildren<Text>().text =
+                GameInput.PlatformMode == InputPlatformMode.Mobile ? "重置手柄" : "重置全部";
             lastGamepadConnected = Gamepad.current != null;
-            statusText.text = service.IsPreviewOnly
+            bool mobile = GameInput.PlatformMode == InputPlatformMode.Mobile;
+            statusText.text = mobile
+                ? Gamepad.current == null ? "请连接手柄后修改映射；屏幕按键请在「触控布局」调整。"
+                    : "这里修改手柄按键；屏幕按键的位置和大小请在「触控布局」调整。"
+                : service.IsPreviewOnly
                 ? "预览模式：可以测试改键，不会修改正式映射；移动固定只读，交互固定同时支持点击和长按。"
                 : "移动固定为默认键位；交互固定同时支持点击和长按；其他操作点击按键框后开始接听。";
         }
@@ -301,12 +311,16 @@ namespace Project.StartMenu
                                 actionId == InputActionId.Move;
             bool editable =
                 canModify &&
+                (deviceFilter != DeviceFilter.Gamepad || Gamepad.current != null) &&
+                deviceFilter != DeviceFilter.Touch &&
                 !binding.IsComposite &&
                 !binding.IsPartOfComposite;
             string keyLabel = readOnlyMove
                 ? MoveDisplayLabel()
                 : !canModify
                     ? binding.DisplayName + "（只读）"
+                    : deviceFilter == DeviceFilter.Gamepad && Gamepad.current == null
+                        ? binding.DisplayName + "（未连接）"
                     : editable
                         ? binding.DisplayName
                         : binding.DisplayName + "（组合）";
@@ -559,6 +573,10 @@ namespace Project.StartMenu
 
         private bool IsDeviceAvailable(DeviceFilter filter)
         {
+            if (GameInput.PlatformMode == InputPlatformMode.Mobile)
+                return filter == DeviceFilter.Gamepad;
+            // Touchscreen bindings are hardware pointer channels, not remappable screen buttons.
+            if (filter == DeviceFilter.Touch) return false;
             if (filter == DeviceFilter.Gamepad)
             {
                 return Gamepad.current != null;
@@ -592,7 +610,8 @@ namespace Project.StartMenu
 
         private void ResetAll()
         {
-            service.ResetAll();
+            if (GameInput.PlatformMode == InputPlatformMode.Mobile) service.ResetDevice(InputBindingDevice.Gamepad);
+            else service.ResetAll();
             Refresh();
         }
 

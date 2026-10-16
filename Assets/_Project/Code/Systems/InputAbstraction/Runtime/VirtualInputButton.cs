@@ -16,6 +16,10 @@ namespace Project.InputAbstraction
 
         public InputActionId Action => action;
         public bool IsPressed { get; private set; }
+        public bool ToggleOn { get; private set; }
+        private bool toggleMode, repeatJump;
+        public void ConfigureToggle() { toggleMode = true; }
+        public void ConfigureRepeatJump() { repeatJump = true; }
 
         public void Configure(InputActionId inputAction)
         {
@@ -30,7 +34,10 @@ namespace Project.InputAbstraction
             }
 
             activePointerId = eventData.pointerId;
-            SetPressed(true);
+            IsPressed = true;
+            if (toggleMode) ToggleOn = !ToggleOn;
+            VirtualInputState.SetButton(GetInstanceID(), action, toggleMode ? ToggleOn : true);
+            if (repeatJump) VirtualInputState.SetRepeatingJump(GetInstanceID(), true);
         }
 
         public void OnPointerUp(PointerEventData eventData)
@@ -53,26 +60,28 @@ namespace Project.InputAbstraction
             VirtualInputState.ReleaseOwner(GetInstanceID());
         }
 
+        private void OnEnable()
+        {
+            if (toggleMode && ToggleOn) VirtualInputState.SetButton(GetInstanceID(), action, true);
+        }
+
         private void OnApplicationFocus(bool focused)
         {
-            if (!focused) Release();
+            if (!focused) { ToggleOn = false; Release(); VirtualInputState.ReleaseOwner(GetInstanceID()); }
         }
 
         private void OnApplicationPause(bool paused)
         {
-            if (paused) Release();
+            if (paused) { ToggleOn = false; Release(); VirtualInputState.ReleaseOwner(GetInstanceID()); }
         }
 
         private void Release()
         {
             activePointerId = int.MinValue;
-            SetPressed(false);
+            IsPressed = false;
+            if (!toggleMode) VirtualInputState.SetButton(GetInstanceID(), action, false);
+            if (repeatJump) VirtualInputState.SetRepeatingJump(GetInstanceID(), false);
         }
 
-        private void SetPressed(bool pressed)
-        {
-            IsPressed = pressed;
-            VirtualInputState.SetButton(GetInstanceID(), action, pressed);
-        }
     }
 }

@@ -41,7 +41,7 @@ namespace Project.CameraModes
         [Header("2D 跟随")]
         [SerializeField]
         [Tooltip("2D 模式下相对目标的焦点偏移。")]
-        private Vector3 side2DOffset = new Vector3(0f, 1f, 0f);
+        private Vector3 side2DOffset = Vector3.zero;
 
         [Header("3D 跟随")]
         [SerializeField]

@@ -1,5 +1,45 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-16 贴墙放下与平滑分离
+
+- 用户授权修复Gaming贴右墙向左放下的误拒绝及生硬挤出，完成后重新构建测试包并整合推送。使用标准玩家单一运动器、完整落点和区域边界校验；覆盖单格夹墙、格线转身、动画期间新增障碍及取消/重生回归。
+- 保留本地Pick布局、字体、插件、PackageManagerSettings及未交付规划数据。此前已完成的美术工作台与移动端改进随本次授权整合；不将用户未交付场景改动混入提交。验证与构建使用Library隔离快照，不切主Unity平台。
+
+## 2026-10-16 搬运落点与移动端操作回归
+
+- 本轮本地修改：未解锁颜色能力统一提示、允许安全推出玩家的搬运落点、Android藤蔓序列帧及渲染差异检查、空中下键、触控按压反馈与方向键跟手、移动端手柄映射和布局入口。预览与执行共用校验，保留其他实体及房间边界限制；防止落点合法性闪烁，不添加闪烁表现。补充：奔跑点击切换、左跳跃按住连跳、初始触摸冗余、右手临时左右键、右侧默认布局上移内收、手机隐藏PC提示；保留已有自定义布局，可恢复默认后保存。
+- 相机以用户最后更正为准向下调：2D跟随默认偏移Y=1改为0，Gaming/Test相同修改，3D不改，其他成员场景覆盖值保留。移动端与PC额外像素化参数对齐，烘焙藤蔓不再回退实时粒子；构建资源保护检查在ObjectArtwork/Editor/VineSequenceBuildGuard。
+- 使用颜色玩法、WordNote、字体和暂停设置约定；不恢复旧流程场景，不改Pick等关卡内容，不提交／合并／推送。测试在Library隔离工程，最终补充验证与限制。
+- 已验证：项目EditMode 171/171；真实运行搬运／颜色锁／触控情境／手柄映射／PC与手机HUD隔离／相机47项通过。Mobile管线中藤蔓渐显、生长、燃烧倒放、重置、注销重注册及无实时粒子验证通过；截图位于Library/FlowRetirementProbe/Library/VineSequence*.png。日志Library/MobileCarryProjectTests.xml、MobileCarryRegression.log、VineMobilePipelineVerification.log。首次包含Unity包的全量测试有2项UGUI包测试失败（顶点输出断言与InputModule工厂预期），未修改包；最终项目定向测试全部通过。
+- 已构建最新安卓包：Builds/形之彩-20261016-触控与放置修复/Android/形之彩.apk，107649359字节，SHA256 9CCCECE8BB82A5FC3667F9C45439D0A32A7073526A8DB07637E3518A950A003C。0错误／4警告，仅MainMenu/Gaming，应用名形之彩，ARM64、API25；签名验证与PrivacyActivity唯一Launcher核对通过。日志Library/AndroidMobileCarry20261016.log。ADB无设备，未做真机手感、闪烁或隐私边界验收；旧包保留，未构建PC。
+- 主Unity PID4980仍为Windows/Gaming，未关闭或切平台；Pick SHA256仍3462C16C02BC001DDC7AC6D83857BAB7E291731BF8405556B0A13985B9E210BD。既有字体、插件、场景存档、美术工作台未撤销；本轮只改Gaming/Test的相机偏移，不更改布局存档或关卡物体。不提交、不合并、不推送。
+
+## 2026-10-16 安卓测试包重新构建
+
+- 用户要求基于当前本地进度重新打包安卓测试。使用MobileBuildSetup.BuildAndroid，仅MainMenu/Gaming，ARM64 IL2CPP开发包，APK名形之彩；保留现有Android7.1最低版本和原生隐私入口。
+- 在Library独立快照构建，不切换主Unity窗口平台，不执行Prepare、不修改场景／预制体／字体／插件／项目设置，不提交、合并或推送。完成后记录产物、构建结果及APK隐私入口静态检查；没有真机时不声称完成真机验收。
+- 已完成：Builds/形之彩-20261016-安卓重打包/Android/形之彩.apk，86949146字节（82.92MiB），SHA256 B87F058C7BE429C351510A75F0DF1FFCA64DCF4EC8AB40B3B2611AB6772B9CA7；0错误／4警告，仅MainMenu和Gaming，当前本地代码与资源快照，不拉取或推送远程。
+- 最终APK核对：应用名形之彩、包名com.miao1suki.shapeofcolor、ARM64、最低API25；签名验证通过。唯一Launcher为独立:privacy进程PrivacyActivity，PrivacyApplication正确，UnityPlayerActivity非导出，无自动初始化Provider，仅INTERNET权限；离线政策和字体均存在。仍需真机测试授权流程及游戏手感，不属于发布合规认证。
+- 构建日志Library/AndroidRetest20261016.log、Builds/形之彩-20261016-安卓重打包/Android-report.txt；独立快照Library/AndroidRetest20261016不含临时验证探针。主项目Pick SHA256保持3462C16C02BC001DDC7AC6D83857BAB7E291731BF8405556B0A13985B9E210BD。旧APK保留，不覆盖。
+
+## 2026-10-16 美术工作台自动保存与关卡联动
+
+- 在原美术任务分支继续：默认开启美术数据延后保存、工作台内直接读取关卡/房间白块与自动底图、减少Hierarchy操作；测试撤回、重开、关卡变更及大图响应。使用taptap-editor-ui，重点避免逐指针落盘/全界面重建/空闲扫描，沿用关卡编辑器延后合批经验。
+- 自动保存只写本工具美术资产，不自动保存其他场景脏改动；不改用户当前Pick、字体、规划存档、插件或设置；本轮不提交、合并、推送或打包。
+- 已完成默认开启且按Scene记忆的自动保存／实时预览、停笔延后合批、关闭重开／切Scene／重编译补存，外部文件变化时停止覆盖并备份Library/GridArtRecovery。新建直接保存本关同目录_Art.asset；明确“保存场景”按钮负责整Scene保存，自动保存不夹带其他场景修改。
+- PlanningArtAdapter通过GridArtLevelSource提供当前关卡草稿→同名planning.json→场景PlacedBlock的Solid轮廓，可选整关／房间／通道，自动底图跟随白块增删移动且不覆盖手工层，无需Hierarchy选择。当前素材配置直接内嵌工作台，多源切图库与旧六面工具入口联通。
+- 同格多层透明叠图、独立显隐／锁定／顺序／透明度及视差可用；自动墙地、草边、叶片分别建层。不是GameObject Layer，也不改变HSV颜色分层。手工装饰／背景尚不自动跟随房间移动，背景循环／缩放补偿／转向重投影仍未实现。
+- 响应改进：Set／Erase格索引、多格擦除缓存、空闲不扫描来源／项目、笔画不重建侧栏、视口剔除与绘制缓存、网格线缩放降密度、生成层／网格块对象复用，只写变化资产，不污染绘图Undo。万格创建1.69ms、万次重复落笔4.95ms、万格擦除7.12ms为数据操作测量，不代表完整UI帧率。
+- Unity6000.3.12f1隔离项目最终相关EditMode175/175通过；实际原生Toolkit点击／框选／自动保存／关闭重开／规划草稿移动／保存交付16项通过；GPU画布可见像素、1280×800与920×560布局、场景视差移回不漂移验证通过。日志Library/SceneArtAutomationRelease.xml、SceneArtUserFlowRelease.log、SceneArtVisualVerified.log；真实用户窗口手感仍需验收。Pick SHA256保持3462C16C02BC001DDC7AC6D83857BAB7E291731BF8405556B0A13985B9E210BD，无正式场景内容改动。
+
+## 2026-10-16 关卡美术工作台
+
+- 范围：分析现有SurfaceTiles/GridArt与白块合并流程，统一多源切图素材检索，关卡美术与玩法Prefab隔离，改善美术窗口/图层/背景视差工作流，保留原六面表面贴画并增加实例保护；预留匹配UV的法线图/3D受光配置。遵循taptap-editor-ui与EDITOR_UI_STANDARD，不安装插件、不升级URP，不改用户当前关卡内容与本地素材，不自动推送。
+- 已在codex/editor/scene-art-workspace本地完成：UI Toolkit三栏工作台、可隐藏且记忆的素材/图层栏、搜索分类大缩略图、选中白块轮廓去重铺绘、独立Scene绘制/工具互斥、背景预设/只读视差预览、独立副本和Scene GUID输出隔离。共享库Assets/_Project/Content/Art/SceneArtLibrary.asset含当前tail原图的20纹样与白线边框，没有引用旧开发图集；新切图返回窗口时汇入共享库。
+- 修复切片重生成时Sprite子资产被替换造成的失效/重复：切片库GUID+稳定tile.Id更新原笔刷槽位，不按临时Sprite localId重复追加。旧库转共享库先校验再重映射，保留原尺寸、规则和法线。原六面工具拒绝Project Prefab/PrefabStage，Bake需保存Scene并按GUID隔离；新美术输出不改白块共享材质或玩法组件。
+- 多轮修整涵盖拖动滑条时不重建控件、素材滚动保留、视差预览不误绘、图层前后顺序与运行时一致、未完成Scene笔画退出取消、Play/跨Scene编辑保护、生成层Undo与持久化。Unity6000.3.12f1隔离工程最终相关EditMode164/164通过，日志Library/SceneArtReadyRegression.xml（含切片再生成、实例隔离、合并轮廓、Undo/redo、保存重开、法线与归属）；GPU验证通过，日志Library/SceneArtReadyVisual.log，含持久化图形、视差往返和1280×800/920×560 Toolkit布局。验证图/脚本只在Library，不放进正式场景。
+- 使用见Docs/Developer/GRID_ART.md；Agent接入见Docs/Agent/Integration/GRID_ART_API.md。法线目前预留URP 3D Lit，不是2D Light链；固定XY、未实现无限背景循环/转向重投影/按房间搬美术。tail尚缺内拐角素材，工具提示并回退中心。保留Pick/字体/插件/项目设置及所有未提交规划存档；未提交、推送、合并或打包。后续关卡交付必须同时交Scene、同名planning.json、美术图/共享库/原图/生成依赖和各自meta。
+
 ## 2026-10-16 双阶段颜色解锁与标准玩家
 
 - 首次同色钥匙只解锁场景物体，第二次解锁玩家能力；两套状态独立，R/离区保留，显式新游戏清空。整理唯一标准玩家预制体，同步已有场景实例及相机/编辑器引用；新建空存档在世界原点创建并绑定标准玩家。用户随后授权整合到main并推送，包含本分支此前已推送的攀爬/移动端改进及后续搬运中心修复。
@@ -1413,3 +1453,8 @@
 - 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补资源清单与运行时接线说明。
 - 验证：文件已放入 `Assets/_Project/Content/Audio/SFX/`；未在 Unity 中试听。
 - 交接提交：本次提交。
+
+## 2026-10-16 全项目现状MD盘点（当前对话）
+
+- 范围：只读核对全部系统文档、源码目录、场景/资源/项目配置与构建记录，汇总到 Docs/PROJECT_OVERVIEW_2026-10-16.md；不改运行时、编辑器、素材、场景或他人任务代码，不提交或推送。另一对话的关卡美术工作台仍在迭代，按本地快照注明状态。
+- 完成：已生成 Docs/PROJECT_OVERVIEW_2026-10-16.md（29个主题章节、A–L详细附录、75份模块原文快照，约1.1万行）。覆盖玩法、源码、输入、场景/Prefab、关卡和美术编辑器、渲染、美术音频、配置、Android、协作及未完成项；区分已提交/本地迭代/历史验证。静态检查1728处本地文件链接全部存在，代码围栏成对；未启动Unity或重跑历史测试，未提交/推送。

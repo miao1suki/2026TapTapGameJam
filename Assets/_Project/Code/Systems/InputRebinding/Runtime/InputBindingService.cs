@@ -253,6 +253,12 @@ namespace Project.InputRebinding
                         .PerformInteractiveRebinding(bindingIndex)
                         .WithCancelingThrough("<Keyboard>/escape")
                         .OnMatchWaitForAnother(0.08f);
+                InputBindingDevice device = ResolveDevice(action.bindings[bindingIndex].effectivePath);
+                // A touch on the settings UI must not replace a gamepad binding with a touchscreen press.
+                if (device == InputBindingDevice.Gamepad)
+                    operation.WithControlsHavingToMatchPath("<Gamepad>/*");
+                else if (device == InputBindingDevice.Keyboard || device == InputBindingDevice.Mouse)
+                    operation.WithControlsHavingToMatchPath("<Keyboard>/*").WithControlsHavingToMatchPath("<Mouse>/*");
                 if (action.name != InputActionId.Look.ToString())
                 {
                     operation
@@ -613,6 +619,45 @@ namespace Project.InputRebinding
                 map.Enable();
             }
 
+            ApplyChange(before);
+        }
+
+        /// <summary>Restore this device without discarding the other platform's bindings.</summary>
+        public void ResetDevice(InputBindingDevice device)
+        {
+            HistorySnapshot before = CaptureSnapshot();
+            InputActionAsset defaults = InputActionAsset.FromJson(defaultJson);
+            try
+            {
+                foreach (InputActionId id in InputActionBindingPolicy.GetVisibleActions())
+                {
+                    if (!CanModifyBinding(id) || !TryGetAction(id, out InputAction action)) continue;
+                    InputAction original = defaults.FindActionMap(GameplayMapName, false)?.FindAction(action.name, false);
+                    if (original == null) continue;
+                    InputActionMap map = action.actionMap;
+                    bool enabled = map != null && map.enabled;
+                    if (enabled) map.Disable();
+                    try
+                    {
+                        for (int i = action.bindings.Count - 1; i >= 0; i--)
+                        {
+                            InputBinding binding = action.bindings[i];
+                            bool matches = ResolveDevice(binding.effectivePath) == device;
+                            foreach (InputBinding source in original.bindings)
+                                if (source.id == binding.id && ResolveDevice(source.effectivePath) == device) matches = true;
+                            if (matches) action.ChangeBinding(i).Erase();
+                        }
+                        foreach (InputBinding binding in original.bindings)
+                            if (ResolveDevice(binding.effectivePath) == device) action.AddBinding(binding);
+                    }
+                    finally { if (enabled) map.Enable(); }
+                }
+            }
+            finally
+            {
+                if (Application.isPlaying) UnityEngine.Object.Destroy(defaults);
+                else UnityEngine.Object.DestroyImmediate(defaults);
+            }
             ApplyChange(before);
         }
 

@@ -23,7 +23,11 @@ namespace Project.Player
         private Vector3 playerCenter;
         private Tween tween;
         private bool movingToCarrier;
+        private bool waitingForSeparation;
+        private Vector3 dropDestination;
+        private float dropDeadline;
         private Transform carrier;
+        private IPlayerCarrySeparationHost separationHost;
         private readonly RaycastHit[] carryHits = new RaycastHit[128];
 
         public bool IsCarrying { get; private set; }
@@ -75,10 +79,10 @@ namespace Project.Player
             {
                 Collider other = placementHits[i];
                 if (other == null || other.transform.IsChildOf(root)) continue;
-                // The player also occupies real space at a proposed destination.
+                if (carrier != null && other.transform.IsChildOf(carrier) && separationHost != null) continue;
                 return false;
             }
-            return true;
+            return separationHost == null || separationHost.ResolveCarryOverlap(bounds, root, false);
         }
 
         public CarryTargetMotion(Transform root, System.Action restored = null)
@@ -99,6 +103,7 @@ namespace Project.Player
 
             CacheTargets();
             carrier = carrierTransform;
+            separationHost = carrier != null ? carrier.GetComponent<IPlayerCarrySeparationHost>() : null;
             originalPosition = root.position;
             originalScale = root.localScale;
             originalSiblingIndex = root.GetSiblingIndex();
@@ -264,10 +269,16 @@ namespace Project.Player
                 return false;
             }
 
+            if (separationHost != null &&
+                !separationHost.ResolveCarryOverlap(GetPlacementBounds(worldPosition), root, true)) return false;
+
             tween?.Kill(false);
             tween = null;
             movingToCarrier = false;
             IsDropAnimating = true;
+            waitingForSeparation = false;
+            dropDestination = worldPosition;
+            dropDeadline = Time.time + .8f;
             Vector3 start = root.position;
             tween = DOTween.To(
                     () => 0f,
@@ -281,11 +292,40 @@ namespace Project.Player
                 .OnComplete(() =>
                 {
                     tween = null;
-                    IsDropAnimating = false;
-                    IsCarrying = false;
-                    Restore();
+                    waitingForSeparation = true;
+                    TickDrop();
                 });
             return true;
+        }
+
+        public void TickDrop()
+        {
+            if (!waitingForSeparation || !IsDropAnimating) return;
+            if (!CanPlaceAt(dropDestination) || Time.time > dropDeadline)
+            {
+                AbortDrop();
+                return;
+            }
+            if (separationHost != null && separationHost.IsCarrySeparationPending(root)) return;
+            if (separationHost != null && !separationHost.IsCarrySeparated(GetPlacementBounds(dropDestination)))
+            {
+                AbortDrop();
+                return;
+            }
+            waitingForSeparation = false;
+            IsDropAnimating = false;
+            IsCarrying = false;
+            Restore();
+        }
+
+        private void AbortDrop()
+        {
+            separationHost?.CancelCarrySeparation(root);
+            waitingForSeparation = false;
+            IsDropAnimating = false;
+            // The player's anchor may have moved while the object was in flight.
+            if (separationHost is IPlayerCarryHost host) currentAnchor = host.CarryAnchorWorldPosition;
+            root.position = currentAnchor;
         }
 
         public bool BeginReset()
@@ -298,6 +338,8 @@ namespace Project.Player
             }
 
             tween?.Kill(false);
+            separationHost?.CancelCarrySeparation(root);
+            waitingForSeparation = false;
             tween = null;
             movingToCarrier = false;
             IsCarrying = false;
@@ -333,6 +375,8 @@ namespace Project.Player
             }
 
             tween?.Kill(false);
+            separationHost?.CancelCarrySeparation(root);
+            waitingForSeparation = false;
             tween = null;
             movingToCarrier = false;
             IsDropAnimating = false;

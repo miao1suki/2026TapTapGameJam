@@ -26,6 +26,10 @@
 
 ## 构建与验证
 
+2026-10-16 触控与放置修复版（最新）：`Builds/形之彩-20261016-触控与放置修复/Android/形之彩.apk`，102.66MiB，ARM64、IL2CPP开发测试包，仅MainMenu/Gaming、最低Android7.1。包含奔跑点击切换、左跳跃长按连跳、按键跟手和触摸容差、手机HUD隔离、放置稳定与玩家分离、未解锁能力提示、藤蔓移动管线修正，以及2D相机下移。旧自定义布局保留，可在设置中恢复默认后保存。构建0错误／4警告，签名和原生隐私入口静态核对通过，ADB无设备，真机仍待验收；未重建PC、未推送。SHA256：`9CCCECE8BB82A5FC3667F9C45439D0A32A7073526A8DB07637E3518A950A003C`。日志`Library/AndroidMobileCarry20261016.log`；项目编辑测试171项、运行回归47项通过。
+
+2026-10-16 当前本地进度重打包：`Builds/形之彩-20261016-安卓重打包/Android/形之彩.apk`，82.92MiB，ARM64开发测试包，MainMenu/Gaming，最低Android7.1。构建0错误／4警告，APK签名、唯一原生隐私Launcher、非导出Unity活动、内置政策和字体检查通过，尚未真机验收。本轮未重建PC、未拉取或推送Git；旧包保留。SHA256：`B87F058C7BE429C351510A75F0DF1FFCA64DCF4EC8AB40B3B2611AB6772B9CA7`。日志`Library/AndroidRetest20261016.log`。
+
 2026-10-16 安卓操作测试版：`Builds/形之彩-20261016/Android/形之彩.apk`，ARM64开发包，约100MiB；MainMenu/Gaming，最低Android7.1。本轮仅构建安卓，未重建PC包。原生隐私入口/非导出Unity活动及内置正文在最终APK中核对通过；没有连接安卓设备，仍需真机验证授权边界、多指手感与不同分辨率。转角与布局44项、相关编辑测试149项通过，真实Touchscreen多指事件通过；不是发布合规认证。
 
 构建脚本：`Assets/Player/Editor/MobileBuildSetup.cs`。使用 Unity 6000.3.12f1，不升级项目。构建时设置 `TAPTAP_TEST_BUILD_ROOT` 为明确输出目录，以 `-executeMethod MobileBuildSetup.BuildWindows` / `BuildAndroid` 调用；安卓启动 Unity 时带 `-buildTarget Android`。脚本明确只收录上述两个场景，检查 BuildReport 结果并生成报告。`Prepare` 为本轮 UI 资产配置脚本，已经应用，不应为普通功能开发反复执行。

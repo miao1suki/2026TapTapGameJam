@@ -19,6 +19,10 @@ namespace Project.InputAbstraction
             new Dictionary<InputActionId, int>();
 
         internal static double LastInputTime { get; private set; }
+        private static readonly HashSet<int> RepeatingJumpOwners = new HashSet<int>();
+        internal static bool RepeatJumpHeld => RepeatingJumpOwners.Count > 0;
+        internal static void SetRepeatingJump(int owner, bool active)
+        { if (active) RepeatingJumpOwners.Add(owner); else RepeatingJumpOwners.Remove(owner); }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetForPlayMode()
@@ -91,6 +95,7 @@ namespace Project.InputAbstraction
 
         internal static void ReleaseOwner(int ownerId)
         {
+            RepeatingJumpOwners.Remove(ownerId);
             foreach (KeyValuePair<InputActionId, Dictionary<int, Vector2>> entry in Vectors)
             {
                 if (entry.Value.Remove(ownerId))
@@ -154,6 +159,7 @@ namespace Project.InputAbstraction
             PressFrames.Clear();
             ReleaseFrames.Clear();
             LastInputTime = 0d;
+            RepeatingJumpOwners.Clear();
         }
 
         private static void MarkActivity()

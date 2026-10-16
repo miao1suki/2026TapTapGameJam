@@ -8,6 +8,7 @@ namespace Project.InputAbstraction
         bool IsClimbing { get; }
         bool IsHorizontalClimbing { get; }
         bool IsGreenHookActive { get; }
+        bool ShowAirborneDownControl { get; }
         bool HasContextInteraction { get; }
         int CarryQueueCount { get; }
     }

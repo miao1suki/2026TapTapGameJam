@@ -196,6 +196,10 @@ namespace Project.StartMenu
         {
             if (Application.isPlaying)
             {
+                EnsureTouchLayoutButton();
+                var label = keyBindingTabButton != null ? keyBindingTabButton.GetComponentInChildren<Text>(true) : null;
+                if (label != null) label.text = Project.InputAbstraction.GameInput.PlatformMode ==
+                    Project.InputAbstraction.InputPlatformMode.Mobile ? "手柄按键" : "按键映射";
                 RefreshSound();
                 ShowPage(0);
             }

@@ -91,6 +91,7 @@ namespace Project.BlockFeatures
 
         private void LateUpdate()
         {
+            carryMotion?.TickDrop();
             // Only the queue head has a visible label. Re-evaluate bindings/device while it remains selected.
             if (indicator != null && indicator.gameObject.activeSelf) SetCarryIndicator(true);
         }

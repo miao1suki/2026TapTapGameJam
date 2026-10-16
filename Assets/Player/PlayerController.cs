@@ -28,6 +28,7 @@ namespace Project.Player
         IAchievementSignalProvider,
         IPlayerControlLockTarget,
         IPlayerCarryHost,
+        IPlayerCarrySeparationHost,
         IMobileGameplayContext,
         Project.CameraModes.ICameraFollowRelocationSource
     {
@@ -279,6 +280,8 @@ namespace Project.Player
         private static PhysicsMaterial zeroFrictionMaterial;
         public Rigidbody Motor => motor;
         public bool IsGrounded { get; private set; }
+        public bool ShowAirborneDownControl => !dead &&
+            (!IsGrounded || Time.time - lastLandingTime <= .3f);
         public bool IsDead => dead;
         public event Action CameraFollowRelocated;
         public bool CanAutomaticallyRespawn => dead && Time.time >= automaticRespawnReadyAt &&
@@ -1324,7 +1327,13 @@ namespace Project.Player
                 if (selectedCarryTarget == null ||
                     !selectedCarryTarget.IsCarryDropAnimating)
                 {
-                    FinishCarryDrop();
+                    if (selectedCarryTarget != null && selectedCarryTarget.IsCarryActive)
+                    {
+                        carryDropAnimating = false;
+                        ReleaseCarryControlLock();
+                        CarryPlacementRejected?.Invoke();
+                    }
+                    else FinishCarryDrop();
                 }
 
                 return;
@@ -1354,6 +1363,7 @@ namespace Project.Player
             carryPlantJumpCells = 0f;
             SetHighlightedCarryTarget(null);
             selectedCarryTarget = target;
+            carryDropCellValid = false;
             carryQueue.Clear();
             carryPreparing = true;
             carryPrepareUntil =
@@ -1399,6 +1409,7 @@ namespace Project.Player
 
         private void FinishCarryDrop()
         {
+            carryDropCellValid = false;
             carryPlantJumpCells = 0f;
             carryDropAnimating = false;
             selectedCarryTarget = null;
@@ -1445,6 +1456,8 @@ namespace Project.Player
 
         private void CancelCarryState()
         {
+            CancelCarrySeparation(carrySeparationItem);
+            carryDropCellValid = false;
             carryPlantJumpCells = 0f;
             carryPreparing = false;
             carryDropAnimating = false;
@@ -1586,7 +1599,7 @@ namespace Project.Player
         }
 
         private void GetCarryFootprintCells(
-            List<Vector3Int> result)
+            List<Vector3Int> result, bool stableDrop = false)
         {
             result.Clear();
             int width = Mathf.Max(1, carryFootprintCells.x);
@@ -1596,6 +1609,17 @@ namespace Project.Player
             Vector3Int min = WorldToCell(CarryCenterWorldPosition - new Vector3(
                 (width - 1) * gridCellWorldSize * .5f,
                 (height - 1) * gridCellWorldSize * .5f, 0f));
+            if (stableDrop)
+            {
+                Vector3 point = CarryCenterWorldPosition / gridCellWorldSize -
+                    new Vector3((width - 1) * .5f, (height - 1) * .5f, 0);
+                if (carryDropCellValid)
+                    for (int axis = 0; axis < 2; axis++)
+                        if (point[axis] >= carryDropOrigin[axis] - .06f && point[axis] < carryDropOrigin[axis] + 1.06f)
+                            min[axis] = carryDropOrigin[axis];
+                carryDropOrigin = min;
+                carryDropCellValid = true;
+            }
             for (int x = min.x; x < min.x + width; x++)
             {
                 for (int y = min.y; y < min.y + height; y++)
@@ -1609,7 +1633,7 @@ namespace Project.Player
             Vector3Int direction,
             out Vector3Int result)
         {
-            GetCarryFootprintCells(carryFootprintBuffer);
+            GetCarryFootprintCells(carryFootprintBuffer, true);
             result = WorldToCell(CarryCenterWorldPosition) + direction;
             bool blocked = HasCarryBlockerInDirection(direction);
             bool hasCandidate = false;
@@ -1676,6 +1700,125 @@ namespace Project.Player
                 : new Bounds(position, Vector3.one * gridCellWorldSize);
             return true;
         }
+
+        private readonly Collider[] carrySeparationHits = new Collider[64];
+        private readonly RaycastHit[] carrySeparationSweep = new RaycastHit[64];
+        private bool carryDropCellValid;
+        private Vector3Int carryDropOrigin;
+        private Transform carrySeparationItem;
+        private Bounds carrySeparationBounds;
+        private float carrySeparationStartX, carrySeparationTargetX, carrySeparationElapsed;
+
+        private Bounds CarryPhysicsBounds
+        {
+            get
+            {
+                Bounds body = capsule.bounds;
+                body.center += motor.position - transform.position;
+                return body;
+            }
+        }
+
+        private float GetCarrySeparationDistance(Bounds itemBounds, out float sign)
+        {
+            Bounds body = CarryPhysicsBounds;
+            sign = body.center.x <= itemBounds.center.x ? -1f : 1f;
+            float tolerance = gridCellWorldSize * .003f;
+            if (itemBounds.max.y <= body.min.y + tolerance || itemBounds.min.y >= body.max.y - tolerance ||
+                itemBounds.max.z <= body.min.z + tolerance || itemBounds.min.z >= body.max.z - tolerance)
+                return 0f;
+            return Mathf.Max(0f, sign < 0 ? body.max.x - itemBounds.min.x : itemBounds.max.x - body.min.x);
+        }
+
+        public bool IsCarrySeparated(Bounds itemBounds) =>
+            capsule != null && motor != null && GetCarrySeparationDistance(itemBounds, out _) <= gridCellWorldSize * .003f;
+
+        public bool IsCarrySeparationPending(Transform item) => item != null && carrySeparationItem == item;
+
+        public void CancelCarrySeparation(Transform item)
+        {
+            if (carrySeparationItem == null || carrySeparationItem != item) return;
+            carrySeparationItem = null;
+            if (motor != null)
+            {
+                Vector3 velocity = motor.linearVelocity;
+                velocity.x = 0f;
+                motor.linearVelocity = velocity;
+            }
+        }
+
+        public bool ResolveCarryOverlap(Bounds itemBounds, Transform item, bool apply)
+        {
+            if (capsule == null || motor == null) return false;
+            Bounds body = CarryPhysicsBounds;
+            float skin = gridCellWorldSize * .002f;
+            float amount = GetCarrySeparationDistance(itemBounds, out float sign);
+            if (amount <= gridCellWorldSize * .003f) return true;
+
+            // Only resolve a neighboring-cell intrusion horizontally, never teleport through a cube or onto it.
+            if (amount > gridCellWorldSize * .65f) return false;
+            Vector3 delta = Vector3.right * (sign * amount);
+            float radius = Mathf.Min(body.extents.x, body.extents.z) - skin;
+            float segment = Mathf.Max(0f, body.extents.y - radius - skin);
+            Vector3 top = body.center + Vector3.up * segment;
+            Vector3 bottom = body.center - Vector3.up * segment;
+            int count = Physics.CapsuleCastNonAlloc(top, bottom, radius, delta.normalized,
+                carrySeparationSweep, amount + skin, ~0, QueryTriggerInteraction.Ignore);
+            if (count == carrySeparationSweep.Length) return false;
+            for (int i = 0; i < count; i++)
+            {
+                var hit = carrySeparationSweep[i];
+                if (!IsCarrySeparationObstacle(hit.collider, item) || Vector3.Dot(hit.normal, delta.normalized) > -.01f) continue;
+                if (hit.distance + skin < amount) return false;
+            }
+            count = Physics.OverlapCapsuleNonAlloc(top + delta, bottom + delta, radius,
+                carrySeparationHits, ~0, QueryTriggerInteraction.Ignore);
+            if (count == carrySeparationHits.Length) return false;
+            for (int i = 0; i < count; i++)
+            {
+                Collider other = carrySeparationHits[i];
+                if (!IsCarrySeparationObstacle(other, item)) continue;
+                // Broad-phase tangency with a floor/back wall isn't penetration. A one-cell player
+                // must fit a one-cell gap without reserving extra space outside that gap.
+                if (Physics.ComputePenetration(capsule, motor.position + delta, transform.rotation,
+                    other, other.transform.position, other.transform.rotation, out _, out float depth) &&
+                    depth > gridCellWorldSize * .003f) return false;
+            }
+            if (apply)
+            {
+                carrySeparationItem = item;
+                carrySeparationBounds = itemBounds;
+                carrySeparationStartX = motor.position.x;
+                carrySeparationTargetX = motor.position.x + delta.x;
+                carrySeparationElapsed = 0f;
+            }
+            return true;
+        }
+
+        private float CarrySeparationVelocity(float normalVelocity)
+        {
+            if (carrySeparationItem == null) return normalVelocity;
+            if (lockDepth > 1 || runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement)
+                return 0f;
+            if (IsCarrySeparated(carrySeparationBounds) || carrySeparationElapsed >= .6f ||
+                !ResolveCarryOverlap(carrySeparationBounds, carrySeparationItem, false))
+            {
+                CancelCarrySeparation(carrySeparationItem);
+                return 0f;
+            }
+            carrySeparationElapsed += Time.fixedDeltaTime;
+            float t = Mathf.Clamp01(carrySeparationElapsed / .16f);
+            float eased = t * t * (3f - 2f * t);
+            float desired = Mathf.Lerp(carrySeparationStartX, carrySeparationTargetX, eased);
+            // The sole motor owns this velocity; gravity and physical walls remain authoritative.
+            return Mathf.Clamp((desired - motor.position.x) / Time.fixedDeltaTime,
+                -6f * gridCellWorldSize, 6f * gridCellWorldSize);
+        }
+
+        private bool IsCarrySeparationObstacle(Collider other, Transform item) => other != null &&
+            !other.transform.IsChildOf(transform) && (item == null || !other.transform.IsChildOf(item)) &&
+            !Physics.GetIgnoreLayerCollision(capsule.gameObject.layer, other.gameObject.layer) &&
+            !Physics.GetIgnoreCollision(capsule, other);
 
         private void RefreshCarryPlacementPreview()
         {
@@ -2377,8 +2520,11 @@ namespace Project.Player
             return solid.ConstrainCarryDisplacement(physicsAnchor, displacement, gridCellWorldSize * .01f);
         }
 
-        private Vector3 ConstrainCarryVelocity(Vector3 velocity) =>
-            ConstrainCarryDisplacement(velocity * Time.fixedDeltaTime) / Time.fixedDeltaTime;
+        private Vector3 ConstrainCarryVelocity(Vector3 velocity)
+        {
+            velocity.x = CarrySeparationVelocity(velocity.x);
+            return ConstrainCarryDisplacement(velocity * Time.fixedDeltaTime) / Time.fixedDeltaTime;
+        }
 
         private bool ShouldPlayLandingImpact()
         {

@@ -26,6 +26,7 @@ namespace Project.InputAbstraction
         public static bool HasMouse => Source.HasMouse;
         public static bool HasGamepad => Source.HasGamepad;
         public static bool HasTouch => Source.HasTouch;
+        public static bool IsTouchJumpRepeating => VirtualInputState.RepeatJumpHeld;
 
         public static bool IsPointerOverUi()
         {

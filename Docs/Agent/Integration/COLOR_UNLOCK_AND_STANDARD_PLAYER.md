@@ -25,6 +25,8 @@ ColorRuntimeService API：
 
 两种进度本轮均为当前运行会话进度，不新增跨运行存档协议。新游戏沿用现有 ResetProgress 调用。
 
+未解锁选色通过 `PlayerColorWheel.AbilitySelectionLocked` 通知输入驱动，统一WordNote提示“此能力未解锁”。事件仅用于反馈，不修改任一解锁集合；第一把钥匙仍只能激活场景颜色，第二把才开放玩家能力。不要在UI选色时直接调用Unlock或UnlockAbility。
+
 ## 唯一标准玩家
 
 唯一资源：`Assets/_Project/Content/Player/Player.prefab`，GUID `850f455fc20459b48987783f0ab1ab59`。以原正式 Gaming 玩家整理；RuntimePlayer 和 Player(暂定) 两个旧路径退役，不得重新生成。

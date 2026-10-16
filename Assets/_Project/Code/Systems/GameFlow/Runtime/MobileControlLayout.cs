@@ -109,6 +109,7 @@ namespace Project.GameFlow
             foreach (var label in preview.GetComponentsInChildren<TextMeshProUGUI>(true)) label.font = value;
             foreach (var input in preview.GetComponentsInChildren<VirtualInputButton>(true)) input.enabled = false;
             foreach (var input in preview.GetComponentsInChildren<VirtualDirectionButton>(true)) input.enabled = false;
+            foreach (var feedback in preview.GetComponentsInChildren<TouchPressFeedback>(true)) feedback.enabled = false;
             foreach (RectTransform item in preview.Controls)
             {
                 item.gameObject.SetActive(true);

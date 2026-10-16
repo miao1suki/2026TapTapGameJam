@@ -214,6 +214,89 @@ namespace Project.InputAbstraction.Tests
             Object.DestroyImmediate(obj);
         }
 
+        [Test]
+        public void RunToggle_PersistsAfterReleaseAndSecondTapTurnsOff()
+        {
+            var obj = new GameObject("ToggleRun", typeof(VirtualInputButton));
+            try
+            {
+                var button = obj.GetComponent<VirtualInputButton>();
+                button.Configure(InputActionId.Sprint); button.ConfigureToggle();
+                var finger = new PointerEventData(null) { pointerId = 1 };
+                button.OnPointerDown(finger); button.OnPointerUp(finger);
+                Assert.IsFalse(button.IsPressed); Assert.IsTrue(button.ToggleOn);
+                Assert.IsTrue(VirtualInputState.IsPressed(InputActionId.Sprint));
+                typeof(VirtualInputButton).GetMethod("OnDisable", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(button, null);
+                Assert.IsFalse(VirtualInputState.IsPressed(InputActionId.Sprint));
+                typeof(VirtualInputButton).GetMethod("OnEnable", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(button, null);
+                Assert.IsTrue(VirtualInputState.IsPressed(InputActionId.Sprint));
+                button.OnPointerDown(finger); button.OnPointerUp(finger);
+                Assert.IsFalse(button.ToggleOn); Assert.IsFalse(VirtualInputState.IsPressed(InputActionId.Sprint));
+            }
+            finally { Object.DestroyImmediate(obj); }
+        }
+
+        [Test]
+        public void HeldLeftJump_RepeatsUntilItsOwnFingerReleases()
+        {
+            var left = new GameObject("LeftJump", typeof(VirtualInputButton));
+            var right = new GameObject("RightJump", typeof(VirtualInputButton));
+            try
+            {
+                var a = left.GetComponent<VirtualInputButton>(); a.ConfigureRepeatJump();
+                var b = right.GetComponent<VirtualInputButton>();
+                var first = new PointerEventData(null) { pointerId = 1 };
+                var second = new PointerEventData(null) { pointerId = 2 };
+                a.OnPointerDown(first); b.OnPointerDown(second);
+                Assert.IsTrue(GameInput.IsTouchJumpRepeating);
+                a.OnPointerUp(second); Assert.IsTrue(GameInput.IsTouchJumpRepeating);
+                a.OnPointerUp(first); Assert.IsFalse(GameInput.IsTouchJumpRepeating);
+                Assert.IsTrue(VirtualInputState.IsPressed(InputActionId.Jump));
+                b.OnPointerUp(second); Assert.IsFalse(VirtualInputState.IsPressed(InputActionId.Jump));
+            }
+            finally { Object.DestroyImmediate(left); Object.DestroyImmediate(right); }
+        }
+
+        [Test]
+        public void TouchFeedback_DragsArtworkOnlyAndIgnoresOtherFinger()
+        {
+            var obj = new GameObject("Touch", typeof(RectTransform), typeof(VirtualDirectionButton), typeof(TouchPressFeedback));
+            try
+            {
+                var rect = (RectTransform)obj.transform; rect.sizeDelta = new Vector2(124, 124);
+                var feedback = obj.GetComponent<TouchPressFeedback>();
+                var direction = obj.GetComponent<VirtualDirectionButton>(); direction.Configure(Vector2.right);
+                var finger = new PointerEventData(null) { pointerId = 3, position = Vector2.zero };
+                direction.OnPointerDown(finger); feedback.OnPointerDown(finger);
+                finger.position = Vector2.one * 200; feedback.OnDrag(finger);
+                Assert.AreEqual(Vector2.zero, rect.anchoredPosition);
+                var other = new PointerEventData(null) { pointerId = 7 };
+                direction.OnPointerUp(other); feedback.OnPointerUp(other);
+                Assert.IsTrue(direction.IsPressed);
+                Assert.Less(obj.transform.Find("Press Feedback").localScale.x, 1f);
+                direction.OnPointerUp(finger); feedback.OnPointerUp(finger);
+                Assert.IsFalse(direction.IsPressed);
+                Assert.AreEqual(Vector3.one, obj.transform.Find("Press Feedback").localScale);
+                Assert.AreEqual(Vector2.zero, rect.anchoredPosition);
+            }
+            finally { Object.DestroyImmediate(obj); }
+        }
+
+        [Test]
+        public void TouchMargin_ExtendsInitialHitOutsideVisibleRectangle()
+        {
+            var obj = new GameObject("HitArea", typeof(RectTransform));
+            try
+            {
+                var rect = (RectTransform)obj.transform; rect.sizeDelta = Vector2.one * 124;
+                var point = new Vector2(72, 0);
+                Assert.IsFalse(RectTransformUtility.RectangleContainsScreenPoint(rect, point, null));
+                Assert.IsTrue(RectTransformUtility.RectangleContainsScreenPoint(rect, point, null, Vector4.one * -14));
+                Assert.IsFalse(RectTransformUtility.RectangleContainsScreenPoint(rect, new Vector2(80, 0), null, Vector4.one * -14));
+            }
+            finally { Object.DestroyImmediate(obj); }
+        }
+
         private sealed class FakeInputSource : IInputSource
         {
             public bool Pressed;

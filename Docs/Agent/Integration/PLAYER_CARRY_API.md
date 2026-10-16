@@ -13,6 +13,14 @@
 
 ## 物理所有权
 
+### 安全放下与玩家分离
+
+- `IPlayerCarrySeparationHost.ResolveCarryOverlap(bounds,item,false)`为只读的路线/终点检查；`true`只排队约0.16秒的水平让位，不立即修改位置。`PlayerController.ConstrainCarryVelocity`在物理步统一写速度，保留竖直运动和实体阻挡。
+- 终点采用真实胶囊穿透检测，避免安全外扩导致一格玩家无法放进一格夹墙通道。最多允许0.65格的水平自重叠，数值接触容差0.003格；深重叠或实际无路仍非法。
+- `CarryTargetMotion`保持Collider关闭，动画后通过`IsCarrySeparationPending(item)`和`IsCarrySeparated(bounds)`确认完成，再恢复运动参与者与实体；总时限0.8秒，落点被占或分离失败保持举起。
+- `CancelCarrySeparation(item)`用于取消/房间重置/死亡，防止残留位移；额外Timeline运动锁不被覆盖。不使用AddForce与正常控制并行竞争，也不直接移动玩家Transform。
+- `GamingCarryPlacementVerification.Run`仅在隔离工程打开真实Gaming，使用原标准玩家、红色ContactCube、白墙与区域重置，验证F拾取、轻点左转、Q放下和R复位，不保存Scene。
+
 `IPlayerCarryTarget` 保持原有拾取、头顶跟随、放下与复位契约。`CarryableFeature` 额外实现可选接口：
 
 ```csharp

@@ -3,6 +3,14 @@ using UnityEngine;
 
 namespace Project.Player
 {
+    /// <summary>Optional motor-owned separation. Preview is read-only; execution uses the same clearance test.</summary>
+    public interface IPlayerCarrySeparationHost
+    {
+        bool ResolveCarryOverlap(Bounds itemBounds, Transform item, bool apply);
+        bool IsCarrySeparationPending(Transform item);
+        bool IsCarrySeparated(Bounds itemBounds);
+        void CancelCarrySeparation(Transform item);
+    }
     public interface IPlayerCarryPlacementTarget
     {
         Bounds GetCarryPlacementBounds(Vector3 worldPosition);
