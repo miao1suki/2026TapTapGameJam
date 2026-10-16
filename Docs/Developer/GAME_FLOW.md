@@ -2,6 +2,8 @@
 
 正式入口是 `Assets/_Project/Scenes/Start/MainMenu.unity`，开始游戏后进入 `Assets/_Project/Scenes/Playing/Gaming.unity`。不再使用 Bootstrap、旧 Systems 场景、旧 Level_01～03 或 Ending。
 
+场景采用叠加加载交接。加载目标流程场景前暂停旧流程场景的 EventSystem，避免新旧 UI 同时启用；失败时恢复，成功卸载后清除引用。水体表现注销只停用并延迟销毁，不能在父节点禁用期间执行 SetParent。若旧测试包仍出现 Water Visual 改父节点报错，需使用当前源码重新打包；仅更新本地源码不会更新已安装包。
+
 MainMenu 的 `__GameFlow` 根持有 `GameFlowController`，开始按钮通过 `StartMenuFlowBridge` 请求 Gaming。Gaming 的 Main Camera 挂 `CameraControlManager`、`CameraModeController`、`CameraFollowController` 和 `LevelSceneContext`；`LevelSceneContext` 会按 `Player` Tag 找到玩家并接为相机随行目标。暂停与共享界面来自 `Content/UI/SharedGameUI.prefab`。
 
 正式加载过渡由 `GameSceneLoader` 统一驱动：

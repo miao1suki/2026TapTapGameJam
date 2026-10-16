@@ -1,5 +1,24 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-16 攀爬转角与移动端操作
+
+- 在现有任务分支继续；本轮完成后仅推分支，不合并 main。保留 Pick 场景/存档、字体、插件和项目设置。
+- 范围：攀爬外转角保护、横爬跳跃脱手、持续选色、多指独立触控、情境按键与持久化布局、安卓隐私入口审计与测试包。包括前次尚未提交的朝向/搬运/菜单往返修复依赖。
+- 完成：真实绿块上下两面/左右外缘/竖向接触交接统一物理转角保护；横爬跳跃脱手且短暂拒绝重抓。顶面交接允许已附着玩家的残余上升速度，避免左侧绕回顶部断开。成功染色/绿钩子不清选色，只有主动取消或重置清除。
+- 移动端：左右与双侧跳跃、右侧跑/选色，情境显示上下/交互/放下/重生。独立触点持有，滑出不释放，暂停/失焦释放；世界点击不再被持有方向键的主触点占用。设置新增触控布局拖动/80–200尺寸/安全区比例存储，保存到本机 PlayerPrefs；不改场景及按键映射。
+- Unity6000.3.12f1隔离验证：真实绿块转角/脱手、连续红蓝/绿色成功保留、布局与字体44项通过；项目相关EditMode149/149通过。实际Touchscreen事件三指同时按住、滑出、抬起单指、持有HUD时另指点世界全部通过；日志Library/ClimbMobileVerification.log、MobileCornerRegression.xml、MobileRealPointerVerification.log。一次误选全包测试包含第三方/引擎测试，1622通过、68跳过、2失败（AssertionFailureOnOutputVertexCount和InputModuleComponentFactory）；不将其报告为全包通过。
+- 保留用户Pick场景/存档、动态字体、DOTweenPro插件及PackageManagerSettings，不纳入本任务提交。Pick SHA256仍为05C74E1A64F415E529677827DA64D113C869BAF44507C3732D46B5DBE3019747。没有连接安卓设备，手感、多分辨率及隐私授权真机检测仍需验收。
+- 最终安卓ARM64开发包构建成功，0错误/12警告：Builds/形之彩-20261016/Android/形之彩.apk（105057359字节，SHA256 749D4EF57A83C7E73D6CB60F5D8572025B15A97A17E98ED7612EF1E82F505F6E）。仅MainMenu/Gaming，最低API25；AAPT确认唯一Launcher为独立:privacy进程PrivacyActivity、PrivacyApplication接管、UnityPlayerActivity非导出，仅INTERNET权限；APK含离线政策及字体。日志Library/MobileCornerAndroidBuild.log，构建报告同输出目录Android-report.txt。测试探针仅在Library隔离工程，运行时探针已从构建工程删除。分支codex/gameplay/facing-placement-menu-return按本轮授权提交推送，不合并main。
+
+## 2026-10-16 朝向交互、搬运落点与轮盘取消
+
+- 分支 codex/gameplay/facing-placement-menu-return；检查打包往返菜单日志，统一提示/搬运目标朝向，添加运行时虚线落点预览与轮盘中央取消能力。保留用户 Pick 场景、存档、字体、插件及设置；本轮未获提交推送授权。
+- 记事本 Player.log 为 FlowRetirementProbe 旧包，水体禁用期间 SetParent 错误对应操作在当前源码已移除；需要用当前代码复验，不将旧日志当作新修复证据。
+- 已完成：MainMenu/Gaming 叠加加载前交接旧场景 EventSystem，失败恢复；现有水体生命周期无非法 SetParent。角色外观、按键交互、持续曲柄与搬运共用最后水平朝向，相近候选稳定排序，稠密交互扫描缓冲按需增长；鼠标染色仍按命中。修复移动跨格时1×1逻辑占格错误扩为2×2的问题。
+- 搬运面朝侧显示青绿/红虚线落点，Q/E仍指定左右并转向。可选IPlayerCarryPlacementTarget与真实放下共用完整实体、物理参与者及房间边界校验，支持合并大小。单缓存Mesh，无新增碰撞/Canvas；网格元数据改为启停登记，避免每帧全场景搜索。
+- 轮盘中央确认取消选色、隐藏能力范围并显示“当前未使用颜色能力”；锁定扇区不清已有能力，成功染色自动清空不误发手动取消提示。中央区域按UI缩放适配，保留扇形素材和DOTween效果。API、开发者说明及颜色规范同步。
+- Unity6000.3.12f1隔离验证：朝向曲柄/拾取、转向、稳定选择、完整尺寸/红色虚线/启停注册、轮盘取消等22项通过；原搬运物理20项通过；相关EditMode140/140通过。当前源码Windows开发包实际完成3轮MainMenu→Gaming→MainMenu，游戏错误0、重复EventSystem警告0。日志Library/FacingInteractionVerification.log、FacingCarryCollision.log、FacingRegression.xml、MenuReturnBuild.log、MenuReturnPlayer.log。安卓未重新打包与真机验证；测试包仅Library隔离目录，不代替正式交付。Pick SHA256保持05C74E1A64F415E529677827DA64D113C869BAF44507C3732D46B5DBE3019747；未提交/合并/推送。
+
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
 
 ## 2026-10-15 编辑器响应、攀爬蹬跳与重生点音频

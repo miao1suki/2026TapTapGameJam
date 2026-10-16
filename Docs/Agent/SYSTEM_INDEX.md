@@ -1,5 +1,7 @@
 # 系统索引
 
+移动端按键与转角：双侧跳跃、情境动作、多指独立持有与世界指针、设置内拖动/缩放/持久化布局；真实绿块外缘保护交接、横爬跳跃脱手，颜色能力持续选色。见 [MOBILE_CONTROLS.md](../Developer/MOBILE_CONTROLS.md)。
+
 编辑器响应与攀爬衔接：预览缓存/分层容器/视口裁剪、合并持久化与连续编辑延后落盘；蹬跳上升期间不被攀爬状态重新接管，适用于藤蔓、梯子与绿色接触方块。重生点首次激活/返回已激活点两种提示声已接线，见 [ROOM_LIFECYCLE_API](Integration/ROOM_LIFECYCLE_API.md) 和 [AUDIO_HANDOVER](Integration/AUDIO_HANDOVER.md)。
 
 绿钩子最新规则：红蓝接触方块/基座每物理步优先拉物，受阻转拉玩家并重评估；绿色接触方块/生长体、藤蔓、弹性植物为荡绳锚点。成功挂接不自动脱钩，现有跳跃/交互主动结束。见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。无色收集品与四向尖刺已加入道具栏目，见 [使用说明](../Developer/WORLD_ITEMS.md)、[接入](Integration/WORLD_ITEMS_API.md)。

@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace Project.Player
 {
+    public interface IPlayerCarryPlacementTarget
+    {
+        Bounds GetCarryPlacementBounds(Vector3 worldPosition);
+        bool CanPlaceCarryAt(IPlayerCarryHost player, Vector3 worldPosition);
+    }
     /// <summary>Optional solid-volume constraint. Only the player's physics owner applies the result.</summary>
     public interface IPlayerCarryCollisionTarget
     {

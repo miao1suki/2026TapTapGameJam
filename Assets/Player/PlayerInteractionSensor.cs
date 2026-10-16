@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Project.InputAbstraction;
 
@@ -13,13 +14,23 @@ namespace Project.Player
         [SerializeField]
         private LayerMask interactionMask = ~0;
 
-        private readonly Collider[] overlapBuffer =
-            new Collider[32];
+        private Collider[] overlapBuffer = new Collider[128];
         private readonly RaycastHit[] screenRaycastBuffer =
             new RaycastHit[32];
         public IInteractionTarget CurrentTarget { get; private set; }
         public bool HasTarget => CurrentTarget != null;
         public float ScanRadius => scanRadius;
+        private PlayerController player;
+        private readonly List<MonoBehaviour> targetBehaviours = new List<MonoBehaviour>();
+
+        // Keep close ties stable, but immediately discard objects behind the player.
+        public static float FacingScore(PlayerController player, Vector3 position)
+        {
+            Vector3 delta = position - player.transform.position;
+            float forward = delta.x * player.FacingDirection;
+            if (forward < -.05f * player.GridCellWorldSize) return float.PositiveInfinity;
+            return delta.sqrMagnitude;
+        }
 
         public bool IsWithinRange(IInteractionTarget target)
         {
@@ -177,12 +188,19 @@ namespace Project.Player
 
         private IInteractionTarget FindNearestTarget()
         {
+            if (player == null) player = GetComponent<PlayerController>();
             int count = Physics.OverlapSphereNonAlloc(
                 transform.position,
                 scanRadius,
                 overlapBuffer,
                 interactionMask.value,
                 QueryTriggerInteraction.Collide);
+            while (count == overlapBuffer.Length && overlapBuffer.Length < 4096)
+            {
+                System.Array.Resize(ref overlapBuffer, overlapBuffer.Length * 2);
+                count = Physics.OverlapSphereNonAlloc(transform.position, scanRadius, overlapBuffer,
+                    interactionMask.value, QueryTriggerInteraction.Collide);
+            }
             IInteractionTarget nearest = null;
             float nearestDistance = float.MaxValue;
             for (int index = 0; index < count; index++)
@@ -193,13 +211,13 @@ namespace Project.Player
                     continue;
                 }
 
-                MonoBehaviour[] behaviours =
-                    collider.GetComponentsInParent<MonoBehaviour>();
+                targetBehaviours.Clear();
+                collider.GetComponentsInParent(false, targetBehaviours);
                 for (int behaviourIndex = 0;
-                     behaviourIndex < behaviours.Length;
+                     behaviourIndex < targetBehaviours.Count;
                      behaviourIndex++)
                 {
-                    if (!(behaviours[behaviourIndex] is
+                    if (!(targetBehaviours[behaviourIndex] is
                             IInteractionTarget target) ||
                         !target.CanInteract(gameObject))
                     {
@@ -207,13 +225,16 @@ namespace Project.Player
                     }
 
                     Vector3 closest = collider.ClosestPoint(transform.position);
-                    float distance = Vector3.Distance(
-                        transform.position,
-                        closest);
-                    if (distance > scanRadius || distance >= nearestDistance)
+                    float distance = FacingScore(player, collider.bounds.center);
+                    if (float.IsPositiveInfinity(distance) ||
+                        (closest - transform.position).sqrMagnitude > scanRadius * scanRadius)
                     {
                         continue;
                     }
+
+                    if (ReferenceEquals(target, CurrentTarget)) distance -= .05f * scanRadius;
+                    if (distance > nearestDistance || (Mathf.Approximately(distance, nearestDistance) &&
+                        nearest is Component previous && targetBehaviours[behaviourIndex].GetInstanceID() >= previous.GetInstanceID())) continue;
 
                     nearestDistance = distance;
                     nearest = target;

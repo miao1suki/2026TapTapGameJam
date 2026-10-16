@@ -43,10 +43,8 @@ namespace Project.InputAbstraction
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (eventData.pointerId == activePointerId)
-            {
-                Release();
-            }
+            // Keep ownership until this finger lifts, even when a thumb drifts outside.
+            // EventSystem delivers PointerUp to the original press target.
         }
 
         private void OnDisable()

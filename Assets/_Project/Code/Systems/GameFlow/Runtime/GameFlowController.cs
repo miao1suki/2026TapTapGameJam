@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Project.StartMenu;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 
 namespace Project.GameFlow
 {
@@ -16,6 +18,7 @@ namespace Project.GameFlow
 
         private static GameFlowController instance;
         private GameFlowSceneId? activeSceneId;
+        private readonly List<EventSystem> suspendedEventSystems = new List<EventSystem>();
 
         public static GameFlowController Instance => instance;
         public GameSceneCatalog Catalog => catalog;
@@ -134,6 +137,7 @@ namespace Project.GameFlow
 
         private void OnDestroy()
         {
+            RestoreSceneEventSystems();
             if (instance == this)
             {
                 instance = null;
@@ -288,6 +292,9 @@ namespace Project.GameFlow
 
             if (!targetScene.IsValid() || !targetScene.isLoaded)
             {
+                // Additive activation enables the incoming scene's EventSystem before
+                // sceneLoaded. Hand off the outgoing scene before that happens.
+                SuspendOutgoingEventSystems(targetPath);
                 AsyncOperation load =
                     GameSceneLoader.Instance.LoadSceneAsync(
                         targetPath,
@@ -295,6 +302,7 @@ namespace Project.GameFlow
                         false);
                 if (load == null)
                 {
+                    RestoreSceneEventSystems();
                     Debug.LogError($"无法加载流程场景：{targetPath}", this);
                     IsTransitioning = false;
                     yield break;
@@ -306,6 +314,7 @@ namespace Project.GameFlow
 
             if (!targetScene.IsValid() || !targetScene.isLoaded)
             {
+                RestoreSceneEventSystems();
                 Debug.LogError($"流程场景加载后无效：{targetPath}", this);
                 IsTransitioning = false;
                 yield break;
@@ -334,6 +343,7 @@ namespace Project.GameFlow
             }
 
             ActivateFlowScene(targetScene);
+            RestoreSceneEventSystems();
 
             if (!isInitialTransition &&
                 target == GameFlowSceneId.Gaming)
@@ -354,6 +364,30 @@ namespace Project.GameFlow
             activeSceneId = target;
             IsTransitioning = false;
             ActiveSceneChanged?.Invoke(target);
+        }
+
+        private void SuspendOutgoingEventSystems(string targetPath)
+        {
+            suspendedEventSystems.Clear();
+            foreach (EventSystem system in ProjectDiscovery.FindAll<EventSystem>())
+            {
+                if (system == null || !system.isActiveAndEnabled || system.gameObject.scene.path == targetPath) continue;
+                // Only suspend scenes owned by this flow, not unrelated persistent UI.
+                foreach (GameFlowSceneEntry entry in catalog.FlowScenes)
+                {
+                    if (entry == null || entry.ScenePath != system.gameObject.scene.path) continue;
+                    suspendedEventSystems.Add(system);
+                    system.enabled = false;
+                    break;
+                }
+            }
+        }
+
+        private void RestoreSceneEventSystems()
+        {
+            foreach (EventSystem system in suspendedEventSystems)
+                if (system != null) system.enabled = true;
+            suspendedEventSystems.Clear();
         }
 
         private static void ActivateFlowScene(Scene scene)

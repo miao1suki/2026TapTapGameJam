@@ -5,6 +5,10 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 # 颜色大洗牌玩法与组件规范
 
+> 2026-10-16 连续能力与转角：选色持续保留，染色或绿钩子成功不再清空；中央确认取消仍清空。横向绿块攀附按跳跃脱手下落，短暂禁止重抓；真实横藤碰撞外缘转角由玩家运动器交接，失效/重置清理。此条覆盖旧自动清色与横爬禁跳描述。触摸按键持有到对应手指抬起，设置支持持久化安全区布局，见 Docs/Developer/MOBILE_CONTROLS.md。
+
+> 2026-10-16 朝向交互：附近按键交互、搬运目标与角色共享 PlayerController.FacingDirection，排除背后并保持相近目标稳定；默认逻辑占格始终1×1。Q/E保留左右放下并转向对应侧，运行时虚线框复用完整落点校验（含合并体积与房间边界）。轮盘中央确认可清空能力，显式取消触发AbilityDeselectedByPlayer与“当前未使用颜色能力”提示；成功染色后的自动清空不冒发手动取消提示。屏幕点击染色不套朝向筛选。水体停用只停用并延迟销毁，不在父节点禁用中SetParent。
+
 > 2026-10-15 玩法水体表现：WaterVisualFeature默认使用Resources/ColorBlocks/WaterPresentation，按相邻体积生成TA水面/水中/水下面片与前方透明折射板，不生成旧InteractiveWater顶板/波纹。水、气泡均用ColorAppearanceManager共享材质渐显，保留blue Layer；PixelWaterRefraction专属通道不限定Water Layer，并纳入HSV遮罩。定向水流自动四向气泡，浮力柱沿上方连通水域向上，普通水域不加流向气泡。旧waterPrefab等字段只作缺配置后备。此条覆盖下文旧水体默认生成说明。接入先读Docs/Agent/Integration/GAMEPLAY_PIXEL_WATER_API.md。
 
 > 2026-10-14 标注图水流：DirectionalCurrentFeature 增加向上/向下，保留 Left=0、Right=1 的旧存档值，Up=2、Down=3；定向水流仍是同一固定功能的方向参数，不是水域/气泡柱形态切换。编辑器规划参数必须持久保存方向。
@@ -23,7 +27,7 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 > 2026-10-12 区域生命周期定稿：Rooms/RoomLifecycleManager 按世界图实际占格管理房间/通道。离开或死亡/R重生仅恢复所属物体的布置状态与位置，保留门、按钮、已拾取钥匙和全局解锁；已解锁物体恢复刚解锁的行为而非白色锁定。ResetForRoom 不清空颜色、不全局广播；仅 ResetProgress 明确清空进度。R 返回最近触碰的锚点，取消携带并恢复区域，不再只是回上一次拿起位置。此条覆盖下文旧房间清锁与搬运重置说明。接入必须读 Docs/Agent/Integration/ROOM_LIFECYCLE_API.md。
 
-> 水体透明渲染：水面/横截面使用 MeshRenderer，Shader Graph 使用 URP Unlit 透明子目标，不使用依赖 SpriteRenderer 翻转/颜色参数的 Sprite Lit。保留原水效节点，透明度只由水体原始 Alpha 与 `_ColorRevealOpacity` 相乘；生成水体注销先停用、移出宿主，再延迟销毁，防止同帧重新绑定误用旧实例。
+> 水体透明渲染：水面/横截面使用 MeshRenderer，Shader Graph 使用 URP Unlit 透明子目标，不使用依赖 SpriteRenderer 翻转/颜色参数的 Sprite Lit。保留原水效节点，透明度只由水体原始 Alpha 与 `_ColorRevealOpacity` 相乘；生成水体注销先停用并延迟销毁，禁止在父节点禁用中移出宿主；同帧重新绑定不复用停用旧实例。
 
 > 分类表现解耦：`HSVColorFadeManager.SetHsv(id, saturation, whiteAmount, seconds)` 只控制全屏 HSV，不读解锁、不操作材质或 Renderer。`ColorAppearanceManager.Play(id, unlocked, duration)` 统一编排基础方块、水、藤蔓的外观；按源材质/颜色组/基础或正式阶段共享运行时材质，物体只注册、注销，不逐帧写透明度。原生缓存不在组件构造时创建。遮罩只裁剪透明度零值，不再次将 Alpha 乘进 HSV，避免漏出原色。藤蔓在运行时用独立透明拖尾 Shader，保留源纹理/颜色，源资产不变。此条覆盖下文关于 HSV 负责交接、GetOpacity 和自动扫描 Renderer 的旧描述。
 

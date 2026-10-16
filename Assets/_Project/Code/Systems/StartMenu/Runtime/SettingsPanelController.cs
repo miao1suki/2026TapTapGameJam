@@ -38,6 +38,7 @@ namespace Project.StartMenu
         private bool buttonsBound;
 
         public event Action BackRequested;
+        public static event Action<TMPro.TMP_FontAsset> TouchLayoutRequested;
 
         public void SetBackButtonVisible(bool value)
         {
@@ -160,7 +161,27 @@ namespace Project.StartMenu
 
             StyleCreditsPage();
             EnsurePrivacyButton();
+            EnsureTouchLayoutButton();
             BindButtons();
+        }
+
+        private void EnsureTouchLayoutButton()
+        {
+            if (categoryList == null || categoryList.Find("Touch Layout") != null ||
+                Project.InputAbstraction.GameInput.PlatformMode != Project.InputAbstraction.InputPlatformMode.Mobile) return;
+            Button layout = StartMenuUiFactory.CreateButton("Touch Layout", categoryList, "触控布局",
+                new Vector2(190f, 48f), OpenTouchLayout);
+            AddCategorySize(layout);
+        }
+
+        private void OpenTouchLayout()
+        {
+            var font = StartMenuTypography.SdfFont;
+            if (font == null)
+                foreach (var text in GetComponentsInChildren<TMPro.TMP_Text>(true))
+                    if (text.font != null && text.font.name == "Cubic_11 SDF") { font = text.font; break; }
+            if (font != null) TouchLayoutRequested?.Invoke(font);
+            else Debug.LogWarning("触控布局缺少项目字体配置。", this);
         }
 
         private void EnsurePrivacyButton()

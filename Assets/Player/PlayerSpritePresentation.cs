@@ -98,8 +98,8 @@ namespace Project.Player
                 visual.sprite = frame >= 0 ? clip.frames[frame] : null;
                 hasPresented = true;
             }
-            if (!suspended && state != PlayerStateId.Death && Mathf.Abs(player.MoveInput.x) > .05f)
-                visual.flipX = player.MoveInput.x < 0f;
+            if (!suspended && state != PlayerStateId.Death)
+                visual.flipX = player.FacingDirection < 0;
             if (capsule != null)
                 visual.transform.position = transform.TransformPoint(capsule.center) + Vector3.up * (verticalOffsetCells * cellWorldSize);
             float cell = cellWorldSize;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Project.BlockFeatures;
 using Project.SurfaceTiles;
 using UnityEngine;
@@ -8,6 +9,31 @@ namespace Project.LevelEditor
     public sealed class LevelEditorPlacedBlock : MonoBehaviour,
         IGridCellSizeProvider
     {
+        private static readonly List<LevelEditorPlacedBlock> activeInstances = new List<LevelEditorPlacedBlock>();
+        private static readonly Dictionary<LevelEditorPlacedBlock, int> activeIndices = new Dictionary<LevelEditorPlacedBlock, int>();
+        public static IReadOnlyList<LevelEditorPlacedBlock> ActiveInstances => activeInstances;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRegistry()
+        {
+            activeInstances.Clear();
+            activeIndices.Clear();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void SeedRegistry()
+        {
+            // Also supports Enter Play Mode with both reload options disabled.
+            foreach (LevelEditorPlacedBlock block in ProjectDiscovery.FindAll<LevelEditorPlacedBlock>())
+                if (block.isActiveAndEnabled) block.RegisterActive();
+        }
+
+        private void RegisterActive()
+        {
+            if (activeIndices.ContainsKey(this)) return;
+            activeIndices.Add(this, activeInstances.Count);
+            activeInstances.Add(this);
+        }
         [SerializeField] private Vector2Int cell;
         [SerializeField] private Vector2Int sizeCells = Vector2Int.one;
         [SerializeField, Min(.01f)] private float cellWorldSize = 1f;
@@ -105,7 +131,19 @@ namespace Project.LevelEditor
 
         private void OnEnable()
         {
+            RegisterActive();
             ApplyEntryColor();
+        }
+
+        private void OnDisable()
+        {
+            if (!activeIndices.TryGetValue(this, out int index)) return;
+            int lastIndex = activeInstances.Count - 1;
+            LevelEditorPlacedBlock last = activeInstances[lastIndex];
+            activeInstances[index] = last;
+            activeIndices[last] = index;
+            activeInstances.RemoveAt(lastIndex);
+            activeIndices.Remove(this);
         }
     }
 }

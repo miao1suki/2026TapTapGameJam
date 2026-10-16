@@ -92,16 +92,19 @@ namespace Project.InputAbstraction
                 Touchscreen.current?.lastUpdateTime ?? 0d));
 
         public bool IsActionPressed(InputActionId action) =>
-            TryGetAction(action, out InputAction value) && value.IsPressed();
+            UseTouchPointer(action) ? TouchGameplayPointer.Pressed : TryGetAction(action, out InputAction value) && value.IsPressed();
 
         public bool WasActionPressedThisFrame(InputActionId action) =>
-            TryGetAction(action, out InputAction value) && value.WasPressedThisFrame();
+            UseTouchPointer(action) ? TouchGameplayPointer.Triggered : TryGetAction(action, out InputAction value) && value.WasPressedThisFrame();
 
         public bool WasActionTriggeredThisFrame(InputActionId action) =>
-            TryGetAction(action, out InputAction value) && value.WasPerformedThisFrame();
+            UseTouchPointer(action) ? TouchGameplayPointer.Triggered : TryGetAction(action, out InputAction value) && value.WasPerformedThisFrame();
 
         public bool WasActionReleasedThisFrame(InputActionId action) =>
-            TryGetAction(action, out InputAction value) && value.WasReleasedThisFrame();
+            UseTouchPointer(action) ? TouchGameplayPointer.Released : TryGetAction(action, out InputAction value) && value.WasReleasedThisFrame();
+
+        private bool UseTouchPointer(InputActionId action) => action == InputActionId.PointerPrimary &&
+            ActiveDeviceMode == InputDeviceMode.Touch;
 
         public InputActionTrigger GetActionTrigger(InputActionId action)
         {
@@ -151,7 +154,7 @@ namespace Project.InputAbstraction
         }
 
         public Vector2 PointerPosition => ActiveDeviceMode == InputDeviceMode.Touch && Touchscreen.current != null
-            ? Touchscreen.current.primaryTouch.position.ReadValue()
+            ? TouchGameplayPointer.Position
             : Mouse.current?.position.ReadValue() ?? Vector2.zero;
         public Vector2 PointerDelta => ActiveDeviceMode == InputDeviceMode.Touch && Touchscreen.current != null
             ? Touchscreen.current.primaryTouch.delta.ReadValue()

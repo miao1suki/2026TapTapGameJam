@@ -23,7 +23,7 @@ namespace Project.InputAbstraction
         }
         public void OnPointerExit(PointerEventData data)
         {
-            if (data.pointerId == pointerId) Release();
+            // Do not cancel a held direction when a thumb drifts outside its artwork.
         }
         private void OnDisable() => Release();
         private void OnApplicationFocus(bool focused) { if (!focused) Release(); }

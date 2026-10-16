@@ -29,6 +29,57 @@ namespace Project.Player
         public bool IsCarrying { get; private set; }
         public bool IsDropAnimating { get; private set; }
         public bool IsResetAnimating { get; private set; }
+        private readonly Collider[] placementHits = new Collider[128];
+
+        public Bounds GetPlacementBounds(Vector3 position)
+        {
+            Bounds result = new Bounds(position, Vector3.zero);
+            bool found = false;
+            if (colliders == null) return result;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider shape = colliders[i];
+                if (shape == null || !colliderStates[i] || shape.isTrigger) continue;
+                Bounds local;
+                if (shape is BoxCollider box) local = new Bounds(box.center, box.size);
+                else if (shape is MeshCollider mesh && mesh.sharedMesh != null) local = mesh.sharedMesh.bounds;
+                else if (shape is SphereCollider sphere) local = new Bounds(sphere.center, Vector3.one * sphere.radius * 2f);
+                else if (shape is CapsuleCollider capsule)
+                {
+                    Vector3 size = Vector3.one * capsule.radius * 2f;
+                    size[capsule.direction] = Mathf.Max(capsule.height, size[capsule.direction]);
+                    local = new Bounds(capsule.center, size);
+                }
+                else continue;
+                Vector3 offset = position - root.position;
+                for (int corner = 0; corner < 8; corner++)
+                {
+                    Vector3 point = shape.transform.TransformPoint(local.center + Vector3.Scale(local.extents,
+                        new Vector3((corner & 1) == 0 ? -1 : 1, (corner & 2) == 0 ? -1 : 1, (corner & 4) == 0 ? -1 : 1))) + offset;
+                    if (!found) { result = new Bounds(point, Vector3.zero); found = true; }
+                    else result.Encapsulate(point);
+                }
+            }
+            return result;
+        }
+
+        public bool CanPlaceAt(Vector3 position)
+        {
+            Bounds bounds = GetPlacementBounds(position);
+            if (bounds.size.sqrMagnitude < .00001f) return false;
+            int count = Physics.OverlapBoxNonAlloc(bounds.center,
+                Vector3.Max(bounds.extents - Vector3.one * .01f, Vector3.one * .0001f),
+                placementHits, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+            if (count == placementHits.Length) return false;
+            for (int i = 0; i < count; i++)
+            {
+                Collider other = placementHits[i];
+                if (other == null || other.transform.IsChildOf(root)) continue;
+                // The player also occupies real space at a proposed destination.
+                return false;
+            }
+            return true;
+        }
 
         public CarryTargetMotion(Transform root, System.Action restored = null)
         {

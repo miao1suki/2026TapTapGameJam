@@ -1,5 +1,16 @@
 # 玩家搬运与提示
 
+## 2026-10-16 朝向与落点预览
+
+- `PlayerController.FacingDirection` 为最后有效水平输入朝向（-1/1），与角色 Sprite 共用；释放移动不复原朝向。输入驱动在交互扫描前更新朝向。
+- 按键交互与搬运队列排除背后目标；相近候选保留当前目标并使用稳定次序，避免左右提示闪跳。鼠标染色仍按屏幕命中，不受此筛选影响。
+- 逻辑占格依照配置固定大小，默认 1×1；移动经过格线不会临时扩为 2×2。完整实体重叠仍另外校验。
+- `TryGetCarryPlacementPreview(out Bounds bounds, out bool valid)` 返回面朝侧的预计放下包围盒。Q/E 保持显式左/右放下，并转向该侧；不新增键位。合法为青绿虚线，非法为红色虚线，暂停/放下/复位/未携带时隐藏。
+- 可选 `IPlayerCarryPlacementTarget.GetCarryPlacementBounds(position)` / `CanPlaceCarryAt(host, position)` 使预览与执行共用完整实体、运动参与者和房间边界校验。`CarryableFeature` 已实现；不能只以一个格子的空闲状态放下合并块。
+- 预览仅一个缓存 Mesh，不添加 Collider、Canvas、EventSystem 或第二个刚体写入者。碰撞体拿起后虽停用，尺寸仍由缓存的原始实体计算。
+- 网格占用查询使用 `LevelEditorPlacedBlock.ActiveInstances` 启停注册表，不因每帧预览调用全场景扫描。注册/注销采用索引交换删除，场景卸载不逐项线性查找；Enter Play Mode 可在启动时补登记已有实例。
+- `Project.Player.Editor.FacingInteractionVerification.Run` 是隔离项目的 Play Mode 回归入口。
+
 ## 物理所有权
 
 `IPlayerCarryTarget` 保持原有拾取、头顶跟随、放下与复位契约。`CarryableFeature` 额外实现可选接口：
