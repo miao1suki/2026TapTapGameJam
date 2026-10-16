@@ -12,6 +12,7 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 2. `Docs/Agent/WORKING_AGREEMENTS.md`
 3. `Docs/Agent/ACTIVE_WORK.md`
 4. `Docs/Agent/SYSTEM_INDEX.md`
+   正式关卡工作另须读取 `Docs/Agent/Integration/FORMAL_LEVEL_DELIVERY.md`：唯一正式玩法为新版 `Gaming.unity`，配套 `Gaming.planning.json` 与 `Content/LevelMaps/正式关卡.json`。仍使用旧 Gaming 的成员须先同步这次 main 基线，再继续制作；禁止以旧场景、旧存档或 Library 缓存覆盖新版本。正式关卡工作者只拉取、制作并推送自己的分支，只有用户当前整合窗口负责合并和推送 main。
 5. 开发颜色系统、颜色物体、万能方块、钥匙、房间重置或交互图迁移时，必须先读 `.agents/skills/taptap-color-gameplay/SKILL.md`，并完整读取其中指定的 `Assets/_Project/Code/Systems/ColorBlocks/SKILL.md`。
 6. 做编辑器 UI 时另读 `Docs/Agent/EDITOR_UI_STANDARD.md`。
 7. 修改玩家屏幕提示、按键说明、搬运提示、复活提示或 `WordNote_UI` 时，必须先读 `.agents/skills/taptap-word-note/SKILL.md`，并完整读取其中指定的 `Assets/_Project/Code/Systems/WordNote/SKILL.md`。

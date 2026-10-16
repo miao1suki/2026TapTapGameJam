@@ -1,0 +1,37 @@
+# 正式关卡交接与同步
+
+## 当前交付基线
+
+2026-10-16 正式关卡采用策划分支 `codex/formal-level-progress`，交付末端 `ad8e34e2e36f9f64d8d68f28d461fe992c8d3278`（含 `d12680d`、`a036d32`）。整合时以这套关卡布局为准，不拼回本地旧布局；main 的最新运行时功能继续保留。
+
+必须成套维护以下文件及各自 `.meta`，保留现有 GUID：
+
+- `Assets/_Project/Scenes/Playing/Gaming.unity`：正式打包、游玩及后续关卡修改的唯一玩法场景。
+- `Assets/_Project/Scenes/Playing/Gaming.planning.json`：场景同名可编辑规划数据。
+- `Assets/_Project/Content/LevelMaps/正式关卡.json`：正式关卡的命名共享存档。
+
+场景内嵌规划、同名规划和命名存档的布局必须一致。不能只交付生成后的 Scene，不能把唯一存档留在 Library。新增栏目、预制体和美术依赖也须一起提交。
+
+正式启动/构建流程仍为 `MainMenu -> Gaming`，不启用旧 Bootstrap、旧三关或测试场景。标准玩家仍唯一使用 `Assets/_Project/Content/Player/Player.prefab`；不复制或恢复旧玩家。关卡布局以策划交付为准，不因运行时接线检查而全量重建地图或重置出生点。
+
+## 旧版本成员先同步
+
+所有仍使用旧 Gaming 的成员，必须先取得包含本次整合的最新 `origin/main`，使用上述新版场景和两份存档，再继续正式制作。不能从旧 Scene、旧 JSON、EditorPrefs 或 Library 缓存恢复旧图后覆盖新版。
+
+1. 重新读取根 AGENTS、PROJECT_CONTEXT、WORKING_AGREEMENTS、ACTIVE_WORK、SYSTEM_INDEX 和本文件。
+2. 核对唯一远程为 `https://github.com/miao1suki/2026TapTapGameJam.git`，运行 `git fetch origin --prune`。
+3. 干净的新任务从最新 `origin/main` 创建自己的 `codex/<成员>/<任务>` 分支。已有分支落后或分叉时，把未交付改动保存在自己的分支并联系当前整合者；不自行合并、rebase、强推或删除他人文件。
+4. 使用新 Gaming 及配套存档。Unity 若仍打开旧版场景/关卡编辑器，先保存需要保留的个人内容到独立场景或片段，关闭旧编辑窗口，再从磁盘重新打开新版；不要把旧内存场景保存回正式路径。出现外部更新保护时，先保留冲突备份，再重开新版，不绕过保护。
+5. 新版正式关卡已经包含自己的布局，不能用模板场景、测试图或“全量重建”代替同步。
+
+本次“本地正式关卡丢弃、采用策划版”仅是当前整合者收到的一次性指令，不是授权其他成员丢弃本地工作或日后自动覆盖。
+
+## 制作、交付与合并权限
+
+指定关卡策划在自己的分支继续修改新版 Gaming；功能程序默认在独立测试场景验证，需接入正式关卡时保留现有布局、物体参数和绑定关系。多人制作片段时使用编辑器“协作与片段”交付，不并行手工合并大 JSON。
+
+编辑器保存/应用会维护场景同名规划文件。交付前同时更新命名的“正式关卡”共享存档，核对三份布局一致，显式暂存 Scene、两份 JSON、各自 meta 和必要依赖。运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`；该检查保证配对文件存在，不代替三份布局一致性和游戏验收。
+
+其他成员与 agent 只拉取进度、制作并推送自己的分支，交接分支、SHA、修改文件和验证结果。**只有用户当前整合窗口负责合并到 main 并推送 main。** 本文不授权其他人合并、直接推 main、重写历史或自动恢复旧关卡；后续每次合并仍等待用户在整合窗口确认。
+
+策划原交付未执行 Play Mode 或打包；整合验证结果记录在 ACTIVE_WORK 当前条目，不把静态检查表述为完整关卡通关或真机验收。

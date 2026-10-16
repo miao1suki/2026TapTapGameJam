@@ -1,5 +1,7 @@
 # 系统索引
 
+正式打包关卡：`Assets/_Project/Scenes/Playing/Gaming.unity`，配套同名规划文件及 `Assets/_Project/Content/LevelMaps/正式关卡.json`；采用策划 `ad8e34e` 的完整关卡基线。旧 Gaming 使用者先同步新版，不用旧场景/缓存覆盖；其他成员仅拉取和推送分支，由当前整合窗口合并 main。必读 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
+
 开发者复活方式：标准玩家默认常规，可用 `PlayerController.ConfigureRespawn(LoadingTransition, seconds)` 切换慢速收黑/加载背景/原路退场，沿用既有区域及重生点恢复，不换场景、不清进度；支持Inspector调试、重复请求和中断清理。见 [接入API](Integration/PLAYER_RESPAWN_API.md)、[复活表现](../Developer/PLAYER_RESPAWN.md)。
 
 颜色双阶段解锁与唯一标准玩家：见 [接入约定](Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。场景颜色和玩家能力分别查询；所有玩法场景共用 `Content/Player/Player.prefab`，新建空地图在原点生成并绑定玩家。

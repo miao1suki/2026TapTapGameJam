@@ -44,7 +44,7 @@ ColorRuntimeService API：
 
 编辑器入口统一取 StandardPlayerAsset.Path；EnsureInScene 仅在当前场景无玩家时实例化，有玩家则复用，多个玩家时报错。新建空存档调用 LevelEditorPlayerService.CreateAndBindAtOrigin，在世界(0,0,0)放置并绑定玩家；无房间时使用 hasUnassignedPlayerStart/playerStartWorld 保存出生位置，进入房间后仍按房间ID与局部位置持久化。LevelEditorState按当前活动场景恢复玩家引用，不跨场景串绑。
 
-迁移通过Unity的Prefab替换/转换API重映射场景引用，非单纯替换GUID；原场景位置保留，唯一例外是Gaming出生点调整为(1.5,-28,0)，与独立及场景内嵌planning存档同步，避免中心归零后开局进入红钥匙磁吸范围。三把钥匙的位置不变。迁移前本地备份位于Library/PlayerConsolidationBackup-20261016，既有非玩家内容不全量重建。MigrateProject仅允许隔离验证工程显式执行，不在导入或运行时自动执行。
+迁移通过Unity的Prefab替换/转换API重映射场景引用，非单纯替换GUID；原场景位置保留。历史迁移曾将旧Gaming出生点调整为(1.5,-28,0)，避免中心归零后开局进入红钥匙磁吸范围；此坐标不再是正式关卡约束。2026-10-16已采用策划新版Gaming，布局、钥匙和玩家位置以当前正式场景/存档为准，禁止再次运行旧迁移把它改回旧图。正式交付与同步规则见[FORMAL_LEVEL_DELIVERY.md](FORMAL_LEVEL_DELIVERY.md)。迁移前本地备份位于Library/PlayerConsolidationBackup-20261016，既有非玩家内容不全量重建。MigrateProject仅允许隔离验证工程显式执行，不在导入或运行时自动执行。
 
 ## 交付
 

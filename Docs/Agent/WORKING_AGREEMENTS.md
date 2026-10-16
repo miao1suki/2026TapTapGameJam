@@ -6,6 +6,7 @@
 
 修改前在 ACTIVE_WORK 记录范围、正在编辑的场景和接口；遇到重叠先协调，不覆盖他人的改动。
 场景按关卡分目录，每人独立 Scene 工作。不要自动替换已保存的场景，也不要复制旧测试场景进正式关卡。
+正式关卡例外与交付基线见 [FORMAL_LEVEL_DELIVERY.md](Integration/FORMAL_LEVEL_DELIVERY.md)：后续正式制作使用新版 Gaming 及其配套存档；仍在旧 Gaming 上工作的成员先同步新版，不能提交旧关卡覆盖正式进度。策划可在自己的任务分支继续维护正式关卡，合并与 main 推送仍仅由用户当前整合窗口完成，不向其他 worker 转授。
 避免跨功能强依赖：输入经 GameInput，实际 Camera 写入经 CameraControlManager，游戏流程经 GameFlowController。
 未确认的功能迁移先询问；不得把旧玩法顺手带入。旧 API 只有文档明确标注的可用子集有效。
 
@@ -20,4 +21,4 @@ Git 忽略目录中放本地日志/验证产物；凭据不得进入项目，包
 
 ## 关卡协作存档
 
-关卡场景必须连同同名 `.planning.json` 及双方 `.meta` 提交，不能只上传生成后的 Scene；旧 Library 存档需先存到项目目录。每人维护独立小地图，整合者通过“协作与片段”导入当前大地图，不直接手工混改一个 JSON。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`；新克隆执行 `git config core.hooksPath .githooks`，已有 hook 则组合调用，不覆盖原 hook。操作和依赖交付见 [关卡协作说明](../Developer/LEVEL_EDITOR_COLLABORATION.md) 与 [接入约定](Integration/PLANNING_COLLABORATION_API.md)。
+关卡场景必须连同同名 `.planning.json` 及双方 `.meta` 提交，不能只上传生成后的 Scene；旧 Library 存档需先存到项目目录。正式 Gaming 还需一起提交 `Assets/_Project/Content/LevelMaps/正式关卡.json` 及 `.meta`，三份布局数据须一致。正式关卡由指定策划在独立分支维护，其他成员制作独立小地图并通过“协作与片段”交给整合者，不多人并行手工混改同一大 JSON。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`；新克隆执行 `git config core.hooksPath .githooks`，已有 hook 则组合调用，不覆盖原 hook。操作和依赖交付见 [关卡协作说明](../Developer/LEVEL_EDITOR_COLLABORATION.md) 与 [接入约定](Integration/PLANNING_COLLABORATION_API.md)。

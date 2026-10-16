@@ -12,7 +12,7 @@
 
 每位成员只需在自己的克隆中执行一次 `git config core.hooksPath .githooks`。提交检查会阻止“有规划场景但没有配套存档/元数据”或存档修改未暂存的提交。已有自定义 hooks 的成员应把检查脚本加入原 pre-commit，不覆盖原流程。也可手动运行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File Ops/LevelMaps/Test-PlanningMapCommit.ps1`。
 
-Git hook 不能替代分工：同一大地图仍由整合者维护，各策划制作自己的小地图或片段，由整合者导入。不要多人同时手动合并同一个大 JSON。
+Git hook 不能替代分工：正式 Gaming 由指定关卡策划在任务分支继续制作，其他成员制作独立小地图或片段，由整合者导入。不要多人同时手动合并同一个大 JSON。正式交付需包含 Gaming 场景、同名规划文件及 `Assets/_Project/Content/LevelMaps/正式关卡.json` 和各自元数据；旧 Gaming 使用者先同步新版再编辑。所有成员仅推送自己的分支，不自行合并或推送 main；详见 [正式关卡交接](../Agent/Integration/FORMAL_LEVEL_DELIVERY.md)。
 
 ## 移动房间
 
