@@ -36,7 +36,7 @@ namespace Project.BlockFeatures.Editor
                 entry.ClearComponentValueOverrides();
             }
             EditorUtility.SetDirty(palette);
-            var playerPath = "Assets/_Project/Content/Player/RuntimePlayer.prefab";
+            var playerPath = "Assets/_Project/Content/Player/Player.prefab";
             var player = PrefabUtility.LoadPrefabContents(playerPath);
             player.GetComponent<CapsuleCollider>().height = 1;
             var playerSettings = new SerializedObject(player.GetComponent<Project.Player.PlayerController>());

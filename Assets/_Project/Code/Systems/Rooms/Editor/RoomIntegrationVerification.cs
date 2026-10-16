@@ -193,7 +193,7 @@ namespace Project.Rooms.Editor
         }
         private static PlayerController MakePlayer(Vector3 point)
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/RuntimePlayer.prefab");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab");
             var item = (GameObject)PrefabUtility.InstantiatePrefab(prefab); item.name = "TestPlayer"; item.transform.position = point;
             return item.GetComponent<PlayerController>();
         }

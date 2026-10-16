@@ -27,6 +27,7 @@ namespace Project.ColorBlocks
         private float originalFieldOfView;
         private float nextPlayerSearchTime;
         private IDisposable controlLockHandle;
+        public ColorKeyUnlockResult UnlockResult { get; private set; }
 
         public string ColorTypeId => colorTypeId;
 
@@ -40,10 +41,6 @@ namespace Project.ColorBlocks
         {
             ReleasePlayerControlLock();
             base.OnDisable();
-            ColorRuntimeService manager = ColorRuntimeService.Existing;
-            if (Application.isPlaying && CollectionRequested && manager != null &&
-                !manager.IsUnlocked(colorTypeId))
-                manager.Unlock(colorTypeId);
         }
 
         private void OnTriggerEnter(Collider other)
@@ -64,11 +61,6 @@ namespace Project.ColorBlocks
             if (!Application.isPlaying ||
                 CollectionRequested ||
                 AttractionRequested)
-            {
-                return;
-            }
-
-            if (ColorRuntimeService.Instance.IsUnlocked(colorTypeId))
             {
                 return;
             }
@@ -100,7 +92,7 @@ namespace Project.ColorBlocks
         }
 
         /// <summary>
-        /// 颜色钥匙的直接收集入口。钥匙只负责解锁颜色，不经过交互图。
+        /// 同色钥匙依次解锁场景颜色与玩家能力，不经过交互图。
         /// </summary>
         public void OnInteractionPlayerEntered(GameObject actor)
         {
@@ -108,7 +100,6 @@ namespace Project.ColorBlocks
                 ? actor.GetComponentInParent<PlayerController>()
                 : null;
             if (CollectionRequested || IsAttracting || player == null) return;
-            if (ColorRuntimeService.Instance.IsUnlocked(colorTypeId)) return;
 
             collectingPlayer = player;
             if (!TryBeginCollection(player.gameObject))
@@ -122,6 +113,7 @@ namespace Project.ColorBlocks
         {
             base.ResetItemState();
             IsCollectionVisualComplete = false;
+            UnlockResult = ColorKeyUnlockResult.None;
             ReleasePlayerControlLock();
             collectingPlayer = null;
             nextPlayerSearchTime = 0f;
@@ -195,23 +187,17 @@ namespace Project.ColorBlocks
             var collider = GetComponent<Collider>();
             if (collider != null) collider.enabled = false;
 
-            bool unlocked = ColorRuntimeService.Instance.Unlock(colorTypeId);
-            if (unlocked)
+            UnlockResult = ColorRuntimeService.Instance.CollectColorKey(colorTypeId);
+            if (UnlockResult != ColorKeyUnlockResult.None)
             {
                 AudioCuePlayer.Play(AudioCueIds.PaintAcquire, .9f);
+            }
+            if (UnlockResult == ColorKeyUnlockResult.SceneColor)
+            {
                 ColorAppearanceManager.Instance.Play(
                     colorTypeId,
                     true,
                     revealDuration);
-                Debug.Log(
-                    $"[ColorBlocks] 钥匙触发入口已解锁 {colorTypeId}：材质恢复/水体显现已开始。",
-                    this);
-            }
-            else
-            {
-                Debug.LogWarning(
-                    $"[ColorBlocks] 钥匙触发入口执行，但 {colorTypeId} 未完成 Unlock。",
-                    this);
             }
         }
 
@@ -224,7 +210,7 @@ namespace Project.ColorBlocks
         {
             // 解锁已在触发入口同步完成。镜头 Timeline 不能阻塞颜色恢复；
             // 这里只等待渐显收尾。
-            bool unlocked = ColorRuntimeService.Instance.IsUnlocked(colorTypeId);
+            bool unlocked = UnlockResult == ColorKeyUnlockResult.SceneColor;
             bool hasCameraShot = PlayCameraCutscene(collectingPlayer);
             if (hasCameraShot)
             {

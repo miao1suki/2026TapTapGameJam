@@ -56,7 +56,7 @@ namespace Project.Development.PickWheel
 
         private void OnEnable()
         {
-            ColorRuntimeService.Instance.ColorUnlocked += OnUnlocked;
+            ColorRuntimeService.Instance.AbilityUnlocked += OnUnlocked;
             EventMgr.OnRoomColorReset += OnRoomReset;
             Refresh();
         }
@@ -64,7 +64,7 @@ namespace Project.Development.PickWheel
         private void OnDisable()
         {
             if (ColorRuntimeService.Existing != null)
-                ColorRuntimeService.Existing.ColorUnlocked -= OnUnlocked;
+                ColorRuntimeService.Existing.AbilityUnlocked -= OnUnlocked;
             EventMgr.OnRoomColorReset -= OnRoomReset;
             if (playerWheel != null)
             {
@@ -107,8 +107,7 @@ namespace Project.Development.PickWheel
         public void UpdatePointer(Vector2 screenPosition)
         {
             if (root == null) return;
-            Vector2 delta = screenPosition -
-                RectTransformUtility.WorldToScreenPoint(null, root.position);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(root, screenPosition, null, out Vector2 delta);
             int next = -1;
             if (delta.sqrMagnitude > 34f * 34f)
             {
@@ -294,6 +293,7 @@ namespace Project.Development.PickWheel
             hovered = next;
             if (previous >= 0) SetSector(previous, false);
             if (hovered >= 0) SetSector(hovered, true);
+            RefreshCenterLabel();
         }
 
         private void SetSector(int index, bool active)
@@ -317,16 +317,23 @@ namespace Project.Development.PickWheel
             for (int i = 0; i < 3; i++)
             {
                 if (images[i] == null) continue;
-                bool unlocked = ColorRuntimeService.Instance.IsUnlocked(Ids[i]);
+                bool unlocked = ColorRuntimeService.Instance.IsAbilityUnlocked(Ids[i]);
                 ColorTypeDefinition definition = ColorRuntimeService.Instance.Catalog?.Find(Ids[i]);
                 labels[i].text = unlocked
                     ? (definition?.displayName ?? Ids[i]) : "?";
             }
+            RefreshCenterLabel();
+        }
+
+        private void RefreshCenterLabel()
+        {
             if (centerLabel == null) return;
             string selected = playerWheel != null
                 ? playerWheel.SelectedColorId : string.Empty;
-            centerLabel.text = string.IsNullOrEmpty(selected)
-                ? "选择颜色" : $"当前\n{selected}";
+            var definition = ColorRuntimeService.Existing?.Catalog?.Find(selected);
+            centerLabel.text = hovered < 0 && !string.IsNullOrEmpty(selected)
+                ? "取消能力"
+                : string.IsNullOrEmpty(selected) ? "未使用\n颜色能力" : $"当前\n{definition?.displayName ?? selected}色";
         }
 
         private void OnUnlocked(ColorTypeDefinition _) => Refresh();

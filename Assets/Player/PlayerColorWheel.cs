@@ -73,6 +73,7 @@ namespace Project.Player
         public bool IsWheelOpen => wheelOpen;
 
         public event Action<string> SelectedColorChanged;
+        public event Action AbilityDeselectedByPlayer;
         public event Action ColorApplicationSucceeded;
         public event Action ColorApplicationOutOfRange;
         public event Action ColorApplicationRejected;
@@ -191,7 +192,7 @@ namespace Project.Player
         public bool TrySelectColor(string colorId)
         {
             if (string.IsNullOrWhiteSpace(colorId) ||
-                !ColorRuntimeService.Instance.IsUnlocked(colorId))
+                !ColorRuntimeService.Instance.IsAbilityUnlocked(colorId))
             {
                 return false;
             }
@@ -233,6 +234,12 @@ namespace Project.Player
 
             SelectedColorChanged?.Invoke(selectedColorId);
             RefreshRangeIndicator();
+        }
+
+        public void DeselectAbility()
+        {
+            ClearSelectedColor();
+            AbilityDeselectedByPlayer?.Invoke();
         }
 
         private void RefreshCursorVisibility()
@@ -295,6 +302,7 @@ namespace Project.Player
             {
                 TrySelectColor(selected);
             }
+            else DeselectAbility();
 
             CloseWheel();
         }
@@ -409,7 +417,6 @@ namespace Project.Player
                 gameObject);
             if (success)
             {
-                ClearSelectedColor();
                 ColorApplicationSucceeded?.Invoke();
                 AudioCuePlayer.Play(AudioCueIds.PaintComplete, .9f);
             }
@@ -432,7 +439,6 @@ namespace Project.Player
             switch (result)
             {
                 case GreenHookLaunchResult.Success:
-                    ClearSelectedColor();
                     ColorApplicationSucceeded?.Invoke();
                     AudioCuePlayer.Play(AudioCueIds.PaintComplete, .9f);
                     break;
@@ -623,9 +629,9 @@ namespace Project.Player
                 return;
             }
 
-            Vector2 center = RectTransformUtility.WorldToScreenPoint(null,
-                wheelRoot.position);
-            Vector2 delta = currentPointerPosition - center;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(wheelRoot,
+                currentPointerPosition, null, out Vector2 delta);
+            highlightedColorId = string.Empty;
             if (delta.sqrMagnitude >= WheelSelectionDeadZone * WheelSelectionDeadZone)
             {
                 float angle = Mathf.Atan2(delta.y, delta.x) + Mathf.PI * .5f;
@@ -650,7 +656,7 @@ namespace Project.Player
             if (wheelLabel != null)
             {
                 wheelLabel.text = string.IsNullOrWhiteSpace(highlightedColorId)
-                    ? (HasSelectedColor ? $"当前：{selectedColorId}" : "选择颜色")
+                    ? (HasSelectedColor ? "点击中央取消能力" : "当前未使用颜色能力")
                     : $"高亮：{highlightedColorId}";
             }
         }
@@ -668,7 +674,7 @@ namespace Project.Player
             {
                 ColorTypeDefinition definition = catalog.Colors[index];
                 if (definition != null &&
-                    ColorRuntimeService.Instance.IsUnlocked(definition.id))
+                    ColorRuntimeService.Instance.IsAbilityUnlocked(definition.id))
                 {
                     result.Add(definition);
                 }

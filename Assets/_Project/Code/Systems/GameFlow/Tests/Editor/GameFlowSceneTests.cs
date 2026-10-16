@@ -132,11 +132,27 @@ namespace Project.GameFlow.Tests
 
         [TestCase("Assets/_Project/Content/UI/MainMenuUI.prefab")]
         [TestCase("Assets/_Project/Content/UI/SharedGameUI.prefab")]
-        [TestCase("Assets/_Project/Content/Player/RuntimePlayer.prefab")]
-        [TestCase("Assets/_Project/Content/Player/Player(暂定).prefab")]
+        [TestCase("Assets/_Project/Content/Player/Player.prefab")]
         public void IndependentPrefabs_ArePreserved(string path)
         {
             Assert.That(AssetDatabase.LoadAssetAtPath<GameObject>(path), Is.Not.Null);
+        }
+
+        [Test]
+        public void StandardPlayer_IsOneCellAndRetiredSourcesAreAbsent()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab");
+            Assert.That(prefab, Is.Not.Null);
+            Assert.That(prefab.CompareTag("Player"), Is.True);
+            Assert.That(prefab.transform.localPosition, Is.EqualTo(Vector3.zero));
+            Assert.That(prefab.transform.localScale, Is.EqualTo(Vector3.one));
+            var capsule = prefab.GetComponent<CapsuleCollider>();
+            Assert.That(capsule.center, Is.EqualTo(Vector3.zero));
+            Assert.That(capsule.height, Is.EqualTo(1f));
+            Assert.That(capsule.radius, Is.EqualTo(.5f));
+            Assert.That(prefab.GetComponentsInChildren<Collider>(true).Length, Is.EqualTo(1));
+            Assert.That(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/RuntimePlayer.prefab"), Is.Null);
+            Assert.That(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player(暂定).prefab"), Is.Null);
         }
 
         [TestCase(GameFlowSceneScaffolder.CorePath)]

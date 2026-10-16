@@ -170,6 +170,38 @@ namespace Project.InputAbstraction.Tests
         }
 
         [Test]
+        public void ThreeFingersAndTwoJumpButtons_HaveIndependentOwnership()
+        {
+            var left = new GameObject("Left", typeof(VirtualDirectionButton));
+            var run = new GameObject("Run", typeof(VirtualInputButton));
+            var jump1 = new GameObject("Jump1", typeof(VirtualInputButton));
+            var jump2 = new GameObject("Jump2", typeof(VirtualInputButton));
+            try
+            {
+                var direction = left.GetComponent<VirtualDirectionButton>(); direction.Configure(Vector2.left);
+                var sprint = run.GetComponent<VirtualInputButton>(); sprint.Configure(InputActionId.Sprint);
+                var a = jump1.GetComponent<VirtualInputButton>(); var b = jump2.GetComponent<VirtualInputButton>();
+                var e1 = new PointerEventData(null) { pointerId = 1 };
+                var e2 = new PointerEventData(null) { pointerId = 2 };
+                var e3 = new PointerEventData(null) { pointerId = 3 };
+                direction.OnPointerDown(e1); sprint.OnPointerDown(e2); a.OnPointerDown(e3);
+                direction.OnPointerExit(e1); sprint.OnPointerExit(e2); a.OnPointerExit(e3);
+                Assert.AreEqual(Vector2.left, VirtualInputState.ReadVector(InputActionId.Move));
+                Assert.IsTrue(VirtualInputState.IsPressed(InputActionId.Sprint));
+                Assert.IsTrue(VirtualInputState.IsPressed(InputActionId.Jump));
+                a.OnPointerUp(e2); Assert.IsTrue(a.IsPressed);
+                b.OnPointerDown(new PointerEventData(null) { pointerId = 4 });
+                a.OnPointerUp(e3); Assert.IsTrue(VirtualInputState.IsPressed(InputActionId.Jump));
+                b.OnPointerUp(new PointerEventData(null) { pointerId = 4 }); Assert.IsFalse(VirtualInputState.IsPressed(InputActionId.Jump));
+                Assert.AreEqual(Vector2.left, VirtualInputState.ReadVector(InputActionId.Move));
+                direction.OnPointerUp(e1); sprint.OnPointerUp(e2);
+                Assert.AreEqual(Vector2.zero, VirtualInputState.ReadVector(InputActionId.Move));
+                Assert.IsFalse(VirtualInputState.IsPressed(InputActionId.Sprint));
+            }
+            finally { Object.DestroyImmediate(left); Object.DestroyImmediate(run); Object.DestroyImmediate(jump1); Object.DestroyImmediate(jump2); }
+        }
+
+        [Test]
         public void SafeArea_NormalizesInsetAnchorsWithoutLeavingOffsets()
         {
             var obj = new GameObject("Safe", typeof(RectTransform), typeof(ScreenSafeArea));

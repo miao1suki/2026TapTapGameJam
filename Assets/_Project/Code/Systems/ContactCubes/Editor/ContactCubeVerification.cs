@@ -82,7 +82,7 @@ namespace Project.ContactCubes.Editor
                     green.ResetForRoom(); Check(green.Length == 1 && green.State == CubeReactionState.Idle, "room reset");
                     Move(green, Vector3.one * 90); Move(blue, Vector3.right * 10); Move(red, Vector3.right * 11);
                     pushed = Spawn(CubeColor.Green, Vector3.right * 8); pushed.PushRequested += (source,v,dt) => { if (v.x < 0 && dt > 0) pushes++; };
-                    var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/RuntimePlayer.prefab");
+                    var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab");
                     player = UnityEngine.Object.Instantiate(playerPrefab, new Vector3(7,0,0), Quaternion.identity).GetComponent<Project.Player.PlayerController>();
                     player.GetComponent<Project.Player.PlayerInputDriver>().enabled = false;
                     player.Motor.constraints = RigidbodyConstraints.FreezeAll;

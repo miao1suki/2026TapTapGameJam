@@ -18,18 +18,11 @@ public static class TapTapFoundationSetup
     public static void Generate()
     {
         GameFlowSceneScaffolder.Generate();
-        const string path = "Assets/_Project/Content/Player/RuntimePlayer.prefab";
+        const string path = "Assets/_Project/Content/Player/Player.prefab";
         Directory.CreateDirectory(Path.GetDirectoryName(path));
         AssetDatabase.Refresh();
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-        if (prefab == null)
-        {
-            GameObject player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            player.name = "RuntimePlayer"; player.tag = "Player";
-            player.AddComponent<PlayerController>();
-            prefab = PrefabUtility.SaveAsPrefabAsset(player, path);
-            Object.DestroyImmediate(player);
-        }
+        if (prefab == null) throw new System.InvalidOperationException("缺少标准玩家预制体：" + path);
         string[] paths = { GameFlowSceneScaffolder.Level01Path, GameFlowSceneScaffolder.Level02Path, GameFlowSceneScaffolder.Level03Path };
         for (int i = 0; i < paths.Length; i++)
         {

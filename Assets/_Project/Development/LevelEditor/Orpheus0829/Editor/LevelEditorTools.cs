@@ -32,6 +32,13 @@ namespace Project.LevelEditor.Editor
             "2026TapTap.LevelEditor.LockPlayerToPlane";
         private static GameObject player;
         private static GameObject generationParent;
+        private static int playerSceneHandle = -1;
+        private static bool playerLookupDirty = true;
+
+        static LevelEditorState()
+        {
+            EditorApplication.hierarchyChanged += () => playerLookupDirty = true;
+        }
 
         internal static bool EditMode { get; set; }
         internal static LevelEditorTool Tool { get; set; }
@@ -67,10 +74,15 @@ namespace Project.LevelEditor.Editor
         {
             get
             {
-                if (player != null)
+                var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+                if (player != null && player.scene == scene)
                 {
                     return player;
                 }
+                player = null;
+                if (playerSceneHandle == scene.handle && !playerLookupDirty) return null;
+                playerSceneHandle = scene.handle;
+                playerLookupDirty = false;
 
                 string reference = EditorPrefs.GetString(
                     PlayerReferencePreferenceKey,
@@ -83,13 +95,23 @@ namespace Project.LevelEditor.Editor
                     player =
                         GlobalObjectId.GlobalObjectIdentifierToObjectSlow(
                             globalId) as GameObject;
+                    if (player != null && player.scene != scene) player = null;
                 }
+
+                if (player == null && scene.IsValid())
+                    foreach (var root in scene.GetRootGameObjects())
+                    {
+                        var candidate = root.GetComponentInChildren<Project.Player.PlayerController>(true);
+                        if (candidate != null) { player = candidate.gameObject; break; }
+                    }
 
                 return player;
             }
             set
             {
                 player = value;
+                playerSceneHandle = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+                playerLookupDirty = false;
                 if (value == null)
                 {
                     EditorPrefs.DeleteKey(PlayerReferencePreferenceKey);
@@ -166,6 +188,17 @@ namespace Project.LevelEditor.Editor
 
     internal static class LevelEditorPlayerService
     {
+        internal static GameObject CreateAndBindAtOrigin()
+        {
+            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            var player = Project.Player.Editor.StandardPlayerAsset.EnsureInScene(scene);
+            if (player == null) return null;
+            LevelEditorState.Player = player;
+            SetPlayerPosition(Vector3.zero, true);
+            Project.Player.Editor.StandardPlayerAsset.WireScene(scene, player);
+            return player;
+        }
+
         internal static bool SnapPlayerToPlane()
         {
             GameObject player = LevelEditorState.Player;

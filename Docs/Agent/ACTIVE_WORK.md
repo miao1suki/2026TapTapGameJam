@@ -1,5 +1,40 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-16 双阶段颜色解锁与标准玩家
+
+- 首次同色钥匙只解锁场景物体，第二次解锁玩家能力；两套状态独立，R/离区保留，显式新游戏清空。整理唯一标准玩家预制体，同步已有场景实例及相机/编辑器引用；新建空存档在世界原点创建并绑定标准玩家。用户随后授权整合到main并推送，包含本分支此前已推送的攀爬/移动端改进及后续搬运中心修复。
+- 标准资源唯一为Assets/_Project/Content/Player/Player.prefab（保留原正式玩家GUID）；7个已有玩家场景统一Prefab来源、1×1中心碰撞与核心组件，移除默认测试Timeline。旧两个玩家预制体和迁移前场景完整备份在Library/PlayerConsolidationBackup-20261016。Gaming出生点同步调整为(1.5,-28,0)，不改三把钥匙位置，避免开局磁吸；其余原场景位置保留。MainMenu和TA场景不额外添加玩家。
+- Unity6000.3.12f1隔离验证：标准玩家/7场景接线/新存档原点43项，两阶段真实钥匙与独立API29项，EditMode149/149，搬运9项、朝向交互22项、攀爬与移动端44项通过。最终重跑43项通过，Gaming静置8秒三色仍锁定且三把钥匙位置不变、未被拾取。日志Library/StandardPlayerAssetVerificationFinal.log、StandardPlayerGamingAuditFixed.log、ColorTwoStagePlayVerification.log、ColorStandardPlayerRegression.xml、StandardCarryGround.log、StandardFacingInteraction.log、StandardClimbMobile.log。3个修改的skill校验通过。未重新打包或推送，旧APK不包含本轮修改。
+- 接入约定见Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md；后续关卡若需解锁玩家能力，必须提供第二把同色钥匙。场景、同名planning.json、各自meta及依赖必须一起交付，不得仅交场景；本轮保留用户既有场景内容、字体、插件和项目设置。
+- 整合时Pick只提交已跟踪版本上的玩家迁移，不提交本地额外关卡编辑；本地Pick场景与存档原样保留。带规划绑定的场景交付同名planning.json。字体、DOTweenPro、本地插件、临时ICON和PackageManagerSettings不纳入提交。未重新打包。
+- 提交审计补上Pick旧玩家子相机的保留：Prefab替换清除覆盖前先保留场景相机，替换后恢复父子关系。相机属于场景而非标准Prefab；加入7场景活动相机检查，避免仅验证玩家数量却遗漏相机。
+- 最终交付版本在隔离工程验证50项全部通过（含已跟踪Pick版本及全部7场景相机），日志Library/StandardPlayerDeliveryCameraVerification.log；规划存档提交检查与git diff --cached --check通过。提交中补齐RoomRespawnTest和MVMapImportTest的同名规划存档，不改用户本地Pick规划。
+
+## 2026-10-16 搬运占格与初始颜色复查
+
+- 在codex/gameplay/facing-placement-menu-return本地修正。真实玩家根节点低于胶囊中心，之前固定1×1占格使用根节点导致落点落入地面、同高度搬运候选误判；占格、默认落点和方向阻挡射线统一使用实际胶囊中心，保持原左右紧邻放下规则，不向下搜索地面。
+- Gaming三把钥匙未删除，初始能力也未配置解锁；场景玩家偏移到钥匙旁，开局被磁吸拾取。将玩家恢复到现有planning.json的(2.5,-28)，红钥匙恢复到(4.5,-28.5)，绿蓝钥匙不动，不新增重复钥匙。实际场景运行300帧不操作，三色保持锁定且三把钥匙未被拾取。
+- Unity6000.3.12f1隔离验证：真实玩家地面搬运/升高落点9项通过、原朝向交互22项通过、项目相关EditMode149/149通过。日志Library/CarryGroundVerification.log、FacingInteractionGroundRegression.log、CarryGroundRegression.xml、GamingKeyAuditFixed.log。API与开发者说明同步；保留用户Pick、字体、插件及设置。未提交、推送或重新打包，之前APK不含本轮修复。
+
+## 2026-10-16 攀爬转角与移动端操作
+
+- 在现有任务分支继续；本轮完成后仅推分支，不合并 main。保留 Pick 场景/存档、字体、插件和项目设置。
+- 范围：攀爬外转角保护、横爬跳跃脱手、持续选色、多指独立触控、情境按键与持久化布局、安卓隐私入口审计与测试包。包括前次尚未提交的朝向/搬运/菜单往返修复依赖。
+- 完成：真实绿块上下两面/左右外缘/竖向接触交接统一物理转角保护；横爬跳跃脱手且短暂拒绝重抓。顶面交接允许已附着玩家的残余上升速度，避免左侧绕回顶部断开。成功染色/绿钩子不清选色，只有主动取消或重置清除。
+- 移动端：左右与双侧跳跃、右侧跑/选色，情境显示上下/交互/放下/重生。独立触点持有，滑出不释放，暂停/失焦释放；世界点击不再被持有方向键的主触点占用。设置新增触控布局拖动/80–200尺寸/安全区比例存储，保存到本机 PlayerPrefs；不改场景及按键映射。
+- Unity6000.3.12f1隔离验证：真实绿块转角/脱手、连续红蓝/绿色成功保留、布局与字体44项通过；项目相关EditMode149/149通过。实际Touchscreen事件三指同时按住、滑出、抬起单指、持有HUD时另指点世界全部通过；日志Library/ClimbMobileVerification.log、MobileCornerRegression.xml、MobileRealPointerVerification.log。一次误选全包测试包含第三方/引擎测试，1622通过、68跳过、2失败（AssertionFailureOnOutputVertexCount和InputModuleComponentFactory）；不将其报告为全包通过。
+- 保留用户Pick场景/存档、动态字体、DOTweenPro插件及PackageManagerSettings，不纳入本任务提交。Pick SHA256仍为05C74E1A64F415E529677827DA64D113C869BAF44507C3732D46B5DBE3019747。没有连接安卓设备，手感、多分辨率及隐私授权真机检测仍需验收。
+- 最终安卓ARM64开发包构建成功，0错误/12警告：Builds/形之彩-20261016/Android/形之彩.apk（105057359字节，SHA256 749D4EF57A83C7E73D6CB60F5D8572025B15A97A17E98ED7612EF1E82F505F6E）。仅MainMenu/Gaming，最低API25；AAPT确认唯一Launcher为独立:privacy进程PrivacyActivity、PrivacyApplication接管、UnityPlayerActivity非导出，仅INTERNET权限；APK含离线政策及字体。日志Library/MobileCornerAndroidBuild.log，构建报告同输出目录Android-report.txt。测试探针仅在Library隔离工程，运行时探针已从构建工程删除。分支codex/gameplay/facing-placement-menu-return按本轮授权提交推送，不合并main。
+
+## 2026-10-16 朝向交互、搬运落点与轮盘取消
+
+- 分支 codex/gameplay/facing-placement-menu-return；检查打包往返菜单日志，统一提示/搬运目标朝向，添加运行时虚线落点预览与轮盘中央取消能力。保留用户 Pick 场景、存档、字体、插件及设置；本轮未获提交推送授权。
+- 记事本 Player.log 为 FlowRetirementProbe 旧包，水体禁用期间 SetParent 错误对应操作在当前源码已移除；需要用当前代码复验，不将旧日志当作新修复证据。
+- 已完成：MainMenu/Gaming 叠加加载前交接旧场景 EventSystem，失败恢复；现有水体生命周期无非法 SetParent。角色外观、按键交互、持续曲柄与搬运共用最后水平朝向，相近候选稳定排序，稠密交互扫描缓冲按需增长；鼠标染色仍按命中。修复移动跨格时1×1逻辑占格错误扩为2×2的问题。
+- 搬运面朝侧显示青绿/红虚线落点，Q/E仍指定左右并转向。可选IPlayerCarryPlacementTarget与真实放下共用完整实体、物理参与者及房间边界校验，支持合并大小。单缓存Mesh，无新增碰撞/Canvas；网格元数据改为启停登记，避免每帧全场景搜索。
+- 轮盘中央确认取消选色、隐藏能力范围并显示“当前未使用颜色能力”；锁定扇区不清已有能力，成功染色自动清空不误发手动取消提示。中央区域按UI缩放适配，保留扇形素材和DOTween效果。API、开发者说明及颜色规范同步。
+- Unity6000.3.12f1隔离验证：朝向曲柄/拾取、转向、稳定选择、完整尺寸/红色虚线/启停注册、轮盘取消等22项通过；原搬运物理20项通过；相关EditMode140/140通过。当前源码Windows开发包实际完成3轮MainMenu→Gaming→MainMenu，游戏错误0、重复EventSystem警告0。日志Library/FacingInteractionVerification.log、FacingCarryCollision.log、FacingRegression.xml、MenuReturnBuild.log、MenuReturnPlayer.log。安卓未重新打包与真机验证；测试包仅Library隔离目录，不代替正式交付。Pick SHA256保持05C74E1A64F415E529677827DA64D113C869BAF44507C3732D46B5DBE3019747；未提交/合并/推送。
+
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
 
 ## Boss 场景相机与 WordNote

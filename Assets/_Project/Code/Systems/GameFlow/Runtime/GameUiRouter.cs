@@ -223,6 +223,7 @@ namespace Project.GameFlow
 
         private void Update()
         {
+            if (MobileControlLayout.IsEditing) return;
             if (IsInitialized &&
                 IsSystemUiSceneAvailable() &&
                 IsGameplayScene() &&

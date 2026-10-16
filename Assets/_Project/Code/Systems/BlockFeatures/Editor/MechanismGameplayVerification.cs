@@ -36,7 +36,7 @@ namespace Project.BlockFeatures.Editor
         private static void Move(ContactCube cube,Vector3 value) { cube.transform.position = cube.GetComponent<Rigidbody>().position = value; Physics.SyncTransforms(); }
         private static PlayerController Player(Vector3 pos)
         {
-            var value = Spawn("Assets/_Project/Content/Player/RuntimePlayer.prefab",pos).GetComponent<PlayerController>();
+            var value = Spawn("Assets/_Project/Content/Player/Player.prefab",pos).GetComponent<PlayerController>();
             value.GetComponent<PlayerInputDriver>().enabled = false;
             return value;
         }

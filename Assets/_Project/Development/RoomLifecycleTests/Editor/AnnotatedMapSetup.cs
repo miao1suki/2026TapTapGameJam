@@ -116,7 +116,7 @@ public static class AnnotatedMapSetup
         finally { PlanningSceneBuilder.SuppressSceneUndo = false; }
         Check(doc.TryGetPlayerStartWorldPosition(out Vector3 spawn), "spawn");
         var player = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(
-            "Assets/_Project/Content/Player/RuntimePlayer.prefab"));
+            "Assets/_Project/Content/Player/Player.prefab"));
         player.name = "TestPlayer"; player.transform.position = spawn;
         var cameraRoot = new GameObject("Main Camera"); cameraRoot.tag = "MainCamera";
         var camera = cameraRoot.AddComponent<Camera>(); camera.clearFlags = CameraClearFlags.SolidColor;

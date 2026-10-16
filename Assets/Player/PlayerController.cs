@@ -28,6 +28,7 @@ namespace Project.Player
         IAchievementSignalProvider,
         IPlayerControlLockTarget,
         IPlayerCarryHost,
+        IMobileGameplayContext,
         Project.CameraModes.ICameraFollowRelocationSource
     {
         private static readonly HashSet<PlayerController> activePlayers = new HashSet<PlayerController>();
@@ -168,6 +169,106 @@ namespace Project.Player
         private readonly Dictionary<int, float> climbInwardDirections =
             new Dictionary<int, float>();
         private float climbReattachUntil;
+        private float horizontalReleaseUntil;
+        private Component cornerSource;
+        private Bounds cornerBounds;
+        private float cornerProgress, cornerSpeed, cornerCooldown;
+        private int cornerSide, cornerTravel;
+        private Component wrappedEdgeSource;
+        private int wrappedEdgeSide;
+        public bool IsClimbCornerProtected => cornerSource != null;
+        public bool CanAttachHorizontalVine => Time.time >= horizontalReleaseUntil;
+        public void CancelClimbCorner(Component source)
+        {
+            if (cornerSource == source) cornerSource = null;
+            if (wrappedEdgeSource == source) wrappedEdgeSource = null;
+        }
+
+        // Called by real climbable surfaces, never by decorative meshes or arbitrary walls.
+        public void ProtectClimbCorner(Component source, Bounds bounds, float speed)
+        {
+            if (source == null || dead || IsControlLocked || !CanAttachHorizontalVine ||
+                protectBounceFromClimbing || cornerSource != null || Time.time < cornerCooldown) return;
+            Bounds body = capsule.bounds;
+            if (body.max.z < bounds.min.z || body.min.z > bounds.max.z) return;
+            float margin = gridCellWorldSize * .24f;
+            bool top = Mathf.Abs(body.min.y - bounds.max.y) < margin;
+            bool bottom = Mathf.Abs(body.max.y - bounds.min.y) < margin;
+            int side = body.center.x >= bounds.center.x ? 1 : -1;
+            float edge = side > 0 ? bounds.max.x : bounds.min.x;
+            float gap = (body.center.x - edge) * side;
+            bool outward = movement.x * side > .1f;
+            bool verticalAttached = climbSources.Count > 0 && Time.time >= climbReattachUntil;
+            if ((top || bottom) && horizontalVines.Count > 0 && outward &&
+                gap >= -margin && gap < body.extents.x + margin)
+            {
+                cornerProgress = top ? 0f : 3f;
+                cornerTravel = top ? 1 : -1;
+            }
+            else if (verticalAttached && gap > 0 && gap < body.extents.x + margin &&
+                     body.center.y >= bounds.min.y && body.center.y <= bounds.max.y &&
+                     (Mathf.Abs(movement.y) > .1f || movement.x * side < -.1f))
+            {
+                cornerProgress = 1f + Mathf.InverseLerp(bounds.max.y, bounds.min.y, body.center.y);
+                cornerTravel = movement.y < -.1f ? 1 : -1;
+            }
+            else return;
+            cornerSource = source; cornerBounds = bounds; cornerSide = side;
+            cornerSpeed = Mathf.Max(.1f, speed);
+        }
+
+        private Vector3 ClimbCornerPoint(float progress)
+        {
+            Bounds body = capsule.bounds;
+            float edge = cornerSide > 0 ? cornerBounds.max.x : cornerBounds.min.x;
+            float rx = body.extents.x + .035f, ry = body.extents.y + .035f;
+            Vector3 center = body.center;
+            if (progress <= 1f)
+            {
+                float angle = (1f - progress) * Mathf.PI * .5f;
+                center.x = edge + cornerSide * rx * Mathf.Cos(angle);
+                center.y = cornerBounds.max.y + ry * Mathf.Sin(angle);
+            }
+            else if (progress < 2f)
+            {
+                center.x = edge + cornerSide * rx;
+                center.y = Mathf.Lerp(cornerBounds.max.y, cornerBounds.min.y, progress - 1f);
+            }
+            else
+            {
+                float angle = (progress - 2f) * Mathf.PI * .5f;
+                center.x = edge + cornerSide * rx * Mathf.Cos(angle);
+                center.y = cornerBounds.min.y - ry * Mathf.Sin(angle);
+            }
+            return center - (body.center - motor.position);
+        }
+
+        private bool TickClimbCorner()
+        {
+            if (cornerSource == null) return false;
+            if (!cornerSource.gameObject.activeInHierarchy || IsControlLocked || dead ||
+                (cornerSource is Behaviour b && !b.isActiveAndEnabled) || !CanAttachHorizontalVine)
+            { cornerSource = null; return false; }
+            var solid = cornerSource.GetComponentInChildren<BoxCollider>();
+            if (solid == null || !solid.enabled || (solid.bounds.center - cornerBounds.center).sqrMagnitude > .01f ||
+                (solid.bounds.size - cornerBounds.size).sqrMagnitude > .01f)
+            { cornerSource = null; return false; }
+            // Advancing only after reaching each waypoint keeps collision response authoritative.
+            Vector3 point = ClimbCornerPoint(cornerProgress);
+            if (Vector3.Distance(motor.position, point) < gridCellWorldSize * .07f)
+                cornerProgress = Mathf.Clamp(cornerProgress + cornerTravel * .05f, 0f, 3f);
+            Vector3 delta = ClimbCornerPoint(cornerProgress) - motor.position;
+            motor.linearVelocity = Vector3.ClampMagnitude(delta / Time.fixedDeltaTime, cornerSpeed);
+            IsGrounded = false;
+            if ((cornerProgress <= 0f && cornerTravel < 0 || cornerProgress >= 3f && cornerTravel > 0) &&
+                delta.magnitude < gridCellWorldSize * .07f)
+            {
+                SetHorizontalVineSurface(cornerSource, ClimbCornerPoint(cornerProgress).y, cornerSpeed);
+                wrappedEdgeSource = cornerSource; wrappedEdgeSide = cornerSide;
+                cornerSource = null; cornerCooldown = Time.time + .2f;
+            }
+            return true;
+        }
         private float climbKickHorizontalControlUntil;
         private float climbKickFallProtectionUntil;
         private float environmentLaunchUntil;
@@ -192,10 +293,11 @@ namespace Project.Player
         }
         private readonly Dictionary<int, HorizontalVineSurface> horizontalVines = new Dictionary<int, HorizontalVineSurface>();
         private readonly List<int> expiredHorizontalVines = new List<int>();
-        public bool IsHorizontalClimbing => !protectBounceFromClimbing && horizontalVines.Count > 0;
+        public bool IsHorizontalClimbing => CanAttachHorizontalVine && !protectBounceFromClimbing &&
+            (horizontalVines.Count > 0 || IsClimbCornerProtected);
         public void SetHorizontalVineSurface(Component source, float rootY, float speed)
         {
-            if (source == null || dead) return;
+            if (source == null || dead || !CanAttachHorizontalVine) return;
             horizontalVines[source.GetInstanceID()] = new HorizontalVineSurface { source = source, rootY = rootY, speed = speed, renewed = Time.fixedTime };
         }
         public void ClearHorizontalVineSurface(Component source)
@@ -215,6 +317,9 @@ namespace Project.Player
             IsClimbing ? PlayerStateId.Climbing :
             IsSwimming ? PlayerStateId.Swimming : PlayerStateId.Normal;
         public Vector2 MoveInput => movement;
+        public int FacingDirection { get; private set; } = 1;
+        public float GridCellWorldSize => gridCellWorldSize;
+        private CarryPlacementPreview carryPlacementPreview;
         public bool SprintRequested => sprint;
         public float HorizontalVelocity => motor != null
             ? motor.linearVelocity.x
@@ -302,7 +407,7 @@ namespace Project.Player
             }
         }
         public Vector3 CarryCenterWorldPosition =>
-            transform.position;
+            capsule != null ? capsule.bounds.center : transform.position;
         public float InteractionScanRadius =>
             interactionSensor != null
                 ? interactionSensor.ScanRadius
@@ -366,6 +471,7 @@ namespace Project.Player
         private void LateUpdate()
         {
             TickCarryState();
+            RefreshCarryPlacementPreview();
             if (selectedCarryTarget == null ||
                 carryPreparing ||
                 carryDropAnimating ||
@@ -430,6 +536,8 @@ namespace Project.Player
         }
         private void OnDisable()
         {
+            carryPlacementPreview?.Dispose();
+            carryPlacementPreview = null;
             activePlayers.Remove(this);
             if (health != null)
             {
@@ -446,6 +554,8 @@ namespace Project.Player
             pendingPlatformDelta = Vector3.zero;
             waterSources.Clear();
             horizontalVines.Clear();
+            cornerSource = wrappedEdgeSource = null;
+            horizontalReleaseUntil = cornerCooldown = 0f;
             waterSpeedMultipliers.Clear();
             waterVelocities.Clear();
             waterBuoyancies.Clear();
@@ -950,6 +1060,7 @@ namespace Project.Player
             }
 
             movement = value;
+            if (Mathf.Abs(value.x) > .05f) FacingDirection = value.x < 0f ? -1 : 1;
         }
         public void SetSprintInput(bool value)
         {
@@ -962,8 +1073,16 @@ namespace Project.Player
         }
         public void RequestJump()
         {
-            if (dead || IsHorizontalClimbing)
+            if (dead) return;
+            if (IsHorizontalClimbing)
             {
+                horizontalVines.Clear(); cornerSource = wrappedEdgeSource = null;
+                horizontalReleaseUntil = Time.time + .5f;
+                climbReattachUntil = Mathf.Max(climbReattachUntil, horizontalReleaseUntil);
+                jumpUntil = groundedUntil = -1f; jumpHeld = false;
+                Vector3 falling = motor.linearVelocity;
+                falling.y = Mathf.Min(falling.y, -.5f * gridCellWorldSize);
+                motor.linearVelocity = falling;
                 return;
             }
 
@@ -993,6 +1112,9 @@ namespace Project.Player
             interactionSensor?.RefreshTarget();
         }
 
+        public bool HasContextInteraction => heldInteractionTarget != null ||
+            (interactionSensor != null && interactionSensor.HasTarget);
+
         public void UpdateInteraction(
             bool interactHeld,
             bool interactTriggered,
@@ -1006,7 +1128,9 @@ namespace Project.Player
 
             if (heldInteractionTarget != null)
             {
-                if (interactHeld)
+                bool facingHeldTarget = heldInteractionTarget is not Component heldComponent ||
+                    (heldComponent != null && !float.IsPositiveInfinity(PlayerInteractionSensor.FacingScore(this, heldComponent.transform.position)));
+                if (interactHeld && facingHeldTarget && !interactionBlocked)
                 {
                     heldInteractionTarget.HoldInteract(gameObject);
                 }
@@ -1239,6 +1363,7 @@ namespace Project.Player
 
         private void TryDropCarry(Vector3Int direction)
         {
+            if (direction.x != 0) FacingDirection = direction.x < 0 ? -1 : 1;
             if (selectedCarryTarget == null ||
                 carryPreparing ||
                 carryDropAnimating ||
@@ -1391,7 +1516,8 @@ namespace Project.Player
                 IPlayerCarryTarget target = targets[index];
                 if (target == null ||
                     target.CarryTransform == null ||
-                    !target.CanCarry(this))
+                    !target.CanCarry(this) ||
+                    float.IsPositiveInfinity(PlayerInteractionSensor.FacingScore(this, target.CarryTransform.position)))
                 {
                     continue;
                 }
@@ -1411,13 +1537,13 @@ namespace Project.Player
                 Vector3 playerPosition = transform.position;
                 carryQueue.Sort((left, right) =>
                 {
-                    float leftDistance =
-                        (left.CarryTransform.position - playerPosition)
-                        .sqrMagnitude;
-                    float rightDistance =
-                        (right.CarryTransform.position - playerPosition)
-                        .sqrMagnitude;
-                    return leftDistance.CompareTo(rightDistance);
+                    float leftDistance = (left.CarryTransform.position - playerPosition).sqrMagnitude;
+                    float rightDistance = (right.CarryTransform.position - playerPosition).sqrMagnitude;
+                    float bias = gridCellWorldSize * gridCellWorldSize * .1f;
+                    if (ReferenceEquals(left, highlightedCarryTarget)) leftDistance -= bias;
+                    if (ReferenceEquals(right, highlightedCarryTarget)) rightDistance -= bias;
+                    int comparison = leftDistance.CompareTo(rightDistance);
+                    return comparison != 0 ? comparison : left.CarryTransform.GetInstanceID().CompareTo(right.CarryTransform.GetInstanceID());
                 });
             }
 
@@ -1465,19 +1591,14 @@ namespace Project.Player
             result.Clear();
             int width = Mathf.Max(1, carryFootprintCells.x);
             int height = Mathf.Max(1, carryFootprintCells.y);
-            float epsilon = gridCellWorldSize * .001f;
-            Vector3 center = transform.position;
-            Vector3 halfExtents = new Vector3(
-                width * gridCellWorldSize * .5f,
-                height * gridCellWorldSize * .5f,
-                0f);
-            Vector3Int min = WorldToCell(
-                center - halfExtents + Vector3.one * epsilon);
-            Vector3Int max = WorldToCell(
-                center + halfExtents - Vector3.one * epsilon);
-            for (int x = min.x; x <= max.x; x++)
+            // Logical authored footprint, not every physical grid crossed while moving.
+            // A one-cell player must not turn into a 2x2 footprint between cell centers.
+            Vector3Int min = WorldToCell(CarryCenterWorldPosition - new Vector3(
+                (width - 1) * gridCellWorldSize * .5f,
+                (height - 1) * gridCellWorldSize * .5f, 0f));
+            for (int x = min.x; x < min.x + width; x++)
             {
-                for (int y = min.y; y <= max.y; y++)
+                for (int y = min.y; y < min.y + height; y++)
                 {
                     result.Add(new Vector3Int(x, y, 0));
                 }
@@ -1488,13 +1609,10 @@ namespace Project.Player
             Vector3Int direction,
             out Vector3Int result)
         {
-            if (HasCarryBlockerInDirection(direction))
-            {
-                result = default;
-                return false;
-            }
-
             GetCarryFootprintCells(carryFootprintBuffer);
+            result = WorldToCell(CarryCenterWorldPosition) + direction;
+            bool blocked = HasCarryBlockerInDirection(direction);
+            bool hasCandidate = false;
             int minX = int.MaxValue;
             int maxX = int.MinValue;
             int minY = int.MaxValue;
@@ -1529,18 +1647,45 @@ namespace Project.Player
                 }
 
                 Vector3Int candidate = occupied + direction;
+                if (!hasCandidate) { result = candidate; hasCandidate = true; }
                 if (carryFootprintBuffer.Contains(candidate) ||
-                    !IsCarryDropCellFree(candidate))
+                    blocked || !IsCarryDropCellFree(candidate))
                 {
                     continue;
                 }
 
+                if (selectedCarryTarget is IPlayerCarryPlacementTarget placement &&
+                    !placement.CanPlaceCarryAt(this, CellToWorld(candidate, selectedCarryTarget.CarryTransform.position.z))) continue;
                 result = candidate;
                 return true;
             }
 
-            result = default;
             return false;
+        }
+
+        public bool TryGetCarryPlacementPreview(out Bounds bounds, out bool valid)
+        {
+            bounds = default;
+            valid = false;
+            if (!isActiveAndEnabled || dead || selectedCarryTarget == null || selectedCarryTarget.CarryTransform == null ||
+                carryPreparing || carryDropAnimating || carryResetting || Time.timeScale <= 0f) return false;
+            valid = TryResolveCarryDropCell(FacingDirection < 0 ? Vector3Int.left : Vector3Int.right, out Vector3Int cell);
+            Vector3 position = CellToWorld(cell, selectedCarryTarget.CarryTransform.position.z);
+            bounds = selectedCarryTarget is IPlayerCarryPlacementTarget placement
+                ? placement.GetCarryPlacementBounds(position)
+                : new Bounds(position, Vector3.one * gridCellWorldSize);
+            return true;
+        }
+
+        private void RefreshCarryPlacementPreview()
+        {
+            if (!TryGetCarryPlacementPreview(out Bounds bounds, out bool valid))
+            {
+                carryPlacementPreview?.Hide();
+                return;
+            }
+            carryPlacementPreview ??= new CarryPlacementPreview(transform);
+            carryPlacementPreview.Show(bounds, valid, gridCellWorldSize);
         }
 
         private bool HasCarryBlockerInDirection(
@@ -1557,7 +1702,7 @@ namespace Project.Player
 
             rayDirection.Normalize();
             int count = Physics.RaycastNonAlloc(
-                new Ray(transform.position, rayDirection),
+                new Ray(CarryCenterWorldPosition, rayDirection),
                 carryRayBuffer,
                 gridCellWorldSize * 1.1f,
                 ~0,
@@ -1636,9 +1781,7 @@ namespace Project.Player
             Vector2Int gridCell = new Vector2Int(cell.x, cell.y);
             IReadOnlyList<Project.LevelEditor.LevelEditorPlacedBlock>
                 blocks =
-                    ProjectDiscovery.FindAll<
-                        Project.LevelEditor.LevelEditorPlacedBlock>(
-                        true);
+                    Project.LevelEditor.LevelEditorPlacedBlock.ActiveInstances;
             for (int index = 0; index < blocks.Count; index++)
             {
                 Project.LevelEditor.LevelEditorPlacedBlock block =
@@ -1853,13 +1996,18 @@ namespace Project.Player
                 else if (!chosen.HasValue || Mathf.Abs(surface.rootY - motor.position.y) < Mathf.Abs(chosen.Value.rootY - motor.position.y)) chosen = surface;
             }
             foreach (int id in expiredHorizontalVines) horizontalVines.Remove(id);
-            if (!chosen.HasValue) return false;
+            if (!chosen.HasValue) { wrappedEdgeSource = null; return false; }
             jumpUntil = groundedUntil = -1; jumpHeld = false; requestedBounceSpeed = -1; requestedJumpBoost = -1;
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
             if (blocked) return false;
             HorizontalVineSurface selected = chosen.Value;
             Vector3 velocity = motor.linearVelocity;
             velocity.x = Mathf.Clamp(movement.x, -1, 1) * selected.speed;
+            if (wrappedEdgeSource == selected.source)
+            {
+                if (movement.x * wrappedEdgeSide > 0) velocity.x = 0;
+                else if (movement.x * wrappedEdgeSide < -.1f) wrappedEdgeSource = null;
+            }
             velocity.y = Mathf.Clamp((selected.rootY - motor.position.y) / Time.fixedDeltaTime, -3f, 3f);
             velocity.z = 0;
             motor.linearVelocity = ConstrainCarryVelocity(velocity);
@@ -1896,7 +2044,7 @@ namespace Project.Player
 
             if (protectBounceFromClimbing && motor.linearVelocity.y <= 0f)
                 protectBounceFromClimbing = false;
-            if (TickHorizontalVine()) return;
+            if (TickClimbCorner() || TickHorizontalVine()) return;
 
             float velocityAtStepStart = motor != null
                 ? motor.linearVelocity.y
@@ -2557,6 +2705,8 @@ namespace Project.Player
             pendingPlatformDelta = Vector3.zero;
             waterSources.Clear();
             horizontalVines.Clear();
+            cornerSource = wrappedEdgeSource = null;
+            horizontalReleaseUntil = cornerCooldown = 0f;
             waterSpeedMultipliers.Clear();
             waterVelocities.Clear();
             waterBuoyancies.Clear();

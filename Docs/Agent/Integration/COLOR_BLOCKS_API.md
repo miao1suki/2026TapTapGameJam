@@ -1,5 +1,13 @@
 # 颜色物体 API
 
+解锁进度已拆分：`Unlock/IsUnlocked` 只管理场景颜色，`UnlockAbility/IsAbilityUnlocked` 管理玩家能力。钥匙首把恢复场景、第二把授予能力；完整接入见 [颜色进度与标准玩家](COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。
+
+## 轮盘中央取消
+
+`PlayerColorWheel.DeselectAbility()` 显式取消当前能力，清空选色与范围圈，并发出 `AbilityDeselectedByPlayer`。`PlayerInputDriver` 通过已有 WordNote 提示“当前未使用颜色能力”；`SelectedColorChanged` 仍通知空 ID。成功染色或发射绿钩子保留选色，支持连续使用；程序显式 `ClearSelectedColor()` 不发送手动取消事件。外部轮盘视图在中央返回空 HighlightedColorId，在锁定扇区返回该扇区 ID，不能将锁定扇区误报为中央。
+
+附近按键交互和搬运按玩家朝向筛选；鼠标屏幕命中的染色不受朝向限制。搬运与运行时落点预览见 `PLAYER_CARRY_API.md`。
+
 ## 分类表现与纯 HSV
 
 `HSVColorFadeManager` 不决定解锁、材质、透明度或物体显隐，也不扫描场景 Renderer。纯 API：
@@ -31,7 +39,7 @@ HSVColorFadeManager.Instance.SetHsv("green", saturation: 1f, whiteAmount: 0f, se
 
 `_WaterMeshDepth` 必须生成材质属性（Generate Property Block），由水体初始化按自身深度设置；不可声明成共享全局值，否则顶面采样可能使用零深度，且不同尺寸水体相互污染。
 
-水面与横截面由 MeshRenderer 渲染，Shader Graph 使用 URP Unlit 透明子目标，不使用 Sprite Lit：后者依赖 SpriteRenderer 的翻转参数、颜色与 Alpha，不能仅修透明度参数解决网格渲染问题。保留波纹、折射、水下颜色、焦散与反射节点，最终 Alpha 保留原水体透明度并乘 `_ColorRevealOpacity`，不得替换为编辑识别材质。注销生成水体时先停用并移出所属物体，再延迟销毁；同帧重新绑定不得发现已预约销毁的旧实例。
+水面与横截面由 MeshRenderer 渲染，Shader Graph 使用 URP Unlit 透明子目标，不使用 Sprite Lit：后者依赖 SpriteRenderer 的翻转参数、颜色与 Alpha，不能仅修透明度参数解决网格渲染问题。保留波纹、折射、水下颜色、焦散与反射节点，最终 Alpha 保留原水体透明度并乘 `_ColorRevealOpacity`，不得替换为编辑识别材质。注销生成水体时先停用，再延迟销毁，不在父节点禁用期间执行 SetParent；同帧重新绑定不得发现已预约销毁的旧实例。
 
 ## 玩家运动接入
 

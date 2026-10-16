@@ -196,6 +196,7 @@ namespace Project.GameFlow
 
         private void Update()
         {
+            if (MobileControlLayout.IsEditing) return;
             KeepWheelLabelsUpright();
             if (!isOpen || IsSubPageOpen || options.Count == 0)
             {

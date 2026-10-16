@@ -14,7 +14,7 @@ namespace Project.BlockFeatures
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CarryableFeature : MonoBehaviour,
-        IPlayerCarryTarget, IPlayerCarryCollisionTarget
+        IPlayerCarryTarget, IPlayerCarryCollisionTarget, IPlayerCarryPlacementTarget
     {
         [SerializeField] private bool canCarry = true;
         [SerializeField] private TMP_FontAsset indicatorFont;
@@ -194,19 +194,23 @@ namespace Project.BlockFeatures
             IPlayerCarryHost player,
             Vector3 worldPosition)
         {
-            var member = GetComponent<Project.Rooms.RoomResetObject>();
-            if (member != null && member.Manager != null && !member.Manager.CanPlaceInAuthoredRegion(member,worldPosition)) return false;
-            if (player == null || carryPlayer != player)
-            {
-                return false;
-            }
-
-            if (motionParticipant != null && !motionParticipant.CanPlaceCarriedAt(worldPosition)) return false;
+            if (!CanPlaceCarryAt(player, worldPosition)) return false;
 
             bool started = carryMotion != null &&
                            carryMotion.BeginDrop(worldPosition);
             if (started) AudioCuePlayer.Play(AudioCueIds.BlockDrop);
             return started;
+        }
+
+        public Bounds GetCarryPlacementBounds(Vector3 worldPosition) => carryMotion != null
+            ? carryMotion.GetPlacementBounds(worldPosition) : new Bounds(worldPosition, Vector3.one);
+
+        public bool CanPlaceCarryAt(IPlayerCarryHost player, Vector3 worldPosition)
+        {
+            if (player == null || carryPlayer != player || carryMotion == null || !IsCarryActive) return false;
+            var member = GetComponent<Project.Rooms.RoomResetObject>();
+            if (member != null && member.Manager != null && !member.Manager.CanPlaceInAuthoredRegion(member, worldPosition)) return false;
+            return (motionParticipant == null || motionParticipant.CanPlaceCarriedAt(worldPosition)) && carryMotion.CanPlaceAt(worldPosition);
         }
 
         public bool BeginCarryReset(IPlayerCarryHost player)

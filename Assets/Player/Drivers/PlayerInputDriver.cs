@@ -49,6 +49,7 @@ namespace Project.Player
 
         private void OnDisable()
         {
+            if (ReferenceEquals(MobileGameplayContext.Current, player)) MobileGameplayContext.Current = null;
             UnbindCarryEvents();
             UnbindColorWheelEvents();
             if (player != null)
@@ -75,6 +76,7 @@ namespace Project.Player
             {
                 return;
             }
+            MobileGameplayContext.Current = target;
 
             if (player != target)
             {
@@ -126,6 +128,8 @@ namespace Project.Player
                 target.SetJumpHeld(false);
                 return;
             }
+            if (!target.IsControlLocked && Time.timeScale > 0f)
+                target.SetMoveInput(GameInput.ReadVector2(InputActionId.Move));
             bool carryInteractionConsumed =
                 target.UpdateCarryInput(
                     GameInput.WasTriggeredThisFrame(
@@ -562,6 +566,8 @@ namespace Project.Player
                 OnSelectedColorChanged;
             colorWheel.SelectedColorChanged +=
                 OnSelectedColorChanged;
+            colorWheel.AbilityDeselectedByPlayer -= OnAbilityDeselected;
+            colorWheel.AbilityDeselectedByPlayer += OnAbilityDeselected;
             colorWheel.ColorApplicationSucceeded -=
                 OnColorApplicationSucceeded;
             colorWheel.ColorApplicationSucceeded +=
@@ -585,6 +591,7 @@ namespace Project.Player
 
             colorWheel.SelectedColorChanged -=
                 OnSelectedColorChanged;
+            colorWheel.AbilityDeselectedByPlayer -= OnAbilityDeselected;
             colorWheel.ColorApplicationSucceeded -=
                 OnColorApplicationSucceeded;
             colorWheel.ColorApplicationOutOfRange -=
@@ -593,7 +600,11 @@ namespace Project.Player
                 OnColorApplicationRejected;
         }
 
-        private void OnSelectedColorChanged(string colorId)
+        private void OnAbilityDeselected() => ShowColorSelectionHint(string.Empty, true);
+
+        private void OnSelectedColorChanged(string colorId) => ShowColorSelectionHint(colorId, false);
+
+        private void ShowColorSelectionHint(string colorId, bool manuallyDeselected)
         {
             WordNoteUI wordNote = WordNoteUI.Instance;
             if (wordNote == null)
@@ -601,7 +612,7 @@ namespace Project.Player
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(colorId))
+            if (string.IsNullOrWhiteSpace(colorId) && !manuallyDeselected)
             {
                 return;
             }
@@ -665,7 +676,8 @@ namespace Project.Player
                 }
             };
             WordNoteHandle handle = wordNote.Show(
-                $"当前选择<color=#{ColorUtility.ToHtmlStringRGB(definition != null ? definition.swatch : Color.white)}>{colorName}色</color>",
+                manuallyDeselected ? "当前未使用颜色能力" :
+                    $"当前选择<color=#{ColorUtility.ToHtmlStringRGB(definition != null ? definition.swatch : Color.white)}>{colorName}色</color>",
                 colorSelectionStyle);
             colorSelectionHintId =
                 handle != null ? handle.Id : -1;

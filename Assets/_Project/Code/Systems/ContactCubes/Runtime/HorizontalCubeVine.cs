@@ -32,7 +32,7 @@ namespace Project.ContactCubes
             {
                 float cell = GridCellSizeUtility.Resolve(this);
                 Bounds bounds = shape.bounds;
-                int count = Physics.OverlapBoxNonAlloc(bounds.center, bounds.extents + Vector3.one * cell * contactMargin,
+                int count = Physics.OverlapBoxNonAlloc(bounds.center, bounds.extents + Vector3.one * cell * .85f,
                     hits, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
                 for (int i = 0; i < count; i++)
                 {
@@ -41,6 +41,9 @@ namespace Project.ContactCubes
                     var capsule = player.GetComponent<CapsuleCollider>();
                     if (capsule == null) continue;
                     Bounds p = capsule.bounds;
+                    if (cube.Length > 1 && Mathf.Abs(cube.GrowthDirection.x) > .98f)
+                        player.ProtectClimbCorner(this, bounds, traverseSpeed);
+                    if (player.IsClimbCornerProtected) current.Add(player);
                     bool side = p.max.y > bounds.min.y+.02f && p.min.y < bounds.max.y-.02f &&
                         p.max.z >= bounds.min.z && p.min.z <= bounds.max.z &&
                         (Mathf.Abs(p.max.x-bounds.min.x) <= cell*contactMargin ||
@@ -52,24 +55,25 @@ namespace Project.ContactCubes
                         currentSides.Add(player);
                     }
                     if (cube.Length <= 1 || Mathf.Abs(cube.GrowthDirection.x) <= .98f) continue;
-                    float end = transform.position.x + Mathf.Sign(cube.GrowthDirection.x) * cell * .5f;
-                    bool grown = cube.GrowthDirection.x > 0 ? p.center.x > end && p.center.x < bounds.max.x : p.center.x < end && p.center.x > bounds.min.x;
+                    bool grown = p.center.x >= bounds.min.x - contactMargin * cell && p.center.x <= bounds.max.x + contactMargin * cell;
                     if (!grown || p.max.z < bounds.min.z || p.min.z > bounds.max.z) continue;
-                    bool top = Mathf.Abs(p.min.y - bounds.max.y) <= cell * contactMargin && player.Motor.linearVelocity.y <= .1f;
+                    bool top = Mathf.Abs(p.min.y - bounds.max.y) <= cell * contactMargin &&
+                        (player.Motor.linearVelocity.y <= .1f || player.IsHorizontalClimbing);
                     bool bottom = Mathf.Abs(p.max.y - bounds.min.y) <= cell * contactMargin;
                     if (!top && !bottom) continue;
                     float target = player.Motor.position.y + (top ? bounds.max.y + .015f - p.min.y : bounds.min.y - .015f - p.max.y);
                     player.SetHorizontalVineSurface(this, target, traverseSpeed); current.Add(player);
                 }
             }
-            foreach (var player in previous) if (player != null && !current.Contains(player)) player.ClearHorizontalVineSurface(this);
+            foreach (var player in previous) if (player != null && !current.Contains(player))
+            { player.CancelClimbCorner(this); player.ClearHorizontalVineSurface(this); }
             previous.Clear(); foreach (var player in current) previous.Add(player);
             foreach (var player in previousSides) if (player != null && !currentSides.Contains(player)) player.ExitClimb(this);
             previousSides.Clear(); foreach (var player in currentSides) previousSides.Add(player);
         }
         public void ResetForRoom()
         {
-            foreach (var player in previous) if (player != null) player.ClearHorizontalVineSurface(this);
+            foreach (var player in previous) if (player != null) { player.CancelClimbCorner(this); player.ClearHorizontalVineSurface(this); }
             previous.Clear(); current.Clear();
             foreach (var player in previousSides) if (player != null) player.ExitClimb(this);
             previousSides.Clear(); currentSides.Clear();

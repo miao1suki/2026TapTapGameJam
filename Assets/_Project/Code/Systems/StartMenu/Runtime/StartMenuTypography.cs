@@ -11,6 +11,7 @@ namespace Project.StartMenu
         private static Font sourceFont;
 
         public static Font SourceFont => sourceFont;
+        public static TMP_FontAsset SdfFont => font;
 
         public static void Configure(
             TMP_FontAsset value,

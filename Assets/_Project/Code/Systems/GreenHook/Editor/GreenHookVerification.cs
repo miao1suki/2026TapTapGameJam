@@ -61,7 +61,7 @@ namespace Project.GreenHook.Editor
         }
         private static PlayerController Player(Vector3 position)
         {
-            var player = Instantiate("Assets/_Project/Content/Player/RuntimePlayer.prefab", position).GetComponent<PlayerController>();
+            var player = Instantiate("Assets/_Project/Content/Player/Player.prefab", position).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
             player.Motor.interpolation = RigidbodyInterpolation.None;
             return player;
@@ -86,6 +86,7 @@ namespace Project.GreenHook.Editor
             try
             {
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
+                ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 for (int variant = 0; variant < 3; variant++)
                 {
                     Vector3 origin = new Vector3(variant * 30, 20, 0);

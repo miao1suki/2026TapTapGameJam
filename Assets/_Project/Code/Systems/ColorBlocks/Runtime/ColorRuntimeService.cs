@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace Project.ColorBlocks
 {
+    public enum ColorKeyUnlockResult { None, SceneColor, PlayerAbility }
+
     /// <summary>
     /// Owns session color unlock progress and fixed color object activation.
     /// Gameplay visuals and reactions belong to object feature components.
@@ -13,6 +15,8 @@ namespace Project.ColorBlocks
     {
         private static ColorRuntimeService instance;
         private readonly HashSet<string> unlocked =
+            new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> unlockedAbilities =
             new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<IColorObject> colorObjects =
             new HashSet<IColorObject>();
@@ -43,6 +47,36 @@ namespace Project.ColorBlocks
         public static ColorRuntimeService Existing => instance;
         public ColorCatalog Catalog => catalog;
         public event Action<ColorTypeDefinition> ColorUnlocked;
+        public event Action<ColorTypeDefinition> AbilityUnlocked;
+
+        /// <summary>Player permission only; scene activation uses IsUnlocked.</summary>
+        public bool IsAbilityUnlocked(string typeId) =>
+            !string.IsNullOrEmpty(typeId) && unlockedAbilities.Contains(typeId);
+
+        /// <summary>One settled pickup advances exactly one stage, synchronously.</summary>
+        public ColorKeyUnlockResult CollectColorKey(string typeId)
+        {
+            if (!IsUnlocked(typeId))
+                return Unlock(typeId) ? ColorKeyUnlockResult.SceneColor : ColorKeyUnlockResult.None;
+            return UnlockAbility(typeId) ? ColorKeyUnlockResult.PlayerAbility : ColorKeyUnlockResult.None;
+        }
+
+        /// <summary>Does not activate scene objects or restart their appearance.</summary>
+        public bool UnlockAbility(string typeId)
+        {
+            ColorTypeDefinition definition = catalog != null ? catalog.Find(typeId) : null;
+            if (definition == null || !unlockedAbilities.Add(typeId)) return false;
+            AbilityUnlocked?.Invoke(definition);
+            EventMgr.RaiseColorAbilityUnlocked(definition);
+            return true;
+        }
+
+        public void UnlockAllAbilitiesForCurrentSession()
+        {
+            if (catalog == null) return;
+            foreach (var definition in catalog.Colors)
+                if (definition != null) UnlockAbility(definition.id);
+        }
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -179,6 +213,7 @@ namespace Project.ColorBlocks
         public void ResetProgress()
         {
             unlocked.Clear();
+            unlockedAbilities.Clear();
             foreach (IColorObject colorObject in
                      new List<IColorObject>(colorObjects))
             {
@@ -246,6 +281,9 @@ namespace Project.ColorBlocks
 
 public partial class EventMgr
 {
+    public static event Action<Project.ColorBlocks.ColorTypeDefinition> OnColorAbilityUnlocked;
+    public static void RaiseColorAbilityUnlocked(Project.ColorBlocks.ColorTypeDefinition color) =>
+        OnColorAbilityUnlocked?.Invoke(color);
     public static event Action<Project.ColorBlocks.ColorTypeDefinition>
         OnColorUnlocked;
     public static event Action<string, string> OnColorTypeEvent;
