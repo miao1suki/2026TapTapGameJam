@@ -181,7 +181,7 @@ namespace Project.GameFlow
                     maxRadius,
                     duration)
                 .SetEase(Ease.OutCubic)
-                .SetUpdate(true);
+                .SetUpdate(true).SetTarget(this);
             yield return tween.WaitForCompletion();
         }
 
@@ -238,7 +238,7 @@ namespace Project.GameFlow
                     0f,
                     duration)
                 .SetEase(Ease.InCubic)
-                .SetUpdate(true);
+                .SetUpdate(true).SetTarget(this);
             yield return tween.WaitForCompletion();
 
             // A negative radius closes the exact center pixel too.
@@ -248,7 +248,8 @@ namespace Project.GameFlow
 
         public IEnumerator SlideBackgroundOutAsync(
             float duration,
-            Ease ease)
+            Ease ease,
+            bool reverseEase = false)
         {
             if (background == null)
             {
@@ -263,8 +264,11 @@ namespace Project.GameFlow
                         rect.anchoredPosition.y),
                     Screen.width,
                     Mathf.Max(.01f, duration))
-                .SetEase(ease)
-                .SetUpdate(true);
+                .SetUpdate(true).SetTarget(this);
+            if (reverseEase)
+                tween.SetEase((sampleTime, sampleDuration, overshoot, period) =>
+                    1f - DOVirtual.EasedValue(0f, 1f, 1f - sampleTime / sampleDuration, ease));
+            else tween.SetEase(ease);
             yield return tween.WaitForCompletion();
         }
 
@@ -287,7 +291,7 @@ namespace Project.GameFlow
                     0f,
                     Mathf.Max(.01f, duration))
                 .SetEase(ease)
-                .SetUpdate(true);
+                .SetUpdate(true).SetTarget(this);
             yield return tween.WaitForCompletion();
         }
 
@@ -319,7 +323,7 @@ namespace Project.GameFlow
                     value => textGroup.alpha = value,
                     visible ? 1f : 0f,
                     Mathf.Max(.01f, duration))
-                .SetUpdate(true);
+                .SetUpdate(true).SetTarget(this);
             yield return tween.WaitForCompletion();
             if (!visible)
             {
@@ -462,6 +466,11 @@ namespace Project.GameFlow
                 return;
             }
 
+            // A level opened directly has not captured the menu background yet.
+            if (backgroundTexture == null)
+            {
+                backgroundTexture = Project.StartMenu.GameUiArtwork.Load()?.menuBackground;
+            }
             background.texture = backgroundTexture;
             background.color = backgroundTint;
             background.uvRect = backgroundUv;
@@ -500,8 +509,19 @@ namespace Project.GameFlow
             return edge.magnitude + .25f;
         }
 
+        public void ResetPresentation()
+        {
+            DOTween.Kill(this);
+            SetLoadingTextVisible(false);
+            SetBackgroundVisible(false);
+            SetBlackVisible(false);
+            SetInputBlocking(false);
+            if (background != null) background.rectTransform.anchoredPosition = Vector2.zero;
+        }
+
         private void OnDestroy()
         {
+            DOTween.Kill(this);
             if (revealMaterial != null)
             {
                 Destroy(revealMaterial);

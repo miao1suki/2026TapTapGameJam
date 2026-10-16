@@ -26,6 +26,16 @@
 
 ## 构建与验证
 
+2026-10-16 离线规则更新：以下开发包仅保留为历史产物，不是比赛离线包，不应继续分发。当前构建脚本改为 `BuildOptions.None`、关闭调试发现/遥测，由 `ContestOfflineBuildGuard` 阻止开发构建并移除 Android 网络权限。本次未重新构建；详见 [比赛离线版本](OFFLINE_BUILD.md)。
+
+2026-10-16 贴墙放置修复版（最新）：`Builds/形之彩-20261016-贴墙放置修复/Android/形之彩.apk`（102.65MiB），以及`形之彩-Windows.zip`（107.45MiB，解压后运行形之彩.exe，保留全部依赖）。两端均仅MainMenu/Gaming，源码基于cdde143，不含本地未交付关卡和插件。修复贴另一侧墙时放下误拒绝；玩家由控制器平滑让位，不再瞬移，保留真实阻挡和区域重置。
+
+Android构建0错误/4旧Shader警告，Windows构建0错误/2旧Shader警告。171项项目编辑检查与151项运行检查通过，含真实Gaming现有红块、白墙、玩家指令与R复位。APK签名、原生隐私入口、ARM64、Android7.1/API25核对通过，仍需手机手感和隐私流程真机验收。日志`Library/CarryWallAndroidBuildFinal.log`、`CarryWallWindowsBuild.log`、`CarryWallProjectTests.xml`及`CarryRelease-*.log`。APK SHA256 `4DAB8DE00EF0ABB8769C1A9EE60D723F3C576C1DE1A344767E59FE0E4555C0B1`；Windows ZIP SHA256 `302DE46785B141CB9278E7BE37B7D07596987186916D1BBEB2CE1FB8F9E2F8E6`。旧包保留。
+
+2026-10-16 触控与放置修复版：`Builds/形之彩-20261016-触控与放置修复/Android/形之彩.apk`，102.66MiB，ARM64、IL2CPP开发测试包，仅MainMenu/Gaming、最低Android7.1。包含奔跑点击切换、左跳跃长按连跳、按键跟手和触摸容差、手机HUD隔离、放置稳定与玩家分离、未解锁能力提示、藤蔓移动管线修正，以及2D相机下移。旧自定义布局保留，可在设置中恢复默认后保存。构建0错误／4警告，签名和原生隐私入口静态核对通过，ADB无设备，真机仍待验收；该次未重建PC、未推送。SHA256：`9CCCECE8BB82A5FC3667F9C45439D0A32A7073526A8DB07637E3518A950A003C`。日志`Library/AndroidMobileCarry20261016.log`；项目编辑测试171项、运行回归47项通过。
+
+2026-10-16 当前本地进度重打包：`Builds/形之彩-20261016-安卓重打包/Android/形之彩.apk`，82.92MiB，ARM64开发测试包，MainMenu/Gaming，最低Android7.1。构建0错误／4警告，APK签名、唯一原生隐私Launcher、非导出Unity活动、内置政策和字体检查通过，尚未真机验收。本轮未重建PC、未拉取或推送Git；旧包保留。SHA256：`B87F058C7BE429C351510A75F0DF1FFCA64DCF4EC8AB40B3B2611AB6772B9CA7`。日志`Library/AndroidRetest20261016.log`。
+
 2026-10-16 安卓操作测试版：`Builds/形之彩-20261016/Android/形之彩.apk`，ARM64开发包，约100MiB；MainMenu/Gaming，最低Android7.1。本轮仅构建安卓，未重建PC包。原生隐私入口/非导出Unity活动及内置正文在最终APK中核对通过；没有连接安卓设备，仍需真机验证授权边界、多指手感与不同分辨率。转角与布局44项、相关编辑测试149项通过，真实Touchscreen多指事件通过；不是发布合规认证。
 
 构建脚本：`Assets/Player/Editor/MobileBuildSetup.cs`。使用 Unity 6000.3.12f1，不升级项目。构建时设置 `TAPTAP_TEST_BUILD_ROOT` 为明确输出目录，以 `-executeMethod MobileBuildSetup.BuildWindows` / `BuildAndroid` 调用；安卓启动 Unity 时带 `-buildTarget Android`。脚本明确只收录上述两个场景，检查 BuildReport 结果并生成报告。`Prepare` 为本轮 UI 资产配置脚本，已经应用，不应为普通功能开发反复执行。

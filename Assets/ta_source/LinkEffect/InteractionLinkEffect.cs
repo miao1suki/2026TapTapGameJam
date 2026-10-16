@@ -87,6 +87,10 @@ namespace TaSource.LinkEffect
         public int DetectedTargetCount => candidates.Count;
         public int VisibleLinkCount { get; private set; }
         public Material LinkMaterial => linkMaterial;
+        public Vector3 SourceWorldPosition => sourceAnchor != null
+            ? sourceAnchor.position
+            : transform.position + transform.TransformVector(new Vector3(sourceOffset.x, 0f, sourceOffset.z))
+                + transform.up * sourceOffset.y;
 
         private void Awake()
         {
@@ -334,12 +338,7 @@ namespace TaSource.LinkEffect
         private bool TryGetLineEndpoints(Candidate candidate, Vector3 rangeCenter,
             float rangeRadius, out Vector3 source, out Vector3 destination)
         {
-            source = sourceAnchor != null
-                ? sourceAnchor.position
-                : transform.position
-                  + transform.TransformVector(
-                      new Vector3(sourceOffset.x, 0f, sourceOffset.z))
-                  + transform.up * sourceOffset.y;
+            source = SourceWorldPosition;
             destination = candidate.Collider != null
                 ? candidate.Collider.ClosestPoint(rangeCenter)
                 : candidate.Component.transform.position;

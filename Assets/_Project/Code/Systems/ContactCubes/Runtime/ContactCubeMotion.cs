@@ -179,7 +179,8 @@ namespace Project.ContactCubes
             int count = Physics.OverlapBoxNonAlloc(center, half, nearby, t.rotation, ~0, QueryTriggerInteraction.Ignore);
             if (count == nearby.Length) return false;
             for (int i = 0; i < count; i++)
-                if (nearby[i] != null && !nearby[i].transform.IsChildOf(transform)) return false;
+                if (nearby[i] != null && !nearby[i].transform.IsChildOf(transform) &&
+                    nearby[i].GetComponentInParent<IPlayerCarrySeparationHost>() == null) return false;
             return true;
         }
         private void FixedUpdate()

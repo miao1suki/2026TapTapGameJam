@@ -22,6 +22,10 @@ namespace Project.SurfaceTiles.Editor
         internal static bool Bake(SurfaceTileBlock block, out string message)
         {
             message = string.Empty;
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            { message = "请退出运行模式后合成贴图。"; return false; }
+            if (block != null && !SurfaceTileAuthoringService.CanEditSceneInstance(block.gameObject))
+            { message = "只允许烘焙场景实例，不修改共享预制体源。"; return false; }
             if (block == null || block.Palette == null)
             {
                 message = "请先选择一个可贴画方块并指定瓦片库。";
@@ -51,10 +55,10 @@ namespace Project.SurfaceTiles.Editor
                 return false;
             }
 
+            string sceneName = AssetDatabase.AssetPathToGUID(block.gameObject.scene.path);
+            if (string.IsNullOrEmpty(sceneName))
+            { message = "请先保存当前场景，再合成贴图。"; return false; }
             EnsureUniqueId(block);
-            string sceneName = string.IsNullOrWhiteSpace(block.gameObject.scene.name)
-                ? "UnsavedScene"
-                : Sanitize(block.gameObject.scene.name);
             string folder = EnsureFolder(GeneratedRoot, sceneName);
             string prefix = Sanitize(block.name) + "_" + block.BlockId.Substring(0, 8);
             string texturePath = $"{folder}/{prefix}_Tiles.png";
@@ -118,6 +122,9 @@ namespace Project.SurfaceTiles.Editor
             Undo.RecordObject(block.OutputFilter, "烘焙表面瓦片");
             Undo.RecordObject(block.OutputRenderer, "烘焙表面瓦片");
             block.BindBake(mesh, material);
+            if (PrefabUtility.IsPartOfPrefabInstance(block)) PrefabUtility.RecordPrefabInstancePropertyModifications(block);
+            if (PrefabUtility.IsPartOfPrefabInstance(block.OutputFilter)) PrefabUtility.RecordPrefabInstancePropertyModifications(block.OutputFilter);
+            if (PrefabUtility.IsPartOfPrefabInstance(block.OutputRenderer)) PrefabUtility.RecordPrefabInstancePropertyModifications(block.OutputRenderer);
             EditorUtility.SetDirty(block);
             EditorSceneManager.MarkSceneDirty(block.gameObject.scene);
             AssetDatabase.SaveAssets();

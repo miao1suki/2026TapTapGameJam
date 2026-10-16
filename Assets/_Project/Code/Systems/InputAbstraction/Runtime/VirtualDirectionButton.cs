@@ -9,6 +9,7 @@ namespace Project.InputAbstraction
     {
         [SerializeField] private Vector2 direction;
         private int pointerId = int.MinValue;
+        public bool IsPressed => pointerId != int.MinValue;
         public Vector2 Direction => direction;
         public void Configure(Vector2 value) => direction = Vector2.ClampMagnitude(value, 1f);
         public void OnPointerDown(PointerEventData data)

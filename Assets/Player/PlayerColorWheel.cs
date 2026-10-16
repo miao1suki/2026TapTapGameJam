@@ -77,6 +77,7 @@ namespace Project.Player
         public event Action ColorApplicationSucceeded;
         public event Action ColorApplicationOutOfRange;
         public event Action ColorApplicationRejected;
+        public event Action AbilitySelectionLocked;
 
         public void BindExternalView(IPlayerColorWheelView view)
         {
@@ -191,9 +192,10 @@ namespace Project.Player
 
         public bool TrySelectColor(string colorId)
         {
-            if (string.IsNullOrWhiteSpace(colorId) ||
-                !ColorRuntimeService.Instance.IsAbilityUnlocked(colorId))
+            if (string.IsNullOrWhiteSpace(colorId)) return false;
+            if (!ColorRuntimeService.Instance.IsAbilityUnlocked(colorId))
             {
+                AbilitySelectionLocked?.Invoke();
                 return false;
             }
 

@@ -101,6 +101,7 @@ namespace Project.GridArt.Editor
             var camera = new GameObject("美术预览摄像机").AddComponent<Camera>(); camera.tag = "MainCamera";
             camera.transform.position = new Vector3(0,1,-20); camera.orthographic = true; camera.orthographicSize = 7;
             camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = new Color(.1f,.13f,.17f);
+            EditorSceneManager.SaveScene(scene,ScenePath);
             var output = GridArtBuilder.Apply(AssetDatabase.LoadAssetAtPath<GridArtMap>(MapPath),scene); output.targetCamera = camera;
             EditorSceneManager.SaveScene(scene,ScenePath); AssetDatabase.SaveAssets();
         }

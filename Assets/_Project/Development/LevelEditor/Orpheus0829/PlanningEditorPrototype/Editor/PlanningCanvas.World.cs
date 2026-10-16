@@ -314,23 +314,8 @@ namespace PlanningEditorPrototype
 
         private void DrawWorldOwner(Painter2D painter, PlanningRoom room, Color color, bool selected)
         {
-            // At overview zoom, draw contiguous row spans instead of thousands of tiny outlines.
-            var cells = new HashSet<Vector2Int>();
-            foreach (var cell in room.cells) cells.Add(new Vector2Int(cell.x, cell.y));
-            foreach (var cell in cells)
-            {
-                if (cells.Contains(cell + Vector2Int.left)) continue;
-                int end = cell.x + 1;
-                while (cells.Contains(new Vector2Int(end, cell.y))) end++;
-                Rect span = CellRect(cell.x, cell.y, end - cell.x, 1);
-                if (span.xMax < 0 || span.yMax < 0 || span.xMin > resolvedStyle.width || span.yMin > resolvedStyle.height) continue;
-                FillRect(painter, span, color, 0f);
-                if (GridSize < 10f) continue;
-                int min = Mathf.Max(cell.x, CellAt(Vector2.zero).x);
-                int max = Mathf.Min(end, CellAt(new Vector2(resolvedStyle.width, resolvedStyle.height)).x + 1);
-                for (int x = min; x < max; x++)
-                    StrokeRect(painter, CellRect(x, cell.y), selected ? Color.white : new Color(0f, 0f, 0f, .45f), 1f);
-            }
+            DrawOwnerPreview(painter, room, Vector2.zero, Vector2.one, color,
+                selected ? Color.white : new Color(0, 0, 0, .45f));
         }
 
         private void DrawWorldRegions(Painter2D painter)
@@ -350,34 +335,24 @@ namespace PlanningEditorPrototype
             foreach (var room in document.rooms)
             {
                 Color color = room.isConnector ? new Color(.12f, .7f, .7f, .12f) : new Color(.3f, .5f, .8f, .08f);
-                foreach (var cell in room.cells)
-                {
-                    Rect rect = CellRect(cell.x * WorldBlockCellWidth, cell.y * WorldBlockCellHeight, WorldBlockCellWidth, WorldBlockCellHeight);
-                    if (!rect.Overlaps(contentRect)) continue;
-                    FillRect(painter, rect, color, 0f);
-                    StrokeRect(painter, rect, new Color(color.r, color.g, color.b, .4f), 1f);
-                }
+                DrawOwnerPreview(painter, room, Vector2.zero, new Vector2(WorldBlockCellWidth, WorldBlockCellHeight),
+                    color, new Color(color.r, color.g, color.b, .4f));
             }
         }
 
         private void DrawDetailOwnership(Painter2D painter, PlanningRoom room)
         {
-            Vector2Int origin = PlanningWorldUtility.Bounds(room).position;
+            Vector2Int origin = OwnerPreview(room).Bounds.position;
             var color = room.isConnector ? new Color(.2f, .8f, .78f, .12f) : new Color(.3f, .55f, .85f, .08f);
-            foreach (var cell in room.cells)
-            {
-                Rect rect = CellRect((cell.x - origin.x) * WorldBlockCellWidth, (cell.y - origin.y) * WorldBlockCellHeight, WorldBlockCellWidth, WorldBlockCellHeight);
-                if (!rect.Overlaps(contentRect)) continue;
-                FillRect(painter, rect, color, 0f);
-                StrokeRect(painter, rect, new Color(color.r, color.g, color.b, .55f), 1f);
-            }
+            DrawOwnerPreview(painter, room, -origin, new Vector2(WorldBlockCellWidth, WorldBlockCellHeight),
+                color, new Color(color.r, color.g, color.b, .55f));
         }
 
         private void DrawWorldMovePreview(Painter2D painter)
         {
             if (!worldMoving || !isDragging || worldMoveDelta == Vector2Int.zero) return;
-            foreach (var room in document.rooms) if (worldSelection.Contains(room.id)) foreach (var cell in room.cells)
-                StrokeRect(painter, CellRect(cell.x + worldMoveDelta.x, cell.y + worldMoveDelta.y), new Color(1f, .8f, .3f), 2f);
+            foreach (var room in document.rooms) if (worldSelection.Contains(room.id))
+                DrawOwnerPreview(painter, room, worldMoveDelta, Vector2.one, Color.clear, new Color(1f, .8f, .3f));
             foreach (var region in document.regions) if (regionSelection.Contains(region.id))
                 StrokeRect(painter, CellRect(region.x + worldMoveDelta.x, region.y + worldMoveDelta.y, region.width, region.height), Color.white, 2f);
         }

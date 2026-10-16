@@ -176,19 +176,27 @@ namespace Project.StartMenu
 
         private void OpenTouchLayout()
         {
+            var font = ResolveFont();
+            if (font != null) TouchLayoutRequested?.Invoke(font);
+            else Debug.LogWarning("触控布局缺少项目字体配置。", this);
+        }
+
+        private TMPro.TMP_FontAsset ResolveFont()
+        {
             var font = StartMenuTypography.SdfFont;
             if (font == null)
                 foreach (var text in GetComponentsInChildren<TMPro.TMP_Text>(true))
                     if (text.font != null && text.font.name == "Cubic_11 SDF") { font = text.font; break; }
-            if (font != null) TouchLayoutRequested?.Invoke(font);
-            else Debug.LogWarning("触控布局缺少项目字体配置。", this);
+            return font;
         }
+
+        private void OpenPrivacyPolicy() => Project.Privacy.AndroidPrivacyPolicy.ShowPolicy(ResolveFont());
 
         private void EnsurePrivacyButton()
         {
             if (categoryList == null || categoryList.Find("Privacy Policy") != null) return;
             Button privacy = StartMenuUiFactory.CreateButton("Privacy Policy", categoryList, "隐私政策",
-                new Vector2(190f, 48f), Project.Privacy.AndroidPrivacyPolicy.ShowPolicy);
+                new Vector2(190f, 48f), OpenPrivacyPolicy);
             AddCategorySize(privacy);
         }
 
@@ -196,6 +204,10 @@ namespace Project.StartMenu
         {
             if (Application.isPlaying)
             {
+                EnsureTouchLayoutButton();
+                var label = keyBindingTabButton != null ? keyBindingTabButton.GetComponentInChildren<Text>(true) : null;
+                if (label != null) label.text = Project.InputAbstraction.GameInput.PlatformMode ==
+                    Project.InputAbstraction.InputPlatformMode.Mobile ? "手柄按键" : "按键映射";
                 RefreshSound();
                 ShowPage(0);
             }

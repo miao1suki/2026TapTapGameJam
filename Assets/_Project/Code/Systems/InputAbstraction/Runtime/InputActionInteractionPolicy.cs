@@ -69,9 +69,9 @@ namespace Project.InputAbstraction
                 case InputActionId.CameraModeSwitch:
                     return "调色";
                 case InputActionId.PointerPrimary:
-                    return "指针主键";
+                    return "使用颜色能力";
                 case InputActionId.PointerSecondary:
-                    return "指针副键";
+                    return "辅助点击（右键）";
                 case InputActionId.Respawn:
                     return "重生";
                 default:

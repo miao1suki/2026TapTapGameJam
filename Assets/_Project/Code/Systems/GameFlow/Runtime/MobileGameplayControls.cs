@@ -15,6 +15,8 @@ namespace Project.GameFlow
         [SerializeField] private GameUiRouter router;
         [SerializeField] private bool previewOnDesktop;
         private bool? visible;
+        private VirtualInputButton leftJump, sprint;
+        private TextMeshProUGUI sprintLabel;
         public bool LayoutEditing { get; set; }
         public RectTransform Controls => controls;
         public void Configure(TMP_FontAsset value, GameUiRouter owner)
@@ -28,19 +30,24 @@ namespace Project.GameFlow
             controls = new GameObject("Touch Controls", typeof(RectTransform), typeof(ScreenSafeArea)).GetComponent<RectTransform>();
             controls.SetParent(transform, false);
             controls.GetComponent<ScreenSafeArea>().Refresh();
-            Direction("上", Vector2.up, new Vector2(245, 365));
-            Direction("左", Vector2.left, new Vector2(115, 210));
-            Direction("右", Vector2.right, new Vector2(270, 210));
-            Direction("下", Vector2.down, new Vector2(400, 130));
-            Action("左跳跃", InputActionId.Jump, new Vector2(400, 300), Vector2.zero);
-            Action("跳跃", InputActionId.Jump, new Vector2(-120, 155));
-            Action("跑", InputActionId.Sprint, new Vector2(-265, 155));
-            Action("交互", InputActionId.Interact, new Vector2(-265, 325));
-            Action("放左", InputActionId.DropLeft, new Vector2(-410, 155));
-            Action("放右", InputActionId.DropRight, new Vector2(-410, 325));
-            Action("选色", InputActionId.CameraModeSwitch, new Vector2(-120, 325));
-            Action("重生", InputActionId.Respawn, new Vector2(-85, -70), Vector2.one);
-            var pause = CreateButton("暂停", Vector2.one, new Vector2(-210, -70));
+            Direction("上", Vector2.up);
+            Direction("左", Vector2.left);
+            Direction("右", Vector2.right);
+            Direction("下", Vector2.down);
+            Action("左跳跃", InputActionId.Jump);
+            leftJump = controls.Find("左跳跃").GetComponent<VirtualInputButton>(); leftJump.ConfigureRepeatJump();
+            Action("跳跃", InputActionId.Jump);
+            Action("跑", InputActionId.Sprint);
+            sprint = controls.Find("跑").GetComponent<VirtualInputButton>(); sprint.ConfigureToggle();
+            sprintLabel = sprint.GetComponentInChildren<TextMeshProUGUI>();
+            Action("交互", InputActionId.Interact);
+            Action("放左", InputActionId.DropLeft);
+            Action("放右", InputActionId.DropRight);
+            Action("选色", InputActionId.CameraModeSwitch);
+            Direction("右手左", Vector2.left);
+            Direction("右手右", Vector2.right);
+            Action("重生", InputActionId.Respawn);
+            var pause = CreateButton("暂停");
             pause.GetComponent<Button>().onClick.AddListener(TogglePause);
             ApplySavedLayout();
         }
@@ -72,8 +79,16 @@ namespace Project.GameFlow
             var player = MobileGameplayContext.Current;
             bool alive = player != null && !player.IsDead;
             bool carrying = alive && player.IsCarrying;
+            bool rightDirections = alive && (player.ShowAirborneDownControl || player.IsClimbing ||
+                player.IsHorizontalClimbing || leftJump != null && leftJump.IsPressed);
+            Show("右手左", rightDirections); Show("右手右", rightDirections);
+            if (sprintLabel != null)
+            {
+                string caption = sprint.ToggleOn ? "奔跑" : "行走";
+                if (sprintLabel.text != caption) sprintLabel.text = caption;
+            }
             Show("上", alive && (player.IsSwimming || player.IsClimbing || player.IsHorizontalClimbing || player.IsGreenHookActive));
-            Show("下", alive && (player.IsSwimming || player.IsClimbing || player.IsHorizontalClimbing || player.IsGreenHookActive));
+            Show("下", alive && (player.IsSwimming || player.IsClimbing || player.IsHorizontalClimbing || player.IsGreenHookActive || player.ShowAirborneDownControl));
             Show("交互", alive && !carrying && (player.CarryQueueCount > 0 || player.HasContextInteraction || player.IsGreenHookActive));
             Show("放左", carrying); Show("放右", carrying);
             Show("重生", player != null && player.IsDead);
@@ -84,7 +99,9 @@ namespace Project.GameFlow
             Transform item = controls.Find(label);
             // Never revoke a held press because its contextual condition changed mid-gesture.
             var held = item != null ? item.GetComponent<VirtualInputButton>() : null;
-            if (item != null && item.gameObject.activeSelf != show && (held == null || !held.IsPressed))
+            var direction = item != null ? item.GetComponent<VirtualDirectionButton>() : null;
+            if (item != null && item.gameObject.activeSelf != show && (held == null || !held.IsPressed) &&
+                (direction == null || !direction.IsPressed))
                 item.gameObject.SetActive(show);
         }
         private void RefreshVisibility()
@@ -96,16 +113,17 @@ namespace Project.GameFlow
             controls.gameObject.SetActive(show);
         }
         public void TogglePause() => router?.TogglePause();
-        private void Direction(string label, Vector2 direction, Vector2 position)
+        private void Direction(string label, Vector2 direction)
         {
-            CreateButton(label, Vector2.zero, position).AddComponent<VirtualDirectionButton>().Configure(direction);
+            CreateButton(label).AddComponent<VirtualDirectionButton>().Configure(direction);
         }
-        private void Action(string label, InputActionId action, Vector2 position, Vector2? anchor = null)
+        private void Action(string label, InputActionId action)
         {
-            CreateButton(label, anchor ?? new Vector2(1, 0), position).AddComponent<VirtualInputButton>().Configure(action);
+            CreateButton(label).AddComponent<VirtualInputButton>().Configure(action);
         }
-        private GameObject CreateButton(string label, Vector2 anchor, Vector2 position)
+        private GameObject CreateButton(string label)
         {
+            GetDefaultLayout(label, out Vector2 anchor, out Vector2 position);
             var obj = new GameObject(label, typeof(RectTransform), typeof(Image), typeof(Button));
             var rect = (RectTransform)obj.transform;
             rect.SetParent(controls, false);
@@ -114,16 +132,24 @@ namespace Project.GameFlow
             rect.anchoredPosition = position;
             var image = obj.GetComponent<Image>();
             image.color = new Color(.07f, .13f, .19f, .68f);
+            image.raycastPadding = Vector4.one * -14f;
             var button = obj.GetComponent<Button>();
             button.targetGraphic = image;
+            var colors = button.colors;
+            colors.pressedColor = new Color(.4f, .85f, 1f, 1f);
+            colors.highlightedColor = Color.white;
+            colors.selectedColor = Color.white;
+            colors.fadeDuration = .05f;
+            button.colors = colors;
             button.navigation = new Navigation { mode = Navigation.Mode.None };
+            obj.AddComponent<TouchPressFeedback>();
             var textObj = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
             var textRect = (RectTransform)textObj.transform;
             textRect.SetParent(rect, false);
             textRect.anchorMin = Vector2.zero; textRect.anchorMax = Vector2.one;
             textRect.offsetMin = textRect.offsetMax = Vector2.zero;
             var text = textObj.GetComponent<TextMeshProUGUI>();
-            text.font = font; text.text = label == "左跳跃" ? "跳跃" : label; text.fontSize = 29;
+            text.font = font; text.text = label switch { "左跳跃" => "跳跃", "右手左" => "左", "右手右" => "右", "跑" => "行走", _ => label }; text.fontSize = 29;
             text.alignment = TextAlignmentOptions.Center; text.raycastTarget = false;
             return obj;
         }
@@ -141,15 +167,17 @@ namespace Project.GameFlow
             position = label switch
             {
                 "上" => new Vector2(245, 365), "左" => new Vector2(115, 210),
-                "右" => new Vector2(270, 210), "下" => new Vector2(400, 130),
-                "左跳跃" => new Vector2(400, 300), "跳跃" => new Vector2(-120, 155),
-                "跑" => new Vector2(-265, 155), "交互" => new Vector2(-265, 325),
-                "放左" => new Vector2(-410, 155), "放右" => new Vector2(-410, 325),
-                "选色" => new Vector2(-120, 325), "重生" => new Vector2(-85, -70),
-                "暂停" => new Vector2(-210, -70), _ => Vector2.zero
+                "右" => new Vector2(270, 210), "下" => new Vector2(450, 120),
+                "左跳跃" => new Vector2(400, 300), "跳跃" => new Vector2(-160, 200),
+                "跑" => new Vector2(-315, 200), "交互" => new Vector2(-315, 360),
+                "放左" => new Vector2(-470, 200), "放右" => new Vector2(-470, 360),
+                "选色" => new Vector2(-160, 360), "重生" => new Vector2(-85, -70),
+                "右手左" => new Vector2(-315, 520), "右手右" => new Vector2(-160, 520),
+                "暂停" => new Vector2(90, -90), _ => Vector2.zero
             };
             if (label is "上" or "下" or "左" or "右" or "左跳跃") anchor = Vector2.zero;
-            if (label is "重生" or "暂停") anchor = Vector2.one;
+            if (label == "重生") anchor = Vector2.one;
+            if (label == "暂停") anchor = Vector2.up;
         }
     }
 }

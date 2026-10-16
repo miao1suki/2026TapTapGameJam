@@ -196,7 +196,7 @@ namespace Project.GameFlow
 
         private void Update()
         {
-            if (MobileControlLayout.IsEditing) return;
+            if (MobileControlLayout.IsEditing || Project.Privacy.AndroidPrivacyPolicy.IsShowing) return;
             KeepWheelLabelsUpright();
             if (!isOpen || IsSubPageOpen || options.Count == 0)
             {

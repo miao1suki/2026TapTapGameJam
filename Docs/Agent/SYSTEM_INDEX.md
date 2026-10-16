@@ -1,12 +1,16 @@
 # 系统索引
 
+开发者复活方式：标准玩家默认常规，可用 `PlayerController.ConfigureRespawn(LoadingTransition, seconds)` 切换慢速收黑/加载背景/原路退场，沿用既有区域及重生点恢复，不换场景、不清进度；支持Inspector调试、重复请求和中断清理。见 [接入API](Integration/PLAYER_RESPAWN_API.md)、[复活表现](../Developer/PLAYER_RESPAWN.md)。
+
 颜色双阶段解锁与唯一标准玩家：见 [接入约定](Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。场景颜色和玩家能力分别查询；所有玩法场景共用 `Content/Player/Player.prefab`，新建空地图在原点生成并绑定玩家。
 
 移动端按键与转角：双侧跳跃、情境动作、多指独立持有与世界指针、设置内拖动/缩放/持久化布局；真实绿块外缘保护交接、横爬跳跃脱手，颜色能力持续选色。见 [MOBILE_CONTROLS.md](../Developer/MOBILE_CONTROLS.md)。
 
 编辑器响应与攀爬衔接：预览缓存/分层容器/视口裁剪、合并持久化与连续编辑延后落盘；蹬跳上升期间不被攀爬状态重新接管，适用于藤蔓、梯子与绿色接触方块。重生点首次激活/返回已激活点两种提示声已接线，见 [ROOM_LIFECYCLE_API](Integration/ROOM_LIFECYCLE_API.md) 和 [AUDIO_HANDOVER](Integration/AUDIO_HANDOVER.md)。
 
-绿钩子最新规则：红蓝接触方块/基座每物理步优先拉物，受阻转拉玩家并重评估；绿色接触方块/生长体、藤蔓、弹性植物为荡绳锚点。成功挂接不自动脱钩，现有跳跃/交互主动结束。见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。无色收集品与四向尖刺已加入道具栏目，见 [使用说明](../Developer/WORLD_ITEMS.md)、[接入](Integration/WORLD_ITEMS_API.md)。
+编辑器远景：关卡画布与美术工作台共用有线数预算的自适应参考网格，实际1格命中和存档不变；房间/通道缓存精确矩形覆盖及孔洞轮廓，装配物体复用房间原点；美术瓦片使用保序的缓存批次，平移/缩放不逐瓦片重写顶点。接入维护见 [GRID_ART_API](Integration/GRID_ART_API.md)。
+
+绿钩子最新规则：自由指针瞄准，与红蓝共用出线点，确认命中才接管玩家。红蓝接触方块/基座每物理步四向优先拉物，受阻转拉玩家并重评估；绿色接触方块/生长体、藤蔓、弹性植物为保留动量的荡绳锚点，连接中直接点击切换挂点。成功挂接不自动脱钩，现有跳跃/交互主动结束。见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。无色收集品与四向尖刺已加入道具栏目，见 [使用说明](../Developer/WORLD_ITEMS.md)、[接入](Integration/WORLD_ITEMS_API.md)。
 
 关卡协作：共享项目存档、Scene 同名规划文件、片段追加导入/区域导出、水与物品同格分层、整房间内容移动。使用 [LEVEL_EDITOR_COLLABORATION.md](../Developer/LEVEL_EDITOR_COLLABORATION.md)，接入 [PLANNING_COLLABORATION_API.md](Integration/PLANNING_COLLABORATION_API.md)。
 
@@ -16,17 +20,17 @@
 
 正式水族已替换为TA像素水面/水中/水下自动分区与透明折射板；定向水流四向气泡、浮力柱向上连通水域气泡，继续共享蓝色HSV/透明交接与原玩法/区域重置。无需重建场景。见 [玩法水体API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[使用说明](../Developer/GAMEPLAY_PIXEL_WATER.md)。旧独立波纹水保留作资源和后备路径，不再默认生成。
 
-Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全文/在线入口、设置查看与撤回；最低 Android 7.1 不变，不启用 Bootstrap。见 [开发说明](../Developer/ANDROID_PRIVACY.md) 与 [接入 API](Integration/ANDROID_PRIVACY_API.md)。
+Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全文、设置查看与撤回，无在线入口；最低 Android 7.1 不变，不启用 Bootstrap。见 [开发说明](../Developer/ANDROID_PRIVACY.md) 与 [接入 API](Integration/ANDROID_PRIVACY_API.md)。比赛版本禁止非 TapTap SDK 联网，当前无 TapTap SDK，完全离线构建；必须阅读 [离线规则](../Developer/OFFLINE_BUILD.md)，不得使用开发构建或恢复网络权限。
 
 物体美术新增 `MechanismArtworkPresentation`：门及按钮三色提示、曲柄进度正反帧、移动平台、三色接触方块/钥匙、梯子及静态岩浆；沿用原碰撞、格尺寸与集中颜色表现。安卓暂停只反转触摸上下滑动，不改变键鼠手柄。见 [物体美术](../Developer/OBJECT_ARTWORK.md) 与 [接入API](Integration/OBJECT_ARTWORK_API.md)。
 
-藤蔓外观现默认使用TA192帧序列图集（ObjectArtwork），整根单SpriteRenderer、按生长长度适配、燃烧倒放及长成末段循环；仍走集中绿色HSV/共享材质透明交接，粒子仅作缺配置后备。弹性植物底部贴齐格子，不再为顶面对齐而悬空。水序列帧尚未交付，保留现有水效果。见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md) 和 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
+藤蔓外观使用TA192帧序列图集（ObjectArtwork），整根单SpriteRenderer、按生长长度适配、燃烧倒放及长成末段循环；仍走集中绿色HSV/共享材质透明交接，不再回退实时粒子。构建前检查序列帧和材质完整性，缺配置阻止出包。移动端额外像素化参数与PC一致，烘焙精灵不进入实时粒子像素遮罩。弹性植物底部贴齐格子。水序列帧尚未交付，保留现有水效果。见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md) 和 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
 
 双平台测试：SharedGameUI 的 MobileGameplayControls 提供多指方向/跳跃/Sprint/交互/左右放下与暂停/重生/选色，ScreenSafeArea 与 Expand Canvas 适配横屏比例及安全区。输入仍走 GameInput，触摸边沿在下一帧统一发布；合并气泡柱使用碰撞体底部而非中心判断上浮。正式包仅 MainMenu/Gaming，应用名和 APK 为“形之彩”。见 [双平台操作与构建](../Developer/ANDROID_AND_PC_TEST_BUILDS.md)。
 
 重生点/弹性植物美术：`ObjectArtwork`配置与`WorldObjectSpritePresentation`表现，三态重生点、真实弹跳触发的6帧动画、合并植物按格重复，接入既有绿色HSV/共享透明材质。使用见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md)，接入见 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
 
-网格美术试用版：`Code/Systems/GridArt`，独立美术资产、八邻格四象限自动边角、多格装饰、多层XY视差与持久化分块Mesh；关卡编辑器“网格美术”入口共享格尺寸、只读已应用的场景轮廓，不改玩法存档。独立测试在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
+关卡美术工作台：`Code/Systems/GridArt`，UI Toolkit双侧栏、共享多图集素材库、直接读取当前关卡／房间／通道Solid白块并可联动铺绘，无需Hierarchy选择；自动保存美术／延后实时预览默认开启，显式“保存场景”交付Scene。支持Scene绘制、自动边角、多格装饰、同格多层透明叠图、多层XY视差预设／预览及每关独立持久化Mesh。自动底图不覆盖手工装饰；空闲不扫描、笔画不重建侧栏、未变生成网格复用。不改白块共享材质／玩法存档，跨Scene需独立副本；预留同UV法线与URP 3D受光，不代表2D Light已接入。独立示例在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
 
 游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标和设置背景，预裁切产物位于`Art/Generated/GameUI`。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
 
@@ -84,7 +88,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；世界图/详情/装配图、方块/道具栏目、玩家贴纸与拖拽同步、矩形多选与单块合并、组件模板、贴画、场景生成和本地存档；方块栏目只做地图墙壁，颜色玩法物体全部走道具栏目；图定义、交互按钮和交互目录同步已移除 |
 | 固定颜色物体/钥匙/房间重置 | `Assets/_Project/Code/Systems/ColorBlocks` | `ColorObject`、`ColorRuntimeService`、钥匙解锁、房间重置和 HSV 渐变；`Content/ColorBlocks/Prefabs` 使用 `Red_*`、`Blue_*`、`Green_*` 道具预制体；Universal_Block 白色代理及直接接色链仍保留，通用旧交互图退役 |
 | 颜色物玩法组件 | `Assets/_Project/Code/Systems/Interactions` | 旧交互图及无调用 AnchorPoint 已退役；固定功能组件位于 `BlockFeatures/Runtime/Features`，米黄色重生点使用 RespawnAnchorFeature，不依赖旧 AnchorPoint |
-| 绿色钩子 | `Assets/_Project/Code/Systems/GreenHook` | 四向发射、逐物理步目标优先拉取/受阻回退、绿色固定物体荡绳；成功挂接由玩家主动结束，房间和控制锁保持隔离。见 [GREEN_HOOK_API.md](Integration/GREEN_HOOK_API.md) |
+| 绿色钩子 | `Assets/_Project/Code/Systems/GreenHook` | 自由瞄准、命中后接管、四向拉取/受阻回退、切向荡绳与连续换点；成功挂接由玩家主动结束，房间和控制锁保持隔离。见 [GREEN_HOOK_API.md](Integration/GREEN_HOOK_API.md) |
 | 交互水面 | `Assets/ta_source/InteractiveWater`、`Assets/ta_source/Newwater/Prefabs` | TA 独立预制体保留独立波纹/反射资源；像素水提供三种双面片预制体和独立材质，透明物体后复制相机颜色、专用绘制折射滤镜，噪波只改片元屏幕采样 UV；每个实例可运行时调整滤镜色彩、折射强度和时间变化，前片自动贴合后片宽高/变换。场景和接入方式见 `Developer/PIXEL_WATER.md`、`Integration/PIXEL_WATER_API.md`；无颜色系统自动生成水体 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。

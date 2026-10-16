@@ -89,7 +89,7 @@ public static class TapTapFoundationSetup
     }
     public static void ValidateBuild()
     {
-        var result = BuildPipeline.BuildPlayer(EditorBuildSettings.scenes, "Builds/Validation/2026TapTap.exe", BuildTarget.StandaloneWindows64, BuildOptions.Development);
+        var result = BuildPipeline.BuildPlayer(EditorBuildSettings.scenes, "Builds/Validation/2026TapTap.exe", BuildTarget.StandaloneWindows64, BuildOptions.None);
         if (result.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded) throw new System.Exception("Foundation build failed");
     }
 }

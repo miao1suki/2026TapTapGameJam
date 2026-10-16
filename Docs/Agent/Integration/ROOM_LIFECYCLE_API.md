@@ -30,6 +30,8 @@
 
 ## 输入与颜色
 
+开发者可通过 `PlayerController.ConfigureRespawn` 切换常规/加载转场复活，默认常规；两者都复用以下同一复位链。加载方式只在遮罩完整覆盖后调用复位，不切换场景、不改变区域或进度语义。接口与取消契约见 [PLAYER_RESPAWN_API.md](PLAYER_RESPAWN_API.md)。
+
 `PlayerInputDriver -> PlayerController.RequestRespawn()` 是已有 Respawn 动作入口，存活时也可请求。保持键位，不直接读 Keyboard。取消携带、清理玩家临时状态，恢复房间后再寻找安全落点，同步 Rigidbody 与 Transform。
 
 死亡自动重生先检查 `PlayerController.CanAutomaticallyRespawn`，等待精灵死亡动画和配置的死亡Timeline表现时间完成，不在死亡当帧调用重生。主动 `RequestRespawn()` 不受此等待限制；暂停不会推进死亡播放或自动重生时间。重复死亡不会重置等待，手动复活后旧等待条件立即失效，无异步延迟回调。

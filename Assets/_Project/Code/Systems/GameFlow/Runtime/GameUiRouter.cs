@@ -50,6 +50,18 @@ namespace Project.GameFlow
         private bool isPaused;
         private bool pauseCloseInProgress;
         private Coroutine screenAnimation;
+        private InputPlatformMode hudPlatform;
+        private void RefreshPlatformHud()
+        {
+            if (gameplayHud == null) return;
+            bool desktop = GameInput.PlatformMode != InputPlatformMode.Mobile;
+            foreach (string name in new[] { "Help", "PauseHint", "PauseButton", "LevelLabel" })
+            {
+                var item = gameplayHud.transform.Find(name);
+                if (item != null) item.gameObject.SetActive(desktop);
+            }
+            hudPlatform = GameInput.PlatformMode;
+        }
 
         public int InitializationOrder => 100;
         public bool IsInitialized { get; private set; }
@@ -149,6 +161,7 @@ namespace Project.GameFlow
             bool playSound = true,
             bool immediate = false)
         {
+            if (value && GameSceneLoader.Existing != null && GameSceneLoader.Existing.IsRespawnTransitioning) return;
             if (value && !IsGameplayScene())
             {
                 value = false;
@@ -219,11 +232,13 @@ namespace Project.GameFlow
 
             systemSceneRoot = GetComponentInParent<GameSystemSceneRoot>();
             BindButtons();
+            RefreshPlatformHud();
         }
 
         private void Update()
         {
-            if (MobileControlLayout.IsEditing) return;
+            if (hudPlatform != GameInput.PlatformMode) RefreshPlatformHud();
+            if (MobileControlLayout.IsEditing || Project.Privacy.AndroidPrivacyPolicy.IsShowing) return;
             if (IsInitialized &&
                 IsSystemUiSceneAvailable() &&
                 IsGameplayScene() &&

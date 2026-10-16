@@ -437,6 +437,8 @@ MonoBehaviour:
   respawnRandomRadiusBlocks: 10
   respawnRandomAttempts: 32
   respawnSafetyRadius: 0.45
+  respawnMode: 0
+  respawnLoadingSeconds: 2
 --- !u!114 &49729266779791607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -539,7 +541,7 @@ MonoBehaviour:
   pullSpeed: 8
   contactPadding: 0.05
   finishDissolveSeconds: 0.18
-  sourceOffset: {x: 0, y: 0.75, z: 0}
+  sourceOffset: {x: 0, y: 0.3, z: 0}
   cameraFacingOffset: -0.18
   curveSegments: 12
   arcHeight: 0.08
@@ -548,6 +550,8 @@ MonoBehaviour:
   effectSpeed: 7
   swingAcceleration: 18
   swingSpeedLimit: 14
+  swingDamping: 0.08
+  retargetVisualSeconds: 0.1
 --- !u!114 &2415582080761627893
 MonoBehaviour:
   m_ObjectHideFlags: 0

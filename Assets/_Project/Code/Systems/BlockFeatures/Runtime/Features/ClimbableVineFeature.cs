@@ -119,26 +119,23 @@ namespace Project.BlockFeatures
         private Coroutine growthRoutine;
         private int growthTargetCount;
         [SerializeField, HideInInspector] private ClimbableVineFeature vineRoot;
-        [BlockParameter(Label = "藤蔓粒子预制体", Group = "粒子备用", Order = 0, Tooltip = "仅缺少序列帧配置时使用；留空使用颜色目录中的粒子。")]
-        [SerializeField] private GameObject vineParticlePrefab;
-        [BlockParameter(Label = "初始粒子时间", Group = "粒子备用", Order = 1)]
-        [SerializeField, Min(0)] private float initialParticleTime = 30.13f;
-        [BlockParameter(Label = "长成粒子时间", Group = "粒子备用", Order = 2)]
-        [SerializeField, Min(0)] private float grownParticleTime = 32.43f;
+        // Retained only for serialization compatibility; runtime uses the baked sequence on every platform.
+#pragma warning disable CS0414
+        [SerializeField, HideInInspector] private GameObject vineParticlePrefab;
+        [SerializeField, HideInInspector, Min(0)] private float initialParticleTime = 30.13f;
+        [SerializeField, HideInInspector, Min(0)] private float grownParticleTime = 32.43f;
         [BlockParameter(Label = "生长表现时长", Group = "藤蔓表现", Order = 3)]
         [SerializeField, Min(.1f)] private float visualGrowthDuration = 2.3f;
         [BlockParameter(Label = "藤蔓宽度（格）", Group = "藤蔓表现", Order = 4, Tooltip = "控制整束藤蔓的横向范围，不改变攀爬判定。")]
         [SerializeField, Min(.1f)] private float vineWidth = 1.2f;
-        [BlockParameter(Label = "藤蔓枝条粗细倍率", Group = "粒子备用", Order = 5, Tooltip = "仅调整备用粒子的拖尾宽度，不改变序列帧。")]
-        [SerializeField, Min(.1f)] private float vineThickness = 3f;
+        [SerializeField, HideInInspector, Min(.1f)] private float vineThickness = 3f;
+#pragma warning restore CS0414
         [BlockParameter(Label = "逐节燃烧时间", Group = "燃烧设置", Order = 0)]
         [SerializeField, Min(.1f)] private float burnSegmentDuration = .45f;
         private Coroutine burnRoutine;
         private bool burning, burned;
         private GameObject vineVisual;
-        private ParticleSystem vineParticles;
         private Renderer vineRenderer;
-        private VinePoseCache poseCache;
         private float visualProgress, visualTarget, visibleCells = 1f, targetCells = 1f;
         private int lastPose = -1;
         [BlockParameter(Label = "序列帧美术配置", Group = "藤蔓表现", Order = 0, Tooltip = "留空使用 Resources/ObjectArtwork/Objects；整条母藤蔓共用一套序列帧。")]
@@ -146,6 +143,7 @@ namespace Project.BlockFeatures
         private SpriteRenderer sequenceRenderer;
         private MaterialPropertyBlock sequenceMask;
         private float sequenceIdleTime;
+        private bool sequenceMissingReported;
         private float nextWaterContactCheck;
         public ClimbableVineFeature Root => vineRoot != null ? vineRoot : this;
         public bool IsBurning => burning;
@@ -204,7 +202,6 @@ namespace Project.BlockFeatures
                 Destroy(vineVisual);
             }
             vineVisual = null;
-            vineParticles = null;
             vineRenderer = null;
             sequenceRenderer = null;
             sequenceMask = null;
@@ -680,68 +677,16 @@ namespace Project.BlockFeatures
         private void UpdateVineVisual(float deltaTime)
         {
             if (UpdateVineSequence(deltaTime)) return;
-            if (vineVisual == null)
-            {
-                GameObject prefab = vineParticlePrefab != null ? vineParticlePrefab : ColorRuntimeService.Instance.Catalog?.GreenVinePrefab;
-                if (prefab == null) return;
-                vineVisual = new GameObject("Vine Visual");
-                vineVisual.transform.SetParent(transform, false);
-                GameObject particles = Instantiate(prefab, vineVisual.transform);
-                particles.transform.localPosition = Vector3.zero;
-                particles.transform.localScale = Vector3.one;
-                vineParticles = particles.GetComponent<ParticleSystem>();
-                vineRenderer = particles.GetComponent<Renderer>();
-                if (vineRenderer != null) vineRenderer.enabled = false;
-                if (vineParticles == null || vineRenderer == null)
-                {
-                    Destroy(vineVisual);
-                    vineVisual = null;
-                    return;
-                }
-                poseCache = VinePoseCache.Get(prefab, vineParticles, initialParticleTime, grownParticleTime);
-                var trails = vineParticles.trails;
-                var width = trails.widthOverTrail;
-                if (width.mode == ParticleSystemCurveMode.Constant) width.constant *= vineThickness;
-                else if (width.mode == ParticleSystemCurveMode.TwoConstants)
-                {
-                    width.constantMin *= vineThickness;
-                    width.constantMax *= vineThickness;
-                }
-                else width.curveMultiplier *= vineThickness;
-                trails.widthOverTrail = width;
-                int layer = ColorRuntimeService.Instance.Catalog.Find("green")?.unityLayer ?? gameObject.layer;
-                particles.layer = layer;
-                vineRenderer.renderingLayerMask |= 128u;
-                var properties = new MaterialPropertyBlock();
-                vineRenderer.GetPropertyBlock(properties);
-                properties.SetFloat("_ColorMaskUseVertexAlpha", 1f);
-                Material trailMaterial = (vineRenderer as ParticleSystemRenderer)?.trailMaterial;
-                Texture alphaTexture = trailMaterial != null ? trailMaterial.mainTexture : null;
-                properties.SetTexture("_ColorMaskAlphaTexture", alphaTexture != null ? alphaTexture : Texture2D.whiteTexture);
-                vineRenderer.SetPropertyBlock(properties);
-                ColorAppearanceManager.Instance.RegisterVine(vineRenderer);
-            }
-            visualProgress = Mathf.MoveTowards(visualProgress, visualTarget, deltaTime / Mathf.Max(.1f, visualGrowthDuration));
-            visibleCells = Mathf.MoveTowards(visibleCells, targetCells, deltaTime * Mathf.Max(1, maxGrowthBlocks) / Mathf.Max(.1f, visualGrowthDuration));
-            int pose = Mathf.RoundToInt(visualProgress * (poseCache.Poses.Length - 1));
-            if (pose != lastPose)
-            {
-                poseCache.Apply(vineParticles, pose);
-                lastPose = pose;
-            }
-            Bounds bounds = poseCache.Poses[pose].Bounds;
-            Vector3 scale = new Vector3(vineWidth / Mathf.Max(.05f, poseCache.FullBounds.size.x),
-                Mathf.Max(.001f, visibleCells) / Mathf.Max(.05f, bounds.size.y),
-                vineWidth / Mathf.Max(.05f, poseCache.FullBounds.size.z));
-            vineVisual.transform.localScale = scale;
-            vineVisual.transform.localPosition = new Vector3(-bounds.center.x * scale.x,
-                -.5f - bounds.min.y * scale.y, -bounds.center.z * scale.z);
+            if (sequenceMissingReported) return;
+            sequenceMissingReported = true;
+            Debug.LogError("藤蔓序列帧配置缺失，请检查ObjectArtwork/Objects；不启用旧实时粒子后备。", this);
         }
 
         private bool UpdateVineSequence(float deltaTime)
         {
             if (sequenceArtwork == null) sequenceArtwork = ObjectArtworkLibrary.Load();
-            if (sequenceArtwork == null || sequenceArtwork.vineGrowth.Length == 0) return false;
+            if (sequenceArtwork == null || sequenceArtwork.vineGrowth == null || sequenceArtwork.vineGrowth.Length == 0 ||
+                sequenceArtwork.colorSpriteMaterial == null) return false;
             if (vineVisual == null)
             {
                 vineVisual = new GameObject("Vine Visual");
@@ -750,7 +695,8 @@ namespace Project.BlockFeatures
                 sequenceRenderer.enabled = false;
                 sequenceRenderer.sharedMaterial = sequenceArtwork.colorSpriteMaterial;
                 vineVisual.layer = ColorRuntimeService.Instance.Catalog?.Find("green")?.unityLayer ?? gameObject.layer;
-                sequenceRenderer.renderingLayerMask |= 128u;
+                // These frames already contain the baked pixel art. Only live water/effects need pixel resampling.
+                sequenceRenderer.renderingLayerMask &= ~128u;
                 vineRenderer = sequenceRenderer;
                 sequenceMask = new MaterialPropertyBlock();
                 ColorAppearanceManager.Instance.RegisterVine(sequenceRenderer);

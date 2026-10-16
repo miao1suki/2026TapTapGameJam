@@ -494388,7 +494388,7 @@ MonoBehaviour:
   requestedMode: 0
   requestedSide2DYawDegrees: 0
   requestOnEnable: 1
-  side2DOffset: {x: 0, y: 1, z: 0}
+  side2DOffset: {x: 0, y: 0, z: 0}
   perspective3DOffset: {x: 0, y: 1, z: 0}
   damping: 0.12
   deadZone: {x: 0, y: 0}

@@ -10,12 +10,22 @@ namespace Project.SurfaceTiles.Editor
 {
     internal static class SurfaceTileAuthoringService
     {
+        internal static bool CanEditSceneInstance(GameObject target)
+        {
+            return target != null && target.scene.IsValid() && !EditorUtility.IsPersistent(target) &&
+                UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(target) == null;
+        }
         private const string SurfaceShaderName =
             "2026TapTap/Surface Tiles/Unlit Cutout";
 
         internal static SurfaceTileBlock MakeSelectedObjectPaintable()
         {
             GameObject target = Selection.activeGameObject;
+            if (target != null && !CanEditSceneInstance(target))
+            {
+                EditorUtility.DisplayDialog("请选择场景实例", "请在Hierarchy中选择方块实例。此工具不修改Project预制体或Prefab模式中的共享源。", "确定");
+                return null;
+            }
             if (target == null)
             {
                 target = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -143,6 +153,7 @@ namespace Project.SurfaceTiles.Editor
             for (int index = 0; index < blocks.Count; index++)
             {
                 SurfaceTileBlock block = blocks[index];
+                if (!CanEditSceneInstance(block.gameObject)) continue;
                 Undo.RecordObject(block, "修复表面瓦片方块");
                 block.EnsureBlockId();
                 if (!ids.Add(block.BlockId))

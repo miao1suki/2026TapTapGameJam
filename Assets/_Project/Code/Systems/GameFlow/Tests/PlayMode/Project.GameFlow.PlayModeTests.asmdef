@@ -6,7 +6,9 @@
     "Project.GameFlow.Runtime",
     "Project.CameraModes.Runtime",
     "Project.Shared.Runtime",
-    "Unity.UGUI"
+    "Unity.UGUI",
+    "Unity.TextMeshPro",
+    "Unity.InputSystem"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

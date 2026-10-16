@@ -99,6 +99,51 @@ namespace Project.GameFlow.Editor
         }
     }
 
+    [CustomEditor(typeof(GameSceneLoader))]
+    public sealed class GameSceneLoaderEditor : UnityEditor.Editor
+    {
+        public override VisualElement CreateInspectorGUI()
+        {
+            var root = GameFlowInspectorUi.Root(serializedObject, "场景加载与转场");
+            var resources = GameFlowInspectorUi.Foldout("转场配置");
+            resources.Add(GameFlowInspectorUi.Property(serializedObject, "transitionSettings", "转场资源"));
+            root.Add(resources);
+            var advanced = GameFlowInspectorUi.Foldout("兼容加载界面", false);
+            advanced.Add(GameFlowInspectorUi.Property(serializedObject, "loadingScreenBehaviour", "加载界面组件"));
+            advanced.Add(GameFlowInspectorUi.Property(serializedObject, "minimumDisplaySeconds", "最短显示（秒）"));
+            root.Add(advanced);
+            var loader = (GameSceneLoader)target;
+            var state = GameFlowInspectorUi.Foldout("运行时状态");
+            state.Add(GameFlowInspectorUi.ReadOnly("复活转场", () => loader == null ? "空闲" : loader.RespawnPhase switch
+            {
+                RespawnTransitionPhase.Covering => "收拢黑幕",
+                RespawnTransitionPhase.BackgroundEntering => "加载背景入场",
+                RespawnTransitionPhase.Loading => "加载停留",
+                RespawnTransitionPhase.BackgroundLeaving => "加载背景退场",
+                RespawnTransitionPhase.Revealing => "展开黑幕",
+                _ => "空闲"
+            }));
+            root.Add(state);
+            root.Bind(serializedObject);
+            return root;
+        }
+    }
+
+    [CustomEditor(typeof(GameTransitionOverlay))]
+    public sealed class GameTransitionOverlayEditor : UnityEditor.Editor
+    {
+        public override VisualElement CreateInspectorGUI()
+        {
+            var root = GameFlowInspectorUi.Root(serializedObject, "加载转场遮罩");
+            var resources = GameFlowInspectorUi.Foldout("显示资源");
+            resources.Add(GameFlowInspectorUi.Property(serializedObject, "settings", "转场配置"));
+            resources.Add(GameFlowInspectorUi.Property(serializedObject, "font", "字体覆盖"));
+            root.Add(resources);
+            root.Bind(serializedObject);
+            return root;
+        }
+    }
+
     [CustomEditor(typeof(GameFlowController))]
     public sealed class GameFlowControllerEditor :
         UnityEditor.Editor

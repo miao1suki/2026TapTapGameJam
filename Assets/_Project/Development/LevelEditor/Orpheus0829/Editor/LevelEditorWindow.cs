@@ -209,11 +209,7 @@ namespace Project.LevelEditor.Editor
 
             body.Add(new Button(() =>
             {
-                var artReference = new List<Rect>();
-                foreach (var block in UnityEngine.Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                    if (block.gameObject.scene == UnityEngine.SceneManagement.SceneManager.GetActiveScene())
-                        artReference.Add(new Rect(block.Cell, block.SizeCells));
-                Project.GridArt.Editor.GridArtWindow.OpenForGrid(LevelEditorState.CellSize, artReference);
+                Project.GridArt.Editor.GridArtWindow.OpenForGrid(LevelEditorState.CellSize);
             })
             {
                 text = "网格美术",

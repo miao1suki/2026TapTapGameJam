@@ -13,7 +13,6 @@ import java.security.MessageDigest;
 
 /** No Unity, analytics, WebView, network, device identifiers or permission requests. */
 public final class PrivacyConsent {
-    public static final String POLICY_URL = "https://www.taptap.cn/app/976206/common-privacy";
     private static String version;
     private PrivacyConsent() {}
 

@@ -112,9 +112,15 @@ namespace Project.Player
                 if (Time.timeScale > 0f && target.CanDriveGreenHook)
                 {
                     if (resetTriggered) target.RequestRespawn();
-                    else target.UpdateGreenHookInput(GameInput.ReadVector2(InputActionId.Move),
-                        GameInput.WasTriggeredThisFrame(InputActionId.Jump) ||
-                        GameInput.WasTriggeredThisFrame(InputActionId.Interact));
+                    else
+                    {
+                        bool release = GameInput.WasTriggeredThisFrame(InputActionId.Jump) ||
+                            GameInput.WasTriggeredThisFrame(InputActionId.Interact);
+                        target.UpdateGreenHookInput(GameInput.ReadVector2(InputActionId.Move), release);
+                        target.TickColorWheel(GameInput.PointerPosition);
+                        if (!release && GameInput.WasTriggeredThisFrame(InputActionId.PointerPrimary))
+                            target.TryUseSelectedColorAbility();
+                    }
                 }
                 target.SetJumpHeld(false);
                 return;
@@ -163,7 +169,8 @@ namespace Project.Player
                 target.SetSprintInput(
                     GameInput.IsPressed(InputActionId.Sprint));
                 target.SetJumpHeld(GameInput.IsPressed(InputActionId.Jump));
-                if (target.CanCarryPlantJump && GameInput.WasPressedThisFrame(InputActionId.Jump)) target.RequestJump();
+                if (target.CanCarryPlantJump && (GameInput.WasPressedThisFrame(InputActionId.Jump) ||
+                    target.IsGrounded && GameInput.IsTouchJumpRepeating)) target.RequestJump();
                 return;
             }
 
@@ -180,7 +187,8 @@ namespace Project.Player
             target.SetSprintInput(
                 GameInput.IsPressed(InputActionId.Sprint));
 
-            if (GameInput.WasTriggeredThisFrame(InputActionId.Jump))
+            if (GameInput.WasTriggeredThisFrame(InputActionId.Jump) ||
+                target.IsGrounded && GameInput.IsTouchJumpRepeating && !target.IsHorizontalClimbing && !target.IsClimbing)
             {
                 target.RequestJump();
             }
@@ -393,6 +401,8 @@ namespace Project.Player
             ShowColorDyeFeedback("这个物体好像不能与这个颜色反应");
         }
 
+        private void OnAbilitySelectionLocked() => ShowColorDyeFeedback("此能力未解锁");
+
         private void OnColorApplicationOutOfRange()
         {
             ShowColorDyeFeedback("无法触碰到这个物体");
@@ -568,6 +578,8 @@ namespace Project.Player
                 OnSelectedColorChanged;
             colorWheel.AbilityDeselectedByPlayer -= OnAbilityDeselected;
             colorWheel.AbilityDeselectedByPlayer += OnAbilityDeselected;
+            colorWheel.AbilitySelectionLocked -= OnAbilitySelectionLocked;
+            colorWheel.AbilitySelectionLocked += OnAbilitySelectionLocked;
             colorWheel.ColorApplicationSucceeded -=
                 OnColorApplicationSucceeded;
             colorWheel.ColorApplicationSucceeded +=
@@ -592,6 +604,7 @@ namespace Project.Player
             colorWheel.SelectedColorChanged -=
                 OnSelectedColorChanged;
             colorWheel.AbilityDeselectedByPlayer -= OnAbilityDeselected;
+            colorWheel.AbilitySelectionLocked -= OnAbilitySelectionLocked;
             colorWheel.ColorApplicationSucceeded -=
                 OnColorApplicationSucceeded;
             colorWheel.ColorApplicationOutOfRange -=

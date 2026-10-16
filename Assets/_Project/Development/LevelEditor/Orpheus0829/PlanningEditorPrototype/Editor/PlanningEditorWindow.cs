@@ -1413,6 +1413,7 @@ namespace PlanningEditorPrototype
             MarkPlanningSaved();
             RefreshCurrentSaveLabel();
             PlanningSharedSaveUtility.ObserveSceneCopy(SceneManager.GetActiveScene());
+            Project.GridArt.Editor.GridArtLevelSource.NotifyChanged();
             RestoreAutoSync();
         }
 
@@ -2462,12 +2463,14 @@ namespace PlanningEditorPrototype
             planningSnapshot = snapshot;
             SaveDocument();
             restoringPlanningDocument = false;
+            Project.GridArt.Editor.GridArtLevelSource.NotifyChanged();
             RefreshAll();
             if(sceneHasBeenApplied && syncSceneHandle==SceneManager.GetActiveScene().handle) ApplyMapToScene();
         }
 
         private void OnCanvasDocumentChanged()
         {
+            Project.GridArt.Editor.GridArtLevelSource.NotifyChanged();
             canvas.CapturePlayerStart();
             document.RefreshConnectorPaths();
             RecordPlanningChange();

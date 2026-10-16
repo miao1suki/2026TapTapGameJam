@@ -61,7 +61,7 @@ namespace Project.GreenHook
         [SerializeField, Min(0f)] private float contactPadding = .05f;
         [SerializeField, Min(.01f)] private float finishDissolveSeconds = .18f;
         [SerializeField] private Vector3 sourceOffset =
-            new Vector3(0f, .75f, 0f);
+            new Vector3(0f, .3f, 0f);
         [SerializeField] private float cameraFacingOffset = -.18f;
         [SerializeField, Range(2, 32)] private int curveSegments = 12;
         [SerializeField, Min(0f)] private float arcHeight = .08f;
@@ -83,8 +83,13 @@ namespace Project.GreenHook
         private Vector3 localAnchor;
         private float ropeLength;
         private string launchRegion;
+        private Vector2 pullAxis;
+        private Vector3 retargetVisualStart;
+        private float retargetVisualElapsed;
         [SerializeField, Min(0f)] private float swingAcceleration = 18f;
         [SerializeField, Min(0.1f)] private float swingSpeedLimit = 14f;
+        [SerializeField, Min(0f)] private float swingDamping = .08f;
+        [SerializeField, Min(0f)] private float retargetVisualSeconds = .1f;
         public bool IsSwinging => phase == HookPhase.Swinging;
         public bool IsPullingPlayer => pullingPlayer;
 
@@ -94,7 +99,7 @@ namespace Project.GreenHook
             if (!release || phase == HookPhase.None) return;
             // Only an explicit input releases a successfully attached rope.
             bool preserveMomentum = IsSwinging;
-            Vector2 velocity = swingVelocity;
+            Vector2 velocity = playerBody != null ? (Vector2)playerBody.linearVelocity : swingVelocity;
             CancelHook();
             if (preserveMomentum) player?.RestoreGreenHookReleaseVelocity(velocity);
         }
@@ -142,6 +147,7 @@ namespace Project.GreenHook
             bool greenSelected)
         {
             pointerPosition = currentPointerPosition;
+            if (phase == HookPhase.Extending && !greenSelected) { CancelHook(); return; }
             if (phase != HookPhase.None)
             {
                 return;
@@ -165,14 +171,16 @@ namespace Project.GreenHook
                 return GreenHookLaunchResult.Ignored;
             }
 
-            if (phase != HookPhase.None)
+            bool retarget = phase == HookPhase.Swinging || phase == HookPhase.Pulling;
+            if (phase != HookPhase.None && !retarget)
             {
                 return GreenHookLaunchResult.Busy;
             }
 
             if (player == null ||
-                player.IsControlLocked ||
+                (retarget ? !player.CanDriveGreenHook : player.IsControlLocked) ||
                 player.IsDead ||
+                Time.timeScale <= 0f ||
                 sensor == null ||
                 GameInput.IsPointerOverUi())
             {
@@ -212,7 +220,7 @@ namespace Project.GreenHook
                     screenHit,
                     out IGreenHookTarget foundTarget) ||
                 foundTarget == null ||
-                !foundTarget.CanBeGreenHooked(gameObject))
+                (!ReferenceEquals(foundTarget, target) && !foundTarget.CanBeGreenHooked(gameObject)))
             {
                 return GreenHookLaunchResult.Rejected;
             }
@@ -222,34 +230,25 @@ namespace Project.GreenHook
             {
                 return GreenHookLaunchResult.OutOfRange;
             }
+            if (foundTarget.GreenHookMotionMode == GreenHookMotionMode.PullTarget &&
+                GetTargetMotion(foundTarget.GreenHookTransform) == null)
+                return GreenHookLaunchResult.Rejected;
 
             Vector3 clickPoint = screenHit.point;
-            Vector2 rawDirection = new Vector2(
-                clickPoint.x - transform.position.x,
-                clickPoint.y - transform.position.y);
+            Vector3 targetPoint = new Vector3(clickPoint.x, clickPoint.y, foundTarget.GreenHookTransform.position.z);
+            Vector2 rawDirection = (Vector2)(targetPoint - ResolveSourcePoint());
             if (rawDirection.sqrMagnitude < .0001f)
             {
                 return GreenHookLaunchResult.Rejected;
             }
 
-            hookDirection = SnapToCardinal(rawDirection);
-            hookLength = Mathf.Min(
-                rawDirection.magnitude,
-                sensor.ScanRadius);
-            Vector3 correctedEnd =
-                transform.position +
-                new Vector3(hookDirection.x, hookDirection.y, 0f) *
-                hookLength;
-            Vector3 targetPoint = foundTarget.GreenHookMotionMode == GreenHookMotionMode.Swing
-                ? new Vector3(clickPoint.x, clickPoint.y, foundTarget.GreenHookTransform.position.z)
-                : GetTargetCenter(foundTarget.GreenHookTransform);
-            if (!IsPathWithinRoom(correctedEnd) ||
-                !IsPathWithinRoom(targetPoint))
+            if (!IsPathWithinRoom(targetPoint))
             {
                 return GreenHookLaunchResult.Rejected;
             }
 
-            BeginHook(foundTarget, targetPoint);
+            if (retarget) Retarget(foundTarget, targetPoint);
+            else BeginHook(foundTarget, targetPoint);
             return GreenHookLaunchResult.Success;
         }
 
@@ -273,11 +272,22 @@ namespace Project.GreenHook
             targetTransform = null;
             phase = HookPhase.None;
             finishElapsed = 0f;
+            pullingPlayer = false;
+            pullAxis = swingInput = swingVelocity = Vector2.zero;
             HideLine();
         }
 
         private void Update()
         {
+            if (Time.timeScale <= 0f) return;
+            if ((phase == HookPhase.Extending || phase == HookPhase.Pulling || phase == HookPhase.Swinging) &&
+                (!IsTargetAvailable() || player == null || player.IsDead || !IsActivePathWithinRoom() ||
+                 phase == HookPhase.Extending && !IsWithinRange(targetTransform.TransformPoint(localAnchor))))
+            {
+                CancelHook();
+                return;
+            }
+            if (player != null && player.IsControlLocked && !player.CanDriveGreenHook) return;
             switch (phase)
             {
                 case HookPhase.Extending:
@@ -302,9 +312,7 @@ namespace Project.GreenHook
             {
                 return;
             }
-            if (player == null || player.IsDead || targetTransform == null ||
-                !targetTransform.gameObject.activeInHierarchy || target == null ||
-                (target is Behaviour behaviour && !behaviour.isActiveAndEnabled) ||
+            if (player == null || player.IsDead || !IsTargetAvailable() ||
                 !IsActivePathWithinRoom())
             {
                 CancelHook();
@@ -334,7 +342,10 @@ namespace Project.GreenHook
                 StopPullMotion();
                 return;
             }
-            toTarget.Normalize();
+            // Visual aiming is free; the physical pull follows a stable single grid axis.
+            if (pullAxis == Vector2.zero || Vector2.Dot(toTarget, pullAxis) <= .05f)
+                pullAxis = SnapToCardinal(toTarget);
+            toTarget = pullAxis;
             float step = Mathf.Min(pullSpeed * deltaTime, Mathf.Max(0f, distance - contactPadding));
             // Assess the next physical step every time. Do not infer blockage from render-frame jitter.
             float targetStep = targetMotion != null && target.GreenHookMotionMode == GreenHookMotionMode.PullTarget
@@ -366,8 +377,13 @@ namespace Project.GreenHook
         {
             var manager = RoomLifecycleManager.ForScene(gameObject.scene);
             return manager == null || (manager.FindRegion(GetPlayerCenter()) == launchRegion &&
-                IsPathWithinRoom(IsSwinging ? targetTransform.TransformPoint(localAnchor) : GetTargetCenter(targetTransform)));
+                IsPathWithinRoom(targetTransform.TransformPoint(localAnchor)));
         }
+
+        private bool IsTargetAvailable() => targetTransform != null && target != null &&
+            targetTransform.gameObject.activeInHierarchy &&
+            (!(target is Behaviour behaviour) || behaviour.isActiveAndEnabled) &&
+            (phase == HookPhase.Pulling || target.CanBeGreenHooked(gameObject));
 
         private void TickSwing(float dt)
         {
@@ -376,11 +392,13 @@ namespace Project.GreenHook
             Vector2 radial = center - anchor;
             float length = radial.magnitude;
             Vector2 normal = length > .0001f ? radial / length : Vector2.down;
-            Vector2 acceleration = new Vector2(swingInput.x * swingAcceleration, Physics.gravity.y);
-            if (length >= ropeLength - .02f)
-                acceleration -= normal * Mathf.Max(0f, Vector2.Dot(acceleration, normal));
+            // Input pumps along the tangent instead of fighting the radial rope constraint.
+            Vector2 tangent = new Vector2(-normal.y, normal.x);
+            if (tangent.x < 0f) tangent = -tangent;
+            Vector2 acceleration = tangent * (swingInput.x * swingAcceleration) + Vector2.up * Physics.gravity.y;
             // Read resolved physics velocity so collision contacts cannot accumulate invisible momentum.
             swingVelocity = playerBody != null ? (Vector2)playerBody.linearVelocity : swingVelocity;
+            swingVelocity *= Mathf.Exp(-swingDamping * dt);
             swingVelocity += acceleration * dt;
             if (length >= ropeLength - .02f)
                 swingVelocity -= normal * Mathf.Max(0f, Vector2.Dot(swingVelocity, normal));
@@ -407,11 +425,12 @@ namespace Project.GreenHook
             playerColliders = player.GetComponentsInChildren<Collider>(true);
             playerBody = player.GetComponent<Rigidbody>();
             launchRegion = RoomLifecycleManager.ForScene(gameObject.scene)?.FindRegion(GetPlayerCenter());
-            swingInput = swingVelocity = Vector2.zero;
+            swingInput = Vector2.zero;
+            pullAxis = Vector2.zero;
             hookStart = ResolveSourcePoint();
-            hookEnd = hookStart +
-                new Vector3(hookDirection.x, hookDirection.y, 0f) *
-                hookLength;
+            hookEnd = targetPoint;
+            hookDirection = ((Vector2)(targetPoint - hookStart)).normalized;
+            hookLength = Vector2.Distance(hookStart, targetPoint);
             extensionElapsed = 0f;
             retractElapsed = 0f;
             retractDuration = 0f;
@@ -425,24 +444,22 @@ namespace Project.GreenHook
             extensionDuration = distanceCells /
                 Mathf.Max(.05f, growthSpeedCellsPerSecond);
 
-            controlLock = player.AcquireControlLock(this);
-            player.BeginGreenHookPull(this);
             EnsureLine();
             UpdateLine(hookStart, idleOpacity, 0f, 0f);
         }
 
         private void UpdateExtension()
         {
-            Vector3 previousHead = hookStart + new Vector3(hookDirection.x, hookDirection.y, 0f) *
-                (hookLength * Mathf.Clamp01(extensionElapsed / Mathf.Max(.0001f, extensionDuration)));
+            if (!IsTargetAvailable()) { CancelHook(); return; }
+            hookStart = ResolveSourcePoint();
+            hookEnd = targetTransform.TransformPoint(localAnchor);
+            Vector3 previousHead = Vector3.Lerp(hookStart, hookEnd,
+                Mathf.Clamp01(extensionElapsed / Mathf.Max(.0001f, extensionDuration)));
             extensionElapsed += Time.deltaTime;
             float progress = extensionDuration <= 0f
                 ? 1f
                 : Mathf.Clamp01(extensionElapsed / extensionDuration);
-            Vector3 end =
-                hookStart +
-                new Vector3(hookDirection.x, hookDirection.y, 0f) *
-                (hookLength * progress);
+            Vector3 end = Vector3.Lerp(hookStart, hookEnd, progress);
             UpdateLine(end, hookOpacity, progress, 0f);
 
             float catchRadius =
@@ -462,10 +479,6 @@ namespace Project.GreenHook
                 return;
             }
 
-            hookEnd =
-                hookStart +
-                new Vector3(hookDirection.x, hookDirection.y, 0f) *
-                hookLength;
             BeginRetracting();
         }
 
@@ -487,12 +500,28 @@ namespace Project.GreenHook
 
         private void BeginPulling()
         {
+            if (!IsTargetAvailable()) { CancelHook(); return; }
+            if (target.GreenHookMotionMode == GreenHookMotionMode.PullTarget && targetMotion == null)
+            { CancelHook(); return; }
+            controlLock = player.AcquireControlLock(this);
+            player.BeginGreenHookPull(this, target.GreenHookMotionMode == GreenHookMotionMode.Swing);
+            retargetVisualElapsed = retargetVisualSeconds;
+            StartAttachedMotion();
+        }
+
+        private void StartAttachedMotion()
+        {
             phase = HookPhase.Pulling;
             if (target.GreenHookMotionMode == GreenHookMotionMode.Swing)
             {
                 phase = HookPhase.Swinging;
+                pullingPlayer = false;
                 ropeLength = Mathf.Max(.1f, Vector2.Distance(GetPlayerCenter(), targetTransform.TransformPoint(localAnchor)));
-                swingVelocity = Vector2.zero;
+                swingVelocity = playerBody != null ? (Vector2)playerBody.linearVelocity : Vector2.zero;
+                Vector2 outward = ((Vector2)targetTransform.TransformPoint(localAnchor) - (Vector2)GetPlayerCenter()).normalized;
+                // Preserve tangential/inward momentum, removing only rope-stretching velocity.
+                swingVelocity -= outward * Mathf.Min(0f, Vector2.Dot(swingVelocity, outward));
+                player.SetGreenHookPullVelocity(this, swingVelocity);
                 return;
             }
             retractElapsed = 0f;
@@ -503,6 +532,24 @@ namespace Project.GreenHook
             {
                 targetMotion?.BeginGreenHookPull();
             }
+        }
+
+        private void Retarget(IGreenHookTarget next, Vector3 point)
+        {
+            Vector3 previousPoint = line != null && line.enabled && line.positionCount > 0
+                ? line.GetPosition(line.positionCount - 1) - Vector3.forward * cameraFacingOffset
+                : targetTransform.TransformPoint(localAnchor);
+            if (!ReferenceEquals(next, target)) targetMotion?.EndGreenHookPull(false, Vector3.zero, 0f);
+            target = next;
+            targetTransform = next.GreenHookTransform;
+            targetMotion = GetTargetMotion(targetTransform);
+            targetColliders = targetTransform.GetComponentsInChildren<Collider>(true);
+            localAnchor = targetTransform.InverseTransformPoint(point);
+            pullAxis = Vector2.zero;
+            retargetVisualStart = previousPoint;
+            retargetVisualElapsed = 0f;
+            // Retain the existing control handle and actual physics momentum across anchor changes.
+            StartAttachedMotion();
         }
 
         private bool TryResolveHookTarget(
@@ -600,7 +647,13 @@ namespace Project.GreenHook
                 return;
             }
 
-            Vector3 targetPoint = IsSwinging ? targetTransform.TransformPoint(localAnchor) : GetTargetCenter(targetTransform);
+            Vector3 targetPoint = targetTransform.TransformPoint(localAnchor);
+            if (retargetVisualElapsed < retargetVisualSeconds)
+            {
+                retargetVisualElapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(retargetVisualElapsed / Mathf.Max(.001f, retargetVisualSeconds));
+                targetPoint = Vector3.Lerp(retargetVisualStart, targetPoint, t * t * (3f - 2f * t));
+            }
             UpdateLine(
                 targetPoint,
                 hookOpacity,
@@ -693,16 +746,14 @@ namespace Project.GreenHook
                 return;
             }
 
-            Vector2 rawDirection = new Vector2(
-                pointerWorldPoint.x - transform.position.x,
-                pointerWorldPoint.y - transform.position.y);
+            Vector2 rawDirection = (Vector2)(pointerWorldPoint - ResolveSourcePoint());
             if (rawDirection.sqrMagnitude < .0001f)
             {
                 HideLine();
                 return;
             }
 
-            Vector2 direction = SnapToCardinal(rawDirection);
+            Vector2 direction = rawDirection.normalized;
             float cellSize = Mathf.Max(
                 .0001f,
                 GridCellSizeUtility.Resolve(this));
@@ -842,6 +893,7 @@ namespace Project.GreenHook
 
         private Vector3 ResolveSourcePoint()
         {
+            if (linkEffect != null) return linkEffect.SourceWorldPosition;
             Vector3 source = transform.position +
                 transform.TransformVector(
                     new Vector3(sourceOffset.x, 0f, sourceOffset.z));
@@ -1133,6 +1185,8 @@ namespace Project.GreenHook
             finishDissolveSeconds =
                 Mathf.Max(.01f, finishDissolveSeconds);
             curveSegments = Mathf.Clamp(curveSegments, 2, 32);
+            swingDamping = Mathf.Max(0f, swingDamping);
+            retargetVisualSeconds = Mathf.Max(0f, retargetVisualSeconds);
         }
     }
 }
