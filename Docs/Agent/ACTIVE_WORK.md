@@ -18,7 +18,7 @@
 - 边界：只增加接入说明和索引链接；不修改染色玩法逻辑、能力获取、场景、Prefab、Shader 或材质。特别说明 `Test.unity` 不能假定已有玩家监听器或特效接线。
 - 文档：同步链接到 `Assets/ta_source/GivingColor/使用说明.md` 和 `Docs/Agent/SYSTEM_INDEX.md`。
 - 验证：尝试使用 skill-creator 的 `quick_validate.py`，但当前 Python 环境缺少 `yaml`（PyYAML），脚本未能运行；人工核对了 Skill 名称、YAML frontmatter、链接目标和未完成占位符，已运行 `git diff --check`。本任务只改接入文档与 Skill，未运行 Unity 场景或运行时测试。
-- 交接：分支 `codex/ta/lava-cooling-steam-burn`；本次文档提交 `f17d4a6`，Unity `6000.3.12f1`。当前分支还包含植物燃烧与岩浆冷却蒸汽提交 `3b8f482`、`6273d9c`、`87b470f`。推送尝试因无法连接 `github.com:443` 失败；网络恢复后可运行 `git push -u origin codex/ta/lava-cooling-steam-burn`，不需强推。
+- 交接：分支 `codex/ta/lava-cooling-steam-burn`；本次文档提交 `f17d4a6`，Unity `6000.3.12f1`。当前分支还包含植物燃烧与岩浆冷却蒸汽提交 `3b8f482`、`6273d9c`、`87b470f`。已通过本机系统代理推送到同名 `origin` 分支；最新主线同步与合并由整合者处理。
 
 ## 2026-10-16 TA 植物燃烧溶解效果
 
