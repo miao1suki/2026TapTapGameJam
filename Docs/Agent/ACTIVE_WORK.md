@@ -173,3 +173,15 @@
 - 文档：`Docs/Agent/Integration/AUDIO_HANDOVER.md` 增补资源清单与运行时接线说明。
 - 验证：文件已放入 `Assets/_Project/Content/Audio/SFX/`；未在 Unity 中试听。
 - 交接提交：本次提交。
+
+## 音乐新增（Boss OP 与 OP）
+
+- 日期：2026-10-16。
+- 负责人：Codex。
+- 分支：codex/codex/taptap-music。
+- 范围：新增 gm_boss.mp3（Boss 战 / Boss 出场主题曲）与 mg_op.mp3（OP / 开场演出音乐）。
+- 命名：按用户要求本次暂不修正命名规范问题，保留现有文件名。
+- 接口变更：无。
+- 文档：Docs/Agent/Integration/AUDIO_HANDOVER.md 增补清单、接线项与命名备注。
+- 验证：文件已放入 Assets/_Project/Content/Audio/Music/；循环属性与 Unity 试听待确认。
+- 交接提交：本次提交。

@@ -39,6 +39,8 @@
 | `bgm_vocal_chop_01.mp3` | 人声切片，节奏层 / 过渡 | 是 |
 | `bgm_wake_up_01_loop.mp3` | 醒来 / 开场序列 | 是 |
 | `bgm_alien_sacrifice_01.mp3` | 外星祭祀主题，重要事件场景 | 否 |
+| `bgm_boss.mp3` | Boss 战 / Boss 出场主题曲（本次暂保现有命名） | 待确认 |
+| `bmg_op.mp3` | OP / 开场演出音乐（本次暂保现有命名） | 待确认 |
 
 路径均为 `Assets/_Project/Content/Audio/Music/`。
 
@@ -141,6 +143,8 @@ GameAudioService.PlaySound(clip, volumeScale: 1f);
 | 触发时机 | 文件 | 建议调用 |
 |---|---|---|
 | 开场场景加载 / 标题画面 | `bgm_wn_01_opening` | `PlayMusic(clip, loop: true)` |
+| OP / 开场演出 | `bmg_op` | 按演出时机播放，循环待确认 |
+| Boss 战 / Boss 出场 | `bgm_boss` | 按 Boss 演出时机播放，循环待确认 |
 | 常驻氛围层 | `bgm_ambient_loop_01` | `PlayMusic(clip, loop: true)` |
 | 区域环境音 | `amb_env_machine_hum_01` / `amb_env_plant_rustle_01` / `amb_env_water_drip_01` / `amb_env_wind_gust_01` / `amb_env_room_loop` / `amb_env_water_flow_loop` | 按区域进入 / 离开淡入淡出 |
 | 玩家跳跃 / 落地 | `sfx_gp_plr_jump` / `sfx_footstep_land_walk_*` | `PlaySound` |
@@ -182,6 +186,7 @@ GameAudioService.PlaySound(clip, volumeScale: 1f);
 
 - `amb_` 前缀的环境声暂存于 `Music/`，如需严格按类别分桶可另开 `Ambience/` 目录
 - `bgm_wn_01_opening` 的分段词不在 RVSA 允许的 `intro` / `loop` / `tail` 三件套内，后续如做正式交付建议改为 `bgm_wn_01_intro`
+- 本次新增 `bgm_boss.mp3` 与 `bmg_op.mp3` 按需求暂不重命名，后续正式整理时再统一 RVSA 命名。
 - 早期版本移除的 `sfx_ui_button_select`、`sfx_ui_notice_success_*`、`sfx_gp_water_enter_01`、`sfx_gp_water_splash_*` 已不在仓库，接入方需使用新命名
 - 部分音效的导入压缩与音量需在 Unity 中实测后微调
 - 音频系统的接线（场景引用、AudioMixer 路由、3D 空间化）由整合者完成，本分支不包含场景修改
