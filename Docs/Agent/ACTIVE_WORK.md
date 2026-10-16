@@ -2,6 +2,13 @@
 
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
 
+## Boss 场景相机与 WordNote
+
+- 日期：2026-10-16；负责人：Codex；分支：`Boss`。
+- 范围：为 `Assets/_Project/Scenes/Boss.unity` 的 Main Camera 补齐 `CameraControlManager`、`CameraModeController`、`CameraFollowController`、`LevelSceneContext` 和 `TimelineCamRig`；新增独立 `WordNote_UI` 预制体并放入场景。
+- 边界：Boss 仍为开发测试场景，不加入 `GameSceneCatalog`，不改变 MainMenu/Gaming 正式流程。玩家引用暂留空，由 `LevelSceneContext.Activate()` 按 `Player` Tag 复核。
+- 状态：场景与预制体已写入；待 Unity 导入和 PlayMode 验收。
+
 ## 2026-10-15 编辑器响应、攀爬蹬跳与重生点音频
 
 - 本轮按用户授权完成后整合推送，包含下方此前未交付的绿钩子、收集品与四向尖刺。保留本地 Pick 场景及存档、动态字体、插件和项目设置，不将这些用户未交付的改动混入提交。
