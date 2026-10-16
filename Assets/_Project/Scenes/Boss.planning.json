@@ -19811,5 +19811,11 @@
     "playerStartLocal": {
         "x": 2.5,
         "y": 12.0
+    },
+    "hasUnassignedPlayerStart": false,
+    "playerStartWorld": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
     }
 }
