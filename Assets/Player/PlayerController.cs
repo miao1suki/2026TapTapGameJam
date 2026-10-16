@@ -3,12 +3,19 @@ using System.Collections.Generic;
 using Project.Audio;
 using Project.BlockFeatures;
 using Project.GreenHook;
+using Project.GameFlow;
 using Project.InputAbstraction;
 using UnityEngine;
 using UnityEngine.Playables;
 
 namespace Project.Player
 {
+    public enum PlayerRespawnMode
+    {
+        [InspectorName("常规复活")] Standard = 0,
+        [InspectorName("加载转场复活")] LoadingTransition = 1
+    }
+
     public enum PlayerStateId
     {
         Normal = 0,
@@ -96,6 +103,24 @@ namespace Project.Player
         [SerializeField, Min(1)] private int respawnRandomRadiusBlocks = 4;
         [SerializeField, Range(1, 128)] private int respawnRandomAttempts = 32;
         [SerializeField, Min(.05f)] private float respawnSafetyRadius = .45f;
+        [SerializeField] private PlayerRespawnMode respawnMode = PlayerRespawnMode.Standard;
+        [SerializeField, Min(0f)] private float respawnLoadingSeconds = 2f;
+        private bool respawnInProgress;
+        private IDisposable respawnControlLock;
+        private GameSceneLoader respawnLoader;
+        public PlayerRespawnMode RespawnMode => respawnMode;
+        public float RespawnLoadingSeconds => float.IsFinite(respawnLoadingSeconds) ? Mathf.Max(0f, respawnLoadingSeconds) : 2f;
+        public bool IsRespawning => respawnInProgress;
+        public event Action RespawnCompleted;
+
+        /// <summary>Developer-owned mode; changing it affects the next respawn, not an active transition.</summary>
+        public void ConfigureRespawn(PlayerRespawnMode mode, float loadingSeconds = 2f)
+        {
+            if (mode != PlayerRespawnMode.Standard && mode != PlayerRespawnMode.LoadingTransition)
+                throw new ArgumentOutOfRangeException(nameof(mode));
+            respawnMode = mode;
+            respawnLoadingSeconds = float.IsFinite(loadingSeconds) ? Mathf.Max(0f, loadingSeconds) : 2f;
+        }
         private Rigidbody motor;
         private CapsuleCollider capsule;
         private PlayerActionRunner runner;
@@ -284,7 +309,7 @@ namespace Project.Player
             (!IsGrounded || Time.time - lastLandingTime <= .3f);
         public bool IsDead => dead;
         public event Action CameraFollowRelocated;
-        public bool CanAutomaticallyRespawn => dead && Time.time >= automaticRespawnReadyAt &&
+        public bool CanAutomaticallyRespawn => dead && !respawnInProgress && Time.time >= automaticRespawnReadyAt &&
             (spritePresentation == null || !spritePresentation.isActiveAndEnabled ||
              spritePresentation.DeathAnimationDuration <= 0f || spritePresentation.IsDeathAnimationComplete);
         public bool IsControlLocked => dead || lockDepth > 0;
@@ -351,7 +376,7 @@ namespace Project.Player
         public bool IsOnBounceSurface => bounceSurfaces.Count > 0;
         public bool LandedThisStep => landedThisStep;
         public bool IsInvulnerable =>
-            !dead && Time.time < invulnerableUntil;
+            !dead && (respawnInProgress || Time.time < invulnerableUntil);
         public float InvulnerabilityRemaining =>
             Mathf.Max(0f, invulnerableUntil - Time.time);
         public string GravityMode
@@ -539,6 +564,8 @@ namespace Project.Player
         }
         private void OnDisable()
         {
+            if (respawnLoader != null) respawnLoader.CancelRespawnTransition(transform);
+            FinishRespawnPresentation(false);
             carryPlacementPreview?.Dispose();
             carryPlacementPreview = null;
             activePlayers.Remove(this);
@@ -951,7 +978,7 @@ namespace Project.Player
 
         public void QueuePlatformDelta(Vector3 delta)
         {
-            if (dead)
+            if (dead || respawnInProgress)
             {
                 return;
             }
@@ -2160,7 +2187,7 @@ namespace Project.Player
 
         private void FixedUpdate()
         {
-            if (dead)
+            if (dead || respawnInProgress)
             {
                 motor.linearVelocity = Vector3.zero;
                 motor.angularVelocity = Vector3.zero;
@@ -2599,7 +2626,7 @@ namespace Project.Player
 
         public void EnterDeath()
         {
-            if (dead)
+            if (dead || respawnInProgress)
             {
                 return;
             }
@@ -2630,6 +2657,42 @@ namespace Project.Player
         }
 
         public void RequestRespawn()
+        {
+            if (!isActiveAndEnabled || respawnInProgress) return;
+            if (GameFlowController.Instance != null && GameFlowController.Instance.IsTransitioning) return;
+            if (respawnMode != PlayerRespawnMode.LoadingTransition)
+            {
+                PerformRespawn();
+                RespawnCompleted?.Invoke();
+                return;
+            }
+
+            if (!dead) deathPosition = transform.position;
+            respawnInProgress = true;
+            respawnControlLock = AcquireControlLock(this);
+            runner?.Stop();
+            ClearDeathControlState();
+            respawnLoader = GameSceneLoader.Instance;
+            if (!respawnLoader.TryStartRespawnTransition(transform, RespawnLoadingSeconds,
+                    PerformRespawn, FinishRespawnPresentation))
+                FinishRespawnPresentation(false);
+        }
+
+        private void FinishRespawnPresentation(bool completed)
+        {
+            bool wasRespawning = respawnInProgress;
+            respawnInProgress = false;
+            respawnLoader = null;
+            IDisposable controlLock = respawnControlLock;
+            respawnControlLock = null;
+            controlLock?.Dispose();
+            if (!wasRespawning || !completed) return;
+            // The protected interval starts when the player can see and control the character again.
+            invulnerableUntil = Time.time + Mathf.Max(0f, respawnInvulnerabilitySeconds);
+            RespawnCompleted?.Invoke();
+        }
+
+        private void PerformRespawn()
         {
             bool wasDead = dead;
             if (!dead) deathPosition = transform.position;

@@ -7,6 +7,16 @@ using UnityEngine.SceneManagement;
 
 namespace Project.GameFlow
 {
+    public enum RespawnTransitionPhase
+    {
+        [InspectorName("空闲")] Idle,
+        [InspectorName("收拢黑幕")] Covering,
+        [InspectorName("加载背景入场")] BackgroundEntering,
+        [InspectorName("加载停留")] Loading,
+        [InspectorName("加载背景退场")] BackgroundLeaving,
+        [InspectorName("展开黑幕")] Revealing
+    }
+
     public interface IGameLoadingScreen
     {
         void ShowLoading();
@@ -29,6 +39,12 @@ namespace Project.GameFlow
         private bool appEntryPlayed;
         private bool applicationQuitRequested;
         private float loadingTextVisibleSince;
+        private Coroutine respawnRoutine;
+        private Transform respawnOwner;
+        private Action<bool> respawnFinished;
+        private bool respawnActive;
+        public bool IsRespawnTransitioning => respawnActive;
+        public RespawnTransitionPhase RespawnPhase { get; private set; }
 
         public static GameSceneLoader Instance => EnsureInstance();
         public static GameSceneLoader Existing => instance;
@@ -86,6 +102,7 @@ namespace Project.GameFlow
                 return;
             }
 
+            CancelRespawnTransition();
             applicationQuitRequested = true;
             StartCoroutine(ApplicationQuitRoutine());
         }
@@ -93,6 +110,7 @@ namespace Project.GameFlow
         public IEnumerator PlayAppEntryReveal(
             StartMenuController menu)
         {
+            CancelRespawnTransition();
             if (appEntryPlayed)
             {
                 yield break;
@@ -145,6 +163,7 @@ namespace Project.GameFlow
         public IEnumerator PrepareGameplayTransition(
             StartMenuController menu)
         {
+            CancelRespawnTransition();
             GameTransitionOverlay overlay = EnsureTransitionOverlay();
             GameTransitionSettings settings = ResolveTransitionSettings();
             if (menu != null)
@@ -227,6 +246,7 @@ namespace Project.GameFlow
         public IEnumerator PrepareMenuReturnTransition(
             Transform centerTransform)
         {
+            CancelRespawnTransition();
             GameTransitionOverlay overlay = EnsureTransitionOverlay();
             GameTransitionSettings settings = ResolveTransitionSettings();
             StartMenuController.SetExternalBackgroundScrollPaused(true);
@@ -315,6 +335,7 @@ namespace Project.GameFlow
                 return null;
             }
 
+            CancelRespawnTransition();
             AsyncOperation operation =
                 SceneManager.LoadSceneAsync(scenePath, mode);
             if (operation != null && showLoading)
@@ -348,6 +369,8 @@ namespace Project.GameFlow
 
         private void Update()
         {
+            if (respawnActive && (respawnOwner == null || !respawnOwner.gameObject.activeInHierarchy))
+                CancelRespawnTransition();
             if (activeOperation == null)
             {
                 return;
@@ -365,6 +388,88 @@ namespace Project.GameFlow
             loadingScreen?.SetLoadingProgress(1f);
             loadingScreen?.HideLoading();
             activeOperation = null;
+        }
+
+        /// <summary>Presentation only. The owner retains its control lock and existing reset logic.</summary>
+        public bool TryStartRespawnTransition(Transform owner, float loadingSeconds,
+            Action restoreWhileCovered, Action<bool> finished)
+        {
+            if (owner == null || !owner.gameObject.activeInHierarchy || !isActiveAndEnabled ||
+                respawnActive || applicationQuitRequested ||
+                GameFlowController.Instance != null && GameFlowController.Instance.IsTransitioning)
+                return false;
+            respawnActive = true;
+            respawnOwner = owner;
+            respawnFinished = finished;
+            float seconds = float.IsFinite(loadingSeconds) ? Mathf.Max(0f, loadingSeconds) : 2f;
+            respawnRoutine = StartCoroutine(RespawnTransitionRoutine(owner, seconds, restoreWhileCovered));
+            return true;
+        }
+
+        public void CancelRespawnTransition(Transform owner = null)
+        {
+            if (!respawnActive || owner != null && owner != respawnOwner) return;
+            Coroutine routine = respawnRoutine;
+            respawnRoutine = null;
+            if (routine != null) StopCoroutine(routine);
+            CompleteRespawnTransition(false);
+        }
+
+        private IEnumerator RespawnTransitionRoutine(Transform owner, float seconds, Action restore)
+        {
+            GameTransitionOverlay overlay = EnsureTransitionOverlay();
+            GameTransitionSettings settings = ResolveTransitionSettings();
+            Vector2 center = settings != null ? settings.AppRevealViewportCenter : new Vector2(.5f, .5f);
+            float speed = settings != null ? settings.MenuReturnCoverSpeed : .72f;
+            float softness = settings != null ? settings.MenuReturnCoverSoftness : 0f;
+            float slideSeconds = settings != null ? settings.MenuBackgroundSlideDuration : .55f;
+            overlay.ResetPresentation();
+            RespawnPhase = RespawnTransitionPhase.Covering;
+            yield return overlay.CoverFromCenterAsync(owner, center, speed, softness);
+            float hold = settings != null ? settings.MenuReturnCoverHoldSeconds : .5f;
+            if (hold > 0f) yield return new WaitForSecondsRealtime(hold);
+
+            RespawnPhase = RespawnTransitionPhase.BackgroundEntering;
+            overlay.SetBackgroundVisible(true);
+            yield return overlay.SlideBackgroundInAsync(slideSeconds,
+                settings != null ? settings.MenuBackgroundSlideEase : Ease.OutCubic);
+            yield return overlay.FadeLoadingTextAsync(true);
+            RespawnPhase = RespawnTransitionPhase.Loading;
+            // No scene reload and no global color reset. Relocation is hidden by both layers.
+            bool restored = false;
+            try { restore?.Invoke(); restored = true; }
+            catch (Exception exception) { Debug.LogException(exception, this); }
+            if (!restored) { CompleteRespawnTransition(false); yield break; }
+            if (!respawnActive || respawnOwner != owner) yield break;
+            if (seconds > 0f) yield return new WaitForSecondsRealtime(seconds);
+
+            yield return overlay.FadeLoadingTextAsync(false);
+            RespawnPhase = RespawnTransitionPhase.BackgroundLeaving;
+            yield return overlay.SlideBackgroundOutAsync(slideSeconds,
+                settings != null ? settings.MenuBackgroundSlideEase : Ease.OutCubic, true);
+            overlay.SetBackgroundVisible(false);
+            RespawnPhase = RespawnTransitionPhase.Revealing;
+            yield return overlay.RevealFromAsync(owner, center, speed, softness);
+            CompleteRespawnTransition(true);
+        }
+
+        private void CompleteRespawnTransition(bool completed)
+        {
+            Action<bool> callback = respawnFinished;
+            respawnActive = false;
+            respawnOwner = null;
+            respawnRoutine = null;
+            respawnFinished = null;
+            RespawnPhase = RespawnTransitionPhase.Idle;
+            if (transitionOverlay != null) transitionOverlay.ResetPresentation();
+            callback?.Invoke(completed);
+        }
+
+        private void OnDisable() => CancelRespawnTransition();
+        private void OnDestroy()
+        {
+            CancelRespawnTransition();
+            if (instance == this) instance = null;
         }
 
         private IEnumerator ApplicationQuitRoutine()

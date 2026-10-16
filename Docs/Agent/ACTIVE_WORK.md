@@ -1,5 +1,19 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-16 可切换复活转场
+
+- 本轮实现开发者调用的常规/加载转场复活方式；慢速方式复用GameSceneLoader与GameTransitionOverlay的收黑、背景滑入、可调停留、反向揭示。默认保留原复活；不新增Boss场景或玩家可选设置。
+- 使用场景流程、颜色/区域重置、字体与中文Toolkit Inspector规范。只扩展标准PlayerController和现有转场所有权，保留最近重生点、区域恢复、死亡动画及解锁进度；验证重复请求、禁用、返回主菜单与控制锁清理。保留本地Pick、字体、插件及未交付规划文件，完成验证后按用户授权整合推送。
+- 已完成：`ConfigureRespawn(PlayerRespawnMode, loadingSeconds)`、只读方式/停留/进行状态和`RespawnCompleted`；默认Standard、加载停留2秒。Inspector“死亡与复活”配置、条件计时字段及运行测试按钮；揭示结束才释放本次控制锁并开始原复活无敌时间。转场期间忽略重复请求和平台位移，禁用/卸载/正式流程抢占清理自身Tween与遮罩，不清除外部演出锁；加载背景有直接开关卡的菜单美术后备。
+- 修正共用GameTransitionSettings的字体资源引用类型，保证加载文字实际使用Cubic_11，而非默认TMP字体。Agent接入见Integration/PLAYER_RESPAWN_API.md，使用见Developer/PLAYER_RESPAWN.md；不新增Boss场景或实现Boss自身状态恢复。
+- 验证：Library/FlowRetirementProbe隔离项目编译通过；D3D11项目EditMode 180/180、真实Gaming复活运行59项、既有搬运8项、MainMenu→Gaming→暂停回菜单重复往返测试1项通过。日志Library/RespawnProjectGpuTests.xml、RespawnTransitionFinalVerification.log、RespawnCompileAndCarry.log、RespawnFlowRoundTripTests.xml。首次无图形设备跑全量有1项既有GridArt视图初始化失败，改用D3D11后全数通过；批处理截图不作为实际窗口视觉验收，未新构建PC/Android包或进行真机验收。
+- 本次未更改Scene/规划存档，Pick SHA256仍为3462C16C02BC001DDC7AC6D83857BAB7E291731BF8405556B0A13985B9E210BD。用户主Unity未关闭、未切平台。按本轮授权从codex/gameplay/respawn-transition整合main并推送；不混入其他未合并功能分支。
+
+## 2026-10-16 移动端占位按键美术交接图
+
+- 按当前MobileGameplayControls的15个默认按键坐标、124参考单位尺寸和Cubic_11字体导出PNG，标明按键名称、显隐条件及行走/奔跑双状态；情境键仅为美术交接集中显示，不改变游戏中的显隐逻辑，不使用个人已保存的布局。
+- 交接图及2560×1440透明布局位于Builds/UI-Handoff-20261016；已检查文字与边界。仅导出说明图，不更改场景、预制体、输入或实际UI，不提交或推送。
+
 ## 2026-10-16 贴墙放下与平滑分离
 
 - 用户授权修复Gaming贴右墙向左放下的误拒绝及生硬挤出，完成后重新构建测试包并整合推送。使用标准玩家单一运动器、完整落点和区域边界校验；覆盖单格夹墙、格线转身、动画期间新增障碍及取消/重生回归。

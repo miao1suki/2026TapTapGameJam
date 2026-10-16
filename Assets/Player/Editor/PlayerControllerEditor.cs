@@ -11,6 +11,7 @@ namespace Project.Player.Editor
         public override VisualElement CreateInspectorGUI()
         {
             VisualElement root = new VisualElement();
+            root.Add(new Label("玩家控制器") { style = { unityFontStyleAndWeight = FontStyle.Bold } });
             root.Add(PlayerInspectorFields.CreateScriptField(
                 serializedObject));
 
@@ -189,7 +190,7 @@ namespace Project.Player.Editor
             root.Add(carry);
 
             Foldout death = PlayerInspectorFields.CreateFoldout(
-                "死亡");
+                "死亡与复活");
             death.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "lethalFallHeightBlocks",
@@ -205,6 +206,18 @@ namespace Project.Player.Editor
                 "deathAction",
                 "死亡动作",
                 "死亡时通过 PlayerActionRunner 播放的 ActSO Timeline；播放结束后保持最后一帧。"));
+            death.Add(PlayerInspectorFields.Create(serializedObject, "respawnMode", "复活方式",
+                "由开发者配置。常规复活保留现有表现；加载转场复活使用大厅加载遮罩，不切换场景。"));
+            var loadingSeconds = PlayerInspectorFields.Create(serializedObject, "respawnLoadingSeconds", "加载停留（秒）",
+                "加载背景与文字完全出现后停留的时长，不含收黑和背景动画；运行时修改对下次复活生效。");
+            death.Add(loadingSeconds);
+            void RefreshRespawnFields()
+            {
+                loadingSeconds.style.display = serializedObject.FindProperty("respawnMode").enumValueIndex ==
+                    (int)PlayerRespawnMode.LoadingTransition ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+            RefreshRespawnFields();
+            root.TrackPropertyValue(serializedObject.FindProperty("respawnMode"), _ => RefreshRespawnFields());
             death.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "respawnPoint",
@@ -228,12 +241,13 @@ namespace Project.Player.Editor
             root.Add(death);
 
             Foldout debug = PlayerInspectorFields.CreateFoldout(
-                "运行时调试（只读）");
+                "运行时调试");
             Label moveDebug = CreateDebugLabel();
             Label jumpDebug = CreateDebugLabel();
             Label actionDebug = CreateDebugLabel();
             Label pickupDebug = CreateDebugLabel();
             Label carryDebug = CreateDebugLabel();
+            Label respawnDebug = CreateDebugLabel();
             debug.Add(new Label("移动"));
             debug.Add(moveDebug);
             debug.Add(new Label("跳跃"));
@@ -244,6 +258,10 @@ namespace Project.Player.Editor
             debug.Add(pickupDebug);
             debug.Add(new Label("搬运"));
             debug.Add(carryDebug);
+            debug.Add(new Label("复活"));
+            debug.Add(respawnDebug);
+            var testRespawn = new Button(() => (target as PlayerController)?.RequestRespawn()) { text = "测试复活" };
+            debug.Add(testRespawn);
             root.Add(debug);
             root.schedule.Execute(() =>
             {
@@ -253,6 +271,10 @@ namespace Project.Player.Editor
                 {
                     return;
                 }
+
+                testRespawn.SetEnabled(Application.isPlaying && !player.IsRespawning);
+                respawnDebug.text = !Application.isPlaying ? "进入运行模式后可测试复活" :
+                    (player.IsRespawning ? "正在播放复活转场" : "未进行复活转场");
 
                 if (!Application.isPlaying)
                 {

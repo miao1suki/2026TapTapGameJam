@@ -161,6 +161,7 @@ namespace Project.GameFlow
             bool playSound = true,
             bool immediate = false)
         {
+            if (value && GameSceneLoader.Existing != null && GameSceneLoader.Existing.IsRespawnTransitioning) return;
             if (value && !IsGameplayScene())
             {
                 value = false;

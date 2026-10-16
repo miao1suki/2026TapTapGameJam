@@ -437,6 +437,8 @@ MonoBehaviour:
   respawnRandomRadiusBlocks: 10
   respawnRandomAttempts: 32
   respawnSafetyRadius: 0.45
+  respawnMode: 0
+  respawnLoadingSeconds: 2
 --- !u!114 &49729266779791607
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6e8b1c1a86e64f27af8d52a5bcf59d3e, type: 3}
   m_Name: GameTransitionSettings
   m_EditorClassIdentifier: Project.GameFlow.Runtime::Project.GameFlow.GameTransitionSettings
-  font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 3}
+  font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
   revealShader: {fileID: 4800000, guid: 7d3dd20b5be740f0b06e2bc119b20333, type: 3}
   loadingText: "\u52A0\u8F7D\u4E2D\u2026\u2026"
   loadingFontSize: 120
