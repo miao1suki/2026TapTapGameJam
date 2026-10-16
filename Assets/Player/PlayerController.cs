@@ -407,7 +407,7 @@ namespace Project.Player
             }
         }
         public Vector3 CarryCenterWorldPosition =>
-            transform.position;
+            capsule != null ? capsule.bounds.center : transform.position;
         public float InteractionScanRadius =>
             interactionSensor != null
                 ? interactionSensor.ScanRadius
@@ -1593,7 +1593,7 @@ namespace Project.Player
             int height = Mathf.Max(1, carryFootprintCells.y);
             // Logical authored footprint, not every physical grid crossed while moving.
             // A one-cell player must not turn into a 2x2 footprint between cell centers.
-            Vector3Int min = WorldToCell(transform.position - new Vector3(
+            Vector3Int min = WorldToCell(CarryCenterWorldPosition - new Vector3(
                 (width - 1) * gridCellWorldSize * .5f,
                 (height - 1) * gridCellWorldSize * .5f, 0f));
             for (int x = min.x; x < min.x + width; x++)
@@ -1610,7 +1610,7 @@ namespace Project.Player
             out Vector3Int result)
         {
             GetCarryFootprintCells(carryFootprintBuffer);
-            result = WorldToCell(transform.position) + direction;
+            result = WorldToCell(CarryCenterWorldPosition) + direction;
             bool blocked = HasCarryBlockerInDirection(direction);
             bool hasCandidate = false;
             int minX = int.MaxValue;
@@ -1702,7 +1702,7 @@ namespace Project.Player
 
             rayDirection.Normalize();
             int count = Physics.RaycastNonAlloc(
-                new Ray(transform.position, rayDirection),
+                new Ray(CarryCenterWorldPosition, rayDirection),
                 carryRayBuffer,
                 gridCellWorldSize * 1.1f,
                 ~0,

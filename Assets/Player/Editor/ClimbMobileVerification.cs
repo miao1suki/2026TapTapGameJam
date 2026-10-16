@@ -43,6 +43,7 @@ namespace Project.Player.Editor
                 var actor = new GameObject("Player"); var player = actor.AddComponent<PlayerController>();
                 player.Motor.interpolation = RigidbodyInterpolation.None;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
+                ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ContactCubes/Prefabs/Green_ContactCube.prefab");
                 if (prefab == null)
                     foreach (string guid in AssetDatabase.FindAssets("t:Prefab Green"))

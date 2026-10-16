@@ -1,5 +1,7 @@
 # 系统索引
 
+颜色双阶段解锁与唯一标准玩家：见 [接入约定](Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。场景颜色和玩家能力分别查询；所有玩法场景共用 `Content/Player/Player.prefab`，新建空地图在原点生成并绑定玩家。
+
 移动端按键与转角：双侧跳跃、情境动作、多指独立持有与世界指针、设置内拖动/缩放/持久化布局；真实绿块外缘保护交接、横爬跳跃脱手，颜色能力持续选色。见 [MOBILE_CONTROLS.md](../Developer/MOBILE_CONTROLS.md)。
 
 编辑器响应与攀爬衔接：预览缓存/分层容器/视口裁剪、合并持久化与连续编辑延后落盘；蹬跳上升期间不被攀爬状态重新接管，适用于藤蔓、梯子与绿色接触方块。重生点首次激活/返回已激活点两种提示声已接线，见 [ROOM_LIFECYCLE_API](Integration/ROOM_LIFECYCLE_API.md) 和 [AUDIO_HANDOVER](Integration/AUDIO_HANDOVER.md)。
@@ -28,11 +30,11 @@ Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全�
 
 游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标和设置背景，预裁切产物位于`Art/Generated/GameUI`。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
 
-主角像素表现：`Assets/Player/PlayerSpritePresentation.cs`，7套动作35帧，读取现有玩家状态；独立1×1格外观、不新增碰撞体，死亡优先、演出冻结与复活恢复。两份玩家预制体已接线，裸PlayerController运行时自动补齐。接入/维护见 [PLAYER_SPRITE_PRESENTATION.md](../Developer/PLAYER_SPRITE_PRESENTATION.md)。
+主角像素表现：`Assets/Player/PlayerSpritePresentation.cs`，7套动作35帧，读取现有玩家状态；独立1×1格外观、不新增碰撞体，死亡优先、演出冻结与复活恢复。唯一标准Player.prefab已接线，裸PlayerController运行时自动补齐。接入/维护见 [PLAYER_SPRITE_PRESENTATION.md](../Developer/PLAYER_SPRITE_PRESENTATION.md)。
 
 MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 MVMapObjects.planning.json；按 map.mvmap (3).json 标注范围制作，紫色为三区房间、白墙/水域/转弯水流/上喷气泡/单向平台/三按钮一门，方向与模式可编辑。首开场景可恢复共享存档，不依赖 Library。历史73区临时推测版已替换，不改正式关卡。见 [转换 API](Integration/MVMAP_OBJECT_IMPORT_API.md)、[使用说明](../Developer/MVMAP_OBJECT_IMPORT.md)及[映射报告](../Developer/MVMAP_OBJECT_MAPPING.md)。
 
-当前 UI 挂载、两套玩家配置与 TA 白块连线判定：[UI_PLAYER_AND_LINK_AUDIT.md](../Developer/UI_PLAYER_AND_LINK_AUDIT.md)。
+当前 UI 挂载、标准玩家配置与 TA 白块连线判定：[UI_PLAYER_AND_LINK_AUDIT.md](../Developer/UI_PLAYER_AND_LINK_AUDIT.md)。
 
 - 独立曲柄与多平台：平台侧持久绑定、自动配套创建、同控制器平台合并/解除与重建引用。见 [机关 API](Integration/MECHANISM_SIGNAL_API.md) 与 [策划操作](../Developer/MECHANISMS_AND_JUMP.md)。
 

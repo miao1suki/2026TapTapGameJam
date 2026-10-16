@@ -320,6 +320,8 @@ namespace PlanningEditorPrototype
             new List<PlanningBox>();
         public string playerStartRoomId;
         public Vector2 playerStartLocal = new Vector2(2.5f, 12f);
+        public bool hasUnassignedPlayerStart;
+        public Vector3 playerStartWorld;
 
         public static string NewId(string prefix)
         {
@@ -1310,7 +1312,8 @@ namespace PlanningEditorPrototype
             PlanningRoom startRoom = FindRoom(playerStartRoomId);
             if (startRoom == null)
             {
-                return false;
+                position = playerStartWorld;
+                return hasUnassignedPlayerStart;
             }
 
             PlanningLayoutUtility.GetStride(

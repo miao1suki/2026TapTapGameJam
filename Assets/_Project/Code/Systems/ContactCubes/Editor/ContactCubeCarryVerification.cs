@@ -101,7 +101,7 @@ namespace Project.ContactCubes.Editor
                     UnityEngine.Object.DestroyImmediate(cube.gameObject);
                     color++; phase = 0; deadline = Time.time;
                     if (color < 3) return;
-                    var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/RuntimePlayer.prefab");
+                    var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab");
                     player = UnityEngine.Object.Instantiate(playerPrefab,new Vector3(100.5f,.5f,0),Quaternion.identity).GetComponent<PlayerController>();
                     player.GetComponent<PlayerInputDriver>().enabled = false;
                     player.Motor.constraints = RigidbodyConstraints.FreezeAll;

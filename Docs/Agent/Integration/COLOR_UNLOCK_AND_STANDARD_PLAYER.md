@@ -1,0 +1,49 @@
+# 颜色进度与标准玩家
+
+## 颜色进度
+
+每种颜色独立拥有「场景颜色」和「玩家能力」两套会话状态。默认都锁定。
+
+- 同色第一把钥匙：激活所有对应颜色场景物体，启动既有外观/HSV演出；不授予玩家染色能力。
+- 同色第二把钥匙：授予对应玩家能力，轮盘更新；不重复场景颜色恢复。
+- 后续同色钥匙可收集，但不重复解锁事件。
+- 单把钥匙多 Collider、重复触发、禁用或销毁均不得推进第二次。结算只发生在 DropItemBase.OnCollectionStarted。
+- R、死亡和离开房间保留两种状态；明确的新游戏/ResetProgress 才清空两者和选色。
+
+ColorRuntimeService API：
+
+| 调用 | 职责 |
+|---|---|
+| IsUnlocked(id) / Unlock(id) | 只查询/解锁场景颜色，保留旧对象功能、HSV和ColorUnlocked事件语义 |
+| IsAbilityUnlocked(id) / UnlockAbility(id) | 只查询/授予玩家能力；不改场景物体或HSV |
+| CollectColorKey(id) | 每次真实拾取原子推进一个阶段，返回None / SceneColor / PlayerAbility |
+| AbilityUnlocked / EventMgr.OnColorAbilityUnlocked | 能力授予通知，轮盘只订阅此通知 |
+| SetAllUnlockedForCurrentSession | 只调试场景颜色，不授予玩家能力 |
+| UnlockAllAbilitiesForCurrentSession | 独立调试玩家能力，不激活场景颜色 |
+
+场景物体、三色搬运块、功能组件的原有激活门控保持 IsUnlocked；PlayerColorWheel 与 PickWheelPrototype 的显示/选色必须用 IsAbilityUnlocked。不要将全部 IsUnlocked 调用全局替换，三色物体自身的接触反应不依赖玩家能力。
+
+两种进度本轮均为当前运行会话进度，不新增跨运行存档协议。新游戏沿用现有 ResetProgress 调用。
+
+## 唯一标准玩家
+
+唯一资源：`Assets/_Project/Content/Player/Player.prefab`，GUID `850f455fc20459b48987783f0ab1ab59`。以原正式 Gaming 玩家整理；RuntimePlayer 和 Player(暂定) 两个旧路径退役，不得重新生成。
+
+- 根节点 Player，Tag=Player，单位缩放、零旋转；预制体自身位置为原点。
+- 胶囊中心为零、半径0.5、高1，仅一个实体 Collider，不再有旧高胶囊或额外大触发箱。
+- 统一 PlayerController、PlayerInputDriver、PlayerActionRunner、PlayerHealth、PlayerFallDamage、PlayerInteractionSensor、PlayerColorWheel、GreenHookAbility、PlayerSpritePresentation、PickWheelPrototype 与 TA InteractionLinkEffect。
+- 精灵1×1格，保留向下0.08格的美术偏移；Timeline适配保留，但默认无测试Timeline且不自动播放。
+- 搬运逻辑继续使用实际胶囊中心；禁止重新以某一旧预制体偏移修补占格。
+- 场景可配置出生/重生点和相机，不复制玩家Prefab、不对核心碰撞/输入/能力组件保留另一套场景覆盖。
+
+现有 Gaming、Pick、Test、SampleScene、RoyTestScene、RoomRespawnTest、MVMapImportTest 已统一来源和核心配置。MainMenu等无玩家场景不新增玩家。相机跟随/焦点和LevelSceneContext的生成预制体同步到标准玩家。
+
+相机归场景所有，不放进标准玩家Prefab。一次性迁移必须保留旧玩家下的场景相机，暂时脱离后再绑定到新实例，不能随清除旧Prefab覆盖项删除。Pick保留原跟随玩家的场景相机；验证要求每个玩法/测试玩家场景至少有一台启用相机。
+
+编辑器入口统一取 StandardPlayerAsset.Path；EnsureInScene 仅在当前场景无玩家时实例化，有玩家则复用，多个玩家时报错。新建空存档调用 LevelEditorPlayerService.CreateAndBindAtOrigin，在世界(0,0,0)放置并绑定玩家；无房间时使用 hasUnassignedPlayerStart/playerStartWorld 保存出生位置，进入房间后仍按房间ID与局部位置持久化。LevelEditorState按当前活动场景恢复玩家引用，不跨场景串绑。
+
+迁移通过Unity的Prefab替换/转换API重映射场景引用，非单纯替换GUID；原场景位置保留，唯一例外是Gaming出生点调整为(1.5,-28,0)，与独立及场景内嵌planning存档同步，避免中心归零后开局进入红钥匙磁吸范围。三把钥匙的位置不变。迁移前本地备份位于Library/PlayerConsolidationBackup-20261016，既有非玩家内容不全量重建。MigrateProject仅允许隔离验证工程显式执行，不在导入或运行时自动执行。
+
+## 交付
+
+保持项目关卡协作规则：场景、同名planning.json、各自meta和依赖一起交付。不要把编辑器可修改存档只留在Library。玩法验证入口 ColorProgressPlayerVerification（隔离工程），分别检查两阶段真实钥匙、独立API、重置、唯一预制体、场景接线与空存档出生点。

@@ -13,7 +13,7 @@ namespace Project.GameFlow.Editor
     public sealed class GameSceneNavigatorWindow : EditorWindow
     {
         private const string PlayerPrefabPath =
-            "Assets/_Project/Content/Player/RuntimePlayer.prefab";
+            "Assets/_Project/Content/Player/Player.prefab";
         private const string GoalMaterialPath =
             "Assets/_Project/Content/Materials/Prototype/Goal.mat";
 

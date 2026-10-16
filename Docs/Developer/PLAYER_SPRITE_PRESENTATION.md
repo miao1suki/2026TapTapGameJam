@@ -18,7 +18,7 @@
 
 图片位于 `Assets/_Project/Resources/26TAPTAP/玩家`。帧率为当前接入值，可在 `Assets/_Project/Resources/PlayerVisuals/PlayerSprites.asset` 修改，不改变玩家运动速度。
 
-`RuntimePlayer.prefab` 与 `Player(暂定).prefab` 已配置独立 `Player Visual` 子对象。裸场景中的既有 PlayerController 会在运行时自动补齐缺失的表现组件，无需替换玩家或重存关卡。编辑状态下裸玩家仍显示自己的原占位外形，运行后切换像素外形。
+唯一标准 `Assets/_Project/Content/Player/Player.prefab` 已配置独立 `Player Visual` 子对象、1×1居中碰撞体及完整输入/轮盘/连线组件，各玩法场景共用。旧RuntimePlayer与Player(暂定)已退役，不再作为生成来源。
 
 ## 状态与所有权
 

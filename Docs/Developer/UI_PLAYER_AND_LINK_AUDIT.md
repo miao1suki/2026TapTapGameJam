@@ -21,26 +21,14 @@
 - MainMenu：1 Camera、1 AudioListener、1 EventSystem；菜单及流程根，不需要玩家轮盘。
 - Gaming：1 Camera、1 AudioListener、1 EventSystem、1 GameUiRouter、1 WordNoteUI、1 玩家连线；共享暂停界面已存在。
 - Test：测试玩家、轮盘、连线、独立 WordNoteUI；没有共享暂停界面和预置 EventSystem。
-- Pick：使用 RuntimePlayer；本地保存布局单独保留，没有 GameUiRouter、WordNoteUI 或预置 EventSystem，不向它自动新增 UI。
+- Pick：使用标准 Player.prefab；保留本地布局和非玩家内容。共享暂停与文字提示由各场景已有UI接线负责，不挂在玩家预制体下。
 - 在 Test/Pick 接暂停时，放 SharedGameUI 根；检查原独立 WordNote_UI 和 EventSystem，保证各只有一份。轮盘旧内置视图有 EventSystem 兜底，但不能替代完整暂停系统配置。
 
-## 两个玩家的差异
+## 唯一标准玩家
 
-两份资源都位于 `Assets/_Project/Content/Player`，都使用 `Assets/Player/PlayerController.cs` 与 `PlayerInputDriver.cs`，不是两套输入或状态机。
+`Assets/_Project/Content/Player/Player.prefab` 是唯一来源，以原正式Gaming玩家整理，旧RuntimePlayer与Player(暂定)已退役。碰撞在编辑时即为1×1且中心归零，精灵保留向下0.08格偏移；输入、状态机、搬运、轮盘、绿钩子、TA连线及Timeline适配统一配置，没有默认测试Timeline。
 
-| 项目 | RuntimePlayer | Player(暂定) |
-|---|---|---|
-| 当前使用 | Pick；旧导航的玩家创建入口 | Gaming；新版 Test 实例 |
-| 外形 | 根节点一格 Mesh | Visual 子物体，保存的外形仍是高胶囊 |
-| 保存的 CapsuleCollider | 半径0.5、高1、中心0 | 半径0.38、高1.8、中心Y=0.9 |
-| 颜色与生命组件 | prefab 已显式挂 PlayerColorWheel、PlayerHealth、PlayerFallDamage | prefab 未显式挂前两者，PlayerController.Awake 会补齐；未挂 PlayerFallDamage |
-| 拾取演出/旧 Timeline | Director 无默认资产 | Director 保存了测试 Timeline，playOnAwake 关闭，另有 TimelineActorHost |
-| TA 连线 | prefab 没有；Pick 实例额外挂了 | prefab 已有 InteractionLinkEffect、材质与颜色目录 |
-| 轮盘外观 | PickWheelPrototype | 同一 PickWheelPrototype |
-
-重要：新共享控制器 Awake 会把两者实体半径/高度统一成一格，也会统一 Rigidbody 的约束、插值和连续碰撞，因此不能只看 prefab 内保存的 Rigidbody 数值判断运行差异。但该代码没有统一 CapsuleCollider.center，也不会同步缩放 Visual：Player(暂定) 的中心偏移和旧外形仍可能导致与 RuntimePlayer 的站立表现不同。此次未擅自改正式 Gaming 玩家资产；Test 冲突处理保留了本地一格尺寸/零中心，使用 prefab override，不丢弃远程抽出 prefab 的结构。
-
-后续建议只保留一套标准玩家配置作为正式来源，把 TA 连线和 Timeline 适配作为它的组件；不要在同一玩法场景同时放这两份玩家。场景相机绑定唯一玩家，Tag 使用 Player。
+Gaming、Pick、Test、SampleScene、RoyTestScene和区域重生测试场景已统一。场景相机绑定唯一Player标签实例；新建空地图在世界原点生成/复用并绑定。详细接口与两阶段钥匙规则见 [颜色进度与标准玩家](../Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。
 
 ## 白色方块为什么被连线
 

@@ -95658,7 +95658,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.CameraModes.Runtime::Project.CameraModes.CameraControlManager
   outputCamera: {fileID: 330585545}
   focusTarget: {fileID: 700000002}
-  fallbackFocusPoint: {x: 0, y: 1, z: 0}
+  fallbackFocusPoint: {x: 2.5, y: -28, z: 0}
   useUnscaledTime: 1
 --- !u!114 &330585550
 MonoBehaviour:
@@ -603349,41 +603349,9 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2029248853619967212, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
-      propertyPath: m_Radius
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2029248853619967212, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
-      propertyPath: m_Height
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2029248853619967212, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
-      propertyPath: m_Center.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1007475138263787083, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1007475138263787083, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1007475138263787083, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1007475138263787083, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2122566890177981553, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
-      propertyPath: m_SceneBindings.Array.data[0].value
-      value: 
-      objectReference: {fileID: 330585548}
     - target: {fileID: 8106090704347177995, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_Name
-      value: TestPlayer
+      value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalPosition.x

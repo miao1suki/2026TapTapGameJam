@@ -116,7 +116,7 @@ Transform:
   m_GameObject: {fileID: 1685004890589400148}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.82, z: 0}
+  m_LocalPosition: {x: 0, y: -0.08, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -192,7 +192,6 @@ GameObject:
   - component: {fileID: 9021559481742931667}
   - component: {fileID: 7013896870902315991}
   - component: {fileID: 2029248853619967212}
-  - component: {fileID: 7752590466472980690}
   - component: {fileID: 2122566890177981553}
   - component: {fileID: 7171763862375805118}
   - component: {fileID: 1031710460960622957}
@@ -203,8 +202,11 @@ GameObject:
   - component: {fileID: 7574007668881099796}
   - component: {fileID: 5174708446201896078}
   - component: {fileID: 8610000000000000001}
+  - component: {fileID: 2415582080761627893}
+  - component: {fileID: 4133736232464685489}
+  - component: {fileID: 4344423070540822931}
   m_Layer: 0
-  m_Name: "Player(\u6682\u5B9A)"
+  m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -219,7 +221,7 @@ Transform:
   m_GameObject: {fileID: 8106090704347177995}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.5, y: -28, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -253,7 +255,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 120
-  m_CollisionDetection: 1
+  m_CollisionDetection: 2
 --- !u!136 &2029248853619967212
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -273,31 +275,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.38
-  m_Height: 1.8
+  m_Radius: 0.5
+  m_Height: 1
   m_Direction: 1
-  m_Center: {x: 0, y: 0.9, z: 0}
---- !u!65 &7752590466472980690
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8106090704347177995}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.9, y: 1.9, z: 0.8}
-  m_Center: {x: 0, y: 0.9, z: 0}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!320 &2122566890177981553
 PlayableDirector:
   m_ObjectHideFlags: 0
@@ -307,7 +288,7 @@ PlayableDirector:
   m_GameObject: {fileID: 8106090704347177995}
   m_Enabled: 1
   serializedVersion: 3
-  m_PlayableAsset: {fileID: 11400000, guid: a88f2d42e54de7742b60bb10e6ce8743, type: 2}
+  m_PlayableAsset: {fileID: 0}
   m_InitialState: 0
   m_WrapMode: 2
   m_DirectorUpdateMode: 1
@@ -484,7 +465,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.Development.PickWheel.PickWheelPrototype
   wheelArtwork: {fileID: 21300000, guid: 62e2485dab4fdd1499a2bb796e7c561b, type: 3}
   pixelFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
-  playerWheel: {fileID: 0}
+  playerWheel: {fileID: 4344423070540822931}
 --- !u!114 &7574007668881099796
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -498,7 +479,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TaSource.LinkEffect.InteractionLinkEffect
   sensor: {fileID: 7640436600445953060}
-  colorWheel: {fileID: 0}
+  colorWheel: {fileID: 4344423070540822931}
   colorCatalog: {fileID: 11400000, guid: 43b61e3889b18c04dac8919fd6603572, type: 2}
   linkMaterial: {fileID: 2100000, guid: 01a8ab61e63d424b8f01a313dc4f98e2, type: 2}
   sourceAnchor: {fileID: 0}
@@ -546,7 +527,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.GreenHook.GreenHookAbility
   sensor: {fileID: 7640436600445953060}
-  colorWheel: {fileID: 0}
+  colorWheel: {fileID: 4344423070540822931}
   player: {fileID: 9103196063016445328}
   linkEffect: {fileID: 7574007668881099796}
   hookMaterial: {fileID: 2100000, guid: 01a8ab61e63d424b8f01a313dc4f98e2, type: 2}
@@ -554,11 +535,9 @@ MonoBehaviour:
   idleOpacity: 0.5
   hookOpacity: 0.9
   growthSpeedCellsPerSecond: 10.44
+  hookCatchRadiusCells: 0.5
   pullSpeed: 8
   contactPadding: 0.05
-  blockedSeconds: 0.25
-  minimumProgress: 0.002
-  maximumPullSeconds: 10
   finishDissolveSeconds: 0.18
   sourceOffset: {x: 0, y: 0.75, z: 0}
   cameraFacingOffset: -0.18
@@ -567,3 +546,52 @@ MonoBehaviour:
   waveHeight: 0.055
   noiseStrength: 0.75
   effectSpeed: 7
+  swingAcceleration: 18
+  swingSpeedLimit: 14
+--- !u!114 &2415582080761627893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8106090704347177995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ba9afc6f23548609a85a0ad4a6ec684, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerHealth
+  maxHealth: 5
+  startingHealth: 5
+--- !u!114 &4133736232464685489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8106090704347177995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 665a7fcd44d74c3a8745c442eb602555, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerFallDamage
+--- !u!114 &4344423070540822931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8106090704347177995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af6036251da743968211d0fe98eb1a20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Player.PlayerColorWheel
+  rangeLineWidth: 0.035
+  rangeDashCount: 32
+  rangeColor: {r: 0.55, g: 0.8, b: 1, a: 0.45}
+  rangePulsePeriod: 2.4
+  rangeFadeDuration: 0.5
+  rangeMinAlpha: 0.18
+  rangeMaxAlpha: 0.62
+  wheelSize: 280
+  wheelButtonSize: 72

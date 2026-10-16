@@ -53,7 +53,7 @@ namespace Project.ContactCubes.Editor
                     manager.Configure(new List<RoomRegion> { a,b },1,"");
                     // Keep the full random respawn search inside region A; a
                     // region-exit reset must not race the later pressure fixture.
-                    player = Spawn("Assets/_Project/Content/Player/RuntimePlayer.prefab",new Vector3(2,2,0)).GetComponent<PlayerController>();
+                    player = Spawn("Assets/_Project/Content/Player/Player.prefab",new Vector3(2,2,0)).GetComponent<PlayerController>();
                     var respawnSettings = new SerializedObject(player);
                     respawnSettings.FindProperty("respawnRandomRadiusBlocks").intValue = 1;
                     respawnSettings.ApplyModifiedPropertiesWithoutUndo();

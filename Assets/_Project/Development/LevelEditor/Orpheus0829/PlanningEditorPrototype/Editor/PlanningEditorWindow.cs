@@ -1827,6 +1827,9 @@ namespace PlanningEditorPrototype
                         : string.Empty
                 };
                 blank.Normalize();
+                LevelEditorPlayerService.CreateAndBindAtOrigin();
+                blank.hasUnassignedPlayerStart = true;
+                blank.playerStartWorld = Vector3.zero;
                 currentSavePath = PlanningSaveStore.Create(blank);
                 document = blank;
                 canvas.SetDocument(document);

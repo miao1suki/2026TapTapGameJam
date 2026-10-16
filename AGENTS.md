@@ -1,6 +1,7 @@
 # 2026TapTap 协作入口
 
 Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
+颜色钥匙与玩家资源最新约定：必须读取 `Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md`。同色首把只解锁场景颜色，第二把才解锁玩家能力；唯一玩家来源为 `Assets/_Project/Content/Player/Player.prefab`，禁止重建旧的两份玩家。
 唯一工作仓库：**https://github.com/miao1suki/2026TapTapGameJam.git**。
 本机主项目：`D:\.unity\2026TapTap`；其他成员可使用自己的克隆目录。
 

@@ -5,6 +5,8 @@ description: 2026TapTap 颜色大洗牌开发规范，覆盖固定颜色物体�
 
 # 颜色大洗牌开发入口
 
+颜色解锁与玩家的当前规范：先读 `Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md`。同色第一把钥匙只解锁全局场景颜色，第二把才授予玩家能力；`IsUnlocked/Unlock` 只用于场景，轮盘用 `IsAbilityUnlocked`，能力授予走 `UnlockAbility`。钥匙通过 `CollectColorKey` 一次结算一个阶段，禁用/销毁不得补结算。R/离区保留两种进度。唯一玩家预制体为 `Assets/_Project/Content/Player/Player.prefab`，不重建旧RuntimePlayer或Player(暂定)。
+
 2026-10-12 区域生命周期规则优先：先读 `Docs/Agent/Integration/ROOM_LIFECYCLE_API.md`。离开世界图房间/通道或死亡/R重生只恢复相关区域的布置状态；门、按钮、已拾取钥匙及颜色解锁保留。已解锁物体回到刚解锁的行为，不重新锁色。R 不再只重置搬运，取消携带后进行区域重生。不得使用清空全局颜色的旧房间重置，也不得 Destroy 可恢复的作者物体。
 
 本 Skill 是颜色系统开发的强制入口。

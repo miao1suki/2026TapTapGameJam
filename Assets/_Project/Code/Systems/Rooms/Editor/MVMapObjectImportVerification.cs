@@ -101,7 +101,7 @@ namespace Project.Rooms.Editor
             finally { PlanningSceneBuilder.SuppressSceneUndo = false; }
             var room = doc.rooms[0];
             Check(doc.TryGetPlayerStartWorldPosition(out Vector3 spawn), "planning spawn available");
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/RuntimePlayer.prefab");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab");
             var player = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             player.name = "TestPlayer"; player.transform.position = spawn;
             var checkpoint = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(

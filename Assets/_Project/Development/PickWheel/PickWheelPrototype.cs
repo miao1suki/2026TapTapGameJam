@@ -56,7 +56,7 @@ namespace Project.Development.PickWheel
 
         private void OnEnable()
         {
-            ColorRuntimeService.Instance.ColorUnlocked += OnUnlocked;
+            ColorRuntimeService.Instance.AbilityUnlocked += OnUnlocked;
             EventMgr.OnRoomColorReset += OnRoomReset;
             Refresh();
         }
@@ -64,7 +64,7 @@ namespace Project.Development.PickWheel
         private void OnDisable()
         {
             if (ColorRuntimeService.Existing != null)
-                ColorRuntimeService.Existing.ColorUnlocked -= OnUnlocked;
+                ColorRuntimeService.Existing.AbilityUnlocked -= OnUnlocked;
             EventMgr.OnRoomColorReset -= OnRoomReset;
             if (playerWheel != null)
             {
@@ -317,7 +317,7 @@ namespace Project.Development.PickWheel
             for (int i = 0; i < 3; i++)
             {
                 if (images[i] == null) continue;
-                bool unlocked = ColorRuntimeService.Instance.IsUnlocked(Ids[i]);
+                bool unlocked = ColorRuntimeService.Instance.IsAbilityUnlocked(Ids[i]);
                 ColorTypeDefinition definition = ColorRuntimeService.Instance.Catalog?.Find(Ids[i]);
                 labels[i].text = unlocked
                     ? (definition?.displayName ?? Ids[i]) : "?";

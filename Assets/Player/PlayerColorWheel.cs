@@ -192,7 +192,7 @@ namespace Project.Player
         public bool TrySelectColor(string colorId)
         {
             if (string.IsNullOrWhiteSpace(colorId) ||
-                !ColorRuntimeService.Instance.IsUnlocked(colorId))
+                !ColorRuntimeService.Instance.IsAbilityUnlocked(colorId))
             {
                 return false;
             }
@@ -674,7 +674,7 @@ namespace Project.Player
             {
                 ColorTypeDefinition definition = catalog.Colors[index];
                 if (definition != null &&
-                    ColorRuntimeService.Instance.IsUnlocked(definition.id))
+                    ColorRuntimeService.Instance.IsAbilityUnlocked(definition.id))
                 {
                     result.Add(definition);
                 }

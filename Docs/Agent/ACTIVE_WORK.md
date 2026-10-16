@@ -1,5 +1,21 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-16 双阶段颜色解锁与标准玩家
+
+- 首次同色钥匙只解锁场景物体，第二次解锁玩家能力；两套状态独立，R/离区保留，显式新游戏清空。整理唯一标准玩家预制体，同步已有场景实例及相机/编辑器引用；新建空存档在世界原点创建并绑定标准玩家。用户随后授权整合到main并推送，包含本分支此前已推送的攀爬/移动端改进及后续搬运中心修复。
+- 标准资源唯一为Assets/_Project/Content/Player/Player.prefab（保留原正式玩家GUID）；7个已有玩家场景统一Prefab来源、1×1中心碰撞与核心组件，移除默认测试Timeline。旧两个玩家预制体和迁移前场景完整备份在Library/PlayerConsolidationBackup-20261016。Gaming出生点同步调整为(1.5,-28,0)，不改三把钥匙位置，避免开局磁吸；其余原场景位置保留。MainMenu和TA场景不额外添加玩家。
+- Unity6000.3.12f1隔离验证：标准玩家/7场景接线/新存档原点43项，两阶段真实钥匙与独立API29项，EditMode149/149，搬运9项、朝向交互22项、攀爬与移动端44项通过。最终重跑43项通过，Gaming静置8秒三色仍锁定且三把钥匙位置不变、未被拾取。日志Library/StandardPlayerAssetVerificationFinal.log、StandardPlayerGamingAuditFixed.log、ColorTwoStagePlayVerification.log、ColorStandardPlayerRegression.xml、StandardCarryGround.log、StandardFacingInteraction.log、StandardClimbMobile.log。3个修改的skill校验通过。未重新打包或推送，旧APK不包含本轮修改。
+- 接入约定见Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md；后续关卡若需解锁玩家能力，必须提供第二把同色钥匙。场景、同名planning.json、各自meta及依赖必须一起交付，不得仅交场景；本轮保留用户既有场景内容、字体、插件和项目设置。
+- 整合时Pick只提交已跟踪版本上的玩家迁移，不提交本地额外关卡编辑；本地Pick场景与存档原样保留。带规划绑定的场景交付同名planning.json。字体、DOTweenPro、本地插件、临时ICON和PackageManagerSettings不纳入提交。未重新打包。
+- 提交审计补上Pick旧玩家子相机的保留：Prefab替换清除覆盖前先保留场景相机，替换后恢复父子关系。相机属于场景而非标准Prefab；加入7场景活动相机检查，避免仅验证玩家数量却遗漏相机。
+- 最终交付版本在隔离工程验证50项全部通过（含已跟踪Pick版本及全部7场景相机），日志Library/StandardPlayerDeliveryCameraVerification.log；规划存档提交检查与git diff --cached --check通过。提交中补齐RoomRespawnTest和MVMapImportTest的同名规划存档，不改用户本地Pick规划。
+
+## 2026-10-16 搬运占格与初始颜色复查
+
+- 在codex/gameplay/facing-placement-menu-return本地修正。真实玩家根节点低于胶囊中心，之前固定1×1占格使用根节点导致落点落入地面、同高度搬运候选误判；占格、默认落点和方向阻挡射线统一使用实际胶囊中心，保持原左右紧邻放下规则，不向下搜索地面。
+- Gaming三把钥匙未删除，初始能力也未配置解锁；场景玩家偏移到钥匙旁，开局被磁吸拾取。将玩家恢复到现有planning.json的(2.5,-28)，红钥匙恢复到(4.5,-28.5)，绿蓝钥匙不动，不新增重复钥匙。实际场景运行300帧不操作，三色保持锁定且三把钥匙未被拾取。
+- Unity6000.3.12f1隔离验证：真实玩家地面搬运/升高落点9项通过、原朝向交互22项通过、项目相关EditMode149/149通过。日志Library/CarryGroundVerification.log、FacingInteractionGroundRegression.log、CarryGroundRegression.xml、GamingKeyAuditFixed.log。API与开发者说明同步；保留用户Pick、字体、插件及设置。未提交、推送或重新打包，之前APK不含本轮修复。
+
 ## 2026-10-16 攀爬转角与移动端操作
 
 - 在现有任务分支继续；本轮完成后仅推分支，不合并 main。保留 Pick 场景/存档、字体、插件和项目设置。

@@ -26,6 +26,8 @@ namespace PlanningEditorPrototype
             Vector2 plan = new Vector2(player.transform.position.x, -player.transform.position.y) / Mathf.Max(.05f, LevelEditorState.CellSize);
             var owner = PlanningWorldUtility.OwnerAt(document, Vector2Int.FloorToInt(plan));
             document.playerStartRoomId = owner?.id;
+            document.hasUnassignedPlayerStart = owner == null;
+            document.playerStartWorld = player.transform.position / Mathf.Max(.05f, LevelEditorState.CellSize);
             if (owner != null) document.playerStartLocal = plan - (Vector2)PlanningWorldUtility.Bounds(owner).position;
         }
 

@@ -5,6 +5,8 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 # 颜色大洗牌玩法与组件规范
 
+> 双阶段解锁与唯一玩家：同色首把钥匙只激活全部对应场景物体，第二把才开放玩家对应颜色能力；两种状态独立，R/离区保留，新游戏ResetProgress清空。IsUnlocked/Unlock只表示场景颜色；IsAbilityUnlocked/UnlockAbility只表示玩家能力，轮盘不得用场景解锁状态。钥匙经CollectColorKey同步且幂等结算，不在OnDisable补解锁。唯一标准玩家为Content/Player/Player.prefab，1×1、碰撞中心归零，各场景共用。完整API、场景迁移与空存档原点生成规则见Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md；本条覆盖后文旧的单阶段解锁描述。
+
 > 2026-10-16 连续能力与转角：选色持续保留，染色或绿钩子成功不再清空；中央确认取消仍清空。横向绿块攀附按跳跃脱手下落，短暂禁止重抓；真实横藤碰撞外缘转角由玩家运动器交接，失效/重置清理。此条覆盖旧自动清色与横爬禁跳描述。触摸按键持有到对应手指抬起，设置支持持久化安全区布局，见 Docs/Developer/MOBILE_CONTROLS.md。
 
 > 2026-10-16 朝向交互：附近按键交互、搬运目标与角色共享 PlayerController.FacingDirection，排除背后并保持相近目标稳定；默认逻辑占格始终1×1。Q/E保留左右放下并转向对应侧，运行时虚线框复用完整落点校验（含合并体积与房间边界）。轮盘中央确认可清空能力，显式取消触发AbilityDeselectedByPlayer与“当前未使用颜色能力”提示；成功染色后的自动清空不冒发手动取消提示。屏幕点击染色不套朝向筛选。水体停用只停用并延迟销毁，不在父节点禁用中SetParent。

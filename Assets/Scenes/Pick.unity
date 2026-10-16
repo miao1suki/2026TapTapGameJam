@@ -2278,33 +2278,33 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4920354666734387426, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 8106090704347177995, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_Name
-      value: TestPlayer
+      value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalPosition.x
       value: 542.8668
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalPosition.y
       value: -457.44058
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       insertIndex: -1
       addedObject: {fileID: 653003158}
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+  m_SourcePrefab: {fileID: 100100000, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
 --- !u!4 &3000000002 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+  m_CorrespondingSourceObject: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
   m_PrefabInstance: {fileID: 3000000001}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &3000000100
@@ -2321,6 +2321,9 @@ GameObject:
   m_Layer: 5
   m_Name: WordNote_UI
   m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!224 &3000000101
 RectTransform:
@@ -2331,14 +2334,16 @@ RectTransform:
   m_GameObject: {fileID: 3000000100}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 0}
 --- !u!223 &3000000102
 Canvas:
   m_ObjectHideFlags: 0
@@ -2350,6 +2355,16 @@ Canvas:
   serializedVersion: 3
   m_RenderMode: 0
   m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 0
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: 0
   m_SortingOrder: 1200
   m_TargetDisplay: 0
 --- !u!114 &3000000103
@@ -2362,10 +2377,70 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d1e2f3a4b5c6d7e8f9012a3b4c5d6e7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.WordNote.WordNoteUI
   defaultFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
   defaultFontSize: 42
+  defaultFontColor: 2
+  defaultUseOutline: 0
+  defaultOutlineColor: 5
+  defaultPosition: 0
+  defaultParticipateInStackLayout: 1
+  defaultDisplayMode: 1
+  defaultDisplayDuration: 2
+  defaultUseEnterAnimation: 1
+  defaultEnterAnimation: 9
+  defaultUseExitAnimation: 1
+  defaultExitAnimation: 1
+  defaultEnterMotion:
+    useCombinedChannels: 0
+    useFade: 1
+    useHorizontalMove: 0
+    horizontalDirection: -1
+    horizontalDistance: 140
+    useVerticalMove: 0
+    verticalDirection: -1
+    verticalDistance: 80
+    useScale: 0
+    useTypewriter: 0
+    typewriterCharactersPerSecond: 20
+    duration: 0.22
+    startPosition: {x: 0, y: 0}
+    endPosition: {x: 0, y: 0}
+    startAlpha: 0
+    endAlpha: 1
+    startScale: {x: 1, y: 1, z: 1}
+    endScale: {x: 1, y: 1, z: 1}
+    startSpeed: 0
+    endSpeed: 0
+    easePower: 1
+  defaultExitMotion:
+    useCombinedChannels: 0
+    useFade: 1
+    useHorizontalMove: 0
+    horizontalDirection: -1
+    horizontalDistance: 140
+    useVerticalMove: 0
+    verticalDirection: -1
+    verticalDistance: 80
+    useScale: 0
+    useTypewriter: 0
+    typewriterCharactersPerSecond: 20
+    duration: 0.18
+    startPosition: {x: 0, y: 0}
+    endPosition: {x: 0, y: 0}
+    startAlpha: 1
+    endAlpha: 0
+    startScale: {x: 1, y: 1, z: 1}
+    endScale: {x: 0.96, y: 0.96, z: 1}
+    startSpeed: 0
+    endSpeed: 0
+    easePower: 1
+  defaultOutlineWidth: 0.15
+  defaultOutlineSoftness: 0
+  stackSpacing: 64
+  stackShiftDuration: 0.18
+  stackShiftEase: 6
   sortingOrder: 1200
   canvasReferenceWidth: 1920
   canvasReferenceHeight: 1080

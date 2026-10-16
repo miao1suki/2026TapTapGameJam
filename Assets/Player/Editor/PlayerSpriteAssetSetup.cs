@@ -54,8 +54,7 @@ namespace Project.Player.Editor
                 if (shader == null) throw new InvalidOperationException("Player sprite shader missing");
                 material = new Material(shader); AssetDatabase.CreateAsset(material, Root + "/PlayerSprite.mat");
             }
-            foreach (string path in new[] { "Assets/_Project/Content/Player/RuntimePlayer.prefab", "Assets/_Project/Content/Player/Player(暂定).prefab" })
-                BindPrefab(path, set, material);
+            BindPrefab(StandardPlayerAsset.Path, set, material);
             AssetDatabase.SaveAssets();
         }
         private static void BindPrefab(string path, PlayerSpriteAnimationSet set, Material material)

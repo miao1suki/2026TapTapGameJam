@@ -977,47 +977,47 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4920354666734387426, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 8106090704347177995, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_Name
-      value: TestPlayer
+      value: Player
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalPosition.x
       value: 3.5
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalPosition.y
       value: -6
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+    - target: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
@@ -1025,10 +1025,10 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+  m_SourcePrefab: {fileID: 100100000, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
 --- !u!4 &476065314 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 9155612923574786674, guid: 55f197978a1bb97409f085b739e1ce36, type: 3}
+  m_CorrespondingSourceObject: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
   m_PrefabInstance: {fileID: 476065313}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &582757249
@@ -1323,7 +1323,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.CameraModes.Runtime::Project.CameraModes.CameraControlManager
   outputCamera: {fileID: 626208786}
   focusTarget: {fileID: 476065314}
-  fallbackFocusPoint: {x: 3.5, y: -5, z: 0}
+  fallbackFocusPoint: {x: 3.5, y: -6, z: 0}
   useUnscaledTime: 1
 --- !u!81 &626208785
 AudioListener:
@@ -1610,7 +1610,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 789742251}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -2800,7 +2800,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1823560939}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -2999,7 +2999,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1964775267}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1

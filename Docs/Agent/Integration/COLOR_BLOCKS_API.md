@@ -1,5 +1,7 @@
 # 颜色物体 API
 
+解锁进度已拆分：`Unlock/IsUnlocked` 只管理场景颜色，`UnlockAbility/IsAbilityUnlocked` 管理玩家能力。钥匙首把恢复场景、第二把授予能力；完整接入见 [颜色进度与标准玩家](COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。
+
 ## 轮盘中央取消
 
 `PlayerColorWheel.DeselectAbility()` 显式取消当前能力，清空选色与范围圈，并发出 `AbilityDeselectedByPlayer`。`PlayerInputDriver` 通过已有 WordNote 提示“当前未使用颜色能力”；`SelectedColorChanged` 仍通知空 ID。成功染色或发射绿钩子保留选色，支持连续使用；程序显式 `ClearSelectedColor()` 不发送手动取消事件。外部轮盘视图在中央返回空 HighlightedColorId，在锁定扇区返回该扇区 ID，不能将锁定扇区误报为中央。

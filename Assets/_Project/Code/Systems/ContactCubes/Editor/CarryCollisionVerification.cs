@@ -108,7 +108,7 @@ namespace Project.ContactCubes.Editor
                     GeometryChecks();
                     Box(new Vector3(0, -.5f, 0), new Vector3(30, 1, 2));
                     Box(new Vector3(3, 1.5f, 0), Vector3.one); // Above body; only carried box can touch it.
-                    player = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/RuntimePlayer.prefab"), new Vector3(.5f, .5f, 0), Quaternion.identity).GetComponent<PlayerController>();
+                    player = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab"), new Vector3(.5f, .5f, 0), Quaternion.identity).GetComponent<PlayerController>();
                     player.GetComponent<PlayerInputDriver>().enabled = false;
                     carried = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ColorBlocks/Prefabs/Universal_Block.prefab"), new Vector3(1.5f, .5f, 0), Quaternion.identity).GetComponent<CarryableFeature>();
                     Physics.SyncTransforms(); phase = 1; deadline = Time.time + .2f; return;

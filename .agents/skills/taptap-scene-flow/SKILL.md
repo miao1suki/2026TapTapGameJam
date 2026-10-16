@@ -34,7 +34,7 @@ description: 2026TapTap 正式场景流程规范；修改启动、MainMenu、Gam
   - `CameraModeController`
   - `CameraFollowController`
   - `LevelSceneContext`
-- `CameraFollowController.target` 和 `CameraControlManager.focusTarget` 直接指向 `Player(暂定)`；`LevelSceneContext.Activate()` 仍负责在流程进入 Gaming 时按 `Player` Tag 复核并切换到 Side2D。
+- `CameraFollowController.target` 和 `CameraControlManager.focusTarget` 直接指向标准 `Player`；`LevelSceneContext.playerPrefab` 只使用 `Assets/_Project/Content/Player/Player.prefab`。旧 RuntimePlayer/Player(暂定) 已退役。`LevelSceneContext.Activate()` 仍负责在流程进入 Gaming 时按 `Player` Tag 复核并切换到 Side2D；接入先读 `Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md`。
 - 暂停界面使用 `Assets/_Project/Content/UI/SharedGameUI.prefab`，作为 Gaming 的根级 PrefabInstance 放入。
 - 不重复添加 Camera、AudioListener 或 EventSystem；场景中三者各保留一份。
 - 返回主菜单、重载、流程切换和 UI 销毁须立即清理暂停；即使暂停关闭动画尚未结束、`isPaused` 已为 false，也必须恢复时间缩放及音频。不要依赖即将卸载对象的 Tween 回调恢复全局状态。

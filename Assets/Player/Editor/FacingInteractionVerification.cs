@@ -48,6 +48,7 @@ namespace Project.Player.Editor
                 player.Motor.linearVelocity = Vector3.zero;
                 Physics.SyncTransforms();
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
+                ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 var crankPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ColorBlocks/Prefabs/Red_Crank.prefab");
                 var leftCrank = UnityEngine.Object.Instantiate(crankPrefab, player.transform.position + Vector3.left, Quaternion.identity);
                 var rightCrank = UnityEngine.Object.Instantiate(crankPrefab, player.transform.position + Vector3.right, Quaternion.identity);
@@ -64,8 +65,8 @@ namespace Project.Player.Editor
                 player.SetMoveInput(Vector2.left); player.SetMoveInput(Vector2.zero);
                 Check(player.FacingDirection == -1, "facing persists after release");
                 Check(float.IsPositiveInfinity(PlayerInteractionSensor.FacingScore(player, player.transform.position + Vector3.right)), "behind target excluded");
-                var left = Box(player.transform.position + Vector3.left, Vector3.one);
-                var right = Box(player.transform.position + Vector3.right, Vector3.one);
+                var left = Box(player.CarryCenterWorldPosition + Vector3.left, Vector3.one);
+                var right = Box(player.CarryCenterWorldPosition + Vector3.right, Vector3.one);
                 Physics.SyncTransforms();
                 player.UpdateCarryInput(false, false, false, false);
                 Check(player.CarryQueueCount == 1, "only facing-side carry candidate");
@@ -98,6 +99,7 @@ namespace Project.Player.Editor
                 Check(right.GetCarryPlacementBounds(destination.center).size.x > 2.99f, "merged target full width");
                 Check(!right.CanPlaceCarryAt(player, destination.center), "merged volume cannot overlap player");
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
+                ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 var wheel = player.GetComponent<PlayerColorWheel>();
                 var view = new TestView(); wheel.BindExternalView(view);
                 int deselected = 0; wheel.AbilityDeselectedByPlayer += () => deselected++;
