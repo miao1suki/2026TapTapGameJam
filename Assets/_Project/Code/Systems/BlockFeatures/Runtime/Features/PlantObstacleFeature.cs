@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Project.Audio;
+using Project.BurnEffects;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -26,8 +27,16 @@ namespace Project.BlockFeatures
             Order = 1)]
         [SerializeField] private bool hideRenderersWhenBroken = true;
 
+        [BlockParameter(
+            Label = "燃烧效果配置",
+            Group = "燃烧表现",
+            Order = 0,
+            Tooltip = "留空使用 Assets/ta_source/Burn/Resources/Burn/PlantBurnEffectSettings.asset。")]
+        [SerializeField] private PlantBurnEffectSettings burnEffectSettings;
+
         private Collider[] colliders;
         private Renderer[] renderers;
+        private PlantBurnEffectPlayer burnEffectPlayer;
         private bool intact;
 
         public bool IsIntact => intact && CanRunFeature;
@@ -37,18 +46,21 @@ namespace Project.BlockFeatures
         {
             colliders = GetComponentsInChildren<Collider>(true);
             renderers = GetComponentsInChildren<Renderer>(true);
+            burnEffectPlayer = PlantBurnEffectPlayer.GetOrCreate(gameObject);
             intact = startsIntact;
             ApplyState();
         }
 
         protected override void OnDetach()
         {
+            burnEffectPlayer?.Cancel();
             SetCollidersEnabled(true);
             SetRenderersEnabled(true);
         }
 
         protected override void OnResetForRoom()
         {
+            burnEffectPlayer?.Cancel();
             intact = startsIntact;
             ApplyState();
             IntactChanged?.Invoke(this, intact);
@@ -80,7 +92,20 @@ namespace Project.BlockFeatures
 
             intact = false;
             AudioCuePlayer.Play(AudioCueIds.PlantBurn);
-            ApplyState();
+            SetCollidersEnabled(false);
+            if (hideRenderersWhenBroken)
+            {
+                bool playing = burnEffectPlayer != null &&
+                    burnEffectPlayer.Play(
+                        renderers,
+                        burnEffectSettings,
+                        0f,
+                        HideBurnedRenderers);
+                if (!playing)
+                {
+                    SetRenderersEnabled(false);
+                }
+            }
             IntactChanged?.Invoke(this, false);
             return true;
         }
@@ -92,6 +117,7 @@ namespace Project.BlockFeatures
                 return;
             }
 
+            burnEffectPlayer?.Cancel();
             intact = true;
             ApplyState();
             IntactChanged?.Invoke(this, true);
@@ -124,8 +150,26 @@ namespace Project.BlockFeatures
         private void ApplyState()
         {
             SetCollidersEnabled(intact);
-            SetRenderersEnabled(
-                intact || !hideRenderersWhenBroken);
+            if (intact)
+            {
+                SetRenderersEnabled(true);
+            }
+            else if (!hideRenderersWhenBroken)
+            {
+                SetRenderersEnabled(true);
+            }
+            else if (burnEffectPlayer == null || !burnEffectPlayer.IsPlaying)
+            {
+                SetRenderersEnabled(false);
+            }
+        }
+
+        private void HideBurnedRenderers()
+        {
+            if (!intact && hideRenderersWhenBroken)
+            {
+                SetRenderersEnabled(false);
+            }
         }
 
         private void SetCollidersEnabled(bool value)

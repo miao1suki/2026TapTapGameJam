@@ -18,7 +18,7 @@ HSVColorFadeManager.Instance.SetHsv("green", saturation: 1f, whiteAmount: 0f, se
 
 - 基础方块：`ColorObject` 只在启用、激活和阶段通知时绑定共享运行时材质，常态没有 Update / LateUpdate。不会把编辑识别材质当作正式材质。
 - 水体：`RegisterWater` / `UnregisterWater`；水源、水流、水柱统一调用。管理器在过渡期间批量 `SetReveal`；保留各实例波纹/反射纹理，不能直接共用整份水材质。完成后不继续写入。
-- 藤蔓：`RegisterVine` / `UnregisterVine`；母根在粒子初始化后注册，先隐藏 Renderer，再绑定透明运行时材质和遮罩，最后按当前 Alpha 显示。燃尽/禁用注销，不会被管理器重新打开。生长/燃烧姿态仍由藤蔓功能组件负责，不归 HSV。
+- 藤蔓：`RegisterVine` / `UnregisterVine`；母根在序列帧 SpriteRenderer 或粒子后备 Renderer 初始化后注册，先隐藏 Renderer，再绑定透明运行时材质和遮罩，最后按当前 Alpha 显示。燃尽/禁用注销，不会被管理器重新打开。生长姿态由藤蔓功能组件负责，独立燃烧材质由 `PlantBurnEffectPlayer` 临时接管，不归 HSV。
 - 普通材质复用接口：`GetSharedMaterial(source, colorId, realAppearance)`，同源/同颜色/同阶段共享一份副本。调用者不得修改返回的共享外观参数。正式材质须支持透明混合与 `_ColorRevealOpacity`；不透明 Shader 单写 Alpha 不能渐显。
 
 藤蔓透明 Shader 为 `ColorVineReveal.shader`，通过 Resources 中 `VineReveal.mat` 保留构建引用，不依赖裸 Shader.Find。运行时保留 TA 源纹理及 Tint，使用顶点颜色和纹理 Alpha，源预制体与源材质不改。新建效果需检查独立透明 Shader 是否保留源材质所需的全部效果；此适配仅针对现有白膜藤蔓。
@@ -41,7 +41,7 @@ HSVColorFadeManager.Instance.SetHsv("green", saturation: 1f, whiteAmount: 0f, se
 
 颜色普通 Layer 不变；水体与母根 Renderer 使用 `renderingLayerMask |= 128u`，像素化先于 HSV，描边 API 默认关闭，见 PIXELIZATION_API.md。旧 TA 不透明 Equal 深度通道不用于透明水体。
 
-`ClimbableVineFeature.Root` 为唯一母根，红色命中任意节段只沿该根系顶到底逐节燃烧；预置节段休眠以供重置，生成物按生命周期清理。母根共享 30.13→32.43 秒的粒子/拖尾姿态缓存，不使用负模拟速度。首次缓存有 CPU/内存开销，需 Profiler 验证。
+`ClimbableVineFeature.Root` 为唯一母根，红色命中任意节段只燃烧所属根系。燃烧开始时立即关闭整根碰撞与攀爬，然后由 `PlantBurnEffectPlayer` 在原纹理轮廓上从底向顶推进火焰、灰烬与淡出；预置节段休眠以供重置，生成物按生命周期清理。藤蔓默认以序列帧 SpriteRenderer 显示，缺少图集时才使用粒子/拖尾后备；后备沿用原 30.13→32.43 秒姿态缓存，不使用负模拟速度。植物障碍与弹性植物复用同一表现模块。参数与 Renderer 支持范围见 [PLANT_BURN_EFFECT.md](../../Developer/PLANT_BURN_EFFECT.md)。
 
 ## 状态职责
 

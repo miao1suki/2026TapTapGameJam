@@ -16,7 +16,7 @@ Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全�
 
 物体美术新增 `MechanismArtworkPresentation`：门及按钮三色提示、曲柄进度正反帧、移动平台、三色接触方块/钥匙、梯子及静态岩浆；沿用原碰撞、格尺寸与集中颜色表现。安卓暂停只反转触摸上下滑动，不改变键鼠手柄。见 [物体美术](../Developer/OBJECT_ARTWORK.md) 与 [接入API](Integration/OBJECT_ARTWORK_API.md)。
 
-藤蔓外观现默认使用TA192帧序列图集（ObjectArtwork），整根单SpriteRenderer、按生长长度适配、燃烧倒放及长成末段循环；仍走集中绿色HSV/共享材质透明交接，粒子仅作缺配置后备。弹性植物底部贴齐格子，不再为顶面对齐而悬空。水序列帧尚未交付，保留现有水效果。见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md) 和 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
+藤蔓外观现默认使用TA192帧序列图集（ObjectArtwork），整根单SpriteRenderer、按生长长度适配、长成末段循环；红色命中后由独立燃烧Shader沿源轮廓从底向顶烧成灰烬并淡出，粒子仅作生长表现的缺配置后备。仍走集中绿色HSV/共享材质透明交接。弹性植物底部贴齐格子，不再为顶面对齐而悬空。水序列帧尚未交付，保留现有水效果。见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md)、[OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md) 和 [PLANT_BURN_EFFECT.md](../Developer/PLANT_BURN_EFFECT.md)。
 
 双平台测试：SharedGameUI 的 MobileGameplayControls 提供多指方向/跳跃/Sprint/交互/左右放下与暂停/重生/选色，ScreenSafeArea 与 Expand Canvas 适配横屏比例及安全区。输入仍走 GameInput，触摸边沿在下一帧统一发布；合并气泡柱使用碰撞体底部而非中心判断上浮。正式包仅 MainMenu/Gaming，应用名和 APK 为“形之彩”。见 [双平台操作与构建](../Developer/ANDROID_AND_PC_TEST_BUILDS.md)。
 
@@ -64,6 +64,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |
 | 基础玩家 | `Assets/Player` | `PlayerController` 仅保留马能力，`PlayerInputDriver` 负责默认输入；不含旧玩法 |
 | TA 交互像素连线预览 | `Assets/ta_source/LinkEffect` | 仅红绿蓝染色选中时，在 PlayerInteractionSensor 圆形范围内只读预览可接色目标；红蓝整线淡入、绿线带四条噪波弯枝逐段生长；蓝线外围水纹有独立强度参数，Shader 按实际线长生成火星、叶花，不拉伸图案；具备溶解退场。Test 场景只保留玩家上的预览组件；场景接入见 [连接效果使用说明.md](../../Assets/ta_source/LinkEffect/连接效果使用说明.md) |
+| TA 植物燃烧表现 | `Assets/ta_source/Burn` | 红色成功作用于藤蔓、弹性植物或植物障碍后，立即关闭玩法碰撞；专用 URP Shader 采样现有纹理 Alpha，沿 Renderer 本地高度从底向顶燃烧，随后保留灰烬并淡出。共享配置支持燃烧速度、橙色焰边宽度/强度、像素化、扰动和灰烬时长；不复用 GivingColor 临时染色覆盖。接入见 [PLANT_BURN_EFFECT.md](../Developer/PLANT_BURN_EFFECT.md) |
 | TA 染色覆盖效果 | `Assets/ta_source/GivingColor` | 独立 URP 透明覆盖 Shader 读取原材质纹理 Alpha，按红色燃烧、蓝色四次叠染、绿色逐级分叉播放；材质 Inspector 可调速度、噪波和像素化。只在玩家染色成功后短暂显示，完成后渐隐并露出原玩法改色结果；不覆盖水与岩浆生成的深蓝固体块，不覆盖蒸汽和植物反应。开局能力、解锁及目标原颜色由原程序管理；Test 场景文件不作接线修改；见 [使用说明.md](../../Assets/ta_source/GivingColor/使用说明.md) |
 | 掉落物与拾取飞行 | `Assets/_Project/Code/Shared/Runtime/DropItemBase.cs`、`Assets/_Project/Code/Systems/PickupPresentation` | 基类负责感知后的磁吸、收集生命周期；颜色钥匙触碰结算并播放 DOTween 四段飞行与镜头；Pick 场景保留测试物 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |

@@ -2,6 +2,15 @@
 
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
 
+## 2026-10-16 TA 植物燃烧溶解效果
+
+- 范围：在 `Assets/ta_source/Burn` 新增独立植物燃烧 Shader、运行时材质切换器和共享配置；接入藤蔓、弹性植物、植物障碍的既有红色成功反应。
+- 表现：沿 Renderer 原纹理 Alpha 与本地高度从底向顶推进，显示橙红焰边、像素化火线、烧后灰烬与淡出；碰撞和玩法能力在动画开始时立即清除。房间重置/禁用会中断并恢复原材质状态。
+- 参数：共享配置资产支持燃烧时长/速度、焰边宽度/强度、像素化、扰动、灰烬颜色及消散时长；组件允许单目标覆盖。没有修改 GivingColor 染色覆盖模块。
+- 文档：`Docs/Developer/PLANT_BURN_EFFECT.md`、`COLOR_BLOCKS.md`、`OBJECT_ARTWORK.md`、`Integration/COLOR_BLOCKS_API.md` 与本索引。
+- 验证：`git diff --check` 通过；新增 Burn 资源的 `.meta` 与 Shader/配置 GUID 引用已核对。Unity Hub CLI 未发现本机已安装 Unity Editor，因此未能运行 Unity 编译或 Game 画面验收。
+- 交接：个人分支 `codex/effects/plant-burn-vfx` 基于 `856640e8ac34c94ae9c5f3b1b7d29d72b903b630`；检查时 `origin/main` 已前进至 `514850f6eb214e6133cc4f439d4efa15e643f2d4`，差两个提交。按分支规范未合并/变基，交由整合者处理最新主线同步。
+
 ## 2026-10-15 编辑器响应、攀爬蹬跳与重生点音频
 
 - 本轮按用户授权完成后整合推送，包含下方此前未交付的绿钩子、收集品与四向尖刺。保留本地 Pick 场景及存档、动态字体、插件和项目设置，不将这些用户未交付的改动混入提交。

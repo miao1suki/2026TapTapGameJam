@@ -5,6 +5,8 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 # 颜色大洗牌玩法与组件规范
 
+> 2026-10-16 植物燃烧表现：红色成功反应保留植物组件原有判定；藤蔓按命中节段归属的单一母根处理。藤蔓、弹性植物、植物障碍在燃烧开始时立即关闭碰撞和能力，`Assets/ta_source/Burn` 临时材质按源纹理 Alpha 从本地底部向顶部显示焰边、灰烬与淡出。配置 `PlantBurnEffectSettings` 控制速度、边缘、像素化、扰动与灰烬；房间重置/禁用取消效果并恢复。不要改接 `GivingColor` 临时染色覆盖。接入说明：`Docs/Developer/PLANT_BURN_EFFECT.md`。
+
 > 2026-10-15 玩法水体表现：WaterVisualFeature默认使用Resources/ColorBlocks/WaterPresentation，按相邻体积生成TA水面/水中/水下面片与前方透明折射板，不生成旧InteractiveWater顶板/波纹。水、气泡均用ColorAppearanceManager共享材质渐显，保留blue Layer；PixelWaterRefraction专属通道不限定Water Layer，并纳入HSV遮罩。定向水流自动四向气泡，浮力柱沿上方连通水域向上，普通水域不加流向气泡。旧waterPrefab等字段只作缺配置后备。此条覆盖下文旧水体默认生成说明。接入先读Docs/Agent/Integration/GAMEPLAY_PIXEL_WATER_API.md。
 
 > 2026-10-14 标注图水流：DirectionalCurrentFeature 增加向上/向下，保留 Left=0、Right=1 的旧存档值，Up=2、Down=3；定向水流仍是同一固定功能的方向参数，不是水域/气泡柱形态切换。编辑器规划参数必须持久保存方向。

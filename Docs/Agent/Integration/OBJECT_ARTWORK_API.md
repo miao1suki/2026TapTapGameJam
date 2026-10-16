@@ -41,4 +41,6 @@ Sprite Tiled使用FullRect切片、Point采样、无压缩/Mipmap；用原BoxCol
 
 `ColorAppearanceManager.RegisterVine` 对SpriteRenderer保留精灵Shader，复用共享池和统一可见性；粒子备用仍走旧Shader适配。换帧只改sprite及HSV遮罩Alpha纹理，不逐帧复制/改材质。Root.ResetForRoom须重新RegisterVine，防止燃烧Unregister后的对象永远隐藏。Detach立即隐藏并摘下旧视觉子物体，再延迟Destroy，避免同帧重新挂接产生重影。序列帧不能改变规划稳定ID、母根链接、区域或碰撞体。
 
+> 2026-10-16 燃烧表现更新：红色命中后由母根持有的 `PlantBurnEffectPlayer` 临时替换序列帧 Renderer 材质，沿原 Sprite 纹理 Alpha 和本地高度从底向顶推进焰边、炭灰与淡出；整根攀爬能力和 Collider 立即关闭。动画完成后注销绿色外观，区域重置重新登记。火焰时长/速度、焰边、像素化、扰动和灰烬来自 `PlantBurnEffectSettings`；不要恢复旧粒子倒放燃烧路径。植物通用效果见 `Docs/Developer/PLANT_BURN_EFFECT.md`。
+
 2026-10-15隔离Unity6000.3.12f1：89项EditMode通过；真实GPU/Play检查初始隐藏、渐显中间透明、完整生长、末段循环、单根单实例、燃烧倒放、烧毁重置、禁用重启、材质池不增长及单株/合并植物底边和宽度。日志在Library/VineSequence*，未验证安卓真机与完整关卡通关。

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82f6345f6f0b44d291233787d809313b, type: 3}
+  m_Name: PlantBurnEffectSettings
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BurnEffects.PlantBurnEffectSettings
+  durationSeconds: 2.25
+  speedMultiplier: 1
+  flameEdgeWidth: 0.065
+  flameEdgeIntensity: 1.25
+  pixelation: 0.24
+  edgeNoise: 0.5
+  ashFadeSeconds: 0.7
+  flameCoreColor: {r: 1, g: 0.94, b: 0.46, a: 1}
+  flameOuterColor: {r: 1, g: 0.19, b: 0.025, a: 1}
+  ashColor: {r: 0.19, g: 0.17, b: 0.16, a: 1}

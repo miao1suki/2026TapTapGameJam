@@ -5,6 +5,7 @@ using Project.Player;
 using Project.ColorBlocks;
 using Project.GreenHook;
 using Project.ObjectArtwork;
+using Project.BurnEffects;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -131,9 +132,13 @@ namespace Project.BlockFeatures
         [SerializeField, Min(.1f)] private float vineWidth = 1.2f;
         [BlockParameter(Label = "藤蔓枝条粗细倍率", Group = "粒子备用", Order = 5, Tooltip = "仅调整备用粒子的拖尾宽度，不改变序列帧。")]
         [SerializeField, Min(.1f)] private float vineThickness = 3f;
-        [BlockParameter(Label = "逐节燃烧时间", Group = "燃烧设置", Order = 0)]
+        [BlockParameter(Label = "每节燃烧时长（秒）", Group = "燃烧设置", Order = 0,
+            Tooltip = "用于按藤蔓节段数延长整体燃烧时间；整体时长不会短于燃烧效果配置。")]
         [SerializeField, Min(.1f)] private float burnSegmentDuration = .45f;
-        private Coroutine burnRoutine;
+        [BlockParameter(Label = "燃烧效果配置", Group = "燃烧设置", Order = 1,
+            Tooltip = "留空使用 Burn 目录中的共享配置。")]
+        [SerializeField] private PlantBurnEffectSettings burnEffectSettings;
+        private PlantBurnEffectPlayer burnEffectPlayer;
         private bool burning, burned;
         private GameObject vineVisual;
         private ParticleSystem vineParticles;
@@ -159,6 +164,8 @@ namespace Project.BlockFeatures
         protected override void OnAttach()
         {
             RestoreInitialGrowthLinks();
+            if (Root == this)
+                burnEffectPlayer = PlantBurnEffectPlayer.GetOrCreate(gameObject);
             burned = false;
             visualProgress = visualTarget = maxGrowthBlocks > 0 ? Mathf.Clamp01((float)CurrentGrowthBlocks / maxGrowthBlocks) : 0f;
             visibleCells = targetCells = CurrentGrowthBlocks + 1;
@@ -185,6 +192,7 @@ namespace Project.BlockFeatures
 
         protected override void OnResetForRoom()
         {
+            StopBurn();
             DisconnectAllPlayers();
             ResetGrowth();
             RestoreBurnedSegments();
@@ -793,43 +801,58 @@ namespace Project.BlockFeatures
             AudioCuePlayer.Play(AudioCueIds.PlantBurn);
             if (growthRoutine != null) StopCoroutine(growthRoutine);
             growthRoutine = null;
-            burnRoutine = StartCoroutine(BurnRootRoutine());
-        }
-
-        private IEnumerator BurnRootRoutine()
-        {
             var owned = new List<ClimbableVineFeature>();
             foreach (GameObject item in initialSegments) AddOwned(owned, item);
             foreach (GameObject item in spawnedSegments) AddOwned(owned, item);
             owned.Add(this);
-            owned.Sort((a, b) => b.transform.position.y.CompareTo(a.transform.position.y));
-            float startProgress = visualProgress;
-            float startCells = visibleCells;
+            owned.Sort((a, b) => a.transform.position.y.CompareTo(b.transform.position.y));
+
+            // The burn VFX owns the visible transition; disable the entire root
+            // immediately so every linked segment stops behaving as a ladder.
             for (int index = 0; index < owned.Count; index++)
             {
                 ClimbableVineFeature segment = owned[index];
                 if (segment == null) continue;
                 segment.burning = true;
                 segment.DisconnectAllPlayers();
-                float elapsed = 0;
-                while (elapsed < burnSegmentDuration)
-                {
-                    elapsed += Time.deltaTime;
-                    float progress = (index + Mathf.Clamp01(elapsed / burnSegmentDuration)) / owned.Count;
-                    visualProgress = visualTarget = Mathf.Lerp(startProgress, 0f, progress);
-                    visibleCells = targetCells = Mathf.Lerp(startCells, .001f, progress);
-                    yield return null;
-                }
+                foreach (Collider collider in segment.GetComponents<Collider>()) collider.enabled = false;
+            }
+
+            UpdateVineVisual(0f);
+            if (vineRenderer != null) vineRenderer.enabled = true;
+            Renderer[] renderers = vineRenderer != null
+                ? new[] { vineRenderer }
+                : GetComponentsInChildren<Renderer>(true);
+            PlantBurnEffectSettings settings = burnEffectSettings != null
+                ? burnEffectSettings
+                : PlantBurnEffectSettings.LoadDefault();
+            float baseDuration = Mathf.Max(
+                settings != null ? settings.DurationSeconds : 2.25f,
+                Mathf.Max(.1f, burnSegmentDuration) * owned.Count);
+            burnEffectPlayer = PlantBurnEffectPlayer.GetOrCreate(gameObject);
+            bool playing = burnEffectPlayer != null && burnEffectPlayer.Play(
+                renderers,
+                burnEffectSettings,
+                baseDuration,
+                () => FinishBurn(owned));
+            if (!playing) FinishBurn(owned);
+        }
+
+        private void FinishBurn(List<ClimbableVineFeature> owned)
+        {
+            for (int index = 0; index < owned.Count; index++)
+            {
+                ClimbableVineFeature segment = owned[index];
+                if (segment == null) continue;
                 segment.burned = true;
                 segment.burning = false;
-                foreach (Collider collider in segment.GetComponents<Collider>()) collider.enabled = false;
                 if (segment != this) segment.gameObject.SetActive(false);
             }
+
             burned = true;
             burning = false;
             ColorAppearanceManager.Existing?.UnregisterVine(vineRenderer);
             if (vineRenderer != null) vineRenderer.enabled = false;
-            burnRoutine = null;
         }
 
         private void AddOwned(List<ClimbableVineFeature> owned, GameObject item)
@@ -841,20 +864,26 @@ namespace Project.BlockFeatures
 
         private void StopBurn()
         {
-            if (burnRoutine != null) StopCoroutine(burnRoutine);
-            burnRoutine = null;
+            burnEffectPlayer?.Cancel();
             burning = false;
         }
 
         private void RestoreBurnedSegments()
         {
             burned = false;
+            burning = false;
             foreach (Collider collider in GetComponents<Collider>()) collider.enabled = true;
             foreach (GameObject item in initialSegments)
             {
                 if (item == null) continue;
                 var segment = item.GetComponent<ClimbableVineFeature>();
-                if (segment != null) { segment.burned = false; segment.burning = false; }
+                if (segment != null)
+                {
+                    segment.burned = false;
+                    segment.burning = false;
+                    foreach (Collider collider in segment.GetComponents<Collider>())
+                        collider.enabled = true;
+                }
                 item.SetActive(true);
             }
         }
