@@ -1375,3 +1375,9 @@
 - 范围：`Assets/_Project/Scenes/Playing/Gaming.unity`、同名 `Gaming.planning.json` 及 `.meta`、`Assets/_Project/Content/LevelMaps/正式关卡.json` 及 `.meta`；作为后续正式关卡基线。
 - 排除：Unity 自动生成的 Cubic-11 字体缓存，不纳入关卡提交。
 - 验证：提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`；Unity 6000.3.12f1 Play Mode、打包和真实协作往返仍待后续验收。
+
+## 2026-10-16 正式关卡交付规范补齐
+
+- 分支：`codex/formal-level-progress`；本轮补齐 RoomLifecycleTests 两个现有场景的同名规划存档及 meta，核对正式关卡交付；不改变正式关卡布局、出生点、机关或场景接线。
+- 最新规则参考 origin/main `51e4893`；不合并、rebase 或推送 main。较早条目中的 main 授权已被后续分支交付要求取代。
+- 验证：两个测试场景规划数据从各自 YAML 内嵌数据无损提取，JSON 结构对比一致（MVMapImportTest 4房间、RoomRespawnTest 3房间）；正式 Gaming 场景内嵌数据、同名 planning 和 LevelMaps/正式关卡 三者结构一致。Unity版本6000.3.12f1，hook保持.githooks。仅新增可编辑数据及文档，不修改Runtime源码；本轮未运行Unity编译、Play Mode或打包，未宣称包含最新main的运行时功能。
