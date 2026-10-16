@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82f6345f6f0b44d291233787d809313b, type: 3}
   m_Name: PlantBurnEffectSettings
   m_EditorClassIdentifier: Assembly-CSharp::Project.BurnEffects.PlantBurnEffectSettings
-  durationSeconds: 2.25
-  speedMultiplier: 1
-  flameEdgeWidth: 0.065
-  flameEdgeIntensity: 1.25
-  pixelation: 0.24
-  edgeNoise: 0.5
+  durationSeconds: 1.08
+  speedMultiplier: 2.1
+  flameEdgeWidth: 0.059
+  flameEdgeIntensity: 1.9
+  pixelation: 0
+  edgeNoise: 0.867
   ashFadeSeconds: 0.7
   flameCoreColor: {r: 1, g: 0.94, b: 0.46, a: 1}
   flameOuterColor: {r: 1, g: 0.19, b: 0.025, a: 1}
