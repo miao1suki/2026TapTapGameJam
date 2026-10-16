@@ -30,24 +30,24 @@ namespace Project.GameFlow
             controls = new GameObject("Touch Controls", typeof(RectTransform), typeof(ScreenSafeArea)).GetComponent<RectTransform>();
             controls.SetParent(transform, false);
             controls.GetComponent<ScreenSafeArea>().Refresh();
-            Direction("上", Vector2.up, new Vector2(245, 365));
-            Direction("左", Vector2.left, new Vector2(115, 210));
-            Direction("右", Vector2.right, new Vector2(270, 210));
-            Direction("下", Vector2.down, new Vector2(400, 130));
-            Action("左跳跃", InputActionId.Jump, new Vector2(400, 300), Vector2.zero);
+            Direction("上", Vector2.up);
+            Direction("左", Vector2.left);
+            Direction("右", Vector2.right);
+            Direction("下", Vector2.down);
+            Action("左跳跃", InputActionId.Jump);
             leftJump = controls.Find("左跳跃").GetComponent<VirtualInputButton>(); leftJump.ConfigureRepeatJump();
-            Action("跳跃", InputActionId.Jump, new Vector2(-160, 200));
-            Action("跑", InputActionId.Sprint, new Vector2(-315, 200));
+            Action("跳跃", InputActionId.Jump);
+            Action("跑", InputActionId.Sprint);
             sprint = controls.Find("跑").GetComponent<VirtualInputButton>(); sprint.ConfigureToggle();
             sprintLabel = sprint.GetComponentInChildren<TextMeshProUGUI>();
-            Action("交互", InputActionId.Interact, new Vector2(-315, 360));
-            Action("放左", InputActionId.DropLeft, new Vector2(-470, 200));
-            Action("放右", InputActionId.DropRight, new Vector2(-470, 360));
-            Action("选色", InputActionId.CameraModeSwitch, new Vector2(-160, 360));
-            Direction("右手左", Vector2.left, new Vector2(-315, 520), new Vector2(1, 0));
-            Direction("右手右", Vector2.right, new Vector2(-160, 520), new Vector2(1, 0));
-            Action("重生", InputActionId.Respawn, new Vector2(-85, -70), Vector2.one);
-            var pause = CreateButton("暂停", Vector2.one, new Vector2(-210, -70));
+            Action("交互", InputActionId.Interact);
+            Action("放左", InputActionId.DropLeft);
+            Action("放右", InputActionId.DropRight);
+            Action("选色", InputActionId.CameraModeSwitch);
+            Direction("右手左", Vector2.left);
+            Direction("右手右", Vector2.right);
+            Action("重生", InputActionId.Respawn);
+            var pause = CreateButton("暂停");
             pause.GetComponent<Button>().onClick.AddListener(TogglePause);
             ApplySavedLayout();
         }
@@ -113,16 +113,17 @@ namespace Project.GameFlow
             controls.gameObject.SetActive(show);
         }
         public void TogglePause() => router?.TogglePause();
-        private void Direction(string label, Vector2 direction, Vector2 position, Vector2? anchor = null)
+        private void Direction(string label, Vector2 direction)
         {
-            CreateButton(label, anchor ?? Vector2.zero, position).AddComponent<VirtualDirectionButton>().Configure(direction);
+            CreateButton(label).AddComponent<VirtualDirectionButton>().Configure(direction);
         }
-        private void Action(string label, InputActionId action, Vector2 position, Vector2? anchor = null)
+        private void Action(string label, InputActionId action)
         {
-            CreateButton(label, anchor ?? new Vector2(1, 0), position).AddComponent<VirtualInputButton>().Configure(action);
+            CreateButton(label).AddComponent<VirtualInputButton>().Configure(action);
         }
-        private GameObject CreateButton(string label, Vector2 anchor, Vector2 position)
+        private GameObject CreateButton(string label)
         {
+            GetDefaultLayout(label, out Vector2 anchor, out Vector2 position);
             var obj = new GameObject(label, typeof(RectTransform), typeof(Image), typeof(Button));
             var rect = (RectTransform)obj.transform;
             rect.SetParent(controls, false);
@@ -166,16 +167,17 @@ namespace Project.GameFlow
             position = label switch
             {
                 "上" => new Vector2(245, 365), "左" => new Vector2(115, 210),
-                "右" => new Vector2(270, 210), "下" => new Vector2(400, 130),
+                "右" => new Vector2(270, 210), "下" => new Vector2(450, 120),
                 "左跳跃" => new Vector2(400, 300), "跳跃" => new Vector2(-160, 200),
                 "跑" => new Vector2(-315, 200), "交互" => new Vector2(-315, 360),
                 "放左" => new Vector2(-470, 200), "放右" => new Vector2(-470, 360),
                 "选色" => new Vector2(-160, 360), "重生" => new Vector2(-85, -70),
                 "右手左" => new Vector2(-315, 520), "右手右" => new Vector2(-160, 520),
-                "暂停" => new Vector2(-210, -70), _ => Vector2.zero
+                "暂停" => new Vector2(90, -90), _ => Vector2.zero
             };
             if (label is "上" or "下" or "左" or "右" or "左跳跃") anchor = Vector2.zero;
-            if (label is "重生" or "暂停") anchor = Vector2.one;
+            if (label == "重生") anchor = Vector2.one;
+            if (label == "暂停") anchor = Vector2.up;
         }
     }
 }

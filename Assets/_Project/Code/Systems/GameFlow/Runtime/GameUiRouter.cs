@@ -55,7 +55,7 @@ namespace Project.GameFlow
         {
             if (gameplayHud == null) return;
             bool desktop = GameInput.PlatformMode != InputPlatformMode.Mobile;
-            foreach (string name in new[] { "Help", "PauseHint", "PauseButton" })
+            foreach (string name in new[] { "Help", "PauseHint", "PauseButton", "LevelLabel" })
             {
                 var item = gameplayHud.transform.Find(name);
                 if (item != null) item.gameObject.SetActive(desktop);

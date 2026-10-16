@@ -376,12 +376,12 @@ namespace Project.Player.Editor
                 instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/UI/SharedGameUI.prefab"));
                 var router = instance.GetComponentInChildren<GameUiRouter>(true);
                 var hud = (GameObject)typeof(GameUiRouter).GetField("gameplayHud", Private).GetValue(router);
-                foreach (string name in new[] { "Help", "PauseHint", "PauseButton" })
+                foreach (string name in new[] { "Help", "PauseHint", "PauseButton", "LevelLabel" })
                     Check(hud.transform.Find(name) != null && !hud.transform.Find(name).gameObject.activeSelf,
                         "mobile hides desktop HUD " + name);
                 field.SetValue(input, InputPlatformMode.Desktop);
                 typeof(GameUiRouter).GetMethod("RefreshPlatformHud", Private).Invoke(router, null);
-                foreach (string name in new[] { "Help", "PauseHint", "PauseButton" })
+                foreach (string name in new[] { "Help", "PauseHint", "PauseButton", "LevelLabel" })
                     Check(hud.transform.Find(name).gameObject.activeSelf, "desktop retains HUD " + name);
             }
             finally
