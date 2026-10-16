@@ -10,6 +10,48 @@
 - 接触触发器：新增“播放期间申请玩家控制锁”选项，通过 `IPlayerControlLockTarget` 接口申请并在 Timeline 停止、重置、禁用时释放，不持有具体玩家引用。
 - 场景：`Prop [0,41]` 已接 `BossIntro.playable`；`ContactTimelineTrigger.timeline` 与 `PlayableDirector.m_PlayableAsset` 同时写入 PrefabInstance 覆盖，并把同一对象引用同步到 `Boss.planning.json` 和 `Content/LevelMaps/Boss.json` 的 `componentOverrides`。
 
+## 2026-10-16 Boss 追击寻路
+
+- 分支：`Boss`；只实现寻路层，不实现移动、跳跃、爬山、传送、阶段血量或道具利用。
+- 新增 `Assets/Boss_Logic/Navigation/BossPathNode.cs`：有向回环节点图，边类型包含跑动、爬升、跳跃、下落、乘平台、危险通过和自定义。
+- 新增 `Assets/Boss_Logic/Navigation/BossPathfinder.cs`：按 `Player` Tag 或显式目标实时 A* 寻路，默认危险边直接通过，不绕路；输出节点路径和带类型的 `BossPathStep`。
+- 新增 `Assets/Boss_Logic/Navigation/BossPathExecutor.cs`：读取路径段，自动执行跑动、`BossController.RequestJumpTo` 跳跃、爬升和下落；马夫通过 `SetExternalMotion` / `ClearExternalMotion` 指挥马，不直接操作 Rigidbody。
+- 自动越障：普通跑动节点出现高度差时自动转成跳跃或下落，避免 Boss 在上坡和台阶前持续水平顶墙；阈值可在执行器 Inspector 调整。
+- 阻挡探测：跑动方向前方有方块且 Boss 在地面时自动改跳，节点边类型设错为“跑动”也不会继续顶墙。
+- 自动烘焙：新增 `BossNavAutoBaker`，运行时从关卡方块顶面生成 Boss 3×3 净空节点和跳跃/下落边；不写回场景，有手摆节点时跳过。
+- 移速调整：Boss 直接追击默认速度从 `2.5` 调整为 `5`，路径执行器默认跑动速度 `5.5`、爬升速度 `4.5`，预制体同步更新；不再只有玩家基础速度的一半。
+- 职责重构：`BossController` 作为“马”提供外部运动、重力、地面和跳跃能力；`BossPathfinder` 只算路径；`BossPathExecutor` 作为“马夫”只下发跑动/跳跃/爬升/下落指令，不再直接操作 Rigidbody。
+- 跳跃权限：跳跃时长、水平速度和最大跳高/最大垂直速度全部收口到 `BossController`，马夫只调用 `RequestJumpTo(target)`；重力始终使用 `Physics.gravity` 且不被修改，超出身体能力直接拒绝。
+- 跳跃物理：跳跃改为真实 Rigidbody 初速度弹道；起跳时清空马夫外部运动状态，落地恢复重力，不再 Kinematic 插值、不再继承爬升时的无重力状态。
+- 浮空修正：马夫跑动/下落现在只设置水平速度，不再每帧把竖直速度写成 0；竖直方向继续由 Boss 自身重力处理，避免接近玩家后悬空追随。
+- 无路径释放：修复马夫在无路径时“清空后又重新打开零速外部运动”导致 Boss 完全不追的问题；无路径会彻底释放 Controller，恢复原始追击。
+- 近身误跳：前方阻挡检测排除玩家 Tag、玩家子碰撞和当前目标；进入 `noAutoJumpNearTarget` 距离后不再触发方块自动跳。
+- 编辑器：新增中文 UI Toolkit Inspector；Scene 视图显示节点边和当前选中 Boss 的路径。
+
+## 2026-10-16 Boss 入场片段 Inspector
+
+- `BossIntroClip` 改为全中文 UI Toolkit Inspector，分为 Boss 来源、生成位置、动作时序和结束行为；镜头职责移到独立 `CameraTimelineTrack + CameraTimelineClip`。
+- 生成位置支持一键把当前场景玩家位置写入固定世界出生点；运行时玩家位置、片段锚点和固定世界坐标三种模式会动态显示说明。
+- 动作时序显示预计总时长；`BossIntro.playable` 时长已同步为纯 Boss 行为时长。
+- `BossIntro.playable` 增加独立 `CameraTimelineTrack + CameraTimelineClip`，不再从 Boss 行为片段控制相机；按“不要改我的场景”要求，未写回 `Boss.unity` 的相机绑定。
+- Editor 静态编译通过；未修改 Timeline 资源参数或运行逻辑。
+
+## 2026-10-16 Boss 长廊模式与最高排序层
+
+- 当前 Boss 预制体移除 `BossPathfinder`、`BossPathExecutor`、`BossNavAutoBaker` 挂载；`BossController` 默认关闭自动目标追击，只响应 Timeline 和外部马夫指令。
+- 新增 `BossRightMoveExecutor` 右移马夫，手动配置右移世界 Y，等待整个 Timeline PlayableGraph 停止后调用 Controller 的右移与高度能力；预制体 Collider 为 Trigger，可穿过地形，同时保留后续道具伤害接口。
+- 新增排序层 `BossTop`，将 Boss MeshRenderer 设置为该项目最高排序层、排序值 `32767`、Renderer Priority `32767`。
+- 修复 `Boss.unity` 的 `Prop [0,41]` Timeline 触发器实例：补齐实际场景覆盖中的 `timeline` 与 `PlayableDirector.m_PlayableAsset` 引用；规划 JSON 原本已有同一引用，场景现与规划数据一致。
+- 入场 Timeline 调整为 `3.15` 秒：Boss 在玩家编辑模式位置 `(-9.4, -33.19, 0)` 出现，站立 `2` 秒，跳跃落地后保持 `0.5` 秒；相机轨绑定到 Main Camera 的 `TimelineCamRig` 并按曲线平滑移动，期间玩家控制锁生效。
+- 入场跳跃改为唤醒 Rigidbody 并按配置时长完成弹道，移除起跳点地面导致的向下跳提前取消；相机轨在绑定缺失时自动查找 `TimelineCamRig`，入场片段持续把相机锚点设为 Boss。
+- 新增怪物 Timeline 轨迹预览：选中 `BossTimelineClip` 时，Scene 视图显示起点、目标点及入场/瞬移/平滑/弧线轨迹。
+- Boss 碰撞策略改为 Timeline 期间保持正常地形交互；右移马夫启动时才调用 `SetPassThroughTerrain(true)`，停止时恢复。
+- Boss 入场 Timeline 约束：每个 Boss Clip 只能做一个操作，多操作必须拆成多条 `BossTimelineTrack` 堆叠；Inspector 已移除自定义组合入口，Boss 入场相机轨仅允许 2D 正交运镜。
+- Boss Clip Inspector 进一步收口为“动作 + 当前动作数据 + 是否生成 Boss / Boss 预制体”；移动动作新增 `moveSpeed` 并按时长按距离/速度自动计算。
+- 废除 `BossIntroTrack` / `BossIntroClip` / `BossIntroBehaviour` 及专用 Inspector；`BossIntro.playable` 改为五条 `BossTimelineTrack` 加一条 2D 相机轨，动作 Clip 数据由通用 Boss Timeline Inspector 管理。
+- 入场初始位置右移半格到 `(-8.9, -33.19, 0)`，跳跃改为 `1.4` 秒目标弹道并落到 `(-6.9, -36.19, 0)`，落地后发呆延长为 `2` 秒，总时长 `5.41` 秒；相机轨结束会把 `TimelineCamRig.target` 交回 `CameraControlManager.FocusTarget` 并释放控制权。
+- 除本次补齐 Timeline 场景引用外，未额外改动用户场景；场景中的预制体实例通过预制体更新继承组件和排序设置。
+
 ## 2026-10-16 Boss 追击控制器与动画分离
 
 - 分支：`Boss`；源码：`Assets/Boss_Logic/BossController.cs`、`Assets/Boss_Logic/BossAnimationDriver.cs`。

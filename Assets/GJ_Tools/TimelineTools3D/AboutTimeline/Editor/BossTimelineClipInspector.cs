@@ -1,179 +1,176 @@
 using System.Collections.Generic;
 using Project.Editor;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 [CustomEditor(typeof(BossTimelineClip))]
-public sealed class BossTimelineClipInspector :
-    ActorTimelineClipInspectorBase
+public sealed class BossTimelineClipInspector : Editor
 {
-    private enum Operation
+    private enum Action
     {
-        Motion,
+        Idle,
+        Move,
+        Jump,
         SetTracking,
-        Kill,
-        Custom
+        Kill
     }
 
-    private static readonly List<string> OperationNames =
+    private static readonly List<string> ActionNames =
         new List<string>
         {
-            "角色位移",
-            "设置追击",
-            "杀死 Boss",
-            "自定义组合"
+            "发呆",
+            "移动",
+            "跳跃",
+            "设置运动开关",
+            "死亡"
         };
 
     private SerializedProperty motionMode;
+    private SerializedProperty spawnBoss;
+    private SerializedProperty bossPrefab;
+    private SerializedProperty targetOffset;
+    private SerializedProperty useOwnerAsOrigin;
+    private SerializedProperty moveSpeed;
+    private SerializedProperty useBossJumpState;
     private SerializedProperty setTrackingOnStart;
     private SerializedProperty setTrackingOnEnd;
-    private SerializedProperty useBossJumpState;
+    private SerializedProperty trackingOnStart;
     private SerializedProperty killAtEnd;
 
-    private PopupField<string> operationPopup;
-    private VisualElement trackingStartGroup;
-    private VisualElement trackingEndGroup;
-    private VisualElement jumpStateGroup;
-    private HelpBox jumpStateHelp;
-    private Foldout trackingSection;
-    private Foldout killSection;
-    private Operation operation;
+    private PopupField<string> actionField;
+    private VisualElement bossPrefabGroup;
+    private VisualElement moveDataGroup;
+    private VisualElement jumpDataGroup;
+    private VisualElement trackingDataGroup;
+    private HelpBox actionHelp;
+    private HelpBox conflictHelp;
+    private Action action;
+    private bool conflict;
 
-    protected override string Title => "Boss Timeline 片段";
-
-    protected override string HelpText =>
-        "控制 Boss 位移、跳跃和追击状态。轨道绑定优先，也可按 Boss Tag 查找。";
-
-    protected override void AddOperationSelector(VisualElement root)
+    public override VisualElement CreateInspectorGUI()
     {
-        motionMode = serializedObject.FindProperty("motionMode");
-        setTrackingOnStart = serializedObject.FindProperty(
-            "setTrackingOnStart");
-        setTrackingOnEnd = serializedObject.FindProperty(
-            "setTrackingOnEnd");
-        useBossJumpState = serializedObject.FindProperty(
-            "useBossJumpState");
-        killAtEnd = serializedObject.FindProperty("killAtEnd");
-
-        operation = DetectOperation();
-        operationPopup = new PopupField<string>(
-            "本片段操作",
-            OperationNames,
-            (int)operation);
-        operationPopup.tooltip =
-            "一个片段建议只控制一个操作；高级组合时选择“自定义组合”。";
-        operationPopup.RegisterValueChangedCallback(evt =>
-        {
-            operation = (Operation)OperationNames.IndexOf(evt.newValue);
-            ApplyOperation();
-            RefreshSpecificVisibility();
-        });
-        root.Add(operationPopup);
+        CacheProperties();
+        VisualElement root = ProjectInspectorUtility.CreateRoot(
+            serializedObject);
+        root.Add(ProjectInspectorUtility.CreateTitle(
+            "Boss Timeline 片段"));
+        root.Add(ProjectInspectorUtility.CreateScriptField(
+            serializedObject));
         root.Add(ProjectInspectorUtility.CreateHelp(
-            "选择操作后，只显示这一类操作需要的参数。",
-            HelpBoxMessageType.None));
-    }
+            "每个 Boss Clip 只能选择一个动作；多个动作请拆成多条 Boss Track。"));
 
-    protected override void AddSpecificSections(VisualElement root)
-    {
-        trackingSection = ProjectInspectorUtility.CreateFoldout(
-            "设置追击",
+        Foldout source = ProjectInspectorUtility.CreateFoldout(
+            "Boss 生成",
             true);
-        trackingSection.Add(ProjectInspectorUtility.CreateProperty(
+        source.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "setTrackingOnStart",
-            "片段开始时设置追击"));
-        trackingStartGroup = new VisualElement();
-        trackingStartGroup.Add(ProjectInspectorUtility.CreateProperty(
+            "spawnBoss",
+            "是否生成 Boss"));
+        bossPrefabGroup = new VisualElement();
+        bossPrefabGroup.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "bossPrefab",
+            "Boss 预制体"));
+        source.Add(bossPrefabGroup);
+        root.Add(source);
+
+        Foldout actionSection = ProjectInspectorUtility.CreateFoldout(
+            "片段动作",
+            true);
+        action = DetectAction();
+        actionField = new PopupField<string>(
+            "动作",
+            ActionNames,
+            (int)action);
+        actionField.RegisterValueChangedCallback(evt =>
+        {
+            action = (Action)ActionNames.IndexOf(evt.newValue);
+            ApplyAction();
+            RefreshVisibility();
+        });
+        actionSection.Add(actionField);
+        actionHelp = ProjectInspectorUtility.CreateHelp(string.Empty);
+        actionSection.Add(actionHelp);
+        conflictHelp = ProjectInspectorUtility.CreateHelp(
+            "这个 Clip 同时配置了多个动作，已按旧数据兼容显示。请重新选择一个动作。",
+            HelpBoxMessageType.Warning);
+        actionSection.Add(conflictHelp);
+
+        moveDataGroup = new VisualElement();
+        moveDataGroup.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "useOwnerAsOrigin",
+            "以片段挂载物体为原点"));
+        moveDataGroup.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "targetOffset",
+            "目标位置 / 偏移"));
+        moveDataGroup.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "moveSpeed",
+            "移动速度"));
+        actionSection.Add(moveDataGroup);
+
+        jumpDataGroup = new VisualElement();
+        jumpDataGroup.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "useOwnerAsOrigin",
+            "以片段挂载物体为原点"));
+        jumpDataGroup.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "targetOffset",
+            "跳跃目标位置 / 偏移"));
+        actionSection.Add(jumpDataGroup);
+
+        trackingDataGroup = new VisualElement();
+        trackingDataGroup.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "trackingOnStart",
-            "开始时追击"));
-        trackingSection.Add(trackingStartGroup);
-        trackingSection.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "setTrackingOnEnd",
-            "片段结束时设置追击"));
-        trackingEndGroup = new VisualElement();
-        trackingEndGroup.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "trackingOnEnd",
-            "结束时追击"));
-        trackingSection.Add(trackingEndGroup);
-        root.Add(trackingSection);
+            "开启运动"));
+        actionSection.Add(trackingDataGroup);
+        root.Add(actionSection);
 
-        jumpStateGroup = new VisualElement();
-        jumpStateGroup.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "useBossJumpState",
-            "跳跃使用 Boss Jump 状态",
-            "开启后弧线跳跃交给 BossController，而不是直接写 Transform。"));
-        jumpStateHelp = ProjectInspectorUtility.CreateHelp(
-            "当前运动模式不是弧线跳跃，本项暂不生效。",
-            HelpBoxMessageType.None);
-        jumpStateGroup.Add(jumpStateHelp);
-        root.Add(jumpStateGroup);
-
-        killSection = ProjectInspectorUtility.CreateFoldout(
-            "杀死 Boss",
-            true);
-        killSection.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "killAtEnd",
-            "片段结束时杀死 Boss"));
-        root.Add(killSection);
+        ProjectInspectorUtility.Bind(root, serializedObject);
+        RefreshVisibility();
+        root.schedule.Execute(() =>
+        {
+            serializedObject.Update();
+            RefreshVisibility();
+        }).Every(100);
+        return root;
     }
 
-    protected override void RefreshSpecificVisibility()
+    private void CacheProperties()
     {
-        if (operationPopup != null)
-        {
-            operationPopup.SetValueWithoutNotify(
-                OperationNames[(int)operation]);
-        }
-
-        bool custom = operation == Operation.Custom;
-        bool motion = operation == Operation.Motion || custom;
-        bool tracking = operation == Operation.SetTracking || custom;
-        bool kill = operation == Operation.Kill || custom;
-        SetCommonMotionVisible(motion);
-        SetVisible(trackingSection, tracking);
-        SetVisible(killSection, kill);
-
-        SetVisible(
-            trackingStartGroup,
-            setTrackingOnStart != null &&
-            setTrackingOnStart.boolValue);
-        SetVisible(
-            trackingEndGroup,
-            setTrackingOnEnd != null &&
-            setTrackingOnEnd.boolValue);
-
-        bool jumpMotion = motion &&
-                          motionMode != null &&
-                          (ActorTimelineMotionMode)
-                          motionMode.enumValueIndex ==
-                          ActorTimelineMotionMode.JumpArc;
-        SetVisible(jumpStateGroup, jumpMotion);
-        if (jumpStateHelp != null && jumpMotion)
-        {
-            jumpStateHelp.text = useBossJumpState != null &&
-                                 useBossJumpState.boolValue
-                ? "跳跃会进入 BossController.Jump 状态，并触发 Jump 动画接口。"
-                : "跳跃直接由 Timeline 驱动 Transform，不进入 Boss Jump 状态。";
-        }
+        motionMode = serializedObject.FindProperty("motionMode");
+        spawnBoss = serializedObject.FindProperty("spawnBoss");
+        bossPrefab = serializedObject.FindProperty("bossPrefab");
+        targetOffset = serializedObject.FindProperty("targetOffset");
+        useOwnerAsOrigin =
+            serializedObject.FindProperty("useOwnerAsOrigin");
+        moveSpeed = serializedObject.FindProperty("moveSpeed");
+        useBossJumpState =
+            serializedObject.FindProperty("useBossJumpState");
+        setTrackingOnStart =
+            serializedObject.FindProperty("setTrackingOnStart");
+        setTrackingOnEnd =
+            serializedObject.FindProperty("setTrackingOnEnd");
+        trackingOnStart =
+            serializedObject.FindProperty("trackingOnStart");
+        killAtEnd = serializedObject.FindProperty("killAtEnd");
     }
 
-    private Operation DetectOperation()
+    private Action DetectAction()
     {
         int count = 0;
-        bool motion =
+        bool moving =
             motionMode.enumValueIndex !=
             (int)ActorTimelineMotionMode.None;
         bool tracking =
             setTrackingOnStart.boolValue ||
             setTrackingOnEnd.boolValue;
-        bool kill = killAtEnd.boolValue;
-        if (motion)
+        if (moving)
         {
             count++;
         }
@@ -183,57 +180,91 @@ public sealed class BossTimelineClipInspector :
             count++;
         }
 
-        if (kill)
+        if (killAtEnd.boolValue)
         {
             count++;
         }
 
-        if (count > 1)
+        conflict = count > 1;
+        if (killAtEnd.boolValue)
         {
-            return Operation.Custom;
+            return Action.Kill;
         }
 
         if (tracking)
         {
-            return Operation.SetTracking;
+            return Action.SetTracking;
         }
 
-        if (kill)
+        return motionMode.enumValueIndex switch
         {
-            return Operation.Kill;
-        }
-
-        return Operation.Motion;
+            (int)ActorTimelineMotionMode.JumpArc => Action.Jump,
+            (int)ActorTimelineMotionMode.Linear => Action.Move,
+            (int)ActorTimelineMotionMode.Teleport => Action.Move,
+            _ => Action.Idle
+        };
     }
 
-    private void ApplyOperation()
+    private void ApplyAction()
     {
-        if (operation == Operation.Custom)
-        {
-            return;
-        }
+        bool move = action == Action.Move;
+        bool jump = action == Action.Jump;
+        bool tracking = action == Action.SetTracking;
+        bool kill = action == Action.Kill;
 
-        bool motion = operation == Operation.Motion;
-        bool tracking = operation == Operation.SetTracking;
-        bool kill = operation == Operation.Kill;
-        if (motion)
-        {
-            if (motionMode.enumValueIndex ==
-                (int)ActorTimelineMotionMode.None)
-            {
-                motionMode.enumValueIndex =
-                    (int)ActorTimelineMotionMode.Linear;
-            }
-        }
-        else
-        {
-            motionMode.enumValueIndex =
-                (int)ActorTimelineMotionMode.None;
-        }
-
+        motionMode.enumValueIndex = jump
+            ? (int)ActorTimelineMotionMode.JumpArc
+            : move
+                ? (int)ActorTimelineMotionMode.Linear
+                : (int)ActorTimelineMotionMode.None;
         setTrackingOnStart.boolValue = tracking;
-        setTrackingOnEnd.boolValue = tracking;
+        setTrackingOnEnd.boolValue = false;
         killAtEnd.boolValue = kill;
+        useBossJumpState.boolValue = jump;
+        conflict = false;
         serializedObject.ApplyModifiedProperties();
+    }
+
+    private void RefreshVisibility()
+    {
+        if (actionField != null)
+        {
+            actionField.SetValueWithoutNotify(ActionNames[(int)action]);
+        }
+
+        SetVisible(
+            bossPrefabGroup,
+            spawnBoss != null && spawnBoss.boolValue);
+        SetVisible(moveDataGroup, action == Action.Move);
+        SetVisible(jumpDataGroup, action == Action.Jump);
+        SetVisible(
+            trackingDataGroup,
+            action == Action.SetTracking);
+        SetVisible(conflictHelp, conflict);
+
+        if (actionHelp != null)
+        {
+            actionHelp.text = action switch
+            {
+                Action.Idle => "只等待，时长由 Timeline Clip 长度决定。",
+                Action.Move => "从片段开始时所在位置移动到目标位置；时长由距离和移动速度计算。",
+                Action.Jump => "通过 BossController 的 Jump 状态跳到目标位置。",
+                Action.SetTracking => "在片段开始时设置 Boss 运动开关。",
+                Action.Kill => "片段结束时杀死 Boss。",
+                _ => string.Empty
+            };
+        }
+    }
+
+    private static void SetVisible(
+        VisualElement element,
+        bool visible)
+    {
+        if (element != null)
+        {
+            element.style.display = visible
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
     }
 }

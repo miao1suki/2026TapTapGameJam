@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 900000001}
   - component: {fileID: 900000002}
   - component: {fileID: 900000003}
+  - component: {fileID: 900000004}
   m_Layer: 0
   m_Name: "Boss(\u6682\u5B9A)"
   m_TagString: Boss
@@ -68,7 +69,7 @@ MeshRenderer:
   m_ForceMeshLod: -1
   m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
-  m_RendererPriority: 0
+  m_RendererPriority: 32767
   m_Materials:
   - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
   m_StaticBatchInfo:
@@ -89,9 +90,9 @@ MeshRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingLayerID: 1273193381
+  m_SortingLayer: 3
+  m_SortingOrder: 32767
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!135 &803711403353317325
@@ -156,15 +157,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossController
   target: {fileID: 0}
   targetTag: Player
-  trackingEnabled: 1
+  enableAutonomousChase: 0
+  trackingEnabled: 0
   targetRefreshSeconds: 0.5
   moveSpeed: 2.5
+  climbSpeed: 4.5
   acceleration: 18
   stopDistance: 0.15
   chaseVertical: 0
   faceTarget: 1
-  jumpDuration: 0.65
-  jumpArcHeight: 2
+  jumpDuration: 1.4
+  jumpHorizontalSpeed: 5.5
+  maxJumpRiseHeight: 6
+  maxJumpVerticalSpeed: 12
   jumpCooldownSeconds: 0.2
   faceJumpDirection: 1
   clearVelocityOnLanding: 1
@@ -204,3 +209,19 @@ MonoBehaviour:
   jumpStarted:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &900000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4776779470644211574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ef4f1d1530947e7a6e1b661157af859, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossRightMoveExecutor
+  moving: 1
+  rightMoveHeightY: -41.5
+  waitForBossMotionEnabled: 1
+  startDelaySeconds: 0

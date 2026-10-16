@@ -1,3 +1,4 @@
+using Project;
 using Project.CameraModes;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -33,12 +34,16 @@ public class CameraTimelineBehaviour : PlayableBehaviour
         TimelineCamRig rig = playerData as TimelineCamRig;
         if (rig == null)
         {
-            if (!_warned)
+            rig = ProjectDiscovery.FindFirst<TimelineCamRig>();
+            if (rig == null)
             {
-                Debug.LogWarning("[CameraTimeline] 未绑定 TimelineCamRig，运镜不生效");
-                _warned = true;
+                if (!_warned)
+                {
+                    Debug.LogWarning("[CameraTimeline] 未绑定 TimelineCamRig，运镜不生效");
+                    _warned = true;
+                }
+                return;
             }
-            return;
         }
 
         _rig = rig;
@@ -457,8 +462,12 @@ public class CameraTimelineMixerBehaviour : PlayableBehaviour
         TimelineCamRig rig = playerData as TimelineCamRig;
         if (rig == null)
         {
-            ReleaseControl();
-            return;
+            rig = ProjectDiscovery.FindFirst<TimelineCamRig>();
+            if (rig == null)
+            {
+                ReleaseControl();
+                return;
+            }
         }
 
         if (_rig != rig)
@@ -507,6 +516,14 @@ public class CameraTimelineMixerBehaviour : PlayableBehaviour
     {
         if (_rig != null && _hasControl)
         {
+            Transform followTarget = _rig.Manager != null
+                ? _rig.Manager.FocusTarget
+                : null;
+            if (followTarget != null)
+            {
+                _rig.target = followTarget;
+            }
+
             _rig.Release(_rig.SmoothReturnOnRelease);
         }
 

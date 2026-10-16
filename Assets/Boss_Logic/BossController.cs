@@ -20,17 +20,21 @@ namespace Project.BossLogic
         [Header("追击")]
         [SerializeField] private Transform target;
         [SerializeField] private string targetTag = "Player";
+        [SerializeField] private bool enableAutonomousChase;
         [SerializeField] private bool trackingEnabled = true;
         [SerializeField, Min(0f)] private float targetRefreshSeconds = .5f;
         [SerializeField, Min(0f)] private float moveSpeed = 2.5f;
+        [SerializeField, Min(0f)] private float climbSpeed = 4.5f;
         [SerializeField, Min(0f)] private float acceleration = 18f;
         [SerializeField, Min(0f)] private float stopDistance = .15f;
         [SerializeField] private bool chaseVertical;
         [SerializeField] private bool faceTarget = true;
 
         [Header("跳跃")]
-        [SerializeField, Min(0.05f)] private float jumpDuration = .65f;
-        [SerializeField, Min(0f)] private float jumpArcHeight = 2f;
+        [SerializeField, Min(0.05f)] private float jumpDuration = 1.4f;
+        [SerializeField, Min(.1f)] private float jumpHorizontalSpeed = 5.5f;
+        [SerializeField, Min(0f)] private float maxJumpRiseHeight = 6f;
+        [SerializeField, Min(0f)] private float maxJumpVerticalSpeed = 12f;
         [SerializeField, Min(0f)] private float jumpCooldownSeconds = .2f;
         [SerializeField] private bool faceJumpDirection = true;
         [SerializeField] private bool clearVelocityOnLanding = true;
@@ -46,23 +50,25 @@ namespace Project.BossLogic
         [SerializeField, Min(0f)] private float destroyDelaySeconds = 2f;
 
         private Rigidbody body;
+        private Collider bodyCollider;
         private float currentHealth;
         private float hitUntil;
         private float nextTargetRefreshTime;
         private float nextJumpTime;
         private int facingDirection = 1;
         private bool dead;
+        private bool externalMotionActive;
+        private Vector2 externalMotionVelocity;
+        private bool externalMotionControlsVertical;
+        private bool externalHeightLocked;
+        private float externalHeightY;
+        private bool authoredColliderIsTrigger;
         private BossStateId state = BossStateId.Chase;
         private bool jumpActive;
         private float jumpElapsed;
         private float activeJumpDuration;
-        private float activeJumpArcHeight;
         private Vector3 jumpStartPosition;
         private Vector3 jumpTargetPosition;
-        private bool previousKinematic;
-        private bool previousUseGravity;
-        private RigidbodyInterpolation previousInterpolation;
-        private CollisionDetectionMode previousCollisionDetectionMode;
 
         public event Action<BossStateId, BossStateId> StateChanged;
         public event Action<float, float> Damaged;
@@ -73,14 +79,27 @@ namespace Project.BossLogic
         public float CurrentHealth => currentHealth;
         public float MaxHealth => maxHealth;
         public Transform Target => target;
+        public bool AutonomousChaseEnabled => enableAutonomousChase;
         public bool TrackingEnabled => trackingEnabled;
         public int FacingDirection => facingDirection;
         public Rigidbody Body => body;
         public bool IsJumping => jumpActive;
+        public bool IsExternallyControlled => externalMotionActive;
+        public bool IsGrounded { get; private set; }
+        public Collider BodyCollider => bodyCollider;
+        public float ConfiguredJumpDuration => jumpDuration;
+        public float ConfiguredJumpHorizontalSpeed =>
+            jumpHorizontalSpeed;
+        public float ConfiguredMaxJumpRiseHeight =>
+            maxJumpRiseHeight;
+        public float ConfiguredMaxJumpVerticalSpeed =>
+            maxJumpVerticalSpeed;
 
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
+            bodyCollider = GetComponent<Collider>();
+            authoredColliderIsTrigger = bodyCollider.isTrigger;
             body.freezeRotation = true;
             body.constraints |= RigidbodyConstraints.FreezePositionZ;
             currentHealth = Mathf.Clamp(
@@ -98,6 +117,7 @@ namespace Project.BossLogic
                 return;
             }
 
+            UpdateGrounded();
             if (trackingEnabled)
             {
                 ResolveTarget(false);
@@ -124,7 +144,14 @@ namespace Project.BossLogic
                 return;
             }
 
-            if (state != BossStateId.Chase ||
+            if (externalMotionActive)
+            {
+                ApplyExternalMotion();
+                return;
+            }
+
+            if (!enableAutonomousChase ||
+                state != BossStateId.Chase ||
                 !trackingEnabled ||
                 target == null)
             {
@@ -197,6 +224,11 @@ namespace Project.BossLogic
             target = value;
         }
 
+        public void SetAutonomousChaseEnabled(bool value)
+        {
+            enableAutonomousChase = value;
+        }
+
         public void SetTrackingEnabled(bool value)
         {
             trackingEnabled = value;
@@ -213,11 +245,123 @@ namespace Project.BossLogic
             }
         }
 
+        public void SetExternalMove(
+            float direction)
+        {
+            float horizontal = Mathf.Clamp(
+                direction,
+                -1f,
+                1f) * moveSpeed;
+            SetExternalMotion(
+                new Vector2(horizontal, 0f),
+                false);
+        }
+
+        public void SetExternalClimb(float direction)
+        {
+            float vertical = Mathf.Clamp(
+                direction,
+                -1f,
+                1f) * climbSpeed;
+            SetExternalMotion(
+                new Vector2(0f, vertical),
+                true);
+        }
+
+        public void SetExternalHeight(float worldY)
+        {
+            externalHeightY = worldY;
+            externalHeightLocked = true;
+        }
+
+        public void ClearExternalHeight()
+        {
+            externalHeightLocked = false;
+        }
+
+        public void SetPassThroughTerrain(bool value)
+        {
+            if (bodyCollider != null)
+            {
+                bodyCollider.isTrigger =
+                    value || authoredColliderIsTrigger;
+            }
+        }
+
+        private void SetExternalMotion(
+            Vector2 velocity,
+            bool controlsVertical)
+        {
+            externalMotionActive = true;
+            externalMotionVelocity = velocity;
+            externalMotionControlsVertical = controlsVertical;
+        }
+
+        public void ClearExternalMotion()
+        {
+            if (!externalMotionActive)
+            {
+                return;
+            }
+
+            externalMotionActive = false;
+            externalMotionVelocity = Vector2.zero;
+            externalMotionControlsVertical = true;
+        }
+
+        private void ApplyExternalMotion()
+        {
+            if (body == null || jumpActive)
+            {
+                return;
+            }
+
+            Vector3 velocity = body.linearVelocity;
+            velocity.x = externalMotionVelocity.x;
+            if (externalMotionControlsVertical)
+            {
+                velocity.y = externalMotionVelocity.y;
+            }
+            else if (externalHeightLocked)
+            {
+                velocity.y = 0f;
+            }
+
+            velocity.z = 0f;
+            body.linearVelocity = velocity;
+
+            if (externalHeightLocked)
+            {
+                Vector3 position = body.position;
+                position.y = externalHeightY;
+                body.position = position;
+            }
+        }
+
+        private void UpdateGrounded()
+        {
+            if (body == null || bodyCollider == null)
+            {
+                IsGrounded = false;
+                return;
+            }
+
+            Bounds bounds = bodyCollider.bounds;
+            Vector3 origin = new Vector3(
+                bounds.center.x,
+                bounds.min.y + .02f,
+                bounds.center.z);
+            IsGrounded = Physics.Raycast(
+                origin,
+                Vector3.down,
+                .22f,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+        }
+
         public bool RequestJump(
             Vector2 direction,
-            float distance,
-            float arcHeight = -1f,
-            float duration = -1f)
+            float distance)
         {
             Vector3 worldDirection = new Vector3(
                 direction.x,
@@ -233,13 +377,11 @@ namespace Project.BossLogic
                 : transform.position;
             Vector3 target =
                 start + worldDirection.normalized * distance;
-            return RequestJumpTo(target, arcHeight, duration);
+            return RequestJumpTo(target);
         }
 
         public bool RequestJumpTo(
-            Vector3 worldTargetPosition,
-            float arcHeight = -1f,
-            float duration = -1f)
+            Vector3 worldTargetPosition)
         {
             if (dead ||
                 jumpActive ||
@@ -249,35 +391,53 @@ namespace Project.BossLogic
                 return false;
             }
 
-            float resolvedArcHeight =
-                arcHeight >= 0f ? arcHeight : jumpArcHeight;
-            float resolvedDuration =
-                duration > 0f ? duration : jumpDuration;
-            if (resolvedDuration <= 0f)
+            jumpStartPosition = body.position;
+            Vector3 delta = worldTargetPosition - jumpStartPosition;
+            delta.z = 0f;
+            float horizontalDistance = Mathf.Abs(delta.x);
+            float speed = jumpHorizontalSpeed;
+            float resolvedDuration = Mathf.Max(
+                jumpDuration,
+                horizontalDistance / Mathf.Max(.01f, speed));
+            float horizontalSpeed = horizontalDistance /
+                                    Mathf.Max(.01f, resolvedDuration);
+
+            if (delta.y > maxJumpRiseHeight)
             {
                 return false;
             }
 
-            jumpStartPosition = body.position;
+            float gravity = Mathf.Max(
+                .01f,
+                -Physics.gravity.y);
+            float verticalSpeed =
+                (delta.y +
+                 .5f * gravity * resolvedDuration * resolvedDuration) /
+                resolvedDuration;
+            if (Mathf.Abs(verticalSpeed) > maxJumpVerticalSpeed)
+            {
+                return false;
+            }
+
             jumpTargetPosition = worldTargetPosition;
-            activeJumpArcHeight = Mathf.Max(0f, resolvedArcHeight);
             activeJumpDuration = Mathf.Max(.05f, resolvedDuration);
             jumpElapsed = 0f;
             jumpActive = true;
+            externalMotionActive = false;
+            externalMotionVelocity = Vector2.zero;
 
-            previousKinematic = body.isKinematic;
-            previousUseGravity = body.useGravity;
-            previousInterpolation = body.interpolation;
-            previousCollisionDetectionMode = body.collisionDetectionMode;
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
-            body.useGravity = false;
-            body.isKinematic = true;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.collisionDetectionMode =
                 CollisionDetectionMode.ContinuousSpeculative;
             body.position = jumpStartPosition;
             transform.position = jumpStartPosition;
+            body.WakeUp();
+            body.linearVelocity = new Vector3(
+                Mathf.Sign(delta.x) * horizontalSpeed,
+                verticalSpeed,
+                0f);
 
             if (faceJumpDirection)
             {
@@ -300,13 +460,11 @@ namespace Project.BossLogic
                 return;
             }
 
-            Vector3 current = snapToTarget
-                ? jumpTargetPosition
-                : body != null
-                    ? body.position
-                    : transform.position;
-            RestoreJumpPhysics(current);
             jumpActive = false;
+            if (body != null)
+            {
+                body.WakeUp();
+            }
         }
 
         public void TeleportTo(
@@ -409,20 +567,7 @@ namespace Project.BossLogic
         private void TickJump()
         {
             jumpElapsed += Time.fixedDeltaTime;
-            float progress = Mathf.Clamp01(
-                jumpElapsed / activeJumpDuration);
-            Vector3 position = Vector3.Lerp(
-                jumpStartPosition,
-                jumpTargetPosition,
-                progress);
-            position.y +=
-                4f *
-                activeJumpArcHeight *
-                progress *
-                (1f - progress);
-            body.MovePosition(position);
-
-            if (progress >= 1f)
+            if (jumpElapsed >= activeJumpDuration)
             {
                 FinishJump();
             }
@@ -430,37 +575,21 @@ namespace Project.BossLogic
 
         private void FinishJump()
         {
-            RestoreJumpPhysics(jumpTargetPosition);
             jumpActive = false;
             nextJumpTime = Time.time + jumpCooldownSeconds;
+            if (body != null && clearVelocityOnLanding)
+            {
+                Vector3 velocity = body.linearVelocity;
+                velocity.x = 0f;
+                velocity.y = Mathf.Min(0f, velocity.y);
+                body.linearVelocity = velocity;
+                body.angularVelocity = Vector3.zero;
+            }
+
             if (!dead)
             {
                 SetState(BossStateId.Chase);
             }
-        }
-
-        private void RestoreJumpPhysics(Vector3 position)
-        {
-            if (body == null)
-            {
-                transform.position = position;
-                return;
-            }
-
-            body.position = position;
-            transform.position = position;
-            body.useGravity = previousUseGravity;
-            body.isKinematic = previousKinematic;
-            body.interpolation = previousInterpolation;
-            body.collisionDetectionMode =
-                previousCollisionDetectionMode;
-            if (clearVelocityOnLanding)
-            {
-                body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
-            }
-
-            body.WakeUp();
         }
 
         private void ResolveTarget(bool force)

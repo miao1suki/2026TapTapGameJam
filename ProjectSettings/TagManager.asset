@@ -48,6 +48,9 @@ TagManager:
   - name: WaterFrontMesh
     uniqueID: 261461823
     locked: 0
+  - name: BossTop
+    uniqueID: 1273193381
+    locked: 0
   m_RenderingLayers:
   - Default
   - Light Layer 1

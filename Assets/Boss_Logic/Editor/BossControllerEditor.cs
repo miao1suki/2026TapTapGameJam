@@ -40,8 +40,14 @@ public sealed class BossControllerEditor : Editor
         chase.Add(targetTagField);
         chase.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
+            "enableAutonomousChase",
+            "启用自动目标追击",
+            "默认关闭。Boss 常规移动由右移马夫负责；只有特殊需要时再启用。"));
+        chase.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
             "trackingEnabled",
-            "启用追击"));
+            "启用运动 / 追击",
+            "Timeline 和右移马夫读取的运动门；自动目标追击还受“启用自动目标追击”控制。"));
         chase.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "targetRefreshSeconds",
@@ -74,11 +80,19 @@ public sealed class BossControllerEditor : Editor
         jump.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "jumpDuration",
-            "跳跃持续时间"));
+            "最短跳跃时长"));
         jump.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "jumpArcHeight",
-            "默认跳跃弧高"));
+            "jumpHorizontalSpeed",
+            "跳跃水平速度"));
+        jump.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "maxJumpRiseHeight",
+            "最大跳跃上升高度"));
+        jump.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "maxJumpVerticalSpeed",
+            "最大跳跃垂直速度"));
         jump.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "jumpCooldownSeconds",

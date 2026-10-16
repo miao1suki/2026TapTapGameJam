@@ -1,4 +1,5 @@
 using System;
+using Project;
 using Project.BossLogic;
 using Project.Player;
 using UnityEngine;
@@ -31,16 +32,13 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
     private bool previousSprint;
     private bool previousJumpHeld;
     private bool playerInputCaptured;
+    private float activeMotionDuration = 1f;
 
     public override void OnBehaviourPlay(
         Playable playable,
         FrameData info)
     {
-        ResolveActor(null);
-        if (actor != null)
-        {
-            Initialize();
-        }
+        Initialize();
     }
 
     public override void ProcessFrame(
@@ -53,12 +51,12 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
             return;
         }
 
-        ResolveActor(playerData);
         if (!initialized)
         {
             Initialize();
         }
 
+        ResolveActor(playerData);
         if (actor == null)
         {
             return;
@@ -92,6 +90,7 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
             return;
         }
 
+        TrySpawnBoss();
         ResolveActor(null);
         if (actor == null)
         {
@@ -114,9 +113,19 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
         startPosition = actor.position;
         startRotation = actor.rotation;
         targetPosition = ResolveTargetPosition();
+        activeMotionDuration = ResolveMotionDuration();
         body = actor.GetComponent<Rigidbody>();
         player = actor.GetComponent<PlayerController>();
         boss = actor.GetComponent<BossController>();
+        if (boss != null)
+        {
+            TimelineCamRig cameraRig =
+                ProjectDiscovery.FindFirst<TimelineCamRig>();
+            if (cameraRig != null)
+            {
+                cameraRig.target = actor;
+            }
+        }
 
         if (clip is PlayerTimelineClip playerClip)
         {
@@ -132,14 +141,7 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
             clip is BossTimelineClip jumpBossClip &&
             jumpBossClip.useBossJumpState)
         {
-            jumpStarted = boss.RequestJumpTo(
-                targetPosition,
-                clip.jumpArcHeight,
-                clip.motionDuration);
-            if (!jumpStarted)
-            {
-                boss.TeleportTo(targetPosition, startRotation);
-            }
+            jumpStarted = boss.RequestJumpTo(targetPosition);
         }
         else if (clip.motionMode != ActorTimelineMotionMode.None)
         {
@@ -192,6 +194,39 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
         return origin != null
             ? origin.TransformPoint(clip.targetOffset)
             : clip.targetOffset;
+    }
+
+    private void TrySpawnBoss()
+    {
+        if (actor != null ||
+            clip is not BossTimelineClip bossClip ||
+            !bossClip.spawnBoss ||
+            bossClip.bossPrefab == null)
+        {
+            return;
+        }
+
+        BossController instance = UnityEngine.Object.Instantiate(
+            bossClip.bossPrefab,
+            ResolveTargetPosition(),
+            bossClip.bossPrefab.transform.rotation);
+        instance.name = bossClip.bossPrefab.name;
+        actor = instance.transform;
+    }
+
+    private float ResolveMotionDuration()
+    {
+        if (clip is BossTimelineClip bossClip &&
+            clip.motionMode == ActorTimelineMotionMode.Linear &&
+            bossClip.moveSpeed > 0f)
+        {
+            return Mathf.Max(
+                .01f,
+                Vector3.Distance(startPosition, targetPosition) /
+                bossClip.moveSpeed);
+        }
+
+        return Mathf.Max(.01f, clip.motionDuration);
     }
 
     private void ApplyPlayerStart(PlayerTimelineClip playerClip)
@@ -285,7 +320,7 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
             return;
         }
 
-        float duration = Mathf.Max(.01f, clip.motionDuration);
+        float duration = activeMotionDuration;
         float progress = Mathf.Clamp01(time / duration);
         float curve = clip.motionCurve != null
             ? clip.motionCurve.Evaluate(progress)
