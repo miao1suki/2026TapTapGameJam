@@ -664,7 +664,7 @@ namespace Project.Player
             }
         }
 
-        public void BeginGreenHookPull(Component source)
+        public void BeginGreenHookPull(Component source, bool preserveVelocity = false)
         {
             if (source == null)
             {
@@ -672,10 +672,10 @@ namespace Project.Player
             }
 
             greenHookMotionSource = source;
-            greenHookVelocity = Vector2.zero;
+            greenHookVelocity = preserveVelocity && motor != null ? (Vector2)motor.linearVelocity : Vector2.zero;
             if (motor != null)
             {
-                motor.linearVelocity = Vector3.zero;
+                if (!preserveVelocity) motor.linearVelocity = Vector3.zero;
                 motor.angularVelocity = Vector3.zero;
             }
             IsGrounded = false;

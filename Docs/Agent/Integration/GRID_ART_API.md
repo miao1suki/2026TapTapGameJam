@@ -28,6 +28,10 @@ GridArtWindow.Automation负责0.65秒延后自动保存/预览，两个开关默
 
 窗口不每帧重建；滑条只使画布失效，不销毁正在拖动的控件；笔画结束只更新画布/状态，不重建侧栏。未变图层缓存、视口剔除、复用绘制列表。GridArtLayer.Set/Erase使用非序列化格索引，直接改cells列表或通过Undo恢复后须InvalidateLookup；多格图的擦除仍覆盖整个占格。保留素材滚动位置、Foldout与每图视图。素材表单直接在工作台编辑，库Inspector保留为维护入口。
 
+画布`RepaintView()`只变更预览父节点的translate/scale、256图块批次可见性与顶层参考线，不失效瓦片几何；`Invalidate()`用于数据/素材/视差变化。`GridArtPreviewBatch`按原排序中连续同纹理片段分批，不按纹理全局重排，保持透明叠图顺序。预览坐标以32显示单位/格缓存，显示变换为zoom/32；不参与地图存储或运行时Mesh。不要在generateVisualContent中修改UI树。
+
+两套关卡画布共用`GridViewportDrawing`：显示线间隔至少16点、总数预算320，2的幂次整格LOD与世界原点对齐，直接提交线条四边形，避免密集Painter2D交叉路径细分。它只接收显示坐标，不负责鼠标命中、吸附或坐标迁移。房间所有权使用`PlanningOwnerPreview`缓存精确矩形覆盖和孔洞/外轮廓，文档修改必须走`InvalidatePreviewData`；不能以缓存几何替换实际存档cells。组装预览按每个房间一次求原点，不在每个box上扫描整房间。
+
 ## 渲染与兼容
 
 SetCamera、RebaseParallax、ParallaxOffset API保持。LateUpdate10000只读跟随后的相机；绝对偏移delta*(1-factor)，不改Z、不累计漂移，可像素吸附。换相机重新建参考。

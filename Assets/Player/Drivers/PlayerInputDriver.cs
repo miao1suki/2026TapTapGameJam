@@ -112,9 +112,15 @@ namespace Project.Player
                 if (Time.timeScale > 0f && target.CanDriveGreenHook)
                 {
                     if (resetTriggered) target.RequestRespawn();
-                    else target.UpdateGreenHookInput(GameInput.ReadVector2(InputActionId.Move),
-                        GameInput.WasTriggeredThisFrame(InputActionId.Jump) ||
-                        GameInput.WasTriggeredThisFrame(InputActionId.Interact));
+                    else
+                    {
+                        bool release = GameInput.WasTriggeredThisFrame(InputActionId.Jump) ||
+                            GameInput.WasTriggeredThisFrame(InputActionId.Interact);
+                        target.UpdateGreenHookInput(GameInput.ReadVector2(InputActionId.Move), release);
+                        target.TickColorWheel(GameInput.PointerPosition);
+                        if (!release && GameInput.WasTriggeredThisFrame(InputActionId.PointerPrimary))
+                            target.TryUseSelectedColorAbility();
+                    }
                 }
                 target.SetJumpHeld(false);
                 return;

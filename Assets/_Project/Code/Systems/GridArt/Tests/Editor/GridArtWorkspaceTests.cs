@@ -55,6 +55,96 @@ namespace Project.GridArt.Tests
         private static void Field(object target, string name, object value) => target.GetType().GetField(name,System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(target,value);
         private GridArtWindow Window()
         { var w=ScriptableObject.CreateInstance<GridArtWindow>(); w.CreateGUI(); w.SetMap(map); return w; }
+
+        [Test] public void PanAndZoomReuseArtworkGeometryAndKeepOverlayAboveAllLayers()
+        {
+            AddBrush();
+            for (int x=0; x<20; x++) map.layers[0].Set(new Vector2Int(x,-2),0);
+            var overlayLayer = new GridArtLayer { tint = new Color(1,1,1,.5f), sortingOrder=10 };
+            overlayLayer.Set(new Vector2Int(0,-2),0); map.layers.Add(overlayLayer);
+            var w = Window();
+            try
+            {
+                var canvas = (VisualElement)w.GetType().GetField("canvas",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(w);
+                var artwork = canvas.Q("artwork-cache"); var overlay = canvas.Q("art-overlay");
+                Assert.That(artwork.childCount,Is.GreaterThan(0));
+                Assert.That(canvas.IndexOf(overlay),Is.GreaterThan(canvas.IndexOf(artwork)));
+                var originalBatches = artwork.Children().ToArray();
+                string data = EditorJsonUtility.ToJson(map);
+                Field(canvas,"pan",new Vector2(-100,380)); Field(canvas,"zoom",5f);
+                canvas.GetType().GetMethod("RepaintView").Invoke(canvas,null);
+                Assert.That(artwork.Children().ToArray(),Is.EqualTo(originalBatches));
+                Assert.That(artwork.style.translate.value.x.value,Is.EqualTo(-100));
+                Assert.That(artwork.style.scale.value.value.x,Is.EqualTo(5f/32).Within(.0001f));
+                Assert.That(EditorJsonUtility.ToJson(map),Is.EqualTo(data));
+                map.layers[0].Set(new Vector2Int(30,0),0);
+                canvas.GetType().GetMethod("Invalidate").Invoke(canvas,null);
+                Assert.That(artwork.Children().First(),Is.Not.SameAs(originalBatches[0]));
+            }
+            finally { Object.DestroyImmediate(w); }
+        }
+
+        [Test] public void RetainedArtworkPreservesTintLayerOrderUvsAndParallaxOffsets()
+        {
+            AddBrush(); map.layers[0].sortingOrder=-100; map.layers[0].Set(new Vector2Int(-3,2),0);
+            var top = new GridArtLayer { sortingOrder=20, tint=new Color(1,.5f,.25f,.3f), parallax=Vector2.one*.5f };
+            top.Set(new Vector2Int(-3,2),0); map.layers.Add(top);
+            var w=Window();
+            try
+            {
+                Field(w,"previewTravel",new Vector2(4,2));
+                var canvas=(VisualElement)w.GetType().GetField("canvas",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(w);
+                canvas.GetType().GetMethod("Invalidate").Invoke(canvas,null);
+                var quads=(System.Collections.Generic.List<(GridArtQuad,Color)>)canvas.GetType()
+                    .GetField("quads",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(canvas);
+                Assert.That(quads.Count,Is.EqualTo(2));
+                Assert.That(quads[0].Item1.bounds.position,Is.EqualTo(new Vector2(-3,2)));
+                Assert.That(quads[1].Item1.bounds.position,Is.EqualTo(new Vector2(-1,3)));
+                Assert.That(quads[1].Item2,Is.EqualTo(top.tint));
+                Assert.That(quads[1].Item1.uv,Is.EqualTo(quads[0].Item1.uv));
+                top.visible=false; canvas.GetType().GetMethod("Invalidate").Invoke(canvas,null);
+                quads=(System.Collections.Generic.List<(GridArtQuad,Color)>)canvas.GetType()
+                    .GetField("quads",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(canvas);
+                Assert.That(quads.Count,Is.EqualTo(1));
+            }
+            finally { Object.DestroyImmediate(w); }
+        }
+
+        [UnityEngine.TestTools.UnityTest]
+        public System.Collections.IEnumerator AttachedCanvasPanAndZoomKeepArtworkAlignedWithoutRetessellatingTiles()
+        {
+            AddBrush(); map.layers[0].Set(new Vector2Int(-3,2),0);
+            var w=Window();
+            try
+            {
+                w.position=new Rect(20,20,1200,800); w.Show();
+                for(int i=0;i<5;i++) yield return null;
+                var canvas=(VisualElement)w.GetType().GetField("canvas",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(w);
+                Field(canvas,"pan",new Vector2(240,320)); Field(canvas,"zoom",32f);
+                canvas.GetType().GetMethod("RepaintView").Invoke(canvas,null); w.Repaint();
+                for(int i=0;i<5;i++) yield return null;
+                var artwork=canvas.Q("artwork-cache"); var batch=artwork.Children().Single();
+                int rebuilds=0; batch.generateVisualContent+=context=>rebuilds++;
+                batch.MarkDirtyRepaint(); w.Repaint();
+                for(int i=0;i<5;i++) yield return null;
+                Assert.That(rebuilds,Is.GreaterThan(0),"visible artwork must really render before measuring its reuse");
+                rebuilds=0;
+                Field(canvas,"pan",new Vector2(260,340)); Field(canvas,"zoom",16f);
+                canvas.GetType().GetMethod("RepaintView").Invoke(canvas,null); w.Repaint();
+                for(int i=0;i<5;i++) yield return null;
+                Vector2 actual=canvas.WorldToLocal(batch.LocalToWorld(Vector2.zero));
+                Assert.That(actual.x,Is.EqualTo(260-3*16).Within(.05f));
+                Assert.That(actual.y,Is.EqualTo(340-3*16).Within(.05f));
+                Assert.That(batch.resolvedStyle.display,Is.EqualTo(DisplayStyle.Flex));
+                Assert.That(rebuilds,Is.Zero,"pan/zoom should retain tile geometry, not redraw it each frame");
+                Field(canvas,"pan",new Vector2(-10000,-10000));
+                canvas.GetType().GetMethod("RepaintView").Invoke(canvas,null);
+                for(int i=0;i<3;i++) yield return null;
+                Assert.That(batch.resolvedStyle.display,Is.EqualTo(DisplayStyle.None));
+                Assert.That(map.layers[0].cells.Single().position,Is.EqualTo(new Vector2Int(-3,2)));
+            }
+            finally { w.Close(); }
+        }
         private static void ToggleValue(Toggle toggle, bool value)
         {
             bool before=toggle.value; toggle.SetValueWithoutNotify(value);

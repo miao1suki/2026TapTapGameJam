@@ -201,12 +201,20 @@ namespace Project.GridArt.Editor
             }
             private List<(GridArtQuad, Color)> quads;
             private readonly Dictionary<GridArtLayer, List<GridArtQuad>> layerQuads = new Dictionary<GridArtLayer, List<GridArtQuad>>();
-            private readonly List<(GridArtQuad, Color)> visibleQuads = new List<(GridArtQuad, Color)>();
+            private readonly VisualElement artwork, overlay;
+            private readonly List<GridArtPreviewBatch> batches = new List<GridArtPreviewBatch>();
             private Vector2Int lastHover;
             public ArtCanvas(GridArtWindow window)
             {
                 owner = window; focusable = true; style.overflow = Overflow.Hidden; style.backgroundColor = new Color(.09f,.11f,.14f);
-                generateVisualContent += Draw;
+                artwork = new VisualElement { name = "artwork-cache", pickingMode = PickingMode.Ignore, usageHints = UsageHints.DynamicTransform };
+                artwork.style.position = Position.Absolute;
+                artwork.style.width = artwork.style.height = 0;
+                artwork.style.transformOrigin = new TransformOrigin(0, 0);
+                Add(artwork);
+                overlay = new VisualElement { name = "art-overlay", pickingMode = PickingMode.Ignore };
+                overlay.StretchToParentSize(); overlay.generateVisualContent += Draw; Add(overlay);
+                RegisterCallback<GeometryChangedEvent>(e => RepaintView());
                 RegisterCallback<PointerDownEvent>(Down); RegisterCallback<PointerMoveEvent>(Move);
                 RegisterCallback<PointerUpEvent>(Up); RegisterCallback<PointerCaptureOutEvent>(e =>
                 {
@@ -216,17 +224,17 @@ namespace Project.GridArt.Editor
                     }
                     gesture = -1;
                 });
-                RegisterCallback<WheelEvent>(e => { var before = e.localMousePosition; float old = zoom; zoom = Mathf.Clamp(zoom * Mathf.Exp(-e.delta.y * .04f), .75f, 192); pan = before + (pan - before) * (zoom / old); e.StopPropagation(); MarkDirtyRepaint(); RememberView(); });
+                RegisterCallback<WheelEvent>(e => { var before = e.localMousePosition; float old = zoom; zoom = Mathf.Clamp(zoom * Mathf.Exp(-e.delta.y * .04f), .75f, 192); pan = before + (pan - before) * (zoom / old); e.StopPropagation(); RepaintView(); RememberView(); });
                 RegisterCallback<KeyDownEvent>(e =>
                 {
-                    if (e.keyCode == KeyCode.Escape) { CancelStroke(); e.StopPropagation(); MarkDirtyRepaint(); }
+                    if (e.keyCode == KeyCode.Escape) { CancelStroke(); e.StopPropagation(); RepaintView(); }
                     if ((e.ctrlKey || e.commandKey) && e.keyCode == KeyCode.Z) { if (e.shiftKey) Undo.PerformRedo(); else Undo.PerformUndo(); e.StopPropagation(); }
                 });
                 RegisterCallback<AttachToPanelEvent>(e => RestoreView());
             }
             private string Key => "2026TapTap.GridArt.View." + Hash128.Compute(Application.dataPath) + "." + (owner.map != null ? AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(owner.map)) : "none");
             public void RememberView() { EditorPrefs.SetFloat(Key + ".Zoom", zoom); EditorPrefs.SetFloat(Key + ".X", pan.x); EditorPrefs.SetFloat(Key + ".Y", pan.y); }
-            public void RestoreView() { zoom = EditorPrefs.GetFloat(Key + ".Zoom", 32); pan = new Vector2(EditorPrefs.GetFloat(Key + ".X", 240), EditorPrefs.GetFloat(Key + ".Y", 320)); }
+            public void RestoreView() { zoom = EditorPrefs.GetFloat(Key + ".Zoom", 32); pan = new Vector2(EditorPrefs.GetFloat(Key + ".X", 240), EditorPrefs.GetFloat(Key + ".Y", 320)); RepaintView(); }
             public void FrameAll()
             {
                 if (owner.map == null) return;
@@ -241,9 +249,9 @@ namespace Project.GridArt.Editor
                 if (!found) return;
                 zoom = Mathf.Clamp(Mathf.Min((contentRect.width - 48) / Mathf.Max(1,bounds.width), (contentRect.height - 48) / Mathf.Max(1,bounds.height)),.75f,64);
                 pan = contentRect.center + new Vector2(-bounds.center.x,bounds.center.y)*zoom;
-                RememberView(); MarkDirtyRepaint();
+                RememberView(); RepaintView();
             }
-            public void Invalidate() { quads = null; layerQuads.Clear(); MarkDirtyRepaint(); }
+            public void Invalidate() { quads = null; layerQuads.Clear(); RepaintView(); }
             private Vector2Int Cell(Vector2 p) => new Vector2Int(Mathf.FloorToInt((p.x - pan.x) / zoom), Mathf.FloorToInt((pan.y - p.y) / zoom));
             private Rect Screen(Rect r) => new Rect(pan.x + r.x * zoom, pan.y - r.yMax * zoom, r.width * zoom, r.height * zoom);
             private static RectInt Selection(Vector2Int a, Vector2Int b) => new RectInt(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Abs(a.x - b.x) + 1, Mathf.Abs(a.y - b.y) + 1);
@@ -256,7 +264,7 @@ namespace Project.GridArt.Editor
                 gesture = e.button; pointerId = e.pointerId; dirty = canceled = false; eraseStroke = owner.erase || e.button == 1;
                 this.CapturePointer(e.pointerId); e.StopPropagation();
                 if (gesture != 2) { Undo.IncrementCurrentGroup(); strokeGroup = Undo.GetCurrentGroup(); Undo.RegisterCompleteObjectUndo(owner.map, "绘制网格美术"); if (!owner.rectangle) Paint(start); }
-                MarkDirtyRepaint();
+                RepaintView();
             }
             private void Move(PointerMoveEvent e)
             {
@@ -268,7 +276,7 @@ namespace Project.GridArt.Editor
                     if (steps <= 4096) for (int i = 1; i <= steps; i++) Paint(Vector2Int.RoundToInt(Vector2.Lerp(last, now, (float)i / steps)));
                     last = now;
                 }
-                if (gesture >= 0 || Cell(pointer) != lastHover) MarkDirtyRepaint();
+                if (gesture >= 0 || Cell(pointer) != lastHover) RepaintView();
                 lastHover = Cell(pointer);
                 if (gesture >= 0) e.StopPropagation();
             }
@@ -288,7 +296,7 @@ namespace Project.GridArt.Editor
                 }
                 gesture = -1; this.ReleasePointer(e.pointerId); RememberView();
                 if (dirty) { owner.map.revision++; EditorUtility.SetDirty(owner.map); Undo.CollapseUndoOperations(strokeGroup); owner.ArtChanged(); }
-                e.StopPropagation(); MarkDirtyRepaint();
+                e.StopPropagation(); RepaintView();
             }
             private void Paint(Vector2Int p)
             {
@@ -296,9 +304,8 @@ namespace Project.GridArt.Editor
                 bool changed = eraseStroke ? owner.Layer.Erase(p, owner.map.palette) : owner.Layer.Set(p, owner.brushIndex);
                 dirty |= changed; if (changed) { quads = null; layerQuads.Remove(owner.Layer); }
             }
-            private void Draw(MeshGenerationContext context)
+            public void RepaintView()
             {
-                var painter = context.painter2D;
                 if (quads == null)
                 {
                     quads = new List<(GridArtQuad, Color)>();
@@ -313,30 +320,24 @@ namespace Project.GridArt.Editor
                                 quads.Add((new GridArtQuad(new Rect(q.bounds.position + offset, q.bounds.size), q.uv, q.texture, q.normal), layer.tint));
                             }
                         }
-                }
-                visibleQuads.Clear();
-                foreach (var item in quads) if (Screen(item.Item1.bounds).Overlaps(contentRect)) visibleQuads.Add(item);
-                for (int begin = 0; begin < visibleQuads.Count;)
-                {
-                    int end = begin + 1;
-                    while (end < visibleQuads.Count && end - begin < 4096 && visibleQuads[end].Item1.texture == visibleQuads[begin].Item1.texture) end++;
-                    var mesh = context.Allocate((end-begin)*4,(end-begin)*6,visibleQuads[begin].Item1.texture);
-                    for (int j = begin; j < end; j++)
+                    artwork.Clear(); batches.Clear();
+                    for (int begin = 0; begin < quads.Count;)
                     {
-                        var item = visibleQuads[j]; Rect r = Screen(item.Item1.bounds); Rect uv = item.Item1.uv;
-                        mesh.SetNextVertex(V(r.xMin,r.yMin,uv.xMin,uv.yMax,item.Item2)); mesh.SetNextVertex(V(r.xMax,r.yMin,uv.xMax,uv.yMax,item.Item2));
-                        mesh.SetNextVertex(V(r.xMax,r.yMax,uv.xMax,uv.yMin,item.Item2)); mesh.SetNextVertex(V(r.xMin,r.yMax,uv.xMin,uv.yMin,item.Item2));
-                        ushort i = (ushort)((j-begin)*4);
-                        mesh.SetNextIndex(i); mesh.SetNextIndex((ushort)(i+1)); mesh.SetNextIndex((ushort)(i+2));
-                        mesh.SetNextIndex((ushort)(i+2)); mesh.SetNextIndex((ushort)(i+3)); mesh.SetNextIndex(i);
+                        int end = begin + 1;
+                        while (end < quads.Count && end - begin < 256 && quads[end].Item1.texture == quads[begin].Item1.texture) end++;
+                        var batch = new GridArtPreviewBatch(quads, begin, end - begin);
+                        batches.Add(batch); artwork.Add(batch); begin = end;
                     }
-                    begin = end;
                 }
-                painter.strokeColor = new Color(.36f, .42f, .5f, .32f); painter.lineWidth = 1; painter.BeginPath();
-                float gridStep = zoom; while (gridStep < 6) gridStep *= 2;
-                for (float x = pan.x % gridStep; x < contentRect.width; x += gridStep) { painter.MoveTo(new Vector2(x, 0)); painter.LineTo(new Vector2(x, contentRect.height)); }
-                for (float y = pan.y % gridStep; y < contentRect.height; y += gridStep) { painter.MoveTo(new Vector2(0, y)); painter.LineTo(new Vector2(contentRect.width, y)); }
-                painter.Stroke();
+                artwork.style.translate = new Translate(pan.x, pan.y);
+                artwork.style.scale = new Scale(Vector3.one * (zoom / GridArtPreviewBatch.Units));
+                foreach (var batch in batches) batch.SetVisible(Screen(batch.Bounds).Overlaps(contentRect));
+                overlay.MarkDirtyRepaint();
+            }
+            private void Draw(MeshGenerationContext context)
+            {
+                var painter = context.painter2D;
+                GridViewportDrawing.Draw(context, contentRect, pan, zoom, new Color(.36f, .42f, .5f, .5f));
                 if (owner.showGuides)
                 {
                     painter.strokeColor = new Color(1,.8f,.25f,.65f); painter.lineWidth = 2; painter.BeginPath();
@@ -353,7 +354,6 @@ namespace Project.GridArt.Editor
                 Rect box = Screen(area); painter.strokeColor = eraseStroke && gesture >= 0 || owner.erase ? new Color(1,.3f,.25f) : new Color(.25f,.8f,1);
                 painter.lineWidth = 2; painter.BeginPath(); painter.MoveTo(box.min); painter.LineTo(new Vector2(box.xMax,box.yMin)); painter.LineTo(box.max); painter.LineTo(new Vector2(box.xMin,box.yMax)); painter.ClosePath(); painter.Stroke();
             }
-            private static Vertex V(float x, float y, float u, float v, Color color) => new Vertex { position = new Vector3(x,y,Vertex.nearZ), uv = new Vector2(u,v), tint = color };
         }
     }
 }

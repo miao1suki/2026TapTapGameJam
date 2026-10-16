@@ -201,7 +201,7 @@ namespace Project.GridArt.Editor
             var cell = new FloatField("每格世界尺寸") { value = map.cellSize, isDelayed = true }; cell.RegisterValueChangedCallback(e => { Change("美术网格", () => map.cellSize = Mathf.Max(.01f, e.newValue)); RequestSource(); }); advanced.Add(cell);
             var palette = new ObjectField("素材库") { objectType = typeof(GridArtPalette), allowSceneObjects = false, value = map.palette };
             palette.RegisterValueChangedCallback(e => { if (map.layers.Any(l => l.cells.Count > 0)) { palette.SetValueWithoutNotify(map.palette); status.text = "已有绘图不能直接换库，请使用独立副本或共享库迁移。"; } else Change("选择素材库", () => map.palette = e.newValue as GridArtPalette); }); advanced.Add(palette); inspectorPanel.Add(advanced);
-            var guide = new Toggle("显示关卡轮廓") { value = showGuides }; guide.RegisterValueChangedCallback(e => { showGuides = e.newValue; canvas.MarkDirtyRepaint(); }); inspectorPanel.Add(guide);
+            var guide = new Toggle("显示关卡轮廓") { value = showGuides }; guide.RegisterValueChangedCallback(e => { showGuides = e.newValue; canvas.RepaintView(); }); inspectorPanel.Add(guide);
             UpdateSaveStatus();
             scroll.schedule.Execute(() => scroll.scrollOffset = libraryOffset);
             inspectorPanel.schedule.Execute(() => ((ScrollView)inspectorPanel).scrollOffset = inspectorOffset);

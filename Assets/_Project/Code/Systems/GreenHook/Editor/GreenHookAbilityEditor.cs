@@ -17,8 +17,8 @@ namespace Project.GreenHook.Editor
             root.Add(ProjectInspectorUtility.CreateScriptField(
                 serializedObject));
             root.Add(ProjectInspectorUtility.CreateHelp(
-                "选中绿色后，待机藤蔓头跟随鼠标四向方向。" +
-                "点击交互圈内的有效目标后，短藤蔓伸出并执行拉动。" +
+                "选中绿色后，藤蔓随指针自由瞄准，与红蓝线共用出线起点。" +
+                "命中后四向拉动物体，或以绿色物体为挂点荡绳；连接中可点击其他目标切换。" +
                 "钩子可穿过方块，但不能跨出当前房间。"));
 
             Foldout idle = ProjectInspectorUtility.CreateFoldout(
@@ -62,6 +62,8 @@ namespace Project.GreenHook.Editor
             movement.Add(ProjectInspectorUtility.CreateHelp("挂接后保持连接，跳跃或交互键主动脱钩。物体受阻时拉近玩家；绿色固定物体作为荡绳锚点。"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingAcceleration", "荡绳加速度"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingSpeedLimit", "荡绳速度上限"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingDamping", "荡绳阻尼", "松开方向输入后动量衰减速度；0为无额外阻尼。"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "retargetVisualSeconds", "换点视觉衔接（秒）", "切换挂点时绳尖的短过渡，不暂停玩家或清除惯性。"));
             root.Add(movement);
 
             Foldout visual = ProjectInspectorUtility.CreateFoldout(
@@ -78,7 +80,8 @@ namespace Project.GreenHook.Editor
             visual.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "sourceOffset",
-                "玩家出藤点偏移"));
+                "后备出线偏移",
+                "无红蓝连接组件时使用；存在该组件时共用其出线锚点和偏移。"));
             visual.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "cameraFacingOffset",

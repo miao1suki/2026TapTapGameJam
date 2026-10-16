@@ -146,9 +146,9 @@ namespace Project.GridArt.Editor
                         if (layer.followLevel && map.palette.Get(layer.sourceBrush) != null)
                             changed |= GridArtLevelSource.Synchronize(layer, SourceCells(layer.sourceGroup));
                 if (changed) { map.revision++; EditorUtility.SetDirty(map); ArtChanged(); }
-                RefreshSourcePanel(); canvas?.MarkDirtyRepaint();
+                RefreshSourcePanel(); canvas?.RepaintView();
             }
-            catch (Exception e) { levelSource=null; sourceCellCache.Clear(); guides.Clear(); canvas?.MarkDirtyRepaint(); if (sourceSummary != null) sourceSummary.text = e.Message; }
+            catch (Exception e) { levelSource=null; sourceCellCache.Clear(); guides.Clear(); canvas?.RepaintView(); if (sourceSummary != null) sourceSummary.text = e.Message; }
         }
         private HashSet<Vector2Int> SourceCells(string group)
         {

@@ -53,7 +53,9 @@ namespace PlanningEditorPrototype
             if (mode != PlanningCanvasMode.Assembly || room == null)
                 return new RectInt(box.x, box.y, box.width, box.height);
             GetAssemblyStride(out int sx, out int sy);
-            return GetAssemblyBoxRect(room, box, sx, sy);
+            if (room.isConnector) return GetAssemblyBoxRect(room, box, sx, sy);
+            var origin = OwnerPreview(room).Bounds.position;
+            return new RectInt(origin.x * sx + box.x, origin.y * sy + box.y, box.width, box.height);
         }
 
         private static bool SameKind(PlanningBox a, PlanningBox b) =>
@@ -324,7 +326,7 @@ namespace PlanningEditorPrototype
         public void RestoreView(Vector2 savedPan, float savedZoom)
         {
             if (float.IsNaN(savedPan.x) || float.IsNaN(savedPan.y) ||
-                float.IsNaN(savedZoom))
+                float.IsNaN(savedZoom) || float.IsInfinity(savedPan.x) || float.IsInfinity(savedPan.y) || float.IsInfinity(savedZoom))
             {
                 return;
             }
@@ -1588,7 +1590,7 @@ namespace PlanningEditorPrototype
         {
             Painter2D painter = context.painter2D;
             DrawAssemblyOwnership(painter);
-            DrawGrid(painter);
+            DrawGrid(context);
             GetAssemblyStride(out int strideX, out int strideY);
 
             for (int index = 0; index < document.rooms.Count; index++)
@@ -1616,6 +1618,7 @@ namespace PlanningEditorPrototype
                         offsetY + box.y,
                         box.width,
                         box.height);
+                    if (!rect.Overlaps(contentRect)) continue;
                     FillRect(painter, rect, ColorForBox(box), .92f);
                 }
             }
@@ -1674,6 +1677,7 @@ namespace PlanningEditorPrototype
                         originY + box.y,
                         box.width,
                         box.height);
+                    if (!rect.Overlaps(contentRect)) continue;
                     FillRect(painter, rect, ColorForBox(box), .92f);
                 }
             }
@@ -1688,6 +1692,7 @@ namespace PlanningEditorPrototype
                     box.y,
                     box.width,
                     box.height);
+                if (!rect.Overlaps(contentRect)) continue;
                 FillRect(painter, rect, ColorForBox(box), .92f);
                 StrokeRect(
                     painter,
@@ -1696,7 +1701,6 @@ namespace PlanningEditorPrototype
                     1f);
             }
 
-            DrawGrid(painter, .16f);
             DrawDoorLinks(painter);
             DrawRectanglePreview(painter);
             DrawHoverCell(painter);
@@ -1777,7 +1781,6 @@ namespace PlanningEditorPrototype
         {
             Painter2D painter = context.painter2D;
             DrawWorldRegions(painter);
-            DrawGrid(painter);
             for (int roomIndex = 0;
                  roomIndex < document.rooms.Count;
                  roomIndex++)
@@ -1800,6 +1803,7 @@ namespace PlanningEditorPrototype
             }
 
             DrawConnectors(painter);
+            DrawGrid(context);
             DrawDoors(painter);
             DrawKeys(painter);
             DrawRectanglePreview(painter);
@@ -1865,12 +1869,13 @@ namespace PlanningEditorPrototype
             }
 
             Painter2D painter = context.painter2D;
-            DrawGrid(painter);
+            DrawGrid(context);
             DrawDetailOwnership(painter, room);
 
             foreach (var box in room.boxes.OrderBy(b => PlanningWaterLayerUtility.IsWater(b, palette) ? 0 : 1))
             {
                 Rect rect = CellRect(box.x, box.y, box.width, box.height);
+                if (!rect.Overlaps(contentRect)) continue;
                 Texture2D preview = GetBoxPreview(box);
                 if (preview == null)
                 {
@@ -1927,7 +1932,8 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            var active = new HashSet<string>();
+            var active = activePreviewKeys;
+            active.Clear();
             foreach (PlanningBox box in room.boxes)
             {
                 AddPreviewImage(box, new RectInt(box.x, box.y, box.width, box.height), active);
@@ -1938,7 +1944,8 @@ namespace PlanningEditorPrototype
 
         private void UpdateAssemblyPreviewImages()
         {
-            var active = new HashSet<string>();
+            var active = activePreviewKeys;
+            active.Clear();
             GetAssemblyStride(out int strideX, out int strideY);
             for (int roomIndex = 0;
                  roomIndex < document.rooms.Count;
@@ -1976,6 +1983,8 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
+                // Resolve the room layout once, not once for every object in this room.
+                var origin = OwnerPreview(room).Bounds.position;
                 for (int boxIndex = 0;
                      boxIndex < room.boxes.Count;
                      boxIndex++)
@@ -1983,11 +1992,7 @@ namespace PlanningEditorPrototype
                     PlanningBox box = room.boxes[boxIndex];
                     AddPreviewImage(
                         box,
-                        GetAssemblyBoxRect(
-                            room,
-                            box,
-                            strideX,
-                            strideY),
+                        new RectInt(origin.x * strideX + box.x, origin.y * strideY + box.y, box.width, box.height),
                         active);
                 }
             }
@@ -2072,23 +2077,9 @@ namespace PlanningEditorPrototype
         }
 
         private void DrawGrid(
-            Painter2D painter,
+            MeshGenerationContext context,
             float opacity = 1f)
         {
-            Rect visible = contentRect;
-            float grid = GridSize;
-            if (grid <= 2f)
-            {
-                return;
-            }
-
-            Vector2 topLeft = ScreenToWorld(visible.min);
-            Vector2 bottomRight = ScreenToWorld(visible.max);
-            int startX = Mathf.FloorToInt(topLeft.x);
-            int endX = Mathf.CeilToInt(bottomRight.x);
-            int startY = Mathf.FloorToInt(topLeft.y);
-            int endY = Mathf.CeilToInt(bottomRight.y);
-            int lineCount = 0;
             float luminance =
                 backgroundColor.r * .2126f +
                 backgroundColor.g * .7152f +
@@ -2097,21 +2088,7 @@ namespace PlanningEditorPrototype
                 ? new Color(.42f, .5f, .64f, .68f)
                 : new Color(.18f, .22f, .28f, .58f);
             gridColor.a *= opacity;
-            for (int x = startX; x <= endX && lineCount < 500; x++)
-            {
-                Vector2 start = WorldToScreen(new Vector2(x, topLeft.y));
-                Vector2 end = WorldToScreen(new Vector2(x, bottomRight.y));
-                DrawLine(painter, start, end, gridColor, 1f);
-                lineCount++;
-            }
-
-            for (int y = startY; y <= endY && lineCount < 1000; y++)
-            {
-                Vector2 start = WorldToScreen(new Vector2(topLeft.x, y));
-                Vector2 end = WorldToScreen(new Vector2(bottomRight.x, y));
-                DrawLine(painter, start, end, gridColor, 1f);
-                lineCount++;
-            }
+            Project.GridArt.Editor.GridViewportDrawing.Draw(context, contentRect, pan, GridSize, gridColor);
         }
 
         private void DrawDoors(Painter2D painter)
