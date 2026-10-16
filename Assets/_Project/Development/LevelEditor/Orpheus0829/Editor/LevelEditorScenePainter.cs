@@ -53,6 +53,7 @@ namespace Project.LevelEditor.Editor
                 return;
             }
 
+            if (Project.GridArt.Editor.GridArtScenePainter.IsPainting) return;
             if (LevelEditorState.EditMode)
             {
                 LevelEditorViewLock.Tick(sceneView);

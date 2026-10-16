@@ -1,0 +1,20 @@
+.art-workspace { background-color: rgb(29, 32, 38); color: rgb(218, 224, 232); flex-direction: column; }
+.art-header { min-height: 42px; padding: 6px 10px; align-items: center; background-color: rgb(37, 41, 48); }
+#art-title { font-size: 18px; -unity-font-style: bold; margin-right: 16px; }
+.art-toolbar { min-height: 32px; padding: 4px 8px; align-items: center; background-color: rgb(31, 35, 42); }
+.art-workspace Button { min-height: 26px; margin: 2px; padding-left: 8px; padding-right: 8px; border-radius: 4px; border-width: 1px; border-color: rgb(61, 68, 80); background-color: rgb(45, 51, 61); }
+.art-workspace Button:hover { background-color: rgb(58, 69, 84); }
+.art-workspace .art-primary { background-color: rgb(35, 112, 164); color: white; border-color: rgb(66, 154, 208); }
+.art-workspace .art-selected { border-color: rgb(68, 177, 230); border-width: 2px; background-color: rgb(37, 72, 93); }
+.art-library { width: 250px; min-width: 220px; flex-shrink: 0; padding: 10px; background-color: rgb(33, 37, 44); }
+.art-inspector { width: 280px; flex-shrink: 0; padding: 10px; background-color: rgb(33, 37, 44); }
+.art-section-title { font-size: 14px; -unity-font-style: bold; margin-top: 10px; margin-bottom: 8px; }
+.art-brush-grid { flex-direction: row; flex-wrap: wrap; align-content: flex-start; }
+.art-workspace .art-brush { width: 102px; height: 94px; padding: 4px; margin: 3px; }
+.art-brush-name { font-size: 11px; -unity-text-align: middle-center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#art-current-preview { height: 100px; margin-bottom: 8px; background-color: rgb(23, 27, 33); }
+.art-status { min-height: 28px; padding: 6px 12px; background-color: rgb(24, 28, 34); white-space: normal; }
+#art-canvas-hint { padding: 6px 10px; color: rgb(150, 163, 183); font-size: 11px; }
+.art-workspace Foldout { margin-top: 8px; margin-bottom: 6px; }
+.art-inspector .unity-base-field__label, .art-library .unity-base-field__label { min-width: 85px; width: 85px; }
+.art-inspector .unity-base-field__input, .art-library .unity-base-field__input { min-width: 35px; }

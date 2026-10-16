@@ -26,7 +26,7 @@ Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全�
 
 重生点/弹性植物美术：`ObjectArtwork`配置与`WorldObjectSpritePresentation`表现，三态重生点、真实弹跳触发的6帧动画、合并植物按格重复，接入既有绿色HSV/共享透明材质。使用见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md)，接入见 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
 
-网格美术试用版：`Code/Systems/GridArt`，独立美术资产、八邻格四象限自动边角、多格装饰、多层XY视差与持久化分块Mesh；关卡编辑器“网格美术”入口共享格尺寸、只读已应用的场景轮廓，不改玩法存档。独立测试在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
+关卡美术工作台：`Code/Systems/GridArt`，UI Toolkit双侧栏、共享多图集素材库、直接读取当前关卡／房间／通道Solid白块并可联动铺绘，无需Hierarchy选择；自动保存美术／延后实时预览默认开启，显式“保存场景”交付Scene。支持Scene绘制、自动边角、多格装饰、同格多层透明叠图、多层XY视差预设／预览及每关独立持久化Mesh。自动底图不覆盖手工装饰；空闲不扫描、笔画不重建侧栏、未变生成网格复用。不改白块共享材质／玩法存档，跨Scene需独立副本；预留同UV法线与URP 3D受光，不代表2D Light已接入。独立示例在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
 
 游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标和设置背景，预裁切产物位于`Art/Generated/GameUI`。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
 

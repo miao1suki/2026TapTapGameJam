@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEditor.SceneManagement;
@@ -9,7 +10,7 @@ using UnityEngine.UIElements;
 
 namespace Project.GridArt.Editor
 {
-    public sealed class GridArtWindow : EditorWindow
+    public sealed partial class GridArtWindow : EditorWindow
     {
         [SerializeField] private GridArtMap map;
         [SerializeField] private int layerIndex;
@@ -34,6 +35,9 @@ namespace Project.GridArt.Editor
         public GridArtMap Map => map;
         public GridArtLayer Layer => map != null && layerIndex >= 0 && layerIndex < map.layers.Count ? map.layers[layerIndex] : null;
         public GridArtBrush Brush => map != null && map.palette != null ? map.palette.Get(brushIndex) : null;
+        internal bool CanEditMap => map != null && (string.IsNullOrEmpty(map.ownerSceneGuid) || map.ownerSceneGuid == AssetDatabase.AssetPathToGUID(SceneManager.GetActiveScene().path));
+        private int LayerOrder(int index) => map.layers[index].sortingOrder == int.MinValue ? index - 100 : map.layers[index].sortingOrder;
+        private IEnumerable<int> OrderedLayers => Enumerable.Range(0,map.layers.Count).OrderBy(LayerOrder);
 
         [MenuItem("Tools/2026TapTap/关卡美术/网格美术编辑器")]
         public static void Open() => GetWindow<GridArtWindow>("网格美术");
@@ -42,6 +46,7 @@ namespace Project.GridArt.Editor
             var window = GetWindow<GridArtWindow>("网格美术");
             window.guides.Clear(); if (reference != null) window.guides.AddRange(reference);
             window.canvas?.Invalidate();
+            window.RequestSource();
             if (window.map == null) window.CreateMap(Mathf.Max(.01f, size));
             else if (!Mathf.Approximately(window.map.cellSize, size))
                 window.ShowNotification(new GUIContent("美术图格尺寸不同，请在网格设置中核对。"));
@@ -49,173 +54,132 @@ namespace Project.GridArt.Editor
 
         private void OnEnable()
         {
-            Undo.undoRedoPerformed += Refresh;
+            Undo.undoRedoPerformed += OnArtUndo;
+            GridArtLevelSource.Changed += RequestSource;
+            EditorApplication.hierarchyChanged += RequestSource;
+            EditorApplication.update += AutomationTick;
+            AssemblyReloadEvents.beforeAssemblyReload += FlushBeforeReload;
+            EditorSceneManager.sceneSaving += ArtSceneSaving;
             EditorSceneManager.activeSceneChangedInEditMode += SceneChanged;
+            EditorApplication.playModeStateChanged += PlayChanged;
         }
         private void OnDisable()
         {
-            Undo.undoRedoPerformed -= Refresh;
+            StopScenePainting();
+            canvas?.CancelStroke(); FlushPending(true);
+            Undo.undoRedoPerformed -= OnArtUndo;
+            GridArtLevelSource.Changed -= RequestSource;
+            EditorApplication.hierarchyChanged -= RequestSource;
+            EditorApplication.update -= AutomationTick;
+            AssemblyReloadEvents.beforeAssemblyReload -= FlushBeforeReload;
+            EditorSceneManager.sceneSaving -= ArtSceneSaving;
             EditorSceneManager.activeSceneChangedInEditMode -= SceneChanged;
+            EditorApplication.playModeStateChanged -= PlayChanged;
             canvas?.RememberView();
         }
-        private void SceneChanged(Scene before, Scene after) { canvas?.RememberView(); BindRemembered(); canvas?.RestoreView(); Refresh(); }
-        private void OnFocus() => Refresh();
+        private void FlushBeforeReload() { StopScenePainting(); canvas?.CancelStroke(); FlushPending(true); }
+        private void ArtSceneSaving(Scene scene, string path) { if (map != null && scene == SceneManager.GetActiveScene()) { if (sourcePending) RefreshLevelSource(); FlushPending(false); } }
+        private void SceneChanged(Scene before, Scene after) { StopScenePainting(); canvas?.CancelStroke(); FlushDataForPreviousScene(); canvas?.RememberView(); BindRemembered(); BindAutomation(); canvas?.RestoreView(); Refresh(); }
+        private void PlayChanged(PlayModeStateChange state) { if (state == PlayModeStateChange.ExitingEditMode) { StopScenePainting(); canvas?.CancelStroke(); if(sourcePending) RefreshLevelSource(); FlushPending(false); } }
+        private void OnFocus()
+        {
+            if (map?.palette != null && AssetDatabase.GetAssetPath(map.palette) == GridArtLibraryService.SharedPath)
+                GridArtLibraryService.Synchronize(map.palette);
+            RequestSource();
+            if (map != null) foreach (var layer in map.layers) layer.InvalidateLookup();
+            if (map != null && (EditorUtility.IsDirty(map) || map.palette != null && EditorUtility.IsDirty(map.palette))) QueuePersistence();
+            Refresh();
+        }
         private void BindRemembered()
         {
             string guid = EditorPrefs.GetString(SceneKey, "");
             map = AssetDatabase.LoadAssetAtPath<GridArtMap>(AssetDatabase.GUIDToAssetPath(guid));
+            if (map == null) foreach (var root in SceneManager.GetActiveScene().GetRootGameObjects())
+            {
+                var output = root.GetComponentInChildren<GridArtScene>(true);
+                if (output != null && output.map != null) { map = output.map; break; }
+            }
+            if (map == null && !string.IsNullOrEmpty(SceneManager.GetActiveScene().path))
+            {
+                string sceneGuid = AssetDatabase.AssetPathToGUID(SceneManager.GetActiveScene().path);
+                foreach (var candidateGuid in AssetDatabase.FindAssets("t:GridArtMap"))
+                {
+                    var candidate = AssetDatabase.LoadAssetAtPath<GridArtMap>(AssetDatabase.GUIDToAssetPath(candidateGuid));
+                    if (candidate.ownerSceneGuid == sceneGuid) { map = candidate; break; }
+                }
+            }
+            RestoreSelection();
+        }
+        private string SelectionKey => "2026TapTap.GridArt.Selection." + Hash128.Compute(Application.dataPath) + "." + AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(map));
+        private void RememberSelection()
+        { if (map != null) { EditorPrefs.SetInt(SelectionKey+".Layer",layerIndex); EditorPrefs.SetInt(SelectionKey+".Brush",brushIndex); } }
+        private void RestoreSelection()
+        {
+            if (map == null) { layerIndex=brushIndex=0; return; }
+            int initial=map.layers.FindIndex(l=>l.label=="墙地表面");
+            layerIndex=Mathf.Clamp(EditorPrefs.GetInt(SelectionKey+".Layer",Mathf.Max(0,initial)),0,Mathf.Max(0,map.layers.Count-1));
+            brushIndex=EditorPrefs.GetInt(SelectionKey+".Brush",0);
         }
         public void CreateGUI()
         {
-            minSize = new Vector2(760, 460);
-            BindRemembered();
-            rootVisualElement.style.flexDirection = FlexDirection.Column;
-            var toolbar = new Toolbar();
-            toolbar.style.flexWrap = Wrap.Wrap; toolbar.style.height = StyleKeyword.Auto; toolbar.style.minHeight = 28;
-            mapField = new ObjectField("美术图") { objectType = typeof(GridArtMap), value = map };
-            mapField.style.width = 320;
-            mapField.RegisterValueChangedCallback(e => SetMap(e.newValue as GridArtMap)); toolbar.Add(mapField);
-            toolbar.Add(new ToolbarButton(() => CreateMap(1)) { text = "新建" });
-            toolbar.Add(new ToolbarButton(() => GridArtDemo.Create(this)) { text = "载入素材示例" });
-            toolbar.Add(new ToolbarButton(() => EditorApplication.ExecuteMenuItem("Tools/2026TapTap/方块贴画/导入不规则瓦片图")) { text = "切片导入" });
-            toolbar.Add(new ToolbarButton(() => canvas?.FrameAll()) { text = "居中全部" });
-            toolbar.Add(new ToolbarButton(Apply) { text = "应用到当前场景" });
-            toolbar.Add(new ToolbarButton(() => { AssetDatabase.SaveAssets(); if (map != null) EditorGUIUtility.PingObject(map); }) { text = "保存" });
-            rootVisualElement.Add(toolbar);
-            var content = new VisualElement(); content.style.flexGrow = 1; content.style.flexDirection = FlexDirection.Row;
-            canvas = new ArtCanvas(this); canvas.style.flexGrow = 1; content.Add(canvas);
-            sidebar = new ScrollView(); sidebar.style.width = 288; sidebar.style.paddingLeft = 12; sidebar.style.paddingRight = 12;
-            sidebar.style.backgroundColor = new Color(.14f, .15f, .17f); content.Add(sidebar);
-            rootVisualElement.Add(content);
-            status = new Label(); status.style.paddingLeft = 12; status.style.paddingTop = 6; status.style.paddingBottom = 6;
-            status.style.whiteSpace = WhiteSpace.Normal;
-            rootVisualElement.Add(status);
-            Refresh();
+            BuildWorkspace();
         }
         public void SetMap(GridArtMap value)
         {
-            canvas?.RememberView(); map = value; layerIndex = brushIndex = 0;
+            StopScenePainting(); canvas?.CancelStroke(); FlushPending(true); EndPreview();
+            canvas?.RememberView(); RememberSelection(); map = value; RestoreSelection();
             EditorPrefs.SetString(SceneKey, value != null ? AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value)) : "");
-            mapField?.SetValueWithoutNotify(value); canvas?.RestoreView(); Refresh();
+            BindAutomation(); mapField?.SetValueWithoutNotify(value); canvas?.RestoreView(); Refresh();
         }
         private void CreateMap(float size)
         {
-            string path = EditorUtility.SaveFilePanelInProject("新建美术图", "美术图", "asset", "选择此关卡的美术数据保存位置");
-            if (string.IsNullOrEmpty(path)) return;
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (PrefabStageUtility.GetCurrentPrefabStage() != null) { ShowNotification(new GUIContent("请退出预制体模式，在关卡场景创建美术图。")); return; }
+            var scene = SceneManager.GetActiveScene();
+            if (string.IsNullOrEmpty(scene.path)) { ShowNotification(new GUIContent("请先保存关卡场景，再创建本关美术图。")); return; }
+            string path = AssetDatabase.GenerateUniqueAssetPath(System.IO.Path.ChangeExtension(scene.path, null) + "_Art.asset");
             var data = CreateInstance<GridArtMap>(); data.cellSize = size;
+            data.ownerSceneGuid = AssetDatabase.AssetPathToGUID(scene.path);
+            data.palette = GridArtLibraryService.Shared(); GridArtLibraryService.Synchronize(data.palette);
             data.layers.Add(new GridArtLayer { label = "远景背景", depth = 5, parallax = new Vector2(.3f, .3f) });
             data.layers.Add(new GridArtLayer { label = "近景背景", depth = 2, parallax = new Vector2(.7f, .7f) });
-            data.layers.Add(new GridArtLayer { label = "场景装饰", depth = -.51f });
-            AssetDatabase.CreateAsset(data, path); SetMap(data);
+            data.layers.Add(new GridArtLayer { label = "墙地表面", depth = -.51f, sortingOrder = -100 });
+            data.layers.Add(new GridArtLayer { label = "场景装饰", depth = -.55f, sortingOrder = -80 });
+            AssetDatabase.CreateAsset(data, path); SetMap(data); layerIndex = 2; Refresh();
         }
         private void Apply()
         {
             try
             {
-                var output = GridArtBuilder.Apply(map, SceneManager.GetActiveScene());
-                Refresh();
-                EditorGUIUtility.PingObject(output); status.text = "已应用 · 请保存当前 Scene";
+                GridArtBuilder.Apply(map, SceneManager.GetActiveScene(), false, autoSave);
+                diskSignature = DiskSignature(map); buildPending = false;
+                if (autoSave) savePending = false;
+                UpdateSaveStatus();
             }
-            catch (Exception e) { status.text = e.Message; }
+            catch (Exception e) { saveError = e.Message; status.text = e.Message; }
         }
-        private void Change(string title, Action operation)
+        private void Change(string title, Action operation, bool refresh = true)
         {
             if (map == null || EditorApplication.isPlayingOrWillChangePlaymode) return;
-            Undo.RecordObject(map, title); operation(); map.revision++; EditorUtility.SetDirty(map); Refresh();
+            if (!CanEditMap) { status.text = "此图属于其他场景，请先创建独立副本。"; return; }
+            Undo.RecordObject(map, title); operation(); map.revision++; EditorUtility.SetDirty(map);
+            ArtChanged(refresh);
         }
         public void Refresh()
         {
-            if (sidebar == null) return;
-            mapField.SetValueWithoutNotify(map);
-            sidebar.Clear(); canvas.Invalidate();
-            if (map == null)
-            {
-                sidebar.Add(new HelpBox("新建美术图，或载入素材示例。", HelpBoxMessageType.Info));
-                status.text = "未选择美术图"; return;
-            }
-            var palette = new ObjectField("瓦片库") { objectType = typeof(GridArtPalette), value = map.palette };
-            palette.RegisterValueChangedCallback(e => Change("更换美术库", () => map.palette = e.newValue as GridArtPalette));
-            sidebar.Add(palette);
-            sidebar.Add(new Button(() =>
-            {
-                string path = EditorUtility.SaveFilePanelInProject("新建瓦片库", "美术瓦片库", "asset", "选择共享瓦片库位置");
-                if (string.IsNullOrEmpty(path)) return;
-                var library = CreateInstance<GridArtPalette>(); library.brushes.Add(new GridArtBrush());
-                AssetDatabase.CreateAsset(library,path); Change("设置美术库", () => map.palette = library); Selection.activeObject = library;
-            }) { text = "新建瓦片库" });
-            sidebar.Add(new Button(() => { if (map.palette != null) { Selection.activeObject = map.palette; EditorGUIUtility.PingObject(map.palette); } }) { text = "配置瓦片库" });
-            var heading = new Label("图层"); heading.style.fontSize = 16; heading.style.marginTop = 16; sidebar.Add(heading);
-            var names = new List<string>(); foreach (var layer in map.layers) names.Add(layer.label);
-            if (names.Count > 0)
-            {
-                layerIndex = Mathf.Clamp(layerIndex, 0, names.Count - 1);
-                var layers = new PopupField<string>("当前图层", names, layerIndex);
-                layers.RegisterValueChangedCallback(e => { layerIndex = names.IndexOf(e.newValue); Refresh(); }); sidebar.Add(layers);
-                var label = new TextField("名称") { value = Layer.label, isDelayed = true };
-                label.RegisterValueChangedCallback(e => Change("修改图层名称", () => Layer.label = e.newValue)); sidebar.Add(label);
-                var visible = new Toggle("显示") { value = Layer.visible }; visible.RegisterValueChangedCallback(e => Change("显示美术层", () => Layer.visible = e.newValue)); sidebar.Add(visible);
-                var locked = new Toggle("锁定") { value = Layer.locked }; locked.RegisterValueChangedCallback(e => Change("锁定美术层", () => Layer.locked = e.newValue)); sidebar.Add(locked);
-            }
-            var layerActions = new VisualElement(); layerActions.style.flexDirection = FlexDirection.Row;
-            layerActions.Add(new Button(() => Change("新增美术层", () => { map.layers.Add(new GridArtLayer { label = "美术层 " + (map.layers.Count + 1) }); layerIndex = map.layers.Count - 1; })) { text = "新增" });
-            layerActions.Add(new Button(() => { if (Layer != null && EditorUtility.DisplayDialog("删除图层", "删除“" + Layer.label + "”及其中全部美术？", "删除", "取消")) Change("删除美术层", () => map.layers.RemoveAt(layerIndex)); }) { text = "删除" });
-            sidebar.Add(layerActions);
-            if (Layer == null) { status.text = "暂无图层 · 点击新增开始绘图"; return; }
-            var order = new VisualElement(); order.style.flexDirection = FlexDirection.Row;
-            order.Add(new Button(() => MoveLayer(-1)) { text = "后移一层" }); order.Add(new Button(() => MoveLayer(1)) { text = "前移一层" }); sidebar.Add(order);
-            var advanced = new Foldout { text = "图层与网格设置", value = EditorPrefs.GetBool(SceneKey + ".Advanced", false) };
-            advanced.RegisterValueChangedCallback(e => EditorPrefs.SetBool(SceneKey + ".Advanced", e.newValue));
-            var tint = new ColorField("颜色 / 透明度") { value = Layer.tint };
-            tint.RegisterValueChangedCallback(e => Change("美术层颜色", () => Layer.tint = e.newValue)); advanced.Add(tint);
-            var depth = new FloatField("Z 深度") { value = Layer.depth, isDelayed = true };
-            depth.RegisterValueChangedCallback(e => Change("美术层深度", () => Layer.depth = e.newValue)); advanced.Add(depth);
-            var factor = new Vector2Field("视差系数") { value = Layer.parallax };
-            factor.tooltip = "1：跟随世界；0：固定在镜头中。背景一般使用 0.2～0.8。";
-            factor.RegisterValueChangedCallback(e => Change("视差系数", () => Layer.parallax = e.newValue)); advanced.Add(factor);
-            var cell = new FloatField("每格世界尺寸") { value = map.cellSize, isDelayed = true };
-            cell.RegisterValueChangedCallback(e => Change("美术网格尺寸", () => map.cellSize = Mathf.Max(.01f, e.newValue))); advanced.Add(cell);
-            sidebar.Add(advanced);
-            var guide = new Toggle("关卡参考轮廓") { value = showGuides };
-            guide.RegisterValueChangedCallback(e => { showGuides = e.newValue; canvas.MarkDirtyRepaint(); }); sidebar.Add(guide);
-            var paintHeading = new Label("笔刷"); paintHeading.style.fontSize = 16; paintHeading.style.marginTop = 16; sidebar.Add(paintHeading);
-            var modes = new VisualElement(); modes.style.flexDirection = FlexDirection.Row;
-            modes.Add(new Button(() => { erase = false; Refresh(); }) { text = erase ? "绘制" : "● 绘制" });
-            modes.Add(new Button(() => { erase = true; Refresh(); }) { text = erase ? "● 擦除" : "擦除" }); sidebar.Add(modes);
-            var box = new Toggle("框选区域") { value = rectangle }; box.RegisterValueChangedCallback(e => rectangle = e.newValue); sidebar.Add(box);
-            if (map.palette != null && map.palette.brushes.Count > 0)
-            {
-                brushIndex = Mathf.Clamp(brushIndex, 0, map.palette.brushes.Count - 1);
-                var brushes = new VisualElement(); brushes.style.flexDirection = FlexDirection.Row; brushes.style.flexWrap = Wrap.Wrap;
-                for (int i = 0; i < map.palette.brushes.Count; i++)
-                {
-                    int index = i; var b = map.palette.Get(i);
-                    var button = new Button(() => { brushIndex = index; Refresh(); });
-                    button.style.width = 120; button.style.height = 96; button.style.marginBottom = 6;
-                    if (i == brushIndex) button.style.backgroundColor = new Color(.16f, .34f, .46f);
-                    var preview = new Image { sprite = b.autoTerrain ? b.GetPiece(4) : b.sprite, scaleMode = ScaleMode.ScaleToFit };
-                    preview.style.height = 56; preview.pickingMode = PickingMode.Ignore; button.Add(preview);
-                    var title = new Label(b.label); title.style.unityTextAlign = TextAnchor.MiddleCenter; title.pickingMode = PickingMode.Ignore; button.Add(title); brushes.Add(button);
-                }
-                sidebar.Add(brushes);
-                if (Brush.autoTerrain && !Brush.HasInnerCorners)
-                    sidebar.Add(new HelpBox("内拐角素材未齐；缺失位置使用中心图。", HelpBoxMessageType.Warning));
-                sidebar.Add(new Label(Brush.autoTerrain ? "自动边缘与拐角" : "占格 " + Brush.Size.x + " × " + Brush.Size.y));
-            }
-            sidebar.Add(new HelpBox("左键绘制 · 右键擦除\n中键拖动 · 滚轮缩放\nCtrl+Z 撤销 · Esc 取消笔画", HelpBoxMessageType.Info));
-            bool applied = false;
-            if (map.palette != null)
-            {
-                string hash = AssetDatabase.GetAssetDependencyHash(AssetDatabase.GetAssetPath(map.palette)).ToString();
-                foreach (var output in UnityEngine.Object.FindObjectsByType<GridArtScene>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                    if (output.map == map && output.gameObject.scene == SceneManager.GetActiveScene() && output.IsBuiltFor(map.revision,hash)) applied = true;
-            }
-            status.text = (applied ? "已应用" : "有未应用修改") + " · " + Layer.cells.Count + " 个绘制点 · " + AssetDatabase.GetAssetPath(map);
+            RefreshWorkspace();
         }
         private void MoveLayer(int direction)
         {
-            int next = layerIndex + direction;
-            if (next < 0 || next >= map.layers.Count) return;
-            Change("调整美术层顺序", () => { var l = Layer; map.layers.RemoveAt(layerIndex); map.layers.Insert(next, l); layerIndex = next; });
+            var sorted = OrderedLayers.ToList(); int place = sorted.IndexOf(layerIndex), next = place + direction;
+            if (next < 0 || next >= sorted.Count) return;
+            Change("调整美术层顺序", () =>
+            {
+                if (LayerOrder(sorted[place]) == LayerOrder(sorted[next]))
+                    for (int i=0;i<sorted.Count;i++) map.layers[sorted[i]].sortingOrder = -200+i*10;
+                int a = LayerOrder(layerIndex), b = LayerOrder(sorted[next]);
+                map.layers[layerIndex].sortingOrder = b; map.layers[sorted[next]].sortingOrder = a;
+            });
         }
 
         private sealed class ArtCanvas : VisualElement
@@ -227,24 +191,35 @@ namespace Project.GridArt.Editor
             private Vector2 pointer;
             private int gesture = -1, pointerId, strokeGroup;
             private bool dirty, canceled, eraseStroke;
+            public bool IsStroking => gesture >= 0 && gesture != 2;
+            public void CancelStroke()
+            {
+                if (!IsStroking) return;
+                gesture = -1; dirty = false; Undo.RevertAllDownToGroup(strokeGroup);
+                if (this.HasPointerCapture(pointerId)) this.ReleasePointer(pointerId);
+                Invalidate();
+            }
             private List<(GridArtQuad, Color)> quads;
+            private readonly Dictionary<GridArtLayer, List<GridArtQuad>> layerQuads = new Dictionary<GridArtLayer, List<GridArtQuad>>();
+            private readonly List<(GridArtQuad, Color)> visibleQuads = new List<(GridArtQuad, Color)>();
+            private Vector2Int lastHover;
             public ArtCanvas(GridArtWindow window)
             {
-                owner = window; focusable = true; style.overflow = Overflow.Hidden;
+                owner = window; focusable = true; style.overflow = Overflow.Hidden; style.backgroundColor = new Color(.09f,.11f,.14f);
                 generateVisualContent += Draw;
                 RegisterCallback<PointerDownEvent>(Down); RegisterCallback<PointerMoveEvent>(Move);
                 RegisterCallback<PointerUpEvent>(Up); RegisterCallback<PointerCaptureOutEvent>(e =>
                 {
                     if (gesture >= 0 && gesture != 2 && dirty && owner.map != null)
                     {
-                        owner.map.revision++; EditorUtility.SetDirty(owner.map); Undo.CollapseUndoOperations(strokeGroup); owner.Refresh();
+                        owner.map.revision++; EditorUtility.SetDirty(owner.map); Undo.CollapseUndoOperations(strokeGroup); owner.ArtChanged();
                     }
                     gesture = -1;
                 });
-                RegisterCallback<WheelEvent>(e => { var before = e.localMousePosition; float old = zoom; zoom = Mathf.Clamp(zoom * Mathf.Exp(-e.delta.y * .04f), 6, 192); pan = before + (pan - before) * (zoom / old); e.StopPropagation(); MarkDirtyRepaint(); RememberView(); });
+                RegisterCallback<WheelEvent>(e => { var before = e.localMousePosition; float old = zoom; zoom = Mathf.Clamp(zoom * Mathf.Exp(-e.delta.y * .04f), .75f, 192); pan = before + (pan - before) * (zoom / old); e.StopPropagation(); MarkDirtyRepaint(); RememberView(); });
                 RegisterCallback<KeyDownEvent>(e =>
                 {
-                    if (e.keyCode == KeyCode.Escape) { canceled = true; gesture = -1; this.ReleasePointer(pointerId); if (dirty) { dirty = false; Undo.PerformUndo(); } e.StopPropagation(); MarkDirtyRepaint(); }
+                    if (e.keyCode == KeyCode.Escape) { CancelStroke(); e.StopPropagation(); MarkDirtyRepaint(); }
                     if ((e.ctrlKey || e.commandKey) && e.keyCode == KeyCode.Z) { if (e.shiftKey) Undo.PerformRedo(); else Undo.PerformUndo(); e.StopPropagation(); }
                 });
                 RegisterCallback<AttachToPanelEvent>(e => RestoreView());
@@ -261,20 +236,23 @@ namespace Project.GridArt.Editor
                     bounds = found ? Rect.MinMaxRect(Mathf.Min(bounds.xMin,q.bounds.xMin),Mathf.Min(bounds.yMin,q.bounds.yMin),Mathf.Max(bounds.xMax,q.bounds.xMax),Mathf.Max(bounds.yMax,q.bounds.yMax)) : q.bounds;
                     found = true;
                 }
+                if (!found) foreach (var guide in owner.guides)
+                { bounds = found ? Rect.MinMaxRect(Mathf.Min(bounds.xMin, guide.xMin), Mathf.Min(bounds.yMin, guide.yMin), Mathf.Max(bounds.xMax, guide.xMax), Mathf.Max(bounds.yMax, guide.yMax)) : guide; found = true; }
                 if (!found) return;
-                zoom = Mathf.Clamp(Mathf.Min((contentRect.width - 48) / Mathf.Max(1,bounds.width), (contentRect.height - 48) / Mathf.Max(1,bounds.height)),6,64);
+                zoom = Mathf.Clamp(Mathf.Min((contentRect.width - 48) / Mathf.Max(1,bounds.width), (contentRect.height - 48) / Mathf.Max(1,bounds.height)),.75f,64);
                 pan = contentRect.center + new Vector2(-bounds.center.x,bounds.center.y)*zoom;
                 RememberView(); MarkDirtyRepaint();
             }
-            public void Invalidate() { quads = null; MarkDirtyRepaint(); }
+            public void Invalidate() { quads = null; layerQuads.Clear(); MarkDirtyRepaint(); }
             private Vector2Int Cell(Vector2 p) => new Vector2Int(Mathf.FloorToInt((p.x - pan.x) / zoom), Mathf.FloorToInt((pan.y - p.y) / zoom));
             private Rect Screen(Rect r) => new Rect(pan.x + r.x * zoom, pan.y - r.yMax * zoom, r.width * zoom, r.height * zoom);
             private static RectInt Selection(Vector2Int a, Vector2Int b) => new RectInt(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Abs(a.x - b.x) + 1, Mathf.Abs(a.y - b.y) + 1);
             private void Down(PointerDownEvent e)
             {
                 if (gesture >= 0) return;
+                if (e.button != 2 && owner.previewTravel.sqrMagnitude > .0001f) { owner.status.text = "视差预览中 · 点击复位后继续绘制"; e.StopPropagation(); return; }
                 Focus(); pointer = e.localPosition; start = last = Cell(pointer); pointerStart = pointer; panStart = pan;
-                if (e.button != 2 && (owner.Layer == null || owner.Layer.locked || !owner.Layer.visible || owner.map.palette == null || owner.Brush == null || EditorApplication.isPlayingOrWillChangePlaymode)) return;
+                if (e.button != 2 && (!owner.CanEditMap || owner.Layer == null || owner.Layer.locked || owner.Layer.followLevel || !owner.Layer.visible || owner.map.palette == null || owner.Brush == null || EditorApplication.isPlayingOrWillChangePlaymode)) return;
                 gesture = e.button; pointerId = e.pointerId; dirty = canceled = false; eraseStroke = owner.erase || e.button == 1;
                 this.CapturePointer(e.pointerId); e.StopPropagation();
                 if (gesture != 2) { Undo.IncrementCurrentGroup(); strokeGroup = Undo.GetCurrentGroup(); Undo.RegisterCompleteObjectUndo(owner.map, "绘制网格美术"); if (!owner.rectangle) Paint(start); }
@@ -290,7 +268,8 @@ namespace Project.GridArt.Editor
                     if (steps <= 4096) for (int i = 1; i <= steps; i++) Paint(Vector2Int.RoundToInt(Vector2.Lerp(last, now, (float)i / steps)));
                     last = now;
                 }
-                MarkDirtyRepaint();
+                if (gesture >= 0 || Cell(pointer) != lastHover) MarkDirtyRepaint();
+                lastHover = Cell(pointer);
                 if (gesture >= 0) e.StopPropagation();
             }
             private void Up(PointerUpEvent e)
@@ -308,39 +287,43 @@ namespace Project.GridArt.Editor
                     else owner.ShowNotification(new GUIContent("一次框选最多 4096 格。"));
                 }
                 gesture = -1; this.ReleasePointer(e.pointerId); RememberView();
-                if (dirty) { owner.map.revision++; EditorUtility.SetDirty(owner.map); Undo.CollapseUndoOperations(strokeGroup); owner.Refresh(); }
+                if (dirty) { owner.map.revision++; EditorUtility.SetDirty(owner.map); Undo.CollapseUndoOperations(strokeGroup); owner.ArtChanged(); }
                 e.StopPropagation(); MarkDirtyRepaint();
             }
             private void Paint(Vector2Int p)
             {
                 if (owner.Layer == null) return;
                 bool changed = eraseStroke ? owner.Layer.Erase(p, owner.map.palette) : owner.Layer.Set(p, owner.brushIndex);
-                dirty |= changed; if (changed) quads = null;
+                dirty |= changed; if (changed) { quads = null; layerQuads.Remove(owner.Layer); }
             }
             private void Draw(MeshGenerationContext context)
             {
                 var painter = context.painter2D;
-                painter.fillColor = new Color(.09f, .11f, .14f); painter.BeginPath(); painter.MoveTo(Vector2.zero);
-                painter.LineTo(new Vector2(contentRect.width, 0)); painter.LineTo(contentRect.size); painter.LineTo(new Vector2(0, contentRect.height)); painter.ClosePath(); painter.Fill();
                 if (quads == null)
                 {
                     quads = new List<(GridArtQuad, Color)>();
                     if (owner.map != null && owner.map.palette != null)
-                        foreach (var layer in owner.map.layers)
-                            if (layer.visible) foreach (var q in GridArtBuilder.BuildQuads(layer, owner.map.palette)) quads.Add((q, layer.tint));
+                        foreach (int index in owner.OrderedLayers)
+                        {
+                            var layer = owner.map.layers[index];
+                            if (!layerQuads.TryGetValue(layer,out var cached)) layerQuads[layer]=cached=GridArtBuilder.BuildQuads(layer,owner.map.palette);
+                            if (layer.visible) foreach (var q in cached)
+                            {
+                                Vector2 offset = Vector2.Scale(owner.previewTravel, Vector2.one - layer.parallax);
+                                quads.Add((new GridArtQuad(new Rect(q.bounds.position + offset, q.bounds.size), q.uv, q.texture, q.normal), layer.tint));
+                            }
+                        }
                 }
-                var visible = new List<(GridArtQuad, Color)>();
-                foreach (var item in quads) if (Screen(item.Item1.bounds).Overlaps(contentRect)) visible.Add(item);
-                for (int begin = 0; begin < visible.Count;)
+                visibleQuads.Clear();
+                foreach (var item in quads) if (Screen(item.Item1.bounds).Overlaps(contentRect)) visibleQuads.Add(item);
+                for (int begin = 0; begin < visibleQuads.Count;)
                 {
                     int end = begin + 1;
-                    while (end < visible.Count && end - begin < 4096 && visible[end].Item1.texture == visible[begin].Item1.texture) end++;
-                    var mesh = context.Allocate((end-begin)*4,(end-begin)*6,visible[begin].Item1.texture);
+                    while (end < visibleQuads.Count && end - begin < 4096 && visibleQuads[end].Item1.texture == visibleQuads[begin].Item1.texture) end++;
+                    var mesh = context.Allocate((end-begin)*4,(end-begin)*6,visibleQuads[begin].Item1.texture);
                     for (int j = begin; j < end; j++)
                     {
-                        var item = visible[j]; Rect r = Screen(item.Item1.bounds); Rect uv = item.Item1.uv;
-                        Rect region = mesh.uvRegion;
-                        uv = new Rect(region.position + Vector2.Scale(region.size, uv.position), Vector2.Scale(region.size, uv.size));
+                        var item = visibleQuads[j]; Rect r = Screen(item.Item1.bounds); Rect uv = item.Item1.uv;
                         mesh.SetNextVertex(V(r.xMin,r.yMin,uv.xMin,uv.yMax,item.Item2)); mesh.SetNextVertex(V(r.xMax,r.yMin,uv.xMax,uv.yMax,item.Item2));
                         mesh.SetNextVertex(V(r.xMax,r.yMax,uv.xMax,uv.yMin,item.Item2)); mesh.SetNextVertex(V(r.xMin,r.yMax,uv.xMin,uv.yMin,item.Item2));
                         ushort i = (ushort)((j-begin)*4);
@@ -350,8 +333,9 @@ namespace Project.GridArt.Editor
                     begin = end;
                 }
                 painter.strokeColor = new Color(.36f, .42f, .5f, .32f); painter.lineWidth = 1; painter.BeginPath();
-                for (float x = pan.x % zoom; x < contentRect.width; x += zoom) { painter.MoveTo(new Vector2(x, 0)); painter.LineTo(new Vector2(x, contentRect.height)); }
-                for (float y = pan.y % zoom; y < contentRect.height; y += zoom) { painter.MoveTo(new Vector2(0, y)); painter.LineTo(new Vector2(contentRect.width, y)); }
+                float gridStep = zoom; while (gridStep < 6) gridStep *= 2;
+                for (float x = pan.x % gridStep; x < contentRect.width; x += gridStep) { painter.MoveTo(new Vector2(x, 0)); painter.LineTo(new Vector2(x, contentRect.height)); }
+                for (float y = pan.y % gridStep; y < contentRect.height; y += gridStep) { painter.MoveTo(new Vector2(0, y)); painter.LineTo(new Vector2(contentRect.width, y)); }
                 painter.Stroke();
                 if (owner.showGuides)
                 {

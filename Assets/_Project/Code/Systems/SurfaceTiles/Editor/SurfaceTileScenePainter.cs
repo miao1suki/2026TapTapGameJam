@@ -117,7 +117,8 @@ namespace Project.SurfaceTiles.Editor
             {
                 SurfaceTileBlock candidate =
                     hits[index].collider.GetComponentInParent<SurfaceTileBlock>();
-                if (candidate == null || candidate.SurfaceCollider == null)
+                if (candidate == null || candidate.SurfaceCollider == null ||
+                    !SurfaceTileAuthoringService.CanEditSceneInstance(candidate.gameObject))
                 {
                     continue;
                 }
@@ -160,6 +161,7 @@ namespace Project.SurfaceTiles.Editor
             Vector2Int cell,
             SurfaceTilePaintMode mode)
         {
+            if (!SurfaceTileAuthoringService.CanEditSceneInstance(block.gameObject)) return;
             if (mode == SurfaceTilePaintMode.Pick)
             {
                 if (block.TryGetPlacement(face, cell, out SurfaceTilePlacement placement))

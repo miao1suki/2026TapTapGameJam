@@ -14,6 +14,37 @@ namespace Project.SurfaceTiles.Tests
     public sealed class SurfaceTileTests
     {
         [Test]
+        public void ScenePaintingDoesNotModifySiblingInstanceOrPrefabSource()
+        {
+            string folder = "Assets/__SurfaceInstanceTest_" + System.Guid.NewGuid().ToString("N");
+            AssetDatabase.CreateFolder("Assets", folder.Substring(7));
+            var original = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var texture = new Texture2D(2,2);
+            var sprite = Sprite.Create(texture,new Rect(0,0,2,2),Vector2.one*.5f);
+            var palette = ScriptableObject.CreateInstance<SurfaceTilePalette>(); palette.ReplaceTiles(new[] {sprite});
+            GameObject a = null, b = null;
+            try
+            {
+                var source = PrefabUtility.SaveAsPrefabAsset(original,folder + "/White.prefab");
+                Assert.That(SurfaceTileAuthoringService.CanEditSceneInstance(source),Is.False);
+                a = (GameObject)PrefabUtility.InstantiatePrefab(source); b = (GameObject)PrefabUtility.InstantiatePrefab(source);
+                var block = a.AddComponent<SurfaceTileBlock>(); block.Configure(palette,1);
+                block.SetTile(SurfaceTileFace.Front,Vector2Int.zero,palette.Tiles[0].Id,0,false,false);
+                SurfaceTileMeshBuilder.RefreshPreview(block,false);
+                Assert.That(block.OutputFilter.sharedMesh.vertexCount,Is.EqualTo(4));
+                Assert.That(b.GetComponent<SurfaceTileBlock>(),Is.Null);
+                Assert.That(source.GetComponent<SurfaceTileBlock>(),Is.Null);
+                Assert.That(a.GetComponent<Renderer>().sharedMaterial,Is.SameAs(b.GetComponent<Renderer>().sharedMaterial));
+                Assert.That(b.transform.childCount,Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(original); if (a != null) Object.DestroyImmediate(a); if (b != null) Object.DestroyImmediate(b);
+                Object.DestroyImmediate(palette); Object.DestroyImmediate(sprite); Object.DestroyImmediate(texture);
+                AssetDatabase.DeleteAsset(folder);
+            }
+        }
+        [Test]
         public void Importer_UsesToolkitSourcePickerAndCollapsibleSettings()
         {
             var window = ScriptableObject.CreateInstance<SurfaceTileSheetImporterWindow>();
@@ -359,8 +390,7 @@ namespace Project.SurfaceTiles.Tests
             const string temporaryRoot = "Assets/__SurfaceTileBakeTest";
             const string generatedParent = "Assets/_Project/Generated";
             const string generatedRoot = generatedParent + "/SurfaceTiles";
-            const string generatedFolder =
-                generatedRoot + "/BakeTest";
+            string generatedFolder = string.Empty;
             bool generatedParentExisted = AssetDatabase.IsValidFolder(generatedParent);
             bool generatedRootExisted = AssetDatabase.IsValidFolder(generatedRoot);
             try
@@ -402,6 +432,7 @@ namespace Project.SurfaceTiles.Tests
                 Assert.That(EditorSceneManager.SaveScene(
                     scene,
                     temporaryRoot + "/BakeTest.unity"), Is.True);
+                generatedFolder = generatedRoot + "/" + AssetDatabase.AssetPathToGUID(scene.path);
                 palette = AssetDatabase.LoadAssetAtPath<SurfaceTilePalette>(
                     palettePath);
 
@@ -451,7 +482,7 @@ namespace Project.SurfaceTiles.Tests
                     NewSceneSetup.EmptyScene,
                     NewSceneMode.Single);
                 AssetDatabase.DeleteAsset(temporaryRoot);
-                AssetDatabase.DeleteAsset(generatedFolder);
+                if (!string.IsNullOrEmpty(generatedFolder)) AssetDatabase.DeleteAsset(generatedFolder);
                 if (!generatedRootExisted)
                 {
                     AssetDatabase.DeleteAsset(generatedRoot);

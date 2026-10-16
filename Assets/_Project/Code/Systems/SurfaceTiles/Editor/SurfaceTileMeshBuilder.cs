@@ -27,7 +27,7 @@ namespace Project.SurfaceTiles.Editor
             SurfaceTileBlock block,
             bool recordUndo = true)
         {
-            if (block == null)
+            if (block == null || !SurfaceTileAuthoringService.CanEditSceneInstance(block.gameObject))
             {
                 return;
             }
@@ -49,6 +49,8 @@ namespace Project.SurfaceTiles.Editor
             EditorUtility.SetDirty(block);
             EditorUtility.SetDirty(block.OutputFilter);
             EditorUtility.SetDirty(block.OutputRenderer);
+            if (PrefabUtility.IsPartOfPrefabInstance(block))
+                PrefabUtility.RecordPrefabInstancePropertyModifications(block);
         }
 
         internal static Mesh BuildCellMesh(SurfaceTileBlock block)
@@ -147,6 +149,7 @@ namespace Project.SurfaceTiles.Editor
             SurfaceTileBlock block,
             bool recordUndo = true)
         {
+            if (block == null || !SurfaceTileAuthoringService.CanEditSceneInstance(block.gameObject)) return;
             if (block.OutputFilter != null && block.OutputRenderer != null)
             {
                 return;
