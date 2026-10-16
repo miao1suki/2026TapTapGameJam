@@ -20,7 +20,7 @@ Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全�
 
 物体美术新增 `MechanismArtworkPresentation`：门及按钮三色提示、曲柄进度正反帧、移动平台、三色接触方块/钥匙、梯子及静态岩浆；沿用原碰撞、格尺寸与集中颜色表现。安卓暂停只反转触摸上下滑动，不改变键鼠手柄。见 [物体美术](../Developer/OBJECT_ARTWORK.md) 与 [接入API](Integration/OBJECT_ARTWORK_API.md)。
 
-藤蔓外观现默认使用TA192帧序列图集（ObjectArtwork），整根单SpriteRenderer、按生长长度适配、燃烧倒放及长成末段循环；仍走集中绿色HSV/共享材质透明交接，粒子仅作缺配置后备。弹性植物底部贴齐格子，不再为顶面对齐而悬空。水序列帧尚未交付，保留现有水效果。见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md) 和 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
+藤蔓外观使用TA192帧序列图集（ObjectArtwork），整根单SpriteRenderer、按生长长度适配、燃烧倒放及长成末段循环；仍走集中绿色HSV/共享材质透明交接，不再回退实时粒子。构建前检查序列帧和材质完整性，缺配置阻止出包。移动端额外像素化参数与PC一致，烘焙精灵不进入实时粒子像素遮罩。弹性植物底部贴齐格子。水序列帧尚未交付，保留现有水效果。见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md) 和 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
 
 双平台测试：SharedGameUI 的 MobileGameplayControls 提供多指方向/跳跃/Sprint/交互/左右放下与暂停/重生/选色，ScreenSafeArea 与 Expand Canvas 适配横屏比例及安全区。输入仍走 GameInput，触摸边沿在下一帧统一发布；合并气泡柱使用碰撞体底部而非中心判断上浮。正式包仅 MainMenu/Gaming，应用名和 APK 为“形之彩”。见 [双平台操作与构建](../Developer/ANDROID_AND_PC_TEST_BUILDS.md)。
 
