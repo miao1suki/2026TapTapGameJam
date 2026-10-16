@@ -12,6 +12,13 @@
 - 后续调整：蒸汽发射点在运行时对齐到主镜头可见的冷却块上部表面，三个粒子层排序提高，确保雾气覆盖黑曜石表面；保留 Shader 深度测试，使更近的场景物体仍可遮住蒸汽。已同步更新效果说明、项目交接表和索引。
 - 交接：新分支 `codex/ta/lava-cooling-steam-burn` 包含现有植物燃烧效果、Burn 参数调整和岩浆冷却蒸汽表现。当前以本地 `3b8f482` 为基线；尝试获取最新 `origin/main` 时 GitHub 连接被重置，分支同步由整合者处理。
 
+## 2026-10-16 TA 染色覆盖效果跨场景接入 Skill
+
+- 范围：新增 `.agents/skills/taptap-giving-color-effects/SKILL.md`，供后续程序员 AI 检查玩家监听器、目标资格、Renderer/贴图透明度与 URP Shader 接线，再将现有红蓝绿临时染色覆盖效果增量接入其他场景。
+- 边界：只增加接入说明和索引链接；不修改染色玩法逻辑、能力获取、场景、Prefab、Shader 或材质。特别说明 `Test.unity` 不能假定已有玩家监听器或特效接线。
+- 文档：同步链接到 `Assets/ta_source/GivingColor/使用说明.md` 和 `Docs/Agent/SYSTEM_INDEX.md`。
+- 验证：尝试使用 skill-creator 的 `quick_validate.py`，但当前 Python 环境缺少 `yaml`（PyYAML），脚本未能运行；人工核对了 Skill 名称、YAML frontmatter、链接目标和未完成占位符，已运行 `git diff --check`。本任务只改接入文档与 Skill，未运行 Unity 场景或运行时测试。
+
 ## 2026-10-16 TA 植物燃烧溶解效果
 
 - 范围：在 `Assets/ta_source/Burn` 新增独立植物燃烧 Shader、运行时材质切换器和共享配置；接入藤蔓、弹性植物、植物障碍的既有红色成功反应。

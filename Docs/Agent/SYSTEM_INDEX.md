@@ -64,9 +64,9 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |
 | 基础玩家 | `Assets/Player` | `PlayerController` 仅保留马能力，`PlayerInputDriver` 负责默认输入；不含旧玩法 |
 | TA 交互像素连线预览 | `Assets/ta_source/LinkEffect` | 仅红绿蓝染色选中时，在 PlayerInteractionSensor 圆形范围内只读预览可接色目标；红蓝整线淡入、绿线带四条噪波弯枝逐段生长；蓝线外围水纹有独立强度参数，Shader 按实际线长生成火星、叶花，不拉伸图案；具备溶解退场。Test 场景只保留玩家上的预览组件；场景接入见 [连接效果使用说明.md](../../Assets/ta_source/LinkEffect/连接效果使用说明.md) |
+| TA 染色覆盖效果 | `Assets/ta_source/GivingColor` | 独立 URP 透明覆盖 Shader 读取原材质纹理 Alpha，按红色燃烧、蓝色四次叠染、绿色逐级分叉播放；材质 Inspector 可调速度、噪波和像素化。只在玩家染色成功后短暂显示，完成后渐隐并露出原玩法改色结果；不覆盖水与岩浆生成的深蓝固体块，不覆盖蒸汽和植物反应。开局能力、解锁及目标原颜色由原程序管理；Test 场景文件不作接线修改；使用见 [使用说明.md](../../Assets/ta_source/GivingColor/使用说明.md)，跨场景 AI 接入见 [taptap-giving-color-effects Skill](../../.agents/skills/taptap-giving-color-effects/SKILL.md) |
 | TA 植物燃烧表现 | `Assets/ta_source/Burn` | 红色成功作用于藤蔓、弹性植物或植物障碍后，立即关闭玩法碰撞；专用 URP Shader 采样现有纹理 Alpha，沿 Renderer 本地高度从底向顶燃烧，随后保留灰烬并淡出。共享配置支持燃烧速度、橙色焰边宽度/强度、像素化、扰动和灰烬时长；不复用 GivingColor 临时染色覆盖。接入见 [PLANT_BURN_EFFECT.md](../Developer/PLANT_BURN_EFFECT.md) |
 | TA 岩浆冷却蒸汽 | `Assets/ta_source/Steam` | 蓝色成功作用于岩浆并生成固体块时，在镜头可见的冷却块上部表面播放较高排序的低速上浮像素雾团，覆盖固体表面并保留对更近遮挡物的深度测试；约 1.2 秒消散并随临时替换块一起清理。接入字段位于 `LavaHazardFeature`，使用见 [LAVA_COOLING_STEAM_EFFECT.md](../Developer/LAVA_COOLING_STEAM_EFFECT.md) |
-| TA 染色覆盖效果 | `Assets/ta_source/GivingColor` | 独立 URP 透明覆盖 Shader 读取原材质纹理 Alpha，按红色燃烧、蓝色四次叠染、绿色逐级分叉播放；材质 Inspector 可调速度、噪波和像素化。只在玩家染色成功后短暂显示，完成后渐隐并露出原玩法改色结果；不覆盖水与岩浆生成的深蓝固体块，不覆盖蒸汽和植物反应。开局能力、解锁及目标原颜色由原程序管理；Test 场景文件不作接线修改；见 [使用说明.md](../../Assets/ta_source/GivingColor/使用说明.md) |
 | 掉落物与拾取飞行 | `Assets/_Project/Code/Shared/Runtime/DropItemBase.cs`、`Assets/_Project/Code/Systems/PickupPresentation` | 基类负责感知后的磁吸、收集生命周期；颜色钥匙触碰结算并播放 DOTween 四段飞行与镜头；Pick 场景保留测试物 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
 | 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、块材质和达成图片 |
