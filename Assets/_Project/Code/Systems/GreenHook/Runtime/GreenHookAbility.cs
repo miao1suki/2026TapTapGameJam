@@ -97,11 +97,7 @@ namespace Project.GreenHook
         {
             swingInput = Vector2.ClampMagnitude(move, 1f);
             if (!release || phase == HookPhase.None) return;
-            // Only an explicit input releases a successfully attached rope.
-            bool preserveMomentum = IsSwinging;
-            Vector2 velocity = playerBody != null ? (Vector2)playerBody.linearVelocity : swingVelocity;
-            CancelHook();
-            if (preserveMomentum) player?.RestoreGreenHookReleaseVelocity(velocity);
+            ReleaseHook();
         }
         private Transform targetTransform;
         private Collider playerCollider;
@@ -280,12 +276,14 @@ namespace Project.GreenHook
         private void Update()
         {
             if (Time.timeScale <= 0f) return;
-            if ((phase == HookPhase.Extending || phase == HookPhase.Pulling || phase == HookPhase.Swinging) &&
-                (!IsTargetAvailable() || player == null || player.IsDead || !IsActivePathWithinRoom() ||
-                 phase == HookPhase.Extending && !IsWithinRange(targetTransform.TransformPoint(localAnchor))))
+            if (phase == HookPhase.Extending || phase == HookPhase.Pulling || phase == HookPhase.Swinging)
             {
-                CancelHook();
-                return;
+                if (!IsTargetAvailable() || player == null || player.IsDead || !IsActivePathWithinRoom())
+                {
+                    CancelHook();
+                    return;
+                }
+                if (!IsAnchorWithinRange()) { ReleaseHook(); return; }
             }
             if (player != null && player.IsControlLocked && !player.CanDriveGreenHook) return;
             switch (phase)
@@ -318,6 +316,7 @@ namespace Project.GreenHook
                 CancelHook();
                 return;
             }
+            if (!IsAnchorWithinRange()) { ReleaseHook(); return; }
             if (!player.CanDriveGreenHook) { StopPullMotion(); return; }
             float deltaTime = Time.fixedDeltaTime;
             if (phase == HookPhase.Swinging)
@@ -371,6 +370,26 @@ namespace Project.GreenHook
             targetMotion?.SetGreenHookVelocity(Vector3.zero);
             player?.SetGreenHookPullVelocity(this, Vector2.zero);
             swingVelocity = Vector2.zero;
+        }
+
+        private void ReleaseHook()
+        {
+            // Normal release (manual or range) keeps resolved swing momentum, but must
+            // not inject velocity while another system owns a higher-priority lock.
+            bool preserveMomentum = IsSwinging && player != null && player.CanDriveGreenHook;
+            Vector2 velocity = playerBody != null ? (Vector2)playerBody.linearVelocity : swingVelocity;
+            CancelHook();
+            if (preserveMomentum) player.RestoreGreenHookReleaseVelocity(velocity);
+        }
+
+        private bool IsAnchorWithinRange()
+        {
+            if (sensor == null || targetTransform == null) return false;
+            // Use the actual bound point, not the mouse or the blended visual tip.
+            // Sub-millimetre numerical tolerance prevents a maximum-length swing
+            // from detaching due to float/collision-solver rounding.
+            float radius = sensor.ScanRadius + .001f;
+            return (targetTransform.TransformPoint(localAnchor) - transform.position).sqrMagnitude <= radius * radius;
         }
 
         private bool IsActivePathWithinRoom()

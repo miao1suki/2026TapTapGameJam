@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Project.ColorBlocks;
 using Project.ContactCubes;
@@ -17,20 +18,21 @@ namespace Project.GreenHook.Editor
     {
         private const string SessionKey = "GreenHookLiveVerification";
         private static PlayerController player;
-        private static GameObject target, second, floor;
+        private static GameObject target, second, floor, playerStop, targetStop;
         private static Camera camera;
         private static GreenHookAbility hook;
         private static HookInput input;
         private static int stage, variant, checks;
         private static float next;
         private static double deadline;
-        private static Vector3 start;
+        private static Vector3 start, playerStart;
         private static readonly string[] Paths = { "ContactCubes/Red_ContactCube.prefab",
             "ContactCubes/Blue_ContactCube.prefab", "ColorBlocks/Prefabs/Red_Foundation.prefab" };
 
         public static void Run()
         {
             if (!Application.dataPath.Contains("FlowRetirementProbe")) throw new Exception("Isolated verification only");
+            if (!Environment.GetCommandLineArgs().Contains("-noaudio")) throw new Exception("Verification requires -noaudio");
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
             SessionState.SetBool(SessionKey, true); Resume(); EditorApplication.EnterPlaymode();
         }
@@ -110,10 +112,49 @@ namespace Project.GreenHook.Editor
                         "real loop retarget keeps movement and single lock");
                     input.ReleaseFrame = Time.frameCount + 2; stage = 7; next = Time.time + .1f;
                 }
-                else
+                else if (stage == 7)
                 {
                     Check(!hook.IsHookActive && !player.IsControlLocked, "real loop swing can release");
-                    Finish(true, "PASS " + checks);
+                    Cleanup(); variant = 0; SetupBlockedPull(); stage = 8; next = Time.time + .15f;
+                }
+                else if (stage == 8)
+                {
+                    player.GetComponent<PlayerColorWheel>().TrySelectColor("green");
+                    input.Pointer = camera.WorldToScreenPoint(target.transform.position); input.ClickFrame = Time.frameCount + 2;
+                    stage = 9; next = Time.time + 1.2f;
+                }
+                else if (stage == 9)
+                {
+                    Check(hook.IsPulling && hook.IsPullingPlayer && player.CanDriveGreenHook && player.ControlLockDepth == 1,
+                        "real loop both blocked keep rope " + variant);
+                    Check((player.Motor.position - playerStart).sqrMagnitude < .001f &&
+                        (target.GetComponent<Rigidbody>().position - start).sqrMagnitude < .001f,
+                        "real loop both blocked do not penetrate " + variant);
+                    Object.DestroyImmediate(playerStop); stage = 10; next = Time.time + .12f;
+                }
+                else if (stage == 10)
+                {
+                    Check(hook.IsPullingPlayer && player.Motor.position.x > playerStart.x + .2f &&
+                        (target.GetComponent<Rigidbody>().position - start).sqrMagnitude < .001f,
+                        "real loop resumes player pull " + variant);
+                    playerStart = player.Motor.position;
+                    Object.DestroyImmediate(targetStop); stage = 11; next = Time.time + .12f;
+                }
+                else if (stage == 11)
+                {
+                    Check(hook.IsPulling && !hook.IsPullingPlayer && target.GetComponent<Rigidbody>().position.x < start.x - .2f &&
+                        (player.Motor.position - playerStart).sqrMagnitude < .001f,
+                        "real loop restores target priority " + variant);
+                    target.GetComponent<Rigidbody>().position = player.Motor.position + Vector3.right * 6f;
+                    Physics.SyncTransforms(); stage = 12; next = Time.time + .1f;
+                }
+                else
+                {
+                    Check(!hook.IsHookActive && !player.IsControlLocked && !player.IsGreenHookActive,
+                        "real loop out-of-range releases " + variant);
+                    Cleanup(); variant++;
+                    if (variant < Paths.Length) { SetupBlockedPull(); stage = 8; next = Time.time + .15f; }
+                    else Finish(true, "PASS " + checks);
                 }
             }
             catch (Exception error) { Debug.LogException(error); Finish(false, error.ToString()); }
@@ -145,6 +186,19 @@ namespace Project.GreenHook.Editor
             }
         }
 
+        private static void SetupBlockedPull()
+        {
+            SetupPull();
+            playerStop = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            playerStop.transform.position = player.transform.position + Vector3.right * .7f;
+            playerStop.transform.localScale = new Vector3(.4f, 4f, 2f);
+            targetStop = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            targetStop.transform.position = target.transform.position - Vector3.right * .7f;
+            targetStop.transform.localScale = new Vector3(.4f, 4f, 2f);
+            playerStart = player.Motor.position; start = target.GetComponent<Rigidbody>().position;
+            Physics.SyncTransforms();
+        }
+
         private static void Cleanup()
         {
             hook?.CancelHook();
@@ -152,6 +206,8 @@ namespace Project.GreenHook.Editor
             if (target != null) Object.DestroyImmediate(target);
             if (second != null) Object.DestroyImmediate(second);
             if (floor != null) Object.DestroyImmediate(floor);
+            if (playerStop != null) Object.DestroyImmediate(playerStop);
+            if (targetStop != null) Object.DestroyImmediate(targetStop);
             input.Move = Vector2.zero;
         }
 

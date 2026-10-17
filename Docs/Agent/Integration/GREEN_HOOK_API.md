@@ -1,6 +1,6 @@
 # 绿色钩子接入 API
 
-源码：`Assets/_Project/Code/Systems/GreenHook`。2026-10-16 更新：自由瞄准与四向拉取分离，成功挂接后可直接换点；继续保留主动脱钩规则。
+源码：`Assets/_Project/Code/Systems/GreenHook`。2026-10-17 更新：复查受阻回退与持续连接，补齐挂接后的超距检查；保留自由瞄准、四向拉取及连续换点。
 
 ## 输入与控制所有权
 
@@ -33,13 +33,15 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 
 `ContactCubeMotion` 接管自身刚体并暂停接触反应，入钩时恢复玩家碰撞对；`GreenHookBodyMotion` 为基座接管刚体，结束后恢复原运动类型、重力、约束。基座没有迁移成 ContactCube，不改变信号契约。旧场景通过 MechanismBaseFeature.OnAttach 自动补齐运动组件，无需全量重建。
 
-只有一个对象收到非零拉动速度；拉玩家时目标被冻结，重新可拉时先停玩家再动目标。碰到彼此后速度归零，但保持连接，直到主动结束。主动脱钩不执行跨房间搜索或位置吸附；荡绳脱钩保留当前动量。
+只有一个对象收到非零拉动速度；拉玩家时目标被冻结，重新可拉时先停玩家再动目标。双方受阻或碰到彼此后速度归零，但保持连接，不积累超时、不自动结束；解除障碍后不必重发。主动脱钩不执行跨房间搜索或位置吸附；荡绳主动/超距脱钩保留碰撞求解后的当前动量，但叠加高优先级控制锁时不注入速度。
 
 拉取运动每步只提交一个水平或竖直速度，不沿绳子斜向施力；选定主轴后持续到该轴接近对齐再切换，避免45度附近抖动和贴地微小高度差被当成向地下拉。荡绳不套此四向限制：输入沿切线加速，保留初始动量、重力、轻阻尼与速度上限，绳长为最大约束而非瞬移定位。读取碰撞求解后的刚体速度，松开时也交还该实际速度。
 
 挂接中再次点击合法目标或同一物体上的新位置即可切点，不重开轮盘、不重新锁人、不瞬移玩家；新绳长从当前玩家位置计算，保留切向/向内惯性，去除拉长绳子的向外分量。绳尖默认0.1秒平滑衔接，连续换点从当前可见端点继续。无效、圈外、UI或受额外控制锁的点击保留原连接。
 
 ## 物理、边界与性能
+
+伸出、拉物/拉人和荡绳均检查实际局部锚点随目标变换后的距离，半径沿用传感器 ScanRadius（标准玩家5，当前网格为5格），不是鼠标位置、目标中心或换点中的平滑绳尖。Update与FixedUpdate均检查，超过范围释放控制与目标运动所有权；0.001世界单位仅用于消除最长绳长附近的浮点误差，不是额外玩法范围。正常挂接不会因接触、不能移动或等待时间而断开；死亡/重生、离区及目标销毁/禁用属于必要生命周期清理。
 
 钩子以执行顺序 -50 在 PlayerController 固定更新前提交速度。`GreenHookPhysics.FreeDistance` 对下一步实体包围盒作无分配扫掠，忽略平行地面支撑、触发器、自身与拉动对端，尊重碰撞矩阵。不再用渲染帧 Transform 位移/累计停滞时间推断受阻。
 
@@ -51,6 +53,6 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 
 ## 验证入口
 
-`Project.GreenHook.Editor.GreenHookVerification.Run` 仅允许隔离的 FlowRetirementProbe 项目，使用真实 Physics.Simulate 验证拉物优先、受阻回退/重评估、插值、长时间不脱钩、控制锁、荡绳、基座、收集品推挤、四向尖刺与房间边界；另覆盖真实屏幕偏角发射、八象限、共享起点、单轴速度、换点输入和动量，不只绕过发射调用私有挂接方法。
+`Project.GreenHook.Editor.GreenHookVerification.Run` 仅允许隔离的 FlowRetirementProbe 项目且强制要求 -noaudio，使用真实 Physics.Simulate 验证拉物优先、受阻回退/重评估、插值、长时间不脱钩、控制锁、荡绳、基座、收集品推挤、四向尖刺与房间边界；另覆盖真实屏幕偏角发射、八象限、共享起点、单轴速度、换点输入和动量，不只绕过发射调用私有挂接方法。新增红/蓝块与基座四方向双方受阻650物理步、解除障碍自动继续、跳跃/交互主动结束、双方移动超距（渲染/物理入口）、最大范围荡绳及藤蔓/弹性植物锚点验证。基座按作者实际重力/刚体设置检查交还，不假定所有基座静止时均为运动学。
 
-`Project.GreenHook.Editor.GreenHookLiveVerification.Run` 在隔离空场景运行真实Update/FixedUpdate与PlayerInputDriver，不手工调用物理步；验证键鼠/手柄/触摸输入源下的拉物、控制锁、主动脱钩和连续荡绳换点。不要在成员当前Scene内运行验证入口，自动测试不代替实机手感验收。
+`Project.GreenHook.Editor.GreenHookLiveVerification.Run` 在隔离空场景运行真实Update/FixedUpdate与PlayerInputDriver，不手工调用物理步，强制要求 -noaudio；验证键鼠/手柄/触摸输入源下的拉物、控制锁、主动脱钩和连续荡绳换点，另经真实屏幕点击覆盖双方受阻、移走障碍后拉人/恢复拉物与超距释放。不要在成员当前Scene内运行验证入口，模拟设备输入不代替真实手柄/安卓或实机手感验收。
