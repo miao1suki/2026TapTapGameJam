@@ -26,6 +26,8 @@ namespace Project.LevelEditor.Editor
         private string secondaryActionLabel;
         private Action thirdAction;
         private string thirdActionLabel;
+        private Action fourthAction;
+        private string fourthActionLabel;
         private Action<List<LevelEditorComponentValueOverride>>
             onSaved;
         private readonly List<LevelEditorComponentValueOverride>
@@ -44,7 +46,9 @@ namespace Project.LevelEditor.Editor
             Action secondary = null,
             string secondaryLabel = null,
             Action third = null,
-            string thirdLabel = null)
+            string thirdLabel = null,
+            Action fourth = null,
+            string fourthLabel = null)
         {
             if (sourcePrefab == null)
             {
@@ -61,6 +65,8 @@ namespace Project.LevelEditor.Editor
             window.secondaryActionLabel = secondaryLabel;
             window.thirdAction = third;
             window.thirdActionLabel = thirdLabel;
+            window.fourthAction = fourth;
+            window.fourthActionLabel = fourthLabel;
             window.draftOverrides.Clear();
             if (values != null)
             {
@@ -171,6 +177,8 @@ namespace Project.LevelEditor.Editor
                 componentList.Add(new Button(() => secondaryAction?.Invoke()) { text = secondaryActionLabel ?? "解除关联" });
             if (thirdAction != null)
                 componentList.Add(new Button(() => thirdAction?.Invoke()) { text = thirdActionLabel ?? "解除关联" });
+            if (fourthAction != null)
+                componentList.Add(new Button(() => fourthAction?.Invoke()) { text = fourthActionLabel ?? "解除关联" });
             if (prefab == null)
             {
                 componentList.Add(

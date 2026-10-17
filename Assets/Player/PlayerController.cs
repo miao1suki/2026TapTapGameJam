@@ -2357,6 +2357,12 @@ namespace Project.Player
 
         private void FixedUpdate()
         {
+            if (motor != null && motor.isKinematic)
+            {
+                CancelVariableJump();
+                return;
+            }
+
             if (dead || respawnInProgress)
             {
                 CancelVariableJump();

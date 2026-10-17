@@ -214,14 +214,46 @@ namespace Project.BlockFeatures
             ? transform.parent.TransformVector((Vector3)cells * PreviewCellSize) : (Vector3)cells * PreviewCellSize;
         private float PreviewCellSize => Application.isPlaying && IsAttached ? GridCellWorldSize : GridCellSizeUtility.Resolve(this);
         public IReadOnlyList<MonoBehaviour> LinkedControls => linkedControls;
-        public void BindBase(MechanismBaseFeature source)
+        public void BindSignalSources(
+            IReadOnlyList<MonoBehaviour> sources)
         {
             if (crankController != null) crankController.UnregisterPlatform(this);
             crankController = null;
             UnsubscribeControls();
             driveMode = MovingPlatformDriveMode.SignalControlled;
-            linkedControls = source != null ? new MonoBehaviour[] { source } : System.Array.Empty<MonoBehaviour>();
-            if (Application.isPlaying) { SubscribeControls(); EvaluateLinkedControls(); }
+            if (sources == null)
+            {
+                linkedControls = System.Array.Empty<MonoBehaviour>();
+            }
+            else
+            {
+                var next = new List<MonoBehaviour>();
+                for (int index = 0; index < sources.Count; index++)
+                {
+                    MonoBehaviour source = sources[index];
+                    if (source != null &&
+                        source is IMechanismSignalSource &&
+                        !next.Contains(source))
+                    {
+                        next.Add(source);
+                    }
+                }
+
+                linkedControls = next.ToArray();
+            }
+
+            if (Application.isPlaying)
+            {
+                SubscribeControls();
+                EvaluateLinkedControls();
+            }
+        }
+
+        public void BindBase(MechanismBaseFeature source)
+        {
+            BindSignalSources(source != null
+                ? new MonoBehaviour[] { source }
+                : System.Array.Empty<MonoBehaviour>());
         }
 
         protected override void OnAttach()

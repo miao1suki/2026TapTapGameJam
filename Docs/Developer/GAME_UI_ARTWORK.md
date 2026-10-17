@@ -10,6 +10,8 @@
 
 `Assets/_Project/Resources/UI/GameUiArtwork.asset` 集中引用背景、按钮、暂停图标和三色扇区。裁切产物位于 `Assets/_Project/Art/Generated/GameUI`；原图位于 `Assets/_Project/Resources/26TAPTAP/UI`，没有覆盖原图。
 
+Boss 血条不使用图片材质：外框以外保持透明，拖尾血皮为纯白，当前血量为项目肉红色 `#B23E3E`，血量分段使用无 Sprite 的纯黑竖直 `Image`。外框同样由纯色硬边 `Image` 拼成，使用 1px 黑外缘、`#523B42` 暗红框体和左上/右下 `#F65332` 短角部强调。所有边缘保持硬直，不创建底板、图片描边、Mipmap 或压缩资源；长度、高度、外框、颜色和分隔线宽度仍可在 `BossHealthBarUI` Inspector 调整。
+
 | 用途 | 原图 |
 |---|---|
 | 主菜单与设置背景 | Image_765789177504539.png |

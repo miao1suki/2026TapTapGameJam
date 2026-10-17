@@ -107,6 +107,7 @@ TopRight
 ```
 
 描边开关是 `WordNoteStyle.useOutline`。
+字重由 `WordNoteStyle.bold` 控制；启用后 TMP 使用 `FontStyles.Bold`，关闭时恢复 `FontStyles.Normal`。
 文字对齐由 `WordNoteStyle.textAlignment` 控制，可选居中、靠左、靠右；`WordNotePosition.MiddleLeftEdge` 表示屏幕最左侧。
 
 `WordNoteStyle.richText` 控制 TMP 富文本；局部着色使用：

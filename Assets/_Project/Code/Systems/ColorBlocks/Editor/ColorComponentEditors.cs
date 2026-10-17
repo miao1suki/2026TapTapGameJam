@@ -103,19 +103,29 @@ namespace Project.ColorBlocks.Editor
                 true);
             timing.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
-                "revealAtTimelineProgress",
-                "解锁进度",
-                "Timeline 播放到该进度时解锁颜色。"));
-            timing.Add(ProjectInspectorUtility.CreateProperty(
-                serializedObject,
                 "revealDuration",
                 "褪色恢复时间",
                 "颜色从褪色状态恢复的时长。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "orthographicZoomOut",
-                "镜头拉远倍率",
-                "2D 正交镜头在演出中的拉远倍率。"));
+                "视野扩大倍率",
+                "正交相机可视范围倍率；3 表示视野范围扩大到 3 倍，镜头拉远。"));
+            timing.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "cameraTrackDuration",
+                "先追踪玩家时长",
+                "镜头先移动到玩家当前普通机位的时间；这段时间内不放大。"));
+            timing.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "cameraMoveDuration",
+                "上升与推近时长",
+                "镜头向上移动并放大的时长。"));
+            timing.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "cameraHoldDuration",
+                "停留时长",
+                "到达上方放大机位后停留的时间，之后开始同时倒放。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "cameraReturnDuration",

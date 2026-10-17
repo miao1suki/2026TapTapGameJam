@@ -11,17 +11,25 @@ public class CameraTimelineBehaviour : PlayableBehaviour
     private TimelineCamRig _rig;
     private bool _inited;
     private bool _warned;
+    private bool _anchorWarned;
     private Vector3 _originWorldPos;
     private Quaternion _originWorldRot;
     private float _surroundStartAngle;
     private CameraViewModeRequestHandle _modeRequestHandle;
     private bool _modeRequestAttempted;
+    private Transform _originalAnchor;
+    private Transform _overrideAnchor;
+    private bool _anchorOverridden;
+    private float _baseOrthographicSize;
+    private float _baseFieldOfView;
 
     public override void OnBehaviourPlay(Playable playable, FrameData info)
     {
         _inited = false;
         _warned = false;
+        _anchorWarned = false;
         _modeRequestAttempted = false;
+        _anchorOverridden = false;
     }
 
     public override void ProcessFrame(Playable playable, FrameData info, object playerData)
@@ -56,8 +64,25 @@ public class CameraTimelineBehaviour : PlayableBehaviour
 
         if (!_inited)
         {
+            if (!ApplyAnchorOverride(rig))
+            {
+                return;
+            }
+
             _inited = true;
             rig.CaptureNormalState();
+            CameraState baseState = rig.Manager != null
+                ? rig.Manager.CurrentState
+                : default;
+            _baseOrthographicSize = baseState.orthographicSize;
+            _baseFieldOfView = baseState.fieldOfView;
+            if (clip.overrideOrthographicSize)
+            {
+                rig.SetShotLens(
+                    _baseOrthographicSize *
+                    clip.orthographicSizeMultiplier,
+                    _baseFieldOfView);
+            }
             if (!clip.useLastFrameAsOrigin)
             {
                 _originWorldPos = rig.CurrentPosition;
@@ -117,30 +142,85 @@ public class CameraTimelineBehaviour : PlayableBehaviour
             return;
         }
 
-        float baseProgress = clip.useVariableSpeed
-            ? GetProgress(currentTime, totalDuration, clip.startSpeed, clip.endSpeed)
-            : Mathf.Clamp01(currentTime / totalDuration);
-        if (clip.useMotionCurve && clip.motionCurve != null)
-        {
-            baseProgress = Mathf.Clamp01(clip.motionCurve.Evaluate(baseProgress));
-        }
-
         float planarTurnAngle = IsOrthographicMode(rig)
             ? rig.PlanarYaw
             : 0f;
         Quaternion planarTurn = Quaternion.Euler(0f, planarTurnAngle, 0f);
+        bool usePlanarRotation =
+            IsOrthographicMode(rig) &&
+            clip.constrainOrthographicAxes;
+        float trackDuration = clip.trackAnchorFirst
+            ? Mathf.Clamp(
+                clip.trackDuration,
+                .01f,
+                totalDuration)
+            : 0f;
+        Vector3 trackTargetPosition =
+            anchor.TransformPoint(
+                planarTurn * clip.trackTargetLocalPos);
+        Quaternion trackTargetRotation =
+            usePlanarRotation
+                ? planarTurn
+                : anchor.rotation *
+                  planarTurn *
+                  Quaternion.Euler(clip.cameraTargetEuler);
+        if (trackDuration > 0f &&
+            currentTime < trackDuration)
+        {
+            float trackProgress = Mathf.SmoothStep(
+                0f,
+                1f,
+                currentTime / trackDuration);
+            ApplyShot(
+                rig,
+                Vector3.Lerp(
+                    _originWorldPos,
+                    trackTargetPosition,
+                    trackProgress),
+                Quaternion.Slerp(
+                    _originWorldRot,
+                    trackTargetRotation,
+                    trackProgress));
+            return;
+        }
+
+        float motionElapsed = Mathf.Max(
+            0f,
+            currentTime - trackDuration);
+        float motionDuration = Mathf.Max(
+            .01f,
+            totalDuration - trackDuration);
+        float baseProgress = clip.useVariableSpeed
+            ? GetProgress(
+                motionElapsed,
+                motionDuration,
+                clip.startSpeed,
+                clip.endSpeed)
+            : Mathf.Clamp01(motionElapsed / motionDuration);
+        if (clip.useMotionCurve && clip.motionCurve != null)
+        {
+            baseProgress = Mathf.Clamp01(
+                clip.motionCurve.Evaluate(baseProgress));
+        }
+
         Vector3 worldTargetPosition =
             anchor.TransformPoint(planarTurn * clip.cameraTargetLocalPos);
         Quaternion worldTargetRotation =
-            anchor.rotation *
-            planarTurn *
-            Quaternion.Euler(clip.cameraTargetEuler);
-        Vector3 originPosition = clip.useLastFrameAsOrigin
-            ? currentPosition
-            : _originWorldPos;
-        Quaternion originRotation = clip.useLastFrameAsOrigin
-            ? currentRotation
-            : _originWorldRot;
+            usePlanarRotation
+                ? planarTurn
+                : anchor.rotation *
+                  planarTurn *
+                  Quaternion.Euler(clip.cameraTargetEuler);
+        Vector3 originPosition = trackDuration > 0f
+            ? trackTargetPosition
+            : clip.useLastFrameAsOrigin
+                ? currentPosition
+                : _originWorldPos;
+        Quaternion originRotation = trackDuration > 0f
+            ? trackTargetRotation
+            : clip.useLastFrameAsOrigin
+                ? currentRotation
+                : _originWorldRot;
 
         Vector3 finalTargetPosition;
         if (!clip.useSurroundMode)
@@ -226,7 +306,11 @@ public class CameraTimelineBehaviour : PlayableBehaviour
             }
         }
 
-        nextPosition = ApplyOrthographicConstraints(rig, nextPosition, originPosition);
+        ApplyOrthographicConstraints(
+            rig,
+            ref nextPosition,
+            ref nextRotation,
+            originPosition);
         ApplyShot(
             rig,
             nextPosition,
@@ -235,18 +319,40 @@ public class CameraTimelineBehaviour : PlayableBehaviour
 
     public override void OnBehaviourPause(Playable playable, FrameData info)
     {
-        ReleaseClipMode();
-        _rig = null;
-        _inited = false;
-        _warned = false;
+        FinishClip(playable);
     }
 
     public override void OnGraphStop(Playable playable)
     {
+        FinishClip(playable);
+    }
+
+    public override void OnPlayableDestroy(Playable playable)
+    {
+        FinishClip(playable);
+    }
+
+    private void FinishClip(Playable playable)
+    {
+        TimelineCamRig rig = _rig;
+        bool reachedEnd =
+            playable.IsValid() &&
+            playable.GetDuration() > 0d &&
+            playable.GetTime() >= playable.GetDuration() - 0.0001d;
         ReleaseClipMode();
+        // A Hold-wrapped director stops evaluating without raising OnGraphStop.
+        if (reachedEnd && rig != null &&
+            rig.IsTimelineControlling)
+        {
+            rig.ReleaseTimelineControl(
+                rig.SmoothReturnOnRelease);
+        }
+        RestoreAnchorOverride(rig);
         _rig = null;
         _inited = false;
         _warned = false;
+        _anchorWarned = false;
+        _anchorOverridden = false;
     }
 
     private static float GetProgress(
@@ -277,6 +383,46 @@ public class CameraTimelineBehaviour : PlayableBehaviour
             : fallback;
     }
 
+    private bool ApplyAnchorOverride(TimelineCamRig rig)
+    {
+        if (rig == null || string.IsNullOrWhiteSpace(clip.anchorTag))
+        {
+            return true;
+        }
+
+        GameObject tagged = GameObject.FindGameObjectWithTag(clip.anchorTag);
+        if (tagged == null)
+        {
+            if (!_anchorWarned)
+            {
+                Debug.LogWarning(
+                    $"[CameraTimeline] 暂未找到 Tag={clip.anchorTag} 的运镜锚点，将在后续帧继续查找。",
+                    rig);
+                _anchorWarned = true;
+            }
+            return false;
+        }
+
+        _originalAnchor = rig.target;
+        _overrideAnchor = tagged.transform;
+        rig.target = _overrideAnchor;
+        _anchorOverridden = true;
+        return true;
+    }
+
+    private void RestoreAnchorOverride(TimelineCamRig rig)
+    {
+        if (!_anchorOverridden || rig == null)
+        {
+            return;
+        }
+
+        if (rig.target == _overrideAnchor)
+        {
+            rig.target = _originalAnchor;
+        }
+    }
+
     private void ApplyShot(
         TimelineCamRig rig,
         Vector3 position,
@@ -292,20 +438,21 @@ public class CameraTimelineBehaviour : PlayableBehaviour
             rotation);
     }
 
-    private Vector3 ApplyOrthographicConstraints(
+    private void ApplyOrthographicConstraints(
         TimelineCamRig rig,
-        Vector3 position,
+        ref Vector3 position,
+        ref Quaternion rotation,
         Vector3 originPosition)
     {
         if (!clip.constrainOrthographicAxes)
         {
-            return position;
+            return;
         }
 
         bool isOrthographic = IsOrthographicMode(rig);
         if (!isOrthographic)
         {
-            return position;
+            return;
         }
 
         if (!clip.allowPositionX)
@@ -334,7 +481,14 @@ public class CameraTimelineBehaviour : PlayableBehaviour
             position.z = ClampRange(position.z, clip.positionZRange);
         }
 
-        return position;
+        Vector3 planarForward = rotation * Vector3.forward;
+        planarForward.y = 0f;
+        if (planarForward.sqrMagnitude > .0001f)
+        {
+            rotation = Quaternion.LookRotation(
+                planarForward.normalized,
+                Vector3.up);
+        }
     }
 
     private static float ClampRange(float value, Vector2 range)
@@ -476,6 +630,11 @@ public class CameraTimelineMixerBehaviour : PlayableBehaviour
             _rig = rig;
         }
 
+        if (_hasControl && !_rig.IsTimelineControlling)
+        {
+            _hasControl = false;
+        }
+
         bool hasActiveClip = false;
         int inputCount = playable.GetInputCount();
         for (int index = 0; index < inputCount; index++)
@@ -516,15 +675,8 @@ public class CameraTimelineMixerBehaviour : PlayableBehaviour
     {
         if (_rig != null && _hasControl)
         {
-            Transform followTarget = _rig.Manager != null
-                ? _rig.Manager.FocusTarget
-                : null;
-            if (followTarget != null)
-            {
-                _rig.target = followTarget;
-            }
-
-            _rig.Release(_rig.SmoothReturnOnRelease);
+            _rig.ReleaseTimelineControl(
+                _rig.SmoothReturnOnRelease);
         }
 
         _rig = null;

@@ -137,6 +137,15 @@ public class TimelineCamRig :
 
     private void Awake()
     {
+        _activeTracks = 0;
+        _controlHandle = default;
+        isPlayingAnim = false;
+        userManualAllowed = false;
+        userDriving = false;
+        _hasShotState = false;
+        _hasNormalState = false;
+        _hasLensOverride = false;
+        _returnDurationOverride = -1f;
         ResolveManager();
         ResolveModeController();
     }
@@ -229,6 +238,17 @@ public class TimelineCamRig :
         userDriving = false;
         _hasShotState = false;
 
+        if (restoreProjectCamera)
+        {
+            Transform projectTarget = Manager != null
+                ? Manager.FocusTarget
+                : null;
+            if (projectTarget != null)
+            {
+                target = projectTarget;
+            }
+        }
+
         if (_controlHandle.IsValid)
         {
             float returnDuration = _returnDurationOverride >= 0f
@@ -244,6 +264,12 @@ public class TimelineCamRig :
         _hasNormalState = false;
         _hasLensOverride = false;
         _returnDurationOverride = -1f;
+    }
+
+    public void ReleaseTimelineControl(bool restoreProjectCamera)
+    {
+        _activeTracks = 0;
+        Release(restoreProjectCamera);
     }
 
     public void SetReturnDurationForCurrentShot(float seconds)

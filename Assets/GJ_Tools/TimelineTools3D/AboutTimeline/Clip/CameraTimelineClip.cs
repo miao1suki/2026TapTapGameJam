@@ -41,6 +41,22 @@ public enum Camera2DTurnTiming
 
 public class CameraTimelineClip : PlayableAsset
 {
+    [Header("运镜锚点")]
+    [Tooltip("可选。按 Unity Tag 查找本片段的运镜锚点；留空时使用 TimelineCamRig.target。")]
+    public string anchorTag;
+
+    [Header("初始追踪玩家")]
+    [Tooltip("片段开始时先把镜头平滑追踪到玩家当前所在机位，再执行后续运镜。")]
+    public bool trackAnchorFirst;
+    [Min(.01f)] public float trackDuration = .5f;
+    [Tooltip("追踪完成后到达的玩家普通机位，坐标相对角色。")]
+    public Vector3 trackTargetLocalPos = new Vector3(0f, 2f, -10f);
+
+    [Header("镜头尺寸")]
+    [Tooltip("片段期间覆盖正交相机尺寸；用于稍微扩大视野。")]
+    public bool overrideOrthographicSize;
+    [Min(.01f)] public float orthographicSizeMultiplier = 1f;
+
     [Header("镜头移动总模式")]
     [Tooltip("运镜模式：平滑跟到目标机位 / 瞬移切镜 / 归位回播放前机位")]
     public CamMoveMode cameraMoveMode;

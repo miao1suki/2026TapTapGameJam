@@ -58,7 +58,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 
 - 独立曲柄与多平台：平台侧持久绑定、自动配套创建、同控制器平台合并/解除与重建引用。见 [机关 API](Integration/MECHANISM_SIGNAL_API.md) 与 [策划操作](../Developer/MECHANISMS_AND_JUMP.md)。
 
-红块供能与平台：旧能源兼容替换为固定红色 ContactCube，任意已解锁红块可供能任意基座。移动平台信号驱动，曲柄通电制动/载人快降；参数模式可点击绑定，地图存稳定 ID + 相对格，Scene 显示青色路线与粉色绑定。新增无色单向平台和有材质无碰撞隐藏块。玩家1×1、普通上升4格，弹性植物8格及一次搬运4格跳跃，摔死门槛10格，气泡柱出水上升3格。见 [机关信号 API](Integration/MECHANISM_SIGNAL_API.md)、[机关与跳跃](../Developer/MECHANISMS_AND_JUMP.md)。
+红块供能与平台：旧能源兼容替换为固定红色 ContactCube，任意已解锁红块可供能任意基座。移动平台信号驱动，曲柄通电制动/载人快降；参数模式可分别绑定基座和统一信号源，信号源支持多个门按钮/红色按钮或曲柄，地图存稳定 ID + 相对格，Scene 显示青色路线、粉色基座、红色按钮与金色曲柄绑定。新增无色单向平台和有材质无碰撞隐藏块。玩家1×1、普通上升4格，弹性植物8格及一次搬运4格跳跃，摔死门槛10格，气泡柱出水上升3格。见 [机关信号 API](Integration/MECHANISM_SIGNAL_API.md)、[机关与跳跃](../Developer/MECHANISMS_AND_JUMP.md)。
 
 独立三色接触方块：`Code/Systems/ContactCubes`，道具栏目三个 ContactCube 预制体，不是玩家染色目标；绿块四态长度反应、红蓝水柱、既有颜色目标转发。动态重力、落稳锁定、红蓝空中玩家碰撞隔离和喷出保护；绿块始终实体，母体及伸长部分侧面可攀爬、横向伸长部分上下攀附已接入。搬运已复用 CarryableFeature/玩家现有输入，通过 ICarryMotionParticipant 挂起刚体与反应、完整实体校验放下；黏住待接。API：[CONTACT_CUBES_API.md](Integration/CONTACT_CUBES_API.md)，策划：[CONTACT_CUBES.md](../Developer/CONTACT_CUBES.md)。
 
@@ -95,7 +95,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本；新增对话轨道，不需要绑定对象，直接向常驻 `WordNote_UI` 申请同一画布中的消息。使用见 [对话轨道](../Developer/TIMELINE_DIALOGUE.md)，接入见 [API](Integration/TIMELINE_DIALOGUE_API.md) |
 | 玩家 / Boss Timeline 轨道 | `Assets/GJ_Tools/TimelineTools3D/AboutTimeline` | `PlayerTimelineTrack` 与 `BossTimelineTrack` 支持显式绑定或按 Tag 查找角色，驱动位移、跳跃、玩家输入锁和 Boss 追击状态。使用见 [玩家与 Boss 轨道](../Developer/TIMELINE_ACTOR_TRACKS.md)，接入见 [API](Integration/TIMELINE_ACTOR_TRACKS_API.md) |
 | 通用接触触发道具 | `Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/ContactTimelineTrigger.cs` | 独立 MonoBehaviour，挂在有 Collider 的道具上后自动隐藏 Renderer，通过 Trigger/Collision 接触播放绑定 Timeline；支持玩家、任意碰撞体或 Tag 筛选，不依赖颜色系统。使用见 [接触触发](../Developer/CONTACT_TIMELINE.md)，接入见 [API](Integration/CONTACT_TIMELINE_API.md) |
-| Boss 控制器与右移马夫 | `Assets/Boss_Logic/BossController.cs`、`BossAnimationDriver.cs`、`BossRightMoveExecutor.cs` | Controller 默认关闭自动目标追击，只响应 Timeline 和马夫指令，提供运动、跳跃、受击和死亡能力；Timeline 期间保持正常世界交互，`BossRightMoveExecutor` 启动后配置固定世界 Y、切穿地形并下发右移命令。`BossIntro.playable` 由多条 `BossTimelineTrack` 加 2D 相机轨组成，每个 Boss Clip 只做一个动作。选中怪物 Clip 时 Scene 视图显示轨迹。Renderer 使用 `BossTop`、排序值 `32767` 和 Renderer Priority `32767`。 |
+| Boss 控制器与右移马夫 | `Assets/Boss_Logic/BossController.cs`、`BossAnimationDriver.cs`、`BossRightMoveExecutor.cs` | Controller 默认关闭自动目标追击，只响应 Timeline 和马夫指令，提供运动、跳跃、受击和死亡能力；Timeline 行走保留常规重力，所有 Boss 动作下游必须是 Controller。`BossRightMoveExecutor` 首次接管时记录 Boss 当前世界 Y，之后保持该高度切穿地形右移。`Boss_appear.playable` 由多条 `BossTimelineTrack` 加 2D 相机轨组成，每个 Boss Clip 只做一个动作。选中怪物 Clip 时 Scene 视图显示轨迹。Renderer 使用 `BossTop`、排序值 `32767` 和 Renderer Priority `32767`。 |
 | Boss 追击寻路（保留未挂载） | `Assets/Boss_Logic/Navigation` | 有向节点图 + A*，未来可用于其他 Boss/关卡；当前 Boss 预制体不挂载，不参与默认长廊战斗。使用见 [Boss 追击寻路](../Developer/BOSS_PATHFINDING.md)，接入见 [API](Integration/BOSS_PATHFINDING_API.md) |
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
 | 颜色物功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 提供固定形态、生命周期、信号、命令与调试；`BlockAbilityHost` 只按固定颜色组启停预制体已有组件；`CarryableFeature` 是能源方块和万能方块共用的独立搬运组件，能源由 `IColorObject` 门控，万能方块常态可搬 |

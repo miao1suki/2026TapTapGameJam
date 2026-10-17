@@ -21,19 +21,21 @@
 
 ## Boss 片段参数
 
-- 通用运动参数与玩家轨相同。
 - `spawnBoss` / `bossPrefab`：是否生成 Boss，以及生成使用的 Boss 预制体。
-- `moveSpeed`：移动动作的速度；移动时长由起点到目标的距离除以该速度计算。
+- `moveInput`：移动动作的 `-1…1` 操作方向；调用 `BossController.SetWalkInput`。
+- 跳跃动作调用 `BossController.RequestJump()`，不传目标位置或速度。
 - `setTrackingOnStart` / `trackingOnStart`：片段开始时设置追击。
 - `setTrackingOnEnd` / `trackingOnEnd`：片段结束时设置追击。
-- `useBossJumpState`：弧线跳跃通过 `BossController.RequestJumpTo` 执行。
+- `useBossJumpState`：弧线跳跃通过 `BossController.RequestJump` 执行。
 - `killAtEnd`：片段结束时调用 `BossController.Kill`。
 
 ## Boss 入场约束
 
 - 每个 `BossTimelineClip` 只能配置一个操作：`Idle`、`Motion`、`Jump`、`SetTracking` 或 `Kill`。
 - 多操作必须通过多条 `BossTimelineTrack` 在 Timeline 中堆叠；Inspector 不再提供自定义组合模式。
-- Inspector 只显示当前动作所需数据，以及 `spawnBoss` / `bossPrefab`；移动动作显示目标与 `moveSpeed`，跳跃显示目标，运动开关显示开启状态，死亡无额外参数。
+- Inspector 只显示当前动作所需数据，以及 `spawnBoss` / `bossPrefab`；移动动作显示 `moveInput`，跳跃不显示目标或速度，运动开关显示开启状态，死亡无额外参数。
 - Boss 入场相机轨只允许正交 2D 运镜，使用 `CameraTimelineTrack` 时必须保持 `Side2D`，不得使用透视 3D 或 3D 环绕。
+- CameraTimelineClip 的 `anchorTag` 可按 Tag 查找片段有效期内的运镜锚点，留空时使用 `TimelineCamRig.target`。Boss 入场使用 `Boss`。
+- 角色轨不得直接改写 `TimelineCamRig.target`。相机 Clip 在自然末尾主动释放控制并恢复 `CameraControlManager.FocusTarget`，兼容 PlayableDirector 的 Hold 模式；不要只依赖 Graph 停止回调。
 
 行为在直接驱动 Rigidbody 时会临时切换为 Kinematic，并在结束、暂停或 Playable 销毁时恢复原状态；玩家轨可同时通过 `PlayerController.AcquireControlLock` 锁住输入。

@@ -40,6 +40,10 @@ public sealed class DialogueTimelineClipInspector : Editor
             "字号"));
         style.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
+            "style.bold",
+            "加粗"));
+        style.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
             "style.richText",
             "允许富文本"));
         style.Add(ProjectInspectorUtility.CreateProperty(

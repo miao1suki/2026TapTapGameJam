@@ -8,6 +8,12 @@ public class CameraTimelineClipInspector : Editor
         "CameraTimelineClipInspector.ModeDependentExpanded";
 
     private bool modeDependentExpanded;
+    private SerializedProperty anchorTag;
+    private SerializedProperty trackAnchorFirst;
+    private SerializedProperty trackDuration;
+    private SerializedProperty trackTargetLocalPos;
+    private SerializedProperty overrideOrthographicSize;
+    private SerializedProperty orthographicSizeMultiplier;
     private SerializedProperty cameraMoveMode;
     private SerializedProperty resetSubMode;
     private SerializedProperty resetLerpFactor;
@@ -50,6 +56,17 @@ public class CameraTimelineClipInspector : Editor
 
     private void OnEnable()
     {
+        anchorTag = serializedObject.FindProperty("anchorTag");
+        trackAnchorFirst =
+            serializedObject.FindProperty("trackAnchorFirst");
+        trackDuration =
+            serializedObject.FindProperty("trackDuration");
+        trackTargetLocalPos =
+            serializedObject.FindProperty("trackTargetLocalPos");
+        overrideOrthographicSize =
+            serializedObject.FindProperty("overrideOrthographicSize");
+        orthographicSizeMultiplier =
+            serializedObject.FindProperty("orthographicSizeMultiplier");
         cameraMoveMode = serializedObject.FindProperty("cameraMoveMode");
         resetSubMode = serializedObject.FindProperty("resetSubMode");
         resetLerpFactor = serializedObject.FindProperty("resetLerpFactor");
@@ -101,6 +118,41 @@ public class CameraTimelineClipInspector : Editor
         TimelineHelp.DrawBoxFor(target);
         serializedObject.Update();
         EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
+        EditorGUILayout.Space(2);
+
+        EditorGUILayout.LabelField("运镜锚点", EditorStyles.boldLabel);
+        EditorGUILayout.PropertyField(
+            anchorTag,
+            new GUIContent(
+                "锚点 Tag",
+                "可选。留空使用 TimelineCamRig.target；填写后按 Unity Tag 查找本次片段跟随对象。"));
+        EditorGUILayout.PropertyField(
+            trackAnchorFirst,
+            new GUIContent(
+                "先追踪玩家机位",
+                "片段开始时先把镜头平滑追踪到玩家当前普通机位，再执行主体运镜。"));
+        if (trackAnchorFirst.boolValue)
+        {
+            EditorGUILayout.PropertyField(
+                trackDuration,
+                new GUIContent("初始追踪时长"));
+            EditorGUILayout.PropertyField(
+                trackTargetLocalPos,
+                new GUIContent(
+                    "追踪目标机位",
+                    "追踪结束时到达的普通机位，坐标相对角色。"));
+        }
+        EditorGUILayout.PropertyField(
+            overrideOrthographicSize,
+            new GUIContent(
+                "覆盖正交视野",
+                "片段期间按倍率调整正交相机尺寸；大于 1 表示视野变宽、镜头拉远。"));
+        if (overrideOrthographicSize.boolValue)
+        {
+            EditorGUILayout.PropertyField(
+                orthographicSizeMultiplier,
+                new GUIContent("视野倍率"));
+        }
         EditorGUILayout.Space(2);
 
         EditorGUILayout.LabelField("运镜方式", EditorStyles.boldLabel);

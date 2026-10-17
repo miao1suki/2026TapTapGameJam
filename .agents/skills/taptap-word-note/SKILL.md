@@ -44,6 +44,7 @@ description: 2026TapTap 玩家屏幕提示与设备化按键文案规范，适�
 - 系统提示还允许白、黑。
 - 当前搬运提示、非法提示、复活提示统一使用白字黑描边。
 - `WordNoteStyle.richText` 控制 TMP 富文本；需要局部颜色时用 `<color=#RRGGBB>...</color>`。
+- `WordNoteStyle.bold` 控制 TMP 加粗；默认关闭，需要强调的 Timeline 台词或提示显式开启。
 
 ## 当前固定消息规则
 

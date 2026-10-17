@@ -156,6 +156,7 @@ namespace Project.WordNote
     {
         public TMP_FontAsset font;
         [Min(1f)] public float fontSize = 42f;
+        public bool bold;
         public bool richText = true;
         public WordNoteColor fontColor = WordNoteColor.Yellow;
         public bool useOutline;
@@ -202,6 +203,7 @@ namespace Project.WordNote
             {
                 font = font,
                 fontSize = fontSize,
+                bold = bold,
                 richText = richText,
                 fontColor = fontColor,
                 useOutline = useOutline,
@@ -731,6 +733,9 @@ namespace Project.WordNote
                     ? defaultFont
                     : TMP_Settings.defaultFontAsset;
             text.fontSize = style.fontSize;
+            text.fontStyle = style.bold
+                ? FontStyles.Bold
+                : FontStyles.Normal;
             text.richText = style.richText;
             text.color = ResolveColor(style.fontColor);
             text.text = message.Content;
@@ -1161,6 +1166,9 @@ namespace Project.WordNote
                 ? font
                 : TMP_Settings.defaultFontAsset;
             view.Text.fontSize = message.Style.fontSize;
+            view.Text.fontStyle = message.Style.bold
+                ? FontStyles.Bold
+                : FontStyles.Normal;
             view.Text.richText = message.Style.richText;
             view.Text.alignment = ResolveTextAlignment(
                 message.Style.textAlignment);

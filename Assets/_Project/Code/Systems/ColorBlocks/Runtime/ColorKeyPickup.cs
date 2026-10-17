@@ -17,9 +17,11 @@ namespace Project.ColorBlocks
         [SerializeField] private string colorTypeId = "red";
         [SerializeField] private PlayableDirector cameraDirector;
         [SerializeField] private bool hideOnCollect = true;
-        [SerializeField, Range(0.5f, 1f)] private float revealAtTimelineProgress = .98f;
         [SerializeField, Min(.01f)] private float revealDuration = 1.5f;
-        [SerializeField, Min(1f)] private float orthographicZoomOut = 1.04f;
+        [SerializeField, Min(.01f)] private float orthographicZoomOut = 1.5f;
+        [SerializeField, Min(0f)] private float cameraTrackDuration = .5f;
+        [SerializeField, Min(.01f)] private float cameraMoveDuration = 3f;
+        [SerializeField, Min(0f)] private float cameraHoldDuration = 2f;
         [SerializeField, Min(0f)] private float cameraReturnDuration = .85f;
         private PlayerController collectingPlayer;
         private TimelineCamRig activeRig;
@@ -215,27 +217,46 @@ namespace Project.ColorBlocks
             if (hasCameraShot)
             {
                 double duration = cameraDirector.playableAsset.duration;
-                double revealTime = Mathf.Max(0f,
-                    (float)duration * revealAtTimelineProgress - .03f);
+                float totalDuration = Mathf.Max(.01f, (float)duration);
+                float trackDuration = Mathf.Clamp(
+                    cameraTrackDuration,
+                    0f,
+                    totalDuration - .01f);
+                float reverseStart = Mathf.Clamp(
+                    trackDuration +
+                    cameraMoveDuration +
+                    cameraHoldDuration,
+                    trackDuration + .01f,
+                    totalDuration);
+                bool releasedAtReverse = false;
                 float timeout = Time.unscaledTime + (float)duration + 1f;
                 while (cameraDirector != null &&
                        cameraDirector.state == PlayState.Playing &&
-                       cameraDirector.time < revealTime &&
+                       cameraDirector.time < duration &&
                        Time.unscaledTime < timeout)
                 {
-                    UpdateCameraLens((float)(cameraDirector.time / duration));
+                    float timelineTime = (float)cameraDirector.time;
+                    UpdateCameraLens(EvaluateCameraShotProgress(
+                        timelineTime,
+                        totalDuration));
+                    if (!releasedAtReverse &&
+                        timelineTime >= reverseStart - .0001f)
+                    {
+                        ReleasePlayerControlLock();
+                        releasedAtReverse = true;
+                    }
+
                     yield return null;
-                }
-                if (cameraDirector != null && cameraDirector.state == PlayState.Playing)
-                {
-                    UpdateCameraLens(1f);
-                    cameraDirector.Pause();
                 }
 
                 if (cameraDirector != null)
                 {
-                    cameraDirector.Stop(); // Start the return transition immediately.
-                    ReleasePlayerControlLock();
+                    UpdateCameraLens(0f);
+                    cameraDirector.Stop();
+                    if (!releasedAtReverse)
+                    {
+                        ReleasePlayerControlLock();
+                    }
                 }
             }
 
@@ -271,10 +292,15 @@ namespace Project.ColorBlocks
                 Debug.LogWarning("[ColorBlocks] 未找到 TimelineCamRig，演出轨无法接管相机。", this);
                 return false;
             }
-            if (rig.isPlayingAnim)
+            if (rig.IsTimelineControlling)
             {
                 Debug.LogWarning("[ColorBlocks] 相机演出正在播放，颜色钥匙跳过重叠运镜。", this);
                 return false;
+            }
+
+            if (rig.isPlayingAnim)
+            {
+                rig.ReleaseTimelineControl(false);
             }
             rig.target = player.transform;
             bool hasCameraTrack = false;
@@ -312,6 +338,49 @@ namespace Project.ColorBlocks
                 Mathf.Lerp(originalOrthographicSize,
                     originalOrthographicSize * orthographicZoomOut, eased),
                 originalFieldOfView);
+        }
+
+        private float EvaluateCameraShotProgress(
+            float timelineTime,
+            float totalDuration)
+        {
+            float forwardEnd = Mathf.Clamp(
+                cameraTrackDuration + cameraMoveDuration,
+                .01f,
+                totalDuration);
+            float reverseStart = Mathf.Clamp(
+                cameraTrackDuration +
+                cameraMoveDuration +
+                cameraHoldDuration,
+                forwardEnd,
+                totalDuration);
+            float motionStart = Mathf.Clamp(
+                cameraTrackDuration,
+                0f,
+                totalDuration - .0001f);
+            if (timelineTime <= forwardEnd)
+            {
+                return Mathf.SmoothStep(
+                    0f,
+                    1f,
+                    Mathf.Max(0f, timelineTime - motionStart) /
+                    Mathf.Max(
+                        .0001f,
+                        forwardEnd - motionStart));
+            }
+
+            if (timelineTime <= reverseStart)
+            {
+                return 1f;
+            }
+
+            float reverseDuration = Mathf.Max(
+                .0001f,
+                totalDuration - reverseStart);
+            return 1f - Mathf.SmoothStep(
+                0f,
+                1f,
+                (timelineTime - reverseStart) / reverseDuration);
         }
 
         private void AcquirePlayerControlLock(PlayerController player)

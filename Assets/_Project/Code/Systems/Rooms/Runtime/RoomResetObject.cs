@@ -59,6 +59,7 @@ namespace Project.Rooms
         {
             if (Persistent) return;
             Capture();
+            GetComponent<Project.TemporaryObjectHideState>()?.Restore();
             GetComponent<Project.Items.DropItemBase>()?.CancelAttractionForRoomReset();
             GetComponent<CarryableFeature>()?.CancelCarry();
             foreach (var replacement in replacements) if (replacement != null) Destroy(replacement);

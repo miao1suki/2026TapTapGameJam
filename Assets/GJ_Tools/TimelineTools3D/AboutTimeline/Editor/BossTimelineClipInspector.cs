@@ -29,9 +29,7 @@ public sealed class BossTimelineClipInspector : Editor
     private SerializedProperty motionMode;
     private SerializedProperty spawnBoss;
     private SerializedProperty bossPrefab;
-    private SerializedProperty targetOffset;
-    private SerializedProperty useOwnerAsOrigin;
-    private SerializedProperty moveSpeed;
+    private SerializedProperty moveInput;
     private SerializedProperty useBossJumpState;
     private SerializedProperty setTrackingOnStart;
     private SerializedProperty setTrackingOnEnd;
@@ -100,27 +98,14 @@ public sealed class BossTimelineClipInspector : Editor
         moveDataGroup = new VisualElement();
         moveDataGroup.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "useOwnerAsOrigin",
-            "以片段挂载物体为原点"));
-        moveDataGroup.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "targetOffset",
-            "目标位置 / 偏移"));
-        moveDataGroup.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "moveSpeed",
-            "移动速度"));
+            "moveInput",
+            "移动输入（-1 左 / 1 右）",
+            "只发送操作输入；速度、加速度、碰撞与最终位置都由 BossController 决定。"));
         actionSection.Add(moveDataGroup);
 
         jumpDataGroup = new VisualElement();
-        jumpDataGroup.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "useOwnerAsOrigin",
-            "以片段挂载物体为原点"));
-        jumpDataGroup.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "targetOffset",
-            "跳跃目标位置 / 偏移"));
+        jumpDataGroup.Add(ProjectInspectorUtility.CreateHelp(
+            "只向 BossController 发送一次跳跃请求；跳跃高度、时长、重力、水平惯性和落点都由控制器与物理决定。"));
         actionSection.Add(jumpDataGroup);
 
         trackingDataGroup = new VisualElement();
@@ -146,10 +131,7 @@ public sealed class BossTimelineClipInspector : Editor
         motionMode = serializedObject.FindProperty("motionMode");
         spawnBoss = serializedObject.FindProperty("spawnBoss");
         bossPrefab = serializedObject.FindProperty("bossPrefab");
-        targetOffset = serializedObject.FindProperty("targetOffset");
-        useOwnerAsOrigin =
-            serializedObject.FindProperty("useOwnerAsOrigin");
-        moveSpeed = serializedObject.FindProperty("moveSpeed");
+        moveInput = serializedObject.FindProperty("moveInput");
         useBossJumpState =
             serializedObject.FindProperty("useBossJumpState");
         setTrackingOnStart =
@@ -247,8 +229,8 @@ public sealed class BossTimelineClipInspector : Editor
             actionHelp.text = action switch
             {
                 Action.Idle => "只等待，时长由 Timeline Clip 长度决定。",
-                Action.Move => "从片段开始时所在位置移动到目标位置；时长由距离和移动速度计算。",
-                Action.Jump => "通过 BossController 的 Jump 状态跳到目标位置。",
+                Action.Move => "片段持续期间向 BossController 发送移动输入；速度和最终移动结果由控制器决定。",
+                Action.Jump => "向 BossController 发送一次跳跃请求；可与并行移动轨同时运行。",
                 Action.SetTracking => "在片段开始时设置 Boss 运动开关。",
                 Action.Kill => "片段结束时杀死 Boss。",
                 _ => string.Empty

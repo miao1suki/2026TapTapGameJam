@@ -1,3 +1,4 @@
+using System;
 using Project.BlockFeatures;
 using Project.Player;
 using Project.ContactCubes;
@@ -15,7 +16,9 @@ namespace Project.Mechanisms
     }
 
     [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider))]
-    public sealed class DoorButton : MonoBehaviour, IRoomColorResettable
+    public sealed class DoorButton : MonoBehaviour,
+        IRoomColorResettable,
+        IMechanismSignalSource
     {
         [SerializeField, InspectorName("所属门")] private DoorController owner;
         [BlockParameter(Label = "触发模式", Group = "踩踏", Order = -1)]
@@ -31,6 +34,8 @@ namespace Project.Mechanisms
         public bool Persistent => mode == DoorButtonMode.Latched;
         public DoorButtonState State { get; private set; }
         public bool IsPressed => State == DoorButtonState.Pressed;
+        public bool IsSignalActive => IsPressed && isActiveAndEnabled;
+        public event Action<bool> SignalChanged;
         public int BindingIndex
         {
             get
@@ -112,6 +117,7 @@ namespace Project.Mechanisms
             State = value ? DoorButtonState.Pressed : DoorButtonState.Unpressed;
             if (Application.isPlaying) AudioCuePlayer.Play(value ? AudioCueIds.ButtonPress : AudioCueIds.ButtonRelease);
             ApplyAppearance();
+            SignalChanged?.Invoke(IsSignalActive);
             if (owner != null) owner.NotifyButtonPressed(actor);
         }
         public void ResetButton() { SetPressed(false,null); ApplyAppearance(); if (owner != null) owner.RefreshHint(); }

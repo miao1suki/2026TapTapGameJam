@@ -45,13 +45,10 @@ public static class BossTimelineSceneDrawer
             return;
         }
 
-        Transform owner = director.transform;
-        Vector3 start = ResolveClipStart(
-            actor,
-            track,
-            timelineClip,
-            owner);
-        Vector3 end = ResolveTarget(bossClip, owner);
+        Vector3 start = actor.position;
+        Vector3 end = ResolveInputPreviewEnd(
+            bossClip,
+            start);
 
         if (bossClip.motionMode == ActorTimelineMotionMode.None)
         {
@@ -64,14 +61,7 @@ public static class BossTimelineSceneDrawer
             return;
         }
 
-        if (bossClip.motionMode == ActorTimelineMotionMode.Teleport)
-        {
-            DrawDottedLine(start, end);
-        }
-        else
-        {
-            DrawMotionPath(bossClip, start, end);
-        }
+        DrawDottedLine(start, end);
 
         DrawMarker(start);
         DrawMarker(end);
@@ -104,131 +94,24 @@ public static class BossTimelineSceneDrawer
         return tagged != null ? tagged.transform : null;
     }
 
-    private static Vector3 ResolveClipStart(
-        Transform actor,
-        TrackAsset track,
-        TimelineClip current,
-        Transform owner)
+    private static Vector3 ResolveInputPreviewEnd(
+        BossTimelineClip clip,
+        Vector3 start)
     {
-        TimelineClip previous = FindPreviousClip(track, current);
-        int guard = 0;
-        while (previous != null && guard++ < 64)
+        if (clip.motionMode == ActorTimelineMotionMode.Linear)
         {
-            BossTimelineClip previousClip =
-                previous.asset as BossTimelineClip;
-            if (previousClip != null &&
-                previousClip.motionMode !=
-                ActorTimelineMotionMode.None)
-            {
-                return ResolveTarget(previousClip, owner);
-            }
-
-            previous = FindPreviousClip(track, previous);
+            return start +
+                   Vector3.right *
+                   Mathf.Sign(clip.moveInput) *
+                   1.5f;
         }
 
-        return actor.position;
-    }
-
-    private static TimelineClip FindPreviousClip(
-        TrackAsset track,
-        TimelineClip current)
-    {
-        TimelineClip previous = null;
-        foreach (TimelineClip candidate in track.GetClips())
-        {
-            if (candidate == current ||
-                candidate.start >= current.start)
-            {
-                continue;
-            }
-
-            if (previous == null ||
-                candidate.start > previous.start)
-            {
-                previous = candidate;
-            }
-        }
-
-        return previous;
-    }
-
-    private static Vector3 ResolveTarget(
-        BossTimelineClip clip,
-        Transform owner)
-    {
-        return clip.useOwnerAsOrigin && owner != null
-            ? owner.TransformPoint(clip.targetOffset)
-            : clip.targetOffset;
-    }
-
-    private static void DrawMotionPath(
-        BossTimelineClip clip,
-        Vector3 start,
-        Vector3 end)
-    {
-        const int sampleCount = 64;
-        Vector3 previous = EvaluateMotion(
-            clip,
-            start,
-            end,
-            0f);
-
-        Handles.color = BossRouteColor;
-        Handles.SphereHandleCap(
-            0,
-            previous,
-            Quaternion.identity,
-            HandleUtility.GetHandleSize(previous) * .07f,
-            EventType.Repaint);
-
-        for (int index = 1; index <= sampleCount; index++)
-        {
-            float progress = index / (float)sampleCount;
-            Vector3 point = EvaluateMotion(
-                clip,
-                start,
-                end,
-                progress);
-            Handles.DrawLine(
-                previous,
-                point,
-                TimelineSceneStyle.MainLineWidth);
-            previous = point;
-        }
-
-        Handles.DrawLine(
-            start,
-            start + Vector3.up * .35f,
-            TimelineSceneStyle.ThinLineWidth);
-        Handles.DrawLine(
-            end,
-            end + Vector3.up * .35f,
-            TimelineSceneStyle.ThinLineWidth);
-    }
-
-    private static Vector3 EvaluateMotion(
-        BossTimelineClip clip,
-        Vector3 start,
-        Vector3 end,
-        float progress)
-    {
-        float curveProgress = clip.motionCurve != null
-            ? clip.motionCurve.Evaluate(progress)
-            : progress;
-        Vector3 position = Vector3.Lerp(
-            start,
-            end,
-            curveProgress);
         if (clip.motionMode == ActorTimelineMotionMode.JumpArc)
         {
-            position.y +=
-                4f *
-                Mathf.Max(0f, clip.jumpArcHeight) *
-                progress *
-                (1f - progress);
+            return start + Vector3.up * 1.5f;
         }
 
-        return position;
+        return start;
     }
 
     private static void DrawDottedLine(
@@ -273,12 +156,16 @@ public static class BossTimelineSceneDrawer
         string mode = clip.motionMode switch
         {
             ActorTimelineMotionMode.Teleport => "瞬移",
-            ActorTimelineMotionMode.Linear => "平滑移动",
-            ActorTimelineMotionMode.JumpArc => "弧线跳跃",
+            ActorTimelineMotionMode.Linear => "移动输入",
+            ActorTimelineMotionMode.JumpArc => "跳跃请求",
             _ => "无位移"
         };
-        if (clip.motionMode == ActorTimelineMotionMode.JumpArc &&
-            clip.useBossJumpState)
+        if (clip.motionMode == ActorTimelineMotionMode.Linear)
+        {
+            mode += $"（X = {clip.moveInput:0.##}）";
+        }
+        else if (clip.motionMode == ActorTimelineMotionMode.JumpArc &&
+                 clip.useBossJumpState)
         {
             mode += "（Boss Jump 状态：实际受重力与落地影响）";
         }
@@ -292,7 +179,7 @@ public static class BossTimelineSceneDrawer
             start + Vector3.up * .35f,
             BossRouteColor);
         TimelineSceneStyle.Tag(
-            "终点",
+            "输入方向",
             end + Vector3.up * .35f,
             BossRouteColor);
     }

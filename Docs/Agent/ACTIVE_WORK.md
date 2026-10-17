@@ -1,5 +1,90 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-17 移动平台按钮连线
+
+- 分支：`Boss2`；范围：`MovingPlatformFeature`、`DoorButton`、关卡编辑器参数绑定与机制规划存档。
+- 运行时：`DoorButton` 实现 `IMechanismSignalSource`，按下/释放广播信号；`MovingPlatformFeature.BindSignalSources` 可绑定多个基座/按钮来源。
+- 编辑器：普通移动平台参数窗口提供“绑定基座”和统一的“绑定信号源”；信号源模式可选择按钮或曲柄，按钮可连续追加多个，曲柄会切换为曲柄控制。规划图为按钮绘制红色虚线、曲柄绘制金色虚线。
+- 存档：场景应用按 PlanningBoxId 重建基座、按钮列表和曲柄引用；旧单按钮字段自动迁移到列表，片段导入导出、合并/拆分、孤儿清理和链接差异比较同步处理按钮列表。曲柄有值时优先进入曲柄控制，基座/按钮关系保留。
+- 边界：未改变平台运动数值、门逻辑、按钮触发规则或其他机关绑定。
+- 验证：`git diff --check` 通过；Unity 当前未自动刷新脚本，`PlanningMechanismVerification` 与 `PlanningCollaborationVerification` 尚待运行。
+
+## 2026-10-17 Boss 入场输入化与场景落点演出
+
+- 分支：`Boss2`；范围：`BossController`、BossTimelineClip、ActorTimelineBehaviour、Boss Inspector、Boss_appear Timeline、Timeline 安装器和接入文档。
+- 边界：Boss Timeline 只发送操作输入，不保存目标位置、跳跃高度、落点、重力或物理速度。移动轨写 `moveInput` 并调用 `SetWalkInput`；跳跃轨只调用 `RequestJump()`。
+- 参数：控制器新增 `walkSpeed = 3`。相较原实际 Walk `5` 降低 40%；跳跃、重力、加速度和最终位置仍由控制器与物理决定。
+- 演出：编辑态玩家世界坐标为 `(-9.07, -33.33)`；Boss 在该位置生成。字幕完整淡出后，`4–5.4` 秒并行发送右移与跳跃输入。Boss 右移约 `1.4` 秒后落在场景弹性植物组 X `-7…-2` 上方，约 `6.02` 秒首次接触顶面 Y `-41`，Timeline 在 `6.55` 秒结束；`6.54` 秒开启右移门与血条。
+- 收尾：删除 `SetExternalMoveToX` 和 Clip 内目标/速度/水平弹道保留参数；Actor Timeline 不再传送纠偏。控制器在 Kinematic 状态下跳过速度写入。
+- 验证：待 Unity 完成本轮脚本与 Timeline 资产重载后检查编译和 Play Mode 实际落点。
+
+## 2026-10-17 Boss 入场相机控制权归还
+
+- 分支：`Boss2`；范围：Boss 入场 Timeline、CameraTimelineClip、CameraTimelineBehaviour、TimelineCamRig、ActorTimelineBehaviour 及相机说明。
+- 根因：Boss 入场 PlayableDirector 使用 `Hold`，播放到最后一帧会停住但不会销毁 PlayableGraph，因此 `CameraTimelineMixerBehaviour.OnGraphStop` 不会触发，旧释放路径无法执行。相机持续持有 Cutscene 控制权。
+- 修复：相机 Clip 在自然末尾自行释放 Timeline 相机控制；强制释放接口会清零引用计数、恢复 `CameraControlManager.FocusTarget` 并清除运行态。`TimelineCamRig` 在 Awake 重置序列化运行态，Mixer 同步检测已失效的租约。
+- 解耦：删除 Boss 行为片段对 `TimelineCamRig.target` 的隐式写入；CameraTimelineClip 新增“锚点 Tag”，Boss 入场相机显式使用 `Boss` Tag，并在片段暂停/结束时恢复原锚点。
+
+## 2026-10-17 Boss 入场节奏与清障性能
+
+- 分支：`Boss2`；Boss 碰撞清障从 `Destroy` 改为 `SetActive(false)`，保留 `RoomResetObject` 优先隐藏与房间恢复路径，减少连续销毁造成的卡顿。
+- `Boss_appear.playable` 初始发呆由 `1.0666667` 秒延长到 `2.1333333` 秒；后续 Boss 运动片段、相机轨、追踪开关和总时长同步顺移。
+- 对话起点由 `0.41` 移到 `0.61`，终点与初始发呆结束位置 `2.1333333` 对齐。
+- 时间轴末尾新增 Playable 轨和临时 `BossHealthBarActivationPlayable`，在最后一刻按 `Boss` Tag 激活 Boss 血条。
+
+## 2026-10-17 Boss 入场刚体警告与台词强调
+
+- `PlayerController.FixedUpdate` 在 Timeline 临时把玩家 Rigidbody 设为 Kinematic 时直接跳过马的运动写入，修复约一秒内重复输出四十余次 `Setting linear velocity of a kinematic body is not supported`。
+- `WordNoteStyle` 新增 `bold`，运行时统一映射到 TMP `FontStyles.Bold/Normal`；Timeline 对话 Inspector 同步暴露“加粗”。
+- Boss 入场台词字号从 `42` 调到 `84` 并开启加粗。
+
+## 2026-10-17 Boss 吃物体尖峰优化
+
+- 碰撞回调不再直接 `SetActive(false)`；按目标实例 ID 去重后进入隐藏队列，在 `LateUpdate` 以默认每帧 4 个的预算分批停用。
+- `BossController` 新增 `maxHiddenObjectsPerFrame`，避免一次 Trigger 回调停用大量 Collider 和脚本造成物理/生命周期峰值。
+- `SetPassThroughTerrain` 仅在 Collider 状态实际变化时写入 `isTrigger`，避免右移马夫每 FixedUpdate 重复提交相同物理状态。
+
+### 追加：不再停用整对象
+
+- 延迟隐藏仍会产生明显尖峰后，改为 `TemporaryObjectHideState`：只关闭目标树下 Renderer、Collider，并临时切换 3D Rigidbody 的 Kinematic/重力状态，保留所有 GameObject 激活。
+- `RoomResetObject.RestorePose` 会先调用该状态组件恢复渲染、碰撞和刚体，再执行原有房间恢复；没有房间生命周期的对象继续保留隐藏状态。
+- Boss 入场 2D 相机机位高度由 `1.5` 对齐到看向高度 `1.2`，并在正交轴约束下压平俯仰，消除方块顶面/侧壁造成的 3D 穿帮。
+
+## 2026-10-17 Boss 体型与入场节奏
+
+- Boss 根物体统一放大 3 倍，血条 Canvas 以 1/3 缩放抵消父物体比例。
+- Boss 作者碰撞保持本地 `1×1×1`；右移穿行阶段由 `SetPassThroughTerrain(true)` 临时拉高到本地 `12`，在 3 倍缩放下覆盖约 `3×36×3` 格，停止穿行时恢复，避免入场跳跃被超长碰撞体干扰。
+- 入场台词展示时长改为原 2.5 倍，从 `1.0166667` 持续到 `3.8083333` 秒，再加 `0.18` 秒退场淡出；Boss 跳跃延后到 `4` 秒，确保文字完全消失后才跳。后续片段、相机、血条激活和总时长同步顺延到 `7.41` 秒。
+- Boss 入场镜头目标下移到 `-0.3`，到 Boss 机位时视野扩大 `1.15` 倍；2D 运镜强制只取平面 Yaw，不再继承角色旋转。
+- 新增独立 Boss 行走 Clip：`3.1–3.5` 秒向右走 1 格，停留到 `4` 秒后再跳。
+- 直接写 `.playable` YAML 的行走轨道会被 Unity 重新序列化覆盖；新增 `BossWalkTimelineInstaller` 通过 Timeline API 自动补齐“Boss 走一格”轨道，也可从菜单 `Tools/2026TapTap/Boss/添加跳跃前移动一格` 手动执行。
+- Boss Timeline 行走改为通过 `BossController.SetExternalMove` 下发横向速度和倍率，Y 轴保留常规重力，结束由 `TeleportTo` 收口；Actor 层不再直接写 Boss Rigidbody/Transform。跳跃前行走距离 `1.5` 格和时长 `0.6` 秒保持不变，仅速度从 `2.5` 提升到 `5` 格/秒。
+- Boss Timeline 行走改为只下发横向外部移动，不再锁定 Y 高度，保留常规重力和竖直物理速度。
+- `BossRightMoveExecutor` 改为首次开始右移时记录 Boss 当前世界 Y，之后保持该高度持续右移；移除 Inspector 手动固定高度。
+
+## 2026-10-17 颜色钥匙运镜与 Boss 入场锁
+
+- 三把颜色钥匙 Timeline 统一为 8.5 秒：0–0.5 秒先追踪到玩家当前普通机位，0.5–3.5 秒原地向上 2 格并把视野范围扩大到 1.5 倍，3.5–5.5 秒停留 2 秒，5.5–8.5 秒位置和镜头视野同时倒放。
+- `ColorKeyPickup` 在倒放开始 5.5 秒释放玩家控制锁；颜色渐显、拾取视觉和相机倒放继续异步收尾。
+- Boss 入场触发器的场景实例开启 `requestPlayerControlLockDuringTimeline`，从触发解锁/入场开始锁住玩家，Timeline 时长到尾时释放。
+
+## 2026-10-17 Boss 碰撞清除与受击无敌
+
+- 分支：`Boss2`；范围：`Assets/Boss_Logic/BossController.cs`、`BossControllerEditor.cs`、Boss 预制体及说明文档。
+- 新调试分区“碰撞清除、受击与无敌”集中提供最大/初始受击值、岩浆伤害、无敌时间、闪烁间隔和清障开关；整只 Boss 自动收集自身及全部子 Renderer 闪烁，无需手工配置。普通受伤不进入 Hit、不硬直、不击退，右移马夫当前以默认 0.7 倍速度继续右移 4 秒，等效移动 7 格。
+- Boss 默认只在外部右移阶段清除碰撞物体；玩家和其他 Boss 不会被清除。关卡物体优先通过 RoomResetObject 隐藏并在 R/离区恢复，无生命周期物体直接销毁。
+- 岩浆首次接触造成默认 1 点伤害并开始默认 1.2 秒无敌；无敌期间岩浆仍会被清除但不再扣血。身体 Renderer 按 0.08 秒间隔闪烁，结束后恢复原启用状态。
+- 血量归零时右移马夫监听 Death 状态并立即停止外部移动；控制器新增 `DefeatPresentationRequested` 事件与 Inspector UnityEvent，作为后续玩家 Timeline 演出接口，不直接持有 PlayableDirector。
+- 当前 Boss 最大与初始血量均为 9。
+- Boss 预制体新增 Screen Space Overlay 子 Canvas 与 `BossHealthBarUI`；出生后保持隐藏且伤害关闭，调用 `BossController.ActivateHealthSystem()` 后才创建血条并允许受伤。血条按当前 9 点血生成 9 段和 8 条棱角分明的纯黑竖直分隔线，从 0 在 0.35 秒内涨满；拖尾血皮纯白，当前血量使用项目肉红 `#B23E3E`，肉红层下降更快、纯白层较慢跟随。外框以外保持透明；外框由 1px 黑外缘、`#523B42` 暗红框体和左上/右下 `#F65332` 短角部强调组成。血条只使用无 Sprite 的硬边纯色 `Image`，已移除旧红白纹理和分隔线图片材质。
+
+## 2026-10-17 重力岩浆道具
+
+- 分支：`Boss2`；新增 `Assets/_Project/Content/ColorBlocks/Prefabs/Red_GravityLava.prefab` 及 meta。
+- 预制体复用 `Red_Lava` 的外观、红色解锁组、岩浆触发伤害和区域重置；根物体增加动态 Rigidbody 与落地实体碰撞子体，仅改变重力落地能力。
+- 蓝交互替换预制体为空，红、绿、蓝均不会触发颜色反应，也不会生成黑曜石。
+- 关卡编辑器道具栏目新增“重力岩浆”，排在“岩浆”之后；未修改场景或规划地图。
+
 ## 2026-10-17 本地完成进度整合交付
 
 - 用户在当前整合窗口授权合并并推送 main；前述各任务的“不提交/不推送”是当时交付状态，本轮统一纳入已完成的 MRoom2 第二版、平台充能模式、自动同步保护、画布边缘拖拽、尖刺接触伤害和自建隐私政策入口。

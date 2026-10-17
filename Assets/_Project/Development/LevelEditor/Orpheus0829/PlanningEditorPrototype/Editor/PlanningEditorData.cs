@@ -89,6 +89,8 @@ namespace PlanningEditorPrototype
         public int doorButtonOrder;
         public string mechanismBaseId;
         public Vector2Int mechanismBaseCellOffset;
+        public string mechanismButtonId;
+        public List<string> mechanismButtonIds = new List<string>();
         public string crankOwnerId;
         public bool initialCrankPlatformCreated;
         public List<string> mergeParts = new List<string>();
@@ -109,11 +111,32 @@ namespace PlanningEditorPrototype
         }
         internal void PreparePersistentValues()
         {
+            NormalizeMechanismButtonLinks();
             componentOverrides = Project.LevelEditor.Editor.LevelEditorComponentOverrideUtility.PersistentValues(componentOverrides);
             for (int i = 0; i < mergeParts.Count; i++)
             {
                 var part = FromPersistentJson(mergeParts[i]);
                 if (part != null) { part.PreparePersistentValues(); mergeParts[i] = JsonUtility.ToJson(part); }
+            }
+        }
+        internal void NormalizeMechanismButtonLinks()
+        {
+            mechanismButtonIds ??= new List<string>();
+            if (!string.IsNullOrEmpty(mechanismButtonId) &&
+                !mechanismButtonIds.Contains(mechanismButtonId))
+            {
+                mechanismButtonIds.Add(mechanismButtonId);
+            }
+
+            mechanismButtonId = null;
+            for (int index = mechanismButtonIds.Count - 1; index >= 0; index--)
+            {
+                string id = mechanismButtonIds[index];
+                if (string.IsNullOrEmpty(id) ||
+                    mechanismButtonIds.IndexOf(id) != index)
+                {
+                    mechanismButtonIds.RemoveAt(index);
+                }
             }
         }
         [NonSerialized] public LevelEditorPlacedBlock sceneBlock;
@@ -1415,6 +1438,8 @@ namespace PlanningEditorPrototype
                 PlanningRoom room = rooms[index];
                 room.cells ??= new List<PlanningCell>();
                 room.boxes ??= new List<PlanningBox>();
+                foreach (PlanningBox box in room.boxes)
+                    box.NormalizeMechanismButtonLinks();
                 if (room.isConnector)
                 {
                     room.connectorWidth = Mathf.Clamp(
@@ -1428,6 +1453,8 @@ namespace PlanningEditorPrototype
             keys ??= new List<PlanningKey>();
             locks ??= new List<PlanningLock>();
             assemblyPatches ??= new List<PlanningBox>();
+            foreach (PlanningBox box in assemblyPatches)
+                box.NormalizeMechanismButtonLinks();
             RefreshConnectorPaths();
             UpgradeWorldGrid();
         }

@@ -21,7 +21,7 @@ WordNoteUI.Instance.RequestTimeline(content, style)
 
 ## 参数
 
-`DialogueTimelineClip.style` 直接使用 `Project.WordNote.WordNoteStyle`，不维护第二套气泡参数。字体为空时继承 `WordNoteUI.defaultFont`，仍遵守项目 `Cubic_11 SDF` 字体规范。
+`DialogueTimelineClip.style` 直接使用 `Project.WordNote.WordNoteStyle`，不维护第二套气泡参数。字体为空时继承 `WordNoteUI.defaultFont`，仍遵守项目 `Cubic_11 SDF` 字体规范；`style.bold` 控制 TMP 加粗。
 
 ## 验证
 

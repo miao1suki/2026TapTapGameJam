@@ -14,7 +14,7 @@ public sealed class BossRightMoveExecutorEditor : Editor
         root.Add(ProjectInspectorUtility.CreateScriptField(
             serializedObject));
         root.Add(ProjectInspectorUtility.CreateHelp(
-            "只向 BossController 下发固定高度的向右移动指令，不直接修改 Rigidbody。"));
+            "只向 BossController 下发向右移动指令；接管瞬间记录 Boss 当前 Y，并保持该高度右移，不直接修改 Rigidbody。"));
 
         Foldout route = ProjectInspectorUtility.CreateFoldout(
             "右移路线",
@@ -25,11 +25,6 @@ public sealed class BossRightMoveExecutorEditor : Editor
             "启用右移"));
         route.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
-            "rightMoveHeightY",
-            "右移世界 Y 坐标",
-            "Boss 在右移期间固定的世界高度。"));
-        route.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
             "waitForBossMotionEnabled",
             "等待 Boss 运动开启",
             "开启后，等 Timeline 调用 SetTrackingEnabled(true) 才开始右移。"));
@@ -37,6 +32,11 @@ public sealed class BossRightMoveExecutorEditor : Editor
             serializedObject,
             "startDelaySeconds",
             "启动延迟"));
+        route.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "invulnerableMoveSpeedMultiplier",
+            "无敌时右移速度倍率",
+            "Boss 受伤进入无敌后右移速度的倍率；1 为不减速，0.5 为半速，0 为暂时停止。"));
         root.Add(route);
 
         BossRightMoveExecutor executor =
@@ -57,9 +57,14 @@ public sealed class BossRightMoveExecutorEditor : Editor
                 ? "是"
                 : "否"));
         debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
-            "当前配置高度",
+            "当前运行高度",
             () => executor != null
                 ? executor.RightMoveHeightY.ToString("0.###")
+                : "无"));
+        debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+            "无敌减速倍率",
+            () => executor != null
+                ? executor.InvulnerableMoveSpeedMultiplier.ToString("0.##")
                 : "无"));
         root.Add(debug);
 

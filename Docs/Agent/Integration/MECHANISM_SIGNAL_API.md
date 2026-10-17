@@ -8,7 +8,7 @@
 
 `ContactCube` 固定身份，红块实现 `IEnergySource`；`MechanismBaseFeature` 查询相邻能源并输出 `IMechanismSignalSource`，无能源独占绑定。不要改写旧能源的运动控制或直接写玩家坐标。
 
-`MovingPlatformFeature.BindBase(MechanismBaseFeature)` 将驱动改为 SignalControlled，替换信号来源并安全重新订阅；传 null 解绑，按所选模式原地停止或回原位。`IsMoving`、`PreviewStart/PreviewEnd`、`LinkedControls` 只读。既有 Any/All 信号组合仍可用，默认编辑器快捷绑定仅一个基座。
+`MovingPlatformFeature.BindBase(MechanismBaseFeature)` 将驱动改为 SignalControlled，替换信号来源并安全重新订阅；传 null 解绑，按所选模式原地停止或回原位。`BindSignalSources(IReadOnlyList<MonoBehaviour>)` 可同时绑定基座、`ButtonLockFeature` 与 `DoorButton`。`DoorButton` 实现 `IMechanismSignalSource`，按下/释放广播 `SignalChanged`。`IsMoving`、`PreviewStart/PreviewEnd`、`LinkedControls` 只读；既有 Any/All 信号组合继续生效。
 
 `signalMotion`独立于路线几何：`MovingPlatformSignalMotion.PoweredPingPong=0`兼容旧存档（充能往返、断电停留），`PoweredEndpoint=1`充能至`Path.FirstEnd`并保持、断电回作者origin。仅SignalControlled生效，曲柄/自动不受影响。每次目标改变从当前格空间位置建立新缓动段，按剩余路程比例计时，复用既有扫掠检测与QueuePlatformDelta承载；遇实体阻挡不累计进度，清除后重试，不反向。该模式忽略端点停留，反复切换/Reset不瞬移，参数经通用组件覆盖持久保存，不增加规划版本。`SignalMotion`只读；解绑无信号时终点模式同样执行回原位，旧模式才原地停止。
 
@@ -22,11 +22,13 @@
 
 `MovingPlatformFeature.BindCrank(CrankPlatformFeature)` 切换为 CrankControlled，取消旧基座信号订阅并更换曲柄注册；null 解绑并停止。消费者在 Attach/Detach 成对注册，自己按作者位置、路线和 travelBlocks 在 FixedUpdate 移动，位移通过 `PlayerController.QueuePlatformDelta` 交给玩家；不是满进度后才触发普通往返。`CrankController`、`IsCrankControlled`、`HasStandingPlayer` 只读。平台停用/删除不遗留注册，重建重新绑定新实例。`SnapToCrankProgress` 仅用于显式设置/重置，不用于逐帧或玩家移动。`LiftPlatform` 仅为旧调用兼容返回首个注册平台，不作为新集成入口。
 
+普通移动平台也可通过统一的“绑定信号源”参数选择任意曲柄，不再只限于“曲柄升降平台”预制体。编辑器识别到曲柄目标时写入 `crankOwnerId` 并调用 `BindCrank`；按钮目标则追加到 `mechanismButtonIds`。`crankOwnerId` 有值时场景重连优先进入曲柄控制，基座和按钮 ID 保留但不参与当前运动；清空信号源或解除曲柄后恢复为 SignalControlled，并按已保留的基座/按钮来源重新计算。
+
 机关通过现有 ColorObject、BlockAbilityHost/BlockRuntime 按固定颜色解锁。正式材质配置为真实占位材质，不使用 ColorCatalog 的编辑边框识别材质作为解锁外观。
 
 ## 持久绑定
 
-PlanningBox 保存 `mechanismBaseId` 和 `mechanismBaseCellOffset`。后者是相对目标基础对象左下格的偏移，支持一次批量放置多个基座后选具体格。`PlanningMechanismUtility.BindScene` 在全量构建和增量应用结束后按 PlanningBoxId/PlanningLocalCell 重连；房间坐标相同不造成串绑。局部擦除批量基座时，RemapCarvedSource 将剩余格的绑定转移到新片段，擦除被绑定格则清除关系。拆分批量平台保留其原基座关系。不用 instanceID / 临时 Unity 引用保存地图关系。复制或合并地图对象时应重映射来源 ID（否则需重新绑定），不能把旧源 ID 指向不相关副本。
+PlanningBox 保存 `mechanismBaseId`、`mechanismBaseCellOffset` 和 `mechanismButtonIds`。基座偏移是相对目标基础对象左下格的偏移，支持一次批量放置多个基座后选具体格；按钮来源列表通过稳定 PlanningBoxId 保存，允许同一平台绑定任意数量的门按钮/红色按钮。旧单按钮字段会在加载与持久化时迁移到列表。`PlanningMechanismUtility.BindScene` 在全量构建和增量应用结束后按 PlanningBoxId/PlanningLocalCell 重连；房间坐标相同不造成串绑。局部擦除批量基座时，RemapCarvedSource 将剩余格的绑定转移到新片段，擦除被绑定格则清除关系。不用 instanceID / 临时 Unity 引用保存地图关系。复制、片段导入导出、合并/拆分和孤儿清理同步重映射或清理按钮列表，不能把旧源 ID 指向不相关副本。
 
 曲柄平台另存 `PlanningBox.crankOwnerId`；`initialCrankPlatformCreated` 记录首次配套创建，删除平台不自动重生。曲柄单实例，不可合并；平台可合并。CanMerge 要求各平台相同控制器；合并结果保留曲柄 ID，解除时以当前合并体绑定覆盖旧快照绑定。基座合并与解除按具体被绑定格重映射，不残留被删除来源 ID。BindScene 在每次构建/增量结束按持久 ID 重建并记录 Prefab override，保存 Scene 后可在运行时独立加载。不依赖 instanceID。
 

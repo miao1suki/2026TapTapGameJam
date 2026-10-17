@@ -1,6 +1,11 @@
 using System;
+using System.Collections.Generic;
+using Project;
+using Project.BlockFeatures;
 using Project.Player;
+using Project.Rooms;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Project.BossLogic
 {
@@ -10,6 +15,12 @@ namespace Project.BossLogic
         Hit = 1,
         Death = 2,
         Jump = 3
+    }
+
+    [Serializable]
+    public sealed class BossDefeatPresentationEvent :
+        UnityEvent<BossController>
+    {
     }
 
     [DisallowMultipleComponent]
@@ -30,6 +41,9 @@ namespace Project.BossLogic
         [SerializeField] private bool chaseVertical;
         [SerializeField] private bool faceTarget = true;
 
+        [Header("Timeline 操作输入")]
+        [SerializeField, Min(0f)] private float walkSpeed = 3f;
+
         [Header("跳跃")]
         [SerializeField, Min(0.05f)] private float jumpDuration = 1.4f;
         [SerializeField, Min(.1f)] private float jumpHorizontalSpeed = 5.5f;
@@ -40,19 +54,30 @@ namespace Project.BossLogic
         [SerializeField] private bool clearVelocityOnLanding = true;
 
         [Header("受击")]
-        [SerializeField, Min(1f)] private float maxHealth = 5f;
-        [SerializeField, Min(0f)] private float startingHealth = 5f;
-        [SerializeField, Min(0f)] private float hitStunSeconds = .35f;
-        [SerializeField, Min(0f)] private float hitKnockbackSpeed = 4f;
+        [SerializeField, Min(1f)] private float maxHealth = 9f;
+        [SerializeField, Min(0f)] private float startingHealth = 9f;
+        [SerializeField, Min(0f)] private float invulnerabilitySeconds = 4f;
+        [SerializeField, Min(.01f)] private float invulnerabilityFlashInterval = .08f;
+
+        [Header("碰撞清除")]
+        [SerializeField] private bool destroyTouchedObjects = true;
+        [SerializeField] private bool destroyOnlyWhileExternalMoving = true;
+        [SerializeField] private bool useRoomResetForDestroyedObjects = true;
+        [SerializeField, Min(0f)] private float lavaContactDamage = 1f;
+        [SerializeField, Min(1)] private int maxHiddenObjectsPerFrame = 4;
+        [SerializeField, Min(1f)] private float passThroughColliderHeight = 12f;
 
         [Header("死亡")]
         [SerializeField] private bool destroyAfterDeath;
         [SerializeField, Min(0f)] private float destroyDelaySeconds = 2f;
+        [SerializeField]
+        private BossDefeatPresentationEvent
+            defeatPresentationRequested =
+                new BossDefeatPresentationEvent();
 
         private Rigidbody body;
         private Collider bodyCollider;
         private float currentHealth;
-        private float hitUntil;
         private float nextTargetRefreshTime;
         private float nextJumpTime;
         private int facingDirection = 1;
@@ -62,17 +87,43 @@ namespace Project.BossLogic
         private bool externalMotionControlsVertical;
         private bool externalHeightLocked;
         private float externalHeightY;
+        private float invulnerableUntil;
+        private float invulnerabilityStartedAt;
+        private bool healthSystemActive;
         private bool authoredColliderIsTrigger;
+        private Vector3 authoredColliderSize;
+        private bool authoredColliderSizeCaptured;
         private BossStateId state = BossStateId.Chase;
         private bool jumpActive;
         private float jumpElapsed;
         private float activeJumpDuration;
         private Vector3 jumpStartPosition;
         private Vector3 jumpTargetPosition;
+        private readonly List<RendererFlashState> rendererFlashStates =
+            new List<RendererFlashState>();
+        private readonly Queue<PendingHiddenObject> pendingHiddenObjects =
+            new Queue<PendingHiddenObject>();
+        private readonly HashSet<int> pendingHiddenObjectIds =
+            new HashSet<int>();
+
+        private struct RendererFlashState
+        {
+            public Renderer renderer;
+            public bool initiallyEnabled;
+        }
+
+        private struct PendingHiddenObject
+        {
+            public GameObject target;
+            public int id;
+        }
 
         public event Action<BossStateId, BossStateId> StateChanged;
         public event Action<float, float> Damaged;
         public event Action Died;
+        public event Action<BossController>
+            DefeatPresentationRequested;
+        public event Action HealthSystemActivated;
 
         public BossStateId State => state;
         public bool IsDead => dead;
@@ -82,11 +133,20 @@ namespace Project.BossLogic
         public bool AutonomousChaseEnabled => enableAutonomousChase;
         public bool TrackingEnabled => trackingEnabled;
         public int FacingDirection => facingDirection;
+        public float MoveSpeed => moveSpeed;
+        public float WalkSpeed => walkSpeed;
         public Rigidbody Body => body;
         public bool IsJumping => jumpActive;
         public bool IsExternallyControlled => externalMotionActive;
         public bool IsGrounded { get; private set; }
+        public bool IsInvulnerable =>
+            !dead && Time.time < invulnerableUntil;
+        public bool IsHealthSystemActive => healthSystemActive;
+        public float InvulnerabilityRemaining =>
+            Mathf.Max(0f, invulnerableUntil - Time.time);
         public Collider BodyCollider => bodyCollider;
+        public BossDefeatPresentationEvent DefeatPresentation =>
+            defeatPresentationRequested;
         public float ConfiguredJumpDuration => jumpDuration;
         public float ConfiguredJumpHorizontalSpeed =>
             jumpHorizontalSpeed;
@@ -100,6 +160,11 @@ namespace Project.BossLogic
             body = GetComponent<Rigidbody>();
             bodyCollider = GetComponent<Collider>();
             authoredColliderIsTrigger = bodyCollider.isTrigger;
+            if (bodyCollider is BoxCollider boxCollider)
+            {
+                authoredColliderSize = boxCollider.size;
+                authoredColliderSizeCaptured = true;
+            }
             body.freezeRotation = true;
             body.constraints |= RigidbodyConstraints.FreezePositionZ;
             currentHealth = Mathf.Clamp(
@@ -112,6 +177,7 @@ namespace Project.BossLogic
 
         private void Update()
         {
+            UpdateInvulnerabilityFlash();
             if (dead)
             {
                 return;
@@ -123,16 +189,36 @@ namespace Project.BossLogic
                 ResolveTarget(false);
             }
 
-            if (state == BossStateId.Hit &&
-                Time.time >= hitUntil)
+        }
+
+        private void LateUpdate()
+        {
+            int budget = Mathf.Max(1, maxHiddenObjectsPerFrame);
+            while (budget > 0 &&
+                   pendingHiddenObjects.Count > 0)
             {
-                SetState(BossStateId.Chase);
+                PendingHiddenObject pending =
+                    pendingHiddenObjects.Dequeue();
+                budget--;
+                pendingHiddenObjectIds.Remove(pending.id);
+                GameObject target = pending.target;
+                if (target == null)
+                {
+                    continue;
+                }
+
+                if (!target.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                HideTouchedObject(target);
             }
         }
 
         private void FixedUpdate()
         {
-            if (body == null || dead)
+            if (body == null || body.isKinematic || dead)
             {
                 return;
             }
@@ -140,6 +226,11 @@ namespace Project.BossLogic
             Vector3 velocity = body.linearVelocity;
             if (jumpActive)
             {
+                if (externalMotionActive)
+                {
+                    ApplyExternalMotion();
+                }
+
                 TickJump();
                 return;
             }
@@ -217,6 +308,9 @@ namespace Project.BossLogic
         private void OnDisable()
         {
             CancelJump();
+            RestoreInvulnerabilityRenderers();
+            pendingHiddenObjects.Clear();
+            pendingHiddenObjectIds.Clear();
         }
 
         public void SetTarget(Transform value)
@@ -246,15 +340,33 @@ namespace Project.BossLogic
         }
 
         public void SetExternalMove(
-            float direction)
+            float direction,
+            float speedMultiplier = 1f)
         {
             float horizontal = Mathf.Clamp(
                 direction,
                 -1f,
                 1f) * moveSpeed;
+            horizontal *= Mathf.Max(0f, speedMultiplier);
             SetExternalMotion(
                 new Vector2(horizontal, 0f),
                 false);
+        }
+
+        public void SetWalkInput(float direction)
+        {
+            float horizontal = Mathf.Clamp(
+                direction,
+                -1f,
+                1f) * walkSpeed;
+            SetExternalMotion(
+                new Vector2(horizontal, 0f),
+                false);
+        }
+
+        public void ClearWalkInput()
+        {
+            ClearExternalMotion();
         }
 
         public void SetExternalClimb(float direction)
@@ -283,8 +395,29 @@ namespace Project.BossLogic
         {
             if (bodyCollider != null)
             {
-                bodyCollider.isTrigger =
-                    value || authoredColliderIsTrigger;
+                if (authoredColliderSizeCaptured &&
+                    bodyCollider is BoxCollider boxCollider)
+                {
+                    float height = value
+                        ? Mathf.Max(
+                            authoredColliderSize.y,
+                            passThroughColliderHeight)
+                        : authoredColliderSize.y;
+                    Vector3 size = new Vector3(
+                        authoredColliderSize.x,
+                        height,
+                        authoredColliderSize.z);
+                    if (boxCollider.size != size)
+                    {
+                        boxCollider.size = size;
+                    }
+                }
+
+                bool target = value || authoredColliderIsTrigger;
+                if (bodyCollider.isTrigger != target)
+                {
+                    bodyCollider.isTrigger = target;
+                }
             }
         }
 
@@ -311,7 +444,7 @@ namespace Project.BossLogic
 
         private void ApplyExternalMotion()
         {
-            if (body == null || jumpActive)
+            if (body == null)
             {
                 return;
             }
@@ -380,13 +513,25 @@ namespace Project.BossLogic
             return RequestJumpTo(target);
         }
 
+        public bool RequestJump()
+        {
+            if (body == null)
+            {
+                return false;
+            }
+
+            return RequestJumpTo(body.position, true);
+        }
+
         public bool RequestJumpTo(
-            Vector3 worldTargetPosition)
+            Vector3 worldTargetPosition,
+            bool preserveExternalHorizontal = false)
         {
             if (dead ||
                 jumpActive ||
                 Time.time < nextJumpTime ||
-                body == null)
+                body == null ||
+                body.isKinematic)
             {
                 return false;
             }
@@ -394,7 +539,9 @@ namespace Project.BossLogic
             jumpStartPosition = body.position;
             Vector3 delta = worldTargetPosition - jumpStartPosition;
             delta.z = 0f;
-            float horizontalDistance = Mathf.Abs(delta.x);
+            float horizontalDistance = preserveExternalHorizontal
+                ? 0f
+                : Mathf.Abs(delta.x);
             float speed = jumpHorizontalSpeed;
             float resolvedDuration = Mathf.Max(
                 jumpDuration,
@@ -423,8 +570,11 @@ namespace Project.BossLogic
             activeJumpDuration = Mathf.Max(.05f, resolvedDuration);
             jumpElapsed = 0f;
             jumpActive = true;
-            externalMotionActive = false;
-            externalMotionVelocity = Vector2.zero;
+            if (!preserveExternalHorizontal)
+            {
+                externalMotionActive = false;
+                externalMotionVelocity = Vector2.zero;
+            }
 
             body.linearVelocity = Vector3.zero;
             body.angularVelocity = Vector3.zero;
@@ -435,7 +585,9 @@ namespace Project.BossLogic
             transform.position = jumpStartPosition;
             body.WakeUp();
             body.linearVelocity = new Vector3(
-                Mathf.Sign(delta.x) * horizontalSpeed,
+                preserveExternalHorizontal
+                    ? 0f
+                    : Mathf.Sign(delta.x) * horizontalSpeed,
                 verticalSpeed,
                 0f);
 
@@ -478,7 +630,7 @@ namespace Project.BossLogic
             {
                 body.position = worldPosition;
                 body.rotation = worldRotation;
-                if (clearMotion)
+                if (clearMotion && !body.isKinematic)
                 {
                     body.linearVelocity = Vector3.zero;
                     body.angularVelocity = Vector3.zero;
@@ -493,14 +645,27 @@ namespace Project.BossLogic
             ReceiveHit(amount, Vector3.zero);
         }
 
-        public void ReceiveHit(float amount, Vector3 knockback)
+        public void ActivateHealthSystem()
         {
-            if (dead || amount <= 0f)
+            if (healthSystemActive || dead)
             {
                 return;
             }
 
-            CancelJump();
+            healthSystemActive = true;
+            HealthSystemActivated?.Invoke();
+        }
+
+        public void ReceiveHit(float amount, Vector3 knockback)
+        {
+            if (!healthSystemActive ||
+                dead ||
+                amount <= 0f ||
+                IsInvulnerable)
+            {
+                return;
+            }
+
             currentHealth = Mathf.Max(0f, currentHealth - amount);
             Damaged?.Invoke(amount, currentHealth);
             if (currentHealth <= 0f)
@@ -509,30 +674,188 @@ namespace Project.BossLogic
                 return;
             }
 
-            if (knockback.sqrMagnitude <= 0f &&
-                hitKnockbackSpeed > 0f)
-            {
-                knockback = new Vector3(
-                    -facingDirection * hitKnockbackSpeed,
-                    0f,
-                    0f);
-            }
-
-            if (body != null && knockback.sqrMagnitude > 0f)
-            {
-                Vector3 velocity = body.linearVelocity;
-                velocity.x = knockback.x;
-                velocity.y = knockback.y;
-                body.linearVelocity = velocity;
-            }
-
-            hitUntil = Time.time + Mathf.Max(0f, hitStunSeconds);
-            SetState(BossStateId.Hit);
+            BeginInvulnerability();
         }
 
         public void Kill()
         {
             EnterDeath(Vector3.zero);
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            HandleTouchedObject(other);
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            HandleTouchedObject(collision != null ? collision.collider : null);
+        }
+
+        private void HandleTouchedObject(Collider other)
+        {
+            if (dead ||
+                !destroyTouchedObjects ||
+                other == null ||
+                other.transform.IsChildOf(transform))
+            {
+                return;
+            }
+
+            if (destroyOnlyWhileExternalMoving &&
+                !externalMotionActive)
+            {
+                return;
+            }
+
+            if (other.GetComponentInParent<PlayerController>() != null ||
+                other.GetComponentInParent<BossController>() != null)
+            {
+                return;
+            }
+
+            RoomResetObject reset =
+                other.GetComponentInParent<RoomResetObject>();
+            LavaHazardFeature lava =
+                other.GetComponentInParent<LavaHazardFeature>();
+            GameObject target = reset != null
+                ? reset.gameObject
+                : other.attachedRigidbody != null
+                    ? other.attachedRigidbody.gameObject
+                    : other.gameObject;
+
+            if (lava != null &&
+                !IsInvulnerable &&
+                lavaContactDamage > 0f)
+            {
+                ReceiveHit(lavaContactDamage, Vector3.zero);
+            }
+
+            QueueTouchedObject(target);
+        }
+
+        private void QueueTouchedObject(GameObject target)
+        {
+            if (target == null ||
+                !target.activeInHierarchy)
+            {
+                return;
+            }
+
+            int id = target.GetInstanceID();
+            if (!pendingHiddenObjectIds.Add(id))
+            {
+                return;
+            }
+
+            pendingHiddenObjects.Enqueue(
+                new PendingHiddenObject
+                {
+                    target = target,
+                    id = id
+                });
+        }
+
+        private void HideTouchedObject(GameObject target)
+        {
+            if (useRoomResetForDestroyedObjects)
+            {
+                TemporaryObjectHideState state =
+                    target.GetComponent<TemporaryObjectHideState>();
+                if (state == null)
+                {
+                    state = target.AddComponent<
+                        TemporaryObjectHideState>();
+                }
+
+                state.Hide();
+                return;
+            }
+
+            target.SetActive(false);
+        }
+
+        private void BeginInvulnerability()
+        {
+            if (invulnerabilitySeconds <= 0f)
+            {
+                invulnerableUntil = 0f;
+                RestoreInvulnerabilityRenderers();
+                return;
+            }
+
+            CacheInvulnerabilityRenderers();
+            invulnerabilityStartedAt = Time.time;
+            invulnerableUntil =
+                Time.time + invulnerabilitySeconds;
+        }
+
+        private void CacheInvulnerabilityRenderers()
+        {
+            rendererFlashStates.Clear();
+            Renderer[] renderers =
+                GetComponentsInChildren<Renderer>(true);
+            HashSet<int> seen = new HashSet<int>();
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                Renderer renderer = renderers[index];
+                if (renderer == null ||
+                    !seen.Add(renderer.GetInstanceID()))
+                {
+                    continue;
+                }
+
+                rendererFlashStates.Add(
+                    new RendererFlashState
+                    {
+                        renderer = renderer,
+                        initiallyEnabled = renderer.enabled
+                    });
+            }
+        }
+
+        private void UpdateInvulnerabilityFlash()
+        {
+            if (!IsInvulnerable)
+            {
+                RestoreInvulnerabilityRenderers();
+                return;
+            }
+
+            float interval =
+                Mathf.Max(.01f, invulnerabilityFlashInterval);
+            int phase = Mathf.FloorToInt(
+                (Time.time - invulnerabilityStartedAt) /
+                interval);
+            bool visible = (phase & 1) == 0;
+            for (int index = 0;
+                 index < rendererFlashStates.Count;
+                 index++)
+            {
+                RendererFlashState state =
+                    rendererFlashStates[index];
+                if (state.renderer != null)
+                {
+                    state.renderer.enabled =
+                        state.initiallyEnabled && visible;
+                }
+            }
+        }
+
+        private void RestoreInvulnerabilityRenderers()
+        {
+            for (int index = 0;
+                 index < rendererFlashStates.Count;
+                 index++)
+            {
+                RendererFlashState state =
+                    rendererFlashStates[index];
+                if (state.renderer != null)
+                {
+                    state.renderer.enabled =
+                        state.initiallyEnabled;
+                }
+            }
         }
 
         private void EnterDeath(Vector3 knockback)
@@ -544,9 +867,13 @@ namespace Project.BossLogic
 
             currentHealth = 0f;
             dead = true;
+            invulnerableUntil = 0f;
+            pendingHiddenObjects.Clear();
+            pendingHiddenObjectIds.Clear();
+            RestoreInvulnerabilityRenderers();
             CancelJump();
             SetState(BossStateId.Death);
-            if (body != null)
+            if (body != null && !body.isKinematic)
             {
                 Vector3 velocity = Vector3.zero;
                 if (knockback.sqrMagnitude > 0f)
@@ -558,6 +885,8 @@ namespace Project.BossLogic
             }
 
             Died?.Invoke();
+            DefeatPresentationRequested?.Invoke(this);
+            defeatPresentationRequested?.Invoke(this);
             if (destroyAfterDeath)
             {
                 Destroy(gameObject, Mathf.Max(0f, destroyDelaySeconds));

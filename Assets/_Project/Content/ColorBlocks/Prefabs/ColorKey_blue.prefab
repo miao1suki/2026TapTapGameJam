@@ -240,9 +240,11 @@ MonoBehaviour:
   colorTypeId: blue
   cameraDirector: {fileID: 4138227554053104612}
   hideOnCollect: 1
-  revealAtTimelineProgress: 0.98
   revealDuration: 1.5
-  orthographicZoomOut: 1.04
+  orthographicZoomOut: 1.5
+  cameraTrackDuration: 0.5
+  cameraMoveDuration: 3
+  cameraHoldDuration: 2
   cameraReturnDuration: 0.85
 --- !u!114 &909090909090909090
 MonoBehaviour:

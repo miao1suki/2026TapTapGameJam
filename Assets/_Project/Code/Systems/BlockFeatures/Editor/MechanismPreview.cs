@@ -66,7 +66,12 @@ namespace Project.BlockFeatures.Editor
             if (platform.LinkedControls == null) return;
             foreach (var control in platform.LinkedControls) if (control != null)
             {
-                Handles.color = new Color(1f,.45f,.8f,.9f);
+                bool isButton =
+                    control is Project.Mechanisms.DoorButton ||
+                    control is ButtonLockFeature;
+                Handles.color = isButton
+                    ? new Color(1f,.35f,.25f,.9f)
+                    : new Color(1f,.45f,.8f,.9f);
                 Handles.DrawDottedLine(platform.transform.position, control.transform.position, 5f);
             }
         }

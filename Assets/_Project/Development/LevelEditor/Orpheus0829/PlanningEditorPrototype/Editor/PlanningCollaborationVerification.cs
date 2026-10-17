@@ -31,7 +31,7 @@ namespace PlanningEditorPrototype
                 var door = new PlanningBox { id = "door", x = 0, y = 0, width = 1, height = 2, singleInstance = true };
                 var button = new PlanningBox { id = "button", x = 2, y = 1, doorOwnerId = door.id };
                 var source = new PlanningBox { id = "source", x = 2, y = 2 };
-                var platform = new PlanningBox { id = "platform", x = 3, y = 2, mechanismBaseId = source.id, crankOwnerId = source.id };
+                var platform = new PlanningBox { id = "platform", x = 3, y = 2, mechanismBaseId = source.id, mechanismButtonIds = new List<string> { source.id }, crankOwnerId = source.id };
                 room.boxes.AddRange(new[] { door, button, source, platform });
                 doc.playerStartRoomId = room.id; doc.playerStartLocal = new Vector2(.5f, .5f);
                 string before = doc.ToPersistentJson();
@@ -42,7 +42,7 @@ namespace PlanningEditorPrototype
                 var added = imported.rooms[1]; var boxes = added.boxes;
                 Check(added.cells[0].x == 10 && added.cells[0].y == -2, "import destination");
                 Check(boxes.Select(b => b.id).Distinct().Count() == 4 && !boxes.Any(b => room.boxes.Any(old => old.id == b.id)), "new IDs");
-                Check(boxes[1].doorOwnerId == boxes[0].id && boxes[3].mechanismBaseId == boxes[2].id && boxes[3].crankOwnerId == boxes[2].id, "all internal links remap");
+                Check(boxes[1].doorOwnerId == boxes[0].id && boxes[3].mechanismBaseId == boxes[2].id && boxes[3].mechanismButtonIds.SequenceEqual(new[] { boxes[2].id }) && boxes[3].crankOwnerId == boxes[2].id, "all internal links remap");
                 Check(imported.playerStartRoomId == room.id && added.name != room.name, "existing spawn and unique names");
                 var repeated = PlanningFragmentUtility.Import(imported, fragment, new Vector2Int(20, 0), true, out _);
                 Check(repeated.rooms.Select(r => r.id).Distinct().Count() == 3 && repeated.playerStartRoomId == repeated.rooms[2].id, "repeated import with optional spawn");

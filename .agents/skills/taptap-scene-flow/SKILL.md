@@ -52,5 +52,6 @@ description: 2026TapTap 正式场景流程规范；修改启动、MainMenu、Gam
 
 - Boss 入场中的每一个 `BossTimelineClip` 只能操作 Boss 做一件事：发呆、移动、跳跃、设置运动开关或死亡。
 - 一个 Boss Clip 禁止同时承担移动、跳跃、状态开关、死亡等多个操作；需要多个动作时必须新增多条 `BossTimelineTrack`，按时间堆叠。
+- 所有 Boss 动作的下游必须是 `BossController`：移动使用其外部移动/高度接口，跳跃使用 `RequestJumpTo`，瞬移使用 `TeleportTo`，状态与死亡使用控制器 API。Timeline/Actor 层禁止直接写 Boss Rigidbody 或 Transform。
 - Boss 入场相机轨只允许 2D 运镜：保持正交 `Side2D`，只允许 2D 平移、缩放、停留和平面转向；不得申请透视 3D、三维环绕或自由 3D 机位。
 - 修改 Boss 入场 Timeline 前必须检查当前 Clip 是否违反“一 Clip 一操作”，并在交付时说明使用的 Track 堆叠关系。

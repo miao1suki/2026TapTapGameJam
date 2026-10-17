@@ -12,6 +12,7 @@
 - `ResetDoor()`：停止自身 Tween / Timeline、释放控制锁、恢复关闭姿态、实体碰撞和按钮初始状态。
 - `StateChanged`：订阅者按生命周期取消订阅。
 - `DoorButton.State / IsPressed / Owner`：只读运行状态和所属门。
+- `DoorButton` 同时实现 `IMechanismSignalSource`：`IsSignalActive` 映射当前按下状态，按下/释放通过 `SignalChanged` 广播；移动平台可把它作为独立信号来源，不改变其所属门。
 - `DoorButton.BindingIndex`：绑定列表位置；0/1/2对应红/绿/蓝美术，不是颜色能力或颜色层。
 - `DoorButton.Mode / Persistent`：Latched（一次按下保持，默认/旧场景兼容）或 Held（持续压住）。mode 有 BlockParameter，规划编辑器参数模式可写入实例配置并随存档/增量同步保存。
 - `DoorButton.TryPress(actor)`：供程序主动申请按下，接受玩家或 ContactCube，不是输入交互接口。正常玩法每个物理步用 NonAlloc OBB 查询并检查玩家脚部或方块底面；只查询非 Trigger 实体。持续模式须有有效物理重量，否则下一步释放；多个重量/Collider 不会让其中一个离开时误释放。

@@ -159,8 +159,18 @@ namespace PlanningEditorPrototype
             string Map(string id) => !string.IsNullOrEmpty(id) && ids.TryGetValue(id, out var value) ? value : null;
             void RemapBox(PlanningBox box)
             {
+                box.NormalizeMechanismButtonLinks();
                 box.id = Map(box.id); box.doorOwnerId = Map(box.doorOwnerId);
-                box.mechanismBaseId = Map(box.mechanismBaseId); box.crankOwnerId = Map(box.crankOwnerId);
+                box.mechanismBaseId = Map(box.mechanismBaseId);
+                var mappedButtons = new List<string>();
+                foreach (string buttonId in box.mechanismButtonIds)
+                {
+                    string mapped = Map(buttonId);
+                    if (!string.IsNullOrEmpty(mapped) && !mappedButtons.Contains(mapped))
+                        mappedButtons.Add(mapped);
+                }
+                box.mechanismButtonIds = mappedButtons;
+                box.crankOwnerId = Map(box.crankOwnerId);
                 if (string.IsNullOrEmpty(box.mechanismBaseId)) box.mechanismBaseCellOffset = default;
                 box.sceneBlock = null;
                 for (int i = 0; i < box.mergeParts.Count; i++)
@@ -329,9 +339,12 @@ namespace PlanningEditorPrototype
             var all = Boxes(doc).ToList(); var ids = new HashSet<string>(all.Select(b => b.id));
             foreach (var box in all)
             {
+                box.NormalizeMechanismButtonLinks();
                 if (!string.IsNullOrEmpty(box.doorOwnerId) && !ids.Contains(box.doorOwnerId))
                 { foreach (var room in doc.rooms) room.boxes.Remove(box); doc.assemblyPatches.Remove(box); count++; continue; }
                 if (!string.IsNullOrEmpty(box.mechanismBaseId) && !ids.Contains(box.mechanismBaseId)) { box.mechanismBaseId = null; box.mechanismBaseCellOffset = default; count++; }
+                int removedButtons = box.mechanismButtonIds.RemoveAll(id => !ids.Contains(id));
+                count += removedButtons;
                 if (!string.IsNullOrEmpty(box.crankOwnerId) && !ids.Contains(box.crankOwnerId)) { box.crankOwnerId = null; count++; }
             }
             return count;

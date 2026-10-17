@@ -1,5 +1,4 @@
 using System;
-using Project;
 using Project.BossLogic;
 using Project.Player;
 using UnityEngine;
@@ -113,19 +112,10 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
         startPosition = actor.position;
         startRotation = actor.rotation;
         targetPosition = ResolveTargetPosition();
-        activeMotionDuration = ResolveMotionDuration();
         body = actor.GetComponent<Rigidbody>();
         player = actor.GetComponent<PlayerController>();
         boss = actor.GetComponent<BossController>();
-        if (boss != null)
-        {
-            TimelineCamRig cameraRig =
-                ProjectDiscovery.FindFirst<TimelineCamRig>();
-            if (cameraRig != null)
-            {
-                cameraRig.target = actor;
-            }
-        }
+        activeMotionDuration = ResolveMotionDuration();
 
         if (clip is PlayerTimelineClip playerClip)
         {
@@ -141,7 +131,19 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
             clip is BossTimelineClip jumpBossClip &&
             jumpBossClip.useBossJumpState)
         {
-            jumpStarted = boss.RequestJumpTo(targetPosition);
+            jumpStarted = boss.RequestJump();
+        }
+        else if (boss != null &&
+                 clip is BossTimelineClip &&
+                 clip.motionMode == ActorTimelineMotionMode.Linear)
+        {
+            ApplyBossLinearStart();
+        }
+        else if (boss != null &&
+                 clip is BossTimelineClip &&
+                 clip.motionMode != ActorTimelineMotionMode.None)
+        {
+            // Boss movement stays inside BossController; no Rigidbody takeover.
         }
         else if (clip.motionMode != ActorTimelineMotionMode.None)
         {
@@ -216,16 +218,6 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
 
     private float ResolveMotionDuration()
     {
-        if (clip is BossTimelineClip bossClip &&
-            clip.motionMode == ActorTimelineMotionMode.Linear &&
-            bossClip.moveSpeed > 0f)
-        {
-            return Mathf.Max(
-                .01f,
-                Vector3.Distance(startPosition, targetPosition) /
-                bossClip.moveSpeed);
-        }
-
         return Mathf.Max(.01f, clip.motionDuration);
     }
 
@@ -288,6 +280,17 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
         }
     }
 
+    private void ApplyBossLinearStart()
+    {
+        if (boss == null ||
+            clip is not BossTimelineClip bossClip)
+        {
+            return;
+        }
+
+        boss.SetWalkInput(bossClip.moveInput);
+    }
+
     private void PrepareRigidbody()
     {
         if (!clip.driveRigidbody || body == null)
@@ -313,6 +316,7 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
     {
         if (clip.motionMode == ActorTimelineMotionMode.None ||
             clip.motionMode == ActorTimelineMotionMode.Teleport ||
+            (boss != null && clip is BossTimelineClip) ||
             (jumpStarted &&
              clip is BossTimelineClip bossClip &&
              bossClip.useBossJumpState))
@@ -386,7 +390,12 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
         bool bossStateJump =
             jumpStarted &&
             clip is BossTimelineClip;
+        bool bossControllerMotion =
+            boss != null &&
+            clip is BossTimelineClip &&
+            clip.motionMode != ActorTimelineMotionMode.None;
         if (!bossStateJump &&
+            !bossControllerMotion &&
             clip != null &&
             (clip.motionMode == ActorTimelineMotionMode.Linear ||
              clip.motionMode == ActorTimelineMotionMode.JumpArc))
@@ -443,6 +452,11 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
         if (bossClip.setTrackingOnEnd)
         {
             boss.SetTrackingEnabled(bossClip.trackingOnEnd);
+        }
+
+        if (bossClip.motionMode == ActorTimelineMotionMode.Linear)
+        {
+            boss.ClearWalkInput();
         }
 
         if (bossClip.killAtEnd)

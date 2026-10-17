@@ -8,8 +8,8 @@ public sealed class BossTimelineClip : ActorTimelineClipBase
     public bool spawnBoss;
     public BossController bossPrefab;
 
-    [Header("移动")]
-    [Min(0f)] public float moveSpeed = 5f;
+    [Header("操作输入")]
+    [Range(-1f, 1f)] public float moveInput;
 
     [Header("Boss 状态")]
     public bool setTrackingOnStart;
