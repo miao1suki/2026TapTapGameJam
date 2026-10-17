@@ -147,14 +147,7 @@ namespace Project.StartMenu
 
         private void Update()
         {
-            if (!Cursor.visible)
-            {
-                Cursor.visible = true;
-            }
-            if (Cursor.lockState != CursorLockMode.None)
-            {
-                Cursor.lockState = CursorLockMode.None;
-            }
+            Project.InputAbstraction.DesktopCursorPolicy.Apply(true);
 
             if (backgroundScrollEnabled &&
                 !externalBackgroundScrollPaused &&
@@ -171,6 +164,8 @@ namespace Project.StartMenu
                 ApplyAdaptiveCanvasScale();
             }
         }
+
+        private void OnApplicationFocus(bool focused) => Project.InputAbstraction.DesktopCursorPolicy.Apply(true, focused);
 
         private void ApplyAdaptiveCanvasScale()
         {

@@ -17,10 +17,12 @@ namespace PlanningEditorPrototype
         private bool ResolveArtworkPreview(PlanningBox box, out PlanningArtworkPreview artwork)
         {
             if (artworkPreviewCache.TryGetValue(box.id, out var cached)) { artwork = cached.artwork; return cached.matched; }
+            if (artworkPreviewCache.Count == 0) ClearVinePreviewGroups();
             var entry = FindPropEntry(box.propEntryId, box.propEntryName);
             artwork = default;
-            bool matched = entry?.Prefab != null && ObjectArtworkPlanningPreview.TryGet(entry.Prefab,
-                new Vector2(box.width, box.height), box.hasComponentOverrides ? box.componentOverrides : entry.ComponentValueOverrides, out artwork);
+            bool matched = entry?.Prefab != null && (TryResolveVinePreview(box, out artwork) ||
+                ObjectArtworkPlanningPreview.TryGet(entry.Prefab,
+                    new Vector2(box.width, box.height), box.hasComponentOverrides ? box.componentOverrides : entry.ComponentValueOverrides, out artwork));
             if (matched && box.propEntryId == PlanningDoorUtility.ButtonEntryId && box.doorButtonOrder > 0)
             {
                 if (previewArtwork == null) previewArtwork=ObjectArtworkLibrary.Load();
@@ -32,6 +34,7 @@ namespace PlanningEditorPrototype
 
         private void RefreshArtworkPreviews()
         {
+            ClearVinePreviewGroups();
             artworkPreviewCache.Clear(); waterPreviewCells.Clear(); boxPreviewCache.Clear(); previewArtwork=null; waterTileArtwork=null;
             UpdateDetailPreviewImages(); MarkDirtyRepaint();
         }
@@ -56,14 +59,16 @@ namespace PlanningEditorPrototype
         {
             if (!ResolveArtworkPreview(box,out var artwork)) return false;
             if (artwork.Hidden || artwork.Texture == null) return true;
+            if (TryAddVinePreview(box, rect, active, offset)) return true;
             bool water = PlanningWaterLayerUtility.IsWater(box,palette);
-            VisualElement layer = water ? waterPreviewLayer : objectPreviewLayer;
+            VisualElement layer = artwork.EditorOverlay ? triggerPreviewLayer : water ? waterPreviewLayer : objectPreviewLayer;
             Rect target = CellRect(rect.x,rect.y,rect.width,rect.height);
             Vector2 native = artwork.Cells;
             if (native.x <= 0 || native.y <= 0) return true;
             bool rotated = Mathf.Abs(Mathf.DeltaAngle(artwork.RotationDegrees,0)) % 180 > 45;
             Color tint = mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
             if (water) tint.a = editWaterLayer ? 1f : .82f;
+            if (artwork.EditorOverlay) tint.a = .75f;
             if (!artwork.Tile)
             {
                 Vector2 size = native * GridSize;
@@ -129,26 +134,40 @@ namespace PlanningEditorPrototype
             image.style.rotate=new Rotate(new Angle(-artwork.RotationDegrees,AngleUnit.Degree));
             image.style.scale=new Scale(new Vector3(artwork.FlipX ? -1 : 1,1,1));
             image.style.display=DisplayStyle.Flex; active.Add(key);
+            if (artwork.EditorOverlay) triggerPlacementPreview.BringToFront();
         }
 
         private bool TryAddPlatformPreview(PlanningBox box, RectInt rect, HashSet<string> active)
         {
-            if (!PlanningDoorUtility.IsPlatformEntry(box.propEntryId)) return false;
+            var entry = FindPropEntry(box.propEntryId, box.propEntryName);
+            var platform = entry?.Prefab != null ? entry.Prefab.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() : null;
+            bool oneWay = entry?.Prefab != null && entry.Prefab.GetComponent<Project.Mechanisms.OneWayPlatform>() != null;
+            if (!PlanningDoorUtility.IsPlatformEntry(box.propEntryId) && platform == null && !oneWay) return false;
             if (previewArtwork == null) previewArtwork = ObjectArtworkLibrary.Load();
             if (previewArtwork == null) return false;
-            var kind = box.propEntryId == PlanningMechanismUtility.LiftEntryId
+            var kind = oneWay || box.propEntryId == PlanningDoorUtility.OneWayPlatformEntryId ? MechanismArtworkKind.OneWayPlatform
+                : box.propEntryId == PlanningMechanismUtility.LiftEntryId || platform != null && platform.IsCrankControlled
                 ? MechanismArtworkKind.CrankPlatform : MechanismArtworkKind.MovingPlatform;
             var sprite = previewArtwork.FirstFrame(kind);
             if (sprite == null) return false;
             Rect source = sprite.textureRect;
             int nativeLength = Mathf.Max(1, Mathf.RoundToInt(source.width / GridArtworkMetrics.PixelsPerCell));
-            bool vertical = ObjectArtworkLibrary.PlatformVisualIsVertical(new Vector2(box.width, box.height));
+            // A legacy paint batch contains separate one-cell objects, not one long
+            // merged platform. Keep each object's native-pixel crop and support edge.
+            bool separateCells = !box.isMerged && !box.singleInstance;
+            bool vertical = !separateCells && ObjectArtworkLibrary.PlatformVisualIsVertical(new Vector2(box.width, box.height));
             int length = vertical ? rect.height : rect.width;
             int tracks = vertical ? rect.width : rect.height;
+            int stride = separateCells ? 1 : nativeLength;
+            var bounds = entry?.Prefab != null ? entry.Prefab.GetComponent<BoxCollider>() : null;
+            // Resolve author geometry once per box, not once per visible tile.
+            float topInset = bounds != null
+                ? (.5f - (bounds.center.y + bounds.size.y * .5f) * entry.Prefab.transform.localScale.y) * (separateCells ? 1 : rect.height)
+                : 0f;
             for (int track = 0; track < tracks; track++)
-            for (int start = 0; start < length; start += nativeLength)
+            for (int start = 0; start < length; start += stride)
             {
-                int count = Mathf.Min(nativeLength, length - start);
+                int count = Mathf.Min(stride, length - start);
                 RectInt cells = vertical ? new RectInt(rect.x + track, rect.y + start, 1, count)
                     : new RectInt(rect.x + start, rect.y + track, count, 1);
                 if (!PreviewVisible(cells)) continue;
@@ -164,13 +183,17 @@ namespace PlanningEditorPrototype
                 float width = count * GridSize, height = source.height / GridArtworkMetrics.PixelsPerCell * GridSize;
                 image.image = sprite.texture;
                 // Keep 16 authored pixels per cell. Partial end pieces crop instead of squeezing.
-                image.uv = new Rect(source.x / sprite.texture.width, source.y / sprite.texture.height,
-                    Mathf.Min(source.width, count * GridArtworkMetrics.PixelsPerCell) / sprite.texture.width, source.height / sprite.texture.height);
+                image.uv = PlatformArtworkLayout.SliceUV(sprite, count);
+                float thickness = PlatformArtworkLayout.VisibleThicknessCells(kind, sprite);
+                // The crank and one-way collision strips are thinner than a grid
+                // cell. Align art to their actual support, not the nominal cell top.
                 image.style.left = target.center.x - width * .5f;
-                image.style.top = (vertical ? target.center.y : target.yMax-height*.5f) - height * .5f;
+                image.style.top = (vertical ? target.center.y : target.yMin + (topInset + thickness) * GridSize - height * .5f) - height * .5f;
+                if (vertical) image.style.left = target.xMin + thickness * GridSize - height * .5f - width * .5f;
                 image.style.width = width;
                 image.style.height = height;
-                image.style.rotate = new Rotate(new Angle(vertical ? 90 : 0, AngleUnit.Degree));
+                image.style.rotate = new Rotate(new Angle(vertical ? -90 : 0, AngleUnit.Degree));
+                image.style.scale = new Scale(Vector3.one);
                 image.tintColor = mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge
                     ? new Color(.55f, .85f, 1f) : Color.white;
                 image.style.display = DisplayStyle.Flex;

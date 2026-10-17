@@ -70,6 +70,7 @@ namespace Project.GreenHook
         [SerializeField, Min(0f)] private float effectSpeed = 7f;
 
         private LineRenderer line;
+        private Vector3[] linePoints;
         private MaterialPropertyBlock properties;
         private IDisposable controlLock;
         private HookPhase phase;
@@ -90,6 +91,10 @@ namespace Project.GreenHook
         [SerializeField, Min(0.1f)] private float swingSpeedLimit = 14f;
         [SerializeField, Min(0f)] private float swingDamping = .08f;
         [SerializeField, Min(0f)] private float retargetVisualSeconds = .1f;
+        [SerializeField, Min(0f)] private float attachedRangeSlackCells = 3f;
+        [SerializeField, Min(0f)] private float attachedOutOfRangeGraceSeconds = .4f;
+        private float hookCellWorldSize = 1f;
+        private float outOfRangeSince = -1f;
         public bool IsSwinging => phase == HookPhase.Swinging;
         public bool IsPullingPlayer => pullingPlayer;
 
@@ -97,11 +102,7 @@ namespace Project.GreenHook
         {
             swingInput = Vector2.ClampMagnitude(move, 1f);
             if (!release || phase == HookPhase.None) return;
-            // Only an explicit input releases a successfully attached rope.
-            bool preserveMomentum = IsSwinging;
-            Vector2 velocity = playerBody != null ? (Vector2)playerBody.linearVelocity : swingVelocity;
-            CancelHook();
-            if (preserveMomentum) player?.RestoreGreenHookReleaseVelocity(velocity);
+            ReleaseHook();
         }
         private Transform targetTransform;
         private Collider playerCollider;
@@ -248,7 +249,13 @@ namespace Project.GreenHook
             }
 
             if (retarget) Retarget(foundTarget, targetPoint);
-            else BeginHook(foundTarget, targetPoint);
+            else
+            {
+                BeginHook(foundTarget, targetPoint);
+                // A valid click confirms attachment. Growing the visible rope must
+                // never delay swinging or make a moving player miss the anchor.
+                BeginPulling();
+            }
             return GreenHookLaunchResult.Success;
         }
 
@@ -273,6 +280,7 @@ namespace Project.GreenHook
             phase = HookPhase.None;
             finishElapsed = 0f;
             pullingPlayer = false;
+            outOfRangeSince = -1f;
             pullAxis = swingInput = swingVelocity = Vector2.zero;
             HideLine();
         }
@@ -280,12 +288,14 @@ namespace Project.GreenHook
         private void Update()
         {
             if (Time.timeScale <= 0f) return;
-            if ((phase == HookPhase.Extending || phase == HookPhase.Pulling || phase == HookPhase.Swinging) &&
-                (!IsTargetAvailable() || player == null || player.IsDead || !IsActivePathWithinRoom() ||
-                 phase == HookPhase.Extending && !IsWithinRange(targetTransform.TransformPoint(localAnchor))))
+            if (phase == HookPhase.Extending || phase == HookPhase.Pulling || phase == HookPhase.Swinging)
             {
-                CancelHook();
-                return;
+                if (!IsTargetAvailable() || player == null || player.IsDead || !IsActivePathWithinRoom())
+                {
+                    CancelHook();
+                    return;
+                }
+                if (ShouldReleaseForRange()) { ReleaseHook(); return; }
             }
             if (player != null && player.IsControlLocked && !player.CanDriveGreenHook) return;
             switch (phase)
@@ -318,6 +328,7 @@ namespace Project.GreenHook
                 CancelHook();
                 return;
             }
+            if (ShouldReleaseForRange()) { ReleaseHook(); return; }
             if (!player.CanDriveGreenHook) { StopPullMotion(); return; }
             float deltaTime = Time.fixedDeltaTime;
             if (phase == HookPhase.Swinging)
@@ -373,6 +384,33 @@ namespace Project.GreenHook
             swingVelocity = Vector2.zero;
         }
 
+        private void ReleaseHook()
+        {
+            // Normal release (manual or range) keeps resolved swing momentum, but must
+            // not inject velocity while another system owns a higher-priority lock.
+            bool preserveMomentum = IsSwinging && player != null && player.CanDriveGreenHook;
+            Vector2 velocity = playerBody != null ? (Vector2)playerBody.linearVelocity : swingVelocity;
+            CancelHook();
+            if (preserveMomentum) player.RestoreGreenHookReleaseVelocity(velocity);
+        }
+
+        private bool ShouldReleaseForRange()
+        {
+            if (sensor == null || targetTransform == null) return true;
+            // Use the actual bound point, not the mouse or the blended visual tip.
+            float radius = sensor.ScanRadius + .001f;
+            bool attached = phase == HookPhase.Pulling || phase == HookPhase.Swinging;
+            if (attached) radius += attachedRangeSlackCells * hookCellWorldSize;
+            if ((targetTransform.TransformPoint(localAnchor) - transform.position).sqrMagnitude <= radius * radius)
+            {
+                outOfRangeSince = -1f;
+                return false;
+            }
+            if (!attached) return true;
+            if (outOfRangeSince < 0f) outOfRangeSince = Time.time;
+            return Time.time - outOfRangeSince >= attachedOutOfRangeGraceSeconds;
+        }
+
         private bool IsActivePathWithinRoom()
         {
             var manager = RoomLifecycleManager.ForScene(gameObject.scene);
@@ -383,7 +421,10 @@ namespace Project.GreenHook
         private bool IsTargetAvailable() => targetTransform != null && target != null &&
             targetTransform.gameObject.activeInHierarchy &&
             (!(target is Behaviour behaviour) || behaviour.isActiveAndEnabled) &&
-            (phase == HookPhase.Pulling || target.CanBeGreenHooked(gameObject));
+            (phase == HookPhase.Pulling
+                ? target.GreenHookMotionMode != GreenHookMotionMode.PullTarget ||
+                    targetMotion != null && targetMotion.IsGreenHookPullActive
+                : target.CanBeGreenHooked(gameObject));
 
         private void TickSwing(float dt)
         {
@@ -426,6 +467,7 @@ namespace Project.GreenHook
             playerBody = player.GetComponent<Rigidbody>();
             launchRegion = RoomLifecycleManager.ForScene(gameObject.scene)?.FindRegion(GetPlayerCenter());
             swingInput = Vector2.zero;
+            outOfRangeSince = -1f;
             pullAxis = Vector2.zero;
             hookStart = ResolveSourcePoint();
             hookEnd = targetPoint;
@@ -440,6 +482,7 @@ namespace Project.GreenHook
             float cellSize = Mathf.Max(
                 .0001f,
                 GridCellSizeUtility.Resolve(this));
+            hookCellWorldSize = cellSize;
             float distanceCells = hookLength / cellSize;
             extensionDuration = distanceCells /
                 Mathf.Max(.05f, growthSpeedCellsPerSecond);
@@ -505,7 +548,8 @@ namespace Project.GreenHook
             { CancelHook(); return; }
             controlLock = player.AcquireControlLock(this);
             player.BeginGreenHookPull(this, target.GreenHookMotionMode == GreenHookMotionMode.Swing);
-            retargetVisualElapsed = retargetVisualSeconds;
+            retargetVisualStart = ResolveSourcePoint();
+            retargetVisualElapsed = 0f;
             StartAttachedMotion();
         }
 
@@ -546,6 +590,7 @@ namespace Project.GreenHook
             targetColliders = targetTransform.GetComponentsInChildren<Collider>(true);
             localAnchor = targetTransform.InverseTransformPoint(point);
             pullAxis = Vector2.zero;
+            outOfRangeSince = -1f;
             retargetVisualStart = previousPoint;
             retargetVisualElapsed = 0f;
             // Retain the existing control handle and actual physics momentum across anchor changes.
@@ -753,14 +798,13 @@ namespace Project.GreenHook
                 return;
             }
 
-            Vector2 direction = rawDirection.normalized;
-            float cellSize = Mathf.Max(
-                .0001f,
-                GridCellSizeUtility.Resolve(this));
-            Vector3 end =
-                ResolveSourcePoint() +
-                new Vector3(direction.x, direction.y, 0f) *
-                (cellSize * Mathf.Max(.01f, idleLengthCells));
+            // Follow the actual pointer position, not a fixed one-cell direction
+            // indicator. Preview remains within launch range; attached rope still
+            // follows its real local target anchor, independent of the pointer.
+            Vector3 end = pointerWorldPoint;
+            Vector3 rangeCenter = sensor != null ? sensor.transform.position : transform.position;
+            float radius = sensor != null ? sensor.ScanRadius : GridCellSizeUtility.Resolve(this) * idleLengthCells;
+            end = rangeCenter + Vector3.ClampMagnitude(end - rangeCenter, radius);
             UpdateLine(end, idleOpacity, 1f, 0f);
         }
 
@@ -792,11 +836,14 @@ namespace Project.GreenHook
             Vector3 delta = targetPoint - sourcePoint;
             Vector3 side = Vector3.Cross(Vector3.forward, delta.normalized);
             int segments = Mathf.Clamp(curveSegments, 2, 32);
+            if (linePoints == null || linePoints.Length != segments + 1)
+                linePoints = new Vector3[segments + 1];
             line.positionCount = segments + 1;
             line.widthMultiplier = Mathf.Max(
                 .01f,
                 GetMaterialFloat(LineThicknessId, .2f) * 3f);
 
+            float length = 0f;
             for (int index = 0; index <= segments; index++)
             {
                 float t = (float)index / segments;
@@ -818,16 +865,10 @@ namespace Project.GreenHook
                     targetPoint,
                     t) +
                     side * envelope * (arcHeight + motion);
-                line.SetPosition(index, point);
+                linePoints[index] = point;
+                if (index > 0) length += Vector3.Distance(linePoints[index - 1], point);
             }
-
-            float length = 0f;
-            for (int index = 1; index <= segments; index++)
-            {
-                length += Vector3.Distance(
-                    line.GetPosition(index - 1),
-                    line.GetPosition(index));
-            }
+            line.SetPositions(linePoints);
 
             properties.Clear();
             properties.SetColor(LinkColorId, new Color(.08f, 1f, .08f));

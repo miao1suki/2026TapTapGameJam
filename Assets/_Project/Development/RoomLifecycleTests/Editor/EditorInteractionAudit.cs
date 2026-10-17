@@ -139,7 +139,7 @@ public static class EditorInteractionAudit
         float grid = (float)canvas.GetType().GetProperty("GridSize", Hidden).GetValue(canvas);
         Check(Mathf.Abs(parts.Sum(image => image.style.width.value.value) - 5 * grid) < .01f, "vertical preview covers five cells along rotated long axis");
         float nativeHeight = library.FirstFrame(MechanismArtworkKind.MovingPlatform).rect.height / GridArtworkMetrics.PixelsPerCell * grid;
-        Check(parts.All(image => Mathf.Abs(image.style.rotate.value.angle.value - 90f) < .01f && Mathf.Abs(image.style.height.value.value - nativeHeight) < .01f), "vertical preview rotates ninety degrees without flattening");
+        Check(parts.All(image => Mathf.Abs(image.style.rotate.value.angle.value + 90f) < .01f && Mathf.Abs(image.style.height.value.value - nativeHeight) < .01f), "vertical preview matches runtime counterclockwise rotation without flattening");
 
         // The standalone audit does not open the placement panel that normally
         // initializes LevelEditorState.Palette. Load the real shared asset explicitly.
@@ -147,6 +147,26 @@ public static class EditorInteractionAudit
             "Assets/_Project/Development/LevelEditor/Orpheus0829/LevelEditorPalette.asset");
         Check(sourcePalette != null,"shared prop palette exists for artwork integration");
         canvas.SetPalette(sourcePalette);
+        var platformEntry = sourcePalette.PropEntries.First(e => e?.Prefab != null && e.Prefab.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() != null);
+        var legacy = new PlanningBox(PlanningDetailType.Prop, new RectInt(5, 12, 2, 1))
+            { propEntryId = platformEntry.EntryId, propEntryName = platformEntry.DisplayName };
+        room.boxes.Add(legacy); Call(canvas,"InvalidatePreviewData"); Call(canvas,"UpdateDetailPreviewImages");
+        var legacyParts = images.Where(p => p.Key.StartsWith(legacy.id + ":platform:")).Select(p => p.Value).ToArray();
+        var platformSprite = library.FirstFrame(platformEntry.Prefab.GetComponent<Project.BlockFeatures.MovingPlatformFeature>().IsCrankControlled
+            ? MechanismArtworkKind.CrankPlatform : MechanismArtworkKind.MovingPlatform);
+        Check(legacyParts.Length == 2 && legacyParts.All(i => Mathf.Abs(i.style.width.value.value - grid) < .01f),
+            "legacy painted batch retains independent one-cell art instead of repeated three-cell overlap");
+        Check(legacyParts.All(i => i.uv == PlatformArtworkLayout.SliceUV(platformSprite, 1)),
+            "legacy one-cell images use centered 16-pixel crops without shrinking48px");
+        var oneWayEntry = sourcePalette.PropEntries.First(e => e?.Prefab != null && e.Prefab.GetComponent<Project.Mechanisms.OneWayPlatform>() != null);
+        var oneWay = new PlanningBox(PlanningDetailType.Prop,new RectInt(10,12,3,1))
+            { propEntryId=oneWayEntry.EntryId,propEntryName=oneWayEntry.DisplayName,singleInstance=true };
+        room.boxes.Add(oneWay); Call(canvas,"InvalidatePreviewData"); Call(canvas,"UpdateDetailPreviewImages");
+        var oneWayParts=images.Where(p=>p.Key.StartsWith(oneWay.id+":platform:")).Select(p=>p.Value).ToArray();
+        Check(oneWayParts.Length==1 && oneWayParts[0].image==library.FirstFrame(MechanismArtworkKind.OneWayPlatform).texture,
+            "one-way platform uses its own half-height material, not moving-platform artwork");
+        Check(Mathf.Abs(oneWayParts[0].style.height.value.value-grid*.5f)<.01f,
+            "one-way platform preserves native48x8 pixel ratio");
         var baseEntry=sourcePalette.PropEntries.FirstOrDefault(e=>e?.Prefab!=null && e.Prefab.GetComponent<Project.BlockFeatures.MechanismBaseFeature>()!=null);
         Check(baseEntry!=null,"mechanism base has a palette entry");
         var baseBox=new PlanningBox(PlanningDetailType.Prop,new RectInt(12,8,1,1)) { propEntryId=baseEntry.EntryId,propEntryName=baseEntry.DisplayName };

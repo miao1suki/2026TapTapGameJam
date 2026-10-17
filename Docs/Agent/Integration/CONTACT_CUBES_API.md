@@ -32,13 +32,19 @@
 
 `CarryableFeature` 通过可选 `ICarryMotionParticipant` 对接 ContactCubeMotion：`SetCarrySuspended(true)` 立即清除接触/水柱，保留长度，清除速度并挂起刚体；CarryTargetMotion 独占动画位姿并关闭 Collider。放下/复位动画完成或 Cancel 时回调解除挂起，同步 Rigidbody 姿态、恢复重力与碰撞。房间重置先 Cancel，再恢复作者姿态/长度；不能同时运行两个刚体写入者。
 
+普通藤蔓生长时可通过 `VineGrowthLift` 短时托举顶部重力方块及其堆叠。ContactCubeMotion.FixedUpdate 在租约期间跳过重力/落稳约束写入并保留玩家碰撞；搬运、绿钩子接管、禁用和房间重置先Cancel租约，避免多写入者或错误保存临时无重力状态。颜色反应仍保留，红块接触藤蔓仍会燃烧。详见 [藤蔓托举](../../Developer/VINE_GROWTH_LIFT.md)。
+
 `CanPlaceCarriedAt(worldPosition)` 校验平移后的完整实体 OBB，含伸长绿块，不只检查根的一格；拒绝墙体、玩家实体及查询缓冲溢出的落点。来源房间校验仍由 CarryableFeature 调用 CanPlaceInAuthoredRegion，区域根中心规则不变。玩家选择目标沿用根格相邻规则，未新增按长块任意节段拾取。输入、提示和头顶飞行动画全部复用原搬运系统。
 
-绿色实体挂 HorizontalCubeVine：母块与伸长实体落稳后两侧可通过 EnterClimb/ExitClimb 攀爬，顶部高度随生长更新；横向长出部分上方脚部接触或下方头部接触会续租玩家横向攀附，原始一格不进入横向攀附，脱离自动清除。`PlayerController.SetHorizontalVineSurface(Component source, float rootY, float speed)` / `ClearHorizontalVineSurface(source)` 只发送目标高度和移动速度，由玩家自己的物理步处理。新增状态 HorizontalClimbing=6，不改原枚举编号和输入键位；左右缓行、维持高度、禁止跳跃。租约超时、来源禁用、玩家重置都会清除。
+绿色实体挂 HorizontalCubeVine：母块与伸长实体落稳后两侧可通过 EnterClimb/ExitClimb 攀爬，顶部高度随生长更新；横向长出部分上方脚部接触或下方头部接触会续租玩家横向攀附，原始一格不进入横向攀附，脱离自动清除。`PlayerController.SetHorizontalVineSurface(Component source, float rootY, float speed)` / `ClearHorizontalVineSurface(source)` 只发送目标高度和移动速度，由玩家自己的物理步处理。新增状态 HorizontalClimbing=6，不改原枚举编号和输入键位；左右缓行、维持高度，跳跃操作脱手下落并短暂禁止重吸附。租约超时、来源禁用、玩家重置都会清除。
+
+向上外角保护由 `PlayerController.ProtectClimbCorner(source,bounds,speed,wrapEntireEdge)` 统一处理。横向长绿块保留完整上下绕边；单格/竖向绿块以及普通藤蔓每个真实节段调用 `wrapEntireEdge:false`，只在接近露出的顶部、向上或向内输入时交接到顶面。顶部探针检查真实实体（包括同根上方节段），避免在链条中间提前翻顶；路径逐步提交刚体速度，不能穿墙/瞬移。横爬/保护期间跳跃脱手并短暂禁止重吸附；来源禁用、重置、死亡取消所有权。`IsClimbCornerProtectedBy(source)` 供节段保持并清理自己的交接，不保留无效全局抓附。
 
 其他受推对象可实现 `ICubeJetPushReceiver.SetCubeJetVelocity(source, velocity, deltaTime)`。零值表示解除该来源。玩家已有适配走 EnterWater/SetWaterVelocity/ExitWater，由 PlayerController 在自己的物理步处理水柱推动，不写玩家 Transform 或刚体。
 
 ## 接触既有颜色物体
+
+绿钩子拉红/蓝块时，`ContactCubeMotion`继续独占刚体、暂停接触反应，但不关闭重力。横向命令只控制X，保留碰撞解算后的Y速度；零命令停止X并继续自然下落。四向限制指主动拉力方向，不是把总速度锁为四向。入钩先取消`VineGrowthLift`租约，再移除落稳锁；不能保留托举临时关闭的重力或暂停控制器遗留的FreezeY。主动结束、禁用、搬运和房间重置恢复既有控制器；绿色块荡绳不使用这条拉物路径。
 
 方块触碰已有 IColorApplicationTarget，转发固定 ColorId，通过目标 CanApplyColor/ApplyColor 使用与玩家相同的规则，actor 为方块自身；仍服从目标激活与颜色解锁条件。一次持续接触中每个成功目标只执行一次，失败目标后续可重试（例如刚解锁）；分离后可再触发。三种新方块彼此只走上表 FSM，不走此广播接口，不形成递归反应。
 
@@ -51,3 +57,5 @@
 ## 验证
 
 ContactCubeAssets.Build 与 ContactCubeVerification.Run 只用于 Library/FlowRetirementProbe 隔离项目，不覆盖用户场景。nographics 验证不代替真实画面/打包验收。
+
+`Project.Player.Editor.ClimbCornerVerification.Run` 强制隔离项目及 `-noaudio`，以标准玩家和真实绿块/藤蔓预制体验证双侧向上翻角、单格/横向/竖向绿块、链条露顶、顶端阻挡、跳跃脱手、来源禁用与原有上下绕边。`ClimbCornerLiveVerification.Run` 另跑真实 Update/FixedUpdate，检查八组两侧翻顶后租约过期仍稳定站在真实顶面。脚本只使用空测试场景，不保存作者关卡。

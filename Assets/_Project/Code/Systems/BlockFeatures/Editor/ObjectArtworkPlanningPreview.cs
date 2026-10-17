@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Globalization;
 using Project.ColorBlocks;
 using Project.ContactCubes;
 using Project.LevelEditor;
@@ -22,6 +23,7 @@ namespace Project.BlockFeatures.Editor
         public readonly float RotationDegrees;
         public readonly bool FlipX, Tile;
         public readonly bool Hidden;
+        public readonly bool EditorOverlay;
         public PlanningArtworkPreview(Sprite sprite, bool tile = false, float rotationDegrees = 0, bool flipX = false)
         {
             Sprite = sprite; Texture = sprite != null ? sprite.texture : null;
@@ -29,12 +31,19 @@ namespace Project.BlockFeatures.Editor
             UV = Texture != null ? new Rect(rect.x / Texture.width, rect.y / Texture.height,
                 rect.width / Texture.width, rect.height / Texture.height) : default;
             Cells = GridArtworkMetrics.SpriteCells(sprite, GridArtworkMetrics.SourcePixelScale(sprite));
-            RotationDegrees = rotationDegrees; FlipX = flipX; Tile = tile; Hidden = sprite == null;
+            RotationDegrees = rotationDegrees; FlipX = flipX; Tile = tile; Hidden = sprite == null; EditorOverlay = false;
+        }
+        internal PlanningArtworkPreview(Texture2D texture, Vector2 footprint)
+        {
+            Sprite = null; Texture = texture; UV = new Rect(0, 0, 1, 1);
+            float fit = texture != null ? Mathf.Min(footprint.x / texture.width, footprint.y / texture.height) : 0f;
+            Cells = texture != null ? new Vector2(texture.width, texture.height) * fit : Vector2.zero;
+            RotationDegrees = 0; FlipX = Tile = false; Hidden = texture == null; EditorOverlay = true;
         }
         internal PlanningArtworkPreview(PlanningArtworkPreview source, Rect uv, Vector2 cells)
         {
             Sprite = source.Sprite; Texture = source.Texture; UV = uv; Cells = cells;
-            RotationDegrees = source.RotationDegrees; FlipX = source.FlipX; Tile = source.Tile; Hidden = source.Hidden;
+            RotationDegrees = source.RotationDegrees; FlipX = source.FlipX; Tile = source.Tile; Hidden = source.Hidden; EditorOverlay = source.EditorOverlay;
         }
     }
 
@@ -69,7 +78,18 @@ namespace Project.BlockFeatures.Editor
             if (prefab == null) return false;
             if (overrides != null && overrides.Count == 0) overrides = null;
             var cacheKey = (prefab.GetInstanceID(), footprintCells);
-            if (overrides == null && defaults.TryGetValue(cacheKey, out preview)) return true;
+            // Palette assets have stable defaults between project-change events;
+            // Scene instances do not (spike rotation, ladder side, door index,
+            // etc. can be edited independently). Their caller caches the mesh,
+            // so caching instance parameters here would only preserve stale art.
+            bool cacheDefault = overrides == null && EditorUtility.IsPersistent(prefab);
+            if (cacheDefault && defaults.TryGetValue(cacheKey, out preview)) return true;
+            if (prefab.GetComponent<ContactTimelineTrigger>() != null)
+            {
+                preview = new PlanningArtworkPreview(ContactTimelineEditorPreview.Texture, footprintCells);
+                if (cacheDefault) defaults[cacheKey] = preview;
+                return true;
+            }
             if (library == null) library = ObjectArtworkLibrary.Load();
             if (library == null) return false;
 
@@ -95,15 +115,9 @@ namespace Project.BlockFeatures.Editor
             {
                 if (!TryGetWaterTile(0, out preview)) return false;
             }
-            else if (prefab.GetComponent<ClimbableVineFeature>() != null)
+            else if (prefab.TryGetComponent<ClimbableVineFeature>(out var vine))
             {
-                int rows = Mathf.Max(1, Mathf.RoundToInt(footprintCells.y));
-                int frame = rows > 1 ? library.vineGrownFrame : library.vineInitialFrame;
-                if (library.vineGrowth == null || library.vineGrowth.Length == 0) return false;
-                Sprite source = library.vineGrowth[Mathf.Clamp(frame, 0, library.vineGrowth.Length - 1)];
-                var properties = new SerializedObject(prefab.GetComponent<ClimbableVineFeature>());
-                float width = properties.FindProperty("vineWidth")?.floatValue ?? 1.2f;
-                preview = SampleVine(source, width, rows);
+                if (!TryGetVine(vine, footprintCells, overrides, vine.AuthoredArtworkGrowthProgress, out preview)) return false;
             }
             else if (prefab.GetComponent<RespawnAnchorFeature>() != null) preview = new PlanningArtworkPreview(library.respawnLocked);
             else if (prefab.GetComponent<BouncePlantFeature>() != null)
@@ -128,8 +142,57 @@ namespace Project.BlockFeatures.Editor
                     preview = new PlanningArtworkPreview(sprite, tile, rotation, flip);
                 }
             }
-            if (overrides == null) defaults[cacheKey] = preview;
+            if (cacheDefault) defaults[cacheKey] = preview;
             return true;
+        }
+
+        public static bool TryGetVine(ClimbableVineFeature feature, Vector2 footprintCells,
+            out PlanningArtworkPreview preview) => TryGetVine(feature, footprintCells, null,
+                feature != null ? feature.AuthoredArtworkGrowthProgress : 0f, out preview);
+
+        public static bool TryGetVine(ClimbableVineFeature feature, Vector2 footprintCells,
+            IReadOnlyList<LevelEditorComponentValueOverride> overrides, float growthProgress,
+            out PlanningArtworkPreview preview)
+        {
+            preview = default;
+            if (feature == null) return false;
+            feature = feature.ArtworkRoot;
+            var sourceLibrary = feature.SequenceArtwork != null ? feature.SequenceArtwork : library;
+            if (sourceLibrary == null) sourceLibrary = library = ObjectArtworkLibrary.Load();
+            float width = feature.ArtworkWidthCells;
+            if (overrides != null) foreach (var value in overrides)
+            {
+                if (value == null || !string.IsNullOrEmpty(value.ComponentPath) ||
+                    value.ComponentTypeName != typeof(ClimbableVineFeature).FullName &&
+                    value.ComponentTypeName != typeof(ClimbableVineFeature).AssemblyQualifiedName &&
+                    value.ComponentTypeName != typeof(LadderSonFeature).FullName &&
+                    value.ComponentTypeName != typeof(LadderSonFeature).AssemblyQualifiedName) continue;
+                if (value.PropertyPath == "vineWidth" && float.TryParse(value.Value, NumberStyles.Float,
+                    CultureInfo.InvariantCulture, out float authoredWidth)) width = Mathf.Max(.1f, authoredWidth);
+                if (value.PropertyPath == "sequenceArtwork")
+                {
+                    if (GlobalObjectId.TryParse(value.Value, out var id) &&
+                        GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id) is ObjectArtworkLibrary custom) sourceLibrary = custom;
+                    else if (value.ObjectReferenceValue is ObjectArtworkLibrary reference && EditorUtility.IsPersistent(reference)) sourceLibrary = reference;
+                }
+            }
+            if (sourceLibrary?.vineGrowth == null || sourceLibrary.vineGrowth.Length == 0) return false;
+            int index = sourceLibrary.VineFrame(growthProgress, 0f, false);
+            Sprite source = sourceLibrary.vineGrowth[index];
+            if (source == null) return false;
+            preview = SampleVine(source, width, Mathf.Max(1, Mathf.RoundToInt(footprintCells.y)));
+            return preview.Texture != null;
+        }
+
+        // All cells of a prebuilt column sample one root image. They are not
+        // independent initial-frame thumbnails with a repeated dangling tip.
+        public static PlanningArtworkPreview VineSlice(PlanningArtworkPreview root, int rowFromBottom, int rowCount)
+        {
+            rowCount = Mathf.Max(1, rowCount);
+            Rect uv = root.UV;
+            uv.y += uv.height * Mathf.Clamp(rowFromBottom, 0, rowCount - 1) / rowCount;
+            uv.height /= rowCount;
+            return new PlanningArtworkPreview(root, uv, new Vector2(root.Cells.x, root.Cells.y / rowCount));
         }
 
         public static bool TryGetWaterTile(int kind, out PlanningArtworkPreview preview)

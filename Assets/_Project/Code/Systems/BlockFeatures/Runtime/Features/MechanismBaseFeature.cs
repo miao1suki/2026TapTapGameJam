@@ -87,6 +87,7 @@ namespace Project.BlockFeatures
 
         protected override void OnDetach()
         {
+            VineGrowthLift.Cancel(motionBody);
             GetComponent<CarryableFeature>()?.CancelCarry();
             SetCarrySuspended(false);
             hookMotion?.ResetForRoom();
@@ -106,6 +107,7 @@ namespace Project.BlockFeatures
 
         protected override void OnResetForRoom()
         {
+            VineGrowthLift.Cancel(motionBody);
             SetCarrySuspended(false);
             hookMotion?.ResetForRoom();
             RefreshGravityMotion();
@@ -115,6 +117,7 @@ namespace Project.BlockFeatures
 
         public void SetCarrySuspended(bool suspended)
         {
+            if (suspended) VineGrowthLift.Cancel(motionBody);
             if (carrySuspended == suspended) return;
             carrySuspended = suspended;
             if (suspended)
@@ -159,7 +162,7 @@ namespace Project.BlockFeatures
 
         private void RefreshGravityMotion()
         {
-            if (motionBody == null || carrySuspended || (hookMotion != null && hookMotion.IsHookMoving)) return;
+            if (motionBody == null || carrySuspended || VineGrowthLift.IsLifting(motionBody) || (hookMotion != null && hookMotion.IsHookMoving)) return;
             if (!useGravity)
             {
                 if (!motionBody.isKinematic) { motionBody.linearVelocity = Vector3.zero; motionBody.angularVelocity = Vector3.zero; }

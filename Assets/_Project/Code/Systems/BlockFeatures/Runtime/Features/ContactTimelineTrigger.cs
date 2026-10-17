@@ -103,7 +103,8 @@ namespace Project.BlockFeatures
                 director.Stop();
             }
 
-            RestoreRenderers();
+            // Disabling just this component must not reveal the invisible trigger in Game.
+            if (!Application.isPlaying || !hideRenderersOnEnable) RestoreRenderers();
         }
 
         private void Update()

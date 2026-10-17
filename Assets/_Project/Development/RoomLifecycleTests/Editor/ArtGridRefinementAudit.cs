@@ -28,7 +28,8 @@ public static class ArtGridRefinementAudit
     private static GameObject Spawn(string path) => Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(Content + path));
     public static void Run()
     {
-        if (!Application.dataPath.Replace('\\', '/').Contains("/Library/FlowRetirementProbe/Assets"))
+        if (!Application.dataPath.Replace('\\', '/').Contains("/Library/FlowRetirementProbe/Assets") ||
+            Array.IndexOf(Environment.GetCommandLineArgs(), "-noaudio") < 0)
             throw new InvalidOperationException("此验证仅可在 Library/FlowRetirementProbe 隔离工程执行。");
         int code = 0;
         try
@@ -38,7 +39,7 @@ public static class ArtGridRefinementAudit
             WorldObjectArtworkSetup.BuildPlatformFrames();
             WorldObjectArtworkSetup.BuildSupplementArtwork();
             artwork = ObjectArtworkLibrary.Load();
-            Metrics(); Assets(); Ladders(); Platforms(); Respawn(); KeysAndSupplementary(); Spikes(); PlanningPreviews(); PixelGpu();
+            Metrics(); Assets(); Ladders(); Platforms(); ShortPlatforms(); Respawn(); KeysAndSupplementary(); Spikes(); PlanningPreviews(); PixelGpu();
             string result = "PASS " + checks + " artwork/grid assertions; GPU=" + SystemInfo.graphicsDeviceType;
             File.WriteAllText("Library/ArtGridRefinementResult.txt", result); Debug.Log(result);
         }
@@ -160,6 +161,35 @@ public static class ArtGridRefinementAudit
         }
         finally { Object.DestroyImmediate(lava); }
     }
+    private static void ShortPlatforms()
+    {
+        foreach (string path in new[] { "ColorBlocks/Prefabs/Red_Platform.prefab", "ColorBlocks/Prefabs/Red_CrankLift.prefab", "Mechanisms/OneWayPlatform.prefab" })
+        foreach (int length in new[] { 1, 2 })
+        {
+            var owner = Spawn(path);
+            try
+            {
+                owner.transform.localScale = Vector3.Scale(owner.transform.localScale, new Vector3(length, 1, 1));
+                var collider = owner.GetComponent<BoxCollider>();
+                string before = EditorJsonUtility.ToJson(collider);
+                var presentation = MechanismArtworkPresentation.Ensure(owner);
+                presentation.Refresh(0);
+                var visual = presentation.Visual;
+                Check(Near(visual.sprite.rect.width, length * 16), path + " clips native short-platform pixels " + length);
+                Check(Near(visual.bounds.size.x, length), path + " retains authored short-platform width " + length);
+                Check(Near(visual.transform.TransformVector(Vector3.right / 16).magnitude, 1f / 16) &&
+                    Near(visual.transform.TransformVector(Vector3.up / 16).magnitude, 1f / 16), path + " short-platform pixels stay square " + length);
+                Check(before == EditorJsonUtility.ToJson(collider), path + " short-platform clipping preserves collision " + length);
+                var originalSprite = visual.sprite;
+                presentation.Refresh(.16f);
+                Check(Near(visual.sprite.rect.width, length * 16) && Near(visual.bounds.size.x, length), path + " animation frames cannot widen short platform " + length);
+                Check(PlatformArtworkLayout.CroppedFrame(originalSprite, length) == originalSprite,
+                    path + " already cropped sprite is reused without extra allocation " + length);
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+    }
+
     private static void Respawn()
     {
         var owner = Spawn("ColorBlocks/Prefabs/Respawn_Block.prefab");

@@ -18,7 +18,7 @@ namespace Project.GreenHook.Editor
                 serializedObject));
             root.Add(ProjectInspectorUtility.CreateHelp(
                 "选中绿色后，藤蔓随指针自由瞄准，与红蓝线共用出线起点。" +
-                "命中后四向拉动物体，或以绿色物体为挂点荡绳；连接中可点击其他目标切换。" +
+                "有效点击立即挂接，四向拉动物体或以绿色物体为挂点荡绳；连接中可点击其他目标切换。" +
                 "钩子可穿过方块，但不能跨出当前房间。"));
 
             Foldout idle = ProjectInspectorUtility.CreateFoldout(
@@ -27,8 +27,8 @@ namespace Project.GreenHook.Editor
             idle.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "idleLengthCells",
-                "待机长度（格）",
-                "绿色选中时玩家身上探出的预览藤蔓长度。"));
+                "无传感器时后备范围（格）",
+                "正常待机绳尖跟随鼠标位置，并限制在染色范围内；仅缺少传感器时使用此值。"));
             idle.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "idleOpacity",
@@ -37,18 +37,8 @@ namespace Project.GreenHook.Editor
             root.Add(idle);
 
             Foldout movement = ProjectInspectorUtility.CreateFoldout(
-                "钩子伸缩与拉动",
+                "挂接与拉动",
                 true);
-            movement.Add(ProjectInspectorUtility.CreateProperty(
-                serializedObject,
-                "growthSpeedCellsPerSecond",
-                "伸长速度（格/秒）",
-                "正式藤蔓从玩家伸向目标的生长速度。"));
-            movement.Add(ProjectInspectorUtility.CreateProperty(
-                serializedObject,
-                "hookCatchRadiusCells",
-                "命中判定半径（格）",
-                "藤蔓头与目标碰撞体的最近距离进入该范围后算抓到目标。"));
             movement.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "pullSpeed",
@@ -60,6 +50,10 @@ namespace Project.GreenHook.Editor
                 "接触停止距离",
                 "碰撞体距离小于该值后视为已经接触。"));
             movement.Add(ProjectInspectorUtility.CreateHelp("挂接后保持连接，跳跃或交互键主动脱钩。物体受阻时拉近玩家；绿色固定物体作为荡绳锚点。"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "attachedRangeSlackCells", "挂接范围冗余（格）",
+                "只增加已挂接连接的维持距离，不扩大可点击距离。默认额外3格。"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "attachedOutOfRangeGraceSeconds", "持续超距宽限（秒）",
+                "连续超过维持距离达到此时间才断绳，回到范围内即清空计时。默认0.4秒，暂停不计时。"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingAcceleration", "荡绳加速度"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingSpeedLimit", "荡绳速度上限"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingDamping", "荡绳阻尼", "松开方向输入后动量衰减速度；0为无额外阻尼。"));

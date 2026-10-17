@@ -27,6 +27,7 @@ namespace Project.GreenHook
 
     public interface IGreenHookMotion
     {
+        bool IsGreenHookPullActive { get; }
         Vector3 GreenHookPosition { get; }
         void BeginGreenHookPull();
         void SetGreenHookVelocity(Vector3 velocity);

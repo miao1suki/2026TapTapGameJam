@@ -38,6 +38,7 @@ namespace Project.BlockFeatures
         }
         private void OnEnable()
         {
+            if (!Application.isPlaying) return;
             Initialize();
             mask = null;
             BindMaterial();
@@ -82,11 +83,12 @@ namespace Project.BlockFeatures
         }
         private void OnDisable()
         {
+            if (!Application.isPlaying) return;
             if (plant != null) { plant.BounceTriggered -= PlayBounce; plant.AppearanceReset -= ResetPlayback; }
             ResetPlayback();
             if (visual != null) visual.enabled = false;
         }
-        private void LateUpdate() => Refresh(Application.isPlaying ? Time.deltaTime : 0f);
+        private void LateUpdate() { if (Application.isPlaying) Refresh(Time.deltaTime); }
         public void PlayBounce()
         {
             if (!initialized || plant == null) return;

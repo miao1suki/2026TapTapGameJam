@@ -16,18 +16,13 @@ namespace Project.BlockFeatures.Editor
         private const string Source = "Assets/_Project/Resources/26TAPTAP/物体道具/";
         static WorldObjectArtworkSetup()
         {
+            // The Editor preview service also follows objects recreated by the
+            // planner; loading a scene must not install runtime components.
             EditorApplication.delayCall += RefreshOpenScenes;
-            EditorSceneManager.sceneOpened += (_, _) => RefreshOpenScenes();
         }
         public static void RefreshOpenScenes()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode || ObjectArtworkLibrary.Load() == null) return;
-            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
-                MechanismArtworkPresentation.RefreshScene(UnityEngine.SceneManagement.SceneManager.GetSceneAt(i));
-            foreach (var anchor in UnityEngine.Object.FindObjectsByType<RespawnAnchorFeature>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                if (anchor.gameObject.scene.IsValid() && !EditorUtility.IsPersistent(anchor)) WorldObjectSpritePresentation.Ensure(anchor.gameObject);
-            foreach (var plant in UnityEngine.Object.FindObjectsByType<BouncePlantFeature>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                if (plant.gameObject.scene.IsValid() && !EditorUtility.IsPersistent(plant)) WorldObjectSpritePresentation.Ensure(plant.gameObject);
+            ArtworkScenePreview.RefreshOpenScenes();
         }
 
         public static void BuildMechanisms()

@@ -490,7 +490,7 @@ MonoBehaviour:
   targetMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  maxLinks: 16
+  prewarmLinks: 16
   curveSegments: 12
   arcHeight: 0.08
   waveHeight: 0.055
