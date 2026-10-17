@@ -1802,3 +1802,10 @@
 - 验证：文件已放入 Assets/_Project/Content/Audio/Music/；循环属性与 Unity 试听待确认。
 - 交接提交：本次提交。
 - 完成：已生成 Docs/BOSS_DESIGN_BRAINSTORM_玩法组件总结.txt，整理当前玩家、颜色、白块、搬运、攀爬、钩子、水流、三色方块、植物、按钮、平台、门、重置等玩法组件，附带组合示例、6个Boss方向、攻击方式、原型范围和团队讨论问题；明确区分现有能力与需新增的Boss战斗层。
+
+## 2026-10-17 正式关卡11房间分支交付
+
+- 用户确认当前 Gaming 作为正式关卡持续基线；工作分支 `codex/level/main-20261017-02`，起点 main 897e3c4。已fetch main至577a4d4；本窗口只交付分支，不合并、不推main，主线后续功能由整合者保留。
+- 范围：Gaming.unity、同名Gaming.planning.json、Content/LevelMaps/正式关卡.json及各自既有meta（保留GUID）。用户在当前Unity应用到场景并保存后，核对场景内嵌与配套规划一致（11房间）；命名存档先备份至Library/FormalLevelDeliveryBackups，再同步为同一份数据。关卡布局、实例参数和绑定以本次交付为准，不重建地图或重置出生点。
+- 排除：字体缓存、LevelEditorPalette中文转义编码差异，以及DirectionalBubble_Up动态预览的随机变换/精灵序列化改动，均保留本地，不作为关卡编辑依赖变更交付。未新增资源依赖；现有meta及新增引用GUID已核对。
+- 验证：三份规划JSON结构一致，提交前执行Test-PlanningMapCommit.ps1（AllTracked）及暂存差异检查；Unity6000.3.12f1。未修改Runtime源码，未执行本轮Unity编译、Play Mode、完整通关或打包；数据检查不等于游戏验收。
