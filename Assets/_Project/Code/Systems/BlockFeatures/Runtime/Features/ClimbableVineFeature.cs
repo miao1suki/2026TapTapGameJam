@@ -148,7 +148,55 @@ namespace Project.BlockFeatures
         private float sequenceIdleTime;
         private bool sequenceMissingReported;
         private float nextWaterContactCheck;
+        private float artworkBaseCells = 1f;
         public ClimbableVineFeature Root => vineRoot != null ? vineRoot : this;
+        // Pure authoring reads: preview code must not call RestoreInitialGrowthLinks,
+        // which intentionally repairs serialized ownership and growth parameters.
+        public ClimbableVineFeature ArtworkRoot
+        {
+            get
+            {
+                if (this is LadderSonFeature && transform.parent != null &&
+                    transform.parent.TryGetComponent<ClimbableVineFeature>(out var parent) && !(parent is LadderSonFeature)) return parent;
+                return Root;
+            }
+        }
+        public ObjectArtworkLibrary SequenceArtwork => sequenceArtwork;
+        public float ArtworkWidthCells => vineWidth;
+        private float ArtworkCellWorldSize => IsAttached ? GridCellWorldSize : GridCellSizeUtility.Resolve(this);
+        public Bounds AuthoredArtworkRootBounds => VineArtworkLayout.RootBounds(transform,
+            GetComponent<BoxCollider>(), ArtworkCellWorldSize);
+        public Vector2 AuthoredArtworkCells
+        {
+            get
+            {
+                var root = ArtworkRoot;
+                float cell = GridCellSizeUtility.Resolve(root);
+                Bounds bounds = root.AuthoredArtworkRootBounds;
+                float top = bounds.max.y;
+                for (int i = 0; i < root.transform.childCount; i++)
+                {
+                    var child = root.transform.GetChild(i);
+                    if (child.GetComponent<LadderSonFeature>() != null)
+                        top = Mathf.Max(top, VineArtworkLayout.RootBounds(child, child.GetComponent<BoxCollider>(), cell).max.y);
+                }
+                return new Vector2(root.vineWidth, Mathf.Max(.001f, (top - bounds.min.y) / cell));
+            }
+        }
+        public float AuthoredArtworkGrowthProgress
+        {
+            get
+            {
+                var root = ArtworkRoot;
+                int count = 0;
+                for (int i = 0; i < root.transform.childCount; i++)
+                    if (root.transform.GetChild(i).GetComponent<LadderSonFeature>() != null) count++;
+                // OnAttach restores author children as an already-grown chain and
+                // sets maxGrowthBlocks to that count. Mirror that outcome without
+                // repairing fields merely because SceneView asked for an image.
+                return count > 0 ? 1f : 0f;
+            }
+        }
         public bool IsBurning => burning;
         public bool IsBurned => burned;
         public GreenHookMotionMode GreenHookMotionMode =>
@@ -160,9 +208,10 @@ namespace Project.BlockFeatures
         protected override void OnAttach()
         {
             RestoreInitialGrowthLinks();
+            artworkBaseCells = Mathf.Max(.001f, AuthoredArtworkRootBounds.size.y / GridCellWorldSize);
             burned = false;
             visualProgress = visualTarget = maxGrowthBlocks > 0 ? Mathf.Clamp01((float)CurrentGrowthBlocks / maxGrowthBlocks) : 0f;
-            visibleCells = targetCells = CurrentGrowthBlocks + 1;
+            visibleCells = targetCells = CurrentGrowthBlocks + artworkBaseCells;
         }
 
         public override bool CanApplyColor(string colorId, GameObject actor) =>
@@ -501,7 +550,7 @@ namespace Project.BlockFeatures
             growthBlocker = null;
             growthBlocked = false;
             visualTarget = maxGrowthBlocks > 0 ? Mathf.Clamp01((float)initialSegments.Count / maxGrowthBlocks) : 0f;
-            targetCells = initialSegments.Count + 1;
+            targetCells = initialSegments.Count + artworkBaseCells;
         }
 
         public void PlayAppearAnimation()
@@ -614,8 +663,8 @@ namespace Project.BlockFeatures
                     {
                         yield return new WaitForFixedUpdate();
                         if (!growthLift.Advance(GridCellWorldSize * Time.fixedDeltaTime / Mathf.Max(.1f, growthInterval))) break;
-                        visibleCells = targetCells = CurrentGrowthBlocks + 1 + growthLift.Progress;
-                        visualProgress = visualTarget = maxGrowthBlocks > 0 ? (visibleCells - 1) / maxGrowthBlocks : 0;
+                        visibleCells = targetCells = CurrentGrowthBlocks + artworkBaseCells + growthLift.Progress;
+                        visualProgress = visualTarget = maxGrowthBlocks > 0 ? (visibleCells - artworkBaseCells) / maxGrowthBlocks : 0;
                     }
                     yield return new WaitForFixedUpdate();
                     bool completed = growthLift.Active && growthLift.Progress >= .99999f;
@@ -623,7 +672,7 @@ namespace Project.BlockFeatures
                     if (!completed)
                     {
                         growthBlocked = true; growthBlocker = growthLift.Blocker;
-                        targetCells = CurrentGrowthBlocks + 1;
+                        targetCells = CurrentGrowthBlocks + artworkBaseCells;
                         visualTarget = maxGrowthBlocks > 0 ? (float)CurrentGrowthBlocks / maxGrowthBlocks : 0;
                         break;
                     }
@@ -670,7 +719,7 @@ namespace Project.BlockFeatures
             ClimbableVineFeature child = segment.GetComponent<ClimbableVineFeature>();
             if (child != null) child.vineRoot = this;
             visualTarget = maxGrowthBlocks > 0 ? Mathf.Clamp01((float)CurrentGrowthBlocks / maxGrowthBlocks) : 0f;
-            targetCells = CurrentGrowthBlocks + 1;
+            targetCells = CurrentGrowthBlocks + artworkBaseCells;
             segment.SetActive(true);
 
             if (playAppearance)
@@ -793,10 +842,8 @@ namespace Project.BlockFeatures
             }
             // Atlas sprites are trimmed to their visible height and keep one common X range.
             // Fit the whole root once, not one independent animation per gameplay segment.
-            vineVisual.transform.localScale = new Vector3(
-                vineWidth / Mathf.Max(.001f, frame.bounds.size.x),
-                Mathf.Max(.001f, visibleCells) / Mathf.Max(.001f, frame.bounds.size.y), 1f);
-            vineVisual.transform.localPosition = new Vector3(0f, -.5f, -.51f);
+            VineArtworkLayout.Apply(vineVisual.transform, transform, frame, vineWidth, visibleCells,
+                GridCellWorldSize, AuthoredArtworkRootBounds);
             return true;
         }
 

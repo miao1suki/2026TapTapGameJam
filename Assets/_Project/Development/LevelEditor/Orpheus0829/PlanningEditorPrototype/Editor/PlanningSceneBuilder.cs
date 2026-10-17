@@ -1283,7 +1283,6 @@ namespace PlanningEditorPrototype
                 placed.Configure(bottomCell,placed.EntryName,placed.EntryColor,!placed.IsProp && !FindEntry(palette,box).UsesPrefabDirectly,placed.IsProp,CellSize);
                 placed.SetSizeCells(new Vector2Int(box.width,box.height));
             }
-            if (fittedLadder || fittedPlatform) placed.GetComponent<MechanismArtworkPresentation>()?.Refresh(0f);
             if (box.isMerged && PlanningShapeUtility.IsIrregular(box))
             {
                 var coverage = new List<RectInt>();
@@ -1293,11 +1292,11 @@ namespace PlanningEditorPrototype
                 }
                 var shape = placed.gameObject.AddComponent<LevelEditorMergedShape>();
                 shape.Configure(new Vector2Int(box.width, box.height), coverage);
-                placed.GetComponent<MechanismArtworkPresentation>()?.Refresh(0f);
             }
             // The signature tracks content, not selection or transient scene references.
             PlanningBox signatureBox = box.PersistentClone();
             placed.SetPlanningSource(box.id,JsonUtility.ToJson(signatureBox)+JsonUtility.ToJson(new OverrideSignature { values = LevelEditorComponentOverrideUtility.PersistentValues(values) }),localCell);
+            Project.BlockFeatures.Editor.ArtworkScenePreview.QueueObject(placed.gameObject);
             return placed;
         }
 

@@ -164,7 +164,7 @@ public static class TimelineVineLiftAudit
                 {
                     Check(VineGrowthLift.IsLifting(hook.Body), "hook test is inside a real incremental lift");
                     hook.Body.GetComponent<ContactCubeMotion>().BeginGreenHookPull();
-                    Check(!VineGrowthLift.IsLifting(hook.Body) && !hook.Body.useGravity && !hook.Body.isKinematic, "green hook owns body without lift overwriting its physics");
+                    Check(!VineGrowthLift.IsLifting(hook.Body) && hook.Body.useGravity && !hook.Body.isKinematic, "green hook cancels lift ownership and preserves target gravity");
                     carry.Body.GetComponent<ContactCubeMotion>().SuspendMotion(true);
                     Check(!VineGrowthLift.IsLifting(carry.Body) && carry.Body.isKinematic, "carry suspension takes over without dual body writers");
                     Check(VineGrowthLift.IsLifting(reset.Body), "room reset occurs during an active lift");

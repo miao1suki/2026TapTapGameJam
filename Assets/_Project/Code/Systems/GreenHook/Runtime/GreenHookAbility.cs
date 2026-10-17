@@ -421,7 +421,10 @@ namespace Project.GreenHook
         private bool IsTargetAvailable() => targetTransform != null && target != null &&
             targetTransform.gameObject.activeInHierarchy &&
             (!(target is Behaviour behaviour) || behaviour.isActiveAndEnabled) &&
-            (phase == HookPhase.Pulling || target.CanBeGreenHooked(gameObject));
+            (phase == HookPhase.Pulling
+                ? target.GreenHookMotionMode != GreenHookMotionMode.PullTarget ||
+                    targetMotion != null && targetMotion.IsGreenHookPullActive
+                : target.CanBeGreenHooked(gameObject));
 
         private void TickSwing(float dt)
         {

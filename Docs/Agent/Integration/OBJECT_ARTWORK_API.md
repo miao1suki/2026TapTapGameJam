@@ -6,6 +6,10 @@
 
 `ObjectArtworkPlanningPreview.TryGet` 是道具栏目及关卡画布的统一只读2D预览入口，返回纹理、UV、自然格数、旋转、镜像和平铺信息。已接入正式素材的物体不应再请求3D预制体截图。水采用正式水面/中/底瓦片，藤蔓采用真实序列帧的缓存采样；原像素、透明区、孔洞及实例素材覆盖必须保留。
 
+Scene编辑态统一由`ArtworkScenePreview`缓存并绘制2D代理：ObjectChangeEvents、开关场景、资源变化与Undo驱动局部重建，hierarchyChanged合并发现未走Undo的新实例，平移/重绘不扫描场景，不触发玩法Awake/挂接。代理Mesh/材质是HideAndDontSave，不创建场景节点；旧Renderer只临时forceRenderingOff，Play/重载/关闭恢复。规划构建所有参数设置后统一调用`QueueObject`，下一编辑器tick批量刷新；`RefreshObject`仅用于需要立即预览的显式操作。不再调用运行时Refresh产生持久视觉子节点；显式运行外观Ensure/Refresh保留给资源生成及隔离审计。见[Scene预览说明](../../Developer/SCENE_ARTWORK_PREVIEW.md)。
+
+平台不足3格用`PlatformArtworkLayout.SliceUV/CroppedFrame`居中裁原像素；旧逐格batch不视为合并体。新放仍3格，旧位置、占格和绑定不迁移。Canvas支撑面与真实Collider一致，竖向UI−90°对应Scene+90°；单向平台不能借用移动平台首帧。
+
 ## 机关与道具精灵
 
 `MechanismArtworkPresentation.Ensure(owner)` 补齐支持的物体，`RefreshScene(scene)` 在场景加载时补旧实例；正式Prefab已持久绑定，动态实例继承组件。不要通过重建Scene/规划存档接入美术。组件只读机关状态，不写引用、物理或重置逻辑。
@@ -46,5 +50,7 @@ Sprite Tiled使用FullRect切片、Point采样、无压缩/Mipmap；用原BoxCol
 `ClimbableVineFeature.UpdateVineSequence` 优先读取作者配置或 Resources 中的 ObjectArtworkLibrary；`VineFrame(progress,idleTime,animateIdle)` 支持生长/倒放和长成末段循环。每个母根创建一个SpriteRenderer，子节段只负责原有碰撞/攀爬，不创建各自的动画。无Animator、无运行时读图、无粒子Simulate；源图经 `WorldObjectArtworkSetup.BuildVineSequence()` 在Editor生成12页图集，192帧完整保留，Point/无Mip、HQ压缩，公共横向裁切、逐帧底部和可见高度裁切。
 
 `ColorAppearanceManager.RegisterVine` 对SpriteRenderer保留精灵Shader，复用共享池和统一可见性；粒子备用仍走旧Shader适配。换帧只改sprite及HSV遮罩Alpha纹理，不逐帧复制/改材质。Root.ResetForRoom须重新RegisterVine，防止燃烧Unregister后的对象永远隐藏。Detach立即隐藏并摘下旧视觉子物体，再延迟Destroy，避免同帧重新挂接产生重影。序列帧不能改变规划稳定ID、母根链接、区域或碰撞体。
+
+藤蔓布局共用`VineArtworkLayout`，抵消父根缩放并按真实cellWorldSize摆放；编辑读取`ArtworkRoot/AuthoredArtworkCells/AuthoredArtworkRootBounds`不调用会修改根系的RestoreInitialGrowthLinks。Canvas同作用域连续竖列先取整根帧后逐格`VineSlice`，不是每格单独初始帧。宽度与自定义序列配置覆盖保留，断格/跨房间不合成同根，修改/擦除清理链采样缓存。
 
 2026-10-15隔离Unity6000.3.12f1：89项EditMode通过；真实GPU/Play检查初始隐藏、渐显中间透明、完整生长、末段循环、单根单实例、燃烧倒放、烧毁重置、禁用重启、材质池不增长及单株/合并植物底边和宽度。日志在Library/VineSequence*，未验证安卓真机与完整关卡通关。

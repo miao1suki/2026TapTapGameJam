@@ -1,5 +1,7 @@
 # 系统索引
 
+Scene编辑态正式2D由只读ArtworkScenePreview按变更缓存，旧尖刺不再等Play才换图；平台旧1格/批量独立占格裁原像素、单向平台独立素材、支撑面与旋转共用规则。藤蔓同列连续组链只采一根后分片，显示抵消作者缩放。见[美术约定](../Developer/ART_GRID_CONVENTIONS.md)与[物体美术API](Integration/OBJECT_ARTWORK_API.md)。绿色拉物保留自然重力，显式无重力基座优先；拉力仍四向，详见[绿绳API](Integration/GREEN_HOOK_API.md)。
+
 Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/非Play的SceneView可见，画布独立顶层与半透明放置预览；游戏中图片、占位模型和阴影不可见。资源与meta必须一起交付，见 [CONTACT_TIMELINE_API](Integration/CONTACT_TIMELINE_API.md)。普通藤蔓生长可分步托起顶部重力方块/堆叠并承载玩家，路径受阻停止，搬运/绿绳/燃烧/房间重置交还物理控制，见 [藤蔓托举](../Developer/VINE_GROWTH_LIFT.md)。
 
 新增独立绿色进阶关：`Assets/Scenes/MRoom3.unity`及同名planning/mvmap。仅新区域，4平台/3无重力基座、充能前进断电回位，6门/13保持按钮，尖刺朝通道。新图不用覆盖旧MRoom2或正式Gaming；交付必须带可编辑存档/meta，见 [MROOM3_IMPORT](../Developer/MROOM3_IMPORT.md)。

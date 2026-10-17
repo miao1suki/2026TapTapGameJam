@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Project.ColorBlocks;
+using Project.BlockFeatures;
 using Project.ContactCubes;
 using Project.InputAbstraction;
 using Project.Player;
@@ -159,13 +160,48 @@ namespace Project.GreenHook.Editor
                     Check(hook.IsHookActive, "real loop transient overshoot keeps rope " + variant);
                     stage = 14; next = Time.time + .4f;
                 }
-                else
+                else if (stage == 14)
                 {
                     Check(!hook.IsHookActive && !player.IsControlLocked && !player.IsGreenHookActive,
                         "real loop out-of-range releases " + variant);
                     Cleanup(); variant++;
                     if (variant < Paths.Length) { SetupBlockedPull(); stage = 8; next = Time.time + .15f; }
-                    else Finish(true, "PASS " + checks);
+                    else { SetupPuzzlePassage(); stage = 15; next = Time.time + .15f; }
+                }
+                else if (stage == 15)
+                {
+                    player.GetComponent<PlayerColorWheel>().TrySelectColor("green");
+                    input.Pointer = camera.WorldToScreenPoint(target.transform.position);
+                    input.ClickFrame = Time.frameCount + 2;
+                    stage = 16; next = Time.time + 1.2f;
+                }
+                else if (stage == 16)
+                {
+                    Check(hook.IsPulling && hook.IsPullingPlayer && player.CanDriveGreenHook,
+                        "puzzle blocked red block pulls player across spike gap");
+                    Check(player.Motor.position.x > 3.15f && player.Motor.position.x < 3.45f &&
+                        player.Motor.position.y > 3.9f && !player.IsDead,
+                        "puzzle reaches narrow shaft instead of dropping halfway onto spikes");
+                    Check(Mathf.Abs(target.GetComponent<Rigidbody>().position.x - 4.8f) < .05f,
+                        "puzzle red block remains physically blocked by pillar");
+                    stage = 17; next = Time.time + .8f;
+                }
+                else if (stage == 17)
+                {
+                    Check(hook.IsHookActive && !player.IsDead && player.Motor.position.y > 3.9f,
+                        "puzzle both blocked keeps player held until explicit release");
+                    input.ReleaseFrame = Time.frameCount + 2;
+                    stage = 18; next = Time.time + .8f;
+                }
+                else
+                {
+                    Check(!hook.IsHookActive && !player.IsControlLocked && !player.IsDead &&
+                        player.IsSwimming && player.Motor.position.y < 3.2f,
+                        "puzzle manual release enters underground water passage safely");
+                    var signal = floor.GetComponentInChildren<MechanismBaseFeature>();
+                    Check(target.GetComponent<ContactCube>().IsEnergyAvailable && signal.IsSignalActive,
+                        "puzzle released red block still supplies later mechanism");
+                    Finish(true, "PASS " + checks);
                 }
             }
             catch (Exception error) { Debug.LogException(error); Finish(false, error.ToString()); }
@@ -208,6 +244,40 @@ namespace Project.GreenHook.Editor
             targetStop.transform.localScale = new Vector3(.4f, 4f, 2f);
             playerStart = player.Motor.position; start = target.GetComponent<Rigidbody>().position;
             Physics.SyncTransforms();
+        }
+
+        private static void SetupPuzzlePassage()
+        {
+            input.Device = InputDeviceMode.KeyboardMouse;
+            player = Instantiate("Player/Player.prefab", new Vector3(0, 4, 0)).GetComponent<PlayerController>();
+            typeof(PlayerController).GetField("invulnerableUntil", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(player, 0f);
+            hook = player.GetComponent<GreenHookAbility>();
+            target = Instantiate("ContactCubes/Red_ContactCube.prefab", new Vector3(4.8f, 4, 0));
+            floor = new GameObject("HookPuzzlePassage");
+            PuzzleSolid("Departure", new Vector3(0, 2.5f, 0), new Vector3(1, 2, 2));
+            PuzzleSolid("BlockedPillar", new Vector3(4.05f, 3.5f, 0), new Vector3(.5f, 7, 2));
+            PuzzleSolid("RedSupport", new Vector3(4.8f, 1.5f, 0), new Vector3(1, 4, 2));
+            PuzzleSolid("SpikeFloor", new Vector3(1.75f, .5f, 0), new Vector3(2, 1, 2));
+            PuzzleSolid("WaterFloor", new Vector3(3.3f, -1, 0), new Vector3(1.1f, 1, 2));
+            foreach (float x in new[] { 1.25f, 2.25f })
+            {
+                var spike = Instantiate("WorldItems/Spike_上.prefab", new Vector3(x, 1.5f, 0));
+                spike.transform.SetParent(floor.transform, true);
+            }
+            second = Instantiate("ColorBlocks/Prefabs/Blue_WaterSource.prefab", new Vector3(3.3f, 1, 0));
+            second.transform.localScale = new Vector3(1, 3, 1);
+            var foundation = Instantiate("ColorBlocks/Prefabs/Red_Foundation.prefab", new Vector3(5.8f, 4, 0));
+            foundation.transform.SetParent(floor.transform, true);
+            var signal = foundation.GetComponent<MechanismBaseFeature>();
+            typeof(MechanismBaseFeature).GetField("useGravity", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(signal, false);
+            camera.transform.position = new Vector3(2, 3, -10);
+            Physics.SyncTransforms();
+        }
+
+        private static void PuzzleSolid(string name, Vector3 position, Vector3 size)
+        {
+            var obj = GameObject.CreatePrimitive(PrimitiveType.Cube); obj.name = name;
+            obj.transform.SetParent(floor.transform, false); obj.transform.position = position; obj.transform.localScale = size;
         }
 
         private static void Cleanup()

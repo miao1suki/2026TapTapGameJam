@@ -74,13 +74,17 @@ namespace Project.BlockFeatures
                 foreach (var component in root.GetComponentsInChildren<MonoBehaviour>(true))
                     if (component != null && Supports(component.gameObject)) Ensure(component.gameObject);
         }
-        private void OnEnable() { initialized = false; elapsed = 0; Refresh(0f); }
+        // Edit-time Scene artwork is a read-only Editor overlay. Do not add
+        // serialized children or change authored Renderer flags merely by opening
+        // a scene. Explicit Ensure/Refresh remain available to asset generators.
+        private void OnEnable() { if (!Application.isPlaying) return; initialized = false; elapsed = 0; Refresh(0f); }
         private void OnDisable()
         {
+            if (!Application.isPlaying) return;
             if (visual != null) visual.enabled = false;
             if (indicators != null) foreach (var item in indicators) if (item != null) item.enabled = false;
         }
-        private void LateUpdate() => Refresh(Application.isPlaying ? Time.deltaTime : 0f);
+        private void LateUpdate() { if (Application.isPlaying) Refresh(Time.deltaTime); }
         private void Initialize()
         {
             if (initialized) return;
@@ -194,6 +198,13 @@ namespace Project.BlockFeatures
             }
             previousPosition = transform.position;
             var sprite = door != null && artwork.doorClosed != null ? artwork.doorClosed : entry.frames[Mathf.Clamp(frame, 0, entry.frames.Length - 1)];
+            if (platform != null || kind == MechanismArtworkKind.OneWayPlatform)
+            {
+                DisplayBounds(out _, out var platformSize);
+                Vector3 authorScale = transform.lossyScale;
+                float length = Mathf.Max(Mathf.Abs(platformSize.x * authorScale.x), Mathf.Abs(platformSize.y * authorScale.y)) / cell;
+                sprite = PlatformArtworkLayout.CroppedFrame(sprite, length);
+            }
             if (visual.sprite != sprite || mask == null)
             {
                 visual.sprite = sprite;
@@ -223,10 +234,9 @@ namespace Project.BlockFeatures
                 if (hintRenderers != null) foreach (var renderer in hintRenderers) if (renderer != null) renderer.enabled = false;
             }
         }
-        private void Layout(Sprite sprite)
+        private void DisplayBounds(out Vector3 center, out Vector3 size)
         {
-            if (sprite == null) return;
-            Vector3 center = Vector3.zero, size = Vector3.one;
+            center = Vector3.zero; size = Vector3.one;
             if (footprint != null)
             {
                 var toRoot = transform.worldToLocalMatrix * footprint.transform.localToWorldMatrix;
@@ -236,9 +246,14 @@ namespace Project.BlockFeatures
                 Vector3 z = toRoot.MultiplyVector(Vector3.forward * footprint.size.z);
                 size = new Vector3(Mathf.Abs(x.x)+Mathf.Abs(y.x)+Mathf.Abs(z.x), Mathf.Abs(x.y)+Mathf.Abs(y.y)+Mathf.Abs(z.y), Mathf.Abs(x.z)+Mathf.Abs(y.z)+Mathf.Abs(z.z));
             }
-            if (gridOwner != null) { grid ??= gridOwner as IGridCellSizeProvider; if (grid != null) cell = Mathf.Max(.01f, grid.CellWorldSize); }
             if (shape == null) shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
             if (shape != null) { center = shape.LocalBounds.center; size = shape.LocalBounds.size; }
+        }
+        private void Layout(Sprite sprite)
+        {
+            if (sprite == null) return;
+            if (gridOwner != null) { grid ??= gridOwner as IGridCellSizeProvider; if (grid != null) cell = Mathf.Max(.01f, grid.CellWorldSize); }
+            DisplayBounds(out var center, out var size);
             Vector3 scale = transform.lossyScale;
             if (spike != null)
             {
