@@ -14,7 +14,7 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 关卡/美术适配：16有效像素/格、正式2D预览、左右靠墙梯、基座重力及新图用途见 [ART_GRID_REFINEMENT_API](Integration/ART_GRID_REFINEMENT_API.md)。工作台静态三色装饰按颜色目录Layer分批，初始褪色、场景颜色解锁后恢复；不要误当动画或加ColorObject。告示牌复用字幕激发道具。片段导入/区域导出入口在关卡编辑器右侧三视图按钮下方。
 
-正式打包关卡：`Assets/_Project/Scenes/Playing/Gaming.unity`，配套同名规划文件及 `Assets/_Project/Content/LevelMaps/正式关卡.json`；采用策划 `a86fc5a` 的10房间基线，物体/位置/实例参数/绑定以策划版为准，代码与工具修复保留整合最新版。旧 Gaming 使用者先同步新版，不用旧场景/缓存覆盖；其他成员仅拉取和推送分支，由当前整合窗口合并 main。必读 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
+正式打包关卡：`Assets/_Project/Scenes/Playing/Gaming.unity`，配套同名规划文件及 `Assets/_Project/Content/LevelMaps/正式关卡.json`；采用策划 `f35ff0f` 的11房间基线，物体/位置/实例参数/绑定以策划版为准，代码与工具修复保留整合最新版。房间9仅清除批量平台重叠格，独立16格路线保留。旧 Gaming 使用者先同步新版，不用旧场景/缓存覆盖；其他成员仅拉取和推送分支，由当前整合窗口合并 main。必读 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
 
 命名MVMap独立导入图：`Assets/Scenes/MRoom2.unity` + 同名planning存档/原始mvmap文件。第二版24分类完整重导入，六平台、三基座、两曲柄、三门七保持按钮及六重生点；四个基座消费者使用断电回位，托红块平台与左竖平台共用基座。路线补齐网页占格缺口，左下平台补4格水，两排尖刺均朝上，侧梯按邻墙选左右。保留Scene/meta、默认锁色、单测试区域，不替代Gaming或加入构建。见 [地图说明](../Developer/MROOM2_IMPORT.md)、[导入API](Integration/MVMAP_OBJECT_IMPORT_API.md)。
 
