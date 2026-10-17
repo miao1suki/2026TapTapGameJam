@@ -29,6 +29,7 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 
 维护源码、场景和 `.meta` 一起提交。不得提交私钥、凭据、Library、Temp、Logs、Builds 或本地用户设置。
 多人各自创建自己的场景，不采用旧地图总拼、代理同步或对象锁方案。
+Boss 场景的所有专属逻辑、组件、Editor 工具和测试脚本统一放在 `Assets/Boss_Logic`；Boss 场景与 `.planning.json` 只能引用该目录中的 Boss 专属脚本。项目公共框架和可复用系统脚本保持原归属，不因 Boss 使用而搬入该目录。
 <!-- UNITY CODE ASSIST INSTRUCTIONS START -->
 - Project name: 2026TapTapGameJam
 - Unity version: Unity 6000.3.12f1

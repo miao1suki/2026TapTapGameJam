@@ -45,6 +45,14 @@ namespace Project.Player
         private static void ResetPlayerRegistry() => activePlayers.Clear();
         [SerializeField, Min(.1f), InspectorName("普通跳跃上升（格）")]
         private float jumpRiseCells = 4f;
+        [SerializeField, Min(.1f), InspectorName("点按跳跃上升（格）")]
+        private float jumpTapRiseCells = 1f;
+        [SerializeField, Min(0f), InspectorName("点按判定时间（秒）")]
+        private float jumpTapWindowSeconds = .08f;
+        [SerializeField, Min(.01f), InspectorName("长按满高时间（秒）")]
+        private float jumpFullHeightHoldSeconds = .35f;
+        [SerializeField, Min(0f), InspectorName("按住跳跃加速度")]
+        private float jumpHoldAcceleration = 45f;
         private float carryPlantJumpCells;
         public bool CanCarryPlantJump => carryPlantJumpCells > 0f && IsCarrying && !IsCarryBusy;
         public void GrantCarryPlantJump(float cells) { if (IsCarrying) carryPlantJumpCells = Mathf.Max(.1f, cells); }
@@ -158,6 +166,12 @@ namespace Project.Player
         private float bounceDecayMultiplier = 1f;
         private bool landedThisStep;
         private bool jumpHeld;
+        private bool variableJumpActive;
+        private float jumpPressedAt = -1f;
+        private float jumpReleasedAt = -1f;
+        private float variableJumpStartY;
+        private float variableJumpTargetRiseCells;
+        private float variableJumpFullRiseCells;
         private bool dead;
         private bool enteredWaterDuringFall;
         private bool enteredClimbDuringFall;
@@ -356,6 +370,23 @@ namespace Project.Player
             ? motor.linearVelocity.y
             : 0f;
         public bool JumpHeld => jumpHeld;
+        public float JumpHoldSeconds
+        {
+            get
+            {
+                if (jumpPressedAt < 0f)
+                {
+                    return 0f;
+                }
+
+                float releasedAt = jumpHeld
+                    ? Time.time
+                    : Mathf.Max(jumpPressedAt, jumpReleasedAt);
+                return Mathf.Max(0f, releasedAt - jumpPressedAt);
+            }
+        }
+        public float CurrentJumpTargetRiseCells =>
+            variableJumpTargetRiseCells;
         public float AirTime => IsGrounded
             ? 0f
             : Mathf.Max(0f, Time.time - airborneSince);
@@ -579,7 +610,8 @@ namespace Project.Player
             CancelCarryState();
             ReleaseHeldInteraction();
             lockDepth = 0; movement = Vector2.zero; jumpUntil = -1;
-            jumpHeld = false;
+            EndJumpHold();
+            CancelVariableJump();
             requestedJumpBoost = -1f;
             pendingPlatformDelta = Vector3.zero;
             waterSources.Clear();
@@ -1104,12 +1136,18 @@ namespace Project.Player
         public void RequestJump()
         {
             if (dead) return;
+            if (!jumpHeld)
+            {
+                BeginJumpHold();
+            }
             if (IsHorizontalClimbing)
             {
                 horizontalVines.Clear(); cornerSource = wrappedEdgeSource = null;
                 horizontalReleaseUntil = Time.time + .5f;
                 climbReattachUntil = Mathf.Max(climbReattachUntil, horizontalReleaseUntil);
-                jumpUntil = groundedUntil = -1f; jumpHeld = false;
+                jumpUntil = groundedUntil = -1f;
+                EndJumpHold();
+                CancelVariableJump();
                 Vector3 falling = motor.linearVelocity;
                 falling.y = Mathf.Min(falling.y, -.5f * gridCellWorldSize);
                 motor.linearVelocity = falling;
@@ -1123,8 +1161,21 @@ namespace Project.Player
         {
             if (dead)
             {
-                jumpHeld = false;
+                EndJumpHold();
+                CancelVariableJump();
                 return;
+            }
+
+            if (value)
+            {
+                if (!jumpHeld)
+                {
+                    BeginJumpHold();
+                }
+            }
+            else if (jumpHeld)
+            {
+                jumpReleasedAt = Time.time;
             }
 
             jumpHeld = value;
@@ -1133,8 +1184,123 @@ namespace Project.Player
         {
             movement = Vector2.zero;
             jumpUntil = -1;
-            jumpHeld = false;
+            EndJumpHold();
+            CancelVariableJump();
             requestedJumpBoost = -1f;
+        }
+
+        private void BeginJumpHold()
+        {
+            jumpPressedAt = Time.time;
+            jumpReleasedAt = -1f;
+            jumpHeld = true;
+        }
+
+        private void EndJumpHold()
+        {
+            if (jumpHeld)
+            {
+                jumpReleasedAt = Time.time;
+            }
+
+            jumpHeld = false;
+        }
+
+        private void CancelVariableJump()
+        {
+            variableJumpActive = false;
+            variableJumpTargetRiseCells = 0f;
+            variableJumpFullRiseCells = 0f;
+            variableJumpStartY = motor != null
+                ? motor.position.y
+                : transform.position.y;
+        }
+
+        private float GetHeldJumpRiseCells(float fullRiseCells)
+        {
+            float fullRise = Mathf.Max(.1f, fullRiseCells);
+            float tapRise = Mathf.Clamp(
+                jumpTapRiseCells,
+                .1f,
+                fullRise);
+            float tapWindow = Mathf.Max(0f, jumpTapWindowSeconds);
+            float fullHeightTime =
+                ResolveJumpFullHeightHoldSeconds();
+            float normalizedHold = Mathf.InverseLerp(
+                tapWindow,
+                fullHeightTime,
+                JumpHoldSeconds);
+            normalizedHold = Mathf.SmoothStep(
+                0f,
+                1f,
+                normalizedHold);
+            return Mathf.Lerp(
+                tapRise,
+                fullRise,
+                normalizedHold);
+        }
+
+        private float ResolveJumpFullHeightHoldSeconds()
+        {
+            return Mathf.Max(
+                Mathf.Max(0f, jumpTapWindowSeconds) + .01f,
+                jumpFullHeightHoldSeconds);
+        }
+
+        private void ApplyVariableJumpHeightControl(
+            ref Vector3 velocity)
+        {
+            if (!variableJumpActive)
+            {
+                return;
+            }
+
+            variableJumpTargetRiseCells =
+                GetHeldJumpRiseCells(
+                    variableJumpFullRiseCells);
+            if (!jumpHeld ||
+                velocity.y <= .01f)
+            {
+                variableJumpActive = false;
+                return;
+            }
+
+            float currentRise = Mathf.Max(
+                0f,
+                motor.position.y - variableJumpStartY);
+            bool holdRampComplete =
+                JumpHoldSeconds >=
+                ResolveJumpFullHeightHoldSeconds() - .0001f;
+            float apexTolerance =
+                Mathf.Max(.001f, gridCellWorldSize * .01f);
+            if (holdRampComplete &&
+                currentRise >=
+                variableJumpTargetRiseCells -
+                apexTolerance)
+            {
+                variableJumpActive = false;
+                return;
+            }
+
+            float remainingRise = Mathf.Max(
+                0f,
+                variableJumpTargetRiseCells - currentRise);
+            float gravity = GetVerticalGravity(true);
+            float desiredSpeed =
+                Mathf.Sqrt(
+                    2f *
+                    gravity *
+                    remainingRise) +
+                gravity *
+                Time.fixedDeltaTime;
+            if (velocity.y < desiredSpeed)
+            {
+                velocity.y = Mathf.MoveTowards(
+                    velocity.y,
+                    desiredSpeed,
+                    jumpHoldAcceleration *
+                    Time.fixedDeltaTime);
+            }
         }
 
         public void RefreshInteractionTarget()
@@ -2167,7 +2333,11 @@ namespace Project.Player
             }
             foreach (int id in expiredHorizontalVines) horizontalVines.Remove(id);
             if (!chosen.HasValue) { wrappedEdgeSource = null; return false; }
-            jumpUntil = groundedUntil = -1; jumpHeld = false; requestedBounceSpeed = -1; requestedJumpBoost = -1;
+            jumpUntil = groundedUntil = -1;
+            EndJumpHold();
+            CancelVariableJump();
+            requestedBounceSpeed = -1;
+            requestedJumpBoost = -1;
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
             if (blocked) return false;
             HorizontalVineSurface selected = chosen.Value;
@@ -2189,6 +2359,7 @@ namespace Project.Player
         {
             if (dead || respawnInProgress)
             {
+                CancelVariableJump();
                 motor.linearVelocity = Vector3.zero;
                 motor.angularVelocity = Vector3.zero;
                 return;
@@ -2196,6 +2367,7 @@ namespace Project.Player
 
             if (greenHookMotionSource != null)
             {
+                CancelVariableJump();
                 Vector3 hookVelocity = new Vector3(
                     greenHookVelocity.x,
                     greenHookVelocity.y,
@@ -2233,6 +2405,7 @@ namespace Project.Player
             if (IsGrounded) groundedUntil = Time.time + coyoteTime;
             if (IsGrounded)
             {
+                CancelVariableJump();
                 if (!wasGrounded)
                 {
                     lastAirTime = airborneSince >= 0f
@@ -2360,6 +2533,7 @@ namespace Project.Player
 
             if (IsClimbing)
             {
+                CancelVariableJump();
                 float climbMultiplier =
                     GetClimbSpeedMultiplier();
                 float horizontalTarget = blocked
@@ -2420,6 +2594,7 @@ namespace Project.Player
             }
             if (IsSwimming && Time.time >= environmentLaunchUntil)
             {
+                CancelVariableJump();
                 Vector2 externalVelocity = GetWaterVelocity();
                 float buoyancy = GetBuoyancy();
                 float horizontalTarget = blocked
@@ -2493,11 +2668,16 @@ namespace Project.Player
             velocity.z = 0;
             if (jumpRequested)
             {
+                float fullRiseCells = IsCarrying
+                    ? carryPlantJumpCells
+                    : jumpRiseCells;
                 float jumpVelocity =
-                    CalculateGridRiseSpeed(IsCarrying ? carryPlantJumpCells : jumpRiseCells) *
+                    CalculateGridRiseSpeed(fullRiseCells) *
                     NextJumpBounceService.ConsumeMultiplier();
+                bool hasExplicitJumpBoost =
+                    requestedJumpBoost >= 0f;
                 if (IsCarrying) carryPlantJumpCells = 0f;
-                if (requestedJumpBoost >= 0f)
+                if (hasExplicitJumpBoost)
                 {
                     jumpVelocity = Mathf.Max(
                         jumpVelocity,
@@ -2505,12 +2685,52 @@ namespace Project.Player
                     requestedJumpBoost = -1f;
                 }
 
+                float fullJumpRiseCells =
+                    CalculateVerticalRiseHeight(
+                        jumpVelocity,
+                        true) /
+                    Mathf.Max(.0001f, gridCellWorldSize);
+                float heldRiseCells = hasExplicitJumpBoost
+                    ? fullJumpRiseCells
+                    : GetHeldJumpRiseCells(
+                        fullJumpRiseCells);
+                bool startedHeld = jumpHeld;
+                float fullHoldSeconds =
+                    ResolveJumpFullHeightHoldSeconds();
+                float heldSecondsBeforeJump = Mathf.Clamp(
+                    JumpHoldSeconds,
+                    0f,
+                    fullHoldSeconds);
+                bool alreadyAtFullHold =
+                    heldSecondsBeforeJump >=
+                    fullHoldSeconds - .0001f;
+                float tapJumpVelocity =
+                    CalculateGridRiseSpeed(heldRiseCells);
+                if (!hasExplicitJumpBoost)
+                {
+                    jumpVelocity = alreadyAtFullHold
+                        ? CalculateGridRiseSpeed(
+                            fullJumpRiseCells)
+                        : tapJumpVelocity;
+                }
+
                 velocity.y = jumpVelocity;
+                variableJumpStartY = motor.position.y;
+                variableJumpTargetRiseCells = heldRiseCells;
+                variableJumpFullRiseCells = fullJumpRiseCells;
+                variableJumpActive =
+                    startedHeld &&
+                    !hasExplicitJumpBoost &&
+                    !alreadyAtFullHold &&
+                    fullJumpRiseCells >
+                    jumpTapRiseCells + .001f;
                 jumpUntil = groundedUntil = -1; IsGrounded = false;
                 airborneSince = Time.time;
                 Emit(AchievementSignalIds.PlayerJumped);
                 AudioCuePlayer.Play(AudioCueIds.PlayerJump);
             }
+
+            ApplyVariableJumpHeightControl(ref velocity);
 
             if (IsGrounded && velocity.y < 0f)
             {

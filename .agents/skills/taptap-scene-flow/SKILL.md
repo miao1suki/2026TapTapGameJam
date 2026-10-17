@@ -47,3 +47,10 @@ description: 2026TapTap 正式场景流程规范；修改启动、MainMenu、Gam
 - 不允许把 MainMenu 的 `GameFlowController` 挂到会随关卡卸载的 UI 子物体上。
 - 不允许在 Gaming 里重新放一套主菜单 UI。
 - 新增正式场景前先征得用户确认，并同步修改本 skill；未确认前只作为开发测试场景。
+
+## Boss 入场 Timeline 硬约束
+
+- Boss 入场中的每一个 `BossTimelineClip` 只能操作 Boss 做一件事：发呆、移动、跳跃、设置运动开关或死亡。
+- 一个 Boss Clip 禁止同时承担移动、跳跃、状态开关、死亡等多个操作；需要多个动作时必须新增多条 `BossTimelineTrack`，按时间堆叠。
+- Boss 入场相机轨只允许 2D 运镜：保持正交 `Side2D`，只允许 2D 平移、缩放、停留和平面转向；不得申请透视 3D、三维环绕或自由 3D 机位。
+- 修改 Boss 入场 Timeline 前必须检查当前 Clip 是否违反“一 Clip 一操作”，并在交付时说明使用的 Track 堆叠关系。
