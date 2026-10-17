@@ -21,7 +21,11 @@
 
 窗口读入/成功保存后调用 `ObserveSceneCopy` 记录共享文件哈希；`VerifySceneCopy` 在覆盖或生成前检查外部更新，冲突时将本地数据备份到 Library/PlanningConflicts 并拒绝覆盖。禁止绕过此检查从失效的窗口写回。未保存场景的应用文档按 scene handle 暂存，首次保存后导出，关闭场景清理暂存。
 
+自动同步的 `BindingMemory` 记录 `(PlanningBoxId, Cell)` 和采集时持久化文档的 `documentHash`。只有同一文档版本的会话记录才可用于推断关窗期间的手动删除；重导入/外部更新/旧版无哈希缓存一律重新建基线，不能把坐标变化或合并重新分块当作删除。保存记录时使用采集版本，而非尚未应用的新草稿。开窗期间发现 Unity 对象引用失效，先按稳定 ID+格重新查找当前生成实例，排除单纯的实例重建后才删除规划项；无失效引用时不做额外全场景扫描。自动同步开关保持原值，真实删除仍可同步并使用规划撤回恢复。
+
 ## 移动与水层
+
+`PlanningCanvas.Interaction` 在画布拥有拖拽指针捕获期间使用 UI Toolkit 定时器做边缘平移；越界指针按最近边界限速，不能在 PointerLeave 时终止仍被捕获的手势。平移量同时补偿 dragStart/movingBoxStart，保留世界起点；仅更新视图和拖拽预览，完成时仍走原单次历史事务。释放、取消、失焦/丢捕获和卸载窗口均停止，未拖拽的普通悬停不会滚动。
 
 `TryMove` 保留房间物体/出生点局部位置，并移动所选所有者的全局装配补丁。跨选区的完整补丁拒绝移动；`Reanchor` 递归同步 mergeParts。数据移动失败必须保持原图。
 
@@ -43,3 +47,7 @@
 隔离项目执行 `PlanningEditorPrototype.PlanningCollaborationVerification.Run`。入口限制项目路径含 `FlowRetirementProbe`，测试会生成独立 Scene，不在主工作区执行。覆盖深拷贝、重复导入、ID/绑定、边界与冲突拒绝、合并原始片、整房间移动、磁盘原子保存、真实 prefab 的水/物品同格生成与增量保留、分别擦除、Scene 配对保存。交互窗口人工拖拽和多人真实 Git 往返仍需验收。
 
 补充专项 `FragmentSafetyAudit.Run` 检查旧比例冲突、栏目 ID 迁移、缺失/场景引用拒绝、深层快照绑定、非矩形孔洞和跨所有者装配重叠；`EditorInteractionAudit.Run` 使用附着的真实 UI Toolkit 窗口测试拖放、捕获丢失、四向边缘平移、视图高亮及明确的导入/区域导出入口。均仅在隔离工程执行。
+
+`PlanningEdgePanAudit.Run` 使用真实附着窗口的定时回调验证静止边缘持续平移、四向跨界、三视图拖拽、绘制/区域框选、世界起点补偿、单次事务以及释放/取消/丢捕获停止；不以直接调用 TickEdgePan 代替持续滚动验证。仅在隔离工程执行。
+
+`PlanningAutoSyncAudit.Run` 依赖隔离工程内完整 MRoom2 第二版；可用 `Library/PlanningAutoSyncPrevious.json`（第一版仅作为过期会话夹具）重现现场，无此本机文件则生成合成旧版本。使用附着的真实窗口和 Editor 更新循环覆盖旧缓存开窗、重复应用/重开、无版本缓存、外部生成实例替换，以及开窗/关窗期间真正删除与撤回；结束时还原夹具 Scene/规划文件，不在主工程执行。

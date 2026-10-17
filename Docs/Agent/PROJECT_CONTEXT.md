@@ -3,9 +3,10 @@
 项目：2026TapTap；远程：`https://github.com/miao1suki/2026TapTapGameJam.git`。
 Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未导入旧项目设置。
 
-场景美术统一16个有效美术像素对应1格。编码尺寸需扣除已验证的导出倍率（tail为4倍），不拉伸以迁就碰撞；24像素玩家外观为1.5格而物理仍1格。修改物体、关卡预览、贴花或背景前读 [美术换算约定](../Developer/ART_GRID_CONVENTIONS.md) 和 [工作台换算](../Developer/SCENE_ART_PIXEL_CONVERSION.md)。基座默认有重力，可实例关闭；MRoom2两基座保持无重力。新增颜色装饰仅归属颜色层，不是可交互颜色物体，不能授予能力或参与房间玩法重置。
+场景美术统一16个有效美术像素对应1格。编码尺寸需扣除已验证的导出倍率（tail为4倍），不拉伸以迁就碰撞；24像素玩家外观为1.5格而物理仍1格。修改物体、关卡预览、贴花或背景前读 [美术换算约定](../Developer/ART_GRID_CONVENTIONS.md) 和 [工作台换算](../Developer/SCENE_ART_PIXEL_CONVERSION.md)。基座默认有重力，可实例关闭；MRoom2第二版三基座保持无重力。新增颜色装饰仅归属颜色层，不是可交互颜色物体，不能授予能力或参与房间玩法重置。
 
 当前是一份从旧项目筛选而来的基础框架，不是旧游戏整体复制。
+关卡自动同步的删除会话缓存必须与采集时文档版本绑定；重导入或共享存档更新不能沿用旧版ID/格推断删除。生成实例重建先重新识别，避免墙、水和机关引用再次误删。MRoom2第二版已从完整副本恢复；打开旧内存场景时先重新加载，不保存覆盖。详见 `Integration/PLANNING_COLLABORATION_API.md`。
 正式关卡已采用策划分支 `codex/formal-level-progress` 的 `a86fc5a` 交付（10房间）：`Scenes/Playing/Gaming.unity`、同名 `Gaming.planning.json` 与 `Content/LevelMaps/正式关卡.json` 成套维护（均在 `Assets/_Project` 下）。物体、位置、实例参数和绑定以策划版为准，运行时和工具修复保留整合窗口最新版。Gaming 是正式打包游玩场景，不是临时测试关卡；后续正式关卡变动在此基线上继续。旧 Gaming 使用者必须先同步新版场景和两份存档，不可用旧版覆盖；仅当前整合窗口合并 main，其他成员只拉取和推送任务分支。完整约定见 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
 当前唯一标准玩家为 `Assets/_Project/Content/Player/Player.prefab`（1×1、中心归零），各场景共用；旧RuntimePlayer/Player(暂定)已退役。同色第一把钥匙只解锁场景物体，第二把授予玩家颜色能力，两种状态独立、房间重置保留。接入必读 `Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md`。
 保留：启动与多场景生命周期、场景导航、基础玩家控制、输入与重绑定、双端 UI 预设、相机 Manager/跟随/模式转换、成就、Timeline 演出/战斗、表面瓦片工具、方块功能组件契约、不规则精灵切片。

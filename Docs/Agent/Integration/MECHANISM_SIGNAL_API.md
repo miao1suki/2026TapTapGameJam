@@ -8,7 +8,9 @@
 
 `ContactCube` 固定身份，红块实现 `IEnergySource`；`MechanismBaseFeature` 查询相邻能源并输出 `IMechanismSignalSource`，无能源独占绑定。不要改写旧能源的运动控制或直接写玩家坐标。
 
-`MovingPlatformFeature.BindBase(MechanismBaseFeature)` 将驱动改为 SignalControlled，替换信号来源并安全重新订阅；传 null 解绑并停止。`IsMoving`、`PreviewStart/PreviewEnd`、`LinkedControls` 只读。既有 Any/All 信号组合仍可用，默认编辑器快捷绑定仅一个基座。
+`MovingPlatformFeature.BindBase(MechanismBaseFeature)` 将驱动改为 SignalControlled，替换信号来源并安全重新订阅；传 null 解绑，按所选模式原地停止或回原位。`IsMoving`、`PreviewStart/PreviewEnd`、`LinkedControls` 只读。既有 Any/All 信号组合仍可用，默认编辑器快捷绑定仅一个基座。
+
+`signalMotion`独立于路线几何：`MovingPlatformSignalMotion.PoweredPingPong=0`兼容旧存档（充能往返、断电停留），`PoweredEndpoint=1`充能至`Path.FirstEnd`并保持、断电回作者origin。仅SignalControlled生效，曲柄/自动不受影响。每次目标改变从当前格空间位置建立新缓动段，按剩余路程比例计时，复用既有扫掠检测与QueuePlatformDelta承载；遇实体阻挡不累计进度，清除后重试，不反向。该模式忽略端点停留，反复切换/Reset不瞬移，参数经通用组件覆盖持久保存，不增加规划版本。`SignalMotion`只读；解绑无信号时终点模式同样执行回原位，旧模式才原地停止。
 
 移动路线通过 `MovingPlatformPath.Resolve` 共用格空间计算。`pathMode=Legacy(0)`保留正数`travelBlocks`、`route`和`reverseRoute`（false右/上，true左/下）；旧序列化缺字段时仍为0，不自动迁移。Right/Left/Up/Down(1～4)从作者位置到对应`rightDistance/leftDistance/upDistance/downDistance`；HorizontalRange/VerticalRange(5～6)使用双侧距离、`centerOffset`和`startNegative`。偏移沿路线正轴，以作者位置为基准，限制在[-正向距离,负向距离]内，保证作者位置在区间。负值距离按0；双侧均0静止。距离均以既有格尺寸换算，不受合并物体自身拉伸影响。
 

@@ -42,5 +42,44 @@ namespace Project.GameFlow.Tests
             Assert.That(policy, Does.Not.Contain("<script"));
             Assert.That(policy, Does.Not.Contain("<iframe"));
         }
+
+        [Test] public void ConsentChoicesHaveOnlyTheRequestedLabels()
+        {
+            string native = File.ReadAllText("Assets/Plugins/Android/PrivacyGate.androidlib/src/com/miao1suki/shapeofcolor/privacy/PrivacyActivity.java");
+            Assert.That(native, Does.Contain("Button decline = button(\"不同意\")"));
+            Assert.That(native, Does.Contain("Button agree = button(\"同意\")"));
+            Assert.That(native, Does.Not.Contain("button(\"不同意并退出\")"));
+            Assert.That(native, Does.Not.Contain("button(\"同意并进入游戏\")"));
+            Assert.That(native, Does.Contain("agree.setEnabled(loaded)"));
+            Assert.That(native, Does.Contain("if (PrivacyConsent.accept(this)) enterGame()"));
+        }
+
+        [Test] public void PolicyWebsiteIsFixedHttpsAndOnlyUsesExternalBrowser()
+        {
+            string source = File.ReadAllText("Assets/Plugins/Android/PrivacyGate.androidlib/src/com/miao1suki/shapeofcolor/privacy/PrivacyConsent.java");
+            Assert.That(source, Does.Contain("POLICY_URL = \"https://meowgame.cloud/shape-of-color/privacy/\""));
+            Assert.That(source, Does.Contain("new Intent(Intent.ACTION_VIEW, Uri.parse(POLICY_URL))"));
+            Assert.That(source, Does.Contain("Intent.CATEGORY_BROWSABLE"));
+            Assert.That(source, Does.Not.Contain("android.webkit"));
+            Assert.That(source, Does.Not.Contain("java.net"));
+            Assert.That(source, Does.Not.Contain("getStringExtra"));
+            Assert.That(source, Does.Contain("ActivityNotFoundException | SecurityException"));
+            var manifest = XDocument.Load("Assets/Plugins/Android/PrivacyGate.androidlib/AndroidManifest.xml");
+            Assert.That(manifest.Descendants("uses-permission").Any(), Is.False);
+        }
+
+        [Test] public void BrowsingIsExplicitDoesNotGrantConsentAndRestorationDoesNotReopen()
+        {
+            string root = "Assets/Plugins/Android/PrivacyGate.androidlib/src/com/miao1suki/shapeofcolor/privacy/";
+            string native = File.ReadAllText(root + "PrivacyActivity.java");
+            Assert.That(native, Does.Contain("website.setOnClickListener(view -> PrivacyConsent.openPolicyWebsite(this))"));
+            Assert.That(native, Does.Contain("review && state == null && getIntent().getBooleanExtra(PrivacyConsent.OPEN_POLICY_WEBSITE, false)"));
+            string consent = File.ReadAllText(root + "PrivacyConsent.java");
+            string browser = consent.Substring(consent.IndexOf("static void openPolicyWebsite("));
+            browser = browser.Substring(0, browser.IndexOf("public static void withdrawConsentAndExit"));
+            Assert.That(browser, Does.Not.Contain("accept("));
+            Assert.That(browser, Does.Not.Contain("enterGame("));
+            Assert.That(consent, Does.Contain("gate(activity, true).putExtra(OPEN_POLICY_WEBSITE, true)"));
+        }
     }
 }

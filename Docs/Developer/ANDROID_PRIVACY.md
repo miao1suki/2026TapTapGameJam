@@ -2,17 +2,18 @@
 
 ## 玩家流程
 
-安卓首次安装、清除应用数据或内置政策正文变更后，先显示原生隐私页面。页面包含完整离线正文和同意/不同意按钮，不提供在线入口或可点击外链。未同意不启动 Unity；不同意或返回退出。已同意且正文版本未变时正常进入游戏。
+安卓首次安装、清除应用数据或内置政策正文变更后，先显示原生隐私页面。页面包含完整离线正文和仅标为“同意”/“不同意”的按钮，另有主动点击的“查看《形之彩隐私政策》网页版”。未同意不启动 Unity；不同意或返回退出。打开或关闭网页均不代表同意。已同意且正文版本未变时正常进入游戏。
 
-开始菜单与暂停菜单的设置均提供“隐私政策”。安卓可阅读政策及撤回同意；撤回会停止游戏，下次启动重新授权。桌面端在游戏内离线阅读同一正文，不增加强制启动弹窗。
+开始菜单与暂停菜单的设置均提供“隐私政策”。安卓点击后打开系统浏览器中的固定政策页，返回后仍保留原生离线全文、返回游戏与撤回授权入口；系统恢复原生页不反复打开浏览器。没有浏览器时提示并保留离线阅读。撤回会停止游戏，下次启动重新授权。桌面端在游戏内离线阅读同一正文，不增加强制启动弹窗。
 
 ## 政策来源
 
-- 在线政策：https://www.taptap.cn/app/976206/common-privacy
+- 自建在线政策：https://meowgame.cloud/shape-of-color/privacy/ ，页底备案号与网站主页一致：豫ICP备2026018798号。
+- 既有正文来源：https://www.taptap.cn/app/976206/common-privacy 。本轮仅更换载体/样式，不改写条款。
 - 唯一正文源：`Assets/_Project/Resources/Privacy/privacy-policy.txt`，内容为既有 HTML，来自上述游戏自己的政策页，不是 TapTap 平台通用隐私政策。Android 构建时复制为生成工程 androidlib 的 `assets/privacy-policy.html`；PC 从 Resources 离线加载。不要维护两份正文。
 - 同意版本为离线正文的 SHA-256，保存在应用不参与备份的私有目录；正文更新自动要求重新同意。更新在线政策时必须同步更新离线正文。
 
-TapTap [公开上架指南](https://developer.taptap.cn/docs/store/release/policy/policy-guide/)要求政策可访问、内外一致、与实际行为及主体一致，禁止使用论坛帖作为政策载体；未发现要求把游戏自身的 common-privacy 页改为自建网站。此前飞书文档当前无法完整读取，因此不能据此确认其中是否还有额外要求。当前未新建 GitHub Pages。
+网站由 `Ops/PrivacyPolicy/build-site.mjs` 从唯一正文源生成，只增加响应式样式与备案页脚；`node --test Ops/PrivacyPolicy/build-site.test.mjs` 检查正文逐字一致。模板不含脚本、统计、外部字体/图片、登录、导航或其他内容；部署到现有 Nginx 静态目录，不改主页和其他服务。生成/更新及正文一致性维护见 `Ops/PrivacyPolicy/README.md`。没有新建 GitHub Pages。
 
 政策现有注册、实名认证、TapSDK 等条款来自原文；发布前需要负责人按实际 SDK/数据处理行为核对，不能把技术入口完成视为合规认证。本次未改写这些法律事实，也未接入 TapSDK。
 
@@ -20,7 +21,7 @@ TapTap [公开上架指南](https://developer.taptap.cn/docs/store/release/polic
 
 - 最低 Android 7.1 / API 25 不变，Unity 6000.3.12f1 不变。
 - Android Application Entry 使用传统 Activity，替代 GameActivity，以接入 UnityPlayerActivity 前置授权。
-- `PrivacyActivity` 是独立 `:privacy` 进程中的唯一桌面入口，不引用 Unity、WebView 或网络 SDK；正文离线显示，移除 URLSpan，不调用浏览器。
+- `PrivacyActivity` 是独立 `:privacy` 进程中的唯一桌面入口，不引用 Unity、WebView 或网络 SDK；正文仍离线显示并移除原文 URLSpan，只通过受控点击调用 `PrivacyConsent.openPolicyWebsite` 打开固定 HTTPS 系统浏览器页面。设置查看以显式 Intent 标志发起，恢复状态不重开。浏览不会保存授权或启动 Unity。
 - `PrivacyApplication.attachBaseContext` 在主进程组件初始化前验证同意记录，拦截系统直接恢复 Unity 活动的路径；无有效同意则打开原生入口并停止该主进程。不是只依赖桌面启动按钮。
 - 构建钩子关闭 Unity 活动的导出和 Launcher，阻止未审计的自动初始化 Provider，复制现有 Cubic_11 原始字体到生成的 Android 工程，不在仓库额外复制字体。
 - 新增 SDK、Application、其他进程、Activity/Provider 或入口变更，都必须重新审计。不要在隐私进程初始化 SDK，不要使用 Unity 内弹窗替代前置授权。

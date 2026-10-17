@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="light">
+  <meta name="privacy-policy-sha256" content="{{POLICY_SHA256}}">
+  <link rel="canonical" href="{{POLICY_URL}}">
+  <link rel="icon" href="data:,">
+  <title>形之彩隐私政策</title>
+  <style>
+    :root { color-scheme: light; --ink: #25332f; --muted: #56635d; --accent: #226b58; --line: #dde5df; }
+    * { box-sizing: border-box; }
+    html { background: #f2f5f1; -webkit-text-size-adjust: 100%; }
+    body { margin: 0; color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 16px; line-height: 1.95; overflow-wrap: anywhere; }
+    main { width: min(900px, calc(100% - 48px)); margin: 56px auto 0; padding: 52px 64px 44px; border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 6px; background: #fff; box-shadow: 0 12px 45px #25332f08; }
+    h1 { margin: 0 0 28px; padding: 0 0 24px; border-bottom: 1px solid var(--line); font-size: clamp(25px, 4.4vw, 34px); font-weight: 700; letter-spacing: .04em; line-height: 1.5; color: #163c31; }
+    h2 { margin: 40px 0 16px; padding-left: 14px; border-left: 3px solid var(--accent); font-size: 21px; font-weight: 650; line-height: 1.65; color: #163c31; }
+    h3 { margin: 25px 0 10px; font-size: 17px; line-height: 1.75; }
+    p { margin: 12px 0; }
+    strong { font-weight: 650; }
+    ol, ul { padding-left: 1.65em; }
+    li { margin: 9px 0; padding-left: .2em; }
+    a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 4px; }
+    a:hover { color: #103f31; }
+    a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+    .table-container { width: 100%; overflow-x: auto; margin: 20px 0; border: 1px solid var(--line); border-radius: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.8; }
+    th, td { min-width: 100px; padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); }
+    th { background: #eef4ef; color: #254b3d; font-weight: 650; }
+    td:last-child, th:last-child { border-right: 0; }
+    tbody tr:last-child td { border-bottom: 0; }
+    footer { padding: 24px 20px max(28px, env(safe-area-inset-bottom)); text-align: center; color: var(--muted); font-size: 13px; }
+    footer a { color: inherit; text-decoration: none; display: inline-block; padding: 8px; }
+    footer a:hover { text-decoration: underline; }
+    @media (max-width: 600px) {
+      body { font-size: 16px; line-height: 1.9; }
+      main { width: calc(100% - 24px); margin-top: 16px; padding: 28px 20px; }
+      h1 { margin-bottom: 22px; padding-bottom: 20px; letter-spacing: .02em; }
+      h2 { margin-top: 32px; font-size: 19px; padding-left: 11px; }
+      h3 { font-size: 16px; }
+      th, td { padding: 10px; }
+    }
+    @media print {
+      html { background: #fff; }
+      main { width: 100%; margin: 0; padding: 0; border: 0; box-shadow: none; }
+      h2, h3 { break-after: avoid; }
+      .table-container { overflow: visible; }
+      footer { padding-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main aria-label="隐私政策正文">
+<!-- privacy-policy:start -->{{POLICY_HTML}}<!-- privacy-policy:end -->
+  </main>
+  <footer><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">豫ICP备2026018798号</a></footer>
+</body>
+</html>

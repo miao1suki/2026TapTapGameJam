@@ -1,9 +1,12 @@
 package com.miao1suki.shapeofcolor.privacy;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.util.AtomicFile;
+import android.widget.Toast;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -13,6 +16,8 @@ import java.security.MessageDigest;
 
 /** No Unity, analytics, WebView, network, device identifiers or permission requests. */
 public final class PrivacyConsent {
+    public static final String POLICY_URL = "https://meowgame.cloud/shape-of-color/privacy/";
+    static final String OPEN_POLICY_WEBSITE = "open_policy_website";
     private static String version;
     private PrivacyConsent() {}
 
@@ -77,7 +82,20 @@ public final class PrivacyConsent {
             .putExtra("review", review).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
     }
 
-    public static void showPolicy(Activity activity) { activity.startActivity(gate(activity, true)); }
+    public static void showPolicy(Activity activity) {
+        // Only reached after the player explicitly selects Privacy Policy in settings.
+        // Keep the native review/withdraw page underneath the external browser.
+        activity.startActivity(gate(activity, true).putExtra(OPEN_POLICY_WEBSITE, true));
+    }
+
+    static void openPolicyWebsite(Activity activity) {
+        try {
+            activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(POLICY_URL))
+                .addCategory(Intent.CATEGORY_BROWSABLE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } catch (ActivityNotFoundException | SecurityException error) {
+            Toast.makeText(activity, "无法打开系统浏览器，请阅读本页离线隐私政策", Toast.LENGTH_LONG).show();
+        }
+    }
 
     public static void withdrawConsentAndExit(Activity activity) {
         record(activity).delete();

@@ -2838,7 +2838,7 @@ namespace Project.Player
                     ~0,
                     QueryTriggerInteraction.Ignore) ||
                 hit.collider == null ||
-                hit.collider.transform.root == transform.root)
+                hit.collider.transform.IsChildOf(transform))
             {
                 return false;
             }
@@ -2865,12 +2865,14 @@ namespace Project.Player
             {
                 Collider hit = respawnOverlapBuffer[index];
                 if (hit == null ||
-                    hit.transform.root == transform.root)
+                    hit.transform.IsChildOf(transform))
                 {
                     continue;
                 }
 
-                if (hit.GetComponentInParent<LavaHazardFeature>() != null)
+                if (hit.GetComponentInParent<LavaHazardFeature>() != null ||
+                    hit.GetComponentInParent<Project.WorldItems.NeutralSpike>() != null ||
+                    hit.GetComponentInParent<SpikeFeature>() != null)
                 {
                     return false;
                 }

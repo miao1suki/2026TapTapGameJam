@@ -48,7 +48,7 @@ namespace Project.GameFlow.Tests
             Assert.That(app.Elements("meta-data").Count(), Is.EqualTo(1));
         }
 
-        [Test] public void LocalPolicyContainsFullTextWithoutInteractiveHtml()
+        [Test] public void LocalPolicyRetainsFullTextAndOnlyExplicitFixedWebsiteIsAllowed()
         {
             var policy = Resources.Load<TextAsset>("Privacy/privacy-policy");
             Assert.IsNotNull(policy);
@@ -63,6 +63,11 @@ namespace Project.GameFlow.Tests
             Assert.That(native, Does.Not.Contain("LinkMovementMethod"));
             Assert.That(native, Does.Contain("text.removeSpan(link)"));
             Assert.That(File.ReadAllText("Assets/_Project/Code/Shared/Runtime/AndroidPrivacyPolicy.cs"), Does.Not.Contain("Application.OpenURL"));
+            string consent = File.ReadAllText("Assets/Plugins/Android/PrivacyGate.androidlib/src/com/miao1suki/shapeofcolor/privacy/PrivacyConsent.java");
+            Assert.That(consent, Does.Contain("Intent.ACTION_VIEW, Uri.parse(POLICY_URL)"));
+            Assert.That(consent, Does.Contain("POLICY_URL = \"https://meowgame.cloud/shape-of-color/privacy/\""));
+            Assert.That(consent, Does.Not.Contain("android.webkit"));
+            Assert.That(consent, Does.Not.Contain("java.net"));
         }
     }
 }

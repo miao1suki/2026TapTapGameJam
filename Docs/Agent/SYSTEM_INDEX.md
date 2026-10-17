@@ -2,13 +2,15 @@
 
 植物障碍：同房间上下左右真实接触连通燃烧，斜角/孔洞不连通；一次组燃烧一次音效，沿用R/死亡/离区复原。见 [玩法说明](../Developer/GAMEPLAY_REFINEMENTS.md#植物障碍连通燃烧)。主菜单已接新OP `bmg_op`，Gaming保留atmosphere；Boss曲通过`AudioCueIds.MusicBoss`显式调用，见 [音频交接](Integration/AUDIO_HANDOVER.md)。
 
-平台路线：支持从布置位置四向单程往返、以可偏移中心设置左右/上下不等距范围和首次方向；规划/Scene预览与运动共用MovingPlatformPath，兼容旧反向路线。长虚线先裁剪视口。见 [机关API](Integration/MECHANISM_SIGNAL_API.md)、[配置说明](../Developer/MECHANISMS_AND_JUMP.md#移动路线与中心)。
+平台路线：支持四向、双侧独立范围/中心及首程方向，预览/运行共用MovingPlatformPath。信号驱动可选充能往返断电停留（旧默认），或充能至首程端点并保持、断电返回作者位置；遇障等待后续恢复，曲柄进度逻辑不变。长虚线先裁剪视口。见 [机关API](Integration/MECHANISM_SIGNAL_API.md)、[配置说明](../Developer/MECHANISMS_AND_JUMP.md#移动路线与中心)。
 
 关卡/美术适配：16有效像素/格、正式2D预览、左右靠墙梯、基座重力及新图用途见 [ART_GRID_REFINEMENT_API](Integration/ART_GRID_REFINEMENT_API.md)。工作台静态三色装饰按颜色目录Layer分批，初始褪色、场景颜色解锁后恢复；不要误当动画或加ColorObject。告示牌复用字幕激发道具。片段导入/区域导出入口在关卡编辑器右侧三视图按钮下方。
 
 正式打包关卡：`Assets/_Project/Scenes/Playing/Gaming.unity`，配套同名规划文件及 `Assets/_Project/Content/LevelMaps/正式关卡.json`；采用策划 `a86fc5a` 的10房间基线，物体/位置/实例参数/绑定以策划版为准，代码与工具修复保留整合最新版。旧 Gaming 使用者先同步新版，不用旧场景/缓存覆盖；其他成员仅拉取和推送分支，由当前整合窗口合并 main。必读 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
 
-命名MVMap独立导入图：`Assets/Scenes/MRoom2.unity` + 同名planning存档/原始mvmap文件。保留命名物体和占格、侧梯、三重生点及基座/曲柄绑定的四平台；最长路线补齐植物占格，反向路线从作者位置向左。正面/侧面梯子默认1×1，长梯按作者格数平铺，旧两格兼容保留。默认锁色、单测试区域，不替代Gaming或加入构建。见 [地图说明](../Developer/MROOM2_IMPORT.md)、[导入API](Integration/MVMAP_OBJECT_IMPORT_API.md)。
+命名MVMap独立导入图：`Assets/Scenes/MRoom2.unity` + 同名planning存档/原始mvmap文件。第二版24分类完整重导入，六平台、三基座、两曲柄、三门七保持按钮及六重生点；四个基座消费者使用断电回位，托红块平台与左竖平台共用基座。路线补齐网页占格缺口，左下平台补4格水，两排尖刺均朝上，侧梯按邻墙选左右。保留Scene/meta、默认锁色、单测试区域，不替代Gaming或加入构建。见 [地图说明](../Developer/MROOM2_IMPORT.md)、[导入API](Integration/MVMAP_OBJECT_IMPORT_API.md)。
+
+自动同步删除记忆已按规划文档版本隔离；重导入/队友更新不能沿用旧版 `(ID,格)` 推断删除，实例重建先重新查找。MRoom2开窗误删已从完整第二版成套恢复（188项、456墙格、61水格）；仅重新加载Scene/重开窗口，不能保存旧内存覆盖。专项 `PlanningAutoSyncAudit` 和链路说明见 [协作API](Integration/PLANNING_COLLABORATION_API.md)。
 
 开发者复活方式：标准玩家默认常规，可用 `PlayerController.ConfigureRespawn(LoadingTransition, seconds)` 切换慢速收黑/加载背景/原路退场，沿用既有区域及重生点恢复，不换场景、不清进度；支持Inspector调试、重复请求和中断清理。见 [接入API](Integration/PLAYER_RESPAWN_API.md)、[复活表现](../Developer/PLAYER_RESPAWN.md)。
 
@@ -20,7 +22,11 @@
 
 编辑器远景：关卡画布与美术工作台共用有线数预算的自适应参考网格，实际1格命中和存档不变；房间/通道缓存精确矩形覆盖及孔洞轮廓，装配物体复用房间原点；美术瓦片使用保序的缓存批次，平移/缩放不逐瓦片重写顶点。接入维护见 [GRID_ART_API](Integration/GRID_ART_API.md)。
 
+画布边缘拖拽：世界/详情/装配共用定时自动平移，静止按住和拖过边界仍持续，释放/取消/失焦即停止；补偿抓取起点、不增加中间保存事务。使用与接入见 [关卡协作](Integration/PLANNING_COLLABORATION_API.md)，专项验证为 PlanningEdgePanAudit。
+
 绿钩子最新规则：自由指针瞄准，与红蓝共用出线点，确认命中才接管玩家。红蓝接触方块/基座每物理步四向优先拉物，受阻转拉玩家并重评估；绿色接触方块/生长体、藤蔓、弹性植物为保留动量的荡绳锚点，连接中直接点击切换挂点。成功挂接不自动脱钩，现有跳跃/交互主动结束。见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。无色收集品与四向尖刺已加入道具栏目，见 [使用说明](../Developer/WORLD_ITEMS.md)、[接入](Integration/WORLD_ITEMS_API.md)。
+
+无色尖刺接触链（2026-10-17）：NeutralSpike + 子碰撞体 SpikeContactRelay，按合并实际占格生成方向触发区，保留空洞并支持房间重置；统一玩家死亡/复活保护，重生安全查询排除尖刺且不误跳过同地图地面。真实物理回归 HazardContactAudit 仅在静音隔离工程运行，见 WORLD_ITEMS_API。
 
 关卡协作：共享项目存档、Scene 同名规划文件、片段追加导入/区域导出、水与物品同格分层、整房间内容移动。使用 [LEVEL_EDITOR_COLLABORATION.md](../Developer/LEVEL_EDITOR_COLLABORATION.md)，接入 [PLANNING_COLLABORATION_API.md](Integration/PLANNING_COLLABORATION_API.md)。
 
@@ -30,7 +36,7 @@
 
 正式水族已替换为TA像素水面/水中/水下自动分区与透明折射板；定向水流四向气泡、浮力柱向上连通水域气泡，继续共享蓝色HSV/透明交接与原玩法/区域重置。无需重建场景。见 [玩法水体API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[使用说明](../Developer/GAMEPLAY_PIXEL_WATER.md)。旧独立波纹水保留作资源和后备路径，不再默认生成。
 
-Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全文、设置查看与撤回，无在线入口；最低 Android 7.1 不变，不启用 Bootstrap。见 [开发说明](../Developer/ANDROID_PRIVACY.md) 与 [接入 API](Integration/ANDROID_PRIVACY_API.md)。比赛版本禁止非 TapTap SDK 联网，当前无 TapTap SDK，完全离线构建；必须阅读 [离线规则](../Developer/OFFLINE_BUILD.md)，不得使用开发构建或恢复网络权限。
+Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全文、设置查看与撤回；同意/不同意严格短文案。仅主动点击时系统浏览器打开 https://meowgame.cloud/shape-of-color/privacy/ ，网页版从唯一正文源生成，只有政策与主页相同的ICP备案；最低 Android 7.1 不变，不启用 Bootstrap。见 [开发说明](../Developer/ANDROID_PRIVACY.md) 与 [接入 API](Integration/ANDROID_PRIVACY_API.md)。用户只允许这一网页例外，游戏仍禁止非 TapTap SDK 联网，不增加 INTERNET，不使用 WebView；必须阅读 [离线规则](../Developer/OFFLINE_BUILD.md)，不得使用开发构建或恢复网络权限。
 
 物体美术新增 `MechanismArtworkPresentation`：门及按钮三色提示、曲柄进度正反帧、移动平台、三色接触方块/钥匙、梯子及静态岩浆；沿用原碰撞、格尺寸与集中颜色表现。安卓暂停只反转触摸上下滑动，不改变键鼠手柄。见 [物体美术](../Developer/OBJECT_ARTWORK.md) 与 [接入API](Integration/OBJECT_ARTWORK_API.md)。
 

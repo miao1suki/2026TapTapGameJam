@@ -57,6 +57,7 @@ public static class MovingPlatformRouteAudit
                 for (int negative = 0; negative < 2; negative++)
                     Verify((MovingPlatformPathMode)mode, negative == 1);
             VerifyCenterLimits(); VerifySignalAndCrank(); VerifyPlanningPersistence(); VerifyGridAndBlocking();
+            VerifyPoweredEndpoint();
             Finish(true, "PASS " + checks + " platform route assertions");
         }
         catch (Exception error) { Finish(false, error.ToString()); }
@@ -196,6 +197,71 @@ public static class MovingPlatformRouteAudit
         a = new Vector2(-100, -200); b = new Vector2(1000, -200);
         Check(!PlanningPlatformPathUtility.ClipLine(new Rect(0, 0, 800, 600), ref a, ref b), "offscreen route performs no dash loop");
         Object.DestroyImmediate(p.gameObject);
+    }
+    private static void VerifyPoweredEndpoint()
+    {
+        var source = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/_Project/Content/ColorBlocks/Prefabs/Red_Crank.prefab"), new Vector3(900, 200), Quaternion.identity)
+            .GetComponent<CrankPlatformFeature>();
+        foreach (var mode in new[] { MovingPlatformPathMode.Right, MovingPlatformPathMode.Left,
+            MovingPlatformPathMode.Up, MovingPlatformPathMode.Down, MovingPlatformPathMode.HorizontalRange, MovingPlatformPathMode.VerticalRange })
+        {
+            Vector3 origin = new Vector3(800, 200, 0);
+            var p = Spawn(origin); Configure(p, mode, true);
+            var value = new LevelEditorComponentValueOverride();
+            value.Configure("", typeof(MovingPlatformFeature).FullName, 0, "signalMotion", "Enum", "1", null);
+            var loaded = PlanningBox.FromPersistentJson(JsonUtility.ToJson(new PlanningBox
+                { hasComponentOverrides = true, componentOverrides = new List<LevelEditorComponentValueOverride> { value } }.PersistentClone()));
+            LevelEditorComponentOverrideUtility.ApplyOverrides(p.gameObject, loaded.componentOverrides, false);
+            Check(p.SignalMotion == MovingPlatformSignalMotion.PoweredEndpoint, "signal mode survives planning serialization");
+            using (var s = new SerializedObject(p))
+            {
+                s.FindProperty("driveMode").intValue = 1;
+                s.FindProperty("linkedControls").arraySize = 1;
+                s.FindProperty("linkedControls").GetArrayElementAtIndex(0).objectReferenceValue = source;
+                s.FindProperty("holdAtEnds").floatValue = 10;
+                s.ApplyModifiedPropertiesWithoutUndo();
+            }
+            source.SetSignal(false, null); p.ResetForRoom(); Step(p, 70);
+            Near(p.transform.position, origin, "unpowered endpoint mode stays at author position");
+            source.SetSignal(true, null); Step(p, 150);
+            Vector3 end = origin + (Vector3)p.Path.Axis * p.Path.FirstEnd;
+            Near(p.transform.position, end, "powered reaches configured first endpoint: " + mode);
+            Check(!p.IsMoving, "endpoint stops without ping-pong");
+            Step(p, 100); Near(p.transform.position, end, "holds endpoint indefinitely");
+            source.SetSignal(false, null); Step(p, 5);
+            Check(p.IsMoving && Vector3.Distance(p.transform.position, end) > .001f, "power loss starts return immediately despite endpoint hold");
+            Step(p, 150); Near(p.transform.position, origin, "unpowered returns to author, not opposite range endpoint");
+            source.SetSignal(true, null); Step(p, 8); Vector3 mid = p.transform.position;
+            source.SetSignal(false, null); Step(p, 1);
+            Check(Vector3.Distance(p.transform.position, origin) < Vector3.Distance(mid, origin), "midflight reversal responds without snap");
+            Check(Vector3.Distance(p.transform.position, mid) < .5f, "reversal is incremental");
+            source.SetSignal(true, null); Step(p, 150); Near(p.transform.position, end, "recharging resumes toward endpoint");
+            p.ResetForRoom(); Near(p.transform.position, origin, "room reset restores authored pose while retaining mode and binding");
+            Check(p.LinkedControls.Count == 1 && p.SignalMotion == MovingPlatformSignalMotion.PoweredEndpoint, "reset preserves configuration");
+            p.BindCrank(source); source.SetSignal(false, null); p.SnapToCrankProgress();
+            Near(p.transform.position, origin, "signal mode never overrides crank zero");
+            source.SetSignal(true, null); p.SnapToCrankProgress(); Near(p.transform.position, end, "crank progress remains authoritative");
+            Object.DestroyImmediate(p.gameObject);
+        }
+        var blocked = Spawn(new Vector3(800, 200)); Configure(blocked, MovingPlatformPathMode.Right, false);
+        using (var s = new SerializedObject(blocked))
+        {
+            s.FindProperty("driveMode").intValue = 1; s.FindProperty("signalMotion").intValue = 1;
+            s.FindProperty("linkedControls").arraySize = 1;
+            s.FindProperty("linkedControls").GetArrayElementAtIndex(0).objectReferenceValue = source;
+            s.FindProperty("reverseOnBlock").boolValue = true; s.ApplyModifiedPropertiesWithoutUndo();
+        }
+        blocked.ResetForRoom(); source.SetSignal(true, null);
+        var wall = GameObject.CreatePrimitive(PrimitiveType.Cube); wall.transform.position = blocked.transform.position + Vector3.right * 1.6f;
+        for (int i = 0; i < 100; i++) { Physics.SyncTransforms(); Step(blocked, 1); }
+        Check(blocked.transform.position.x > 800 && blocked.transform.position.x < 800.7f, "obstructed endpoint mode waits before solid, never reverses");
+        Vector3 paused = blocked.transform.position; Step(blocked, 10); Near(blocked.transform.position, paused, "blocked progress does not accumulate");
+        Object.DestroyImmediate(wall); Physics.SyncTransforms(); Step(blocked, 150);
+        Near(blocked.transform.position, new Vector3(805, 200), "cleared obstacle resumes to endpoint");
+        Object.DestroyImmediate(blocked.gameObject); Object.DestroyImmediate(source.gameObject);
+        Check(typeof(MovingPlatformFeature).GetField("signalMotion", Hidden).GetCustomAttribute<BlockParameterAttribute>().MatchesVisibility(1),
+            "signal settings have Chinese conditional inspector metadata");
     }
     private static void VerifyGridAndBlocking()
     {

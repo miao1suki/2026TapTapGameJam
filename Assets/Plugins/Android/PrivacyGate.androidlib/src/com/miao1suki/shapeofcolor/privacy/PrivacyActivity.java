@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.Html;
@@ -33,6 +34,12 @@ public final class PrivacyActivity extends Activity {
         TextView title = label("隐私政策与个人信息保护", 21); panel.addView(title);
         TextView introduction = label("请阅读《形之彩隐私政策》。同意后才会启动 Unity 引擎及游戏；不同意将退出游戏。未满14周岁的玩家请由监护人阅读并同意。", 15);
         panel.addView(introduction);
+        TextView website = label("查看《形之彩隐私政策》网页版", 15);
+        website.setTextColor(Color.rgb(12, 100, 135));
+        website.setPaintFlags(website.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+        website.setGravity(Gravity.CENTER_VERTICAL); website.setMinHeight(dp(44));
+        website.setOnClickListener(view -> PrivacyConsent.openPolicyWebsite(this));
+        panel.addView(website);
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true);
         TextView policy = label("", 15); policy.setTextIsSelectable(true);
         boolean loaded = false;
@@ -54,14 +61,17 @@ public final class PrivacyActivity extends Activity {
             buttons.addView(revoke, equalWidth());
             Button back = button("返回游戏"); back.setOnClickListener(view -> finish()); buttons.addView(back, equalWidth());
         } else {
-            Button decline = button("不同意并退出"); decline.setOnClickListener(view -> finishAndRemoveTask()); buttons.addView(decline, equalWidth());
-            Button agree = button("同意并进入游戏"); agree.setEnabled(loaded);
+            Button decline = button("不同意"); decline.setOnClickListener(view -> finishAndRemoveTask()); buttons.addView(decline, equalWidth());
+            Button agree = button("同意"); agree.setEnabled(loaded);
             agree.setOnClickListener(view -> {
                 if (PrivacyConsent.accept(this)) enterGame();
                 else Toast.makeText(this, "授权记录保存失败，请检查存储空间后重试", Toast.LENGTH_LONG).show();
             }); buttons.addView(agree, equalWidth());
         }
         panel.addView(buttons); setContentView(panel);
+        // Restoration/back navigation must not launch the browser again.
+        if (review && state == null && getIntent().getBooleanExtra(PrivacyConsent.OPEN_POLICY_WEBSITE, false))
+            PrivacyConsent.openPolicyWebsite(this);
     }
 
     private void enterGame() {

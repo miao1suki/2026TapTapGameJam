@@ -83,7 +83,8 @@ public static class EditorInteractionAudit
         Check(PlanningCanvas.EdgePanVelocity(rect, new Vector2(797, 300)).x < 0, "right edge pans view left");
         Check(PlanningCanvas.EdgePanVelocity(rect, new Vector2(400, 3)).y > 0, "top edge pans down");
         Check(PlanningCanvas.EdgePanVelocity(rect, new Vector2(400, 597)).y < 0, "bottom edge pans up");
-        Check(PlanningCanvas.EdgePanVelocity(rect, new Vector2(-1, 20)) == Vector2.zero, "outside viewport stops edge pan");
+        Check(PlanningCanvas.EdgePanVelocity(rect, new Vector2(-30, 300)) == new Vector2(680, 0), "captured overshoot continues at bounded edge speed");
+        Check(PlanningCanvas.EdgePanVelocity(rect, new Vector2(1200, -500)) == new Vector2(-680, 680), "corner overshoot keeps both directions bounded");
         Check(PlanningCanvas.EdgePanVelocity(rect, new Vector2(1, 300)).magnitude > PlanningCanvas.EdgePanVelocity(rect, new Vector2(40, 300)).magnitude, "deeper edge contact accelerates");
 
         LevelEditorState.Tool = LevelEditorTool.Select;

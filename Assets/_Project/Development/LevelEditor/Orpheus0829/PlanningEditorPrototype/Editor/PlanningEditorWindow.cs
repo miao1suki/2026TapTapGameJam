@@ -40,8 +40,10 @@ namespace PlanningEditorPrototype
         }
         [System.Serializable] private sealed class BindingMemory
         {
+            public string documentHash;
             public List<BindingRecord> records = new List<BindingRecord>();
         }
+        private string sceneBindingDocumentHash;
 
         private string GetScenePreferenceScope()
         {
@@ -68,7 +70,9 @@ namespace PlanningEditorPrototype
 
         private void RememberBindings()
         {
-            var memory = new BindingMemory();
+            // Bind the observations to the document that produced them, not to a
+            // newer, possibly not-yet-applied draft when closing the window.
+            var memory = new BindingMemory { documentHash = sceneBindingDocumentHash };
             foreach (var binding in sceneBindings)
                 memory.records.Add(new BindingRecord { id = binding.id, cell = binding.cell });
             SessionState.SetString(BindingMemoryKey, JsonUtility.ToJson(memory));
@@ -82,15 +86,18 @@ namespace PlanningEditorPrototype
             if (!autoSync || EditorApplication.isPlayingOrWillChangePlaymode) return;
             sceneHasBeenApplied = PlanningSceneBuilder.HasAnyGeneratedRoot();
             CaptureSceneBindings();
-            // Session memory survives recompilation, but not restarting Unity: unsaved
-            // scene geometry must not be mistaken for objects deliberately deleted.
+            // Reimports reuse stable IDs but can repartition/move their contents.
+            // Absence relative to another map revision is NOT a manual deletion.
+            // Legacy unversioned memory is intentionally discarded once.
             var memory = JsonUtility.FromJson<BindingMemory>(
                 SessionState.GetString(BindingMemoryKey, "{}"));
             var present = new HashSet<string>();
             foreach (var binding in sceneBindings) present.Add(binding.id + ":" + binding.cell);
             var ids = new List<string>();
             var cells = new List<Vector2Int>();
-            if (memory?.records != null)
+            if (sceneHasBeenApplied && memory?.records != null &&
+                !string.IsNullOrEmpty(memory.documentHash) &&
+                memory.documentHash == sceneBindingDocumentHash)
                 foreach (var binding in memory.records)
                     if (!present.Contains(binding.id + ":" + binding.cell))
                     { ids.Add(binding.id); cells.Add(binding.cell); }
@@ -2287,6 +2294,8 @@ namespace PlanningEditorPrototype
         private void CaptureSceneBindings()
         {
             sceneBindings.Clear();
+            sceneBindingDocumentHash = document == null
+                ? null : Hash128.Compute(document.ToPersistentJson()).ToString();
             foreach(var root in SceneManager.GetActiveScene().GetRootGameObjects())
             {
                 if(root.name != "__PlanningMapGenerated") continue;
@@ -2302,8 +2311,15 @@ namespace PlanningEditorPrototype
             foreach(var binding in sceneBindings)
                 if(binding.block == null) { ids.Add(binding.id); cells.Add(binding.cell); }
             if(ids.Count==0) return;
-            sceneBindings.RemoveAll(b=>b.block==null);
-            canvas.RemoveMissingSceneItems(ids,cells);
+            // A generator/reload can replace instances without deleting their
+            // authored objects. Reacquire once on a missing reference, not every tick.
+            CaptureSceneBindings();
+            var present = new HashSet<(string id, Vector2Int cell)>();
+            foreach (var binding in sceneBindings) present.Add((binding.id, binding.cell));
+            for (int i = ids.Count - 1; i >= 0; i--)
+                if (present.Contains((ids[i], cells[i]))) { ids.RemoveAt(i); cells.RemoveAt(i); }
+            if (ids.Count > 0) canvas.RemoveMissingSceneItems(ids,cells);
+            RememberBindings();
         }
 
         private void EditPlacementDefaults()

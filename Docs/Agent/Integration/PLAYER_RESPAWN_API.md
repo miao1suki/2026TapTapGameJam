@@ -26,6 +26,8 @@ player.RequestRespawn();
 - 慢速转场冻结唯一玩家运动器，持有独立 `AcquireControlLock`，不清除其他系统的控制锁。揭示结束重新开始原配置的复活无敌时间。暂停打开请求在该期间被拒绝；转场 Tween 和停留用非缩放时间。
 - 房间和重生点仍走 `RoomLifecycleManager.BeforeRespawn`、原安全落点和 `CameraFollowRelocated`，不换场景、不清空颜色/能力/钥匙/门进度。参见 [区域契约](ROOM_LIFECYCLE_API.md)。
 
+安全落点查询排除岩浆、无色四向尖刺与旧尖刺的有效 Collider；自身过滤只跳过玩家本体及子物体，不跳过与玩家共用规划根物体的地板或危险物。尖刺接触在复活保护期间不致死，保护到期后仍停留在尖刺内会走正常死亡流程，见 [无色道具接入](WORLD_ITEMS_API.md)。
+
 表现复用 `Project.GameFlow` 的 `GameSceneLoader` / `GameTransitionOverlay`，不新增加载 Canvas 或 Boss 专用场景。收黑与背景入场沿用 `Resources/GameTransitionSettings` 的返回大厅参数；背景取最近主菜单背景状态，直接开关卡则读取 `GameUiArtwork.menuBackground`。字体和遮罩 Shader 是转场配置的显式资源引用。
 
 `GameSceneLoader.RespawnPhase` 提供六阶段状态，`IsRespawnTransitioning` 仅表示复活表现。底层 `TryStartRespawnTransition(owner, seconds, restoreWhileCovered, finished)` 不负责玩家复位或控制锁，玩法应优先使用 `PlayerController`，避免绕过房间契约。

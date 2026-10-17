@@ -1,5 +1,64 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-17 本地完成进度整合交付
+
+- 用户在当前整合窗口授权合并并推送 main；前述各任务的“不提交/不推送”是当时交付状态，本轮统一纳入已完成的 MRoom2 第二版、平台充能模式、自动同步保护、画布边缘拖拽、尖刺接触伤害和自建隐私政策入口。
+- 已重新读取协作入口并 fetch；本轮开始时 HEAD 与 origin/main 同为 d63eb5e，无新的 main 差异需要强行制造合并提交。其他远程历史任务分支不因本次授权自动全量合入。
+- 全部108份本地修改/未跟踪文件备份至 Library/ProgressIntegrationBackup-20261017-162649。只显式提交本轮任务文件，Pick/字体/插件/栏目/TA气泡和本地设置不纳入；正式 Gaming 及配套两份存档保留策划已整合版本。
+- 验证在 -noaudio 静音隔离工程进行，不切换或保存主 Unity 的内存场景，不构建新包。关卡仍成套提交 Scene、同名 planning、原始 mvmap 及各自 meta；提交前运行规划存档守卫。
+- 本轮新跑 EditMode 228/228、地刺真实物理76项、平台4802项、MRoom2真实运行77项、自动同步1736项、边缘拖拽175项全部通过；Node网页生成器3/3与Android API36原生javac编译通过。日志为 Library/ProgressIntegration-*，EditMode报告为 ProgressIntegration-EditMode.xml。
+- 自动同步首次在撤回存档时遇到一次Windows File.Replace IOException，未改变主项目；原失败日志保留为 ProgressIntegration-AutoSync.log。隔离夹具还原后不改产品代码重跑，完整1736项通过，日志为 ProgressIntegration-AutoSync-Retry.log。仍有既有插件退出/临时分配提示，不声称全日志零告警或已完成真机/完整通关验收。
+- 47份任务文件显式暂存；其余61份本地文件与备份SHA256一致，正式Gaming/同名planning/正式关卡JSON摘要保持不变，凭据模式检查及存档提交守卫通过。采用常规main提交和非强制推送，不纳入其他历史分支或无关素材。
+- 隐私网页已经上线，本轮只交付其源码和安卓入口，不重新部署/改动服务器。未重新构建APK，旧包不自动生效；继续编辑MRoom2前须重新加载磁盘场景并重开编辑器，不能保存旧内存地图覆盖新版。
+
+## 2026-10-17 自建隐私政策网页与安卓入口（网页已发布，安卓本地完成）
+
+- 用户授权从相关历史对话与 D 盘下载目录查找服务器连接资料，仅用既有 SSH 私钥连接，不输出/复制密钥或写入仓库。新增网站独立隐私页，正文沿用现有唯一源，备案信息以公开主页为准；不修改主页或其他服务。
+- 安卓用户主动打开隐私政策时允许调用系统浏览器，这是本轮明确授权的唯一外部网页例外；仍不恢复游戏 INTERNET/局域网/遥测权限，不嵌 WebView，不自动联网。保留前置原生离线全文、明确同意和撤回授权，按钮仅“同意”/“不同意”。
+- 保留所有先前本地修改、场景及配套规划；不提交、推送、合并或出包。验证使用静音 Library 隔离工程及独立浏览器上下文。关卡交付仍须 Scene、配套 planning/meta 成套提交。
+- 网页已部署 https://meowgame.cloud/shape-of-color/privacy/ ，源为 Ops/PrivacyPolicy 的生成器/模板/测试；政策仍逐字取 Resources/Privacy/privacy-policy.txt，SHA256 cb1574e139a7ede16c9cc752052f1d859ecb1e2d6935b2fc2eaefeefe70ec26d 未变，不改变授权版本。页面仅政策与公开主页同款“豫ICP备2026018798号”页脚；没有脚本、统计、外部字体/图片或额外导航。
+- 使用现有 HTTPS 静态根的新子目录，不改 Nginx、TLS、主页或其他服务器服务。线上 HTML 与本地生成物 SHA256 一致；主页发布前后 SHA256 均 a79fe57abaab228913e29a783254b2678ad8c32498ffc4836baa31fd61351fd3。没有用云平台 API Key，也没有把私钥复制进仓库或生成物。
+- PrivacyConsent 只向系统浏览器发送固定 POLICY_URL，原生首次授权不自动开网页，点击网页不写同意；设置显式 review 在首次创建时开网页，返回后保留离线全文和撤回入口，恢复状态不重开。无法打开浏览器时提示并保留原页。正文内原始外链仍移除，AndroidPrivacyPolicy 托管API/场景/预制体不用改。
+- 验证：Node生成器3/3；Android API36 javac编译通过（仅既有弃用API/source8警告）；Unity6000.3.12f1/D3D11静音隔离EditMode228/228，Library/PrivacyWebsite/EditMode.xml。真实Chrome桌面1440×1000、手机390×844、横屏844×390已截图并检查，无整页横向溢出、仅一次本页HTTP请求、无脚本/多余UI，完整线上正文与生成文件一致；截图和 visual-results.json 在 Library/PrivacyWebsite。
+- 正式Gaming、配套planning及正式关卡JSON摘要保持不变，任务Java/C#测试与隔离副本已核对。未重打APK、未真机验收系统浏览器/授权恢复/撤回，不以源码测试代替隐私合规认证；既有注册/实名/SDK条款仍需负责人按实际行为核实。旧APK不受此次源码变更影响。AGENTS、工作约定与隐私/离线说明同步记录这一窄例外，不为其他联网放行。
+
+## 2026-10-17 地刺接触伤害与危险物回归（本地修复）
+
+- 排查无色四向地刺的真实物理回调，检查合并/子碰撞体、岩浆、旧尖刺与复活保护的同类失效；修复限定接触链，不调整关卡布局或颜色进度。
+- 保留全部既有本地修改，真实Play验证仅在Library/FlowRetirementProbe。主Unity场景不切换/保存；本轮不提交、推送、合并或打包。关卡交付仍需Scene、配对planning/meta及依赖成套提交，不能只交场景。
+- 真实物理复现根因：四向 NeutralSpike 的三角柱 Trigger 在子物体，伤害脚本在父物体且无 Rigidbody，父脚本收不到接触回调。此前旧验证直接反射调用伤害方法，绕过断点。现在由 SpikeContactRelay 转发 Enter/Stay 到唯一 owner；禁用 owner 不伤害，不添加逐帧扫描或额外刚体。
+- 合并地刺按实际占格复制精确方向触发区，共享临时 Mesh；不再把长排拉成一个巨大三角形而漏判两端，保留空洞；房间重置后不会重开旧拉伸触发器，也不重复生成。重生安全查询新增地刺排除，并修正共享规划根节点时误忽略地面/危险物的过滤。
+- Unity6000.3.12f1/D3D11 隔离真实物理专项 76 项通过（Library/HazardContactFinal.log，包含静音入口保护的最终代码），覆盖四向、单体、48格合并、非矩形孔洞、复活保护与 Stay、R/房间复位、岩浆锁色/冷却/还原与重生落点；项目 EditMode 225/225 通过（Library/HazardEditMode.xml）。未做完整人工游玩或双端打包验收。
+- 验证初次批量创建死亡玩家曾同时播放音效，已退出该进程；后续使用 -noaudio，测试入口强制要求此参数，并在 AudioManager 初始化后静音 AudioListener。只影响隔离测试，不调用写 PlayerPrefs 的音量 API，不删改正常游戏死亡声音。
+- 正式 Gaming 场景、配对 planning、正式关卡 JSON 的 SHA256 均保持不变；本轮不修改任何场景/地图/美术/音频资源。运行时/测试与 meta 已在隔离副本核对一致，具体接入更新 WORLD_ITEMS_API、PLAYER_RESPAWN_API 与 Developer/WORLD_ITEMS。
+
+## 2026-10-17 画布拖拽边缘平移（本地完成）
+
+- 按用户要求完善类似PS的边缘自动平移：排查已存在的边缘计时器，重点处理拖拽跨出画布后立即停止，以及静止按住、落点与释放/取消。只改关卡画布交互、专项测试和说明，不改场景、存档、栏目、美术或运行时。
+- 保留此前同步修复与用户新增LevelEditorPalette改动，验证在Library隔离工程进行；本轮不提交、推送、合并或打包。关卡交付仍需Scene、同名planning、meta及依赖成套提交，不得只交Scene。
+- 真实定时回调复现旧逻辑：静止停在边缘内有效，但越过画布边界时 UpdateEdgePanPointer/PointerLeave 同时暂停，快速拖拽容易完全错过滚动。现在以指针捕获期间的手势为准，越界按最近边缘限速继续；普通悬停不滚动，松手/取消/失焦/丢捕获停止。保持原 UI Toolkit 画布与单次撤回事务，不另建操作路径。
+- Unity6000.3.12f1/D3D11隔离验证：PlanningEdgePanAudit 175项通过，覆盖四向静止/越界、详情/装配/世界整体拖动、绘制和区域框选、起点补偿、不生成中间保存记录、释放/取消/丢捕获停止；EditorInteractionAudit 51项通过。日志 Library/PlanningEdgePanBefore.log 保留未修复复现，修复后为 PlanningEdgePanFinal.log、PlanningEdgePanInteraction.log。未做完整人工操作或双端构建验收。
+- 五份实现/测试及meta与隔离副本逐字节一致；正式Gaming场景、配对planning及正式关卡JSON的SHA保持不变。本轮不改MRoom2、其他场景、地图、栏目、素材或运行时逻辑，不保存/切换主Unity内存场景。
+- 项目EditMode 225/225通过，报告 Library/PlanningEdgePanEditMode.xml（本轮新生成），日志 PlanningEdgePanEditMode.log；差异检查通过，真实Git暂存区为空。
+
+## 2026-10-17 MRoom2 开窗自动同步误删（本地修复）
+
+- 原因已现场复现：旧SessionState仅保存ID/格，不记录所属文档版本；第二版重导入重新分块/坐标后，开窗把第一版缺失格当作手动删除，188项变104项，连带墙、水和部分平台绑定损坏。不是材质或视图遮挡。损坏三件地图/meta及完整第二版副本均备份至 Library/MRoom2AutosyncBackup-20261017。
+- BindingMemory加入采集版本documentHash，版本不符或旧无版本缓存只重新建基线，不推断删除；开窗期间实例替换先按稳定ID+格重新查找，只有实际不存在才移除。无缺失引用时不增加逐帧扫描。保留自动同步开关与真实删除/规划撤回，不以关闭功能掩盖问题。
+- 对照损坏前后未发现额外有意布局修改：新增19个随机ID均为原格克隆、两处绑定清空为误删衍生。已恢复完整第二版Scene及配对planning（188项、456墙格、61水格），不回退第一版；源图和三份meta不变。正式Gaming三件交付SHA不变，Pick、字体、插件、TA气泡预制体和设置不纳入本轮改动。
+- Unity6000.3.12f1/D3D11隔离验证：真实附着窗口/更新循环1736项通过（实际第一版缓存和无本地夹具合成旧版各一轮，含重开/重复应用/旧缓存、生成实例替换、开关窗实际删除与撤回）；编辑器交互50项、协作36项、水形状/接触/重置197项、项目EditMode225/225通过。日志Library/PlanningAutoSyncFull.log、PlanningAutoSyncSynthetic.log、RefinementEditorFinal.log、RefinementCollaborationFinal.log、RefinementWaterFinal.log、RefinementEditMode.xml。最初未修复版本同样测试得到104项，复现日志PlanningAutoSyncRepro.log保留。
+- 实际MRoom2运行另验证13个水体、61格实际水面/水中/水底渲染，临时解锁颜色仅在隔离Play中，不写回默认锁色。截图已查看：Library/MRoom2Restoration/MRoom2RuntimeRestored.png（整图）、MRoom2WaterRestored.png（近景）；不是原生编辑器窗口截图，不将离屏渲染冒称为完整人工操作验收。主Unity未强制切换/保存；需先关编辑器、重新加载MRoom2再开窗，不保存旧缺块内存覆盖磁盘。未提交、推送、合并或打包。
+
+## 2026-10-17 MRoom2 第二版导入与平台充能模式（本地完成）
+
+- 按用户提供 m-room-2.mvmap (2).json 重建独立 MRoom2 场景、同名可编辑规划和原始源图；不修改正式 Gaming。原件成套备份至 Library/MRoom2SecondImportBackup-20261017。
+- 平台增加兼容旧存档的充能往返/充能到终点断电返回模式；用户确认两个曲柄仍保持进度联动，四个基座消费者使用返回模式。两排尖刺均朝上；按名称绑定三门及各自保持按钮；路线补全网页占格限制，左下平台补水。用户确认新增单格托红块平台与左竖平台共用原基座，按图间距上移1格托住红块。
+- 验证仅在 Library/FlowRetirementProbe 执行；不保存或切换主Unity内存场景，不改无关Pick、字体、插件、项目设置；本轮未授权提交、推送、合并或打包。
+- 已将验证过的Scene/配对planning/原始mvmap成套替换回主项目，保留三份meta；24源分类、794玩法格（含平台下补入4水格）、188编辑对象、54路线预览格。新图六平台、三基座、两曲柄、三门七保持按钮、六重生点；两排尖刺均朝上，左右侧梯依实际邻墙，出生/默认锁色与唯一标准玩家保持。旧源和新源对象关系不混用；正式Gaming三件交付文件未变。
+- signalMotion=0兼容旧充能往返/断电停留，=1为充能至Path.FirstEnd/断电回作者位置，只作用信号驱动；中途改向、遇障等待/清除重试、承载、重置均沿用原运动链。模式及绑定进入全部合并快照。托红块上移1格且与左竖平台共用基座，实际释放红块后保持接触供能；不增加虚假的保持供能状态。
+- Unity6000.3.12f1/D3D11隔离验证：7791项作者/存档/增量/窗口/无缺失对象断言；4802项旧新路线/信号/阻挡/曲柄/格尺寸断言；双Inspector与参数保存49项；真实MRoom2运行77项（供能回位、两平台共用基座、松手红块托举、门持久按钮、区域恢复及实际玩家往返承载）；项目EditMode225/225。日志Library/MRoom2SecondImport.log、PlatformPoweredModes.log、PlatformPoweredModesUi.log、MRoom2SecondRuntimeFinal.log、MRoom2SecondEditMode.xml。未做完整关卡通关、真机或双端构建验收；隔离启动/退出仍有既有授权握手重试与插件清理日志，不宣称全日志零错误。
+- 四份实现/验证C#及三份地图交付文件与隔离版本逐字节一致；三份原meta保持不变，规划提交守卫通过临时独立Git index检查，真实暂存区为空，HEAD仍为d63eb5e。Pick/字体/PackageManagerSettings与任务前备份SHA一致，其余无关文件保留。主Unity若仍显示旧图，须重新加载MRoom2并重开编辑器；不要保存旧内存地图覆盖新版共享存档。
+
 ## 2026-10-17 连通植物燃烧与正式关卡/音乐整合
 
 - 用户授权当前整合窗口合并并推送main：植物障碍按上下左右真实接触连通燃烧，斜角不连通；保持房间边界和既有重置链路。
@@ -1626,3 +1685,4 @@
 - 文档：Docs/Agent/Integration/AUDIO_HANDOVER.md 增补清单、接线项与命名备注。
 - 验证：文件已放入 Assets/_Project/Content/Audio/Music/；循环属性与 Unity 试听待确认。
 - 交接提交：本次提交。
+- 完成：已生成 Docs/BOSS_DESIGN_BRAINSTORM_玩法组件总结.txt，整理当前玩家、颜色、白块、搬运、攀爬、钩子、水流、三色方块、植物、按钮、平台、门、重置等玩法组件，附带组合示例、6个Boss方向、攻击方式、原型范围和团队讨论问题；明确区分现有能力与需新增的Boss战斗层。

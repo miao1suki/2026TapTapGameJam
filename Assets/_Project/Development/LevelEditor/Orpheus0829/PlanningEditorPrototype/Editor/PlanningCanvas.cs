@@ -2687,7 +2687,11 @@ namespace PlanningEditorPrototype
 
         private void OnPointerLeave(PointerLeaveEvent evt)
         {
-            PauseEdgePan();
+            if (evt.target != this) return;
+            if (isDragging && !isPanning && this.HasPointerCapture(dragPointerId))
+                UpdateEdgePanPointer(this.WorldToLocal(evt.position));
+            else
+                PauseEdgePan();
             hasHover = false;
             MarkDirtyRepaint();
         }

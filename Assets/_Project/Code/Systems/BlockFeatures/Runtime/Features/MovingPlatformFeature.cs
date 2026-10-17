@@ -24,6 +24,12 @@ namespace Project.BlockFeatures
         [InspectorName("全部激活")] All = 1
     }
 
+    public enum MovingPlatformSignalMotion
+    {
+        [InspectorName("充能时往返，断电停留")] PoweredPingPong = 0,
+        [InspectorName("充能到终点，断电回原位")] PoweredEndpoint = 1
+    }
+
     [BlockFeature(
         DisplayName = "移动平台",
         DefaultColorId = "red",
@@ -95,7 +101,7 @@ namespace Project.BlockFeatures
         [BlockParameter(
             Label = "端点停留",
             Group = "移动设置",
-            Order = 1)]
+            Order = 1, Tooltip = "往返模式到端点后的等待时间；充能到终点模式不使用此时间，断电立即开始回程。")]
         [SerializeField, Min(0f)] private float holdAtEnds = .25f;
 
         [BlockParameter(
@@ -106,10 +112,10 @@ namespace Project.BlockFeatures
             AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
         [BlockParameter(
-            Label = "碰到方块后反向",
+            Label = "遇实体阻挡检测",
             Group = "移动设置",
             Order = 3,
-            Tooltip = "移动方向前方碰到非玩家碰撞体时，平台立即掉头。")]
+            Tooltip = "检测前方非玩家实体：往返模式遇障掉头；充能到终点模式遇障等待，障碍清除后继续向目标移动。")]
         [SerializeField] private bool reverseOnBlock = true;
 
         [BlockParameter(
@@ -118,6 +124,12 @@ namespace Project.BlockFeatures
             Order = 0)]
         [SerializeField] private MovingPlatformDriveMode driveMode =
             MovingPlatformDriveMode.SignalControlled;
+
+        [BlockParameter(Label = "充能移动模式", Group = "控制设置", Order = 2,
+            VisibleWhenField = "driveMode", VisibleWhenValue = (int)MovingPlatformDriveMode.SignalControlled,
+            Tooltip = "往返模式断电停在当前位置；终点模式充能时到首程端点并停留，断电沿原路回到布置位置。曲柄仍按自身进度联动。")]
+        [SerializeField] private MovingPlatformSignalMotion signalMotion;
+        public MovingPlatformSignalMotion SignalMotion => signalMotion;
 
         [BlockParameter(Label = "控制曲柄", Group = "控制目标", Order = 0,
             Tooltip = "多个平台可绑定同一个曲柄，按各自路线和距离同步升降。",
@@ -187,7 +199,11 @@ namespace Project.BlockFeatures
         private float holdRemaining;
         private bool movementAudioPlaying;
         private Collider[] platformSurfaces;
-        public bool IsMoving => CanRunFeature && active;
+        private bool UsesPoweredEndpoint => driveMode == MovingPlatformDriveMode.SignalControlled &&
+            signalMotion == MovingPlatformSignalMotion.PoweredEndpoint;
+        public bool IsMoving => CanRunFeature && (UsesPoweredEndpoint
+            ? Mathf.Abs(Vector3.Dot(transform.localPosition - origin, Path.Axis) / GridCellWorldSize - (active ? Path.FirstEnd : 0f)) > .00001f
+            : active);
         public Vector3 PreviewOrigin => Application.isPlaying && IsAttached
             ? transform.parent != null ? transform.parent.TransformPoint(origin) : origin : transform.position;
         public Vector3 PreviewStart => PreviewOrigin + PathWorldOffset(Path.PreviewFrom);
@@ -264,6 +280,11 @@ namespace Project.BlockFeatures
                 return;
             }
             EvaluateLinkedControls();
+            if (UsesPoweredEndpoint)
+            {
+                TickPoweredEndpoint(deltaTime);
+                return;
+            }
             if (!active)
             {
                 return;
@@ -316,6 +337,37 @@ namespace Project.BlockFeatures
             }
         }
 
+        private void TickPoweredEndpoint(float deltaTime)
+        {
+            MovingPlatformPath path = Path;
+            float target = active ? path.FirstEnd : 0f;
+            float current = Vector3.Dot(transform.localPosition - origin, path.Axis) / GridCellWorldSize;
+            if (Mathf.Abs(current - target) < .00001f) return;
+            if (!Mathf.Approximately(legEnd, target))
+            {
+                legStart = current;
+                legEnd = target;
+                progress = 0f;
+            }
+            float duration = Mathf.Max(.05f, travelDuration) * Mathf.Abs(legEnd - legStart) / Mathf.Max(.00001f, path.Span);
+            float nextProgress = Mathf.Min(1f, progress + deltaTime / Mathf.Max(.0001f, duration));
+            float curved = easing != null && easing.length > 0
+                ? Mathf.Clamp01(easing.Evaluate(nextProgress)) : nextProgress;
+            Vector3 desired = origin + (Vector3)path.Axis * (Mathf.Lerp(legStart, legEnd, curved) * GridCellWorldSize);
+            Vector3 delta = desired - transform.localPosition;
+            if (reverseOnBlock && IsBlockedAlong(delta))
+            {
+                // Retry the remaining route when clear; never reverse away from the signal's target.
+                legStart = current;
+                progress = 0f;
+                return;
+            }
+            RefreshStandingPlayers();
+            transform.localPosition = desired;
+            progress = nextProgress;
+            CarryPlayers(transform.parent != null ? transform.parent.TransformVector(delta) : delta);
+        }
+
         protected override void OnResetForRoom()
         {
             SetMovementAudio(false);
@@ -333,7 +385,10 @@ namespace Project.BlockFeatures
         {
             values.Add(new BlockDebugValue(
                 "运行状态",
-                active ? "移动中" : "已停止"));
+                IsMoving ? (UsesPoweredEndpoint && !active ? "返回原位" : "移动中") : "已停止"));
+            if (driveMode == MovingPlatformDriveMode.SignalControlled)
+                values.Add(new BlockDebugValue("充能移动模式", signalMotion == MovingPlatformSignalMotion.PoweredEndpoint
+                    ? "充能到终点，断电回原位" : "充能时往返，断电停留"));
             values.Add(new BlockDebugValue(
                 "路线",
                 Path.Axis.x > 0f ? "水平往返" : "竖直往返"));
@@ -349,8 +404,8 @@ namespace Project.BlockFeatures
                     ? "任一激活"
                     : "全部激活"));
             values.Add(new BlockDebugValue(
-                "碰到方块反向",
-                reverseOnBlock ? "开启" : "关闭"));
+                "遇障行为",
+                !reverseOnBlock ? "不检测" : UsesPoweredEndpoint ? "等待通路" : "反向移动"));
         }
 
         private void OnCollisionEnter(Collision collision)

@@ -1,13 +1,13 @@
 # 比赛离线版本
 
-比赛期间禁止非 TapTap SDK 的运行时联网，包括局域网发现、遥测、广告和外部网页跳转。当前项目没有接入 TapTap SDK，因此现阶段所有测试包均为完全离线版本。Git、Package Manager、编辑器协作工具不属于游戏运行时，不因此删除。
+比赛期间禁止非 TapTap SDK 的游戏运行时联网，包括局域网发现、遥测和广告。当前项目没有接入 TapTap SDK，游戏保持离线、无网络权限。2026-10-17 用户明确要求的唯一网页例外：玩家主动点击隐私政策时，由系统浏览器打开固定 HTTPS 政策页；浏览器自行联网，不向游戏申请 INTERNET。Git、Package Manager、编辑器协作工具不属于游戏运行时，不因此删除。
 
 ## 构建规则
 
 - `MobileBuildSetup.BuildAndroid` / `BuildWindows` 使用 `BuildOptions.None`，关闭 Development、Profiler、Script Debugging 和 Deep Profiling。仍可用本机调试证书签名；调试签名不等于开发构建，也不会单独开启联网。
 - `ContestOfflineBuildGuard` 拒绝带上述调试选项的任何构建，检查 Unity Analytics、Ads、Diagnostics、Crash Reporting、Performance Reporting 的开关和初始化配置。`submitAnalytics` 必须关闭。
 - Android 在最高优先级 launcher Manifest 写入移除规则：INTERNET、网络状态、Wi-Fi、局域网及蓝牙相关权限；关闭 `debuggable` 和明文流量。不能只修改低优先级 androidlib 的 Manifest。
-- 初次授权和设置中的隐私政策均使用内置全文，不提供浏览器跳转或可点击外链。PC 也在游戏内离线阅读。
+- 初次原生授权保留内置全文，提供一个明确点击的固定政策网页入口；安卓设置点击隐私政策时打开系统浏览器，返回后仍可在原生页离线阅读和撤回同意。网页没有自动请求、WebView 或任意 URL 参数。PC 保持游戏内离线阅读。此例外不改变非开发构建和网络权限移除守卫。
 - 现有内置政策是既有正文，没有按本次技术变更擅自重写法律条款；发布前负责人仍须核对其内容是否符合实际数据处理行为。
 
 TapTap 云存档、成就等 SDK 是用户允许的例外，但尚未接入。接入时必须单独审核域名、权限、自动初始化及同意前行为，明确修改离线守卫和相关测试；不得为 SDK 之外的请求开放通路。当前不提前申请 INTERNET。

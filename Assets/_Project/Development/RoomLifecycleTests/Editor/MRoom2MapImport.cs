@@ -10,6 +10,7 @@ using Project.GameFlow;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
 using Project.Rooms;
+using Project.Mechanisms;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -32,7 +33,10 @@ public static class MRoom2MapImport
         { "弹性植物", "Green_JumpPlant" }, { "移动平台", "Red_Platform" },
         { "曲柄", "Red_Crank" }, { "岩浆块", "Red_Lava" },
         { "重生点", "Respawn_Block" }, { "红色接触方块", "Red_ContactCube" },
-        { "基座", "Red_Foundation" }, { "绿色接触方块", "Green_ContactCube" }
+        { "基座", "Red_Foundation" }, { "绿色接触方块", "Green_ContactCube" },
+        { "基座2", "Red_Foundation" }, { "移动平台2", "Red_Platform" },
+        { "尖刺", "Spike_上" }, { "门1", "Door" }, { "门2", "Door" }, { "门3", "Door" },
+        { "按一次就行的按钮1", "DoorButton" }, { "按一次就行的按钮2", "DoorButton" }, { "按一次就行的按钮3", "DoorButton" }
     };
 
     private static void Check(bool value, string message)
@@ -48,34 +52,52 @@ public static class MRoom2MapImport
         checks = 0;
         File.WriteAllText("Library/MRoom2ImportVerification.txt", "RUNNING");
         var source = PlanningMVMapImporter.Read(File.ReadAllText(SourcePath));
-        Check(source.name == "m_room_2" && source.rooms.Count == 15, "source map identity");
+        Check(source.name == "m_room_2" && source.rooms.Count == 24, "source map identity");
         var palette = LevelEditorPaletteService.GetOrCreate();
         var doc = new PlanningDocument { name = "m_room_2", worldBlockCellWidth = 1, worldBlockCellHeight = 1 };
         var room = new PlanningRoom("m_room_2") { id = "mroom2_play_area", sourceColorHex = "#4c8dd8" };
         // Source 'rooms' are object categories, not gameplay region boundaries.
-        var bounds = new RectInt(-123, -32, 49, 37);
+        var allCells = source.rooms.SelectMany(r => r.cells).ToArray();
+        var bounds = new RectInt(allCells.Min(c => c.x) - 1, allCells.Min(c => c.y) - 1,
+            allCells.Max(c => c.x) - allCells.Min(c => c.x) + 3, allCells.Max(c => c.y) - allCells.Min(c => c.y) + 3);
         foreach (var cell in bounds.allPositionsWithin) room.cells.Add(new PlanningCell(cell.x, cell.y));
         doc.rooms.Add(room);
         var expected = new Dictionary<string, HashSet<Vector2Int>>();
+        var wallCells = source.rooms.Single(r => r.name == "墙").cells.Select(c => new Vector2Int(c.x, c.y)).ToHashSet();
         foreach (var item in source.rooms)
         {
             if (item.name == "移动平台路线") continue;
             Check(Prefabs.TryGetValue(item.name, out string prefab), "known named object: " + item.name);
             expected.Add(item.name, new HashSet<Vector2Int>(item.cells.Select(c => new Vector2Int(c.x, c.y))));
-            var rectangles = item.name == "藤蔓"
+            bool unitItems = item.name == "藤蔓" || prefab == "DoorButton" || prefab == "Red_Foundation" ||
+                prefab == "Collectible" || prefab == "Respawn_Block" || prefab == "Red_Crank";
+            var rectangles = unitItems
                 ? item.cells.Select(c => new RectInt(c.x, c.y, 1, 1)).ToList()
                 : PlanningMVMapObjectImporter.Partition(item.cells);
             int part = 0;
             foreach (var rect in rectangles)
-                AddBox(palette, room, "mroom2_" + item.id + "_" + part++, item.name, prefab, rect, bounds.position);
+            {
+                string actualPrefab = prefab;
+                if (item.name == "梯子")
+                {
+                    int left = Enumerable.Range(rect.yMin, rect.height).Count(y => wallCells.Contains(new Vector2Int(rect.xMin - 1, y)));
+                    int right = Enumerable.Range(rect.yMin, rect.height).Count(y => wallCells.Contains(new Vector2Int(rect.xMax, y)));
+                    if (left > right) actualPrefab = "LadderSideLeft";
+                }
+                AddBox(palette, room, "mroom2_" + item.id + "_" + part++, item.name, actualPrefab, rect, bounds.position);
+            }
         }
         PlanningBox At(string label, int x, int y) => room.boxes.Single(b => b.label == label && b.x + bounds.x == x && b.y + bounds.y == y);
         var longPlatform = At("移动平台", -84, -14);
         var upperPlatform = At("移动平台", -94, -19);
         var lowerPlatform = At("移动平台", -110, 0);
         var verticalPlatform = At("移动平台", -112, -24);
+        var addedPlatform = At("移动平台2", -99, -23);
+        var supportPlatform = At("移动平台", -108, -20);
         longPlatform.mechanismBaseId = At("基座", -95, -13).id;
         verticalPlatform.mechanismBaseId = At("基座", -108, -23).id;
+        addedPlatform.mechanismBaseId = At("基座2", -106, -25).id;
+        supportPlatform.mechanismBaseId = verticalPlatform.mechanismBaseId;
         upperPlatform.crankOwnerId = At("曲柄", -92, -13).id;
         lowerPlatform.crankOwnerId = At("曲柄", -110, 2).id;
         foreach (var crank in room.boxes.Where(b => b.label == "曲柄")) crank.initialCrankPlatformCreated = true;
@@ -83,8 +105,29 @@ public static class MRoom2MapImport
         ConfigureRoute(upperPlatform, false, 7, false);
         ConfigureRoute(lowerPlatform, false, 3, false);
         ConfigureRoute(verticalPlatform, true, 5, false);
-        foreach (var basis in room.boxes.Where(b => b.label == "基座"))
+        ConfigureRoute(addedPlatform, true, 5, true);
+        ConfigureRoute(supportPlatform, true, 1, false);
+        foreach (var platform in new[] { longPlatform, verticalPlatform, addedPlatform, supportPlatform })
+            SetParameter(platform, "signalMotion", "Enum", "1");
+        foreach (var basis in room.boxes.Where(b => b.label == "基座" || b.label == "基座2"))
             SetParameter(basis, "useGravity", "Boolean", "0", typeof(MechanismBaseFeature).FullName);
+
+        for (int number = 1; number <= 3; number++)
+        {
+            var door = room.boxes.Single(b => b.label == "门" + number);
+            int order = 0;
+            foreach (var button in room.boxes.Where(b => b.label == "按一次就行的按钮" + number))
+            {
+                button.doorOwnerId = door.id;
+                button.doorButtonOrder = ++order;
+                SetParameter(button, "mode", "Enum", "0", typeof(DoorButton).FullName);
+            }
+            Check(order == (number == 2 ? 1 : 3), "named door button count: " + number);
+        }
+        // The web editor has one object layer; restore water beneath the authored lower platform.
+        var submerged = new RectInt(lowerPlatform.x + bounds.x, lowerPlatform.y + bounds.y, lowerPlatform.width, lowerPlatform.height);
+        AddBox(palette, room, "mroom2_submerged_platform_water", "水", "Blue_WaterSource", submerged, bounds.position);
+        foreach (var cell in submerged.allPositionsWithin) Check(expected["水"].Add(cell), "water fills only missing authored platform cells");
         foreach (var box in room.boxes.Where(b => b.isMerged && b.width * b.height > 1))
             foreach (var cell in new RectInt(box.x, box.y, box.width, box.height).allPositionsWithin)
             {
@@ -96,8 +139,9 @@ public static class MRoom2MapImport
             }
         // Route cells describe empty swept space, never a solid wall or a water object.
         var routeCells = source.rooms.Single(r => r.name == "移动平台路线").cells.Select(c => new Vector2Int(c.x, c.y)).ToHashSet();
-        Check(routeCells.Count == 49 && !routeCells.Contains(new Vector2Int(-94, -14)), "source route gap");
-        routeCells.Add(new Vector2Int(-94, -14));
+        Check(routeCells.Count == 51, "source route markers");
+        foreach (int x in Enumerable.Range(-119, 35)) routeCells.Add(new Vector2Int(x, -14));
+        foreach (int y in Enumerable.Range(-17, 5)) routeCells.Add(new Vector2Int(-99, y));
         foreach (var rect in PlanningMVMapObjectImporter.Partition(routeCells.Select(c => new PlanningCell(c.x, c.y)).ToList()))
             doc.regions.Add(new PlanningRegion { id = "mroom2_route_" + doc.regions.Count,
                 annotation = "平台路线", x = rect.x, y = rect.y, width = rect.width, height = rect.height, colorHex = "#4c8dd8" });
@@ -150,7 +194,7 @@ public static class MRoom2MapImport
         EditorSceneManager.OpenScene(ScenePath);
         VerifyScene(doc, expected, bounds.position);
         File.WriteAllText("Library/MRoom2ImportVerification.txt", $"PASS {checks} assertions; {expected.Sum(p => p.Value.Count)} gameplay cells; " +
-            $"{room.boxes.Count} editor objects; 4 platforms; 50 route cells; one editable reset area; default locked colours.");
+            $"{room.boxes.Count} editor objects; 6 platforms; {routeCells.Count} route cells; 3 doors/7 latched buttons; one editable reset area; default locked colours.");
         Debug.Log(File.ReadAllText("Library/MRoom2ImportVerification.txt"));
     }
 
@@ -160,11 +204,16 @@ public static class MRoom2MapImport
             new RectInt(rect.position - origin, rect.size))
         { id = id, label = label, isMerged = rect.width * rect.height > 1,
             singleInstance = prefab == "Red_Crank" || prefab == "Respawn_Block" || prefab == "Collectible" ||
-                prefab == "Red_ContactCube" || prefab == "Green_ContactCube" };
+                prefab == "Red_ContactCube" || prefab == "Green_ContactCube" || prefab == "Door" || prefab == "DoorButton" || prefab == "Red_Foundation" };
+        if (box.singleInstance) box.isMerged = false;
         if (prefab == null)
         {
             var entry = palette.Entries.First(e => e?.DisplayName == "白方块");
             box.paletteEntryId = entry.EntryId; box.paletteEntryName = entry.DisplayName;
+        }
+        else if (prefab == "DoorButton")
+        {
+            box.propEntryId = PlanningDoorUtility.ButtonEntryId; box.propEntryName = "门按钮";
         }
         else
         {
@@ -241,7 +290,7 @@ public static class MRoom2MapImport
             var world = new Vector2Int(box.x + origin.x, box.y + origin.y);
             Check(p.Cell == new Vector2Int(world.x, -world.y - box.height), "scene cell " + box.id);
             Check(p.GetComponent<RoomResetObject>() != null, "room reset membership " + box.id);
-            if (box.isMerged && box.propEntryId == PlanningDoorUtility.SideLadderEntryId)
+            if (box.isMerged && PlanningDoorUtility.IsLadderEntry(box.propEntryId))
             {
                 var trigger = p.GetComponent<BoxCollider>();
                 Check(trigger != null && trigger.isTrigger && Mathf.Abs(trigger.bounds.size.y - box.height) < .001f &&
@@ -256,14 +305,31 @@ public static class MRoom2MapImport
             if (!string.IsNullOrEmpty(box.crankOwnerId))
                 Check(platform.IsCrankControlled && platform.CrankController != null && platform.CrankController.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == box.crankOwnerId, "persistent crank binding");
             else
+            {
                 Check(platform.LinkedControls.Count == 1 && platform.LinkedControls[0].GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == box.mechanismBaseId, "persistent base binding");
+                Check(platform.SignalMotion == MovingPlatformSignalMotion.PoweredEndpoint, "powered endpoint mode persisted");
+            }
         }
-        Check(placed.Count(p => p.GetComponent<MovingPlatformFeature>() != null) == 4, "four platforms, no extra auto-created lift");
+        Check(placed.Count(p => p.GetComponent<MovingPlatformFeature>() != null) == 6, "six platforms, no extra auto-created lift");
         Check(placed.Count(p => p.GetComponent<CrankPlatformFeature>() != null) == 2, "two cranks");
         var roots = placed.Where(p => doc.rooms.Single().boxes.Single(b => b.id == p.PlanningBoxId).label == "藤蔓").ToArray();
-        Check(roots.Length == 4, "four vine cells");
+        Check(roots.Length == 12, "twelve vine cells");
         var linked = roots.Select(p => p.GetComponent<ClimbableVineFeature>()).ToArray();
         Check(linked.Count(v => new SerializedObject(v).FindProperty("vineRoot").objectReferenceValue != null) == 1, "stacked vine remains one linked root and child");
+        foreach (var basis in placed.Select(p => p.GetComponent<MechanismBaseFeature>()).Where(b => b != null))
+            Check(!basis.UsesGravity, "MRoom2 bases retain fixed authored position");
+        var doors = placed.Select(p => p.GetComponent<DoorController>()).Where(d => d != null).ToArray();
+        Check(doors.Length == 3, "three doors");
+        foreach (var door in doors)
+        {
+            var doorBox = doc.rooms.Single().boxes.Single(b => b.id == door.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId);
+            var buttons = doc.rooms.Single().boxes.Where(b => b.doorOwnerId == doorBox.id).OrderBy(b => b.doorButtonOrder).ToArray();
+            Check(door.Buttons.Count == buttons.Length, "door retains named button set");
+            for (int i = 0; i < buttons.Length; i++)
+                Check(door.Buttons[i].Owner == door && door.Buttons[i].Persistent &&
+                    door.Buttons[i].GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == buttons[i].id,
+                    "stable button order and latched mode");
+        }
         Check(GameObject.FindGameObjectsWithTag("Player").Length == 1, "one tagged player");
         Check(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(GameObject.FindGameObjectWithTag("Player")) == "Assets/_Project/Content/Player/Player.prefab", "standard player");
         Check(Object.FindObjectsByType<Camera>(FindObjectsSortMode.None).Count(c => c.isActiveAndEnabled) == 1, "one camera");
@@ -316,7 +382,7 @@ public static class MRoom2MapImport
         var canvas = new PlanningCanvas(); canvas.SetDocument(doc); canvas.SelectRoom(room.id); canvas.SetMode(PlanningCanvasMode.Detail);
         var selection = (HashSet<string>)typeof(PlanningCanvas).GetField("mergeSelection", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(canvas);
         selection.Add(ladder.id); canvas.UnmergeSelectedItems();
-        Check(room.boxes.Count(b => b.propEntryId == PlanningDoorUtility.SideLadderEntryId) == 8, "six-cell ladder unmerges into six units plus two other runs");
+        Check(room.boxes.Count(b => PlanningDoorUtility.IsLadderEntry(b.propEntryId)) == 10, "six-cell ladder unmerges into six units plus four other runs");
         VerifyCoverage(doc, expected, origin);
         PlanningSceneBuilder.SuppressSceneUndo = true;
         try { Check(PlanningSceneBuilder.TryApplyDocument(doc, out string message), message); }

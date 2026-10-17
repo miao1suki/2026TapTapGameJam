@@ -9,7 +9,7 @@ namespace PlanningEditorPrototype
         private IVisualElementScheduledItem edgePanSchedule;
         private Vector2 edgePanPointer;
         private double edgePanLastTime;
-        private bool edgePanInside;
+        private bool edgePanTracking;
         private bool completingPointer;
 
         private void InitializeEdgePan()
@@ -21,7 +21,7 @@ namespace PlanningEditorPrototype
         private void BeginEdgePan(Vector2 pointer)
         {
             edgePanPointer = pointer;
-            edgePanInside = true;
+            edgePanTracking = true;
             edgePanLastTime = EditorApplication.timeSinceStartup;
             edgePanSchedule.Resume();
         }
@@ -29,14 +29,15 @@ namespace PlanningEditorPrototype
         private void UpdateEdgePanPointer(Vector2 pointer)
         {
             edgePanPointer = pointer;
-            edgePanInside = contentRect.Contains(pointer);
-            if (edgePanInside) edgePanSchedule.Resume();
-            else edgePanSchedule.Pause();
+            // Pointer capture owns the drag even over a sidebar. Crossing the
+            // canvas boundary must not stop a fast drag before the next tick.
+            edgePanTracking = true;
+            edgePanSchedule.Resume();
         }
 
         private void PauseEdgePan()
         {
-            edgePanInside = false;
+            edgePanTracking = false;
             edgePanSchedule?.Pause();
         }
 
@@ -49,7 +50,10 @@ namespace PlanningEditorPrototype
         // View-space speed is independent of editor refresh rate and world zoom.
         internal static Vector2 EdgePanVelocity(Rect viewport, Vector2 pointer)
         {
-            if (viewport.width < 24f || viewport.height < 24f || !viewport.Contains(pointer)) return Vector2.zero;
+            if (viewport.width < 24f || viewport.height < 24f) return Vector2.zero;
+            // Overshoot continues at the nearest edge's bounded maximum speed.
+            pointer.x = Mathf.Clamp(pointer.x, viewport.xMin, viewport.xMax);
+            pointer.y = Mathf.Clamp(pointer.y, viewport.yMin, viewport.yMax);
             float Axis(float position, float low, float high)
             {
                 float band = Mathf.Min(56f, (high - low) * .2f);
@@ -73,7 +77,7 @@ namespace PlanningEditorPrototype
 
         internal void TickEdgePan(double now)
         {
-            if (!isDragging || isPanning || !edgePanInside || !SupportsEdgePan()) return;
+            if (!isDragging || isPanning || !edgePanTracking || !SupportsEdgePan()) return;
             if (panel == null || !this.HasPointerCapture(dragPointerId)) { EndPointerAction(); return; }
             float seconds = Mathf.Clamp((float)(now - edgePanLastTime), 0f, .05f);
             edgePanLastTime = now;
