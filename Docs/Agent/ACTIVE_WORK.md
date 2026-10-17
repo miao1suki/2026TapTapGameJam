@@ -1609,3 +1609,15 @@
 - 范围：Gaming.unity、Gaming.planning.json、Content/LevelMaps/正式关卡.json 及既有各自 meta（GUID保持）；不重建关卡，不修改当前布局、出生点或机关接线，不纳入字体缓存。
 - 基线核对：已获取 origin/main c25deac；修改前 HEAD 中正式场景及两份存档与该 main 完全一致，本次是已整合正式关卡之上的后续制作，不恢复旧地图。分支运行时代码尚未同步主线后续变化，交由整合者保留最新运行时功能。
 - 验证：场景内嵌规划、同名规划与命名正式存档 JSON 结构一致（10房间）；各自 meta 已跟踪；新增场景资产 GUID 无未跟踪依赖。Unity 固定6000.3.12f1。提交前执行规划存档守卫与差异检查；本轮不修改源码，未执行 Unity 编译、Play Mode、完整通关或打包，不将数据检查视为玩法验收。
+
+## 音乐新增（Boss OP 与 OP）
+
+- 日期：2026-10-16。
+- 负责人：Codex。
+- 分支：codex/codex/taptap-music。
+- 范围：新增 `bgm_boss.mp3`（Boss 战 / Boss 出场主题曲）与 `bmg_op.mp3`（OP / 开场演出音乐）。
+- 命名：按用户要求本次暂不修正命名规范问题，保留现有文件名。
+- 接口变更：无。
+- 文档：Docs/Agent/Integration/AUDIO_HANDOVER.md 增补清单、接线项与命名备注。
+- 验证：文件已放入 Assets/_Project/Content/Audio/Music/；循环属性与 Unity 试听待确认。
+- 交接提交：本次提交。
