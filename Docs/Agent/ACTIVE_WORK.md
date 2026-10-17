@@ -1809,3 +1809,10 @@
 - 范围：Gaming.unity、同名Gaming.planning.json、Content/LevelMaps/正式关卡.json及各自既有meta（保留GUID）。用户在当前Unity应用到场景并保存后，核对场景内嵌与配套规划一致（11房间）；命名存档先备份至Library/FormalLevelDeliveryBackups，再同步为同一份数据。关卡布局、实例参数和绑定以本次交付为准，不重建地图或重置出生点。
 - 排除：字体缓存、LevelEditorPalette中文转义编码差异，以及DirectionalBubble_Up动态预览的随机变换/精灵序列化改动，均保留本地，不作为关卡编辑依赖变更交付。未新增资源依赖；现有meta及新增引用GUID已核对。
 - 验证：三份规划JSON结构一致，提交前执行Test-PlanningMapCommit.ps1（AllTracked）及暂存差异检查；Unity6000.3.12f1。未修改Runtime源码，未执行本轮Unity编译、Play Mode、完整通关或打包；数据检查不等于游戏验收。
+
+## 2026-10-17 正式关卡12房间更新交付
+
+- 用户确认当前已保存Gaming关卡为后续正式关卡基线；沿用协作分支codex/level/main-20261017-02。范围为Gaming.unity、Gaming.planning.json、Content/LevelMaps/正式关卡.json及各自既有meta，保留GUID、当前布局、物体参数及绑定；不全量重建地图。
+- 已fetch origin/main至3932955；本窗口不合并、不推main，不用旧代码回退主线修复，由整合窗口保留主线后续功能并整合此关卡交付。
+- 场景内嵌规划与同名规划一致（12房间），命名存档备份至Library/FormalLevelDeliveryBackups后同步；三份布局结构一致。既有meta与新增GUID引用已核对；提交前执行AllTracked规划守卫及diff检查。
+- 保留本地字体缓存、栏目中文转义编码差异、定向气泡预览序列化，不混入关卡提交；没有新增未跟踪资源依赖。Unity6000.3.12f1，本轮未执行Unity编译、Play Mode、完整通关或打包，不将静态数据检查视为运行验收。
