@@ -10,7 +10,15 @@ namespace PlanningEditorPrototype
     [InitializeOnLoad]
     internal static class PlanningArtAdapter
     {
-        static PlanningArtAdapter() { GridArtLevelSource.Read = Read; }
+        static PlanningArtAdapter() { GridArtLevelSource.Read = Read; GridArtColorSource.Read = ReadColors; }
+        private static System.Collections.Generic.IReadOnlyList<GridArtColorDefinition> ReadColors()
+        {
+            var result = new System.Collections.Generic.List<GridArtColorDefinition>();
+            var catalog = Resources.Load<Project.ColorBlocks.ColorCatalog>("ColorBlocks/ColorCatalog");
+            if (catalog != null) foreach (var color in catalog.Colors)
+                if (color != null) result.Add(new GridArtColorDefinition(color.id,color.displayName,color.unityLayer));
+            return result;
+        }
         internal static GridArtLevelSnapshot Read(Scene scene)
         {
             var snapshot = new GridArtLevelSnapshot();
@@ -32,14 +40,17 @@ namespace PlanningEditorPrototype
                     {
                         if (!string.IsNullOrEmpty(box.propEntryId) || !string.IsNullOrEmpty(box.propEntryName) || box.type != PlanningDetailType.Solid) continue;
                         var rect = PlanningLayoutUtility.GetAssemblyBoxRect(room, box, document.worldBlockCellWidth, document.worldBlockCellHeight);
-                        group.bounds.Add(new Rect(rect.x, -rect.yMax, rect.width, rect.height));
+                        Vector2Int offset = rect.position - new Vector2Int(box.x,box.y);
+                        foreach (RectInt part in PlanningShapeUtility.Rectangles(box))
+                            group.bounds.Add(new Rect(part.x+offset.x, -part.yMax-offset.y, part.width, part.height));
                     }
                     snapshot.groups.Add(group);
                 }
                 var patches = new GridArtLevelGroup { id = "assembly", label = "装配补丁" };
                 foreach (var box in document.assemblyPatches)
                     if (box.type == PlanningDetailType.Solid && string.IsNullOrEmpty(box.propEntryId) && string.IsNullOrEmpty(box.propEntryName))
-                        patches.bounds.Add(new Rect(box.x, -box.y-box.height, box.width, box.height));
+                        foreach (RectInt part in PlanningShapeUtility.Rectangles(box))
+                            patches.bounds.Add(new Rect(part.x, -part.yMax, part.width, part.height));
                 if (patches.bounds.Count > 0) snapshot.groups.Add(patches);
                 return snapshot;
             }
@@ -49,7 +60,10 @@ namespace PlanningEditorPrototype
                 {
                     if (block.IsProp) continue;
                     float size = block.CellWorldSize; snapshot.cellSize = size;
-                    sceneGroup.bounds.Add(new Rect((Vector2)block.Cell*size, (Vector2)block.SizeCells*size));
+                    var shape = block.GetComponent<LevelEditorMergedShape>();
+                    if (shape == null) sceneGroup.bounds.Add(new Rect((Vector2)block.Cell*size, (Vector2)block.SizeCells*size));
+                    else foreach (RectInt part in shape.Rectangles)
+                        sceneGroup.bounds.Add(new Rect(new Vector2(block.Cell.x+part.x,block.Cell.y+block.SizeCells.y-part.yMax)*size,(Vector2)part.size*size));
                 }
             snapshot.groups.Add(sceneGroup); return snapshot;
         }

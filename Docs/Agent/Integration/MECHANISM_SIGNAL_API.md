@@ -10,6 +10,12 @@
 
 `MovingPlatformFeature.BindBase(MechanismBaseFeature)` 将驱动改为 SignalControlled，替换信号来源并安全重新订阅；传 null 解绑并停止。`IsMoving`、`PreviewStart/PreviewEnd`、`LinkedControls` 只读。既有 Any/All 信号组合仍可用，默认编辑器快捷绑定仅一个基座。
 
+移动路线通过 `MovingPlatformPath.Resolve` 共用格空间计算。`pathMode=Legacy(0)`保留正数`travelBlocks`、`route`和`reverseRoute`（false右/上，true左/下）；旧序列化缺字段时仍为0，不自动迁移。Right/Left/Up/Down(1～4)从作者位置到对应`rightDistance/leftDistance/upDistance/downDistance`；HorizontalRange/VerticalRange(5～6)使用双侧距离、`centerOffset`和`startNegative`。偏移沿路线正轴，以作者位置为基准，限制在[-正向距离,负向距离]内，保证作者位置在区间。负值距离按0；双侧均0静止。距离均以既有格尺寸换算，不受合并物体自身拉伸影响。
+
+信号/自动模式首次从作者位置到指定端点，随后完整两端往返；每段独立缓动，初始短段按总行程比例计时，遇实体阻挡重新从当前位置反向，不跃迁端点。曲柄0→1仍是作者位置到`Path.FirstEnd`，不会将0%映射成负端点而造成解锁瞬移。ResetForRoom恢复作者位置、首程和停留状态，绑定/解锁保留。
+
+`Path`只读格空间路径，`PreviewOrigin`为作者位置，`PreviewStart/PreviewEnd`为路线绘制两端（单向保留从作者位置到目标端的方向），`PreviewCenter`为有效中心、`PreviewFirstTarget`为首程目标。Scene Gizmo和PlanningPlatformPathUtility均走同一Resolve；规划读取预制体/栏目或实例覆盖，包括reverseRoute，最后只翻转屏幕Y。不要再次单独实现方向推导。参数元数据的VisibleWhenValues支持枚举多值显隐；Inspector与参数窗口共享此条件。
+
 `CrankPlatformFeature` 是独立控制器，仅写进度和信号，不持有平台模型，不写平台 Transform。`BindBase(source)` 配置制动；`TryInteract/HoldInteract/EndInteract` 复用交互契约。`Progress` 为0～1，`Platforms` 为消费者注册的只读运行时集合，不是持久引用列表。任一平台载人加快共享进度回落，基座通电冻结共享进度。
 
 `MovingPlatformFeature.BindCrank(CrankPlatformFeature)` 切换为 CrankControlled，取消旧基座信号订阅并更换曲柄注册；null 解绑并停止。消费者在 Attach/Detach 成对注册，自己按作者位置、路线和 travelBlocks 在 FixedUpdate 移动，位移通过 `PlayerController.QueuePlatformDelta` 交给玩家；不是满进度后才触发普通往返。`CrankController`、`IsCrankControlled`、`HasStandingPlayer` 只读。平台停用/删除不遗留注册，重建重新绑定新实例。`SnapToCrankProgress` 仅用于显式设置/重置，不用于逐帧或玩家移动。`LiftPlatform` 仅为旧调用兼容返回首个注册平台，不作为新集成入口。

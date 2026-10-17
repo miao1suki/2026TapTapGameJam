@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Project.LevelEditor;
+using Project.LevelEditor.Editor;
+using UnityEditor;
 using UnityEngine;
 
 namespace PlanningEditorPrototype
@@ -44,7 +47,8 @@ namespace PlanningEditorPrototype
                 foreach (var box in room.boxes.ToList())
                 {
                     var world = new RectInt(oldOrigin.x + box.x, oldOrigin.y + box.y, box.width, box.height);
-                    if (!area.Value.Overlaps(world)) { room.boxes.Remove(box); continue; }
+                    var localArea = new RectInt(area.Value.position - oldOrigin, area.Value.size);
+                    if (!PlanningShapeUtility.Overlaps(box, localArea)) { room.boxes.Remove(box); continue; }
                     if (!Contains(area.Value, world)) ClipBox(result, box, world, area.Value);
                 }
                 Vector2Int shift = oldOrigin - PlanningWorldUtility.Bounds(room).position;
@@ -57,11 +61,11 @@ namespace PlanningEditorPrototype
             foreach (var patch in result.assemblyPatches.ToList())
             {
                 var rect = new RectInt(patch.x, patch.y, patch.width, patch.height);
-                if (area.HasValue ? !area.Value.Overlaps(rect) : !Cells(rect).Any(keptCells.Contains))
+                if (area.HasValue ? !PlanningShapeUtility.Overlaps(patch, area.Value) : !PlanningShapeUtility.Cells(patch).Any(keptCells.Contains))
                     result.assemblyPatches.Remove(patch);
                 else if (area.HasValue && !Contains(area.Value, rect))
                     ClipBox(result, patch, rect, area.Value);
-                else if (selected != null && Cells(rect).Any(cell => !keptCells.Contains(cell)))
+                else if (selected != null && PlanningShapeUtility.Cells(patch).Any(cell => !keptCells.Contains(cell)))
                     throw new InvalidDataException("装配物体跨越未选中房间，请同时选择相关房间或使用框选导出。");
             }
             result.doors.RemoveAll(d => !retained.Contains(d.roomId) || area.HasValue && !area.Value.Contains(new Vector2Int(d.x, d.y)));
@@ -97,11 +101,15 @@ namespace PlanningEditorPrototype
 
         internal static PlanningDocument Import(PlanningDocument target, PlanningDocument source, Vector2Int anchor, bool includePlayer, out int detached)
         {
-            ValidatePlacement(target, source, anchor);
+            ValidateStructure(source);
             var incoming = PlanningDocument.FromPersistentJson(source.ToPersistentJson());
             var result = PlanningDocument.FromPersistentJson(target.ToPersistentJson());
+            // Legacy 16:1 ownership must migrate before collision checks, not after them.
+            ValidatePlacement(result, incoming, anchor);
+            ResolveDependencies(incoming, true);
             var origin = Bounds(incoming).position;
             var delta = anchor - origin;
+            ValidateObjectPlacement(result, incoming, delta);
             detached = DetachExternalLinks(incoming);
             var ids = new Dictionary<string, string>();
             void Add(string id, string prefix)
@@ -125,6 +133,7 @@ namespace PlanningEditorPrototype
             {
                 box.id = Map(box.id); box.doorOwnerId = Map(box.doorOwnerId);
                 box.mechanismBaseId = Map(box.mechanismBaseId); box.crankOwnerId = Map(box.crankOwnerId);
+                if (string.IsNullOrEmpty(box.mechanismBaseId)) box.mechanismBaseCellOffset = default;
                 box.sceneBlock = null;
                 for (int i = 0; i < box.mergeParts.Count; i++)
                 {
@@ -169,11 +178,122 @@ namespace PlanningEditorPrototype
         }
         internal static void ValidatePlacement(PlanningDocument target, PlanningDocument source, Vector2Int anchor)
         {
-            Vector2Int shift = anchor - Bounds(source).position;
+            Vector2Int origin = Bounds(source).position;
+            Vector2Int shift = new Vector2Int(checked(anchor.x - origin.x), checked(anchor.y - origin.y));
             var occupied = new HashSet<Vector2Int>(target.rooms.SelectMany(r => r.cells).Select(c => new Vector2Int(c.x, c.y)));
             foreach (var cell in source.rooms.SelectMany(r => r.cells))
-                if (!occupied.Add(new Vector2Int(cell.x, cell.y) + shift))
+                if (!occupied.Add(new Vector2Int(checked(cell.x + shift.x), checked(cell.y + shift.y))))
                     throw new InvalidDataException("导入位置与现有房间或通道重叠，请调整导入坐标。");
+        }
+
+        // Run once on file selection/apply, never during pan or drawing previews.
+        internal static void ValidateDependencies(PlanningDocument source)
+        { ValidateStructure(source); ResolveDependencies(source, false); }
+
+        private static void ResolveDependencies(PlanningDocument source, bool canonicalize)
+        {
+            var palette = LevelEditorPaletteService.GetOrCreate();
+            var resolvedAssets = new HashSet<string>();
+            foreach (var box in Boxes(source)) ResolveBox(box);
+
+            void ResolveBox(PlanningBox box)
+            {
+                string label = box.propEntryName ?? box.paletteEntryName ?? box.label ?? box.id;
+                if (box.type == PlanningDetailType.Prop)
+                {
+                    var entry = box.propEntryId == PlanningDoorUtility.ButtonEntryId
+                        ? PlanningDoorUtility.GetButtonEntry()
+                        : palette.PropEntries.FirstOrDefault(p => p != null && p.EntryId == box.propEntryId) ??
+                          palette.PropEntries.FirstOrDefault(p => p != null && !string.IsNullOrEmpty(box.propEntryName) && p.DisplayName == box.propEntryName);
+                    if (entry?.Prefab == null)
+                        throw new InvalidDataException("缺少道具资源：" + label + "。请先同步道具栏目及预制体。");
+                    if (canonicalize && box.propEntryId != PlanningDoorUtility.ButtonEntryId)
+                    { box.propEntryId = entry.EntryId; box.propEntryName = entry.DisplayName; }
+                }
+                else if (!string.IsNullOrEmpty(box.paletteEntryId) || !string.IsNullOrEmpty(box.paletteEntryName))
+                {
+                    var entry = palette.Entries.FirstOrDefault(p => p != null && p.EntryId == box.paletteEntryId) ??
+                                palette.Entries.FirstOrDefault(p => p != null && !string.IsNullOrEmpty(box.paletteEntryName) && p.DisplayName == box.paletteEntryName);
+                    if (entry == null || entry.UsesPrefabDirectly && entry.Prefab == null)
+                        throw new InvalidDataException("缺少方块资源：" + label + "。请先同步栏目及预制体。");
+                    if (canonicalize) { box.paletteEntryId = entry.EntryId; box.paletteEntryName = entry.DisplayName; }
+                }
+                if (box.componentOverrides != null)
+                    foreach (var value in box.componentOverrides)
+                    {
+                        if (value == null || value.ValueType != "ObjectReference" || string.IsNullOrEmpty(value.Value) || value.Value == "reference:null") continue;
+                        if (!resolvedAssets.Add(value.Value)) continue;
+                        if (!GlobalObjectId.TryParse(value.Value, out var assetId) || assetId.identifierType == 2)
+                            throw new InvalidDataException("物体“" + label + "”的参数“" + value.PropertyPath + "”包含场景引用，不能跨存档导入。请改用项目资源或编辑器绑定。");
+                        if (GlobalObjectId.GlobalObjectIdentifierToObjectSlow(assetId) == null)
+                            throw new InvalidDataException("物体“" + label + "”的参数“" + value.PropertyPath + "”缺少引用资源，请先同步资源。");
+                    }
+                for (int i = 0; i < box.mergeParts.Count; i++)
+                {
+                    var part = PlanningBox.FromPersistentJson(box.mergeParts[i]);
+                    ResolveBox(part);
+                    if (canonicalize) box.mergeParts[i] = JsonUtility.ToJson(part);
+                }
+            }
+        }
+
+        private static void ValidateStructure(PlanningDocument source)
+        {
+            if (source == null || source.rooms == null) throw new InvalidDataException("存档没有房间数据。");
+            var ids = new HashSet<string>();
+            void Id(string id)
+            { if (string.IsNullOrEmpty(id) || !ids.Add(id)) throw new InvalidDataException("存档包含空或重复的内部ID。"); }
+            void Box(PlanningBox box, int depth)
+            {
+                if (box == null || box.width <= 0 || box.height <= 0 || box.mergeParts == null || depth > 32)
+                    throw new InvalidDataException("存档包含损坏的物体或合并数据。");
+                Id(box.id);
+                foreach (var json in box.mergeParts)
+                {
+                    if (string.IsNullOrEmpty(json)) throw new InvalidDataException("合并物体的原始数据损坏。");
+                    Box(PlanningBox.FromPersistentJson(json), depth + 1);
+                }
+            }
+            foreach (var room in source.rooms)
+            {
+                if (room == null || room.cells == null || room.boxes == null || room.cells.Any(c => c == null))
+                    throw new InvalidDataException("存档包含损坏的房间数据。");
+                Id(room.id);
+                foreach (var box in room.boxes) Box(box, 0);
+            }
+            foreach (var box in source.assemblyPatches ?? Enumerable.Empty<PlanningBox>()) Box(box, 0);
+            foreach (var region in source.regions ?? Enumerable.Empty<PlanningRegion>()) Id(region.id);
+            foreach (var door in source.doors ?? Enumerable.Empty<PlanningDoor>()) Id(door.id);
+            foreach (var key in source.keys ?? Enumerable.Empty<PlanningKey>()) Id(key.id);
+            foreach (var item in source.locks ?? Enumerable.Empty<PlanningLock>()) Id(item.id);
+        }
+
+        private static void ValidateObjectPlacement(PlanningDocument target, PlanningDocument source, Vector2Int shift)
+        {
+            var palette = LevelEditorPaletteService.GetOrCreate();
+            var foreground = new HashSet<Vector2Int>();
+            var water = new HashSet<Vector2Int>();
+            IEnumerable<(PlanningBox box, Vector2Int origin)> WorldBoxes(PlanningDocument doc)
+            {
+                foreach (var room in doc.rooms)
+                {
+                    Vector2Int origin = PlanningWorldUtility.Bounds(room).position;
+                    foreach (var box in room.boxes) yield return (box, origin);
+                }
+                foreach (var box in doc.assemblyPatches) yield return (box, Vector2Int.zero);
+            }
+            foreach (var item in WorldBoxes(target))
+            {
+                var layer = PlanningWaterLayerUtility.IsWater(item.box, palette) ? water : foreground;
+                foreach (var cell in PlanningShapeUtility.Cells(item.box)) layer.Add(cell + item.origin);
+            }
+            foreach (var item in WorldBoxes(source))
+            {
+                var layer = PlanningWaterLayerUtility.IsWater(item.box, palette) ? water : foreground;
+                foreach (var cell in PlanningShapeUtility.Cells(item.box))
+                    if (layer.Contains(cell + item.origin + shift))
+                        throw new InvalidDataException("导入物体与当前地图同层物体重叠，请调整导入坐标。装配物体可能超出房间边界。");
+            }
         }
         private static int DetachExternalLinks(PlanningDocument doc)
         {

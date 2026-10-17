@@ -19,6 +19,8 @@ namespace Project.Mechanisms.Editor
             settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "fastSlideSpeed", "加速下滑速度", "向下输入时的下滑速度。"));
             var orientation = new PropertyField(serializedObject.FindProperty("sideFacing"));
             orientation.SetEnabled(false); settings.Add(orientation);
+            if (((NeutralLadder)target).SideFacing)
+                settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "wallSide", "靠墙方向", "左连墙：墙在梯子左侧；右连墙：墙在梯子右侧。只改变梯子朝向，不移动已放置的梯子。"));
             root.Add(settings);
             ProjectInspectorUtility.Bind(root, serializedObject);
             return root;

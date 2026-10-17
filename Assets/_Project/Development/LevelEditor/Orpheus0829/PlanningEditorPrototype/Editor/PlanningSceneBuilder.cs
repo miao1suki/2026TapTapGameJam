@@ -316,7 +316,7 @@ namespace PlanningEditorPrototype
                 var externalLayer = block.GetComponent<Project.BlockFeatures.WaterVisualFeature>() != null ? existingWaterCells : existingCells;
                 for(int x=block.Cell.x;x<block.Cell.x+block.SizeCells.x;x++)
                     for(int y=block.Cell.y;y<block.Cell.y+block.SizeCells.y;y++)
-                        externalLayer.Add(new Vector2Int(x,-y-1));
+                        if (block.ContainsCell(new Vector2Int(x,y))) externalLayer.Add(new Vector2Int(x,-y-1));
             }
 
             var occupied = new HashSet<Vector2Int>();
@@ -359,6 +359,7 @@ namespace PlanningEditorPrototype
                              x < box.x + box.width;
                              x++)
                         {
+                            if (!PlanningShapeUtility.Contains(box, new Vector2Int(x,y))) continue;
                             int sceneY = layout.OffsetY + y;
                             var cell = new Vector2Int(
                                 layout.OffsetX + x,
@@ -379,7 +380,7 @@ namespace PlanningEditorPrototype
                                     new Vector2Int(x,y));
                             if (placed == null)
                             {
-                                if ((box.isMerged || box.singleInstance || PlanningDoorUtility.IsDoor(box)) && (x != box.x || y != box.y)) continue;
+                                if ((box.isMerged || box.singleInstance || PlanningDoorUtility.IsDoor(box)) && !IsShapeAnchor(box, new Vector2Int(x,y))) continue;
                                 skippedCount++;
                                 continue;
                             }
@@ -1203,6 +1204,7 @@ namespace PlanningEditorPrototype
             HashSet<Vector2Int> existingCells,
             Vector2Int localCell)
         {
+            if (!PlanningShapeUtility.Contains(box, localCell)) return false;
             if (!occupied.Add(cell) || existingCells.Contains(cell))
             {
                 return false;
@@ -1223,7 +1225,12 @@ namespace PlanningEditorPrototype
             Transform parent,
             Vector2Int localCell)
         {
-            if ((box.isMerged || box.singleInstance || PlanningDoorUtility.IsDoor(box)) && localCell != new Vector2Int(box.x,box.y)) return null;
+            if ((box.isMerged || box.singleInstance || PlanningDoorUtility.IsDoor(box)) && !IsShapeAnchor(box, localCell)) return null;
+            if (box.isMerged)
+            {
+                cell -= localCell - new Vector2Int(box.x, box.y);
+                localCell = new Vector2Int(box.x, box.y);
+            }
             LevelEditorPlacedBlock placed;
             IReadOnlyList<LevelEditorComponentValueOverride> defaults;
             if (!string.IsNullOrEmpty(box.propEntryId) ||
@@ -1239,7 +1246,23 @@ namespace PlanningEditorPrototype
                 defaults = entry?.ComponentValueOverrides;
             }
             if (placed == null) return null;
-            if (PlanningDoorUtility.HasFixedFootprint(box.propEntryId) || box.propEntryId == PlanningDoorUtility.ButtonEntryId)
+            bool fittedLadder = PlanningDoorUtility.IsLadderEntry(box.propEntryId);
+            bool fittedPlatform = PlanningDoorUtility.IsPlatformEntry(box.propEntryId);
+            if (fittedLadder)
+            {
+                // Use authored dimensions, including old two-cell non-merged saves.
+                // A centered unit trigger avoids multiplying the legacy height twice.
+                var ladderCollider = placed.GetComponent<BoxCollider>();
+                if (ladderCollider != null)
+                {
+                    var size = ladderCollider.size; size.y = 1f; ladderCollider.size = size;
+                    var center = ladderCollider.center; center.y = 0f; ladderCollider.center = center;
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(ladderCollider);
+                }
+                placed.transform.localScale *= CellSize;
+            }
+            if (fittedPlatform) placed.transform.localScale *= CellSize;
+            if (!fittedLadder && !fittedPlatform && (PlanningDoorUtility.HasFixedFootprint(box.propEntryId) || box.propEntryId == PlanningDoorUtility.ButtonEntryId))
             {
                 placed.transform.localScale *= CellSize;
                 if (PlanningDoorUtility.HasFixedFootprint(box.propEntryId))
@@ -1252,13 +1275,25 @@ namespace PlanningEditorPrototype
             }
             var values=box.hasComponentOverrides ? box.componentOverrides : defaults;
             LevelEditorComponentOverrideUtility.ApplyOverrides(placed.gameObject,values,false);
-            if(box.isMerged)
+            if(box.isMerged || fittedLadder || fittedPlatform && box.singleInstance)
             {
                 placed.transform.localScale=Vector3.Scale(placed.transform.localScale,new Vector3(box.width,box.height,1));
                 placed.transform.position+=new Vector3((box.width-1)*CellSize*.5f,-(box.height-1)*CellSize*.5f,0);
                 var bottomCell=new Vector2Int(cell.x,-cell.y-box.height);
                 placed.Configure(bottomCell,placed.EntryName,placed.EntryColor,!placed.IsProp && !FindEntry(palette,box).UsesPrefabDirectly,placed.IsProp,CellSize);
                 placed.SetSizeCells(new Vector2Int(box.width,box.height));
+            }
+            if (fittedLadder || fittedPlatform) placed.GetComponent<MechanismArtworkPresentation>()?.Refresh(0f);
+            if (box.isMerged && PlanningShapeUtility.IsIrregular(box))
+            {
+                var coverage = new List<RectInt>();
+                foreach (RectInt rect in PlanningShapeUtility.Rectangles(box))
+                {
+                    var part = rect; part.position -= new Vector2Int(box.x, box.y); coverage.Add(part);
+                }
+                var shape = placed.gameObject.AddComponent<LevelEditorMergedShape>();
+                shape.Configure(new Vector2Int(box.width, box.height), coverage);
+                placed.GetComponent<MechanismArtworkPresentation>()?.Refresh(0f);
             }
             // The signature tracks content, not selection or transient scene references.
             PlanningBox signatureBox = box.PersistentClone();
@@ -1268,11 +1303,14 @@ namespace PlanningEditorPrototype
 
         [System.Serializable] private sealed class OverrideSignature { public List<LevelEditorComponentValueOverride> values; }
 
+        private static bool IsShapeAnchor(PlanningBox box, Vector2Int cell) =>
+            PlanningShapeUtility.Rectangles(box).Count > 0 && PlanningShapeUtility.Rectangles(box)[0].position == cell;
+
         private static bool CanPlaceMerged(PlanningBox box,Vector2Int offset,HashSet<Vector2Int> occupied,HashSet<Vector2Int> external)
         {
             if(!box.isMerged && !box.singleInstance && !PlanningDoorUtility.IsDoor(box)) return true;
-            for(int x=box.x;x<box.x+box.width;x++) for(int y=box.y;y<box.y+box.height;y++)
-                if(occupied.Contains(new Vector2Int(x,y)+offset) || external.Contains(new Vector2Int(x,y)+offset)) return false;
+            foreach (Vector2Int cell in PlanningShapeUtility.Cells(box))
+                if(occupied.Contains(cell+offset) || external.Contains(cell+offset)) return false;
             return true;
         }
 

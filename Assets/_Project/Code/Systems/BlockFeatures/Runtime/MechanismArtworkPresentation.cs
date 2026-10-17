@@ -2,6 +2,7 @@ using Project.ColorBlocks;
 using Project.ContactCubes;
 using Project.Mechanisms;
 using Project.ObjectArtwork;
+using Project.WorldItems;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -19,6 +20,10 @@ namespace Project.BlockFeatures
         private MovingPlatformFeature platform;
         private ButtonLockFeature redButton;
         private NeutralLadder ladder;
+        private NeutralSpike spike;
+        private Transform spikeDirection;
+        private MechanismBaseFeature mechanismBase;
+        private PlantObstacleFeature obstacle;
         private LavaHazardFeature lava;
         private DoorHint hint;
         private ColorObject colorObject;
@@ -28,6 +33,7 @@ namespace Project.BlockFeatures
         private SpriteRenderer[] indicators;
         private Renderer[] hintRenderers;
         private MonoBehaviour gridOwner;
+        private Project.LevelEditor.LevelEditorMergedShape shape;
         private IGridCellSizeProvider grid;
         private float cell = 1f;
         private MaterialPropertyBlock mask;
@@ -41,7 +47,9 @@ namespace Project.BlockFeatures
             owner.GetComponent<DoorButton>() != null || owner.GetComponent<CrankPlatformFeature>() != null ||
             owner.GetComponent<MovingPlatformFeature>() != null || owner.GetComponent<ContactCube>() != null ||
             owner.GetComponent<ColorKeyPickup>() != null || owner.GetComponent<ButtonLockFeature>() != null ||
-            owner.GetComponent<OneWayPlatform>() != null || owner.GetComponent<NeutralLadder>() != null || owner.GetComponent<LavaHazardFeature>() != null;
+            owner.GetComponent<OneWayPlatform>() != null || owner.GetComponent<NeutralLadder>() != null || owner.GetComponent<LavaHazardFeature>() != null ||
+            owner.GetComponent<NeutralSpike>() != null || owner.GetComponent<MechanismBaseFeature>() != null ||
+            owner.GetComponent<PlantObstacleFeature>() != null || owner.GetComponent<MechanismArtworkPresentation>() != null;
 
         public static MechanismArtworkPresentation Ensure(GameObject owner)
         {
@@ -82,6 +90,14 @@ namespace Project.BlockFeatures
             crank = GetComponent<CrankPlatformFeature>(); platform = GetComponent<MovingPlatformFeature>();
             redButton = GetComponent<ButtonLockFeature>(); colorObject = GetComponent<ColorObject>();
             ladder = GetComponent<NeutralLadder>();
+            spike = GetComponent<NeutralSpike>();
+            mechanismBase = GetComponent<MechanismBaseFeature>();
+            obstacle = GetComponent<PlantObstacleFeature>();
+            if (spike != null)
+            {
+                var volume = GetComponentInChildren<MeshCollider>(true);
+                if (volume != null) spikeDirection = volume.transform;
+            }
             lava = GetComponent<LavaHazardFeature>();
             var cube = GetComponent<ContactCube>(); var key = GetComponent<ColorKeyPickup>();
             colorKey = key;
@@ -91,11 +107,16 @@ namespace Project.BlockFeatures
                 : cube != null ? cube.Color == CubeColor.Red ? MechanismArtworkKind.RedCube : cube.Color == CubeColor.Green ? MechanismArtworkKind.GreenCube : MechanismArtworkKind.BlueCube
                 : key != null ? key.ColorTypeId == "red" ? MechanismArtworkKind.RedKey : key.ColorTypeId == "green" ? MechanismArtworkKind.GreenKey : MechanismArtworkKind.BlueKey
                 : redButton != null ? MechanismArtworkKind.RedButton
+                : mechanismBase != null ? MechanismArtworkKind.MechanismBase
+                : obstacle != null ? MechanismArtworkKind.PlantObstacle
                 : ladder != null ? ladder.SideFacing ? MechanismArtworkKind.LadderSide : MechanismArtworkKind.LadderFront
-                : lava != null ? MechanismArtworkKind.Lava : MechanismArtworkKind.OneWayPlatform;
+                : spike != null ? MechanismArtworkKind.Spike
+                : lava != null ? MechanismArtworkKind.Lava
+                : GetComponent<OneWayPlatform>() != null ? MechanismArtworkKind.OneWayPlatform : kind;
             var entry = artwork.Find(kind);
             if (entry == null || entry.frames == null || entry.frames.Length == 0) return;
             footprint = GetComponent<BoxCollider>();
+            shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
             if (cube != null) foreach (var box in GetComponentsInChildren<BoxCollider>(true)) if (!box.isTrigger) { footprint = box; break; }
             if (visual == null)
             {
@@ -138,6 +159,7 @@ namespace Project.BlockFeatures
         {
             Initialize();
             if (!initialized || visual == null) return;
+            if (ladder != null) ladder.PreserveLegacyFootprint();
             if (runtimeMaterial != Application.isPlaying) BindMaterial();
             if (button != null) kind = ObjectArtworkLibrary.DoorButtonKind(button.BindingIndex);
             var entry = artwork.Find(kind);
@@ -148,10 +170,11 @@ namespace Project.BlockFeatures
                 if (model != null && (!Application.isPlaying || colorObject == null || real || model != colorObject.TargetRenderer)) model.enabled = false;
             visual.enabled = isActiveAndEnabled && (!Application.isPlaying ||
                 ((colorKey == null || !colorKey.IsCollectionVisualComplete) &&
-                 (colorObject == null || colorObject.IsActive)));
+                 (colorObject == null || colorObject.IsActive) && (obstacle == null || obstacle.ShowsArtwork)));
             visual.gameObject.layer = colorObject != null && colorObject.TargetRenderer != null ? colorObject.TargetRenderer.gameObject.layer : gameObject.layer;
             int frame = 0;
-            if (crank != null) frame = ObjectArtworkLibrary.ProgressFrame(crank.Progress, entry.frames.Length);
+            if (mechanismBase != null) frame = mechanismBase.IsSignalActive ? 1 : 0;
+            else if (crank != null) frame = ObjectArtworkLibrary.ProgressFrame(crank.Progress, entry.frames.Length);
             else if (door != null)
             {
                 openProgress = Mathf.MoveTowards(openProgress, door.State == DoorState.Unlocked ? 1f : 0f, Mathf.Max(0, delta) / Mathf.Max(.01f, door.OpenDuration));
@@ -214,27 +237,60 @@ namespace Project.BlockFeatures
                 size = new Vector3(Mathf.Abs(x.x)+Mathf.Abs(y.x)+Mathf.Abs(z.x), Mathf.Abs(x.y)+Mathf.Abs(y.y)+Mathf.Abs(z.y), Mathf.Abs(x.z)+Mathf.Abs(y.z)+Mathf.Abs(z.z));
             }
             if (gridOwner != null) { grid ??= gridOwner as IGridCellSizeProvider; if (grid != null) cell = Mathf.Max(.01f, grid.CellWorldSize); }
+            if (shape == null) shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
+            if (shape != null) { center = shape.LocalBounds.center; size = shape.LocalBounds.size; }
             Vector3 scale = transform.lossyScale;
-            bool tile = ladder != null || lava != null || kind == MechanismArtworkKind.RedCube || kind == MechanismArtworkKind.GreenCube || kind == MechanismArtworkKind.BlueCube;
+            if (spike != null)
+            {
+                Quaternion rotation = spikeDirection != null ? Quaternion.Inverse(transform.rotation) * spikeDirection.rotation : Quaternion.identity;
+                bool sideways = Mathf.Abs((rotation * Vector3.right).y) > .9f;
+                visual.drawMode = SpriteDrawMode.Tiled;
+                visual.tileMode = SpriteTileMode.Continuous;
+                visual.transform.localRotation = rotation;
+                visual.transform.localScale = ObjectArtworkLibrary.PlatformTileScale(scale, cell, sideways);
+                visual.size = new Vector2(Mathf.Abs(sideways ? size.y * scale.y : size.x * scale.x) / cell,
+                    sprite.rect.height / sprite.pixelsPerUnit);
+                Vector3 baseEdge = rotation * (Vector3.down * .5f);
+                visual.transform.localPosition = center + new Vector3(baseEdge.x * size.x, baseEdge.y * size.y, -size.z * .5f - .015f);
+                return;
+            }
+            bool tile = ladder != null || lava != null || obstacle != null || kind == MechanismArtworkKind.Obsidian || kind == MechanismArtworkKind.RedCube || kind == MechanismArtworkKind.GreenCube || kind == MechanismArtworkKind.BlueCube;
             bool sliced = platform != null || kind == MechanismArtworkKind.OneWayPlatform;
+            bool verticalPlatform = sliced && ObjectArtworkLibrary.PlatformVisualIsVertical(new Vector2(Mathf.Abs(size.x * scale.x), Mathf.Abs(size.y * scale.y)));
+            visual.flipX = ladder != null && ladder.SideFacing && ladder.WallSide == LadderWallSide.Left;
+            // A narrow ladder trigger is not its art footprint. Its complete 16-pixel
+            // tile still occupies one authored cell, including existing long ladders.
+            if (ladder != null) size.x = 1f;
             visual.transform.localRotation = door != null && door.IsHorizontal ? Quaternion.Euler(0, 0, 90) : Quaternion.identity;
             if (tile || sliced)
             {
                 visual.drawMode = SpriteDrawMode.Tiled;
                 visual.tileMode = SpriteTileMode.Continuous;
-                visual.transform.localScale = ObjectArtworkLibrary.TileScale(scale, cell);
-                // Platform art is a five-pixel-high strip at the collision top, not an inflated solid block.
-                visual.size = new Vector2(Mathf.Abs(size.x * scale.x) / cell, tile ? Mathf.Abs(size.y * scale.y) / cell : sprite.rect.height / sprite.pixelsPerUnit);
-                float bottom = tile ? center.y - size.y * .5f : center.y + size.y * .5f - visual.size.y * cell / Mathf.Max(.001f, Mathf.Abs(scale.y));
-                visual.transform.localPosition = new Vector3(center.x, bottom, center.z - size.z * .5f - .015f * cell / Mathf.Max(.001f, Mathf.Abs(scale.z)));
+                visual.transform.localScale = ObjectArtworkLibrary.PlatformTileScale(scale, cell, verticalPlatform);
+                float depth = center.z - size.z * .5f - .015f * cell / Mathf.Max(.001f, Mathf.Abs(scale.z));
+                if (verticalPlatform)
+                {
+                    visual.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                    visual.size = new Vector2(Mathf.Abs(size.y * scale.y) / cell, sprite.rect.height / sprite.pixelsPerUnit);
+                    // Native visible platform strip is 5/16 of a cell; preserve its
+                    // support edge while keeping the transparent 16-pixel frame.
+                    float visibleThickness = platform != null ? 5f / 16f : sprite.rect.height / sprite.pixelsPerUnit;
+                    visual.transform.localPosition = new Vector3(center.x - size.x * .5f + visibleThickness * cell / Mathf.Max(.001f, Mathf.Abs(scale.x)), center.y, depth);
+                }
+                else
+                {
+                    visual.size = new Vector2(Mathf.Abs(size.x * scale.x) / cell, tile ? Mathf.Abs(size.y * scale.y) / cell : sprite.rect.height / sprite.pixelsPerUnit);
+                    float visibleThickness = platform != null ? 5f / 16f : visual.size.y;
+                    float bottom = tile ? center.y - size.y * .5f : center.y + size.y * .5f - visibleThickness * cell / Mathf.Max(.001f, Mathf.Abs(scale.y));
+                    visual.transform.localPosition = new Vector3(center.x, bottom, depth);
+                }
             }
             else
             {
                 visual.drawMode = SpriteDrawMode.Simple;
                 bool horizontal = door != null && door.IsHorizontal;
-                float width = horizontal ? size.y : size.x, height = horizontal ? size.x : size.y;
-                if (button != null || redButton != null) { width = 1f; height = 1f; }
-                visual.transform.localScale = new Vector3(width / sprite.bounds.size.x, height / sprite.bounds.size.y, 1);
+                Vector3 parentAxes = horizontal ? new Vector3(scale.y, scale.x, scale.z) : scale;
+                visual.transform.localScale = GridArtworkMetrics.NaturalSpriteScale(sprite, parentAxes, cell);
                 if (door != null && artwork.doorClosed != null)
                 {
                     var localScale = visual.transform.localScale;
@@ -242,9 +298,13 @@ namespace Project.BlockFeatures
                     visual.transform.localScale = localScale;
                 }
                 // Bottom-pivot sprites fit the complete footprint, including the door's two cells.
+                float bottom = colorKey != null
+                    ? center.y - sprite.rect.height / GridArtworkMetrics.PixelsPerCell * cell * .5f / Mathf.Max(.001f, Mathf.Abs(scale.y))
+                    : button != null ? -.5f : center.y - size.y * .5f;
                 visual.transform.localPosition = horizontal ? new Vector3(center.x + size.x * .5f, center.y, center.z - size.z * .5f - .015f)
-                    : new Vector3(center.x, (button != null ? -.5f : center.y - size.y * .5f), center.z - size.z * .5f - .015f);
+                    : new Vector3(center.x, bottom, center.z - size.z * .5f - .015f);
             }
+            if (shape != null && (tile || sliced)) shape.ApplySprite(visual, sliced);
         }
         private void OnTransformParentChanged() => CacheGrid();
         private void CacheGrid()

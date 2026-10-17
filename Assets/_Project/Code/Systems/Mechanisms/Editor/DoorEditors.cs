@@ -28,6 +28,7 @@ namespace Project.Mechanisms.Editor
             var timing = ProjectInspectorUtility.CreateFoldout("开门与镜头", true);
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"openDuration","开门时间","门绕侧边轴旋转 90°。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"unlockDelay","图案展示时间","所有按钮按下后，保留完整彩色图案的时间；有镜头演出时从镜头到达门附近后开始计算。"));
+            timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"closeDelay","松开后关门延迟","持续压住按钮释放后的通行缓冲；期间重新按齐按钮会取消关门。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraMoveDuration","镜头移动时间","移向门中心。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraHoldDuration","镜头停留时间","门附近的停留时间。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraReturnDuration","镜头返回时间","平滑交还玩家跟随相机。"));
@@ -40,7 +41,7 @@ namespace Project.Mechanisms.Editor
             root.schedule.Execute(() =>
             {
                 if (target is not DoorController door) return;
-                state.text = "状态：" + (door.IsWaitingToOpen ? "等待开门" : door.State == DoorState.Unlocked ? "已解锁" : "未解锁") + " · 按钮 " + door.PressedCount + "/" + door.Buttons.Count;
+                state.text = "状态：" + (door.IsWaitingToOpen ? "等待开门" : door.IsWaitingToClose ? "等待关门" : door.State == DoorState.Unlocked ? "已解锁" : "未解锁") + " · 按钮 " + door.PressedCount + "/" + door.Buttons.Count;
                 reset.SetEnabled(Application.isPlaying);
             }).Every(200);
             reset.SetEnabled(Application.isPlaying);

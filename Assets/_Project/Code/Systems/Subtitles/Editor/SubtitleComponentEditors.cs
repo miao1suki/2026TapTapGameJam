@@ -1,4 +1,5 @@
 using Project.Editor;
+using Project.ObjectArtwork;
 using Project.Subtitles;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -9,6 +10,53 @@ namespace Project.Subtitles.Editor
 {
     internal static class SubtitleInspectorFields
     {
+        public static void AddSignAppearance(VisualElement parent, SerializedObject serializedObject,
+            System.Action<SerializedProperty> changed = null)
+        {
+            var appearance = ProjectInspectorUtility.CreateFoldout("告示牌外观", true);
+            foreach (var item in new[] { ("showSign", "显示告示牌"), ("signSprite", "告示牌图样") })
+            {
+                var property = serializedObject.FindProperty(item.Item1);
+                var field = new PropertyField(property, item.Item2);
+                field.BindProperty(property);
+                field.RegisterCallback<SerializedPropertyChangeEvent>(_ =>
+                {
+                    serializedObject.ApplyModifiedProperties();
+                    changed?.Invoke(property);
+                    if (serializedObject.targetObject is SubtitleTrigger trigger) trigger.RefreshSignVisual();
+                });
+                appearance.Add(field);
+            }
+            var gallery = new VisualElement();
+            gallery.style.flexDirection = FlexDirection.Row;
+            gallery.style.flexWrap = Wrap.Wrap;
+            ObjectArtworkLibrary artwork = ObjectArtworkLibrary.Load();
+            var choices = artwork != null ? artwork.signboards : null;
+            if (choices != null)
+                for (int i = 0; i < choices.Length; i++)
+                {
+                    Sprite sprite = choices[i];
+                    if (sprite == null) continue;
+                    var button = new Button(() =>
+                    {
+                        serializedObject.Update();
+                        var property = serializedObject.FindProperty("signSprite");
+                        property.objectReferenceValue = sprite;
+                        serializedObject.ApplyModifiedProperties();
+                        changed?.Invoke(property);
+                        if (serializedObject.targetObject is SubtitleTrigger trigger) trigger.RefreshSignVisual();
+                    }) { tooltip = $"告示牌 {i + 1}" };
+                    button.style.width = 54; button.style.height = 54;
+                    button.style.marginRight = 4; button.style.marginBottom = 4;
+                    button.Add(new Image { sprite = sprite, scaleMode = ScaleMode.ScaleToFit, pickingMode = PickingMode.Ignore,
+                        style = { flexGrow = 1 } });
+                    gallery.Add(button);
+                }
+            appearance.Add(gallery);
+            appearance.Add(ProjectInspectorUtility.CreateHelp("图样留空时使用默认告示牌。外观按16像素一格显示，触发范围独立于图样。"));
+            parent.Add(appearance);
+        }
+
         public static VisualElement Root(
             SerializedObject serializedObject,
             string title)
@@ -239,6 +287,8 @@ namespace Project.Subtitles.Editor
                     serializedObject,
                     "字幕触发道具");
 
+            SubtitleInspectorFields.AddSignAppearance(root, serializedObject);
+
             Foldout content = ProjectInspectorUtility.CreateFoldout(
                 "字幕内容",
                 true);
@@ -300,8 +350,8 @@ namespace Project.Subtitles.Editor
             trigger.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "hideVisualOnAwake",
-                "进入游戏时隐藏物体外观",
-                "默认关闭所有 Renderer，但保留 Collider 用于触发。"));
+                "进入游戏时隐藏占位外观",
+                "隐藏旧占位网格，保留字幕触发范围；告示牌由外观设置独立控制。"));
             trigger.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "destroyAfterPlay",

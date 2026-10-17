@@ -866,8 +866,12 @@ MonoBehaviour:
     prefab: {fileID: 100000, guid: fa6d2fe6b4dd4a6f938bb5acd263af2e, type: 3}
     componentValueOverrides: []
   - entryId: mechanism-ladder-side
-    displayName: "\u4FA7\u9762\u68AF\u5B50"
+    displayName: "右连墙梯"
     prefab: {fileID: 100000, guid: d5e3e097fa6c4f04b32866ebc592b58a, type: 3}
+    componentValueOverrides: []
+  - entryId: mechanism-ladder-side-left
+    displayName: "左连墙梯"
+    prefab: {fileID: 100000, guid: 54f12a13c528461fbc65bfdd982e8b36, type: 3}
     componentValueOverrides: []
   - entryId: mechanism-door-standard
     displayName: "\u95E8"

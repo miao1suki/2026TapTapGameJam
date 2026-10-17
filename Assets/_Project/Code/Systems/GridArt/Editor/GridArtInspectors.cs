@@ -29,12 +29,10 @@ namespace Project.GridArt.Editor
                 var stamp = new VisualElement(); stamp.style.display = brush.autoTerrain ? DisplayStyle.None : DisplayStyle.Flex;
                 auto.RegisterValueChangedCallback(e => { Edit(() => brush.autoTerrain = e.newValue); terrain.style.display = e.newValue ? DisplayStyle.Flex : DisplayStyle.None; stamp.style.display = e.newValue ? DisplayStyle.None : DisplayStyle.Flex; });
                 var image = new ObjectField("图片") { objectType = typeof(Sprite), value = brush.sprite, allowSceneObjects = false };
-                image.RegisterValueChangedCallback(e => Edit(() => brush.sprite = e.newValue as Sprite)); stamp.Add(image);
+                image.RegisterValueChangedCallback(e => { Edit(() => { brush.sprite = e.newValue as Sprite; brush.contentRect = new Rect(0,0,1,1); GridArtPixelLayout.RestoreNative(brush, out _); }); Show(i); }); stamp.Add(image);
                 var size = new Vector2IntField("占格宽 / 高") { value = brush.Size };
-                size.RegisterValueChangedCallback(e => Edit(() => { brush.size = new Vector2Int(Mathf.Max(1,e.newValue.x),Mathf.Max(1,e.newValue.y)); brush.visualSize = brush.size; })); stamp.Add(size);
-                var display = new Vector2Field("显示宽 / 高（格）") { value = brush.DisplaySize };
-                display.tooltip = "支持小数；占格用于排布，显示尺寸用于保留细长或不规则图片的比例。";
-                display.RegisterValueChangedCallback(e => Edit(() => brush.visualSize = new Vector2(Mathf.Max(.01f,e.newValue.x),Mathf.Max(.01f,e.newValue.y)))); stamp.Add(display);
+                size.RegisterValueChangedCallback(e => Edit(() => brush.size = new Vector2Int(Mathf.Max(1,e.newValue.x),Mathf.Max(1,e.newValue.y)))); stamp.Add(size);
+                foldout.Add(GridArtPixelSettings.Build(brush, Edit, () => Show(i)));
                 var normal = new ObjectField("法线图集") { objectType = typeof(Texture2D), allowSceneObjects = false, value = brush.normalMap };
                 normal.tooltip = "与颜色原图同尺寸、同排布，导入类型为法线贴图；仅在图层启用接收3D灯光时使用。";
                 normal.RegisterValueChangedCallback(e => Edit(() => brush.normalMap = e.newValue as Texture2D)); foldout.Add(normal);
@@ -42,7 +40,13 @@ namespace Project.GridArt.Editor
                 for (int slot = 0; slot < labels.Length; slot++)
                 {
                     int index = slot; var field = new ObjectField(labels[slot]) { objectType = typeof(Sprite), allowSceneObjects = false, value = brush.pieces != null && slot < brush.pieces.Length ? brush.pieces[slot] : null };
-                    field.RegisterValueChangedCallback(e => Edit(() => { if (brush.pieces == null || brush.pieces.Length != 13) System.Array.Resize(ref brush.pieces, 13); brush.pieces[index] = e.newValue as Sprite; })); terrain.Add(field);
+                    var feedback = new Label(); feedback.style.whiteSpace = WhiteSpace.Normal;
+                    field.RegisterValueChangedCallback(e =>
+                    {
+                        if (!GridArtPixelLayout.IsRuleSprite(e.newValue as Sprite, brush.sourcePixelScale)) { field.SetValueWithoutNotify(e.previousValue); feedback.text = "自动边角需16×16原像素切片。"; return; }
+                        feedback.text = "";
+                        Edit(() => { if (brush.pieces == null || brush.pieces.Length != 13) System.Array.Resize(ref brush.pieces, 13); brush.pieces[index] = e.newValue as Sprite; });
+                    }); terrain.Add(field); terrain.Add(feedback);
                 }
                 foldout.Add(terrain); foldout.Add(stamp); details.Add(foldout);
             }
@@ -84,8 +88,10 @@ namespace Project.GridArt.Editor
             root.Add(new Label("美术网格与背景视差"));
             root.Add(new PropertyField(serializedObject.FindProperty("map"), "美术图"));
             root.Add(new PropertyField(serializedObject.FindProperty("targetCamera"), "跟随摄像机"));
-            root.Add(new PropertyField(serializedObject.FindProperty("pixelsPerCell"), "每格像素数"));
-            root.Add(new HelpBox("仅移动背景层，不控制相机。每格像素数为零时关闭像素吸附。", HelpBoxMessageType.Info));
+            var pixels = new IntegerField("视差吸附像素/格") { value = ((GridArtScene)target).pixelsPerCell }; pixels.SetEnabled(false); root.Add(pixels);
+            if (((GridArtScene)target).pixelsPerCell != Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell)
+                root.Add(new Button(() => { Undo.RecordObject(target,"统一背景像素吸附"); ((GridArtScene)target).pixelsPerCell = Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell; EditorUtility.SetDirty(target); root.Clear(); root.Add(CreateInspectorGUI()); }) { text = "改用16像素网格吸附" });
+            root.Add(new HelpBox("只移动背景层，不缩放图片。新背景按16源像素/格吸附；旧背景保留原值，确认后可统一。", HelpBoxMessageType.Info));
             root.Add(new Button(() => { var output = (GridArtScene)target; if (output.map != null) EditorWindow.GetWindow<GridArtWindow>("网格美术").SetMap(output.map); }) { text = "编辑美术图" });
             root.Add(new Button(() => ((GridArtScene)target).RebaseParallax()) { text = "重设视差参考点" });
             return root;

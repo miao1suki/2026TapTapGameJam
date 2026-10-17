@@ -24,6 +24,8 @@
 
 ## 规划标识
 
-`mechanism-door-standard` 保留；新增 `mechanism-door-horizontal`、`mechanism-ladder-front`、`mechanism-ladder-side`。按钮仍使用内部 `mechanism-door-owned-button`，提示不是可独立放置的 palette 项，也不写入 PlanningBox。生成器、逆向导入、鼠标预览和参数模式分别处理固定占格；横门 2×1，其他三者 1×2。
+`mechanism-door-standard` 保留；新增 `mechanism-door-horizontal`、`mechanism-ladder-front`、`mechanism-ladder-side`。按钮仍使用内部 `mechanism-door-owned-button`，提示不是可独立放置的 palette 项，也不写入 PlanningBox。生成器、逆向导入、鼠标预览和参数模式分别处理固定占格；横门2×1、竖门1×2、两种梯子默认均1×1。
+
+2026-10-17梯子规格：新放置正面/侧面梯子与共享Prefab均为居中1×1，Trigger保留原深度和横向宽度。生成器始终按PlanningBox实际宽高适配，不依赖isMerged推断尺寸，因此旧1×2存档重新应用不会缩小；逆向导入读取SizeCells，不再硬编码两格。未重建的旧场景实例由NeutralLadder依据既有SizeCells及单格根缩放恢复旧两格Trigger和下格中心轴，Artwork刷新与Awake均调用，避免修改共享Prefab后旧梯子变短。外观按Trigger平铺；已按矩形缩放的新长梯不重复扩大。不新增规划字段，不使旧场景签名因默认字段变化而全量失效。
 
 验证应涵盖详情/装配放置、自动同步与撤销、按钮增删、绑定变更、门删除、重置、多 Collider 玩家、梯子禁用及相邻梯子交接。静态编译不能替代实际玩家攀爬手感、Timeline 和打包验收。

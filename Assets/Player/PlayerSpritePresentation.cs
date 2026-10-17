@@ -1,4 +1,5 @@
 using Project.BlockFeatures;
+using Project.ObjectArtwork;
 using UnityEngine;
 
 namespace Project.Player
@@ -100,12 +101,19 @@ namespace Project.Player
             }
             if (!suspended && state != PlayerStateId.Death)
                 visual.flipX = player.FacingDirection < 0;
-            if (capsule != null)
-                visual.transform.position = transform.TransformPoint(capsule.center) + Vector3.up * (verticalOffsetCells * cellWorldSize);
-            float cell = cellWorldSize;
             Vector3 parentScale = transform.lossyScale;
-            visual.transform.localScale = new Vector3(cell / Mathf.Max(.001f, Mathf.Abs(parentScale.x)),
-                cell / Mathf.Max(.001f, Mathf.Abs(parentScale.y)), 1f);
+            Sprite sprite = visual.sprite;
+            int sourcePixelScale = GridArtworkMetrics.SourcePixelScale(sprite);
+            visual.transform.localScale = GridArtworkMetrics.NaturalSpriteScale(sprite, parentScale,
+                cellWorldSize, sourcePixelScale);
+            if (capsule != null && sprite != null)
+            {
+                float bodyHeight = Mathf.Max(capsule.height, capsule.radius * 2f) * Mathf.Abs(parentScale.y);
+                float pivotHeight = GridArtworkMetrics.PixelsToWorld(sprite.pivot, cellWorldSize, sourcePixelScale).y;
+                // Anchor the authored frame bottom to the existing feet offset; visual size never resizes physics.
+                visual.transform.position = transform.TransformPoint(capsule.center) + Vector3.up *
+                    (-bodyHeight * .5f + pivotHeight + verticalOffsetCells * cellWorldSize);
+            }
             if (faceCamera)
             {
                 if (viewingCamera == null || !viewingCamera.isActiveAndEnabled) viewingCamera = Camera.main;

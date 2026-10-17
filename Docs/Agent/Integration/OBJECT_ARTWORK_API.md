@@ -1,5 +1,11 @@
 # 物体美术接入
 
+## 统一像素尺度与关卡预览
+
+当前场景美术以 `GridArtworkMetrics.PixelsPerCell = 16` 为唯一基准；详细换算及资源尺寸见 `Docs/Developer/ART_GRID_CONVENTIONS.md` 和 `ART_GRID_REFINEMENT_API.md`。物理占格不再作为任意缩放贴图的依据：32×32重生点显示2×2格，24×24玩家显示1.5×1.5格，已有碰撞保持不变；确证4倍导出的tail瓦片按有效16像素显示1格。旧存档不因外观更新自动扩占格或移位。
+
+`ObjectArtworkPlanningPreview.TryGet` 是道具栏目及关卡画布的统一只读2D预览入口，返回纹理、UV、自然格数、旋转、镜像和平铺信息。已接入正式素材的物体不应再请求3D预制体截图。水采用正式水面/中/底瓦片，藤蔓采用真实序列帧的缓存采样；原像素、透明区、孔洞及实例素材覆盖必须保留。
+
 ## 机关与道具精灵
 
 `MechanismArtworkPresentation.Ensure(owner)` 补齐支持的物体，`RefreshScene(scene)` 在场景加载时补旧实例；正式Prefab已持久绑定，动态实例继承组件。不要通过重建Scene/规划存档接入美术。组件只读机关状态，不写引用、物理或重置逻辑。
@@ -25,7 +31,7 @@
 
 植物使用 `ColorAppearanceManager.GetSharedMaterial(source,"green",true)`，共享池统一更新 `_ColorRevealOpacity`，不为每株复制/逐帧修改材质。渲染器位于绿色 Layer，MPB 给原HSV遮罩提供颜色组/正式阶段/精灵Alpha纹理；HSV仍走现有全屏阶段，不另算一份本地HSV。重生点走无色共享材质。
 
-Sprite Tiled使用FullRect切片、Point采样、无压缩/Mipmap；用原BoxCollider尺寸及根lossyScale确定铺设面积，用 `GridCellSizeUtility` 决定一株的世界尺寸。对子节点反向补偿非等比缩放，不能直接把一幅植物图拉成合并长条。图片底部固定到碰撞体底部，静止帧的上方留白不再通过抬高整图补偿。`plantIdleTop` 保留为旧配置兼容，不再参与位置计算。精灵尺寸更新只写表现子物体，不改变碰撞体/物体根姿态。
+Sprite Tiled使用FullRect切片、Point采样、无压缩/Mipmap；用原BoxCollider确定平铺覆盖范围，用 `GridCellSizeUtility` 和16有效像素/格确定单幅素材的自然世界尺寸。对子节点反向补偿非等比缩放，不能直接把一幅植物图拉成合并长条。图片底部固定到碰撞体底部，静止帧的上方留白不再通过抬高整图补偿。`plantIdleTop` 保留为旧配置兼容，不再参与位置计算。精灵尺寸更新只写表现子物体，不改变碰撞体/物体根姿态。
 
 原占位Mesh保留：编辑时隐藏；运行时由ColorObject负责黑白基础阶段和退场，不能由表现组件提前关闭基础阶段。植物正式阶段不使用颜色目录的编辑边框材质。
 

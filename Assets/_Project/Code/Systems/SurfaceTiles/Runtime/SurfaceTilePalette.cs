@@ -17,6 +17,7 @@ namespace Project.SurfaceTiles
             [SerializeField] private Sprite sprite;
             [SerializeField] private Vector2 sizeInCells = Vector2.one;
             [SerializeField] private Rect contentRect = new Rect(0f, 0f, 1f, 1f);
+            [SerializeField] private int sourcePixelScale = 1;
 
             public string Id => id;
             public string DisplayName => displayName;
@@ -27,6 +28,7 @@ namespace Project.SurfaceTiles
             public Rect ContentRect => contentRect.width > 0f && contentRect.height > 0f
                 ? contentRect
                 : new Rect(0f, 0f, 1f, 1f);
+            public int SourcePixelScale => Mathf.Max(Mathf.Max(1, sourcePixelScale), Project.ObjectArtwork.GridArtworkMetrics.SourcePixelScale(sprite));
             public Vector2Int FootprintCells => new Vector2Int(
                 Mathf.Max(1, Mathf.CeilToInt(SizeInCells.x - 0.0001f)),
                 Mathf.Max(1, Mathf.CeilToInt(SizeInCells.y - 0.0001f)));
@@ -87,18 +89,20 @@ namespace Project.SurfaceTiles
                     Mathf.Clamp(valueContentRect.width, 0.0001f, 1f - x),
                     Mathf.Clamp(valueContentRect.height, 0.0001f, 1f - y));
             }
+
+            internal void ConfigurePixelScale(int value) { sourcePixelScale = Mathf.Max(1, value); }
         }
 
         [SerializeField] private List<Entry> tiles = new List<Entry>();
         [SerializeField] private Material previewMaterial;
         [SerializeField] private Vector2Int bakePixelsPerCell =
-            new Vector2Int(128, 128);
+            new Vector2Int(Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell, Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell);
 
         public IReadOnlyList<Entry> Tiles => tiles;
         public Material PreviewMaterial => previewMaterial;
         public Vector2Int BakePixelsPerCell => new Vector2Int(
-            bakePixelsPerCell.x >= 8 ? bakePixelsPerCell.x : 128,
-            bakePixelsPerCell.y >= 8 ? bakePixelsPerCell.y : 128);
+            bakePixelsPerCell.x >= 8 ? bakePixelsPerCell.x : Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell,
+            bakePixelsPerCell.y >= 8 ? bakePixelsPerCell.y : Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell);
 
         public bool TryGet(string id, out Entry entry)
         {
@@ -209,6 +213,25 @@ namespace Project.SurfaceTiles
             }
 
             tiles = replacement;
+        }
+
+        // Explicit native import. The older ReplaceTiles API preserves its one-cell
+        // contract for external integrations and already-authored palettes.
+        public void ReplaceTilesAtNativeScale(IEnumerable<Sprite> sprites)
+        {
+            ReplaceTiles(sprites);
+            foreach (var entry in tiles)
+            {
+                int scale = Project.ObjectArtwork.GridArtworkMetrics.SourcePixelScale(entry.Sprite);
+                entry.ConfigurePixelScale(scale);
+                entry.ConfigureLayout(Project.ObjectArtwork.GridArtworkMetrics.SpriteCells(entry.Sprite, scale), new Rect(0,0,1,1));
+            }
+        }
+
+        public void ConfigureTilePixelScale(string displayName, int scale)
+        {
+            foreach (var entry in tiles)
+                if (entry != null && entry.DisplayName == displayName) { entry.ConfigurePixelScale(scale); return; }
         }
 
         public void SetPreviewMaterial(Material material)

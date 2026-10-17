@@ -256,7 +256,8 @@ namespace Project.BlockFeatures
 
             Bounds bounds = playerCollider.bounds;
             Collider columnCollider = GetComponent<Collider>();
-            float columnBottom = columnCollider != null
+            var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
+            float columnBottom = shape != null ? shape.WorldBounds.min.y : columnCollider != null
                 ? columnCollider.bounds.min.y
                 : transform.position.y - GridCellWorldSize * .5f;
             if (columnBottom >= bounds.center.y)
@@ -378,7 +379,8 @@ namespace Project.BlockFeatures
 
             Bounds bounds = playerCollider.bounds;
             Collider bubbleCollider = GetComponent<Collider>();
-            float columnBottom = bubbleCollider != null
+            var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
+            float columnBottom = shape != null ? shape.WorldBounds.min.y : bubbleCollider != null
                 ? bubbleCollider.bounds.min.y
                 : transform.position.y - GridCellWorldSize * .5f;
             if (bounds.max.y <= columnBottom)
@@ -398,7 +400,18 @@ namespace Project.BlockFeatures
                        fallbackRadius * fallbackRadius;
             }
 
-            Bounds bubbleBounds = bubbleCollider.bounds;
+            Bounds bubbleBounds = shape != null ? shape.WorldBounds : bubbleCollider.bounds;
+            if (shape != null)
+            {
+                foreach (var volume in shape.Volumes)
+                {
+                    if (volume == null) continue;
+                    Bounds part = volume.bounds;
+                    if (bounds.max.y > part.min.y && Mathf.Abs(bounds.center.x-part.center.x) <= part.extents.x+bounds.extents.x &&
+                        Mathf.Abs(bounds.center.z-part.center.z) <= part.extents.z+bounds.extents.z) return true;
+                }
+                return false;
+            }
             float overlapX =
                 bubbleBounds.extents.x + bounds.extents.x;
             float overlapZ =

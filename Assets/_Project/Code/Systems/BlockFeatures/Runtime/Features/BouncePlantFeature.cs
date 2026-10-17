@@ -15,7 +15,7 @@ namespace Project.BlockFeatures
     {
         [BlockParameter(Label = "玩家标签", Group = "弹跳", Order = 0)]
         [SerializeField] private string playerTag = "Player";
-        [BlockParameter(Label = "普通回弹高度（格）", Group = "弹跳", Order = 1)]
+        [BlockParameter(Label = "普通回弹高度（格）", Group = "弹跳", Order = 1, Tooltip = "只影响本实例的普通回弹高度；关卡编辑器参数模式可在放置前或选中植物后调整。")]
         [SerializeField, Min(.1f)] private float normalRiseCells = 8f;
         [BlockParameter(Label = "高跳落差门槛（格）", Group = "弹跳", Order = 2, Tooltip = "落差超过门槛，且落地时按住跳跃，触发高跳。")]
         [SerializeField, Min(0f)] private float highFallThresholdCells = 4f;
@@ -26,6 +26,9 @@ namespace Project.BlockFeatures
         [BlockParameter(Label = "触发间隔（秒）", Group = "弹跳", Order = 4)]
         [SerializeField, Min(.05f)] private float minTriggerInterval = .15f;
         public bool IsBounceSurfaceAvailable => CanRunFeature;
+        public float NormalRiseCells => normalRiseCells;
+        public float HighRiseCells => highRiseCells;
+        public float CarryRiseCells => carryRiseCells;
         public GreenHookMotionMode GreenHookMotionMode =>
             GreenHookMotionMode.Swing;
         public Transform GreenHookTransform => transform;
@@ -56,7 +59,8 @@ namespace Project.BlockFeatures
             if (!CanRunFeature || collision == null) return;
             var player = collision.collider.GetComponentInParent<PlayerController>();
             if (player == null || !player.CompareTag(playerTag)) return;
-            Collider plant = GetComponent<Collider>(), body = player.GetComponent<Collider>();
+            Collider plant = collision.contactCount > 0 ? collision.GetContact(0).thisCollider : GetComponent<Collider>();
+            Collider body = player.GetComponent<Collider>();
             if (plant == null || body == null) return;
             Bounds p = plant.bounds, b = body.bounds;
             bool top = b.min.y >= p.max.y - GridCellWorldSize * .12f && b.center.x >= p.min.x && b.center.x <= p.max.x && player.VerticalVelocity <= .1f;

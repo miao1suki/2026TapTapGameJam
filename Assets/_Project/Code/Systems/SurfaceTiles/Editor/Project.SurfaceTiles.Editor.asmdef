@@ -3,7 +3,8 @@
   "rootNamespace": "Project.SurfaceTiles.Editor",
   "references": [
     "Project.Shared.Runtime",
-    "Project.SurfaceTiles.Runtime"
+    "Project.SurfaceTiles.Runtime",
+    "Project.ObjectArtwork.Runtime"
   ],
   "includePlatforms": [
     "Editor"

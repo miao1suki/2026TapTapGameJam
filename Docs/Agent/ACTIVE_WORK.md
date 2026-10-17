@@ -1,5 +1,61 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-17 连通植物燃烧与正式关卡/音乐整合（进行中）
+
+- 用户授权当前整合窗口合并并推送main：植物障碍按上下左右真实接触连通燃烧，斜角不连通；保持房间边界和既有重置链路。
+- 整合此前已完成的本地编辑器、玩法和美术修复；策划a86fc5a的Gaming、同名planning及正式关卡JSON中的物体/位置/参数为准，不以旧代码覆盖当前修复。音频c2abe42新增OP/Boss资源，补齐持久meta与实际播放接线。
+- 全部225份本地变更已备份至Library/ConnectedPlantIntegrationBackup-20261017；无关Pick、字体、插件及项目设置不提交、不覆盖。不切换或保存主Unity内存场景，不构建新包；验证使用隔离工程。
+
+## 2026-10-17 平台路线范围与 MRoom2 绑定（本地完成）
+
+- 扩展移动平台的四向单程、左右/上下双侧独立距离和中心偏移；Scene、规划预览与运行共用计算，兼容旧 route/travelBlocks/reverseRoute 存档。
+- 用户授权恢复 MRoom2 当前左侧竖合并平台 box_bb266cc9 与右侧原定基座的稳定ID绑定；只同步此关系及Scene内嵌规划，不重建或改动布局，保留两基座无重力。
+- 保留全部前轮和用户本地变更，隔离工程验证；不提交、推送、合并、打包，不切换或保存主Unity当前场景。
+- 已完成：路线配置含四向单程与左右/上下双侧不等距范围、中心偏移和首程方向；从作者位置起步，偏移受范围限制，不在解锁/曲柄0%时瞬移。信号/自动走完整区间，曲柄仅走作者位置至首程端点；重置回布置位置并保留绑定。参数窗口与Inspector按模式显隐中文字段；Scene与规划共用MovingPlatformPath，修复规划漏读reverseRoute造成最长路线反向的预览错误。长虚线先裁剪视口，不循环绘制画外百万格路线。
+- MRoom2保留box_bb266cc9与六段合并快照，恢复绑定mroom2_room_fo4awc8u0s_0。只修改目标关系、生成签名和Scene内嵌规划；全部对象实例/布局、其他控制器关系和两基座无重力不变。成套复制Scene与planning前复核原SHA，原件保存在Library/MRoom2BeforeBindingRestore-20261017，meta不改；没有重建地图或保存主Unity内存场景。
+- Unity6000.3.12f1/D3D11隔离验证通过：路线/运动/阻挡/格尺寸/序列化4714项、真实玩家载人13项、双Inspector条件显隐/参数保存26项、曲柄合并/拆分/增量与保存重开绑定28项、编辑输入50项、MRoom2真实播放35项；项目EditMode225/225。旧曲柄验证不再将美术子物体误判为平台子模型，改为实际检查MovingPlatformFeature后代。MRoom2审计不再临时BindBase。
+- 性能回归约1600×900：详情远景0.485ms、装配1.038ms、世界0.305ms、美术6400格0.165ms绘制中位数；仅generateVisualContent CPU回调，不代表整窗/GPU帧率。日志Library/PlatformRoutesFinal.log、PlatformRoutesRider.log、PlatformRouteUi.log、PlatformRoutesCrankBinding.log、PlatformRoutesEditor.log、PlatformRoutesPerformance.log、PlatformRoutesEditMode.xml、MRoom2RestoredBinding.log、MRoom2BoundRuntime.log。未验证完整关卡通关或双端包，退出仍有既有编辑器插件清理日志。
+- 使用/序列化说明更新至Developer/MECHANISMS_AND_JUMP.md、Integration/MECHANISM_SIGNAL_API.md及MRoom2说明。主Unity若仍打开旧MRoom2，测试前重新加载场景并重开关卡编辑器，避免旧内存规划覆盖新持久绑定。
+- 最终核对203份无关本地文件SHA256不变，10份实现/测试C#与隔离验证工程完全一致；MRoom2成套文件与验证副本逐字节一致，Pick保留B00C18CE4C738D6CF80F7EF82A5FAE3C16A2326E9DB9D3291BF7202E77223D4B。diff检查通过、真实Git暂存区为空，未提交或推送。
+
+## 2026-10-17 编辑交互、机关与素材比例完善（本地完成）
+
+- 用户允许同级模型分工：editor_interactions负责视图按钮、边缘平移、拖拽状态、协作入口和竖平台预览；gameplay_fixes负责逻辑对象连线去重、藤蔓生长阻挡、弹跳参数、基座搬运及门延迟关闭；art_ladders负责左右靠墙梯及素材占格/平台3×1比例。整合窗口负责片段导入安全、跨模块验证和文档汇总。
+- 保留前轮水层/不规则合并与MRoom2导入的全部本地进度，不切分支、不提交/推送/合并/打包；不覆盖正式Gaming、Pick/Test场景或配套规划，不修改无关字体、插件和项目设置。用户追加授权：MRoom2两基座显式关闭重力，Scene与planning成套更新，原布局与其他配置保留。测试仅在Library/FlowRetirementProbe进行，其他worker不同时启动Unity。
+- 已确认移动平台6帧各为3×1格；其他尺寸不明确的美术先提问，不以拉伸或修改旧关卡实体占格掩盖混素。
+- 已完成视图高亮、四边自动平移和失焦/丢捕获拖动恢复；导入存档拼接与片段导出提供常驻入口。导入先验证资源/稳定引用/重复ID和层叠占格，再原子提交；旧16:1存档先在副本迁移，不修改源文件。合并平台保留一致机关绑定；不以包围矩形填空洞。
+- 栏目与网格共用正式2D素材预览；水按邻接显示水面/中/底，藤蔓采用缓存世界像素采样，竖平台旋转90°、按原像素重复。场景美术统一16有效像素/格，tail确证4倍导出；玩家自然外观1.5格、重生点2格，原碰撞/布局不扩大。TA外观及HSV遮罩共享稳定采样，修复源texel边界浮点误差造成的细线。
+- 新图已绑定暗/亮U形基座、植物障碍、黑曜石及可选告示牌；下半部54项静态装饰和24项雨滴原图追加至统一库，后者不是天气系统。装饰携带颜色归属，保存/重开后一次性恢复HSV遮罩，按实际颜色Layer合批；无逐物体材质Update。成就收集表未交付，暂不接入。
+- 逻辑目标连线同根取最近单点；藤蔓生长检测实体阻挡；植物可独立调弹跳高度，保留8/8/4默认。基座复用现有搬运和区域重置，增加默认启用重力参数；门增加独立的松开后关门缓冲。MRoom2两处基座的重力已在Scene和planning明确关闭，保留作者位置和ID；保存时同时补齐新基座/障碍的正式外观，未重建地图。原始两文件备份在Library/MRoom2BeforeGravityOverride。
+- 注意：本轮开始前的用户MRoom2存档已将左侧竖平台改为box_bb266cc9，六个原始快照和Scene均未绑定基座；因此默认不动，并非本轮合并逻辑丢引用。已询问是否恢复绑定，未擅改。地图运行回归先验证未绑定静止，再在Play临时绑定验证上移，不将临时绑定保存为作者地图。
+- Unity6000.3.12f1/D3D11隔离验证：美术/真实GPU179项、玩家像素/碰撞51项、玩法83项、装饰真实URP保存重开及双钥匙47项、真实编辑窗口50项、片段安全16项、地图协作36项、水层/形状197项、MRoom2运行35项通过；项目EditMode225/225通过。MRoom2重力设置另经保存/重新打开验证，未替换或移动原实例。日志Library/Refinement*Final.log、RefinementEditMode.xml、RefinementMRoom2Gravity.log。
+- 远景性能采样约1600×900：房间绘制中位0.486ms、装配1.063ms、世界0.301ms，美术6400格0.166ms；仅为generateVisualContent的CPU绘制时间，不代表整窗帧率或真机性能。Library/RefinementPerformanceFinal.log。退出时仍有既有Audio Manager/编辑器插件清理提示，不声称整个项目零告警；未验证双端包或完整通关。
+- 已复制并核对生成图/meta、Objects.asset、四向尖刺Mesh和统一素材库；58份无关本地文件SHA256不变，正式Gaming与两份正式存档不改。真实Git暂存区为空，未提交、推送、合并或构建。交接见Integration/ART_GRID_REFINEMENT_API.md及Developer/ART_GRID_CONVENTIONS.md、EDITOR_INTERACTION_UPDATE.md、GAMEPLAY_REFINEMENTS.md。
+
+## 2026-10-17 水层叠放与不规则合并（本地完成）
+
+- 处理水与墙/道具同格、水层独立编辑及半透明前景预览；颜色命中优先非水，墙下水不显示交互连线。
+- 合并保存真实占格与孔洞，扩展场景生成、碰撞及水面/水中/水底分区，不以包围矩形填充空白；保留旧存档、稳定机关绑定及增量同步。
+- 只修改相关源码与说明；使用Library/FlowRetirementProbe隔离验证，不覆盖正式Gaming、本地Pick/Test或前轮MRoom2交付，不提交、推送、合并或打包。
+- 已实现：水和墙/列出的道具分层占格；仅水模式淡化前景、限制绘制/移动/合并/擦除/参数与玩家覆盖层；普通颜色屏幕点击优先非水。WaterCellVisibility按实例注册表版本缓存墙格，遮蔽初始网格/正式面片与水交互连线，不逐帧扫描场景。
+- 合并复用既有mergeParts保存精确覆盖，不新增PlanningBox字段或强制迁移旧地图；允许L形、环形、孔洞、分离片段，旧无快照矩形仍兼容。运行时LevelEditorMergedShape使用单逻辑根、压缩复合BoxCollider与单形状网格；编辑命中、增量生成、场景反向恢复、片段导出和美术铺绘尊重孔洞，水/平台/岩浆替换使用实际体积。
+- 真实播放补测发现标准1格胶囊刚好填满1格孔洞时会实际接触边缘，孔洞游泳用例改用验证专用0.8格胶囊确认完全离水，未缩小正式玩家。进一步修复复合触发器跨接缝/重置后的进入计数：退出时按实际复合体重叠确认，不在仍触水时清掉游泳状态。
+- Unity6000.3.12f1/D3D11隔离验证：水层/形状专项197项通过，覆盖各类道具同格、拆合/存档/实例保留、首格为空、孔洞碰撞、墙遮挡/点击、真实游泳接缝与重置、岩浆冷却形状及GPU截图；协作地图36项、MRoom2作者4348项/播放33项通过。旧“空洞必须拒绝”的验证更新为“合并后孔洞仍空”，项目EditMode最终212/212通过。日志Library/WaterShapeAuditFinal.log、WaterShapeCollaborationRegression.log、WaterShapeMRoom2Regression.log、WaterShapeFinalEditTests.xml。隔离播放退出时仍有既有Audio Manager清理提示，不声称全项目零告警或双端真机验证。
+- 实际EditorWindow平移采样（约1600×900、5次预热/30次）：房间远景绘制中位0.500ms、装配1.083ms、世界0.320ms；美术6400格远景0.179ms。为generateVisualContent CPU耗时，不等于整窗帧率；压缩覆盖随编辑缓存失效，平移不解析合并JSON。日志Library/WaterShapeCanvasPerformance.log。
+- 开发者/接入说明和系统索引已更新。正式Gaming及两份规划仍与HEAD一致，本地Pick SHA256仍B00C18CE4C738D6CF80F7EF82A5FAE3C16A2326E9DB9D3291BF7202E77223D4B；无关字体、插件与设置保留。未提交、推送、合并或打包；等待用户编辑/游玩验收。
+- 最终全部任务C#与隔离工程逐文件SHA256相同；最后一次MRoom2真实播放仍33/33通过（Library/WaterShapeFinalMRoom2Runtime.log），diff检查通过，真实Git暂存区为空。
+
+## 2026-10-17 m_room_2 独立关卡导入（本地完成）
+
+- 使用用户提供的 m-room-2.mvmap.json，按对象名称映射到现有关卡道具；新建 Assets/Scenes/MRoom2.unity 及同名 planning.json，不覆盖正式 Gaming、旧 MVMapImportTest 或本地 Pick/Test。
+- 用户确认：四个平台按附近两个基座/两个曲柄绑定；梯子全部为侧面梯子；玩家在原图(-110,-8)附近重生点出生，默认锁色、不增加钥匙。中间最长横向路线补齐被植物障碍占用的(-94,-14)格，路线与障碍共存。
+- 源文件按物体分类而非房间划分，因此本次为单个可编辑测试区域，保留原坐标、非矩形墙洞与各物体形状。通过 PlanningDocument/PlanningSceneBuilder 生成并验证稳定机关引用、藤蔓链接、重置和增量往返。
+- 为从作者位置向左移动的平台补充默认关闭的反向路线参数，不改旧路线默认方向。使用唯一标准Player及既有相机/UI；不改正式构建列表，不提交、推送、合并或打包。无关字体、插件、场景和规划存档保留。
+- 已生成405格实际物体、110个编辑器对象、50格非实体路线预览。源JSON逐字节保留于Assets/Scenes/MRoom2.mvmap.json。用户追加要求：正面/侧面梯子默认统一1×1，更新两份Prefab与放置/逆向导入；图中长梯仍按1/5/6格适配，已有两格存档与场景实例保留原尺寸，不新增规划字段。合并对象保存单元快照，验证实际窗口拆分/重新合并及应用，不只做静态场景。
+- Unity6000.3.12f1/D3D11隔离作者验证4348项通过：源占格/孔洞、全部实例尺寸、场景与配套存档相等、独立编辑器恢复/序列化、无变化增量保留实例、机关稳定引用、藤蔓母根/节段、梯子拆合与旧规格兼容、无缺失脚本/预制体。新增检查两种梯子的真实放置准备流程、居中单格Prefab、旧下格轴心兼容与长梯不重复扩大。物理尺寸检查先SyncTransforms，避免同帧缩放后读取旧物理缓存。破坏性编辑测试后显式还原原始Scene和JSON，避免把测试对象写入交付存档。
+- 最终同一构建的真实PlayMode33项通过：默认场景/能力均锁定、相机能看到玩家、出生点激活、任意红块给两个基座供能、长平台向左/竖平台向上、曲柄端点和实际交互行程、区域重置回作者位置且保留解锁和藤蔓链接。梯子续作后再次运行项目EditMode212/212通过。最新日志Library/MRoom2LadderVerified.log、MRoom2LadderEditTests.xml；未做完整通关或双端打包验收。
+- 六份新场景/规划/原始源与meta已逐文件比对复制至主项目，只有本地变更；使用临时Git index运行规划提交守卫通过，不改真实暂存区。导入阶段已验证58份无关本地文件SHA256不变；梯子续作只编辑明确任务路径，再次核对正式Gaming及其两份存档与HEAD一致、本地Pick的原始SHA256不变。操作/映射见Docs/Developer/MROOM2_IMPORT.md；主Unity仍保持Pick，未强制切场景或关闭。
+
 ## 2026-10-16 正式 Gaming 关卡整合（当前任务）
 
 - 用户授权将策划 `codex/formal-level-progress`（ad8e34e，含 d12680d/a036d32）合入 main 并推送。本次 Gaming 场景、同名规划存档及 LevelMaps/正式关卡.json 全套以策划交付为准，丢弃本地旧正式关卡；不将该一次性覆盖授权扩展到其他文件或后续协作。

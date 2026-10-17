@@ -23,7 +23,7 @@ namespace Project.GridArt.Editor
             var label = new TextField("名称") { value=brush.label, isDelayed=true }; label.RegisterValueChangedCallback(e => Edit(()=>brush.label=e.newValue)); section.Add(label);
             var categoryField = new TextField("分类") { value=brush.category, isDelayed=true }; categoryField.RegisterValueChangedCallback(e=>Edit(()=>brush.category=e.newValue)); section.Add(categoryField);
             var size = new Vector2IntField("占格") { value=brush.Size }; size.RegisterValueChangedCallback(e=>Edit(()=>brush.size=Vector2Int.Max(Vector2Int.one,e.newValue))); section.Add(size);
-            var display = new Vector2Field("显示尺寸") { value=brush.DisplaySize }; display.RegisterValueChangedCallback(e=>Edit(()=>brush.visualSize=Vector2.Max(Vector2.one*.01f,e.newValue))); section.Add(display);
+            section.Add(GridArtPixelSettings.Build(brush, Edit, Refresh));
             var normal = new ObjectField("法线图集") { objectType=typeof(Texture2D),allowSceneObjects=false,value=brush.normalMap }; normal.RegisterValueChangedCallback(e=>Edit(()=>brush.normalMap=e.newValue as Texture2D)); section.Add(normal);
             var auto = new Toggle("自动边角") { value=brush.autoTerrain }; auto.RegisterValueChangedCallback(e=> { Edit(()=>brush.autoTerrain=e.newValue); Refresh(); }); section.Add(auto);
             if (brush.autoTerrain)
@@ -32,7 +32,12 @@ namespace Project.GridArt.Editor
                 for(int i=0;i<13;i++)
                 {
                     int slot=i; var field=new ObjectField(names[i]) { objectType=typeof(Sprite),allowSceneObjects=false,value=brush.pieces!=null && i<brush.pieces.Length ? brush.pieces[i] : null };
-                    field.RegisterValueChangedCallback(e=>Edit(()=>{ if(brush.pieces==null || brush.pieces.Length!=13) Array.Resize(ref brush.pieces,13); brush.pieces[slot]=e.newValue as Sprite; })); section.Add(field);
+                    field.RegisterValueChangedCallback(e=>
+                    {
+                        var sprite = e.newValue as Sprite;
+                        if (!GridArtPixelLayout.IsRuleSprite(sprite, brush.sourcePixelScale)) { field.SetValueWithoutNotify(e.previousValue); status.text = "自动边角需16×16原像素切片，不能缩放大图替代。"; return; }
+                        Edit(()=>{ if(brush.pieces==null || brush.pieces.Length!=13) Array.Resize(ref brush.pieces,13); brush.pieces[slot]=sprite; });
+                    }); section.Add(field);
                 }
             }
             section.SetEnabled(CanEditMap && !EditorApplication.isPlayingOrWillChangePlaymode); return section;

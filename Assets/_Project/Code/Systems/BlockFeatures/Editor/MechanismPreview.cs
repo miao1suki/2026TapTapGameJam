@@ -47,7 +47,17 @@ namespace Project.BlockFeatures.Editor
         {
             Handles.color = new Color(.3f,.9f,1f,.9f);
             Handles.DrawDottedLine(platform.PreviewStart, platform.PreviewEnd, 5f);
-            Handles.DrawWireCube(platform.PreviewEnd, Vector3.one * GridCellSizeUtility.Resolve(platform));
+            float cell = GridCellSizeUtility.Resolve(platform);
+            Handles.DrawWireCube(platform.PreviewEnd, Vector3.one * cell);
+            if (platform.Path.IsRange)
+            {
+                Handles.DrawWireCube(platform.PreviewStart, Vector3.one * cell);
+                Handles.DrawWireDisc(platform.PreviewCenter, Vector3.forward, cell * .12f);
+            }
+            Vector3 direction = platform.PreviewFirstTarget - platform.PreviewOrigin;
+            if (direction.sqrMagnitude > .0001f)
+                Handles.ArrowHandleCap(0, platform.PreviewOrigin,
+                    Quaternion.LookRotation(direction), Mathf.Min(cell * .6f, direction.magnitude), EventType.Repaint);
             if (platform.CrankController != null)
             {
                 Handles.color = new Color(1f,.78f,.3f,.9f);

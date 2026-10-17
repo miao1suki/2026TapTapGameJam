@@ -115,7 +115,7 @@ namespace Project.SurfaceTiles.Editor
             }
 
             SurfaceTilePalette palette = ScriptableObject.CreateInstance<SurfaceTilePalette>();
-            palette.ReplaceTiles(sprites);
+            palette.ReplaceTilesAtNativeScale(sprites);
             AssetDatabase.CreateAsset(palette, palettePath);
 
             Shader shader = Shader.Find(SurfaceShaderName);

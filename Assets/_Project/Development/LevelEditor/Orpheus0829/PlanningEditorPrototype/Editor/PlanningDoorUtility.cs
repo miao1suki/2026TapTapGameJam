@@ -12,12 +12,19 @@ namespace PlanningEditorPrototype
         internal const string HorizontalDoorEntryId = "mechanism-door-horizontal";
         internal const string FrontLadderEntryId = "mechanism-ladder-front";
         internal const string SideLadderEntryId = "mechanism-ladder-side";
+        internal const string LeftSideLadderEntryId = "mechanism-ladder-side-left";
+        internal const string MovingPlatformEntryId = "212cd7a2ff304a6288b4d850132de143";
+        internal const string OneWayPlatformEntryId = "a6ec8d1c0f0c4d7fb9851a46a3ca6c49";
         internal const string ButtonEntryId = "mechanism-door-owned-button";
         internal const string ButtonPath = "Assets/_Project/Content/Mechanisms/DoorButton.prefab";
         internal static bool IsDoor(PlanningBox box) => box != null && IsDoorEntry(box.propEntryId);
         internal static bool IsDoorEntry(string id) => id == DoorEntryId || id == HorizontalDoorEntryId;
-        internal static bool HasFixedFootprint(string id) => IsDoorEntry(id) || id == FrontLadderEntryId || id == SideLadderEntryId;
-        internal static Vector2Int Footprint(string id) => id == HorizontalDoorEntryId ? new Vector2Int(2, 1) : new Vector2Int(1, 2);
+        internal static bool IsLadderEntry(string id) => id == FrontLadderEntryId || id == SideLadderEntryId || id == LeftSideLadderEntryId;
+        internal static bool IsPlatformEntry(string id) => id == MovingPlatformEntryId || id == PlanningMechanismUtility.LiftEntryId || id == OneWayPlatformEntryId;
+        internal static bool HasFixedFootprint(string id) => IsDoorEntry(id) || IsLadderEntry(id) || IsPlatformEntry(id);
+        internal static Vector2Int Footprint(string id) => IsLadderEntry(id) ? Vector2Int.one
+            : IsPlatformEntry(id) ? new Vector2Int(3, 1)
+            : id == HorizontalDoorEntryId ? new Vector2Int(2, 1) : new Vector2Int(1, 2);
         internal static LevelEditorPropEntry GetButtonEntry()
         {
             var entry = new LevelEditorPropEntry();
@@ -27,7 +34,7 @@ namespace PlanningEditorPrototype
         internal static bool CanPlace(List<PlanningBox> boxes, RectInt rect)
         {
             foreach (var box in boxes)
-                if (!PlanningWaterLayerUtility.IsWater(box) && rect.Overlaps(new RectInt(box.x, box.y, box.width, box.height))) return false;
+                if (!PlanningWaterLayerUtility.IsWater(box) && PlanningShapeUtility.Overlaps(box, rect)) return false;
             return true;
         }
         internal static bool TryFindButtonCell(List<PlanningBox> boxes, PlanningBox door, RectInt allowed, out Vector2Int cell,

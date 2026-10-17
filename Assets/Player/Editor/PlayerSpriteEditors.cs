@@ -11,8 +11,11 @@ namespace Project.Player.Editor
         {
             var root = ProjectInspectorUtility.CreateRoot(serializedObject);
             root.Add(ProjectInspectorUtility.CreateScriptField(serializedObject));
+            root.Add(new HelpBox("外观按16个有效美术像素对应1格显示，碰撞尺寸独立。垂直偏移以碰撞体脚底为基准。", HelpBoxMessageType.Info));
+            var artwork = new Foldout { text = "动画与外观", value = true };
+            root.Add(artwork);
             foreach (string name in new[] { "animationSet", "visual", "spriteMaterial", "hidePlaceholder", "faceCamera", "verticalOffsetCells" })
-                root.Add(ProjectInspectorUtility.CreateProperty(serializedObject, name));
+                artwork.Add(ProjectInspectorUtility.CreateProperty(serializedObject, name));
             return root;
         }
     }

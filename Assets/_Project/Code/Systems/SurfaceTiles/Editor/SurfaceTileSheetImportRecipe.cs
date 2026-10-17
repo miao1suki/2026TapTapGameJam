@@ -52,9 +52,10 @@ namespace Project.SurfaceTiles.Editor
         [SerializeField] private string outputName = "SurfaceTiles";
         [SerializeField, Min(8)] private int outputWidth = 128;
         [SerializeField, Min(8)] private int outputHeight = 128;
-        [SerializeField, Min(1)] private int sourcePixelsPerCell = 64;
+        [SerializeField, Min(1)] private int sourcePixelsPerCell = Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell;
+        [SerializeField, Min(1)] private int sourcePixelScale = 1;
         [SerializeField, Min(0)] private int transparentPadding = 4;
-        [SerializeField] private bool trimTransparentPixels = true;
+        [SerializeField] private bool trimTransparentPixels;
         [SerializeField] private bool allowUpscale;
         [SerializeField] private SurfaceTileOutputAnchor anchor =
             SurfaceTileOutputAnchor.Center;
@@ -68,7 +69,9 @@ namespace Project.SurfaceTiles.Editor
         internal int OutputHeight => outputHeight;
         internal int SourcePixelsPerCell => sourcePixelsPerCell > 0
             ? sourcePixelsPerCell
-            : 64;
+            : Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell;
+        internal int SourcePixelScale => Mathf.Max(Mathf.Max(1, sourcePixelScale), Project.ObjectArtwork.GridArtworkMetrics.SourcePixelScale(sourceTexture));
+        internal bool UsesNativePixels => SourcePixelsPerCell == Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell * SourcePixelScale;
         internal int TransparentPadding => transparentPadding;
         internal bool TrimTransparentPixels => trimTransparentPixels;
         internal bool AllowUpscale => allowUpscale;
@@ -77,12 +80,21 @@ namespace Project.SurfaceTiles.Editor
 
         internal void ConfigureSource(Texture2D value)
         {
+            bool native = UsesNativePixels;
             sourceTexture = value;
+            if (native) UseNativePixelScale(Project.ObjectArtwork.GridArtworkMetrics.SourcePixelScale(value));
             if (value != null &&
                 (string.IsNullOrWhiteSpace(outputName) || outputName == "SurfaceTiles"))
             {
                 outputName = value.name + "_SurfaceTiles";
             }
+        }
+
+        internal void UseNativePixelScale(int scale = 1)
+        {
+            sourcePixelScale = Mathf.Clamp(scale,1,16);
+            sourcePixelsPerCell = Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell * SourcePixelScale;
+            allowUpscale = false;
         }
 
         internal void ConfigureOutput(

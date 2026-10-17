@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using Project.BlockFeatures.Editor;
 using Project.ColorBlocks;
 using Project.SurfaceTiles;
 using Project.SurfaceTiles.Editor;
@@ -918,12 +919,13 @@ namespace Project.LevelEditor.Editor
                 card.style.borderTopColor = border;
                 card.style.borderBottomColor = border;
 
-                Texture2D preview = entry.Prefab != null
+                bool hasArtwork = ObjectArtworkPlanningPreview.TryGet(entry.Prefab, entry.ComponentValueOverrides,out var artwork);
+                Texture2D preview = hasArtwork ? artwork.Texture : entry.Prefab != null
                     ? AssetPreview.GetAssetPreview(entry.Prefab)
                     : null;
-                bool awaitingPreview = preview == null &&
+                bool awaitingPreview = !hasArtwork && preview == null &&
                     entry.Prefab != null;
-                if (preview == null && entry.Prefab != null)
+                if (!hasArtwork && preview == null && entry.Prefab != null)
                 {
                     preview = AssetPreview.GetMiniThumbnail(entry.Prefab);
                 }
@@ -931,17 +933,30 @@ namespace Project.LevelEditor.Editor
                 Image image = new Image
                 {
                     image = preview,
-                    scaleMode = ScaleMode.ScaleToFit,
+                    scaleMode = hasArtwork ? ScaleMode.StretchToFill : ScaleMode.ScaleToFit,
                     pickingMode = PickingMode.Ignore
                 };
-                image.style.width = 98f * scale;
-                image.style.height = 98f * scale;
-                image.style.marginTop = 6f * scale;
+                var previewFrame=new VisualElement { pickingMode=PickingMode.Ignore };
+                previewFrame.style.width=98f*scale; previewFrame.style.height=98f*scale; previewFrame.style.marginTop=6f*scale;
+                image.style.position=Position.Absolute;
+                float artWidth=98f*scale,artHeight=98f*scale;
+                if (hasArtwork)
+                {
+                    image.uv=artwork.UV;
+                    bool vertical=Mathf.Abs(Mathf.DeltaAngle(artwork.RotationDegrees,0))%180>45;
+                    Vector2 display=vertical ? new Vector2(artwork.Cells.y,artwork.Cells.x) : artwork.Cells;
+                    float fit=98f*scale/Mathf.Max(.001f,Mathf.Max(display.x,display.y));
+                    artWidth=artwork.Cells.x*fit; artHeight=artwork.Cells.y*fit;
+                    image.style.rotate=new Rotate(new Angle(-artwork.RotationDegrees,AngleUnit.Degree));
+                    image.style.scale=new Scale(new Vector3(artwork.FlipX ? -1 : 1,1,1));
+                }
+                image.style.width=artWidth; image.style.height=artHeight;
+                image.style.left=(98f*scale-artWidth)*.5f; image.style.top=(98f*scale-artHeight)*.5f;
                 if (awaitingPreview)
                 {
                     pendingPropPreviews[image] = entry.Prefab;
                 }
-                card.Add(image);
+                previewFrame.Add(image); card.Add(previewFrame);
                 Label name = new Label(entry.DisplayName);
                 name.style.width = 116f * scale;
                 name.style.fontSize =
@@ -1117,11 +1132,9 @@ namespace Project.LevelEditor.Editor
                 return cached;
             }
 
-            Texture2D preview = AssetPreview.GetAssetPreview(sourcePrefab);
-            if (preview == null)
-            {
-                preview = AssetPreview.GetMiniThumbnail(sourcePrefab);
-            }
+            // Geometry without authored artwork is represented by its flat palette
+            // color; a lit 3D prefab thumbnail misrepresents the front-facing level.
+            Texture2D preview = GetColorPreview(entry.Color);
 
             if (preview != null)
             {

@@ -115,6 +115,12 @@ namespace Project.SurfaceTiles.Editor
                 }
 
                 Color32[] sourcePixels = source.GetPixels32();
+                if (recipe.UsesNativePixels && recipe.SourcePixelScale > 1 &&
+                    Project.ObjectArtwork.GridArtworkMetrics.ExactExportScale(sourcePixels, source.width, source.height, recipe.SourcePixelScale) != recipe.SourcePixelScale)
+                {
+                    error = $"源图不是完整{recipe.SourcePixelScale}倍最近邻导出，不能用此倍率压缩像素。请使用1倍，或先确认原始素材。";
+                    return false;
+                }
                 Color32[] atlasPixels = new Color32[atlasWidth * atlasHeight];
                 List<string> names = CreateUniqueNames(regions);
                 List<RectInt> contentRects = new List<RectInt>(regions.Count);
@@ -129,10 +135,22 @@ namespace Project.SurfaceTiles.Editor
                     {
                         rect = Trim(rect, sourcePixels, source.width);
                     }
+                    if (recipe.UsesNativePixels && recipe.SourcePixelScale > 1 && rect.width > 0 && rect.height > 0)
+                    {
+                        int scale = recipe.SourcePixelScale;
+                        int x = rect.xMin / scale * scale, y = rect.yMin / scale * scale;
+                        rect = ClampRect(new RectInt(x,y,Mathf.CeilToInt(rect.xMax/(float)scale)*scale-x,Mathf.CeilToInt(rect.yMax/(float)scale)*scale-y), source.width, source.height);
+                    }
 
                     if (rect.width <= 0 || rect.height <= 0)
                     {
                         error = $"选区“{names[index]}”不包含可见像素。";
+                        return false;
+                    }
+
+                    if (recipe.UsesNativePixels && (rect.width > recipe.OutputWidth - recipe.TransparentPadding * 2 || rect.height > recipe.OutputHeight - recipe.TransparentPadding * 2))
+                    {
+                        error = $"选区“{names[index]}”为 {rect.width}×{rect.height} 源像素，超出输出容量。请增大输出宽高或减小留白；原像素模式不会缩小素材。";
                         return false;
                     }
 
@@ -150,6 +168,7 @@ namespace Project.SurfaceTiles.Editor
                         recipe.OutputHeight,
                         recipe.TransparentPadding,
                         recipe.AllowUpscale,
+                        recipe.UsesNativePixels,
                         recipe.Anchor);
                     contentRects.Add(contentRect);
                     sizesInCells.Add(new Vector2(
@@ -216,9 +235,8 @@ namespace Project.SurfaceTiles.Editor
                 }
 
                 palette.ReplaceTilesPreservingIds(sprites);
-                palette.SetBakePixelsPerCell(new Vector2Int(
-                    recipe.OutputWidth,
-                    recipe.OutputHeight));
+                palette.SetBakePixelsPerCell(recipe.UsesNativePixels ?
+                    Vector2Int.one * recipe.SourcePixelsPerCell : new Vector2Int(recipe.OutputWidth, recipe.OutputHeight));
                 for (int index = 0; index < names.Count; index++)
                 {
                     int cellX = index % columns * recipe.OutputWidth;
@@ -232,6 +250,7 @@ namespace Project.SurfaceTiles.Editor
                             (content.y - cellY) / (float)recipe.OutputHeight,
                             content.width / (float)recipe.OutputWidth,
                             content.height / (float)recipe.OutputHeight));
+                    palette.ConfigureTilePixelScale(names[index], recipe.UsesNativePixels ? recipe.SourcePixelScale : 1);
                 }
                 for (int index = 0; index < previousSprites.Length; index++)
                 {
@@ -480,6 +499,7 @@ namespace Project.SurfaceTiles.Editor
             int cellHeight,
             int padding,
             bool allowUpscale,
+            bool preservePixels,
             SurfaceTileOutputAnchor anchor)
         {
             int availableWidth = Mathf.Max(1, cellWidth - padding * 2);
@@ -491,6 +511,7 @@ namespace Project.SurfaceTiles.Editor
             {
                 scale = Mathf.Min(1f, scale);
             }
+            if (preservePixels) scale = 1f;
 
             int drawWidth = Mathf.Max(1, Mathf.RoundToInt(rect.width * scale));
             int drawHeight = Mathf.Max(1, Mathf.RoundToInt(rect.height * scale));

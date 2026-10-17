@@ -33,8 +33,9 @@ namespace Project.GridArt.Editor
             string key = SpriteKey(sprite);
             if (string.IsNullOrEmpty(key) || library.brushes.Any(b => b.sourceKey == key || b.sprite == sprite)) return false;
             library.brushes.Add(new GridArtBrush { sourceKey = key, label = sprite.name, sprite = sprite,
-                size = new Vector2Int(Mathf.Max(1, Mathf.CeilToInt(size.x)), Mathf.Max(1, Mathf.CeilToInt(size.y))),
-                visualSize = size, contentRect = crop, category = category });
+                size = new Vector2Int(Mathf.Max(1, Mathf.CeilToInt(size.x - .0001f)), Mathf.Max(1, Mathf.CeilToInt(size.y - .0001f))),
+                visualSize = size, contentRect = crop, category = category,
+                sourcePixelScale = GridArtPixelLayout.SourceScale(sprite) });
             EditorUtility.SetDirty(library);
             return true;
         }
@@ -43,7 +44,7 @@ namespace Project.GridArt.Editor
         {
             if (Application.isPlaying || library == null) return 0;
             Undo.RecordObject(library, "汇入切片素材");
-            int count = 0;
+            int count = GridArtSupplementLibrary.Import(library);
             foreach (string guid in AssetDatabase.FindAssets("t:SurfaceTilePalette", new[] { "Assets" }).OrderBy(g => g))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -66,15 +67,15 @@ namespace Project.GridArt.Editor
                 var existing=library.brushes.FirstOrDefault(b=>b.sourceKey==key);
                 if (existing != null)
                 {
-                    if (existing.sprite != tile.Sprite || existing.contentRect != tile.ContentRect)
-                    { existing.sprite=tile.Sprite; existing.contentRect=tile.ContentRect; EditorUtility.SetDirty(library); }
+                    if (existing.sprite != tile.Sprite || existing.contentRect != tile.ContentRect || existing.sourcePixelScale != tile.SourcePixelScale)
+                    { existing.sprite=tile.Sprite; existing.contentRect=tile.ContentRect; existing.sourcePixelScale=tile.SourcePixelScale; EditorUtility.SetDirty(library); }
                     continue;
                 }
                 // The slicer recreates Sprite subassets but preserves tile.Id. Maps keep this slot.
-                var size=tile.SizeInCells;
+                var size=GridArtPixelLayout.NativeSize(tile.Sprite, tile.ContentRect, tile.SourcePixelScale);
                 library.brushes.Add(new GridArtBrush { sourceKey=key, label=tile.Sprite.name, sprite=tile.Sprite,
-                    size=new Vector2Int(Mathf.Max(1,Mathf.CeilToInt(size.x)),Mathf.Max(1,Mathf.CeilToInt(size.y))),
-                    visualSize=size, contentRect=tile.ContentRect, category=source.name });
+                    size=new Vector2Int(Mathf.Max(1,Mathf.CeilToInt(size.x - .0001f)),Mathf.Max(1,Mathf.CeilToInt(size.y - .0001f))),
+                    visualSize=size, contentRect=tile.ContentRect, category=source.name, sourcePixelScale=tile.SourcePixelScale });
                 EditorUtility.SetDirty(library); count++;
             }
             return count;
@@ -87,23 +88,27 @@ namespace Project.GridArt.Editor
             if (texture == null || texture.width != 1408 || texture.height != 704) return;
             Sprite Crop(Rect rect, string name)
             {
-                var sprite = Sprite.Create(texture, rect, Vector2.one * .5f, 64, 0, SpriteMeshType.FullRect);
+                var sprite = Sprite.Create(texture, rect, Vector2.one * .5f,
+                    Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell * Project.ObjectArtwork.GridArtworkMetrics.SourcePixelScale(texture), 0, SpriteMeshType.FullRect);
                 sprite.name = name; AssetDatabase.AddObjectToAsset(sprite, library); return sprite;
             }
             for (int row = 0; row < 5; row++) for (int column = 0; column < 4; column++)
             {
                 string label = "墙面纹样 " + (row * 4 + column + 1).ToString("00");
                 var sprite = Crop(new Rect(64 + column * 128, 704 - (64 + row * 128) - 64,64,64), label);
-                Add(library, sprite, Vector2.one, new Rect(0,0,1,1), "场景纹样");
+                Add(library, sprite, GridArtPixelLayout.NativeSize(sprite, new Rect(0,0,1,1)), new Rect(0,0,1,1), "场景纹样");
             }
+            // tail is an audited 4x nearest-neighbour export: 64 encoded pixels
+            // represent 16 authored pixels. Its existing one-cell rules stay valid.
             var frame = new GridArtBrush { label = "白线边框", category = "边框", autoTerrain = true,
-                sourceKey = AssetDatabase.AssetPathToGUID(path) + "#frame" };
+                sourceKey = AssetDatabase.AssetPathToGUID(path) + "#frame", sourcePixelScale = 4 };
             for (int row=0;row<3;row++) for (int column=0;column<3;column++)
             {
                 int i=row*3+column;
                 frame.pieces[i] = Crop(i==4 ? new Rect(640,351,1,1) : new Rect(640+column*128,704-(320+row*128)-64,64,64),"边框_"+i);
             }
-            library.brushes.Add(frame); EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
+            library.brushes.Add(frame);
+            EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
         }
 
         public static void Connect(GridArtMap map, GridArtPalette destination)
@@ -126,7 +131,7 @@ namespace Project.GridArt.Editor
                     {
                         var copy = new GridArtBrush { sourceKey = key, label = brush.label, category = brush.category,
                             autoTerrain = brush.autoTerrain, sprite = brush.sprite, size = brush.size,
-                            visualSize = brush.visualSize, contentRect = brush.contentRect, normalMap = brush.normalMap,
+                            visualSize = brush.visualSize, contentRect = brush.contentRect, normalMap = brush.normalMap, sourcePixelScale = brush.sourcePixelScale, colorId = brush.colorId,
                             pieces = brush.pieces != null ? (Sprite[])brush.pieces.Clone() : new Sprite[13] };
                         index = destination.brushes.Count; destination.brushes.Add(copy);
                     }
@@ -153,7 +158,9 @@ namespace Project.GridArt.Editor
                 AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GetAssetPath(source)).OfType<Sprite>().ToArray();
             int count = 0;
             foreach (var item in sprites)
-                if (Add(library, item, item.rect.size / Mathf.Max(1, pixelsPerCell), new Rect(0, 0, 1, 1), "自定义")) count++;
+                // Retain the argument for callers compiled against the former API; new art
+                // always uses the project pixel metric rather than a per-import scale.
+                if (Add(library, item, GridArtPixelLayout.NativeSize(item, new Rect(0, 0, 1, 1)), new Rect(0, 0, 1, 1), "自定义")) count++;
             AssetDatabase.SaveAssetIfDirty(library);
             return count;
         }

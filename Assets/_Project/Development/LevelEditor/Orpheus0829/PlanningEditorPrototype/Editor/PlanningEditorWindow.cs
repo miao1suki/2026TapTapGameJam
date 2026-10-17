@@ -174,6 +174,7 @@ namespace PlanningEditorPrototype
         }
         private readonly List<SceneBinding> sceneBindings=new List<SceneBinding>();
         private bool autoSync;
+        [SerializeField] private bool waterEditingMode;
         private bool syncPending;
         private bool documentSavePending;
         private double documentSaveAt;
@@ -307,6 +308,7 @@ namespace PlanningEditorPrototype
             LevelEditorPalette sharedPalette =
                 LevelEditorPaletteService.GetOrCreate();
             canvas.SetPalette(sharedPalette);
+            canvas.SetWaterEditing(waterEditingMode);
             if (sharedPalette != null &&
                 sharedPalette.Entries.Count > 0 &&
                 sharedPalette.Entries[0] != null)
@@ -342,6 +344,7 @@ namespace PlanningEditorPrototype
             statusLabel.style.backgroundColor = new Color(.09f, .1f, .13f);
             root.Add(statusLabel);
             root.Add(BuildSaveOverlay());
+            root.Add(BuildCollaborationOverlay());
             canvas.ValidationFailed += message =>
             {
                 statusLabel.text = message;
@@ -1232,7 +1235,6 @@ namespace PlanningEditorPrototype
             selectionHint.style.color = new Color(.65f, .72f, .8f);
             rail.Add(selectionHint);
             rail.Add(BuildRegionTools());
-            rail.Add(BuildCollaborationTools());
             worldMapTools = rail;
             return rail;
         }
@@ -1273,10 +1275,21 @@ namespace PlanningEditorPrototype
             modeRow.Add(detail);
             modeRow.Add(assembly);
             panel.Add(modeRow);
-            var waterEditing = new Toggle("仅操作水层") { tooltip = "仅选择和擦除水层；关闭时优先操作水上的物品。" };
+            VisualElement transferRow = Row();
+            transferRow.name = "PlanningTransferActions";
+            transferRow.style.paddingLeft = transferRow.style.paddingRight = 6f;
+            var import = TopButton("导入存档拼接…", () => ShowCollaborationOverlay(true));
+            import.name = "PlanningImportFragment";
+            import.tooltip = "把另一份关卡存档加入当前地图；先预览位置，再确认导入，不替换当前存档。";
+            var export = TopButton("导出地图片段…", () => ShowCollaborationOverlay(false));
+            export.name = "PlanningExportFragment";
+            export.tooltip = "导出选中房间、通道或框选的一部分区域，不修改当前地图。";
+            import.style.flexGrow = export.style.flexGrow = 1f;
+            transferRow.Add(import); transferRow.Add(export); panel.Add(transferRow);
+            var waterEditing = new Toggle("仅操作水层") { value = waterEditingMode, tooltip = "仅绘制、选择、合并、调整和擦除水体；其他物品半透明显示。关闭后优先操作水上的物品。" };
             waterEditing.style.marginLeft = 8;
             waterEditing.style.marginBottom = 8;
-            waterEditing.RegisterValueChangedCallback(evt => canvas?.SetWaterEditing(evt.newValue));
+            waterEditing.RegisterValueChangedCallback(evt => { waterEditingMode = evt.newValue; canvas?.SetWaterEditing(evt.newValue); });
             panel.Add(waterEditing);
             panel.Add(BuildWorldToolPanel());
 
@@ -2079,6 +2092,7 @@ namespace PlanningEditorPrototype
             canvas?.SetMode(value);
             canvas?.schedule.Execute(() =>
             {
+                if (canvas == null || mode != value) return;
                 if (!RestoreCanvasView(value))
                 {
                     FocusCurrentMode();
@@ -2555,6 +2569,7 @@ namespace PlanningEditorPrototype
             }
 
             canvas.MarkDirtyRepaint();
+            RefreshToolStyles();
             RefreshImportPreview();
         }
 

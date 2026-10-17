@@ -313,9 +313,8 @@ namespace Project.BlockFeatures.Editor
             Action refresh = () =>
             {
                 field.style.display =
-                    MatchesVisibility(
-                        condition,
-                        entry.Parameter.VisibleWhenValue)
+                    entry.Parameter.MatchesVisibility(condition.propertyType == SerializedPropertyType.Boolean
+                        ? condition.boolValue ? 1 : 0 : condition.intValue)
                         ? DisplayStyle.Flex
                         : DisplayStyle.None;
             };

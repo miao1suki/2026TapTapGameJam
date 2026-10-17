@@ -187,6 +187,12 @@ namespace TaSource.LinkEffect
                 float distanceSqr = (hit.ClosestPoint(rangeCenter) -
                     rangeCenter).sqrMagnitude;
                 if (distanceSqr > radius * radius) continue;
+                var water = hit.GetComponentInParent<WaterVisualFeature>();
+                if (water != null)
+                {
+                    if (!WaterCellVisibility.TryVisiblePoint(water, hit, rangeCenter, radius, out Vector3 visible)) continue;
+                    distanceSqr = (visible - rangeCenter).sqrMagnitude;
+                }
 
                 behaviourBuffer.Clear();
                 hit.GetComponentsInParent(false, behaviourBuffer);
@@ -235,7 +241,11 @@ namespace TaSource.LinkEffect
             float distanceSqr, bool feasible)
         {
             ColorObject colorObject = component.GetComponentInParent<ColorObject>();
-            int key = colorObject != null ? colorObject.gameObject.GetInstanceID()
+            // A vine's authored and runtime segments share one logical root.
+            // Keep the closest real collider as the endpoint, not the root pivot.
+            var vine = component as ClimbableVineFeature;
+            int key = vine != null ? vine.Root.gameObject.GetInstanceID()
+                : colorObject != null ? colorObject.gameObject.GetInstanceID()
                 : component.gameObject.GetInstanceID();
             if (candidateIndices.TryGetValue(key, out int index))
             {
@@ -347,6 +357,9 @@ namespace TaSource.LinkEffect
 
             if (candidate.Collider != null)
                 destination = candidate.Collider.ClosestPoint(source);
+            var water = candidate.Component as WaterVisualFeature;
+            if (water != null && candidate.Collider != null &&
+                !WaterCellVisibility.TryVisiblePoint(water, candidate.Collider, source, rangeRadius, out destination)) return false;
             Vector3 sourceOffsetFromCenter = source - rangeCenter;
             if (sourceOffsetFromCenter.sqrMagnitude > rangeRadius * rangeRadius)
                 source = rangeCenter + sourceOffsetFromCenter.normalized * rangeRadius;

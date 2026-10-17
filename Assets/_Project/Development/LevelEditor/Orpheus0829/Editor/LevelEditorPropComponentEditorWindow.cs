@@ -347,15 +347,34 @@ namespace Project.LevelEditor.Editor
                             "组件数值已修改，尚未保存。";
                     });
                 fieldParent.Add(field);
+                Label description = null;
                 if (!string.IsNullOrWhiteSpace(tooltip))
                 {
-                    var description = new Label(tooltip);
+                    description = new Label(tooltip);
                     description.style.whiteSpace = WhiteSpace.Normal;
                     description.style.fontSize = 11f;
                     description.style.opacity = .7f;
                     description.style.marginLeft = 4f;
                     description.style.marginBottom = 6f;
                     fieldParent.Add(description);
+                }
+                if (!string.IsNullOrWhiteSpace(parameter?.VisibleWhenField))
+                {
+                    SerializedProperty condition = serializedObject.FindProperty(parameter.VisibleWhenField);
+                    if (condition != null)
+                    {
+                        Label help = description;
+                        void RefreshVisibility(SerializedProperty changed)
+                        {
+                            int value = changed.propertyType == SerializedPropertyType.Boolean
+                                ? changed.boolValue ? 1 : 0 : changed.intValue;
+                            DisplayStyle display = parameter.MatchesVisibility(value) ? DisplayStyle.Flex : DisplayStyle.None;
+                            field.style.display = display;
+                            if (help != null) help.style.display = display;
+                        }
+                        RefreshVisibility(condition);
+                        field.TrackPropertyValue(condition, RefreshVisibility);
+                    }
                 }
             }
 
@@ -377,6 +396,12 @@ namespace Project.LevelEditor.Editor
             var serializedObject = new SerializedObject(component);
             serializedObjects.Add(serializedObject);
             serializedObject.Update();
+
+            SubtitleInspectorFields.AddSignAppearance(section, serializedObject, property =>
+            {
+                CaptureOverride(component, property);
+                statusLabel.text = "告示牌外观已修改，尚未保存。";
+            });
 
             Foldout content = ProjectInspectorUtility.CreateFoldout(
                 "字幕内容",
@@ -444,8 +469,8 @@ namespace Project.LevelEditor.Editor
                 serializedObject,
                 component,
                 "hideVisualOnAwake",
-                "进入游戏时隐藏物体外观",
-                "默认关闭所有 Renderer，但保留 Collider 用于触发。");
+                "进入游戏时隐藏占位外观",
+                "隐藏旧占位网格；告示牌外观与触发范围独立控制。");
             AddOverrideField(
                 trigger,
                 serializedObject,

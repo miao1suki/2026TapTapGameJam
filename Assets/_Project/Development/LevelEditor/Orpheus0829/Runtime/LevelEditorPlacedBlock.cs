@@ -12,12 +12,14 @@ namespace Project.LevelEditor
         private static readonly List<LevelEditorPlacedBlock> activeInstances = new List<LevelEditorPlacedBlock>();
         private static readonly Dictionary<LevelEditorPlacedBlock, int> activeIndices = new Dictionary<LevelEditorPlacedBlock, int>();
         public static IReadOnlyList<LevelEditorPlacedBlock> ActiveInstances => activeInstances;
+        public static int ActiveRevision { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRegistry()
         {
             activeInstances.Clear();
             activeIndices.Clear();
+            ActiveRevision++;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -33,6 +35,7 @@ namespace Project.LevelEditor
             if (activeIndices.ContainsKey(this)) return;
             activeIndices.Add(this, activeInstances.Count);
             activeInstances.Add(this);
+            ActiveRevision++;
         }
         [SerializeField] private Vector2Int cell;
         [SerializeField] private Vector2Int sizeCells = Vector2Int.one;
@@ -58,9 +61,12 @@ namespace Project.LevelEditor
         public Vector2Int Cell => cell;
         public Vector2Int SizeCells => new Vector2Int(Mathf.Max(1, sizeCells.x), Mathf.Max(1, sizeCells.y));
         public float CellWorldSize => Mathf.Max(.01f, cellWorldSize);
-        public bool ContainsCell(Vector2Int value) =>
-            value.x >= cell.x && value.y >= cell.y &&
-            value.x < cell.x + SizeCells.x && value.y < cell.y + SizeCells.y;
+        public bool ContainsCell(Vector2Int value)
+        {
+            if (value.x < cell.x || value.y < cell.y || value.x >= cell.x + SizeCells.x || value.y >= cell.y + SizeCells.y) return false;
+            var shape = GetComponent<LevelEditorMergedShape>();
+            return shape == null || shape.ContainsCell(new Vector2Int(value.x - cell.x, SizeCells.y - 1 - (value.y - cell.y)));
+        }
         public string EntryName => entryName;
         public Color EntryColor => entryColor;
         public bool HasColorData => hasColorData;
@@ -82,6 +88,7 @@ namespace Project.LevelEditor
             isProp = valueIsProp;
             sizeCells = Vector2Int.one;
             SetCellWorldSize(valueCellWorldSize);
+            ActiveRevision++;
             ApplyEntryColor();
         }
 
@@ -93,6 +100,7 @@ namespace Project.LevelEditor
         public void SetSizeCells(Vector2Int value)
         {
             sizeCells = new Vector2Int(Mathf.Max(1, value.x), Mathf.Max(1, value.y));
+            ActiveRevision++;
         }
 
         public void ApplyEntryColor()
@@ -144,6 +152,7 @@ namespace Project.LevelEditor
             activeIndices[last] = index;
             activeInstances.RemoveAt(lastIndex);
             activeIndices.Remove(this);
+            ActiveRevision++;
         }
     }
 }

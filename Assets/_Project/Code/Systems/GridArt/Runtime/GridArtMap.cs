@@ -22,6 +22,7 @@ namespace Project.GridArt
         public float depth = 2f;
         public Vector2 parallax = Vector2.one;
         public Color tint = Color.white;
+        public string colorId = ""; // Empty inherits each brush; "none" forces neutral.
         public bool lighting3D;
         public int sortingOrder = int.MinValue;
         public bool followLevel;

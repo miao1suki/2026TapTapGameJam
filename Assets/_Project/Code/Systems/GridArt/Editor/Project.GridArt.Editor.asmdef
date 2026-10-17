@@ -1,1 +1,1 @@
-{"name":"Project.GridArt.Editor","rootNamespace":"Project.GridArt.Editor","references":["Project.GridArt.Runtime","Project.SurfaceTiles.Runtime","Project.SurfaceTiles.Editor"],"includePlatforms":["Editor"]}
+{"name":"Project.GridArt.Editor","rootNamespace":"Project.GridArt.Editor","references":["Project.GridArt.Runtime","Project.SurfaceTiles.Runtime","Project.SurfaceTiles.Editor","Project.ObjectArtwork.Runtime"],"includePlatforms":["Editor"]}

@@ -110,6 +110,9 @@ namespace Project.BlockFeatures
             new List<GameObject>();
         private readonly Collider[] proximityBuffer =
             new Collider[32];
+        private readonly Collider[] growthObstacleBuffer = new Collider[128];
+        private Collider growthBlocker;
+        private bool growthBlocked;
         private readonly Dictionary<int, PlayerController> climbingPlayers =
             new Dictionary<int, PlayerController>();
         private readonly HashSet<int> foundPlayerIds =
@@ -171,6 +174,7 @@ namespace Project.BlockFeatures
         public int MaxGrowthBlocks => maxGrowthBlocks;
         public GameObject GrowthSegmentPrefab => growthSegmentPrefab;
         public float ClimbSpeedMultiplier => climbSpeedMultiplier;
+        public bool IsGrowthBlocked => growthBlocked;
 
         protected override void OnTick(float deltaTime)
         {
@@ -429,6 +433,8 @@ namespace Project.BlockFeatures
                 return;
             }
 
+            if (!CanSpawnSegment(CurrentGrowthBlocks)) return;
+
             AudioCuePlayer.Play(AudioCueIds.PlantGrow, .8f);
             if (growthRoutine != null)
             {
@@ -477,6 +483,8 @@ namespace Project.BlockFeatures
             }
 
             spawnedSegments.Clear();
+            growthBlocker = null;
+            growthBlocked = false;
             visualTarget = maxGrowthBlocks > 0 ? Mathf.Clamp01((float)initialSegments.Count / maxGrowthBlocks) : 0f;
             targetCells = initialSegments.Count + 1;
         }
@@ -561,6 +569,7 @@ namespace Project.BlockFeatures
             values.Add(new BlockDebugValue(
                 "生长块数",
                 $"{CurrentGrowthBlocks} / {maxGrowthBlocks}"));
+            values.Add(new BlockDebugValue("生长阻挡", growthBlocker != null ? growthBlocker.name : growthBlocked ? "检测区域拥挤" : "无"));
         }
 
         public override void CollectDebugActions(
@@ -601,6 +610,7 @@ namespace Project.BlockFeatures
             int index,
             bool playAppearance)
         {
+            if (!CanSpawnSegment(index)) return null;
             GameObject segmentPrefab = growthSegmentPrefab != null
                 ? growthSegmentPrefab
                 : gameObject;
@@ -632,6 +642,43 @@ namespace Project.BlockFeatures
             }
 
             return segment;
+        }
+
+        private bool CanSpawnSegment(int index)
+        {
+            growthBlocker = null;
+            growthBlocked = false;
+            GameObject source = growthSegmentPrefab != null ? growthSegmentPrefab : gameObject;
+            BoxCollider shape = source.GetComponent<BoxCollider>();
+            if (shape == null) shape = GetComponent<BoxCollider>();
+            Vector3 position = transform.position + Vector3.up * (GridCellWorldSize * (index + 1));
+            Vector3 scale = transform.lossyScale;
+            scale = new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
+            Vector3 center = position + transform.rotation * Vector3.Scale(shape != null ? shape.center : Vector3.zero, scale);
+            Vector3 half = shape != null ? Vector3.Scale(shape.size * .5f, scale) : Vector3.one * (GridCellWorldSize * .5f);
+            half = Vector3.Max(half - Vector3.one * (GridCellWorldSize * .02f), Vector3.one * .001f);
+            int count = Physics.OverlapBoxNonAlloc(center, half, growthObstacleBuffer,
+                transform.rotation, ~0, QueryTriggerInteraction.Ignore);
+            // A saturated query must not allow a segment through an unexamined solid.
+            if (count == growthObstacleBuffer.Length) { growthBlocked = true; return false; }
+            Collider ownShape = GetComponent<Collider>();
+            for (int hitIndex = 0; hitIndex < count; hitIndex++)
+            {
+                Collider hit = growthObstacleBuffer[hitIndex];
+                if (hit == null || !hit.enabled || hit.isTrigger || !hit.gameObject.activeInHierarchy ||
+                    hit.transform.IsChildOf(Root.transform) ||
+                    Physics.GetIgnoreLayerCollision(gameObject.layer, hit.gameObject.layer) ||
+                    (ownShape != null && Physics.GetIgnoreCollision(ownShape, hit))) continue;
+                var vine = hit.GetComponentInParent<ClimbableVineFeature>();
+                if (vine != null && vine.Root == Root) continue;
+                // Water and effect colliders do not describe solid growth obstructions.
+                if (hit.GetComponentInParent<WaterVisualFeature>() != null ||
+                    hit.GetComponentInParent<InteractiveWater.InteractiveWater>() != null) continue;
+                growthBlocker = hit;
+                growthBlocked = true;
+                return false;
+            }
+            return true;
         }
 
         private void PlayAppearanceOnTopSegment()
@@ -695,7 +742,7 @@ namespace Project.BlockFeatures
                 sequenceRenderer.enabled = false;
                 sequenceRenderer.sharedMaterial = sequenceArtwork.colorSpriteMaterial;
                 vineVisual.layer = ColorRuntimeService.Instance.Catalog?.Find("green")?.unityLayer ?? gameObject.layer;
-                // These frames already contain the baked pixel art. Only live water/effects need pixel resampling.
+                // Frames are baked; shared shader sampling keeps stretched growth on the same 16-pixel grid.
                 sequenceRenderer.renderingLayerMask &= ~128u;
                 vineRenderer = sequenceRenderer;
                 sequenceMask = new MaterialPropertyBlock();
@@ -719,6 +766,7 @@ namespace Project.BlockFeatures
                 sequenceMask.SetFloat("_ColorMaskReal", 1f);
                 sequenceMask.SetFloat("_ColorMaskUseVertexAlpha", 1f);
                 sequenceMask.SetTexture("_ColorMaskAlphaTexture", frame.texture);
+                GridArtworkMetrics.ConfigurePixelSampling(sequenceMask, frame, GridCellWorldSize);
                 sequenceRenderer.SetPropertyBlock(sequenceMask);
                 lastPose = index;
             }

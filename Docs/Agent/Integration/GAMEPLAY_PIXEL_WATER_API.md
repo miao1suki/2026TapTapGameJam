@@ -13,6 +13,14 @@
 - 气泡复用 TA `DirectionalWaterBubbleStream`，新增Down=3而不修改Up=0/Left=1/Right=2。按10格长度、最多3格宽度分段，长度与世界尺寸匹配；普通水域无气泡，定向水流四向，浮力柱向上延伸至连通水域顶面。
 - `WaterVisualFeature.ShowFlowBubbles/FlowBubbleDensity/FlowBubbleSpeed` 为只读配置访问，字段使用现有BlockParameter中文Inspector及规划参数保存。
 
+## 形状、水下物品与墙遮挡
+
+水与普通物品/墙分层占格，不改变普通 Layer、HSV 或颜色解锁契约。颜色屏幕命中优先同体积的非水物体，包含没有颜色反应的墙，不能继续穿透墙去染水。非水物品不遮掉整格水，仍可显示水中效果。
+
+不规则合并使用根上的 `LevelEditorMergedShape`：`WorldBounds` 仅用于遍历边界，`ContainsWorldPoint` 和压缩 `Volumes` 才定义水域；前后片网格都按实际格生成，不填孔洞。多 Collider 仍只有一套水状态，退出一片但仍在另一片内不能清掉游泳状态。浮力柱按实际片段检查，岩浆冷却继承形状和大小。
+
+`WaterCellVisibility` 根据 `LevelEditorPlacedBlock.ActiveRevision` 缓存当前 Scene 实体墙的实际格，只在增删/配置变化后重建；不是每帧扫描场景。水的初始网格、正式前后面片以及 InteractionLinkEffect 都忽略被墙覆盖的格；部分被遮挡的大水体将连线落到范围内的可见水格，全遮挡时不出线。该遮挡不删改规划、碰撞或水状态，不禁止水与墙同格存储。
+
 ## 材质与管线
 
 全部正式水和气泡材质通过 `ColorAppearanceManager.GetSharedMaterial(source,"blue",true)` 获取；同一来源材质共享，无逐物体逐帧改材质、无逐帧实例化。实际透明度由集中管理器写 `_ColorRevealOpacity`。气泡自身游动透明度与该值相乘，不覆盖解锁渐显。

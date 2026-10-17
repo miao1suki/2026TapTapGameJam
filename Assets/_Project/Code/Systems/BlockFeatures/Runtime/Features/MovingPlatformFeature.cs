@@ -33,18 +33,58 @@ namespace Project.BlockFeatures
     [DefaultExecutionOrder(-150)]
     public sealed class MovingPlatformFeature : BlockFeature
     {
+        [BlockParameter(Label = "路线配置", Group = "移动路线", Order = -1,
+            Tooltip = "单向路线从布置位置出发后往返；双侧路线可分别设置两端距离。原路线保留旧存档配置。")]
+        [SerializeField] private MovingPlatformPathMode pathMode;
+
         [BlockParameter(
             Label = "路线类型",
             Group = "移动路线",
-            Order = 0)]
+            Order = 0, VisibleWhenField = "pathMode", VisibleWhenValue = 0)]
         [SerializeField] private MovingPlatformRoute route =
             MovingPlatformRoute.Horizontal;
 
         [BlockParameter(
             Label = "游荡距离（格）",
             Group = "移动路线",
-            Order = 1)]
+            Order = 1, VisibleWhenField = "pathMode", VisibleWhenValue = 0)]
         [SerializeField, Min(1)] private int travelBlocks = 4;
+
+        [BlockParameter(
+            Label = "反向路线",
+            Group = "移动路线",
+            Order = 2,
+            VisibleWhenField = "pathMode", VisibleWhenValue = 0,
+            Tooltip = "关闭时向右或向上移动；开启时向左或向下移动。作者放置的位置始终为起点。")]
+        [SerializeField] private bool reverseRoute;
+
+        [BlockParameter(Label = "左距离（格）", Group = "移动路线", Order = 3,
+            VisibleWhenField = "pathMode", VisibleWhenValues = new[] { 2, 5 },
+            Tooltip = "向左路线的总距离，或移动中心至左端的距离；0表示不向该侧移动。")]
+        [SerializeField, Min(0f)] private float leftDistance = 4f;
+        [BlockParameter(Label = "右距离（格）", Group = "移动路线", Order = 4,
+            VisibleWhenField = "pathMode", VisibleWhenValues = new[] { 1, 5 },
+            Tooltip = "向右路线的总距离，或移动中心至右端的距离；0表示不向该侧移动。")]
+        [SerializeField, Min(0f)] private float rightDistance = 4f;
+        [BlockParameter(Label = "下距离（格）", Group = "移动路线", Order = 5,
+            VisibleWhenField = "pathMode", VisibleWhenValues = new[] { 4, 6 },
+            Tooltip = "向下路线的总距离，或移动中心至下端的距离；0表示不向该侧移动。")]
+        [SerializeField, Min(0f)] private float downDistance = 4f;
+        [BlockParameter(Label = "上距离（格）", Group = "移动路线", Order = 6,
+            VisibleWhenField = "pathMode", VisibleWhenValues = new[] { 3, 6 },
+            Tooltip = "向上路线的总距离，或移动中心至上端的距离；0表示不向该侧移动。")]
+        [SerializeField, Min(0f)] private float upDistance = 4f;
+        [BlockParameter(Label = "中心偏移（格）", Group = "移动路线", Order = 7,
+            VisibleWhenField = "pathMode", VisibleWhenValues = new[] { 5, 6 },
+            Tooltip = "相对布置位置沿路线偏移中心，正数向右/上，负数向左/下。自动限制在两侧距离内，保证初始位置在路线上且不瞬移。")]
+        [SerializeField] private float centerOffset;
+        [BlockParameter(Label = "首次向左 / 向下", Group = "移动路线", Order = 8,
+            VisibleWhenField = "pathMode", VisibleWhenValues = new[] { 5, 6 },
+            Tooltip = "决定首次前往哪一端。曲柄0%保留布置位置，100%到达该方向端点，松开沿原路返回。")]
+        [SerializeField] private bool startNegative;
+
+        public MovingPlatformPath Path => MovingPlatformPath.Resolve(pathMode, route, travelBlocks, reverseRoute,
+            leftDistance, rightDistance, downDistance, upDistance, centerOffset, startNegative);
 
         [BlockParameter(
             Label = "单程时间",
@@ -143,11 +183,20 @@ namespace Project.BlockFeatures
         private bool active;
         private float progress;
         private int travelDirection = 1;
+        private float legStart, legEnd;
         private float holdRemaining;
         private bool movementAudioPlaying;
+        private Collider[] platformSurfaces;
         public bool IsMoving => CanRunFeature && active;
-        public Vector3 PreviewStart => Application.isPlaying ? transform.parent != null ? transform.parent.TransformPoint(origin) : origin : transform.position;
-        public Vector3 PreviewEnd => PreviewStart + (transform.parent != null ? transform.parent.TransformVector(GetOffset()) : GetOffset());
+        public Vector3 PreviewOrigin => Application.isPlaying && IsAttached
+            ? transform.parent != null ? transform.parent.TransformPoint(origin) : origin : transform.position;
+        public Vector3 PreviewStart => PreviewOrigin + PathWorldOffset(Path.PreviewFrom);
+        public Vector3 PreviewEnd => PreviewOrigin + PathWorldOffset(Path.PreviewTo);
+        public Vector3 PreviewCenter => PreviewOrigin + PathWorldOffset(Path.Axis * Path.Center);
+        public Vector3 PreviewFirstTarget => PreviewOrigin + PathWorldOffset(Path.Axis * Path.FirstEnd);
+        private Vector3 PathWorldOffset(Vector2 cells) => transform.parent != null
+            ? transform.parent.TransformVector((Vector3)cells * PreviewCellSize) : (Vector3)cells * PreviewCellSize;
+        private float PreviewCellSize => Application.isPlaying && IsAttached ? GridCellWorldSize : GridCellSizeUtility.Resolve(this);
         public IReadOnlyList<MonoBehaviour> LinkedControls => linkedControls;
         public void BindBase(MechanismBaseFeature source)
         {
@@ -161,9 +210,9 @@ namespace Project.BlockFeatures
 
         protected override void OnAttach()
         {
+            platformSurfaces = GetComponents<Collider>();
             origin = transform.localPosition;
-            progress = 0f;
-            travelDirection = 1;
+            ResetMotion();
             holdRemaining = 0f;
             active = driveMode == MovingPlatformDriveMode.Automatic &&
                      startsActive;
@@ -228,50 +277,49 @@ namespace Project.BlockFeatures
                 return;
             }
 
-            float travel = Mathf.Max(.05f, travelDuration);
+            MovingPlatformPath path = Path;
+            if (path.Span <= .00001f) return;
+            float travel = Mathf.Max(.05f, travelDuration) * Mathf.Abs(legEnd - legStart) / path.Span;
             float hold = Mathf.Max(0f, holdAtEnds);
-            float previousProgress = progress;
-            progress += travelDirection *
-                        (deltaTime / travel);
-            if (progress >= 1f)
-            {
-                progress = 1f;
-                travelDirection = -1;
-                holdRemaining = hold;
-            }
-            else if (progress <= 0f)
-            {
-                progress = 0f;
-                travelDirection = 1;
-                holdRemaining = hold;
-            }
+            progress = Mathf.Min(1f, progress + deltaTime / Mathf.Max(.0001f, travel));
 
             float curved = easing != null &&
                            easing.length > 0
-                ? easing.Evaluate(Mathf.Clamp01(progress))
+                ? Mathf.Clamp01(easing.Evaluate(progress))
                 : progress;
+            if (pathMode == MovingPlatformPathMode.Legacy && legEnd == 0f && easing != null && easing.length > 0)
+                curved = 1f - Mathf.Clamp01(easing.Evaluate(1f - progress));
             Vector3 before = transform.localPosition;
             Vector3 desired =
-                origin + GetOffset() * curved;
+                origin + (Vector3)path.Axis * (Mathf.Lerp(legStart, legEnd, curved) * GridCellWorldSize);
             Vector3 delta = desired - before;
             if (reverseOnBlock && IsBlockedAlong(delta))
             {
-                progress = previousProgress;
                 holdRemaining = 0f;
                 travelDirection *= -1;
+                legStart = Vector3.Dot(before - origin, path.Axis) / GridCellWorldSize;
+                legEnd = travelDirection > 0 ? path.Maximum : path.Minimum;
+                progress = 0f;
                 return;
             }
 
             RefreshStandingPlayers();
             transform.localPosition = desired;
             CarryPlayers(transform.parent != null ? transform.parent.TransformVector(delta) : delta);
+            if (progress >= 1f)
+            {
+                legStart = legEnd;
+                travelDirection *= -1;
+                legEnd = travelDirection > 0 ? path.Maximum : path.Minimum;
+                progress = 0f;
+                holdRemaining = hold;
+            }
         }
 
         protected override void OnResetForRoom()
         {
             SetMovementAudio(false);
-            progress = 0f;
-            travelDirection = 1;
+            ResetMotion();
             holdRemaining = 0f;
             active = driveMode == MovingPlatformDriveMode.Automatic &&
                      startsActive;
@@ -288,9 +336,10 @@ namespace Project.BlockFeatures
                 active ? "移动中" : "已停止"));
             values.Add(new BlockDebugValue(
                 "路线",
-                route == MovingPlatformRoute.Horizontal
-                    ? "平面游荡"
-                    : "上下游荡"));
+                Path.Axis.x > 0f ? "水平往返" : "竖直往返"));
+            values.Add(new BlockDebugValue("负向端点（格）", Path.Minimum));
+            values.Add(new BlockDebugValue("正向端点（格）", Path.Maximum));
+            values.Add(new BlockDebugValue("实际中心偏移（格）", Path.Center));
             values.Add(new BlockDebugValue(
                 "承载玩家",
                 carriedPlayers.Count));
@@ -363,10 +412,17 @@ namespace Project.BlockFeatures
 
         private Vector3 GetOffset()
         {
-            float cellSize = GridCellWorldSize;
-            return route == MovingPlatformRoute.Horizontal
-                ? Vector3.right * travelBlocks * cellSize
-                : Vector3.up * travelBlocks * cellSize;
+            MovingPlatformPath path = Path;
+            return (Vector3)path.Axis * (path.FirstEnd * GridCellWorldSize);
+        }
+
+        private void ResetMotion()
+        {
+            MovingPlatformPath path = Path;
+            progress = 0f;
+            legStart = 0f;
+            travelDirection = path.StartsNegative ? -1 : 1;
+            legEnd = path.FirstEnd;
         }
 
         private bool IsBlockedAlong(Vector3 delta)
@@ -376,33 +432,27 @@ namespace Project.BlockFeatures
                 return false;
             }
 
-            Collider platformCollider = GetComponent<Collider>();
-            if (platformCollider == null)
+            foreach (Collider surface in platformSurfaces)
             {
-                return false;
-            }
-
-            Bounds bounds = platformCollider.bounds;
-            int count = Physics.BoxCastNonAlloc(
-                bounds.center,
-                bounds.extents * .96f,
-                delta.normalized,
-                platformHitBuffer,
-                transform.rotation,
-                delta.magnitude,
-                ~0,
-                QueryTriggerInteraction.Ignore);
-            for (int index = 0; index < count; index++)
-            {
-                RaycastHit hit = platformHitBuffer[index];
-                if (hit.collider == null ||
-                    hit.collider.transform.IsChildOf(transform) ||
-                    IsCarriedPlayer(hit.collider))
+                if (surface == null || !surface.enabled || surface.isTrigger) continue;
+                Bounds bounds = surface.bounds;
+                int count = Physics.BoxCastNonAlloc(
+                    bounds.center,
+                    bounds.extents * .96f,
+                    delta.normalized,
+                    platformHitBuffer,
+                    transform.rotation,
+                    delta.magnitude,
+                    ~0,
+                    QueryTriggerInteraction.Ignore);
+                for (int index = 0; index < count; index++)
                 {
-                    continue;
+                    RaycastHit hit = platformHitBuffer[index];
+                    if (hit.collider == null ||
+                        hit.collider.transform.IsChildOf(transform) ||
+                        IsCarriedPlayer(hit.collider)) continue;
+                    return true;
                 }
-
-                return true;
             }
 
             return false;
@@ -437,21 +487,23 @@ namespace Project.BlockFeatures
         private void RefreshStandingPlayers()
         {
             carriedPlayers.Clear();
-            Collider surface = GetComponent<Collider>();
-            if (surface == null || !surface.enabled || surface.isTrigger) return;
-            Bounds top = surface.bounds;
-            float tolerance = GridCellWorldSize * .12f;
-            foreach (PlayerController player in PlayerController.ActivePlayers)
+            foreach (Collider surface in platformSurfaces)
             {
-                if (player == null || player.gameObject.scene != gameObject.scene || player.VerticalVelocity > .1f || !player.CompareTag(carryPlayerTag)) continue;
-                Collider body = player.GetComponent<Collider>();
-                if (body == null || !body.enabled || Physics.GetIgnoreCollision(surface, body)) continue;
-                Bounds bounds = body.bounds;
-                Vector3 physicsOffset = player.Motor.position - player.transform.position;
-                float feet = bounds.min.y + physicsOffset.y;
-                Vector3 center = bounds.center + physicsOffset;
-                if (Mathf.Abs(feet - top.max.y) <= tolerance && center.x >= top.min.x - tolerance && center.x <= top.max.x + tolerance &&
-                    center.z >= top.min.z - tolerance && center.z <= top.max.z + tolerance) carriedPlayers.Add(player);
+                if (surface == null || !surface.enabled || surface.isTrigger) continue;
+                Bounds top = surface.bounds;
+                float tolerance = GridCellWorldSize * .12f;
+                foreach (PlayerController player in PlayerController.ActivePlayers)
+                {
+                    if (player == null || player.gameObject.scene != gameObject.scene || player.VerticalVelocity > .1f || !player.CompareTag(carryPlayerTag)) continue;
+                    Collider body = player.GetComponent<Collider>();
+                    if (body == null || !body.enabled || Physics.GetIgnoreCollision(surface, body)) continue;
+                    Bounds bounds = body.bounds;
+                    Vector3 physicsOffset = player.Motor.position - player.transform.position;
+                    float feet = bounds.min.y + physicsOffset.y;
+                    Vector3 center = bounds.center + physicsOffset;
+                    if (Mathf.Abs(feet - top.max.y) <= tolerance && center.x >= top.min.x - tolerance && center.x <= top.max.x + tolerance &&
+                        center.z >= top.min.z - tolerance && center.z <= top.max.z + tolerance) carriedPlayers.Add(player);
+                }
             }
         }
 
@@ -478,7 +530,7 @@ namespace Project.BlockFeatures
             Collision collision,
             PlayerController player)
         {
-            Collider platformCollider = GetComponent<Collider>();
+            Collider platformCollider = collision.contactCount > 0 ? collision.GetContact(0).thisCollider : GetComponent<Collider>();
             Collider playerCollider =
                 player.GetComponent<Collider>();
             if (platformCollider != null &&

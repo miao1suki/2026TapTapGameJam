@@ -1,1 +1,1 @@
-{"name":"Project.GridArt.Runtime","rootNamespace":"Project.GridArt"}
+{"name":"Project.GridArt.Runtime","rootNamespace":"Project.GridArt","references":["Project.ObjectArtwork.Runtime"]}

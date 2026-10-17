@@ -315,7 +315,8 @@ namespace Project.BlockFeatures
                 transform.parent);
             steamVfxInstance.name = $"{name} Steam VFX";
             Collider waterCollider = GetComponent<Collider>();
-            float topY = waterCollider != null
+            var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
+            float topY = shape != null ? shape.WorldBounds.max.y : waterCollider != null
                 ? waterCollider.bounds.max.y
                 : transform.position.y + GridCellWorldSize * .5f;
             steamVfxInstance.transform.position = new Vector3(
@@ -340,7 +341,8 @@ namespace Project.BlockFeatures
             float cellSize = GridCellWorldSize;
             float height = Mathf.Max(1, steamHeightBlocks) * cellSize;
             Collider waterCollider = GetComponent<Collider>();
-            Bounds waterBounds = waterCollider != null
+            var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
+            Bounds waterBounds = shape != null ? shape.WorldBounds : waterCollider != null
                 ? waterCollider.bounds
                 : new Bounds(
                     transform.position,

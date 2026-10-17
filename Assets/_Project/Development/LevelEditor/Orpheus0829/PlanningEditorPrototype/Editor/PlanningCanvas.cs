@@ -70,16 +70,23 @@ namespace PlanningEditorPrototype
             ToggleMergeArea(area);
         }
 
+        private bool ShapeContains(PlanningRoom room, PlanningBox box, Vector2Int displayCell)
+        {
+            Vector2Int local = displayCell - DisplayRect(room, box).position + new Vector2Int(box.x, box.y);
+            return PlanningShapeUtility.Contains(box, local);
+        }
+
         internal void ToggleMergeArea(RectInt area)
         {
             var hits = new List<PlanningBox>();
             PlanningBox kind = null;
             foreach (var item in AllBoxes())
                 if (mergeSelection.Contains(item.box.id)) { kind = item.box; break; }
-            foreach (var item in AllBoxes())
+            foreach (var item in HitOrder())
             {
                 if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
-                if (!DisplayRect(item.room, item.box).Overlaps(area)) continue;
+                var localArea = area; localArea.position += new Vector2Int(item.box.x, item.box.y) - DisplayRect(item.room, item.box).position;
+                if (!PlanningShapeUtility.Overlaps(item.box, localArea)) continue;
                 if (kind == null) kind = item.box;
                 if (SameKind(kind, item.box)) hits.Add(item.box);
             }
@@ -111,11 +118,9 @@ namespace PlanningEditorPrototype
             {
                 minX = Mathf.Min(minX,box.x); minY = Mathf.Min(minY,box.y);
                 maxX = Mathf.Max(maxX,box.x+box.width); maxY = Mathf.Max(maxY,box.y+box.height);
-                for (int x=box.x; x<box.x+box.width; x++) for (int y=box.y; y<box.y+box.height; y++)
-                    if (!cells.Add(new Vector2Int(x,y))) { ValidationFailed?.Invoke("选区存在重叠物体，请先移除重叠。"); return; }
+                foreach (Vector2Int cell in PlanningShapeUtility.Cells(box))
+                    if (!cells.Add(cell)) { ValidationFailed?.Invoke("选区存在重叠物体，请先移除重叠。"); return; }
             }
-            if ((long)(maxX-minX)*(maxY-minY) != cells.Count)
-            { ValidationFailed?.Invoke("请选满连续矩形，合并不能包含空格。"); return; }
             if (!PlanningMechanismUtility.CanMerge(items))
             { ValidationFailed?.Invoke("控制器绑定不同，请先绑定同一曲柄或基座再合并。"); return; }
             var merged = items[0].Clone();
@@ -123,7 +128,7 @@ namespace PlanningEditorPrototype
             merged.isMerged = true; merged.mergeParts = new List<string>();
             foreach (var item in items)
             {
-                if (item.isMerged && item.mergeParts != null)
+                if (item.isMerged && item.mergeParts != null && item.mergeParts.Count > 0)
                 {
                     var parts=new List<PlanningBox>();
                     int originX=int.MaxValue,originY=int.MaxValue;
@@ -189,7 +194,7 @@ namespace PlanningEditorPrototype
             foreach (var item in visibleItems)
             {
                 if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
-                if (!DisplayRect(item.room,item.box).Contains(cell)) continue;
+                if (!ShapeContains(item.room,item.box,cell)) continue;
                 var box=item.box;
                 var prop=FindPropEntry(box.propEntryId,box.propEntryName);
                 var entry=FindEntry(box.paletteEntryId,box.paletteEntryName);
@@ -243,6 +248,7 @@ namespace PlanningEditorPrototype
         private float zoom = 1f;
         private bool isPanning;
         private int panPointerId = -1;
+        private int panButton = -1;
         private Vector2 panLastPosition;
         private bool isDragging;
         private int dragPointerId = -1;
@@ -390,6 +396,9 @@ namespace PlanningEditorPrototype
                 return false;
             }
 
+            var replacement = box.Clone();
+            ApplyDetailSelection(replacement);
+            if (!CanEditPlacement(replacement)) return false;
             ApplyDetailSelection(box);
             NotifyDocumentChanged();
             SelectionChanged?.Invoke();
@@ -485,6 +494,20 @@ namespace PlanningEditorPrototype
                         box = authored.Clone(); box.sceneBlock = block;
                         box.x = globalPlanX - offsetX; box.y = globalPlanY - offsetY - (box.height - 1);
                     }
+                    if (authored == null && block.GetComponent<LevelEditorMergedShape>() is LevelEditorMergedShape importedShape)
+                    {
+                        box.width = importedShape.Dimensions.x; box.height = importedShape.Dimensions.y;
+                        box.y -= box.height - 1; box.isMerged = true;
+                        foreach (RectInt part in importedShape.Rectangles)
+                        {
+                            var snapshot = box.PersistentClone();
+                            snapshot.isMerged = false; snapshot.mergeParts.Clear();
+                            snapshot.id = PlanningDocument.NewId("box");
+                            snapshot.x = box.x + part.x; snapshot.y = box.y + part.y;
+                            snapshot.width = part.width; snapshot.height = part.height;
+                            box.mergeParts.Add(JsonUtility.ToJson(snapshot));
+                        }
+                    }
                     if (block.GetComponent<Project.BlockFeatures.CrankPlatformFeature>() is Project.BlockFeatures.CrankPlatformFeature importedCrank)
                     {
                         box.singleInstance = true; box.initialCrankPlatformCreated = importedCrank.InitialPlatformCreated;
@@ -509,8 +532,12 @@ namespace PlanningEditorPrototype
                     }
                     if (authored == null && block.GetComponent<Project.Mechanisms.NeutralLadder>() is Project.Mechanisms.NeutralLadder ladder)
                     {
-                        box.propEntryId = ladder.SideFacing ? PlanningDoorUtility.SideLadderEntryId : PlanningDoorUtility.FrontLadderEntryId;
-                        box.singleInstance = true; box.height = 2; box.y -= 1;
+                        box.propEntryId = ladder.SideFacing
+                            ? ladder.WallSide == Project.Mechanisms.LadderWallSide.Left ? PlanningDoorUtility.LeftSideLadderEntryId : PlanningDoorUtility.SideLadderEntryId
+                            : PlanningDoorUtility.FrontLadderEntryId;
+                        box.singleInstance = true;
+                        box.width = block.SizeCells.x; box.height = block.SizeCells.y;
+                        box.y -= box.height - 1;
                     }
                     if (block.GetComponent<Project.Mechanisms.DoorButton>() is Project.Mechanisms.DoorButton button)
                     {
@@ -730,14 +757,17 @@ namespace PlanningEditorPrototype
             RegisterCallback<PointerMoveEvent>(OnPointerMove);
             RegisterCallback<PointerUpEvent>(OnPointerUp);
             RegisterCallback<PointerCancelEvent>(_ => EndPointerAction());
+            RegisterCallback<PointerCaptureOutEvent>(OnCanvasCaptureOut);
             RegisterCallback<PointerLeaveEvent>(OnPointerLeave);
             RegisterCallback<KeyDownEvent>(OnKeyDown);
             RegisterCallback<GeometryChangedEvent>(
                 _ => UpdateDetailPreviewImages());
-            RegisterCallback<DetachFromPanelEvent>(_ => CancelPointerInteraction());
+            RegisterCallback<AttachToPanelEvent>(_ => { EditorApplication.projectChanged -= RefreshArtworkPreviews; EditorApplication.projectChanged += RefreshArtworkPreviews; });
+            RegisterCallback<DetachFromPanelEvent>(_ => { EditorApplication.projectChanged -= RefreshArtworkPreviews; CancelPointerInteraction(); });
             BuildPreviewLayers();
             BuildPlayerOverlay();
             schedule.Execute(RefreshRegionLabels).Every(100);
+            InitializeEdgePan();
         }
 
         private void BuildPlayerOverlay()
@@ -813,7 +843,7 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            playerOverlay.pickingMode = LevelEditorState.Tool == LevelEditorTool.Player &&
+            playerOverlay.pickingMode = !editWaterLayer && LevelEditorState.Tool == LevelEditorTool.Player &&
                 !EditorApplication.isPlayingOrWillChangePlaymode
                 ? PickingMode.Position : PickingMode.Ignore;
 
@@ -976,7 +1006,7 @@ namespace PlanningEditorPrototype
 
         private void OnPlayerPointerDown(PointerDownEvent evt)
         {
-            if (evt.button != 0 || LevelEditorState.Tool != LevelEditorTool.Player ||
+            if (editWaterLayer || evt.button != 0 || LevelEditorState.Tool != LevelEditorTool.Player ||
                 EditorApplication.isPlayingOrWillChangePlaymode ||
                 !playerOverlay.worldBound.Contains(evt.position))
             {
@@ -1580,7 +1610,9 @@ namespace PlanningEditorPrototype
                 {
                     if (!mergeSelection.Contains(item.box.id) || (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId)) continue;
                     var r=DisplayRect(item.room,item.box);
-                    StrokeRect(context.painter2D, CellRect(r.x,r.y,r.width,r.height),new Color(.3f,.85f,1f),3f);
+                    Vector2Int offset = r.position - new Vector2Int(item.box.x, item.box.y);
+                    foreach (RectInt part in PlanningShapeUtility.Rectangles(item.box))
+                        StrokeRect(context.painter2D, CellRect(part.x + offset.x,part.y + offset.y,part.width,part.height),new Color(.3f,.85f,1f),3f);
                 }
                 DrawRectanglePreview(context.painter2D);
             }
@@ -1619,7 +1651,7 @@ namespace PlanningEditorPrototype
                         box.width,
                         box.height);
                     if (!rect.Overlaps(contentRect)) continue;
-                    FillRect(painter, rect, ColorForBox(box), .92f);
+                    DrawShapeFallback(painter, box, new Vector2Int(offsetX,offsetY));
                 }
             }
 
@@ -1678,7 +1710,7 @@ namespace PlanningEditorPrototype
                         box.width,
                         box.height);
                     if (!rect.Overlaps(contentRect)) continue;
-                    FillRect(painter, rect, ColorForBox(box), .92f);
+                    DrawShapeFallback(painter, box, new Vector2Int(originX,originY));
                 }
             }
 
@@ -1693,7 +1725,7 @@ namespace PlanningEditorPrototype
                     box.width,
                     box.height);
                 if (!rect.Overlaps(contentRect)) continue;
-                FillRect(painter, rect, ColorForBox(box), .92f);
+                DrawShapeFallback(painter, box, Vector2Int.zero);
                 StrokeRect(
                     painter,
                     rect,
@@ -1879,11 +1911,7 @@ namespace PlanningEditorPrototype
                 Texture2D preview = GetBoxPreview(box);
                 if (preview == null)
                 {
-                    FillRect(
-                        painter,
-                        rect,
-                        ColorForBox(box),
-                        .82f);
+                    DrawShapeFallback(painter, box, Vector2Int.zero);
                 }
 
                 if (box.id == selectedBoxId)
@@ -1901,8 +1929,21 @@ namespace PlanningEditorPrototype
             DrawHoverCell(painter);
         }
 
+        private void DrawShapeFallback(Painter2D painter, PlanningBox box, Vector2Int offset)
+        {
+            if (GetBoxPreview(box) != null) return;
+            Color color = ColorForBox(box);
+            color.a *= editWaterLayer && !PlanningWaterLayerUtility.IsWater(box, palette) ? .2f : 1f;
+            foreach (RectInt part in PlanningShapeUtility.Rectangles(box))
+            {
+                Rect rect = CellRect(part.x + offset.x, part.y + offset.y, part.width, part.height);
+                if (rect.Overlaps(contentRect)) FillRect(painter, rect, color, 0f);
+            }
+        }
+
         private void UpdateDetailPreviewImages()
         {
+            if (objectPreviewLayer != null) objectPreviewLayer.style.opacity = editWaterLayer ? .2f : 1f;
             if (document == null)
             {
                 HideDetailPreviewImages();
@@ -2021,6 +2062,19 @@ namespace PlanningEditorPrototype
             HashSet<string> active)
         {
             if (!PreviewVisible(rect)) return;
+            Vector2Int offset = rect.position - new Vector2Int(box.x, box.y);
+            foreach (RectInt part in PlanningShapeUtility.Rectangles(box))
+            {
+                var display = part; display.position += offset;
+                AddPreviewRectangle(box, display, active, offset);
+            }
+        }
+
+        private void AddPreviewRectangle(PlanningBox box, RectInt rect, HashSet<string> active, Vector2Int offset)
+        {
+            if (!PreviewVisible(rect)) return;
+            if (TryAddPlatformPreview(box, rect, active)) return;
+            if (TryAddArtworkPreview(box, rect, active, offset)) return;
             Texture2D preview = GetBoxPreview(box);
             bool fallback = preview == null;
             preview ??= Texture2D.whiteTexture;
@@ -2055,6 +2109,8 @@ namespace PlanningEditorPrototype
 
                     Rect cellRect = CellRect(x, y, box.isMerged ? rect.width : 1, box.isMerged ? rect.height : 1);
                     image.image = preview;
+                    image.uv = new Rect(0, 0, 1, 1);
+                    image.style.rotate = new Rotate(new Angle(0));
                     image.tintColor = fallback ? ColorForBox(box) :
                         mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
                     image.style.left = cellRect.x;
@@ -2062,7 +2118,7 @@ namespace PlanningEditorPrototype
                     image.style.width = cellRect.width;
                     image.style.height = cellRect.height;
                     image.style.display = DisplayStyle.Flex;
-                    if (water) image.tintColor = new Color(.65f, .85f, 1f, .55f);
+                    if (water) image.tintColor = new Color(.65f, .85f, 1f, editWaterLayer ? 1f : .72f);
                     active.Add(key);
                 }
             }
@@ -2390,6 +2446,7 @@ namespace PlanningEditorPrototype
 
         private Texture2D ResolveBoxPreview(PlanningBox box)
         {
+            if (ResolveArtworkPreview(box,out var artwork)) return artwork.Texture != null ? artwork.Texture : Texture2D.whiteTexture;
             if (!string.IsNullOrEmpty(box.propEntryId) ||
                 !string.IsNullOrEmpty(box.propEntryName))
             {
@@ -2522,6 +2579,7 @@ namespace PlanningEditorPrototype
 
         private void OnPointerDown(PointerDownEvent evt)
         {
+            if (isDragging || isPanning) CancelPointerInteraction();
             if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
             Focus();
             Vector2 position = evt.localPosition;
@@ -2551,6 +2609,7 @@ namespace PlanningEditorPrototype
             {
                 isPanning = true;
                 panPointerId = evt.pointerId;
+                panButton = evt.button;
                 panLastPosition = position;
                 PointerCaptureHelper.CapturePointer(
                     this,
@@ -2571,6 +2630,7 @@ namespace PlanningEditorPrototype
             PointerCaptureHelper.CapturePointer(
                 this,
                 evt.pointerId);
+            BeginEdgePan(position);
             if (mode == PlanningCanvasMode.World)
             {
                 HandleWorldPointerDown(position, evt.ctrlKey || evt.commandKey || evt.shiftKey);
@@ -2594,6 +2654,8 @@ namespace PlanningEditorPrototype
             UpdateHover(position);
             if (isPanning && evt.pointerId == panPointerId)
             {
+                if ((evt.pressedButtons & (1 << panButton)) == 0 || !this.HasPointerCapture(panPointerId))
+                { EndPointerAction(); return; }
                 pan += position - panLastPosition;
                 panLastPosition = position;
                 UpdateDetailPreviewImages();
@@ -2609,19 +2671,15 @@ namespace PlanningEditorPrototype
                 return;
             }
 
+            if ((evt.pressedButtons & 1) == 0 || !this.HasPointerCapture(dragPointerId))
+            {
+                CompletePointerDrag(dragCurrent);
+                return;
+            }
+
             dragCurrent = position;
-            if (mode == PlanningCanvasMode.World)
-            {
-                HandleWorldPointerMove(position);
-            }
-            else if (mode == PlanningCanvasMode.Assembly)
-            {
-                HandleAssemblyPointerMove(position);
-            }
-            else
-            {
-                HandleDetailPointerMove(position);
-            }
+            ContinuePointerDrag(position);
+            UpdateEdgePanPointer(position);
 
             MarkDirtyRepaint();
             evt.StopPropagation();
@@ -2629,6 +2687,7 @@ namespace PlanningEditorPrototype
 
         private void OnPointerLeave(PointerLeaveEvent evt)
         {
+            PauseEdgePan();
             hasHover = false;
             MarkDirtyRepaint();
         }
@@ -2647,52 +2706,35 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            if (isDragging && evt.pointerId == dragPointerId)
+            if (isDragging && evt.pointerId == dragPointerId && evt.button == 0)
             {
-                dragCurrent = evt.localPosition;
-                if (mode == PlanningCanvasMode.World)
-                {
-                    CompleteWorldDrag();
-                }
-                else if (mode == PlanningCanvasMode.Assembly)
-                {
-                    CompleteAssemblyDrag();
-                }
-                else
-                {
-                    CompleteDetailDrag();
-                }
+                CompletePointerDrag(evt.localPosition);
             }
-
-            EndPointerAction();
+            else if (isPanning && evt.pointerId == panPointerId && evt.button == panButton) EndPointerAction();
             MarkDirtyRepaint();
             evt.StopPropagation();
         }
 
         private void EndPointerAction()
         {
-            if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
-            if (suppressDocumentChanged) EndDocumentBatch();
-            if (isPanning && panPointerId >= 0)
-            {
-                PointerCaptureHelper.ReleasePointer(
-                    this,
-                    panPointerId);
-            }
-
-            if (isDragging && dragPointerId >= 0)
-            {
-                PointerCaptureHelper.ReleasePointer(
-                    this,
-                    dragPointerId);
-            }
-
+            // Clear before releasing: capture-out is synchronous on some panels.
+            int previousPan = panPointerId, previousDrag = dragPointerId;
+            bool moved = movingBox != null && movingBoxOrigin != new Vector2Int(movingBox.x, movingBox.y);
             isPanning = false;
             isDragging = false;
             panPointerId = -1;
             dragPointerId = -1;
+            panButton = -1;
             movingBox = null;
             worldMoving = false;
+            StopEdgePan();
+            if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
+            if (suppressDocumentChanged) EndDocumentBatch();
+            if (previousPan >= 0 && this.HasPointerCapture(previousPan)) this.ReleasePointer(previousPan);
+            if (previousDrag >= 0 && this.HasPointerCapture(previousDrag)) this.ReleasePointer(previousDrag);
+            // Interrupted drags have already changed coordinates. Persist that one move,
+            // never an unfinished paint/erase marquee or a preview-only world move.
+            if (moved) { NotifyDocumentChanged(); SelectionChanged?.Invoke(); }
             lastPaintCell = new Vector2Int(int.MinValue, int.MinValue);
         }
 
@@ -2905,6 +2947,7 @@ namespace PlanningEditorPrototype
                         maxX - minX + 1,
                         maxY - minY + 1));
                 ApplyDetailSelection(box);
+                if (!CanEditPlacement(box)) return;
                 if (!PrepareDoorPlacement(room, box, allowed)) return;
                 if (!CanPlaceLocalRect(room, new RectInt(box.x, box.y, box.width, box.height)))
                 { StatusChanged?.Invoke("选区超出当前房间或通道占格。"); return; }
@@ -2917,7 +2960,7 @@ namespace PlanningEditorPrototype
             else if (activeTool == PlanningDetailTool.Select &&
                      movingBox != null)
             {
-                NotifyDocumentChanged();
+                if (movingBoxOrigin != new Vector2Int(movingBox.x, movingBox.y)) NotifyDocumentChanged();
                 SelectionChanged?.Invoke();
             }
             else if (activeTool == PlanningDetailTool.Erase)
@@ -2960,7 +3003,7 @@ namespace PlanningEditorPrototype
                 var items = HitOrder();
                 foreach (var item in items)
                 {
-                    if (!DisplayRect(item.room, item.box).Contains(cell)) continue;
+                    if (!ShapeContains(item.room, item.box, cell)) continue;
                     selectedRoomId = item.room?.id; selectedBoxId = item.box.id;
                     movingBox = item.box; movingBoxStart = position;
                     movingBoxOrigin = new Vector2Int(item.box.x, item.box.y);
@@ -3055,9 +3098,10 @@ namespace PlanningEditorPrototype
                     detailType,
                     new RectInt(local.x, local.y, 1, 1));
                 ApplyDetailSelection(box);
+                if (!CanEditPlacement(box)) return;
                 Vector2Int size = IsPlacingDoor ? PlanningDoorUtility.Footprint(detailPropEntryId) : new Vector2Int(box.width, box.height);
                 if (!CanPlaceLocalRect(owner, new RectInt(new Vector2Int(box.x, box.y), size))) return;
-                if (owner.boxes.Exists(b => b.x == box.x && b.y == box.y && SameKind(b, box))) return;
+                if (owner.boxes.Exists(b => SameKind(b, box) && PlanningShapeUtility.Contains(b, new Vector2Int(box.x, box.y)))) return;
                 RectInt allowed = owner.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
                 if (owner.isConnector) allowed = GetConnectorDetailBounds(owner);
                 if (!PrepareDoorPlacement(owner, box, allowed)) return;
@@ -3141,6 +3185,7 @@ namespace PlanningEditorPrototype
 
         private void DrawDoorLinks(Painter2D painter)
         {
+            if (editWaterLayer) return;
             DrawMechanismLinks(painter);
             var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
             foreach (var item in items)
@@ -3185,7 +3230,7 @@ namespace PlanningEditorPrototype
             {
                 if (item.box.id == bindingConsumerId) consumer = item.box;
                 if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
-                if (DisplayRect(item.room, item.box).Contains(cell) && (pickingCrank ? IsCrankBox(item.box) : FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.Prefab?.GetComponent<Project.BlockFeatures.MechanismBaseFeature>() != null))
+                if (ShapeContains(item.room, item.box, cell) && (pickingCrank ? IsCrankBox(item.box) : FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.Prefab?.GetComponent<Project.BlockFeatures.MechanismBaseFeature>() != null))
                 { selected = item.box; selectedOffset = cell - DisplayRect(item.room,item.box).position; }
             }
             if (consumer == null) { bindingConsumerId = null; return; }
@@ -3205,20 +3250,29 @@ namespace PlanningEditorPrototype
                 if (!PlanningMechanismUtility.IsConsumer(prefab)) continue;
                 RectInt rect = DisplayRect(item.room, item.box);
                 Vector2 start = CellRect(rect.x, rect.y, rect.width, rect.height).center;
-                Component feature = prefab.GetComponent<Project.BlockFeatures.MovingPlatformFeature>();
-                bool crank = feature == null;
-                if (crank) feature = prefab.GetComponent<Project.BlockFeatures.CrankPlatformFeature>();
-                var serialized = new SerializedObject(feature);
-                float distance = crank ? 0 : serialized.FindProperty("travelBlocks").intValue;
-                int route = crank ? 1 : serialized.FindProperty("route").enumValueIndex;
+                var feature = prefab.GetComponent<Project.BlockFeatures.MovingPlatformFeature>();
                 var values = item.box.hasComponentOverrides ? item.box.componentOverrides : FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.ComponentValueOverrides;
-                if (values != null) foreach (var value in values)
+                if (feature != null)
                 {
-                    if (value == null || value.ComponentTypeName != feature.GetType().AssemblyQualifiedName && value.ComponentTypeName != feature.GetType().FullName) continue;
-                    if (!crank && value.PropertyPath == "travelBlocks" && float.TryParse(value.Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float d)) distance = d;
-                    if (value.PropertyPath == "route" && int.TryParse(value.Value, out int r)) route = r;
+                    var path = PlanningPlatformPathUtility.Resolve(feature, values);
+                    Vector2 ScreenOffset(Vector2 cells) => new Vector2(cells.x, -cells.y) * GridSize;
+                    Color pathColor = new Color(.3f,.9f,1f,.85f);
+                    Dashed(painter, start + ScreenOffset(path.PreviewFrom), start + ScreenOffset(path.PreviewTo), pathColor);
+                    Vector2 first = ScreenOffset(path.Axis * path.FirstEnd);
+                    if (first.sqrMagnitude > 16f)
+                    {
+                        Vector2 tip = start + first.normalized * Mathf.Min(18f, first.magnitude);
+                        Vector2 side = new Vector2(-first.y, first.x).normalized * 3f;
+                        DrawLine(painter, tip, tip - first.normalized * 6f + side, pathColor, 2f);
+                        DrawLine(painter, tip, tip - first.normalized * 6f - side, pathColor, 2f);
+                    }
+                    if (path.IsRange)
+                    {
+                        Vector2 center = start + ScreenOffset(path.Axis * path.Center);
+                        DrawLine(painter, center - Vector2.right * 4f, center + Vector2.right * 4f, pathColor, 2f);
+                        DrawLine(painter, center - Vector2.up * 4f, center + Vector2.up * 4f, pathColor, 2f);
+                    }
                 }
-                Dashed(painter, start, start + (route == 0 ? Vector2.right : Vector2.up * -1f) * distance * GridSize, new Color(.3f,.9f,1f,.85f));
                 foreach (var controller in items) if (controller.box.id == item.box.crankOwnerId)
                 {
                     RectInt target = DisplayRect(controller.room,controller.box);
@@ -3233,8 +3287,9 @@ namespace PlanningEditorPrototype
                 }
             }
         }
-        private static void Dashed(Painter2D painter, Vector2 start, Vector2 end, Color color)
+        private void Dashed(Painter2D painter, Vector2 start, Vector2 end, Color color)
         {
+            if (!PlanningPlatformPathUtility.ClipLine(contentRect, ref start, ref end)) return;
             float length = Vector2.Distance(start,end);
             for (float d = 0; d < length; d += 12f) DrawLine(painter, Vector2.Lerp(start,end,d/length), Vector2.Lerp(start,end,Mathf.Min(d+6,length)/length), color, 2f);
         }
@@ -3259,7 +3314,7 @@ namespace PlanningEditorPrototype
             foreach (var item in HitOrder())
             {
                 var rect = DisplayRect(item.room, item.box);
-                if (!rect.Contains(cell)) continue;
+                if (!ShapeContains(item.room, item.box, cell)) continue;
                 CarveBox(item.boxes, item.box, cell - rect.position + new Vector2Int(item.box.x, item.box.y));
                 NotifyDocumentChanged();
                 SelectionChanged?.Invoke();
@@ -3502,8 +3557,7 @@ namespace PlanningEditorPrototype
             {
                 PlanningBox box = ordered[index];
                 if (editWaterLayer && !PlanningWaterLayerUtility.IsWater(box, palette)) continue;
-                if (x >= box.x && x < box.x + box.width &&
-                    y >= box.y && y < box.y + box.height)
+                if (PlanningShapeUtility.Contains(box, new Vector2Int(x, y)))
                 {
                     return box;
                 }
@@ -3514,6 +3568,7 @@ namespace PlanningEditorPrototype
 
         private void NotifyDocumentChanged()
         {
+            PlanningShapeUtility.Invalidate();
             if (suppressDocumentChanged)
             {
                 pendingDocumentChanged = true;
@@ -3566,14 +3621,17 @@ namespace PlanningEditorPrototype
             room.boxes.Add(new PlanningBox(PlanningDetailType.Solid,new RectInt(2,0,1,1)));
             testCanvas.ToggleMergeArea(new RectInt(0,0,3,1));
             testCanvas.MergeSelectedItems();
-            Require(room.boxes.Count==2 && !room.boxes[0].isMerged,"拒绝空洞选区");
+            Require(room.boxes.Count==1 && room.boxes[0].isMerged &&
+                PlanningShapeUtility.Contains(room.boxes[0],new Vector2Int(0,0)) &&
+                !PlanningShapeUtility.Contains(room.boxes[0],new Vector2Int(1,0)) &&
+                PlanningShapeUtility.Contains(room.boxes[0],new Vector2Int(2,0)),"不规则合并保留孔洞");
             room.boxes.Clear(); testCanvas.mergeSelection.Clear();
             var rectangle=new PlanningBox(PlanningDetailType.Solid,new RectInt(0,0,2,2)) { hasComponentOverrides=true };
             room.boxes.Add(rectangle);
             testCanvas.RemoveMissingSceneItems(new []{rectangle.id,rectangle.id},new []{new Vector2Int(0,0),new Vector2Int(1,1)});
             Require(room.boxes.Count==2 && room.boxes.TrueForAll(b=>b.hasComponentOverrides),"矩形批量删除保留参数");
-            Require(changes==4,"每个数据事务仅通知一次");
-            Debug.Log("关卡编辑器规划验证通过：选择、合并/解除、存档、空洞保护、删除回流与事务通知。");
+            Require(changes==5,"每个数据事务仅通知一次");
+            Debug.Log("关卡编辑器规划验证通过：选择、合并/解除、存档、孔洞保留、删除回流与事务通知。");
         }
 
         private static void Require(bool condition,string operation)

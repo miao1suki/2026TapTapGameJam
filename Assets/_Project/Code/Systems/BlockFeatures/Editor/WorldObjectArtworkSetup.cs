@@ -62,8 +62,8 @@ namespace Project.BlockFeatures.Editor
             SliceMechanism(Source + "蓝绿按钮80ms每帧.png", 16, 16, Vector4.zero);
             Add(MechanismArtworkKind.RedButton, "按钮80ms每帧.png", 16, 16, 2);
             Add(MechanismArtworkKind.Crank, "曲柄40ms每帧.png", 16, 16, 28);
-            Add(MechanismArtworkKind.CrankPlatform, "移动平台80ms每帧.png", 48, 16, 6, top: 11, cropHeight: 5, border: new Vector4(8,0,8,0));
-            Add(MechanismArtworkKind.MovingPlatform, "自动平台80ms每帧.png", 48, 16, 8, top: 11, cropHeight: 5, border: new Vector4(8,0,8,0));
+            Add(MechanismArtworkKind.CrankPlatform, "移动平台80ms每帧.png", 48, 16, 6, border: new Vector4(8,0,8,0));
+            Add(MechanismArtworkKind.MovingPlatform, "自动平台80ms每帧.png", 48, 16, 8, border: new Vector4(8,0,8,0));
             Add(MechanismArtworkKind.RedCube, "0-2~4.png", 16, 16, 1, 80, top: 64);
             Add(MechanismArtworkKind.GreenCube, "0-2~4.png", 16, 16, 1, 48, top: 64);
             Add(MechanismArtworkKind.BlueCube, "0-2~4.png", 16, 16, 1, 112, top: 64);
@@ -135,6 +135,7 @@ namespace Project.BlockFeatures.Editor
                 library.doorClosed = SliceMechanism(closedPath, 16, 32, Vector4.zero)[0];
             }
             library.mechanisms = entries.ToArray(); EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
+            BuildSupplementArtwork();
             foreach (string folder in new[] { "Assets/_Project/Content/Mechanisms", "Assets/_Project/Content/ContactCubes", "Assets/_Project/Content/ColorBlocks/Prefabs" })
                 foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { folder }))
                 {
@@ -146,6 +147,114 @@ namespace Project.BlockFeatures.Editor
                     finally { PrefabUtility.UnloadPrefabContents(owner); }
                 }
             RefreshOpenScenes();
+        }
+
+        // Deliberately narrow: upgrades only the two frame groups, without rewriting
+        // gameplay prefabs or touching any currently open scene.
+        public static void BuildPlatformFrames()
+        {
+            Folder(Generated);
+            var library = AssetDatabase.LoadAssetAtPath<ObjectArtworkLibrary>(Root + "/Objects.asset");
+            if (library == null) throw new InvalidOperationException("缺少物体美术配置。");
+            foreach (var kind in new[] { MechanismArtworkKind.CrankPlatform, MechanismArtworkKind.MovingPlatform })
+            {
+                string source = Source + (kind == MechanismArtworkKind.CrankPlatform ? "移动平台80ms每帧.png" : "自动平台80ms每帧.png");
+                string path = Generated + "/" + kind + ".png";
+                File.Copy(source, path, true);
+                AssetDatabase.ImportAsset(path);
+                var entry = library.Find(kind);
+                if (entry == null) throw new InvalidOperationException("缺少平台帧配置：" + kind);
+                entry.frames = SliceMechanism(path, 48, 16, new Vector4(8, 0, 8, 0));
+                entry.frameSeconds = .08f;
+            }
+            EditorUtility.SetDirty(library);
+            AssetDatabase.SaveAssetIfDirty(library);
+        }
+
+        public static void BuildSupplementArtwork()
+        {
+            const string path = Source + "471dca30b9bcb2527867589ad677e3e3.png";
+            var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+            importer.textureType = TextureImporterType.Sprite; importer.spriteImportMode = SpriteImportMode.Multiple;
+            importer.spritePixelsPerUnit = GridArtworkMetrics.PixelsPerCell;
+            importer.filterMode = FilterMode.Point; importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.npotScale = TextureImporterNPOTScale.None; importer.maxTextureSize = 512;
+            importer.alphaIsTransparency = true;
+            var settings = new TextureImporterSettings(); importer.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect; settings.spriteGenerateFallbackPhysicsShape = false;
+            importer.SetTextureSettings(settings);
+            foreach (var target in new[] { "Standalone", "Android", "iPhone" })
+            {
+                var platform = importer.GetPlatformTextureSettings(target); platform.overridden = false;
+                importer.SetPlatformTextureSettings(platform);
+            }
+            var rectangles = new[]
+            {
+                new RectInt(160,16,16,16),new RectInt(176,16,16,16),new RectInt(192,16,16,16),
+                new RectInt(160,32,16,16),new RectInt(176,32,16,16),new RectInt(192,32,16,16),new RectInt(160,48,16,16)
+            };
+            #pragma warning disable CS0618
+            var entries = importer.spritesheet.Where(entry => !entry.name.StartsWith("Sign_", StringComparison.Ordinal) &&
+                entry.name != "Spike_White" && entry.name != "Base_00" && entry.name != "Base_01" && entry.name != "Plant_Obstacle" && entry.name != "Obsidian").ToList();
+            #pragma warning restore CS0618
+            importer.GetSourceTextureWidthAndHeight(out _, out int height);
+            for (int i = 0; i < rectangles.Length; i++)
+            {
+                RectInt rect = rectangles[i];
+                entries.Add(new SpriteMetaData { name = "Sign_" + i.ToString("D2"),
+                    rect = new Rect(rect.x, height-rect.y-rect.height, rect.width, rect.height),
+                    alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
+            }
+            // Use one authored cell, not two cells squeezed into the same volume.
+            entries.Add(new SpriteMetaData { name = "Spike_White", rect = new Rect(368,height-32,16,16),
+                alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
+            entries.Add(new SpriteMetaData { name = "Base_00", rect = new Rect(16,height-48,16,16),
+                alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
+            entries.Add(new SpriteMetaData { name = "Base_01", rect = new Rect(48,height-48,16,16),
+                alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
+            entries.Add(new SpriteMetaData { name = "Plant_Obstacle", rect = new Rect(224,height-48,16,16),
+                alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
+            entries.Add(new SpriteMetaData { name = "Obsidian", rect = new Rect(96,height-48,16,16),
+                alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
+            #pragma warning disable CS0618
+            importer.spritesheet = entries.ToArray();
+            #pragma warning restore CS0618
+            importer.SaveAndReimport();
+            var sprites = AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().ToArray();
+            var library = AssetDatabase.LoadAssetAtPath<ObjectArtworkLibrary>(Root + "/Objects.asset");
+            library.signboards = sprites.Where(sprite => sprite.name.StartsWith("Sign_", StringComparison.Ordinal)).OrderBy(sprite => sprite.name).ToArray();
+            void Assign(MechanismArtworkKind kind, params string[] names)
+            {
+                var entry = library.Find(kind);
+                if (entry == null)
+                {
+                    var all = library.mechanisms.ToList(); entry = new MechanismArtworkEntry { kind = kind };
+                    all.Add(entry); library.mechanisms = all.ToArray();
+                }
+                entry.frames = names.Select(name => sprites.First(sprite => sprite.name == name)).ToArray();
+            }
+            Assign(MechanismArtworkKind.Spike, "Spike_White");
+            Assign(MechanismArtworkKind.MechanismBase, "Base_00", "Base_01");
+            Assign(MechanismArtworkKind.PlantObstacle, "Plant_Obstacle");
+            Assign(MechanismArtworkKind.Obsidian, "Obsidian");
+            EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
+            FitSpikeVolumes();
+        }
+        private static void FitSpikeVolumes()
+        {
+            foreach (string direction in new[] { "上", "下", "左", "右" })
+            {
+                var mesh = AssetDatabase.LoadAssetAtPath<Mesh>("Assets/_Project/Content/WorldItems/Spike_" + direction + ".asset");
+                if (mesh == null) continue;
+                var bounds = mesh.bounds;
+                if (Mathf.Abs(bounds.size.y - .25f) < .0001f && Mathf.Abs(bounds.min.y + .5f) < .0001f) continue;
+                var vertices = mesh.vertices;
+                for (int i = 0; i < vertices.Length; i++)
+                    vertices[i].y = -.5f + (vertices[i].y - bounds.min.y) / Mathf.Max(.0001f, bounds.size.y) * .25f;
+                mesh.vertices = vertices; mesh.RecalculateNormals(); mesh.RecalculateBounds();
+                EditorUtility.SetDirty(mesh); AssetDatabase.SaveAssetIfDirty(mesh);
+            }
         }
         private sealed class ImageScope : IDisposable
         {
@@ -314,7 +423,7 @@ namespace Project.BlockFeatures.Editor
             importer.GetSourceTextureWidthAndHeight(out int textureWidth, out int textureHeight);
             if (textureHeight != height || textureWidth % width != 0) throw new InvalidOperationException("素材帧尺寸错误：" + path);
             importer.textureType = TextureImporterType.Sprite; importer.spriteImportMode = SpriteImportMode.Multiple;
-            importer.spritePixelsPerUnit = height;
+            importer.spritePixelsPerUnit = GridArtworkMetrics.PixelsPerCell;
             var settings = new TextureImporterSettings(); importer.ReadTextureSettings(settings);
             settings.spriteMeshType = SpriteMeshType.FullRect; importer.SetTextureSettings(settings);
             importer.filterMode = FilterMode.Point; importer.mipmapEnabled = false;

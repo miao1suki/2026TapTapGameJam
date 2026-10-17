@@ -471,5 +471,73 @@ namespace Project.GridArt.Tests
             Assert.That(library.Get(0).sprite,Is.SameAs(tiles.Tiles[0].Sprite));
             Assert.That(GridArtBuilder.BuildQuads(map.layers[0],library).Count,Is.EqualTo(1));
         }
+
+        [Test] public void ColoredArtSplitsSameAtlasAndRestoresAlphaMasksAfterSceneReload()
+        {
+            var previousColors=GridArtColorSource.Read;
+            GridArtColorSource.Read=()=>new[] { new GridArtColorDefinition("red","红色",8),new GridArtColorDefinition("blue","蓝色",10) };
+            try
+            {
+                AddBrush();
+                library.brushes[0].colorId="red";
+                library.brushes.Add(new GridArtBrush { sprite=library.brushes[0].sprite,colorId="blue",visualSize=Vector2.one });
+                map.layers[0].Set(Vector2Int.zero,0); map.layers[0].Set(Vector2Int.right,1);
+                map.layers[0].tint=new Color(1,1,1,.35f);
+                EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
+                var output=GridArtBuilder.Apply(map,scene,false);
+                Assert.That(output.GetComponentsInChildren<MeshRenderer>().Select(r=>r.gameObject.layer).OrderBy(i=>i),Is.EqualTo(new[] {8,10}));
+                EditorSceneManager.SaveScene(scene);
+                string path=scene.path;
+                scene=EditorSceneManager.OpenScene(path,OpenSceneMode.Single);
+                output=scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<GridArtScene>()).Single();
+                // EditMode must not dispatch MonoBehaviour messages through Unity's
+                // play-mode scheduler. Invoke only the restored initialization hook.
+                Invoke(output,"OnEnable");
+                var renderers=output.GetComponentsInChildren<MeshRenderer>();
+                Assert.That(renderers.Length,Is.EqualTo(2),"Two colors in one atlas must not share one layer mesh.");
+                foreach (var renderer in renderers)
+                {
+                    var mask=new MaterialPropertyBlock(); renderer.GetPropertyBlock(mask);
+                    Assert.That(mask.GetFloat("_ColorMaskGroup"),Is.EqualTo(-1f));
+                    Assert.That(mask.GetFloat("_ColorMaskUseVertexAlpha"),Is.EqualTo(0f));
+                    Assert.That(mask.GetFloat("_ColorMaskReal"),Is.EqualTo(1f));
+                    Assert.That(mask.GetFloat("_ColorMaskOpacity"),Is.EqualTo(.35f).Within(.0001f));
+                    Assert.That(mask.GetTexture("_ColorMaskAlphaTexture"),Is.SameAs(renderer.sharedMaterial.GetTexture("_BaseMap")));
+                }
+            }
+            finally { GridArtColorSource.Read=previousColors; }
+        }
+
+        [Test] public void SupplementaryDecorationLibraryIsAppendOnlyAndPreservesEdgePixels()
+        {
+            AddBrush();
+            GridArtBrush original=library.brushes[0]; string originalKey=original.sourceKey;
+            Assert.That(GridArtSupplementLibrary.Import(library),Is.EqualTo(78));
+            Assert.That(library.brushes.Count,Is.EqualTo(79));
+            Assert.That(library.brushes[0],Is.SameAs(original));
+            Assert.That(library.brushes[0].sourceKey,Is.EqualTo(originalKey));
+            var imported=library.brushes.Skip(1).ToArray();
+            Assert.That(imported.Select(b=>b.colorId).Distinct(),Is.EquivalentTo(new[] {"red","blue","green"}));
+            Assert.That(imported.Count(b=>b.category=="雨滴原图"),Is.EqualTo(24));
+            Assert.That(imported.Count(b=>b.category=="颜色装饰"),Is.EqualTo(54));
+            Assert.That(imported.All(b=>AssetDatabase.Contains(b.sprite)),Is.True);
+            var edge=imported.Where(b=>b.sourceKey.EndsWith("_8",StringComparison.Ordinal)).ToArray();
+            Assert.That(edge.Length,Is.EqualTo(6));
+            foreach (var brush in edge)
+            {
+                Assert.That(brush.sprite.rect.width,Is.EqualTo(15));
+                Assert.That(brush.DisplaySize,Is.EqualTo(new Vector2(15f/16f,1f)));
+                Assert.That(brush.sprite.rect.xMax,Is.EqualTo(brush.sprite.texture.width));
+            }
+            string[] keys=library.brushes.Select(b=>b.sourceKey).ToArray();
+            Assert.That(GridArtSupplementLibrary.Import(library),Is.Zero);
+            Assert.That(library.brushes.Select(b=>b.sourceKey),Is.EqualTo(keys));
+            EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
+            string path=AssetDatabase.GetAssetPath(library);
+            AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceUpdate);
+            var restored=AssetDatabase.LoadAssetAtPath<GridArtPalette>(path);
+            Assert.That(restored.brushes.Select(b=>b.sourceKey),Is.EqualTo(keys));
+            Assert.That(restored.brushes.Skip(1).All(b=>b.sprite!=null && AssetDatabase.Contains(b.sprite)),Is.True);
+        }
     }
 }

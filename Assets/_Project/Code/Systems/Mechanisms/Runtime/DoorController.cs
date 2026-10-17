@@ -28,6 +28,9 @@ namespace Project.Mechanisms
         [SerializeField, Min(.01f)] private float openDuration = .6f;
         [BlockParameter(Label = "图案展示时间", Group = "开门", Order = 1)]
         [SerializeField, Min(0f)] private float unlockDelay = .8f;
+        [BlockParameter(Label = "松开后关门延迟（秒）", Group = "关门", Order = 0,
+            Tooltip = "持续压住按钮松开后仍保留通行时间；计时内重新按齐按钮会取消关门。")]
+        [SerializeField, Min(0f)] private float closeDelay = .6f;
         [BlockParameter(Label = "镜头移动时间", Group = "演出", Order = 0)]
         [SerializeField, Min(.1f)] private float cameraMoveDuration = 1f;
         [BlockParameter(Label = "镜头停留时间", Group = "演出", Order = 1)]
@@ -46,10 +49,15 @@ namespace Project.Mechanisms
         private IDisposable controlLock;
         private bool pendingOpen;
         private float pendingOpenRemaining;
+        private bool pendingClose;
+        private float pendingCloseRemaining;
+        private bool resetting;
         public DoorState State { get; private set; }
         public float OpenDuration => openDuration;
         public float UnlockDelay => unlockDelay;
         public bool IsWaitingToOpen => pendingOpen;
+        public float CloseDelay => closeDelay;
+        public bool IsWaitingToClose => pendingClose;
         public IReadOnlyList<DoorButton> Buttons => buttons;
         public bool IsHorizontal => horizontal;
         public int PressedCount { get { int count = 0; foreach (var button in buttons) if (button != null && button.IsPressed) count++; return count; } }
@@ -71,6 +79,7 @@ namespace Project.Mechanisms
         private void OnDisable()
         {
             pendingOpen = false;
+            pendingClose = false;
             EventMgr.OnRoomColorReset -= HandleRoomReset;
             opening?.Kill();
             if (shotRoutine != null) StopCoroutine(shotRoutine);
@@ -118,7 +127,7 @@ namespace Project.Mechanisms
         public void NotifyButtonPressed(GameObject actor)
         {
             RefreshHint();
-            if (!Application.isPlaying || !isActiveAndEnabled) return;
+            if (!Application.isPlaying || !isActiveAndEnabled || resetting) return;
             bool allPressed = buttons.Count > 0, hasHeld = false;
             foreach (var button in buttons)
             {
@@ -128,21 +137,34 @@ namespace Project.Mechanisms
             if (!allPressed)
             {
                 if (pendingOpen) CancelPendingOpen();
-                if ((hasHeld || buttons.Count == 0) && State == DoorState.Unlocked) CloseFromPressureRelease();
+                if ((hasHeld || buttons.Count == 0) && State == DoorState.Unlocked && !pendingClose)
+                {
+                    pendingClose = true;
+                    pendingCloseRemaining = Mathf.Max(0f, closeDelay);
+                    if (pendingCloseRemaining <= 0f) CloseFromPressureRelease();
+                }
                 return;
             }
+            pendingClose = false;
             if (State != DoorState.Locked || pendingOpen) return;
             pendingOpen = true;
             pendingOpenRemaining = Mathf.Max(0f, unlockDelay);
             shotRoutine = StartCoroutine(PlayDoorShot(actor));
         }
-        private void Update()
+        private void Update() => AdvanceTimers(Time.deltaTime);
+        private void AdvanceTimers(float deltaTime)
         {
-            if (!pendingOpen || Time.deltaTime <= 0f) return;
+            if (deltaTime <= 0f) return;
+            if (pendingClose)
+            {
+                pendingCloseRemaining -= deltaTime;
+                if (pendingCloseRemaining <= 0f) CloseFromPressureRelease();
+            }
+            if (!pendingOpen) return;
             foreach (var button in buttons)
                 if (button == null || !button.isActiveAndEnabled || !button.IsPressed) { CancelPendingOpen(); return; }
             if (buttons.Count == 0) { CancelPendingOpen(); return; }
-            pendingOpenRemaining -= Time.deltaTime;
+            pendingOpenRemaining -= deltaTime;
             if (pendingOpenRemaining > 0f) return;
             pendingOpen = false;
             State = DoorState.Unlocked;
@@ -163,6 +185,7 @@ namespace Project.Mechanisms
         }
         private void CloseFromPressureRelease()
         {
+            pendingClose = false;
             opening?.Kill();
             if (shotRoutine != null) StopCoroutine(shotRoutine);
             shotRoutine = null; CleanupShot();
@@ -174,7 +197,9 @@ namespace Project.Mechanisms
         }
         public void ResetDoor()
         {
+            resetting = true;
             pendingOpen = false;
+            pendingClose = false;
             opening?.Kill();
             if (shotRoutine != null) StopCoroutine(shotRoutine);
             shotRoutine = null;
@@ -183,6 +208,7 @@ namespace Project.Mechanisms
             if (hinge != null) hinge.localRotation = closedRotation;
             if (blockingCollider != null) blockingCollider.enabled = true;
             foreach (var button in buttons) if (button != null) button.ResetButton();
+            resetting = false;
             RefreshHint();
             StateChanged?.Invoke(State);
         }

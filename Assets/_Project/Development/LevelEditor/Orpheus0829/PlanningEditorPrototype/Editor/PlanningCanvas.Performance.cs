@@ -62,7 +62,9 @@ namespace PlanningEditorPrototype
 
         private void InvalidatePreviewData()
         {
+            PlanningShapeUtility.Invalidate();
             boxPreviewCache.Clear(); pendingBoxPreviews.Clear();
+            artworkPreviewCache.Clear(); waterPreviewCells.Clear();
             ownerPreviewCache.Clear();
         }
 

@@ -115,7 +115,7 @@ namespace Project.BlockFeatures
                 frame = state == RespawnArtworkState.Current && index >= 0 ? artwork.respawnCurrent[index]
                     : state == RespawnArtworkState.Locked ? artwork.respawnLocked : artwork.respawnUsed;
                 visual.drawMode = SpriteDrawMode.Simple;
-                SetLayout(ObjectArtworkLibrary.TileScale(authorScale, cell),
+                SetLayout(GridArtworkMetrics.NaturalSpriteScale(frame, authorScale, cell),
                     center + new Vector3(0f, -.5f * cell / Mathf.Max(.001f, Mathf.Abs(authorScale.y)), -.51f));
                 visual.enabled = isActiveAndEnabled && frame != null;
             }

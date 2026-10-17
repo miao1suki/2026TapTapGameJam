@@ -15,6 +15,8 @@ namespace Project.GridArt
         public Vector2Int size = Vector2Int.one;
         public Vector2 visualSize;
         public Rect contentRect = new Rect(0, 0, 1, 1);
+        public int sourcePixelScale = 1;
+        public string colorId = "";
         public Texture2D normalMap;
         // 0..8: top-left to bottom-right. 9..12: inner corners BL,BR,TL,TR.
         public Sprite[] pieces = new Sprite[13];

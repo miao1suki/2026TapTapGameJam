@@ -13,7 +13,11 @@ namespace Project.ObjectArtwork
         [InspectorName("蓝色钥匙")] BlueKey, [InspectorName("单向平台")] OneWayPlatform,
         [InspectorName("红色按钮")] RedButton, [InspectorName("正面梯子")] LadderFront,
         [InspectorName("侧面梯子")] LadderSide, [InspectorName("岩浆")] Lava,
-        [InspectorName("绿色门按钮")] GreenDoorButton, [InspectorName("蓝色门按钮")] BlueDoorButton
+        [InspectorName("绿色门按钮")] GreenDoorButton, [InspectorName("蓝色门按钮")] BlueDoorButton,
+        [InspectorName("尖刺")] Spike,
+        [InspectorName("基座")] MechanismBase,
+        [InspectorName("植物障碍")] PlantObstacle,
+        [InspectorName("黑曜石")] Obsidian
     }
     [System.Serializable]
     public sealed class MechanismArtworkEntry
@@ -43,6 +47,7 @@ namespace Project.ObjectArtwork
         public Sprite[] doorIndicators = System.Array.Empty<Sprite>();
         public Sprite[] doorWhiteIndicators = System.Array.Empty<Sprite>();
         public Sprite doorClosed;
+        public Sprite[] signboards = System.Array.Empty<Sprite>();
 
         public static MechanismArtworkKind DoorButtonKind(int index) => index == 1
             ? MechanismArtworkKind.GreenDoorButton : index == 2 ? MechanismArtworkKind.BlueDoorButton : MechanismArtworkKind.DoorButton;
@@ -57,6 +62,19 @@ namespace Project.ObjectArtwork
                 if (entry != null && entry.kind == kind) return entry;
             return null;
         }
+        public Sprite FirstFrame(MechanismArtworkKind kind)
+        {
+            var entry = Find(kind);
+            return entry != null && entry.frames != null && entry.frames.Length > 0 ? entry.frames[0] : null;
+        }
+        public static bool PlatformVisualIsVertical(Vector2 dimensions) => dimensions.y > dimensions.x;
+
+        // A 90-degree sprite rotation swaps the axes before the author's nonuniform
+        // root scale. Compensate those swapped axes to retain square source pixels.
+        public static Vector3 PlatformTileScale(Vector3 authorScale, float cell, bool vertical) => vertical
+            ? new Vector3(cell / Mathf.Max(.001f, Mathf.Abs(authorScale.y)),
+                cell / Mathf.Max(.001f, Mathf.Abs(authorScale.x)), 1f / Mathf.Max(.001f, Mathf.Abs(authorScale.z)))
+            : TileScale(authorScale, cell);
         public static int ProgressFrame(float progress, int count) => count <= 0 ? -1
             : Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(progress) * (count - 1)), 0, count - 1);
 

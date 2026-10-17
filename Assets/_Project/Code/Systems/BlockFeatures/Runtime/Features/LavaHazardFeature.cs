@@ -113,10 +113,20 @@ namespace Project.BlockFeatures
                 return false;
             }
 
+            // Configure shape before Awake caches the replacement's colliders/renderers.
+            var staging = new GameObject("Reaction Staging"); staging.SetActive(false);
             GameObject replacement = Instantiate(
                 blueReplacementPrefab,
                 transform.position,
-                transform.rotation);
+                transform.rotation, staging.transform);
+            var placed = GetComponent<Project.LevelEditor.LevelEditorPlacedBlock>();
+            if (placed != null)
+                replacement.transform.localScale = Vector3.Scale(replacement.transform.localScale,
+                    new Vector3(placed.SizeCells.x, placed.SizeCells.y, 1f) * placed.CellWorldSize);
+            var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
+            if (shape != null)
+                replacement.AddComponent<Project.LevelEditor.LevelEditorMergedShape>().Configure(shape.Dimensions, shape.Rectangles);
+            replacement.transform.SetParent(null, true); Destroy(staging);
             AudioCuePlayer.Play(AudioCueIds.LavaCool);
             if (!Project.Rooms.RoomResetObject.HideForReaction(gameObject, replacement)) Destroy(gameObject);
             return true;

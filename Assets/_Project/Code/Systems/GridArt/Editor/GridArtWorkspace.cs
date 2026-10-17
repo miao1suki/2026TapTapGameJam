@@ -120,7 +120,8 @@ namespace Project.GridArt.Editor
             query.RegisterValueChangedCallback(e => { search = e.newValue; RefreshBrushes(); }); libraryPanel.Add(query);
             var sourceTools = Section("素材来源", false);
             var source = new ObjectField("图片 / 切片") { objectType = typeof(UnityEngine.Object), allowSceneObjects = false };
-            var ppc = new IntegerField("每格像素") { value = 64, isDelayed = true }; sourceTools.Add(source); sourceTools.Add(ppc);
+            var ppc = new IntegerField("每格源像素") { value = Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell }; ppc.SetEnabled(false); sourceTools.Add(source); sourceTools.Add(ppc);
+            sourceTools.Add(new HelpBox("按原像素导入：16像素＝1格。占格不改变图片比例。", HelpBoxMessageType.Info));
             sourceTools.Add(ActionButton("加入当前库", () =>
             {
                 if (map?.palette == null) { status.text = "请先新建或选择美术图。"; return; }
@@ -187,6 +188,7 @@ namespace Project.GridArt.Editor
             var config = Section("当前图层设置", true);
             var name = new TextField("名称") { value = Layer.label, isDelayed = true }; name.RegisterValueChangedCallback(e => Change("图层名称", () => Layer.label = e.newValue)); config.Add(name);
             var locked = new Toggle("锁定") { value = Layer.locked }; locked.RegisterValueChangedCallback(e => Change("锁定图层", () => Layer.locked = e.newValue)); config.Add(locked);
+            config.Add(GridArtColorField.Build(Layer.colorId, true, value => Change("图层颜色归属", () => Layer.colorId = value)));
             var factor = new Slider("视差速度", 0, 1.5f) { value = Layer.parallax.x, showInputField = true };
             factor.tooltip = "1为普通世界物体；越小越远；超过1为前景。";
             factor.RegisterValueChangedCallback(e => Change("视差速度", () => Layer.parallax = Vector2.one * e.newValue, false)); config.Add(factor);

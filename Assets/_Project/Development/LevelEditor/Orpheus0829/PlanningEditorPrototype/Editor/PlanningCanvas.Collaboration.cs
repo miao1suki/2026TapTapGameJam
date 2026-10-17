@@ -51,7 +51,22 @@ namespace PlanningEditorPrototype
             return true;
         }
 
-        public void SetWaterEditing(bool value) { editWaterLayer = value; MarkDirtyRepaint(); }
+        public void SetWaterEditing(bool value)
+        {
+            if (editWaterLayer == value) return;
+            CancelPointerInteraction();
+            editWaterLayer = value;
+            mergeSelection.Clear(); selectedBoxId = null; movingBox = null;
+            bindingConsumerId = null;
+            objectPreviewLayer.style.opacity = value ? .2f : 1f;
+            UpdateDetailPreviewImages(); UpdatePlayerOverlay(); MarkDirtyRepaint();
+        }
+        private bool CanEditPlacement(PlanningBox box)
+        {
+            if (!editWaterLayer || PlanningWaterLayerUtility.IsWater(box, palette)) return true;
+            StatusChanged?.Invoke("仅操作水层：请选择水体，或关闭水层模式放置其他物品。");
+            return false;
+        }
         public void SetImportPreview(PlanningDocument source, Vector2Int anchor, bool valid)
         {
             if (importPreview != source)

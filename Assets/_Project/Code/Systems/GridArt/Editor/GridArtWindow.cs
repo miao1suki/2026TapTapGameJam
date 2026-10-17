@@ -317,7 +317,7 @@ namespace Project.GridArt.Editor
                             if (layer.visible) foreach (var q in cached)
                             {
                                 Vector2 offset = Vector2.Scale(owner.previewTravel, Vector2.one - layer.parallax);
-                                quads.Add((new GridArtQuad(new Rect(q.bounds.position + offset, q.bounds.size), q.uv, q.texture, q.normal), layer.tint));
+                                quads.Add((new GridArtQuad(new Rect(q.bounds.position + offset, q.bounds.size), q.uv, q.texture, q.normal, q.colorId), layer.tint));
                             }
                         }
                     artwork.Clear(); batches.Clear();

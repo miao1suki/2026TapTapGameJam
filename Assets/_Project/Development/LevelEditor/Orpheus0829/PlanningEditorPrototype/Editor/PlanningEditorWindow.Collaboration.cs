@@ -16,53 +16,108 @@ namespace PlanningEditorPrototype
         private int fragmentDetached;
         private Label fragmentStatus;
         private Button fragmentApply;
+        private VisualElement collaborationOverlay;
+        private VisualElement fragmentImportSection, fragmentExportSection;
+
+        private VisualElement BuildCollaborationOverlay()
+        {
+            collaborationOverlay = new VisualElement { name = "PlanningCollaborationOverlay" };
+            collaborationOverlay.style.position = Position.Absolute;
+            collaborationOverlay.style.top = 112f;
+            collaborationOverlay.style.right = 20f;
+            collaborationOverlay.style.bottom = 30f;
+            collaborationOverlay.style.width = 400f;
+            collaborationOverlay.style.maxWidth = Length.Percent(90);
+            collaborationOverlay.style.backgroundColor = new Color(.09f, .105f, .135f);
+            collaborationOverlay.style.borderLeftWidth = collaborationOverlay.style.borderRightWidth =
+                collaborationOverlay.style.borderTopWidth = collaborationOverlay.style.borderBottomWidth = 1f;
+            collaborationOverlay.style.borderLeftColor = collaborationOverlay.style.borderRightColor =
+                collaborationOverlay.style.borderTopColor = collaborationOverlay.style.borderBottomColor = new Color(.3f, .4f, .55f);
+            var title = Row();
+            var label = new Label("关卡协作 · 导入与片段") { style = { flexGrow = 1f, fontSize = 15f, marginLeft = 10f, unityTextAlign = TextAnchor.MiddleLeft } };
+            title.Add(label);
+            title.Add(TopButton("关闭", () => collaborationOverlay.style.display = DisplayStyle.None));
+            collaborationOverlay.Add(title);
+            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "PlanningCollaborationScroll" };
+            scroll.style.flexGrow = 1f;
+            scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            scroll.Add(BuildCollaborationTools());
+            collaborationOverlay.Add(scroll);
+            collaborationOverlay.style.display = DisplayStyle.None;
+            return collaborationOverlay;
+        }
+
+        private void ShowCollaborationOverlay(bool importing)
+        {
+            if (collaborationOverlay == null) return;
+            canvas?.CancelPointerInteraction();
+            collaborationOverlay.style.display = DisplayStyle.Flex;
+            collaborationOverlay.BringToFront();
+            fragmentImportSection.style.display = importing ? DisplayStyle.Flex : DisplayStyle.None;
+            fragmentExportSection.style.display = importing ? DisplayStyle.None : DisplayStyle.Flex;
+            SetMode(PlanningCanvasMode.World);
+        }
+
+        private void BeginFragmentAreaExport()
+        {
+            collaborationOverlay.style.display = DisplayStyle.None;
+            SetMode(PlanningCanvasMode.World);
+            canvas.BeginAreaExport();
+        }
 
         private VisualElement BuildCollaborationTools()
         {
-            var group = new Foldout { text = "协作与片段", value = false };
+            var group = new VisualElement();
             group.style.marginLeft = group.style.marginRight = 8;
-            group.Add(new Label("导入到当前地图") { style = { marginTop = 8 } });
+            fragmentImportSection = new VisualElement();
+            fragmentExportSection = new VisualElement();
+            group.Add(fragmentImportSection); group.Add(fragmentExportSection);
+            var importing = fragmentImportSection;
+            var exporting = fragmentExportSection;
+            importing.Add(new Label("导入到当前地图") { style = { marginTop = 8, fontSize = 14f } });
+            importing.Add(new Label("选择存档 → 调整左上格 → 查看绿色预览 → 确认导入") { style = { whiteSpace = WhiteSpace.Normal, marginBottom = 8f } });
             var input = new ObjectField("存档文件") { objectType = typeof(TextAsset), allowSceneObjects = false };
             input.RegisterValueChangedCallback(evt =>
             {
                 if (evt.newValue == null) { fragmentSource = null; RefreshImportPreview(); return; }
                 LoadFragment(AssetDatabase.GetAssetPath(evt.newValue));
             });
-            group.Add(input);
-            group.Add(SmallRowButton("浏览 JSON…", () =>
+            importing.Add(input);
+            importing.Add(SmallRowButton("选择关卡存档 JSON…", () =>
             {
                 string path = EditorUtility.OpenFilePanel("选择关卡存档", PlanningSaveStore.SaveFolder, "json");
                 if (!string.IsNullOrEmpty(path)) LoadFragment(path);
             }));
             var anchor = new Vector2IntField("导入左上格") { tooltip = "世界图坐标；Y 向下。导入前显示位置预览，不覆盖已有房间。" };
             anchor.RegisterValueChangedCallback(evt => { fragmentAnchor = evt.newValue; RefreshImportPreview(); });
-            group.Add(anchor);
-            group.Add(SmallRowButton("放到地图右侧", () =>
+            importing.Add(anchor);
+            importing.Add(SmallRowButton("放到地图右侧并预览", () =>
             {
                 fragmentAnchor = SuggestedFragmentAnchor(); anchor.SetValueWithoutNotify(fragmentAnchor); RefreshImportPreview(); canvas.FocusImportPreview();
             }));
             var player = new Toggle("使用导入的出生点");
             player.RegisterValueChangedCallback(evt => { fragmentIncludePlayer = evt.newValue; RefreshImportPreview(); });
-            group.Add(player);
+            importing.Add(player);
             fragmentStatus = new Label("请选择关卡存档。");
             fragmentStatus.style.whiteSpace = WhiteSpace.Normal;
             fragmentStatus.style.marginTop = fragmentStatus.style.marginBottom = 8;
-            group.Add(fragmentStatus);
+            importing.Add(fragmentStatus);
             fragmentApply = new Button(ApplyFragment) { text = "导入当前地图" };
             fragmentApply.SetEnabled(false);
-            group.Add(fragmentApply);
-            group.Add(SmallRowButton("取消预览", () => { fragmentSource = null; input.SetValueWithoutNotify(null); RefreshImportPreview(); }));
-            group.Add(new Label("导出地图片段") { style = { marginTop = 12 } });
-            group.Add(SmallRowButton("导出选中房间 / 通道…", () => ExportFragment(canvas.SelectedWorldIds.ToArray(), null)));
-            group.Add(SmallRowButton("框选区域导出…", () => { SetMode(PlanningCanvasMode.World); canvas.BeginAreaExport(); }));
-            group.Add(SmallRowButton("导出选中规划区域…", () =>
+            importing.Add(fragmentApply);
+            importing.Add(SmallRowButton("取消预览", () => { fragmentSource = null; input.SetValueWithoutNotify(null); RefreshImportPreview(); }));
+            exporting.Add(new Label("导出地图片段") { style = { marginTop = 8, fontSize = 14f } });
+            exporting.Add(new Label("可以导出整个房间 / 通道，也可以在世界图框选区域。原地图保持不变。") { style = { whiteSpace = WhiteSpace.Normal, marginBottom = 8f } });
+            exporting.Add(SmallRowButton("导出当前选中的房间 / 通道…", () => ExportFragment(canvas.SelectedWorldIds.ToArray(), null)));
+            exporting.Add(SmallRowButton("在地图上框选区域并导出…", BeginFragmentAreaExport));
+            exporting.Add(SmallRowButton("导出选中的规划区域…", () =>
             {
                 if (canvas.SelectedRegion == null) { EditorUtility.DisplayDialog("导出区域", "请先选择一个规划区域。", "确定"); return; }
                 ExportFragment(null, canvas.SelectedRegion.Bounds);
             }));
             canvas.ExportAreaSelected -= OnExportArea;
             canvas.ExportAreaSelected += OnExportArea;
-            group.Add(SmallRowButton("定位当前存档", () =>
+            group.Add(SmallRowButton("定位当前存档文件", () =>
             {
                 string path = !string.IsNullOrEmpty(currentSavePath) ? currentSavePath : PlanningSharedSaveUtility.SceneSavePath(UnityEngine.SceneManagement.SceneManager.GetActiveScene().path);
                 if (!string.IsNullOrEmpty(path) && File.Exists(path)) EditorUtility.RevealInFinder(path);
@@ -94,7 +149,9 @@ namespace PlanningEditorPrototype
                 // Rebuild-free field update keeps a visible anchor consistent with the preview.
                 rootVisualElement.Query<Vector2IntField>().ForEach(field => { if (field.label == "导入左上格") field.SetValueWithoutNotify(fragmentAnchor); });
                 SetMode(PlanningCanvasMode.World);
-                RefreshImportPreview(); canvas.FocusImportPreview();
+                RefreshImportPreview();
+                // Run after the view-mode restoration queued by SetMode.
+                canvas.schedule.Execute(() => { if (fragmentSource != null) canvas.FocusImportPreview(); }).StartingIn(0);
             }
             catch (Exception exception) { fragmentSource = null; RefreshImportPreview(); ShowSavePanelError("无法读取片段", exception); }
         }
@@ -136,6 +193,7 @@ namespace PlanningEditorPrototype
                 OnCanvasDocumentChanged();
                 OnCanvasSelectionChanged();
                 RefreshImportPreview();
+                collaborationOverlay.style.display = DisplayStyle.None;
             }
             catch (Exception exception) { ShowSavePanelError("无法导入片段", exception); }
         }
@@ -143,20 +201,7 @@ namespace PlanningEditorPrototype
         private void OnExportArea(RectInt area) => ExportFragment(null, area);
         private static void ValidateFragmentPalette(PlanningDocument source)
         {
-            var palette = Project.LevelEditor.Editor.LevelEditorPaletteService.GetOrCreate();
-            foreach (var box in PlanningFragmentUtility.Boxes(source))
-            {
-                if (box.type == PlanningDetailType.Prop)
-                {
-                    if (box.propEntryId == PlanningDoorUtility.ButtonEntryId) continue;
-                    var entry = palette.PropEntries.FirstOrDefault(p => p.EntryId == box.propEntryId) ??
-                        palette.PropEntries.FirstOrDefault(p => p.DisplayName == box.propEntryName);
-                    if (entry?.Prefab == null) throw new InvalidDataException("缺少道具资源：" + (box.propEntryName ?? box.propEntryId) + "。请先同步道具栏目及预制体。");
-                }
-                else if ((!string.IsNullOrEmpty(box.paletteEntryId) || !string.IsNullOrEmpty(box.paletteEntryName)) &&
-                    !palette.Entries.Any(e => e.EntryId == box.paletteEntryId || e.DisplayName == box.paletteEntryName))
-                    throw new InvalidDataException("缺少方块栏目：" + (box.paletteEntryName ?? box.paletteEntryId) + "。请先同步栏目资源。");
-            }
+            PlanningFragmentUtility.ValidateDependencies(source);
         }
         private void ExportFragment(string[] owners, RectInt? area)
         {

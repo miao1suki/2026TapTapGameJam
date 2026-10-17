@@ -361,6 +361,23 @@ MonoBehaviour:
     frames:
     - {fileID: 1284647483036081791, guid: 38b3095d88670ac408a1fb53e50aca8f, type: 3}
     frameSeconds: 0.08
+  - kind: 18
+    frames:
+    - {fileID: 1626053780491658355, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
+  - kind: 19
+    frames:
+    - {fileID: -298081613838670490, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    - {fileID: 1106490514604871238, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
+  - kind: 20
+    frames:
+    - {fileID: -6960679804039842356, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
+  - kind: 21
+    frames:
+    - {fileID: -5533367892921092500, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
   doorIndicators:
   - {fileID: 1284647483036081791, guid: f0667e8d7daeb5247aa3fc58cc48f4b7, type: 3}
   - {fileID: -3826572569901313554, guid: f0667e8d7daeb5247aa3fc58cc48f4b7, type: 3}
@@ -370,3 +387,11 @@ MonoBehaviour:
   - {fileID: -3826572569901313554, guid: 705154ea97c90e64982f5afb351f293f, type: 3}
   - {fileID: -6287503803897879949, guid: 705154ea97c90e64982f5afb351f293f, type: 3}
   doorClosed: {fileID: 1284647483036081791, guid: a29278c9cc69e9546beaa6de8a10b04c, type: 3}
+  signboards:
+  - {fileID: -8267004847819040414, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - {fileID: -7475727355236625864, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - {fileID: 5213157417746651780, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - {fileID: 3446053148560286964, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - {fileID: -8628735654483159503, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - {fileID: 3136566099455051159, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - {fileID: 1808974218479773267, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}

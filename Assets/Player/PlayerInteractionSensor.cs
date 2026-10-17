@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Project.InputAbstraction;
+using Project.BlockFeatures;
 
 namespace Project.Player
 {
@@ -15,7 +16,7 @@ namespace Project.Player
         private LayerMask interactionMask = ~0;
 
         private Collider[] overlapBuffer = new Collider[128];
-        private readonly RaycastHit[] screenRaycastBuffer =
+        private RaycastHit[] screenRaycastBuffer =
             new RaycastHit[32];
         public IInteractionTarget CurrentTarget { get; private set; }
         public bool HasTarget => CurrentTarget != null;
@@ -126,12 +127,17 @@ namespace Project.Player
                 Mathf.Infinity,
                 interactionMask.value,
                 triggerInteraction);
+            while (count == screenRaycastBuffer.Length && screenRaycastBuffer.Length < 4096)
+            {
+                System.Array.Resize(ref screenRaycastBuffer, screenRaycastBuffer.Length * 2);
+                count = Physics.RaycastNonAlloc(ray, screenRaycastBuffer, Mathf.Infinity, interactionMask.value, triggerInteraction);
+            }
             float nearestDistance = float.MaxValue;
             bool found = false;
             for (int index = 0; index < count; index++)
             {
                 RaycastHit candidate = screenRaycastBuffer[index];
-                if (candidate.collider == null ||
+                if (candidate.collider == null || candidate.collider.transform.IsChildOf(transform) ||
                     candidate.distance >= nearestDistance)
                 {
                     continue;
@@ -142,6 +148,21 @@ namespace Project.Player
                 found = true;
             }
 
+            // The water volume is the underlay. A wall or prop in that same volume
+            // owns the click even if it has no color reaction; never fall through it.
+            if (found && hit.collider.GetComponentInParent<WaterVisualFeature>() != null)
+            {
+                Bounds waterBounds = hit.collider.bounds;
+                float foregroundDistance = float.MaxValue;
+                for (int i = 0; i < count; i++)
+                {
+                    var candidate = screenRaycastBuffer[i];
+                    if (candidate.collider == null || candidate.collider.transform.IsChildOf(transform) ||
+                        candidate.collider.GetComponentInParent<WaterVisualFeature>() != null ||
+                        !waterBounds.Intersects(candidate.collider.bounds) || candidate.distance >= foregroundDistance) continue;
+                    hit = candidate; foregroundDistance = candidate.distance;
+                }
+            }
             return found;
         }
 

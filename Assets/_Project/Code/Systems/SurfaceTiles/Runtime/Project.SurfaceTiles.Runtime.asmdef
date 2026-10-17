@@ -2,7 +2,8 @@
   "name": "Project.SurfaceTiles.Runtime",
   "rootNamespace": "Project.SurfaceTiles",
   "references": [
-    "Project.Shared.Runtime"
+    "Project.Shared.Runtime",
+    "Project.ObjectArtwork.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

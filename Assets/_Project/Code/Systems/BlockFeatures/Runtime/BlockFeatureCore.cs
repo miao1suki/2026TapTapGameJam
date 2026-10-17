@@ -95,6 +95,10 @@ namespace Project.BlockFeatures
         public string Tooltip { get; set; }
         public string VisibleWhenField { get; set; }
         public int VisibleWhenValue { get; set; }
+        public int[] VisibleWhenValues { get; set; }
+
+        public bool MatchesVisibility(int value) => VisibleWhenValues != null && VisibleWhenValues.Length > 0
+            ? Array.IndexOf(VisibleWhenValues, value) >= 0 : value == VisibleWhenValue;
     }
 
     public sealed class BlockFeatureMetadata

@@ -83,7 +83,7 @@ namespace Project.SurfaceTiles.Editor
             detection.Add(NumberSetting("合并间距", mergeGap, value => mergeGap = Mathf.Max(0, value)));
             detection.Add(NumberSetting("边缘留白", detectionMargin, value => detectionMargin = Mathf.Max(0, value)));
             sidebar.Add(detection);
-            var output = new Foldout { text = "输出设置", value = true }; settingsPanel = new VisualElement(); output.Add(settingsPanel); sidebar.Add(output);
+            var output = new Foldout { text = "输出设置", value = true }; settingsPanel = new VisualElement(); settingsPanel.RegisterCallback<SerializedPropertyChangeEvent>(_=>SaveRecipe()); output.Add(settingsPanel); sidebar.Add(output);
             var regions = new Foldout { text = "瓦片选区", value = true }; regionPanel = new VisualElement(); regions.Add(regionPanel); sidebar.Add(regions);
             row.Add(sidebar); rootVisualElement.Add(row);
             statusLabel = new Label(); statusLabel.style.whiteSpace = WhiteSpace.Normal; rootVisualElement.Add(statusLabel);
@@ -102,8 +102,20 @@ namespace Project.SurfaceTiles.Editor
             if (recipe != null)
             {
                 var serialized = new SerializedObject(recipe);
-                foreach (string property in new[] { "outputFolder", "outputName", "outputWidth", "outputHeight", "sourcePixelsPerCell", "transparentPadding", "trimTransparentPixels", "allowUpscale", "anchor" })
-                    settingsPanel.Add(new PropertyField(serialized.FindProperty(property)));
+                settingsPanel.Add(new HelpBox("16有效源像素＝1格。保持原像素，不以输出框大小缩放素材；输出宽高只决定图集容量。", HelpBoxMessageType.Info));
+                string[] properties = { "outputFolder", "outputName", "outputWidth", "outputHeight", "transparentPadding", "trimTransparentPixels" };
+                string[] labels = { "输出目录", "输出名称", "图集单块容量宽", "图集单块容量高", "透明留白（源像素）", "裁去透明边缘" };
+                for (int i=0;i<properties.Length;i++) settingsPanel.Add(new PropertyField(serialized.FindProperty(properties[i]),labels[i]));
+                var factor = new IntegerField("原图整数导出倍率") { value=recipe.SourcePixelScale,isDelayed=true };
+                factor.tooltip="例如完整4倍最近邻导出填4；不是任意缩放。tail已自动识别为4倍。";
+                factor.RegisterValueChangedCallback(e=> { Undo.RecordObject(recipe,"设置源图像素倍率"); recipe.UseNativePixelScale(e.newValue); SaveRecipe(); RefreshToolkit(); }); settingsPanel.Add(factor);
+                var anchor = new PopupField<string>("图集对齐",new List<string>{"居中","底部居中"},(int)recipe.Anchor);
+                anchor.RegisterValueChangedCallback(e=> { Undo.RecordObject(recipe,"设置图集对齐"); var property=new SerializedObject(recipe); property.FindProperty("anchor").enumValueIndex=anchor.index; property.ApplyModifiedProperties(); SaveRecipe(); }); settingsPanel.Add(anchor);
+                if (!recipe.UsesNativePixels)
+                {
+                    settingsPanel.Add(new HelpBox($"旧导入方案按{recipe.SourcePixelsPerCell}像素/格处理，可能重采样。旧库不会自动改写；确认后切换原像素方案并重新生成。",HelpBoxMessageType.Warning));
+                    settingsPanel.Add(new Button(()=> { Undo.RecordObject(recipe,"采用原像素导入"); recipe.UseNativePixelScale(recipe.SourcePixelScale); SaveRecipe(); RefreshToolkit(); }) { text="改用16有效像素/格" });
+                }
                 settingsPanel.Bind(serialized);
                 for (int i = 0; i < recipe.Regions.Count; i++)
                 {

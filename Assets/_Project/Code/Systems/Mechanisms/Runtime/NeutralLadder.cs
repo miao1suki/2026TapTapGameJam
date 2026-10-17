@@ -1,10 +1,16 @@
 using System.Collections.Generic;
 using Project.BlockFeatures;
+using Project.LevelEditor;
 using Project.Player;
 using UnityEngine;
 
 namespace Project.Mechanisms
 {
+    public enum LadderWallSide
+    {
+        [InspectorName("右侧连墙（从左侧攀爬）")] Right,
+        [InspectorName("左侧连墙（从右侧攀爬）")] Left
+    }
     [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider))]
     public sealed class NeutralLadder : MonoBehaviour
     {
@@ -15,13 +21,29 @@ namespace Project.Mechanisms
         [BlockParameter(Label = "加速下滑速度", Group = "攀爬", Order = 2)]
         [SerializeField, Min(0)] private float fastSlideSpeed = 3f;
         [SerializeField, InspectorName("侧面梯子")] private bool sideFacing;
+        [BlockParameter(Label = "靠墙方向", Group = "攀爬", Order = 3)]
+        [SerializeField] private LadderWallSide wallSide;
         private BoxCollider area;
         private readonly Dictionary<Collider, PlayerController> contacts = new();
         private readonly List<Collider> expired = new();
         public bool SideFacing => sideFacing;
+        public LadderWallSide WallSide => wallSide;
         public int ContactCount => contacts.Count;
 
-        private void Awake() { area = GetComponent<BoxCollider>(); area.isTrigger = true; }
+        private void Awake() { area = GetComponent<BoxCollider>(); area.isTrigger = true; PreserveLegacyFootprint(); }
+
+        internal void PreserveLegacyFootprint()
+        {
+            if (area == null) area = GetComponent<BoxCollider>();
+            if (area == null || !Mathf.Approximately(area.size.y, 1f) || !Mathf.Approximately(area.center.y, 0f)) return;
+            var placed = GetComponent<LevelEditorPlacedBlock>();
+            if (placed == null || placed.SizeCells.y <= 1 ||
+                !Mathf.Approximately(Mathf.Abs(transform.lossyScale.y), placed.CellWorldSize)) return;
+            // Old scene instances use a bottom-cell pivot and inherit the shared prefab
+            // collider. New rectangular ladders already carry their height in root scale.
+            var size = area.size; size.y = placed.SizeCells.y; area.size = size;
+            var center = area.center; center.y = (placed.SizeCells.y - 1) * .5f; area.center = center;
+        }
         private void OnTriggerEnter(Collider other) => Track(other);
         private void OnTriggerStay(Collider other) => Track(other);
         private void Track(Collider other)

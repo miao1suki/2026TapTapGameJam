@@ -52,7 +52,7 @@ namespace PlanningEditorPrototype
                 Check(merged.crankOwnerId==crankBox.id && merged.mergeParts.Count==2,"merged JSON survives reload");
                 var root=new GameObject("GeneratedTest").transform;
                 var crank=Spawn(root,crankEntry.Prefab,crankBox.id).GetComponent<CrankPlatformFeature>();
-                Check(crank.transform.childCount==0,"crank prefab contains no platform child");
+                Check(crank.GetComponentsInChildren<MovingPlatformFeature>(true).Length==0,"crank contains artwork but no platform child");
                 var lift=Spawn(root,AssetDatabase.LoadAssetAtPath<GameObject>(PlanningMechanismUtility.LiftPath),merged.id).GetComponent<MovingPlatformFeature>();
                 lift.transform.localScale=new Vector3(2,1,1);
                 PlanningMechanismUtility.BindScene(root,document.rooms,document.assemblyPatches);

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using InteractiveWater;
 using Project.ColorBlocks;
 using Project.WaterBubbles;
+using Project.LevelEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -20,12 +21,16 @@ namespace Project.BlockFeatures
         private readonly List<Mesh> meshes = new List<Mesh>();
         private Bounds lastBounds;
         private Collider volumeCollider;
+        private LevelEditorMergedShape shape;
+        private MeshFilter neutralFilter;
+        private Mesh originalNeutralMesh;
+        private int wallRevision = -1;
         private float cellSize = 1f;
         private Vector4 flowSettings;
         public int SurfaceCellCount { get; private set; }
         public int BodyCellCount { get; private set; }
         public int InteriorCellCount { get; private set; }
-        public Bounds Volume => volumeCollider != null
+        public Bounds Volume => shape != null ? shape.WorldBounds : volumeCollider != null
             ? volumeCollider.bounds : new Bounds(transform.position, Vector3.one * CellSize);
         private float CellSize => cellSize;
 
@@ -37,6 +42,9 @@ namespace Project.BlockFeatures
             owner = feature;
             settings = configuration;
             volumeCollider = feature.GetComponent<Collider>();
+            shape = feature.GetComponent<LevelEditorMergedShape>();
+            neutralFilter = feature.GetComponent<MeshFilter>();
+            if (neutralFilter != null) originalNeutralMesh = neutralFilter.sharedMesh;
             cellSize = GridCellSizeUtility.Resolve(feature);
             flowSettings = ReadFlowSettings();
             active.Add(this);
@@ -63,6 +71,7 @@ namespace Project.BlockFeatures
             if (bounds != lastBounds) { lastBounds = bounds; revision++; }
             Vector4 nextSettings = ReadFlowSettings();
             if (nextSettings != flowSettings) { flowSettings = nextSettings; revision++; }
+            if (wallRevision != LevelEditorPlacedBlock.ActiveRevision) { wallRevision = LevelEditorPlacedBlock.ActiveRevision; revision++; }
             if (builtRevision != revision) Rebuild();
         }
 
@@ -74,6 +83,7 @@ namespace Project.BlockFeatures
 
         private void ClearParts()
         {
+            if (neutralFilter != null) neutralFilter.sharedMesh = originalNeutralMesh;
             foreach (var part in parts)
                 if (part != null) { part.SetActive(false); Destroy(part); }
             foreach (var mesh in meshes) if (mesh != null) Destroy(mesh);
@@ -89,7 +99,8 @@ namespace Project.BlockFeatures
                 float epsilon = CellSize * .001f;
                 if (world.x >= b.min.x + epsilon && world.x <= b.max.x - epsilon &&
                     world.y >= b.min.y + epsilon && world.y <= b.max.y - epsilon &&
-                    world.z >= b.min.z - epsilon && world.z <= b.max.z + epsilon) return true;
+                    world.z >= b.min.z - epsilon && world.z <= b.max.z + epsilon &&
+                    (water.shape == null || water.shape.ContainsWorldPoint(world))) return true;
             }
             return false;
         }
@@ -105,6 +116,8 @@ namespace Project.BlockFeatures
             var vertices = new List<Vector3>[3];
             var uvs = new List<Vector2>[3];
             var triangles = new List<int>[3];
+            var frontVertices = new List<Vector3>(); var frontUvs = new List<Vector2>(); var frontTriangles = new List<int>();
+            var visibleCells = new List<RectInt>();
             for (int i = 0; i < 3; i++) { vertices[i] = new List<Vector3>(); uvs[i] = new List<Vector2>(); triangles[i] = new List<int>(); }
             for (int y = 0; y < rows; y++)
                 for (int x = 0; x < columns; x++)
@@ -112,6 +125,9 @@ namespace Project.BlockFeatures
                     Vector3 min = new Vector3(b.min.x + x * cell, b.min.y + y * cell, b.max.z + cell * .02f);
                     Vector3 max = new Vector3(Mathf.Min(b.max.x, min.x + cell), Mathf.Min(b.max.y, min.y + cell), min.z);
                     Vector3 center = (min + max) * .5f; center.z = b.center.z;
+                    if (shape != null && !shape.ContainsWorldPoint(center)) continue;
+                    if (WaterCellVisibility.Covered(owner, center, cell)) continue;
+                    visibleCells.Add(new RectInt(x, rows - y - 1, 1, 1));
                     int kind = !ContainsWater(center + Vector3.up * cell) ? 0
                         : !ContainsWater(center + Vector3.up * cell * 2f) ? 1 : 2;
                     if (kind == 0) SurfaceCellCount++; else if (kind == 1) BodyCellCount++; else InteriorCellCount++;
@@ -122,19 +138,28 @@ namespace Project.BlockFeatures
                     Rect uv = Rect.MinMaxRect(rect.xMin / sprite.texture.width, bottom / sprite.texture.height,
                         rect.xMax / sprite.texture.width, rect.yMax / sprite.texture.height);
                     AddQuad(vertices[kind], uvs[kind], triangles[kind], min, max, uv);
+                    Vector3 frontMin = min; frontMin.z = b.min.z - cell * .02f;
+                    Vector3 frontMax = max; frontMax.z = frontMin.z;
+                    AddQuad(frontVertices, frontUvs, frontTriangles, frontMin, frontMax, new Rect(x, y, 1, 1));
                 }
             for (int kind = 0; kind < 3; kind++)
                 if (vertices[kind].Count > 0)
                     CreateMeshPart(new[] { "Water Surface", "Water Body", "Water Interior" }[kind],
                         vertices[kind], uvs[kind], triangles[kind], settings.tileMaterials[kind], -100, settings.tiles[kind].texture);
 
-            var frontVertices = new List<Vector3>(); var frontUvs = new List<Vector2>(); var frontTriangles = new List<int>();
-            Vector3 frontMin = b.min; frontMin.z -= cell * .02f;
-            Vector3 frontMax = b.max; frontMax.z = frontMin.z;
-            AddQuad(frontVertices, frontUvs, frontTriangles, frontMin, frontMax, new Rect(0, 0, b.size.x / cell, b.size.y / cell));
             var front = CreateMeshPart("Water Refraction", frontVertices, frontUvs, frontTriangles, settings.filterMaterial, 100, Texture2D.whiteTexture);
             front.AddComponent<WaterUnderlayCaptureRequester>();
-            BuildBubbles(b, cell);
+            if (neutralFilter != null && originalNeutralMesh != null)
+            {
+                Bounds localBounds = shape != null ? shape.LocalBounds : originalNeutralMesh.bounds;
+                var neutralMesh = LevelEditorMergedShape.CreateMesh(localBounds, new Vector2Int(columns, rows), visibleCells);
+                meshes.Add(neutralMesh); neutralFilter.sharedMesh = neutralMesh;
+            }
+            if (shape != null)
+            {
+                foreach (var volume in shape.Volumes) if (volume != null) BuildBubbles(volume.bounds, cell);
+            }
+            else BuildBubbles(b, cell);
             lastBounds = b;
             builtRevision = revision;
         }

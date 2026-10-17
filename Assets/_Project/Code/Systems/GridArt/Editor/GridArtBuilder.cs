@@ -15,8 +15,9 @@ namespace Project.GridArt.Editor
         public readonly Rect uv;
         public readonly Texture2D texture;
         public readonly Texture2D normal;
-        public GridArtQuad(Rect area, Rect sample, Texture2D source, Texture2D normalMap = null)
-        { bounds = area; uv = sample; texture = source; normal = normalMap; }
+        public readonly string colorId;
+        public GridArtQuad(Rect area, Rect sample, Texture2D source, Texture2D normalMap = null, string color = "")
+        { bounds = area; uv = sample; texture = source; normal = normalMap; colorId = color; }
     }
 
     public static class GridArtBuilder
@@ -31,9 +32,10 @@ namespace Project.GridArt.Editor
             {
                 var brush = palette.Get(cell.brush);
                 if (brush == null) continue;
+                string colorId = string.IsNullOrEmpty(layer.colorId) ? brush.colorId : layer.colorId == "none" ? "" : layer.colorId;
                 if (!brush.autoTerrain)
                 {
-                    Add(result, brush.sprite, new Rect(cell.position, brush.DisplaySize), brush.contentRect, brush.normalMap);
+                    Add(result, brush.sprite, new Rect(cell.position, brush.DisplaySize), brush.contentRect, brush.normalMap, colorId);
                     continue;
                 }
                 for (int q = 0; q < 4; q++)
@@ -45,13 +47,13 @@ namespace Project.GridArt.Editor
                         GridArtRules.Same(cells, cell.position + new Vector2Int(dx, dy), cell.brush));
                     var sprite = brush.GetPiece(GridArtRules.Slot(kind, q));
                     var quadrant = new Rect(q % 2 * .5f, q / 2 * .5f, .5f, .5f);
-                    Add(result, sprite, new Rect((Vector2)cell.position + quadrant.position, quadrant.size), quadrant, brush.normalMap);
+                    Add(result, sprite, new Rect((Vector2)cell.position + quadrant.position, quadrant.size), quadrant, brush.normalMap, colorId);
                 }
             }
             return result;
         }
 
-        private static void Add(List<GridArtQuad> result, Sprite sprite, Rect bounds, Rect? part, Texture2D normal)
+        private static void Add(List<GridArtQuad> result, Sprite sprite, Rect bounds, Rect? part, Texture2D normal, string colorId)
         {
             if (sprite == null) return;
             if (sprite.packed) throw new InvalidOperationException("美术网格笔刷暂不支持已打包 Sprite，请使用独立原图切片。");
@@ -65,7 +67,12 @@ namespace Project.GridArt.Editor
             }
             result.Add(new GridArtQuad(bounds,
                 new Rect(sample.x / sprite.texture.width, sample.y / sprite.texture.height,
-                    sample.width / sprite.texture.width, sample.height / sprite.texture.height), sprite.texture, normal));
+                    sample.width / sprite.texture.width, sample.height / sprite.texture.height), sprite.texture, normal, colorId));
+        }
+
+        public static int ColorLayer(string colorId)
+        {
+            return GridArtColorSource.UnityLayer(colorId);
         }
 
         private sealed class Chunk
@@ -109,12 +116,18 @@ namespace Project.GridArt.Editor
             if (!string.IsNullOrEmpty(map.ownerSceneGuid) && map.ownerSceneGuid != sceneGuid)
                 throw new InvalidOperationException("这张美术图属于其他场景。请先创建独立副本，避免改动另一关。");
             var prepared = new List<List<GridArtQuad>>();
+            var colorLayers = new Dictionary<string,int>(StringComparer.Ordinal);
             int total = 0;
             foreach (var layer in map.layers)
             {
                 total += layer.cells.Count;
                 if (total > 100000) throw new InvalidOperationException("单张美术图上限为十万格，请拆分为多个区域。");
                 prepared.Add(BuildQuads(layer, map.palette));
+                foreach (var quad in prepared[prepared.Count-1])
+                {
+                    string id = quad.colorId ?? "";
+                    if (!colorLayers.ContainsKey(id)) colorLayers[id] = ColorLayer(id);
+                }
             }
             Shader shader = Shader.Find("2026TapTap/Grid Art/Unlit");
             if (shader == null) throw new InvalidOperationException("美术 Shader 尚未就绪。");
@@ -123,6 +136,7 @@ namespace Project.GridArt.Editor
             string folder = "Assets/_Project/Art/Generated/GridArt/" + sceneGuid + "/" + AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(map));
             EnsureFolder(folder);
             var bindings = new List<GridArtLayerBinding>();
+            var colorBindings = new List<GridArtColorBinding>();
             GridArtScene output = null;
             foreach (var root in scene.GetRootGameObjects())
                 foreach (var candidate in root.GetComponentsInChildren<GridArtScene>(true))
@@ -159,10 +173,10 @@ namespace Project.GridArt.Editor
                 root.SetActive(layer.visible);
                 bindings.Add(new GridArtLayerBinding { id = layer.id, root = root.transform,
                     restPosition = root.transform.localPosition, parallax = layer.parallax });
-                var chunks = new Dictionary<(Texture2D, int, int, Texture2D), Chunk>();
+                var chunks = new Dictionary<(Texture2D, int, int, Texture2D, string), Chunk>();
                 foreach (var q in prepared[l])
                 {
-                    var key = (q.texture, Mathf.FloorToInt(q.bounds.x / 32), Mathf.FloorToInt(q.bounds.y / 32), q.normal);
+                    var key = (q.texture, Mathf.FloorToInt(q.bounds.x / 32), Mathf.FloorToInt(q.bounds.y / 32), q.normal, q.colorId ?? "");
                     if (!chunks.TryGetValue(key, out var chunk)) chunks[key] = chunk = new Chunk();
                     chunk.Add(q, Mathf.Max(.01f, map.cellSize));
                 }
@@ -171,7 +185,8 @@ namespace Project.GridArt.Editor
                 {
                     string textureId = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(pair.Key.Item1));
                     string normalId = pair.Key.Item4 != null ? AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(pair.Key.Item4)) : "flat";
-                    string name = layer.id + "_" + textureId + "_" + normalId + "_" + pair.Key.Item2 + "_" + pair.Key.Item3;
+                    int colorLayer = colorLayers[pair.Key.Item5];
+                    string name = layer.id + "_" + textureId + "_" + normalId + "_" + pair.Key.Item2 + "_" + pair.Key.Item3 + (colorLayer == 0 ? "" : "_c"+Hash128.Compute(pair.Key.Item5));
                     var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(folder + "/" + name + ".asset");
                     if (mesh == null) { mesh = new Mesh(); AssetDatabase.CreateAsset(mesh, folder + "/" + name + ".asset"); }
                     if (!pair.Value.Matches(mesh))
@@ -211,8 +226,10 @@ namespace Project.GridArt.Editor
                     var existing = root.transform.Find(childName);
                     var child = existing != null ? existing.gameObject : new GameObject(childName);
                     if (existing == null) { child.transform.SetParent(root.transform, false); child.AddComponent<MeshFilter>(); child.AddComponent<MeshRenderer>(); }
+                    child.layer = colorLayer;
                     child.GetComponent<MeshFilter>().sharedMesh = mesh;
                     var renderer = child.GetComponent<MeshRenderer>(); renderer.sharedMaterial = material;
+                    if (colorLayer != 0) colorBindings.Add(new GridArtColorBinding { renderer=renderer,alphaTexture=pair.Key.Item1 });
                     renderer.sortingOrder = layer.sortingOrder == int.MinValue ? l - 100 : layer.sortingOrder;
                     renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = false;
                 }
@@ -220,6 +237,7 @@ namespace Project.GridArt.Editor
                     if (!used.Contains(root.transform.GetChild(i).name)) Destroy(root.transform.GetChild(i).gameObject, recordUndo);
             }
             output.SetBindings(bindings.ToArray()); EditorUtility.SetDirty(output);
+            output.SetColorBindings(colorBindings.ToArray());
             map.ownerSceneGuid = sceneGuid;
             map.bakedRevision = map.revision; EditorUtility.SetDirty(map);
             if (saveMap) AssetDatabase.SaveAssetIfDirty(map.palette);
