@@ -1596,3 +1596,16 @@
 - 原分支 `codex/formal-level-progress`：d12680d 提交 Gaming 与正式关卡存档，a036d32 更新关卡进度，ad8e34e 补齐测试场景配套规划文件。正式关卡作为后续制作基线，字体缓存未交付。
 - 策划末次交付已澄清采用独立分支，不直接合并或推送 main；分支历史条目中更早的 main 授权不再适用于工作者。策划只运行存档完整性与差异检查，未运行 Play Mode 或打包。
 - 整合者本轮采用该分支的正式关卡；附带 MVMapImportTest/RoomRespawnTest 存档为旧场景数据，因此冲突时保留 main 当前配套版本，防止回退已统一玩家的测试场景。原分支完整记录仍可从ad8e34e查看；当前整合验证与权限以本文件顶部记录为准。
+
+## 2026-10-16 正式关卡交付规范补齐
+
+- 分支：`codex/formal-level-progress`；本轮补齐 RoomLifecycleTests 两个现有场景的同名规划存档及 meta，核对正式关卡交付；不改变正式关卡布局、出生点、机关或场景接线。
+- 最新规则参考 origin/main `51e4893`；不合并、rebase 或推送 main。较早条目中的 main 授权已被后续分支交付要求取代。
+- 验证：两个测试场景规划数据从各自 YAML 内嵌数据无损提取，JSON 结构对比一致（MVMapImportTest 4房间、RoomRespawnTest 3房间）；正式 Gaming 场景内嵌数据、同名 planning 和 LevelMaps/正式关卡 三者结构一致。Unity版本6000.3.12f1，hook保持.githooks。仅新增可编辑数据及文档，不修改Runtime源码；本轮未运行Unity编译、Play Mode或打包，未宣称包含最新main的运行时功能。
+
+## 2026-10-17 正式关卡最新布局交付
+
+- 用户确认当前已保存的 Gaming 关卡作为后续正式关卡基线；继续使用协作分支 `codex/formal-level-progress`，由整合窗口负责合入 main。本窗口不合并、不推 main。
+- 范围：Gaming.unity、Gaming.planning.json、Content/LevelMaps/正式关卡.json 及既有各自 meta（GUID保持）；不重建关卡，不修改当前布局、出生点或机关接线，不纳入字体缓存。
+- 基线核对：已获取 origin/main c25deac；修改前 HEAD 中正式场景及两份存档与该 main 完全一致，本次是已整合正式关卡之上的后续制作，不恢复旧地图。分支运行时代码尚未同步主线后续变化，交由整合者保留最新运行时功能。
+- 验证：场景内嵌规划、同名规划与命名正式存档 JSON 结构一致（10房间）；各自 meta 已跟踪；新增场景资产 GUID 无未跟踪依赖。Unity 固定6000.3.12f1。提交前执行规划存档守卫与差异检查；本轮不修改源码，未执行 Unity 编译、Play Mode、完整通关或打包，不将数据检查视为玩法验收。
