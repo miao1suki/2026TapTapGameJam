@@ -10,6 +10,7 @@ using Project.BlockFeatures;
 using Project.BlockFeatures.Editor;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
+using Project.Player;
 using Project.Rooms;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -63,7 +64,7 @@ public static class FormalArtworkCompatibilityAudit
         string original = File.ReadAllText(PairedPath);
         Check(pairedBytes.SequenceEqual(mapBytes), "paired planning and named formal map have identical original bytes");
         var document = JsonUtility.FromJson<PlanningDocument>(original);
-        Check(document != null && document.rooms.Count == 11, "latest formal author document contains 11 rooms");
+        Check(document != null && document.rooms.Count >= 11, "formal author document retains at least the original 11 rooms");
         var ownerRoom = document.rooms.Single(room => room.boxes.Any(box => box.id == CoverId));
         var cover = ownerRoom.boxes.Single(box => box.id == CoverId);
         var duplicate = ownerRoom.boxes.SingleOrDefault(box => box.id == DuplicateId);
@@ -103,6 +104,7 @@ public static class FormalArtworkCompatibilityAudit
         Check(scene.isDirty == dirtyBefore, "refreshing 2D Scene artwork does not dirty the author Scene");
         Check(Snapshot(scene).OrderBy(pair => pair.Key).SequenceEqual(authorBefore.OrderBy(pair => pair.Key)),
             "artwork refresh installs no runtime component or Scene object and changes no serialized author field");
+        ValidateIncrementalLevel(document, scene, placed);
         foreach (var block in platformOwners)
         {
             Check(block.SizeCells.x >= 1 && block.SizeCells.y >= 1, "platform retains valid logical occupancy " + block.PlanningBoxId);
@@ -148,8 +150,8 @@ public static class FormalArtworkCompatibilityAudit
         var revisedRoom = revisedDocument.rooms.Single(room => room.id == ownerRoom.id);
         var left = revisedRoom.boxes.Single(box => box.id == CoverId);
         var right = revisedRoom.boxes.Single(box => box.id == RightId);
-        Check(revisedDocument.rooms.Count == 11 && revisedDocument.rooms.Sum(room => room.boxes.Count) == document.rooms.Sum(room => room.boxes.Count) + 1,
-            "normal rectangular batch split retains 11 rooms and all separately authored objects");
+        Check(revisedDocument.rooms.Count == document.rooms.Count && revisedDocument.rooms.Sum(room => room.boxes.Count) == document.rooms.Sum(room => room.boxes.Count) + 1,
+            "normal rectangular batch split retains all rooms and separately authored objects");
         Check(RecordText(revised, DuplicateId) == RecordText(original, DuplicateId), "all bytes and unknown fields of the 16-cell platform record remain unchanged");
         Check(!left.isMerged && !right.isMerged && !left.singleInstance && !right.singleInstance &&
             PlanningShapeUtility.Cells(left).Concat(PlanningShapeUtility.Cells(right)).OrderBy(cell => cell.x).SequenceEqual(
@@ -222,6 +224,84 @@ public static class FormalArtworkCompatibilityAudit
             Check(block.PlanningSignature == Signature(targetBox, entry), "persisted planning source signature matches next editor apply " + block.PlanningBoxId);
         }
         report.AppendLine("CLEANED batch overlap at 50,9; preserved " + DuplicateId + " with travelBlocks16; no Scene roots rebuilt, moved or removed.");
+    }
+
+    private static void ValidateIncrementalLevel(PlanningDocument document, Scene scene, LevelEditorPlacedBlock[] placed)
+    {
+        if (document.rooms.Count < 12) return;
+        // Fragment import rejects prefab-local placeholders; this is a same-Scene
+        // audit. Keep those placeholders in the real document and validate the
+        // resolved components below, while still checking all external assets.
+        var dependencies = JsonUtility.FromJson<PlanningDocument>(JsonUtility.ToJson(document));
+        foreach (var box in dependencies.rooms.SelectMany(room => room.boxes).Concat(dependencies.assemblyPatches)) StripPrefabLocal(box);
+        PlanningFragmentUtility.ValidateDependencies(dependencies);
+        Check(true, "formal document has valid unique IDs, merge snapshots and resolvable prefab/asset dependencies");
+        var boxes = document.rooms.SelectMany(room => room.boxes).Concat(document.assemblyPatches).ToDictionary(box => box.id);
+        foreach (var box in boxes.Values)
+        {
+            foreach (string reference in new[] { box.doorOwnerId, box.mechanismBaseId, box.crankOwnerId })
+                if (!string.IsNullOrEmpty(reference)) Check(boxes.ContainsKey(reference), "mechanism reference exists " + box.id + " -> " + reference);
+        }
+        Check(scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+            .All(node => GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(node.gameObject) == 0), "formal Scene has no missing MonoBehaviour scripts");
+        var players = All<PlayerController>(scene);
+        Check(players.Length == 1 && players[0].CompareTag("Player"), "one tagged formal player retained");
+        Check(AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(players[0].gameObject)) ==
+            "Assets/_Project/Content/Player/Player.prefab", "formal player still uses the standard prefab");
+        Check(All<Camera>(scene).Count(camera => camera.enabled && camera.CompareTag("MainCamera")) == 1,
+            "one enabled MainCamera retained");
+        var changedRoom = document.rooms.Single(room => room.id == "room_5c0def1a");
+        var rendered = placed.GroupBy(block => block.PlanningBoxId ?? "").ToDictionary(group => group.Key, group => group.ToArray());
+        var changedBlocks = new List<LevelEditorPlacedBlock>();
+        foreach (var box in changedRoom.boxes)
+        {
+            rendered.TryGetValue(box.id, out var instances);
+            if (instances == null || instances.Length == 0)
+            {
+                // Existing author records can cover the same normal paint cell.
+                // SceneBuilder emits only the first same-layer instance, not a
+                // duplicate. Require full coverage by present equivalent paint.
+                var covering = changedRoom.boxes.Where(other => other.id != box.id && other.type == box.type &&
+                    other.propEntryId == box.propEntryId && other.paletteEntryId == box.paletteEntryId &&
+                    rendered.ContainsKey(other.id)).ToArray();
+                Check(!box.isMerged && !box.singleInstance && string.IsNullOrEmpty(box.doorOwnerId) &&
+                    string.IsNullOrEmpty(box.mechanismBaseId) && string.IsNullOrEmpty(box.crankOwnerId) &&
+                    PlanningShapeUtility.Cells(box).All(cell => covering.Any(other => PlanningShapeUtility.Contains(other, cell))),
+                    "suppressed duplicate paint is fully represented by equivalent existing Scene coverage " + box.id);
+                report.AppendLine("INFO overlapping author paint retained without spawning duplicate: " + box.id);
+                continue;
+            }
+            Check(true, "updated room has Scene instance " + box.id);
+            string prefix = JsonUtility.ToJson(box.PersistentClone());
+            Check(instances.All(block => block.PlanningSignature.StartsWith(prefix, StringComparison.Ordinal)),
+                "updated room Scene source matches saved parameters " + box.id);
+            Check(instances.All(block => PlanningShapeUtility.Contains(box, block.PlanningLocalCell)),
+                "updated room Scene instance stays inside its saved coverage " + box.id);
+            foreach (var block in instances)
+            {
+                changedBlocks.Add(block);
+                if (!string.IsNullOrEmpty(box.doorOwnerId))
+                {
+                    var button = block.GetComponent<Project.Mechanisms.DoorButton>();
+                    Check(button != null && button.Owner != null && button.Owner.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == box.doorOwnerId,
+                        "updated button is connected to its saved door " + box.id);
+                }
+            }
+        }
+        Screenshot(changedBlocks.ToArray(), "Library/FormalArtworkCompatibility_UpdatedRoom11.png");
+        var reservedRoom = document.rooms.Single(room => room.id == "room_5bd7a307");
+        Check(reservedRoom.cells.Count == 6 && reservedRoom.boxes.Count == 0, "new room 12 is the author's empty six-cell planning reservation");
+        report.AppendLine("INFO empty reserved room retained; not represented as a completed playable room.");
+    }
+
+    private static void StripPrefabLocal(PlanningBox box)
+    {
+        box.componentOverrides.RemoveAll(value => value.ValueType == "ObjectReference" && value.Value == "reference:local");
+        for (int i = 0; i < box.mergeParts.Count; i++)
+        {
+            var part = PlanningBox.FromPersistentJson(box.mergeParts[i]);
+            StripPrefabLocal(part); box.mergeParts[i] = JsonUtility.ToJson(part);
+        }
     }
 
     private static bool SamePlacementSemantics(PlanningBox a, PlanningBox b) => a.type == b.type && a.propEntryId == b.propEntryId &&
