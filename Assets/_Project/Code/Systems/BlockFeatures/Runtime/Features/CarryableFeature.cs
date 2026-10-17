@@ -167,6 +167,7 @@ namespace Project.BlockFeatures
             }
 
             if (IsCarryActive) return false;
+            VineGrowthLift.Cancel(GetComponent<Rigidbody>());
             carryMotion ??= new CarryTargetMotion(transform, OnCarryRestored);
             motionParticipant?.SetCarrySuspended(true);
             if (!carryMotion.BeginCarry(

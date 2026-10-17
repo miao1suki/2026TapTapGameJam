@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.LevelEditor.Editor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,7 +11,8 @@ namespace PlanningEditorPrototype
         private readonly Dictionary<string, Texture2D> boxPreviewCache = new Dictionary<string, Texture2D>();
         private readonly HashSet<string> pendingBoxPreviews = new HashSet<string>();
         private readonly List<string> stalePreviewKeys = new List<string>();
-        private VisualElement waterPreviewLayer, objectPreviewLayer;
+        private VisualElement waterPreviewLayer, objectPreviewLayer, triggerPreviewLayer;
+        private Image triggerPlacementPreview;
         private readonly Dictionary<PlanningRoom, PlanningOwnerPreview> ownerPreviewCache = new Dictionary<PlanningRoom, PlanningOwnerPreview>();
         private readonly HashSet<string> activePreviewKeys = new HashSet<string>();
 
@@ -58,6 +60,31 @@ namespace PlanningEditorPrototype
             objectPreviewLayer = new VisualElement { pickingMode = PickingMode.Ignore };
             waterPreviewLayer.StretchToParentSize(); objectPreviewLayer.StretchToParentSize();
             Add(waterPreviewLayer); Add(objectPreviewLayer);
+            triggerPreviewLayer = new VisualElement { name = "TimelineTriggerPreviewLayer", pickingMode = PickingMode.Ignore };
+            triggerPreviewLayer.StretchToParentSize();
+            Add(triggerPreviewLayer);
+            triggerPlacementPreview = new Image { name = "TimelineTriggerPlacementPreview", pickingMode = PickingMode.Ignore, scaleMode = ScaleMode.ScaleToFit };
+            triggerPlacementPreview.style.position = Position.Absolute;
+            triggerPlacementPreview.style.opacity = .5f;
+            triggerPlacementPreview.style.display = DisplayStyle.None;
+            triggerPreviewLayer.Add(triggerPlacementPreview);
+        }
+
+        private void UpdateTriggerPlacementPreview()
+        {
+            if (triggerPreviewLayer == null) return;
+            triggerPreviewLayer.BringToFront();
+            triggerPlacementPreview.BringToFront();
+            var entry = FindPropEntry(detailPropEntryId, detailPropEntryName);
+            bool show = document != null && hasHover && mode != PlanningCanvasMode.World && !editWaterLayer &&
+                LevelEditorState.Tool == LevelEditorTool.Paint && entry?.Prefab != null &&
+                entry.Prefab.GetComponent<Project.BlockFeatures.ContactTimelineTrigger>() != null;
+            triggerPlacementPreview.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!show) return;
+            Rect rect = CellRect(hoveredCell.x, hoveredCell.y);
+            triggerPlacementPreview.image = Project.BlockFeatures.Editor.ContactTimelineEditorPreview.Texture;
+            triggerPlacementPreview.style.left = rect.x; triggerPlacementPreview.style.top = rect.y;
+            triggerPlacementPreview.style.width = rect.width; triggerPlacementPreview.style.height = rect.height;
         }
 
         private void InvalidatePreviewData()

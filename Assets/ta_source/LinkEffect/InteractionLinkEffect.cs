@@ -33,14 +33,14 @@ namespace TaSource.LinkEffect
         [SerializeField] private Vector3 sourceOffset = new Vector3(0f, .3f, 0f);
         [SerializeField, Min(.01f)] private float scanInterval = .12f;
         [SerializeField] private LayerMask targetMask = ~0;
-        [SerializeField, Range(1, 32)] private int maxLinks = 16;
+        [FormerlySerializedAs("maxLinks"), SerializeField, Range(1, 32)] private int prewarmLinks = 16;
         [SerializeField, Range(2, 32)] private int curveSegments = 12;
         [SerializeField, Min(0f)] private float arcHeight = .08f;
         [SerializeField, Min(0f)] private float waveHeight = .055f;
         [SerializeField] private float cameraFacingOffset = -.18f;
         [SerializeField, Range(0f, 1f)] private float opacity = .68f;
         [FormerlySerializedAs("revealDuration"), SerializeField, Min(.05f)]
-        [Tooltip("红蓝线整条淡入、绿线沿长度生长所需的生成时长。")]
+        [Tooltip("红蓝预览线整条淡入所需的生成时长；绿色绳索由独立钩子组件控制。")]
         private float generationDuration = .55f;
         [SerializeField, Min(.05f)] private float dissolveDuration = .3f;
 
@@ -74,6 +74,8 @@ namespace TaSource.LinkEffect
         private readonly Dictionary<int, LinkVisualState> visualStates =
             new Dictionary<int, LinkVisualState>(32);
         private readonly List<int> staleRevealKeys = new List<int>(16);
+        private readonly Stack<LinkVisualState> statePool = new Stack<LinkVisualState>(32);
+        private Vector3[] linePoints;
         private MaterialPropertyBlock properties;
         private PlayerController player;
         private float nextScanTime;
@@ -87,6 +89,7 @@ namespace TaSource.LinkEffect
         public int DetectedTargetCount => candidates.Count;
         public int VisibleLinkCount { get; private set; }
         public Material LinkMaterial => linkMaterial;
+        public int PooledLineCount => lines.Count;
         public Vector3 SourceWorldPosition => sourceAnchor != null
             ? sourceAnchor.position
             : transform.position + transform.TransformVector(new Vector3(sourceOffset.x, 0f, sourceOffset.z))
@@ -96,13 +99,19 @@ namespace TaSource.LinkEffect
         {
             ResolveReferences();
             properties = new MaterialPropertyBlock();
+            if (linkMaterial != null)
+            {
+                int initialCapacity = Mathf.Clamp(prewarmLinks, 1, 32);
+                EnsureLine(initialCapacity - 1);
+                for (int index = 0; index < initialCapacity; index++) statePool.Push(new LinkVisualState());
+            }
         }
 
         private void OnEnable()
         {
             ResolveReferences();
             nextScanTime = 0f;
-            visualStates.Clear();
+            ClearVisualStates();
         }
 
         private void LateUpdate()
@@ -119,7 +128,7 @@ namespace TaSource.LinkEffect
                 ActiveColorId = string.Empty;
                 candidates.Clear();
                 candidateIndices.Clear();
-                visualStates.Clear();
+                ClearVisualStates();
                 HideLines();
                 nextScanTime = 0f;
                 return;
@@ -129,7 +138,7 @@ namespace TaSource.LinkEffect
             {
                 candidates.Clear();
                 candidateIndices.Clear();
-                visualStates.Clear();
+                ClearVisualStates();
                 HideLines();
                 nextScanTime = 0f;
                 return;
@@ -143,7 +152,7 @@ namespace TaSource.LinkEffect
             {
                 previousColorId = ActiveColorId;
                 nextScanTime = 0f;
-                visualStates.Clear();
+                ClearVisualStates();
             }
             if (Time.time >= nextScanTime)
             {
@@ -211,7 +220,8 @@ namespace TaSource.LinkEffect
             candidates.Sort((left, right) =>
             {
                 if (left.Feasible != right.Feasible) return left.Feasible ? -1 : 1;
-                return left.DistanceSqr.CompareTo(right.DistanceSqr);
+                int distance = left.DistanceSqr.CompareTo(right.DistanceSqr);
+                return distance != 0 ? distance : left.Key.CompareTo(right.Key);
             });
         }
 
@@ -287,7 +297,7 @@ namespace TaSource.LinkEffect
             foreach (LinkVisualState state in visualStates.Values)
                 state.SeenThisFrame = false;
 
-            for (int index = 0; index < candidates.Count && visible < maxLinks; index++)
+            for (int index = 0; index < candidates.Count; index++)
             {
                 Candidate candidate = candidates[index];
                 if (candidate.Component == null ||
@@ -298,7 +308,10 @@ namespace TaSource.LinkEffect
 
                 if (!visualStates.TryGetValue(candidate.Key, out LinkVisualState state))
                 {
-                    state = new LinkVisualState { RevealStartedAt = Time.time };
+                    state = statePool.Count > 0 ? statePool.Pop() : new LinkVisualState();
+                    state.RevealStartedAt = Time.time;
+                    state.FadeStartedAt = -1f;
+                    state.RevealProgress = 0f;
                     visualStates.Add(candidate.Key, state);
                 }
                 else if (state.FadeStartedAt >= 0f)
@@ -334,13 +347,16 @@ namespace TaSource.LinkEffect
                     staleRevealKeys.Add(item.Key);
                     continue;
                 }
-                if (visible >= maxLinks) continue;
                 DrawLine(EnsureLine(visible), state, lineThickness, noiseStrength,
                     effectSpeed, dissolve, rangeCenter, rangeRadius);
                 visible++;
             }
             for (int index = 0; index < staleRevealKeys.Count; index++)
-                visualStates.Remove(staleRevealKeys[index]);
+            {
+                int key = staleRevealKeys[index];
+                statePool.Push(visualStates[key]);
+                visualStates.Remove(key);
+            }
             for (int index = visible; index < lines.Count; index++) lines[index].enabled = false;
             VisibleLinkCount = visible;
         }
@@ -402,11 +418,14 @@ namespace TaSource.LinkEffect
             Vector3 delta = state.Destination - state.Source;
             Vector3 side = Vector3.Cross(Vector3.forward, delta.normalized);
             int segments = Mathf.Clamp(curveSegments, 2, 32);
+            if (linePoints == null || linePoints.Length != segments + 1)
+                linePoints = new Vector3[segments + 1];
             line.positionCount = segments + 1;
             // Reserve transparent geometry around the trunk for leaves, petals and sparks.
             // The material thickness still controls the visible core and motif dimensions.
             line.widthMultiplier = Mathf.Max(.01f, lineThickness * 3f);
             if (line.sharedMaterial != linkMaterial) line.sharedMaterial = linkMaterial;
+            float lineLength = 0f;
             for (int index = 0; index <= segments; index++)
             {
                 float t = (float)index / segments;
@@ -421,11 +440,10 @@ namespace TaSource.LinkEffect
                 Vector3 fromRangeCenter = point - rangeCenter;
                 if (fromRangeCenter.sqrMagnitude > rangeRadius * rangeRadius)
                     point = rangeCenter + fromRangeCenter.normalized * rangeRadius;
-                line.SetPosition(index, point);
+                linePoints[index] = point;
+                if (index > 0) lineLength += Vector3.Distance(linePoints[index - 1], point);
             }
-            float lineLength = 0f;
-            for (int index = 1; index <= segments; index++)
-                lineLength += Vector3.Distance(line.GetPosition(index - 1), line.GetPosition(index));
+            line.SetPositions(linePoints);
             properties.Clear();
             properties.SetColor(LinkColorId, state.Tint);
             properties.SetFloat(FeasibleId, state.Feasible ? 1f : 0f);
@@ -463,22 +481,34 @@ namespace TaSource.LinkEffect
 
         private void OnDisable()
         {
-            for (int index = 0; index < lines.Count; index++)
-                if (lines[index] != null) Destroy(lines[index].gameObject);
-            lines.Clear();
+            HideLines();
             candidates.Clear();
             candidateIndices.Clear();
-            visualStates.Clear();
+            ClearVisualStates();
             staleRevealKeys.Clear();
             VisibleLinkCount = 0;
             ActiveColorId = string.Empty;
+        }
+
+        private void ClearVisualStates()
+        {
+            foreach (var state in visualStates.Values) statePool.Push(state);
+            visualStates.Clear();
+        }
+
+        private void OnDestroy()
+        {
+            for (int index = 0; index < lines.Count; index++)
+                if (lines[index] != null) Destroy(lines[index].gameObject);
+            lines.Clear();
+            statePool.Clear();
         }
 
         private void OnValidate()
         {
             scanInterval = Mathf.Max(.01f, scanInterval);
             curveSegments = Mathf.Clamp(curveSegments, 2, 32);
-            maxLinks = Mathf.Clamp(maxLinks, 1, 32);
+            prewarmLinks = Mathf.Clamp(prewarmLinks, 1, 32);
             generationDuration = generationDuration > 0f
                 ? Mathf.Max(.05f, generationDuration) : .55f;
             dissolveDuration = dissolveDuration > 0f

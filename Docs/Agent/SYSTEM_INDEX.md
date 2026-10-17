@@ -1,5 +1,11 @@
 # 系统索引
 
+Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/非Play的SceneView可见，画布独立顶层与半透明放置预览；游戏中图片、占位模型和阴影不可见。资源与meta必须一起交付，见 [CONTACT_TIMELINE_API](Integration/CONTACT_TIMELINE_API.md)。普通藤蔓生长可分步托起顶部重力方块/堆叠并承载玩家，路径受阻停止，搬运/绿绳/燃烧/房间重置交还物理控制，见 [藤蔓托举](../Developer/VINE_GROWTH_LIFT.md)。
+
+新增独立绿色进阶关：`Assets/Scenes/MRoom3.unity`及同名planning/mvmap。仅新区域，4平台/3无重力基座、充能前进断电回位，6门/13保持按钮，尖刺朝通道。新图不用覆盖旧MRoom2或正式Gaming；交付必须带可编辑存档/meta，见 [MROOM3_IMPORT](../Developer/MROOM3_IMPORT.md)。
+
+三色连线：红蓝不再按1/3条截断，预热线条池、复用淡出状态、批量提交顶点；绿色待机绳尖跟鼠标实际位置且不超染色范围，挂接后仍跟目标。PC独立包有焦点时使用DesktopCursorPolicy限制鼠标在游戏窗口，失焦释放，Editor/安卓不锁定。见[连线说明](../../Assets/ta_source/LinkEffect/连接效果使用说明.md)和[绿绳API](Integration/GREEN_HOOK_API.md)。
+
 植物障碍：同房间上下左右真实接触连通燃烧，斜角/孔洞不连通；一次组燃烧一次音效，沿用R/死亡/离区复原。见 [玩法说明](../Developer/GAMEPLAY_REFINEMENTS.md#植物障碍连通燃烧)。主菜单已接新OP `bmg_op`，Gaming保留atmosphere；Boss曲通过`AudioCueIds.MusicBoss`显式调用，见 [音频交接](Integration/AUDIO_HANDOVER.md)。
 
 平台路线：支持四向、双侧独立范围/中心及首程方向，预览/运行共用MovingPlatformPath。信号驱动可选充能往返断电停留（旧默认），或充能至首程端点并保持、断电返回作者位置；遇障等待后续恢复，曲柄进度逻辑不变。长虚线先裁剪视口。见 [机关API](Integration/MECHANISM_SIGNAL_API.md)、[配置说明](../Developer/MECHANISMS_AND_JUMP.md#移动路线与中心)。

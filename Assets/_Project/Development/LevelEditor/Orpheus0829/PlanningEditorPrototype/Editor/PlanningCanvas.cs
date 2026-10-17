@@ -900,6 +900,7 @@ namespace PlanningEditorPrototype
             playerOverlay.style.top = clampedY - halfHeight;
             playerOverlay.style.display = DisplayStyle.Flex;
             playerOverlay.BringToFront();
+            triggerPreviewLayer?.BringToFront();
         }
 
         private void UpdatePlayerThumbnail(GameObject player)
@@ -1943,6 +1944,7 @@ namespace PlanningEditorPrototype
 
         private void UpdateDetailPreviewImages()
         {
+            UpdateTriggerPlacementPreview();
             if (objectPreviewLayer != null) objectPreviewLayer.style.opacity = editWaterLayer ? .2f : 1f;
             if (document == null)
             {
@@ -2693,6 +2695,7 @@ namespace PlanningEditorPrototype
             else
                 PauseEdgePan();
             hasHover = false;
+            UpdateTriggerPlacementPreview();
             MarkDirtyRepaint();
         }
 
@@ -2700,6 +2703,7 @@ namespace PlanningEditorPrototype
         {
             hoveredCell = CellAt(position);
             hasHover = true;
+            UpdateTriggerPlacementPreview();
         }
 
         private void OnPointerUp(PointerUpEvent evt)

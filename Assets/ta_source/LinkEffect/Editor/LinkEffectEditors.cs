@@ -26,7 +26,8 @@ namespace TaSource.LinkEffect.EditorUI
             Add(source, "colorCatalog", "颜色目录");
             Add(source, "targetMask", "目标检测层");
             Add(source, "scanInterval", "扫描间隔（秒）");
-            Add(source, "maxLinks", "最多显示线条数");
+            Add(source, "prewarmLinks", "预热线条池容量");
+            source.Add(new HelpBox("红蓝显示范围内的有效目标，不按数量截断。连线与淡出状态复用对象池；不足时扩容。绿色使用独立单根钩绳。", HelpBoxMessageType.Info));
             Add(source, "sourceAnchor", "链条起点锚点");
             Add(source, "sourceOffset", "无锚点时起点偏移");
             root.Add(source);
@@ -39,7 +40,7 @@ namespace TaSource.LinkEffect.EditorUI
             Add(visual, "cameraFacingOffset", "朝相机偏移");
             Add(visual, "opacity", "透明度");
             PropertyField generationTime = Add(visual, "generationDuration", "线条生成时长（秒）");
-            generationTime.tooltip = "红、蓝线整条淡入的时长；绿线从玩家端沿长度生长的时长。";
+            generationTime.tooltip = "红、蓝预览线整条淡入的时长；不控制绿色钩绳。";
             Add(visual, "dissolveDuration", "断开溶解时间（秒）");
             root.Add(visual);
 

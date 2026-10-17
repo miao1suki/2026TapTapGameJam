@@ -1,5 +1,32 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-17 Timeline编辑器图标与藤蔓顶升（完成，整合交付）
+
+- 用户授权完善后整合并推送main，包括上一轮MRoom3/连线池/鼠标保护；新增UI/棍母.png及meta必须交付。Timeline触发器只在编辑器使用图片并置于最上层，运行时不可见；不把照片当作场景像素美术，不改变触发碰撞或Timeline逻辑。
+- 藤蔓蓝色生长时托起顶部有重力的方块，沿用统一物理控制，测试顶墙/堆叠/载人/禁用与房间重置；不把静态墙或无重力基座强行推走。
+- 已确认正确仓库与Unity版本并fetch，HEAD与origin/main暂时相同；本地全部修改和未跟踪文件备份至Library/TriggerVineIntegrationBackup-*。不动无关Pick/插件/TA气泡/设置，不切换或保存主Unity内存场景。只在-noaudio的Library隔离工程验证；不打包。
+- 关卡交付继续要求Scene、同名planning、源图及meta成套提交，正式Gaming及存档保持策划基线，不只交生成场景。
+- 已实现：棍母图片按单图/无mipmap/最大512导入，保留原GUID；道具栏、画布和非Play的SceneView共用，独立置顶且等比缩放，放置图半透明。玩家贴纸再置顶也不会覆盖标记，Image忽略输入且平移刷新复用，不添加游戏图片Renderer/材质。默认占位MeshRenderer及阴影关闭；运行时禁用组件不会露出立方体，Collider/Timeline照常工作。
+- 藤蔓托举采用VineGrowthLift短时物理租约：接触顶面与整组堆叠完整上移路径先校验、逐物理步MovePosition，动态障碍每步重查；载人复用QueuePlatformDelta，跳离/离开支撑/演出锁后不再承载。三色块/基座原运动器让出写入；完成、受阻、燃烧、禁用/房间重置恢复重力和约束，搬运/绿绳接管先取消租约。不强推静态或无重力物体，不越作者房间边界；保留红块烧藤蔓、蓝块促生长。
+- Unity6000.3.12f1/D3D11静音隔离验证：真实自动FixedUpdate/协程/PhysX79项，含普通与三色块运动器、基座、堆叠、载人/实际跳跃、连续两格、天花板/途中障碍、房间边界/重置、禁用、搬运/绿绳交接及未挂起的红蓝反应；附着图片/图层/实际玩家贴纸/导入设置12项，编辑器绘制/拖拽/三视图与拼接入口51项；旧玩法83项、绿绳真实物理324项、真实输入更新循环37项、全EditMode232/232均通过。
+- 日志Library/TimelineVineLift-Final.log、TimelinePreview-Final.log、TriggerVine-EditorInteractions.log、TriggerVine-Gameplay.log、TriggerVine-GreenPhysics.log、TriggerVine-GreenLive.log、TriggerVine-EditMode.xml。早期夹具有GetComponent假空引用、颜色接触干扰和子Collider取法问题，已修正后重跑；生产代码补齐编辑器命名空间及玩家贴纸后的层级排序，保留初次日志。不将模拟输入、策略单测冒称安卓/多显示器实机或人工完整通关。
+- 20份本轮实现/夹具/资源及MRoom3成套文件与验证副本逐字节一致；照片meta采用Unity实际导入生成的稳定spriteID。正式Gaming与两份规划SHA256仍与策划基线完全一致，MRoom2未改；无关Pick/栏目/TA气泡/项目设置与备份哈希一致。不切换/保存主Unity内存Scene，未打包、未修改运行时网络或Android配置。交接见CONTACT_TIMELINE_API、VINE_GROWTH_LIFT及本页下方MRoom3记录。
+- 本次整合又复测MRoom3真实开窗/自动同步/关闭重开与Play机关62项通过（Library/TriggerVine-MRoom3.log）。实际暂存区的规划存档守卫及diff检查通过；最终fetch的origin/main仍为897e3c4，与整合前HEAD相同，无需制造空合并。只提交本任务56份文件，不包含无关本地内容；保留备份与已有stash。
+
+## 2026-10-17 新增 MRoom3、连线对象池与鼠标保护（本地完成，纳入本次整合）
+
+- 本条原记录的“不提交/推送”是上一轮交接时状态；用户随后授权与Timeline编辑器图标、藤蔓托举一起整合推送main。本次同时交付以下Scene、同名planning、源JSON和meta，不只交场景；旧MRoom2及正式Gaming不被新测试关覆盖。
+
+- 用户要求独立新场景，仅导入 m-room-3.mvmap.json 的绿色能力进阶关，不更新旧 MRoom2 或正式 Gaming；基座实例无重力，所有平台充能前进、断电回作者位置。按名称与稳定ID接线，交付Scene、同名planning、源JSON及meta，不能只交生成场景。
+- 用户后续覆盖条数方案：不再限制为1/3条，红蓝范围内有效目标均可显示，改为预热线条池/复用淡出状态/批量提交顶点，保留同逻辑藤蔓只连最近节段。绿色待机绳尖跟随实际鼠标位置并限制在染色范围，挂接后仍跟真实目标。
+- PC多显示器保护统一DesktopCursorPolicy：Windows/Linux独立包聚焦时Confined，菜单/暂停共用，失焦释放；Editor/安卓不锁鼠标，不用Locked/强行回中。遵守原场景流程和统一字体规范，不更改UI布局或文字资源。
+- 保留无关Pick、栏目、TA气泡、插件和本地设置；仅静音Library/FlowRetirementProbe生成与回归，不切换/保存主Unity内存场景。本轮不自动提交、合并、推送或打包。
+- 新场景 Assets/Scenes/MRoom3.unity、同名planning、原始mvmap及meta均已落盘。32个源分类仅包含绿色能力进阶关与用户确认误归旧区域的平台2；246个物体、883逻辑占格，696墙格/7水格/40藤蔓/68朝通道尖刺/10重生点。四个平台共用三个无重力基座，六门分别绑定1/2/3/3/3/1个保持按钮；远处竖平台按确认移到X=60，保留X=61墙。颜色与能力默认锁定，不额外放钥匙。
+- Unity6000.3.12f1/D3D11静音隔离：生成与配对存档4964项，真实附着编辑器开关/重开/应用与Play机关62项；绿绳真实物理324项、键鼠/手柄/触摸模拟输入循环37项；连线池/鼠标位置/游标策略199项通过。36目标同时显示，复用渲染器/淡出状态，预热后300次密集绘制托管分配为0。对象池不能消除大量透明线条的GPU绘制成本，不承诺任意数量零开销。
+- 已查看实际相机全景、上部及下部截图，保存在 Library/FlowRetirementProbe/Library/MRoom3-Overview.png、MRoom3-Upper.png、MRoom3-Lower.png；仅隔离Play临时解锁用于观察，不保存回默认锁色场景。测试源与主工程12份实现/夹具逐字节一致，规划存档提交守卫通过，真实暂存区保持为空；正式Gaming及配对存档、旧MRoom2未改动。
+- 日志 Library/MRoom3-Import.log、MRoom3-Live2.log、MRoom3-GreenPhysics.log、MRoom3-GreenLive.log、LinkPoolFinal2.log。首次机关夹具把红块停到房间外而被正确复位，已修正测试停放位置重跑；首次最终池回归命令填错命名空间，正确全局入口重跑通过，保留原日志。未做PC多显示器实机、安卓或人工完整通关验收，不以纯游标策略测试冒称原生窗口锁定验证。
+- 最终项目EditMode232/232通过（Library/MRoom3-EditMode.xml），包含新增4项聚焦游标策略；git diff --check通过。正式Gaming与配对planning及正式关卡JSON的SHA256保持原值。本轮未提交、推送、合并或打包；交接继续要求场景、同名可编辑存档、源图与meta成套同步。
+
 ## 2026-10-17 向上外角与宽容绿绳整合（完成，已整合）
 
 - 用户授权本轮完成后整合并推送：复查向上翻越藤蔓/绿块外角，补全缺少的真实表面交接；绿色钩子改合法点击即挂接、出线仅视觉，挂接维持距离增加充分冗余，不因轻微越界频繁断绳。

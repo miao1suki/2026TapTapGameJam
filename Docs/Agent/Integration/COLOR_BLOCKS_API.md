@@ -43,6 +43,8 @@ HSVColorFadeManager.Instance.SetHsv("green", saturation: 1f, whiteAmount: 0f, se
 
 ## 玩家运动接入
 
+普通藤蔓生长支持托举顶面动态重力方块，含三色方块/重力基座、堆叠和载人。`VineGrowthLift` 分步上移前检查完整行程，遇静态/无重力障碍或房间边界停止；完成、受阻、燃烧、禁用/重置交还重力与约束。搬运和绿钩子先取消托举再接管，不直接写玩家Transform，载人复用QueuePlatformDelta；保留红烧藤蔓、蓝促生长的既有反应。见 [托举说明](../../Developer/VINE_GROWTH_LIFT.md)。
+
 藤蔓用 `SetClimbTopHeight(source, worldHeight)` 更新根系顶部，先 `EnterClimb(source)`；退出与重置清理记录。气泡/蒸汽/弹跳调用既有 `ApplyVerticalBounce` / `ApplyVerticalBounceImmediate`，由 PlayerController 增强向上速度并提供短暂保护，不在功能组件写 Rigidbody、不逐帧累加冲量。顶部向内、中段向外蹬跳，参数见玩家中文 Inspector。
 
 ## 像素化与藤蔓根系

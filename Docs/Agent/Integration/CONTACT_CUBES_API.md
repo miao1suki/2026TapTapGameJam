@@ -32,6 +32,8 @@
 
 `CarryableFeature` 通过可选 `ICarryMotionParticipant` 对接 ContactCubeMotion：`SetCarrySuspended(true)` 立即清除接触/水柱，保留长度，清除速度并挂起刚体；CarryTargetMotion 独占动画位姿并关闭 Collider。放下/复位动画完成或 Cancel 时回调解除挂起，同步 Rigidbody 姿态、恢复重力与碰撞。房间重置先 Cancel，再恢复作者姿态/长度；不能同时运行两个刚体写入者。
 
+普通藤蔓生长时可通过 `VineGrowthLift` 短时托举顶部重力方块及其堆叠。ContactCubeMotion.FixedUpdate 在租约期间跳过重力/落稳约束写入并保留玩家碰撞；搬运、绿钩子接管、禁用和房间重置先Cancel租约，避免多写入者或错误保存临时无重力状态。颜色反应仍保留，红块接触藤蔓仍会燃烧。详见 [藤蔓托举](../../Developer/VINE_GROWTH_LIFT.md)。
+
 `CanPlaceCarriedAt(worldPosition)` 校验平移后的完整实体 OBB，含伸长绿块，不只检查根的一格；拒绝墙体、玩家实体及查询缓冲溢出的落点。来源房间校验仍由 CarryableFeature 调用 CanPlaceInAuthoredRegion，区域根中心规则不变。玩家选择目标沿用根格相邻规则，未新增按长块任意节段拾取。输入、提示和头顶飞行动画全部复用原搬运系统。
 
 绿色实体挂 HorizontalCubeVine：母块与伸长实体落稳后两侧可通过 EnterClimb/ExitClimb 攀爬，顶部高度随生长更新；横向长出部分上方脚部接触或下方头部接触会续租玩家横向攀附，原始一格不进入横向攀附，脱离自动清除。`PlayerController.SetHorizontalVineSurface(Component source, float rootY, float speed)` / `ClearHorizontalVineSurface(source)` 只发送目标高度和移动速度，由玩家自己的物理步处理。新增状态 HorizontalClimbing=6，不改原枚举编号和输入键位；左右缓行、维持高度，跳跃操作脱手下落并短暂禁止重吸附。租约超时、来源禁用、玩家重置都会清除。

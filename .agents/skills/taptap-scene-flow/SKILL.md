@@ -22,7 +22,7 @@ description: 2026TapTap 正式场景流程规范；修改启动、MainMenu、Gam
 - `GameSceneCatalog` 只登记 MainMenu 与 Gaming 两个流程场景。
 - 运行时存在兜底：catalog 为空时从 `Resources/GameSceneCatalog` 加载，缺少流程根或桥接组件时自动补齐；场景文件仍必须保持正确接线。
 - 加载期间冻结 MainMenu 背景滚动；玩家输入锁从进入 Gaming 起保持到黑屏扩散完全结束。
-- MainMenu 存活期间必须恒定保证鼠标可见且 `lockState` 为 `None`，任何染色、搬运或暂停逻辑遗留的隐藏状态都要在主菜单帧更新中纠正。
+- MainMenu 存活期间必须恒定保证鼠标可见；2026-10-17按用户要求，Windows/Linux独立包有焦点时通过DesktopCursorPolicy使用Confined限制在游戏窗口，失焦立即释放。Editor/安卓仍None。不能恢复旧的每帧None或Locked居中路径；绝对指针与菜单点击保留。
 - 开始菜单退出游戏必须经 `StartMenuFlowBridge` 请求 `GameSceneLoader`：黑屏反向缩圈到中心、保持 1 秒后再退出，不允许按钮直接调用 `Application.Quit`。
 
 ## Gaming

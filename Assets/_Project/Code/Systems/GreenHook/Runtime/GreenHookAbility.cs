@@ -70,6 +70,7 @@ namespace Project.GreenHook
         [SerializeField, Min(0f)] private float effectSpeed = 7f;
 
         private LineRenderer line;
+        private Vector3[] linePoints;
         private MaterialPropertyBlock properties;
         private IDisposable controlLock;
         private HookPhase phase;
@@ -794,14 +795,13 @@ namespace Project.GreenHook
                 return;
             }
 
-            Vector2 direction = rawDirection.normalized;
-            float cellSize = Mathf.Max(
-                .0001f,
-                GridCellSizeUtility.Resolve(this));
-            Vector3 end =
-                ResolveSourcePoint() +
-                new Vector3(direction.x, direction.y, 0f) *
-                (cellSize * Mathf.Max(.01f, idleLengthCells));
+            // Follow the actual pointer position, not a fixed one-cell direction
+            // indicator. Preview remains within launch range; attached rope still
+            // follows its real local target anchor, independent of the pointer.
+            Vector3 end = pointerWorldPoint;
+            Vector3 rangeCenter = sensor != null ? sensor.transform.position : transform.position;
+            float radius = sensor != null ? sensor.ScanRadius : GridCellSizeUtility.Resolve(this) * idleLengthCells;
+            end = rangeCenter + Vector3.ClampMagnitude(end - rangeCenter, radius);
             UpdateLine(end, idleOpacity, 1f, 0f);
         }
 
@@ -833,11 +833,14 @@ namespace Project.GreenHook
             Vector3 delta = targetPoint - sourcePoint;
             Vector3 side = Vector3.Cross(Vector3.forward, delta.normalized);
             int segments = Mathf.Clamp(curveSegments, 2, 32);
+            if (linePoints == null || linePoints.Length != segments + 1)
+                linePoints = new Vector3[segments + 1];
             line.positionCount = segments + 1;
             line.widthMultiplier = Mathf.Max(
                 .01f,
                 GetMaterialFloat(LineThicknessId, .2f) * 3f);
 
+            float length = 0f;
             for (int index = 0; index <= segments; index++)
             {
                 float t = (float)index / segments;
@@ -859,16 +862,10 @@ namespace Project.GreenHook
                     targetPoint,
                     t) +
                     side * envelope * (arcHeight + motion);
-                line.SetPosition(index, point);
+                linePoints[index] = point;
+                if (index > 0) length += Vector3.Distance(linePoints[index - 1], point);
             }
-
-            float length = 0f;
-            for (int index = 1; index <= segments; index++)
-            {
-                length += Vector3.Distance(
-                    line.GetPosition(index - 1),
-                    line.GetPosition(index));
-            }
+            line.SetPositions(linePoints);
 
             properties.Clear();
             properties.SetColor(LinkColorId, new Color(.08f, 1f, .08f));

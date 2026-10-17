@@ -18,6 +18,7 @@ namespace Project.GreenHook
         {
             if (active) return;
             if (body == null) body = GetComponent<Rigidbody>();
+            VineGrowthLift.Cancel(body);
             wasKinematic = body.isKinematic; usedGravity = body.useGravity; savedConstraints = body.constraints;
             active = true; body.isKinematic = false; body.useGravity = false;
             SetGreenHookVelocity(Vector3.zero);

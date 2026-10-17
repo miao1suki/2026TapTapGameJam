@@ -110,9 +110,9 @@ namespace Project.BlockFeatures
             new List<GameObject>();
         private readonly Collider[] proximityBuffer =
             new Collider[32];
-        private readonly Collider[] growthObstacleBuffer = new Collider[128];
         private Collider growthBlocker;
         private bool growthBlocked;
+        private VineGrowthLift growthLift;
         private readonly Dictionary<int, PlayerController> climbingPlayers =
             new Dictionary<int, PlayerController>();
         private readonly HashSet<int> foundPlayerIds =
@@ -450,10 +450,17 @@ namespace Project.BlockFeatures
             }
             growthTargetCount = targetCount;
 
-            if (growInstantly)
+            growthLift ??= new VineGrowthLift(this);
+            if (growInstantly && !growthLift.HasBodies)
             {
                 while (CurrentGrowthBlocks < targetCount)
                 {
+                    if (!CanSpawnSegment(CurrentGrowthBlocks)) break;
+                    if (growthLift.HasBodies)
+                    {
+                        growthRoutine = StartCoroutine(GrowRoutine(targetCount));
+                        return;
+                    }
                     if (SpawnSegment(
                         CurrentGrowthBlocks,
                         false) == null)
@@ -472,6 +479,7 @@ namespace Project.BlockFeatures
 
         public void ResetGrowth()
         {
+            growthLift?.End();
             StopBurn();
             if (growthRoutine != null)
             {
@@ -598,6 +606,28 @@ namespace Project.BlockFeatures
         {
             while (CurrentGrowthBlocks < targetCount)
             {
+                if (!CanSpawnSegment(CurrentGrowthBlocks)) break;
+                if (growthLift.HasBodies)
+                {
+                    growthLift.Begin();
+                    while (growthLift.Active && growthLift.Progress < .99999f)
+                    {
+                        yield return new WaitForFixedUpdate();
+                        if (!growthLift.Advance(GridCellWorldSize * Time.fixedDeltaTime / Mathf.Max(.1f, growthInterval))) break;
+                        visibleCells = targetCells = CurrentGrowthBlocks + 1 + growthLift.Progress;
+                        visualProgress = visualTarget = maxGrowthBlocks > 0 ? (visibleCells - 1) / maxGrowthBlocks : 0;
+                    }
+                    yield return new WaitForFixedUpdate();
+                    bool completed = growthLift.Active && growthLift.Progress >= .99999f;
+                    growthLift.End();
+                    if (!completed)
+                    {
+                        growthBlocked = true; growthBlocker = growthLift.Blocker;
+                        targetCells = CurrentGrowthBlocks + 1;
+                        visualTarget = maxGrowthBlocks > 0 ? (float)CurrentGrowthBlocks / maxGrowthBlocks : 0;
+                        break;
+                    }
+                }
                 if (SpawnSegment(
                     CurrentGrowthBlocks,
                     true) == null)
@@ -664,26 +694,10 @@ namespace Project.BlockFeatures
             Vector3 center = position + transform.rotation * Vector3.Scale(shape != null ? shape.center : Vector3.zero, scale);
             Vector3 half = shape != null ? Vector3.Scale(shape.size * .5f, scale) : Vector3.one * (GridCellWorldSize * .5f);
             half = Vector3.Max(half - Vector3.one * (GridCellWorldSize * .02f), Vector3.one * .001f);
-            int count = Physics.OverlapBoxNonAlloc(center, half, growthObstacleBuffer,
-                transform.rotation, ~0, QueryTriggerInteraction.Ignore);
-            // A saturated query must not allow a segment through an unexamined solid.
-            if (count == growthObstacleBuffer.Length) { growthBlocked = true; return false; }
-            Collider ownShape = GetComponent<Collider>();
-            for (int hitIndex = 0; hitIndex < count; hitIndex++)
+            growthLift ??= new VineGrowthLift(this);
+            if (!growthLift.Prepare(center, half, transform.rotation, GridCellWorldSize))
             {
-                Collider hit = growthObstacleBuffer[hitIndex];
-                if (hit == null || !hit.enabled || hit.isTrigger || !hit.gameObject.activeInHierarchy ||
-                    hit.transform.IsChildOf(Root.transform) ||
-                    Physics.GetIgnoreLayerCollision(gameObject.layer, hit.gameObject.layer) ||
-                    (ownShape != null && Physics.GetIgnoreCollision(ownShape, hit))) continue;
-                var vine = hit.GetComponentInParent<ClimbableVineFeature>();
-                if (vine != null && vine.Root == Root) continue;
-                // Water and effect colliders do not describe solid growth obstructions.
-                if (hit.GetComponentInParent<WaterVisualFeature>() != null ||
-                    hit.GetComponentInParent<InteractiveWater.InteractiveWater>() != null) continue;
-                growthBlocker = hit;
-                growthBlocked = true;
-                return false;
+                growthBlocked = true; growthBlocker = growthLift.Blocker; return false;
             }
             return true;
         }
@@ -790,6 +804,7 @@ namespace Project.BlockFeatures
         {
             if (Root != this) { Root.BeginBurn(); return; }
             if (burning || burned || !CanRunFeature) return;
+            growthLift?.End();
             burning = true;
             AudioCuePlayer.Play(AudioCueIds.PlantBurn);
             if (growthRoutine != null) StopCoroutine(growthRoutine);

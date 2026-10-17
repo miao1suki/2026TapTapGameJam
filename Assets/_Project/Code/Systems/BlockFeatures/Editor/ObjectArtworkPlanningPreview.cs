@@ -22,6 +22,7 @@ namespace Project.BlockFeatures.Editor
         public readonly float RotationDegrees;
         public readonly bool FlipX, Tile;
         public readonly bool Hidden;
+        public readonly bool EditorOverlay;
         public PlanningArtworkPreview(Sprite sprite, bool tile = false, float rotationDegrees = 0, bool flipX = false)
         {
             Sprite = sprite; Texture = sprite != null ? sprite.texture : null;
@@ -29,12 +30,19 @@ namespace Project.BlockFeatures.Editor
             UV = Texture != null ? new Rect(rect.x / Texture.width, rect.y / Texture.height,
                 rect.width / Texture.width, rect.height / Texture.height) : default;
             Cells = GridArtworkMetrics.SpriteCells(sprite, GridArtworkMetrics.SourcePixelScale(sprite));
-            RotationDegrees = rotationDegrees; FlipX = flipX; Tile = tile; Hidden = sprite == null;
+            RotationDegrees = rotationDegrees; FlipX = flipX; Tile = tile; Hidden = sprite == null; EditorOverlay = false;
+        }
+        internal PlanningArtworkPreview(Texture2D texture, Vector2 footprint)
+        {
+            Sprite = null; Texture = texture; UV = new Rect(0, 0, 1, 1);
+            float fit = texture != null ? Mathf.Min(footprint.x / texture.width, footprint.y / texture.height) : 0f;
+            Cells = texture != null ? new Vector2(texture.width, texture.height) * fit : Vector2.zero;
+            RotationDegrees = 0; FlipX = Tile = false; Hidden = texture == null; EditorOverlay = true;
         }
         internal PlanningArtworkPreview(PlanningArtworkPreview source, Rect uv, Vector2 cells)
         {
             Sprite = source.Sprite; Texture = source.Texture; UV = uv; Cells = cells;
-            RotationDegrees = source.RotationDegrees; FlipX = source.FlipX; Tile = source.Tile; Hidden = source.Hidden;
+            RotationDegrees = source.RotationDegrees; FlipX = source.FlipX; Tile = source.Tile; Hidden = source.Hidden; EditorOverlay = source.EditorOverlay;
         }
     }
 
@@ -70,6 +78,12 @@ namespace Project.BlockFeatures.Editor
             if (overrides != null && overrides.Count == 0) overrides = null;
             var cacheKey = (prefab.GetInstanceID(), footprintCells);
             if (overrides == null && defaults.TryGetValue(cacheKey, out preview)) return true;
+            if (prefab.GetComponent<ContactTimelineTrigger>() != null)
+            {
+                preview = new PlanningArtworkPreview(ContactTimelineEditorPreview.Texture, footprintCells);
+                if (overrides == null) defaults[cacheKey] = preview;
+                return true;
+            }
             if (library == null) library = ObjectArtworkLibrary.Load();
             if (library == null) return false;
 

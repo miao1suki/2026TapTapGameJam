@@ -57,13 +57,14 @@ namespace PlanningEditorPrototype
             if (!ResolveArtworkPreview(box,out var artwork)) return false;
             if (artwork.Hidden || artwork.Texture == null) return true;
             bool water = PlanningWaterLayerUtility.IsWater(box,palette);
-            VisualElement layer = water ? waterPreviewLayer : objectPreviewLayer;
+            VisualElement layer = artwork.EditorOverlay ? triggerPreviewLayer : water ? waterPreviewLayer : objectPreviewLayer;
             Rect target = CellRect(rect.x,rect.y,rect.width,rect.height);
             Vector2 native = artwork.Cells;
             if (native.x <= 0 || native.y <= 0) return true;
             bool rotated = Mathf.Abs(Mathf.DeltaAngle(artwork.RotationDegrees,0)) % 180 > 45;
             Color tint = mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge ? new Color(.55f,.85f,1f) : Color.white;
             if (water) tint.a = editWaterLayer ? 1f : .82f;
+            if (artwork.EditorOverlay) tint.a = .75f;
             if (!artwork.Tile)
             {
                 Vector2 size = native * GridSize;
@@ -129,6 +130,7 @@ namespace PlanningEditorPrototype
             image.style.rotate=new Rotate(new Angle(-artwork.RotationDegrees,AngleUnit.Degree));
             image.style.scale=new Scale(new Vector3(artwork.FlipX ? -1 : 1,1,1));
             image.style.display=DisplayStyle.Flex; active.Add(key);
+            if (artwork.EditorOverlay) triggerPlacementPreview.BringToFront();
         }
 
         private bool TryAddPlatformPreview(PlanningBox box, RectInt rect, HashSet<string> active)

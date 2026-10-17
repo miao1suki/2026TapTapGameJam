@@ -27,8 +27,8 @@ namespace Project.GreenHook.Editor
             idle.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "idleLengthCells",
-                "待机长度（格）",
-                "绿色选中时玩家身上探出的预览藤蔓长度。"));
+                "无传感器时后备范围（格）",
+                "正常待机绳尖跟随鼠标位置，并限制在染色范围内；仅缺少传感器时使用此值。"));
             idle.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "idleOpacity",

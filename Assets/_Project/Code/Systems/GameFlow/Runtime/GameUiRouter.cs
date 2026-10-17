@@ -208,8 +208,7 @@ namespace Project.GameFlow
                 escMenu.PlayClose(CompletePauseClose);
             }
 
-            Cursor.visible = value;
-            Cursor.lockState = CursorLockMode.None;
+            DesktopCursorPolicy.Apply(value);
             if (playSound)
             {
                 GameAudioService.Instance?.PlayPause();
@@ -237,6 +236,7 @@ namespace Project.GameFlow
 
         private void Update()
         {
+            DesktopCursorPolicy.Apply(Cursor.visible);
             if (hudPlatform != GameInput.PlatformMode) RefreshPlatformHud();
             if (MobileControlLayout.IsEditing || Project.Privacy.AndroidPrivacyPolicy.IsShowing) return;
             if (IsInitialized &&
@@ -260,6 +260,8 @@ namespace Project.GameFlow
         {
             BindFlow();
         }
+
+        private void OnApplicationFocus(bool focused) => DesktopCursorPolicy.Apply(Cursor.visible, focused);
 
         private void OnDisable()
         {
@@ -372,8 +374,7 @@ namespace Project.GameFlow
             SetPaused(false, false, true);
             bool menuLike = sceneId == GameFlowSceneId.MainMenu ||
                             sceneId == GameFlowSceneId.Ending;
-            Cursor.visible = menuLike;
-            Cursor.lockState = CursorLockMode.None;
+            DesktopCursorPolicy.Apply(menuLike);
             switch (sceneId)
             {
                 case GameFlowSceneId.MainMenu:

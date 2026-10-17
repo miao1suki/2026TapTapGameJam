@@ -6,6 +6,8 @@
 
 绿色能力仍由 `PlayerColorWheel → GreenHookAbility.TryLaunch` 发射，距离沿用 `PlayerInteractionSensor.ScanRadius`。待机预览与发射自由朝向指针，不吸附四向；端点保存真实点击位置的局部坐标，移动中的目标与玩家会更新绳子端点。出线点共用 `InteractionLinkEffect.SourceWorldPosition`（现有标准玩家为位置上移0.3格），无该组件时才使用后备偏移。红蓝表现不改。
 
+待机端点现跟随鼠标在玩家平面的实际位置（同方向不同距离也改变绳长），超过ScanRadius时仅将可见端点裁至范围边界；不再固定一格长度。`idleLengthCells`仅为缺少传感器时的后备范围。点击确认后仍以真实局部目标锚点为准，鼠标移动不会带走已挂接绳尖；发射5格/维持8格及0.4秒宽限不变。单根绿色LineRenderer持续复用，复用顶点数组并批量SetPositions，不为待机/发射/换点反复创建线条。
+
 合法点击通过真实目标、发射范围、当前区域与能力资格检查后，当帧挂接并取得唯一控制句柄，立即开始拉取/荡绳，不等待绳头飞行。出线使用与换点相同的视觉插值（默认0.1秒），不参与命中与物理时序；无效点击不取得控制锁。不要恢复旧四向射线/高起点造成实际目标漏接、先锁人再等待命中的路径。旧伸出/收回字段与内部状态仅保留兼容，不是当前正常点击流程。
 
 已挂接时 `PlayerInputDriver` 先通过 `PlayerController.UpdateGreenHookInput(move, release)` 分发输入，再处理普通控制锁；同时刷新世界指针并将 PointerPrimary 转发至现有选色入口以切换目标。现有 Jump 或 Interact 动作主动脱钩，同帧脱钩优先于换点；键鼠、手柄、触摸沿用原动作映射，不增设硬编码按键。Respawn 仍可返回重生点。

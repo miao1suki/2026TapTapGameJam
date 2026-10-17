@@ -61,6 +61,7 @@ namespace Project.ContactCubes
         // Carry controller calls true while held, false after placing; it owns held poses.
         public void SuspendMotion(bool suspended)
         {
+            VineGrowthLift.Cancel(body);
             IsSuspended = suspended; velocities.Clear(); hadHorizontalPush = false;
             gravityProtectedUntil = 0;
             if (suspended)
@@ -84,6 +85,7 @@ namespace Project.ContactCubes
 
         public void BeginGreenHookPull()
         {
+            VineGrowthLift.Cancel(body);
             if (greenHookActive || body == null || cube == null)
             {
                 return;
@@ -185,6 +187,7 @@ namespace Project.ContactCubes
         }
         private void FixedUpdate()
         {
+            if (VineGrowthLift.IsLifting(body)) { RestorePlayerCollision(); return; }
             if (shape == null || !shape.enabled || IsSuspended ||
                 greenHookActive || body.isKinematic)
             {
@@ -258,6 +261,7 @@ namespace Project.ContactCubes
         }
         public void ResetForRoom()
         {
+            VineGrowthLift.Cancel(body);
             if (greenHookActive)
             {
                 EndGreenHookPull(false);
@@ -273,6 +277,7 @@ namespace Project.ContactCubes
         }
         private void OnDisable()
         {
+            VineGrowthLift.Cancel(body);
             if (greenHookActive)
             {
                 EndGreenHookPull(false);
