@@ -148,6 +148,17 @@ namespace Project.GreenHook.Editor
                     target.GetComponent<Rigidbody>().position = player.Motor.position + Vector3.right * 6f;
                     Physics.SyncTransforms(); stage = 12; next = Time.time + .1f;
                 }
+                else if (stage == 12)
+                {
+                    Check(hook.IsHookActive, "real loop six-cell separation keeps rope " + variant);
+                    target.GetComponent<Rigidbody>().position = player.Motor.position + Vector3.right * 20f;
+                    Physics.SyncTransforms(); stage = 13; next = Time.time + .1f;
+                }
+                else if (stage == 13)
+                {
+                    Check(hook.IsHookActive, "real loop transient overshoot keeps rope " + variant);
+                    stage = 14; next = Time.time + .4f;
+                }
                 else
                 {
                     Check(!hook.IsHookActive && !player.IsControlLocked && !player.IsGreenHookActive,

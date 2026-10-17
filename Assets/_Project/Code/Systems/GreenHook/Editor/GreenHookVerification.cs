@@ -50,7 +50,8 @@ namespace Project.GreenHook.Editor
         }
         private static void Wait()
         {
-            if (!EditorApplication.isPlaying || EditorApplication.isCompiling) return;
+            // The grace-time cases backdate a real timestamp by 0.41s; allow the play clock to start first.
+            if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .6f) return;
             EditorApplication.update -= Wait;
             try { RunCases(); Finish(true, "PASS " + checks); }
             catch (Exception error) { Debug.LogException(error); Finish(false, error.ToString()); }
@@ -222,8 +223,30 @@ namespace Project.GreenHook.Editor
                 else player.transform.position = player.Motor.position = origin - Vector3.right * 3f;
                 Physics.SyncTransforms();
                 Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
+                Check(hook.IsHookActive && player.ControlLockDepth == 1, label + " six cells retains attached slack");
+                if (movePlayer == 0) obj.transform.position = body.position = origin + Vector3.right * 9f;
+                else player.transform.position = player.Motor.position = origin - Vector3.right * 6f;
+                Physics.SyncTransforms();
+                Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
+                Check(hook.IsHookActive, label + " transient overshoot retains connection");
+                Set(hook, "outOfRangeSince", Time.time - .2f);
+                Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
+                Check(hook.IsHookActive, label + " grace does not expire early");
+                // Returning inside the enlarged radius clears the continuous-outside timer.
+                if (movePlayer == 0) obj.transform.position = body.position = origin + Vector3.right * 6f;
+                else player.transform.position = player.Motor.position = origin - Vector3.right * 3f;
+                Physics.SyncTransforms();
+                Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
+                Check((float)typeof(GreenHookAbility).GetField("outOfRangeSince", Private).GetValue(hook) < 0f,
+                    label + " returning inside resets grace");
+                if (movePlayer == 0) obj.transform.position = body.position = origin + Vector3.right * 9f;
+                else player.transform.position = player.Motor.position = origin - Vector3.right * 6f;
+                Physics.SyncTransforms();
+                Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
+                Set(hook, "outOfRangeSince", Time.time - .41f);
+                Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
                 Check(!hook.IsHookActive && !player.IsGreenHookActive && !player.IsControlLocked,
-                    label + " real anchor outside radius releases once");
+                    label + " sustained nine-cell separation releases once");
                 if (kind == 3) Check(player.Motor.linearVelocity.y > 1.9f, label + " range release preserves swing momentum");
                 Check(!(obj.GetComponent<IGreenHookMotion>() is GreenHookBodyMotion baseMotion) || !baseMotion.IsHookMoving,
                     label + " base physics ownership released");
@@ -245,8 +268,10 @@ namespace Project.GreenHook.Editor
             Check(Vector3.Distance(player.Motor.position, obj.transform.position) <= 5.001f,
                 "maximum-length swing stays within range");
             var externalLock = player.AcquireControlLock(new object());
-            obj.transform.position = obj.GetComponent<Rigidbody>().position = player.Motor.position + Vector3.right * 6f;
+            obj.transform.position = obj.GetComponent<Rigidbody>().position = player.Motor.position + Vector3.right * 9f;
             Physics.SyncTransforms(); Invoke(hook, "FixedUpdate");
+            Check(hook.IsHookActive, "external lock does not remove range grace");
+            Set(hook, "outOfRangeSince", Time.time - .41f); Invoke(hook, "FixedUpdate");
             Check(!hook.IsHookActive && player.ControlLockDepth == 1 && player.Motor.linearVelocity.sqrMagnitude < .0001f,
                 "range cleanup respects external control lock");
             externalLock.Dispose();
@@ -264,14 +289,21 @@ namespace Project.GreenHook.Editor
                 var anchor = obj.GetComponent<IGreenHookTarget>();
                 Check(anchor != null && anchor.CanBeGreenHooked(player.gameObject) && anchor.GreenHookMotionMode == GreenHookMotionMode.Swing,
                     "plant is an unlocked swing anchor " + index);
-                var hook = Attach(player, anchor);
+                var camera = new GameObject("ImmediateSwingCamera").AddComponent<Camera>();
+                camera.tag = "MainCamera"; camera.orthographic = true; camera.orthographicSize = 7f;
+                camera.transform.position = origin + new Vector3(0, 1, -10);
+                Physics.SyncTransforms();
+                var hook = player.GetComponent<GreenHookAbility>();
+                Check(hook.TryLaunch(camera.WorldToScreenPoint(obj.transform.position), true) == GreenHookLaunchResult.Success &&
+                    hook.IsSwinging && player.CanDriveGreenHook && player.ControlLockDepth == 1,
+                    "plant click starts swinging in same call " + index);
                 Vector3 anchorStart = obj.transform.position;
                 hook.DriveInput(Vector2.right, false); Step(hook, player, 650);
                 Check(hook.IsSwinging && player.ControlLockDepth == 1 && (obj.transform.position - anchorStart).sqrMagnitude < .001f,
                     "plant swing persists without moving anchor " + index);
                 hook.DriveInput(Vector2.zero, true);
                 Check(!player.IsControlLocked && !player.IsGreenHookActive, "plant swing releases " + index);
-                Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(obj);
+                Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(obj); Object.DestroyImmediate(camera.gameObject);
             }
         }
 
@@ -292,14 +324,13 @@ namespace Project.GreenHook.Editor
                 Physics.SyncTransforms();
                 Vector2 pointer = camera.WorldToScreenPoint(obj.transform.position);
                 var result = hook.TryLaunch(pointer, true);
-                Check(result == GreenHookLaunchResult.Success && hook.IsExtending, "real screen launch " + kind);
-                Check(!player.IsControlLocked && !player.IsGreenHookActive, "extension does not freeze the motor " + kind);
+                Check(result == GreenHookLaunchResult.Success && hook.IsPulling, "real screen click immediately attaches " + kind);
+                Check(player.CanDriveGreenHook && player.ControlLockDepth == 1, "same-frame click owns exactly one motor lock " + kind);
                 Vector3 source = player.GetComponent<InteractionLinkEffect>().SourceWorldPosition;
                 var resolve = (Vector3)Invoke(hook, "ResolveSourcePoint");
                 Check((resolve - source).sqrMagnitude < .00001f, "same source as red and blue " + kind);
                 Vector2 direction = (Vector2)typeof(GreenHookAbility).GetField("hookDirection", Private).GetValue(hook);
                 Check(Mathf.Abs(direction.x) > .1f && Mathf.Abs(direction.y) > .1f, "visual direction is not snapped " + kind);
-                Set(hook, "extensionElapsed", 1f); Invoke(hook, "UpdateExtension");
                 Check(hook.IsPulling && player.ControlLockDepth == 1, "off-axis target actually attaches " + kind);
                 Vector3 start = obj.GetComponent<Rigidbody>().position;
                 Step(hook, player, 5);
@@ -321,7 +352,6 @@ namespace Project.GreenHook.Editor
                 camera.transform.position = origin + new Vector3(0, 0, -10); Physics.SyncTransforms();
                 Check(hook.TryLaunch(camera.WorldToScreenPoint(obj.transform.position), true) == GreenHookLaunchResult.Success,
                     "free angle launch " + index);
-                Set(hook, "extensionElapsed", 1f); Invoke(hook, "UpdateExtension");
                 Check(hook.IsPulling && player.CanDriveGreenHook, "free angle reaches clicked collider " + index);
                 Step(hook, player, 1);
                 Vector3 velocity = obj.GetComponent<Rigidbody>().linearVelocity;

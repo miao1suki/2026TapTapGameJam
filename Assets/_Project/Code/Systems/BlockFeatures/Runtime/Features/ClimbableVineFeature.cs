@@ -248,6 +248,7 @@ namespace Project.BlockFeatures
         private void RefreshClimbingPlayers()
         {
             Collider rootCollider = Root.GetComponent<Collider>();
+            Collider segmentCollider = Root == this ? rootCollider : GetComponent<Collider>();
             float topHeight = (rootCollider != null ? rootCollider.bounds.max.y : Root.transform.position.y + GridCellWorldSize * .5f)
                 + Root.CurrentGrowthBlocks * GridCellWorldSize;
             foreach (PlayerController climbingPlayer in climbingPlayers.Values)
@@ -278,11 +279,14 @@ namespace Project.BlockFeatures
                     }
 
                     int id = player.GetInstanceID();
-                    if (!foundPlayerIds.Add(id) ||
-                        climbingPlayers.ContainsKey(id))
+                    if (!foundPlayerIds.Add(id))
                     {
                         continue;
                     }
+                    if (segmentCollider != null)
+                        player.ProtectClimbCorner(this, segmentCollider.bounds,
+                            player.ClimbSpeed * climbSpeedMultiplier, false);
+                    if (climbingPlayers.ContainsKey(id)) continue;
 
                     climbingPlayers.Add(id, player);
                     player.EnterClimb(this);
@@ -303,7 +307,8 @@ namespace Project.BlockFeatures
             foreach (KeyValuePair<int, PlayerController> pair in
                      climbingPlayers)
             {
-                if (!foundPlayerIds.Contains(pair.Key))
+                if (!foundPlayerIds.Contains(pair.Key) &&
+                    (pair.Value == null || !pair.Value.IsClimbCornerProtectedBy(this)))
                 {
                     exitPlayerIds.Add(pair.Key);
                 }
@@ -358,6 +363,8 @@ namespace Project.BlockFeatures
             var ids = new List<int>(climbingPlayers.Keys);
             for (int index = 0; index < ids.Count; index++)
             {
+                if (climbingPlayers.TryGetValue(ids[index], out var player) && player != null)
+                { player.CancelClimbCorner(this); player.ClearHorizontalVineSurface(this); }
                 ExitClimb(ids[index]);
             }
         }

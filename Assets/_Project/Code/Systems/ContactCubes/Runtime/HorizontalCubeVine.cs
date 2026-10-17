@@ -41,9 +41,6 @@ namespace Project.ContactCubes
                     var capsule = player.GetComponent<CapsuleCollider>();
                     if (capsule == null) continue;
                     Bounds p = capsule.bounds;
-                    if (cube.Length > 1 && Mathf.Abs(cube.GrowthDirection.x) > .98f)
-                        player.ProtectClimbCorner(this, bounds, traverseSpeed);
-                    if (player.IsClimbCornerProtected) current.Add(player);
                     bool side = p.max.y > bounds.min.y+.02f && p.min.y < bounds.max.y-.02f &&
                         p.max.z >= bounds.min.z && p.min.z <= bounds.max.z &&
                         (Mathf.Abs(p.max.x-bounds.min.x) <= cell*contactMargin ||
@@ -54,6 +51,9 @@ namespace Project.ContactCubes
                         player.SetClimbTopHeight(this,bounds.max.y);
                         currentSides.Add(player);
                     }
+                    player.ProtectClimbCorner(this, bounds, traverseSpeed,
+                        cube.Length > 1 && Mathf.Abs(cube.GrowthDirection.x) > .98f);
+                    if (player.IsClimbCornerProtected) current.Add(player);
                     if (cube.Length <= 1 || Mathf.Abs(cube.GrowthDirection.x) <= .98f) continue;
                     bool grown = p.center.x >= bounds.min.x - contactMargin * cell && p.center.x <= bounds.max.x + contactMargin * cell;
                     if (!grown || p.max.z < bounds.min.z || p.min.z > bounds.max.z) continue;

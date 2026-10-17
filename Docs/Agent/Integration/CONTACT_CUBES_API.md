@@ -34,7 +34,9 @@
 
 `CanPlaceCarriedAt(worldPosition)` 校验平移后的完整实体 OBB，含伸长绿块，不只检查根的一格；拒绝墙体、玩家实体及查询缓冲溢出的落点。来源房间校验仍由 CarryableFeature 调用 CanPlaceInAuthoredRegion，区域根中心规则不变。玩家选择目标沿用根格相邻规则，未新增按长块任意节段拾取。输入、提示和头顶飞行动画全部复用原搬运系统。
 
-绿色实体挂 HorizontalCubeVine：母块与伸长实体落稳后两侧可通过 EnterClimb/ExitClimb 攀爬，顶部高度随生长更新；横向长出部分上方脚部接触或下方头部接触会续租玩家横向攀附，原始一格不进入横向攀附，脱离自动清除。`PlayerController.SetHorizontalVineSurface(Component source, float rootY, float speed)` / `ClearHorizontalVineSurface(source)` 只发送目标高度和移动速度，由玩家自己的物理步处理。新增状态 HorizontalClimbing=6，不改原枚举编号和输入键位；左右缓行、维持高度、禁止跳跃。租约超时、来源禁用、玩家重置都会清除。
+绿色实体挂 HorizontalCubeVine：母块与伸长实体落稳后两侧可通过 EnterClimb/ExitClimb 攀爬，顶部高度随生长更新；横向长出部分上方脚部接触或下方头部接触会续租玩家横向攀附，原始一格不进入横向攀附，脱离自动清除。`PlayerController.SetHorizontalVineSurface(Component source, float rootY, float speed)` / `ClearHorizontalVineSurface(source)` 只发送目标高度和移动速度，由玩家自己的物理步处理。新增状态 HorizontalClimbing=6，不改原枚举编号和输入键位；左右缓行、维持高度，跳跃操作脱手下落并短暂禁止重吸附。租约超时、来源禁用、玩家重置都会清除。
+
+向上外角保护由 `PlayerController.ProtectClimbCorner(source,bounds,speed,wrapEntireEdge)` 统一处理。横向长绿块保留完整上下绕边；单格/竖向绿块以及普通藤蔓每个真实节段调用 `wrapEntireEdge:false`，只在接近露出的顶部、向上或向内输入时交接到顶面。顶部探针检查真实实体（包括同根上方节段），避免在链条中间提前翻顶；路径逐步提交刚体速度，不能穿墙/瞬移。横爬/保护期间跳跃脱手并短暂禁止重吸附；来源禁用、重置、死亡取消所有权。`IsClimbCornerProtectedBy(source)` 供节段保持并清理自己的交接，不保留无效全局抓附。
 
 其他受推对象可实现 `ICubeJetPushReceiver.SetCubeJetVelocity(source, velocity, deltaTime)`。零值表示解除该来源。玩家已有适配走 EnterWater/SetWaterVelocity/ExitWater，由 PlayerController 在自己的物理步处理水柱推动，不写玩家 Transform 或刚体。
 
@@ -51,3 +53,5 @@
 ## 验证
 
 ContactCubeAssets.Build 与 ContactCubeVerification.Run 只用于 Library/FlowRetirementProbe 隔离项目，不覆盖用户场景。nographics 验证不代替真实画面/打包验收。
+
+`Project.Player.Editor.ClimbCornerVerification.Run` 强制隔离项目及 `-noaudio`，以标准玩家和真实绿块/藤蔓预制体验证双侧向上翻角、单格/横向/竖向绿块、链条露顶、顶端阻挡、跳跃脱手、来源禁用与原有上下绕边。`ClimbCornerLiveVerification.Run` 另跑真实 Update/FixedUpdate，检查八组两侧翻顶后租约过期仍稳定站在真实顶面。脚本只使用空测试场景，不保存作者关卡。

@@ -5,6 +5,8 @@ description: 2026TapTap 颜色大洗牌后的固定颜色物体、钥匙解锁�
 
 # 颜色大洗牌玩法与组件规范
 
+> 2026-10-17 挂接与向上转角：合法点击绿钩目标当帧挂接/开始运动，出线仅视觉；标准发射5格、挂接额外3格冗余、连续超距0.4秒才断，回范围清零，仍不能跨区域。普通藤蔓及单格/竖向绿块补齐真实露顶的向上交接，上方真实节段或实体遮挡时不提前翻顶；保留横向绿块完整上下绕角和跳跃脱手。源码和验证见 GREEN_HOOK_API、CONTACT_CUBES_API；覆盖旧等待出线命中和挂接严格5格断绳描述。
+
 > 2026-10-17 平台路线：`pathMode=0`兼容原route/travelBlocks/reverseRoute；新增四向单程和以中心左右/上下范围，独立方向距离、中心偏移及首程方向。Scene、规划与运行共用MovingPlatformPath，不能再单独推导预览方向。作者位置始终是初始化/重置位置，中心不得使解锁瞬移；曲柄0%仍是作者位置。完整序列化和曲柄范围语义见Docs/Agent/Integration/MECHANISM_SIGNAL_API.md。
 
 > 双阶段解锁与唯一玩家：同色首把钥匙只激活全部对应场景物体，第二把才开放玩家对应颜色能力；两种状态独立，R/离区保留，新游戏ResetProgress清空。IsUnlocked/Unlock只表示场景颜色；IsAbilityUnlocked/UnlockAbility只表示玩家能力，轮盘不得用场景解锁状态。钥匙经CollectColorKey同步且幂等结算，不在OnDisable补解锁。唯一标准玩家为Content/Player/Player.prefab，1×1、碰撞中心归零，各场景共用。完整API、场景迁移与空存档原点生成规则见Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md；本条覆盖后文旧的单阶段解锁描述。

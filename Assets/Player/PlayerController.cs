@@ -216,7 +216,9 @@ namespace Project.Player
         private int cornerSide, cornerTravel;
         private Component wrappedEdgeSource;
         private int wrappedEdgeSide;
+        private readonly Collider[] climbCornerOverlaps = new Collider[16];
         public bool IsClimbCornerProtected => cornerSource != null;
+        public bool IsClimbCornerProtectedBy(Component source) => source != null && cornerSource == source;
         public bool CanAttachHorizontalVine => Time.time >= horizontalReleaseUntil;
         public void CancelClimbCorner(Component source)
         {
@@ -225,7 +227,7 @@ namespace Project.Player
         }
 
         // Called by real climbable surfaces, never by decorative meshes or arbitrary walls.
-        public void ProtectClimbCorner(Component source, Bounds bounds, float speed)
+        public void ProtectClimbCorner(Component source, Bounds bounds, float speed, bool wrapEntireEdge = true)
         {
             if (source == null || dead || IsControlLocked || !CanAttachHorizontalVine ||
                 protectBounceFromClimbing || cornerSource != null || Time.time < cornerCooldown) return;
@@ -239,7 +241,7 @@ namespace Project.Player
             float gap = (body.center.x - edge) * side;
             bool outward = movement.x * side > .1f;
             bool verticalAttached = climbSources.Count > 0 && Time.time >= climbReattachUntil;
-            if ((top || bottom) && horizontalVines.Count > 0 && outward &&
+            if (wrapEntireEdge && (top || bottom) && horizontalVines.Count > 0 && outward &&
                 gap >= -margin && gap < body.extents.x + margin)
             {
                 cornerProgress = top ? 0f : 3f;
@@ -247,7 +249,9 @@ namespace Project.Player
             }
             else if (verticalAttached && gap > 0 && gap < body.extents.x + margin &&
                      body.center.y >= bounds.min.y && body.center.y <= bounds.max.y &&
-                     (Mathf.Abs(movement.y) > .1f || movement.x * side < -.1f))
+                     (Mathf.Abs(movement.y) > .1f || movement.x * side < -.1f) &&
+                     (wrapEntireEdge || (movement.y >= -.1f && body.center.y >= bounds.max.y - margin)) &&
+                     (movement.y < -.1f || IsClimbTopExposed(bounds, side)))
             {
                 cornerProgress = 1f + Mathf.InverseLerp(bounds.max.y, bounds.min.y, body.center.y);
                 cornerTravel = movement.y < -.1f ? 1 : -1;
@@ -255,6 +259,25 @@ namespace Project.Player
             else return;
             cornerSource = source; cornerBounds = bounds; cornerSide = side;
             cornerSpeed = Mathf.Max(.1f, speed);
+        }
+
+        private bool IsClimbTopExposed(Bounds bounds, int side)
+        {
+            float cell = gridCellWorldSize;
+            float width = Mathf.Min(cell * .12f, bounds.extents.x * .5f);
+            float edge = side > 0 ? bounds.max.x : bounds.min.x;
+            Vector3 center = new Vector3(edge - side * width, bounds.max.y + cell * .05f, bounds.center.z);
+            int count = Physics.OverlapBoxNonAlloc(center, new Vector3(width, cell * .025f, bounds.extents.z * .8f),
+                climbCornerOverlaps, Quaternion.identity, groundMask, QueryTriggerInteraction.Ignore);
+            if (count == climbCornerOverlaps.Length) return false;
+            for (int i = 0; i < count; i++)
+            {
+                Collider hit = climbCornerOverlaps[i];
+                // A root's grown children can cover this top too; do not exclude the entire source hierarchy.
+                if (hit != null && !hit.transform.IsChildOf(transform))
+                    return false;
+            }
+            return true;
         }
 
         private Vector3 ClimbCornerPoint(float progress)
@@ -361,6 +384,7 @@ namespace Project.Player
         public Vector2 MoveInput => movement;
         public int FacingDirection { get; private set; } = 1;
         public float GridCellWorldSize => gridCellWorldSize;
+        public float ClimbSpeed => climbSpeed;
         private CarryPlacementPreview carryPlacementPreview;
         public bool SprintRequested => sprint;
         public float HorizontalVelocity => motor != null
