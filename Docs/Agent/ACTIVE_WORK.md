@@ -1,10 +1,15 @@
 # 工作状态与交接（每次任务重读）
 
-## 2026-10-17 连通植物燃烧与正式关卡/音乐整合（进行中）
+## 2026-10-17 连通植物燃烧与正式关卡/音乐整合
 
 - 用户授权当前整合窗口合并并推送main：植物障碍按上下左右真实接触连通燃烧，斜角不连通；保持房间边界和既有重置链路。
 - 整合此前已完成的本地编辑器、玩法和美术修复；策划a86fc5a的Gaming、同名planning及正式关卡JSON中的物体/位置/参数为准，不以旧代码覆盖当前修复。音频c2abe42新增OP/Boss资源，补齐持久meta与实际播放接线。
 - 全部225份本地变更已备份至Library/ConnectedPlantIntegrationBackup-20261017；无关Pick、字体、插件及项目设置不提交、不覆盖。不切换或保存主Unity内存场景，不构建新包；验证使用隔离工程。
+- 本地完成进度eb43bf9已纳入本轮授权；此前任务记录的“不合并/不推送”仅表示当时状态。策划a86fc5a通过d76cc56整合，三份正式关卡文件与策划原件逐字节一致，不全量重建，场景主相机8份文档与原main一致；代码和美术修复未回退。Gaming新版为10房间，其他成员须同步新版Scene及两份存档，旧窗口先重开，禁止旧内存/Library回写。
+- 植物燃烧只在触发时从已挂接对象构建连通组，以实际碰撞体的上下左右接触计算，尊重合并孔洞和区域归属；先统一状态，再发事件，一组一次音效。R/死亡/离区继续恢复原对象，不销毁作者物体。215项真实Play断言通过，含2×2斜角断开、精度/间隙、后建合并碰撞、跨区隔离和重置；160对象事件CPU采样3.444ms，不是全帧性能指标。日志Library/ConnectedPlantBurn.log。
+- 音频c2abe42通过172009a整合；原交付仅新增音轨，现补Unity生成meta和Streaming/Vorbis设置。music.menu.opening改为bmg_op循环，Gaming沿用atmosphere.e_minor；music.boss通过AudioCueIds.MusicBoss登记为可调用非循环曲，尚无Boss触发点。当前22份音乐/环境声、46份SFX，63份登记55Cue。保留资源原命名，不更改两条音量总线或增加联网。
+- Unity6000.3.12f1/D3D11隔离验证：新版正式关卡审计23项（无缺失脚本/Prefab、唯一标准玩家和相机/UI、三份数据一致）；主菜单→Gaming→暂停返回→再次进入PlayMode1/1通过，新增检查每次主菜单真实MusicSource为bmg_op、循环且非空间声；玩法83、水层/形状197、真实编辑输入50、项目EditMode225/225通过。92份任务源码与验证副本SHA一致。日志ConnectedFormalLevelAudit.log、ConnectedMenuRoundTrip.xml、IntegratedAudioSetup.log及Refinement*Final.log、RefinementEditMode.xml，均在Library。
+- 58份无关本地文件SHA256保持不变，主Unity仍停留MRoom2且未保存；本轮无双端构建、完整通关或真机试听验收。隔离退出仍有既有插件清理日志；预加载场景往返用例会短暂产生双EventSystem/AudioListener警告，不等同于正式单场景重复接线。文档、存档提交守卫及差异检查随交付复核；只显式提交任务文件，非强推main。
 
 ## 2026-10-17 平台路线范围与 MRoom2 绑定（本地完成）
 

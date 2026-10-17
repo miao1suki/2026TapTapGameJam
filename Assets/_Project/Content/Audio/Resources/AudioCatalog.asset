@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.Audio.Runtime::Project.Audio.AudioCatalog
   cues:
   - cueId: music.menu.opening
-    displayName: Main Menu Opening
+    displayName: Main Menu OP
     channel: 0
     clips:
-    - {fileID: 8300000, guid: f41e4798b872668439a27311c5124d98, type: 3}
+    - {fileID: 8300000, guid: b57e083bb2fba3d40bf0089d117f43a2, type: 3}
     volumeScale: 0.7
     loop: 1
   - cueId: music.ambient.loop
@@ -398,4 +398,11 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 186cbd78ed1283241a066adf4252fedb, type: 3}
     volumeScale: 1
+    loop: 0
+  - cueId: music.boss
+    displayName: Boss Theme
+    channel: 0
+    clips:
+    - {fileID: 8300000, guid: b5d1b60f55db9d44b8d51198a2b672ff, type: 3}
+    volumeScale: 0.7
     loop: 0

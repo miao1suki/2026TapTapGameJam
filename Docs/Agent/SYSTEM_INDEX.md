@@ -1,10 +1,12 @@
 # 系统索引
 
+植物障碍：同房间上下左右真实接触连通燃烧，斜角/孔洞不连通；一次组燃烧一次音效，沿用R/死亡/离区复原。见 [玩法说明](../Developer/GAMEPLAY_REFINEMENTS.md#植物障碍连通燃烧)。主菜单已接新OP `bmg_op`，Gaming保留atmosphere；Boss曲通过`AudioCueIds.MusicBoss`显式调用，见 [音频交接](Integration/AUDIO_HANDOVER.md)。
+
 平台路线：支持从布置位置四向单程往返、以可偏移中心设置左右/上下不等距范围和首次方向；规划/Scene预览与运动共用MovingPlatformPath，兼容旧反向路线。长虚线先裁剪视口。见 [机关API](Integration/MECHANISM_SIGNAL_API.md)、[配置说明](../Developer/MECHANISMS_AND_JUMP.md#移动路线与中心)。
 
 关卡/美术适配：16有效像素/格、正式2D预览、左右靠墙梯、基座重力及新图用途见 [ART_GRID_REFINEMENT_API](Integration/ART_GRID_REFINEMENT_API.md)。工作台静态三色装饰按颜色目录Layer分批，初始褪色、场景颜色解锁后恢复；不要误当动画或加ColorObject。告示牌复用字幕激发道具。片段导入/区域导出入口在关卡编辑器右侧三视图按钮下方。
 
-正式打包关卡：`Assets/_Project/Scenes/Playing/Gaming.unity`，配套同名规划文件及 `Assets/_Project/Content/LevelMaps/正式关卡.json`；采用策划 `ad8e34e` 的完整关卡基线。旧 Gaming 使用者先同步新版，不用旧场景/缓存覆盖；其他成员仅拉取和推送分支，由当前整合窗口合并 main。必读 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
+正式打包关卡：`Assets/_Project/Scenes/Playing/Gaming.unity`，配套同名规划文件及 `Assets/_Project/Content/LevelMaps/正式关卡.json`；采用策划 `a86fc5a` 的10房间基线，物体/位置/实例参数/绑定以策划版为准，代码与工具修复保留整合最新版。旧 Gaming 使用者先同步新版，不用旧场景/缓存覆盖；其他成员仅拉取和推送分支，由当前整合窗口合并 main。必读 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
 
 命名MVMap独立导入图：`Assets/Scenes/MRoom2.unity` + 同名planning存档/原始mvmap文件。保留命名物体和占格、侧梯、三重生点及基座/曲柄绑定的四平台；最长路线补齐植物占格，反向路线从作者位置向左。正面/侧面梯子默认1×1，长梯按作者格数平铺，旧两格兼容保留。默认锁色、单测试区域，不替代Gaming或加入构建。见 [地图说明](../Developer/MROOM2_IMPORT.md)、[导入API](Integration/MVMAP_OBJECT_IMPORT_API.md)。
 
@@ -42,7 +44,7 @@ Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全�
 
 游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标和设置背景，预裁切产物位于`Art/Generated/GameUI`。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
 
-主角像素表现：`Assets/Player/PlayerSpritePresentation.cs`，7套动作35帧，读取现有玩家状态；独立1×1格外观、不新增碰撞体，死亡优先、演出冻结与复活恢复。唯一标准Player.prefab已接线，裸PlayerController运行时自动补齐。接入/维护见 [PLAYER_SPRITE_PRESENTATION.md](../Developer/PLAYER_SPRITE_PRESENTATION.md)。
+主角像素表现：`Assets/Player/PlayerSpritePresentation.cs`，7套动作35帧，读取现有玩家状态；按24源像素自然显示1.5格、物理仍1×1格，不新增碰撞体，死亡优先、演出冻结与复活恢复。唯一标准Player.prefab已接线，裸PlayerController运行时自动补齐。最新比例见 [美术约定](../Developer/ART_GRID_CONVENTIONS.md)。
 
 MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 MVMapObjects.planning.json；按 map.mvmap (3).json 标注范围制作，紫色为三区房间、白墙/水域/转弯水流/上喷气泡/单向平台/三按钮一门，方向与模式可编辑。首开场景可恢复共享存档，不依赖 Library。历史73区临时推测版已替换，不改正式关卡。见 [转换 API](Integration/MVMAP_OBJECT_IMPORT_API.md)、[使用说明](../Developer/MVMAP_OBJECT_IMPORT.md)及[映射报告](../Developer/MVMAP_OBJECT_MAPPING.md)。
 
@@ -74,7 +76,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 无色梯子、横门与门提示 | `Assets/_Project/Code/Systems/Mechanisms` | 正面/侧面梯子复用攀爬；独立横门 2×1；每门唯一提示按总数/已按数量更新，新绑定上限三个。见 Integration/NEUTRAL_MECHANISMS_API.md 与 Developer/NEUTRAL_MECHANISMS.md；本地开发待验收 |
 | 选择性像素化 | `Assets/_Project/Code/Systems/Pixelization`、`Assets/ta_source/PixelEffect` | 当前 PC 启用 TA Stencil 路径及其像素参数，关闭重复内置像素化；HSV 保持开启且在其后执行。内置路径的 Rendering Layer 128/描边 API 不控制 TA Shader。见 Integration/PIXELIZATION_API.md |
 | 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 正式序列固定为 `Assets/_Project/Scenes/Start/MainMenu.unity` → `Assets/_Project/Scenes/Playing/Gaming.unity`；MainMenu 持 `GameFlowController`/`StartMenuFlowBridge`，Gaming 持玩家、相机管理和 `SharedGameUI` 暂停界面。Bootstrap、旧 Systems、旧三关和 Ending 不再使用 |
-| 音频资源 | `Assets/_Project/Content/Audio` | 20个音乐/环境声与44个SFX；60个文件登记为52个Cue。搬运、基座启停、平台移动、气泡/浮力、6格落地、燃烧、岩浆冷却/触碰及菜单确认已接；解谜/秘密与独立浅水步行待触发点，区域环境声/其余BGM待规划。见 `Integration/AUDIO_HANDOVER.md` |
+| 音频资源 | `Assets/_Project/Content/Audio` | 22个音乐/环境声与46个SFX；63份音频登记为55个Cue。新OP接主菜单，Boss曲仅登记待触发点；两种重生点激活、搬运、基座启停、平台移动、气泡/浮力、6格落地、燃烧、岩浆冷却/触碰及菜单确认已接。解谜/秘密与独立浅水步行待触发点，区域环境声/其余BGM待规划。见 `Integration/AUDIO_HANDOVER.md` |
 | 相机 Manager/跟随/2D3D | `Assets/_Project/Code/Systems/CameraModes` | 旧功能保留；玩家驱动不再申请 2D/3D 切换，Timeline 优先级更高 |
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |

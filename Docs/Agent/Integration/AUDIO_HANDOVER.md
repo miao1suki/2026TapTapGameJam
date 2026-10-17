@@ -21,7 +21,9 @@
 
 循环属性已登记到 `AudioCatalog`，Unity 内仍需实际试听循环点。
 
-正式进入Gaming后，`GameAudioService.HandleActiveSceneChanged`播放`music.atmosphere.e_minor`（`bgm_atmosphere_emin_02_loop.mp3`），复用现有Music音量总线及循环配置。主菜单仍使用原开场音乐，不改其他Cue。
+主菜单的`music.menu.opening`现使用新`bmg_op.mp3`，按菜单场景循环播放。正式进入Gaming后，`GameAudioService.HandleActiveSceneChanged`播放`music.atmosphere.e_minor`（`bgm_atmosphere_emin_02_loop.mp3`），复用现有Music音量总线及循环配置；暂停返回菜单再进入时也按此切换。
+
+`bgm_boss.mp3`登记为`music.boss`（`AudioCueIds.MusicBoss`），可通过`AudioCuePlayer.Play(AudioCueIds.MusicBoss)`调用；当前默认非循环，未擅自添加Boss触发点。两首新增MP3使用Streaming/Vorbis、质量0.8、不预解码，meta已由Unity生成并交付，文件名保留音频成员原命名。
 
 该服务由`GameFlowController.Start`安装到现有持久流程根并初始化，注册实际`ActiveSceneChanged`事件。仅修改Cue或直接调用私有播放方法不能验证真实入口；验收须从MainMenu按钮进入Gaming，再从暂停返回并重新进入，检查实际MusicSource与时间缩放。
 
@@ -29,7 +31,7 @@
 
 | 文件 | 用途 | 循环 |
 |---|---|---|
-| `bgm_wn_01_opening.wav` | 开场主题曲，开始界面 / 新游戏流程 | 是 |
+| `bgm_wn_01_opening.wav` | 原开场主题曲，资源保留，主菜单现改用新OP | 是 |
 | `bgm_ambient_loop_01.mp3` | 环境铺底氛围 | 是 |
 | `bgm_atmosphere_amin_03.mp3` | 氛围 A 小调，场景气氛垫 | 否 |
 | `bgm_atmosphere_dsmin_02.mp3` | 氛围 升D 小调，场景气氛垫 | 否 |
@@ -43,8 +45,8 @@
 | `bgm_vocal_chop_01.mp3` | 人声切片，节奏层 / 过渡 | 是 |
 | `bgm_wake_up_01_loop.mp3` | 醒来 / 开场序列 | 是 |
 | `bgm_alien_sacrifice_01.mp3` | 外星祭祀主题，重要事件场景 | 否 |
-| `bgm_boss.mp3` | Boss 战 / Boss 出场主题曲（本次暂保现有命名） | 待确认 |
-| `bmg_op.mp3` | OP / 开场演出音乐（本次暂保现有命名） | 待确认 |
+| `bgm_boss.mp3` | Boss 战 / Boss 出场主题曲，Cue已登记，等待玩法调用 | 当前否，Boss循环需求待确认 |
+| `bmg_op.mp3` | 主菜单OP，保留现有文件名 | 是 |
 
 路径均为 `Assets/_Project/Content/Audio/Music/`。
 
@@ -230,7 +232,7 @@ AudioCuePlayer.StopLoop(this);
 - [ ] 循环点确认：四个未标注的环境声，以及 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop`、`sfx_gp_platform_move_loop`、`sfx_gp_bubble_loop`
 - [ ] 打包检查：确认音频压缩设置与项目打包配置一致
 - [x] 播放接口扩展：随机变体、按 owner 循环、停止/查询循环音接口已加入 `AudioManager` 和 `GameAudioService`
-- [x] Cue 目录：60 个音频登记为 54 个 Cue，Music / SoundEffect 通道已分流；玩法/确认及两种重生点激活 Cue 已接线
+- [x] Cue 目录：63 个音频登记为 55 个 Cue，Music / SoundEffect 通道已分流；玩法/确认、两种重生点激活和新主菜单OP已接线，Boss曲等待调用
 - [x] 运行时接线：玩家动作、门、曲柄、蒸汽、藤蔓、颜色钥匙与选色反馈已接入
 
 ## 未解决问题

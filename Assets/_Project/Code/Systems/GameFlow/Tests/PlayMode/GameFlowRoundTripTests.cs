@@ -21,6 +21,7 @@ namespace Project.GameFlow.Tests
             var audio = GameAudioService.Instance;
             Assert.That(audio, Is.Not.Null, "Flow audio service must not depend on a retired system scene.");
             audioRoot = audio.MusicSource.transform.root.gameObject;
+            AssertMenuMusic(audio);
 
             for (int entry = 0; entry < 2; entry++)
             {
@@ -46,7 +47,16 @@ namespace Project.GameFlow.Tests
                 yield return WaitForScene(GameFlowSceneId.MainMenu);
                 Assert.That(Time.timeScale, Is.EqualTo(1f));
                 Assert.That(AudioListener.pause, Is.False);
+                AssertMenuMusic(audio);
             }
+        }
+
+        private static void AssertMenuMusic(GameAudioService audio)
+        {
+            Assert.That(audio.MusicSource.clip, Is.Not.Null);
+            Assert.That(audio.MusicSource.clip.name, Is.EqualTo("bmg_op"));
+            Assert.That(audio.MusicSource.loop, Is.True);
+            Assert.That(audio.MusicSource.spatialBlend, Is.Zero);
         }
 
         private static AsyncOperation LoadForTest(string path)

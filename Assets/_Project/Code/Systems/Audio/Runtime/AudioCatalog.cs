@@ -141,6 +141,7 @@ namespace Project.Audio
     public static class AudioCueIds
     {
         public const string MusicMenuOpening = "music.menu.opening";
+        public const string MusicBoss = "music.boss";
         public const string MusicAmbientLoop = "music.ambient.loop";
         public const string MusicAtmosphereAMinor = "music.atmosphere.a_minor";
         public const string MusicAtmosphereDSharpMinor = "music.atmosphere.d_sharp_minor";
