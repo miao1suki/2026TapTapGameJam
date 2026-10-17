@@ -1,5 +1,17 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-17 玩家跳跃按住时长
+
+- 分支：`Boss`；范围：`Assets/Player/PlayerController.cs`、玩家 Inspector、机关跳跃说明与隔离玩法验证。
+- `PlayerController` 直接读取输入驱动已经提供的跳跃按键按住状态，不读取或硬编码具体设备按键；点按判定时间内使用 1 格跳跃，之后按住越久目标高度越高，达到满高时间后使用现有 4 格完整跳跃。
+- 松开跳跃时立即停止按住加力并交还正常重力，不硬砍当前竖直速度；按住期间用可调加速度追随当前目标高度，满高段到达顶点或上升速度接近零时结束加力，避免持续按住悬停。短按高度与长按满高仍由按住加速时长决定。
+- Timeline 显式跳跃加速仍保持原始终速度优先，不被可变跳跃削减。
+
+## 2026-10-17 关卡编辑器岩浆栏目恢复
+
+- 原因：`LevelEditorPalette.asset` 的 `b3197af4d69b44778f4f6d43fb2634e2` 被错误复用为 Timeline 触发器，而现有地图中的岩浆仍引用同一 ID；`FindPropEntry` 按 ID 优先，导致岩浆栏目缺失并可能把旧岩浆解析成触发器。
+- 修复：将该 ID 恢复为“岩浆”/`Red_Lava.prefab`，保留 `30265b9098d545388134efaefa2a7884` 作为 Timeline 触发器；只修复 palette 数据，不增加自动校准脚本。
+
 ## 2026-10-16 Boss 入场序列与角色 Timeline 轨道
 
 - 分支：`Boss`；范围：`Assets/Boss_Logic`、`Assets/GJ_Tools/TimelineTools3D/AboutTimeline`、`Boss(暂定)` 预制体、`Boss` 场景接线。
