@@ -14,12 +14,40 @@ namespace PlanningEditorPrototype
         internal static IEnumerable<PlanningBox> Boxes(PlanningDocument doc) => doc.rooms.SelectMany(r => r.boxes).Concat(doc.assemblyPatches);
         private static IEnumerable<Vector2Int> Cells(RectInt rect)
         { for (int y = rect.y; y < rect.yMax; y++) for (int x = rect.x; x < rect.xMax; x++) yield return new Vector2Int(x, y); }
+        internal static bool TryBounds(
+            PlanningDocument doc,
+            out RectInt bounds)
+        {
+            bounds = default;
+            if (doc == null)
+            {
+                return false;
+            }
+
+            var cells = doc.rooms.SelectMany(r => r.cells).ToList();
+            if (cells.Count == 0)
+            {
+                return false;
+            }
+
+            int x = cells.Min(c => c.x), y = cells.Min(c => c.y);
+            bounds = new RectInt(
+                x,
+                y,
+                cells.Max(c => c.x) - x + 1,
+                cells.Max(c => c.y) - y + 1);
+            return true;
+        }
+
         internal static RectInt Bounds(PlanningDocument doc)
         {
-            var cells = doc.rooms.SelectMany(r => r.cells).ToList();
-            if (cells.Count == 0) throw new InvalidDataException("存档没有可导入的房间或通道。");
-            int x = cells.Min(c => c.x), y = cells.Min(c => c.y);
-            return new RectInt(x, y, cells.Max(c => c.x) - x + 1, cells.Max(c => c.y) - y + 1);
+            if (!TryBounds(doc, out RectInt bounds))
+            {
+                throw new InvalidDataException(
+                    "存档没有可导入的房间或通道。");
+            }
+
+            return bounds;
         }
 
         internal static void ShiftBox(PlanningBox box, Vector2Int delta)

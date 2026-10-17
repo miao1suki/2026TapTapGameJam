@@ -42,7 +42,7 @@ Scene 手工绑定写入组件序列化引用并支持 Undo；它不反向更改
 
 ## 高度接口
 
-`PlayerController.CalculateGridRiseSpeed(cells)` 根据网格、重力和固定步长计算所需初速；普通跳跃 `jumpRiseCells` 默认4。玩家胶囊在 Awake 按网格规格归一到1×1，RuntimePlayer 使用一格占位网格。自定义视觉须保持自己尺寸，不再假定玩家两格高。
+`PlayerController.CalculateGridRiseSpeed(cells)` 根据网格、重力和固定步长计算所需初速；普通跳跃的 `jumpRiseCells` 默认4，表示长按满高，`jumpTapRiseCells` 默认1表示点按高度。`JumpHeld` 的按住时长在控制器内部换算为当前目标高度，`jumpHoldAcceleration` 控制按住时追随该高度的柔和程度；松开后停止加力并交还重力，不做瞬间竖直限速。输入驱动仍只传布尔状态，不读取具体设备按键。玩家胶囊在 Awake 按网格规格归一到1×1，RuntimePlayer 使用一格占位网格。自定义视觉须保持自己尺寸，不再假定玩家两格高。
 
 `BouncePlantFeature.GetRiseCells(fallCells, jumpHeld)` 返回3或8；严格大于4格落差才满足高跳门槛。植物回弹用精确高度路径，不再叠加水柱/蒸汽的额外环境弹射速度；其他环境弹射保持原规则。
 

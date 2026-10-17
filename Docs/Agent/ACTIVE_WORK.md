@@ -130,6 +130,91 @@
 - GameFlow EditMode78/78、既有菜单→Gaming→暂停返回→再次进入PlayMode用例1/1通过；日志Library/FormalLevelIntegrationAudit.log、FormalLevelEditorTests.xml、FormalLevelRoundTripTests.xml。往返用例采用既有预加载场景测试方式，不代表完整关卡通关或真机测试。本次不构建新包。
 - 暂存提交守卫（含AllTracked）与diff检查通过，58份无关本地文件SHA256全部不变。整合仅包含正式关卡及交接文档；不混入音频等其他远程分支。推送目标固定为2026TapTapGameJam的main，不强推、不改写历史。
 
+## 2026-10-17 玩家跳跃按住时长
+
+- 分支：`Boss`；范围：`Assets/Player/PlayerController.cs`、玩家 Inspector、机关跳跃说明与隔离玩法验证。
+- `PlayerController` 直接读取输入驱动已经提供的跳跃按键按住状态，不读取或硬编码具体设备按键；点按判定时间内使用 1 格跳跃，之后按住越久目标高度越高，达到满高时间后使用现有 4 格完整跳跃。
+- 松开跳跃时立即停止按住加力并交还正常重力，不硬砍当前竖直速度；按住期间用可调加速度追随当前目标高度，满高段到达顶点或上升速度接近零时结束加力，避免持续按住悬停。短按高度与长按满高仍由按住加速时长决定。
+- Timeline 显式跳跃加速仍保持原始终速度优先，不被可变跳跃削减。
+
+## 2026-10-17 关卡编辑器岩浆栏目恢复
+
+- 原因：`LevelEditorPalette.asset` 的 `b3197af4d69b44778f4f6d43fb2634e2` 被错误复用为 Timeline 触发器，而现有地图中的岩浆仍引用同一 ID；`FindPropEntry` 按 ID 优先，导致岩浆栏目缺失并可能把旧岩浆解析成触发器。
+- 修复：将该 ID 恢复为“岩浆”/`Red_Lava.prefab`，保留 `30265b9098d545388134efaefa2a7884` 作为 Timeline 触发器；只修复 palette 数据，不增加自动校准脚本。
+
+## 2026-10-16 Boss 入场序列与角色 Timeline 轨道
+
+- 分支：`Boss`；范围：`Assets/Boss_Logic`、`Assets/GJ_Tools/TimelineTools3D/AboutTimeline`、`Boss(暂定)` 预制体、`Boss` 场景接线。
+- Boss：`BossController` 新增 Jump 状态，可配置跳跃持续时间、弧高、冷却、转向和落地清速；提供 `RequestJump`、`RequestJumpTo`、`CancelJump`、`TeleportTo`。受击/死亡/禁用会安全取消跳跃。
+- Timeline：新增 `BossIntroTrack` / `BossIntroClip`，资源 `Assets/_Project/Content/Boss/Timelines/BossIntro.playable`，负责生成或复用 Boss、平滑运镜、站立、向右下小跳和结束后开启追击；Boss 使用编辑模式玩家位置 `(-9.4, -32.1, 0)` 作为固定出生点，不跟随运行时玩家。
+- 工具轨道：新增 `PlayerTimelineTrack` 与 `BossTimelineTrack`，可显式绑定或按 `Player` / `Boss` Tag 查找角色；支持瞬移、曲线位移、弧线跳跃、玩家输入锁和 Boss 追击状态。
+- 片段 Inspector：玩家/Boss Timeline 片段改为中文分区，并新增顶部“本片段操作”选择器；玩家可选择位移、移动输入、冲刺、按住跳跃、请求跳跃、锁控制或自定义，Boss 可选择位移、追击、死亡或自定义，只显示对应参数。标签项使用 Unity TagField，并提供读取场景同 Tag 角色位置到目标坐标的快捷操作。
+- 接触触发器：新增“播放期间申请玩家控制锁”选项，通过 `IPlayerControlLockTarget` 接口申请并在 Timeline 停止、重置、禁用时释放，不持有具体玩家引用。
+- 场景：`Prop [0,41]` 已接 `BossIntro.playable`；`ContactTimelineTrigger.timeline` 与 `PlayableDirector.m_PlayableAsset` 同时写入 PrefabInstance 覆盖，并把同一对象引用同步到 `Boss.planning.json` 和 `Content/LevelMaps/Boss.json` 的 `componentOverrides`。
+
+## 2026-10-16 Boss 追击寻路
+
+- 分支：`Boss`；只实现寻路层，不实现移动、跳跃、爬山、传送、阶段血量或道具利用。
+- 新增 `Assets/Boss_Logic/Navigation/BossPathNode.cs`：有向回环节点图，边类型包含跑动、爬升、跳跃、下落、乘平台、危险通过和自定义。
+- 新增 `Assets/Boss_Logic/Navigation/BossPathfinder.cs`：按 `Player` Tag 或显式目标实时 A* 寻路，默认危险边直接通过，不绕路；输出节点路径和带类型的 `BossPathStep`。
+- 新增 `Assets/Boss_Logic/Navigation/BossPathExecutor.cs`：读取路径段，自动执行跑动、`BossController.RequestJumpTo` 跳跃、爬升和下落；马夫通过 `SetExternalMotion` / `ClearExternalMotion` 指挥马，不直接操作 Rigidbody。
+- 自动越障：普通跑动节点出现高度差时自动转成跳跃或下落，避免 Boss 在上坡和台阶前持续水平顶墙；阈值可在执行器 Inspector 调整。
+- 阻挡探测：跑动方向前方有方块且 Boss 在地面时自动改跳，节点边类型设错为“跑动”也不会继续顶墙。
+- 自动烘焙：新增 `BossNavAutoBaker`，运行时从关卡方块顶面生成 Boss 3×3 净空节点和跳跃/下落边；不写回场景，有手摆节点时跳过。
+- 移速调整：Boss 直接追击默认速度从 `2.5` 调整为 `5`，路径执行器默认跑动速度 `5.5`、爬升速度 `4.5`，预制体同步更新；不再只有玩家基础速度的一半。
+- 职责重构：`BossController` 作为“马”提供外部运动、重力、地面和跳跃能力；`BossPathfinder` 只算路径；`BossPathExecutor` 作为“马夫”只下发跑动/跳跃/爬升/下落指令，不再直接操作 Rigidbody。
+- 跳跃权限：跳跃时长、水平速度和最大跳高/最大垂直速度全部收口到 `BossController`，马夫只调用 `RequestJumpTo(target)`；重力始终使用 `Physics.gravity` 且不被修改，超出身体能力直接拒绝。
+- 跳跃物理：跳跃改为真实 Rigidbody 初速度弹道；起跳时清空马夫外部运动状态，落地恢复重力，不再 Kinematic 插值、不再继承爬升时的无重力状态。
+- 浮空修正：马夫跑动/下落现在只设置水平速度，不再每帧把竖直速度写成 0；竖直方向继续由 Boss 自身重力处理，避免接近玩家后悬空追随。
+- 无路径释放：修复马夫在无路径时“清空后又重新打开零速外部运动”导致 Boss 完全不追的问题；无路径会彻底释放 Controller，恢复原始追击。
+- 近身误跳：前方阻挡检测排除玩家 Tag、玩家子碰撞和当前目标；进入 `noAutoJumpNearTarget` 距离后不再触发方块自动跳。
+- 编辑器：新增中文 UI Toolkit Inspector；Scene 视图显示节点边和当前选中 Boss 的路径。
+
+## 2026-10-16 Boss 入场片段 Inspector
+
+- `BossIntroClip` 改为全中文 UI Toolkit Inspector，分为 Boss 来源、生成位置、动作时序和结束行为；镜头职责移到独立 `CameraTimelineTrack + CameraTimelineClip`。
+- 生成位置支持一键把当前场景玩家位置写入固定世界出生点；运行时玩家位置、片段锚点和固定世界坐标三种模式会动态显示说明。
+- 动作时序显示预计总时长；`BossIntro.playable` 时长已同步为纯 Boss 行为时长。
+- `BossIntro.playable` 增加独立 `CameraTimelineTrack + CameraTimelineClip`，不再从 Boss 行为片段控制相机；按“不要改我的场景”要求，未写回 `Boss.unity` 的相机绑定。
+- Editor 静态编译通过；未修改 Timeline 资源参数或运行逻辑。
+
+## 2026-10-16 Boss 长廊模式与最高排序层
+
+- 当前 Boss 预制体移除 `BossPathfinder`、`BossPathExecutor`、`BossNavAutoBaker` 挂载；`BossController` 默认关闭自动目标追击，只响应 Timeline 和外部马夫指令。
+- 新增 `BossRightMoveExecutor` 右移马夫，手动配置右移世界 Y，等待整个 Timeline PlayableGraph 停止后调用 Controller 的右移与高度能力；预制体 Collider 为 Trigger，可穿过地形，同时保留后续道具伤害接口。
+- 新增排序层 `BossTop`，将 Boss MeshRenderer 设置为该项目最高排序层、排序值 `32767`、Renderer Priority `32767`。
+- 修复 `Boss.unity` 的 `Prop [0,41]` Timeline 触发器实例：补齐实际场景覆盖中的 `timeline` 与 `PlayableDirector.m_PlayableAsset` 引用；规划 JSON 原本已有同一引用，场景现与规划数据一致。
+- 入场 Timeline 调整为 `3.15` 秒：Boss 在玩家编辑模式位置 `(-9.4, -33.19, 0)` 出现，站立 `2` 秒，跳跃落地后保持 `0.5` 秒；相机轨绑定到 Main Camera 的 `TimelineCamRig` 并按曲线平滑移动，期间玩家控制锁生效。
+- 入场跳跃改为唤醒 Rigidbody 并按配置时长完成弹道，移除起跳点地面导致的向下跳提前取消；相机轨在绑定缺失时自动查找 `TimelineCamRig`，入场片段持续把相机锚点设为 Boss。
+- 新增怪物 Timeline 轨迹预览：选中 `BossTimelineClip` 时，Scene 视图显示起点、目标点及入场/瞬移/平滑/弧线轨迹。
+- Boss 碰撞策略改为 Timeline 期间保持正常地形交互；右移马夫启动时才调用 `SetPassThroughTerrain(true)`，停止时恢复。
+- Boss 入场 Timeline 约束：每个 Boss Clip 只能做一个操作，多操作必须拆成多条 `BossTimelineTrack` 堆叠；Inspector 已移除自定义组合入口，Boss 入场相机轨仅允许 2D 正交运镜。
+- Boss Clip Inspector 进一步收口为“动作 + 当前动作数据 + 是否生成 Boss / Boss 预制体”；移动动作新增 `moveSpeed` 并按时长按距离/速度自动计算。
+- 废除 `BossIntroTrack` / `BossIntroClip` / `BossIntroBehaviour` 及专用 Inspector；`BossIntro.playable` 改为五条 `BossTimelineTrack` 加一条 2D 相机轨，动作 Clip 数据由通用 Boss Timeline Inspector 管理。
+- 入场初始位置右移半格到 `(-8.9, -33.19, 0)`，跳跃改为 `1.4` 秒目标弹道并落到 `(-6.9, -36.19, 0)`，落地后发呆延长为 `2` 秒，总时长 `5.41` 秒；相机轨结束会把 `TimelineCamRig.target` 交回 `CameraControlManager.FocusTarget` 并释放控制权。
+- 除本次补齐 Timeline 场景引用外，未额外改动用户场景；场景中的预制体实例通过预制体更新继承组件和排序设置。
+
+## 2026-10-16 Boss 追击控制器与动画分离
+
+- 分支：`Boss`；源码：`Assets/Boss_Logic/BossController.cs`、`Assets/Boss_Logic/BossAnimationDriver.cs`。
+- 范围：在 `Boss(暂定)` 预制体上挂 Rigidbody、BossController 和可选 BossAnimationDriver；实现 Chase、Hit、Death 三状态，目标标签使用 Unity TagField，并增加启用追击开关。
+- 分离：控制器只处理目标追击、受击硬直、扣值、死亡和 Rigidbody；动画桥只订阅状态并转发 Animator/UnityEvent，没有 Animator 时动作逻辑仍可运行。
+- 验证：Runtime 与 Editor 程序集静态编译通过。
+
+## 2026-10-16 规划片段空存档预览修复
+
+- 现象：正常编辑时 `PlanningFragmentUtility.Bounds` 对空片段抛 `InvalidDataException`，导致导入预览刷新中断。
+- 修复：新增 `TryBounds`，Canvas 预览在片段为空或没有房间/通道时清空导入边界和预览，不再绘制；`FocusImportPreview`/`DrawTransferPreview` 增加空边界保护。
+- 验证：Editor 程序集静态编译通过，`git diff --check` 通过。
+
+## 2026-10-16 通用非颜色接触 Timeline 组件
+
+- 分支：`Boss`；源码：`Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/ContactTimelineTrigger.cs`。
+- 范围：新增可挂任意道具的独立 MonoBehaviour，不绑定 Boss 场景、不依赖 `ColorObject`、BlockRuntime 或 BlockAbilityHost；激活时隐藏 Renderer，保留 Collider，按 Trigger/Collision 接触播放绑定的 Timeline。
+- 预制体：`Assets/_Project/Content/ColorBlocks/Prefabs/ContactTimeline_Block.prefab`，1×1 白块外观，仅挂基础视觉、Collider、PlayableDirector 与 ContactTimelineTrigger。
+- 参数：Timeline 资源、直接编辑所挂 Collider 的启用/Trigger/BoxCollider 尺寸与中心、任意碰撞体/仅玩家/指定 Tag 筛选、只触发一次/可重复触发、重复冷却、重复接触重新开始、自动隐藏、触发后销毁。
+- 调试显示：Inspector 顶部显示当前触发模式，触发规则独立分区，调试区显示剩余冷却。
+- 验证：Runtime 与 Editor 程序集静态编译通过，`git diff --check` 通过。
 ## 2026-10-16 触控、编辑器性能与绿色能力整合
 
 - 用户授权本轮合并并推送；此前各任务条目中的“仅本地／不合并”为当时状态，本轮授权覆盖该限制。远程main基线c4fb80d，任务分支codex/ui/mobile-left-controls-spacing；本轮不混入其他实验分支。
@@ -235,7 +320,6 @@
 - 修复切片重生成时Sprite子资产被替换造成的失效/重复：切片库GUID+稳定tile.Id更新原笔刷槽位，不按临时Sprite localId重复追加。旧库转共享库先校验再重映射，保留原尺寸、规则和法线。原六面工具拒绝Project Prefab/PrefabStage，Bake需保存Scene并按GUID隔离；新美术输出不改白块共享材质或玩法组件。
 - 多轮修整涵盖拖动滑条时不重建控件、素材滚动保留、视差预览不误绘、图层前后顺序与运行时一致、未完成Scene笔画退出取消、Play/跨Scene编辑保护、生成层Undo与持久化。Unity6000.3.12f1隔离工程最终相关EditMode164/164通过，日志Library/SceneArtReadyRegression.xml（含切片再生成、实例隔离、合并轮廓、Undo/redo、保存重开、法线与归属）；GPU验证通过，日志Library/SceneArtReadyVisual.log，含持久化图形、视差往返和1280×800/920×560 Toolkit布局。验证图/脚本只在Library，不放进正式场景。
 - 使用见Docs/Developer/GRID_ART.md；Agent接入见Docs/Agent/Integration/GRID_ART_API.md。法线目前预留URP 3D Lit，不是2D Light链；固定XY、未实现无限背景循环/转向重投影/按房间搬美术。tail尚缺内拐角素材，工具提示并回退中心。保留Pick/字体/插件/项目设置及所有未提交规划存档；未提交、推送、合并或打包。后续关卡交付必须同时交Scene、同名planning.json、美术图/共享库/原图/生成依赖和各自meta。
-
 ## 2026-10-16 双阶段颜色解锁与标准玩家
 
 - 首次同色钥匙只解锁场景物体，第二次解锁玩家能力；两套状态独立，R/离区保留，显式新游戏清空。整理唯一标准玩家预制体，同步已有场景实例及相机/编辑器引用；新建空存档在世界原点创建并绑定标准玩家。用户随后授权整合到main并推送，包含本分支此前已推送的攀爬/移动端改进及后续搬运中心修复。
@@ -272,6 +356,18 @@
 - Unity6000.3.12f1隔离验证：朝向曲柄/拾取、转向、稳定选择、完整尺寸/红色虚线/启停注册、轮盘取消等22项通过；原搬运物理20项通过；相关EditMode140/140通过。当前源码Windows开发包实际完成3轮MainMenu→Gaming→MainMenu，游戏错误0、重复EventSystem警告0。日志Library/FacingInteractionVerification.log、FacingCarryCollision.log、FacingRegression.xml、MenuReturnBuild.log、MenuReturnPlayer.log。安卓未重新打包与真机验证；测试包仅Library隔离目录，不代替正式交付。Pick SHA256保持05C74E1A64F415E529677827DA64D113C869BAF44507C3732D46B5DBE3019747；未提交/合并/推送。
 
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
+
+## 2026-10-16 Boss 场景脚本归属
+
+- 分支：`Boss`；规则：Boss 场景专属运行时逻辑、组件、Editor 工具和测试脚本统一放在 `Assets/Boss_Logic`。
+- 边界：Boss 场景与 `Boss.planning.json` 只引用该目录中的 Boss 专属脚本；公共框架、输入、相机、颜色、WordNote 等共享系统保持原归属。
+
+## Boss 场景相机与 WordNote
+
+- 日期：2026-10-16；负责人：Codex；分支：`Boss`。
+- 范围：为 `Assets/_Project/Scenes/Boss.unity` 的 Main Camera 补齐 `CameraControlManager`、`CameraModeController`、`CameraFollowController`、`LevelSceneContext` 和 `TimelineCamRig`；新增独立 `WordNote_UI` 预制体并放入场景。
+- 边界：Boss 仍为开发测试场景，不加入 `GameSceneCatalog`，不改变 MainMenu/Gaming 正式流程。玩家引用暂留空，由 `LevelSceneContext.Activate()` 按 `Player` Tag 复核。
+- 状态：场景与预制体已写入；待 Unity 导入和 PlayMode 验收。
 
 ## 2026-10-15 编辑器响应、攀爬蹬跳与重生点音频
 

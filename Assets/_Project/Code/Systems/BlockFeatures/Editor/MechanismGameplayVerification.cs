@@ -85,7 +85,7 @@ namespace Project.BlockFeatures.Editor
             {
                 if (EditorApplication.timeSinceStartup-started > 120) throw new Exception("timeout phase " + phase);
                 if (!EditorApplication.isPlaying) return;
-                if (player != null && (phase == 8 || phase == 11 || phase == 14 || phase == 18)) peak = Mathf.Max(peak,player.Motor.position.y);
+                if (player != null && (phase == 701 || phase == 8 || phase == 11 || phase == 14 || phase == 18)) peak = Mathf.Max(peak,player.Motor.position.y);
                 if (Time.time < deadline) return;
                 if (phase == 0)
                 {
@@ -180,11 +180,16 @@ namespace Project.BlockFeatures.Editor
                     Check(player.IsGrounded,"player grounded below one-way");
                     Check(Mathf.Abs(player.GetComponent<CapsuleCollider>().bounds.size.y-1)<.001f,"player one cell tall");
                     Check(Mathf.Abs(player.GetComponent<CapsuleCollider>().bounds.size.x-1)<.001f,"player one cell wide");
-                    startY=peak=player.Motor.position.y; player.RequestJump(); player.SetJumpHeld(false); Next(8,2.5f); return;
+                    startY=peak=player.Motor.position.y; player.RequestJump(); player.SetJumpHeld(false); Next(701,1f); return;
+                }
+                if (phase == 701)
+                {
+                    Check(Mathf.Abs(peak-startY-1)<.16f,"tap jump actual apex 1 cell: " + (peak-startY));
+                    startY=peak=player.Motor.position.y; player.SetJumpHeld(true); player.RequestJump(); Next(8,2.5f); return;
                 }
                 if (phase == 8)
                 {
-                    Check(Mathf.Abs(peak-startY-4)<.14f,"normal actual apex 4 cells: " + (peak-startY));
+                    Check(Mathf.Abs(peak-startY-4)<.14f,"held jump actual apex 4 cells: " + (peak-startY));
                     Check(player.IsGrounded && Mathf.Abs(player.Motor.position.y-2.6f)<.12f,"jump through and land atop one-way y=" + player.Motor.position.y + " vy=" + player.VerticalVelocity + " grounded=" + player.IsGrounded);
                     Object.Destroy(player.gameObject);
                     plant=Spawn("Assets/_Project/Content/ColorBlocks/Prefabs/Green_JumpPlant.prefab",new Vector3(120,0,0)).GetComponent<BouncePlantFeature>();

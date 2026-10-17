@@ -3,7 +3,8 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - Boss
   layers:
   - Default
   - TransparentFX
@@ -46,6 +47,9 @@ TagManager:
     locked: 0
   - name: WaterFrontMesh
     uniqueID: 261461823
+    locked: 0
+  - name: BossTop
+    uniqueID: 1273193381
     locked: 0
   m_RenderingLayers:
   - Default

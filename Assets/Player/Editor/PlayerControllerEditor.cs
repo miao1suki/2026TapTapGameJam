@@ -132,13 +132,33 @@ namespace Project.Player.Editor
             jump.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "jumpRiseCells",
-                "跳跃上升（格）",
-                "玩家中心相对起跳位置的最高上升格数。4 表示从第1格中心到第5格中心。"));
+                "完整跳跃上升（格）",
+                "长按跳跃达到的完整上升格数。4 表示从第1格中心到第5格中心。"));
+            jump.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "jumpTapRiseCells",
+                "点按跳跃上升（格）",
+                "只轻点跳跃键时达到的上升格数，默认1格。"));
+            jump.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "jumpTapWindowSeconds",
+                "点按判定时间（秒）",
+                "按住时间不超过此值时仍按点按高度起跳；之后开始随按住时长提高跳跃高度。"));
+            jump.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "jumpFullHeightHoldSeconds",
+                "长按满高时间（秒）",
+                "按住达到此时间时使用完整跳跃高度；按住期间平滑增加上升速度，松开后停止增加并交给正常重力。"));
+            jump.Add(PlayerInspectorFields.Create(
+                serializedObject,
+                "jumpHoldAcceleration",
+                "按住跳跃加速度",
+                "按住期间追赶当前目标高度所需速度的加速度。越高越跟手，越低越柔和；松键不会瞬间降低现有速度。"));
             jump.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "jumpGravityMultiplier",
                 "上升重力倍率",
-                "控制上升节奏；起跳速度自动配合目标高度，松键不改变目标高度。"));
+                "控制上升节奏；起跳速度自动配合本次按住时长决定的目标高度。"));
             jump.Add(PlayerInspectorFields.Create(
                 serializedObject,
                 "fallGravityMultiplier",
@@ -294,6 +314,8 @@ namespace Project.Player.Editor
                     $"着地 {(player.IsGrounded ? "是" : "否")} · " +
                     $"模式 {player.GravityMode} · " +
                     $"跳跃键 {(player.JumpHeld ? "按住" : "松开")} · " +
+                    $"跳键时长 {player.JumpHoldSeconds:0.##}s · " +
+                    $"本次目标 {player.CurrentJumpTargetRiseCells:0.##}格 · " +
                     $"离地 {player.AirTime:0.##}s · " +
                     $"Coyote {player.CoyoteRemaining:0.##}s · " +
                     $"Jump Buffer {player.JumpBufferRemaining:0.##}s · " +
