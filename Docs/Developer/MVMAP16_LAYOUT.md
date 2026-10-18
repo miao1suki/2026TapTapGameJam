@@ -1,5 +1,7 @@
 # Gaming：MVMap16 分房与方块类型
 
+> 类型与材质规则继续有效。房间已按MVMap17重新划分，最新分房与按钮变更见[MVMAP17_ROOM_SPLIT.md](MVMAP17_ROOM_SPLIT.md)。
+
 当前布局按 `Ops/LevelMaps/Map16/source.mvmap.json` 制作，承接 b991bc0 的实际关卡和手工参数。当前结果为18个互不重叠的房间区域、1402项规划物体及实际实例、6277项物体占格累计（允许水与其他物体分层共格）。
 
 ## 坐标与房间
