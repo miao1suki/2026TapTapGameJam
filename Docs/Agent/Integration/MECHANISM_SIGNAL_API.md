@@ -22,6 +22,14 @@
 
 场景交付仍必须成套提交 Scene、同名可编辑 `.planning.json`、双方 `.meta` 和依赖，不能只交生成物。专项入口 `OptionalMechanismTimelineAudit.Run` 保留门/平台旧行为覆盖；新增 `MechanismSignalTimelineAudit.Run` 覆盖实际能源邻接、基座与多平台充能/断电顺序、仅首个、运行中取消及组件参数 JSON 往返。由整合者在 `Library/FlowRetirementProbe`（新专项也允许 `Library/MechanismSignalProbe`）静音运行，不能在用户工程直接执行。
 
+## 可选平台附着物
+
+`PlatformMount` 保存一个 `MovingPlatformFeature` 与平台局部锚点（`Bind` 时通过 InverseTransformPoint 捕获），不将物体设为平台子级，避免合并平台的缩放拉伸物体。挂载协调器使用物理执行顺序200，在现有平台更新之后处理（包括旧 MonoImporter 的显式顺序覆盖），不修改旧平台执行顺序。曲柄等非接触方块由挂载组件跟随；接触方块由协调器请求 `ContactCubeMotion.ApplyPlatformMount`，仍只由方块自身运动器写入刚体，挂载时锁定位移并暂停重力，保留颜色接触反应。
+
+成功 `CarryableFeature.BeginCarry` 后才 `DetachForCarry`；拒绝或失败的搬起不脱离，放下保持脱离直至房间重置。挂载中临时使用无重力、无插值的运动学刚体，不用动态 FreezeAll 抵抗平台位移；搬起、解除挂载或停用后恢复原物理／插值配置，再走既有搬运或普通运动。挂载组件实现 `IRoomColorResettable`，恢复作者附着关系；不改变曲柄转动／回弹速率或平台既有载人。无该组件的物体走原路径。`Platform / IsMounted / IsDetached / TargetPosition` 只读，中文 UI Toolkit Inspector 显示只读绑定及运行状态。
+
+规划通过 `PlanningBox.platformMountId` 稳定绑定平台；生成后接线、回采、片段 ID 重映射、合并／拆分和删除来源清理配套维护。没有绑定默认为空，不为旧 Scene 加挂载、不重建旧关卡。此关系不允许平台和附着物穿过生成时的实体占格限制；R3 初始平台位于岩浆上方。
+
 ## 所有权
 
 按钮统一由脚部/方块底部压力触发。`ButtonLockFeature` 不再实现 `IInteractionTarget`，兼容 `CanInteract/TryInteract` 固定返回 false；不可通过 F 触发。默认一次保持；参数 `mode=Held` 时松开关闭并随区域/R重置，一次保持不因区域/R重置。门按钮和红色信号按钮共用压力判定；红色按钮仍遵守颜色解锁。`Toggle/SetOn` 只供信号/调试调用，不接玩家按键。

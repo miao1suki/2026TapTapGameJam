@@ -1,5 +1,7 @@
 # 系统索引
 
+独立 R3：`Assets/Scenes/R3/R3.unity` 及同名 planning／设计来源，551墙格、59水格、135岩浆格，四固定绿根、两完整藤蔓、两个保持按钮同门。场景三色启用、玩家仅蓝能力，Z96 试玩出生；四格平台从第97行升至88行，红蓝块／曲柄跟随，成功搬起红蓝后脱离、房间重置恢复挂载。可选 `PlatformMount` 与 `platformMountId` 持久化支持；不改 R1/R2、Gaming 或构建列表。见 [R3说明](../Developer/R3_LEVEL.md) 与 [机关API](Integration/MECHANISM_SIGNAL_API.md#可选平台附着物)。
+
 主菜单与游玩采用同一Gaming场景：正式构建仅Gaming，首帧自动安装纯UI WorldMainMenu prefab，新ButtonIcon四项竖排与27帧LOGO；开始平滑退镜、返回反向，期间不加载/卸载场景、不截图、不重置进度，唯一世界Camera/Listener/EventSystem始终启用。旧MainMenu文件只作编辑器兼容重定向，其旧蓝底/布局移除。见[融合菜单](../Developer/WORLD_MENU_FUSION.md)与[场景流程](../Developer/GAME_FLOW.md)。
 
 独立R2：`Assets/Scenes/R2/R2.unity`及同名planning／来源映射，Excel393墙格、三保持按钮同门、曲柄10格升降、两个绿根和8格可烧毁植物。场景三色启用、玩家仅蓝能力，固定AK114复用作者约束攀附；不额外补蓝块，整合main已有玩家蓝能力点击绿块生长入口，不替代正式Gaming、不改R1或R3。见 [R2说明](../Developer/R2_LEVEL.md)。Scene、planning、meta及依赖成套交付。

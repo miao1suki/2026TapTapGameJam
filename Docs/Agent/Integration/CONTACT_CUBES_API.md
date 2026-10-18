@@ -10,6 +10,10 @@
 - `IsUnlocked` 只读。红块实现 `IEnergySource.IsEnergyAvailable`，需已解锁、实体启用且未处于搬运动画；任意红块可供能任意基座，不持久绑定特定红块。旧 Red_Battery 预制体保留 GUID，但已替换为红色 ContactCube 及运动/重置组件；新放置统一使用 Red_ContactCube。
 - 绿色钩子挂接只暂停红块主动接触反应，不暂停被动能源输出。拉到基座后，即使未按跳跃/交互松钩也立即按原接触规则供能；不能把`hookSuspended`当作能源不可用条件。搬运、锁色、禁用实体仍排除。
 
+## 可选平台挂载
+
+实例可通过规划 `platformMountId` 附着于移动平台。`PlatformMount` 不缩放或父子化方块，挂载时由 `ContactCubeMotion` 保持唯一刚体写入，锚点随平台运动；颜色接触反应不关闭。`CarryableFeature.BeginCarry` 只有成功后才使其脱离，放下后正常物理、不自动再附着；房间重置恢复初始位置及挂载。未挂载预制体／旧关卡行为不变。协议与持久化见 [机关 API](MECHANISM_SIGNAL_API.md#可选平台附着物)。
+
 ## 有限状态机
 
 | 绿色当前接触或生长请求 | 状态 | 行为 |

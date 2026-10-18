@@ -195,6 +195,7 @@ namespace PlanningEditorPrototype
                 {
                     part.x += item.box.x-ox; part.y += item.box.y-oy;
                     part.crankOwnerId = item.box.crankOwnerId;
+                    part.platformMountId = item.box.platformMountId;
                     part.mechanismBaseId = item.box.mechanismBaseId;
                     part.mechanismBaseCellOffset = item.box.mechanismBaseCellOffset;
                     part.mechanismButtonIds = new List<string>(item.box.mechanismButtonIds);
@@ -622,6 +623,9 @@ namespace PlanningEditorPrototype
                             box.mergeParts.Add(JsonUtility.ToJson(snapshot));
                         }
                     }
+                    if (block.GetComponent<Project.BlockFeatures.PlatformMount>() is Project.BlockFeatures.PlatformMount importedMount)
+                        box.platformMountId = importedMount.Platform != null
+                            ? importedMount.Platform.GetComponent<LevelEditorPlacedBlock>()?.PlanningBoxId : null;
                     if (block.GetComponent<Project.BlockFeatures.CrankPlatformFeature>() is Project.BlockFeatures.CrankPlatformFeature importedCrank)
                     {
                         box.singleInstance = true; box.initialCrankPlatformCreated = importedCrank.InitialPlatformCreated;
@@ -772,6 +776,7 @@ namespace PlanningEditorPrototype
                     a.height != b.height ||
                     a.paletteEntryName != b.paletteEntryName || a.propEntryName != b.propEntryName ||
                     a.crankOwnerId != b.crankOwnerId || a.mechanismBaseId != b.mechanismBaseId ||
+                    a.platformMountId != b.platformMountId ||
                     !a.mechanismButtonIds.SequenceEqual(b.mechanismButtonIds) ||
                     a.doorOwnerId != b.doorOwnerId ||
                     a.doorButtonOrder != b.doorButtonOrder ||
@@ -4330,6 +4335,7 @@ namespace PlanningEditorPrototype
                 mechanismBaseCellOffset = source.mechanismBaseCellOffset,
                 mechanismButtonIds = new List<string>(source.mechanismButtonIds),
                 crankOwnerId = source.crankOwnerId,
+                platformMountId = source.platformMountId,
                 initialCrankPlatformCreated = source.initialCrankPlatformCreated
             };
             boxes.Add(carved);

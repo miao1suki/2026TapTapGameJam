@@ -18,6 +18,7 @@ namespace PlanningEditorPrototype
             {
                 box.NormalizeMechanismButtonLinks();
                 if (!string.IsNullOrEmpty(box.crankOwnerId) && !ids.Contains(box.crankOwnerId)) box.crankOwnerId = null;
+                if (!string.IsNullOrEmpty(box.platformMountId) && !ids.Contains(box.platformMountId)) box.platformMountId = null;
                 if (!string.IsNullOrEmpty(box.mechanismBaseId) && !ids.Contains(box.mechanismBaseId))
                 { box.mechanismBaseId = null; box.mechanismBaseCellOffset = default; }
                 box.mechanismButtonIds.RemoveAll(id => !ids.Contains(id));
@@ -47,6 +48,7 @@ namespace PlanningEditorPrototype
             var first = items[0];
             foreach (var item in items)
                 if ((item.crankOwnerId ?? "") != (first.crankOwnerId ?? "") ||
+                    (item.platformMountId ?? "") != (first.platformMountId ?? "") ||
                     (item.mechanismBaseId ?? "") != (first.mechanismBaseId ?? "") ||
                     !SameButtonLinks(item, first) ||
                     !string.IsNullOrEmpty(item.mechanismBaseId) && item.mechanismBaseCellOffset != first.mechanismBaseCellOffset) return false;
@@ -63,6 +65,7 @@ namespace PlanningEditorPrototype
                 }
                 ReplaceButtonLink(consumer, original.id, merged.id);
                 if (consumer.crankOwnerId == original.id) consumer.crankOwnerId = merged.id;
+                if (consumer.platformMountId == original.id) consumer.platformMountId = merged.id;
             }
         }
         internal static bool IsConsumer(GameObject prefab) => prefab != null && (prefab.GetComponent<MovingPlatformFeature>() != null || prefab.GetComponent<CrankPlatformFeature>() != null);
@@ -72,6 +75,7 @@ namespace PlanningEditorPrototype
             {
                 consumer.NormalizeMechanismButtonLinks();
                 if (consumer.crankOwnerId == original.id) consumer.crankOwnerId = parts.Count == 1 ? parts[0].id : null;
+                if (consumer.platformMountId == original.id) consumer.platformMountId = parts.Count == 1 ? parts[0].id : null;
                 if (consumer.mechanismButtonIds.Contains(original.id))
                     ReplaceButtonLink(consumer, original.id, parts.Count == 1 ? parts[0].id : null);
                 if (consumer.mechanismBaseId != original.id) continue;
@@ -95,9 +99,12 @@ namespace PlanningEditorPrototype
             var sources = new Dictionary<string, MechanismBaseFeature>();
             var cranks = new Dictionary<string, CrankPlatformFeature>();
             var buttons = new Dictionary<string, MonoBehaviour>();
+            var platforms = new Dictionary<string, MovingPlatformFeature>();
             var placed = root.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
             foreach (var item in placed)
             {
+                if (!string.IsNullOrEmpty(item.PlanningBoxId) && item.TryGetComponent(out MovingPlatformFeature mountedPlatform))
+                    platforms[item.PlanningBoxId] = mountedPlatform;
                 var source = item.GetComponent<MechanismBaseFeature>();
                 if (source != null && !string.IsNullOrEmpty(item.PlanningBoxId)) sources[item.PlanningBoxId + ":" + item.PlanningLocalCell] = source;
                 var doorButton = item.GetComponent<Project.Mechanisms.DoorButton>();
@@ -164,6 +171,16 @@ namespace PlanningEditorPrototype
                     if (!crank.BindSharedController(owner)) Debug.LogError("曲柄共享绑定不能串联或循环：" + box.id, crank);
                     EditorUtility.SetDirty(crank); PrefabUtility.RecordPrefabInstancePropertyModifications(crank);
                 }
+                var mount = item.GetComponent<PlatformMount>();
+                if (!string.IsNullOrEmpty(box.platformMountId) && platforms.TryGetValue(box.platformMountId, out var mountOwner) &&
+                    mountOwner.gameObject != item.gameObject)
+                {
+                    if (mount == null) mount = item.gameObject.AddComponent<PlatformMount>();
+                    mount.Bind(mountOwner);
+                    EditorUtility.SetDirty(mount);
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(mount);
+                }
+                else if (mount != null) Object.DestroyImmediate(mount);
             }
         }
     }
