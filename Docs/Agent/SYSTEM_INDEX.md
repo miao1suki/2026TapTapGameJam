@@ -1,5 +1,7 @@
 # 系统索引
 
+独立 R1：`Development/LevelEditor/ILorR/R1/R1.unity`及同名planning（均在Assets/_Project下）；Excel单格制作，不替代Gaming、不加入正式构建。含多位置曲柄共享进度、作者固定13格绿条横向攀附和单实例占格支持；开局仅玩家红能力、三色场景解锁。操作及验证边界见[关卡说明](../Developer/R1_LEVEL.md)，接入见MECHANISM_SIGNAL_API、CONTACT_CUBES_API、PLANNING_COLLABORATION_API。
+
 TA 新效果已接入现有生命周期：流动岩浆精确保留孔洞、冷却蒸汽、三类植物燃烧、标准玩家死亡/Boss追逐RGB；PC/Mobile只追加RGB通道，不覆盖水/HSV/像素参数。雨区和萤火虫通过 `Tools/2026TapTap/关卡美术/创建雨区` / `创建萤火虫区域` 独立创建，固定16像素/格、Scene保存，不属于planning玩法物体；雨是颜色装饰，萤火虫是中性装饰且实时灯默认关闭。见 [TA_EFFECTS_API](Integration/TA_EFFECTS_API.md) 与 [使用说明](../Developer/TA_EFFECTS.md)。关卡交付仍须Scene+planning+meta成套。
 
 2026-10-18 录像回归：绿钩拉红块/基座新接通供能后暂停主动拉取、保留绳子并放行普通行走，重新点击继续；精确来源查询 `MechanismBaseFeature.IsPoweredBy` 不把他人的红块供能算给蓝块。红/蓝未落稳时保留玩家从上落脚碰撞；岩浆只补真实支撑顶面的少量物理解算薄层，露边仍危险。普通收集品已开始/已完成收集不随R/死亡/离区恢复，`IsCollected`、稳定作者实例键及 `RestoreCollectedState` 供后续存档接入，未实现跨场景/退出后的存档服务。接入见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)、[WORLD_ITEMS_API](Integration/WORLD_ITEMS_API.md)、[CONTACT_CUBES_API](Integration/CONTACT_CUBES_API.md)。

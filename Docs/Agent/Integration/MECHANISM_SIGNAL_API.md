@@ -40,6 +40,12 @@
 
 ## 持久绑定
 
+### 多位置曲柄共享进度
+
+`CrankPlatformFeature.BindSharedController(owner)` 把当前曲柄作为另一独立曲柄的操作位置；`SharedController` 只读。两处交互仍分别检查玩家到本地曲柄的距离，只有 owner 每帧推进一次进度；另一处 Progress/信号跟随 owner，切换位置不清零、不把两份回弹相加。松手等待、每秒转动/回弹、制动使用 owner 配置；载人检测包括组内平台。空绑定恢复独立控制，拒绝自身、串联和循环共享；停用释放本地交互，区域重置恢复组进度。
+
+复用 `PlanningBox.crankOwnerId`：用于平台时仍表示控制曲柄，用于曲柄时表示共享进度 owner。SceneBuilder 按稳定 ID 重连并记录 Prefab 覆盖，既有片段 ID 重映射和缺失来源清理同样生效，不新增存档字段或 instanceID。融合编辑器曲柄参数窗口提供“绑定共享曲柄／解除共享曲柄”；主、从应放在同一重置区域。Scene 手工绑定不替代规划文档绑定。
+
 PlanningBox 保存 `mechanismBaseId`、`mechanismBaseCellOffset` 和 `mechanismButtonIds`。基座偏移是相对目标基础对象左下格的偏移，支持一次批量放置多个基座后选具体格；按钮来源列表通过稳定 PlanningBoxId 保存，允许同一平台绑定任意数量的门按钮/红色按钮。旧单按钮字段会在加载与持久化时迁移到列表。`PlanningMechanismUtility.BindScene` 在全量构建和增量应用结束后按 PlanningBoxId/PlanningLocalCell 重连；房间坐标相同不造成串绑。局部擦除批量基座时，RemapCarvedSource 将剩余格的绑定转移到新片段，擦除被绑定格则清除关系。不用 instanceID / 临时 Unity 引用保存地图关系。复制、片段导入导出、合并/拆分和孤儿清理同步重映射或清理按钮列表，不能把旧源 ID 指向不相关副本。
 
 曲柄平台另存 `PlanningBox.crankOwnerId`；`initialCrankPlatformCreated` 记录首次配套创建，删除平台不自动重生。曲柄单实例，不可合并；平台可合并。CanMerge 要求各平台相同控制器；合并结果保留曲柄 ID，解除时以当前合并体绑定覆盖旧快照绑定。基座合并与解除按具体被绑定格重映射，不残留被删除来源 ID。BindScene 在每次构建/增量结束按持久 ID 重建并记录 Prefab override，保存 Scene 后可在运行时独立加载。不依赖 instanceID。

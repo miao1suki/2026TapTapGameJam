@@ -224,6 +224,8 @@ namespace PlanningEditorPrototype
                     secondaryLabel = "绑定制动基座";
                     thirdAction = () => ClearBaseBinding(box.id);
                     thirdLabel = "解除制动基座绑定";
+                    fourthAction = () => { if (string.IsNullOrEmpty(box.crankOwnerId)) BeginSignalBinding(box.id); else ClearSignalBinding(box.id); };
+                    fourthLabel = string.IsNullOrEmpty(box.crankOwnerId) ? "绑定共享曲柄" : "解除共享曲柄";
                 }
                 else if (PlanningMechanismUtility.IsLift(source))
                 {
@@ -556,6 +558,8 @@ namespace PlanningEditorPrototype
                     if (block.GetComponent<Project.BlockFeatures.CrankPlatformFeature>() is Project.BlockFeatures.CrankPlatformFeature importedCrank)
                     {
                         box.singleInstance = true; box.initialCrankPlatformCreated = importedCrank.InitialPlatformCreated;
+                        box.crankOwnerId = importedCrank.SharedController != null
+                            ? importedCrank.SharedController.GetComponent<LevelEditorPlacedBlock>()?.PlanningBoxId : null;
                     }
                     if (block.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() is Project.BlockFeatures.MovingPlatformFeature importedPlatform)
                     {
@@ -3357,6 +3361,13 @@ namespace PlanningEditorPrototype
             }
             if (pickingSignalSource)
             {
+                if (IsCrankBox(consumer) && (selected.id == consumer.id || !IsCrankBox(selected) ||
+                    !string.IsNullOrEmpty(selected.crankOwnerId) ||
+                    AllBoxes().Any(item => IsCrankBox(item.box) && item.box.crankOwnerId == consumer.id)))
+                {
+                    StatusChanged?.Invoke("请选择另一独立曲柄；共享曲柄不能串联或循环绑定。");
+                    return;
+                }
                 if (selectedPrefab.GetComponent<Project.BlockFeatures.CrankPlatformFeature>() != null)
                 {
                     consumer.crankOwnerId = selected.id;
@@ -3364,7 +3375,7 @@ namespace PlanningEditorPrototype
                     pickingSignalSource = false;
                     NotifyDocumentChanged();
                     MarkDirtyRepaint();
-                    StatusChanged?.Invoke("已绑定曲柄；平台进入曲柄控制。");
+                    StatusChanged?.Invoke(IsCrankBox(consumer) ? "已共享曲柄进度；两个位置控制同一组平台。" : "已绑定曲柄；平台进入曲柄控制。");
                     return;
                 }
 

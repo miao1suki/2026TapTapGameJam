@@ -36,6 +36,9 @@ namespace Project.ContactCubes
         // the physical box has a small clearance for equal-width openings.
         public Vector3 LogicalContactShapeSize => horizontalClearance.LogicalSize(shape);
         public bool IsSettled { get; private set; }
+        // Author-pinned shapes need no invisible support collider for climbing.
+        // Runtime settling locks do not count as author constraints.
+        public bool IsAuthoredFixed => (baseConstraints & RigidbodyConstraints.FreezePosition) == RigidbodyConstraints.FreezePosition;
         public bool GravityProtected => Time.time < gravityProtectedUntil;
         public bool IsSuspended { get; private set; }
         public bool IsGreenHookPullActive => greenHookActive;

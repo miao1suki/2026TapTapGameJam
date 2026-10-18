@@ -35,6 +35,8 @@
 
 ## 不规则合并与覆盖
 
+自身管理几何的普通单实例道具（例如初始伸长接触方块）以 `singleInstance=true` 保存完整逻辑 width/height，SceneBuilder 写入 LevelEditorPlacedBlock.SizeCells，但不重复拉伸根缩放；几何仍归道具组件所有。合并、固定规格门、梯子和平台保留原处理。R1 的 13×1 固定绿条使用此路径，根锚点在最左格、initialLength=13。共享曲柄使用既有 crankOwnerId，片段重映射、来源删除和 Scene 重建仍走稳定 ID，不存临时引用。
+
 - `PlanningShapeUtility` 从既有 `mergeParts` 快照恢复实际覆盖并缓存为压缩 RectInt；`Contains/Overlaps/Cells/Rectangles` 是编辑命中、生成占格和美术铺绘的依据，不再把包围矩形当实际形状。缓存随文档修改失效，平移不重复解析 JSON。
 - 不新增 PlanningBox 存档字段或迁移版本；没有快照的旧合并继续视为完整矩形。移动/解除合并沿用原始片段重锚，机关引用仍只使用稳定 PlanningBoxId。
 - SceneBuilder 以首个实际格作为生成锚点，元数据仍保存完整包围范围；不能要求左上角有实体。增量签名继续含 mergeParts，未修改对象保留实例。
