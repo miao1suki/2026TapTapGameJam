@@ -1,5 +1,13 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 紧急双端 Gaming 出包（进行中）
+
+- 用户要求尽量15分钟内交付Android/Windows，允许非阻断问题后续迭代，并明确授权合并推送；正式地图采用策划最新56126c3的Gaming Scene、同名planning及命名存档，保留本地新版菜单、单世界流程和运镜。
+- 已将origin/main的Boss等进度整合，RoomResetObject保留非分配缓存与未挂接平台复原，PlanningCanvas同时保留平台形状及Boss重生点标记维护。用户未提交MRoom2/MRoom3/Pick、字体等不作为此次关卡交付。
+- Android按键采用新图左侧方形版本（方向/跳跃30×30），保留原触控范围与个人布局；Windows/Android使用Resources/临时ICON.png。资源生成与构建仅在隔离FlowRetirementProbe，不保存主Unity内存Scene。
+- 唯一打包启动场景Gaming，非Development、无Profiler、无运行时网络权限；旧包从Builds移至Library备份以免误用。新地图交接注明7个按钮及部分信号未接线，本轮不猜测补绑定，不声称完整关卡通关。
+- 蓝色点击绿块按玩家网格行决定四向，已伸长锁方向、回单格可改向；持续至最大，真实实体/玩家占新增格暂停，不以整格扩张把玩家吞入，移开后继续。首轮真实PhysX测试发现穿透后改为安全占位策略，终版验证结果待追加。
+
 ## 2026-10-18 紧急包手机按键与双端图标（urgent_mobile_icons）
 
 - 范围仅手机HUD美术、TouchPressFeedback图形与独立MobileArtworkSetup生成入口。采用B31A4497C97A51CF13A50549B8241494.png左侧30×30方向/跳跃版本，动作34×28等比；下组为按下帧，纵向偏移185像素。图标为用户新增Resources/临时ICON.png，未使用Timeline棍母。

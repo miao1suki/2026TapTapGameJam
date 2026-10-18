@@ -34,7 +34,7 @@ namespace Project.Player.Editor
             try
             {
                 if (!source.LoadImage(File.ReadAllBytes(Source))) throw new InvalidOperationException("Cannot decode mobile artwork.");
-                if (source.width != 646 || source.height != 382) throw new InvalidOperationException("Mobile source layout changed; review crop coordinates first.");
+                if (source.width != 645 || source.height != 382) throw new InvalidOperationException("Mobile source layout changed; review crop coordinates first. Actual=" + source.width + "x" + source.height);
                 for (int i = 0; i < Names.Length; i++)
                 {
                     Write(source, Names[i], Rects[i], false);

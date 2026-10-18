@@ -5,6 +5,8 @@ description: 2026TapTap 颜色大洗牌开发规范，覆盖固定颜色物体�
 
 # 颜色大洗牌开发入口
 
+2026-10-18 蓝色能力新增特例：蓝色点击已解锁绿色 ContactCube 可请求持续生长至原最大长度，不改变固定颜色。玩家与根块按实际世界格比较：下方向下、上方向上、同格行时向背离玩家的左右方向。伸长后锁方向，缩回单格才可改向。新增格有实体或玩家占据时暂停，清障后继续；R/离区清除请求。只走玩家真实命中入口，不接受万能方块广播。详见 CONTACT_CUBES_API；覆盖旧“所有接触方块都不接收玩家点击”的绝对描述。
+
 颜色解锁与玩家的当前规范：先读 `Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md`。同色第一把钥匙只解锁全局场景颜色，第二把才授予玩家能力；`IsUnlocked/Unlock` 只用于场景，轮盘用 `IsAbilityUnlocked`，能力授予走 `UnlockAbility`。钥匙通过 `CollectColorKey` 一次结算一个阶段，禁用/销毁不得补结算。R/离区保留两种进度。唯一玩家预制体为 `Assets/_Project/Content/Player/Player.prefab`，不重建旧RuntimePlayer或Player(暂定)。
 
 2026-10-12 区域生命周期规则优先：先读 `Docs/Agent/Integration/ROOM_LIFECYCLE_API.md`。离开世界图房间/通道或死亡/R重生只恢复相关区域的布置状态；门、按钮、已拾取钥匙及颜色解锁保留。已解锁物体回到刚解锁的行为，不重新锁色。R 不再只重置搬运，取消携带后进行区域重生。不得使用清空全局颜色的旧房间重置，也不得 Destroy 可恢复的作者物体。
