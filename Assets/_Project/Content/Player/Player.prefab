@@ -205,6 +205,7 @@ GameObject:
   - component: {fileID: 2415582080761627893}
   - component: {fileID: 4133736232464685489}
   - component: {fileID: 4344423070540822931}
+  - component: {fileID: 6729018101800000001}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -212,6 +213,33 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &6729018101800000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8106090704347177995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27b5f76d8d224a19aa6f0eca30268357, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetPlayer: {fileID: 9103196063016445328}
+  fearLevel: 0
+  vignetteDarkness: 0.65
+  shakeRate: 15
+  shakeStrength: 0.018
+  colorSeparationPixels: 10
+  colorSeparationJitter: 0.85
+  deathFadeSeconds: 0
+  respawnFadeSeconds: 1.2
+  bossFearLevel: 0.4
+  bossVignetteDarkness: 0.28
+  bossShakeRate: 8
+  bossShakeStrength: 0.0035
+  bossColorSeparationPixels: 6
+  bossColorSeparationJitter: 0.55
 --- !u!4 &9021559481742931667
 Transform:
   m_ObjectHideFlags: 0

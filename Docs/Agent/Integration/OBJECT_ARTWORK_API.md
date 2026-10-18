@@ -1,5 +1,7 @@
 # 物体美术接入
 
+流动岩浆/蓝色冷却蒸汽与三类植物燃烧已接入TA正式表现，旧场景通过共享配置后备生效，不重建布局。燃烧使用原Renderer的MPB及Sprite/HSV共用轮廓；藤蔓保留192帧及自顶向下玩法次序。详见 [TA_EFFECTS_API](TA_EFFECTS_API.md)。下文“静态岩浆”指无TA配置时的原后备。
+
 ## 统一像素尺度与关卡预览
 
 当前场景美术以 `GridArtworkMetrics.PixelsPerCell = 16` 为唯一基准；详细换算及资源尺寸见 `Docs/Developer/ART_GRID_CONVENTIONS.md` 和 `ART_GRID_REFINEMENT_API.md`。物理占格不再作为任意缩放贴图的依据：32×32重生点显示2×2格，24×24玩家显示1.5×1.5格，已有碰撞保持不变；确证4倍导出的tail瓦片按有效16像素显示1格。旧存档不因外观更新自动扩占格或移位。

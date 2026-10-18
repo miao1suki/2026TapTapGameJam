@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Project.BossLogic
@@ -22,6 +23,8 @@ namespace Project.BossLogic
 
         public BossController Controller => controller;
         public bool IsMoving => applyingMotion;
+        /// <summary>Presentation boundary only; published after the executor's real motion ownership changes.</summary>
+        public event Action<bool> MotionStateChanged;
         public float RightMoveHeightY =>
             hasActiveRightMoveHeight
                 ? activeRightMoveHeightY
@@ -34,6 +37,9 @@ namespace Project.BossLogic
         private void Awake()
         {
             controller = GetComponent<BossController>();
+            // Existing authored bosses gain presentation without rewriting scenes or motion settings.
+            if (GetComponent<BossRgbFearPresentation>() == null)
+                gameObject.AddComponent<BossRgbFearPresentation>();
         }
 
         private void OnEnable()
@@ -80,7 +86,11 @@ namespace Project.BossLogic
 
             controller.SetExternalHeight(activeRightMoveHeightY);
             controller.SetPassThroughTerrain(true);
-            applyingMotion = true;
+            if (!applyingMotion)
+            {
+                applyingMotion = true;
+                MotionStateChanged?.Invoke(true);
+            }
         }
 
         private void OnDisable()
@@ -128,6 +138,7 @@ namespace Project.BossLogic
 
             applyingMotion = false;
             hasActiveRightMoveHeight = false;
+            MotionStateChanged?.Invoke(false);
         }
     }
 }

@@ -30,6 +30,8 @@ namespace Project.BlockFeatures
         private Collider[] colliders;
         private Renderer[] renderers;
         private bool intact;
+        private bool burning;
+        private Project.BurnEffects.PlantBurnEffectPlayer burnEffect;
         private static readonly HashSet<PlantObstacleFeature> Attached = new HashSet<PlantObstacleFeature>();
 
         private sealed class BurnNode
@@ -41,7 +43,7 @@ namespace Project.BlockFeatures
         }
 
         public bool IsIntact => intact && CanRunFeature;
-        public bool ShowsArtwork => intact || !hideRenderersWhenBroken;
+        public bool ShowsArtwork => intact || burning || !hideRenderersWhenBroken;
         public event Action<PlantObstacleFeature, bool> IntactChanged;
 
         protected override void OnAttach()
@@ -51,10 +53,19 @@ namespace Project.BlockFeatures
             intact = startsIntact;
             Attached.Add(this);
             ApplyState();
+            // SceneLoaded installs authored objects once. Runtime-created copies
+            // must also acquire the same 2D presentation before any reaction.
+            if (Application.isPlaying)
+            {
+                MechanismArtworkPresentation.Ensure(gameObject);
+                renderers = GetComponentsInChildren<Renderer>(true);
+            }
         }
 
         protected override void OnDetach()
         {
+            burnEffect?.Cancel();
+            burning = false;
             Attached.Remove(this);
             SetCollidersEnabled(true);
             SetRenderersEnabled(true);
@@ -62,6 +73,8 @@ namespace Project.BlockFeatures
 
         protected override void OnResetForRoom()
         {
+            burnEffect?.Cancel();
+            burning = false;
             intact = startsIntact;
             ApplyState();
             IntactChanged?.Invoke(this, intact);
@@ -116,7 +129,7 @@ namespace Project.BlockFeatures
             foreach (PlantObstacleFeature obstacle in connected) obstacle.intact = false;
             AudioCuePlayer.Play(AudioCueIds.PlantBurn);
             foreach (PlantObstacleFeature obstacle in connected)
-                if (obstacle != null) obstacle.ApplyState();
+                if (obstacle != null) obstacle.BeginBurnVisual();
             foreach (PlantObstacleFeature obstacle in connected)
                 if (obstacle != null) obstacle.IntactChanged?.Invoke(obstacle, false);
             return true;
@@ -197,6 +210,8 @@ namespace Project.BlockFeatures
                 return;
             }
 
+            burnEffect?.Cancel();
+            burning = false;
             intact = true;
             ApplyState();
             IntactChanged?.Invoke(this, true);
@@ -230,7 +245,25 @@ namespace Project.BlockFeatures
         {
             SetCollidersEnabled(intact);
             SetRenderersEnabled(
-                intact || !hideRenderersWhenBroken);
+                ShowsArtwork);
+        }
+
+        private void BeginBurnVisual()
+        {
+            burning = true;
+            // The complete connected group was committed broken before this point.
+            // Keep only the artwork alive, never its collision or interaction.
+            ApplyState();
+            MechanismArtworkPresentation.Ensure(gameObject);
+            renderers = GetComponentsInChildren<Renderer>(true);
+            burnEffect = Project.BurnEffects.PlantBurnEffectPlayer.GetOrCreate(gameObject);
+            if (!burnEffect.Play(renderers, null, 0f, FinishBurnVisual, cellWorldSize: GridCellWorldSize)) FinishBurnVisual();
+        }
+
+        private void FinishBurnVisual()
+        {
+            burning = false;
+            ApplyState();
         }
 
         private void SetCollidersEnabled(bool value)

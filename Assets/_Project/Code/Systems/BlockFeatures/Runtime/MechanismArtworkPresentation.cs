@@ -129,7 +129,8 @@ namespace Project.BlockFeatures
                 visual = child.GetComponent<SpriteRenderer>();
                 if (visual == null) visual = child.gameObject.AddComponent<SpriteRenderer>();
             }
-            placeholders = GetComponentsInChildren<MeshRenderer>(true);
+            placeholders = System.Array.FindAll(GetComponentsInChildren<MeshRenderer>(true),
+                model => model.GetComponentInParent<Project.FlowMagma.FlowMagmaVisual>() == null);
             if (door != null)
             {
                 hint = GetComponentInChildren<DoorHint>();
@@ -216,6 +217,7 @@ namespace Project.BlockFeatures
                     mask.SetTexture("_ColorMaskAlphaTexture", sprite.texture); visual.SetPropertyBlock(mask);
                 }
             }
+            if (lava != null && lava.HasFlowArtwork) visual.enabled = false;
             Layout(sprite);
             if (door != null)
             {

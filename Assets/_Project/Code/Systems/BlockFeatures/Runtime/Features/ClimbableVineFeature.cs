@@ -139,6 +139,7 @@ namespace Project.BlockFeatures
         private bool burning, burned;
         private GameObject vineVisual;
         private Renderer vineRenderer;
+        private Project.BurnEffects.PlantBurnEffectPlayer burnEffect;
         private float visualProgress, visualTarget, visibleCells = 1f, targetCells = 1f;
         private int lastPose = -1;
         [BlockParameter(Label = "序列帧美术配置", Group = "藤蔓表现", Order = 0, Tooltip = "留空使用 Resources/ObjectArtwork/Objects；整条母藤蔓共用一套序列帧。")]
@@ -872,6 +873,10 @@ namespace Project.BlockFeatures
             foreach (GameObject item in spawnedSegments) AddOwned(owned, item);
             owned.Add(this);
             owned.Sort((a, b) => b.transform.position.y.CompareTo(a.transform.position.y));
+            UpdateVineVisual(0f);
+            burnEffect = Project.BurnEffects.PlantBurnEffectPlayer.GetOrCreate(gameObject);
+            burnEffect.Play(new[] { vineRenderer }, null, owned.Count * burnSegmentDuration, null,
+                fromTop: true, exactDuration: true, cellWorldSize: GridCellWorldSize);
             float startProgress = visualProgress;
             float startCells = visibleCells;
             for (int index = 0; index < owned.Count; index++)
@@ -896,6 +901,7 @@ namespace Project.BlockFeatures
             }
             burned = true;
             burning = false;
+            burnEffect?.Cancel();
             ColorAppearanceManager.Existing?.UnregisterVine(vineRenderer);
             if (vineRenderer != null) vineRenderer.enabled = false;
             burnRoutine = null;
@@ -910,6 +916,7 @@ namespace Project.BlockFeatures
 
         private void StopBurn()
         {
+            burnEffect?.Cancel();
             if (burnRoutine != null) StopCoroutine(burnRoutine);
             burnRoutine = null;
             burning = false;

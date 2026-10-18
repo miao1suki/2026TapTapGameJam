@@ -129,10 +129,17 @@ public static class GameplayRefinementAudit
         Check(root.CurrentGrowthBlocks == 1 && root.IsGrowthBlocked, "plant obstacle blocks growth");
         var obstacleFeature = obstacle.GetComponent<PlantObstacleFeature>();
         var obstacleArt = MechanismArtworkPresentation.Ensure(obstacle);
-        Check(obstacleFeature.BreakObstacle() && !obstacleFeature.ShowsArtwork, "burning obstacle clears artwork availability");
-        obstacleArt.Refresh(0); Check(!obstacleArt.Visual.enabled, "artwork late refresh cannot resurrect burned obstacle sprite");
+        Check(obstacleFeature.BreakObstacle() && !obstacleFeature.IsIntact && obstacleFeature.ShowsArtwork &&
+            obstacleFeature.GetComponentsInChildren<Collider>().All(collider => !collider.enabled),
+            "burning obstacle immediately clears collision while retaining its transient artwork");
+        obstacleArt.Refresh(0);
+        Check(obstacleArt.Visual.enabled && obstacleFeature.GetComponent<Project.BurnEffects.PlantBurnEffectPlayer>().IsPlaying,
+            "artwork refresh preserves the active burn until its visual completion");
         obstacleFeature.ResetForRoom(); obstacleArt.Refresh(0);
-        Check(obstacleFeature.IsIntact && obstacleArt.Visual.enabled, "room reset restores obstacle solidity and sprite");
+        Check(obstacleFeature.IsIntact && obstacleArt.Visual.enabled &&
+            !obstacleFeature.GetComponent<Project.BurnEffects.PlantBurnEffectPlayer>().IsPlaying &&
+            obstacleFeature.GetComponentsInChildren<Collider>().All(collider => collider.enabled),
+            "mid-burn room reset cancels the visual and restores obstacle solidity and sprite");
         Object.DestroyImmediate(obstacle);
         var platform = Spawn("ColorBlocks/Prefabs/Red_Platform.prefab", origin + Vector3.up * 2); Physics.SyncTransforms(); root.GrowTo(4);
         Check(root.CurrentGrowthBlocks == 1 && root.IsGrowthBlocked, "moving platform blocks growth");

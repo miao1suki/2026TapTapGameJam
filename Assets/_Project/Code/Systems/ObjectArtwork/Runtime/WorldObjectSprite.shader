@@ -5,6 +5,7 @@ Shader "Project/Objects/Pixel Sprite Reveal"
         [PerRendererData] _MainTex("Sprite Texture", 2D) = "white" {}
         _Color("Tint", Color) = (1,1,1,1)
         _ColorRevealOpacity("Reveal", Range(0,1)) = 1
+        [PerRendererData] _BurnEnabled("Plant Burn", Float) = 0
         [PerRendererData] _ArtworkPixelWorldSize("Artwork World Pixel", Float) = 0
         [PerRendererData] _ArtworkPixelUVRect("Artwork Frame UV", Vector) = (0,0,1,1)
         [PerRendererData] _ArtworkPixelTextureSize("Artwork Texture Size", Vector) = (1,1,1,1)
@@ -24,6 +25,7 @@ Shader "Project/Objects/Pixel Sprite Reveal"
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/Core2D.hlsl"
             #include "GridArtworkSampling.hlsl"
+            #include "Assets/ta_source/Burn/PlantBurnSampling.hlsl"
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
             CBUFFER_START(UnityPerMaterial)
             half4 _Color;
@@ -49,6 +51,9 @@ Shader "Project/Objects/Pixel Sprite Reveal"
             {
                 float2 uv=GridArtworkSampleUV(i.uv,i.worldXY,_ArtworkPixelWorldSize,_ArtworkPixelUVRect,_ArtworkPixelTextureSize.xy);
                 half4 color=SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,uv)*i.color;
+                float contour=PlantBurnContour(TEXTURE2D_ARGS(_MainTex,sampler_MainTex),uv,
+                    _ArtworkPixelUVRect,_ArtworkPixelTextureSize.xy,color.a,i.color.a);
+                color=ApplyPlantBurn(color,i.worldXY,contour);
                 // Match the silhouette and handoff thresholds used by ColorObjectMask.
                 clip(color.a-.01h);
                 clip(_ColorRevealOpacity-.001h);

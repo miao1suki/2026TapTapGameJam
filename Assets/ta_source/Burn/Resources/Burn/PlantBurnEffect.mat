@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PlantBurnEffect
+  m_Shader: {fileID: 4800000, guid: 8e3e36f65f844727a2c9e98a7d624e27, type: 3}
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 0
+  m_CustomRenderQueue: 3020
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BurnDuration: 2.25
+    - _BurnElapsed: 0
+    - _EdgeNoise: 0.5
+    - _FlameEdgeIntensity: 1.25
+    - _FlameEdgeWidth: 0.065
+    - _Pixelation: 0.24
+    - _AshFadeSeconds: 0.7
+    m_Colors:
+    - _AshColor: {r: 0.19, g: 0.17, b: 0.16, a: 1}
+    - _FlameCoreColor: {r: 1, g: 0.94, b: 0.46, a: 1}
+    - _FlameOuterColor: {r: 1, g: 0.19, b: 0.025, a: 1}
+    - _SourceTint: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

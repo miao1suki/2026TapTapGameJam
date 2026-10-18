@@ -1,5 +1,7 @@
 # 系统索引
 
+TA 新效果已接入现有生命周期：流动岩浆精确保留孔洞、冷却蒸汽、三类植物燃烧、标准玩家死亡/Boss追逐RGB；PC/Mobile只追加RGB通道，不覆盖水/HSV/像素参数。雨区和萤火虫通过 `Tools/2026TapTap/关卡美术/创建雨区` / `创建萤火虫区域` 独立创建，固定16像素/格、Scene保存，不属于planning玩法物体；雨是颜色装饰，萤火虫是中性装饰且实时灯默认关闭。见 [TA_EFFECTS_API](Integration/TA_EFFECTS_API.md) 与 [使用说明](../Developer/TA_EFFECTS.md)。关卡交付仍须Scene+planning+meta成套。
+
 2026-10-18 录像回归：绿钩拉红块/基座新接通供能后暂停主动拉取、保留绳子并放行普通行走，重新点击继续；精确来源查询 `MechanismBaseFeature.IsPoweredBy` 不把他人的红块供能算给蓝块。红/蓝未落稳时保留玩家从上落脚碰撞；岩浆只补真实支撑顶面的少量物理解算薄层，露边仍危险。普通收集品已开始/已完成收集不随R/死亡/离区恢复，`IsCollected`、稳定作者实例键及 `RestoreCollectedState` 供后续存档接入，未实现跨场景/退出后的存档服务。接入见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)、[WORLD_ITEMS_API](Integration/WORLD_ITEMS_API.md)、[CONTACT_CUBES_API](Integration/CONTACT_CUBES_API.md)。
 
 Scene编辑态正式2D由只读ArtworkScenePreview按变更缓存，旧尖刺不再等Play才换图；平台旧1格/批量独立占格裁原像素、单向平台独立素材、支撑面与旋转共用规则。藤蔓同列连续组链只采一根后分片，显示抵消作者缩放。见[美术约定](../Developer/ART_GRID_CONVENTIONS.md)与[物体美术API](Integration/OBJECT_ARTWORK_API.md)。绿色拉物保留自然重力，显式无重力基座优先；拉力仍四向，详见[绿绳API](Integration/GREEN_HOOK_API.md)。

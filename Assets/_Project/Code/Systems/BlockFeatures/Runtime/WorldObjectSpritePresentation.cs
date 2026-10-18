@@ -136,7 +136,7 @@ namespace Project.BlockFeatures
                 float bottom = center.y - size.y * .5f;
                 SetLayout(ObjectArtworkLibrary.TileScale(authorScale, cell),
                     new Vector3(center.x, bottom, center.z - size.z * .5f - depthOffsetCells * cell / Mathf.Max(.001f, Mathf.Abs(authorScale.z))));
-                visual.enabled = isActiveAndEnabled && frame != null && (!Application.isPlaying || colorObject == null || colorObject.IsActive);
+                visual.enabled = isActiveAndEnabled && frame != null && plant.ShowsArtwork && (!Application.isPlaying || colorObject == null || colorObject.IsActive);
             }
             if (visual.sprite != frame || plant != null && Application.isPlaying && mask == null)
             {

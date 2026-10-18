@@ -85,7 +85,9 @@ public static class PlantObstacleBurnAudit
         };
         Check(!a.ApplyColor("blue", null) && a.IsIntact, "blue does not burn obstacles");
         Check(a.ApplyColor("red", null), "existing red interaction starts connected burn");
-        Check(new[] { a, b, c }.All(plant => !plant.IsIntact && !plant.ShowsArtwork), "four-way chain burns entirely");
+        Check(new[] { a, b, c }.All(plant => !plant.IsIntact && plant.ShowsArtwork &&
+            plant.GetComponent<Project.BurnEffects.PlantBurnEffectPlayer>() is var effect && effect != null && effect.IsPlaying),
+            "four-way chain becomes non-solid atomically while the entire group displays its burn");
         Check(diagonal.IsIntact && separated.IsIntact, "diagonal and separated obstacles stay intact");
         Check(notifications == 3 && !b.BreakObstacle(), "one notification per obstacle; repeat burn is rejected");
         foreach (var plant in new[] { a, b, c })

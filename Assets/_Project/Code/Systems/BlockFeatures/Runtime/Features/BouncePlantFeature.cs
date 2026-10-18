@@ -25,7 +25,12 @@ namespace Project.BlockFeatures
         [SerializeField, Min(.1f)] private float carryRiseCells = 4f;
         [BlockParameter(Label = "触发间隔（秒）", Group = "弹跳", Order = 4)]
         [SerializeField, Min(.05f)] private float minTriggerInterval = .15f;
-        public bool IsBounceSurfaceAvailable => CanRunFeature;
+        private bool burning, burned;
+        private Collider[] burnColliders;
+        private bool[] colliderStates;
+        private Project.BurnEffects.PlantBurnEffectPlayer burnEffect;
+        public bool ShowsArtwork => !burned;
+        public bool IsBounceSurfaceAvailable => CanRunFeature && !burning && !burned;
         public float NormalRiseCells => normalRiseCells;
         public float HighRiseCells => highRiseCells;
         public float CarryRiseCells => carryRiseCells;
@@ -33,18 +38,18 @@ namespace Project.BlockFeatures
             GreenHookMotionMode.Swing;
         public Transform GreenHookTransform => transform;
         public bool CanBeGreenHooked(GameObject actor) =>
-            CanRunFeature;
+            IsBounceSurfaceAvailable;
         public event System.Action BounceTriggered;
         public event System.Action AppearanceReset;
 
         protected override void OnAttach() => WorldObjectSpritePresentation.Ensure(gameObject);
-        protected override void OnResetForRoom() => AppearanceReset?.Invoke();
+        protected override void OnResetForRoom() { RestoreBurn(); AppearanceReset?.Invoke(); }
 
         public float GetRiseCells(float fallCells, bool jumpHeld) => fallCells > highFallThresholdCells && jumpHeld ? highRiseCells : normalRiseCells;
         public bool TryGetBounceSpeed(PlayerController player, float fallDistance, float downwardSpeed, out float verticalSpeed)
         {
             verticalSpeed = 0f;
-            if (!CanRunFeature || player == null || player.IsCarrying || fallDistance <= .2f || player.MoveInput.y < -.1f || !player.CanBounce(minTriggerInterval)) return false;
+            if (!IsBounceSurfaceAvailable || player == null || player.IsCarrying || fallDistance <= .2f || player.MoveInput.y < -.1f || !player.CanBounce(minTriggerInterval)) return false;
             float cells = GetRiseCells(fallDistance / GridCellWorldSize, player.JumpHeld);
             verticalSpeed = player.CalculateGridRiseSpeed(cells);
             player.RegisterBounce(1f, minTriggerInterval);
@@ -56,7 +61,7 @@ namespace Project.BlockFeatures
         private void OnCollisionStay(Collision collision) => TrackTop(collision);
         private void TrackTop(Collision collision)
         {
-            if (!CanRunFeature || collision == null) return;
+            if (!IsBounceSurfaceAvailable || collision == null) return;
             var player = collision.collider.GetComponentInParent<PlayerController>();
             if (player == null || !player.CompareTag(playerTag)) return;
             Collider plant = collision.contactCount > 0 ? collision.GetContact(0).thisCollider : GetComponent<Collider>();
@@ -75,14 +80,37 @@ namespace Project.BlockFeatures
         }
         protected override void OnDetach()
         {
+            RestoreBurn();
             AppearanceReset?.Invoke();
             foreach (var player in PlayerController.ActivePlayers) if (player != null) player.ExitBounceSurface(this);
         }
         protected override bool OnColorApplied(string colorId, GameObject actor)
         {
-            if (colorId != "red") return false;
-            if (!Project.Rooms.RoomResetObject.HideForReaction(gameObject)) Destroy(gameObject);
+            if (colorId != "red" || burning || burned) return false;
+            burning = true;
+            foreach (var player in PlayerController.ActivePlayers) if (player != null) player.ExitBounceSurface(this);
+            burnColliders = GetComponentsInChildren<Collider>(true);
+            colliderStates = new bool[burnColliders.Length];
+            for (int i = 0; i < burnColliders.Length; i++) { colliderStates[i] = burnColliders[i].enabled; burnColliders[i].enabled = false; }
+            WorldObjectSpritePresentation.Ensure(gameObject);
+            Project.Audio.AudioCuePlayer.Play(Project.Audio.AudioCueIds.PlantBurn);
+            burnEffect = Project.BurnEffects.PlantBurnEffectPlayer.GetOrCreate(gameObject);
+            if (!burnEffect.Play(GetComponentsInChildren<Renderer>(true), null, 0, FinishBurn,
+                cellWorldSize: GridCellWorldSize)) FinishBurn();
             return true;
+        }
+        private void FinishBurn()
+        {
+            burning = false; burned = true;
+            if (!Project.Rooms.RoomResetObject.HideForReaction(gameObject)) Destroy(gameObject);
+        }
+        private void RestoreBurn()
+        {
+            burnEffect?.Cancel();
+            burning = burned = false;
+            if (burnColliders != null) for (int i = 0; i < burnColliders.Length; i++)
+                if (burnColliders[i] != null) burnColliders[i].enabled = colliderStates[i];
+            burnColliders = null; colliderStates = null;
         }
         public override void CollectDebugValues(List<BlockDebugValue> values)
         {

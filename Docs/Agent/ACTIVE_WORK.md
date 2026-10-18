@@ -84,11 +84,16 @@
 - 预制体复用 `Red_Lava` 的外观、红色解锁组、岩浆触发伤害和区域重置；根物体增加动态 Rigidbody 与落地实体碰撞子体，仅改变重力落地能力。
 - 蓝交互替换预制体为空，红、绿、蓝均不会触发颜色反应，也不会生成黑曜石。
 - 关卡编辑器道具栏目新增“重力岩浆”，排在“岩浆”之后；未修改场景或规划地图。
-## 2026-10-18 录像修复与TA新效果整合（进行中）
+## 2026-10-18 录像修复与TA新效果整合（验证完成，交付main）
 
 - 用户授权完成后合并推送main，并接入TA最新未正式使用效果。先提交已验证的接通暂停拉取、填坑岩浆、收集进度和前轮接触/输入修复，再与origin/main的Boss/平台/钥匙进度增量整合，保留双方实现。
 - TA来源flow-magma、rgb-glitch、rain-sprite-field；精确筛选资源/实现，排除TA恢复场景、字体、Test示例挂载等无关变动。只读审计确认正式玩家未接RGB死亡预设，雨区域不能擅自全关摆放。新效果按既有颜色/重置/16像素每格规范接入，不用视觉替代玩法。
 - 本地MRoom2/MRoom3/Pick、配套存档、字体、栏目、气泡、插件与设置保持原状，不切换/保存主Unity内存Scene；在独立整合工作树与静音FlowRetirementProbe验证。交付仍须Scene、可编辑planning.json、meta及依赖成套同步；不因本轮运行时整合重建作者布局。本轮未要求新包。
+- 已创建录像修复提交 `a67cc82`，与 `origin/main@f18d90a` 在独立整合树生成 `cf8d7c9`。门按钮同时保留主线统一信号事件与本轮可选Timeline通知，平台多信号绑定/片段持久化、PlayerController的Kinematic保护和绿绳运动所有权、RoomResetObject的Boss临时隐藏恢复与永久收集判定均保留，未退回整份任一侧文件。
+- TA正式接线：流动岩浆/蓝冷却蒸汽/三种植物烧毁；标准玩家RGB死亡及真实Boss右移追逐弱效果；雨区通过Tools/2026TapTap/关卡美术/创建雨区独立配置，不全关自动下雨、不增加颜色物体。固定16美术像素/格，父缩放补偿，共享材质/MPB/精确孔洞，Shader和HSV Mask共用轮廓。新喷溅补入95da62e以前三次调优；223eb8d只调预览实例，未拿流速0覆盖正式prefab。来源/接口/交付见Integration/TA_EFFECTS_API.md。
+- 实际GPU发现并修复Flow include把HLSL保留字point当参数导致编译失败、岩浆DefaultTexturePlatform仍为2048导致最大尺寸设置未生效；全部平台现256/Point/无压缩。动态实例化植物障碍错过SceneLoaded外观安装的缺口由自身OnAttach确保2D，不加全场逐帧扫描。烧毁保留图像直到动画完成，旧专项断言同步为立即关闭碰撞、完成后隐藏并可中途/完成后重置。
+- 最后拉取发现TA新增萤火虫`firefly-field@14b0c57`，只接核心资源，不带预览/测试角色。按正式16像素/格改硬点为1/16格，固定种子、父缩放/旋转补偿、编辑缓存，128只/一Mesh两子网格；中性装饰不擅自绑定绿色解锁，实时点光默认0、上限4。通过Tools/2026TapTap/关卡美术/创建萤火虫区域放置独立Scene根，Undo/Redo/保存重载；真实D3D11专项两次38项通过，GPU硬点图已检查。Scene与planning仍须配对交付，不声称玩法片段会包含独立美术。
+- 验证已过：正式玩家RGB生命周期29、实际Boss桥接12、PC/Mobile真实RenderGraph对照9、雨区实际GPU及保存/Undo115；合并后PlanningMechanism12、PlanningCollaboration36、OptionalTimeline52；真实MRoom3输入/物理21、岩浆遮挡92、收集持久性27、接触喷柱1518、GameplayRefinement83、四邻域Burn专项、PowerPause960及VineLift。真实GPU EditMode232/232；第一次无图形启动的两个工作台UI测试因缺图形设备失败，改真实GPU后原用例通过，未改测试掩盖。新喷溅真实GPU179项通过：实际相机、持续随机发射、实心四段冷却、整数世界像素边缘、精确孔洞与颜色/HSV轮廓一致，截图已目视检查；测试夹具补实际Camera RT并重绑Reset后的活实例，未改运行时来迎合夹具。日志只在Library/TAIntegration-*，未打包或验收新安卓/Windows包。
 
 ## 2026-10-18 实录机关拉取、填坑岩浆与收集进度（完成，本地未打包/提交）
 
