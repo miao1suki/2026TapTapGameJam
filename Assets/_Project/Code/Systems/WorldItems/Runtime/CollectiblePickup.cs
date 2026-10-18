@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Project.ColorBlocks;
 using Project.Player;
 using Project.Rooms;
@@ -23,6 +24,29 @@ namespace Project.Items
         private Collider[] shapes;
         private bool[] shapeEnabled;
         private bool originalKinematic;
+        private readonly List<PlayerCollisionPair> playerCollisionPairs = new List<PlayerCollisionPair>();
+
+        private struct PlayerCollisionPair
+        {
+            public Collider Item;
+            public Collider Player;
+        }
+
+        protected override void OnEnable()
+        {
+            // Physics-only filtering belongs to the pickup, not to the player's
+            // global layer: cubes and bases must still be able to push its body.
+            PlayerController.PlayerActivated -= IgnorePlayerSolids;
+            PlayerController.PlayerActivated += IgnorePlayerSolids;
+            base.OnEnable();
+        }
+
+        protected override void OnDisable()
+        {
+            PlayerController.PlayerActivated -= IgnorePlayerSolids;
+            RestorePlayerSolids();
+            base.OnDisable();
+        }
 
         private void EnsureState()
         {
@@ -35,11 +59,54 @@ namespace Project.Items
         }
         private void OnTriggerEnter(Collider other) => TryCollect(other);
         private void OnTriggerStay(Collider other) => TryCollect(other);
-        private void OnCollisionEnter(Collision collision) => TryCollect(collision.collider);
+
+        private void IgnorePlayerSolids(PlayerController player)
+        {
+            if (!isActiveAndEnabled || !CanCollect || player == null) return;
+            EnsureState();
+            // Called only on activation/reset or when a player is enabled, never
+            // as a per-pickup Update/FixedUpdate or a whole-scene search.
+            var playerShapes = player.GetComponentsInChildren<Collider>(true);
+            foreach (var itemShape in shapes)
+            {
+                if (itemShape == null || itemShape.isTrigger || !itemShape.enabled ||
+                    !itemShape.gameObject.activeInHierarchy) continue;
+                foreach (var playerShape in playerShapes)
+                {
+                    if (playerShape == null || playerShape.isTrigger || !playerShape.enabled ||
+                        !playerShape.gameObject.activeInHierarchy ||
+                        playerShape.attachedRigidbody != player.Motor) continue;
+                    bool owned = false;
+                    for (int i = 0; i < playerCollisionPairs.Count; i++)
+                        if (playerCollisionPairs[i].Item == itemShape &&
+                            playerCollisionPairs[i].Player == playerShape)
+                        { owned = true; break; }
+                    // Do not claim or later restore an ignore pair supplied by
+                    // another system. Owned pairs must be reapplied after either
+                    // collider has been disabled during collection/respawn.
+                    if (!owned && Physics.GetIgnoreCollision(itemShape, playerShape)) continue;
+                    if (!owned) playerCollisionPairs.Add(new PlayerCollisionPair
+                        { Item = itemShape, Player = playerShape });
+                    Physics.IgnoreCollision(itemShape, playerShape, true);
+                }
+            }
+        }
+
+        private void RestorePlayerSolids()
+        {
+            foreach (var pair in playerCollisionPairs)
+                if (pair.Item != null && pair.Player != null && pair.Item.enabled && pair.Player.enabled &&
+                    pair.Item.gameObject.activeInHierarchy && pair.Player.gameObject.activeInHierarchy)
+                    Physics.IgnoreCollision(pair.Item, pair.Player, false);
+            playerCollisionPairs.Clear();
+        }
         private void TryCollect(Collider other)
         {
             var player = other.GetComponentInParent<PlayerController>();
-            if (player != null && !player.IsDead) TryBeginCollection(player.gameObject);
+            // A carried cube can temporarily be a descendant of the player,
+            // but its independent body is not the collecting actor's body.
+            if (player != null && other.attachedRigidbody == player.Motor && !player.IsDead)
+                TryBeginCollection(player.gameObject);
         }
         protected override void OnCollectionStarted()
         {
@@ -63,6 +130,8 @@ namespace Project.Items
             // Stay dynamic so cubes/bases can push it in either grid direction.
             body.useGravity = false; body.isKinematic = originalKinematic;
             for (int i = 0; i < shapes.Length; i++) if (shapes[i] != null) shapes[i].enabled = shapeEnabled[i];
+            if (isActiveAndEnabled)
+                foreach (var player in PlayerController.ActivePlayers) IgnorePlayerSolids(player);
         }
         public void ResetForRoom()
         {

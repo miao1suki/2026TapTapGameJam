@@ -109,20 +109,29 @@ namespace Project.Player
 
             if (target.IsGreenHookActive)
             {
+                bool resumedGroundJump = false;
                 if (Time.timeScale > 0f && target.CanDriveGreenHook)
                 {
                     if (resetTriggered) target.RequestRespawn();
                     else
                     {
-                        bool release = GameInput.WasTriggeredThisFrame(InputActionId.Jump) ||
+                        bool jumpTriggered = GameInput.WasTriggeredThisFrame(InputActionId.Jump);
+                        bool release = jumpTriggered ||
                             GameInput.WasTriggeredThisFrame(InputActionId.Interact);
+                        target.SetSprintInput(GameInput.IsPressed(InputActionId.Sprint));
                         target.UpdateGreenHookInput(GameInput.ReadVector2(InputActionId.Move), release);
+                        // Grounded hook contact must not eat the first jump press.
+                        // In the air this remains a pure release, preserving swing inertia.
+                        resumedGroundJump = jumpTriggered && !target.IsGreenHookActive &&
+                            !target.IsControlLocked && target.IsGrounded &&
+                            !target.IsClimbing && !target.IsHorizontalClimbing;
+                        if (resumedGroundJump) target.RequestJump();
                         target.TickColorWheel(GameInput.PointerPosition);
                         if (!release && GameInput.WasTriggeredThisFrame(InputActionId.PointerPrimary))
                             target.TryUseSelectedColorAbility();
                     }
                 }
-                target.SetJumpHeld(false);
+                target.SetJumpHeld(resumedGroundJump && GameInput.IsPressed(InputActionId.Jump));
                 return;
             }
 

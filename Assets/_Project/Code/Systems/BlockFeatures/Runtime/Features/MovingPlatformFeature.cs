@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Project.Player;
 using Project.Audio;
+using Project.Mechanisms;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -28,6 +29,14 @@ namespace Project.BlockFeatures
     {
         [InspectorName("充能时往返，断电停留")] PoweredPingPong = 0,
         [InspectorName("充能到终点，断电回原位")] PoweredEndpoint = 1
+    }
+
+    public enum MovingPlatformTimelineTrigger
+    {
+        [InspectorName("关闭")] Disabled = 0,
+        [InspectorName("收到充能时")] Powered = 1,
+        [InspectorName("开始移动时")] MovementStarted = 2,
+        [InspectorName("到达路径端点时")] EndpointReached = 3
     }
 
     [BlockFeature(
@@ -187,6 +196,26 @@ namespace Project.BlockFeatures
         [SerializeField] private PlatformSignalLogic signalLogic =
             PlatformSignalLogic.Any;
 
+        [BlockParameter(Label = "Timeline触发", Group = "可选演出", Order = -2,
+            Tooltip = "默认关闭。复用门的相机Timeline，聚焦本平台；开始移动/到端点按状态边沿触发，不会每个物理步重复。")]
+        [SerializeField] private MovingPlatformTimelineTrigger timelineTrigger;
+        [BlockParameter(Label = "演出锁定玩家", Group = "可选演出", Order = -1,
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+        [SerializeField] private bool lockPlayerDuringTimeline = true;
+        [BlockParameter(Label = "镜头移动时间", Group = "可选演出", Order = 0,
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+        [SerializeField, Min(.1f)] private float cameraMoveDuration = 1f;
+        [BlockParameter(Label = "镜头停留时间", Group = "可选演出", Order = 1,
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+        [SerializeField, Min(0f)] private float cameraHoldDuration = 1.2f;
+        [BlockParameter(Label = "镜头返回时间", Group = "可选演出", Order = 2,
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+        [SerializeField, Min(0f)] private float cameraReturnDuration = .7f;
+        private MechanismCameraShot cameraShot;
+        private bool previousTimelinePower, previousTimelineMoving, reachedEndpoint;
+        public MovingPlatformTimelineTrigger TimelineTrigger => timelineTrigger;
+        public bool IsTimelinePlaying => cameraShot != null && cameraShot.IsPlaying;
+
         private readonly HashSet<PlayerController> carriedPlayers =
             new HashSet<PlayerController>();
         private readonly RaycastHit[] platformHitBuffer =
@@ -258,6 +287,7 @@ namespace Project.BlockFeatures
 
         protected override void OnAttach()
         {
+            ResetTimeline();
             platformSurfaces = GetComponents<Collider>();
             origin = transform.localPosition;
             ResetMotion();
@@ -272,6 +302,7 @@ namespace Project.BlockFeatures
 
         protected override void OnDetach()
         {
+            ResetTimeline();
             SetMovementAudio(false);
             UnsubscribeControls();
             if (crankController != null) crankController.UnregisterPlatform(this);
@@ -287,8 +318,37 @@ namespace Project.BlockFeatures
         private void FixedUpdate()
         {
             Vector3 before = transform.position;
+            reachedEndpoint = false;
             if (CanRunFeature) TickMotion(Time.fixedDeltaTime);
-            SetMovementAudio(CanRunFeature && (transform.position - before).sqrMagnitude > .00000001f);
+            bool moved = CanRunFeature && (transform.position - before).sqrMagnitude > .00000001f;
+            SetMovementAudio(moved);
+            TickTimeline(moved);
+        }
+
+        private void TickTimeline(bool moved)
+        {
+            bool powered = CanRunFeature && driveMode == MovingPlatformDriveMode.SignalControlled && active;
+            if (timelineTrigger == MovingPlatformTimelineTrigger.Disabled || !CanRunFeature)
+            {
+                if (IsTimelinePlaying) ResetTimeline();
+            }
+            else if ((timelineTrigger == MovingPlatformTimelineTrigger.Powered && powered && !previousTimelinePower) ||
+                (timelineTrigger == MovingPlatformTimelineTrigger.MovementStarted && moved && !previousTimelineMoving) ||
+                (timelineTrigger == MovingPlatformTimelineTrigger.EndpointReached && reachedEndpoint))
+            {
+                cameraShot ??= new MechanismCameraShot(this);
+                cameraShot.TryPlay(null, Vector3.zero, cameraMoveDuration, cameraHoldDuration,
+                    cameraReturnDuration, lockPlayerDuringTimeline);
+            }
+            previousTimelinePower = powered;
+            previousTimelineMoving = moved;
+        }
+
+        private void ResetTimeline()
+        {
+            cameraShot?.Dispose();
+            cameraShot = null;
+            previousTimelinePower = previousTimelineMoving = reachedEndpoint = false;
         }
 
         private void SetMovementAudio(bool moving)
@@ -306,6 +366,8 @@ namespace Project.BlockFeatures
                 if (!active) return;
                 Vector3 desiredPosition = origin + GetOffset() * crankController.Progress;
                 Vector3 motion = desiredPosition - transform.localPosition;
+                if (motion.sqrMagnitude > .00000001f &&
+                    (crankController.Progress <= .00001f || crankController.Progress >= .99999f)) reachedEndpoint = true;
                 RefreshStandingPlayers();
                 transform.localPosition = desiredPosition;
                 CarryPlayers(transform.parent != null ? transform.parent.TransformVector(motion) : motion);
@@ -361,6 +423,7 @@ namespace Project.BlockFeatures
             CarryPlayers(transform.parent != null ? transform.parent.TransformVector(delta) : delta);
             if (progress >= 1f)
             {
+                reachedEndpoint = true;
                 legStart = legEnd;
                 travelDirection *= -1;
                 legEnd = travelDirection > 0 ? path.Maximum : path.Minimum;
@@ -397,11 +460,13 @@ namespace Project.BlockFeatures
             RefreshStandingPlayers();
             transform.localPosition = desired;
             progress = nextProgress;
+            if (nextProgress >= 1f) reachedEndpoint = true;
             CarryPlayers(transform.parent != null ? transform.parent.TransformVector(delta) : delta);
         }
 
         protected override void OnResetForRoom()
         {
+            ResetTimeline();
             SetMovementAudio(false);
             ResetMotion();
             holdRemaining = 0f;
@@ -418,6 +483,8 @@ namespace Project.BlockFeatures
             values.Add(new BlockDebugValue(
                 "运行状态",
                 IsMoving ? (UsesPoweredEndpoint && !active ? "返回原位" : "移动中") : "已停止"));
+            values.Add(new BlockDebugValue("可选Timeline", IsTimelinePlaying ? "播放中" :
+                timelineTrigger == MovingPlatformTimelineTrigger.Disabled ? "关闭" : "等待触发"));
             if (driveMode == MovingPlatformDriveMode.SignalControlled)
                 values.Add(new BlockDebugValue("充能移动模式", signalMotion == MovingPlatformSignalMotion.PoweredEndpoint
                     ? "充能到终点，断电回原位" : "充能时往返，断电停留"));

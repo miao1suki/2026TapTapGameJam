@@ -36,6 +36,8 @@ namespace Project.GreenHook.Editor
         private static void Set(object obj, string field, object value) => obj.GetType().GetField(field, Hidden).SetValue(obj, value);
         private static object Get(object obj, string field) => obj.GetType().GetField(field, Hidden).GetValue(obj);
         private static void Call(object obj, string method, params object[] args) => obj.GetType().GetMethod(method, Hidden).Invoke(obj, args);
+        private static void Aim(GreenHookAbility hook, Vector2 pointer, bool selected = true)
+        { hook.Tick(pointer, selected); Call(hook, "RenderFrame"); }
         private static GameObject Spawn(string path, Vector3 pos) => Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
             "Assets/_Project/Content/" + path + ".prefab"), pos, Quaternion.identity);
         public static void RunBaseline() => Start(true);
@@ -98,13 +100,23 @@ namespace Project.GreenHook.Editor
             var positions = new Vector2[64];
             for (int i = 0; i < positions.Length; i++) positions[i] = camera.WorldToScreenPoint(
                 new Vector3(Mathf.Cos(i * Mathf.PI / 32) * 4, Mathf.Sin(i * Mathf.PI / 32) * 4, 0));
-            for (int i = 0; i < 256; i++) { input.Pointer = positions[i % 64]; hook.Tick(input.Pointer, true); }
+            var render = (Action)Delegate.CreateDelegate(typeof(Action), hook, hook.GetType().GetMethod("RenderFrame", Hidden));
+            for (int i = 0; i < 256; i++) { input.Pointer = positions[i % 64]; hook.Tick(input.Pointer, true); render(); }
             var lineField = typeof(GreenHookAbility).GetField("line", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             if (!(lineField.GetValue(hook) is LineRenderer activeLine) || !activeLine.enabled) throw new Exception("Benchmark must exercise visible green line");
             var watch = new Stopwatch(); watch.Start();
-            for (int i = 0; i < 6000; i++) { input.Pointer = positions[i % 64]; hook.Tick(input.Pointer, true); }
+            for (int i = 0; i < 6000; i++) { input.Pointer = positions[i % 64]; hook.Tick(input.Pointer, true); render(); }
             watch.Stop();
-            string result = $"6000 rotating green Tick: {watch.Elapsed.TotalMilliseconds:F3} ms; locked={player.IsControlLocked}, dead={player.IsDead}, timeScale={Time.timeScale}, ui={EventSystem.current != null}";
+            string result = $"6000 rotating green Tick + render: {watch.Elapsed.TotalMilliseconds:F3} ms; locked={player.IsControlLocked}, dead={player.IsDead}, timeScale={Time.timeScale}, ui={EventSystem.current != null}";
+            using (var renderAlloc = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC.Alloc", 32768,
+                ProfilerRecorderOptions.CollectOnlyOnCurrentThread | ProfilerRecorderOptions.WrapAroundWhenCapacityReached))
+            {
+                for (int i = 0; i < 6000; i++) { input.Pointer = positions[i % 64]; hook.Tick(input.Pointer, true); render(); }
+                renderAlloc.Stop();
+                result += $"\nRotating Tick + render GC.Alloc: valid={renderAlloc.Valid}, events={renderAlloc.Count}";
+                if (!SessionState.GetBool(Flag + "Baseline", false))
+                    Check(renderAlloc.Valid && renderAlloc.Count <= 16, "warm rotating aim/render does not allocate per call (6000 calls)");
+            }
             for (int i = 0; i < 32; i++) { input.Pointer = positions[i % 64]; GameInput.IsPointerOverUi(); }
             using var allocRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC.Alloc", 32768,
                 ProfilerRecorderOptions.CollectOnlyOnCurrentThread | ProfilerRecorderOptions.WrapAroundWhenCapacityReached);
@@ -150,7 +162,7 @@ namespace Project.GreenHook.Editor
                     "near-miss above cube uses 0.65-cell tolerance and attaches immediately");
                 Check(player.ControlLockDepth == 1 && cube.GetComponent<ContactCube>().IsEnergyAvailable,
                     "hook has one control lock and does not suppress red energy");
-                input.Pointer = camera.WorldToScreenPoint(new Vector3(2, 2, 0)); hook.Tick(input.Pointer, true);
+                input.Pointer = camera.WorldToScreenPoint(new Vector3(2, 2, 0)); Aim(hook, input.Pointer);
                 var ring = (LineRenderer)Get(hook, "aimRing"); int ringId = ring.GetInstanceID();
                 var anchor = (Vector3)Get(hook, "localAnchor");
                 Check(ring.enabled && ring.positionCount == 48, "retarget tolerance ring visible while attached");
@@ -172,9 +184,9 @@ namespace Project.GreenHook.Editor
                 Check(Click(cube.transform.position) == GreenHookLaunchResult.Success,
                     "green rope may target through walls without making bodies pass through them");
                 hook.CancelHook(); Object.DestroyImmediate(wall);
-                input.Pointer = camera.WorldToScreenPoint(new Vector3(2, 1, 0)); hook.Tick(input.Pointer, true);
+                input.Pointer = camera.WorldToScreenPoint(new Vector3(2, 1, 0)); Aim(hook, input.Pointer);
                 var line = (LineRenderer)Get(hook, "line"); Vector3 oldTip = line.GetPosition(line.positionCount - 1);
-                input.Pointer = camera.WorldToScreenPoint(new Vector3(-2, 1, 0)); hook.Tick(input.Pointer, true);
+                input.Pointer = camera.WorldToScreenPoint(new Vector3(-2, 1, 0)); Aim(hook, input.Pointer);
                 Vector3 eased = line.GetPosition(line.positionCount - 1);
                 Check(eased.x < oldTip.x && eased.x > -2f, "idle tip eases toward cursor rather than snapping");
                 Vector3 center = Vector3.zero;
@@ -187,18 +199,18 @@ namespace Project.GreenHook.Editor
                 for (int i = 0; i < 512; i++)
                 {
                     var position = new Vector3(Mathf.Cos(i * .7f) * 4, Mathf.Sin(i * .7f) * 4, 0);
-                    input.Pointer = camera.WorldToScreenPoint(position); hook.Tick(input.Pointer, true);
+                    input.Pointer = camera.WorldToScreenPoint(position); Aim(hook, input.Pointer);
                 }
                 Check(((LineRenderer)Get(hook, "aimRing")).GetInstanceID() == ringId && player.GetComponentsInChildren<LineRenderer>(true).Count(l => l.name == "__GreenAimTolerance") == 1,
                     "rapid rotation reuses exactly one tolerance renderer");
                 player.transform.position += Vector3.right; player.Motor.position = player.transform.position;
-                input.Pointer = camera.WorldToScreenPoint(new Vector3(2, 1, 0)); hook.Tick(input.Pointer, true);
+                input.Pointer = camera.WorldToScreenPoint(new Vector3(2, 1, 0)); Aim(hook, input.Pointer);
                 Check(Vector2.Distance(line.GetPosition(0), player.GetComponent<TaSource.LinkEffect.InteractionLinkEffect>().SourceWorldPosition) < .001f,
                     "rope origin follows moving player");
-                hook.Tick(input.Pointer, false); Check(!ring.enabled && !line.enabled, "changing selected ability hides aim visuals");
-                hook.Tick(input.Pointer, true); hook.enabled = false;
+                Aim(hook, input.Pointer, false); Check(!ring.enabled && !line.enabled, "changing selected ability hides aim visuals");
+                Aim(hook, input.Pointer); hook.enabled = false;
                 Check(!ring.enabled && !line.enabled, "disabling idle ability also hides circle"); hook.enabled = true;
-                Time.timeScale = 0f; hook.Tick(input.Pointer, true);
+                Time.timeScale = 0f; Aim(hook, input.Pointer);
                 Check(!ring.enabled && !line.enabled, "pause hides aim visuals"); Time.timeScale = 1;
                 var regionRoot = new GameObject("ToleranceRoomBoundary"); var manager = regionRoot.AddComponent<RoomLifecycleManager>();
                 var cellsA = new List<Vector2Int>(); var cellsB = new List<Vector2Int>();
@@ -235,7 +247,7 @@ namespace Project.GreenHook.Editor
             Canvas.ForceUpdateCanvases(); camera.Render(); input.Pointer = camera.WorldToScreenPoint(new Vector3(3, 0, 0));
             Check(image.depth >= 0, "UI blocking fixture has been actually rendered");
             Check(hook.TryLaunch(input.Pointer, true) == GreenHookLaunchResult.Ignored, "UI click never launches green hook");
-            hook.Tick(input.Pointer, true); Check(!((LineRenderer)Get(hook, "aimRing")).enabled, "UI hides tolerance circle");
+            Aim(hook, input.Pointer); Check(!((LineRenderer)Get(hook, "aimRing")).enabled, "UI hides tolerance circle");
             Object.DestroyImmediate(canvas.gameObject); Object.DestroyImmediate(events);
         }
         private static void VerifyEnergyWhileAttached()

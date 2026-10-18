@@ -284,6 +284,11 @@ namespace Project.GreenHook.Editor
                 // real support keeps the target at its authored height while blocked.
                 var support = axis.y > 0f ? null : Solid("TargetSupport", obj.transform.position + Vector3.down * .75f,
                     new Vector3(axis.x != 0f ? 4f : 1f, .5f, 2f));
+                // Waiting now delegates to the ordinary gravity motor. Horizontal
+                // and upward-pull fixtures need a floor; in the downward fixture
+                // PlayerStop itself is the support and must be removable for fallback.
+                var playerSupport = axis.y < 0f ? null : Solid("PlayerSupport", origin + Vector3.down * .75f,
+                    new Vector3(axis.x != 0f ? 4f : 1f, .5f, 2f));
                 Physics.SyncTransforms();
                 var hook = Attach(player, target);
                 Vector3 targetStart = body.position;
@@ -291,17 +296,23 @@ namespace Project.GreenHook.Editor
                 Check(hook.IsPulling && hook.IsPullingPlayer && player.CanDriveGreenHook && player.ControlLockDepth == 1,
                     label + " stays connected without timeout");
                 Check((body.position - targetStart).sqrMagnitude < .001f &&
-                    (player.Motor.position - origin).sqrMagnitude < .001f, label + " neither body penetrates blockers");
+                    (player.Motor.position - origin).sqrMagnitude < .001f,
+                    label + " neither body penetrates blockers (target=" + (body.position - targetStart) +
+                    ", player=" + (player.Motor.position - origin) + ")");
 
                 Object.DestroyImmediate(playerWall); Physics.SyncTransforms();
                 Step(hook, player, 4);
                 Check(hook.IsPullingPlayer && Vector3.Dot(player.Motor.position - origin, axis) > .3f &&
                     (body.position - targetStart).sqrMagnitude < .001f, label + " resumes player pull without relaunch");
-                Vector3 playerStart = player.Motor.position;
+                float playerSpeedBeforeHandoff = Mathf.Abs(player.Motor.linearVelocity.x);
                 Object.DestroyImmediate(targetWall); Physics.SyncTransforms();
                 Step(hook, player, 4);
                 Check(!hook.IsPullingPlayer && Vector3.Dot(targetStart - body.position, axis) > .3f &&
-                    (player.Motor.position - playerStart).sqrMagnitude < .001f, label + " restores target priority");
+                    player.IsGreenHookLocomotionAllowed, label + " restores target priority and ordinary player motor");
+                if (axis.x != 0f)
+                    Check(((Vector2)typeof(PlayerController).GetField("greenHookVelocity", Private).GetValue(player)).sqrMagnitude < .0001f &&
+                        Mathf.Abs(player.Motor.linearVelocity.x) < playerSpeedBeforeHandoff + .001f,
+                        label + " target motion clears the hook command and allows ordinary motor braking without freezing inertia");
                 var releaseInput = new HookInput { Release = true,
                     ReleaseAction = direction % 2 == 0 ? InputActionId.Jump : InputActionId.Interact };
                 GameInput.UseExternalSource(releaseInput);
@@ -311,6 +322,7 @@ namespace Project.GreenHook.Editor
                     label + " explicit release clears ownership");
                 Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(obj);
                 if (support != null) Object.DestroyImmediate(support);
+                if (playerSupport != null) Object.DestroyImmediate(playerSupport);
             }
         }
 
@@ -387,6 +399,9 @@ namespace Project.GreenHook.Editor
             obj.transform.position = obj.GetComponent<Rigidbody>().position = player.Motor.position + Vector3.right * 9f;
             Physics.SyncTransforms(); Invoke(hook, "FixedUpdate");
             Check(hook.IsHookActive, "external lock does not remove range grace");
+            // The extra owner (for example Timeline) stops the ordinary motor in
+            // PlayerController's physics tick, not while disposing the hook lease.
+            Invoke(player, "FixedUpdate");
             Set(hook, "outOfRangeSince", Time.time - .41f); Invoke(hook, "FixedUpdate");
             Check(!hook.IsHookActive && player.ControlLockDepth == 1 && player.Motor.linearVelocity.sqrMagnitude < .0001f,
                 "range cleanup respects external control lock");
@@ -520,7 +535,11 @@ namespace Project.GreenHook.Editor
                 Vector3 velocity = player.Motor.linearVelocity;
                 input.Release = true; player.GetComponent<PlayerInputDriver>().Drive(player);
                 Check(!hook.IsHookActive && !player.IsControlLocked, "existing interact input detaches");
-                Check((player.Motor.linearVelocity - velocity).sqrMagnitude < .001f, "manual release preserves resolved momentum");
+                float boostRatio = (float)typeof(GreenHookAbility).GetField("releaseBoostRatio", Private).GetValue(hook);
+                float boostLimit = (float)typeof(GreenHookAbility).GetField("releaseBoostLimit", Private).GetValue(hook);
+                Vector3 expectedVelocity = velocity + velocity.normalized * Mathf.Min(boostLimit, velocity.magnitude * boostRatio);
+                Check((player.Motor.linearVelocity - expectedVelocity).sqrMagnitude < .001f,
+                    "manual release preserves resolved direction and applies only the configured capped boost");
             }
             finally { GameInput.ClearExternalSource(input); }
             Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(first.gameObject);

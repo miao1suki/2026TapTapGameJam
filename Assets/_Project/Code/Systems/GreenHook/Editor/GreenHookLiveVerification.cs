@@ -144,26 +144,33 @@ namespace Project.GreenHook.Editor
                 else if (stage == 11)
                 {
                     Check(hook.IsPulling && !hook.IsPullingPlayer && target.GetComponent<Rigidbody>().position.x < start.x - .2f &&
-                        (player.Motor.position - playerStart).sqrMagnitude < .001f,
+                        player.IsGreenHookLocomotionAllowed &&
+                        ((Vector2)typeof(PlayerController).GetField("greenHookVelocity", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(player)).sqrMagnitude < .0001f,
                         "real loop restores target priority " + variant);
-                    target.GetComponent<Rigidbody>().position = player.Motor.position + Vector3.right * 6f;
-                    Physics.SyncTransforms(); stage = 12; next = Time.time + .1f;
+                    TeleportTarget(player.Motor.position + Vector3.right * 6f);
+                    stage = 12; next = Time.time + .1f;
                 }
                 else if (stage == 12)
                 {
                     Check(hook.IsHookActive, "real loop six-cell separation keeps rope " + variant);
-                    target.GetComponent<Rigidbody>().position = player.Motor.position + Vector3.right * 20f;
-                    Physics.SyncTransforms(); stage = 13; next = Time.time + .1f;
+                    TeleportTarget(player.Motor.position + Vector3.right * 20f);
+                    stage = 13; next = Time.time + .1f;
                 }
                 else if (stage == 13)
                 {
+                    Check(Vector3.Distance(player.Motor.position, target.GetComponent<Rigidbody>().position) > 10f,
+                        "real loop fixture maintains actual overshoot " + variant);
                     Check(hook.IsHookActive, "real loop transient overshoot keeps rope " + variant);
                     stage = 14; next = Time.time + .4f;
                 }
                 else if (stage == 14)
                 {
                     Check(!hook.IsHookActive && !player.IsControlLocked && !player.IsGreenHookActive,
-                        "real loop out-of-range releases " + variant);
+                        "real loop out-of-range releases " + variant + " time=" + Time.time +
+                        " phase=" + typeof(GreenHookAbility).GetField("phase", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hook) +
+                        " rangeSince=" + typeof(GreenHookAbility).GetField("outOfRangeSince", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hook) +
+                        " player=" + player.Motor.position + " target=" + target.GetComponent<Rigidbody>().position +
+                        " locks=" + player.ControlLockDepth);
                     Cleanup(); variant++;
                     if (variant < Paths.Length) { SetupBlockedPull(); stage = 8; next = Time.time + .15f; }
                     else { SetupPuzzlePassage(); stage = 15; next = Time.time + .15f; }
@@ -180,16 +187,16 @@ namespace Project.GreenHook.Editor
                     Check(hook.IsPulling && hook.IsPullingPlayer && player.CanDriveGreenHook,
                         "puzzle blocked red block pulls player across spike gap");
                     Check(player.Motor.position.x > 3.15f && player.Motor.position.x < 3.45f &&
-                        player.Motor.position.y > 3.9f && !player.IsDead,
-                        "puzzle reaches narrow shaft instead of dropping halfway onto spikes");
+                        !player.IsDead,
+                        "puzzle reaches the real narrow shaft without dropping halfway onto spikes");
                     Check(Mathf.Abs(target.GetComponent<Rigidbody>().position.x - 4.8f) < .05f,
                         "puzzle red block remains physically blocked by pillar");
                     stage = 17; next = Time.time + .8f;
                 }
                 else if (stage == 17)
                 {
-                    Check(hook.IsHookActive && !player.IsDead && player.Motor.position.y > 3.9f,
-                        "puzzle both blocked keeps player held until explicit release");
+                    Check(hook.IsHookActive && !player.IsDead && player.IsSwimming && player.Motor.position.y < 3.2f,
+                        "puzzle waiting allows normal gravity into the safe water passage without auto-detaching");
                     input.ReleaseFrame = Time.frameCount + 2;
                     stage = 18; next = Time.time + .8f;
                 }
@@ -215,6 +222,15 @@ namespace Project.GreenHook.Editor
             target = Instantiate(Paths[variant], new Vector3(3, .5f, 0));
             floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
             floor.transform.position = new Vector3(1, -.5f, 0); floor.transform.localScale = new Vector3(16, 1, 2);
+        }
+
+        private static void TeleportTarget(Vector3 point)
+        {
+            // SyncTransforms uploads Transform poses. Match both sides rather
+            // than undoing the interpolated base's Rigidbody-only teleport.
+            target.transform.position = point;
+            target.GetComponent<Rigidbody>().position = point;
+            Physics.SyncTransforms();
         }
 
         private static void SetupSwing()

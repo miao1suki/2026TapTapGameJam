@@ -2,6 +2,16 @@
 
 开发者操作：[机关与跳跃](../../Developer/MECHANISMS_AND_JUMP.md)。颜色和重置规范仍以 COLOR_BLOCKS_API / ROOM_LIFECYCLE_API 为准。
 
+## 可选平台 Timeline
+
+`MovingPlatformFeature.timelineTrigger` 使用 `MovingPlatformTimelineTrigger`：`Disabled=0` 默认关闭（旧场景/旧存档缺字段同样关闭），`Powered=1` 仅信号驱动从未充能到充能时，`MovementStarted=2` 实际停止到开始移动时，`EndpointReached=3` 实际到达行程端点时。停留端点、每个 FixedUpdate 的持续充能/移动不会重复创建演出。已在播放的同平台镜头不会重叠，平台运动与载人仍走既有路径，不等待镜头完成才移动。
+
+显式开启后复用 `MechanismCameraShot`，聚焦该平台（锚点随平台移动），可以调移向、停留、返回时间及是否锁定玩家。默认关闭时不创建会话、Director或玩家锁；区域重置、停用/解绑宿主、运行中关闭演出均清理本会话。不改普通开关、路径端点、曲柄进度或区域重置规则。`TimelineTrigger / IsTimelinePlaying` 为只读调试入口，字段均有 BlockParameter，Inspector与关卡参数窗口共用，沿用组件覆盖 JSON 持久化，不引入 instanceID。
+
+门使用独立 `DoorTimelineTrigger`，默认也关闭，可选每次按钮真实按下/全部按钮达成开门。接入见 [DOOR_API](DOOR_API.md)。上述是已有门镜头的可选复用，不是假定能自动绑定任意外部 Timeline 资源；自定义剧情继续使用已有 Timeline 触发器及明确轨道绑定。
+
+场景交付仍必须成套提交 Scene、同名可编辑 `.planning.json`、双方 `.meta` 和依赖，不能只交生成物。专项入口 `OptionalMechanismTimelineAudit.Run` 由整合者在 `Library/FlowRetirementProbe` 静音运行。
+
 ## 所有权
 
 按钮统一由脚部/方块底部压力触发。`ButtonLockFeature` 不再实现 `IInteractionTarget`，兼容 `CanInteract/TryInteract` 固定返回 false；不可通过 F 触发。默认一次保持；参数 `mode=Held` 时松开关闭并随区域/R重置，一次保持不因区域/R重置。门按钮和红色信号按钮共用压力判定；红色按钮仍遵守颜色解锁。`Toggle/SetOn` 只供信号/调试调用，不接玩家按键。

@@ -79,6 +79,9 @@ namespace Project.GreenHook
         private LineRenderer aimRing;
         private Material aimRingMaterial;
         private readonly Vector3[] ringPoints = new Vector3[48];
+        private Vector3 lastRingCenter = Vector3.positiveInfinity;
+        private float lastRingRadius = -1f;
+        private bool? lastRingReachable;
         private readonly List<MonoBehaviour> targetBehaviours = new List<MonoBehaviour>(16);
         private Collider[] aimHits = new Collider[64];
         private Vector3 idleTipOffset;
@@ -104,6 +107,8 @@ namespace Project.GreenHook
         [SerializeField, Min(0f)] private float swingAcceleration = 18f;
         [SerializeField, Min(0.1f)] private float swingSpeedLimit = 14f;
         [SerializeField, Min(0f)] private float swingDamping = .08f;
+        [SerializeField, Min(0f)] private float releaseBoostRatio = .08f;
+        [SerializeField, Min(0f)] private float releaseBoostLimit = 1f;
         [SerializeField, Min(0f)] private float retargetVisualSeconds = .1f;
         [SerializeField, Min(0f)] private float attachedRangeSlackCells = 3f;
         [SerializeField, Min(0f)] private float attachedOutOfRangeGraceSeconds = .4f;
@@ -116,7 +121,7 @@ namespace Project.GreenHook
         {
             swingInput = Vector2.ClampMagnitude(move, 1f);
             if (!release || phase == HookPhase.None) return;
-            ReleaseHook();
+            ReleaseHook(true);
         }
         private Transform targetTransform;
         private Collider playerCollider;
@@ -133,6 +138,8 @@ namespace Project.GreenHook
         private float finishElapsed;
         private bool ownsFallbackMaterial;
         private bool pullingPlayer;
+        private bool showAimRequested;
+        private float visualNoiseSeed;
 
         public bool IsHookActive => phase != HookPhase.None;
         public bool IsExtending => phase == HookPhase.Extending;
@@ -143,6 +150,9 @@ namespace Project.GreenHook
         {
             ResolveReferences();
             properties = new MaterialPropertyBlock();
+            visualNoiseSeed = GetInstanceID() * .0137f;
+            if (GetComponent<GreenHookVisualDriver>() == null)
+                gameObject.AddComponent<GreenHookVisualDriver>();
         }
 
         private void OnEnable()
@@ -163,12 +173,21 @@ namespace Project.GreenHook
             bool greenSelected)
         {
             pointerPosition = currentPointerPosition;
-            bool showAim = greenSelected && CanShowAimIndicator();
+            showAimRequested = greenSelected;
+            if (phase == HookPhase.Extending && !greenSelected) { CancelHook(); return; }
+            if (!greenSelected) { HideAimRing(); if (phase == HookPhase.None) HideLine(); }
+        }
+
+        // Render after the gameplay camera's LateUpdate (order 1000). Input and
+        // physics retain their early execution order; no 50 Hz visual sampling.
+        internal void RenderFrame()
+        {
+            bool showAim = showAimRequested && CanShowAimIndicator();
             if (showAim) UpdateAimRing();
             else HideAimRing();
-            if (phase == HookPhase.Extending && !greenSelected) { CancelHook(); return; }
             if (phase != HookPhase.None)
             {
+                RenderAttachedFrame();
                 return;
             }
 
@@ -284,7 +303,11 @@ namespace Project.GreenHook
                 }
                 if (ShouldReleaseForRange()) { ReleaseHook(); return; }
             }
-            if (player != null && player.IsControlLocked && !player.CanDriveGreenHook) return;
+        }
+
+        private void RenderAttachedFrame()
+        {
+            if (Time.timeScale <= 0f || player != null && player.IsControlLocked && !player.CanDriveGreenHook) return;
             switch (phase)
             {
                 case HookPhase.Extending:
@@ -320,6 +343,7 @@ namespace Project.GreenHook
             float deltaTime = Time.fixedDeltaTime;
             if (phase == HookPhase.Swinging)
             {
+                player.SetGreenHookLocomotion(this, false);
                 TickSwing(deltaTime);
                 return;
             }
@@ -352,6 +376,7 @@ namespace Project.GreenHook
             pullingPlayer = targetStep < Mathf.Min(step, .002f);
             if (!pullingPlayer && targetMotion != null)
             {
+                player.SetGreenHookLocomotion(this, true);
                 player.SetGreenHookPullVelocity(this, Vector2.zero);
                 targetMotion.SetGreenHookVelocity(-toTarget * (targetStep / deltaTime));
             }
@@ -360,6 +385,7 @@ namespace Project.GreenHook
                 targetMotion?.SetGreenHookVelocity(Vector3.zero);
                 float playerStep = GreenHookPhysics.FreeDistance(playerColliders, transform,
                     targetTransform, toTarget, step, .015f);
+                player.SetGreenHookLocomotion(this, playerStep <= .002f);
                 player.SetGreenHookPullVelocity(this, (Vector2)toTarget * (playerStep / deltaTime));
             }
         }
@@ -368,15 +394,18 @@ namespace Project.GreenHook
         {
             targetMotion?.SetGreenHookVelocity(Vector3.zero);
             player?.SetGreenHookPullVelocity(this, Vector2.zero);
+            if (player != null) player.SetGreenHookLocomotion(this, player.CanDriveGreenHook);
             swingVelocity = Vector2.zero;
         }
 
-        private void ReleaseHook()
+        private void ReleaseHook(bool manual = false)
         {
             // Normal release (manual or range) keeps resolved swing momentum, but must
             // not inject velocity while another system owns a higher-priority lock.
             bool preserveMomentum = IsSwinging && player != null && player.CanDriveGreenHook;
             Vector2 velocity = playerBody != null ? (Vector2)playerBody.linearVelocity : swingVelocity;
+            if (preserveMomentum && manual && velocity.sqrMagnitude > .0001f)
+                velocity += velocity.normalized * Mathf.Min(releaseBoostLimit, velocity.magnitude * releaseBoostRatio);
             CancelHook();
             if (preserveMomentum) player.RestoreGreenHookReleaseVelocity(velocity);
         }
@@ -435,9 +464,10 @@ namespace Project.GreenHook
             Vector2 offset = next - anchor;
             if (offset.magnitude > ropeLength) next = anchor + offset.normalized * ropeLength;
             Vector2 movement = next - center;
-            float free = GreenHookPhysics.FreeDistance(playerColliders, transform, null, movement,
-                movement.magnitude, .01f);
-            swingVelocity = movement.sqrMagnitude > .0000001f ? movement.normalized * (free / dt) : Vector2.zero;
+            // A floor hit must not erase horizontal swing momentum (nor a wall
+            // erase downward sliding). Preserve movement tangent to the contact.
+            Vector3 allowed = GreenHookPhysics.SlideDisplacement(playerColliders, transform, movement, .01f);
+            swingVelocity = (Vector2)allowed / dt;
             player.SetGreenHookPullVelocity(this, swingVelocity);
         }
 
@@ -545,6 +575,7 @@ namespace Project.GreenHook
             phase = HookPhase.Pulling;
             if (target.GreenHookMotionMode == GreenHookMotionMode.Swing)
             {
+                player.SetGreenHookLocomotion(this, false);
                 phase = HookPhase.Swinging;
                 pullingPlayer = false;
                 ropeLength = Mathf.Max(.1f, Vector2.Distance(GetPlayerCenter(), targetTransform.TransformPoint(localAnchor)));
@@ -563,6 +594,7 @@ namespace Project.GreenHook
             {
                 targetMotion?.BeginGreenHookPull();
             }
+            player.SetGreenHookLocomotion(this, !pullingPlayer);
         }
 
         private void Retarget(IGreenHookTarget next, Vector3 point)
@@ -833,7 +865,8 @@ namespace Project.GreenHook
             Vector2 rawDirection = (Vector2)(pointerWorldPoint - ResolveSourcePoint());
             if (rawDirection.sqrMagnitude < .0001f)
             {
-                HideLine();
+                idleTipInitialized = false;
+                if (line != null) line.enabled = false; // keep the cursor ring visible
                 return;
             }
 
@@ -867,7 +900,8 @@ namespace Project.GreenHook
             if (!TryGetPointerWorldPoint(Camera.main, pointerPosition, out Vector3 center)) { HideAimRing(); return; }
             if (aimRing == null)
             {
-                Shader shader = Shader.Find("Sprites/Default");
+                Shader shader = Resources.Load<Shader>("GreenHookAimRing");
+                if (shader == null) shader = Shader.Find("Sprites/Default");
                 if (shader == null) return;
                 aimRingMaterial = new Material(shader) { name = "Green Aim Tolerance", hideFlags = HideFlags.DontSave };
                 var child = new GameObject("__GreenAimTolerance") { hideFlags = HideFlags.DontSave };
@@ -880,18 +914,28 @@ namespace Project.GreenHook
                 aimRing.receiveShadows = false; aimRing.sortingOrder = 1001;
             }
             float radius = AimToleranceWorld;
-            center.z += cameraFacingOffset - .01f;
-            for (int i = 0; i < ringPoints.Length; i++)
+            // The overlay shader already ignores depth. Moving this point on
+            // world Z would introduce pointer parallax with a perspective camera.
+            if (center != lastRingCenter || radius != lastRingRadius)
             {
-                float angle = i * (Mathf.PI * 2f / ringPoints.Length);
-                ringPoints[i] = center + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * radius;
+                for (int i = 0; i < ringPoints.Length; i++)
+                {
+                    float angle = i * (Mathf.PI * 2f / ringPoints.Length);
+                    ringPoints[i] = center + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * radius;
+                }
+                aimRing.SetPositions(ringPoints);
+                aimRing.widthMultiplier = .025f * AimCellWorldSize;
+                lastRingCenter = center;
+                lastRingRadius = radius;
             }
-            aimRing.SetPositions(ringPoints);
-            aimRing.widthMultiplier = .025f * AimCellWorldSize;
             float reach = LaunchRangeWorld + radius;
             bool reachable = ((Vector2)(center - transform.position)).sqrMagnitude <= reach * reach;
-            Color tint = reachable ? new Color(.3f, 1f, .25f, .7f) : new Color(.55f, .65f, .55f, .3f);
-            aimRing.startColor = aimRing.endColor = tint;
+            if (lastRingReachable != reachable)
+            {
+                Color tint = reachable ? new Color(.3f, 1f, .25f, .7f) : new Color(.55f, .65f, .55f, .3f);
+                aimRing.startColor = aimRing.endColor = tint;
+                lastRingReachable = reachable;
+            }
             aimRing.enabled = radius > 0f;
         }
 
@@ -931,9 +975,9 @@ namespace Project.GreenHook
             {
                 float t = (float)index / segments;
                 float envelope = Mathf.Sin(Mathf.PI * t);
-                float seed =
-                    sourcePoint.x * 13.1f +
-                    targetPoint.y * 5.7f;
+                // Rotating the pointer must not re-seed the entire silhouette.
+                // Only time evolves the shape, otherwise fast turns shimmer.
+                float seed = visualNoiseSeed;
                 float noise = Mathf.PerlinNoise(
                     t * 3.5f +
                     Time.time * Mathf.Max(.1f, effectSpeed) * .18f,
@@ -1317,6 +1361,8 @@ namespace Project.GreenHook
             aimToleranceCells = Mathf.Max(0f, aimToleranceCells);
             launchRangeSlackCells = Mathf.Max(0f, launchRangeSlackCells);
             idleFollowSeconds = Mathf.Max(0f, idleFollowSeconds);
+            releaseBoostRatio = Mathf.Max(0f, releaseBoostRatio);
+            releaseBoostLimit = Mathf.Max(0f, releaseBoostLimit);
         }
     }
 }

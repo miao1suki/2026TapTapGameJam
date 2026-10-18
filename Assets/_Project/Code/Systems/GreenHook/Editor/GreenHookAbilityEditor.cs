@@ -63,6 +63,8 @@ namespace Project.GreenHook.Editor
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingAcceleration", "荡绳加速度"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingSpeedLimit", "荡绳速度上限"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingDamping", "荡绳阻尼", "松开方向输入后动量衰减速度；0为无额外阻尼。"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "releaseBoostRatio", "主动松绳助推比例", "按当前真实速度方向助推，默认8%；设为0只保留惯性。"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "releaseBoostLimit", "松绳额外速度上限", "默认最多额外1世界单位/秒；不对死亡、重置或超范围断绳助推。"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "retargetVisualSeconds", "换点视觉衔接（秒）", "切换挂点时绳尖的短过渡，不暂停玩家或清除惯性。"));
             root.Add(movement);
 
