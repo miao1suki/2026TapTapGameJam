@@ -33,7 +33,15 @@ namespace Project.ColorBlocks
         public ColorTypeDefinition Find(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
-            return colors.Find(color => color != null && color.id == id);
+            // Called by appearance, target previews and gameplay every frame.
+            // List.Find with a captured id allocates a closure and delegate on
+            // every lookup; keep the original ordered/exact-id semantics.
+            for (int index = 0; index < colors.Count; index++)
+            {
+                ColorTypeDefinition color = colors[index];
+                if (color != null && color.id == id) return color;
+            }
+            return null;
         }
 
 #if UNITY_EDITOR

@@ -1,6 +1,6 @@
 # 绿色钩子接入 API
 
-源码：`Assets/_Project/Code/Systems/GreenHook`。2026-10-18 更新：指针容差圈/边缘冗余、待机缓动与性能、挂绳红块被动供能；保留自由瞄准、四向拉取、持续连接及连续换点。
+源码：`Assets/_Project/Code/Systems/GreenHook`。2026-10-18 更新：挂绳普通行走、攀爬保护与松绳惯性；渲染帧/相机顺序、稳定噪波和常亮容差圈；红蓝预览恢复最近一个逻辑目标。保留自由瞄准、四向拉取、持续连接及连续换点。
 
 ## 输入与控制所有权
 
@@ -8,13 +8,15 @@
 
 待机端点跟随鼠标在玩家平面的实际位置（同方向不同距离也改变绳长），按`idleFollowSeconds`默认0.045秒指数缓动，位置偏移相对玩家计算，不拖慢出线起点。可见端点裁至基础范围加`launchRangeSlackCells`（默认0.5格）；`idleLengthCells`仅为缺少传感器时的后备范围。点击确认后仍以真实局部目标锚点为准，鼠标移动不会带走已挂接绳尖。绿色LineRenderer与顶点数组持续复用，不为待机/发射/换点反复创建线条。
 
-绿色选色时显示跟随真实指针的容差圈，`aimToleranceCells`默认半径0.65格；已挂接时也显示以方便换点。圈不跟随绳尖缓动，点击也不等待缓动。仅点击时做NonAlloc局部查询，按最近真实碰撞体表面挑选有效目标，稳定打破同距并列；空白处本身不是锚点。候选仍受交互Layer、颜色/目标资格、作者所属区域与整条路径房间约束；不可借大碰撞体跨房间。UI、暂停、搬运或额外演出锁时隐藏容差圈。红蓝点击规则不变。
+绿色选色时显示跟随真实指针的容差圈，`aimToleranceCells`默认半径0.65格；已挂接时也显示以方便换点。圈不跟随绳尖缓动，点击也不等待缓动。容差圈无呼吸动画，使用`Resources/GreenHookAimRing.shader`的Overlay队列、`ZTest Always`与`ZWrite Off`保持可见；只在中心/半径变化时更新缓存几何、可达状态变化时改色。不要与玩家原有、允许呼吸的染色范围圈混淆。仅点击时做NonAlloc局部查询，按最近真实碰撞体表面挑选有效目标，稳定打破同距并列；空白处本身不是锚点。候选仍受交互Layer、颜色/目标资格、作者所属区域与整条路径房间约束；不可借大碰撞体跨房间。UI、暂停、搬运或额外演出锁时隐藏容差圈。红蓝点击规则不变。
 
 合法点击通过真实目标、发射范围、当前区域与能力资格检查后，当帧挂接并取得唯一控制句柄，立即开始拉取/荡绳，不等待绳头飞行。出线使用与换点相同的视觉插值（默认0.1秒），不参与命中与物理时序；无效点击不取得控制锁。不要恢复旧四向射线/高起点造成实际目标漏接、先锁人再等待命中的路径。旧伸出/收回字段与内部状态仅保留兼容，不是当前正常点击流程。
 
-已挂接时 `PlayerInputDriver` 先通过 `PlayerController.UpdateGreenHookInput(move, release)` 分发输入，再处理普通控制锁；同时刷新世界指针并将 PointerPrimary 转发至现有选色入口以切换目标。现有 Jump 或 Interact 动作主动脱钩，同帧脱钩优先于换点；键鼠、手柄、触摸沿用原动作映射，不增设硬编码按键。Respawn 仍可返回重生点。
+已挂接时 `PlayerInputDriver` 先通过 `PlayerController.UpdateGreenHookInput(move, release)` 分发输入，再处理普通控制锁；同时刷新世界指针并将 PointerPrimary 转发至现有选色入口以切换目标。现有 Jump 或 Interact 动作主动脱钩，同帧脱钩优先于换点。落地且普通跳跃资格满足时，Jump在同帧脱钩并提交普通起跳，不吞掉第一次按键；空中Jump只脱钩，不额外赋予一次空中跳跃。键鼠、手柄、触摸沿用原动作映射，不增设硬编码按键。Respawn 仍可返回重生点。
 
-`PlayerController.CanDriveGreenHook` 只在钩子持有唯一控制锁时成立；叠加 Timeline 等控制锁后暂停运动和主动操作，不绕过高优先级控制。暂停时不处理脱钩输入。死亡、重生、离区、目标销毁/禁用会取消连接并释放同一锁句柄。
+`PlayerController.CanDriveGreenHook` 只在钩子持有唯一控制锁时成立；唯一钩子锁是连接/运动所有权，不等于全程冻结普通控制器。拉物、双方受阻或接触等待时通过`SetGreenHookLocomotion(source, true)`放行普通行走；仅实际拉玩家或荡绳时接管玩家运动。叠加Timeline等额外控制锁仍暂停运动和主动操作，不绕过高优先级控制。暂停时不处理脱钩输入。死亡、重生、离区、目标销毁/禁用会取消连接并释放同一锁句柄。
+
+挂绳全程以及结束后1秒，`CanAutomaticallyClimb`均为false；普通藤蔓、绿色方块/衍生物、水平攀附和梯子不得通过接触重进攀爬来打断绳索运动。`BeginGreenHookPull`/`EndGreenHookPull`清理旧攀爬来源，保护期到期后接触仍可正常恢复攀爬。这只屏蔽自动攀爬，不是1秒禁走或禁输入。
 
 ## 目标与运动契约
 
@@ -40,7 +42,9 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 
 `IsGreenHookPullActive`表示目标运动器仍拥有此次拉取。搬运、房间重置或禁用运动器会先结束该所有权；能力在下一次Update/FixedUpdate发现其已退出后清理绳子并归还自己的玩家锁，不能继续向已由搬运器控制的物体写速度。接触、受阻等正常等待不结束该所有权，因此不会触发自动松钩。
 
-只有一个对象收到非零拉动命令；拉玩家时目标停止拉动而不是关闭重力，重新可拉时先停玩家拉动再动目标。红/蓝方块拉动期间保持重力；横向拉动及零命令保留物理解算后的竖直速度，离开台面会继续下落，不能把命令零值解释为锁死X/Y。基座以`MechanismBaseFeature.UsesGravity`为最高优先级：关闭重力的实例仍悬浮，开启的实例与方块一致。双方受阻或碰到彼此停止主动拉动，但保持连接，不积累超时、不自动结束；解除障碍后不必重发。主动脱钩不执行跨房间搜索或位置吸附；荡绳主动/超距脱钩保留碰撞求解后的当前动量，但叠加高优先级控制锁时不注入速度。
+只有一个对象收到非零拉动命令；拉玩家时目标停止拉动而不是关闭重力，重新可拉时先停玩家拉动再动目标。红/蓝方块拉动期间保持重力；横向拉动及零命令保留物理解算后的竖直速度，离开台面会继续下落，不能把命令零值解释为锁死X/Y。基座以`MechanismBaseFeature.UsesGravity`为最高优先级：关闭重力的实例仍悬浮，开启的实例与方块一致。双方受阻或碰到彼此停止主动拉动，但保持连接、不清零普通行走速度，玩家仍可主动走开；不积累超时、不自动结束，解除障碍后不必重发。主动脱钩不执行跨房间搜索或位置吸附。
+
+荡绳主动/超距脱钩交还碰撞求解后的真实方向和速度；仅主动松绳沿该速度方向增加`min(当前速率 × releaseBoostRatio, releaseBoostLimit)`，默认比例0.08、额外上限1世界单位/秒，设比例0可只保留惯性。超距、死亡/重置不额外助推；高优先级控制锁期间不注入速度。`RestoreGreenHookReleaseVelocity`提供0.25秒水平动量保护，防止普通motor在下一步直接抹掉松绳水平速度；反向输入仍可立即刹车，不绕过实体碰撞。
 
 拉取运动每步只提交一个水平或竖直命令，不沿绳子斜向施力；竖向拉只提交竖直命令并保留刚体重力，横向拉不抹掉竖直速度。合速度可同时包含水平拉动和向下重力，不是斜向施加拉力。选定主轴后持续到该轴接近对齐再切换，避免45度附近抖动和贴地微小高度差被当成向地下拉。荡绳不套此四向限制：输入沿切线加速，保留初始动量、重力、轻阻尼与速度上限，绳长为最大约束而非瞬移定位。读取碰撞求解后的刚体速度，松开时也交还该实际速度。
 
@@ -50,7 +54,11 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 
 发射/换点检查真实表面锚点，允许ScanRadius加`launchRangeSlackCells`，标准玩家为5+0.5格；光标圈只负责选择表面，不再叠加扩大锚点最大距离。挂接维持距离仍按基础ScanRadius加`attachedRangeSlackCells`（默认3格）计算，即标准8格，不再叠加发射边缘冗余。实际锚点距离连续超出维持半径满 `attachedOutOfRangeGraceSeconds`（默认0.4秒）才释放；回到半径内清零计时，暂停不推进计时。距离按真实局部锚点变换后的坐标，不用鼠标、目标中心或插值绳尖；Update/FixedUpdate均检查，共用同一个连续超距计时。0.001世界单位另防数值误差。此冗余不放宽房间/通道边界、实体碰撞或目标资格；死亡/重生、离区及目标销毁/禁用仍清理。接触、双方不能移动或等待很久都不自动断开。
 
-钩子以执行顺序 -50 在 PlayerController 固定更新前提交速度。`GreenHookPhysics.FreeDistance` 对下一步实体包围盒作无分配扫掠，忽略平行地面支撑、触发器、自身与拉动对端，尊重碰撞矩阵。不再用渲染帧 Transform 位移/累计停滞时间推断受阻。
+钩子物理以执行顺序-50在PlayerController固定更新前提交速度；视觉由运行时伴随组件`GreenHookVisualDriver.LateUpdate`以顺序1100、在`CameraControlManager`的1000之后，每个渲染帧调用`RenderFrame`，不受固定物理步频限制。指针投影、绳尖缓动和容差圈在相机最终位置确定后更新，不能重新塞回FixedUpdate或相机之前。`GreenHookPhysics.FreeDistance`对下一步实体包围盒作无分配扫掠，忽略平行地面支撑、触发器、自身与拉动对端，尊重碰撞矩阵。不再用渲染帧Transform位移/累计停滞时间推断受阻。
+
+`PlayerController.HasAutomaticClimbCandidate`直接枚举当前玩家注册表，不做场景扫描或帧缓存。藤蔓与绿色方块在所有存活玩家都挂绳/处于松绳保护期时跳过无效攀爬Overlap，但仍清理旧来源，保留序列帧、生长与水接触检测；任意另一名玩家可攀爬时仍正常查询。保护期结束应在原地自动恢复，不能缓存被拒绝的进入事件。分配验证使用经过显式分配阳性校准的ProfilerRecorder，不使用本Mono下失效的线程分配字节计数。
+
+光标圈使用Resources内`GreenHookAimRing.shader`的无噪声Overlay材质，固定透明度、缓存顶点与可达状态；场景深度不再让其交替被遮挡。圈中心不施加world-Z偏移，避免透视相机下指针视差。鼠标恰在玩家出线点时可以不画零长度绳子，但光标圈仍显示。玩家原有的染色范围呼吸圈不变，不能用删除它来掩盖光标圈闪烁。
 
 可推动收集品不直接视作墙；最多八层推挤检查，收集品顶住墙时仍会阻挡。缓冲区饱和或超过深度上限保守停止。钩子线可以穿墙，玩家与被拉物仍受物理实体阻挡。
 
@@ -58,9 +66,15 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 
 目标/玩家碰撞体在启动时缓存，不每个物理步重新分配层级数组。新增加/移除实体碰撞体的目标需重新挂接以刷新缓存；已有生长体修改同一碰撞体尺寸无需刷新。
 
-待机旋转不扫场景；格尺寸读取玩家缓存，UI阻挡检测复用PointerEventData/结果列表并只查询GraphicRaycaster，不执行会丢弃的物理射线和全结果排序。PlayerColorWheel统一调用DesktopCursorPolicy，避免逐帧解除桌面鼠标限制。绿线Shader在枝叶实际覆盖区间外跳过高开销曲线/花朵计算，仍保留四枝效果、不砍红蓝线条数。无需为连续指针跟随反复创建协程/Tween。
+待机旋转不扫场景；格尺寸读取玩家缓存，UI阻挡检测复用PointerEventData/结果列表并只查询GraphicRaycaster，不执行会丢弃的物理射线和全结果排序。PlayerColorWheel统一调用DesktopCursorPolicy，避免逐帧解除桌面鼠标限制。绿线使用对象生命周期内固定的`visualNoiseSeed`，鼠标转向不重新洗牌曲线/枝叶噪波；Shader在枝叶实际覆盖区间外跳过高开销曲线/花朵计算，仍保留四枝效果。无需为连续指针跟随反复创建协程/Tween。
+
+红蓝`InteractionLinkEffect`只画最近一个可用逻辑目标，扫描结果先去重再按真实表面距离排序；同一多节物体不因子碰撞体增加条数。预热并复用1个LineRenderer、状态和顶点数组；旧`maxLinks`/`prewarmLinks`多条序列化值仅兼容读取，不再改变数量。换最近目标时立即归还旧状态，不叠加旧线淡出；仅没有新目标时允许单条旧线溶解退场。此限制只改变只读预览，不把实际红蓝点击命中改成强制最近目标。
+
+连线绘制的分配还须沿被调接口追查，不能只看LineRenderer是否池化：性能采样定位到`ResolveColor → ColorCatalog.Find(id)`原先使用捕获`id`的`List.Find`，每次查询创建闭包和委托。当前改为顺序for循环，保留精确ID匹配/首个匹配项语义并去掉这条调用链的捕获分配。仍须以复测的ProfilerRecorder/GC.Alloc证据验收，不据此宣称整帧零分配。
 
 ## 验证入口
+
+本轮新增专项入口（由整合者在静音隔离工程统一执行，不能仅凭入口存在宣称通过）：`Project.Player.Editor.PlayerMotionFeelAudit.Run`覆盖挂绳普通行走、攀爬所有权/松绳保护、过期攀爬来源及落地脱钩起跳；`Project.GreenHook.Editor.GreenHookVisualAudit.Run`覆盖真实渲染帧/相机顺序、容差圈稳定、贴面滑动与松绳；`Project.WorldItems.Editor.CollectibleContactAudit.Run`覆盖真实Trigger穿越、迟到玩家/复用、碰撞忽略所有权与方块/基座推动；`OptionalMechanismTimelineAudit.Run`覆盖门/平台默认关闭、可选触发边沿及控制锁清理。不要在成员正在编辑的Scene内执行这些入口；本段不代表实机手感、性能或本轮测试已验收。
 
 `Project.GreenHook.Editor.GreenHookAimAudit.Run`静音隔离验证容差/真实锚点、范围/跨房间、UI/暂停清理、复用与缓动、挂接供能/搬运排除、收集品无重力及复用。`MRoom3HookEnergyAudit.Run`使用MRoom3首个真实红块、基座与已绑定平台，运行真实输入/Update/FixedUpdate，不保存Scene。`RunBaseline`仅用于同夹具性能对照；当前Unity Mono的GC.GetAllocatedBytesForCurrentThread自检无效（已知分配仍返回0），不能据此宣称零分配，改查ProfilerRecorder的GC.Alloc事件数，不把标记Value冒充字节数。
 
@@ -69,3 +83,7 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 `Project.GreenHook.Editor.GreenHookLiveVerification.Run` 在隔离空场景运行真实Update/FixedUpdate与PlayerInputDriver，不手工调用物理步，强制要求 -noaudio；验证键鼠/手柄/触摸输入源下的拉物、控制锁、主动脱钩和连续荡绳换点，另经真实屏幕点击覆盖双方受阻、移走障碍后拉人/恢复拉物、6格维持、短暂超距与持续超距释放。物理验证另检查合法点击同帧接管、范围内重置超距计时及两种更新入口一致。不要在成员当前Scene内运行验证入口，模拟设备输入不代替真实手柄/安卓或实机手感验收。
 
 重力回归包含红/蓝块、有重力/无重力基座的横拉自然下落、等待中重力、竖向命令和所有权交还，以及从实际柱顶被拉离后的连续下落。Live夹具另构造“左侧玩家—尖刺间隙—窄入口—阻挡红块的柱—地下水域”：红块受阻转拉人到入口、双方受阻保持、玩家主动松钩落入水并进入Swimming、松钩后红块恢复供能。该流程不添加寻路、不绕过实体墙，也不自动松钩让玩家掉刺；完整关卡仍须保留真实可通行入口，不保证封闭实墙可通行。
+
+## 协作交付
+
+修改关卡实例或参数时，必须成套提交Scene、同名planning.json、meta及新增资源依赖；只交场景不能保证其他成员在关卡编辑器继续修改。不要为上述运行时修复全量重建或覆盖策划布局，正式Gaming按[正式关卡交接](FORMAL_LEVEL_DELIVERY.md)增量整合。

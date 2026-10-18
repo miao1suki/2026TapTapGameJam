@@ -5,7 +5,10 @@
 源码：`Code/Systems/Mechanisms`。DoorController / DoorButton 独立继承 MonoBehaviour，不挂 ColorObject、BlockAbilityHost 或 BlockRuntime，不实现 IColorApplicationTarget。不复用 Red_Button 的开关式信号逻辑。
 
 - `DoorController.State`：Locked / Unlocked，只读。
-- `IsWaitingToOpen` / `UnlockDelay`：等待状态和图案展示时间，默认0.8秒。可用Timeline镜头先到门附近，再保留展示时间。等待时State为Locked且碰撞保留；暂停冻结，持续信号释放、ResetDoor或禁用取消等待，不残留延迟回调。
+- `IsWaitingToOpen` / `UnlockDelay`：等待状态和图案展示时间，默认0.8秒。等待时State为Locked且碰撞保留；暂停冻结，持续信号释放、ResetDoor或禁用取消等待，不残留延迟回调。
+- `TimelineTrigger`：`DoorTimelineTrigger.Disabled=0`（默认）、`ButtonPressed=1`（每次按钮由未按到按下）、`DoorOpening=2`（全部按钮达成时）。**旧 Scene、旧 prefab、旧 planning 没有新字段时也为0，绝不沿用旧强制演出；不需要重建或覆盖作者关卡。** 门的开/关延迟与机关逻辑独立于此选项，关闭演出仍正常开门。
+- `NotifyButtonStateChanged(source, actor)`：DoorButton 的真实状态边沿入口；只有归属本门、已绑定且按下的按钮在 ButtonPressed 模式排队一次演出。旧 `NotifyButtonPressed(actor)` 仍只是重新评估信号（初始化、释放、重绑也会调用），不作为按钮演出事件。持续按钮真正松开再按下可以再播；重复 FixedUpdate 压力和重复 TryPress 不会播。
+- `IsTimelinePlaying`：可选演出只读调试。开启时可调镜头移向/停留/返回、`lockPlayerDuringTimeline`；显式关闭锁定则运镜不冻结玩家。禁用演出、ResetDoor/禁用对象清除排队并释放自己的锁，不触碰其他控制锁。
 - `DoorController.Buttons`：只读绑定列表。
 - `SetButtons(values)`：生成器完成增量整合后绑定实际 Scene 对象。
 - `NotifyButtonPressed(actor)`：重新评估全部绑定按钮；全部按下后进入图案展示等待，结束才开门，含持续按钮且信号不齐时取消等待或关门。不清除其他保持按钮进度，门提示同步更新。接口名称兼容既有调用，同时用于释放通知。
@@ -23,6 +26,8 @@ PlanningBox 的 `singleInstance` 使 1×2 门只生成一个实例；`doorOwnerI
 
 删除门清理其所属按钮；删除按钮保留门且解除绑定。NotifyDocumentChanged清理孤儿按钮，新增/保存使用既有规划事务与撤销。PlanningBox.doorButtonOrder保存创建次序，旧存档缺字段按规划文档顺序兼容；BindSceneDoors按此顺序解析实际PlanningBoxId，不依赖Hierarchy或instanceID。删除后保留相对次序，颜色按现有列表重新分配；不能引用staging中即将销毁的对象。按钮移动不跟随门作为子物体。
 
-镜头运行时构造 TimelineAsset / CameraTimelineTrack / CameraTimelineClip，保留当前投影和角度，移向门中心后停留，再交还统一相机。自身仅操作门轴，不直接写 Camera。自身持有并清理 director、Timeline、clip、track、临时锚点、Tween 和玩家控制锁；最多等待已有 Timeline 15 秒，超时跳过镜头，不阻塞开门。
+仅显式开启演出时，`MechanismCameraShot` 运行时构造 TimelineAsset / CameraTimelineTrack / CameraTimelineClip，保留当前投影和角度，移向门中心后停留，再交还统一相机。共享会话也供移动平台使用，不是额外挂到所有门的组件。门自身仅操作门轴，不直接写 Camera。会话持有并清理 director、Timeline、clip、track、临时锚点和自己的玩家锁；最多等待已有 Timeline 15 秒，超时跳过镜头，不阻塞开门。没有相机时不创建 Director、不锁输入；默认关闭时连会话也不创建。按钮模式逐次排队不重叠，开门模式只在本次等待开始时申请一次。
+
+专项 `OptionalMechanismTimelineAudit.Run` 仅在静音隔离工程验证默认不锁玩家、按钮边沿、两种触发、规划覆盖持久化、平台可选镜头与重置/禁用清理。不代替实际镜头手感与打包测试。关卡交付继续要求 Scene、同名 `.planning.json`、各自 `.meta` 及依赖成套同步，不能只提交生成场景。
 
 区域离开和存活/死亡 R 统一经过 RoomLifecycleManager，只恢复相关区域并保留颜色解锁。门本身持久；持续按钮恢复后取消门信号，保持按钮不重置。没有区域管理器/规划房间时不会猜测房间范围，应通过关卡编辑器应用规划。全局显式进度清空事件可按“全局进度重置时关门”配置重置门与全部按钮，不用于普通区域重置。

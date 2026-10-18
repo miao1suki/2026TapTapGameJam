@@ -28,7 +28,8 @@ namespace Project.ContactCubes
         {
             current.Clear();
             currentSides.Clear();
-            if (cube.IsUnlocked && cube.Color == CubeColor.Green && motion.IsSettled && shape.enabled)
+            if (cube.IsUnlocked && cube.Color == CubeColor.Green && motion.IsSettled && shape.enabled &&
+                PlayerController.HasAutomaticClimbCandidate)
             {
                 float cell = GridCellSizeUtility.Resolve(this);
                 Bounds bounds = shape.bounds;
@@ -37,7 +38,8 @@ namespace Project.ContactCubes
                 for (int i = 0; i < count; i++)
                 {
                     PlayerController player = hits[i].GetComponentInParent<PlayerController>();
-                    if (player == null || current.Contains(player)) continue;
+                    if (player == null || !player.isActiveAndEnabled || player.IsDead ||
+                        !player.CanAutomaticallyClimb || current.Contains(player)) continue;
                     var capsule = player.GetComponent<CapsuleCollider>();
                     if (capsule == null) continue;
                     Bounds p = capsule.bounds;

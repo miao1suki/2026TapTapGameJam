@@ -6,7 +6,9 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 新增独立绿色进阶关：`Assets/Scenes/MRoom3.unity`及同名planning/mvmap。仅新区域，4平台/3无重力基座、充能前进断电回位，6门/13保持按钮，尖刺朝通道。新图不用覆盖旧MRoom2或正式Gaming；交付必须带可编辑存档/meta，见 [MROOM3_IMPORT](../Developer/MROOM3_IMPORT.md)。
 
-三色连线：红蓝不再按1/3条截断，预热线条池、复用淡出状态、批量提交顶点；绿色待机绳尖随真实鼠标位置缓动，默认容差圈0.65格/发射边缘额外0.5格，只点击时查目标，挂接后跟真实锚点。UI检测复用缓冲、绿线Shader裁去枝叶覆盖区外的重计算，PC光标共用DesktopCursorPolicy避免选色逐帧解锁；独立包有焦点时限制在游戏窗口，失焦释放，Editor/安卓不锁定。见[连线说明](../../Assets/ta_source/LinkEffect/连接效果使用说明.md)和[绿绳API](Integration/GREEN_HOOK_API.md)。
+三色连线：红蓝均只显示最近一个有效逻辑目标，池预热1条、复用状态/顶点，旧多条字段不再生效，换点无旧线淡出叠加。绿色视觉由GreenHookVisualDriver在相机1000之后以LateUpdate1100每个渲染帧绘制，物理仍为FixedUpdate-50；固定噪波种子不随转向洗牌。待机绳尖随真实鼠标位置缓动，容差圈0.65格/发射边缘额外0.5格，仅点击查询；光标圈无呼吸、Overlay常亮且缓存几何，与玩家原有染色范围圈区分。UI检测复用缓冲、绿线Shader裁去枝叶覆盖区外的重计算，PC光标共用DesktopCursorPolicy；独立包有焦点时限制在游戏窗口，失焦释放，Editor/安卓不锁定。见[连线说明](../../Assets/ta_source/LinkEffect/连接效果使用说明.md)和[绿绳API](Integration/GREEN_HOOK_API.md)。
+
+连线池化专项采样另定位到ColorCatalog.Find的捕获式List.Find每次查询分配闭包/委托，现改顺序for循环、保留精确ID与首个匹配语义；不能只因LineRenderer复用便宣称整帧零分配，复测证据另记。
 
 植物障碍：同房间上下左右真实接触连通燃烧，斜角/孔洞不连通；一次组燃烧一次音效，沿用R/死亡/离区复原。见 [玩法说明](../Developer/GAMEPLAY_REFINEMENTS.md#植物障碍连通燃烧)。主菜单已接新OP `bmg_op`，Gaming保留atmosphere；Boss曲通过`AudioCueIds.MusicBoss`显式调用，见 [音频交接](Integration/AUDIO_HANDOVER.md)。
 
@@ -32,7 +34,9 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 画布边缘拖拽：世界/详情/装配共用定时自动平移，静止按住和拖过边界仍持续，释放/取消/失焦即停止；补偿抓取起点、不增加中间保存事务。使用与接入见 [关卡协作](Integration/PLANNING_COLLABORATION_API.md)，专项验证为 PlanningEdgePanAudit。
 
-绿钩子最新规则：自由指针瞄准，与红蓝共用出线点，合法点击立即挂接并接管运动，出线仅视觉。基础5格，发射/换点额外0.5格，挂接维持仍为基础加3格（8格）/连续超距0.4秒宽限。红蓝接触方块/基座每物理步四向优先拉物，受阻转拉玩家并重评估；红块挂绳不暂停被动供能，搬运仍暂停。绿色接触方块/生长体、藤蔓、弹性植物为保留动量的荡绳锚点，连接中直接点击切换挂点。成功挂接不因受阻/接触/等待脱钩，现有跳跃/交互主动结束。见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。无色收集品关闭重力且保留物理推挤，旧实例/重置/复用自动适配；与四向尖刺均在道具栏目，见 [使用说明](../Developer/WORLD_ITEMS.md)、[接入](Integration/WORLD_ITEMS_API.md)。
+绿钩子最新规则：自由指针瞄准，与红蓝共用出线点，合法点击立即挂接，出线仅视觉。基础5格，发射/换点额外0.5格，挂接维持仍为基础加3格（8格）/连续超距0.4秒宽限。红蓝接触方块/基座每物理步四向优先拉物，受阻转拉玩家并重评估；拉物、接触/双方受阻等待时可普通行走，仅实际拉玩家或荡绳接管运动，额外锁优先。红块挂绳不暂停被动供能，搬运仍暂停。绿色接触方块/生长体、藤蔓、弹性植物为荡绳锚点，连接中可直接换点；不因受阻/接触/等待脱钩。挂绳全程及结束后1秒不自动攀爬；荡绳松绳保留碰撞后动量，主动默认8%助推/额外上限1，0.25秒防普通motor立即抹水平速度。Jump落地脱钩同帧起跳、空中只脱钩，Interact主动结束。见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。无色收集品关闭重力，玩家Trigger收集/实体穿过、方块与基座仍可推动；旧实例/重置/复用自动适配。与四向尖刺均在道具栏目，见 [使用说明](../Developer/WORLD_ITEMS.md)、[接入](Integration/WORLD_ITEMS_API.md)。
+
+本轮专项验证入口：Project.Player.Editor.PlayerMotionFeelAudit.Run、Project.GreenHook.Editor.GreenHookVisualAudit.Run、Project.WorldItems.Editor.CollectibleContactAudit.Run、OptionalMechanismTimelineAudit.Run；仅由整合者在静音FlowRetirementProbe隔离工程运行，分别覆盖运动/攀爬、真实渲染帧、真实收集触发与推动、可选机关Timeline。本索引不声明本轮通过数字，实机与手感另验收，详见绿钩子/门/机关API。
 
 无色尖刺接触链（2026-10-17）：NeutralSpike + 子碰撞体 SpikeContactRelay，按合并实际占格生成方向触发区，保留空洞并支持房间重置；统一玩家死亡/复活保护，重生安全查询排除尖刺且不误跳过同地图地面。真实物理回归 HazardContactAudit 仅在静音隔离工程运行，见 WORLD_ITEMS_API。
 
@@ -40,7 +44,7 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 玩家搬运体积约束：头顶方块按实际实体扫掠限制玩家物理位移，支持长块、冲刺与反向离开；搬运提示统一字体且不继承合并拉伸。Pick 已补 WordNote_UI，Test/Gaming 沿用各自现有组件。见 [搬运 API](Integration/PLAYER_CARRY_API.md)、[使用说明](../Developer/PLAYER_CARRY.md)。
 
-门按钮三色美术按创建/绑定顺序红、绿、蓝；门内白色图案按按钮数量显示、按各按钮独立点亮，全部按下后保留可配置0.8秒展示再开门，有Timeline时先到门附近。规划存档保存按钮创建次序，重建不按Hierarchy排序；按钮仍为无色踩踏机关。见 [门使用说明](../Developer/DOORS.md)、[接入API](Integration/DOOR_API.md)。
+门按钮三色美术按创建/绑定顺序红、绿、蓝；门内白色图案按按钮数量显示、按各按钮独立点亮，全部按下后保留可配置0.8秒展示再开门。门Timeline默认关闭（旧实例/缺字段存档同样关闭），可选每次真实按钮按下或达成开门时播放，演出锁定玩家可配；移动平台也可选充能/开始移动/抵达端点镜头，默认关闭。关闭不生成导演或申请演出锁，无需批量重建用户关卡。规划存档保存按钮创建次序，重建不按Hierarchy排序；按钮仍为无色踩踏机关。见 [门使用说明](../Developer/DOORS.md)、[接入API](Integration/DOOR_API.md)、[机关API](Integration/MECHANISM_SIGNAL_API.md)。
 
 正式水族已替换为TA像素水面/水中/水下自动分区与透明折射板；定向水流四向气泡、浮力柱向上连通水域气泡，继续共享蓝色HSV/透明交接与原玩法/区域重置。无需重建场景。见 [玩法水体API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[使用说明](../Developer/GAMEPLAY_PIXEL_WATER.md)。旧独立波纹水保留作资源和后备路径，不再默认生成。
 
@@ -86,7 +90,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 
 | 系统 | 源码 | 状态 |
 |---|---|---|
-| 非颜色门与绑定按钮 | `Assets/_Project/Code/Systems/Mechanisms` | 道具门 1×2、自动/追加专属按钮、玩家踩踏按钮、全部按下后开门、Timeline 镜头；不使用 E、不接收颜色交互。见 Integration/DOOR_API.md 与 Developer/DOORS.md |
+| 非颜色门与绑定按钮 | `Assets/_Project/Code/Systems/Mechanisms` | 道具门1×2、自动/追加专属按钮、玩家踩踏按钮、全部按下后开门；Timeline默认关闭，可选真实按钮按下/开门触发。平台可选镜头同样默认关闭；不使用E、不接收颜色交互。见 Integration/DOOR_API.md、Integration/MECHANISM_SIGNAL_API.md 与 Developer/DOORS.md |
 | 无色梯子、横门与门提示 | `Assets/_Project/Code/Systems/Mechanisms` | 正面/侧面梯子复用攀爬；独立横门 2×1；每门唯一提示按总数/已按数量更新，新绑定上限三个。见 Integration/NEUTRAL_MECHANISMS_API.md 与 Developer/NEUTRAL_MECHANISMS.md；本地开发待验收 |
 | 选择性像素化 | `Assets/_Project/Code/Systems/Pixelization`、`Assets/ta_source/PixelEffect` | 当前 PC 启用 TA Stencil 路径及其像素参数，关闭重复内置像素化；HSV 保持开启且在其后执行。内置路径的 Rendering Layer 128/描边 API 不控制 TA Shader。见 Integration/PIXELIZATION_API.md |
 | 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 正式序列固定为 `Assets/_Project/Scenes/Start/MainMenu.unity` → `Assets/_Project/Scenes/Playing/Gaming.unity`；MainMenu 持 `GameFlowController`/`StartMenuFlowBridge`，Gaming 持玩家、相机管理和 `SharedGameUI` 暂停界面。Bootstrap、旧 Systems、旧三关和 Ending 不再使用 |
@@ -95,7 +99,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |
 | 基础玩家 | `Assets/Player` | `PlayerController` 仅保留马能力，`PlayerInputDriver` 负责默认输入；不含旧玩法 |
-| TA 交互像素连线预览 | `Assets/ta_source/LinkEffect` | 仅红绿蓝染色选中时，在 PlayerInteractionSensor 圆形范围内只读预览可接色目标；红蓝整线淡入、绿线带四条噪波弯枝逐段生长；蓝线外围水纹有独立强度参数，Shader 按实际线长生成火星、叶花，不拉伸图案；具备溶解退场。Test 场景只保留玩家上的预览组件；场景接入见 [连接效果使用说明.md](../../Assets/ta_source/LinkEffect/连接效果使用说明.md) |
+| TA 交互像素连线预览 | `Assets/ta_source/LinkEffect` | 红蓝在PlayerInteractionSensor范围内只读预览最近一个有效逻辑目标，单线池复用、整线淡入，换点不叠加旧线淡出。蓝线外围水纹有独立强度参数，Shader按实际线长绘图；绿色实际钩绳由GreenHookAbility/VisualDriver负责，保留四枝效果并在相机之后每渲染帧刷新。场景接入见 [连接效果使用说明.md](../../Assets/ta_source/LinkEffect/连接效果使用说明.md) |
 | TA 染色覆盖效果 | `Assets/ta_source/GivingColor` | 独立 URP 透明覆盖 Shader 读取原材质纹理 Alpha，按红色燃烧、蓝色四次叠染、绿色逐级分叉播放；材质 Inspector 可调速度、噪波和像素化。只在玩家染色成功后短暂显示，完成后渐隐并露出原玩法改色结果；不覆盖水与岩浆生成的深蓝固体块，不覆盖蒸汽和植物反应。开局能力、解锁及目标原颜色由原程序管理；Test 场景文件不作接线修改；见 [使用说明.md](../../Assets/ta_source/GivingColor/使用说明.md) |
 | 掉落物与拾取飞行 | `Assets/_Project/Code/Shared/Runtime/DropItemBase.cs`、`Assets/_Project/Code/Systems/PickupPresentation` | 基类负责感知后的磁吸、收集生命周期；颜色钥匙触碰结算并播放 DOTween 四段飞行与镜头；Pick 场景保留测试物 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
@@ -113,7 +117,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 融合关卡编辑器 | `Assets/_Project/Development/LevelEditor/Orpheus0829` | 唯一编辑器入口；世界图/详情/装配图、方块/道具栏目、玩家贴纸与拖拽同步、多选与保留孔洞的不规则合并、组件模板、贴画、场景生成和共享存档；水与墙/道具同格，水层独立编辑、前景半透明；方块栏目只做地图墙壁，颜色玩法物体全部走道具栏目；详见 Integration/PLANNING_COLLABORATION_API.md |
 | 固定颜色物体/钥匙/房间重置 | `Assets/_Project/Code/Systems/ColorBlocks` | `ColorObject`、`ColorRuntimeService`、钥匙解锁、房间重置和 HSV 渐变；`Content/ColorBlocks/Prefabs` 使用 `Red_*`、`Blue_*`、`Green_*` 道具预制体；Universal_Block 白色代理及直接接色链仍保留，通用旧交互图退役 |
 | 颜色物玩法组件 | `Assets/_Project/Code/Systems/Interactions` | 旧交互图及无调用 AnchorPoint 已退役；固定功能组件位于 `BlockFeatures/Runtime/Features`，米黄色重生点使用 RespawnAnchorFeature，不依赖旧 AnchorPoint |
-| 绿色钩子 | `Assets/_Project/Code/Systems/GreenHook` | 自由瞄准、命中后接管、四向拉取/受阻回退、切向荡绳与连续换点；成功挂接由玩家主动结束，房间和控制锁保持隔离。见 [GREEN_HOOK_API.md](Integration/GREEN_HOOK_API.md) |
+| 绿色钩子 | `Assets/_Project/Code/Systems/GreenHook` | 自由瞄准、四向拉取/受阻回退、切向荡绳与连续换点；拉物/等待仍可普通行走，仅实际拉人/荡绳接管运动。挂绳及松绳后1秒不自动攀爬，松绳保动量并可助推；成功挂接由玩家主动结束或合法边界清理，房间和额外控制锁保持隔离。见 [GREEN_HOOK_API.md](Integration/GREEN_HOOK_API.md) |
 | 交互水面 | `Assets/ta_source/InteractiveWater`、`Assets/ta_source/Newwater/Prefabs` | TA 独立预制体保留独立波纹/反射资源；像素水提供三种双面片预制体和独立材质，透明物体后复制相机颜色、专用绘制折射滤镜，噪波只改片元屏幕采样 UV；每个实例可运行时调整滤镜色彩、折射强度和时间变化，前片自动贴合后片宽高/变换。场景和接入方式见 `Developer/PIXEL_WATER.md`、`Integration/PIXEL_WATER_API.md`；无颜色系统自动生成水体 |
 
 接入说明：[基础系统 API](Integration/FOUNDATION_API.md)。
@@ -121,3 +125,5 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 颜色系统：[Agent 接入 API](Integration/COLOR_BLOCKS_API.md)、[制作说明](../Developer/COLOR_BLOCKS.md)。
 迁移记录：[MIGRATION_REPORT.md](MIGRATION_REPORT.md)。
 各模块随源码的 README 是旧实现参考；与这里冲突时以本项目最新说明为准，不复原被排除的场景与玩法。
+
+每次关卡协作交付必须带Scene、同名planning.json、meta及新增资源依赖；不能只推送Scene。运行时修复不授权全量重建、覆盖或丢弃策划已有布局，正式Gaming遵循FORMAL_LEVEL_DELIVERY的增量整合约定。

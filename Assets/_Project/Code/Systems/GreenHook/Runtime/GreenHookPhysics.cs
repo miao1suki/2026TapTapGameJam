@@ -16,7 +16,30 @@ namespace Project.GreenHook
 
         internal static float FreeDistance(Collider[] shapes, Transform owner, Transform other,
             Vector3 direction, float distance, float skin, bool pushCollectibles = false, int depth = 0)
+            => Sweep(shapes, owner, other, direction, distance, skin, pushCollectibles, depth,
+                Vector3.zero, out _);
+
+        internal static Vector3 SlideDisplacement(Collider[] shapes, Transform owner, Vector3 movement, float skin)
         {
+            Vector3 result = Vector3.zero;
+            for (int iteration = 0; iteration < 3 && movement.sqrMagnitude > .0000001f; iteration++)
+            {
+                float distance = movement.magnitude;
+                Vector3 direction = movement / distance;
+                float free = Sweep(shapes, owner, null, direction, distance, skin, false, 0,
+                    result, out Vector3 normal);
+                result += direction * free;
+                if (free >= distance - .00001f || normal.sqrMagnitude < .0001f) break;
+                movement = Vector3.ProjectOnPlane(movement - direction * free, normal);
+            }
+            return result;
+        }
+
+        private static float Sweep(Collider[] shapes, Transform owner, Transform other,
+            Vector3 direction, float distance, float skin, bool pushCollectibles, int depth,
+            Vector3 originOffset, out Vector3 blockingNormal)
+        {
+            blockingNormal = Vector3.zero;
             if (distance <= 0f || direction.sqrMagnitude < .00001f) return 0f;
             if (depth >= buffers.Length) return 0f;
             var hits = buffers[depth];
@@ -28,7 +51,7 @@ namespace Project.GreenHook
                 var bounds = shape.bounds;
                 Vector3 half = bounds.extents - Vector3.one * skin;
                 half = Vector3.Max(half, Vector3.one * .001f);
-                int count = Physics.BoxCastNonAlloc(bounds.center, half, direction, hits,
+                int count = Physics.BoxCastNonAlloc(bounds.center + originOffset, half, direction, hits,
                     Quaternion.identity, distance + skin, ~0, QueryTriggerInteraction.Ignore);
                 if (count == hits.Length) return 0f;
                 for (int i = 0; i < count; i++)
@@ -49,7 +72,12 @@ namespace Project.GreenHook
                         free = Mathf.Min(free, Mathf.Max(0f, hit.distance - skin) + pushedFree);
                         continue;
                     }
-                    free = Mathf.Min(free, Mathf.Max(0f, hit.distance - skin));
+                    float allowed = Mathf.Max(0f, hit.distance - skin);
+                    if (allowed < free)
+                    {
+                        free = allowed;
+                        blockingNormal = hit.normal;
+                    }
                 }
             }
             return free;

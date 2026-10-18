@@ -306,7 +306,8 @@ namespace Project.BlockFeatures
                 Mathf.Max(0f, climbEnterDistanceGrid) *
                 GridCellWorldSize;
             foundPlayerIds.Clear();
-            if (range > 0f)
+            bool hasCandidates = PlayerController.HasAutomaticClimbCandidate;
+            if (range > 0f && hasCandidates)
             {
                 int count = Physics.OverlapSphereNonAlloc(
                     transform.position,
@@ -321,7 +322,9 @@ namespace Project.BlockFeatures
                         ? collider.GetComponentInParent<PlayerController>()
                         : null;
                     if (player == null ||
+                        !player.isActiveAndEnabled || player.IsDead ||
                         !player.gameObject.CompareTag(playerTag) ||
+                        !player.CanAutomaticallyClimb ||
                         !IsSideApproach(player))
                     {
                         continue;
@@ -357,7 +360,8 @@ namespace Project.BlockFeatures
                      climbingPlayers)
             {
                 if (!foundPlayerIds.Contains(pair.Key) &&
-                    (pair.Value == null || !pair.Value.IsClimbCornerProtectedBy(this)))
+                    (!hasCandidates || pair.Value == null || !pair.Value.isActiveAndEnabled || pair.Value.IsDead ||
+                     !pair.Value.CanAutomaticallyClimb || !pair.Value.IsClimbCornerProtectedBy(this)))
                 {
                     exitPlayerIds.Add(pair.Key);
                 }
@@ -401,6 +405,8 @@ namespace Project.BlockFeatures
                 return;
             }
 
+            player.CancelClimbCorner(this);
+            player.ClearHorizontalVineSurface(this);
             player.ExitClimb(this);
             player.SetClimbSpeedMultiplier(this, 0f);
             player.ClearClimbSlideSpeed(this);

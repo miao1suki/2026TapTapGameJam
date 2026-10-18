@@ -13,6 +13,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using Unity.Profiling;
 
 /// <summary>Read-only preview pool/aim/cursor regression, run only in the silent isolated project.</summary>
 public static class InteractionLinkBudgetAudit
@@ -21,6 +22,7 @@ public static class InteractionLinkBudgetAudit
     private const BindingFlags Hidden = BindingFlags.NonPublic | BindingFlags.Instance;
     private static double deadline;
     private static int checks;
+    private static int warmDrawAllocationEvents;
     public static void Run()
     {
         if (!Application.dataPath.Contains("/Library/FlowRetirementProbe/Assets") ||
@@ -60,11 +62,11 @@ public static class InteractionLinkBudgetAudit
             player.Motor.constraints = RigidbodyConstraints.FreezeAll;
             var wheel = player.GetComponent<PlayerColorWheel>();
             var effect = player.GetComponent<InteractionLinkEffect>();
-            Check(effect.PooledLineCount == 16, "renderer pool prewarmed on player creation");
+            Check(effect.PooledLineCount == 1, "one renderer prewarmed even for legacy prefab pool capacity");
             var waters = Enumerable.Range(1, 4).Select(i => Spawn("ColorBlocks/Prefabs/Blue_WaterSource", origin + Vector3.right * i)).ToArray();
             Check(wheel.TrySelectColor("red"), "select red");
             Physics.SyncTransforms(); Call(effect, "LateUpdate");
-            Check(effect.DetectedTargetCount == 4 && effect.VisibleLinkCount == 4, "all four valid waters shown, no one-water restriction");
+            Check(effect.DetectedTargetCount == 4 && effect.VisibleLinkCount == 1, "four waters detected but only nearest one shown");
             var candidates = (IList)Get(effect, "candidates");
             Check(((Component)candidates[0].GetType().GetField("Component").GetValue(candidates[0])).gameObject == waters[0], "nearest water uses actual collider distance");
             for (int i = 0; i < 30; i++)
@@ -72,17 +74,17 @@ public static class InteractionLinkBudgetAudit
                 player.transform.position = origin + Vector3.right * (i % 4 + 1);
                 player.Motor.position = player.transform.position;
                 Physics.SyncTransforms(); Call(effect, "ScanTargets"); Call(effect, "DrawLines");
-                Check(effect.VisibleLinkCount == 4, "water movement keeps all valid previews");
+                Check(effect.VisibleLinkCount == 1, "water movement keeps just one nearest preview");
             }
             foreach (var water in waters) Object.DestroyImmediate(water);
             player.transform.position = origin; player.Motor.position = origin;
             var vines = Enumerable.Range(0, 36).Select(i => Spawn("ColorBlocks/Prefabs/Green_Ladder",
                 origin + new Vector3(Mathf.Cos(i * Mathf.PI / 18) * 3, Mathf.Sin(i * Mathf.PI / 18) * 3, 0))).ToArray();
             Physics.SyncTransforms(); Call(effect, "ScanTargets"); Call(effect, "DrawLines");
-            Check(effect.DetectedTargetCount == 36 && effect.VisibleLinkCount >= 36, "dense red expands pool without discarding targets");
+            Check(effect.DetectedTargetCount == 36 && effect.VisibleLinkCount == 1, "dense red draws nearest target only");
             Check(wheel.TrySelectColor("blue"), "select blue");
             Call(effect, "LateUpdate");
-            Check(effect.DetectedTargetCount == 36 && effect.VisibleLinkCount == 36, "all blue previews displayed");
+            Check(effect.DetectedTargetCount == 36 && effect.VisibleLinkCount == 1, "blue draws nearest target only");
             var originalLines = ((IList)Get(effect, "lines")).Cast<LineRenderer>().Select(l => l.GetInstanceID()).ToArray();
             var draw = (Action)Delegate.CreateDelegate(typeof(Action), effect, effect.GetType().GetMethod("DrawLines", Hidden));
             for (int i = 0; i < 60; i++)
@@ -90,7 +92,7 @@ public static class InteractionLinkBudgetAudit
                 player.transform.position = origin + new Vector3(Mathf.Cos(i * .2f), Mathf.Sin(i * .2f), 0);
                 player.Motor.position = player.transform.position;
                 Physics.SyncTransforms(); Call(effect, "ScanTargets"); Call(effect, "DrawLines");
-                Check(effect.VisibleLinkCount == 36, "changing closest order keeps all targets");
+                Check(effect.VisibleLinkCount == 1 && effect.PooledLineCount == 1, "switching nearest reuses one line without overlapping fade");
             }
             var lines = (IList)Get(effect, "lines");
             Check(originalLines.SequenceEqual(lines.Cast<LineRenderer>().Select(l => l.GetInstanceID())), "steady movement reuses renderer identities");
@@ -105,10 +107,12 @@ public static class InteractionLinkBudgetAudit
                 Check(((IDictionary)Get(effect, "visualStates")).Values.Cast<object>().All(stateReferences.Contains), "visual state objects reused across disable/enable");
             }
             for (int i = 0; i < 10; i++) draw();
-            long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            using var allocation = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC.Alloc", 32768,
+                ProfilerRecorderOptions.CollectOnlyOnCurrentThread | ProfilerRecorderOptions.WrapAroundWhenCapacityReached);
             for (int i = 0; i < 300; i++) draw();
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
-            Check(allocated == 0, "warm 300 dense draws allocate no managed bytes; actual=" + allocated);
+            allocation.Stop();
+            warmDrawAllocationEvents = allocation.Count;
+            Check(allocation.Valid && allocation.Count <= 8, "warm 300 nearest draws do not allocate per draw; events=" + allocation.Count);
             Check(wheel.TrySelectColor("green"), "select green"); Call(effect, "LateUpdate");
             Check(effect.VisibleLinkCount == 0, "green never gets duplicate red-blue preview rays");
             var camera = new GameObject("AimCamera").AddComponent<Camera>(); camera.tag = "MainCamera";
@@ -118,12 +122,15 @@ public static class InteractionLinkBudgetAudit
             player.transform.position = origin; player.Motor.position = origin;
             var firstPoint = origin + new Vector3(1.5f, .8f, 0);
             hook.Tick(camera.WorldToScreenPoint(firstPoint), true);
+            Call(hook, "RenderFrame");
             var greenLine = (LineRenderer)Get(hook, "line");
             Check(Vector2.Distance(greenLine.GetPosition(greenLine.positionCount - 1), firstPoint) < .002f, "green tip tracks near pointer world position");
             var secondPoint = origin + new Vector3(3, 1.6f, 0);
             hook.Tick(camera.WorldToScreenPoint(secondPoint), true);
+            Call(hook, "RenderFrame");
             Check(Vector2.Distance(greenLine.GetPosition(greenLine.positionCount - 1), secondPoint) < .002f, "same direction different distance changes green endpoint");
             hook.Tick(camera.WorldToScreenPoint(origin + Vector3.right * 50), true);
+            Call(hook, "RenderFrame");
             Check(Vector2.Distance(greenLine.GetPosition(greenLine.positionCount - 1), origin) <= hook.LaunchRangeWorld + .002f, "idle preview clips at launch range including configured slack");
             Check(Vector2.Distance(greenLine.GetPosition(0), effect.SourceWorldPosition) < .002f, "green shares red-blue player origin");
             Check(DesktopCursorPolicy.ResolveLockMode(true, true) == CursorLockMode.Confined, "focused desktop confines without recentering");
@@ -138,7 +145,7 @@ public static class InteractionLinkBudgetAudit
     private static void Finish(Exception error)
     {
         EditorApplication.update -= Tick; SessionState.EraseBool(Flag);
-        string result = error == null ? $"PASS {checks} pool/aim/cursor assertions" : error.ToString();
+        string result = error == null ? $"PASS {checks} pool/aim/cursor assertions\n300 warm nearest-target draws: GC.Alloc events={warmDrawAllocationEvents}" : error.ToString();
         File.WriteAllText("Library/InteractionLinkBudget.txt", result);
         if (error == null) Debug.Log(result); else Debug.LogError(result);
         EditorApplication.Exit(error == null ? 0 : 1);

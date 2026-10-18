@@ -1,5 +1,6 @@
 using Project.Editor;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -25,15 +26,26 @@ namespace Project.Mechanisms.Editor
                 EditorUtility.SetDirty(door);
             }) { text = "刷新按钮绑定与提示" });
             root.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"openEuler","开门旋转轴","局部门轴旋转；竖门绕 Y，横门绕 X。"));
-            var timing = ProjectInspectorUtility.CreateFoldout("开门与镜头", true);
+            var timing = ProjectInspectorUtility.CreateFoldout("开门与关门", true);
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"openDuration","开门时间","门绕侧边轴旋转 90°。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"unlockDelay","图案展示时间","所有按钮按下后，保留完整彩色图案的时间；有镜头演出时从镜头到达门附近后开始计算。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"closeDelay","松开后关门延迟","持续压住按钮释放后的通行缓冲；期间重新按齐按钮会取消关门。"));
-            timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraMoveDuration","镜头移动时间","移向门中心。"));
-            timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraHoldDuration","镜头停留时间","门附近的停留时间。"));
-            timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraReturnDuration","镜头返回时间","平滑交还玩家跟随相机。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"resetWithRoom","全局进度重置时关门","仅响应显式进度清空；不改变 R 或离开房间的按钮模式规则。"));
             root.Add(timing);
+            var performance = ProjectInspectorUtility.CreateFoldout("可选Timeline演出", false);
+            var trigger = serializedObject.FindProperty("timelineTrigger");
+            performance.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"timelineTrigger","Timeline触发","默认关闭（包括旧场景）。按钮模式每次真实按下触发一次；开门模式仅在全部按钮达成时触发。"));
+            var shotSettings = new VisualElement();
+            shotSettings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"lockPlayerDuringTimeline","演出锁定玩家","只在显式开启演出时生效。关闭后看门镜头不冻结玩家。"));
+            shotSettings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraMoveDuration","镜头移动时间","移向门中心。"));
+            shotSettings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraHoldDuration","镜头停留时间","门附近的停留时间。"));
+            shotSettings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"cameraReturnDuration","镜头返回时间","平滑交还玩家跟随相机。"));
+            void RefreshShotSettings() => shotSettings.style.display = trigger.hasMultipleDifferentValues || trigger.intValue != 0
+                ? DisplayStyle.Flex : DisplayStyle.None;
+            performance.Add(shotSettings);
+            performance.TrackPropertyValue(trigger, _ => RefreshShotSettings());
+            RefreshShotSettings();
+            root.Add(performance);
             var state = new Label();
             root.Add(state);
             var reset = new Button(() => ((DoorController)target).ResetDoor()) { text = "重置门与按钮" };
