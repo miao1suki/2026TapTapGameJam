@@ -143,6 +143,46 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: flowSpeed
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: launchSpeed
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: settleChance
+      value: 0.81
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: waveAmplitude
+      value: 0.014
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: sizeRandomness
+      value: 0.56
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: particleLifetime
+      value: 2.14
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: particlesPerSecond
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: largeParticleChance
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: trajectoryRandomness
+      value: 0.68
+      objectReference: {fileID: 0}
+    - target: {fileID: 1013, guid: 6f22c79788754385922d14be074fcb8a, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
