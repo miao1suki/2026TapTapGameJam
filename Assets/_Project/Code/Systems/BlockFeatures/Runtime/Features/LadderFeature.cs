@@ -24,6 +24,14 @@ namespace Project.BlockFeatures
             player.ExitClimb(this);
         }
 
+        protected override void OnPlayerStayed(PlayerController player)
+        {
+            // Contact registration survives a rope's temporary climb immunity.
+            // Retry at the real trigger after grace expiry, without requiring exit/re-entry.
+            if (player.CanAutomaticallyClimb) player.EnterClimb(this);
+            else player.ExitClimb(this);
+        }
+
         protected override void OnResetForRoom()
         {
             DisconnectAllPlayers();

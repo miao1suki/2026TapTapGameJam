@@ -33,7 +33,7 @@ namespace TaSource.LinkEffect
         [SerializeField] private Vector3 sourceOffset = new Vector3(0f, .3f, 0f);
         [SerializeField, Min(.01f)] private float scanInterval = .12f;
         [SerializeField] private LayerMask targetMask = ~0;
-        [FormerlySerializedAs("maxLinks"), SerializeField, Range(1, 32)] private int prewarmLinks = 16;
+        [FormerlySerializedAs("maxLinks"), SerializeField, Range(1, 32)] private int prewarmLinks = 1;
         [SerializeField, Range(2, 32)] private int curveSegments = 12;
         [SerializeField, Min(0f)] private float arcHeight = .08f;
         [SerializeField, Min(0f)] private float waveHeight = .055f;
@@ -101,7 +101,9 @@ namespace TaSource.LinkEffect
             properties = new MaterialPropertyBlock();
             if (linkMaterial != null)
             {
-                int initialCapacity = Mathf.Clamp(prewarmLinks, 1, 32);
+                // Legacy prefabs may still serialize sixteen. One visible target
+                // now needs one pooled renderer, not sixteen hidden renderers.
+                int initialCapacity = 1;
                 EnsureLine(initialCapacity - 1);
                 for (int index = 0; index < initialCapacity; index++) statePool.Push(new LinkVisualState());
             }
@@ -332,6 +334,7 @@ namespace TaSource.LinkEffect
                 DrawLine(EnsureLine(visible), state, lineThickness, noiseStrength,
                     effectSpeed, 0f, rangeCenter, rangeRadius);
                 visible++;
+                break; // candidates are nearest-first; never draw a second target.
             }
 
             staleRevealKeys.Clear();
@@ -342,7 +345,7 @@ namespace TaSource.LinkEffect
                 if (state.FadeStartedAt < 0f) state.FadeStartedAt = Time.time;
                 float dissolve = (Time.time - state.FadeStartedAt) /
                     Mathf.Max(.05f, dissolveDuration);
-                if (dissolve >= 1f)
+                if (dissolve >= 1f || visible > 0)
                 {
                     staleRevealKeys.Add(item.Key);
                     continue;

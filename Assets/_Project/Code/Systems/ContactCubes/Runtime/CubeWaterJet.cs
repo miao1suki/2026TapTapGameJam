@@ -23,6 +23,7 @@ namespace Project.ContactCubes
         public void Configure(ContactCube source, ContactCube redContact, float distance, float diameter, float velocity, Material material)
         {
             owner = source; red = redContact; length = distance; width = diameter; speed = velocity;
+            if (!gameObject.activeSelf) gameObject.SetActive(true);
             if (visual == null)
             {
                 GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -49,7 +50,7 @@ namespace Project.ContactCubes
         }
         private void FixedUpdate()
         {
-            if (owner == null || red == null || !owner.isActiveAndEnabled || !red.isActiveAndEnabled) { gameObject.SetActive(false); return; }
+            if (owner == null || !owner.CanMaintainJetWith(red)) { gameObject.SetActive(false); return; }
             UpdatePose(); current.Clear();
             if (Direction.sqrMagnitude > .001f)
             {

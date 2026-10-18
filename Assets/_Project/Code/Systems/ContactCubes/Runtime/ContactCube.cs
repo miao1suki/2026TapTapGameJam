@@ -29,6 +29,10 @@ namespace Project.ContactCubes
         [SerializeField, InspectorName("水柱材质")] private Material jetMaterial;
         private Collider[] hits = new Collider[32];
         private readonly HashSet<ContactCube> neighbours = new HashSet<ContactCube>();
+        // Real contact pairs may have asymmetric/non-default contact offsets.
+        // This is only a candidate set: each step rechecks actual geometry, not a timer.
+        private readonly HashSet<ContactCube> collisionNeighbours = new HashSet<ContactCube>();
+        private readonly List<ContactCube> staleCollisionNeighbours = new List<ContactCube>();
         private readonly HashSet<Component> touchingTargets = new HashSet<Component>();
         private readonly HashSet<Component> appliedTargets = new HashSet<Component>();
         private readonly Dictionary<ContactCube, CubeWaterJet> jets = new Dictionary<ContactCube, CubeWaterJet>();
@@ -37,6 +41,7 @@ namespace Project.ContactCubes
         private float cellSize = 1f;
         private Vector3 localGrowthDirection = Vector3.right;
         private ContactCube selectedBlue;
+        private ContactCubeMotion motion;
         private bool carrySuspended;
         private bool hookSuspended;
         public void SetCarrySuspended(bool suspended)
@@ -49,8 +54,14 @@ namespace Project.ContactCubes
         public bool IsUnlocked => ColorRuntimeService.Existing != null && ColorRuntimeService.Existing.IsUnlocked(ColorId);
         // Hook ownership pauses cube reactions, not its passive electrical contact.
         // Carrying still disables supply (and normally disables the real collider).
-        public bool IsEnergyAvailable => isActiveAndEnabled && IsUnlocked && color == CubeColor.Red && !carrySuspended && shape != null && shape.enabled;
+        public bool IsEnergyAvailable => color == CubeColor.Red && HasContactShape;
         public bool IsHookSuspended => hookSuspended;
+        internal bool HasContactShape => isActiveAndEnabled && IsUnlocked && !carrySuspended &&
+            shape != null && shape.enabled && !shape.isTrigger && shape.gameObject.activeInHierarchy;
+        internal bool CanEmitContactReactions => HasContactShape && !hookSuspended;
+        internal bool CanMaintainJetWith(ContactCube red) => color == CubeColor.Blue && CanEmitContactReactions &&
+            red != null && red.Color == CubeColor.Red && red.HasContactShape &&
+            IsWithinContactShell(red, contactToleranceCells * cellSize);
         public int Length { get; private set; }
         public int MaximumLength => maximumLength;
         public CubeReactionState State { get; private set; }
@@ -61,11 +72,15 @@ namespace Project.ContactCubes
         public event Action<Component, Vector3, float> PushRequested;
         public void RequestPush(Component source, Vector3 velocity, float deltaTime) => PushRequested?.Invoke(source, velocity, deltaTime);
 
-        private void Awake() { cellSize = GridCellSizeUtility.Resolve(this); ResetForRoom(); }
+        private void Awake()
+        {
+            motion = GetComponent<ContactCubeMotion>();
+            cellSize = GridCellSizeUtility.Resolve(this);
+            ResetForRoom();
+        }
         private void FixedUpdate()
         {
-            if (!IsUnlocked || carrySuspended || hookSuspended ||
-                shape == null || !shape.enabled)
+            if (!CanEmitContactReactions)
             {
                 ClearContacts();
                 return;
@@ -87,7 +102,12 @@ namespace Project.ContactCubes
         {
             neighbours.Clear(); touchingTargets.Clear();
             Transform t = shape.transform;
-            Vector3 half = Vector3.Scale(shape.size * .5f, Abs(t.lossyScale)) + Vector3.one * (contactToleranceCells * cellSize);
+            // The original tolerance is smaller than a pair's contact shell:
+            // solver-separated resting boxes need not geometrically overlap.
+            // Broad-phase extra room is narrowed per cube pair below; it must
+            // not extend color application to unrelated nearby world objects.
+            float worldTolerance = contactToleranceCells * cellSize;
+            Vector3 half = Vector3.Scale(shape.size * .5f, Abs(t.lossyScale)) + Vector3.one * worldTolerance;
             int count;
             do
             {
@@ -100,7 +120,11 @@ namespace Project.ContactCubes
                 Collider hit = hits[i];
                 if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<CubeWaterJet>() != null) continue;
                 ContactCube cube = hit.GetComponentInParent<ContactCube>();
-                if (cube != null) { if (cube != this && cube.isActiveAndEnabled && cube.IsUnlocked && !cube.carrySuspended) neighbours.Add(cube); continue; }
+                if (cube != null)
+                {
+                    if (cube != this && cube.HasContactShape && IsWithinContactShell(cube, worldTolerance)) neighbours.Add(cube);
+                    continue;
+                }
                 foreach (MonoBehaviour component in hit.GetComponentsInParent<MonoBehaviour>())
                 {
                     if (!component.isActiveAndEnabled || !(component is IColorApplicationTarget target)) continue;
@@ -109,7 +133,92 @@ namespace Project.ContactCubes
                         appliedTargets.Add(component);
                 }
             }
+            // Only cube/cube reactions use the physical contact shell; do not
+            // enlarge burn/growth/color application to unrelated world objects.
+            // Movable boxes keep a small physical horizontal clearance so they
+            // can fall through a one-cell opening. Color contact must still use
+            // the authored one-cell face, not that smaller collision shape.
+            // This extra margin only finds candidates (including the other
+            // box's physical inset); the logical OBB test below owns acceptance.
+            var logicalBox = new ContactBox(this);
+            float candidateMargin = Mathf.Max(0f, shape.contactOffset) +
+                Mathf.Max(0f, Physics.defaultContactOffset) + cellSize * .05f;
+            Vector3 contactHalf = logicalBox.Half + Vector3.one * (worldTolerance + candidateMargin);
+            do
+            {
+                count = Physics.OverlapBoxNonAlloc(logicalBox.Center, contactHalf, hits, t.rotation, ~0, QueryTriggerInteraction.Ignore);
+                if (count < hits.Length) break;
+                Array.Resize(ref hits, hits.Length * 2);
+            } while (hits.Length <= 4096);
+            for (int index = 0; index < count; index++)
+            {
+                Collider hit = hits[index];
+                if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<CubeWaterJet>() != null) continue;
+                ContactCube cube = hit.GetComponentInParent<ContactCube>();
+                if (cube != null && cube != this && cube.HasContactShape && IsWithinContactShell(cube, worldTolerance)) neighbours.Add(cube);
+            }
+            staleCollisionNeighbours.Clear();
+            foreach (ContactCube cube in collisionNeighbours)
+            {
+                if (cube == null || !cube.HasContactShape || !IsWithinContactShell(cube, worldTolerance))
+                    staleCollisionNeighbours.Add(cube);
+                else neighbours.Add(cube);
+            }
+            foreach (ContactCube cube in staleCollisionNeighbours) collisionNeighbours.Remove(cube);
             appliedTargets.RemoveWhere(target => target == null || !touchingTargets.Contains(target));
+        }
+
+        private void OnCollisionEnter(Collision collision) => RememberContact(collision);
+        private void OnCollisionStay(Collision collision) => RememberContact(collision);
+        private void OnCollisionExit(Collision collision)
+        {
+            ContactCube cube = collision.collider != null ? collision.collider.GetComponentInParent<ContactCube>() : null;
+            if (cube != null) collisionNeighbours.Remove(cube);
+        }
+        private void RememberContact(Collision collision)
+        {
+            ContactCube cube = collision.collider != null ? collision.collider.GetComponentInParent<ContactCube>() : null;
+            if (cube != null && cube != this) collisionNeighbours.Add(cube);
+        }
+
+        private readonly struct ContactBox
+        {
+            public readonly Vector3 Center, Half, X, Y, Z;
+            public ContactBox(ContactCube cube)
+            {
+                BoxCollider box = cube.shape;
+                Transform frame = box.transform;
+                Center = frame.TransformPoint(box.center);
+                Vector3 logicalSize = cube.motion != null ? cube.motion.LogicalContactShapeSize : box.size;
+                // Components assembled by test/tools may not have completed
+                // Motion.Awake yet. Never turn that into a zero-sized contact.
+                if (logicalSize.x <= 0f || logicalSize.y <= 0f || logicalSize.z <= 0f) logicalSize = box.size;
+                Half = Vector3.Scale(logicalSize * .5f, Abs(frame.lossyScale));
+                X = frame.right; Y = frame.up; Z = frame.forward;
+            }
+            public Vector3 Axis(int index) => index == 0 ? X : index == 1 ? Y : Z;
+            public float Radius(Vector3 axis) => Mathf.Abs(Vector3.Dot(axis, X)) * Half.x +
+                Mathf.Abs(Vector3.Dot(axis, Y)) * Half.y + Mathf.Abs(Vector3.Dot(axis, Z)) * Half.z;
+        }
+        private bool IsWithinContactShell(ContactCube other, float worldTolerance)
+        {
+            // A fixed geometric envelope, not hysteresis: a moved/disabled/held
+            // neighbour cannot keep a jet alive through stale collision callbacks.
+            float padding = worldTolerance + Mathf.Max(0f, shape.contactOffset) + Mathf.Max(0f, other.shape.contactOffset);
+            var a = new ContactBox(this); var b = new ContactBox(other);
+            Vector3 delta = b.Center - a.Center;
+            for (int index = 0; index < 3; index++)
+                if (Separated(a, b, delta, a.Axis(index), padding) || Separated(a, b, delta, b.Axis(index), padding)) return false;
+            for (int first = 0; first < 3; first++)
+                for (int second = 0; second < 3; second++)
+                    if (Separated(a, b, delta, Vector3.Cross(a.Axis(first), b.Axis(second)), padding)) return false;
+            return true;
+        }
+        private static bool Separated(ContactBox a, ContactBox b, Vector3 delta, Vector3 axis, float padding)
+        {
+            float lengthSquared = axis.sqrMagnitude;
+            return lengthSquared > .000001f && Mathf.Abs(Vector3.Dot(delta, axis)) >
+                a.Radius(axis) + b.Radius(axis) + padding * Mathf.Sqrt(lengthSquared) + .00001f;
         }
         private static Vector3 Abs(Vector3 value) => new Vector3(Mathf.Abs(value.x), Mathf.Abs(value.y), Mathf.Abs(value.z));
         public static CubeReactionState Evaluate(bool red, bool blue) => red && blue ? CubeReactionState.Locked : blue ? CubeReactionState.Growing : red ? CubeReactionState.Shrinking : CubeReactionState.Idle;
@@ -182,6 +291,7 @@ namespace Project.ContactCubes
         private void ClearContacts()
         {
             neighbours.Clear(); touchingTargets.Clear(); appliedTargets.Clear(); selectedBlue = null; elapsed = 0;
+            collisionNeighbours.Clear(); staleCollisionNeighbours.Clear();
             if (State != CubeReactionState.Idle) { State = CubeReactionState.Idle; StateChanged?.Invoke(State); }
             foreach (CubeWaterJet jet in jets.Values) if (jet != null) { jet.gameObject.SetActive(false); Destroy(jet.gameObject); }
             jets.Clear();

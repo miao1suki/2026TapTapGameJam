@@ -41,8 +41,25 @@ namespace Project.Player
     {
         private static readonly HashSet<PlayerController> activePlayers = new HashSet<PlayerController>();
         public static IEnumerable<PlayerController> ActivePlayers => activePlayers;
+        // Iterate the concrete registry directly: no world scan, boxed enumerator,
+        // or frame cache that could miss a same-frame hook/release transition.
+        public static bool HasAutomaticClimbCandidate
+        {
+            get
+            {
+                foreach (PlayerController player in activePlayers)
+                    if (player != null && player.isActiveAndEnabled && !player.IsDead && player.CanAutomaticallyClimb)
+                        return true;
+                return false;
+            }
+        }
+        public static event Action<PlayerController> PlayerActivated;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetPlayerRegistry() => activePlayers.Clear();
+        private static void ResetPlayerRegistry()
+        {
+            activePlayers.Clear();
+            PlayerActivated = null;
+        }
         [SerializeField, Min(.1f), InspectorName("普通跳跃上升（格）")]
         private float jumpRiseCells = 4f;
         [SerializeField, Min(.1f), InspectorName("点按跳跃上升（格）")]
@@ -136,6 +153,9 @@ namespace Project.Player
         private PlayerColorWheel colorWheel;
         private Component greenHookMotionSource;
         private Vector2 greenHookVelocity;
+        private bool greenHookAllowLocomotion;
+        private float greenHookClimbBlockedUntil;
+        private float greenHookReleaseMomentumUntil;
         private readonly List<IPlayerCarryTarget> carryQueue =
             new List<IPlayerCarryTarget>();
         private readonly List<Vector3Int> carryFootprintBuffer =
@@ -219,7 +239,12 @@ namespace Project.Player
         private readonly Collider[] climbCornerOverlaps = new Collider[16];
         public bool IsClimbCornerProtected => cornerSource != null;
         public bool IsClimbCornerProtectedBy(Component source) => source != null && cornerSource == source;
-        public bool CanAttachHorizontalVine => Time.time >= horizontalReleaseUntil;
+        public bool CanAttachHorizontalVine => CanAutomaticallyClimb && Time.time >= horizontalReleaseUntil;
+        // Contact callbacks may renew leases even while the rope owns the motor.
+        // Reject them at the common entry points, including one second after release.
+        public bool CanAutomaticallyClimb => !IsGreenHookActive && Time.time >= greenHookClimbBlockedUntil;
+        public float GreenHookClimbProtectionRemaining => IsGreenHookActive
+            ? 1f : Mathf.Max(0f, greenHookClimbBlockedUntil - Time.time);
         public void CancelClimbCorner(Component source)
         {
             if (cornerSource == source) cornerSource = null;
@@ -359,7 +384,19 @@ namespace Project.Player
         private readonly Dictionary<int, HorizontalVineSurface> horizontalVines = new Dictionary<int, HorizontalVineSurface>();
         private readonly List<int> expiredHorizontalVines = new List<int>();
         public bool IsHorizontalClimbing => CanAttachHorizontalVine && !protectBounceFromClimbing &&
-            (horizontalVines.Count > 0 || IsClimbCornerProtected);
+            (HasCurrentHorizontalVineSurface() || IsClimbCornerProtected);
+        private static bool IsHorizontalVineSurfaceCurrent(HorizontalVineSurface surface) =>
+            surface.source != null && surface.source.gameObject.activeInHierarchy &&
+            (!(surface.source is Behaviour behaviour) || behaviour.isActiveAndEnabled) &&
+            Time.fixedTime - surface.renewed <= .08f;
+        private bool HasCurrentHorizontalVineSurface()
+        {
+            // Input Update can run before FixedUpdate expires the last contact.
+            // Do not consume an ordinary jump as a vine release for a stale lease.
+            foreach (HorizontalVineSurface surface in horizontalVines.Values)
+                if (IsHorizontalVineSurfaceCurrent(surface)) return true;
+            return false;
+        }
         public void SetHorizontalVineSurface(Component source, float rootY, float speed)
         {
             if (source == null || dead || !CanAttachHorizontalVine) return;
@@ -370,13 +407,14 @@ namespace Project.Player
             if (source != null) horizontalVines.Remove(source.GetInstanceID());
         }
         public bool IsClimbing =>
+            CanAutomaticallyClimb &&
             !protectBounceFromClimbing &&
             climbSources.Count > 0 &&
             Time.time >= climbReattachUntil &&
             (!IsGrounded || movement.y > .01f ||
              movement.x * GetClimbInwardDirection() > .1f);
         public PlayerStateId CurrentStateId => dead ? PlayerStateId.Death :
-            IsControlLocked ? PlayerStateId.Locked :
+            IsControlLocked && !CanDriveGreenHook ? PlayerStateId.Locked :
             runner != null && runner.IsPlaying ? PlayerStateId.Action :
             IsHorizontalClimbing ? PlayerStateId.HorizontalClimbing :
             IsClimbing ? PlayerStateId.Climbing :
@@ -605,6 +643,7 @@ namespace Project.Player
         private void OnEnable()
         {
             activePlayers.Add(this);
+            PlayerActivated?.Invoke(this);
             runner = GetComponent<PlayerActionRunner>();
             runner.Completed -= Completed;
             runner.Completed += Completed;
@@ -663,6 +702,8 @@ namespace Project.Player
             climbKickHorizontalControlUntil = 0f;
             climbKickFallProtectionUntil = environmentLaunchUntil = 0f;
             climbTopHeights.Clear();
+            greenHookAllowLocomotion = false;
+            greenHookClimbBlockedUntil = greenHookReleaseMomentumUntil = 0f;
         }
         public void EnterWater(Component source)
         {
@@ -728,6 +769,10 @@ namespace Project.Player
             }
 
             greenHookMotionSource = source;
+            greenHookAllowLocomotion = false;
+            greenHookReleaseMomentumUntil = 0f;
+            ClearAutomaticClimbState();
+            pendingPlatformDelta = Vector3.zero;
             greenHookVelocity = preserveVelocity && motor != null ? (Vector2)motor.linearVelocity : Vector2.zero;
             if (motor != null)
             {
@@ -740,17 +785,45 @@ namespace Project.Player
         }
 
         public bool CanDriveGreenHook => !dead && greenHookMotionSource != null && lockDepth == 1;
+        public bool IsGreenHookLocomotionAllowed => greenHookAllowLocomotion && CanDriveGreenHook;
+        private bool IsLocomotionControlLocked => IsControlLocked && !IsGreenHookLocomotionAllowed;
+
+        /// <summary>Keep the connection/ownership but let the ordinary motor walk when no player pull is required.</summary>
+        public void SetGreenHookLocomotion(Component source, bool allowed)
+        {
+            if (source == null || !ReferenceEquals(greenHookMotionSource, source)) return;
+            greenHookAllowLocomotion = allowed;
+        }
+
+        private void ClearAutomaticClimbState()
+        {
+            horizontalVines.Clear();
+            cornerSource = wrappedEdgeSource = null;
+            climbSources.Clear();
+            vineClimbSources.Clear();
+            climbInwardDirections.Clear();
+            climbTopHeights.Clear();
+            climbSpeedMultipliers.Clear();
+            climbSlideSpeeds.Clear();
+            climbFastSlideSpeeds.Clear();
+        }
 
         public void UpdateGreenHookInput(Vector2 move, bool release)
         {
             if (CanDriveGreenHook && greenHookMotionSource is GreenHookAbility hook)
+            {
+                SetMoveInput(move);
                 hook.DriveInput(move, release);
+            }
         }
 
         public void RestoreGreenHookReleaseVelocity(Vector2 velocity)
         {
             if (dead || greenHookMotionSource != null || motor == null) return;
             motor.linearVelocity = new Vector3(velocity.x, velocity.y, 0f);
+            // Normal motor deceleration must not erase a just-released swing on
+            // the next physics tick. Opposite input can still brake immediately.
+            greenHookReleaseMomentumUntil = Time.time + .25f;
             highestAirPosition = motor.position.y;
             airborneSince = Time.time;
         }
@@ -778,14 +851,11 @@ namespace Project.Player
 
             greenHookMotionSource = null;
             greenHookVelocity = Vector2.zero;
-            if (motor != null)
-            {
-                Vector3 velocity = motor.linearVelocity;
-                velocity.x = 0f;
-                velocity.y = 0f;
-                velocity.z = 0f;
-                motor.linearVelocity = velocity;
-            }
+            greenHookAllowLocomotion = false;
+            greenHookClimbBlockedUntil = Time.time + 1f;
+            ClearAutomaticClimbState();
+            // Release is not a teleport or a stop command. Death/reset and higher
+            // priority owners explicitly stop their own motor instead.
         }
 
         public void SetBuoyancy(Component source, float targetRiseSpeed)
@@ -1034,7 +1104,7 @@ namespace Project.Player
 
         public void QueuePlatformDelta(Vector3 delta)
         {
-            if (dead || respawnInProgress)
+            if (dead || respawnInProgress || IsGreenHookActive && !IsGreenHookLocomotionAllowed)
             {
                 return;
             }
@@ -1072,7 +1142,7 @@ namespace Project.Player
         }
         public void EnterClimb(Component source)
         {
-            if (dead)
+            if (dead || !CanAutomaticallyClimb)
             {
                 return;
             }
@@ -2344,14 +2414,13 @@ namespace Project.Player
 
         private bool TickHorizontalVine()
         {
-            if (protectBounceFromClimbing) return false;
+            if (protectBounceFromClimbing || !CanAttachHorizontalVine) return false;
             expiredHorizontalVines.Clear();
             HorizontalVineSurface? chosen = null;
             foreach (var pair in horizontalVines)
             {
                 var surface = pair.Value;
-                if (surface.source == null || !surface.source.gameObject.activeInHierarchy ||
-                    (surface.source is Behaviour behaviour && !behaviour.isActiveAndEnabled) || Time.fixedTime - surface.renewed > .08f)
+                if (!IsHorizontalVineSurfaceCurrent(surface))
                     expiredHorizontalVines.Add(pair.Key);
                 else if (!chosen.HasValue || Mathf.Abs(surface.rootY - motor.position.y) < Mathf.Abs(chosen.Value.rootY - motor.position.y)) chosen = surface;
             }
@@ -2395,7 +2464,7 @@ namespace Project.Player
                 return;
             }
 
-            if (greenHookMotionSource != null)
+            if (greenHookMotionSource != null && !IsGreenHookLocomotionAllowed)
             {
                 CancelVariableJump();
                 Vector3 hookVelocity = new Vector3(
@@ -2523,7 +2592,7 @@ namespace Project.Player
                 requestedJumpBoost = -1f;
                 environmentLaunchUntil = 0f;
             }
-            bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
+            bool blocked = IsLocomotionControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
             float climbInward = GetClimbInwardDirection();
             bool climbKickRequested = !blocked && IsClimbing &&
                                       jumpUntil >= Time.time &&
@@ -2665,6 +2734,9 @@ namespace Project.Player
             {
                 float targetSpeed = movement.x * moveSpeed *
                                     (sprint ? sprintMultiplier : 1);
+                bool preserveReleasedMomentum = Time.time < greenHookReleaseMomentumUntil &&
+                    (Mathf.Abs(movement.x) <= .05f ||
+                     Mathf.Sign(movement.x) == Mathf.Sign(velocity.x) && Mathf.Abs(velocity.x) > Mathf.Abs(targetSpeed));
                 bool accelerating =
                     Mathf.Abs(velocity.x) < Mathf.Abs(targetSpeed) &&
                     (Mathf.Approximately(velocity.x, 0f) ||
@@ -2687,7 +2759,7 @@ namespace Project.Player
                 float rate = accelerating
                     ? moveAcceleration * curveMultiplier
                     : moveDeceleration;
-                velocity.x = rate <= 0f
+                velocity.x = preserveReleasedMomentum ? velocity.x : rate <= 0f
                     ? targetSpeed
                     : Mathf.MoveTowards(
                         velocity.x,
@@ -3181,6 +3253,8 @@ namespace Project.Player
             climbKickHorizontalControlUntil = 0f;
             climbKickFallProtectionUntil = environmentLaunchUntil = 0f;
             climbTopHeights.Clear();
+            greenHookAllowLocomotion = false;
+            greenHookClimbBlockedUntil = greenHookReleaseMomentumUntil = 0f;
             bounceSurfaces.Clear();
             enteredWaterDuringFall = false;
             protectBounceFromClimbing = false;

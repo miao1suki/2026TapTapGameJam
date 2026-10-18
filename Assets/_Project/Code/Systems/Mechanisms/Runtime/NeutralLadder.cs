@@ -52,6 +52,11 @@ namespace Project.Mechanisms
             var player = other.GetComponentInParent<PlayerController>();
             if (player == null || !player.isActiveAndEnabled) return;
             contacts[other] = player;
+            if (!player.CanAutomaticallyClimb)
+            {
+                Release(player);
+                return;
+            }
             player.EnterClimb(this);
             player.SetClimbTopHeight(this, area.bounds.max.y);
             player.SetClimbSpeedMultiplier(this, climbMultiplier);

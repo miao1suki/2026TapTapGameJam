@@ -35,6 +35,8 @@ namespace Project.Rooms
         public bool Persistent => GetComponent<DoorController>() != null || (GetComponent<DoorButton>() is DoorButton button && button.Persistent) ||
                                   GetComponent<DoorHint>() != null || GetComponent<ButtonLockFeature>() != null ||
                                   (GetComponent<ColorKeyPickup>() is ColorKeyPickup key && key.CollectionRequested) ||
+                                  (GetComponent<Project.Items.CollectiblePickup>() is Project.Items.CollectiblePickup item &&
+                                   (item.IsCollected || item.CollectionRequested)) ||
                                   GetComponent<RespawnAnchorFeature>() != null;
         private void Awake() => Capture();
         private void Capture()

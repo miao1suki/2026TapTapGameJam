@@ -26,8 +26,7 @@ namespace TaSource.LinkEffect.EditorUI
             Add(source, "colorCatalog", "颜色目录");
             Add(source, "targetMask", "目标检测层");
             Add(source, "scanInterval", "扫描间隔（秒）");
-            Add(source, "prewarmLinks", "预热线条池容量");
-            source.Add(new HelpBox("红蓝显示范围内的有效目标，不按数量截断。连线与淡出状态复用对象池；不足时扩容。绿色使用独立单根钩绳。", HelpBoxMessageType.Info));
+            source.Add(new HelpBox("红蓝仅显示距离玩家最近的一个有效目标。切换目标复用同一条线，不叠加旧目标退场线。绿色使用独立单根钩绳。", HelpBoxMessageType.Info));
             Add(source, "sourceAnchor", "链条起点锚点");
             Add(source, "sourceOffset", "无锚点时起点偏移");
             root.Add(source);

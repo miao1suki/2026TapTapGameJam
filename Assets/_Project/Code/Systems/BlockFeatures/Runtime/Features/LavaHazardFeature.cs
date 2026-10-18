@@ -28,23 +28,30 @@ namespace Project.BlockFeatures
         public GameObject BlueReplacementPrefab =>
             blueReplacementPrefab;
 
+        private readonly LavaContactOcclusion contactOcclusion = new LavaContactOcclusion();
+
+        protected override void OnAttach()
+        {
+            base.OnAttach();
+            contactOcclusion.Bind(this);
+        }
+
         protected override void OnPlayerEntered(
             PlayerController player)
         {
-            if (player != null && !player.IsDead)
-                AudioCuePlayer.Play(AudioCueIds.LavaCool);
-            KillPlayer(player, false);
+            TryKillPlayer(player);
         }
 
         protected override void OnPlayerStayed(
             PlayerController player)
         {
-            KillPlayer(player);
+            TryKillPlayer(player);
         }
 
-        private static void KillPlayer(PlayerController player, bool playSound = true)
+        private void TryKillPlayer(PlayerController player)
         {
-            if (player == null || player.IsDead || player.IsInvulnerable)
+            if (player == null || player.IsDead || player.IsInvulnerable ||
+                !contactOcclusion.HasExposedContact(player, GridCellWorldSize))
             {
                 return;
             }
@@ -52,13 +59,13 @@ namespace Project.BlockFeatures
             PlayerHealth health = player.GetComponent<PlayerHealth>();
             if (health == null)
             {
-                if (playSound) AudioCuePlayer.Play(AudioCueIds.LavaCool);
+                AudioCuePlayer.Play(AudioCueIds.LavaCool);
                 player.EnterDeath();
                 return;
             }
             if (health != null && !health.IsDead)
             {
-                if (playSound) AudioCuePlayer.Play(AudioCueIds.LavaCool);
+                AudioCuePlayer.Play(AudioCueIds.LavaCool);
                 health.TakeDamage(health.MaxHealth);
             }
         }

@@ -30,6 +30,11 @@ namespace Project.ContactCubes
         private float gravityProtectedUntil;
         private bool hadHorizontalPush;
         private bool greenHookActive;
+        private float cellSize = 1f;
+        private HorizontalPhysicsClearance horizontalClearance;
+        // Logical color contact retains the authored grid face even though
+        // the physical box has a small clearance for equal-width openings.
+        public Vector3 LogicalContactShapeSize => horizontalClearance.LogicalSize(shape);
         public bool IsSettled { get; private set; }
         public bool GravityProtected => Time.time < gravityProtectedUntil;
         public bool IsSuspended { get; private set; }
@@ -52,8 +57,24 @@ namespace Project.ContactCubes
             body = GetComponent<Rigidbody>(); cube = GetComponent<ContactCube>(); shape = GetComponentInChildren<BoxCollider>();
             baseConstraints = body.constraints;
             if (shape != null) shape.isTrigger = false;
+            cellSize = Mathf.Max(.01f, GridCellSizeUtility.Resolve(this));
+            ApplyHorizontalClearance();
         }
-        private void OnEnable() { if (cube == null) cube = GetComponent<ContactCube>(); cube.PushRequested += OnPush; }
+        private void OnEnable()
+        {
+            if (cube == null) cube = GetComponent<ContactCube>();
+            cube.PushRequested += OnPush;
+            cube.LengthChanged += OnGeometryChanged;
+            ApplyHorizontalClearance();
+        }
+        private void OnGeometryChanged(int length) => ApplyHorizontalClearance();
+        private void ApplyHorizontalClearance()
+        {
+            // Green shapes are fixed-position climbing/growth anchors, not
+            // movable boxes, and must keep their existing solid geometry.
+            if (cube != null && cube.Color != CubeColor.Green)
+                horizontalClearance.Apply(shape, cellSize);
+        }
         private void OnPush(Component source, Vector3 velocity, float dt)
         {
             if (source == null) return;
@@ -94,6 +115,7 @@ namespace Project.ContactCubes
             }
 
             greenHookActive = true;
+            ApplyHorizontalClearance();
             velocities.Clear();
             gravityProtectedUntil = 0f;
             hadHorizontalPush = false;
@@ -117,7 +139,7 @@ namespace Project.ContactCubes
             }
 
             body.useGravity = true;
-            GreenHookBodyMotion.ApplyPullVelocity(body, velocity);
+            GreenHookBodyMotion.ApplyPullVelocity(body, velocity, shape);
         }
 
 
@@ -229,15 +251,19 @@ namespace Project.ContactCubes
             Bounds bounds = shape.bounds;
             // A constant-width bottom probe: shrinking the entire tall box by a
             // percentage leaves an ever-larger gap and loses support as it grows.
-            Vector3 half = new Vector3(Mathf.Max(.005f,bounds.extents.x-.01f), .01f,
-                Mathf.Max(.005f,bounds.extents.z-.01f));
-            Vector3 origin = new Vector3(bounds.center.x,bounds.min.y+.035f,bounds.center.z);
+            float inset = .01f * cellSize;
+            float halfHeight = .005f * cellSize;
+            Vector3 half = new Vector3(Mathf.Max(.005f * cellSize, bounds.extents.x - inset), halfHeight,
+                Mathf.Max(.005f * cellSize, bounds.extents.z - inset));
+            Vector3 origin = new Vector3(bounds.center.x, bounds.min.y + inset + halfHeight, bounds.center.z);
             int count = Physics.BoxCastNonAlloc(origin, half, Vector3.down, supportHits,
-                Quaternion.identity, .1f, ~0, QueryTriggerInteraction.Ignore);
+                Quaternion.identity, inset * 2f + shape.contactOffset, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
                 Collider hit = supportHits[i].collider;
-                if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<PlayerController>() != null) continue;
+                if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<PlayerController>() != null ||
+                    Physics.GetIgnoreLayerCollision(shape.gameObject.layer, hit.gameObject.layer) ||
+                    Physics.GetIgnoreCollision(shape, hit)) continue;
                 if (supportHits[i].normal.y > .5f) return true;
             }
             return false;
@@ -254,8 +280,20 @@ namespace Project.ContactCubes
                     playerPairs.Add(hit, Physics.GetIgnoreCollision(shape, hit));
             }
             foreach (var pair in playerPairs)
-                if (pair.Key != null) Physics.IgnoreCollision(shape, pair.Key,
-                    cube.Color == CubeColor.Green ? false : pair.Value || !IsSettled);
+            {
+                Collider actor = pair.Key;
+                if (actor == null) continue;
+                Bounds actorBounds = actor.bounds;
+                // Red/blue still pass an airborne player's sides/underside, but their
+                // top is a real support even before the first settled frame. Otherwise
+                // releasing a falling block briefly ignores a player landing on it and
+                // lets the player pass through the filled block into the lava below.
+                float topContactSkin = cellSize * .03f + shape.contactOffset + actor.contactOffset;
+                bool topContact = !actor.isTrigger && actorBounds.center.y > bounds.center.y &&
+                    actorBounds.min.y >= bounds.max.y - topContactSkin;
+                Physics.IgnoreCollision(shape, actor, cube.Color == CubeColor.Green ? false :
+                    pair.Value || !IsSettled && !topContact);
+            }
         }
         public void ResetForRoom()
         {
@@ -266,6 +304,7 @@ namespace Project.ContactCubes
             }
             velocities.Clear(); gravityProtectedUntil = 0; hadHorizontalPush = false; IsSettled = false;
             SetCarrySuspended(false); body.linearVelocity = Vector3.zero;
+            ApplyHorizontalClearance();
             RestorePlayerCollision();
         }
         private void RestorePlayerCollision()
@@ -280,7 +319,7 @@ namespace Project.ContactCubes
             {
                 EndGreenHookPull(false);
             }
-            if (cube != null) cube.PushRequested -= OnPush;
+            if (cube != null) { cube.PushRequested -= OnPush; cube.LengthChanged -= OnGeometryChanged; }
             velocities.Clear(); RestorePlayerCollision();
             if (body != null) { body.useGravity = true; body.constraints = baseConstraints; }
         }

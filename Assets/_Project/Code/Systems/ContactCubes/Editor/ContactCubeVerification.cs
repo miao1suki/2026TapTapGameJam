@@ -137,13 +137,17 @@ namespace Project.ContactCubes.Editor
                 {
                     Check(player.IsHorizontalClimbing, "grown green top activates traversal state");
                     Check(player.Motor.position.x > 31.08f, "player traverses horizontal green top");
-                    player.RequestJump(); Check(player.IsHorizontalClimbing, "traversal remains active on jump request");
-                    Check(player.Motor.linearVelocity.y < .1f, "horizontal traversal prevents upward jump velocity");
+                    // Horizontal traversal now deliberately releases on jump.
+                    // Verify that contract instead of the obsolete sticky-climb behaviour.
+                    player.Motor.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+                    player.RequestJump(); Check(!player.IsHorizontalClimbing, "jump immediately releases horizontal traversal");
+                    Check(player.Motor.linearVelocity.y < -.1f && !player.CanAttachHorizontalVine,
+                        "horizontal release starts falling and prevents immediate reattachment");
                     player.SetMoveInput(Vector2.zero); player.Motor.constraints = RigidbodyConstraints.FreezeAll;
                     Bounds b = physical.GetComponentInChildren<BoxCollider>().bounds; var c = player.GetComponent<CapsuleCollider>();
                     var pos = new Vector3(31, player.Motor.position.y + b.min.y - .015f - c.bounds.max.y,0);
                     player.Motor.position = pos; player.transform.position = pos; Physics.SyncTransforms();
-                    phase = 12; deadline = Time.time + .15f; return;
+                    phase = 12; deadline = Time.time + .65f; return;
                 }
                 if (phase == 12)
                 {

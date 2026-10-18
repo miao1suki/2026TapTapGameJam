@@ -21,9 +21,11 @@ namespace Project.WorldItems.Editor
             root.Add(settings);
             var state = ProjectInspectorUtility.CreateFoldout("运行状态", false);
             state.Add(ProjectInspectorUtility.CreateReadOnlyRow("状态", () => target is CollectiblePickup item ?
-                item.CollectionFinished ? "已收集" : item.CollectionRequested ? "收集中" : "可收集" : "未选择"));
+                item.IsCollected ? "已收集（重置保留）" : item.CollectionRequested ? "收集中" : "可收集" : "未选择"));
+            state.Add(ProjectInspectorUtility.CreateReadOnlyRow("稳定实例编号", () =>
+                target is CollectiblePickup item && item.TryGetStableInstanceId(out string id) ? id : "未分配规划身份"));
             root.Add(state);
-            root.Add(ProjectInspectorUtility.CreateHelp("接触玩家后播放拾取动画，可被三色方块和移动中的基座推动。重生或离开所属区域时复原。"));
+            root.Add(ProjectInspectorUtility.CreateHelp("接触玩家后播放拾取动画，可被三色方块和移动中的基座推动。未拾取物在重生或离区时复原；收集中动画继续完成，已收集物不会重新出现。本组件预留稳定实例查询与已收集状态恢复，不读写永久存档。"));
             ProjectInspectorUtility.Bind(root, serializedObject); return root;
         }
     }

@@ -28,8 +28,8 @@ namespace Project.GreenHook.Editor
                 "光标圆圈与实际命中半径一致；只在点击时查找圈内最近合法目标，默认0.65格。"));
             idle.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "launchRangeSlackCells", "发射边缘冗余（格）",
                 "容差圈可选中基础染色圈外少量目标，默认额外0.5格，仍不能跨房间。"));
-            idle.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "idleFollowSeconds", "待机绳尖跟随时间（秒）",
-                "默认0.045秒指数缓动；仅影响表现，指针容差圈与点击使用真实指针，不延迟挂接。0为立即跟随。"));
+            idle.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "idleFollowSeconds", "待机绳身缓动时间（秒）",
+                "默认0.045秒，仅缓动绳身的小幅弯曲；绳尖、容差圈与点击即时跟随真实指针，不拖尾。0关闭绳身缓动。"));
             idle.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "idleLengthCells",
@@ -55,7 +55,7 @@ namespace Project.GreenHook.Editor
                 "contactPadding",
                 "接触停止距离",
                 "碰撞体距离小于该值后视为已经接触。"));
-            movement.Add(ProjectInspectorUtility.CreateHelp("挂接后保持连接，跳跃或交互键主动脱钩。物体受阻时拉近玩家；绿色固定物体作为荡绳锚点。"));
+            movement.Add(ProjectInspectorUtility.CreateHelp("挂接后保持连接，跳跃或交互键主动脱钩。物体受阻时拉近玩家；新接通基座后暂停拉取并可自由行走，重新点击继续。绿色固定物体作为荡绳锚点。"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "attachedRangeSlackCells", "挂接范围冗余（格）",
                 "只增加已挂接连接的维持距离，不扩大可点击距离。默认额外3格。"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "attachedOutOfRangeGraceSeconds", "持续超距宽限（秒）",
@@ -63,6 +63,8 @@ namespace Project.GreenHook.Editor
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingAcceleration", "荡绳加速度"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingSpeedLimit", "荡绳速度上限"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "swingDamping", "荡绳阻尼", "松开方向输入后动量衰减速度；0为无额外阻尼。"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "releaseBoostRatio", "主动松绳助推比例", "按当前真实速度方向助推，默认8%；设为0只保留惯性。"));
+            movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "releaseBoostLimit", "松绳额外速度上限", "默认最多额外1世界单位/秒；不对死亡、重置或超范围断绳助推。"));
             movement.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "retargetVisualSeconds", "换点视觉衔接（秒）", "切换挂点时绳尖的短过渡，不暂停玩家或清除惯性。"));
             root.Add(movement);
 

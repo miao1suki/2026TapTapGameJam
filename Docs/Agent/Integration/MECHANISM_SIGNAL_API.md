@@ -2,13 +2,25 @@
 
 开发者操作：[机关与跳跃](../../Developer/MECHANISMS_AND_JUMP.md)。颜色和重置规范仍以 COLOR_BLOCKS_API / ROOM_LIFECYCLE_API 为准。
 
+## 可选平台 Timeline
+
+`MovingPlatformFeature.timelineTrigger` 使用 `MovingPlatformTimelineTrigger`：`Disabled=0` 默认关闭（旧场景/旧存档缺字段同样关闭），`Powered=1` 仅信号驱动从未充能到充能时，`MovementStarted=2` 实际停止到开始移动时，`EndpointReached=3` 实际到达行程端点时。停留端点、每个 FixedUpdate 的持续充能/移动不会重复创建演出。已在播放的同平台镜头不会重叠，平台运动与载人仍走既有路径，不等待镜头完成才移动。
+
+显式开启后复用 `MechanismCameraShot`，聚焦该平台（锚点随平台移动），可以调移向、停留、返回时间及是否锁定玩家。默认关闭时不创建会话、Director或玩家锁；区域重置、停用/解绑宿主、运行中关闭演出均清理本会话。不改普通开关、路径端点、曲柄进度或区域重置规则。`TimelineTrigger / IsTimelinePlaying` 为只读调试入口，字段均有 BlockParameter，Inspector与关卡参数窗口共用，沿用组件覆盖 JSON 持久化，不引入 instanceID。
+
+门使用独立 `DoorTimelineTrigger`，默认也关闭，可选每次按钮真实按下/全部按钮达成开门。接入见 [DOOR_API](DOOR_API.md)。上述是已有门镜头的可选复用，不是假定能自动绑定任意外部 Timeline 资源；自定义剧情继续使用已有 Timeline 触发器及明确轨道绑定。
+
+场景交付仍必须成套提交 Scene、同名可编辑 `.planning.json`、双方 `.meta` 和依赖，不能只交生成物。专项入口 `OptionalMechanismTimelineAudit.Run` 由整合者在 `Library/FlowRetirementProbe` 静音运行。
+
 ## 所有权
 
 按钮统一由脚部/方块底部压力触发。`ButtonLockFeature` 不再实现 `IInteractionTarget`，兼容 `CanInteract/TryInteract` 固定返回 false；不可通过 F 触发。默认一次保持；参数 `mode=Held` 时松开关闭并随区域/R重置，一次保持不因区域/R重置。门按钮和红色信号按钮共用压力判定；红色按钮仍遵守颜色解锁。`Toggle/SetOn` 只供信号/调试调用，不接玩家按键。
 
 `ContactCube` 固定身份，红块实现 `IEnergySource`；`MechanismBaseFeature` 查询相邻能源并输出 `IMechanismSignalSource`，无能源独占绑定。不要改写旧能源的运动控制或直接写玩家坐标。
 
-`MovingPlatformFeature.BindBase(MechanismBaseFeature)` 将驱动改为 SignalControlled，替换信号来源并安全重新订阅；传 null 解绑，按所选模式原地停止或回原位。`BindSignalSources(IReadOnlyList<MonoBehaviour>)` 可同时绑定基座、`ButtonLockFeature` 与 `DoorButton`。`DoorButton` 实现 `IMechanismSignalSource`，按下/释放广播 `SignalChanged`。`IsMoving`、`PreviewStart/PreviewEnd`、`LinkedControls` 只读；既有 Any/All 信号组合继续生效。
+`MechanismBaseFeature.IsPoweredBy(IEnergySource)` 只读验证该确切能源是否按已有方向/距离规则给此已启用、已通电基座供能，不把其他红块的信号冒认为当前来源。绿钩拉红块或基座**新接通**时暂停拉取、保留绳子并放行普通行走；再次点击可继续，已有接触作为新拉取的基线，不立即重停。此策略不改变基座/平台信号与碰撞体、不加隐式Timeline，见 GREEN_HOOK_API。
+
+`MovingPlatformFeature.BindBase(MechanismBaseFeature)` 将驱动改为 SignalControlled，替换信号来源并安全重新订阅；传 null 解绑，按所选模式原地停止或回原位。`BindSignalSources(IReadOnlyList<MonoBehaviour>)` 可同时绑定基座、`ButtonLockFeature` 与 `DoorButton`。`DoorButton` 实现 `IMechanismSignalSource`，按下/释放广播 `SignalChanged`，同时保留门的按钮状态边沿和默认关闭的可选演出。`IsMoving`、`PreviewStart/PreviewEnd`、`LinkedControls` 只读；既有 Any/All 信号组合继续生效。
 
 `signalMotion`独立于路线几何：`MovingPlatformSignalMotion.PoweredPingPong=0`兼容旧存档（充能往返、断电停留），`PoweredEndpoint=1`充能至`Path.FirstEnd`并保持、断电回作者origin。仅SignalControlled生效，曲柄/自动不受影响。每次目标改变从当前格空间位置建立新缓动段，按剩余路程比例计时，复用既有扫掠检测与QueuePlatformDelta承载；遇实体阻挡不累计进度，清除后重试，不反向。该模式忽略端点停留，反复切换/Reset不瞬移，参数经通用组件覆盖持久保存，不增加规划版本。`SignalMotion`只读；解绑无信号时终点模式同样执行回原位，旧模式才原地停止。
 

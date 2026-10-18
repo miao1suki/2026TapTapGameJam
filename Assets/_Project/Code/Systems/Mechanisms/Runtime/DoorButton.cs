@@ -118,7 +118,7 @@ namespace Project.Mechanisms
             if (Application.isPlaying) AudioCuePlayer.Play(value ? AudioCueIds.ButtonPress : AudioCueIds.ButtonRelease);
             ApplyAppearance();
             SignalChanged?.Invoke(IsSignalActive);
-            if (owner != null) owner.NotifyButtonPressed(actor);
+            if (owner != null) owner.NotifyButtonStateChanged(this, actor);
         }
         public void ResetButton() { SetPressed(false,null); ApplyAppearance(); if (owner != null) owner.RefreshHint(); }
         public void ResetForRoom() { if (!Persistent) ResetButton(); }

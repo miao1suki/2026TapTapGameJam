@@ -4,6 +4,7 @@ using Project.BlockFeatures.Editor;
 using Project.ColorBlocks;
 using Project.SurfaceTiles;
 using Project.SurfaceTiles.Editor;
+using Unity.Profiling;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -13,6 +14,7 @@ namespace Project.LevelEditor.Editor
 {
     internal sealed class LevelEditorWindow : EditorWindow
     {
+        private static readonly ProfilerMarker TickMarker = new ProfilerMarker("LevelEditor.Tick");
         private LevelEditorPanel panel;
         private double nextRefreshTime;
 
@@ -34,18 +36,33 @@ namespace Project.LevelEditor.Editor
             root.style.paddingTop = 8f;
             root.style.paddingBottom = 8f;
             panel = new LevelEditorPanel(root);
-            LevelEditorBlockFactory.MigratePlacedBlocks();
+            if (!EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                LevelEditorBlockFactory.MigratePlacedBlocks();
+            }
+            root.SetEnabled(!EditorApplication.isPlayingOrWillChangePlaymode);
         }
 
         private void OnEnable()
         {
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
+            EditorApplication.playModeStateChanged -= OnPlayModeChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeChanged;
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                SuspendAuthoring();
+            }
+            else
+            {
+                rootVisualElement.SetEnabled(true);
+            }
         }
 
         private void OnDisable()
         {
             EditorApplication.update -= Tick;
+            EditorApplication.playModeStateChanged -= OnPlayModeChanged;
             if (!LevelEditorState.EditMode)
             {
                 return;
@@ -59,6 +76,14 @@ namespace Project.LevelEditor.Editor
 
         private void Tick()
         {
+            // This window is an authoring tool, not a runtime inspector. Hidden
+            // tabs still receive EditorApplication.update during Play Mode.
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            using var tick = TickMarker.Auto();
             double now = EditorApplication.timeSinceStartup;
             if (panel == null || now < nextRefreshTime)
             {
@@ -66,19 +91,36 @@ namespace Project.LevelEditor.Editor
             }
 
             nextRefreshTime = now + .1d;
-            if (EditorApplication.isPlayingOrWillChangePlaymode &&
-                LevelEditorState.EditMode)
-            {
-                LevelEditorState.EditMode = false;
-                SurfaceTileEditorBridge.SetPainting(false);
-                LevelEditorViewLock.Exit();
-                SceneView.RepaintAll();
-            }
-
             panel.Refresh();
             panel.RefreshPendingPreviews();
             if (LevelEditorPlayerService.EnforceEditPlane())
             {
+                SceneView.RepaintAll();
+            }
+        }
+
+        private void OnPlayModeChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingEditMode ||
+                state == PlayModeStateChange.EnteredPlayMode)
+            {
+                SuspendAuthoring();
+            }
+            else if (state == PlayModeStateChange.EnteredEditMode)
+            {
+                rootVisualElement.SetEnabled(true);
+                nextRefreshTime = 0d;
+            }
+        }
+
+        private void SuspendAuthoring()
+        {
+            rootVisualElement.SetEnabled(false);
+            if (LevelEditorState.EditMode)
+            {
+                LevelEditorState.EditMode = false;
+                SurfaceTileEditorBridge.SetPainting(false);
+                LevelEditorViewLock.Exit();
                 SceneView.RepaintAll();
             }
         }

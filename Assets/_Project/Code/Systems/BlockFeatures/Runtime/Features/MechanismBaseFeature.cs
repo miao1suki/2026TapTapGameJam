@@ -183,16 +183,19 @@ namespace Project.BlockFeatures
             if (supportShape == null || !supportShape.enabled) return false;
             Bounds bounds = supportShape.bounds;
             float cell = GridCellWorldSize;
-            var half = new Vector3(Mathf.Max(.005f, bounds.extents.x - .01f * cell), .01f * cell,
-                Mathf.Max(.005f, bounds.extents.z - .01f * cell));
-            var origin = new Vector3(bounds.center.x, bounds.min.y + .035f * cell, bounds.center.z);
+            float inset = .01f * cell;
+            float halfHeight = .005f * cell;
+            var half = new Vector3(Mathf.Max(.005f * cell, bounds.extents.x - inset), halfHeight,
+                Mathf.Max(.005f * cell, bounds.extents.z - inset));
+            var origin = new Vector3(bounds.center.x, bounds.min.y + inset + halfHeight, bounds.center.z);
             int count = Physics.BoxCastNonAlloc(origin, half, Vector3.down, supportHits,
-                Quaternion.identity, .1f * cell, ~0, QueryTriggerInteraction.Ignore);
+                Quaternion.identity, inset * 2f + supportShape.contactOffset, ~0, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < count; i++)
             {
                 Collider hit = supportHits[i].collider;
                 if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<PlayerController>() != null ||
-                    Physics.GetIgnoreLayerCollision(gameObject.layer, hit.gameObject.layer)) continue;
+                    Physics.GetIgnoreLayerCollision(supportShape.gameObject.layer, hit.gameObject.layer) ||
+                    Physics.GetIgnoreCollision(supportShape, hit)) continue;
                 if (supportHits[i].normal.y > .5f) return true;
             }
             return false;
@@ -248,7 +251,18 @@ namespace Project.BlockFeatures
             SetPowered(found);
         }
 
-        private bool HasEnergyAt(Vector3 offset)
+        /// <summary>Read-only source-specific contact; another red cube powering this base is not a match.</summary>
+        public bool IsPoweredBy(IEnergySource source)
+        {
+            if (source == null || !source.IsEnergyAvailable || !IsSignalActive) return false;
+            float cell = GridCellWorldSize;
+            return checkLeft && HasEnergyAt(Vector3.left * cell, source) ||
+                checkRight && HasEnergyAt(Vector3.right * cell, source) ||
+                checkUp && HasEnergyAt(Vector3.up * cell, source) ||
+                checkDown && HasEnergyAt(Vector3.down * cell, source);
+        }
+
+        private bool HasEnergyAt(Vector3 offset, IEnergySource requiredSource = null)
         {
             float cellSize = GridCellWorldSize;
             int count = Physics.OverlapBoxNonAlloc(
@@ -269,7 +283,8 @@ namespace Project.BlockFeatures
 
                 IEnergySource energy =
                     collider.GetComponentInParent<IEnergySource>();
-                if (energy != null && energy.IsEnergyAvailable)
+                if (energy != null && energy.IsEnergyAvailable &&
+                    (requiredSource == null || ReferenceEquals(energy, requiredSource)))
                 {
                     return true;
                 }
