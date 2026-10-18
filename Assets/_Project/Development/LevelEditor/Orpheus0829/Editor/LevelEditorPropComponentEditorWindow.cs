@@ -280,6 +280,10 @@ namespace Project.LevelEditor.Editor
             var serializedObject = new SerializedObject(component);
             serializedObjects.Add(serializedObject);
             serializedObject.Update();
+            if (component is Rigidbody)
+            {
+                BuildRigidbodyConstraints(section, component, serializedObject);
+            }
             SerializedProperty iterator =
                 serializedObject.GetIterator();
             bool hasVisibleField = false;
@@ -587,9 +591,61 @@ namespace Project.LevelEditor.Editor
             });
         }
 
+        private void BuildRigidbodyConstraints(
+            VisualElement parent, Component component, SerializedObject serializedObject)
+        {
+            // Unity hides this native field from NextVisible.
+            SerializedProperty constraints = serializedObject.FindProperty("m_Constraints");
+            if (constraints == null) return;
+            var group = new Foldout { text = "位置与旋转锁定", value = true };
+            group.tooltip = "勾选后禁止刚体沿对应轴移动或旋转。";
+            parent.Add(group);
+            AddRow("锁定位置", "position", new[] {
+                RigidbodyConstraints.FreezePositionX,
+                RigidbodyConstraints.FreezePositionY,
+                RigidbodyConstraints.FreezePositionZ });
+            AddRow("锁定旋转", "rotation", new[] {
+                RigidbodyConstraints.FreezeRotationX,
+                RigidbodyConstraints.FreezeRotationY,
+                RigidbodyConstraints.FreezeRotationZ });
+
+            void AddRow(string label, string key, RigidbodyConstraints[] flags)
+            {
+                var row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row;
+                var caption = new Label(label);
+                caption.style.width = 90f;
+                row.Add(caption);
+                group.Add(row);
+                for (int index = 0; index < flags.Length; index++)
+                {
+                    RigidbodyConstraints flag = flags[index];
+                    string axis = new[] { "X", "Y", "Z" }[index];
+                    var toggle = new Toggle(axis) {
+                        name = "rigidbody-freeze-" + key + "-" + axis.ToLowerInvariant(),
+                        tooltip = label + " " + axis + " 轴" };
+                    toggle.style.minWidth = 55f;
+                    toggle.style.width = 65f;
+                    toggle.labelElement.style.minWidth = 0f;
+                    toggle.labelElement.style.width = 15f;
+                    toggle.SetValueWithoutNotify((constraints.intValue & (int)flag) != 0);
+                    toggle.RegisterValueChangedCallback(evt => {
+                        serializedObject.Update();
+                        int value = constraints.intValue;
+                        constraints.intValue = evt.newValue ? value | (int)flag : value & ~(int)flag;
+                        serializedObject.ApplyModifiedProperties();
+                        CaptureOverride(component, constraints);
+                    });
+                    row.Add(toggle);
+                }
+            }
+        }
+
         private static bool CanEditProperty(
             SerializedProperty property)
         {
+            if (property.serializedObject.targetObject is Rigidbody &&
+                property.propertyPath == "m_Constraints") return false;
             if (property.propertyPath == "m_Script" ||
                 property.propertyPath == "m_ObjectHideFlags" ||
                 property.propertyPath == "m_CorrespondingSourceObject" ||

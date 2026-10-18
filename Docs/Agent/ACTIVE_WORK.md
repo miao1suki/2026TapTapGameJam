@@ -2127,3 +2127,10 @@
 - 用户本轮确认按新房间更新门按钮：2个跨区按钮改接本区门，Room525(-38,-22)所在新房间15没有门，解除旧跨区绑定并保留按钮。最终14按钮同房绑定、1待绑定，其他机关连线不动；变更及逐物体片段映射见Ops/LevelMaps/Map17。
 - Unity6000.3.12f1隔离保存重开、精确占格/孔洞/区域归属、无Missing Script、重复应用新增0删除0通过；Play Mode专项45项通过，包括同房门按钮双向绑定、6水流、两阶段钥匙和区域重置、存活及无游戏运行异常。未完整通关或构建。
 - 三份规划结构一致，原meta GUID保持，全部输入物体几何与非按钮归属参数保留，哈希保护同步。说明Docs/Developer/MVMAP17_ROOM_SPLIT.md；只推当前任务分支，不合并或推main。主Unity须重载磁盘Gaming并重开关卡编辑器，其他个人文件不纳入。
+
+## Codex / 道具参数窗口刚体约束（已完成）
+
+- 修复LevelEditorPropComponentEditorWindow漏显Rigidbody.m_Constraints的问题；仅编辑器UI与使用/接口文档，不修改Gaming或已有预制体，用户当前Gaming.planning.json未提交编辑保留。
+- UI Toolkit在Rigidbody顶部显式提供“位置与旋转锁定”，位置/旋转各X/Y/Z，窄窗口采用紧凑轴标签；沿用CaptureOverride保存单一约束位掩码，支持保存重开、组件默认还原和取消。未修改运行时运动/搬运规则。
+- Unity6000.3.12f1隔离编译与21项真实窗口/序列化检查通过：六项可见、全锁、保存唯一字段、JSON往返、六轴重开状态、单轴解除不影响其他轴、恢复默认、取消不保存、源预制体不变、关闭清理预览。最终紧凑布局代码重跑21项通过；未进行人工窗口拖拽/截图验收或游戏构建。
+- 使用说明LEVEL_EDITOR.md、接口PLANNING_COLLABORATION_API.md及SYSTEM_INDEX同步；只提交编辑器源码与文档，用户关卡/字体/Boss Timeline等修改保留，不纳入本次提交。按既有授权推送当前任务分支，不合并或推main；待Unity编译完成后关闭重开组件参数窗口即可看到勾选框。

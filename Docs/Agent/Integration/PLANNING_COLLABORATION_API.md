@@ -4,6 +4,8 @@
 
 ## 数据与事务
 
+道具组件参数窗口 `LevelEditorPropComponentEditorWindow` 对Rigidbody显式绘制六轴约束勾选；Unity原生 `m_Constraints` 不在 `NextVisible` 枚举中，不能仅靠通用属性遍历展示。六个勾选只按位更新该字段，并复用 `CaptureOverride` / `LevelEditorComponentOverrideUtility` 的持久化、应用与重置路径，保存的是约束位掩码，不是六个独立字段。不要把预览对象或临时instanceID写回资产；源prefab保持不变。
+
 - `PlanningFragmentUtility.Extract(source, owners, area, out detached)` 返回深拷贝；owners 为 null 表示不限所有者，area 为 null 表示不限矩形。裁剪后重锚局部坐标和 mergeParts，切过完整物体拒绝，不改源数据。
 - `Import(target, source, anchor, includePlayer, out detached)` 返回合并后的新文档，失败不写目标。anchor 是导入源房间占格包围盒左上格。内部房间/物体/合并原始片/门钥匙锁/区域 ID 全量重映射，门按钮、基座、曲柄绑定按新 ID 重连。跨片段绑定解除，孤立按钮移除；不能把绑定随意指向目标地图同名或旧 ID。
 - `ValidatePlacement` 为轻量占格预检，UI 不在每次鼠标绘制时重复序列化完整地图。
