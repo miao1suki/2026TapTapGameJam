@@ -8,6 +8,12 @@
 
 方块栏目同样使用紧凑卡片与选中项操作条；GetBlockColorGroup 仅读取 LevelEditorBlockEntry.Color，HSV 低饱和、近黑及透明归无色，其余按色相进入红蓝绿或其他有色组。分类不代表运行时颜色归属，也不读取图片像素或迁移颜色组件。折叠状态使用独立的 LevelEditor.BlockGroup 项目会话键，保留原下标与数据；与道具共用 ConfigureCompactAddCard 样式。方块列表 GeometryChangedEvent 以实际内容高度更新 ScrollView 高度（独立模式上限280、嵌入模式420），分组折叠/换行后道具栏目随内容收紧，超出上限仍滚动。
 
+## 平台实例尺寸与核心参数
+
+LevelEditorPropComponentEditorWindow.Open 的可选 platformWidth / applyPlatformWidth 仅由规划实例入口传入。宽度为窗口草稿，SaveAndClose 先调用回调；返回错误时不保存任何覆盖、不关闭窗口。PlanningCanvas.ResizePlatform 按当前稳定ID查找，验证非播放、正宽度、非合并平台、房间有效格及实体占用后更新width/singleInstance；随后原onSaved写覆盖并触发一次文档事务。宽度保存在PlanningBox而非Transform覆盖，不改源prefab，SceneBuilder沿用整实例生成和尺寸签名。
+
+PlatformParameterUI 是Editor共用核心字段构建器；普通Inspector与规划预览均调用，返回字段集合防止旧遍历重复绘制。平均速度按Path.Span/travelDuration计算，编辑后只写已有travelDuration；曲柄驱动隐藏该入口，曲柄进度速度仍写原字段。其他组默认折叠，不变更Runtime参数格式、运动与绑定逻辑。
+
 ## 数据与事务
 
 道具组件参数窗口 `LevelEditorPropComponentEditorWindow` 对Rigidbody显式绘制六轴约束勾选；Unity原生 `m_Constraints` 不在 `NextVisible` 枚举中，不能仅靠通用属性遍历展示。六个勾选只按位更新该字段，并复用 `CaptureOverride` / `LevelEditorComponentOverrideUtility` 的持久化、应用与重置路径，保存的是约束位掩码，不是六个独立字段。不要把预览对象或临时instanceID写回资产；源prefab保持不变。

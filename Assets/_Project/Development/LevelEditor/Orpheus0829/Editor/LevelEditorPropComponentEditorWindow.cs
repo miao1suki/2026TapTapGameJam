@@ -20,6 +20,8 @@ namespace Project.LevelEditor.Editor
         private GameObject preview;
         private VisualElement componentList;
         private Label statusLabel;
+        private int draftPlatformWidth;
+        private Func<int, string> savePlatformWidth;
         private Action contextAction;
         private string contextActionLabel;
         private Action secondaryAction;
@@ -48,7 +50,9 @@ namespace Project.LevelEditor.Editor
             Action third = null,
             string thirdLabel = null,
             Action fourth = null,
-            string fourthLabel = null)
+            string fourthLabel = null,
+            int platformWidth = 0,
+            Func<int, string> applyPlatformWidth = null)
         {
             if (sourcePrefab == null)
             {
@@ -58,6 +62,8 @@ namespace Project.LevelEditor.Editor
             LevelEditorPropComponentEditorWindow window =
                 GetWindow<LevelEditorPropComponentEditorWindow>();
             window.prefab = sourcePrefab;
+            window.draftPlatformWidth = platformWidth;
+            window.savePlatformWidth = applyPlatformWidth;
             window.onSaved = saveCallback;
             window.contextAction = extraAction;
             window.contextActionLabel = extraActionLabel;
@@ -213,12 +219,27 @@ namespace Project.LevelEditor.Editor
                 draftOverrides,
                 false);
 
+            if (savePlatformWidth != null)
+            {
+                var width = new IntegerField("平台宽度（格）") { value = draftPlatformWidth, name = "platform-width", isDelayed = true };
+                width.tooltip = "从左侧固定位置向右调整，保存后更新规划占格，应用到场景后更新实体；1～4096格。";
+                width.RegisterValueChangedCallback(evt =>
+                {
+                    draftPlatformWidth = Mathf.Max(1, evt.newValue);
+                    width.SetValueWithoutNotify(draftPlatformWidth);
+                    statusLabel.text = "平台宽度已修改，尚未保存。";
+                });
+                componentList.Add(width);
+            }
             List<Component> components = new List<Component>(
                 preview.GetComponentsInChildren<Component>(true));
             components.RemoveAll(
                 component => component == null || component is Transform);
             components.Sort((left, right) =>
             {
+                bool leftPlatform = Project.BlockFeatures.Editor.PlatformParameterUI.Applies(left);
+                bool rightPlatform = Project.BlockFeatures.Editor.PlatformParameterUI.Applies(right);
+                if (leftPlatform != rightPlatform) return leftPlatform ? -1 : 1;
                 bool leftDefault =
                     PropComponentPresentation.IsDefaultComponent(left);
                 bool rightDefault =
@@ -254,7 +275,7 @@ namespace Project.LevelEditor.Editor
             var section = new Foldout
             {
                 text = isDefault ? $"{title}（默认组件）" : title,
-                value = !isDefault
+                value = !isDefault && (prefab.GetComponent<MovingPlatformFeature>() == null && prefab.GetComponent<CrankPlatformFeature>() == null || Project.BlockFeatures.Editor.PlatformParameterUI.Applies(component))
             };
             section.style.marginTop = 5f;
 
@@ -280,6 +301,13 @@ namespace Project.LevelEditor.Editor
             var serializedObject = new SerializedObject(component);
             serializedObjects.Add(serializedObject);
             serializedObject.Update();
+            bool platform = Project.BlockFeatures.Editor.PlatformParameterUI.Applies(component);
+            var coreFields = platform
+                ? Project.BlockFeatures.Editor.PlatformParameterUI.Build(section, serializedObject, property =>
+                {
+                    CaptureOverride(component, property);
+                    statusLabel.text = "组件数值已修改，尚未保存。";
+                }) : new HashSet<string>();
             if (component is Rigidbody)
             {
                 BuildRigidbodyConstraints(section, component, serializedObject);
@@ -296,6 +324,7 @@ namespace Project.LevelEditor.Editor
                 {
                     continue;
                 }
+                if (coreFields.Contains(iterator.name)) continue;
 
                 hasVisibleField = true;
                 SerializedProperty property = iterator.Copy();
@@ -313,7 +342,7 @@ namespace Project.LevelEditor.Editor
                 {
                     if (!groups.TryGetValue(parameter.Group, out Foldout group))
                     {
-                        group = ProjectInspectorUtility.CreateFoldout(parameter.Group, true);
+                        group = ProjectInspectorUtility.CreateFoldout(parameter.Group, !platform);
                         groups.Add(parameter.Group, group);
                         section.Add(group);
                     }
@@ -715,6 +744,12 @@ namespace Project.LevelEditor.Editor
 
         private void SaveAndClose()
         {
+            string error = savePlatformWidth?.Invoke(draftPlatformWidth);
+            if (!string.IsNullOrEmpty(error))
+            {
+                statusLabel.text = error;
+                return;
+            }
             onSaved?.Invoke(draftOverrides);
             Close();
         }

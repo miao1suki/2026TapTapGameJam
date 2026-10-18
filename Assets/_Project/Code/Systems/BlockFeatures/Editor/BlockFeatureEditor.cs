@@ -37,7 +37,7 @@ namespace Project.BlockFeatures.Editor
             Foldout contract =
                 ProjectInspectorUtility.CreateFoldout(
                     "组件契约",
-                    true);
+                    !PlatformParameterUI.Applies(feature));
             contract.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "固定颜色组",
                 () => string.IsNullOrWhiteSpace(
@@ -149,6 +149,8 @@ namespace Project.BlockFeatures.Editor
             VisualElement root,
             BlockFeature feature)
         {
+            var coreFields = PlatformParameterUI.Applies(feature)
+                ? PlatformParameterUI.Build(root, serializedObject) : new HashSet<string>();
             var groups = new Dictionary<string, List<FieldEntry>>(
                 StringComparer.Ordinal);
             var groupOrder = new Dictionary<string, int>(
@@ -156,6 +158,7 @@ namespace Project.BlockFeatures.Editor
             foreach (FieldInfo field in EnumerateParameterFields(
                          feature.GetType()))
             {
+                if (coreFields.Contains(field.Name)) continue;
                 BlockParameterAttribute parameter =
                     field.GetCustomAttribute<BlockParameterAttribute>();
                 if (parameter == null ||
@@ -218,7 +221,7 @@ namespace Project.BlockFeatures.Editor
                 Foldout foldout =
                     ProjectInspectorUtility.CreateFoldout(
                         groupName,
-                        ShouldExpandGroup(groupName));
+                        !PlatformParameterUI.Applies(feature) && ShouldExpandGroup(groupName));
                 for (int fieldIndex = 0;
                      fieldIndex < entries.Count;
                      fieldIndex++)
