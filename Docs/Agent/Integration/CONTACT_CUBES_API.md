@@ -63,6 +63,8 @@
 
 ## 区域生命周期
 
+作者可通过 Rigidbody 的 FreezePosition 三轴锁定布置固定长绿条，`ContactCubeMotion.IsAuthoredFixed` 只识别 Awake 捕获的作者约束，不把运行中落稳临时锁定当成固定配置。HorizontalCubeVine 对这种固定绿条也允许沿用原底面横向攀附，不需要虚构支撑碰撞；普通未固定方块仍须落稳。R1 的 X30:AJ30 使用 initialLength=maximumLength=13、FreezeAll 且禁用 CarryableFeature；根位于最左格，不拉伸根缩放来表达长度，保留颜色接触和区域重置。
+
 预制体有 RoomResetObject，规划生成按既有区域绑定。ResetForRoom 清空接触/水柱/计时并恢复初始长度、初始轴，位置由 RoomResetObject 统一恢复。不清除钥匙进度，不销毁作者方块。
 
 原始根位姿在 Awake、重力前捕获，不随落地/搬运重采样。RoomLifecycleManager 按固定布置区域约束方块根中心，越界恢复原位置原状态；玩家跨区取消携带。后续搬运程序放下前调用 CanPlaceInAuthoredRegion，不得把搬运目的区域写成新的 RegionId。

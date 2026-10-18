@@ -7,6 +7,7 @@ Boss清障隐藏与持久机关进度分离：房间重置归还临时渲染/碰
 搬运占格区分作者布置与运行时实体：烧毁/打开/移走后的空位不保留旧格阻挡，当前位置实体仍拒绝重叠；R不改作者数据而恢复现有状态。放置射线忽略水与纯Trigger、真实薄墙仍挡，复用候选Collider列表且不逐帧SyncTransforms。接入与隔离回归见[搬运API](Integration/PLAYER_CARRY_API.md)。
 
 基座信号镜头可选收到/解除/双边沿，默认关；共享队列先基座再按序平台，或仅首个平台，等待不提前锁玩家。水与非岩浆所有物体同格，三种水类型可叠、同类生成去重、共同底色只画一次。红蓝指针0.65格容差严格不扩总范围；水蒸汽按点击列，钥匙2有效像素悬浮，红蓝接触水柱改TA水片/气泡并即时推送、玩家默认8格/秒。见[机关API](Integration/MECHANISM_SIGNAL_API.md)、[水API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[钥匙与水柱](../Developer/KEY_HOVER_AND_CONTACT_JETS.md)。关卡仍须Scene、planning及meta成套交付。
+独立 R1：`Assets/Scenes/R1/R1.unity`及同名planning；场景、设计源和专属脚本同目录，迁移保留全部GUID。Excel单格制作，不替代Gaming、不加入正式构建。含多位置曲柄共享进度、作者固定13格绿条横向攀附和单实例占格支持；开局仅玩家红能力、三色场景解锁。操作及验证边界见[关卡说明](../Developer/R1_LEVEL.md)，接入见MECHANISM_SIGNAL_API、CONTACT_CUBES_API、PLANNING_COLLABORATION_API。
 
 TA 新效果已接入现有生命周期：流动岩浆精确保留孔洞、冷却蒸汽、三类植物燃烧、标准玩家死亡/Boss追逐RGB；PC/Mobile只追加RGB通道，不覆盖水/HSV/像素参数。雨区和萤火虫通过 `Tools/2026TapTap/关卡美术/创建雨区` / `创建萤火虫区域` 独立创建，固定16像素/格、Scene保存，不属于planning玩法物体；雨是颜色装饰，萤火虫是中性装饰且实时灯默认关闭。见 [TA_EFFECTS_API](Integration/TA_EFFECTS_API.md) 与 [使用说明](../Developer/TA_EFFECTS.md)。关卡交付仍须Scene+planning+meta成套。
 

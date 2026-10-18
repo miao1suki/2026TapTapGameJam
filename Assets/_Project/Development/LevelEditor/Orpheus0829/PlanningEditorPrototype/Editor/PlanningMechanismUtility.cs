@@ -113,6 +113,9 @@ namespace PlanningEditorPrototype
                 if (crank != null && !string.IsNullOrEmpty(item.PlanningBoxId))
                 { cranks[item.PlanningBoxId] = crank; crank.MarkInitialPlatformCreated(); EditorUtility.SetDirty(crank); }
             }
+            // Clear old group references before resolving the new persistent IDs.
+            // This also supports changing which handle owns a group on re-apply.
+            foreach (var controller in cranks.Values) controller.BindSharedController(null);
             foreach (var item in placed)
             {
                 if (string.IsNullOrEmpty(item.PlanningBoxId) || !links.TryGetValue(item.PlanningBoxId, out var box)) continue;
@@ -153,7 +156,14 @@ namespace PlanningEditorPrototype
                     EditorUtility.SetDirty(platform);
                     PrefabUtility.RecordPrefabInstancePropertyModifications(platform);
                 }
-                if (crank != null) { crank.BindBase(source); EditorUtility.SetDirty(crank); PrefabUtility.RecordPrefabInstancePropertyModifications(crank); }
+                if (crank != null)
+                {
+                    crank.BindBase(source);
+                    CrankPlatformFeature owner = null;
+                    if (!string.IsNullOrEmpty(box.crankOwnerId)) cranks.TryGetValue(box.crankOwnerId, out owner);
+                    if (!crank.BindSharedController(owner)) Debug.LogError("曲柄共享绑定不能串联或循环：" + box.id, crank);
+                    EditorUtility.SetDirty(crank); PrefabUtility.RecordPrefabInstancePropertyModifications(crank);
+                }
             }
         }
     }

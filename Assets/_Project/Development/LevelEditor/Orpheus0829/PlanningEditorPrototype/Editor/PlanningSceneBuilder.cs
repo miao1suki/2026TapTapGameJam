@@ -1354,6 +1354,11 @@ namespace PlanningEditorPrototype
                 placed.Configure(bottomCell,placed.EntryName,placed.EntryColor,!placed.IsProp && !FindEntry(palette,box).UsesPrefabDirectly,placed.IsProp,CellSize);
                 placed.SetSizeCells(new Vector2Int(box.width,box.height));
             }
+            // Some single-instance props own their real geometry. Preserve the
+            // logical footprint without multiplying it into the root scale.
+            if (box.singleInstance && !box.isMerged && !fittedLadder && !fittedPlatform &&
+                !PlanningDoorUtility.HasFixedFootprint(box.propEntryId))
+                placed.SetSizeCells(new Vector2Int(box.width, box.height));
             if (box.isMerged && PlanningShapeUtility.IsIrregular(box))
             {
                 var coverage = new List<RectInt>();
