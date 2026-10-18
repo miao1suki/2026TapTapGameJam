@@ -2054,3 +2054,18 @@
 - 范围：Gaming.unity、Gaming.planning.json、Content/LevelMaps/正式关卡.json及各自既有meta（GUID保持）；保留本次布局、出生点、实例参数和绑定，不全量重建地图。用户通过编辑器应用并保存后，三份规划数据一致（17房间）；命名存档同步前备份于Library/FormalLevelDeliveryBackups。
 - 验证：三份JSON结构一致、meta已跟踪、新增资源GUID引用存在；提交前执行AllTracked规划守卫与暂存diff检查。Unity6000.3.12f1，未运行本轮Unity编译、Play Mode、完整通关或打包，静态数据验证不代表游戏验收。
 - 字体缓存、栏目中文转义差异及定向气泡预览序列化仍保留本地，不纳入本次关卡交付；无新增未跟踪资源依赖。
+
+## 2026-10-18 Gaming 主相机视野调整（当前关卡基线分支交付）
+
+- 分支：codex/codex/gaming-camera-size-8。范围：正式 Gaming.unity 的 Main Camera 与 CameraModeController.Side2D 正交 size，由 5 调整为 8。
+- 用途：扩大正常游玩视野；同时设置 Camera 与 Side2D 配置，避免运行时进入 Side2D 后恢复为 5。正交可见高度由 10 格变为 16 格。
+- 保留现有本地关卡布局、规划存档、Boss Timeline 和字体修改；仅精准替换两个相机参数，不重建场景。
+- 验证：字段唯一性、相机组件归属与运行时读取路径已静态核对；修改前后回转比较确认场景只有两个数值变化。尚未在 Unity Play Mode 验收。
+- 推送调整说明：Gaming Main Camera 的正交 size 5 → 8，并同步 Side2D 运行时配置；扩大游玩视野，不更改布局、跟随目标或演出参数。2026-10-18 用户已授权先推送当前关卡任务分支，再按 map.mvmap (14).json 增量制作；不合并或推送 main。
+
+## 2026-10-18 当前关卡基线与 MVMap14 增量工作
+
+- 分支：codex/codex/gaming-camera-size-8；先交付当前已保存 Gaming 场景及两份配套规划，再增量制作。当前17房间、1484项规划物体；保留作者实例参数、布局与绑定。
+- 场景内嵌规划与同名JSON结构相同；命名正式关卡存档已同步。Main Camera 和 Side2D 的 size 统一为8（原5），垂直视野从10格扩大为16格。
+- 本次基线不含字体缓存、Boss Timeline空白序列化、报告和本地备份。Unity 6000.3.12f1；静态数据核对，不代表完整通关或构建验收。
+- 后续按最新外部 map.mvmap (14).json 与用户确认的名称优先规则增量，不全量重建当前关卡；紫色分界压缩、无色留空，43/44/45/66/127/132为水流起点例外，204为绿块。
