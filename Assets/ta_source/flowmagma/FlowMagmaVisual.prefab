@@ -139,7 +139,7 @@ GameObject:
   - component: {fileID: 1013}
   - component: {fileID: 1014}
   m_Layer: 0
-  m_Name: Splash Bubbles
+  m_Name: Magma Particles
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

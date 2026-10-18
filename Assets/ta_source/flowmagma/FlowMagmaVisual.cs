@@ -302,7 +302,8 @@ namespace Project.FlowMagma
                 float lifeFade = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.7f, 1f, p.age / Mathf.Max(p.lifetime, 0.2f)));
                 float settleFade = p.settled ? 1f - Mathf.Clamp01(p.settleAge / settleDuration) : 1f;
                 byte alpha = visible ? (byte)Mathf.RoundToInt(255f * lifeFade * settleFade) : (byte)0;
-                var color = new Color32(255, 255, 255, alpha);
+                float darkening = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(p.age / Mathf.Max(p.lifetime, 0.2f)));
+                var color = new Color32((byte)Mathf.RoundToInt(255f * darkening), 255, 255, alpha);
                 splashColors[v] = splashColors[v + 1] = splashColors[v + 2] = splashColors[v + 3] = color;
             }
             splashMesh.vertices = splashVertices;

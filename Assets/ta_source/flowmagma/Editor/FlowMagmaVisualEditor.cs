@@ -22,7 +22,7 @@ namespace Project.FlowMagma.Editor
             var script = new PropertyField(serializedObject.FindProperty("m_Script"), "脚本");
             script.SetEnabled(false);
             root.Add(script);
-            root.Add(new HelpBox("编辑模式显示静态波面和泡沫示意；Play 后开始流动与周期喷发。视觉组件不处理碰撞或伤害。", HelpBoxMessageType.Info));
+            root.Add(new HelpBox("编辑模式显示静态波面和方块颗粒示意；Play 后开始流动与周期喷发，颗粒逐渐变暗。视觉组件不处理碰撞或伤害。", HelpBoxMessageType.Info));
 
             var flow = new Foldout { text = "流动与外形", value = true };
             Add(flow, "magmaMaterial", "岩浆材质");
@@ -47,7 +47,7 @@ namespace Project.FlowMagma.Editor
             Add(advanced, "splashMaterial", "喷溅材质");
             Add(advanced, "splashFilter", "喷溅网格");
             Add(advanced, "splashRenderer", "喷溅渲染器");
-            Add(advanced, "particleSize", "泡沫大小");
+            Add(advanced, "particleSize", "方块颗粒大小");
             Add(advanced, "sizeRandomness", "大小随机幅度");
             Add(advanced, "trajectoryRandomness", "轨迹随机幅度");
             Add(advanced, "particleLifetime", "飞行消失时间（秒）");
