@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Project.Fireflies
 {
-    /// <summary>A bounded, deterministic flock of two-pixel fireflies rendered in one mesh.</summary>
+    /// <summary>A bounded, deterministic flock of single-pixel fireflies rendered in one mesh.</summary>
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
@@ -123,11 +123,11 @@ namespace Project.Fireflies
             flies = new Fly[count];
             oldPositions = new Vector2[count];
             oldVelocities = new Vector2[count];
-            vertices = new Vector3[count * 12];
+            vertices = new Vector3[count * 8];
             uvs = new Vector2[vertices.Length];
             colors = new Color32[vertices.Length];
             int[] haloTriangles = new int[count * 6];
-            int[] pixelTriangles = new int[count * 12];
+            int[] pixelTriangles = new int[count * 6];
             var layoutRandom = new System.Random(layoutSeed);
             var motionRandom = new System.Random(motionSeed);
             var pulseRandom = new System.Random(pulseSeed);
@@ -148,8 +148,8 @@ namespace Project.Fireflies
                     pulseRate = Mathf.Lerp(0.75f, 1.3f, (float)pulseRandom.NextDouble())
                 };
 
-                int vertex = i * 12;
-                for (int quad = 0; quad < 3; quad++)
+                int vertex = i * 8;
+                for (int quad = 0; quad < 2; quad++)
                 {
                     int v = vertex + quad * 4;
                     uvs[v] = new Vector2(0f, 0f);
@@ -157,7 +157,7 @@ namespace Project.Fireflies
                     uvs[v + 2] = new Vector2(0f, 1f);
                     uvs[v + 3] = new Vector2(1f, 1f);
                     int[] target = quad == 0 ? haloTriangles : pixelTriangles;
-                    int t = quad == 0 ? i * 6 : i * 12 + (quad - 1) * 6;
+                    int t = i * 6;
                     target[t] = v;
                     target[t + 1] = v + 2;
                     target[t + 2] = v + 1;
@@ -281,10 +281,9 @@ namespace Project.Fireflies
                 float radius = glowRadius * Mathf.Lerp(minimumPulseSize, maximumPulseSize, breath);
                 fly.brightness = Mathf.Lerp(0.38f, 1f, breath);
                 flies[i] = fly;
-                int v = i * 12;
+                int v = i * 8;
                 SetQuad(v, fly.position, radius, -0.02f);
-                SetQuad(v + 4, fly.position + Vector2.down * (pixelSize * 0.5f), pixelSize * 0.5f, -0.025f);
-                SetQuad(v + 8, fly.position + Vector2.up * (pixelSize * 0.5f), pixelSize * 0.5f, -0.025f);
+                SetQuad(v + 4, fly.position, pixelSize * 0.5f, -0.025f);
                 Color32 halo = new Color(haloColor.r, haloColor.g, haloColor.b,
                     glowIntensity * fly.brightness * haloColor.a);
                 Color32 pixel = new Color(pixelColor.r, pixelColor.g, pixelColor.b,
@@ -293,7 +292,6 @@ namespace Project.Fireflies
                 {
                     colors[v + q] = halo;
                     colors[v + 4 + q] = pixel;
-                    colors[v + 8 + q] = pixel;
                 }
             }
             mesh.vertices = vertices;

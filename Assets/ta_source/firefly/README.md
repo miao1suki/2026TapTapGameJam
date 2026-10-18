@@ -1,6 +1,6 @@
 # 萤火虫范围预设
 
-将 `FireflyField.prefab` 拖到场景中，选中物体即可在 Scene 视图看到活动矩形。`Area Size` 控制范围，`Firefly Count` 控制数量（最多 128）。每只萤火虫由两个相邻的小方像素和一圈柔和光晕组成；默认像素边长为 0.018 单位。`Assets/Scenes/Test.unity` 的参照物常用 1 单位格子，默认光晕半径 0.22 单位，设计为小于格子的局部亮光。
+将 `FireflyField.prefab` 拖到场景中，选中物体即可在 Scene 视图看到活动矩形。`Area Size` 控制范围，`Firefly Count` 控制数量（最多 128）。每只萤火虫由一个小方像素和一圈柔和光晕组成；默认像素边长为 0.018 单位。`Assets/Scenes/Test.unity` 的参照物常用 1 单位格子，默认光晕半径 0.22 单位，设计为小于格子的局部亮光。
 
 ## 调参
 
