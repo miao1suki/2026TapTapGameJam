@@ -4,6 +4,7 @@ using UnityEngine;
 namespace Project.Rain
 {
     /// <summary>Animates many atlas droplets in one local XY mesh without spawning GameObjects.</summary>
+    [ExecuteAlways]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
     public sealed class RainSpriteField : MonoBehaviour
@@ -60,18 +61,26 @@ namespace Project.Rain
         private float lastSizeVariation;
         private float lastSpeed;
         private float lastSpeedVariation;
+        private bool previewDirty;
+        private int previewRevision;
 
         private void OnEnable()
         {
-            if (!Application.isPlaying) return;
             Build();
         }
 
         private void OnDisable()
         {
+            DisposeMesh();
+        }
+
+        private void DisposeMesh()
+        {
             if (mesh == null) return;
-            GetComponent<MeshFilter>().sharedMesh = null;
-            Destroy(mesh);
+            MeshFilter filter = GetComponent<MeshFilter>();
+            if (filter != null && filter.sharedMesh == mesh) filter.sharedMesh = null;
+            if (Application.IsPlaying(gameObject)) Destroy(mesh);
+            else DestroyImmediate(mesh);
             mesh = null;
         }
 
@@ -82,28 +91,39 @@ namespace Project.Rain
             dropletSize = Mathf.Max(0.01f, dropletSize);
             fallSpeed = Mathf.Max(0.01f, fallSpeed);
             noiseScale = Mathf.Max(0.01f, noiseScale);
+            previewDirty = true;
         }
 
         private void Build()
         {
+            previewDirty = false;
             MeshRenderer renderer = GetComponent<MeshRenderer>();
-            renderer.sharedMaterial = rainMaterial;
+            if (renderer.sharedMaterial != rainMaterial) renderer.sharedMaterial = rainMaterial;
+            DisposeMesh();
             if (rainMaterial == null)
             {
-                Debug.LogWarning("雨滴缺少材质。", this);
-                enabled = false;
+                if (Application.IsPlaying(gameObject))
+                {
+                    Debug.LogWarning("雨滴缺少材质。", this);
+                    enabled = false;
+                }
                 return;
             }
 
-            if (mesh != null) Destroy(mesh);
             int count = Mathf.Clamp(Mathf.RoundToInt(areaWidth * density), 0, MaxDrops);
             drops = new Drop[count];
             vertices = new Vector3[count * 4];
             uvs = new Vector2[count * 4];
             colors = new Color32[count * 4];
             int[] triangles = new int[count * 6];
-            random = new System.Random(randomSeed ^ GetInstanceID());
-            mesh = new Mesh { name = "Rain Sprite Field (runtime)" };
+            int seed = randomSeed ^ GetInstanceID();
+            if (!Application.IsPlaying(gameObject)) seed ^= previewRevision * 7919;
+            random = new System.Random(seed);
+            mesh = new Mesh
+            {
+                name = "Rain Sprite Field (generated)",
+                hideFlags = HideFlags.DontSave
+            };
             mesh.MarkDynamic();
             for (int i = 0; i < count; i++)
             {
@@ -130,12 +150,25 @@ namespace Project.Rain
             lastSpeed = fallSpeed;
             lastSpeedVariation = speedVariation;
             Animate(0f);
+            if (!Application.IsPlaying(gameObject)) transform.hasChanged = false;
         }
 
         private void Update()
         {
-            if (mesh == null) return;
-            if (Mathf.Abs(lastWidth - areaWidth) > 0.001f ||
+            if (!Application.IsPlaying(gameObject) && transform.hasChanged)
+            {
+                transform.hasChanged = false;
+                previewRevision++;
+                Build();
+                return;
+            }
+            if (mesh == null)
+            {
+                if (previewDirty) Build();
+                return;
+            }
+            if (previewDirty ||
+                Mathf.Abs(lastWidth - areaWidth) > 0.001f ||
                 Mathf.Abs(lastDensity - density) > 0.001f ||
                 Mathf.Abs(lastSize - dropletSize) > 0.001f ||
                 Mathf.Abs(lastSizeVariation - sizeVariation) > 0.001f ||
@@ -145,8 +178,15 @@ namespace Project.Rain
                 Build();
                 return;
             }
-            Animate(Time.deltaTime);
+            if (Application.IsPlaying(gameObject)) Animate(Time.deltaTime);
         }
+
+#if UNITY_EDITOR
+        public void RefreshPreview()
+        {
+            if (!Application.IsPlaying(gameObject) && isActiveAndEnabled) Build();
+        }
+#endif
 
         private void ResetDrop(int index, bool initial)
         {
@@ -161,7 +201,7 @@ namespace Project.Rain
             drops[index] = new Drop
             {
                 x = x,
-                age = initial ? Mathf.Lerp(-0.45f, travelTime, NextFloat()) : -Mathf.Lerp(0.08f, 0.7f, NextFloat()) * randomness,
+                age = initial ? travelTime * Mathf.Lerp(0.08f, 0.88f, NextFloat()) : -Mathf.Lerp(0.08f, 0.7f, NextFloat()) * randomness,
                 size = size,
                 speed = speed,
                 endProgress = endProgress,
@@ -199,7 +239,10 @@ namespace Project.Rain
                 vertices[v + 2] = new Vector3(x - halfSize, y + halfSize, 0f);
                 vertices[v + 3] = new Vector3(x + halfSize, y + halfSize, 0f);
 
-                int frame = Mathf.FloorToInt(Mathf.Max(0f, drop.age) * frameRate * drop.animationScale + drop.framePhase) % FrameCount;
+                // Layout preview uses one still atlas frame; only Play cycles the four frames.
+                int frame = Application.IsPlaying(gameObject)
+                    ? Mathf.FloorToInt(Mathf.Max(0f, drop.age) * frameRate * drop.animationScale + drop.framePhase) % FrameCount
+                    : 0;
                 int frameColumn = frame % 2;
                 int frameRow = frame / 2;
                 float frameX = 320f + frameColumn * 32f;

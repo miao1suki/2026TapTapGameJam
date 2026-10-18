@@ -23,7 +23,7 @@ namespace Project.Rain.Editor
             var script = new PropertyField(serializedObject.FindProperty("m_Script"), "脚本");
             script.SetEnabled(false);
             root.Add(script);
-            root.Add(new HelpBox("运行后在本地 XY 面片内循环下落。场景视图选中物体可看到范围边框。", HelpBoxMessageType.Info));
+            root.Add(new HelpBox("编辑模式显示静止雨滴，进入 Play 后下落；选中物体可看到雨区边框。", HelpBoxMessageType.Info));
 
             var main = new Foldout { text = "雨滴与范围", value = true };
             Field(main, "color", "雨滴颜色");
@@ -37,6 +37,11 @@ namespace Project.Rain.Editor
             Field(main, "speedVariation", "速度随机幅度");
             Field(main, "frameRate", "四帧切换速度（帧/秒）");
             root.Add(main);
+
+            var previewCount = new Label();
+            previewCount.style.marginTop = 4;
+            previewCount.style.marginBottom = 8;
+            root.Add(previewCount);
 
             var variation = new Foldout { text = "随机性与消失", value = true };
             Field(variation, "randomness", "随机性");
@@ -54,6 +59,26 @@ namespace Project.Rain.Editor
             warning.style.display = material.objectReferenceValue == null ? DisplayStyle.Flex : DisplayStyle.None;
             root.Add(warning);
             root.schedule.Execute(() => warning.style.display = material.objectReferenceValue == null ? DisplayStyle.Flex : DisplayStyle.None).Every(150);
+            void RefreshCount()
+            {
+                serializedObject.UpdateIfRequiredOrScript();
+                SerializedProperty width = serializedObject.FindProperty("areaWidth");
+                SerializedProperty density = serializedObject.FindProperty("density");
+                previewCount.text = width.hasMultipleDifferentValues || density.hasMultipleDifferentValues
+                    ? "静态预览：多选对象分别计算雨滴数量"
+                    : $"静态预览雨滴数：{Mathf.Clamp(Mathf.RoundToInt(width.floatValue * density.floatValue), 0, 512)}（宽度 × 密度，最多 512）";
+            }
+
+            RefreshCount();
+            root.TrackSerializedObjectValue(serializedObject, _ =>
+            {
+                RefreshCount();
+                foreach (Object item in targets)
+                {
+                    if (item is RainSpriteField rain) rain.RefreshPreview();
+                }
+                SceneView.RepaintAll();
+            });
             root.Bind(serializedObject);
             return root;
         }
