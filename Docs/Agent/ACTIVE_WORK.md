@@ -3,6 +3,7 @@
 ## 2026-10-18 TA 萤火虫范围预设
 
 - 本轮功能扩展：单像素支持逐只稳定随机尺寸和统一倍率（默认 3，等效基准边长约 0.054 世界单位）；在 `Assets/Scenes/Test.unity` 角色初始位置旁放置 2.2×1.6 活动框实例。Unity Inspector 显示尺寸参数及 Player 感知目标，Play 观察到角色附近光点散开；Console 0 错误，场景导入无错误。
+- 本轮交接：`f7ae117` 已提交至 `codex/ta/firefly-field`；保留该分支，不合并。
 - 本轮微调：把每只萤火虫的两个相邻方像素改为单个方像素；动态网格由每只 3 个四边形减少到 2 个，原预设、运动、受惊与光照参数继续沿用。Unity 独立预览已重新导入并确认单个方形光点，Console 0 错误。
 - 本轮验证：`dotnet build Assembly-CSharp.csproj --no-restore` 0 警告、0 错误；规划存档检查与 `git diff --check` 通过。
 - 交接：单像素代码提交 `af26c24` 已随原萤火虫资源推送到 `origin/codex/ta/firefly-field`；正式场景未接线，整合者按需引用预设体。
