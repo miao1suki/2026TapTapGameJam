@@ -9,13 +9,16 @@ namespace Project.BossLogic.Editor
     {
         private const string TimelinePath =
             "Assets/_Project/Content/Boss/Timelines/Boss_appear.playable";
+        private const string BossPrefabPath =
+            "Assets/_Project/Content/Boss/Boss(暂定).prefab";
         private const string SessionKey =
-            "BossWalkTimelineInstaller.AutoRun.9";
+            "BossWalkTimelineInstaller.AutoRun.10";
         private const double ActionStart = 4d;
         private const double ActionDuration = 1.4d;
         private const double LandingHoldStart = 6d;
         private const double TimelineEnd = 6.55d;
         private const double FinalEventTime = 6.54d;
+        private const double PlayerControlLockEnd = 6.52d;
 
         [InitializeOnLoadMethod]
         private static void AutoInstallOnce()
@@ -25,12 +28,29 @@ namespace Project.BossLogic.Editor
                 return;
             }
 
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                SubscribePlayModeExit();
+                return;
+            }
+
             EditorApplication.delayCall += Install;
         }
 
         [MenuItem("Tools/2026TapTap/Boss/同步 Boss 入场演出")]
         public static void Install()
         {
+            if (EditorApplication.isPlayingOrWillChangePlaymode ||
+                EditorApplication.isCompiling)
+            {
+                if (EditorApplication.isPlayingOrWillChangePlaymode)
+                {
+                    SubscribePlayModeExit();
+                }
+
+                return;
+            }
+
             TimelineAsset timeline =
                 AssetDatabase.LoadAssetAtPath<TimelineAsset>(
                     TimelinePath);
@@ -52,11 +72,21 @@ namespace Project.BossLogic.Editor
             TimelineClip trackingTimelineClip = null;
             BossTimelineClip trackingClip = null;
             TimelineClip healthTimelineClip = null;
+            BossHealthBarActivationPlayable healthActivation = null;
             TimelineClip cameraTimelineClip = null;
+            PlayerTimelineTrack playerLockTrack = null;
+            TimelineClip playerLockTimelineClip = null;
+            PlayerTimelineClip playerLockClip = null;
             List<TimelineClip> playerClipsToDelete =
                 new List<TimelineClip>();
             foreach (TrackAsset outputTrack in timeline.GetOutputTracks())
             {
+                if (outputTrack is PlayerTimelineTrack &&
+                    playerLockTrack == null)
+                {
+                    playerLockTrack = outputTrack as PlayerTimelineTrack;
+                }
+
                 foreach (TimelineClip clip in outputTrack.GetClips())
                 {
                     if (clip.displayName == "Boss 走一格" &&
@@ -97,6 +127,9 @@ namespace Project.BossLogic.Editor
                     if (clip.displayName == "Activate Boss Health")
                     {
                         healthTimelineClip = clip;
+                        healthActivation =
+                            clip.asset as
+                                BossHealthBarActivationPlayable;
                     }
 
                     if (clip.displayName == "Boss 入场镜头")
@@ -104,8 +137,16 @@ namespace Project.BossLogic.Editor
                         cameraTimelineClip = clip;
                     }
 
-                    if (clip.asset is BossTimelineClip actorClip &&
-                        actorClip.actorTag == "Player")
+                    if (clip.asset is PlayerTimelineClip foundLock &&
+                        playerLockTimelineClip == null)
+                    {
+                        playerLockTimelineClip = clip;
+                        playerLockClip = foundLock;
+                        playerLockTrack =
+                            outputTrack as PlayerTimelineTrack;
+                    }
+                    else if (clip.asset is ActorTimelineClipBase actorClip &&
+                             actorClip.actorTag == "Player")
                     {
                         playerClipsToDelete.Add(clip);
                     }
@@ -116,6 +157,31 @@ namespace Project.BossLogic.Editor
             {
                 timeline.DeleteClip(playerClip);
             }
+
+            if (playerLockTrack == null)
+            {
+                playerLockTrack =
+                    timeline.CreateTrack<PlayerTimelineTrack>(
+                        null,
+                        "玩家操作锁");
+            }
+
+            if (playerLockTimelineClip == null)
+            {
+                playerLockTimelineClip =
+                    playerLockTrack.CreateClip<PlayerTimelineClip>();
+                playerLockClip =
+                    (PlayerTimelineClip)
+                    playerLockTimelineClip.asset;
+            }
+
+            playerLockTimelineClip.displayName =
+                "玩家入场操作锁";
+            SetClipWindow(
+                playerLockTimelineClip,
+                0d,
+                PlayerControlLockEnd);
+            ConfigurePlayerLock(playerLockClip);
 
             GameObject player =
                 GameObject.FindGameObjectWithTag("Player");
@@ -203,6 +269,21 @@ namespace Project.BossLogic.Editor
                     .01d);
             }
 
+            if (healthActivation != null)
+            {
+                SerializedObject activationObject =
+                    new SerializedObject(
+                        healthActivation);
+                SetBool(
+                    activationObject,
+                    "enableCameraSize",
+                    true);
+                activationObject
+                    .ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(
+                    healthActivation);
+            }
+
             if (cameraTimelineClip != null)
             {
                 SetClipWindow(
@@ -229,11 +310,33 @@ namespace Project.BossLogic.Editor
 
             timelineObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(timeline);
+            EnsureBossCameraSize();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             SessionState.SetBool(SessionKey, true);
             Debug.Log(
                 $"[BossWalkTimeline] 已同步 Boss 入场演出：动作 {ActionStart:0.###}–{ActionStart + ActionDuration:0.###} 秒，Timeline {TimelineEnd:0.###} 秒");
+        }
+
+        private static void SubscribePlayModeExit()
+        {
+            EditorApplication.playModeStateChanged -=
+                HandlePlayModeStateChanged;
+            EditorApplication.playModeStateChanged +=
+                HandlePlayModeStateChanged;
+        }
+
+        private static void HandlePlayModeStateChanged(
+            PlayModeStateChange state)
+        {
+            if (state != PlayModeStateChange.EnteredEditMode)
+            {
+                return;
+            }
+
+            EditorApplication.playModeStateChanged -=
+                HandlePlayModeStateChanged;
+            EditorApplication.delayCall += Install;
         }
 
         private static void ConfigureInputClip(
@@ -263,6 +366,110 @@ namespace Project.BossLogic.Editor
             clip.trackingOnEnd = false;
             clip.useBossJumpState = jump;
             clip.killAtEnd = false;
+        }
+
+        private static void ConfigurePlayerLock(
+            PlayerTimelineClip clip)
+        {
+            clip.actorTag = "Player";
+            clip.useTrackBinding = false;
+            clip.motionMode =
+                ActorTimelineMotionMode.None;
+            clip.useOwnerAsOrigin = false;
+            clip.targetOffset = Vector3.zero;
+            clip.motionDuration =
+                (float)PlayerControlLockEnd;
+            clip.driveRigidbody = false;
+            clip.clearVelocity = false;
+            clip.lockControlWhileDriving = false;
+            clip.applyMoveInput = false;
+            clip.applySprint = false;
+            clip.applyJumpHeld = false;
+            clip.requestJump = false;
+            clip.restoreInputOnEnd = true;
+            clip.lockControlWhileClip = true;
+            EditorUtility.SetDirty(clip);
+        }
+
+        private static void EnsureBossCameraSize()
+        {
+            GameObject prefabRoot =
+                PrefabUtility.LoadPrefabContents(
+                    BossPrefabPath);
+            if (prefabRoot == null)
+            {
+                Debug.LogWarning(
+                    $"[BossWalkTimeline] 找不到 Boss 预制体：{BossPrefabPath}");
+                return;
+            }
+
+            try
+            {
+                BossCameraSize cameraSize =
+                    prefabRoot.GetComponent<BossCameraSize>();
+                if (cameraSize == null)
+                {
+                    cameraSize =
+                        prefabRoot.AddComponent<BossCameraSize>();
+                    SerializedObject componentObject =
+                        new SerializedObject(cameraSize);
+                    SetFloat(
+                        componentObject,
+                        "sizeMultiplier",
+                        2f);
+                    SetFloat(
+                        componentObject,
+                        "blendDuration",
+                        1f);
+                    SetBool(
+                        componentObject,
+                        "requestOnEnable",
+                        false);
+                    SetBool(
+                        componentObject,
+                        "releaseOnBossDeath",
+                        true);
+                    componentObject
+                        .ApplyModifiedPropertiesWithoutUndo();
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(
+                    prefabRoot,
+                    BossPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(
+                    prefabRoot);
+            }
+        }
+
+        private static void SetFloat(
+            SerializedObject serializedObject,
+            string propertyName,
+            float value)
+        {
+            SerializedProperty property =
+                serializedObject.FindProperty(
+                    propertyName);
+            if (property != null)
+            {
+                property.floatValue = value;
+            }
+        }
+
+        private static void SetBool(
+            SerializedObject serializedObject,
+            string propertyName,
+            bool value)
+        {
+            SerializedProperty property =
+                serializedObject.FindProperty(
+                    propertyName);
+            if (property != null)
+            {
+                property.boolValue = value;
+            }
         }
 
         private static void SetClipWindow(

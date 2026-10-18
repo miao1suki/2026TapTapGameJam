@@ -5,6 +5,8 @@
 - `Assets/Boss_Logic/BossController.cs`
 - `Assets/Boss_Logic/BossAnimationDriver.cs`
 - `Assets/Boss_Logic/BossRightMoveExecutor.cs`
+- `Assets/Boss_Logic/BossCameraSize.cs`
+- `Assets/_Project/Code/Systems/CameraModes/Runtime/CameraControlManager.cs`
 - `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Track/BossTimelineTrack.cs`
 - `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Clip/BossTimelineClip.cs`
 - `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Behavior/ActorTimelineBehaviour.cs`
@@ -43,11 +45,37 @@
 - Timeline 资源：`Assets/_Project/Content/Boss/Timelines/Boss_appear.playable`
 - `BossIntroTrack` / `BossIntroClip` / `BossIntroBehaviour` 已废除，不再作为可用接口。
 - 入场由多条 `BossTimelineTrack` 组成：生成/发呆、并行移动输入、跳跃请求、落地停顿、开启运动。
-- Boss 入场触发器场景实例的 `requestPlayerControlLockDuringTimeline` 必须为开启；通过 `IPlayerControlLockTarget` 申请锁，Timeline 结束、停止、重置或禁用时释放。
+- 入场另有一条覆盖 `0–6.52` 的 `PlayerTimelineTrack`，按 `Player` Tag 解析角色并开启 `lockControlWhileClip`。该轨道在最终开战事件前 `0.02` 秒结束，避免 Hold 模式的末帧暂停未触发释放；行为层还会在片段自然末尾主动清理锁。
+- Boss 入场触发器场景实例的 `requestPlayerControlLockDuringTimeline` 继续保持开启，作为场景入口保险；它通过 `IPlayerControlLockTarget` 申请锁，Timeline 结束、停止、重置或禁用时释放。
 - `BossTimelineClip` 每个 Clip 只能配置一个动作；`spawnBoss` 为真时使用 `bossPrefab` 生成，其他 Clip 通过 `Boss` Tag 查找已生成 Boss。
 - 移动输入与跳跃请求同时处于 `4–5.4` 秒；Timeline 不直接写 Transform/Rigidbody，也不传送或纠偏最终位置。
 - 相机使用 `CameraTimelineTrack`，入场资源只允许 2D 正交运镜。
 - 相机轨结束时释放 Timeline 相机控制，并把 `TimelineCamRig.target` 交回 `CameraControlManager.FocusTarget`。
+- 最后一帧 `BossHealthBarActivationPlayable` 同时开启血条和 `BossCameraSize`。
+
+## Boss 存活期视野接口
+
+`CameraControlManager` 新增镜头倍率申请，倍率请求与相机控制权独立：
+
+```csharp
+CameraLensRequestHandle handle =
+    cameraManager.RequestLensMultiplier(owner, 2f, CameraTransition.Ease(1f));
+handle.Set(2f, CameraTransition.Ease(1f));
+handle.Release(CameraTransition.Ease(1f));
+```
+
+- 多个请求取最高倍率，不累乘。
+- 只有当前相机源优先级低于 `CameraControlPriorities.Cutscene` 时才应用倍率；Timeline 演出镜头保持自身大小。
+- 倍率变化由 `CameraControlManager` 平滑推进，Boss 或玩家代码不得直接写 `Camera.orthographicSize`。
+- 请求不会因玩家死亡、复活、相机重新跟焦或模式重新应用而清除；它只由持有者释放、相机管理器销毁或场景卸载清理。
+
+`BossCameraSize` 是 Boss 预制体上的持有者：
+
+- `RequestEnable()`：提交 `sizeMultiplier`，默认 `2`，平滑时间默认 `1` 秒。
+- `RequestDisable()`：平滑恢复倍率 `1`。
+- `SetRequested(bool)`：统一开关接口。
+- `requestOnEnable` 默认关闭，因此 Boss 出生时不会自动扩大视野。
+- `releaseOnBossDeath` 默认开启；订阅 `BossController.Died`，Boss 死亡时只释放视野请求，不改变玩家控制、相机跟随或玩家重生状态。
 
 ## 事件
 
@@ -111,3 +139,4 @@ BossController.ActivateHealthSystem();
 - `BossController`
 - `BossAnimationDriver`
 - `BossRightMoveExecutor`
+- `BossCameraSize`

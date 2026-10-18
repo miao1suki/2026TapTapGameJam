@@ -126,6 +126,7 @@ GameObject:
   - component: {fileID: 900000002}
   - component: {fileID: 900000003}
   - component: {fileID: 900000004}
+  - component: {fileID: 900000005}
   m_Layer: 0
   m_Name: "Boss(\u6682\u5B9A)"
   m_TagString: Boss
@@ -346,3 +347,19 @@ MonoBehaviour:
   waitForBossMotionEnabled: 1
   startDelaySeconds: 0
   invulnerableMoveSpeedMultiplier: 0.7
+--- !u!114 &900000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4776779470644211574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d95be4d8b114b1a860c8dfbf4b3611c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossCameraSize
+  sizeMultiplier: 2
+  blendDuration: 1
+  requestOnEnable: 0
+  releaseOnBossDeath: 1

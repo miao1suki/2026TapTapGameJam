@@ -6,6 +6,8 @@ using UnityEngine.Playables;
 
 public sealed class ActorTimelineBehaviour : PlayableBehaviour
 {
+    private const double NaturalEndTolerance = .0001d;
+
     public ActorTimelineClipBase clip;
     public GameObject owner;
 
@@ -53,6 +55,19 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
         if (!initialized)
         {
             Initialize();
+        }
+
+        if (finished)
+        {
+            return;
+        }
+
+        if (clip is PlayerTimelineClip &&
+            playerControlLock != null &&
+            HasReachedNaturalEnd(playable))
+        {
+            Finish();
+            return;
         }
 
         ResolveActor(playerData);
@@ -420,6 +435,16 @@ public sealed class ActorTimelineBehaviour : PlayableBehaviour
         player = null;
         boss = null;
         playerInputCaptured = false;
+        initialized = false;
+    }
+
+    private static bool HasReachedNaturalEnd(
+        Playable playable)
+    {
+        double duration = playable.GetDuration();
+        return duration > 0d &&
+               playable.GetTime() >=
+               duration - NaturalEndTolerance;
     }
 
     private void FinishPlayer(PlayerTimelineClip playerClip)

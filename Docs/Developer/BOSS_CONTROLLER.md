@@ -67,7 +67,7 @@ BossController.ActivateHealthSystem();
 
 ## Boss 入场 Timeline
 
-`Assets/_Project/Content/Boss/Timelines/Boss_appear.playable` 不再使用 `BossIntroTrack` / `BossIntroClip`。当前总时长为 `6.55` 秒，由五条 `BossTimelineTrack`、一条 2D 相机轨、一条对话轨和一条末尾 Playable 轨组成：
+`Assets/_Project/Content/Boss/Timelines/Boss_appear.playable` 不再使用 `BossIntroTrack` / `BossIntroClip`。当前总时长为 `6.55` 秒，由五条 `BossTimelineTrack`、一条覆盖全程的 `PlayerTimelineTrack`、一条 2D 相机轨、一条对话轨和一条末尾 Playable 轨组成：
 
 - 生成/发呆：生成 Boss 到当前场景编辑态玩家位置 `(-9.07, -33.33, 0)`，保持 `2.1333333` 秒。
 - 并行移动输入：与跳跃同时从 `4` 秒持续到 `5.4` 秒，只向 `BossController.SetWalkInput` 写入向右输入；Walk 速度为控制器参数 `3` 格/秒。
@@ -75,11 +75,12 @@ BossController.ActivateHealthSystem();
 - 跳跃输入：与移动 Track 同时从 `4` 秒持续到 `5.4` 秒，只向 `BossController.RequestJump()` 发送一次请求；弹道、重力、惯性、碰撞和落点均由控制器与物理决定。
 - 实际结果：向右移动约 `1.4` 秒后停在 X 约 `-4.87`，再受重力落入场景中世界 X `-7…-2`、碰撞顶面 Y `-41` 的弹性植物组。
 - 落地发呆：从 `6` 秒保持 `0.55` 秒，覆盖 Boss 在约 `6.02` 秒首次接触植物后的半秒停顿，Timeline 于 `6.55` 秒结束。
-- 开启运动与血条：在 `6.54` 秒打开运动门并激活血条，随后释放玩家控制。
+- 开启运动、血条与 Boss 视野：在 `6.54` 秒打开运动门、激活血条，并向 `BossCameraSize` 发送开启请求，随后释放玩家控制。
 - 对话：从 `1.0166667` 秒开始，展示时长延长为 `2.7916667` 秒，在 `3.8083333` 秒消失；字号为 `84`，启用加粗，WordNote 显示时长参数为 `5` 秒。
 - 台词 Clip 在 `3.8083333` 秒释放，并播放 `0.18` 秒退场动画，完整淡出到 `3.9883333` 秒；Boss 移动与跳跃输入从 `4` 秒开始，确保文字完全消失后才行动。
-- 血条激活：在时间轴最后一刻调用 `BossController.ActivateHealthSystem()`，血条初始化后才开放受伤。
-- Boss 入场触发器在场景实例上开启“播放期间申请玩家控制锁”；Timeline 开始即锁定移动、跳跃、交互、搬运和染色，到总时长末尾由 `ContactTimelineTrigger` 释放。
+- 末尾 Playable：调用 `BossController.ActivateHealthSystem()`，血条初始化后才开放受伤；同时调用 `BossCameraSize.RequestEnable()`。
+- 玩家锁：Timeline 内有一条从 `0` 到 `6.52` 秒的 `PlayerTimelineTrack` 锁轨，按 `Player` Tag 查找标准玩家，并锁定移动、跳跃、交互、搬运和染色。它在最终开战事件前 `0.02` 秒结束，避开 Hold 模式末帧，并由行为层在自然末尾主动释放。
+- 场景触发器仍保留“播放期间申请玩家控制锁”作为场景入口保险，但入场玩法锁不再只依赖它。
 
 每个 Boss Clip 只能有一个动作。面板只显示当前动作的数据，以及 `spawnBoss` / `bossPrefab`；移动动作只显示 `moveInput`，跳跃不显示目标或速度。Boss Timeline 是操作输入层，不保存“最终走到哪里、跳多高、落在哪”等结果数据；这些都由 `BossController`、刚体、重力和场景碰撞决定。Actor Timeline 层不得直接写 Boss 的 Rigidbody 或 Transform。相机轨只允许 2D 正交运镜，负责跟随 Boss。
 
@@ -92,6 +93,16 @@ BossController.ActivateHealthSystem();
 2D 相机轨的目标高度为 `-0.3`，进入 Boss 机位时正交视野扩大 `1.15` 倍。正交镜头只使用固定平面 Yaw，完全忽略角色 Transform 的旋转，避免角色转身或镜头移动时露出方块顶面和 3D 侧壁。
 
 Boss 根物体使用 `3×3×3` 缩放，外观和碰撞同步放大。入场时保持本地 `1×1×1` BoxCollider；右移马夫接管后临时把本地高度拉到 `12`，在世界空间覆盖约 `3×36×3` 格，保证经过路线上下高低处都会被吞噬，停止穿行时恢复作者碰撞。血条 Canvas 用 `1/3` 缩放抵消父物体比例。
+
+## Boss 存活期视野
+
+`BossCameraSize` 挂在 Boss 预制体根物体上，默认不提交申请。Timeline 最后一帧调用 `RequestEnable()` 后：
+
+- 向 `CameraControlManager` 申请玩家玩法正交视角倍率，默认 `2` 倍。
+- 扩大和恢复时间由组件的“平滑时间（秒）”统一控制，默认 `1` 秒。
+- `CameraControlManager` 只在当前相机源优先级低于 `Cutscene` 时叠加倍率；入场、死亡演出等 Timeline 相机接管期间不会覆盖演出镜头。
+- 玩家死亡、复活和相机重新跟回玩家都不会撤销请求，因此复活后仍保持 Boss 战视野。
+- Boss 进入 Death 状态时组件自动平滑释放请求；只有场景/相机管理器重建等真正销毁路径才会立即清理。
 
 ## 后续扩展
 

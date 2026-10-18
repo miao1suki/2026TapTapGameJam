@@ -1,5 +1,14 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 Boss 入场锁与存活期视野
+
+- 分支：`boss修补`；范围：Boss 入场 Timeline、玩家 Timeline 轨道、`CameraControlManager`、`BossCameraSize`、Boss 预制体及接入文档。
+- 目标：入场 Timeline 用完整时长的 `PlayerTimelineTrack` 锁住玩家；Boss 存活且没有 Timeline 相机接管时，向玩法相机申请可调倍率的视野扩大，默认 `2` 倍。启用与结束均平滑过渡，玩家死亡复活不撤销该请求，Boss 死亡时才恢复。
+- 边界：Boss 专属生命周期与 Inspector 位于 `Assets/Boss_Logic`；倍率请求、Cutscene 优先级隔离和唯一 Camera 写入仍归 `CameraControlManager`。不直接写 Camera，不修改 Boss 物理参数或玩家相机跟随数值。
+- 锁修复：玩家锁轨缩短到 `0–6.52` 秒，在最终开战 Playable 前结束，避开 Hold 模式末帧；`ActorTimelineBehaviour` 同时在片段自然末尾主动释放控制锁，不依赖 `OnGraphStop`。
+- 地图恢复：Unity 重新导入期间 `Boss.json` 与 `Boss.planning.json` 被写成与场景不一致的版本，已从 HEAD 恢复为与 `Boss.unity` 一致的 `8d5ea0`；覆盖前的文件备份在 `Library/MapRecoveryBackup-20261018-1250`。
+- 验证：Unity 已完成脚本与 Timeline 资产导入，Editor.log 无 C# 编译错误；Boss 预制体与玩家锁轨序列化核对通过。EditMode 相机测试和完整入场/死亡实机流程仍待运行。
+
 ## 2026-10-17 移动平台按钮连线
 
 - 分支：`Boss2`；范围：`MovingPlatformFeature`、`DoorButton`、关卡编辑器参数绑定与机制规划存档。

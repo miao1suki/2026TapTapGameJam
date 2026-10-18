@@ -96,6 +96,87 @@ namespace Project.CameraModes
         bool TryGetLensOverride(out float orthographicSize, out float fieldOfView);
     }
 
+    /// <summary>
+    /// A persistent lens-size request. It can outlive player respawns and is
+    /// ignored while a cutscene-level camera source owns the output.
+    /// </summary>
+    public readonly struct CameraLensRequestHandle :
+        IEquatable<CameraLensRequestHandle>,
+        IDisposable
+    {
+        private readonly CameraControlManager manager;
+        private readonly int id;
+
+        internal CameraLensRequestHandle(
+            CameraControlManager manager,
+            int id)
+        {
+            this.manager = manager;
+            this.id = id;
+        }
+
+        internal CameraControlManager Manager => manager;
+        internal int Id => id;
+
+        public bool IsValid =>
+            manager != null && manager.IsLensRequestValid(this);
+
+        public void Set(
+            float multiplier,
+            CameraTransition transition = default)
+        {
+            manager?.SetLensMultiplier(
+                this,
+                multiplier,
+                transition);
+        }
+
+        public void Release(CameraTransition transition = default)
+        {
+            manager?.ReleaseLensMultiplier(this, transition);
+        }
+
+        public void Dispose()
+        {
+            Release(CameraTransition.Immediate);
+        }
+
+        public bool Equals(CameraLensRequestHandle other)
+        {
+            return manager == other.manager && id == other.id;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is CameraLensRequestHandle other &&
+                   Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((manager != null
+                    ? manager.GetHashCode()
+                    : 0) * 397) ^ id;
+            }
+        }
+
+        public static bool operator ==(
+            CameraLensRequestHandle left,
+            CameraLensRequestHandle right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(
+            CameraLensRequestHandle left,
+            CameraLensRequestHandle right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
     public readonly struct CameraControlHandle : IEquatable<CameraControlHandle>, IDisposable
     {
         private readonly CameraControlManager manager;
