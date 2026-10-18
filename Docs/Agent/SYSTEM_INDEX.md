@@ -68,7 +68,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | TA 植物燃烧表现 | `Assets/ta_source/Burn` | 红色成功作用于藤蔓、弹性植物或植物障碍后，立即关闭玩法碰撞；专用 URP Shader 采样现有纹理 Alpha，沿 Renderer 本地高度从底向顶燃烧，随后保留灰烬并淡出。共享配置支持燃烧速度、橙色焰边宽度/强度、像素化、扰动和灰烬时长；不复用 GivingColor 临时染色覆盖。接入见 [PLANT_BURN_EFFECT.md](../Developer/PLANT_BURN_EFFECT.md) |
 | TA 岩浆冷却蒸汽 | `Assets/ta_source/Steam` | 蓝色成功作用于岩浆并生成固体块时，在镜头可见的冷却块上部表面播放较高排序的低速上浮像素雾团，覆盖固体表面并保留对更近遮挡物的深度测试；约 1.2 秒消散并随临时替换块一起清理。接入字段位于 `LavaHazardFeature`，使用见 [LAVA_COOLING_STEAM_EFFECT.md](../Developer/LAVA_COOLING_STEAM_EFFECT.md) |
 | TA 三色四帧雨滴 | `Assets/ta_source/Rain` | 红蓝绿各一套四帧像素雨滴预设体；单张运行时网格在可调宽高的本地 XY 面片内错峰下落。密度、基准大小及其独立随机幅度、基准速度及其独立随机幅度、帧速、错峰随机性、到底概率和噪波可调；独立预览 `RainPreview.unity`，暂不接入正式场景。使用见 [Rain/README.md](../../Assets/ta_source/Rain/README.md) |
-| TA 全屏 RGB 故障 | `Assets/ta_source/RGB_seperate` | PC/Mobile URP Renderer 中的全屏 RGB 分离、横向抽动和暗角 Pass；`RgbGlitchEffect` 提供惊恐基线、死亡增强、复活回落与清空接口。独立预览 `RgbGlitchPreview.unity`，尚未接玩家事件。使用见 [RGB_seperate/README.md](../../Assets/ta_source/RGB_seperate/README.md) |
+| TA 全屏 RGB 故障 | `Assets/ta_source/RGB_seperate` | PC/Mobile URP Renderer 中的全屏 RGB 分离、横向抽动和暗角 Pass；`RgbGlitchEffect` 提供惊恐基线、死亡增强、复活回落、参数覆盖与清空接口。独立预览 `RgbGlitchPreview.unity` 在编辑模式可见测试图案，预览组件的中文 UI Toolkit Inspector 提供画面参数滑块；尚未接玩家事件。使用见 [RGB_seperate/README.md](../../Assets/ta_source/RGB_seperate/README.md) |
 | 掉落物与拾取飞行 | `Assets/_Project/Code/Shared/Runtime/DropItemBase.cs`、`Assets/_Project/Code/Systems/PickupPresentation` | 基类负责感知后的磁吸、收集生命周期；颜色钥匙触碰结算并播放 DOTween 四段飞行与镜头；Pick 场景保留测试物 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
 | 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、块材质和达成图片 |

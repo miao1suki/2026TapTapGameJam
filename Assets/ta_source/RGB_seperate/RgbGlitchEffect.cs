@@ -31,13 +31,19 @@ namespace TapTap.TA.RgbGlitch
         }
 
         private static RgbGlitchEffect instance;
+        private static bool hasParameterOverride;
+        private static Vector4 parameterOverride;
         private Fade fear;
         private Fade death;
 
         public static float Intensity => instance != null ? Mathf.Max(instance.fear.value, instance.death.value) : 0f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => instance = null;
+        private static void ResetStatics()
+        {
+            instance = null;
+            hasParameterOverride = false;
+        }
 
         private static RgbGlitchEffect EnsureCreated()
         {
@@ -59,6 +65,27 @@ namespace TapTap.TA.RgbGlitch
         /// <summary>Fade the death layer out, returning to the current fear baseline.</summary>
         public static void PlayRespawn(float seconds = 0.7f) =>
             EnsureCreated().death.Set(0f, seconds);
+
+        /// <summary>Override renderer tuning until UseRendererDefaults is called.</summary>
+        public static void SetParameters(float vignetteDarkness, float shakeRate,
+            float shakeStrength, float colorSeparationPixels)
+        {
+            parameterOverride = new Vector4(
+                Mathf.Clamp01(vignetteDarkness),
+                Mathf.Clamp(shakeRate, 1f, 40f),
+                Mathf.Clamp(shakeStrength, 0f, 0.04f),
+                Mathf.Clamp(colorSeparationPixels, 0f, 24f));
+            hasParameterOverride = true;
+        }
+
+        /// <summary>Remove the runtime override and use the active Renderer Asset values.</summary>
+        public static void UseRendererDefaults() => hasParameterOverride = false;
+
+        internal static bool TryGetParameters(out Vector4 parameters)
+        {
+            parameters = parameterOverride;
+            return hasParameterOverride;
+        }
 
         /// <summary>Immediately clear both layers, such as when leaving gameplay.</summary>
         public static void ResetEffect()

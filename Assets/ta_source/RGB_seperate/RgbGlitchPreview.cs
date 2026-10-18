@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace TapTap.TA.RgbGlitch
@@ -7,41 +6,18 @@ namespace TapTap.TA.RgbGlitch
     {
         [SerializeField, Range(0f, 1f)] private float fearLevel = 0.45f;
         [SerializeField] private bool automaticCycle = true;
-
-        private static readonly Color[] Colors =
-        {
-            new Color(0.95f, 0.12f, 0.23f),
-            new Color(0.12f, 0.8f, 0.95f),
-            new Color(0.24f, 0.95f, 0.38f),
-            new Color(0.95f, 0.77f, 0.16f)
-        };
+        [SerializeField, Range(0f, 1f)] private float vignetteDarkness = 0.65f;
+        [SerializeField, Range(1f, 40f)] private float shakeRate = 15f;
+        [SerializeField, Range(0f, 0.04f)] private float shakeStrength = 0.012f;
+        [SerializeField, Range(0f, 24f)] private float colorSeparationPixels = 7f;
 
         private float lastFear = -1f;
         private float cycleTime;
         private int cycleStep;
-        private readonly List<Material> materials = new List<Material>();
-
-        private void Start()
-        {
-            var unlit = Shader.Find("Universal Render Pipeline/Unlit");
-            if (unlit == null) return;
-            for (int index = 0; index < 4; index++)
-            {
-                var bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                bar.name = "Color bar " + (index + 1);
-                bar.transform.SetParent(transform, false);
-                bar.transform.localPosition = new Vector3(-6f + index * 4f, 0f, 0f);
-                bar.transform.localScale = new Vector3(3.8f, 9f, 0.2f);
-                var material = new Material(unlit);
-                material.SetColor("_BaseColor", Colors[index]);
-                bar.GetComponent<Renderer>().material = material;
-                materials.Add(material);
-                Destroy(bar.GetComponent<Collider>());
-            }
-        }
-
         private void Update()
         {
+            RgbGlitchEffect.SetParameters(vignetteDarkness, shakeRate,
+                shakeStrength, colorSeparationPixels);
             if (!Mathf.Approximately(fearLevel, lastFear))
             {
                 RgbGlitchEffect.SetFear(fearLevel, 0f);
@@ -67,14 +43,10 @@ namespace TapTap.TA.RgbGlitch
             }
         }
 
-        private void OnDisable() => RgbGlitchEffect.ResetEffect();
-
-        private void OnDestroy()
+        private void OnDisable()
         {
-            foreach (var material in materials)
-            {
-                if (material != null) Destroy(material);
-            }
+            RgbGlitchEffect.ResetEffect();
+            RgbGlitchEffect.UseRendererDefaults();
         }
     }
 }

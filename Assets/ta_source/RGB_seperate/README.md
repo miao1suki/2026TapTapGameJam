@@ -14,6 +14,8 @@ RgbGlitchEffect.PlayDeath(0.25f);     // 死亡：加强到最大
 RgbGlitchEffect.PlayRespawn(0.7f);    // 复活：回到当前惊恐基线
 RgbGlitchEffect.SetFear(0f, 1.0f);    // Boss 战结束
 RgbGlitchEffect.ResetEffect();         // 离开玩法时立即清空
+RgbGlitchEffect.SetParameters(0.65f, 15f, 0.012f, 7f); // 暗角、速率、幅度、色差像素
+RgbGlitchEffect.UseRendererDefaults(); // 取消参数覆盖，回到 Renderer Asset 数值
 ```
 
 `PlayerHealth.Died` 可以触发 `PlayDeath`，`PlayerHealth.Revived` 可以触发 `PlayRespawn`。`PlayerController.RequestRespawn()` 在玩家存活时也能执行，但此时 `PlayerHealth.Revived` 不会触发；若希望手动重生同样播放恢复效果，应在调用 `RequestRespawn()` 的流程里调用 `PlayRespawn()`。目前未修改玩家或正式场景的事件接线，由程序按演出时机接入。
@@ -22,7 +24,9 @@ RgbGlitchEffect.ResetEffect();         // 离开玩法时立即清空
 
 ## 可调参数
 
-在 `Assets/Settings/PC_Renderer.asset` 和 `Assets/Settings/Mobile_Renderer.asset` 的 `RGB Glitch` Feature Inspector 分别调整：
+打开 `RgbGlitchPreview.unity`，在 Hierarchy 选中 `RGB Glitch Preview`，Inspector 的 **画面参数** 中有四个中文滑块。测试场景 Play 后它们会立即驱动全屏效果；也可在 Play 前设置并保存到场景。程序可用 `SetParameters` 设置同样四项，`UseRendererDefaults` 清除覆盖。离开预览场景时会自动清除预览覆盖。
+
+默认值仍可在 `Assets/Settings/PC_Renderer.asset` 和 `Assets/Settings/Mobile_Renderer.asset` 的 `RGB Glitch` Feature Inspector 分别调整：
 
 | 字段 | 作用 |
 | --- | --- |
@@ -31,8 +35,8 @@ RgbGlitchEffect.ResetEffect();         // 离开玩法时立即清空
 | `Shake Strength` | 全屏与局部横向抽动幅度，按屏幕宽度比例计算 |
 | `Color Separation Pixels` | 红蓝通道在强度 1 时的水平偏移像素数 |
 
-这些数值与 `RgbGlitchEffect.Intensity` 相乘；0 强度时画面完全不变。PC 和 Mobile 参数可分别调优。
+暗角黑度、抖动幅度和色差受 `RgbGlitchEffect.Intensity` 缩放，抖动速率控制重新取样的频率；0 强度时画面完全不变。PC 和 Mobile 的默认值可分别调优。
 
 ## 测试场景
 
-打开同目录 `RgbGlitchPreview.unity`，直接 Play。场景运行时生成四色条纹以观察色彩偏移；每 6 秒自动循环：前 2 秒惊恐基线、2～4 秒死亡强化、4～6 秒复活恢复。选中 `RGB Glitch Preview` 可在 Inspector 调整 `Fear Level`，或关闭 `Automatic Cycle` 单独查看持续惊恐。其他四项参数在当前画质使用的 Renderer Asset 中调整，Play 时修改即可观察结果。此场景不加入正式构建。
+打开同目录 `RgbGlitchPreview.unity`，Scene 视图中立即可见已保存的四色测试图案。选中 `RGB Glitch Preview` 可在 Inspector 的 **演示** 中调惊恐强度和自动循环，在 **画面参数** 中调四个滑块。直接 Play 后，全屏效果每 6 秒循环：前 2 秒惊恐基线、2～4 秒死亡强化、4～6 秒复活恢复。关闭自动循环可单独查看持续惊恐。此场景不加入正式构建。

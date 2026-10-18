@@ -51,16 +51,19 @@ namespace TapTap.TA.RgbGlitch
                 descriptor.name = "RGB Glitch";
                 descriptor.clearBuffer = false;
                 var destination = graph.CreateTexture(descriptor);
+                var tuning = new Vector4(owner.vignetteDarkness, owner.shakeRate,
+                    owner.shakeStrength, owner.colorSeparationPixels);
+                if (RgbGlitchEffect.TryGetParameters(out var overrideTuning)) tuning = overrideTuning;
                 using (var builder = graph.AddRasterRenderPass<PassData>("RGB Glitch", out var data))
                 {
                     data.source = source;
                     data.material = owner.material;
                     data.settings = new Vector4(
                         intensity,
-                        owner.vignetteDarkness,
-                        owner.shakeRate,
-                        owner.shakeStrength);
-                    data.separationPixels = owner.colorSeparationPixels;
+                        tuning.x,
+                        tuning.y,
+                        tuning.z);
+                    data.separationPixels = tuning.w;
                     data.time = Time.unscaledTime;
                     builder.UseTexture(source, AccessFlags.Read);
                     builder.SetRenderAttachment(destination, 0);
