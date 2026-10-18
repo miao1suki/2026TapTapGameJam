@@ -413,8 +413,7 @@ namespace Project.LevelEditor.Editor
             };
             paletteList = new VisualElement();
             paletteList.style.width = Length.Percent(100f);
-            paletteList.style.flexDirection = FlexDirection.Row;
-            paletteList.style.flexWrap = Wrap.Wrap;
+            paletteList.style.flexDirection = FlexDirection.Column;
             paletteList.style.paddingTop = 4f;
             paletteList.style.paddingBottom = 4f;
 
@@ -707,27 +706,69 @@ namespace Project.LevelEditor.Editor
                 LevelEditorState.PaletteScale,
                 .5f,
                 1.5f);
-            float cardWidth = 124f * scale;
-            float cardHeight = 148f * scale;
+            float cardWidth = Mathf.Max(40f, 44f * scale);
+            float cardHeight = Mathf.Max(64f, 68f * scale);
+            float previewSize = Mathf.Max(28f, 98f * scale / 3f);
             if (paletteScroll != null)
             {
-                paletteScroll.style.height = Mathf.Clamp(
-                    cardHeight + 24f,
-                    104f,
-                    240f);
+                paletteScroll.style.height = includeContextSections ? 280f : 420f;
+            }
+
+            if (LevelEditorState.SelectedEntryIndex >= 0 && LevelEditorState.SelectedEntryIndex < count)
+            {
+                int selected = LevelEditorState.SelectedEntryIndex;
+                var actions = Row();
+                actions.name = "block-selection-actions";
+                var title = new Label(palette.Entries[selected].DisplayName);
+                title.style.flexGrow = 1f;
+                title.style.minWidth = 0f;
+                title.style.overflow = Overflow.Hidden;
+                title.tooltip = title.text;
+                actions.Add(title);
+                actions.Add(SmallButton("编辑", () => LevelEditorEntryWindow.OpenForEdit(selected)));
+                actions.Add(SmallButton("删除", () => RemovePaletteEntry(selected)));
+                paletteList.Add(actions);
+            }
+
+            string[] groupNames = { "红色方块", "蓝色方块", "绿色方块", "其他有色方块", "无色方块" };
+            string[] groupKeys = { "red", "blue", "green", "other", "neutral" };
+            var headings = new Foldout[groupNames.Length];
+            var grids = new VisualElement[groupNames.Length];
+            var groupCounts = new int[groupNames.Length];
+            for (int groupIndex = 0; groupIndex < groupNames.Length; groupIndex++)
+            {
+                string stateKey = "LevelEditor.BlockGroup." + Application.dataPath + "." + groupKeys[groupIndex];
+                var heading = new Foldout {
+                    name = "block-group-" + groupKeys[groupIndex],
+                    text = groupNames[groupIndex],
+                    value = SessionState.GetBool(stateKey, true) };
+                heading.RegisterValueChangedCallback(evt => SessionState.SetBool(stateKey, evt.newValue));
+                var grid = new VisualElement { name = "block-grid-" + groupKeys[groupIndex] };
+                grid.style.flexDirection = FlexDirection.Row;
+                grid.style.flexWrap = Wrap.Wrap;
+                grid.style.paddingTop = 4f;
+                heading.Add(grid);
+                paletteList.Add(heading);
+                headings[groupIndex] = heading;
+                grids[groupIndex] = grid;
             }
 
             for (int index = 0; index < palette.Entries.Count; index++)
             {
                 int captured = index;
                 LevelEditorBlockEntry entry = palette.Entries[index];
+                int colorGroup = GetBlockColorGroup(entry);
+                groupCounts[colorGroup]++;
                 VisualElement cell = new VisualElement();
+                cell.name = "block-card-" + index;
+                cell.tooltip = entry.DisplayName;
                 cell.style.width = cardWidth;
                 cell.style.minWidth = cardWidth;
-                cell.style.flexGrow = 1f;
+                cell.style.flexGrow = 0f;
+                cell.style.flexShrink = 0f;
                 cell.style.height = cardHeight;
-                cell.style.marginRight = 6f;
-                cell.style.marginBottom = 6f;
+                cell.style.marginRight = 4f;
+                cell.style.marginBottom = 4f;
 
                 Button card = new Button(() =>
                 {
@@ -743,6 +784,10 @@ namespace Project.LevelEditor.Editor
                 };
                 card.style.width = Length.Percent(100f);
                 card.style.height = Length.Percent(100f);
+                card.style.marginLeft = 0f;
+                card.style.marginRight = 0f;
+                card.style.marginTop = 0f;
+                card.style.marginBottom = 0f;
                 card.style.flexDirection = FlexDirection.Column;
                 card.style.alignItems = Align.Center;
                 card.style.justifyContent = Justify.FlexStart;
@@ -771,30 +816,24 @@ namespace Project.LevelEditor.Editor
                     scaleMode = ScaleMode.ScaleToFit,
                     pickingMode = PickingMode.Ignore
                 };
-                preview.style.width = 98f * scale;
-                preview.style.height = 98f * scale;
-                preview.style.marginTop = 6f * scale;
+                preview.style.width = previewSize;
+                preview.style.height = previewSize;
+                preview.style.marginTop = 3f;
+                preview.style.flexShrink = 0f;
                 card.Add(preview);
 
                 Label name = new Label(entry.DisplayName);
-                name.style.width = 116f * scale;
+                name.style.width = cardWidth - 4f;
                 name.style.fontSize =
-                    Mathf.Clamp(12f * scale, 10f, 16f);
+                    Mathf.Clamp(10f * scale, 10f, 12f);
                 name.style.whiteSpace = WhiteSpace.Normal;
+                name.style.maxHeight = 28f;
+                name.style.overflow = Overflow.Hidden;
                 name.style.unityTextAlign = TextAnchor.MiddleCenter;
                 name.pickingMode = PickingMode.Ignore;
-                name.style.marginTop = 4f * scale;
+                name.style.marginTop = 2f;
                 card.Add(name);
                 cell.Add(card);
-
-                if (index == LevelEditorState.SelectedEntryIndex)
-                {
-                    cell.Add(CreatePaletteCardActions(
-                        scale,
-                        () => LevelEditorEntryWindow.OpenForEdit(
-                            captured),
-                        () => RemovePaletteEntry(captured)));
-                }
 
                 if (entry.SourcePrefab != null &&
                     AssetPreview.IsLoadingAssetPreview(
@@ -807,15 +846,23 @@ namespace Project.LevelEditor.Editor
                     };
                 }
 
-                paletteList.Add(cell);
+                grids[colorGroup].Add(cell);
             }
 
-            paletteList.Add(CreateAddCard(
+            for (int groupIndex = 0; groupIndex < headings.Length; groupIndex++)
+            {
+                headings[groupIndex].text = groupNames[groupIndex] + "（" + groupCounts[groupIndex] + "）";
+                headings[groupIndex].style.display = groupCounts[groupIndex] == 0
+                    ? DisplayStyle.None : DisplayStyle.Flex;
+            }
+            var add = CreateAddCard(
                 cardWidth,
                 cardHeight,
                 LevelEditorEntryWindow.OpenForAdd,
                 "新增方块",
-                new Color(.3f, .66f, 1f, 1f)));
+                new Color(.3f, .66f, 1f, 1f));
+            ConfigureCompactAddCard(add, "block-add-card", cardWidth);
+            paletteList.Add(add);
         }
 
         private static VisualElement CreateAddCard(
@@ -1073,15 +1120,7 @@ namespace Project.LevelEditor.Editor
                     ? DisplayStyle.None : DisplayStyle.Flex;
             }
             var add = CreatePropAddCard(cardWidth, cardHeight);
-            add.name = "prop-add-card";
-            add.style.flexGrow = 0f;
-            add.style.flexShrink = 0f;
-            foreach (var label in add.Query<Label>().ToList())
-            {
-                label.style.fontSize = label.text == "+" ? 22f : 10f;
-                label.style.width = cardWidth - 4f;
-                label.style.whiteSpace = WhiteSpace.Normal;
-            }
+            ConfigureCompactAddCard(add, "prop-add-card", cardWidth);
             propList.Add(add);
         }
 
@@ -1135,80 +1174,28 @@ namespace Project.LevelEditor.Editor
                 new Color(.95f, .62f, .2f, 1f));
         }
 
-        private static VisualElement CreatePaletteCardActions(
-            float scale,
-            System.Action editAction,
-            System.Action deleteAction)
+        internal static int GetBlockColorGroup(LevelEditorBlockEntry entry)
         {
-            float previewHorizontalInset =
-                (124f - 98f) * .5f * scale;
-            float actionHeight = Mathf.Clamp(
-                22f * scale,
-                18f,
-                28f);
-            float actionFontSize = Mathf.Clamp(
-                12f * scale,
-                10f,
-                14f);
-            float actionInset = Mathf.Clamp(
-                2f * scale,
-                1.5f,
-                3f);
-            float actionGap = Mathf.Clamp(
-                4f * scale,
-                3f,
-                6f);
-            float previewWidth = 98f * scale;
-            const int actionCount = 2;
-            float actionWidth = Mathf.Clamp(
-                (previewWidth - actionGap * (actionCount - 1) - 4f) /
-                    actionCount,
-                20f,
-                48f);
+            if (entry == null || entry.Color.a <= .01f) return 4;
+            Color.RGBToHSV(entry.Color, out float hue, out float saturation, out float value);
+            if (saturation < .15f || value < .05f) return 4;
+            if (hue < 1f / 12f || hue >= 11f / 12f) return 0;
+            if (hue >= 5f / 12f && hue < 3f / 4f) return 1;
+            if (hue >= 1f / 4f && hue < 5f / 12f) return 2;
+            return 3;
+        }
 
-            VisualElement actions = Row();
-            actions.style.position = Position.Absolute;
-            actions.style.left = previewHorizontalInset;
-            actions.style.width = previewWidth;
-            actions.style.top = 6f * scale + actionInset;
-            actions.style.height = actionHeight + actionInset * 2f;
-            actions.style.justifyContent = Justify.Center;
-            actions.style.alignItems = Align.Center;
-            actions.style.backgroundColor =
-                new Color(.03f, .04f, .055f, .9f);
-            Round(actions, 4f);
-
-            Button edit = new Button(editAction)
+        private static void ConfigureCompactAddCard(VisualElement add, string name, float cardWidth)
+        {
+            add.name = name;
+            add.style.flexGrow = 0f;
+            add.style.flexShrink = 0f;
+            foreach (var label in add.Query<Label>().ToList())
             {
-                text = "编辑"
-            };
-            edit.style.width = actionWidth;
-            edit.style.height = actionHeight;
-            edit.style.fontSize = actionFontSize;
-            edit.style.unityFontStyleAndWeight = FontStyle.Bold;
-            edit.style.paddingLeft = 0f;
-            edit.style.paddingRight = 0f;
-            edit.style.backgroundColor =
-                new Color(.16f, .43f, .82f);
-            edit.style.color = Color.white;
-            edit.style.marginRight = actionGap;
-            actions.Add(edit);
-
-            Button delete = new Button(deleteAction)
-            {
-                text = "删除"
-            };
-            delete.style.width = actionWidth;
-            delete.style.height = actionHeight;
-            delete.style.fontSize = actionFontSize;
-            delete.style.unityFontStyleAndWeight = FontStyle.Bold;
-            delete.style.paddingLeft = 0f;
-            delete.style.paddingRight = 0f;
-            delete.style.backgroundColor =
-                new Color(.62f, .18f, .16f);
-            delete.style.color = Color.white;
-            actions.Add(delete);
-            return actions;
+                label.style.fontSize = label.text == "+" ? 22f : 10f;
+                label.style.width = cardWidth - 4f;
+                label.style.whiteSpace = WhiteSpace.Normal;
+            }
         }
 
         private void RemovePropEntry(int index)
