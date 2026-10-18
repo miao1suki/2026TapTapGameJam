@@ -22,7 +22,7 @@ Scene及同名planning/内嵌planning已成套镜像，原设计标注也已翻�
 
 验证：`R1HorizontalMirror.ApplyAndVerify` 对原保存版本作一次受保护迁移，641项断言通过（逐对象/碰撞镜像、尺寸、规划、机关引用和保存重载）；输入SHA不符时拒绝执行，不能再次翻转当前版本。`R1HorizontalMirror.VerifySaved` 的158项无改动应用检查通过，验证后丢弃内存测试Scene。`R1GameplayVerification.Run`自动识别镜像方向，实际Play1664次断言通过，包含共享曲柄接续/回落、独立曲柄、双按钮门、房间重置、绿条攀附/横移/松手和重置朝向；部分断言为逐帧重复采样，门使用TryPress API，不冒称完整通关。已查看1740×1320运行时全图，未打包或人工从入口通关至出口。
 
-本地原Scene与planning备份位于 `Library/R1BeforeHorizontalMirror`，报告与全图位于Library，不提交这些本地产物。本次只在现有R1分支本地修改，不推送、不合并main，也不修改R2/R3或正式Gaming。
+本地原Scene与planning备份位于 `Library/R1BeforeHorizontalMirror`，报告与全图位于Library，不提交这些本地产物。镜像实现提交为 `40fe66c`，按用户授权仅交付现有R1分支 `codex/ilorr/r1-level`，不合并或推送main，也不修改R2/R3或正式Gaming。
 
 ## 已确认布局
 
