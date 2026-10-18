@@ -1,12 +1,16 @@
 # 工作状态与交接（每次任务重读）
 
-## 2026-10-18 紧急双端 Gaming 出包（进行中）
+## 2026-10-18 紧急双端 Gaming 出包（构建完成，整合交付）
 
 - 用户要求尽量15分钟内交付Android/Windows，允许非阻断问题后续迭代，并明确授权合并推送；正式地图采用策划最新56126c3的Gaming Scene、同名planning及命名存档，保留本地新版菜单、单世界流程和运镜。
 - 已将origin/main的Boss等进度整合，RoomResetObject保留非分配缓存与未挂接平台复原，PlanningCanvas同时保留平台形状及Boss重生点标记维护。用户未提交MRoom2/MRoom3/Pick、字体等不作为此次关卡交付。
 - Android按键采用新图左侧方形版本（方向/跳跃30×30），保留原触控范围与个人布局；Windows/Android使用Resources/临时ICON.png。资源生成与构建仅在隔离FlowRetirementProbe，不保存主Unity内存Scene。
 - 唯一打包启动场景Gaming，非Development、无Profiler、无运行时网络权限；旧包从Builds移至Library备份以免误用。新地图交接注明7个按钮及部分信号未接线，本轮不猜测补绑定，不声称完整关卡通关。
 - 蓝色点击绿块按玩家网格行决定四向，已伸长锁方向、回单格可改向；持续至最大，真实实体/玩家占新增格暂停，不以整格扩张把玩家吞入，移开后继续。首轮真实PhysX测试发现穿透后改为安全占位策略，终版验证结果待追加。
+- 双端构建成功：Windows 0错误/5警告，Android ARM64 IL2CPP 0错误/9警告。仅Gaming进入BuildPlayer；Windows启动烟测未见异常。最终APK无uses-permission，debuggable=false、cleartext=false，PrivacyActivity为唯一Launcher，UnityPlayerActivity不导出，v2签名验证通过。未做Android真机或完整通关。
+- 产物在Builds/形之彩-20261018-Gaming正式测试，旧6套包移至Library/PreviousBuilds-20261018可恢复。SHA256、验证范围与后续事项见Docs/Developer/RELEASE_GAMING_2026-10-18.md；本轮未保存主Unity内存Scene，用户字体、Boss Timeline及MRoom2/MRoom3/Pick留在工作树。
+- 此前旧图专项通过切房12095、菜单165/843帧、故障36、按钮42、Boss63、TA195、岩浆显示10项，不是最新20房间图的全流程重验。新增连续单格平台合并专项未通过、拒绝原因待查；安全生长版第三轮134项处因夹具未移开阻挡玩家而失败，仅修审计重跑，不改已打包生产逻辑。用户要求本轮先包，非阻断问题后续处理。
+- 终版BlueContactCubeGrowthAudit第四轮220项通过，覆盖4方向×3格尺寸、真实鼠标命中、伸长后锁轴/回缩后改向、玩家占格暂停/移开恢复、实体阻挡、颜色门控与R/死亡/离区。第四轮只调整夹具移开占位玩家，包内生产代码未变。
 
 ## 2026-10-18 紧急包手机按键与双端图标（urgent_mobile_icons）
 

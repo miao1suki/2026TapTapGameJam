@@ -222,7 +222,10 @@ namespace Project.ContactCubes.Editor
             ContactCube red = Spawn(CubeColor.Red, root + Vector3.down);
             Step(20); Check(cube.Length == 1, "ordinary red contact still fully retracts completed growth");
             Move(red, root + Vector3.down * 20);
-            MovePlayer(root + Vector3.up * 1.5f); Click(cube, root); Step(7);
+            MovePlayer(root + Vector3.up * 1.5f); Click(cube, root);
+            // Select the new axis from above, then leave its added cell clear.
+            // Player-occupied-cell pausing is verified separately with real PhysX.
+            MovePlayer(root + Vector3.forward * 10); Step(7);
             Check(cube.Length == 2 && Vector3.Dot(cube.GrowthDirection, Vector3.up) > .999f,
                 "after fully retracting, next blue click can select a new axis");
             cube.enabled = red.enabled = false;
