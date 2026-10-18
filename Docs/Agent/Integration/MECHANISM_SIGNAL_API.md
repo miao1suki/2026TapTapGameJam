@@ -2,15 +2,25 @@
 
 开发者操作：[机关与跳跃](../../Developer/MECHANISMS_AND_JUMP.md)。颜色和重置规范仍以 COLOR_BLOCKS_API / ROOM_LIFECYCLE_API 为准。
 
-## 可选平台 Timeline
+## 可选基座与平台 Timeline
 
-`MovingPlatformFeature.timelineTrigger` 使用 `MovingPlatformTimelineTrigger`：`Disabled=0` 默认关闭（旧场景/旧存档缺字段同样关闭），`Powered=1` 仅信号驱动从未充能到充能时，`MovementStarted=2` 实际停止到开始移动时，`EndpointReached=3` 实际到达行程端点时。停留端点、每个 FixedUpdate 的持续充能/移动不会重复创建演出。已在播放的同平台镜头不会重叠，平台运动与载人仍走既有路径，不等待镜头完成才移动。
+`MechanismBaseFeature.timelineTrigger` 使用 `MechanismBaseTimelineTrigger`：`Disabled=0` 默认关闭，`Powered=1` 收到充能，`Unpowered=2` 解除充能，`SignalChanged=3` 两种边沿均播放。只响应实际相邻能源导致的信号变化；持续扫描不重播，R/离区恢复过程及恢复后的首次能源基线扫描不播放镜头。基座仍只检测能源、广播信号，不持久保存或搜索平台。`TimelineTrigger / PlatformTimelineMode / IsTimelinePlaying` 是只读调试入口。
 
-显式开启后复用 `MechanismCameraShot`，聚焦该平台（锚点随平台移动），可以调移向、停留、返回时间及是否锁定玩家。默认关闭时不创建会话、Director或玩家锁；区域重置、停用/解绑宿主、运行中关闭演出均清理本会话。不改普通开关、路径端点、曲柄进度或区域重置规则。`TimelineTrigger / IsTimelinePlaying` 为只读调试入口，字段均有 BlockParameter，Inspector与关卡参数窗口共用，沿用组件覆盖 JSON 持久化，不引入 instanceID。
+平台的 `timelineOrder` 为演出顺序整数，越小越先播放。同一信号边沿中，基座镜头先入队，然后按序播放真正发生所选充能/断电边沿的平台。`MechanismBaseFeature.platformTimelineMode`：`AllOrdered=0` 默认播放全部符合条件的平台；`FirstOnly=1` 仅播放顺序最小的符合条件平台，其他平台的该次边沿会被消费而非在下一物理步补播。同序号按层级顺序；需要稳定的精确顺序时请设置不同整数。基座自身演出关闭时，平台仍可单独启用；选择仅首个平台不会自动启用任何演出。
+
+平台“开始移动”“到达端点”保留原来真实运动边沿，不提前伪造运动/到达；请求同样进入共享串行队列。同一帧同一基座批次中尚未播放的请求按 `timelineOrder` 排序；若不同平台在不同时刻才到达端点，则按实际请求时机入队，不为等待另一个尚未发生的事件而冻结队列。该两种运动事件选“仅首个平台”时，取本基座已启用演出的有效平台中序号最小者。多来源平台仍按原 Any/All 结果判断充能边沿，不会因为某个基座变化而伪造一次平台充能。
+
+`MechanismTimelineSequence` 只保存消费者 Attach/订阅与 Detach/解绑时登记的运行时关系；不是另一套地图绑定，也不逐帧全场搜索。信号反向变化会取消该基座上一次未完成的镜头批次，再按新边沿建立批次。基座重置/停用取消自己及由其触发的平台镜头；平台重置/解绑/停用只取消自己的请求。平台物理运动、承载与信号输出不等待镜头队列，也不因“仅首个镜头”而停止其他平台。
+
+`MovingPlatformFeature.timelineTrigger` 使用 `MovingPlatformTimelineTrigger`：`Disabled=0` 默认关闭（旧场景/旧存档缺字段同样关闭），`Powered=1` 仅信号驱动从未充能到充能时，`MovementStarted=2` 实际停止到开始移动时，`EndpointReached=3` 实际到达行程端点时，新增 `Unpowered=4` 仅信号驱动解除充能时。旧枚举数值不变。停留端点、每个 FixedUpdate 的持续充能/移动不会重复创建演出。已在排队/播放的同平台镜头不会重叠，平台运动与载人仍走既有路径，不等待镜头完成才移动。
+
+显式开启后复用 `MechanismCameraShot`，聚焦该平台（锚点随平台移动），可以调移向、停留、返回时间及是否锁定玩家。门、基座、平台共用串行请求队列；等待期间不先锁玩家、不开 Director，轮到请求且旧 Timeline 释放相机后才取得自己的玩家锁，返回结束或取消后仅释放自己的锁。外部剧情 Timeline 忙碌超过15秒时跳过该镜头，不阻塞机关；队列中正常等待其他机关镜头不消耗这个15秒。丢失相机/管理器、协程异常、宿主失效时清理自有 Director/动态 Timeline/锚点并归还队列。不使用全局强制解锁或强制释放其他剧情的相机句柄。
+
+默认关闭时不创建会话、Director或玩家锁；区域重置、停用/解绑宿主、运行中关闭演出均清理本会话。不改普通开关、路径端点、曲柄进度或区域重置规则。`TimelineTrigger / TimelineOrder / IsTimelinePlaying` 为只读调试入口，字段均有 BlockParameter，Inspector与关卡参数窗口共用，沿用组件覆盖 JSON 持久化，不引入 instanceID。
 
 门使用独立 `DoorTimelineTrigger`，默认也关闭，可选每次按钮真实按下/全部按钮达成开门。接入见 [DOOR_API](DOOR_API.md)。上述是已有门镜头的可选复用，不是假定能自动绑定任意外部 Timeline 资源；自定义剧情继续使用已有 Timeline 触发器及明确轨道绑定。
 
-场景交付仍必须成套提交 Scene、同名可编辑 `.planning.json`、双方 `.meta` 和依赖，不能只交生成物。专项入口 `OptionalMechanismTimelineAudit.Run` 由整合者在 `Library/FlowRetirementProbe` 静音运行。
+场景交付仍必须成套提交 Scene、同名可编辑 `.planning.json`、双方 `.meta` 和依赖，不能只交生成物。专项入口 `OptionalMechanismTimelineAudit.Run` 保留门/平台旧行为覆盖；新增 `MechanismSignalTimelineAudit.Run` 覆盖实际能源邻接、基座与多平台充能/断电顺序、仅首个、运行中取消及组件参数 JSON 往返。由整合者在 `Library/FlowRetirementProbe`（新专项也允许 `Library/MechanismSignalProbe`）静音运行，不能在用户工程直接执行。
 
 ## 所有权
 

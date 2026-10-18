@@ -8,6 +8,8 @@
 
 附近按键交互和搬运按玩家朝向筛选；鼠标屏幕命中的染色不受朝向限制。搬运与运行时落点预览见 `PLAYER_CARRY_API.md`。
 
+红/蓝点击使用 `ColorAbilityAim`：空白处提供默认0.65格的指针容差和提示圈，但指针及最终目标都必须在玩家原 `ScanRadius` 内，不扩大总染色范围。前景优先于水底层，直接命中优先于容差吸附；跨房间目标仍拒绝。`IColorApplicationHitTarget` 是可选的命中世界位置入口，普通 `IColorApplicationTarget.ApplyColor` 保持兼容；水蒸汽使用点击列或附近露出的实际水面，不固定在合并中心。细节见 [水与像素玩法 API](GAMEPLAY_PIXEL_WATER_API.md)。
+
 ## 分类表现与纯 HSV
 
 `HSVColorFadeManager` 不决定解锁、材质、透明度或物体显隐，也不扫描场景 Renderer。纯 API：

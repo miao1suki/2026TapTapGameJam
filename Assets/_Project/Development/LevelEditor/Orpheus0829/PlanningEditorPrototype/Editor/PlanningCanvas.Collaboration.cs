@@ -67,6 +67,13 @@ namespace PlanningEditorPrototype
             StatusChanged?.Invoke("仅操作水层：请选择水体，或关闭水层模式放置其他物品。");
             return false;
         }
+
+        private bool CanPlaceWaterLayer(PlanningRoom owner, PlanningBox box, Vector2Int position, PlanningBox ignored = null)
+        {
+            if (PlanningWaterLayerUtility.CanPlace(document, owner, box, position, palette, ignored)) return true;
+            StatusChanged?.Invoke("水与岩浆不能放在同一格；其他物体可以与水叠放。");
+            return false;
+        }
         public void SetImportPreview(PlanningDocument source, Vector2Int anchor, bool valid)
         {
             importPreview = source;

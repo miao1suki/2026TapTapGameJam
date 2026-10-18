@@ -29,7 +29,9 @@
 
 `TryMove` 保留房间物体/出生点局部位置，并移动所选所有者的全局装配补丁。跨选区的完整补丁拒绝移动；`Reanchor` 递归同步 mergeParts。数据移动失败必须保持原图。
 
-`PlanningWaterLayerUtility.IsWater` 识别旧 Water 类型及带 `WaterVisualFeature` 的道具（含水流、气泡柱）。SceneBuilder 以水层/普通层分别占格；增量匹配必须使用 `(PlanningBoxId, Cell)`，不能只以 Cell 匹配，同格水和物品属于不同实例。不得为此改变颜色 Gameplay 的真实材质/HSV/解锁路径。
+`PlanningWaterLayerUtility.IsWater` 识别旧 Water 类型及带 `WaterVisualFeature` 的道具（含水流、气泡柱）。水可与所有非岩浆物体同格；水/岩浆互斥在绘制、替换、移动、片段导入与场景应用前统一检查，按不规则形状而非包围矩形判定，拒绝时不先改动场景。房间水与全局装配补丁同样适用。
+
+普通水、水流和气泡柱允许彼此叠放，SceneBuilder 依实际 `WaterVisualFeature` 子类分别去重占格；同类型同格不重复生成，不同类型保留各自功能。共同水底色只绘制一次，避免透明度叠深；运行时及 Scene 美术预览同样去重，不影响各水类型原有施力。增量匹配必须使用 `(PlanningBoxId, Cell)`，不能只以 Cell 匹配，同格水和物品属于不同实例。不得为此改变颜色 Gameplay 的真实材质/HSV/解锁路径。
 
 预览独立排序水→物品，选取/擦除顺序相反。“仅水层”筛选同时覆盖参数、移动、合并、绘制与装配擦除；前景层 opacity=0.2，玩家覆盖层不接受点击。窗口重建必须恢复实际开关值，不仅更新 Toggle 外观。
 

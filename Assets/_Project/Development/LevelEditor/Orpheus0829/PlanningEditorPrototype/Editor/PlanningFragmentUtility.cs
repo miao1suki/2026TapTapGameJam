@@ -311,26 +311,38 @@ namespace PlanningEditorPrototype
             var palette = LevelEditorPaletteService.GetOrCreate();
             var foreground = new HashSet<Vector2Int>();
             var water = new HashSet<Vector2Int>();
+            var waterLayers = new Dictionary<string, HashSet<Vector2Int>>();
+            var lava = new HashSet<Vector2Int>();
             IEnumerable<(PlanningBox box, Vector2Int origin)> WorldBoxes(PlanningDocument doc)
             {
-                foreach (var room in doc.rooms)
-                {
-                    Vector2Int origin = PlanningWorldUtility.Bounds(room).position;
-                    foreach (var box in room.boxes) yield return (box, origin);
-                }
-                foreach (var box in doc.assemblyPatches) yield return (box, Vector2Int.zero);
+                return PlanningWaterLayerUtility.WorldBoxes(doc);
             }
             foreach (var item in WorldBoxes(target))
             {
-                var layer = PlanningWaterLayerUtility.IsWater(item.box, palette) ? water : foreground;
+                string kind = PlanningWaterLayerUtility.WaterKind(item.box, palette);
+                var layer = kind != null ? PlanningWaterLayerUtility.Layer(waterLayers, kind) : foreground;
                 foreach (var cell in PlanningShapeUtility.Cells(item.box)) layer.Add(cell + item.origin);
+                if (kind != null)
+                    foreach (var cell in PlanningShapeUtility.Cells(item.box)) water.Add(cell + item.origin);
+                if (PlanningWaterLayerUtility.IsLava(item.box, palette))
+                    foreach (var cell in PlanningShapeUtility.Cells(item.box)) lava.Add(cell + item.origin);
             }
+            if (!PlanningWaterLayerUtility.TryValidate(PlanningWaterLayerUtility.WorldBoxes(source), palette, out var waterError))
+                throw new InvalidDataException(waterError);
             foreach (var item in WorldBoxes(source))
             {
-                var layer = PlanningWaterLayerUtility.IsWater(item.box, palette) ? water : foreground;
+                string kind = PlanningWaterLayerUtility.WaterKind(item.box, palette);
+                bool isWater = kind != null;
+                bool isLava = PlanningWaterLayerUtility.IsLava(item.box, palette);
+                var layer = isWater ? PlanningWaterLayerUtility.Layer(waterLayers, kind) : foreground;
                 foreach (var cell in PlanningShapeUtility.Cells(item.box))
-                    if (layer.Contains(cell + item.origin + shift))
+                {
+                    var position = cell + item.origin + shift;
+                    if (isWater && lava.Contains(position) || isLava && water.Contains(position))
+                        throw new InvalidDataException("导入的水与岩浆重叠，请调整导入坐标。其他物体允许与水叠放。");
+                    if (layer.Contains(position))
                         throw new InvalidDataException("导入物体与当前地图同层物体重叠，请调整导入坐标。装配物体可能超出房间边界。");
+                }
             }
         }
         private static int DetachExternalLinks(PlanningDocument doc)

@@ -12,6 +12,7 @@ namespace PlanningEditorPrototype
         private ObjectArtworkLibrary previewArtwork;
         private readonly Dictionary<string, (bool matched, PlanningArtworkPreview artwork)> artworkPreviewCache = new Dictionary<string, (bool, PlanningArtworkPreview)>();
         private readonly Dictionary<string, HashSet<Vector2Int>> waterPreviewCells = new Dictionary<string, HashSet<Vector2Int>>();
+        private readonly Dictionary<string, Dictionary<Vector2Int, string>> waterPreviewOwners = new();
         private PlanningArtworkPreview[] waterTileArtwork;
 
         private bool ResolveArtworkPreview(PlanningBox box, out PlanningArtworkPreview artwork)
@@ -35,24 +36,47 @@ namespace PlanningEditorPrototype
         private void RefreshArtworkPreviews()
         {
             ClearVinePreviewGroups();
-            artworkPreviewCache.Clear(); waterPreviewCells.Clear(); boxPreviewCache.Clear(); previewArtwork=null; waterTileArtwork=null;
+            artworkPreviewCache.Clear(); waterPreviewCells.Clear(); waterPreviewOwners.Clear(); boxPreviewCache.Clear(); previewArtwork=null; waterTileArtwork=null;
             UpdateDetailPreviewImages(); MarkDirtyRepaint();
         }
 
         private HashSet<Vector2Int> WaterCellsFor(PlanningBox box)
         {
             if (waterPreviewCells.TryGetValue(box.id,out var cached)) return cached;
-            IEnumerable<PlanningBox> siblings = document.assemblyPatches;
-            foreach (var room in document.rooms) if (room.boxes.Contains(box)) { siblings = room.boxes; break; }
             var cells = new HashSet<Vector2Int>(); var members = new List<PlanningBox>();
-            foreach (var item in siblings)
+            var owners = new Dictionary<Vector2Int, string>();
+            foreach (var source in WaterPreviewSources(box))
             {
+                var item = source.box;
                 if (!PlanningWaterLayerUtility.IsWater(item,palette)) continue;
                 members.Add(item);
-                foreach (var cell in PlanningShapeUtility.Cells(item)) cells.Add(cell);
+                foreach (var local in PlanningShapeUtility.Cells(item))
+                {
+                    Vector2Int cell = local + source.origin;
+                    cells.Add(cell);
+                    if (!owners.TryGetValue(cell, out string owner) || string.CompareOrdinal(item.id, owner) < 0)
+                        owners[cell] = item.id;
+                }
             }
-            foreach (var item in members) waterPreviewCells[item.id]=cells;
+            foreach (var item in members) { waterPreviewCells[item.id]=cells; waterPreviewOwners[item.id]=owners; }
             return cells;
+        }
+
+        private IEnumerable<(PlanningBox box, Vector2Int origin)> WaterPreviewSources(PlanningBox box)
+        {
+            if (mode == PlanningCanvasMode.Assembly)
+            {
+                // Build one world-cell union on the first visible water box. Every
+                // member caches this same set until a document edit/mode change;
+                // pan/repaint never rescans all rooms and global patches.
+                foreach (var source in PlanningWaterLayerUtility.WorldBoxes(document)) yield return source;
+                yield break;
+            }
+            // Detail hides other owners. A global patch must not win ownership
+            // here and make this room's otherwise valid water disappear.
+            IEnumerable<PlanningBox> siblings = document.assemblyPatches;
+            foreach (var room in document.rooms) if (room.boxes.Contains(box)) { siblings = room.boxes; break; }
+            foreach (var sibling in siblings) yield return (sibling, Vector2Int.zero);
         }
 
         private bool TryAddArtworkPreview(PlanningBox box, RectInt rect, HashSet<string> active, Vector2Int offset)
@@ -104,7 +128,14 @@ namespace PlanningEditorPrototype
                 if (water)
                 {
                     Vector2Int cell = new Vector2Int(rect.x + Mathf.RoundToInt(x*step.x),
-                        rect.yMax - 1 - Mathf.RoundToInt(y*step.y)) - offset;
+                        rect.yMax - 1 - Mathf.RoundToInt(y*step.y));
+                    // Assembly rectangles already include the room/connector
+                    // world origin; Detail's owner-local cache does not.
+                    if (mode != PlanningCanvasMode.Assembly) cell -= offset;
+                    // Different water forces may overlap, but their common blue
+                    // underlay is drawn once, not as several darker alpha layers.
+                    if (waterPreviewOwners.TryGetValue(box.id, out var owners) &&
+                        owners.TryGetValue(cell, out string owner) && owner != box.id) continue;
                     bool above=waterCells.Contains(cell+Vector2Int.down), below=waterCells.Contains(cell+Vector2Int.up);
                     var waterTile=waterTileArtwork[!above ? 0 : !below ? 2 : 1];
                     if (waterTile.Texture != null) tile=waterTile;

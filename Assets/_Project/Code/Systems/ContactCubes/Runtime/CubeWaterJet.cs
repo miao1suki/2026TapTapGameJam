@@ -14,39 +14,33 @@ namespace Project.ContactCubes
         private ContactCube owner;
         private ContactCube red;
         private float length, width, speed;
-        private Transform visual;
-        private MeshRenderer visualRenderer;
+        private CubeWaterJetArtwork artwork;
+        private float playerMultiplier = 1.6f;
+        private bool configured;
         private Collider[] hits = new Collider[64];
         private readonly HashSet<Component> previous = new HashSet<Component>();
         private readonly HashSet<Component> current = new HashSet<Component>();
         public Vector3 Direction { get; private set; }
-        public void Configure(ContactCube source, ContactCube redContact, float distance, float diameter, float velocity, Material material)
+        public float PlayerPushSpeed => speed * playerMultiplier;
+        public void Configure(ContactCube source, ContactCube redContact, float distance, float diameter, float velocity, Material material,
+            float playerPushMultiplier = 1.6f, float bubbleDensity = 2.5f, float bubbleSpeedCells = 6f)
         {
             owner = source; red = redContact; length = distance; width = diameter; speed = velocity;
+            playerMultiplier = Mathf.Max(0f,playerPushMultiplier);
             if (!gameObject.activeSelf) gameObject.SetActive(true);
-            if (visual == null)
-            {
-                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                cube.name = "水柱预览"; visual = cube.transform;
-                Collider collider = cube.GetComponent<Collider>(); collider.enabled = false; Destroy(collider);
-                visual.SetParent(transform, false); visualRenderer = cube.GetComponent<MeshRenderer>();
-                visualRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            }
-            visualRenderer.sharedMaterial = material;
             UpdatePose();
+            if (artwork == null) artwork = gameObject.AddComponent<CubeWaterJetArtwork>();
+            artwork.Configure(length,width,source.CellWorldSize,bubbleDensity,bubbleSpeedCells);
+            // Publish the first velocity request during the source's contact step.
+            // No artificial startup timer or wait for the child's next FixedUpdate.
+            if (!configured) { configured = true; FixedUpdate(); }
         }
         private void UpdatePose()
         {
             if (owner == null || red == null) return;
             Direction = (owner.transform.position - red.transform.position).normalized;
-            if (Direction.sqrMagnitude < .001f) { visualRenderer.enabled = false; return; }
-            visualRenderer.enabled = true;
             transform.position = owner.transform.position;
-            transform.rotation = Quaternion.FromToRotation(Vector3.right, Direction);
-            visual.position = transform.position + Direction * (length * .5f);
-            visual.rotation = transform.rotation;
-            Vector3 parentScale = transform.lossyScale;
-            visual.localScale = new Vector3(length / Mathf.Abs(parentScale.x), width / Mathf.Abs(parentScale.y), width / Mathf.Abs(parentScale.z));
+            if (Direction.sqrMagnitude > .001f) transform.rotation = Quaternion.FromToRotation(Vector3.right, Direction);
         }
         private void FixedUpdate()
         {
@@ -87,7 +81,7 @@ namespace Project.ContactCubes
                 // Existing water velocity is consumed only in swimming mode.
                 if (velocity.sqrMagnitude > .0001f) player.EnterWater(this);
                 else player.ExitWater(this);
-                player.SetWaterVelocity(this, new Vector2(velocity.x, velocity.y));
+                player.SetWaterVelocity(this, new Vector2(velocity.x, velocity.y) * playerMultiplier);
             }
             else if (target is ICubeJetPushReceiver receiver) receiver.SetCubeJetVelocity(this, velocity, dt);
         }
@@ -95,6 +89,7 @@ namespace Project.ContactCubes
         {
             foreach (Component target in previous) if (target != null) Apply(target, Vector3.zero, 0);
             previous.Clear(); current.Clear();
+            configured = false;
         }
     }
 }

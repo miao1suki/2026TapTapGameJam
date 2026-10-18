@@ -184,6 +184,9 @@ namespace Project.Steam
             child.transform.localScale = Vector3.one * GetCellWorldSize();
 
             ParticleSystem system = child.AddComponent<ParticleSystem>();
+            // Unity starts an added ParticleSystem immediately. Duration may only
+            // be configured after stopping it; emitting below remains explicit.
+            system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var emission = system.emission;
             emission.enabled = false;
 

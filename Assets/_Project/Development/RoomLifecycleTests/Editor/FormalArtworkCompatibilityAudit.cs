@@ -250,9 +250,9 @@ public static class FormalArtworkCompatibilityAudit
             "Assets/_Project/Content/Player/Player.prefab", "formal player still uses the standard prefab");
         Check(All<Camera>(scene).Count(camera => camera.enabled && camera.CompareTag("MainCamera")) == 1,
             "one enabled MainCamera retained");
-        var changedRoom = document.rooms.Single(room => room.id == "room_5c0def1a");
         var rendered = placed.GroupBy(block => block.PlanningBoxId ?? "").ToDictionary(group => group.Key, group => group.ToArray());
         var changedBlocks = new List<LevelEditorPlacedBlock>();
+        foreach (var changedRoom in document.rooms)
         foreach (var box in changedRoom.boxes)
         {
             rendered.TryGetValue(box.id, out var instances);
@@ -273,7 +273,10 @@ public static class FormalArtworkCompatibilityAudit
             }
             Check(true, "updated room has Scene instance " + box.id);
             string prefix = JsonUtility.ToJson(box.PersistentClone());
-            Check(instances.All(block => block.PlanningSignature.StartsWith(prefix, StringComparison.Ordinal)),
+            // Older valid signatures predate the optional button-list fields.
+            // Compare normalized persistent records, not schema-era JSON bytes.
+            Check(instances.All(block => JsonUtility.ToJson(PlanningBox.FromPersistentJson(
+                    RecordText(block.PlanningSignature, box.id)).PersistentClone()) == prefix),
                 "updated room Scene source matches saved parameters " + box.id);
             Check(instances.All(block => PlanningShapeUtility.Contains(box, block.PlanningLocalCell)),
                 "updated room Scene instance stays inside its saved coverage " + box.id);
@@ -288,10 +291,14 @@ public static class FormalArtworkCompatibilityAudit
                 }
             }
         }
-        Screenshot(changedBlocks.ToArray(), "Library/FormalArtworkCompatibility_UpdatedRoom11.png");
+        Screenshot(changedBlocks.ToArray(), "Library/FormalArtworkCompatibility_CurrentLevel.png");
         var reservedRoom = document.rooms.Single(room => room.id == "room_5bd7a307");
-        Check(reservedRoom.cells.Count == 6 && reservedRoom.boxes.Count == 0, "new room 12 is the author's empty six-cell planning reservation");
-        report.AppendLine("INFO empty reserved room retained; not represented as a completed playable room.");
+        if (document.rooms.Count == 12)
+            Check(reservedRoom.cells.Count == 6 && reservedRoom.boxes.Count == 0, "12-room baseline retains its empty reservation");
+        else
+            Check(document.rooms.Count == 17 && reservedRoom.boxes.Count > 0, "current 17-room author delivery includes the completed former reservation");
+        Check(PlanningWaterLayerUtility.TryValidate(PlanningWaterLayerUtility.WorldBoxes(document), LevelEditorPaletteService.GetOrCreate(), out var waterError),
+            "formal water/lava occupancy: " + waterError);
     }
 
     private static void StripPrefabLocal(PlanningBox box)

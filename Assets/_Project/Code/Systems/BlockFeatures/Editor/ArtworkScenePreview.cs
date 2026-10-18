@@ -53,6 +53,7 @@ namespace Project.BlockFeatures.Editor
         private static readonly Dictionary<Texture, Material> materials = new();
         private static readonly HashSet<int> pending = new();
         private static readonly HashSet<WaterCell> waterCells = new();
+        private static readonly Dictionary<WaterCell, int> waterCellOwners = new();
         private static readonly List<int> expired = new();
         private static readonly Plane[] planes = new Plane[6];
         private static bool queued, processing, discoverHierarchy;
@@ -275,7 +276,7 @@ namespace Project.BlockFeatures.Editor
             new WaterCell(owner.scene.handle, Mathf.FloorToInt(center.x / cell), Mathf.FloorToInt(center.y / cell));
         private static void RebuildWaterCells()
         {
-            waterCells.Clear();
+            waterCells.Clear(); waterCellOwners.Clear();
             foreach (var entry in entries.Values)
             {
                 if (!entry.water || entry.owner == null || !entry.owner.activeInHierarchy) continue;
@@ -283,7 +284,12 @@ namespace Project.BlockFeatures.Editor
                 foreach (var bounds in Coverage(entry.owner, Footprint(entry.owner, cell)))
                     for (int y = 0; y < Mathf.RoundToInt(bounds.size.y / cell); y++)
                         for (int x = 0; x < Mathf.RoundToInt(bounds.size.x / cell); x++)
-                            waterCells.Add(Key(entry.owner, bounds.min + new Vector3((x + .5f) * cell, (y + .5f) * cell, 0), cell));
+                        {
+                            var key = Key(entry.owner, bounds.min + new Vector3((x + .5f) * cell, (y + .5f) * cell, 0), cell);
+                            waterCells.Add(key);
+                            int id = entry.owner.GetInstanceID();
+                            if (!waterCellOwners.TryGetValue(key, out int previous) || id < previous) waterCellOwners[key] = id;
+                        }
             }
         }
 
@@ -318,6 +324,7 @@ namespace Project.BlockFeatures.Editor
                         {
                             Vector3 center = area.min + new Vector3((x + .5f) * cell, (y + .5f) * cell, 0);
                             var key = Key(owner, center, cell);
+                            if (waterCellOwners.TryGetValue(key, out int waterOwner) && waterOwner != owner.GetInstanceID()) continue;
                             int kind = !waterCells.Contains(new WaterCell(key.scene, key.x, key.y + 1)) ? 0 :
                                 !waterCells.Contains(new WaterCell(key.scene, key.x, key.y - 1)) ? 2 : 1;
                             if (ObjectArtworkPlanningPreview.TryGetWaterTile(kind, out var tile))
@@ -364,6 +371,12 @@ namespace Project.BlockFeatures.Editor
                         (i & 4) == 0 ? local.min.z : local.max.z)));
                 }
                 entry.bounds = visible;
+                HideRenderers(entry);
+            }
+            else if (entry.water)
+            {
+                // Fully overlapped water is represented by its owning water tile;
+                // it must not fall back to the old cube renderer underneath it.
                 HideRenderers(entry);
             }
         }
@@ -497,7 +510,7 @@ namespace Project.BlockFeatures.Editor
                 foreach (var renderer in entry.hidden) if (renderer != null) renderer.forceRenderingOff = false;
                 foreach (var part in entry.parts) if (part.mesh != null) Object.DestroyImmediate(part.mesh);
             }
-            entries.Clear(); waterCells.Clear();
+            entries.Clear(); waterCells.Clear(); waterCellOwners.Clear();
             foreach (var material in materials.Values) if (material != null) Object.DestroyImmediate(material);
             materials.Clear();
         }

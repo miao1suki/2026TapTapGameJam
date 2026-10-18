@@ -108,6 +108,16 @@ public static class WaterLayerShapeAudit
         foreach (Vector2Int cell in new[] {new Vector2Int(2,8),new Vector2Int(1,9),new Vector2Int(2,9)})
             missingCorner.mergeParts.Add(JsonUtility.ToJson(Prop(palette,"Blue_WaterSource",new RectInt(cell,Vector2Int.one))));
         room.boxes.Add(missingCorner);
+        foreach (string family in new[] { "Blue_WaterSource", "Blue_Current", "Blue_BuoyancyColumn" })
+        {
+            // Resolve by actual component family, not localized palette names.
+            Type type = family == "Blue_WaterSource" ? typeof(WaterSourceFeature) :
+                family == "Blue_Current" ? typeof(DirectionalCurrentFeature) : typeof(BuoyancyColumnFeature);
+            var entry = palette.PropEntries.First(e => e?.Prefab != null && e.Prefab.GetComponent(type) != null);
+            var item = new PlanningBox(PlanningDetailType.Prop, new RectInt(22, 9, 1, 1))
+                { propEntryId = entry.EntryId, propEntryName = entry.DisplayName, id = "water_shape_stacked_" + family };
+            room.boxes.Add(item);
+        }
         var roundTrip = JsonUtility.FromJson<PlanningDocument>(JsonUtility.ToJson(doc));
         Check(PlanningShapeUtility.Cells(roundTrip.rooms[0].boxes.Single(b=>b.id==waterId)).ToHashSet().SetEquals(ring),"JSON round trip preserves shape");
         PlanningSceneBuilder.SuppressSceneUndo = true;
@@ -230,6 +240,14 @@ public static class WaterLayerShapeAudit
             }
             var presentation=water.GetComponentInChildren<GameplayWaterPresentation>();
             Check(presentation!=null,"runtime pixel water loaded");
+            var stacked = Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None)
+                .Where(b=>b.PlanningBoxId.StartsWith("water_shape_stacked_")).ToArray();
+            Check(stacked.Length==3,"runtime retains three overlapping water gameplay families");
+            var displays=stacked.Select(b=>b.GetComponentInChildren<GameplayWaterPresentation>()).ToArray();
+            Check(displays.All(p=>p!=null),"all overlap families initialize normally");
+            Check(displays.Sum(p=>p.SurfaceCellCount+p.BodyCellCount+p.InteriorCellCount)==1,"overlap draws one water cell, not three alpha layers");
+            Check(displays.Sum(p=>p.GetComponentsInChildren<MeshFilter>().Where(m=>m.name=="Water Refraction").Sum(m=>m.sharedMesh.vertexCount))==4,
+                "overlap has one refraction face without flicker");
             Check(presentation.SurfaceCellCount+presentation.BodyCellCount+presentation.InteriorCellCount==13,"water visible cells exclude two holes and overlapping wall");
             var front=presentation.transform.Find("Water Refraction").GetComponent<MeshFilter>().sharedMesh;
             Check(front.vertexCount==13*4,"refraction has no bounding-box fill in holes or walls");

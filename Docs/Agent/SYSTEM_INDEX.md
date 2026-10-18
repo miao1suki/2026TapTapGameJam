@@ -1,5 +1,7 @@
 # 系统索引
 
+基座信号镜头可选收到/解除/双边沿，默认关；共享队列先基座再按序平台，或仅首个平台，等待不提前锁玩家。水与非岩浆所有物体同格，三种水类型可叠、同类生成去重、共同底色只画一次。红蓝指针0.65格容差严格不扩总范围；水蒸汽按点击列，钥匙2有效像素悬浮，红蓝接触水柱改TA水片/气泡并即时推送、玩家默认8格/秒。见[机关API](Integration/MECHANISM_SIGNAL_API.md)、[水API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[钥匙与水柱](../Developer/KEY_HOVER_AND_CONTACT_JETS.md)。关卡仍须Scene、planning及meta成套交付。
+
 TA 新效果已接入现有生命周期：流动岩浆精确保留孔洞、冷却蒸汽、三类植物燃烧、标准玩家死亡/Boss追逐RGB；PC/Mobile只追加RGB通道，不覆盖水/HSV/像素参数。雨区和萤火虫通过 `Tools/2026TapTap/关卡美术/创建雨区` / `创建萤火虫区域` 独立创建，固定16像素/格、Scene保存，不属于planning玩法物体；雨是颜色装饰，萤火虫是中性装饰且实时灯默认关闭。见 [TA_EFFECTS_API](Integration/TA_EFFECTS_API.md) 与 [使用说明](../Developer/TA_EFFECTS.md)。关卡交付仍须Scene+planning+meta成套。
 
 2026-10-18 录像回归：绿钩拉红块/基座新接通供能后暂停主动拉取、保留绳子并放行普通行走，重新点击继续；精确来源查询 `MechanismBaseFeature.IsPoweredBy` 不把他人的红块供能算给蓝块。红/蓝未落稳时保留玩家从上落脚碰撞；岩浆只补真实支撑顶面的少量物理解算薄层，露边仍危险。普通收集品已开始/已完成收集不随R/死亡/离区恢复，`IsCollected`、稳定作者实例键及 `RestoreCollectedState` 供后续存档接入，未实现跨场景/退出后的存档服务。接入见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)、[WORLD_ITEMS_API](Integration/WORLD_ITEMS_API.md)、[CONTACT_CUBES_API](Integration/CONTACT_CUBES_API.md)。
@@ -20,7 +22,7 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 关卡/美术适配：16有效像素/格、正式2D预览、左右靠墙梯、基座重力及新图用途见 [ART_GRID_REFINEMENT_API](Integration/ART_GRID_REFINEMENT_API.md)。工作台静态三色装饰按颜色目录Layer分批，初始褪色、场景颜色解锁后恢复；不要误当动画或加ColorObject。告示牌复用字幕激发道具。片段导入/区域导出入口在关卡编辑器右侧三视图按钮下方。
 
-正式打包关卡：`Assets/_Project/Scenes/Playing/Gaming.unity`，配套同名规划文件及 `Assets/_Project/Content/LevelMaps/正式关卡.json`；增量整合策划 `cbd3a39` 的12房间版（第12房间为六格空规划）。房间11采用策划更新布局，房间9沿用main去重修复及独立16格路线，运行时/美术/工具修复不回退，不全量重建。成员应同步整合main的Scene及两份存档，不能用策划原始旧文件或缓存覆盖修复；其他成员仅拉取和推送分支，由当前整合窗口合并 main。必读 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
+正式打包关卡：`Assets/_Project/Scenes/Playing/Gaming.unity`，配套同名规划文件及 `Assets/_Project/Content/LevelMaps/正式关卡.json`；增量整合策划 `eb76949` 的17房间版（房间12已有内容，新增13～17）。房间9沿用main去重修复及独立16格路线，运行时/美术/工具修复不回退，不全量重建。成员应同步整合main的Scene及两份存档，不能用策划原始旧文件或缓存覆盖修复；其他成员仅拉取和推送分支，由当前整合窗口合并 main。必读 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
 
 命名MVMap独立导入图：`Assets/Scenes/MRoom2.unity` + 同名planning存档/原始mvmap文件。第二版24分类完整重导入，六平台、三基座、两曲柄、三门七保持按钮及六重生点；四个基座消费者使用断电回位，托红块平台与左竖平台共用基座。路线补齐网页占格缺口，左下平台补4格水，两排尖刺均朝上，侧梯按邻墙选左右。保留Scene/meta、默认锁色、单测试区域，不替代Gaming或加入构建。见 [地图说明](../Developer/MROOM2_IMPORT.md)、[导入API](Integration/MVMAP_OBJECT_IMPORT_API.md)。
 

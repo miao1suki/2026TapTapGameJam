@@ -42,6 +42,7 @@ namespace Project.Player
         [SerializeField, Range(0f, 1f)] private float rangeMaxAlpha = .62f;
         [SerializeField, Min(100f)] private float wheelSize = 280f;
         [SerializeField, Min(32f)] private float wheelButtonSize = 72f;
+        [SerializeField, Range(.1f, 1.5f)] private float aimToleranceCells = .65f;
 
         private PlayerInteractionSensor sensor;
         private GameObject rangeRoot;
@@ -64,6 +65,8 @@ namespace Project.Player
         private Vector2 pointerPosition;
         private IPlayerColorWheelView externalView;
         private GreenHookAbility greenHook;
+        private readonly ColorAbilityAim colorAim = new ColorAbilityAim();
+        private float aimCellWorldSize = 1f;
 
         private static Sprite circleSprite;
         private static Sprite ringSprite;
@@ -71,6 +74,8 @@ namespace Project.Player
         public string SelectedColorId => selectedColorId;
         public bool HasSelectedColor => !string.IsNullOrWhiteSpace(selectedColorId);
         public bool IsWheelOpen => wheelOpen;
+        internal Vector2 AimPointerPosition => pointerPosition;
+        public float AimToleranceWorld => Mathf.Max(.1f, aimToleranceCells) * aimCellWorldSize;
 
         public event Action<string> SelectedColorChanged;
         public event Action AbilityDeselectedByPlayer;
@@ -103,6 +108,10 @@ namespace Project.Player
         private void Awake()
         {
             sensor = GetComponent<PlayerInteractionSensor>();
+            aimCellWorldSize = Project.BlockFeatures.GridCellSizeUtility.Resolve(this);
+            var indicator = GetComponent<ColorAbilityAimIndicator>();
+            if (indicator == null) indicator = gameObject.AddComponent<ColorAbilityAimIndicator>();
+            indicator.Initialize(this, sensor);
             CreateRangeIndicator();
             Debug.Log("[PlayerColorWheel] 当前颜色能力：无", this);
         }
@@ -349,75 +358,24 @@ namespace Project.Player
                 return;
             }
 
-            if (!sensor.TryGetScreenHit(
-                    camera,
-                    pointerPosition,
-                    out RaycastHit screenHit))
+            ColorAbilityAim.Result aimResult = colorAim.Find(sensor, camera, pointerPosition,
+                selectedColorId, AimToleranceWorld, out IColorApplicationTarget colorTarget, out Vector3 hitPoint);
+            if (aimResult != ColorAbilityAim.Result.Success)
             {
-                if (TryGetPointerWorldPoint(
-                        camera,
-                        out Vector3 pointerWorldPoint) &&
-                    !IsWorldPointWithinInteractionRange(
-                        pointerWorldPoint))
-                {
-                    Debug.Log(
-                        "[PlayerColorWheel] 左键交互失败：点击位置超出交互圈。",
-                        this);
-                    ColorApplicationOutOfRange?.Invoke();
-                    AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
-                    return;
-                }
-
-                Debug.Log(
-                    "[PlayerColorWheel] 左键交互失败：没有点击到物体。",
-                    this);
-                ColorApplicationRejected?.Invoke();
-                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
-                return;
-            }
-
-            if (!IsWorldPointWithinInteractionRange(
-                    screenHit.point))
-            {
-                Debug.Log(
-                    "[PlayerColorWheel] 左键交互失败：点击位置超出交互圈。",
-                    this);
-                ColorApplicationOutOfRange?.Invoke();
-                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
-                return;
-            }
-
-            if (!sensor.TryGetScreenComponent<IColorApplicationTarget>(
-                    camera,
-                    pointerPosition,
-                    out IColorApplicationTarget colorTarget))
-            {
-                Debug.Log(
-                    "[PlayerColorWheel] 左键交互失败：点击到的物体不能接收颜色。",
-                    this);
-                ColorApplicationRejected?.Invoke();
+                if (aimResult == ColorAbilityAim.Result.OutOfRange) ColorApplicationOutOfRange?.Invoke();
+                else ColorApplicationRejected?.Invoke();
                 AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                 return;
             }
 
             Component targetComponent = colorTarget as Component;
-            if (!sensor.IsWithinRange(targetComponent))
-            {
-                Debug.Log(
-                    "[PlayerColorWheel] 左键交互失败：点击目标超出交互圈。",
-                    this);
-                ColorApplicationOutOfRange?.Invoke();
-                AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
-                return;
-            }
-
             string targetName = targetComponent != null
                 ? targetComponent.gameObject.name
                 : colorTarget.GetType().Name;
 
-            bool success = colorTarget.ApplyColor(
-                selectedColorId,
-                gameObject);
+            bool success = colorTarget is IColorApplicationHitTarget hitTarget
+                ? hitTarget.ApplyColorAt(selectedColorId, gameObject, hitPoint)
+                : colorTarget.ApplyColor(selectedColorId, gameObject);
             if (success)
             {
                 ColorApplicationSucceeded?.Invoke();
@@ -454,41 +412,6 @@ namespace Project.Player
                     AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                     break;
             }
-        }
-
-        private bool TryGetPointerWorldPoint(
-            Camera camera,
-            out Vector3 worldPoint)
-        {
-            worldPoint = default;
-            if (camera == null)
-            {
-                return false;
-            }
-
-            Ray ray = camera.ScreenPointToRay(pointerPosition);
-            Plane gameplayPlane =
-                new Plane(Vector3.forward, transform.position);
-            if (!gameplayPlane.Raycast(ray, out float enter))
-            {
-                return false;
-            }
-
-            worldPoint = ray.GetPoint(enter);
-            return true;
-        }
-
-        private bool IsWorldPointWithinInteractionRange(
-            Vector3 worldPoint)
-        {
-            if (sensor == null)
-            {
-                return false;
-            }
-
-            float range = sensor.ScanRadius;
-            return (worldPoint - transform.position).sqrMagnitude <=
-                   range * range;
         }
 
         private void EnsureCanvas()

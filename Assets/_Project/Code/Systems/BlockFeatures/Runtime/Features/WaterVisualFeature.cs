@@ -16,7 +16,7 @@ namespace Project.BlockFeatures
     /// <summary>
     /// Shared water visual bridge for all blue water-family props.
     /// </summary>
-    public abstract class WaterVisualFeature : PlayerContactFeature
+    public abstract class WaterVisualFeature : PlayerContactFeature, IColorApplicationHitTarget
     {
         [BlockParameter(
             Label = "旧版后备预制体",
@@ -101,6 +101,9 @@ namespace Project.BlockFeatures
         private GameObject steamVfxInstance;
         private float steamRemainingSeconds;
         private bool steamContinuous;
+        private Vector3 steamOrigin;
+        private Vector2 steamHalfWidthDepth;
+        public Vector3 SteamOrigin => steamOrigin;
 
         protected bool HasWaterVisual => waterVisual != null || pixelWaterVisual != null;
         protected bool IsBlueUnlocked()
@@ -144,8 +147,14 @@ namespace Project.BlockFeatures
                 return false;
             }
 
-            TriggerSteamReaction();
-            return true;
+            return TriggerSteamReaction(actor != null ? actor.transform.position : transform.position);
+        }
+
+        public bool ApplyColorAt(string colorId, GameObject actor, Vector3 hitWorldPoint)
+        {
+            return CanApplyColor(colorId, actor) &&
+                string.Equals(colorId, "red", System.StringComparison.OrdinalIgnoreCase) &&
+                TriggerSteamReaction(hitWorldPoint);
         }
 
         protected override void OnResetForRoom()
@@ -248,9 +257,13 @@ namespace Project.BlockFeatures
             pixelWaterVisual = null;
         }
 
-        private void TriggerSteamReaction()
+        private bool TriggerSteamReaction(Vector3 reference)
         {
+            if (!WaterSteamPlacement.TryFind(this, reference, GridCellWorldSize,
+                    out Vector3 surface, out Vector2 halfWidthDepth)) return false;
             StopSteamReaction();
+            steamOrigin = surface;
+            steamHalfWidthDepth = halfWidthDepth;
             steamContinuous =
                 steamMode == SteamReactionMode.Continuous;
             steamRemainingSeconds = steamContinuous
@@ -266,6 +279,7 @@ namespace Project.BlockFeatures
             }
             SpawnSteamVfx();
             ApplySteamPush();
+            return true;
         }
 
         private void UpdateSteamReaction(float deltaTime)
@@ -314,15 +328,7 @@ namespace Project.BlockFeatures
                 steamVfxPrefab,
                 transform.parent);
             steamVfxInstance.name = $"{name} Steam VFX";
-            Collider waterCollider = GetComponent<Collider>();
-            var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
-            float topY = shape != null ? shape.WorldBounds.max.y : waterCollider != null
-                ? waterCollider.bounds.max.y
-                : transform.position.y + GridCellWorldSize * .5f;
-            steamVfxInstance.transform.position = new Vector3(
-                transform.position.x,
-                topY,
-                transform.position.z);
+            steamVfxInstance.transform.position = steamOrigin;
             steamVfxInstance.transform.rotation =
                 Quaternion.identity;
         }
@@ -340,21 +346,11 @@ namespace Project.BlockFeatures
         {
             float cellSize = GridCellWorldSize;
             float height = Mathf.Max(1, steamHeightBlocks) * cellSize;
-            Collider waterCollider = GetComponent<Collider>();
-            var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
-            Bounds waterBounds = shape != null ? shape.WorldBounds : waterCollider != null
-                ? waterCollider.bounds
-                : new Bounds(
-                    transform.position,
-                    Vector3.one * cellSize);
-            Vector3 center = new Vector3(
-                waterBounds.center.x,
-                waterBounds.max.y + height * .5f,
-                waterBounds.center.z);
+            Vector3 center = steamOrigin + Vector3.up * (height * .5f);
             Vector3 halfExtents = new Vector3(
-                Mathf.Max(.05f, waterBounds.extents.x),
+                steamHalfWidthDepth.x,
                 height * .5f,
-                Mathf.Max(.05f, waterBounds.extents.z));
+                steamHalfWidthDepth.y);
             int count = Physics.OverlapBoxNonAlloc(
                 center,
                 halfExtents,

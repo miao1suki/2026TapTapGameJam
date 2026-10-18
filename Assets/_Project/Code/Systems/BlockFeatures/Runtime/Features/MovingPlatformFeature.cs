@@ -36,7 +36,8 @@ namespace Project.BlockFeatures
         [InspectorName("关闭")] Disabled = 0,
         [InspectorName("收到充能时")] Powered = 1,
         [InspectorName("开始移动时")] MovementStarted = 2,
-        [InspectorName("到达路径端点时")] EndpointReached = 3
+        [InspectorName("到达路径端点时")] EndpointReached = 3,
+        [InspectorName("解除充能时")] Unpowered = 4
     }
 
     [BlockFeature(
@@ -196,25 +197,42 @@ namespace Project.BlockFeatures
         [SerializeField] private PlatformSignalLogic signalLogic =
             PlatformSignalLogic.Any;
 
-        [BlockParameter(Label = "Timeline触发", Group = "可选演出", Order = -2,
+        [BlockParameter(Label = "Timeline触发", Group = "可选演出", Order = -3,
             Tooltip = "默认关闭。复用门的相机Timeline，聚焦本平台；开始移动/到端点按状态边沿触发，不会每个物理步重复。")]
         [SerializeField] private MovingPlatformTimelineTrigger timelineTrigger;
+        [BlockParameter(Label = "演出顺序", Group = "可选演出", Order = -2,
+            Tooltip = "绑定同一基座的多个平台按数值从小到大播放镜头；同序号按层级顺序。平台实体仍按既有信号同时运动。",
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3, 4 })]
+        [SerializeField] private int timelineOrder;
         [BlockParameter(Label = "演出锁定玩家", Group = "可选演出", Order = -1,
-            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3, 4 })]
         [SerializeField] private bool lockPlayerDuringTimeline = true;
         [BlockParameter(Label = "镜头移动时间", Group = "可选演出", Order = 0,
-            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3, 4 })]
         [SerializeField, Min(.1f)] private float cameraMoveDuration = 1f;
         [BlockParameter(Label = "镜头停留时间", Group = "可选演出", Order = 1,
-            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3, 4 })]
         [SerializeField, Min(0f)] private float cameraHoldDuration = 1.2f;
         [BlockParameter(Label = "镜头返回时间", Group = "可选演出", Order = 2,
-            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3, 4 })]
         [SerializeField, Min(0f)] private float cameraReturnDuration = .7f;
         private MechanismCameraShot cameraShot;
         private bool previousTimelinePower, previousTimelineMoving, reachedEndpoint;
+        private MechanismBaseFeature timelineSource;
+        private readonly List<MonoBehaviour> subscribedControls = new List<MonoBehaviour>();
         public MovingPlatformTimelineTrigger TimelineTrigger => timelineTrigger;
+        public int TimelineOrder => timelineOrder;
         public bool IsTimelinePlaying => cameraShot != null && cameraShot.IsPlaying;
+        internal bool IsTimelineAvailable => CanRunFeature && timelineTrigger != MovingPlatformTimelineTrigger.Disabled;
+        internal MechanismBaseFeature TimelineBase
+        {
+            get
+            {
+                if (driveMode != MovingPlatformDriveMode.SignalControlled) return null;
+                foreach (var control in subscribedControls) if (control is MechanismBaseFeature source) return source;
+                return null;
+            }
+        }
 
         private readonly HashSet<PlayerController> carriedPlayers =
             new HashSet<PlayerController>();
@@ -333,12 +351,11 @@ namespace Project.BlockFeatures
                 if (IsTimelinePlaying) ResetTimeline();
             }
             else if ((timelineTrigger == MovingPlatformTimelineTrigger.Powered && powered && !previousTimelinePower) ||
+                (timelineTrigger == MovingPlatformTimelineTrigger.Unpowered && !powered && previousTimelinePower) ||
                 (timelineTrigger == MovingPlatformTimelineTrigger.MovementStarted && moved && !previousTimelineMoving) ||
                 (timelineTrigger == MovingPlatformTimelineTrigger.EndpointReached && reachedEndpoint))
             {
-                cameraShot ??= new MechanismCameraShot(this);
-                cameraShot.TryPlay(null, Vector3.zero, cameraMoveDuration, cameraHoldDuration,
-                    cameraReturnDuration, lockPlayerDuringTimeline);
+                MechanismTimelineSequence.Request(this);
             }
             previousTimelinePower = powered;
             previousTimelineMoving = moved;
@@ -348,7 +365,35 @@ namespace Project.BlockFeatures
         {
             cameraShot?.Dispose();
             cameraShot = null;
+            timelineSource = null;
             previousTimelinePower = previousTimelineMoving = reachedEndpoint = false;
+        }
+
+        internal bool TakeSignalTimelineEdge()
+        {
+            bool powered = CanRunFeature && driveMode == MovingPlatformDriveMode.SignalControlled && active;
+            bool request = CanRunFeature &&
+                (timelineTrigger == MovingPlatformTimelineTrigger.Powered && powered && !previousTimelinePower ||
+                 timelineTrigger == MovingPlatformTimelineTrigger.Unpowered && !powered && previousTimelinePower);
+            // Claim even unselected edges, so FirstOnly cannot replay skipped platforms in FixedUpdate.
+            previousTimelinePower = powered;
+            return request;
+        }
+
+        internal void RequestTimelineFrom(MechanismBaseFeature source)
+        {
+            if (!IsTimelineAvailable || IsTimelinePlaying) return;
+            cameraShot ??= new MechanismCameraShot(this);
+            if (cameraShot.TryPlay(null, Vector3.zero, cameraMoveDuration, cameraHoldDuration,
+                cameraReturnDuration, lockPlayerDuringTimeline, sequenceSource: source,
+                sequenceVersion: source != null ? source.TimelineSequenceVersion : 0, sequenceOrder: timelineOrder))
+                timelineSource = source;
+        }
+
+        internal void CancelTimelineFrom(MechanismBaseFeature source)
+        {
+            if (timelineSource != source) return;
+            cameraShot?.Dispose(); cameraShot = null; timelineSource = null;
         }
 
         private void SetMovementAudio(bool moving)
@@ -474,7 +519,9 @@ namespace Project.BlockFeatures
                      startsActive;
             carriedPlayers.Clear();
             RestoreOrigin();
+            SubscribeControls();
             EvaluateLinkedControls();
+            previousTimelinePower = CanRunFeature && driveMode == MovingPlatformDriveMode.SignalControlled && active;
         }
 
         public override void CollectDebugValues(
@@ -732,7 +779,8 @@ namespace Project.BlockFeatures
 
         private void SubscribeControls()
         {
-            if (linkedControls == null)
+            UnsubscribeControls();
+            if (driveMode != MovingPlatformDriveMode.SignalControlled || linkedControls == null)
             {
                 return;
             }
@@ -741,31 +789,31 @@ namespace Project.BlockFeatures
                  index < linkedControls.Length;
                  index++)
             {
-                if (linkedControls[index] is
+                if (linkedControls[index] != null && !subscribedControls.Contains(linkedControls[index]) && linkedControls[index] is
                     IMechanismSignalSource source)
                 {
                     source.SignalChanged += OnControlSignalChanged;
+                    subscribedControls.Add(linkedControls[index]);
+                    if (source is MechanismBaseFeature mechanismBase) MechanismTimelineSequence.Register(mechanismBase, this);
                 }
             }
         }
 
         private void UnsubscribeControls()
         {
-            if (linkedControls == null)
-            {
-                return;
-            }
-
+            ResetTimeline();
             for (int index = 0;
-                 index < linkedControls.Length;
+                 index < subscribedControls.Count;
                  index++)
             {
-                if (linkedControls[index] is
+                if (subscribedControls[index] is
                     IMechanismSignalSource source)
                 {
                     source.SignalChanged -= OnControlSignalChanged;
+                    if (source is MechanismBaseFeature mechanismBase) MechanismTimelineSequence.Unregister(mechanismBase, this);
                 }
             }
+            subscribedControls.Clear();
         }
 
         private void OnControlSignalChanged(bool activeValue)

@@ -29,6 +29,18 @@ namespace Project.Items
         private Tween appearTween;
         private Tween attractTween;
         private Vector3 initialScale;
+        [SerializeField, Min(0f)] private float idleHoverPixels = 2f;
+        [SerializeField, Min(.2f)] private float idleHoverPeriod = 2f;
+        [SerializeField, Min(.01f)] private float idleHoverBlendSeconds = .2f;
+        private Transform idleVisual;
+        private Vector3 idleOffsetLocal, lastIdlePosition;
+        private float idleWeight, idleTime;
+        protected virtual bool UsesIdleHover => false;
+        // Shared owns animation, not the higher-level grid/artwork dependency.
+        // A participating item supplies its authored pixel-to-world conversion.
+        protected virtual float IdleHoverPixelWorldSize => 0f;
+        public float IdleHoverOffsetWorld { get; private set; }
+        public float IdleHoverAmplitudeWorld => IdleHoverPixelWorldSize * idleHoverPixels;
 
         public bool CollectionRequested => collectionRequested;
         public bool CollectionFinished => collectionFinished;
@@ -39,6 +51,7 @@ namespace Project.Items
             attractionRequested = attractionFinished = false;
             CollectionActor = null;
             ResetItemState();
+            idleTime = idleWeight = 0f;
         }
         public bool AttractionRequested => attractionRequested;
         public bool AttractionFinished => attractionFinished;
@@ -84,6 +97,7 @@ namespace Project.Items
             attractionFinished = false;
             CollectionActor = null;
             ResetItemState();
+            idleTime = idleWeight = 0f;
         }
 
         protected virtual void OnDisable()
@@ -114,6 +128,7 @@ namespace Project.Items
             }
 
             collectionRequested = true;
+            ReleaseIdleVisual();
             attractTween?.Kill(false);
             attractTween = null;
             CollectionActor = actor != null
@@ -187,10 +202,51 @@ namespace Project.Items
         /// </summary>
         protected virtual void StopItemAnimations()
         {
+            ReleaseIdleVisual();
+            idleTime = idleWeight = 0f;
             appearTween?.Kill(false);
             attractTween?.Kill(false);
             appearTween = null;
             attractTween = null;
+        }
+
+        // The artwork presenter lays out its SpriteRenderer first. Only add a
+        // world-space translation afterwards; never scale the art or move the
+        // item's trigger/root while waiting to be collected.
+        protected virtual void LateUpdate()
+        {
+            if (!Application.isPlaying || !UsesIdleHover || collectionRequested || collectionFinished) return;
+            if (idleVisual == null)
+            {
+                var sprite = GetComponentInChildren<SpriteRenderer>(true);
+                if (sprite == null || sprite.transform == transform) return;
+                idleVisual = sprite.transform;
+            }
+            RemoveIdleOffset();
+            idleTime += Time.deltaTime;
+            idleWeight = Mathf.MoveTowards(idleWeight, attractionRequested ? 0f : 1f,
+                Time.deltaTime / Mathf.Max(.01f,idleHoverBlendSeconds));
+            IdleHoverOffsetWorld = Mathf.Sin(idleTime * (Mathf.PI * 2f / Mathf.Max(.2f,idleHoverPeriod))) *
+                IdleHoverAmplitudeWorld * Mathf.SmoothStep(0f,1f,idleWeight);
+            idleOffsetLocal = idleVisual.parent.InverseTransformVector(Vector3.up * IdleHoverOffsetWorld);
+            idleVisual.localPosition += idleOffsetLocal;
+            lastIdlePosition = idleVisual.localPosition;
+        }
+
+        private void RemoveIdleOffset()
+        {
+            // A formal artwork refresh may have already restored the layout.
+            // Do not subtract the old offset twice or accumulate upward drift.
+            if (idleVisual != null && (idleVisual.localPosition - lastIdlePosition).sqrMagnitude < .0000000001f)
+                idleVisual.localPosition -= idleOffsetLocal;
+            idleOffsetLocal = Vector3.zero;
+            IdleHoverOffsetWorld = 0f;
+        }
+
+        private void ReleaseIdleVisual()
+        {
+            RemoveIdleOffset();
+            idleVisual = null;
         }
 
         protected virtual void OnCollectionStarted()

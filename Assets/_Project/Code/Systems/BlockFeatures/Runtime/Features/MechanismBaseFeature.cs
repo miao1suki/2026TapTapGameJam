@@ -3,10 +3,25 @@ using System.Collections.Generic;
 using Project.GreenHook;
 using Project.Audio;
 using Project.Player;
+using Project.Mechanisms;
 using UnityEngine;
 
 namespace Project.BlockFeatures
 {
+    public enum MechanismBaseTimelineTrigger
+    {
+        [InspectorName("关闭")] Disabled = 0,
+        [InspectorName("收到充能时")] Powered = 1,
+        [InspectorName("解除充能时")] Unpowered = 2,
+        [InspectorName("充能与断电时")] SignalChanged = 3
+    }
+
+    public enum MechanismPlatformTimelineMode
+    {
+        [InspectorName("全部按顺序播放")] AllOrdered = 0,
+        [InspectorName("只播放首个平台")] FirstOnly = 1
+    }
+
     [BlockFeature(
         DisplayName = "机关基座",
         DefaultColorId = "red",
@@ -47,6 +62,33 @@ namespace Project.BlockFeatures
             Tooltip = "开启后基座会向下落至实体支撑面；玩家不能推动。关闭后保持悬浮位置，仍可搬运与绿钩子拉动。")]
         [SerializeField] private bool useGravity = true;
 
+        [BlockParameter(Label = "Timeline触发", Group = "可选演出", Order = -3,
+            Tooltip = "默认关闭。真实充能/断电边沿触发基座镜头；绑定平台同时开启演出时先看基座，再按平台演出顺序播放。不会改变供能与平台运动。")]
+        [SerializeField] private MechanismBaseTimelineTrigger timelineTrigger;
+        [BlockParameter(Label = "平台播放方式", Group = "可选演出", Order = -2,
+            Tooltip = "仅影响绑定平台已启用的镜头，不会自动开启平台演出。首个平台取演出顺序最小的有效平台。")]
+        [SerializeField] private MechanismPlatformTimelineMode platformTimelineMode;
+        [BlockParameter(Label = "演出锁定玩家", Group = "可选演出", Order = -1,
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+        [SerializeField] private bool lockPlayerDuringTimeline = true;
+        [BlockParameter(Label = "镜头移动时间", Group = "可选演出", Order = 0,
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+        [SerializeField, Min(.1f)] private float cameraMoveDuration = 1f;
+        [BlockParameter(Label = "镜头停留时间", Group = "可选演出", Order = 1,
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+        [SerializeField, Min(0f)] private float cameraHoldDuration = 1.2f;
+        [BlockParameter(Label = "镜头返回时间", Group = "可选演出", Order = 2,
+            VisibleWhenField = "timelineTrigger", VisibleWhenValues = new[] { 1, 2, 3 })]
+        [SerializeField, Min(0f)] private float cameraReturnDuration = .7f;
+        private MechanismCameraShot cameraShot;
+        private int timelineSequenceVersion;
+        private bool suppressSignalTimeline;
+        private bool suppressNextScanTimeline;
+        public MechanismBaseTimelineTrigger TimelineTrigger => timelineTrigger;
+        public MechanismPlatformTimelineMode PlatformTimelineMode => platformTimelineMode;
+        public bool IsTimelinePlaying => cameraShot != null && cameraShot.IsPlaying;
+        internal int TimelineSequenceVersion => timelineSequenceVersion;
+
         private readonly Collider[] overlapBuffer = new Collider[32];
         private bool powered;
         private bool energyDetected;
@@ -70,6 +112,7 @@ namespace Project.BlockFeatures
 
         protected override void OnAttach()
         {
+            suppressNextScanTimeline = false;
             motionBody = GetComponent<Rigidbody>();
             if (motionBody == null) motionBody = gameObject.AddComponent<Rigidbody>();
             supportShape = GetComponent<Collider>();
@@ -87,6 +130,8 @@ namespace Project.BlockFeatures
 
         protected override void OnDetach()
         {
+            CancelTimelineSequence();
+            suppressSignalTimeline = true;
             VineGrowthLift.Cancel(motionBody);
             GetComponent<CarryableFeature>()?.CancelCarry();
             SetCarrySuspended(false);
@@ -98,21 +143,28 @@ namespace Project.BlockFeatures
                 motionBody.useGravity = false;
             }
             SetPowered(false);
+            suppressSignalTimeline = false;
         }
 
         protected override void OnTick(float deltaTime)
         {
+            if (timelineTrigger == MechanismBaseTimelineTrigger.Disabled && IsTimelinePlaying)
+            { cameraShot.Dispose(); cameraShot = null; }
             if (!carrySuspended) ScanForEnergy();
         }
 
         protected override void OnResetForRoom()
         {
+            CancelTimelineSequence();
+            suppressSignalTimeline = true;
             VineGrowthLift.Cancel(motionBody);
             SetCarrySuspended(false);
             hookMotion?.ResetForRoom();
             RefreshGravityMotion();
             energyDetected = false;
             SetPowered(false);
+            suppressSignalTimeline = false;
+            suppressNextScanTimeline = true;
         }
 
         public void SetCarrySuspended(bool suspended)
@@ -215,6 +267,8 @@ namespace Project.BlockFeatures
                 IsSignalActive ? "开启" : "关闭"));
             values.Add(new BlockDebugValue("搬运状态", carrySuspended ? "搬运中" : "未搬运"));
             values.Add(new BlockDebugValue("重力", useGravity ? "开启" : "关闭"));
+            values.Add(new BlockDebugValue("可选Timeline", IsTimelinePlaying ? "排队或播放中" :
+                timelineTrigger == MechanismBaseTimelineTrigger.Disabled ? "关闭" : "等待触发"));
         }
 
         private void ScanForEnergy()
@@ -248,7 +302,11 @@ namespace Project.BlockFeatures
             }
 
             energyDetected = found;
+            bool wasSuppressed = suppressSignalTimeline;
+            suppressSignalTimeline |= suppressNextScanTimeline;
+            suppressNextScanTimeline = false;
             SetPowered(found);
+            suppressSignalTimeline = wasSuppressed;
         }
 
         /// <summary>Read-only source-specific contact; another red cube powering this base is not a match.</summary>
@@ -303,7 +361,29 @@ namespace Project.BlockFeatures
             powered = value;
             if (Application.isPlaying)
                 AudioCuePlayer.Play(value ? AudioCueIds.MachineStart : AudioCueIds.MachineStop);
+            if (!suppressSignalTimeline) CancelTimelineSequence();
             SignalChanged?.Invoke(IsSignalActive);
+            if (!suppressSignalTimeline && CanRunFeature && Application.isPlaying)
+                MechanismTimelineSequence.SignalChanged(this, IsSignalActive);
+            else MechanismTimelineSequence.SynchronizeSignalState(this);
+        }
+
+        internal void RequestSignalTimeline(bool value)
+        {
+            if (timelineTrigger == MechanismBaseTimelineTrigger.Disabled || !CanRunFeature ||
+                (value && timelineTrigger == MechanismBaseTimelineTrigger.Unpowered) ||
+                (!value && timelineTrigger == MechanismBaseTimelineTrigger.Powered)) return;
+            cameraShot ??= new MechanismCameraShot(this);
+            cameraShot.TryPlay(null, Vector3.zero, cameraMoveDuration, cameraHoldDuration, cameraReturnDuration,
+                lockPlayerDuringTimeline, sequenceSource: this, sequenceVersion: timelineSequenceVersion,
+                sequenceOrder: int.MinValue);
+        }
+
+        private void CancelTimelineSequence()
+        {
+            cameraShot?.Dispose(); cameraShot = null;
+            timelineSequenceVersion++;
+            MechanismTimelineSequence.Cancel(this);
         }
     }
 }

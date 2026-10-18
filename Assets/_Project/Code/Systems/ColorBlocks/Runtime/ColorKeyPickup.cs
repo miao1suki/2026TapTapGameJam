@@ -3,13 +3,15 @@ using System.Collections;
 using Project.Audio;
 using Project.Player;
 using Project.Items;
+using Project.BlockFeatures;
+using Project.ObjectArtwork;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
 namespace Project.ColorBlocks
 {
-    [DisallowMultipleComponent]
+    [DisallowMultipleComponent, DefaultExecutionOrder(1200)]
     [RequireComponent(typeof(Collider))]
     public sealed class ColorKeyPickup : DropItemBase
     {
@@ -29,9 +31,24 @@ namespace Project.ColorBlocks
         private float originalFieldOfView;
         private float nextPlayerSearchTime;
         private IDisposable controlLockHandle;
+        private IGridCellSizeProvider hoverGrid;
+        private MonoBehaviour hoverGridOwner;
         public ColorKeyUnlockResult UnlockResult { get; private set; }
 
         public string ColorTypeId => colorTypeId;
+        protected override bool UsesIdleHover => true;
+        protected override float IdleHoverPixelWorldSize => GridArtworkMetrics.PixelWorldSize(
+            hoverGridOwner != null ? hoverGrid.CellWorldSize : GridCellSizeUtility.FallbackCellWorldSize);
+
+        private void OnTransformParentChanged() => CacheHoverGrid();
+        private void CacheHoverGrid()
+        {
+            hoverGrid=null; hoverGridOwner=null;
+            foreach (var component in GetComponentsInParent<MonoBehaviour>(true))
+                if (component is IGridCellSizeProvider provider && provider.CellWorldSize>0f &&
+                    !float.IsNaN(provider.CellWorldSize))
+                { hoverGrid=provider; hoverGridOwner=component; break; }
+        }
 
         private void Reset()
         {
@@ -114,6 +131,7 @@ namespace Project.ColorBlocks
         protected override void ResetItemState()
         {
             base.ResetItemState();
+            CacheHoverGrid();
             IsCollectionVisualComplete = false;
             UnlockResult = ColorKeyUnlockResult.None;
             ReleasePlayerControlLock();

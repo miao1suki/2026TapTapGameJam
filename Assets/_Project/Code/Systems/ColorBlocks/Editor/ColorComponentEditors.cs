@@ -98,6 +98,12 @@ namespace Project.ColorBlocks.Editor
                 "拾取后隐藏"));
             root.Add(pickup);
 
+            Foldout hover = ProjectInspectorUtility.CreateFoldout("待机悬浮（仅外观）", false);
+            hover.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"idleHoverPixels","上下振幅（美术像素）"));
+            hover.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"idleHoverPeriod","往返周期（秒）"));
+            hover.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"idleHoverBlendSeconds","启停缓动（秒）"));
+            root.Add(hover);
+
             Foldout timing = ProjectInspectorUtility.CreateFoldout(
                 "演出时序",
                 true);

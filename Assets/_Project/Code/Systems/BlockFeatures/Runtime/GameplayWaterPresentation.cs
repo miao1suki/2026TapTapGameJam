@@ -90,19 +90,68 @@ namespace Project.BlockFeatures
             parts.Clear(); meshes.Clear();
         }
 
-        private bool ContainsWater(Vector3 world)
+        private bool ContainsWater(Vector3 world) => ContainsWater(gameObject.scene, world);
+
+        public static bool ContainsWater(UnityEngine.SceneManagement.Scene scene, Vector3 world) =>
+            ContainsWater(scene, world, false, out _);
+
+        // Click-time steam placement also needs the exact containing rectangle's top,
+        // not the merged owner's bounding-box top. Existing mesh adjacency keeps its
+        // inexpensive boolean path and does not traverse volume lists per cell.
+        public static bool ContainsWater(UnityEngine.SceneManagement.Scene scene, Vector3 world, out float topY) =>
+            ContainsWater(scene, world, true, out topY);
+
+        private static bool ContainsWater(UnityEngine.SceneManagement.Scene scene, Vector3 world,
+            bool resolveTop, out float topY)
         {
+            topY = float.NegativeInfinity;
+            bool found = false;
             foreach (var water in active)
             {
-                if (water == null || water.owner == null || water.gameObject.scene != gameObject.scene) continue;
+                if (water == null || water.owner == null || !water.isActiveAndEnabled ||
+                    !water.owner.isActiveAndEnabled || water.gameObject.scene != scene) continue;
                 Bounds b = water.Volume;
+                float epsilon = water.CellSize * .001f;
+                if (world.x >= b.min.x + epsilon && world.x <= b.max.x - epsilon &&
+                    world.y >= b.min.y + epsilon && world.y <= b.max.y - epsilon &&
+                    world.z >= b.min.z - epsilon && world.z <= b.max.z + epsilon &&
+                    (water.shape == null || water.shape.ContainsWorldPoint(world)))
+                {
+                    if (!resolveTop) return true;
+                    if (water.shape == null)
+                    {
+                        if (water.volumeCollider != null && !water.volumeCollider.enabled) continue;
+                        found = true;
+                        topY = Mathf.Max(topY, b.max.y);
+                    }
+                    else foreach (BoxCollider volume in water.shape.Volumes)
+                    {
+                        if (volume == null || !volume.enabled || !volume.bounds.Contains(world)) continue;
+                        found = true;
+                        topY = Mathf.Max(topY, volume.bounds.max.y);
+                    }
+                }
+            }
+            return found;
+        }
+
+        // Overlapping water/current/buoyancy volumes keep separate gameplay sources, but
+        // one deterministic renderer owns each surface cell. Re-evaluated only on rebuild.
+        private bool OwnsSurfaceCell(Vector3 world)
+        {
+            int id = GetInstanceID();
+            foreach (var other in active)
+            {
+                if (other == null || other == this || other.owner == null ||
+                    other.gameObject.scene != gameObject.scene || other.GetInstanceID() >= id) continue;
+                Bounds b = other.Volume;
                 float epsilon = CellSize * .001f;
                 if (world.x >= b.min.x + epsilon && world.x <= b.max.x - epsilon &&
                     world.y >= b.min.y + epsilon && world.y <= b.max.y - epsilon &&
                     world.z >= b.min.z - epsilon && world.z <= b.max.z + epsilon &&
-                    (water.shape == null || water.shape.ContainsWorldPoint(world))) return true;
+                    (other.shape == null || other.shape.ContainsWorldPoint(world))) return false;
             }
-            return false;
+            return true;
         }
 
         private void Rebuild()
@@ -127,6 +176,7 @@ namespace Project.BlockFeatures
                     Vector3 center = (min + max) * .5f; center.z = b.center.z;
                     if (shape != null && !shape.ContainsWorldPoint(center)) continue;
                     if (WaterCellVisibility.Covered(owner, center, cell)) continue;
+                    if (!OwnsSurfaceCell(center)) continue;
                     visibleCells.Add(new RectInt(x, rows - y - 1, 1, 1));
                     int kind = !ContainsWater(center + Vector3.up * cell) ? 0
                         : !ContainsWater(center + Vector3.up * cell * 2f) ? 1 : 2;
@@ -147,8 +197,11 @@ namespace Project.BlockFeatures
                     CreateMeshPart(new[] { "Water Surface", "Water Body", "Water Interior" }[kind],
                         vertices[kind], uvs[kind], triangles[kind], settings.tileMaterials[kind], -100, settings.tiles[kind].texture);
 
-            var front = CreateMeshPart("Water Refraction", frontVertices, frontUvs, frontTriangles, settings.filterMaterial, 100, Texture2D.whiteTexture);
-            front.AddComponent<WaterUnderlayCaptureRequester>();
+            if (frontVertices.Count > 0)
+            {
+                var front = CreateMeshPart("Water Refraction", frontVertices, frontUvs, frontTriangles, settings.filterMaterial, 100, Texture2D.whiteTexture);
+                front.AddComponent<WaterUnderlayCaptureRequester>();
+            }
             if (neutralFilter != null && originalNeutralMesh != null)
             {
                 Bounds localBounds = shape != null ? shape.LocalBounds : originalNeutralMesh.bounds;

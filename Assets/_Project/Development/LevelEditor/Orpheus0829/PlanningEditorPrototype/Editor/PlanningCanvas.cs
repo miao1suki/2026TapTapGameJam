@@ -444,6 +444,8 @@ namespace PlanningEditorPrototype
             var replacement = box.Clone();
             ApplyDetailSelection(replacement);
             if (!CanEditPlacement(replacement)) return false;
+            if (!CanPlaceWaterLayer(document.rooms.Find(r => ReferenceEquals(r.boxes, boxes)), replacement,
+                    new Vector2Int(replacement.x, replacement.y), box)) return false;
             ApplyDetailSelection(box);
             NotifyDocumentChanged();
             SelectionChanged?.Invoke();
@@ -1274,6 +1276,8 @@ namespace PlanningEditorPrototype
             EndPointerAction();
             isPlacingRoom = false;
             mode = value;
+            waterPreviewCells.Clear();
+            waterPreviewOwners.Clear();
             selectedBoxId = null;
             mergeSelection.Clear();
             UpdateDetailPreviewImages();
@@ -2979,6 +2983,7 @@ namespace PlanningEditorPrototype
                 allowed.y,
                 allowed.yMax - movingBox.height);
             if (!CanPlaceLocalRect(room, new RectInt(targetX, targetY, movingBox.width, movingBox.height))) return;
+            if (!CanPlaceWaterLayer(room, movingBox, new Vector2Int(targetX, targetY))) return;
             movingBox.x = targetX; movingBox.y = targetY;
             UpdateDetailPreviewImages();
             MarkDirtyRepaint();
@@ -3036,6 +3041,7 @@ namespace PlanningEditorPrototype
                 if (!PrepareDoorPlacement(room, box, allowed)) return;
                 if (!CanPlaceLocalRect(room, new RectInt(box.x, box.y, box.width, box.height)))
                 { StatusChanged?.Invoke("选区超出当前房间或通道占格。"); return; }
+                if (!CanPlaceWaterLayer(room, box, new Vector2Int(box.x, box.y))) return;
                 room.boxes.Add(box);
                 if (PlanningDoorUtility.IsDoor(box)) PlanningDoorUtility.AddButton(room.boxes, box, allowed, c => CanPlaceLocalRect(room, new RectInt(c, Vector2Int.one)));
                 selectedBoxId = box.id;
@@ -3114,6 +3120,7 @@ namespace PlanningEditorPrototype
                 Vector2Int delta = CellAt(position) - CellAt(movingBoxStart);
                 Vector2Int target = movingBoxOrigin + delta;
                 if (owner != null && !CanPlaceLocalRect(owner, new RectInt(target.x, target.y, movingBox.width, movingBox.height))) return;
+                if (!CanPlaceWaterLayer(owner, movingBox, target)) return;
                 movingBox.x = target.x; movingBox.y = target.y;
                 UpdateDetailPreviewImages(); MarkDirtyRepaint(); return;
             }
@@ -3190,6 +3197,7 @@ namespace PlanningEditorPrototype
                 RectInt allowed = owner.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
                 if (owner.isConnector) allowed = GetConnectorDetailBounds(owner);
                 if (!PrepareDoorPlacement(owner, box, allowed)) return;
+                if (!CanPlaceWaterLayer(owner, box, new Vector2Int(box.x, box.y))) return;
                 owner.boxes.Add(box);
                 if (PlanningDoorUtility.IsDoor(box)) PlanningDoorUtility.AddButton(owner.boxes, box, allowed, c => CanPlaceLocalRect(owner, new RectInt(c, Vector2Int.one)));
             }

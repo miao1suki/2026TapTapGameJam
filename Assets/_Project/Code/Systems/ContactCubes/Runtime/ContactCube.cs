@@ -25,8 +25,11 @@ namespace Project.ContactCubes
         [SerializeField, Min(.001f), InspectorName("接触容差（格）")] private float contactToleranceCells = .01f;
         [SerializeField, Min(1), InspectorName("水柱射程（格）")] private float jetLengthCells = 6f;
         [SerializeField, Min(.05f), InspectorName("水柱宽度（格）")] private float jetWidthCells = .5f;
-        [SerializeField, Min(0), InspectorName("水柱推动速度")] private float jetSpeed = 5f;
-        [SerializeField, InspectorName("水柱材质")] private Material jetMaterial;
+        [SerializeField, Min(0), InspectorName("水柱推动速度（格/秒）")] private float jetSpeed = 5f;
+        [SerializeField, Min(0), InspectorName("玩家推动倍率")] private float jetPlayerPushMultiplier = 1.6f;
+        [SerializeField, Range(.2f,4f), InspectorName("气泡密度（排/格）")] private float jetBubbleDensity = 2.5f;
+        [SerializeField, Range(.1f,12f), InspectorName("气泡速度（格/秒）")] private float jetBubbleSpeed = 6f;
+        [SerializeField, HideInInspector] private Material jetMaterial; // Legacy serialized reference, formal visuals use WaterPresentation.
         private Collider[] hits = new Collider[32];
         private readonly HashSet<ContactCube> neighbours = new HashSet<ContactCube>();
         // Real contact pairs may have asymmetric/non-default contact offsets.
@@ -64,6 +67,7 @@ namespace Project.ContactCubes
             IsWithinContactShell(red, contactToleranceCells * cellSize);
         public int Length { get; private set; }
         public int MaximumLength => maximumLength;
+        public float CellWorldSize => cellSize;
         public CubeReactionState State { get; private set; }
         public Vector3 GrowthDirection => transform.TransformDirection(localGrowthDirection).normalized;
         public event Action<CubeReactionState> StateChanged;
@@ -282,7 +286,8 @@ namespace Project.ContactCubes
                     go.transform.SetParent(transform, false);
                     jet = go.AddComponent<CubeWaterJet>(); jets[neighbour] = jet;
                 }
-                jet.Configure(this, neighbour, jetLengthCells * cellSize, jetWidthCells * cellSize, jetSpeed, jetMaterial);
+                jet.Configure(this, neighbour, jetLengthCells * cellSize, jetWidthCells * cellSize, jetSpeed * cellSize, jetMaterial,
+                    jetPlayerPushMultiplier,jetBubbleDensity,jetBubbleSpeed);
             }
             staleJets.Clear();
             foreach (var pair in jets) if (pair.Key == null || !neighbours.Contains(pair.Key) || !pair.Key.isActiveAndEnabled) staleJets.Add(pair.Key);

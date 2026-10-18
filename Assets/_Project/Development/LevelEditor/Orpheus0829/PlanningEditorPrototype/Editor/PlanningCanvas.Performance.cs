@@ -91,7 +91,7 @@ namespace PlanningEditorPrototype
         {
             PlanningShapeUtility.Invalidate();
             boxPreviewCache.Clear(); pendingBoxPreviews.Clear();
-            artworkPreviewCache.Clear(); waterPreviewCells.Clear();
+            artworkPreviewCache.Clear(); waterPreviewCells.Clear(); waterPreviewOwners.Clear();
             ownerPreviewCache.Clear();
         }
 

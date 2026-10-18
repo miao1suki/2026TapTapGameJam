@@ -91,6 +91,9 @@ MonoBehaviour:
   jetLengthCells: 6
   jetWidthCells: 0.5
   jetSpeed: 5
+  jetPlayerPushMultiplier: 1.6
+  jetBubbleDensity: 2.5
+  jetBubbleSpeed: 6
   jetMaterial: {fileID: 2100000, guid: 6e08f148c21fc1342be5aeb699629639, type: 2}
 --- !u!114 &6505628216208801715
 MonoBehaviour:

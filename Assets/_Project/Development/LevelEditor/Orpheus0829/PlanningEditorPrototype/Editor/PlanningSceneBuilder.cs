@@ -300,6 +300,8 @@ namespace PlanningEditorPrototype
 
             var existingCells = new HashSet<Vector2Int>();
             var existingWaterCells = new HashSet<Vector2Int>();
+            var existingWaterLayers = new Dictionary<string, HashSet<Vector2Int>>();
+            var existingLavaCells = new HashSet<Vector2Int>();
             IReadOnlyList<LevelEditorPlacedBlock> existingBlocks =
                 ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
             for (int index = 0; index < existingBlocks.Count; index++)
@@ -313,14 +315,53 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
-                var externalLayer = block.GetComponent<Project.BlockFeatures.WaterVisualFeature>() != null ? existingWaterCells : existingCells;
+                var waterFeature = block.GetComponent<WaterVisualFeature>();
+                bool isLava = block.GetComponent<LavaHazardFeature>() != null;
+                var externalLayer = waterFeature != null ? PlanningWaterLayerUtility.Layer(existingWaterLayers,
+                    waterFeature.GetType().FullName) : existingCells;
                 for(int x=block.Cell.x;x<block.Cell.x+block.SizeCells.x;x++)
                     for(int y=block.Cell.y;y<block.Cell.y+block.SizeCells.y;y++)
-                        if (block.ContainsCell(new Vector2Int(x,y))) externalLayer.Add(new Vector2Int(x,-y-1));
+                        if (block.ContainsCell(new Vector2Int(x,y)))
+                        {
+                            var cell = new Vector2Int(x,-y-1);
+                            externalLayer.Add(cell);
+                            if (waterFeature != null) existingWaterCells.Add(cell);
+                            if (isLava) existingLavaCells.Add(cell);
+                        }
+            }
+
+            // Validate before staging or replacing any author object. A water/lava conflict
+            // must not silently drop part of an irregular water volume during generation.
+            var waterValidation = new List<(PlanningBox box, Vector2Int origin)>();
+            foreach (var layout in layouts)
+                foreach (var box in layout.Room.boxes)
+                    waterValidation.Add((box, new Vector2Int(layout.OffsetX, layout.OffsetY)));
+            foreach (var box in assemblyPatches) waterValidation.Add((box, Vector2Int.zero));
+            if (connectRooms)
+                foreach (var connector in rooms)
+                {
+                    if (connector == null || !connector.isConnector) continue;
+                    var path = PlanningLayoutUtility.GetConnectorAssemblyPath(rooms, connector,
+                        worldBlockCellWidth, worldBlockCellHeight);
+                    if (path.Count == 0) continue;
+                    foreach (var box in connector.boxes) waterValidation.Add((box, path[0]));
+                }
+            if (!PlanningWaterLayerUtility.TryValidate(waterValidation, palette, out message)) return false;
+            foreach (var item in waterValidation)
+            {
+                var opposite = PlanningWaterLayerUtility.IsWater(item.box, palette) ? existingLavaCells :
+                    PlanningWaterLayerUtility.IsLava(item.box, palette) ? existingWaterCells : null;
+                if (opposite == null || opposite.Count == 0) continue;
+                foreach (var local in PlanningShapeUtility.Cells(item.box))
+                    if (opposite.Contains(local + item.origin))
+                    {
+                        message = "规划中的水与场景已有岩浆重叠（或相反）；未修改现有场景，请先调整位置。";
+                        return false;
+                    }
             }
 
             var occupied = new HashSet<Vector2Int>();
-            var occupiedWater = new HashSet<Vector2Int>();
+            var occupiedWater = new Dictionary<string, HashSet<Vector2Int>>();
             int placedCount = 0;
             int skippedCount = 0;
             int connectorCount = 0;
@@ -346,9 +387,9 @@ namespace PlanningEditorPrototype
                      boxIndex++)
                 {
                     PlanningBox box = layout.Room.boxes[boxIndex];
-                    bool water = PlanningWaterLayerUtility.IsWater(box, palette);
-                    var layer = water ? occupiedWater : occupied;
-                    var external = water ? existingWaterCells : existingCells;
+                    string waterKind = PlanningWaterLayerUtility.WaterKind(box, palette);
+                    var layer = waterKind != null ? PlanningWaterLayerUtility.Layer(occupiedWater, waterKind) : occupied;
+                    var external = waterKind != null ? PlanningWaterLayerUtility.Layer(existingWaterLayers, waterKind) : existingCells;
                     if (!CanPlaceMerged(box, new Vector2Int(layout.OffsetX,layout.OffsetY),layer,external))
                     { skippedCount += box.width*box.height; continue; }
                     for (int y = box.y;
@@ -401,9 +442,9 @@ namespace PlanningEditorPrototype
                          boxIndex++)
                     {
                         PlanningBox box = assemblyPatches[boxIndex];
-                        bool patchWater = PlanningWaterLayerUtility.IsWater(box, palette);
-                        var patchLayer = patchWater ? occupiedWater : occupied;
-                        var patchExternal = patchWater ? existingWaterCells : existingCells;
+                        string patchWaterKind = PlanningWaterLayerUtility.WaterKind(box, palette);
+                        var patchLayer = patchWaterKind != null ? PlanningWaterLayerUtility.Layer(occupiedWater, patchWaterKind) : occupied;
+                        var patchExternal = patchWaterKind != null ? PlanningWaterLayerUtility.Layer(existingWaterLayers, patchWaterKind) : existingCells;
                         if (!CanPlaceMerged(box,Vector2Int.zero,patchLayer,patchExternal)) continue;
                         for (int y = box.y;
                              y < box.y + box.height;
@@ -477,9 +518,9 @@ namespace PlanningEditorPrototype
                     {
                         PlanningBox box =
                             connector.boxes[boxIndex];
-                        bool connectorWater = PlanningWaterLayerUtility.IsWater(box, palette);
-                        var connectorLayer = connectorWater ? occupiedWater : occupied;
-                        var connectorExternal = connectorWater ? existingWaterCells : existingCells;
+                        string connectorWaterKind = PlanningWaterLayerUtility.WaterKind(box, palette);
+                        var connectorLayer = connectorWaterKind != null ? PlanningWaterLayerUtility.Layer(occupiedWater, connectorWaterKind) : occupied;
+                        var connectorExternal = connectorWaterKind != null ? PlanningWaterLayerUtility.Layer(existingWaterLayers, connectorWaterKind) : existingCells;
                         if (!CanPlaceMerged(box,origin,connectorLayer,connectorExternal)) continue;
                         for (int y = box.y;
                              y < box.y + box.height;
