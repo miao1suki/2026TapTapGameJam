@@ -2250,6 +2250,7 @@ namespace Project.Player
 
         private bool IsSolidCarryPlacementBlocker(Collider collider) =>
             collider != null && collider.enabled && !collider.isTrigger &&
+            !Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(collider) &&
             collider.gameObject.activeInHierarchy &&
             !BelongsToPlayer(collider.transform) &&
             !BelongsToSelectedCarryTarget(collider.transform);

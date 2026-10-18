@@ -35,10 +35,10 @@ namespace PlanningEditorPrototype
             entry.Configure("门按钮", AssetDatabase.LoadAssetAtPath<GameObject>(ButtonPath));
             return entry;
         }
-        internal static bool CanPlace(List<PlanningBox> boxes, RectInt rect)
+        internal static bool CanPlace(List<PlanningBox> boxes, RectInt rect, LevelEditorPalette palette = null)
         {
             foreach (var box in boxes)
-                if (!PlanningWaterLayerUtility.IsWater(box) && PlanningShapeUtility.Overlaps(box, rect)) return false;
+                if (!PlanningWaterLayerUtility.IsWater(box, palette) && PlanningShapeUtility.Overlaps(box, rect)) return false;
             return true;
         }
         internal static bool TryFindButtonCell(List<PlanningBox> boxes, PlanningBox door, RectInt allowed, out Vector2Int cell,

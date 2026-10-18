@@ -4,7 +4,7 @@
 
 ## 所有权
 
-- 三种固定身份，不实现 IColorApplicationTarget，不接受玩家点击染色或万能方块改色。预制体挂 ColorObject，仅用于基础色钥匙门控、共享外观/HSV 与搬运激活；初始未解锁，解锁对应颜色后才参与反应、搬运和供能。身份不会随解锁改变。三个预制体均挂 CarryableFeature，使用既有玩家搬运流程；黏住尚未接入。预制体已有动态 Rigidbody、重力和 ContactCubeMotion，限制 Z 位移和旋转，适配横版运动。
+- 三种固定身份，ContactCube 本身不实现 IColorApplicationTarget。绿色在 Awake 自动补齐专属 `BlueContactCubeGrowthTarget`，只接受真实玩家蓝能力的命中应用、启动生长；不改变固定颜色。红蓝块不添加此入口，也不接受玩家改色或万能方块广播。预制体挂 ColorObject，仅用于基础色钥匙门控、共享外观/HSV 与搬运激活；初始未解锁，解锁对应颜色后才参与反应、搬运和供能。身份不会随解锁改变。三个预制体均挂 CarryableFeature，使用既有玩家搬运流程；黏住尚未接入。预制体已有动态 Rigidbody、重力和 ContactCubeMotion，限制 Z 位移和旋转，适配横版运动。
 - ContactCube 只拥有状态、长度、实体子物体尺寸及反应水柱；不能由移动程序缩放根物体表达生长。根坐标是原始一格中心，增长保留此锚点。尺寸读取 GridCellSizeUtility，一体模型/BoxCollider 伸长，不生成节段。不可把它组为旧藤蔓母根。
 - 固定类型字段只供预制体作者配置，不提供运行时切色 API。Length、State、ColorId、GrowthDirection 只读，LengthChanged / StateChanged 提供状态通知。
 - `IsUnlocked` 只读。红块实现 `IEnergySource.IsEnergyAvailable`，需已解锁、实体启用且未处于搬运动画；任意红块可供能任意基座，不持久绑定特定红块。旧 Red_Battery 预制体保留 GUID，但已替换为红色 ContactCube 及运动/重置组件；新放置统一使用 Red_ContactCube。
@@ -12,16 +12,24 @@
 
 ## 有限状态机
 
-| 绿色当前接触 | 状态 | 行为 |
+| 绿色当前接触或生长请求 | 状态 | 行为 |
 |---|---|---|
-| 无红无蓝 | Idle | 保留长度 |
-| 仅蓝 | Growing | 默认每秒长一格，到 maximumLength |
+| 无红、无蓝接触及蓝点击请求 | Idle | 保留长度 |
+| 仅蓝接触或蓝点击请求 | Growing | 默认每秒长一格，到 maximumLength |
 | 仅红 | Shrinking | 默认每秒短一格，最小一格 |
-| 红蓝同时 | Locked | 保留当前长度，暂停变化 |
+| 红与蓝接触或蓝点击请求同时存在 | Locked | 保留当前长度，暂停变化 |
 
 接触使用作者逻辑OBB加0.01格容差及双方真实contactOffset，NonAlloc候选查询合并同物体多个碰撞体；不只看世界AABB或必须等实体穿透。碰撞回调仅补充非默认接触偏移的候选，每步仍严格几何复核，不用计时续租保留脱离的接触。红蓝运动器的`LogicalContactShapeSize`保留完整作者尺寸，不受单格坑物理避让皮肤影响；候选召回余量不扩大真实接受范围或既有物体的染色范围。禁用碰撞箱暂停反应并清空接触、水柱。状态/主蓝邻居变化后重新计时，不累计锁定期时间。
 
 首次从一格长出时方向为蓝块中心→绿块根中心的反向远离方向（即远离蓝块）；一旦长出固定轴，避免切换邻居时甩动现有长块。完全缩回一格后可重新选方向。多个蓝邻居按本次运行实例优先级选择，不把 instanceID 存入场景或存档；方块身份/颜色不改变。
+
+玩家蓝能力点击绿块根体或一体伸长实体时，沿已有 `stepSeconds` 持续生长至该块 `maximumLength`，不需要保持点击。玩家和根中心按现有世界网格 `floor(y / cellSize)` 判断行（有 RoomLifecycleManager 时沿其网格坐标）；中心纵差在 0.01 格以内容忍物理解算跨边界误差。同一行玩家在左则向右、在右则向左；不同行玩家在下则向下、在上则向上。读取 GridCellSizeUtility，不假定一格等于一个世界单位。长出后的点击始终保持既有方向；完全缩为一格后的新请求才重新选向。点击源和真实蓝接触同时存在时，只有从一格开始的新点击请求负责选向。
+
+`BlueContactCubeGrowthTarget` 实现 `IColorApplicationHitTarget`：正常入口为 PlayerColorWheel 的屏幕命中与 `ApplyColorAt`。`CanApplyColor` 同时检查绿色场景解锁、蓝能力解锁、真实活动玩家、蓝色选中、无死亡/控制锁/携带及实体启用；不能用第一把蓝钥匙代替能力解锁。普通 `ApplyColor` 始终拒绝，防止接触转发或万能方块广播误触新点击行为。射线命中前景、原交互总范围与区域边界仍由既有玩家能力入口检查。
+
+重复点击不重开计时、不创建额外生长器，到最大长度清除点击请求，满长时不再排队；红接触与未完成的蓝点击请求锁长，解除后重新按状态计时。每次整格增长先检查新增格 OBB，真实墙、移动平台、其他实体方块或玩家胶囊占据该格时保留请求并等待，移开后继续；纯 Trigger、压力检测体及物理明确忽略的碰撞对不当作墙。玩家胶囊保留绿块实体碰撞，不将整格碰撞体扩入玩家身体，也不接管玩家运动。此规则共用在绿接触方块自身的增长路径，不改变普通藤蔓生长组件。
+
+`IsPlayerGrowthRequested` 只读供调试。禁用方块或接收器、锁色后物理步、搬运/钩子挂起及 ResetForRoom 均清除点击请求，不残留自动增长。房间恢复仍同时恢复作者长度、方向和根位姿；R/死亡/离区保留两阶段颜色进度。
 
 蓝块与每个接触红块各拥有一个水柱：方向为红块→蓝块，起点蓝块根中心，射程/宽度按格，速度可配。离开、禁用、重置立即停止并清理，不向自身或激发本水柱的红块反馈自推。其余红绿蓝方块可受推。
 
@@ -64,5 +72,7 @@
 ContactCubeAssets.Build 与 ContactCubeVerification.Run 只用于 Library/FlowRetirementProbe 隔离项目，不覆盖用户场景。nographics 验证不代替真实画面/打包验收。
 
 `Project.ContactCubes.Editor.ContactCubeJetContactAudit.Run`仅静音隔离运行，检查真实掉落/接触/落稳180物理步保持同一水柱、不同接触偏移、横向作者邻接、旋转OBB、实际脱离立即清力、锁色/携带/挂钩资格与重置。不要把静态贴近两块物体冒充真实掉落回归。
+
+`Project.ContactCubes.Editor.BlueContactCubeGrowthAudit.Run` 强制 FlowRetirementProbe 隔离目录及 `-noaudio`，从唯一标准玩家的真实屏幕颜色命中入口验证四向×三种格尺寸、同行/跨行边界、伸长部分命中、重复点击/最大长度、薄墙/Trigger/地板、真实玩家占格暂停与移开后恢复且不嵌入实体、红蓝接触竞争、完全回缩后改向、颜色/选色门控、禁用/搬运/挂绳清理及真实 R/死亡/离区恢复。报告为 `Library/BlueContactCubeGrowthAudit.txt`；不保存或加载作者关卡，不把脚本模拟断言当作人工手感或双端包验收。
 
 `Project.Player.Editor.ClimbCornerVerification.Run` 强制隔离项目及 `-noaudio`，以标准玩家和真实绿块/藤蔓预制体验证双侧向上翻角、单格/横向/竖向绿块、链条露顶、顶端阻挡、跳跃脱手、来源禁用与原有上下绕边。`ClimbCornerLiveVerification.Run` 另跑真实 Update/FixedUpdate，检查八组两侧翻顶后租约过期仍稳定站在真实顶面。脚本只使用空测试场景，不保存作者关卡。

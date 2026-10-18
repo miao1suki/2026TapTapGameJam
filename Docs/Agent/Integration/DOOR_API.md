@@ -18,12 +18,14 @@
 - `DoorButton` 同时实现 `IMechanismSignalSource`：`IsSignalActive` 映射当前按下状态，按下/释放通过 `SignalChanged` 广播；移动平台可把它作为独立信号来源，不改变其所属门。
 - `DoorButton.BindingIndex`：绑定列表位置；0/1/2对应红/绿/蓝美术，不是颜色能力或颜色层。
 - `DoorButton.Mode / Persistent`：Latched（一次按下保持，默认/旧场景兼容）或 Held（持续压住）。mode 有 BlockParameter，规划编辑器参数模式可写入实例配置并随存档/增量同步保存。
+- `ButtonLockFeature.Persistent` 同样只对 Latched 为真。RoomResetObject 与 BlockAbilityHost 只跳过保持模式，不得把所有颜色按钮统一视为持久；Held 在 R/离房间复位时恢复 `startsOn`，四向参数不改变。`ButtonCarryOrientationAudit.Run` 含真实颜色按钮 Host 与房间重置双路径的四向回归。
+- `DoorButton.Facing` / `ButtonLockFeature.Facing`：同一按钮的 `ButtonFacing.Up=0/Down=1/Left=2/Right=3` 参数；旧数据默认朝上。`facing` 走既有组件覆盖存档，不能拆成四种道具或Prefab。上按钮检测脚/方块底面，下按钮检测头顶/方块顶面，左右按钮检测面向按钮的实体侧面；只接受玩家与三色ContactCube，不绑定F。
 - `DoorButton.TryPress(actor)`：供程序主动申请按下，接受玩家或 ContactCube，不是输入交互接口。正常玩法每个物理步用 NonAlloc OBB 查询并检查玩家脚部或方块底面；只查询非 Trigger 实体。持续模式须有有效物理重量，否则下一步释放；多个重量/Collider 不会让其中一个离开时误释放。
 - `ResetForRoom()`：保持模式无操作，持续模式恢复未按下，并通知门重评估。持续模式禁用时也释放。显式 `ResetDoor/ResetButton` 是清空调试/进度接口，可重置保持模式，不应在 R 或离房间时直接调用。
 
 PlanningBox 的 `singleInstance` 使 1×2 门只生成一个实例；`doorOwnerId` 保存按钮所属门的规划 ID。DoorEntryId=`mechanism-door-standard`；内部按钮 EntryId=`mechanism-door-owned-button` 不进入 palette。按钮专用 prefab 由 PlanningDoorUtility 解析，不依赖随机生成的入口 ID。
 
-门放置预览按固定 1×2 绘制；详情/装配拖拽都以按下格为上格，一次只创建一扇。Scene 放置器使用世界坐标下格作为根位置，提示向上扩展两格。DoorButton 模型局部中心 y=-0.44、尺寸 (0.6,0.12,0.6)，底面位于所属格底 y=-0.5。根 Trigger 中心 y=-0.35、尺寸 (0.6,0.3,0.6)，Awake 同步修正旧场景实例；脚部容差按 GridCellSizeUtility 换算，仅玩家和三色接触方块可触发，玩家辅助 Trigger 不触发。
+门放置预览按固定 1×2 绘制；详情/装配拖拽都以按下格为上格，一次只创建一扇。Scene 放置器使用世界坐标下格作为根位置，提示向上扩展两格。DoorButton 模型局部中心 y=-0.44、尺寸 (0.6,0.12,0.6)，底面位于所属格底 y=-0.5。朝上根 Trigger 中心 y=-0.35、尺寸 (0.6,0.3,0.6)，其他朝向由 `ButtonPressureGeometry` 围绕格中心旋转同一传感区；Awake 同步修正旧场景实例。脚部/接触面容差按 GridCellSizeUtility 换算，仅玩家和三色接触方块可触发，玩家辅助 Trigger 不触发。传感器无实体阻挡，重力方块可放在按钮同格并压下；真正墙/薄墙仍参与搬运体积校验。按钮完整16×16帧围绕格中心旋转，运行、Scene只读代理和规划预览共用朝向，不围绕薄Trigger缩放。
 
 删除门清理其所属按钮；删除按钮保留门且解除绑定。NotifyDocumentChanged清理孤儿按钮，新增/保存使用既有规划事务与撤销。PlanningBox.doorButtonOrder保存创建次序，旧存档缺字段按规划文档顺序兼容；BindSceneDoors按此顺序解析实际PlanningBoxId，不依赖Hierarchy或instanceID。删除后保留相对次序，颜色按现有列表重新分配；不能引用staging中即将销毁的对象。按钮移动不跟随门作为子物体。
 

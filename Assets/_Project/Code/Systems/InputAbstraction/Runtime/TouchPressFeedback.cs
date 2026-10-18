@@ -16,6 +16,7 @@ namespace Project.InputAbstraction
         private bool direction;
         private bool latched;
         private VirtualInputButton inputButton;
+        private MobileButtonArtwork artwork;
         public Vector2 VisualOffset => face != null ? face.anchoredPosition : Vector2.zero;
 
         public void OnPointerDown(PointerEventData e)
@@ -34,11 +35,16 @@ namespace Project.InputAbstraction
         {
             if (face != null) return;
             inputButton = GetComponent<VirtualInputButton>();
-            var obj = new GameObject("Press Feedback", typeof(RectTransform), typeof(Image));
-            face = obj.GetComponent<RectTransform>(); face.SetParent(transform, false);
-            face.anchorMin = Vector2.zero; face.anchorMax = Vector2.one;
-            face.offsetMin = face.offsetMax = Vector2.zero;
-            highlight = obj.GetComponent<Image>(); highlight.raycastTarget = false;
+            artwork = GetComponent<MobileButtonArtwork>();
+            face = artwork != null ? transform.Find("Artwork") as RectTransform : null;
+            if (face == null)
+            {
+                var obj = new GameObject("Press Feedback", typeof(RectTransform), typeof(Image));
+                face = obj.GetComponent<RectTransform>(); face.SetParent(transform, false);
+                face.anchorMin = Vector2.zero; face.anchorMax = Vector2.one;
+                face.offsetMin = face.offsetMax = Vector2.zero;
+            }
+            highlight = face.GetComponent<Image>(); highlight.raycastTarget = false;
             // Keep a stable hit area while only the visible button follows the finger.
             Transform label = transform.Find("Label");
             if (label != null) label.SetParent(face, false);
@@ -68,7 +74,8 @@ namespace Project.InputAbstraction
         private void Paint(bool pressed)
         {
             if (face == null) return;
-            highlight.color = pressed || latched ? new Color(.18f, .52f, .68f, .96f) : Color.clear;
+            if (artwork != null) artwork.SetPressed(pressed || latched);
+            else highlight.color = pressed || latched ? new Color(.18f, .52f, .68f, .96f) : Color.clear;
             face.localScale = Vector3.one * (pressed ? .94f : 1f);
         }
         private void Release() { pointer = int.MinValue; targetOffset = Vector2.zero; Paint(false); }

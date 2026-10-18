@@ -22,6 +22,12 @@
 
 新组件实现 `IRoomColorResettable`，或 BlockFeature 的 `OnResetForRoom`，清理协程、临时产物、接触缓存和交互状态。BlockAbilityHost 恢复后按仍保留的颜色激活状态挂接。不要逐帧注册或扫描。
 
+切区复原仍在该帧完成，不延迟布置/碰撞恢复。`BlockAbilityHost.ResetForRoom` 先调用各功能的重置钩子，再用 `BlockRuntime.RefreshFeatureSet(true, true)` 保留仍启用、仍属于该物体的已有功能连接，只挂接新增或重新启用的功能、拆除真正离开的功能，同时清空信号/命令/状态队列。不要用无条件 Detach/Attach 代替重置：水体的销毁/重新注册会改变全局相邻水拓扑，使其他房间水网格也一起重建。水体重置只清蒸汽和玩家接触，保留未变的TA水面片/气泡；真实禁用、颜色停用和销毁仍完整清理。藤蔓重置立即恢复作者长度并清生长/燃烧，不依赖重建精灵。`RoomResetObject.RestorePose` 只写实际改变的姿态、激活和Collider属性，避免静态墙反复进入原生碰撞更新。
+
+`RoomResetObject` 每个恢复阶段和 `Persistent` 查询枚举一次根物体的组件，复用非分配列表，不为每类持久对象分别进行原生查找。颜色/功能宿主钩子可能在重激活时添加运动与搬运辅助组件，这类物体会在宿主钩子后再刷新列表，保留原有自定义 reset 分发边界；普通静态墙不追加查找。此列表每次刷新而不是永久缓存：运行时添加/销毁的门提示、拾取组件或 Boss 临时隐藏组件必须立即参与下一次查询与恢复，不能因为首次查询为空就永远漏掉。
+
+气泡柱重置时与禁用时使用相同的 `disconnecting` 重入保护：先清浮力/循环音，再清接触。清理触发的 `OnPlayerExited` 不是玩家物理离开水面，禁止借此重新加回浮力、重播进入/循环音效，或施加出水助推；玩家真实离开柱顶的正常助推仍保留。
+
 不要 Destroy 应可恢复的作者对象：`RoomResetObject.HideForReaction(original, replacement)` 休眠原对象、记录临时替代物供重置清理。无区域管理器时返回 false，调用者可沿用旧销毁行为。预置藤蔓节段不销毁。
 
 门、一次按下保持模式的门按钮、门提示、锚点及 CollectionRequested 的颜色钥匙不恢复。普通 `CollectiblePickup` 在 `CollectionRequested` 或 `IsCollected` 后也不恢复，前者保持收集飞行与唯一结算，后者保持隐藏；未收集品仍恢复布置位置。持续压住模式的门按钮参与区域重置，取消按下状态并重新评估门；若释放持续信号，门关闭，但其他保持按钮的进度保留。DropItemBase.CancelAttractionForRoomReset 仅取消未结算磁吸/出现动画，不中断已开始收集的钥匙或上述受保护收集品。普通收集品的稳定身份与后续存档恢复接口见 WORLD_ITEMS_API；本轮不新增磁盘存档系统。
@@ -51,3 +57,5 @@
 ## 验证
 
 RoomIntegrationVerification.BuildAndVerify / RunPlayVerification 在 Library/FlowRetirementProbe 隔离项目执行；前者核对实际 MVMap 往返和世界占格、生成两个 Scene，后者进入真正 PlayMode 检查重生、区域恢复及持久状态。不可覆盖用户 Scene；nographics 不代表窗口视觉、手感或打包验收。
+
+`Project.Rooms.Editor.RoomTransitionPerformanceAudit.Run` 对真实正式Gaming预热后逐区记录同步复原、随后水网格更新耗时和重新创建的水实例数量；`RunVerified` 另检查未变水实例零重建、解锁保留、每一对实际相邻房间双向切换仅复原来源一次、临时蒸汽/藤蔓生长清理、真实水体隐藏恢复、墙体遮水缓存、运行时新增/销毁持久和隐藏组件，以及玩家仍在柱内/刚过柱顶时重置无浮力、音频和出水助推残留。输出 `Library/RoomTransitionPerformanceAudit.txt`。运行只允许隔离工程；它测代码路径，不把编辑器/显卡等待或完整包帧率当成已经验收。

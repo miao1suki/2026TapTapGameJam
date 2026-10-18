@@ -58,6 +58,7 @@ namespace Project.BlockFeatures
 
         protected override void OnResetForRoom()
         {
+            DisconnectAllPlayers();
             nextDamageTimes.Clear();
         }
 

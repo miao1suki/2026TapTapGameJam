@@ -103,7 +103,8 @@ namespace PlanningEditorPrototype
             foreach (var item in AllBoxes())
             {
                 if (!mergeSelection.Contains(item.box.id)) continue;
-                if (item.box.singleInstance || PlanningDoorUtility.IsDoor(item.box) || !string.IsNullOrEmpty(item.box.doorOwnerId))
+                if ((item.box.singleInstance && !PlanningPlatformShapeUtility.SupportsEntry(item.box.propEntryId)) ||
+                    PlanningDoorUtility.IsDoor(item.box) || !string.IsNullOrEmpty(item.box.doorOwnerId))
                 { ValidationFailed?.Invoke("门与绑定按钮不能合并。"); return; }
                 if (owner != null && (owner != item.boxes || !SameKind(items[0], item.box)))
                 { ValidationFailed?.Invoke("请选择同一房间中的同种物体。"); return; }
@@ -123,9 +124,19 @@ namespace PlanningEditorPrototype
             }
             if (!PlanningMechanismUtility.CanMerge(items))
             { ValidationFailed?.Invoke("控制器绑定不同，请先绑定同一曲柄或基座再合并。"); return; }
+            bool platform = PlanningPlatformShapeUtility.SupportsEntry(items[0].propEntryId);
+            if (platform && !PlanningPlatformShapeUtility.CanMerge(items,
+                FindPropEntry(items[0].propEntryId, items[0].propEntryName), new RectInt(minX, minY, maxX-minX, maxY-minY), cells.Count, out string platformReason))
+            { ValidationFailed?.Invoke(platformReason ?? "平台素材入口不可用，未修改原平台。"); return; }
             var merged = items[0].Clone();
             merged.id = PlanningDocument.NewId("box"); merged.x=minX; merged.y=minY; merged.width=maxX-minX; merged.height=maxY-minY;
             merged.isMerged = true; merged.mergeParts = new List<string>();
+            if (platform)
+            {
+                if (!merged.hasComponentOverrides) CapturePlacementDefaults(merged);
+                merged.singleInstance = true;
+                PlanningPlatformShapeUtility.SetOrientation(merged, merged.height > merged.width);
+            }
             foreach (var item in items)
             {
                 if (item.isMerged && item.mergeParts != null && item.mergeParts.Count > 0)
@@ -251,6 +262,7 @@ namespace PlanningEditorPrototype
                         foreach (var current in AllBoxes())
                             if (current.box.id == box.id)
                             {
+                                PlanningPlatformShapeUtility.PreserveOrientation(current.box, values, prop?.ComponentValueOverrides);
                                 current.box.hasComponentOverrides=true;
                                 current.box.componentOverrides=values;
                                 NotifyDocumentChanged(); return;
@@ -2353,7 +2365,7 @@ namespace PlanningEditorPrototype
                 if (!TryFindAssemblyOwner(cell, sx, sy, out room, out local)) room = null;
             }
             bool valid = false;
-            Vector2Int size = PlanningDoorUtility.Footprint(detailPropEntryId);
+            Vector2Int size = PlacementFootprint(detailPropEntryId);
             if (room != null)
             {
                 RectInt allowed = room.isConnector ? GetConnectorDetailBounds(room) :
@@ -2361,7 +2373,7 @@ namespace PlanningEditorPrototype
                 var door = new PlanningBox(PlanningDetailType.Prop, new RectInt(local, size))
                     { propEntryId = detailPropEntryId };
                 valid = CanPlaceLocalRect(room, new RectInt(local, size)) &&
-                    PlanningDoorUtility.CanPlace(room.boxes, new RectInt(local, size)) &&
+                    PlanningDoorUtility.CanPlace(room.boxes, new RectInt(local, size), palette) &&
                     (!PlanningDoorUtility.IsDoor(door) || PlanningDoorUtility.TryFindButtonCell(room.boxes, door, allowed, out _, c => CanPlaceLocalRect(room, new RectInt(c, Vector2Int.one))));
             }
             Rect footprint = CellRect(cell.x, cell.y, size.x, size.y);
@@ -3009,7 +3021,7 @@ namespace PlanningEditorPrototype
                 int maxY = Mathf.Max(start.y, end.y);
                 if (IsPlacingDoor)
                 {
-                    Vector2Int size = PlanningDoorUtility.Footprint(detailPropEntryId);
+                    Vector2Int size = PlacementFootprint(detailPropEntryId);
                     minX = start.x; maxX = start.x + size.x - 1;
                     minY = start.y;
                     maxY = start.y + size.y - 1;
@@ -3191,7 +3203,7 @@ namespace PlanningEditorPrototype
                     new RectInt(local.x, local.y, 1, 1));
                 ApplyDetailSelection(box);
                 if (!CanEditPlacement(box)) return;
-                Vector2Int size = IsPlacingDoor ? PlanningDoorUtility.Footprint(detailPropEntryId) : new Vector2Int(box.width, box.height);
+                Vector2Int size = IsPlacingDoor ? PlacementFootprint(detailPropEntryId) : new Vector2Int(box.width, box.height);
                 if (!CanPlaceLocalRect(owner, new RectInt(new Vector2Int(box.x, box.y), size))) return;
                 if (owner.boxes.Exists(b => SameKind(b, box) && PlanningShapeUtility.Contains(b, new Vector2Int(box.x, box.y)))) return;
                 RectInt allowed = owner.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
@@ -3238,17 +3250,18 @@ namespace PlanningEditorPrototype
             {
                 box.width = box.height = 1; box.singleInstance = true;
                 if (!CanPlaceLocalRect(room, new RectInt(box.x,box.y,1,1)) ||
-                    !PlanningDoorUtility.CanPlace(room.boxes,new RectInt(box.x,box.y,1,1)) || !TryFindCrankPlatformCell(room,box,out _))
+                    !PlanningDoorUtility.CanPlace(room.boxes,new RectInt(box.x,box.y,1,1), palette) || !TryFindCrankPlatformCell(room,box,out _))
                 { StatusChanged?.Invoke("曲柄及附近升降平台需要空格。"); return false; }
                 return true;
             }
             if (!PlanningDoorUtility.HasFixedFootprint(box.propEntryId)) return true;
-            Vector2Int size = PlanningDoorUtility.Footprint(box.propEntryId);
+            Vector2Int size = PlacementFootprint(box.propEntryId);
             box.width = size.x;
             box.height = size.y;
             box.singleInstance = true;
+            ApplyPlatformPlacementShape(box);
             if (!CanPlaceLocalRect(room, new RectInt(box.x, box.y, size.x, size.y)) ||
-                !PlanningDoorUtility.CanPlace(room.boxes, new RectInt(box.x, box.y, size.x, size.y)))
+                !PlanningDoorUtility.CanPlace(room.boxes, new RectInt(box.x, box.y, size.x, size.y), palette))
             { StatusChanged?.Invoke($"物体需要连续的 {size.x}×{size.y} 空格。"); return false; }
             if (!PlanningDoorUtility.IsDoor(box)) return true;
             if (!PlanningDoorUtility.TryFindButtonCell(room.boxes, box, allowed, out _, c => CanPlaceLocalRect(room, new RectInt(c, Vector2Int.one))))

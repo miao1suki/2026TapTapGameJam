@@ -1,5 +1,20 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 紧急包手机按键与双端图标（urgent_mobile_icons）
+
+- 范围仅手机HUD美术、TouchPressFeedback图形与独立MobileArtworkSetup生成入口。采用B31A4497C97A51CF13A50549B8241494.png左侧30×30方向/跳跃版本，动作34×28等比；下组为按下帧，纵向偏移185像素。图标为用户新增Resources/临时ICON.png，未使用Timeline棍母。
+- 保留124触摸矩形、14触摸容差、独立手指/双跳跃/情境显隐/奔跑开关和ShapeOfColor.TouchLayout.v1个人布局；不保存主Unity内存Scene，不改玩法、流程、平台或房间。worker不切分支、不提交、不并行启动Unity。
+- root串行在隔离工程执行Project.Player.Editor.MobileArtworkSetup.Build，生成26张Sprite及meta、Point/FullRect/无Mip/无压缩并设置默认、Standalone与Android图标；需将生成资源和ProjectSettings/ProjectSettings.asset及图标meta同步回主工程。随后可运行MobileArtworkSetup.Validate。当前worker完成静态diff检查与原图像素矩形验证，Unity编译/生成/包验证由root串行完成。
+
+## 2026-10-18 切房性能、按钮共格与四向、拉取接触及菜单清理（进行中）
+
+- 分支`codex/room-physics-menu-20261018`；用户授权多agent，分别负责Rooms切区性能、按钮搬运/四向、GreenHook与基座，整合者负责岩浆层级、玩家精灵下移2有效像素、新菜单旧底板清理与启动黑屏。Unity验证由整合者串行在静音FlowRetirementProbe运行。
+- 不保存主Unity内存Scene，不覆盖用户MRoom2/MRoom3/Pick、BossTimeline、字体、插件、设置与删除；正式Gaming布局与两份存档保留。不用关闭房间重置/无限接触容差规避问题；保持持久进度、绳索主动解除与像素标准。
+- 玩家仅显示图像下移2/16格，碰撞不移动；按钮同一种物体用四向实例参数，重力方块可压入同格；岩浆只修表现遮挡不放宽伤害。
+- 用户追加确认：发布直接启动Gaming，同一世界叠加新版主菜单；开始/返回只做相反运镜与UI动画，不再装卸Gaming。旧MainMenu仅兼容入口，清理旧蓝底，但保留用户未提交的MainMenu.planning。
+- 用户追加平台：编辑器新放置提供横放/竖放/单格形状，外观朝向独立于路线；单格裁取原素材而非把三格压缩，旧地图平台原占格、移动参数和绑定保留。
+- 交付关卡变更仍需Scene、同名planning.json、meta与新增依赖成套；正式Gaming还需命名正式存档。当前请求未另行授权合并/推送，完成验证后交接。
+
 ## 2026-10-18 Boss重置外观、新平台与场景融合菜单（验证完成，整合交付）
 
 - 当前整合分支`codex/menu-reset-art-20261018`，用户授权多agent分工，最终只由当前整合窗口合并/推送main。并入上一轮已验证的搬运有效占格修复。
@@ -2077,3 +2092,8 @@
 - 范围：Gaming.unity、Gaming.planning.json、Content/LevelMaps/正式关卡.json及各自既有meta（GUID保持）；保留本次布局、出生点、实例参数和绑定，不全量重建地图。用户通过编辑器应用并保存后，三份规划数据一致（17房间）；命名存档同步前备份于Library/FormalLevelDeliveryBackups。
 - 验证：三份JSON结构一致、meta已跟踪、新增资源GUID引用存在；提交前执行AllTracked规划守卫与暂存diff检查。Unity6000.3.12f1，未运行本轮Unity编译、Play Mode、完整通关或打包，静态数据验证不代表游戏验收。
 - 字体缓存、栏目中文转义差异及定向气泡预览序列化仍保留本地，不纳入本次关卡交付；无新增未跟踪资源依赖。
+
+## 2026-10-18 音频资源与实际接线TXT盘点（当前对话）
+
+- 范围：只读核对音频交接、全部音频文件、AudioCatalog、运行时调用及Scene/Prefab/Timeline直接引用；生成Docs/AUDIO_INVENTORY_AND_USAGE_2026-10-18.txt，不修改音频、源码、场景、配置，不启动Unity、不提交推送。
+- 完成：Docs/AUDIO_INVENTORY_AND_USAGE_2026-10-18.txt逐项覆盖68个音频（16音乐/6环境/46音效），解析55Cue引用63文件、37有运行时入口的Cue覆盖42文件；列出预计用途、实际触发/源码行号、Prefab/Scene依赖及26个未接播放文件。已检查68唯一条目与路径、GUID映射；当前Resources/UI/WorldMainMenu.prefab缺失导致菜单/游玩路由只能判代码接入，启动需另验，已在TXT注明。只做静态审计，无Unity运行/试听/编译/打包，无提交推送。

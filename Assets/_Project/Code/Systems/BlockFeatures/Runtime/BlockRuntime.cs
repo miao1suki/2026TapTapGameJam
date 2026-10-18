@@ -13,6 +13,8 @@ namespace Project.BlockFeatures
 
         private readonly List<BlockFeature> features =
             new List<BlockFeature>();
+        private readonly List<BlockFeature> refreshedFeatures =
+            new List<BlockFeature>();
         private readonly Dictionary<System.Type, object> state =
             new Dictionary<System.Type, object>();
         private readonly List<ISignalEnvelope> signals =
@@ -116,8 +118,28 @@ namespace Project.BlockFeatures
         }
 
         public void RefreshFeatureSet(
-            bool resetRuntimeState = false)
+            bool resetRuntimeState = false,
+            bool preserveAttachedFeatures = false)
         {
+            // Room reset already calls each feature's reset hook. Rebuilding an
+            // unchanged profile must not destroy/recreate water, vines and their
+            // shared topology just to clear this object's signal/state queues.
+            if (preserveAttachedFeatures && initialized)
+            {
+                refreshedFeatures.Clear();
+                GetComponents(refreshedFeatures);
+                refreshedFeatures.RemoveAll(feature => feature == null || !feature.isActiveAndEnabled);
+                refreshedFeatures.Sort(CompareFeatures);
+                foreach (BlockFeature feature in features)
+                    if (feature != null && feature.IsAttached && !refreshedFeatures.Contains(feature)) feature.Detach();
+                features.Clear();
+                features.AddRange(refreshedFeatures);
+                if (resetRuntimeState) ClearRuntimeState();
+                foreach (BlockFeature feature in features)
+                    if (!feature.IsAttached) feature.Attach(new BlockContext(this, feature));
+                refreshedFeatures.Clear();
+                return;
+            }
             for (int index = 0; index < features.Count; index++)
             {
                 BlockFeature feature = features[index];
@@ -130,10 +152,7 @@ namespace Project.BlockFeatures
             features.Clear();
             if (resetRuntimeState)
             {
-                state.Clear();
-                signals.Clear();
-                commands.Clear();
-                debugEvents.Clear();
+                ClearRuntimeState();
             }
 
             initialized = false;
@@ -146,6 +165,16 @@ namespace Project.BlockFeatures
                     feature.Attach(new BlockContext(this, feature));
                 }
             }
+        }
+
+        private void ClearRuntimeState()
+        {
+            state.Clear();
+            signals.Clear();
+            commands.Clear();
+            signalBatch.Clear();
+            commandBatch.Clear();
+            debugEvents.Clear();
         }
 
         public void ReceiveExternalSignal<T>(T signal)

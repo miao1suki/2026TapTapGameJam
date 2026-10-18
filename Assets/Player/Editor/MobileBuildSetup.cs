@@ -106,11 +106,11 @@ public static class MobileBuildSetup
         Directory.CreateDirectory(Path.GetDirectoryName(output));
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
-            scenes = new[] { MenuScene, GameScene }, target = target,
+            scenes = new[] { GameScene }, target = target,
             locationPathName = output, options = BuildOptions.None
         });
         File.WriteAllText(Path.Combine(outputRoot, target + "-report.txt"),
-            $"{report.summary.result}\n{output}\nbytes={report.summary.totalSize}\nerrors={report.summary.totalErrors}\nwarnings={report.summary.totalWarnings}\nscenes={MenuScene};{GameScene}\n");
+            $"{report.summary.result}\n{output}\nbytes={report.summary.totalSize}\nerrors={report.summary.totalErrors}\nwarnings={report.summary.totalWarnings}\nscenes={GameScene}\n");
         if (report.summary.result != BuildResult.Succeeded) throw new Exception("Build failed: " + target);
     }
 }

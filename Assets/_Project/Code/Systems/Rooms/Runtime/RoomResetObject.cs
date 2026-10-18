@@ -26,6 +26,21 @@ namespace Project.Rooms
         private readonly List<ChildPose> childPoses = new List<ChildPose>();
         private readonly List<CollisionState> collisionStates = new List<CollisionState>();
         private readonly List<GameObject> replacements = new List<GameObject>();
+        private readonly List<MonoBehaviour> resetComponents = new List<MonoBehaviour>();
+        private DoorController door;
+        private DoorButton button;
+        private DoorHint doorHint;
+        private ButtonLockFeature colorButton;
+        private ColorKeyPickup key;
+        private Project.Items.CollectiblePickup collectible;
+        private RespawnAnchorFeature anchor;
+        private Project.Items.DropItemBase dropItem;
+        private CarryableFeature carryable;
+        private Project.TemporaryObjectHideState temporaryHide;
+        private ColorObject colorObject;
+        private BlockAbilityHost abilityHost;
+        private BlockRuntime blockRuntime;
+        private Project.LevelEditor.LevelEditorPlacedBlock placedBlock;
         public string RegionId => regionId;
         public RoomLifecycleManager Manager => manager;
         /// <summary>Invalidates work queued against the object's previous room state.</summary>
@@ -34,12 +49,45 @@ namespace Project.Rooms
             originalParent != null
                 ? originalParent.TransformPoint(originalPosition)
                 : originalPosition;
-        public bool Persistent => GetComponent<DoorController>() != null || (GetComponent<DoorButton>() is DoorButton button && button.Persistent) ||
-                                  GetComponent<DoorHint>() != null || GetComponent<ButtonLockFeature>() != null ||
-                                  (GetComponent<ColorKeyPickup>() is ColorKeyPickup key && key.CollectionRequested) ||
-                                  (GetComponent<Project.Items.CollectiblePickup>() is Project.Items.CollectiblePickup item &&
-                                   (item.IsCollected || item.CollectionRequested)) ||
-                                  GetComponent<RespawnAnchorFeature>() != null;
+        public bool Persistent
+        {
+            get
+            {
+                RefreshResetComponents();
+                return door != null || button != null && button.Persistent || doorHint != null || colorButton != null && colorButton.Persistent ||
+                    key != null && key.CollectionRequested ||
+                    collectible != null && (collectible.IsCollected || collectible.CollectionRequested) || anchor != null;
+            }
+        }
+
+        // One non-alloc component enumeration replaces repeated native lookups for
+        // every persistence category on every static wall. Refresh at each reset
+        // phase/property query so runtime-added/removed components remain visible.
+        private void RefreshResetComponents()
+        {
+            GetComponents(resetComponents);
+            door = null; button = null; doorHint = null; colorButton = null;
+            key = null; collectible = null; anchor = null; dropItem = null;
+            carryable = null; temporaryHide = null; colorObject = null;
+            abilityHost = null; blockRuntime = null; placedBlock = null;
+            foreach (MonoBehaviour component in resetComponents)
+            {
+                if (component is DoorController d) door = d;
+                if (component is DoorButton b) button = b;
+                if (component is DoorHint h) doorHint = h;
+                if (component is ButtonLockFeature cb) colorButton = cb;
+                if (component is ColorKeyPickup k) key = k;
+                if (component is Project.Items.CollectiblePickup cp) collectible = cp;
+                if (component is RespawnAnchorFeature a) anchor = a;
+                if (component is Project.Items.DropItemBase item) dropItem = item;
+                if (component is CarryableFeature c) carryable = c;
+                if (component is Project.TemporaryObjectHideState hide) temporaryHide = hide;
+                if (component is ColorObject co) colorObject = co;
+                if (component is BlockAbilityHost host) abilityHost = host;
+                if (component is BlockRuntime runtime) blockRuntime = runtime;
+                if (component is Project.LevelEditor.LevelEditorPlacedBlock placed) placedBlock = placed;
+            }
+        }
         private void Awake() => Capture();
         private void Capture()
         {
@@ -55,6 +103,7 @@ namespace Project.Rooms
                     rotation = child.localRotation, scale = child.localScale, active = child.gameObject.activeSelf });
             foreach (var collider in GetComponentsInChildren<Collider>(true))
                 collisionStates.Add(new CollisionState { target = collider, enabled = collider.enabled, trigger = collider.isTrigger });
+            RefreshResetComponents();
         }
         public void Bind(RoomLifecycleManager owner, string id) { Capture(); manager = owner; regionId = id; }
         public void SetRegion(string id) => regionId = id;
@@ -65,49 +114,70 @@ namespace Project.Rooms
             // Persistent means keep progress, not keep a temporary Boss visibility
             // lease. Completed/collecting pickups remain protected by their own
             // lifecycle, including disabled collection colliders.
-            if (Persistent && GetComponent<Project.Items.DropItemBase>() != null) return;
+            bool persistent = Persistent;
+            if (persistent && dropItem != null) return;
             // Restore only the hide lease before skipping authored pose/state.
-            var hidden = GetComponent<Project.TemporaryObjectHideState>();
+            var hidden = temporaryHide;
             bool wasHidden = hidden != null && hidden.IsHidden;
             hidden?.Restore();
-            if (wasHidden) GetComponent<DoorController>()?.RefreshBlockingState();
-            if (Persistent) return;
+            if (wasHidden) door?.RefreshBlockingState();
+            if (persistent) return;
             Capture();
-            GetComponent<Project.Items.DropItemBase>()?.CancelAttractionForRoomReset();
-            GetComponent<CarryableFeature>()?.CancelCarry();
+            dropItem?.CancelAttractionForRoomReset();
+            carryable?.CancelCarry();
             foreach (var replacement in replacements) if (replacement != null) Destroy(replacement);
             replacements.Clear();
-            transform.SetParent(originalParent, false);
-            transform.localPosition = originalPosition;
-            transform.localRotation = originalRotation;
-            transform.localScale = originalScale;
+            bool geometryChanged = wasHidden || transform.parent != originalParent || transform.localPosition != originalPosition ||
+                transform.localRotation != originalRotation || transform.localScale != originalScale;
+            if (transform.parent != originalParent) transform.SetParent(originalParent, false);
+            if (transform.localPosition != originalPosition) transform.localPosition = originalPosition;
+            if (transform.localRotation != originalRotation) transform.localRotation = originalRotation;
+            if (transform.localScale != originalScale) transform.localScale = originalScale;
             foreach (var pose in childPoses)
                 if (pose.target != null)
                 {
-                    pose.target.localPosition = pose.position; pose.target.localRotation = pose.rotation;
-                    pose.target.localScale = pose.scale; pose.target.gameObject.SetActive(pose.active);
+                    geometryChanged |= pose.target.localPosition != pose.position || pose.target.localRotation != pose.rotation ||
+                        pose.target.localScale != pose.scale || pose.target.gameObject.activeSelf != pose.active;
+                    if (pose.target.localPosition != pose.position) pose.target.localPosition = pose.position;
+                    if (pose.target.localRotation != pose.rotation) pose.target.localRotation = pose.rotation;
+                    if (pose.target.localScale != pose.scale) pose.target.localScale = pose.scale;
+                    if (pose.target.gameObject.activeSelf != pose.active) pose.target.gameObject.SetActive(pose.active);
                 }
             foreach (var state in collisionStates)
-                if (state.target != null) { state.target.enabled = state.enabled; state.target.isTrigger = state.trigger; }
+                if (state.target != null)
+                {
+                    geometryChanged |= state.target.enabled != state.enabled || state.target.isTrigger != state.trigger;
+                    if (state.target.enabled != state.enabled) state.target.enabled = state.enabled;
+                    if (state.target.isTrigger != state.trigger) state.target.isTrigger = state.trigger;
+                }
             if (TryGetComponent(out Rigidbody body))
             {
                 body.position = transform.position; body.rotation = transform.rotation;
                 if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
             }
-            gameObject.SetActive(originalActive);
+            if (gameObject.activeSelf != originalActive) gameObject.SetActive(originalActive);
+            if (geometryChanged) placedBlock?.NotifySolidGeometryChanged();
         }
 
         public void RestoreState()
         {
             if (Persistent) return;
-            GetComponent<ColorObject>()?.ResetForRoom();
-            var host = GetComponent<BlockAbilityHost>();
+            colorObject?.ResetForRoom();
+            var host = abilityHost;
             if (host != null) host.ResetForRoom();
-            foreach (var behaviour in GetComponents<MonoBehaviour>())
+            // Color reactivation may add motion / carry helpers in OnAttach.
+            // Preserve the previous post-host discovery boundary for reset dispatch,
+            // without adding another native lookup to ordinary static walls.
+            if (colorObject != null || host != null) GetComponents(resetComponents);
+            for (int index = 0; index < resetComponents.Count; index++)
+            {
+                var behaviour = resetComponents[index];
+                if (behaviour == null) continue;
                 if (behaviour is IRoomColorResettable resettable && !(behaviour is ColorObject) &&
                     (!(behaviour is BlockFeature feature) || feature.IsAttached) &&
                     (host == null || !(behaviour is BlockFeature))) resettable.ResetForRoom();
-            if (host == null) GetComponent<BlockRuntime>()?.RefreshFeatureSet(true);
+            }
+            if (host == null) blockRuntime?.RefreshFeatureSet(true);
         }
 
         /// <summary>Keep authored objects alive; temporary reactions are disposed at room reset.</summary>

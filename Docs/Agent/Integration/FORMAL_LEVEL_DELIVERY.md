@@ -14,7 +14,7 @@
 
 场景内嵌规划、同名规划和命名存档的布局必须一致。不能只交付生成后的 Scene，不能把唯一存档留在 Library。新增栏目、预制体和美术依赖也须一起提交。
 
-正式启动/构建流程仍为 `MainMenu -> Gaming`，不启用旧 Bootstrap、旧三关或测试场景。标准玩家仍唯一使用 `Assets/_Project/Content/Player/Player.prefab`；不复制或恢复旧玩家。关卡布局以策划交付为准，不因运行时接线检查而全量重建地图或重置出生点。
+正式启动/构建只使用 `Gaming`，同一场景自动叠加纯 UI 菜单，在逻辑 MainMenu/Gaming 状态间平滑运镜，不加载／卸载世界或重置进度。旧 MainMenu 仅为编辑器兼容入口，不加入构建；不启用旧 Bootstrap、旧三关或测试场景。标准玩家仍唯一使用 `Assets/_Project/Content/Player/Player.prefab`；不复制或恢复旧玩家。关卡布局以策划交付为准，不因运行时接线检查而全量重建地图或重置出生点。
 
 ## 旧版本成员先同步
 

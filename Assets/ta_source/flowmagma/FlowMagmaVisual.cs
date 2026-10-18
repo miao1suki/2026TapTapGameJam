@@ -204,6 +204,13 @@ namespace Project.FlowMagma
             DisposeMeshes();
             var filter = GetComponent<MeshFilter>();
             bodyRenderer = GetComponent<MeshRenderer>();
+            if (formalArtwork)
+            {
+                // Transparent sprites do not write depth. A slight Z offset alone
+                // cannot stop magma drawing over a cube occupying the same cell.
+                bodyRenderer.sortingOrder = -10;
+                if (splashRenderer != null) splashRenderer.sortingOrder = -9;
+            }
             bodyRenderer.sharedMaterial = formalArtwork && Application.isPlaying
                 ? ColorAppearanceManager.Instance.GetSharedMaterial(magmaMaterial, "red", true) : magmaMaterial;
             if (splashRenderer != null) splashRenderer.sharedMaterial = formalArtwork && Application.isPlaying

@@ -14,9 +14,9 @@ namespace Project.GameFlow.Tests
     public sealed class GameFlowMenuEntryTests
     {
         [UnityTest]
-        public IEnumerator MainMenu_LoadsOnlyCurrentFlow()
+        public IEnumerator Gaming_SingleSceneEntry_HasLiveWorldAndMenu()
         {
-            const string path = "Assets/_Project/Scenes/Start/MainMenu.unity";
+            const string path = GameFlowController.GameplayScenePath;
 #if UNITY_EDITOR
             yield return EditorSceneManager.LoadSceneAsyncInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Additive));
 #else
@@ -43,6 +43,7 @@ namespace Project.GameFlow.Tests
             Assert.That(listeners, Is.EqualTo(1));
             Assert.That(canvases, Is.GreaterThan(0));
             Assert.That(SceneManager.GetSceneByPath("Assets/_Project/Scenes/Playing/Gaming.unity").isLoaded, Is.True);
+            Assert.That(SceneManager.GetSceneByPath(GameFlowController.CompatibilityMenuScenePath).isLoaded, Is.False);
             Assert.That(GameplayPresentationGate.IsSuppressed, Is.True);
             Assert.That(Object.FindObjectsByType<Camera>(FindObjectsSortMode.None).Count(x => x.isActiveAndEnabled), Is.EqualTo(1));
             Assert.That(Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None).Count(x => x.isActiveAndEnabled), Is.EqualTo(1));

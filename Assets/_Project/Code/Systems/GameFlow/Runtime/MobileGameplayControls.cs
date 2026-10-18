@@ -17,6 +17,7 @@ namespace Project.GameFlow
         private bool? visible;
         private VirtualInputButton leftJump, sprint;
         private TextMeshProUGUI sprintLabel;
+        private MobileButtonArtwork sprintArtwork;
         public bool LayoutEditing { get; set; }
         public RectTransform Controls => controls;
         public void Configure(TMP_FontAsset value, GameUiRouter owner)
@@ -40,6 +41,7 @@ namespace Project.GameFlow
             Action("跑", InputActionId.Sprint);
             sprint = controls.Find("跑").GetComponent<VirtualInputButton>(); sprint.ConfigureToggle();
             sprintLabel = sprint.GetComponentInChildren<TextMeshProUGUI>();
+            sprintArtwork = sprint.GetComponent<MobileButtonArtwork>();
             Action("交互", InputActionId.Interact);
             Action("放左", InputActionId.DropLeft);
             Action("放右", InputActionId.DropRight);
@@ -87,6 +89,7 @@ namespace Project.GameFlow
                 string caption = sprint.ToggleOn ? "奔跑" : "行走";
                 if (sprintLabel.text != caption) sprintLabel.text = caption;
             }
+            if (sprintArtwork != null) sprintArtwork.SetRunning(sprint.ToggleOn);
             Show("上", alive && (player.IsSwimming || player.IsClimbing || player.IsHorizontalClimbing || player.IsGreenHookActive));
             Show("下", alive && (player.IsSwimming || player.IsClimbing || player.IsHorizontalClimbing || player.IsGreenHookActive || player.ShowAirborneDownControl));
             Show("交互", alive && !carrying && (player.CarryQueueCount > 0 || player.HasContextInteraction || player.IsGreenHookActive));
@@ -152,6 +155,7 @@ namespace Project.GameFlow
             var text = textObj.GetComponent<TextMeshProUGUI>();
             text.font = font; text.text = label switch { "左跳跃" => "跳跃", "右手左" => "左", "右手右" => "右", "跑" => "行走", _ => label }; text.fontSize = 29;
             text.alignment = TextAlignmentOptions.Center; text.raycastTarget = false;
+            if (MobileButtonArtwork.Apply(obj, label)) text.enabled = false;
             return obj;
         }
 

@@ -1316,6 +1316,17 @@ namespace PlanningEditorPrototype
             }
             var values=box.hasComponentOverrides ? box.componentOverrides : defaults;
             LevelEditorComponentOverrideUtility.ApplyOverrides(placed.gameObject,values,false);
+            if (fittedPlatform && placed.TryGetComponent<Project.BlockFeatures.MovingPlatformFeature>(out var platformBody) &&
+                platformBody.BodyOrientation == Project.BlockFeatures.MovingPlatformBodyOrientation.Vertical &&
+                placed.TryGetComponent<BoxCollider>(out var platformCollider))
+            {
+                // Rotate only the physical strip, not the moving root / world-space
+                // route. Old Auto data and its authored collision remain untouched.
+                Vector3 shape = platformCollider.size, pivot = platformCollider.center;
+                platformCollider.size = new Vector3(shape.y, shape.x, shape.z);
+                platformCollider.center = new Vector3(-pivot.y, pivot.x, pivot.z);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(platformCollider);
+            }
             if(box.isMerged || fittedLadder || fittedPlatform && box.singleInstance)
             {
                 placed.transform.localScale=Vector3.Scale(placed.transform.localScale,new Vector3(box.width,box.height,1));

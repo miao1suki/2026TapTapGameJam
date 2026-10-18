@@ -18,11 +18,11 @@ using Object = UnityEngine.Object;
 
 namespace Project.Player.Editor
 {
-    /// <summary>Actual MainMenu entry and two full round trips; no author scene/save writes.</summary>
+    /// <summary>Actual Gaming single-scene entry and two round trips; no author scene/save writes.</summary>
     public static class WorldMenuFusionVerification
     {
         private const string Flag = "WorldMenuFusionVerification";
-        private const string MenuPath = "Assets/_Project/Scenes/Start/MainMenu.unity";
+        private const string MenuPath = GameFlowController.GameplayScenePath;
         private const string GamePath = "Assets/_Project/Scenes/Playing/Gaming.unity";
         private static int phase, checks, firstWorld;
         private static double start;
@@ -40,6 +40,8 @@ namespace Project.Player.Editor
         private static PropertyInfo selectedSize;
         private static int originalSize;
         private static readonly List<int> temporarySizes = new List<int>();
+        private static readonly HashSet<int> cameraStepSamples = new HashSet<int>();
+        private static int initialLoadedScenes, loadingEvents;
 
         public static void Run()
         {
@@ -54,7 +56,8 @@ namespace Project.Player.Editor
         [InitializeOnLoadMethod] private static void Resume()
         {
             if (!SessionState.GetBool(Flag, false)) return;
-            phase = checks = maxWorlds = listenerSamples = 0;
+            phase = checks = maxWorlds = listenerSamples = loadingEvents = 0;
+            cameraStepSamples.Clear();
             initialSizeSet = false;
             start = EditorApplication.timeSinceStartup;
             EditorApplication.update -= Tick;
@@ -99,7 +102,7 @@ namespace Project.Player.Editor
             Check(player.IsControlLocked && player.Motor.isKinematic, "standard player is leased and physically frozen for presentation");
             Check(!player.GetComponentsInChildren<Collider>().Any(x => x.enabled), "player cannot hit boss/contact triggers in preview");
             Check(!player.GetComponent<PlayerInputDriver>().enabled, "ability and locomotion input are not driven during preview");
-            Check(menu.IsPresented && !menu.Background.gameObject.activeSelf, "menu overlays the real world without its old flat background");
+            Check(menu.IsPresented && menu.Background == null, "menu overlays the real world; old blue background is removed from the asset");
             var router = Object.FindFirstObjectByType<GameUiRouter>();
             if (router != null)
             {
@@ -127,9 +130,17 @@ namespace Project.Player.Editor
                 if (GameFlowController.Instance != null)
                 {
                     if (listeners != 1) throw new Exception("WORLD MENU FAIL: transition frame has " + listeners + " enabled AudioListeners");
+                    int cameras = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None)
+                        .Count(x => x.isActiveAndEnabled && x.cameraType == CameraType.Game && x.cullingMask != 0);
+                    if (cameras != 1) throw new Exception("WORLD MENU FAIL: startup/transition frame has " + cameras + " live world cameras");
                     listenerSamples++;
                 }
                 var flow = GameFlowController.Instance;
+                if (flow != null && flow.IsTransitioning && flow.WorldMenu.ActiveWorld.IsValid())
+                {
+                    var output = Object.FindFirstObjectByType<Project.CameraModes.CameraControlManager>()?.OutputCamera;
+                    if (output != null) cameraStepSamples.Add(Mathf.RoundToInt(output.orthographicSize * 10000f));
+                }
                 if (phase == 0 && Ready(GameFlowSceneId.MainMenu))
                 {
                     if (!initialSizeSet)
@@ -149,6 +160,10 @@ namespace Project.Player.Editor
                         "menu preload does not grant any color ability");
                     CheckPreview();
                     firstWorld = player.gameObject.scene.handle;
+                    initialLoadedScenes = SceneManager.sceneCount;
+                    SceneManager.sceneLoaded += TrackUnexpectedLoad;
+                    Check(!SceneManager.GetSceneByPath(GameFlowController.CompatibilityMenuScenePath).isLoaded,
+                        "shipping entry does not load MainMenu at all");
                     firstLogo = menu.GetComponentsInChildren<Image>(true).First(x => x.name == "Animated Logo").sprite;
                     Capture("menu-16x9");
                     phaseAt = Time.unscaledTime;
@@ -178,12 +193,14 @@ namespace Project.Player.Editor
                     // is released. Disable only that unrelated fixture after proving preview safety.
                     foreach (var key in Object.FindObjectsByType<ColorKeyPickup>(FindObjectsSortMode.None)) key.gameObject.SetActive(false);
                     externalLock = player.AcquireControlLock("menu independent owner regression");
+                    cameraStepSamples.Clear();
                     Check(flow.RequestTransition(GameFlowSceneId.Gaming), "start request accepted through the existing flow");
                     phase = 2;
                 }
                 else if (phase == 2 && Ready(GameFlowSceneId.Gaming))
                 {
                     Check(player.gameObject.scene.handle == firstWorld, "first start does not reload the preview world");
+                    Check(cameraStepSamples.Count >= 4, "start camera has multiple actual intermediate lens values, not a delayed hard cut");
                     Check(!GameplayPresentationGate.IsSuppressed && !player.Motor.isKinematic, "enter completes by releasing physical preview, not changing progress");
                     Check(player.ControlLockDepth == 1, "preview release preserves the independent external control lease");
                     externalLock.Dispose(); externalLock = null;
@@ -196,11 +213,13 @@ namespace Project.Player.Editor
                     Object.FindFirstObjectByType<GameUiRouter>().SetPaused(true, false);
                     Check(Time.timeScale == 0f, "pause fixture is active before returning");
                     Object.FindFirstObjectByType<GameUiRouter>().OpenMainMenu();
+                    cameraStepSamples.Clear();
                     phase = 3;
                 }
                 else if (phase == 3 && Ready(GameFlowSceneId.MainMenu))
                 {
                     Check(player.gameObject.scene.handle == firstWorld, "return reverses in the same real world, without unloading it");
+                    Check(cameraStepSamples.Count >= 4, "return camera also crosses multiple actual intermediate lens values");
                     CheckPreview();
                     Check(GameAudioService.Instance.MusicSource.clip.name == "bmg_op", "return routes the current main menu music");
                     Capture("returned-menu");
@@ -241,7 +260,7 @@ namespace Project.Player.Editor
                 else if (phase == 4 && Ready(GameFlowSceneId.Gaming))
                 {
                     player = Object.FindFirstObjectByType<PlayerController>();
-                    Check(player.gameObject.scene.handle != firstWorld, "second start restores the level with a fresh Gaming instance");
+                    Check(player.gameObject.scene.handle == firstWorld, "second start resumes the same Gaming instance without any scene replacement");
                     Check(ColorRuntimeService.Instance == colors && colors.IsUnlocked("green") && !colors.IsAbilityUnlocked("green"),
                         "new level keeps existing independent session color/ability semantics");
                     Check(flow.WorldMenu.ActiveWorld.handle == player.gameObject.scene.handle, "flow refers only to the new player scene");
@@ -250,7 +269,8 @@ namespace Project.Player.Editor
                     Check(player.ControlLockDepth == 0 && !player.Motor.isKinematic, "second entry does not retain a stale preview lock or frozen body");
                     CheckCollectibleFiltering();
                     Check(maxWorlds == 1, "reload never runs duplicate room and color registries from two Gaming scenes");
-                    Check(flow.WorldMenu.FrameHandoffCount == 1, "second start captured a real GPU frame for the unload/load handoff, without a black-circle fallback");
+                    Check(flow.WorldMenu.FrameHandoffCount == 0 && loadingEvents == 0 && SceneManager.sceneCount == initialLoadedScenes,
+                        "both menu round trips have zero scene loads/unloads or still-frame handoffs");
                     CheckDevices();
                     player.ConfigureRespawn(PlayerRespawnMode.LoadingTransition, .1f);
                     player.EnterDeath();
@@ -357,6 +377,8 @@ namespace Project.Player.Editor
                 }
         }
 
+        private static void TrackUnexpectedLoad(Scene scene, LoadSceneMode mode) => loadingEvents++;
+
         private static void Capture(string name)
         {
             Debug.Log($"WORLD MENU FRAME: {name} {Screen.width}x{Screen.height}");
@@ -369,6 +391,7 @@ namespace Project.Player.Editor
         {
             externalLock?.Dispose(); externalLock = null;
             SceneManager.sceneLoaded -= CheckReloadedScene;
+            SceneManager.sceneLoaded -= TrackUnexpectedLoad;
             SessionState.SetBool(Flag, false);
             EditorApplication.update -= Tick;
             RestoreGameView();

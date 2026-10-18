@@ -25,7 +25,7 @@
 
 不规则合并使用根上的 `LevelEditorMergedShape`：`WorldBounds` 仅用于遍历边界，`ContainsWorldPoint` 和压缩 `Volumes` 才定义水域；前后片网格都按实际格生成，不填孔洞。多 Collider 仍只有一套水状态，退出一片但仍在另一片内不能清掉游泳状态。浮力柱按实际片段检查，岩浆冷却继承形状和大小。
 
-`WaterCellVisibility` 根据 `LevelEditorPlacedBlock.ActiveRevision` 缓存当前 Scene 实体墙的实际格，只在增删/配置变化后重建；不是每帧扫描场景。水的初始网格、正式前后面片以及 InteractionLinkEffect 都忽略被墙覆盖的格；部分被遮挡的大水体将连线落到范围内的可见水格，全遮挡时不出线。该遮挡不删改规划、碰撞或水状态，不禁止水与墙同格存储。
+`WaterCellVisibility` 根据独立的 `LevelEditorPlacedBlock.SolidRevision` 缓存当前 Scene 实体墙的实际碰撞格，只在墙增删/配置变化后重建；不是每帧扫描场景。普通道具、藤蔓节段或反应产物启停只改变原 `ActiveRevision`，不会让全场水误重建。自定义代码若直接移动墙或改墙Collider，完成后调用该墙的 `NotifySolidGeometryChanged()`；`RoomResetObject` 在墙的实际姿态/碰撞复原发生变化时自动通知，未变墙不通知。缓存按当前Collider体积保留合并空洞，不继续遮挡被移走墙的旧作者格。水的初始网格、正式前后面片以及 InteractionLinkEffect 都忽略被墙覆盖的格；部分被遮挡的大水体将连线落到范围内的可见水格，全遮挡时不出线。该遮挡不删改规划、碰撞或水状态，不禁止水与墙同格存储。
 
 ## 材质与管线
 
@@ -35,7 +35,7 @@
 
 所有面片/气泡保留blue普通Layer与Real标记。后片排序-100、气泡0、玩家10；前片在水体前沿，专属PixelWaterRefraction通道于AfterRenderingTransparents取样/绘制，因此包括角色与气泡。WaterUnderlayRendererFeature按唯一LightMode筛选，不再要求普通Water Layer；SelectiveHsvRendererFeature的mask增加此LightMode，HSV继续在像素化之后运行。PC/Mobile Renderer均已具备所需Feature。不把游戏物体Layer改为PixelEffect，不引入另一套全局管线设置。
 
-生成根归WaterVisualFeature所有，禁用时先SetActive(false)再延迟Destroy，不在禁用回调SetParent；同帧重新挂接不复用旧表现。注册表与捕获请求成对注销。区域重置走现有Host重新挂接，保留蓝色解锁状态。
+生成根归WaterVisualFeature所有，禁用时先SetActive(false)再延迟Destroy，不在禁用回调SetParent；同帧真正重新挂接不复用已退役的旧表现。注册表与捕获请求成对注销。区域重置保留蓝色解锁和未变的功能连接，清除蒸汽/接触而不拆水体表现；避免一次切区触发全场水体拓扑和气泡重建。实际隐藏、颜色停用或销毁仍走完整退役路径。
 
 ## 验证入口
 

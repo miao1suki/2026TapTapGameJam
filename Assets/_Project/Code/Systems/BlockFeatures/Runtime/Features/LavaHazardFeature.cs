@@ -51,7 +51,11 @@ namespace Project.BlockFeatures
             flowArtwork = null;
         }
 
-        protected override void OnResetForRoom() { if (flowArtwork != null) flowArtwork.Restart(); }
+        protected override void OnResetForRoom()
+        {
+            DisconnectAllPlayers();
+            if (flowArtwork != null) flowArtwork.Restart();
+        }
 
         private void CreateFlowArtwork()
         {
@@ -62,7 +66,9 @@ namespace Project.BlockFeatures
             BoxCollider box = GetComponent<BoxCollider>();
             Bounds local = shape != null ? shape.LocalBounds : box != null ? new Bounds(box.center, box.size) : new Bounds(Vector3.zero, Vector3.one);
             Vector3 front = transform.TransformPoint(new Vector3(local.center.x, local.center.y, local.min.z));
-            front.z -= .02f * GridCellWorldSize;
+            // This is an underlay in the same cell, not a front-facing decal on its
+            // contents. Put it behind opaque walls and the block's front artwork.
+            front.z += .02f * GridCellWorldSize;
             GameObject instance = Instantiate(prefab, front, Quaternion.identity, transform);
             Vector3 scale = transform.lossyScale;
             instance.transform.localScale = new Vector3(1f / Mathf.Max(.0001f, Mathf.Abs(scale.x)),

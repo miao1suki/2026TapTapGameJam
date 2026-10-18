@@ -2,7 +2,7 @@
 
 ## 场景和名称
 
-唯一启动场景是 `Assets/_Project/Scenes/Start/MainMenu.unity`，开始游戏进入 `Assets/_Project/Scenes/Playing/Gaming.unity`。测试地图不加入正式流程。应用名称为 **形之彩**，安卓文件名为 `形之彩.apk`，Windows 主程序为 `形之彩.exe`。
+唯一启动和构建场景是 `Assets/_Project/Scenes/Playing/Gaming.unity`，同场景叠加新主菜单；开始／返回不切换或重载世界。旧 MainMenu 只作编辑器兼容，不进入新包。测试地图不加入正式流程。应用名称为 **形之彩**，安卓文件名为 `形之彩.apk`，Windows 主程序为 `形之彩.exe`。
 
 本轮产物位于 `Builds/形之彩-20261014/`。安卓为 ARM64、IL2CPP 开发测试包，使用本机调试签名，不是商店发布包。手机要求 Android 7.1/API25 及以上；实际兼容性和性能仍须在设备上验收。Windows 需连同 `_Data`、UnityPlayer.dll 等整个目录分发，不能单独复制 exe。
 
@@ -16,7 +16,7 @@
 
 ## 尺寸与安全区
 
-游戏采用左右横屏自动旋转，不启用竖屏。Canvas 使用 Expand 的参考尺寸适配：主菜单与触摸 HUD 为 1280×720，暂停保持原 1920×1080。内容通过 `ScreenSafeArea` 按 `Screen.safeArea` 设置归一化锚点，更新时清除偏移；背景继续全屏覆盖且各菜单页共享同一横移背景。未改变暂停扇形素材的支点、间距、选中动画和 PC 键位。
+游戏采用左右横屏自动旋转，不启用竖屏。Canvas 使用 Expand 的参考尺寸适配：主菜单与触摸 HUD 为 1280×720，暂停保持原 1920×1080。内容通过 `ScreenSafeArea` 按 `Screen.safeArea` 设置归一化锚点，更新时清除偏移；主菜单透明叠加真实 Gaming，不再有旧横移平面背景。未改变暂停扇形素材的支点、间距、选中动画和 PC 键位。
 
 检查了 1280×720、1920×1080、2400×1080、2560×1600、2048×1536 的触摸按钮尺寸与模拟安全区，设备刘海、手势条与实际点击手感需在手机上确认。
 
@@ -38,7 +38,7 @@ Android构建0错误/4旧Shader警告，Windows构建0错误/2旧Shader警告。
 
 2026-10-16 安卓操作测试版：`Builds/形之彩-20261016/Android/形之彩.apk`，ARM64开发包，约100MiB；MainMenu/Gaming，最低Android7.1。本轮仅构建安卓，未重建PC包。原生隐私入口/非导出Unity活动及内置正文在最终APK中核对通过；没有连接安卓设备，仍需真机验证授权边界、多指手感与不同分辨率。转角与布局44项、相关编辑测试149项通过，真实Touchscreen多指事件通过；不是发布合规认证。
 
-构建脚本：`Assets/Player/Editor/MobileBuildSetup.cs`。使用 Unity 6000.3.12f1，不升级项目。构建时设置 `TAPTAP_TEST_BUILD_ROOT` 为明确输出目录，以 `-executeMethod MobileBuildSetup.BuildWindows` / `BuildAndroid` 调用；安卓启动 Unity 时带 `-buildTarget Android`。脚本明确只收录上述两个场景，检查 BuildReport 结果并生成报告。`Prepare` 为本轮 UI 资产配置脚本，已经应用，不应为普通功能开发反复执行。
+构建脚本：`Assets/Player/Editor/MobileBuildSetup.cs`。使用 Unity 6000.3.12f1，不升级项目。构建时设置 `TAPTAP_TEST_BUILD_ROOT` 为明确输出目录，以 `-executeMethod MobileBuildSetup.BuildWindows` / `BuildAndroid` 调用；安卓启动 Unity 时带 `-buildTarget Android`。脚本现只收录 Gaming，检查 BuildReport 结果并生成报告；旧历史包仍是两场景，不能当作单场景新版本。`Prepare` 为 UI 资产配置脚本，不应为普通功能开发反复执行。
 
 本轮使用 `Library/FlowRetirementProbe` 隔离快照，避免对已打开的主项目切换平台或调用批处理；不将探针脚本放入正式包。源码修正和 UI 资产已同步回当前项目。构建日志为 `Library/WindowsTestBuild.log`、`Library/AndroidTestBuild.log`。输入/UI 与原系统编辑测试：`Library/MobileEditMode.xml`；真实气泡上浮：`Library/BubbleMotion.log`；真实移动/冲刺/跳跃多指输入与暂停释放：`Library/TouchPlay.log`；主菜单三次往返：`Library/MobileMenuRoundTrip.log`。
 

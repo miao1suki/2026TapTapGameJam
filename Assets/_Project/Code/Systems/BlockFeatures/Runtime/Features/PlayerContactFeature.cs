@@ -40,6 +40,11 @@ namespace Project.BlockFeatures
 
         protected void DisconnectAllPlayers()
         {
+            if (contacts.Count == 0)
+            {
+                triggerCounts.Clear();
+                return;
+            }
             var players = new List<PlayerController>(contacts.Values);
             contacts.Clear();
             triggerCounts.Clear();

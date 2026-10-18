@@ -270,6 +270,24 @@ namespace Project.BlockFeatures
             if (gridOwner != null) { grid ??= gridOwner as IGridCellSizeProvider; if (grid != null) cell = Mathf.Max(.01f, grid.CellWorldSize); }
             DisplayBounds(out var center, out var size);
             Vector3 scale = transform.lossyScale;
+            if (button != null || redButton != null)
+            {
+                // All frames are complete 16x16 cells, with a bottom pivot.
+                // Rotate about the cell centre, not about the pressure trigger
+                // or its thin model bounds. Swapping parent axes keeps pixels
+                // square even with a non-uniform authored root scale.
+                ButtonFacing facing = button != null ? button.Facing : redButton.Facing;
+                bool sideways = facing == ButtonFacing.Left || facing == ButtonFacing.Right;
+                Quaternion rotation = ButtonPressureGeometry.Rotation(facing);
+                visual.drawMode = SpriteDrawMode.Simple;
+                visual.transform.localRotation = rotation;
+                visual.transform.localScale = GridArtworkMetrics.NaturalSpriteScale(sprite,
+                    sideways ? new Vector3(scale.y, scale.x, scale.z) : scale, cell);
+                Vector3 edge = rotation * Vector3.down * (cell * .5f);
+                visual.transform.localPosition = new Vector3(edge.x / Mathf.Max(.001f, Mathf.Abs(scale.x)),
+                    edge.y / Mathf.Max(.001f, Mathf.Abs(scale.y)), center.z - size.z * .5f - .015f);
+                return;
+            }
             if (spike != null)
             {
                 Quaternion rotation = spikeDirection != null ? Quaternion.Inverse(transform.rotation) * spikeDirection.rotation : Quaternion.identity;
@@ -286,7 +304,9 @@ namespace Project.BlockFeatures
             }
             bool tile = ladder != null || lava != null || obstacle != null || kind == MechanismArtworkKind.Obsidian || kind == MechanismArtworkKind.RedCube || kind == MechanismArtworkKind.GreenCube || kind == MechanismArtworkKind.BlueCube;
             bool sliced = platform != null || oneWay != null;
-            bool verticalPlatform = sliced && ObjectArtworkLibrary.PlatformVisualIsVertical(new Vector2(Mathf.Abs(size.x * scale.x), Mathf.Abs(size.y * scale.y)));
+            Vector2 platformDimensions = new Vector2(Mathf.Abs(size.x * scale.x), Mathf.Abs(size.y * scale.y));
+            bool verticalPlatform = sliced && (platform != null ? platform.IsArtworkVertical(platformDimensions)
+                : ObjectArtworkLibrary.PlatformVisualIsVertical(platformDimensions));
             visual.flipX = ladder != null && ladder.SideFacing && ladder.WallSide == LadderWallSide.Left;
             // A narrow ladder trigger is not its art footprint. Its complete 16-pixel
             // tile still occupies one authored cell, including existing long ladders.

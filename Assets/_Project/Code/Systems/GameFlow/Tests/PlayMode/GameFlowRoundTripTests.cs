@@ -16,8 +16,9 @@ namespace Project.GameFlow.Tests
         [UnityTest]
         public IEnumerator Menu_Gameplay_PausedReturn_Repeat_RestoresMusicAndSimulation()
         {
-            yield return LoadForTest("Assets/_Project/Scenes/Start/MainMenu.unity");
+            yield return LoadForTest(GameFlowController.GameplayScenePath);
             yield return WaitForScene(GameFlowSceneId.MainMenu);
+            int firstWorld = SceneManager.GetSceneByPath(GameFlowController.GameplayScenePath).handle;
             var audio = GameAudioService.Instance;
             Assert.That(audio, Is.Not.Null, "Flow audio service must not depend on a retired system scene.");
             audioRoot = audio.MusicSource.transform.root.gameObject;
@@ -27,6 +28,8 @@ namespace Project.GameFlow.Tests
             {
                 Assert.That(GameFlowController.Instance.RequestTransition(GameFlowSceneId.Gaming), Is.True);
                 yield return WaitForScene(GameFlowSceneId.Gaming);
+                Assert.That(SceneManager.GetSceneByPath(GameFlowController.GameplayScenePath).handle, Is.EqualTo(firstWorld));
+                Assert.That(SceneManager.GetSceneByPath(GameFlowController.CompatibilityMenuScenePath).isLoaded, Is.False);
                 Assert.That(GameAudioService.Instance, Is.SameAs(audio));
                 Assert.That(audio.MusicSource.clip, Is.Not.Null);
                 StringAssert.Contains("atmosphere_emin", audio.MusicSource.clip.name);

@@ -1327,6 +1327,7 @@ namespace PlanningEditorPrototype
             waterEditing.style.marginBottom = 8;
             waterEditing.RegisterValueChangedCallback(evt => { waterEditingMode = evt.newValue; canvas?.SetWaterEditing(evt.newValue); });
             panel.Add(waterEditing);
+            panel.Add(BuildPlatformShapeTools());
             panel.Add(BuildWorldToolPanel());
 
             blockEditorFoldout = new Foldout
@@ -2932,6 +2933,7 @@ namespace PlanningEditorPrototype
 
         private void RefreshInspector()
         {
+            RefreshPlatformShapeSelection();
             if (inspector == null)
             {
                 return;

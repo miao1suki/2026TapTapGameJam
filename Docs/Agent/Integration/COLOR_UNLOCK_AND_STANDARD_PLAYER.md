@@ -34,7 +34,7 @@ ColorRuntimeService API：
 - 根节点 Player，Tag=Player，单位缩放、零旋转；预制体自身位置为原点。
 - 胶囊中心为零、半径0.5、高1，仅一个实体 Collider，不再有旧高胶囊或额外大触发箱。
 - 统一 PlayerController、PlayerInputDriver、PlayerActionRunner、PlayerHealth、PlayerFallDamage、PlayerInteractionSensor、PlayerColorWheel、GreenHookAbility、PlayerSpritePresentation、PickWheelPrototype 与 TA InteractionLinkEffect。
-- 精灵1×1格，保留向下0.08格的美术偏移；Timeline适配保留，但默认无测试Timeline且不自动播放。
+- 精灵按现有原图比例显示为1.5×1.5格，不改变原图采样密度；在原有向下0.08格的基础上，再下移2个美术像素（`additionalVerticalOffsetPixels=-2`，16有效像素/格，即1格世界尺寸的0.125）。只移动精灵，不移动玩家根节点、胶囊或交互中心；Timeline适配保留，但默认无测试Timeline且不自动播放。
 - 搬运逻辑继续使用实际胶囊中心；禁止重新以某一旧预制体偏移修补占格。
 - 场景可配置出生/重生点和相机，不复制玩家Prefab、不对核心碰撞/输入/能力组件保留另一套场景覆盖。
 

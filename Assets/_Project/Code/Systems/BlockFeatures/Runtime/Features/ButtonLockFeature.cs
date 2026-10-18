@@ -52,12 +52,19 @@ namespace Project.BlockFeatures
         [BlockParameter(Label = "触发模式", Group = "按钮设置", Order = 5)]
         [SerializeField] private DoorButtonMode mode;
 
+        [BlockParameter(Label = "按钮朝向", Group = "按钮设置", Order = 6,
+            Tooltip = "同一按钮的四向压力面，原素材按90度旋转；默认朝上。")]
+        [SerializeField] private ButtonFacing facing;
+
         private bool isOn;
         private bool initialized;
         private BoxCollider pressTrigger;
+        private ButtonFacing configuredFacing;
         private Collider[] contacts = new Collider[16];
 
         public bool IsSignalActive => isOn && CanRunFeature;
+        public bool Persistent => mode == DoorButtonMode.Latched;
+        public ButtonFacing Facing => facing;
         public event Action<bool> SignalChanged;
 
         protected override void OnAttach()
@@ -66,9 +73,8 @@ namespace Project.BlockFeatures
             pressTrigger = GetComponent<BoxCollider>();
             if (pressTrigger != null)
             {
-                pressTrigger.isTrigger = true;
-                pressTrigger.center = new Vector3(0f, -.35f, 0f);
-                pressTrigger.size = new Vector3(.6f, .3f, .6f);
+                ButtonPressureGeometry.Configure(pressTrigger, facing);
+                configuredFacing = facing;
             }
             if (targetRenderer == null)
             {
@@ -82,6 +88,8 @@ namespace Project.BlockFeatures
         private void FixedUpdate()
         {
             if (!CanRunFeature) return;
+            if (pressTrigger != null && (!pressTrigger.isTrigger || configuredFacing != facing))
+            { ButtonPressureGeometry.Configure(pressTrigger, facing); configuredFacing = facing; }
             if (pressTrigger == null || !pressTrigger.enabled)
             {
                 if (mode == DoorButtonMode.Held) SetOn(false);
@@ -89,7 +97,7 @@ namespace Project.BlockFeatures
             }
             if (mode == DoorButtonMode.Latched && isOn) return;
             bool pressed = DoorButton.FindPressureActor(pressTrigger,
-                footTolerance * GridCellWorldSize, ref contacts) != null;
+                footTolerance * GridCellWorldSize, ref contacts, facing) != null;
             if (pressed || mode == DoorButtonMode.Held) SetOn(pressed);
         }
 

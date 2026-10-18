@@ -160,9 +160,11 @@ namespace Project.BlockFeatures
         protected override void OnResetForRoom()
         {
             StopSteamReaction();
-            ColorAppearanceManager.Existing?.UnregisterWater(waterVisual);
-            SetWaterReveal(0f);
-            DestroySpawnedWaterVisual();
+            // Authored water returns to the same volume and keeps the same color
+            // unlock state. Only transient steam/contact gameplay resets; retain
+            // the static water meshes and bubbles. A real disable/detach still
+            // owns full cleanup through OnDetach.
+            DisconnectAllPlayers();
         }
 
         protected void SetWaterReveal(float value)

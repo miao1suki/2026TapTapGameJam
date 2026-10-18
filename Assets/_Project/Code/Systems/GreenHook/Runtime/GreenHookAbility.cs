@@ -108,6 +108,8 @@ namespace Project.GreenHook
         private Collider[] powerContactHits = new Collider[32];
         private HashSet<MechanismBaseFeature> previousPowerContacts = new HashSet<MechanismBaseFeature>();
         private HashSet<MechanismBaseFeature> currentPowerContacts = new HashSet<MechanismBaseFeature>();
+        private readonly Dictionary<MechanismBaseFeature, Vector3> pendingPowerSeats = new Dictionary<MechanismBaseFeature, Vector3>();
+        private readonly List<MechanismBaseFeature> stalePowerSeats = new List<MechanismBaseFeature>();
         private Vector3 retargetVisualStart;
         private float retargetVisualElapsed;
         [SerializeField, Min(0f)] private float swingAcceleration = 18f;
@@ -295,6 +297,8 @@ namespace Project.GreenHook
             pulledEnergy = null;
             previousPowerContacts.Clear();
             currentPowerContacts.Clear();
+            pendingPowerSeats.Clear();
+            stalePowerSeats.Clear();
             phase = HookPhase.None;
             finishElapsed = 0f;
             pullingPlayer = false;
@@ -389,10 +393,24 @@ namespace Project.GreenHook
                 pullAxis = SnapToCardinal(toTarget);
             toTarget = pullAxis;
             float step = Mathf.Min(pullSpeed * deltaTime, Mathf.Max(0f, distance - contactPadding));
+            // The base's neighbour-volume signal may turn on while only the
+            // corner of a red box has entered the neighbouring cell. Finish
+            // the already-directed approach before parking, otherwise the
+            // new-power pause strands a box on the lip instead of on the base.
+            step = LimitPowerSeatingStep(targetCenter, -toTarget, step);
+            if (pausedForPowerContact) { StopPullMotion(); return; }
             // Assess the next physical step every time. Do not infer blockage from render-frame jitter.
             float targetStep = targetMotion != null && target.GreenHookMotionMode == GreenHookMotionMode.PullTarget
                 ? GreenHookPhysics.FreeDistance(targetColliders, targetTransform, transform,
                     -toTarget, step, .015f, true) : 0f;
+            if (pendingPowerSeats.Count != 0 && targetStep < Mathf.Min(step, .002f))
+            {
+                // A real face/wall wins over the ideal cell centre. Never push
+                // through the socket or switch to pulling the player on entry.
+                pausedForPowerContact = true;
+                StopPullMotion();
+                return;
+            }
             pullingPlayer = targetStep < Mathf.Min(step, .002f);
             if (!pullingPlayer && targetMotion != null)
             {
@@ -446,12 +464,50 @@ namespace Project.GreenHook
                         currentPowerContacts.Add(foundation);
                 }
             }
-            if (!snapshot)
+            stalePowerSeats.Clear();
+            foreach (var pending in pendingPowerSeats)
+                if (!currentPowerContacts.Contains(pending.Key)) stalePowerSeats.Add(pending.Key);
+            foreach (MechanismBaseFeature stale in stalePowerSeats) pendingPowerSeats.Remove(stale);
+            if (snapshot) pendingPowerSeats.Clear();
+            else
                 foreach (MechanismBaseFeature foundation in currentPowerContacts)
-                    if (!previousPowerContacts.Contains(foundation)) { pausedForPowerContact = true; break; }
+                    if (!previousPowerContacts.Contains(foundation))
+                    {
+                        if (pulledEnergy == null || foundation == pulledBase)
+                        {
+                            pausedForPowerContact = true;
+                            break;
+                        }
+                        Vector2 side = SnapToCardinal(targetTransform.position - foundation.transform.position);
+                        pendingPowerSeats[foundation] = (Vector3)side * GridCellSizeUtility.Resolve(foundation);
+                    }
             var previous = previousPowerContacts;
             previousPowerContacts = currentPowerContacts;
             currentPowerContacts = previous;
+        }
+
+        private float LimitPowerSeatingStep(Vector3 targetCenter, Vector3 direction, float step)
+        {
+            float tolerance = .02f * hookCellWorldSize;
+            foreach (var pending in pendingPowerSeats)
+            {
+                if (pending.Key == null) continue;
+                Vector3 remaining = pending.Key.transform.position + pending.Value - targetCenter;
+                remaining.z = 0f;
+                float forward = Vector3.Dot(remaining, direction);
+                Vector3 across = remaining - direction * forward;
+                // Only complete an approach that is already heading into the
+                // neighbouring cell. Moving away, changing axes or a socket
+                // moving out from under the box must park immediately instead
+                // of inventing a new movement/snap/autopilot path.
+                if (forward <= tolerance || across.sqrMagnitude > tolerance * tolerance * 4f)
+                {
+                    pausedForPowerContact = true;
+                    return 0f;
+                }
+                step = Mathf.Min(step, forward);
+            }
+            return step;
         }
 
         private void ReleaseHook(bool manual = false)
@@ -631,6 +687,8 @@ namespace Project.GreenHook
             pausedForPowerContact = false;
             previousPowerContacts.Clear();
             currentPowerContacts.Clear();
+            pendingPowerSeats.Clear();
+            stalePowerSeats.Clear();
             pulledBase = targetTransform.GetComponent<MechanismBaseFeature>();
             pulledEnergy = targetTransform.GetComponent<IEnergySource>();
             phase = HookPhase.Pulling;
@@ -910,6 +968,8 @@ namespace Project.GreenHook
             pulledEnergy = null;
             previousPowerContacts.Clear();
             currentPowerContacts.Clear();
+            pendingPowerSeats.Clear();
+            stalePowerSeats.Clear();
             finishElapsed = 0f;
         }
 

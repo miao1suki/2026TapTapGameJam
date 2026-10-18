@@ -143,6 +143,10 @@ namespace Project.BlockFeatures.Editor
                 {
                     Sprite sprite = library.FirstFrame(kind);
                     if (sprite == null) return false;
+                    if (prefab.TryGetComponent<DoorButton>(out var button))
+                        rotation = ButtonRotation(button.Facing, typeof(DoorButton), overrides);
+                    else if (prefab.TryGetComponent<ButtonLockFeature>(out var redButton))
+                        rotation = ButtonRotation(redButton.Facing, typeof(ButtonLockFeature), overrides);
                     preview = new PlanningArtworkPreview(sprite, tile, rotation, flip);
                 }
             }
@@ -241,6 +245,17 @@ namespace Project.BlockFeatures.Editor
                     (value.ComponentTypeName == typeof(OneWayPlatform).FullName || value.ComponentTypeName == typeof(OneWayPlatform).AssemblyQualifiedName) &&
                     value.PropertyPath == "appearanceColor" && int.TryParse(value.Value, out int selected)) color = selected;
             return ObjectArtworkLibrary.OneWayPlatformKind(color);
+        }
+
+        private static float ButtonRotation(ButtonFacing facing, Type component,
+            IReadOnlyList<LevelEditorComponentValueOverride> overrides)
+        {
+            if (overrides != null) foreach (var value in overrides)
+                if (value != null && string.IsNullOrEmpty(value.ComponentPath) &&
+                    (value.ComponentTypeName == component.FullName || value.ComponentTypeName == component.AssemblyQualifiedName) &&
+                    value.PropertyPath == "facing" && int.TryParse(value.Value, out int selected))
+                    facing = (ButtonFacing)selected;
+            return ButtonPressureGeometry.RotationDegrees(facing);
         }
 
         private static PlanningArtworkPreview SampleVine(Sprite source, float width, int rows)

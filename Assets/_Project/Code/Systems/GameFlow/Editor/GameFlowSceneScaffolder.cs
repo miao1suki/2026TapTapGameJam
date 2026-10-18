@@ -52,7 +52,6 @@ namespace Project.GameFlow.Editor
 
         public static readonly string[] CanonicalBuildScenePaths =
         {
-            MainMenuPath,
             GamingPath,
         };
 
@@ -75,7 +74,7 @@ namespace Project.GameFlow.Editor
                 Array.Empty<string>(),
                 new[]
                 {
-                    new GameFlowSceneEntry(GameFlowSceneId.MainMenu, MainMenuPath, false),
+                    new GameFlowSceneEntry(GameFlowSceneId.MainMenu, GamingPath, false),
                     new GameFlowSceneEntry(GameFlowSceneId.Gaming, GamingPath, true),
                 });
             EditorUtility.SetDirty(catalog);

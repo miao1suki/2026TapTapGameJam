@@ -1,6 +1,6 @@
 # 系统索引
 
-主菜单改为真实Gaming近景与常驻MainMenu Canvas融合：新ButtonIcon四项竖排、27帧LOGO，首次开始相机拉远、返回反向运镜，不使用旧菜单黑圈/滚动背景。预览租约隔离玩家物理、输入与收集，不停用世界美术；重复开始先卸旧世界再载新世界，保留本次运行颜色进度，单帧底图交接与唯一相机/Listener/EventSystem。见[融合菜单](../Developer/WORLD_MENU_FUSION.md)与[场景流程](../Developer/GAME_FLOW.md)。
+主菜单与游玩采用同一Gaming场景：正式构建仅Gaming，首帧自动安装纯UI WorldMainMenu prefab，新ButtonIcon四项竖排与27帧LOGO；开始平滑退镜、返回反向，期间不加载/卸载场景、不截图、不重置进度，唯一世界Camera/Listener/EventSystem始终启用。旧MainMenu文件只作编辑器兼容重定向，其旧蓝底/布局移除。见[融合菜单](../Developer/WORLD_MENU_FUSION.md)与[场景流程](../Developer/GAME_FLOW.md)。
 
 Boss清障隐藏与持久机关进度分离：房间重置归还临时渲染/碰撞租约，不清门按钮进度，旧碰撞隐藏队列按ResetRevision失效。见[BOSS_ROOM_RESET_VISUALS](Integration/BOSS_ROOM_RESET_VISUALS.md)。两个移动平台已接新6/9帧48×16素材、14像素支撑上缘，旧占格/路线不扩大；新增红绿蓝单向平台栏目复用同一Prefab，颜色参数只影响外观与HSV图层。见[物体美术API](Integration/OBJECT_ARTWORK_API.md)。Scene/可编辑存档/meta/新增美术依赖仍必须成套交付。
 
@@ -66,7 +66,7 @@ Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全�
 
 藤蔓外观使用TA192帧序列图集（ObjectArtwork），整根单SpriteRenderer、按生长长度适配、燃烧倒放及长成末段循环；仍走集中绿色HSV/共享材质透明交接，不再回退实时粒子。构建前检查序列帧和材质完整性，缺配置阻止出包。移动端额外像素化参数与PC一致，烘焙精灵不进入实时粒子像素遮罩。弹性植物底部贴齐格子。水序列帧尚未交付，保留现有水效果。见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md) 和 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
 
-双平台测试：SharedGameUI 的 MobileGameplayControls 提供多指方向/跳跃/Sprint/交互/左右放下与暂停/重生/选色，ScreenSafeArea 与 Expand Canvas 适配横屏比例及安全区。输入仍走 GameInput，触摸边沿在下一帧统一发布；合并气泡柱使用碰撞体底部而非中心判断上浮。正式包仅 MainMenu/Gaming，应用名和 APK 为“形之彩”。见 [双平台操作与构建](../Developer/ANDROID_AND_PC_TEST_BUILDS.md)。
+双平台测试：SharedGameUI 的 MobileGameplayControls 提供多指方向/跳跃/Sprint/交互/左右放下与暂停/重生/选色，ScreenSafeArea 与 Expand Canvas 适配横屏比例及安全区。输入仍走 GameInput，触摸边沿在下一帧统一发布；合并气泡柱使用碰撞体底部而非中心判断上浮。新正式包仅 Gaming 单场景，菜单为同景 UI；应用名和 APK 为“形之彩”。见 [双平台操作与构建](../Developer/ANDROID_AND_PC_TEST_BUILDS.md)。
 
 重生点/弹性植物美术：`ObjectArtwork`配置与`WorldObjectSpritePresentation`表现，三态重生点、真实弹跳触发的6帧动画、合并植物按格重复，接入既有绿色HSV/共享透明材质。使用见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md)，接入见 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
 
@@ -105,7 +105,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 非颜色门与绑定按钮 | `Assets/_Project/Code/Systems/Mechanisms` | 道具门1×2、自动/追加专属按钮、玩家踩踏按钮、全部按下后开门；Timeline默认关闭，可选真实按钮按下/开门触发。平台可选镜头同样默认关闭；不使用E、不接收颜色交互。见 Integration/DOOR_API.md、Integration/MECHANISM_SIGNAL_API.md 与 Developer/DOORS.md |
 | 无色梯子、横门与门提示 | `Assets/_Project/Code/Systems/Mechanisms` | 正面/侧面梯子复用攀爬；独立横门 2×1；每门唯一提示按总数/已按数量更新，新绑定上限三个。见 Integration/NEUTRAL_MECHANISMS_API.md 与 Developer/NEUTRAL_MECHANISMS.md；本地开发待验收 |
 | 选择性像素化 | `Assets/_Project/Code/Systems/Pixelization`、`Assets/ta_source/PixelEffect` | 当前 PC 启用 TA Stencil 路径及其像素参数，关闭重复内置像素化；HSV 保持开启且在其后执行。内置路径的 Rendering Layer 128/描边 API 不控制 TA Shader。见 Integration/PIXELIZATION_API.md |
-| 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 正式序列固定为 `Assets/_Project/Scenes/Start/MainMenu.unity` → `Assets/_Project/Scenes/Playing/Gaming.unity`；MainMenu 持 `GameFlowController`/`StartMenuFlowBridge`，Gaming 持玩家、相机管理和 `SharedGameUI` 暂停界面。Bootstrap、旧 Systems、旧三关和 Ending 不再使用 |
+| 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 正式构建单Gaming；自动安装GameFlow与纯UI WorldMainMenu，同世界内切逻辑菜单/玩法，开始及返回不重载，旧MainMenu仅兼容；玩家、相机及SharedGameUI仍由Gaming持有。Bootstrap、旧Systems、旧三关和Ending不再使用 |
 | 音频资源 | `Assets/_Project/Content/Audio` | 22个音乐/环境声与46个SFX；63份音频登记为55个Cue。新OP接主菜单，Boss曲仅登记待触发点；两种重生点激活、搬运、基座启停、平台移动、气泡/浮力、6格落地、燃烧、岩浆冷却/触碰及菜单确认已接。解谜/秘密与独立浅水步行待触发点，区域环境声/其余BGM待规划。见 `Integration/AUDIO_HANDOVER.md` |
 | 相机 Manager/跟随/2D3D | `Assets/_Project/Code/Systems/CameraModes` | 旧功能保留；玩家驱动不再申请 2D/3D 切换，Timeline 优先级更高 |
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |

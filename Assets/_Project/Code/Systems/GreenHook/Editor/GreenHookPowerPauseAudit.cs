@@ -58,6 +58,8 @@ namespace Project.GreenHook.Editor
                 Physics.simulationMode = SimulationMode.Script;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
+                currentCase = "video pit socket approach";
+                VerifyPitSocketApproach();
                 currentCase = "red-to-base retained power";
                 VerifyRedPull();
                 currentCase = "base-to-red, no-gravity priority";
@@ -138,6 +140,16 @@ namespace Project.GreenHook.Editor
                 var instance = Object.Instantiate(prefab, position, Quaternion.identity);
                 objects.Add(instance);
                 return instance;
+            }
+
+            public void Solid(string name, Vector3 offset, Vector3 size)
+            {
+                GameObject solid = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                objects.Add(solid);
+                solid.name = name;
+                solid.transform.position = Origin + offset;
+                solid.transform.localScale = size;
+                Physics.SyncTransforms();
             }
 
             public ContactCube Cube(string color, Vector3 offset, bool fixedSource = false)
@@ -281,6 +293,51 @@ namespace Project.GreenHook.Editor
             Check(!fixture.Hook.IsPullPausedForPower && !fixture.Hook.IsHookActive &&
                 !motion.IsGreenHookPullActive && fixture.Player.ControlLockDepth == 0 && foundation.IsPoweredBy(red),
                 "manual cancel clears pause/ownership without removing passive red supply");
+        }
+
+        private static void VerifyPitSocketApproach()
+        {
+            for (int direction = -1; direction <= 1; direction += 2)
+            for (int phase = 0; phase < 3; phase++)
+            {
+                using var fixture = new Fixture(400f + phase * 30f + (direction + 1) * 60f, false);
+                fixture.Solid("Socket left floor", new Vector3(direction * .75f, -1f, 0f), new Vector3(2.5f, 1f, 2f));
+                fixture.Solid("Socket right floor", new Vector3(direction * 5.5f, -1f, 0f), new Vector3(5f, 1f, 2f));
+                var foundation = fixture.Base(new Vector3(direction * 2.5f, -1f, 0f));
+                var red = fixture.Cube("Red", new Vector3(direction * (4.5f + phase * .047f), 0f, 0f));
+                var motion = red.GetComponent<ContactCubeMotion>();
+                var platform = fixture.Platform(foundation);
+                Set(fixture.Hook, "pullSpeed", phase == 2 ? 12f : 8f);
+                fixture.Scan();
+                Check(!foundation.IsSignalActive, "video socket begins unpowered");
+                fixture.Click(motion);
+                float firstSignalOffset = -1f;
+                for (int tick = 0; tick < 100 && !fixture.Hook.IsPullPausedForPower; tick++)
+                {
+                    fixture.Step();
+                    if (firstSignalOffset < 0f && foundation.IsPoweredBy(red))
+                        firstSignalOffset = Mathf.Abs(red.transform.position.x - foundation.transform.position.x);
+                }
+                Check(fixture.Hook.IsPullPausedForPower, "video socket eventually reaches a retained power pause");
+                float offset = Mathf.Abs(red.transform.position.x - foundation.transform.position.x);
+                Debug.Log("SOCKET APPROACH direction=" + direction + " phase=" + phase + " firstSignalOffset=" + firstSignalOffset + " offset=" + offset +
+                    " red=" + red.transform.position + " base=" + foundation.transform.position);
+                Check(firstSignalOffset > .3f, "fixture really exercises early neighbour-volume power, not an already seated cube");
+                Check(offset < .035f, "power pause occurs after red box reaches the socket, not the floor lip: " + offset);
+                Check(foundation.IsPoweredBy(red) && platform.LinkedControls.Count != 0,
+                    "real source and live platform remain powered during socket seating");
+                Vector3 resting = red.transform.position;
+                fixture.Step(160);
+                Check(fixture.Hook.IsPullPausedForPower && foundation.IsPoweredBy(red) &&
+                    Mathf.Abs(red.transform.position.x - resting.x) < .02f,
+                    "socket seating stays powered and does not slide away after the platform moves");
+                Check(Vector3.Distance(platform.transform.position, platform.PreviewFirstTarget) < .03f,
+                    "early signal still lets the bound platform finish its actual travel");
+                AssertOwner(fixture, motion, "socket seating keeps rope and ordinary walking ownership");
+                fixture.Click(motion);
+                fixture.Step();
+                Check(!fixture.Hook.IsPullPausedForPower, "deliberate reclick resumes from a seated socket");
+            }
         }
 
         private static void VerifyBasePull()

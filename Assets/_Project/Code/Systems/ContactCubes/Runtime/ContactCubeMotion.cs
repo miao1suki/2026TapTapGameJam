@@ -202,6 +202,7 @@ namespace Project.ContactCubes
             if (count == nearby.Length) return false;
             for (int i = 0; i < count; i++)
                 if (nearby[i] != null && !nearby[i].transform.IsChildOf(transform) &&
+                    !Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(nearby[i]) &&
                     nearby[i].GetComponentInParent<IPlayerCarrySeparationHost>() == null) return false;
             return true;
         }

@@ -76,11 +76,6 @@ namespace Project.StartMenu
                 canvas = BuildCanvas();
             }
 
-            if (background == null)
-            {
-                background = BuildBackground(canvas.transform);
-            }
-
             if (mainPanel == null)
             {
                 mainPanel = BuildMainPanel(canvas.transform).gameObject;
@@ -316,11 +311,6 @@ namespace Project.StartMenu
         {
             var art = GameUiArtwork.Load();
             if (art == null) return;
-            if (background != null && art.menuBackground != null)
-            {
-                background.texture = art.menuBackground;
-                background.color = Color.white;
-            }
             if (mainPanel != null)
             {
                 var panel = mainPanel.GetComponent<Image>();
@@ -347,10 +337,6 @@ namespace Project.StartMenu
                     }
                 }
             }
-            ApplyButtonArtwork(startButton, art.startButton, new Vector2(6,21));
-            ApplyButtonArtwork(creditsButton, art.creditsButton, new Vector2(5,77));
-            ApplyButtonArtwork(settingsButton, art.settingsButton, new Vector2(4,125));
-            ApplyButtonArtwork(quitButton, art.quitButton, new Vector2(72,125));
             ApplyWorldMenuArtwork(art);
             if (Application.isPlaying && creditsButton != null)
             {
@@ -492,6 +478,7 @@ namespace Project.StartMenu
         {
             AudioCuePlayer.PlayUiConfirm();
             SaveSlotInfo last = SaveGameService.GetMostRecentSlot();
+            if (statusText == null) return;
             statusText.text = last == null
                 ? "没有可继续的存档。"
                 : $"将读取存档：{last.displayName}；进入游戏的逻辑暂未接线。";

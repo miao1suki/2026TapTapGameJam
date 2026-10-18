@@ -28,7 +28,7 @@ namespace PlanningEditorPrototype
             {
                 if (previewArtwork == null) previewArtwork=ObjectArtworkLibrary.Load();
                 var sprite=previewArtwork?.FirstFrame(ObjectArtworkLibrary.DoorButtonKind(box.doorButtonOrder-1));
-                if (sprite != null) artwork=new PlanningArtworkPreview(sprite);
+                if (sprite != null) artwork=new PlanningArtworkPreview(sprite, artwork.Tile, artwork.RotationDegrees, artwork.FlipX);
             }
             artworkPreviewCache[box.id] = (matched, artwork); return matched;
         }
@@ -188,7 +188,11 @@ namespace PlanningEditorPrototype
             // A legacy paint batch contains separate one-cell objects, not one long
             // merged platform. Keep each object's native-pixel crop and support edge.
             bool separateCells = !box.isMerged && !box.singleInstance;
-            bool vertical = !separateCells && ObjectArtworkLibrary.PlatformVisualIsVertical(new Vector2(box.width, box.height));
+            bool vertical = !separateCells && (platform != null
+                ? PlanningPlatformShapeUtility.IsVertical(platform,
+                    box.hasComponentOverrides ? box.componentOverrides : entry.ComponentValueOverrides,
+                    new Vector2(box.width, box.height))
+                : ObjectArtworkLibrary.PlatformVisualIsVertical(new Vector2(box.width, box.height)));
             int length = vertical ? rect.height : rect.width;
             int tracks = vertical ? rect.width : rect.height;
             int stride = separateCells ? 1 : nativeLength;
@@ -197,6 +201,11 @@ namespace PlanningEditorPrototype
             float topInset = bounds != null
                 ? (.5f - (bounds.center.y + bounds.size.y * .5f) * entry.Prefab.transform.localScale.y) * (separateCells ? 1 : rect.height)
                 : 0f;
+            bool explicitVertical = platform != null && PlanningPlatformShapeUtility.Orientation(platform,
+                box.hasComponentOverrides ? box.componentOverrides : entry.ComponentValueOverrides) == Project.BlockFeatures.MovingPlatformBodyOrientation.Vertical;
+            float leftInset = bounds == null ? 0f : explicitVertical
+                ? (.5f - (bounds.center.y + bounds.size.y * .5f) * entry.Prefab.transform.localScale.y) * rect.width
+                : (.5f + (bounds.center.x - bounds.size.x * .5f) * entry.Prefab.transform.localScale.x) * rect.width;
             for (int track = 0; track < tracks; track++)
             for (int start = 0; start < length; start += stride)
             {
@@ -222,7 +231,7 @@ namespace PlanningEditorPrototype
                 // cell. Align art to their actual support, not the nominal cell top.
                 image.style.left = target.center.x - width * .5f;
                 image.style.top = (vertical ? target.center.y : target.yMin + (topInset + thickness) * GridSize - height * .5f) - height * .5f;
-                if (vertical) image.style.left = target.xMin + thickness * GridSize - height * .5f - width * .5f;
+                if (vertical) image.style.left = target.xMin + (leftInset + thickness) * GridSize - height * .5f - width * .5f;
                 image.style.width = width;
                 image.style.height = height;
                 image.style.rotate = new Rotate(new Angle(vertical ? -90 : 0, AngleUnit.Degree));

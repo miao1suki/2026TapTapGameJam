@@ -191,13 +191,17 @@ namespace Project.GameFlow
             scenes.Add(lease);
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                foreach (Camera item in root.GetComponentsInChildren<Camera>(true)) Disable(item, lease.cameras);
-                foreach (AudioListener item in root.GetComponentsInChildren<AudioListener>(true)) Disable(item, lease.cameras);
+                // A menu is an overlay in this world, not a camera handoff. Keep the
+                // gameplay Camera/AudioListener alive from the first rendered frame.
                 foreach (Canvas item in root.GetComponentsInChildren<Canvas>(true))
-                    if (item.renderMode != RenderMode.WorldSpace) Disable(item, lease.interactions);
-                foreach (Transform candidate in root.GetComponentsInChildren<Transform>(true))
+                    if (item.renderMode != RenderMode.WorldSpace &&
+                        item.GetComponentInParent<StartMenuController>() == null) Disable(item, lease.interactions);
+            }
+            foreach (GameObject player in GameObject.FindGameObjectsWithTag("Player"))
+            {
+                if (player.scene != scene) continue;
+                Transform candidate = player.transform;
                 {
-                    if (!candidate.CompareTag("Player")) continue;
                     foreach (MonoBehaviour component in candidate.GetComponents<MonoBehaviour>())
                     {
                         if (component == null) continue;
@@ -224,7 +228,6 @@ namespace Project.GameFlow
                     }
                 }
             }
-            EnsureHandoffListener();
         }
 
         public void UseWorld(Scene scene, StartMenuController menu)
@@ -276,13 +279,36 @@ namespace Project.GameFlow
             menu.SetPresented(true, false);
             Tween ui = DOTween.To(() => 1f, value => menu.SetFusionContent(value), 0f, enterSeconds * .65f)
                 .SetEase(Ease.InCubic).SetUpdate(true).SetTarget(this);
-            cameraLease.Release(CameraTransition.Ease(enterSeconds));
-            cameraLease = default;
+            // Keep the presentation owner until the whole move is finished. Releasing
+            // at the beginning lets a gameplay mode/snap re-request cancel the blend.
+            CameraModeController mode = cameraManager.GetComponent<CameraModeController>();
+            if (mode == null || !mode.TryGetCameraState(new CameraControlContext(cameraManager.FocusPoint, 0f), out menuState))
+                throw new InvalidOperationException("Gaming 缺少可用的正常玩法机位。");
+            cameraManager.Retarget(cameraLease, CameraTransition.Ease(enterSeconds));
             yield return new WaitForSecondsRealtime(enterSeconds);
+            // Let CameraControlManager commit its final LateUpdate before handing back.
+            yield return null;
+            cameraLease.Release(CameraTransition.Immediate);
+            cameraLease = default;
             ui.Complete();
             menu.SetPresented(false);
             EndPreview();
         }
+
+#if UNITY_EDITOR
+        /// <summary>Explicit isolated gameplay-fixture entry; never compiled into a player build.</summary>
+        internal void EnterGameplayImmediatelyForDevelopment(StartMenuController menu)
+        {
+            DOTween.Kill(this);
+            var mode = cameraManager.GetComponent<CameraModeController>();
+            if (mode != null && mode.TryGetCameraState(new CameraControlContext(cameraManager.FocusPoint, 0f), out menuState))
+                cameraManager.Retarget(cameraLease, CameraTransition.Immediate);
+            cameraLease.Release(CameraTransition.Immediate);
+            cameraLease = default;
+            menu.SetPresented(false);
+            EndPreview();
+        }
+#endif
 
         public IEnumerator ReturnToMenu(StartMenuController menu)
         {
@@ -330,8 +356,6 @@ namespace Project.GameFlow
             DOTween.Kill(this);
             cameraLease.Release(CameraTransition.Immediate);
             cameraLease = default;
-            cameraManager = null;
-            activeWorld = default;
             ClearFrameHold();
             EndPreview();
             Time.timeScale = 1f;
@@ -347,6 +371,16 @@ namespace Project.GameFlow
                 // No menu asset exists to restore, but never retain a stale screenshot,
                 // shared gate, frozen player, camera lease or transition flag.
                 EnsureHandoffListener();
+                return;
+            }
+            // Recovery must not unload the only live world or replace its camera with
+            // the retired menu device set. Restore the same world and retry its lease.
+            if (activeWorld.IsValid() && activeWorld.isLoaded)
+            {
+                BeginPreview();
+                UseWorld(activeWorld, menu);
+                menu.ShowMain();
+                menu.SetPresented(true);
                 return;
             }
             Camera selectedCamera = null;

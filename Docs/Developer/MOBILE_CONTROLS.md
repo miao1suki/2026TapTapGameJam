@@ -1,5 +1,7 @@
 # 移动端操作与攀爬转角
 
+手机按键使用 `Resources/26TAPTAP/UI/B31A4497C97A51CF13A50549B8241494.png` 左上/左下两组原图，方向与跳跃取30×30的正方形版本，动作键保留34×28完整帧，Canvas等比显示。`Project.Player.Editor.MobileArtworkSetup.Build()` 显式离线裁切正常/按下状态到 `Resources/MobileControls` 并配置双端应用图标（`Resources/临时ICON.png`）；不打开或保存Scene、Prefab，不改触摸大小、位置、持久化布局。`MobileButtonArtwork`只更换图像，`TouchPressFeedback`仍使用原独立手指、跟手及释放链路；奔跑保持原开关，以按下帧表示激活。`MobileArtworkSetup.Validate()`检查切片、Point采样、Mip关闭和方向/跳跃方形尺寸。
+
 ## 操作
 
 - 左侧：左右移动、跳跃；左侧跳跃按住可在落地后连续起跳。右侧：行走／奔跑切换、单次跳跃、选色。行走／奔跑通过点击切换，不需要持续按住；暂停后保留选择，失焦或切后台清除奔跑输入。

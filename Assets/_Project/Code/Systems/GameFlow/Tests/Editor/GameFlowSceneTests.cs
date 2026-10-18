@@ -3,6 +3,7 @@ using Project.GameFlow.Editor;
 using UnityEditor;
 using UnityEngine;
 using System.Reflection;
+using System.Linq;
 
 namespace Project.GameFlow.Tests
 {
@@ -109,7 +110,7 @@ namespace Project.GameFlow.Tests
             Assert.That(
                 catalog.TryGet(GameFlowSceneId.MainMenu, out var menu),
                 Is.True);
-            Assert.That(menu.ScenePath, Is.EqualTo(GameFlowSceneScaffolder.MainMenuPath));
+            Assert.That(menu.ScenePath, Is.EqualTo(GameFlowSceneScaffolder.GamingPath));
             Assert.That(
                 catalog.TryGet(GameFlowSceneId.Gaming, out var gaming),
                 Is.True);
@@ -122,6 +123,20 @@ namespace Project.GameFlow.Tests
             Assert.That(EditorBuildSettings.scenes.Length, Is.GreaterThan(0));
             foreach (var scene in EditorBuildSettings.scenes)
                 Assert.That(AssetDatabase.LoadAssetAtPath<SceneAsset>(scene.path), Is.Not.Null, scene.path);
+            Assert.That(System.Linq.Enumerable.Where(EditorBuildSettings.scenes, s => s.enabled)
+                .Select(s => s.path), Is.EqualTo(new[] { GameFlowSceneScaffolder.GamingPath }));
+        }
+
+        [Test]
+        public void WorldMenuPrefab_HasOnlyNewArtworkAndNoWorldDevices()
+        {
+            var menu = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Resources/UI/WorldMainMenu.prefab");
+            Assert.That(menu, Is.Not.Null);
+            Assert.That(menu.GetComponentInChildren<Project.StartMenu.StartMenuController>(true).Background, Is.Null);
+            Assert.That(menu.GetComponentsInChildren<Camera>(true), Is.Empty);
+            Assert.That(menu.GetComponentsInChildren<AudioListener>(true), Is.Empty);
+            Assert.That(menu.GetComponentsInChildren<UnityEngine.EventSystems.EventSystem>(true), Is.Empty);
+            Assert.That(System.Linq.Enumerable.Any(menu.GetComponentsInChildren<UnityEngine.UI.Image>(true), x => x.name == "Animated Logo"), Is.True);
         }
 
         [Test]

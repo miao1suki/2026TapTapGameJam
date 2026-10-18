@@ -24,9 +24,9 @@ Timeline 现提供独立对话轨道：轨道不绑定对象，直接向常驻 `
 - `Assets/_Project/Code/Systems/<Feature>`：功能源码，Runtime/Editor/Tests 分开。
 - `Assets/Player`：基础玩家及 Timeline 动作适配。
 - `Assets/GJ_Tools/TimelineTools3D`：保留的旧 Timeline 工具（兼容路径）。
-- `Assets/_Project/Scenes/Start/MainMenu.unity`：唯一正式启动场景，持有 `GameFlowController` 和开始菜单流程桥。
-- `Assets/_Project/Scenes/Playing/Gaming.unity`：唯一正式玩法场景，持有玩家、玩法相机和共享暂停 UI。
-- 正式场景序列固定为 `MainMenu -> Gaming`；Bootstrap、旧五个 Systems 场景、旧 `Flow` 目录、Level_01～03 和 Ending 均退役，不再恢复。
+- `Assets/_Project/Scenes/Start/MainMenu.unity`：仅旧编辑器兼容入口，新美术界面预览，运行重定向 Gaming，不进入正式构建。
+- `Assets/_Project/Scenes/Playing/Gaming.unity`：唯一正式启动与玩法场景，持有玩家、玩法相机和共享暂停 UI；启动前帧自动安装共享 `Resources/UI/WorldMainMenu.prefab`。
+- 正式流程为同一 Gaming 世界内的 MainMenu/Gaming 两个逻辑态。开始、返回、再次开始都不加载或卸载场景，不重置进度；相机通过同一 Manager 租约平滑入退。Bootstrap、旧五个 Systems 场景、旧 `Flow` 目录、Level_01～03 和 Ending 均退役，不再恢复。
 - `Assets/_Project/Development/<Feature>/<AuthorOrTask>`：独立实验；不默认加入正式构建。
 - `Assets/_Project/Content`：正式流程的 prefab、catalog 和配置。
 - `Assets/_Project/Content/Audio/Music` 与 `SFX`：游戏实际使用的音频及其 `.meta`；音频成员按 `.agents/skills/taptap-audio-worker/SKILL.md` 交付。
