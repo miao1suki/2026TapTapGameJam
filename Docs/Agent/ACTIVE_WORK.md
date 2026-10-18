@@ -1,5 +1,16 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 TA 全屏 RGB 故障表现
+
+- 负责人：Codex；分支 `codex/ta/rgb-glitch`，从现有 TA 雨滴分支建立。
+- 范围：`Assets/ta_source/RGB_seperate` 内实现全屏 RGB 分离、画面抽动与暗角；为程序提供死亡、复活及 Boss 惊恐强度接口，并编写接入说明。
+- 场景：只新建独立测试场景，不编辑既有场景；渲染接线限于现有 PC、Mobile URP Renderer 资源。
+- 其他未提交的字体、Recovery、VS Code 和原有 `RGB_seperate.meta` 保留，不纳入本任务提交。
+- 交付：全屏 RGB 分离、间歇性整屏/局部横向抽动及暗角；Renderer Feature 可调暗角黑度、抖动速率/程度、色彩分离像素。静态 API 分别控制 Boss 惊恐基线、死亡增强、复活回落和清空。
+- 独立测试场景：`Assets/ta_source/RGB_seperate/RgbGlitchPreview.unity`，运行时生成四色条纹并以 6 秒循环演示惊恐、死亡、复活；不加入正式构建或自动接玩家事件。
+- 验证：`dotnet build Assembly-CSharp.csproj` 临时纳入三个新脚本后通过（0 错误、28 个既有警告），已撤销对生成 csproj 的临时编辑；6 个新资产及 `.meta`、GUID 唯一性、两个 Renderer Feature Map 与场景脚本引用检查通过，`git diff --check` 通过。Unity Game 画面及 Shader 编译仍待编辑器 Play 验收。
+- 文档：`Assets/ta_source/RGB_seperate/README.md`、`Docs/Agent/SYSTEM_INDEX.md`。
+
 ## 2026-10-18 TA 三色四帧雨滴
 
 - 后续参数：三个雨滴预设体新增独立的大小随机幅度（默认 ±35%）和速度随机幅度（默认 ±30%）；每次雨滴重新出现时重抽尺寸和速度。把两者任一设为 0 可单独关闭该变化；Play 中修改基准值或随机幅度会重建当前网格。Inspector 和 Rain README 已同步。静态核对三个 Prefab 均序列化了新字段，网格按每滴尺寸绘制并扩大包围盒；Unity 6000.3.12f1 运行画面仍待对应编辑器验收。
