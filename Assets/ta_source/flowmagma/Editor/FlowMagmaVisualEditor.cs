@@ -30,6 +30,7 @@ namespace Project.FlowMagma.Editor
             Add(flow, "height", "高度（世界单位）");
             Add(flow, "flowSpeed", "横向流动速度（循环/秒）");
             Add(flow, "waveAmplitude", "表面上下波幅（世界单位）");
+            Add(flow, "verticalWarpStrength", "上下纹理扭曲强度（0～0.03）");
             Add(flow, "waveFrequency", "表面波数");
             root.Add(flow);
 
@@ -39,6 +40,7 @@ namespace Project.FlowMagma.Editor
             Add(eruption, "eruptionDuration", "每轮喷发时长（秒）");
             Add(eruption, "launchSpeed", "喷出初速（单位/秒）");
             Add(eruption, "fallSpeed", "下坠加速度（单位/秒²）");
+            Add(eruption, "shrinkingParticleChance", "由大变小粒子占比");
             root.Add(eruption);
 
             var advanced = new Foldout { text = "粒子外观与高级设置", value = false };
@@ -46,6 +48,9 @@ namespace Project.FlowMagma.Editor
             Add(advanced, "splashFilter", "喷溅网格");
             Add(advanced, "splashRenderer", "喷溅渲染器");
             Add(advanced, "particleSize", "泡沫大小");
+            Add(advanced, "sizeRandomness", "大小随机幅度");
+            Add(advanced, "trajectoryRandomness", "轨迹随机幅度");
+            Add(advanced, "particleLifetime", "飞行消失时间（秒）");
             Add(advanced, "settleChance", "落地堆积概率");
             Add(advanced, "settleDuration", "堆积消失时间（秒）");
             Add(advanced, "randomSeed", "随机种子");

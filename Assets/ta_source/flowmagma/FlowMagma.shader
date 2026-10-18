@@ -5,7 +5,8 @@ Shader "TapTap/FlowMagma/Flowing Body"
         [MainTexture] _MainTex ("岩浆图集", 2D) = "white" {}
         [MainColor] _Color ("颜色", Color) = (1, 1, 1, 1)
         _FlowSpeed ("流动速度", Float) = 0.28
-        _WaveAmplitude ("波幅", Float) = 0.045
+        _WaveAmplitude ("波幅", Float) = 0.008
+        _VerticalWarpStrength ("上下纹理扭曲", Float) = 0.006
         _WaveFrequency ("波频", Float) = 1.5
         _EffectTime ("时间", Float) = 0
         _BodySize ("尺寸", Vector) = (1, 1, 0, 0)
@@ -32,6 +33,7 @@ Shader "TapTap/FlowMagma/Flowing Body"
                 half4 _Color;
                 float _FlowSpeed;
                 float _WaveAmplitude;
+                float _VerticalWarpStrength;
                 float _WaveFrequency;
                 float _EffectTime;
                 float4 _BodySize;
@@ -66,9 +68,9 @@ Shader "TapTap/FlowMagma/Flowing Body"
                 // Two offset flow phases blend at their midpoint, hiding the UV reset.
                 float phase = frac(t * _FlowSpeed);
                 float2 direction = float2(0.68 + 0.32 * sin(input.uv.y * 8.0 + t * 0.8),
-                                          0.12 * sin(input.uv.x * 7.0 - t * 0.9));
+                                          _VerticalWarpStrength * sin(input.uv.x * 7.0 - t * 0.9));
                 float2 baseUv = float2(input.uv.x, input.uv.y * 0.92);
-                baseUv.y += wave * _WaveAmplitude * 0.7;
+                baseUv.y += wave * _VerticalWarpStrength * 0.35;
                 half4 a = SampleTile(baseUv - direction * phase);
                 half4 b = SampleTile(baseUv - direction * frac(phase + 0.5));
                 float blend = abs(phase * 2.0 - 1.0);

@@ -14,6 +14,7 @@ namespace Project.FlowMagma
         private static readonly int EffectTimeId = Shader.PropertyToID("_EffectTime");
         private static readonly int FlowSpeedId = Shader.PropertyToID("_FlowSpeed");
         private static readonly int WaveAmplitudeId = Shader.PropertyToID("_WaveAmplitude");
+        private static readonly int VerticalWarpStrengthId = Shader.PropertyToID("_VerticalWarpStrength");
         private static readonly int WaveFrequencyId = Shader.PropertyToID("_WaveFrequency");
         private static readonly int BodySizeId = Shader.PropertyToID("_BodySize");
 
@@ -27,7 +28,8 @@ namespace Project.FlowMagma
 
         [Header("岩浆流动")]
         [SerializeField, Min(0f)] private float flowSpeed = 0.28f;
-        [SerializeField, Range(0f, MeshTopAllowance)] private float waveAmplitude = 0.045f;
+        [SerializeField, Range(0f, 0.03f)] private float waveAmplitude = 0.008f;
+        [SerializeField, Range(0f, 0.03f)] private float verticalWarpStrength = 0.006f;
         [SerializeField, Min(0.1f)] private float waveFrequency = 1.5f;
 
         [Header("喷发节奏")]
@@ -41,6 +43,10 @@ namespace Project.FlowMagma
         [SerializeField, Range(0f, 1f)] private float settleChance = 0.3f;
         [SerializeField, Min(0.01f)] private float settleDuration = 0.65f;
         [SerializeField, Min(0.01f)] private float particleSize = 0.09f;
+        [SerializeField, Range(0f, 1f)] private float shrinkingParticleChance = 0.55f;
+        [SerializeField, Range(0f, 1f)] private float sizeRandomness = 0.35f;
+        [SerializeField, Range(0f, 1f)] private float trajectoryRandomness = 0.6f;
+        [SerializeField, Min(0.2f)] private float particleLifetime = 1.8f;
         [SerializeField] private int randomSeed = 51;
 
         private struct Splash
@@ -48,6 +54,7 @@ namespace Project.FlowMagma
             public bool active;
             public bool settled;
             public bool maySettle;
+            public bool shrinking;
             public float x;
             public float y;
             public float vx;
@@ -55,6 +62,7 @@ namespace Project.FlowMagma
             public float age;
             public float settleAge;
             public float size;
+            public float lifetime;
         }
 
         private readonly Splash[] splashes = new Splash[MaxParticles];
@@ -70,12 +78,16 @@ namespace Project.FlowMagma
         private bool dirty = true;
 
         public float FlowSpeed { get => flowSpeed; set { flowSpeed = Mathf.Max(0f, value); ApplyProperties(); } }
-        public float WaveAmplitude { get => waveAmplitude; set { waveAmplitude = Mathf.Clamp(value, 0f, MeshTopAllowance); ApplyProperties(); } }
+        public float WaveAmplitude { get => waveAmplitude; set { waveAmplitude = Mathf.Clamp(value, 0f, 0.03f); ApplyProperties(); } }
+        public float VerticalWarpStrength { get => verticalWarpStrength; set { verticalWarpStrength = Mathf.Clamp(value, 0f, 0.03f); ApplyProperties(); } }
         public float ParticlesPerSecond { get => particlesPerSecond; set => particlesPerSecond = Mathf.Clamp(value, 0f, 80f); }
         public float EruptionInterval { get => eruptionInterval; set => eruptionInterval = Mathf.Max(0.05f, value); }
         public float EruptionDuration { get => eruptionDuration; set => eruptionDuration = Mathf.Max(0f, value); }
         public float LaunchSpeed { get => launchSpeed; set => launchSpeed = Mathf.Max(0f, value); }
         public float FallSpeed { get => fallSpeed; set => fallSpeed = Mathf.Max(0f, value); }
+        public float ShrinkingParticleChance { get => shrinkingParticleChance; set => shrinkingParticleChance = Mathf.Clamp01(value); }
+        public float SizeRandomness { get => sizeRandomness; set => sizeRandomness = Mathf.Clamp01(value); }
+        public float TrajectoryRandomness { get => trajectoryRandomness; set => trajectoryRandomness = Mathf.Clamp01(value); }
 
         public void Restart()
         {
@@ -108,7 +120,10 @@ namespace Project.FlowMagma
         {
             width = Mathf.Max(0.1f, width);
             height = Mathf.Max(0.1f, height);
+            waveAmplitude = Mathf.Clamp(waveAmplitude, 0f, 0.03f);
+            verticalWarpStrength = Mathf.Clamp(verticalWarpStrength, 0f, 0.03f);
             eruptionInterval = Mathf.Max(0.05f, eruptionInterval);
+            particleLifetime = Mathf.Max(0.2f, particleLifetime);
             dirty = true;
         }
 
@@ -199,6 +214,7 @@ namespace Project.FlowMagma
             bodyProperties.SetFloat(EffectTimeId, effectTime);
             bodyProperties.SetFloat(FlowSpeedId, flowSpeed);
             bodyProperties.SetFloat(WaveAmplitudeId, waveAmplitude);
+            bodyProperties.SetFloat(VerticalWarpStrengthId, verticalWarpStrength);
             bodyProperties.SetFloat(WaveFrequencyId, waveFrequency);
             bodyProperties.SetVector(BodySizeId, new Vector4(width, height, 0f, 0f));
             renderer.SetPropertyBlock(bodyProperties);
@@ -214,11 +230,13 @@ namespace Project.FlowMagma
                 {
                     active = true,
                     maySettle = RandomRange(0f, 1f) < settleChance,
+                    shrinking = RandomRange(0f, 1f) < shrinkingParticleChance,
                     x = x,
                     y = height * 0.5f + waveAmplitude * Mathf.Sin((x / width + 0.5f) * waveFrequency * Mathf.PI * 2f + effectTime * 1.7f),
-                    vx = RandomRange(-0.45f, 0.45f) * launchSpeed,
-                    vy = launchSpeed * RandomRange(0.75f, 1.3f),
-                    size = particleSize * RandomRange(0.75f, 1.4f)
+                    vx = RandomRange(-0.45f, 0.45f) * launchSpeed * trajectoryRandomness,
+                    vy = launchSpeed * (1f + RandomRange(-0.3f, 0.3f) * trajectoryRandomness),
+                    size = particleSize * Mathf.Max(0.2f, 1f + RandomRange(-1f, 1f) * sizeRandomness),
+                    lifetime = particleLifetime * RandomRange(0.8f, 1.2f)
                 };
                 return;
             }
@@ -247,10 +265,11 @@ namespace Project.FlowMagma
                         {
                             p.settled = true;
                             p.y = -height * 0.5f + p.size * 0.5f;
+                            p.lifetime = Mathf.Max(p.lifetime, p.age + settleDuration);
                         }
                         else p.active = false;
                     }
-                    if (p.age > 3f) p.active = false;
+                    if (p.age >= p.lifetime) p.active = false;
                 }
                 splashes[i] = p;
             }
@@ -269,14 +288,20 @@ namespace Project.FlowMagma
                     p.x = (-0.37f + i * 0.12f) * width;
                     p.y = height * 0.5f + 0.08f + Mathf.Sin(i * 1.7f) * 0.09f;
                     p.size = particleSize;
+                    p.shrinking = i % 2 == 0;
+                    p.age = i * 0.18f;
+                    p.lifetime = particleLifetime;
                 }
-                float s = p.size * (p.settled ? 0.65f : 1f) * 0.5f;
+                float sizeRatio = p.shrinking ? Mathf.Lerp(1f, 0.15f, Mathf.Clamp01(p.age / p.lifetime)) : 1f;
+                float s = p.size * sizeRatio * (p.settled ? 0.65f : 1f) * 0.5f;
                 int v = i * 4;
                 splashVertices[v] = new Vector3(p.x - s, p.y - s, 0f);
                 splashVertices[v + 1] = new Vector3(p.x + s, p.y - s, 0f);
                 splashVertices[v + 2] = new Vector3(p.x - s, p.y + s, 0f);
                 splashVertices[v + 3] = new Vector3(p.x + s, p.y + s, 0f);
-                byte alpha = visible ? (byte)(p.settled ? Mathf.RoundToInt(255f * (1f - p.settleAge / settleDuration)) : Mathf.RoundToInt(255f * Mathf.Clamp01((3f - p.age) * 2f))) : (byte)0;
+                float lifeFade = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.7f, 1f, p.age / Mathf.Max(p.lifetime, 0.2f)));
+                float settleFade = p.settled ? 1f - Mathf.Clamp01(p.settleAge / settleDuration) : 1f;
+                byte alpha = visible ? (byte)Mathf.RoundToInt(255f * lifeFade * settleFade) : (byte)0;
                 var color = new Color32(255, 255, 255, alpha);
                 splashColors[v] = splashColors[v + 1] = splashColors[v + 2] = splashColors[v + 3] = color;
             }

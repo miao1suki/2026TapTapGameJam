@@ -30,7 +30,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _FlowSpeed: 0.28
-    - _WaveAmplitude: 0.045
+    - _WaveAmplitude: 0.008
+    - _VerticalWarpStrength: 0.006
     - _WaveFrequency: 1.5
     - _EffectTime: 0
     m_Colors:

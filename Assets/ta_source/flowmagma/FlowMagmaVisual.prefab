@@ -111,7 +111,8 @@ MonoBehaviour:
   width: 1
   height: 1
   flowSpeed: 0.28
-  waveAmplitude: 0.045
+  waveAmplitude: 0.008
+  verticalWarpStrength: 0.006
   waveFrequency: 1.5
   particlesPerSecond: 13
   eruptionInterval: 2.4
@@ -121,6 +122,10 @@ MonoBehaviour:
   settleChance: 0.3
   settleDuration: 0.65
   particleSize: 0.09
+  shrinkingParticleChance: 0.55
+  sizeRandomness: 0.35
+  trajectoryRandomness: 0.6
+  particleLifetime: 1.8
   randomSeed: 51
 --- !u!1 &1011
 GameObject:
