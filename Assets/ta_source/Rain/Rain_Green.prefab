@@ -108,8 +108,10 @@ MonoBehaviour:
   areaWidth: 2.8
   areaHeight: 4
   dropletSize: 0.35
+  sizeVariation: 0.35
   density: 18
   fallSpeed: 3.2
+  speedVariation: 0.3
   frameRate: 9
   randomness: 0.8
   reachBottomChance: 0.55

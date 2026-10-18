@@ -31,8 +31,10 @@ namespace Project.Rain.Editor
             Field(main, "areaWidth", "下雨宽度（世界单位）");
             Field(main, "areaHeight", "下落高度（世界单位）");
             Field(main, "dropletSize", "雨滴大小（世界单位）");
+            Field(main, "sizeVariation", "大小随机幅度");
             Field(main, "density", "密度（每单位宽度）");
             Field(main, "fallSpeed", "下落速度（单位/秒）");
+            Field(main, "speedVariation", "速度随机幅度");
             Field(main, "frameRate", "四帧切换速度（帧/秒）");
             root.Add(main);
 

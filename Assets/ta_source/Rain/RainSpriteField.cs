@@ -25,8 +25,10 @@ namespace Project.Rain
         [SerializeField, Min(0.1f)] private float areaWidth = 2.8f;
         [SerializeField, Min(0.1f)] private float areaHeight = 4f;
         [SerializeField, Min(0.01f)] private float dropletSize = 0.35f;
+        [SerializeField, Range(0f, 0.9f)] private float sizeVariation = 0.35f;
         [SerializeField, Range(0f, 100f)] private float density = 18f;
         [SerializeField, Min(0.01f)] private float fallSpeed = 3.2f;
+        [SerializeField, Range(0f, 0.9f)] private float speedVariation = 0.3f;
         [SerializeField, Range(1f, 24f)] private float frameRate = 9f;
         [SerializeField, Range(0f, 1f)] private float randomness = 0.8f;
         [SerializeField, Range(0f, 1f)] private float reachBottomChance = 0.55f;
@@ -38,6 +40,7 @@ namespace Project.Rain
         {
             public float x;
             public float age;
+            public float size;
             public float speed;
             public float endProgress;
             public float framePhase;
@@ -53,6 +56,10 @@ namespace Project.Rain
         private System.Random random;
         private float lastWidth;
         private float lastDensity;
+        private float lastSize;
+        private float lastSizeVariation;
+        private float lastSpeed;
+        private float lastSpeedVariation;
 
         private void OnEnable()
         {
@@ -114,17 +121,26 @@ namespace Project.Rain
             mesh.uv = uvs;
             mesh.colors32 = colors;
             mesh.triangles = triangles;
-            mesh.bounds = new Bounds(Vector3.zero, new Vector3(areaWidth + dropletSize, areaHeight + dropletSize, 0.1f));
+            UpdateMeshBounds();
             GetComponent<MeshFilter>().sharedMesh = mesh;
             lastWidth = areaWidth;
             lastDensity = density;
+            lastSize = dropletSize;
+            lastSizeVariation = sizeVariation;
+            lastSpeed = fallSpeed;
+            lastSpeedVariation = speedVariation;
             Animate(0f);
         }
 
         private void Update()
         {
             if (mesh == null) return;
-            if (Mathf.Abs(lastWidth - areaWidth) > 0.001f || Mathf.Abs(lastDensity - density) > 0.001f)
+            if (Mathf.Abs(lastWidth - areaWidth) > 0.001f ||
+                Mathf.Abs(lastDensity - density) > 0.001f ||
+                Mathf.Abs(lastSize - dropletSize) > 0.001f ||
+                Mathf.Abs(lastSizeVariation - sizeVariation) > 0.001f ||
+                Mathf.Abs(lastSpeed - fallSpeed) > 0.001f ||
+                Mathf.Abs(lastSpeedVariation - speedVariation) > 0.001f)
             {
                 Build();
                 return;
@@ -139,13 +155,14 @@ namespace Project.Rain
             float reachChance = Mathf.Clamp01(reachBottomChance + (noise - 0.5f) * noiseStrength * randomness);
             bool reachesBottom = NextFloat() < reachChance;
             float endProgress = reachesBottom ? 1f : Mathf.Lerp(0.28f, 0.82f, noise);
-            float speedFactor = 1f + (NextFloat() * 2f - 1f) * randomness * 0.38f;
-            float speed = Mathf.Max(0.05f, fallSpeed * speedFactor);
+            float size = dropletSize * (1f + (NextFloat() * 2f - 1f) * sizeVariation);
+            float speed = fallSpeed * (1f + (NextFloat() * 2f - 1f) * speedVariation);
             float travelTime = areaHeight * endProgress / speed;
             drops[index] = new Drop
             {
                 x = x,
                 age = initial ? Mathf.Lerp(-0.45f, travelTime, NextFloat()) : -Mathf.Lerp(0.08f, 0.7f, NextFloat()) * randomness,
+                size = size,
                 speed = speed,
                 endProgress = endProgress,
                 framePhase = NextFloat() * FrameCount * randomness,
@@ -156,7 +173,6 @@ namespace Project.Rain
 
         private void Animate(float deltaTime)
         {
-            float halfSize = dropletSize * 0.5f;
             // The rain is the narrow vertical-streak block at the right of the source sheet.
             // Each color occupies two rows, with two animation frames per row.
             int colorRow = color == RainColor.Red ? 160 : color == RainColor.Blue ? 224 : 288;
@@ -172,6 +188,7 @@ namespace Project.Rain
                 }
                 else drops[i] = drop;
 
+                float halfSize = drop.size * 0.5f;
                 float progress = drop.age * drop.speed / areaHeight;
                 float y = areaHeight * (0.5f - progress) - halfSize;
                 float sway = Mathf.Sin(drop.age * 2.1f + drop.swayPhase) * randomness * noiseStrength * 0.06f;
@@ -208,7 +225,14 @@ namespace Project.Rain
             mesh.vertices = vertices;
             mesh.uv = uvs;
             mesh.colors32 = colors;
-            mesh.bounds = new Bounds(Vector3.zero, new Vector3(areaWidth + dropletSize, areaHeight + dropletSize, 0.1f));
+            UpdateMeshBounds();
+        }
+
+        private void UpdateMeshBounds()
+        {
+            float largestDrop = dropletSize * (1f + sizeVariation);
+            mesh.bounds = new Bounds(Vector3.zero,
+                new Vector3(areaWidth + largestDrop + 0.2f, areaHeight + largestDrop * 2f, 0.1f));
         }
 
         private float NextFloat() => (float)random.NextDouble();
