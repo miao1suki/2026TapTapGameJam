@@ -2093,3 +2093,9 @@
 - 本轮明确取代59b28f8的混合物体布局：删除原837项，生成249个白色形状、4577个有效格；单一规划区域只为编辑存档，不生成分界实体。原形状/孔洞/坐标逐物体精确核对；场景内嵌、配套和命名存档一致，原meta GUID保持，基础玩家位置及相机/Side2D size8保持。
 - Unity6000.3.12f1隔离生成、保存重开、碰撞与占格、无玩法道具、无Missing Script检查通过；重复应用新增0、删除0、保留249。仅Editor专项，未完整Play Mode通关或构建。生成证据Library/WhiteOnly，布局清单Ops/LevelMaps/Map14/layout-manifest.json，说明MVMAP14_LAYOUT.md。
 - 按既有授权推送当前任务分支codex/codex/gaming-camera-size-8；不合并或推main。主Unity重新载入磁盘Gaming，勿用旧内存覆盖；字体/Boss Timeline及个人文件未纳入。
+
+### MVMap14 白色平台上下翻转（已完成）
+
+- 按用户纠正，在4418a86仅白平台版本上沿世界水平轴镜像地图，X不变，实体点Y取反（单格索引y映射为-y-1）；同步玩家出生点及相机初始位置，不改变平台形状数量、空隙和相机size8。
+- Unity6000.3.12f1隔离生成、保存重开，249形状/4577格及孔洞逐物体精确镜像、碰撞、无Missing Script、无生成玩法道具、相机/Side2D8验证通过；重复应用新增0删除0。三份存档一致，原meta保持。玩家(16.550934,-46.489815)改为(16.550934,46.489815)，角色本身不倒置。
+- 逐源cells保留用于溯源，manifest新增worldCells记录翻转后实际格；MVMAP14_LAYOUT.md已更正方向说明。日志Library/WhiteFlip。未完整Play Mode通关或构建；推送当前任务分支，不推main，其他个人文件保留。
