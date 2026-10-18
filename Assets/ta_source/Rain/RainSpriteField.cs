@@ -157,7 +157,9 @@ namespace Project.Rain
         private void Animate(float deltaTime)
         {
             float halfSize = dropletSize * 0.5f;
-            int row = color == RainColor.Red ? 160 : color == RainColor.Blue ? 192 : 224;
+            // The rain is the narrow vertical-streak block at the right of the source sheet.
+            // Each color occupies two rows, with two animation frames per row.
+            int colorRow = color == RainColor.Red ? 160 : color == RainColor.Blue ? 224 : 288;
             for (int i = 0; i < drops.Length; i++)
             {
                 Drop drop = drops[i];
@@ -181,10 +183,14 @@ namespace Project.Rain
                 vertices[v + 3] = new Vector3(x + halfSize, y + halfSize, 0f);
 
                 int frame = Mathf.FloorToInt(Mathf.Max(0f, drop.age) * frameRate * drop.animationScale + drop.framePhase) % FrameCount;
-                float u0 = (96f + frame * 32f + 0.5f) / AtlasWidth;
-                float u1 = (96f + frame * 32f + 15.5f) / AtlasWidth;
-                float v0 = (AtlasHeight - row - 15.5f) / AtlasHeight;
-                float v1 = (AtlasHeight - row - 0.5f) / AtlasHeight;
+                int frameColumn = frame % 2;
+                int frameRow = frame / 2;
+                float frameX = 320f + frameColumn * 32f;
+                float frameY = colorRow + frameRow * 32f;
+                float u0 = (frameX + 0.5f) / AtlasWidth;
+                float u1 = (frameX + 15.5f) / AtlasWidth;
+                float v0 = (AtlasHeight - frameY - 15.5f) / AtlasHeight;
+                float v1 = (AtlasHeight - frameY - 0.5f) / AtlasHeight;
                 uvs[v] = new Vector2(u0, v0);
                 uvs[v + 1] = new Vector2(u1, v0);
                 uvs[v + 2] = new Vector2(u0, v1);
