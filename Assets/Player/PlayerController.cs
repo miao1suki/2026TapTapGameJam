@@ -1346,6 +1346,12 @@ namespace Project.Player
                 return;
             }
 
+            if (heldInteractionTarget == null &&
+                (interactHeld || interactTriggered))
+            {
+                interactionSensor?.RefreshTarget();
+            }
+
             if (heldInteractionTarget != null)
             {
                 bool facingHeldTarget = heldInteractionTarget is not Component heldComponent ||
