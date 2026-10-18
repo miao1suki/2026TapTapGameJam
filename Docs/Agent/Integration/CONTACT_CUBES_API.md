@@ -63,7 +63,7 @@
 
 ## 区域生命周期
 
-作者可通过 Rigidbody 的 FreezePosition 三轴锁定布置固定长绿条，`ContactCubeMotion.IsAuthoredFixed` 只识别 Awake 捕获的作者约束，不把运行中落稳临时锁定当成固定配置。HorizontalCubeVine 对这种固定绿条也允许沿用原底面横向攀附，不需要虚构支撑碰撞；普通未固定方块仍须落稳。R1 的 X30:AJ30 使用 initialLength=maximumLength=13、FreezeAll 且禁用 CarryableFeature；根位于最左格，不拉伸根缩放来表达长度，保留颜色接触和区域重置。
+作者可通过 Rigidbody 的 FreezePosition 三轴锁定布置固定绿块，`ContactCubeMotion.IsAuthoredFixed` 只识别 Awake 捕获的作者约束，不把运行中落稳临时锁定当成固定配置。HorizontalCubeVine 对这种固定绿块也允许沿用原底面横向攀附，不需要虚构支撑碰撞；普通未固定方块仍须落稳。R1的X30:AJ30使用initialLength=maximumLength=13、FreezeAll且禁用CarryableFeature，根在最左格；R2的AK114使用initialLength=1、maximumLength=11和相同固定/不可搬运配置，保留原接触生长／缩短、main已有玩家蓝色点击生长和房间重置。两关共用一份固定攀附支持，不拉伸根缩放表达长度，也不回退最新main的生长规则。
 
 预制体有 RoomResetObject，规划生成按既有区域绑定。ResetForRoom 清空接触/水柱/计时并恢复初始长度、初始轴，位置由 RoomResetObject 统一恢复。不清除钥匙进度，不销毁作者方块。
 

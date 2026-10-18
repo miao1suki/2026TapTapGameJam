@@ -30,7 +30,9 @@ namespace Project.ContactCubes.Editor
 
         public static void Run()
         {
-            if (!Application.dataPath.Replace('\\', '/').Contains("/Library/FlowRetirementProbe/Assets") ||
+            string path = Application.dataPath.Replace('\\', '/');
+            if ((!path.Contains("/Library/FlowRetirementProbe/Assets") &&
+                !path.Contains("/Library/R1R2Integration-FlowRetirementProbe-")) ||
                 Array.IndexOf(Environment.GetCommandLineArgs(), "-noaudio") < 0)
                 throw new InvalidOperationException("Only run in the silent isolated FlowRetirementProbe project.");
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);

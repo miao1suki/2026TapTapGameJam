@@ -2,6 +2,8 @@
 
 主菜单与游玩采用同一Gaming场景：正式构建仅Gaming，首帧自动安装纯UI WorldMainMenu prefab，新ButtonIcon四项竖排与27帧LOGO；开始平滑退镜、返回反向，期间不加载/卸载场景、不截图、不重置进度，唯一世界Camera/Listener/EventSystem始终启用。旧MainMenu文件只作编辑器兼容重定向，其旧蓝底/布局移除。见[融合菜单](../Developer/WORLD_MENU_FUSION.md)与[场景流程](../Developer/GAME_FLOW.md)。
 
+独立R2：`Assets/Scenes/R2/R2.unity`及同名planning／来源映射，Excel393墙格、三保持按钮同门、曲柄10格升降、两个绿根和8格可烧毁植物。场景三色启用、玩家仅蓝能力，固定AK114复用作者约束攀附；不额外补蓝块，整合main已有玩家蓝能力点击绿块生长入口，不替代正式Gaming、不改R1或R3。见 [R2说明](../Developer/R2_LEVEL.md)。Scene、planning、meta及依赖成套交付。
+
 Boss清障隐藏与持久机关进度分离：房间重置归还临时渲染/碰撞租约，不清门按钮进度，旧碰撞隐藏队列按ResetRevision失效。见[BOSS_ROOM_RESET_VISUALS](Integration/BOSS_ROOM_RESET_VISUALS.md)。两个移动平台已接新6/9帧48×16素材、14像素支撑上缘，旧占格/路线不扩大；新增红绿蓝单向平台栏目复用同一Prefab，颜色参数只影响外观与HSV图层。见[物体美术API](Integration/OBJECT_ARTWORK_API.md)。Scene/可编辑存档/meta/新增美术依赖仍必须成套交付。
 
 搬运占格区分作者布置与运行时实体：烧毁/打开/移走后的空位不保留旧格阻挡，当前位置实体仍拒绝重叠；R不改作者数据而恢复现有状态。放置射线忽略水与纯Trigger、真实薄墙仍挡，复用候选Collider列表且不逐帧SyncTransforms。接入与隔离回归见[搬运API](Integration/PLAYER_CARRY_API.md)。

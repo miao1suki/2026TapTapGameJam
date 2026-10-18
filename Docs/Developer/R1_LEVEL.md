@@ -2,7 +2,7 @@
 
 ## 打开和编辑
 
-Unity 固定 **6000.3.12f1**。ILorR 本机用 Unity Hub 添加并打开 `C:\Unity Programs\2026TapTapGameJam-R1`，不要打开原目录来找本次 R1。
+Unity 固定 **6000.3.12f1**。合入main后，ILorR 本机用 Unity Hub 打开主项目 `C:\Unity Programs\2026TapTapGameJam` 即可找到R1；原 `2026TapTapGameJam-R1` 目录继续保留原任务分支，不自动切换或覆盖。
 
 Scene：`Assets/Scenes/R1/R1.unity`。场景、可编辑存档、设计源和专属脚本统一保存在 `Assets/Scenes/R1`；从原开发目录迁移时保留全部 `.meta` 和 GUID，布局及机关参数不变。
 
@@ -46,11 +46,11 @@ Scene：`Assets/Scenes/R1/R1.unity`。场景、可编辑存档、设计源和专
 
 同名planning和Scene内嵌planning仍是原76对象规划，未回采上述手动Transform变化；保存Scene不等于自动把Inspector的位置/缩放反写到规划。当前试玩版本以Scene为准。**暂勿从旧planning重新应用/重建Scene，否则可能覆盖微调。** 后续转入规划时需确认非整格坐标和玩家起点，不擅自取整。
 
-本轮没有修改运行时代码；只检查已保存文件、配对存档及依赖，未重跑原源图3378项断言、Play专项或完整通关。原验证数字不代表微调版重新验收。
+微调提交没有修改运行时代码，当时只检查已保存文件、配对存档及依赖。2026-10-18整合main时另在隔离目录重跑微调版Play专项，出生检查读取Scene当前作者位置，不改回旧planning起点；通过2220次断言（含逐帧共享进度检查）。这不是原源图3378项或完整通关的重新验收；仍未回采planning。
 
 ## 协作与实现
 
-分支 `codex/ilorr/r1-level`，基于开始制作时最新 main `a96af4b6353453b1634875f18831d8a50b2722cb`。原项目未提交修改保留原位。不制作 R2/R3，不合并或推送 main。
+原制作分支 `codex/ilorr/r1-level`，基于开始制作时最新 main `a96af4b6353453b1634875f18831d8a50b2722cb`。本关制作阶段未做R2/R3，未合并或推送main。2026-10-18用户授权当前整合窗口将R1微调版4dbeb68与R2一起合入最新main；保留原项目未提交修改与原任务目录。
 
 2026-10-18 同步远端记录时，main 已更新到 18:02（北京时间）的 `ea961fb`，R1 原提交 `e7d0ec2` 为 18:28，仍基于制作开始时的 `a96af4b`。推送任务分支不会覆盖或回退 main，但当前 R1 不含该基线之后 main 的 4 个提交。合并预检查仅发现 `ACTIVE_WORK.md`、`SYSTEM_INDEX.md` 两份文档文字冲突；代码可自动合并不代表组合功能已验证。交由整合窗口保留双方记录并验证机关与水体等共同改动，worker 不自行合并或变基。
 

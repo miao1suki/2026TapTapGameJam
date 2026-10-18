@@ -27,12 +27,20 @@ public static class R1GameplayVerification
     private static RigidbodyConstraints oldConstraints;
     private static IDisposable playerLock;
     private static Vector3 horizontalStart;
+    private static bool IsIntegrationProbe => Application.dataPath.Replace('\\', '/')
+        .Contains("/Library/R1R2Integration-FlowRetirementProbe-");
 
     public static void Run()
     {
-        if (!Application.dataPath.Replace('\\', '/').EndsWith("/2026TapTapGameJam-R1/Assets") ||
+        if ((!Application.dataPath.Replace('\\', '/').EndsWith("/2026TapTapGameJam-R1/Assets") && !IsIntegrationProbe) ||
             !Environment.GetCommandLineArgs().Contains("-noaudio")) throw new Exception("Silent R1 worktree only");
         EditorSceneManager.OpenScene(R1LevelBuilder.ScenePath);
+        var authoredPlayer = Object.FindFirstObjectByType<PlayerController>();
+        if (authoredPlayer == null) throw new Exception("R1 authored player missing");
+        // Planner adjustments belong to the Scene; never rebuild from the older planning spawn.
+        SessionState.SetFloat(Flag + ".SpawnX", authoredPlayer.transform.position.x);
+        SessionState.SetFloat(Flag + ".SpawnY", authoredPlayer.transform.position.y);
+        SessionState.SetFloat(Flag + ".SpawnZ", authoredPlayer.transform.position.z);
         SessionState.SetBool(Flag, true); Resume(); EditorApplication.EnterPlaymode();
     }
     [InitializeOnLoadMethod] private static void Resume()
@@ -66,7 +74,9 @@ public static class R1GameplayVerification
                 Check(new[] { "red", "green", "blue" }.All(service.IsUnlocked), "all three scene colors unlocked");
                 Check(service.IsAbilityUnlocked("red") && !service.IsAbilityUnlocked("green") && !service.IsAbilityUnlocked("blue"), "red-only player ability");
                 player = Object.FindFirstObjectByType<PlayerController>();
-                Check(!player.IsDead && Vector3.Distance(player.transform.position, new Vector3(5.5f, -34.5f, 0)) < .2f, "standard player stands safely at K40");
+                var authoredSpawn = new Vector3(SessionState.GetFloat(Flag + ".SpawnX", float.NaN),
+                    SessionState.GetFloat(Flag + ".SpawnY", float.NaN), SessionState.GetFloat(Flag + ".SpawnZ", float.NaN));
+                Check(!player.IsDead && Vector3.Distance(player.transform.position, authoredSpawn) < .2f, "standard player stands safely at the saved authored spawn");
                 right = Crank("r1_crank_right"); lower = Crank("r1_crank_lower"); left = Crank("r1_crank_left");
                 platform = Object.FindObjectsByType<MovingPlatformFeature>(FindObjectsSortMode.None).Single(p => p.CrankController == right);
                 door = Object.FindFirstObjectByType<DoorController>();
@@ -76,7 +86,7 @@ public static class R1GameplayVerification
                 Check(bar.Length == 13 && bar.GetComponent<ContactCubeMotion>().IsAuthoredFixed, "fixed bar starts at 13 cells");
                 var bounds = bar.GetComponentInChildren<BoxCollider>().bounds;
                 Check(Mathf.Abs(bounds.min.x - 18) < .01f && Mathf.Abs(bounds.max.x - 31) < .01f && Mathf.Abs(bounds.min.y + 25) < .01f, "bar occupies exact X30:AJ30 without geometry scaling");
-                CaptureOverview();
+                if (!IsIntegrationProbe) CaptureOverview();
                 playerLock = player.AcquireControlLock(typeof(R1GameplayVerification));
                 oldConstraints = player.Motor.constraints; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
                 MoveTo(lower.transform.position + Vector3.right);
@@ -170,7 +180,7 @@ public static class R1GameplayVerification
                 Check(!player.IsHorizontalClimbing, "jump detaches from horizontal bar");
                 var bar = Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None).Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "r1_green_horizontal");
                 Check(Vector3.Distance(bar.transform.position, new Vector3(18.5f, -24.5f, 0)) < .001f, "fixed bar never falls or drifts");
-                Finish(true, $"PASS {checks} assertions in actual Play; safe spawn, starting colors, shared handles/switch/rebound, independent left crank, all-buttons door, room reset, exact fixed 13-cell bar, real underside attach/traverse/jump release. Overview: Library/R1Overview.png. Door activation uses TryPress API, not a full player route completion.");
+                Finish(true, $"PASS {checks} assertions in actual Play; saved authored spawn, starting colors, shared handles/switch/rebound, independent left crank, all-buttons door, room reset, exact fixed 13-cell bar, real underside attach/traverse/jump release. Door activation uses TryPress API, not a full player route completion. No render acceptance claimed; integration skips offscreen overview.");
             }
         }
         catch (Exception e) { Finish(false, e.ToString()); }
