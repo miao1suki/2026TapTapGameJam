@@ -18,6 +18,16 @@ public sealed class BossControllerEditor : Editor
         root.Add(ProjectInspectorUtility.CreateHelp(
             "只负责追击、操作输入、受击、死亡和跳跃状态；Timeline 与马夫只下发命令，动画由 BossAnimationDriver 可选接入。"));
 
+        Foldout identity = ProjectInspectorUtility.CreateFoldout(
+            "身份",
+            true);
+        identity.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "bossDisplayName",
+            "Boss 名字",
+            "显示在 Boss 血条左侧。留空时使用物体名称。"));
+        root.Add(identity);
+
         Foldout chase = ProjectInspectorUtility.CreateFoldout(
             "追击设置",
             true);

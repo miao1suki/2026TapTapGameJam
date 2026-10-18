@@ -22,9 +22,52 @@
 
 `BossController` 实现 `IDamageable`，可通过 Timeline HitBox 或外部陷阱调用 `TakeDamage` / `ReceiveHit`。
 
+`bossDisplayName` 显示在 Boss 血条左侧；为空时使用 Boss 物体名称。血条动态文本固定使用 `Cubic_11 SDF`，支持字号、颜色、描边、最大宽度和自动缩小。
+
+`BossMonitorUI` 与 `BossHealthBarUI` 同挂 `Boss Health Canvas`：
+
+- 监控窗锚定屏幕左上角，宽度为 Canvas 宽度约 `23.3%`、高度为 `35%`（原 1/3×1/2 整体缩小 30%）。
+- `RectMask2D` 只改变揭示尺寸，从中心向四周展开；隐藏时按同一路径倒放。
+- 独立正交 Camera 输出 RenderTexture，只跟随 Boss 世界位置，不接管玩法相机或 Timeline 相机；Culling Mask 为除 `UI` 外全部图层。
+- 默认死亡事件后等待 `5` 秒，与血条一起淡出；外部禁用/销毁立即停止相机并释放 RenderTexture。
+- 渲染分辨率按窗口大小和 Canvas Scale Factor 计算，默认 `1.5` 倍、最大宽度 `2048`；窗口比例和纹理尺寸随 PC/移动端实际 Canvas 大小自适应。
+
+玩家提供两个运动信号：`PlayerDied` 与 `PlayerRespawnCompleted`。右移马夫在死亡时立即停止外部移动；标准复活在 `PerformRespawn` 完成时视为成功，加载转场复活在 `FinishRespawnPresentation` 最后结束时才恢复移动。
+
+`BossController` 同时实现 `IBossRespawnStateReceiver`。Boss 关卡重生点完成同步后调用：
+
+```csharp
+IBossRespawnStateReceiver.ApplyBossRespawnState(
+    float health,
+    Vector3 worldPosition);
+```
+
+- 重生点按全局唯一 `Boss` Tag 查找控制器，不保存场景引用。
+- `BossController.OnEnable` 自注册到 `BossRespawnStateRegistry`，因此 Timeline 后生成的 Boss 可以接收等待中的重生点请求；`OnDisable` 注销。
+- `health` 按 `maxHealth` 夹取；大于 0 时恢复死亡状态、激活血条并允许受伤。
+- 位置直接通过 `TeleportTo` 落到指定世界位置并清空刚体速度。
+- 若外部右移马夫已经锁定高度，同时更新锁定高度，避免下一物理帧把 Boss 拉回旧 Y。
+- 应用后广播 `RespawnStateApplied(health, position)`，接口同时提供 `CurrentHealth` 与 `WorldPosition` 供重生点回读验证。
+
 检查器中的目标标签使用 Unity `TagField`；`enableAutonomousChase` 默认关闭，常规运行时不自动追击或右移。`trackingEnabled` 作为运动门，可由 Timeline 开启；关闭后不阻断受击、跳跃与死亡状态。
 
 `BossRightMoveExecutor` 是右移马夫。它在 `waitForBossMotionEnabled` 开启时等待 `trackingEnabled=true`，首次接管时记录 Boss 当前世界 Y，然后持续向 `BossController` 下发 `SetExternalMove(1)`、该记录高度和 `SetPassThroughTerrain(true)`，不直接操作 Rigidbody。速度使用 `BossController.moveSpeed`，长廊默认 `2.5`。`SetMoving(bool)` 可在运行时切换。Timeline 演出期间 Collider 保持正常世界交互；开始右移后切为 Trigger，Boss 可以穿过地形。Renderer 使用 `BossTop`、排序值 `32767`、Renderer Priority `32767`。道具伤害仍可通过 Trigger 事件调用 `TakeDamage` / `ReceiveHit`。
+
+右移马夫新增弱垂直追踪：
+
+- `enableWeakVerticalTracking`：是否跟随玩家高度，默认开启。
+- `verticalDeadbandBlocks`：玩家与 Boss 的高度差死区，默认 `2` 格；死区内目标高度完全不变。
+- `verticalTrackSpeedBlocksPerSecond`：超出死区后的最大高度变化速度，默认 `0.18` 格/秒。
+- 追踪目标是玩家高度减去死区边界，不强制让两者完全同高；实际世界位移使用 `GridCellSizeUtility` 的格尺寸。
+- 玩家死亡立即停止右移；标准复活落位后恢复，加载转场复活在最后 `FinishRespawnPresentation` 后恢复。
+
+出生点弱补助：
+
+- `RespawnAnchorFeature.NewlyActivatedByPlayer` 只在首次激活某个出生点时广播。
+- `BossCheckpointAssistController` 订阅全部场景出生点；若玩家存活，调用 `BossRightMoveExecutor.BeginCheckpointAssist`。
+- 补助目标是该出生点的 `BossRespawnPosition`，水平速度默认 `1.35` 倍、安全上限 `15` 秒、垂直辅助 `0.75` 格/秒。
+- 新出生点再次触发时直接覆盖旧目标；玩家死亡时马夫清空补助，并由复活链传送到当前点配置位置并重置血量。
+- 补助不是传送，不修改生命、重力、基础速度或跳跃参数。
 
 ## 分离边界
 
@@ -51,6 +94,8 @@
 - 移动输入与跳跃请求同时处于 `4–5.4` 秒；Timeline 不直接写 Transform/Rigidbody，也不传送或纠偏最终位置。
 - 相机使用 `CameraTimelineTrack`，入场资源只允许 2D 正交运镜。
 - 相机轨结束时释放 Timeline 相机控制，并把 `TimelineCamRig.target` 交回 `CameraControlManager.FocusTarget`。
+- Side2D 镜头强制使用平面 Yaw，不再把 LookRotation 的 3D 俯仰写回相机。
+- Boss 死亡 Timeline 的相机控制释放在 `4.99` 秒最后一帧执行，并显式调用 `ReleaseTimelineControl(true)`，避免相机轨持续到 `5` 秒后重新接管。
 - 最后一帧 `BossHealthBarActivationPlayable` 同时开启血条和 `BossCameraSize`。
 
 ## Boss 存活期视野接口
@@ -75,7 +120,19 @@ handle.Release(CameraTransition.Ease(1f));
 - `RequestDisable()`：平滑恢复倍率 `1`。
 - `SetRequested(bool)`：统一开关接口。
 - `requestOnEnable` 默认关闭，因此 Boss 出生时不会自动扩大视野。
-- `releaseOnBossDeath` 默认开启；订阅 `BossController.Died`，Boss 死亡时只释放视野请求，不改变玩家控制、相机跟随或玩家重生状态。
+- 组件不再订阅 `BossController.Died`。击败 Timeline 在返回镜头开始时通过 `BossDeathCameraRestorePlayable` 调用 `RequestDisable()`；普通玩家死亡/复活和外部对象销毁路径互不影响。
+
+## Boss 死亡 Timeline
+
+- Timeline：`Assets/_Project/Content/Boss/Timelines/Boss_defeat.playable`
+- 播放器：`BossDefeatTimelinePresenter`，挂在 Boss 预制体，并由 `BossController.defeatPresentationRequested` 调用。
+- 只响应 `EnterDeath` 发出的击败事件；外部 `Destroy` 不触发 `EnterDeath`，因此不会播放。
+- 时长 `5` 秒：`1` 秒去程、`2` 秒死亡位置停留、`1` 秒额外保持、`1` 秒回程。
+- 相机使用 `CameraTimelineTrack`，锚点 Tag 为 `Boss`；播放前实际相机状态为回程终点，不保存世界坐标。
+- 玩家使用 `PlayerTimelineTrack`，按 `Player` Tag 查找并锁定全部普通操作。
+- 第 `1` 秒的 `BossDeathAnimationTriggerPlayable` 调用 `BossAnimationDriver.PlayDeathAnimationNow()`，让未来死亡动画在镜头到位后再开始。
+- 返回开始时刻由 `BossDeathCameraRestorePlayable` 恢复 `BossCameraSize`。
+- 后续有真实死亡动画时，扩展 `1–3` 秒的停留区间并同步 Timeline 总时长即可；不需要修改玩家锁定或相机回归逻辑。
 
 ## 事件
 
@@ -139,4 +196,7 @@ BossController.ActivateHealthSystem();
 - `BossController`
 - `BossAnimationDriver`
 - `BossRightMoveExecutor`
+- `BossCheckpointAssistController`
 - `BossCameraSize`
+- `PlayableDirector`
+- `BossDefeatTimelinePresenter`

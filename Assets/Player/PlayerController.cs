@@ -137,6 +137,8 @@ namespace Project.Player
         public float RespawnLoadingSeconds => float.IsFinite(respawnLoadingSeconds) ? Mathf.Max(0f, respawnLoadingSeconds) : 2f;
         public bool IsRespawning => respawnInProgress;
         public event Action RespawnCompleted;
+        public event Action PlayerDied;
+        public event Action PlayerRespawnCompleted;
 
         /// <summary>Developer-owned mode; changing it affects the next respawn, not an active transition.</summary>
         public void ConfigureRespawn(PlayerRespawnMode mode, float loadingSeconds = 2f)
@@ -2962,6 +2964,7 @@ namespace Project.Player
             bool wasLocked = IsControlLocked;
             deathPosition = transform.position;
             dead = true;
+            PlayerDied?.Invoke();
             AudioCuePlayer.Play(AudioCueIds.PlayerDie);
             float presentationSeconds = spritePresentation != null && spritePresentation.isActiveAndEnabled
                 ? spritePresentation.DeathAnimationDuration : 0f;
@@ -2991,7 +2994,7 @@ namespace Project.Player
             if (respawnMode != PlayerRespawnMode.LoadingTransition)
             {
                 PerformRespawn();
-                RespawnCompleted?.Invoke();
+                NotifyRespawnCompleted();
                 return;
             }
 
@@ -3017,7 +3020,13 @@ namespace Project.Player
             if (!wasRespawning || !completed) return;
             // The protected interval starts when the player can see and control the character again.
             invulnerableUntil = Time.time + Mathf.Max(0f, respawnInvulnerabilitySeconds);
+            NotifyRespawnCompleted();
+        }
+
+        private void NotifyRespawnCompleted()
+        {
             RespawnCompleted?.Invoke();
+            PlayerRespawnCompleted?.Invoke();
         }
 
         private void PerformRespawn()
@@ -3029,19 +3038,27 @@ namespace Project.Player
             runner?.Stop();
             ClearDeathControlState();
             Vector3 requestedPosition = initialRespawnPosition;
+            IPlayerRespawnPoint selectedPoint = null;
             if (PlayerRespawnPointRegistry.TryFindPreferred(this, deathPosition, out IPlayerRespawnPoint boundPoint))
+            {
+                selectedPoint = boundPoint;
                 requestedPosition = boundPoint.RespawnPosition;
+            }
             else if (respawnPoint != null) requestedPosition = respawnPoint.position;
+            if (selectedPoint is
+                IPlayerRespawnPreRoomResetListener
+                    preRoomResetListener)
+            {
+                preRoomResetListener
+                    .OnPlayerRespawnBeforeRoomReset(this);
+            }
             Project.Rooms.RoomLifecycleManager.BeforeRespawn(this, requestedPosition);
             Vector3 targetPosition;
-            if (PlayerRespawnPointRegistry.TryFindPreferred(
-                    this,
-                    deathPosition,
-                    out IPlayerRespawnPoint registeredPoint))
+            if (selectedPoint != null)
             {
                 targetPosition = FindSafeRespawnPosition(
-                    registeredPoint.RespawnPosition,
-                    registeredPoint.RespawnRadiusBlocks,
+                    selectedPoint.RespawnPosition,
+                    selectedPoint.RespawnRadiusBlocks,
                     deathPosition);
             }
             else if (respawnPoint != null)

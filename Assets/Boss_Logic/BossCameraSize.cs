@@ -19,11 +19,6 @@ namespace Project.BossLogic
         [Tooltip("开启后，组件启用时自动提交视野申请。默认关闭，由 Timeline 或外部 API 开启。")]
         private bool requestOnEnable;
 
-        [Header("生命周期")]
-        [SerializeField]
-        [Tooltip("Boss 进入死亡状态时，平滑恢复玩法相机视野。")]
-        private bool releaseOnBossDeath = true;
-
         private BossController boss;
         private CameraControlManager cameraManager;
         private CameraLensRequestHandle requestHandle;
@@ -43,12 +38,6 @@ namespace Project.BossLogic
         private void OnEnable()
         {
             EnsureBoss();
-            if (boss != null)
-            {
-                boss.Died -= HandleBossDied;
-                boss.Died += HandleBossDied;
-            }
-
             if (requestOnEnable || requestRequested)
             {
                 RequestEnable();
@@ -57,11 +46,6 @@ namespace Project.BossLogic
 
         private void OnDisable()
         {
-            if (boss != null)
-            {
-                boss.Died -= HandleBossDied;
-            }
-
             ReleaseRequest(CameraTransition.Immediate);
         }
 
@@ -107,7 +91,8 @@ namespace Project.BossLogic
 
         /// <summary>
         /// Releases the request with the configured blend duration.
-        /// This is used by Boss death and remains safe during player respawns.
+        /// Boss death presentation invokes this when the camera starts returning
+        /// to the player; ordinary player respawns leave the request untouched.
         /// </summary>
         public void RequestDisable()
         {
@@ -123,14 +108,6 @@ namespace Project.BossLogic
                 RequestEnable();
             }
             else
-            {
-                RequestDisable();
-            }
-        }
-
-        private void HandleBossDied()
-        {
-            if (releaseOnBossDeath)
             {
                 RequestDisable();
             }

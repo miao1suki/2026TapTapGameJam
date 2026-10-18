@@ -71,7 +71,7 @@ Renderer，同时保留 Collider。需要单独覆盖样式时，关闭
 
 目标可实现 `ICameraFollowRelocationSource.CameraFollowRelocated`，重定位完成后发送通知。PlayerController在死亡/主动重生完成后发送；跟随组件自动订阅，保持当前焦点并平滑追至新位置，追赶期间忽略大距离吸附、死区和瞬移观察提前量。也可直接调用 `NotifyTargetRelocated()`，不修改实际Camera。显式 `Snap()` / `SetTarget(target, true)` 仍立即定位；暂停不推进追赶，切换目标和禁用会解绑事件。
 Timeline使用 `TimelineCamRig.Acquire/Release/SetShotTransform` 通过Manager接管；保留旧演出API，不给玩家自动开放手动视角切换。
-玩法视野倍率使用独立镜头请求：`CameraControlManager.RequestLensMultiplier(owner, multiplier, transition)` 返回 `CameraLensRequestHandle`，通过 `Set` / `Release` 更新或释放。多个请求取最高倍率，只在当前控制源优先级低于 `Cutscene` 时应用到正交 `orthographicSize`；请求与玩家对象解耦，玩家死亡/复活不会重置。Boss 的持有者和生命周期封装见 `Assets/Boss_Logic/BossCameraSize.cs`。
+玩法视野倍率使用独立镜头请求：`CameraControlManager.RequestLensMultiplier(owner, multiplier, transition)` 返回 `CameraLensRequestHandle`，通过 `Set` / `Release` 更新或释放。绝对请求取最高值；`RequestRelativeLensMultiplier` 在绝对倍率基础上再相乘，适合区域型效果。`RequestViewOffset` 返回 `CameraViewOffsetRequestHandle`，按世界偏移相加并平滑混合焦点。两类请求都只在当前控制源优先级低于 `Cutscene` 时影响玩法相机；请求与玩家对象解耦，玩家死亡/复活不会重置。Boss 的持有者和生命周期封装见 `Assets/Boss_Logic/BossCameraSize.cs`。
 
 ## 玩家（基础子集）
 

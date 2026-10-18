@@ -177,6 +177,93 @@ namespace Project.CameraModes
         }
     }
 
+    /// <summary>
+    /// Additive world-space focus offset used by gameplay composition effects.
+    /// Cutscene-level sources ignore these gameplay offsets.
+    /// </summary>
+    public readonly struct CameraViewOffsetRequestHandle :
+        IEquatable<CameraViewOffsetRequestHandle>,
+        IDisposable
+    {
+        private readonly CameraControlManager manager;
+        private readonly int id;
+
+        internal CameraViewOffsetRequestHandle(
+            CameraControlManager manager,
+            int id)
+        {
+            this.manager = manager;
+            this.id = id;
+        }
+
+        internal CameraControlManager Manager => manager;
+        internal int Id => id;
+
+        public bool IsValid =>
+            manager != null &&
+            manager.IsViewOffsetRequestValid(this);
+
+        public void Set(
+            Vector3 worldOffset,
+            CameraTransition transition = default)
+        {
+            manager?.SetViewOffset(
+                this,
+                worldOffset,
+                transition);
+        }
+
+        public void Release(
+            CameraTransition transition = default)
+        {
+            manager?.ReleaseViewOffset(
+                this,
+                transition);
+        }
+
+        public void Dispose()
+        {
+            Release(CameraTransition.Immediate);
+        }
+
+        public bool Equals(
+            CameraViewOffsetRequestHandle other)
+        {
+            return manager == other.manager &&
+                   id == other.id;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is CameraViewOffsetRequestHandle other &&
+                   Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((manager != null
+                    ? manager.GetHashCode()
+                    : 0) * 397) ^ id;
+            }
+        }
+
+        public static bool operator ==(
+            CameraViewOffsetRequestHandle left,
+            CameraViewOffsetRequestHandle right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(
+            CameraViewOffsetRequestHandle left,
+            CameraViewOffsetRequestHandle right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
     public readonly struct CameraControlHandle : IEquatable<CameraControlHandle>, IDisposable
     {
         private readonly CameraControlManager manager;

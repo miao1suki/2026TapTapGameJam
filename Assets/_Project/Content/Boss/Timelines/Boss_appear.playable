@@ -344,6 +344,7 @@ MonoBehaviour:
     m_Objects: []
   allowManualCamera: 0
   restoreOriginOnEnd: 1
+  entryTransitionDuration: 0
 --- !u!114 &510000003
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -425,7 +426,7 @@ MonoBehaviour:
   modeRequest: 1
   overrideSide2DYaw: 1
   side2DYawDegrees: 0
-  projectionTransitionDuration: 0.4
+  projectionTransitionDuration: 0
   turnTiming: 0
   turnAngleDegrees: 90
   turnDuration: 0.6

@@ -36,16 +36,6 @@ public sealed class BossCameraSizeEditor : Editor
             "启用时自动申请"));
         root.Add(request);
 
-        Foldout lifecycle =
-            ProjectInspectorUtility.CreateFoldout(
-                "生命周期",
-                true);
-        lifecycle.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "releaseOnBossDeath",
-            "Boss 死亡时恢复"));
-        root.Add(lifecycle);
-
         BossCameraSize component =
             target as BossCameraSize;
         Foldout debug =

@@ -44,7 +44,7 @@ Inspector 的“碰撞隐藏、受击与无敌”分区集中放置生存、清�
 - 普通受伤没有硬直和击退，也不会取消跳跃；右移不会停止，只是在无敌期间按“无敌时右移速度倍率”减速，当前默认 0.7，4 秒内等效移动 7 格。
 - 整个 Boss 对象按“无敌闪烁间隔”显隐；进入无敌时会自动收集自身及当前全部子 Renderer，包括后续加入的手部动画，不需要手工配置。
 - 如果不想在入场阶段隐藏脚下地图，保留“仅外部移动时隐藏”开启。
-- 血量归零后右移立即停止；“死亡演出请求（接口）”可在后续接线时让桥接组件绑定玩家并播放 Timeline，控制器本身不直接引用 Timeline 资源。
+- 血量归零后右移立即停止，并调用 `defeatPresentationRequested`。Boss 预制体已把该事件绑定到 `BossDefeatTimelinePresenter`，由它播放独立的 `Boss_defeat.playable`。
 
 ## Boss 血条
 
@@ -64,6 +64,24 @@ BossController.ActivateHealthSystem();
 - 若在 Inspector 修改最大血量后重新生成并激活 Boss，段数会按新血量自动重算。
 - 长度、高度、屏幕位置、外框、颜色、分隔线和两层 Lerp 速度都在 `BossHealthBarUI` 的独立 Inspector 分区中调试。
 - 血条不再引用任何图片材质；外框、血量和分隔线全部为无 Sprite 的纯色硬边 `Image`，不创建底板或图片描边。
+
+## Boss 死亡 Timeline
+
+`Assets/_Project/Content/Boss/Timelines/Boss_defeat.playable` 是独立的击败演出，只在 `BossController.EnterDeath` 发出 `defeatPresentationRequested` 时播放。直接 `Destroy` Boss 不会触发该事件，因此不会误播。
+
+当前总时长为 `5` 秒：
+
+- `0–1` 秒：镜头从玩家当前机位平滑 lerp 到 `Boss` Tag 对应角色。
+- `1` 秒：`BossDeathAnimationTriggerPlayable` 调用 `BossAnimationDriver.PlayDeathAnimationNow()`，确保以后接入死亡动画时，镜头已经到位才开始播。
+- `1–3` 秒：停留在 Boss 死亡位置。当前没有死亡动画，因此固定观看 `2` 秒；后续接入 Animator/死亡轨道时可直接延长这一段。
+- `3–4` 秒：额外保持 `1` 秒。
+- `4–5` 秒：镜头曲线平滑回到演出开始时的玩家机位。
+- `0–5` 秒：`PlayerTimelineTrack` 按 `Player` Tag 锁住玩家移动、跳跃、交互、搬运和染色。
+- `4` 秒：`BossDeathCameraRestorePlayable` 调用 `BossCameraSize.RequestDisable()`，让 Boss 战视野倍率与镜头回归同步收束。
+
+Timeline 不保存玩家或 Boss 的世界坐标。去程和回程以播放前实际相机状态为起点，Boss 机位通过 `Boss` Tag 解析，因此换场景位置后无需硬编码坐标。
+
+`BossAnimationDriver.waitForPresentationDeathTrigger` 在 Boss 预制体上默认开启：进入 Death 时只切换状态和停止马夫，不立即触发 Animator 死亡 Trigger；真正动画由死亡 Timeline 的第 1 秒 Playable 触发。没有 Animator 时调用安全跳过，Timeline 仍固定观察 2 秒。
 
 ## Boss 入场 Timeline
 
@@ -102,7 +120,7 @@ Boss 根物体使用 `3×3×3` 缩放，外观和碰撞同步放大。入场时�
 - 扩大和恢复时间由组件的“平滑时间（秒）”统一控制，默认 `1` 秒。
 - `CameraControlManager` 只在当前相机源优先级低于 `Cutscene` 时叠加倍率；入场、死亡演出等 Timeline 相机接管期间不会覆盖演出镜头。
 - 玩家死亡、复活和相机重新跟回玩家都不会撤销请求，因此复活后仍保持 Boss 战视野。
-- Boss 进入 Death 状态时组件自动平滑释放请求；只有场景/相机管理器重建等真正销毁路径才会立即清理。
+- 组件不再在 `Died` 时自动恢复；死亡 Timeline 在返回镜头开始时调用 `RequestDisable()`。对象被外部销毁或场景卸载时仍在 `OnDisable` 立即清理请求。
 
 ## 后续扩展
 

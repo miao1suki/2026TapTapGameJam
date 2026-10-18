@@ -223,4 +223,10 @@ namespace Project.Player
     {
         void OnRespawnBindingChanged(PlayerController player, bool current);
     }
+
+    public interface IPlayerRespawnPreRoomResetListener
+    {
+        void OnPlayerRespawnBeforeRoomReset(
+            PlayerController player);
+    }
 }

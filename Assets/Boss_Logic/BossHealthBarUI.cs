@@ -1,3 +1,5 @@
+using DG.Tweening;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,6 +15,16 @@ namespace Project.BossLogic
         [SerializeField, Min(8f)] private float barHeight = 28f;
         [SerializeField, Min(0f)] private float topOffset = 76f;
         [SerializeField, Min(1f)] private float dividerWidth = 4f;
+
+        [Header("Boss 名字")]
+        [SerializeField] private TMP_FontAsset uiSdfFont;
+        [SerializeField, Min(8f)] private float nameFontSize = 34f;
+        [SerializeField, Min(4f)] private float nameMinFontSize = 14f;
+        [SerializeField, Min(0f)] private float nameMaxWidth = 260f;
+        [SerializeField, Min(0f)] private float nameGap = 14f;
+        [SerializeField] private Color nameColor = Color.white;
+        [SerializeField, Min(0f)] private float nameOutlineWidth = .18f;
+        [SerializeField] private Color nameOutlineColor = Color.black;
 
         [Header("外框")]
         [SerializeField, Min(2f)] private float frameThickness = 3f;
@@ -37,6 +49,9 @@ namespace Project.BossLogic
 
         private BossController controller;
         private RectTransform barRoot;
+        private RectTransform nameRect;
+        private TextMeshProUGUI nameText;
+        private CanvasGroup hudCanvasGroup;
         private RectTransform healthFill;
         private RectTransform trailFill;
         private float fillAreaWidth;
@@ -46,8 +61,12 @@ namespace Project.BossLogic
         private int segmentCount;
         private bool initialized;
         private bool initializing;
+        private Tween hideTween;
 
         public bool IsInitialized => initialized;
+        public bool IsHudVisible =>
+            barRoot != null &&
+            barRoot.gameObject.activeSelf;
         public int SegmentCount => segmentCount;
         public float DisplayedHealth => displayedHealth;
         public float DisplayedTrail => displayedTrail;
@@ -72,6 +91,8 @@ namespace Project.BossLogic
 
         private void OnDisable()
         {
+            hideTween?.Kill();
+            hideTween = null;
             if (controller != null)
             {
                 controller.HealthSystemActivated -=
@@ -89,6 +110,7 @@ namespace Project.BossLogic
                 return;
             }
 
+            RefreshBossName();
             float maxHealth =
                 Mathf.Max(.0001f, controller.MaxHealth);
             float target = controller.IsDead
@@ -149,6 +171,8 @@ namespace Project.BossLogic
                 BuildBar();
             }
 
+            hideTween?.Kill();
+            hudCanvasGroup.alpha = 1f;
             displayedHealth = 0f;
             displayedTrail = 0f;
             initialFillElapsed = 0f;
@@ -176,6 +200,11 @@ namespace Project.BossLogic
                 new Vector2(0f, -topOffset);
             barRoot.sizeDelta =
                 new Vector2(barWidth, barHeight);
+            hudCanvasGroup =
+                barRoot.gameObject.AddComponent<CanvasGroup>();
+            hudCanvasGroup.interactable = false;
+            hudCanvasGroup.blocksRaycasts = false;
+            BuildBossName(barRoot);
 
             float frame = Mathf.Clamp(
                 frameThickness,
@@ -230,6 +259,127 @@ namespace Project.BossLogic
             }
 
             initialized = true;
+        }
+
+        public void ShowHud()
+        {
+            if (controller == null)
+            {
+                controller =
+                    GetComponentInParent<BossController>();
+            }
+            if (controller == null)
+            {
+                return;
+            }
+
+            if (!initialized)
+            {
+                BuildBar();
+            }
+
+            hideTween?.Kill();
+            hudCanvasGroup.alpha = 1f;
+            barRoot.gameObject.SetActive(true);
+            RefreshBossName();
+        }
+
+        public void HideHud(
+            float duration,
+            bool immediate = false)
+        {
+            if (barRoot == null)
+            {
+                return;
+            }
+
+            hideTween?.Kill();
+            if (immediate || duration <= 0f)
+            {
+                barRoot.gameObject.SetActive(false);
+                if (hudCanvasGroup != null)
+                {
+                    hudCanvasGroup.alpha = 1f;
+                }
+                return;
+            }
+
+            hideTween = hudCanvasGroup
+                .DOFade(0f, duration)
+                .SetEase(Ease.InCubic)
+                .OnComplete(() =>
+                {
+                    if (barRoot != null)
+                    {
+                        barRoot.gameObject.SetActive(false);
+                    }
+                    if (hudCanvasGroup != null)
+                    {
+                        hudCanvasGroup.alpha = 1f;
+                    }
+                });
+        }
+
+        private void BuildBossName(RectTransform parent)
+        {
+            GameObject nameObject = new GameObject(
+                "Boss Name",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(TextMeshProUGUI));
+            nameObject.transform.SetParent(parent, false);
+            nameRect = (RectTransform)nameObject.transform;
+            nameRect.anchorMin = new Vector2(0f, .5f);
+            nameRect.anchorMax = new Vector2(0f, .5f);
+            nameRect.pivot = new Vector2(1f, .5f);
+            nameRect.anchoredPosition =
+                new Vector2(-nameGap, 0f);
+            nameRect.sizeDelta =
+                new Vector2(nameMaxWidth, barHeight);
+
+            nameText =
+                nameObject.GetComponent<TextMeshProUGUI>();
+            if (uiSdfFont == null)
+            {
+                Debug.LogError(
+                    "[BossHealthBarUI] 未配置 Cubic_11 SDF 字体，Boss 名字不会显示。",
+                    this);
+                nameObject.SetActive(false);
+                return;
+            }
+
+            nameText.font = uiSdfFont;
+            nameText.fontSize = nameFontSize;
+            nameText.enableAutoSizing = true;
+            nameText.fontSizeMin = Mathf.Min(
+                nameMinFontSize,
+                nameFontSize);
+            nameText.fontSizeMax = nameFontSize;
+            nameText.color = nameColor;
+            nameText.outlineWidth = nameOutlineWidth;
+            nameText.outlineColor = nameOutlineColor;
+            nameText.alignment =
+                TextAlignmentOptions.MidlineRight;
+            nameText.textWrappingMode =
+                TextWrappingModes.NoWrap;
+            nameText.overflowMode =
+                TextOverflowModes.Ellipsis;
+            nameText.raycastTarget = false;
+            RefreshBossName();
+        }
+
+        private void RefreshBossName()
+        {
+            if (nameText == null || controller == null)
+            {
+                return;
+            }
+
+            string nextName = controller.BossDisplayName;
+            if (nameText.text != nextName)
+            {
+                nameText.text = nextName;
+            }
         }
 
         private RectTransform CreateFill(

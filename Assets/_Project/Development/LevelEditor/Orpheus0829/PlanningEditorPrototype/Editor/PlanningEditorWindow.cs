@@ -2503,6 +2503,7 @@ namespace PlanningEditorPrototype
             Project.GridArt.Editor.GridArtLevelSource.NotifyChanged();
             canvas.CapturePlayerStart();
             document.RefreshConnectorPaths();
+            canvas.NormalizeBossRespawnMarkers();
             RecordPlanningChange();
             // History stays immediate; batch disk persistence after the input burst.
             // Closing/switching scene, saving the Scene and explicit save/apply still flush synchronously.

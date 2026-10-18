@@ -1,5 +1,37 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 Boss 关卡重生点附属标记
+
+- 分支：`boss修补`；范围：`RespawnAnchorFeature`、玩家复活完成回调、Boss 重生状态接口、Boss 标记 SceneEditor、关卡参数窗口与 PlanningCanvas。
+- 数据：Boss 开关、复活血量、Boss 本地 X 直接保存在重生点组件；附属标记无 Collider/Renderer、不保存业务数据，只定位并跟随 X 字段，删除后由编辑器维护自动补建并重新链接。
+- 编辑：参数窗口可像门生成按钮一样创建 `Boss复活标记` 规划格，通过 `bossRespawnOwnerId` 连接重生点；Scene 与关卡画布都只允许沿 X 拖动，Y 始终继承重生点，位置不产生实体。
+- 边界：不改现有重生链、房间重置、Boss 入场/死亡 Timeline；玩家完成复活后通过类型接口通知所选重生点，再由重生点向 Boss 状态接收者下发血量与位置。
+- 动态生成：BossController 启用时注册 `BossRespawnStateRegistry`；重生点保存待应用请求，Boss 后生成后自动应用并回读血量/坐标，Inspector 显示等待/已应用及一致性。
+- 顺序：玩家确定重生点后先通过 `IPlayerRespawnPreRoomResetListener` 请求 Boss 重置，再执行 `RoomLifecycleManager.BeforeRespawn` 房间恢复。
+- 弱追踪：`BossRightMoveExecutor` 在右移高度基础上增加玩家 Y 死区和格/秒追踪速度；死区内保持原高度，超出后只缓慢追到死区边缘。
+- 弱补助：`BossCheckpointAssistController` 监听重生点首次激活；玩家存活时按该点 Boss 位置启动临时水平加速和垂直辅助，玩家死亡立即取消，继续使用现有传送重置。
+- 相机：Side2D 镜头强制只保留平面 Yaw；Boss 死亡 Timeline 的镜头控制释放移到 4.99 秒最后一帧，并显式调用 `ReleaseTimelineControl(true)`。
+- 相机：Boss 入场首段在等待后生成锚点前先申请正交 2D，避免首个渲染帧继续使用透视投影。
+- Boss HUD：BossController 新增显示名；血条左侧动态创建 Cubic_11 SDF 名字。Boss Health Canvas 新增 `BossMonitorUI`，使用独立正交相机与 RenderTexture，在屏幕左上角按约 23.3% 宽、35% 高显示 Boss（原 1/3×1/2 的 70%），中央展开/倒放收起，死亡 5 秒后与血条同步退场；监控相机显示除 UI 外全部图层，渲染倍率 1.5、最大宽度 2048。
+- 玩家运动信号：`PlayerDied` 立即让右移马夫清外部移动；直接复活在落位完成时发 `PlayerRespawnCompleted`，过场复活在最后动画结束时发同名信号恢复右移。
+- 验证：Runtime/Editor Roslyn 编译通过；待 Unity 内验证开关显隐、生成按钮、规划格拖动、删除补建、Undo、规划保存、后生成 Boss 同步、复活前后右移暂停/恢复、弱 Y 追踪、出生点弱补助重定向/死亡取消、入场首帧投影、死亡末帧相机归还、监控窗比例/跟随/RenderTexture 释放和名字排版。
+
+## 2026-10-18 区域镜头下移 Timeline
+
+- 分支：`boss修补`；范围：`camera_down.playable`、`CameraDownPlayable`、相机镜头/焦点请求、`ContactTimelineTrigger` 区域模式与 SceneView 范围虚线。
+- 效果：进入触发器后，在当前玩法视野基础上再乘 `1.3`，焦点向下偏移 `5` 格；离开最后一个接触时停止 Timeline，Playable 释放两个请求并平滑恢复。
+- 解耦：Timeline 只向 `CameraControlManager` 提交相对倍率和世界焦点偏移请求；表现层不写 Camera、不写跟随组件，Cutscene 相机不消费玩法偏移。
+- 编辑器：Timeline 触发器新增“进入播放，离开停止”，非 Play SceneView 与关卡编辑器画布用与门连接线一致的金色虚线绘制真实 Collider 范围；关卡画布读取布置覆盖后的中心/尺寸。
+- 验证：待 Unity 退出 Play 后编译并做进入/离开区域、无 Timeline、Cutscene 优先级及虚线范围检查。
+
+## 2026-10-18 Boss 死亡 Timeline 与视角回归
+
+- 分支：`boss修补`；范围：Boss 死亡演出 Timeline、Boss 预制体、玩家 Timeline 锁、Boss 视野恢复时机及接入文档。
+- 目标：Boss 被击杀后通过 `defeatPresentationRequested` 播放独立 Timeline；镜头平滑移到 Boss，停留死亡演出 2 秒（后续可替换为实际动画时长），再额外停留 1 秒，最后 1 秒平滑回到玩家镜头。玩家操作锁覆盖整段演出。
+- 边界：普通外部删除不触发 `EnterDeath`，因此不会播放死亡表演；Boss 视野倍率不在 `Died` 时自动恢复，而由死亡 Timeline 在返回阶段通过 Playable 调用恢复。
+- 资产：已生成 `Boss_defeat.playable` 并完成预制体 `PlayableDirector`、`BossDefeatTimelinePresenter` 和 `defeatPresentationRequested` 事件接线；Timeline 为 5 秒，含玩家锁、Boss 动画触发、镜头去程/停留/回程和视野恢复 Playable。
+- 验证：静态检查通过；Unity 当前仍在 Play，退出后需重新编译并验证死亡触发、镜头回归和普通 Destroy 不播演出。
+
 ## 2026-10-18 Boss 入场锁与存活期视野
 
 - 分支：`boss修补`；范围：Boss 入场 Timeline、玩家 Timeline 轨道、`CameraControlManager`、`BossCameraSize`、Boss 预制体及接入文档。

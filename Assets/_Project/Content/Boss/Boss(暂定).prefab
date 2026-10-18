@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 900000302}
   - component: {fileID: 900000303}
   - component: {fileID: 900000304}
+  - component: {fileID: 900000305}
   m_Layer: 0
   m_Name: Boss Health Canvas
   m_TagString: Untagged
@@ -100,6 +101,14 @@ MonoBehaviour:
   barHeight: 28
   topOffset: 76
   dividerWidth: 4
+  uiSdfFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+  nameFontSize: 34
+  nameMinFontSize: 14
+  nameMaxWidth: 260
+  nameGap: 14
+  nameColor: {r: 1, g: 1, b: 1, a: 1}
+  nameOutlineWidth: 0.18
+  nameOutlineColor: {r: 0, g: 0, b: 0, a: 1}
   frameThickness: 3
   frameAccentLength: 18
   frameColor: {r: 0.32156864, g: 0.23137255, b: 0.25882354, a: 1}
@@ -110,6 +119,33 @@ MonoBehaviour:
   initialFillDuration: 0.35
   healthLerpSpeed: 20
   trailLerpSpeed: 4.5
+--- !u!114 &900000305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76b911a18d794f6cb1a3568575240086, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossMonitorUI
+  screenWidthFraction: 0.23333333
+  screenHeightFraction: 0.35
+  frameThickness: 3
+  backgroundColor: {r: 0.07058824, g: 0.08627451, b: 0.10980392, a: 0.9019608}
+  frameColor: {r: 0.32156864, g: 0.23137255, b: 0.25882354, a: 1}
+  frameAccentColor: {r: 0.9647059, g: 0.3254902, b: 0.19607843, a: 1}
+  showDuration: 0.35
+  hideDuration: 0.35
+  showEase: 9
+  hideEase: 8
+  hideDelayAfterDeath: 5
+  monitorZoomMultiplier: 1
+  fallbackCameraDistance: 10
+  renderResolutionScale: 1.5
+  maximumRenderWidth: 2048
 --- !u!1 &4776779470644211574
 GameObject:
   m_ObjectHideFlags: 0
@@ -127,6 +163,9 @@ GameObject:
   - component: {fileID: 900000003}
   - component: {fileID: 900000004}
   - component: {fileID: 900000005}
+  - component: {fileID: 900000006}
+  - component: {fileID: 900000007}
+  - component: {fileID: 900000008}
   m_Layer: 0
   m_Name: "Boss(\u6682\u5B9A)"
   m_TagString: Boss
@@ -267,6 +306,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e5bb16ee268408c920ada39d19b96ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossController
+  bossDisplayName: Boss
   target: {fileID: 0}
   targetTag: Player
   enableAutonomousChase: 0
@@ -300,7 +340,20 @@ MonoBehaviour:
   destroyDelaySeconds: 2
   defeatPresentationRequested:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 900000007}
+        m_TargetAssemblyTypeName: Project.BossLogic.BossDefeatTimelinePresenter,
+          Assembly-CSharp
+        m_MethodName: PlayDefeatPresentation
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &900000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -315,6 +368,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossAnimationDriver
   animator: {fileID: 0}
   driveAnimator: 1
+  waitForPresentationDeathTrigger: 1
   chaseBoolParameter: Chasing
   hitTriggerParameter: Hit
   deathTriggerParameter: Death
@@ -347,6 +401,11 @@ MonoBehaviour:
   waitForBossMotionEnabled: 1
   startDelaySeconds: 0
   invulnerableMoveSpeedMultiplier: 0.7
+  pauseWhilePlayerRespawning: 1
+  playerTag: Player
+  enableWeakVerticalTracking: 1
+  verticalDeadbandBlocks: 2
+  verticalTrackSpeedBlocksPerSecond: 0.18
 --- !u!114 &900000005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -359,7 +418,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d95be4d8b114b1a860c8dfbf4b3611c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossCameraSize
-  sizeMultiplier: 2
+  sizeMultiplier: 1.7
   blendDuration: 1
   requestOnEnable: 0
-  releaseOnBossDeath: 1
+--- !u!320 &900000006
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4776779470644211574}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 11400000, guid: d77843b46d7945f1b28b0190e981f459, type: 2}
+  m_InitialState: 0
+  m_WrapMode: 0
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings: []
+  m_ExposedReferences:
+    m_References: []
+--- !u!114 &900000007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4776779470644211574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3de45c898d574112beab801990199be5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossDefeatTimelinePresenter
+  director: {fileID: 900000006}
+  defeatTimeline: {fileID: 11400000, guid: d77843b46d7945f1b28b0190e981f459, type: 2}
+  onlyPlayForThisBoss: 1
+--- !u!114 &900000008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4776779470644211574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01039532494144ba911ccb3ce924aa1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossCheckpointAssistController
+  horizontalSpeedMultiplier: 10
+  maximumDurationSeconds: 15
+  horizontalToleranceBlocks: 0.25
+  verticalAssistSpeedBlocksPerSecond: 0.75

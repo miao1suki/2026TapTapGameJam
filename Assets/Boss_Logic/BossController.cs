@@ -26,8 +26,14 @@ namespace Project.BossLogic
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(Collider))]
-    public sealed class BossController : MonoBehaviour, IDamageable
+    public sealed class BossController :
+        MonoBehaviour,
+        IDamageable,
+        IBossRespawnStateReceiver
     {
+        [Header("身份")]
+        [SerializeField] private string bossDisplayName = "Boss";
+
         [Header("追击")]
         [SerializeField] private Transform target;
         [SerializeField] private string targetTag = "Player";
@@ -124,8 +130,14 @@ namespace Project.BossLogic
         public event Action<BossController>
             DefeatPresentationRequested;
         public event Action HealthSystemActivated;
+        public event Action<float, Vector3>
+            RespawnStateApplied;
 
         public BossStateId State => state;
+        public string BossDisplayName =>
+            string.IsNullOrWhiteSpace(bossDisplayName)
+                ? gameObject.name
+                : bossDisplayName.Trim();
         public bool IsDead => dead;
         public float CurrentHealth => currentHealth;
         public float MaxHealth => maxHealth;
@@ -142,6 +154,9 @@ namespace Project.BossLogic
         public bool IsInvulnerable =>
             !dead && Time.time < invulnerableUntil;
         public bool IsHealthSystemActive => healthSystemActive;
+        public bool IsBossRespawnStateAvailable =>
+            isActiveAndEnabled;
+        public Vector3 WorldPosition => transform.position;
         public float InvulnerabilityRemaining =>
             Mathf.Max(0f, invulnerableUntil - Time.time);
         public Collider BodyCollider => bodyCollider;
@@ -305,8 +320,17 @@ namespace Project.BossLogic
             }
         }
 
+        private void OnEnable()
+        {
+            if (CompareTag("Boss"))
+            {
+                BossRespawnStateRegistry.Register(this);
+            }
+        }
+
         private void OnDisable()
         {
+            BossRespawnStateRegistry.Unregister(this);
             CancelJump();
             RestoreInvulnerabilityRenderers();
             pendingHiddenObjects.Clear();
@@ -654,6 +678,67 @@ namespace Project.BossLogic
 
             healthSystemActive = true;
             HealthSystemActivated?.Invoke();
+        }
+
+        public void ApplyBossRespawnState(
+            float health,
+            Vector3 worldPosition)
+        {
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
+            float nextHealth = Mathf.Clamp(
+                health,
+                0f,
+                maxHealth);
+            if (nextHealth <= 0f)
+            {
+                TeleportTo(
+                    worldPosition,
+                    transform.rotation);
+                if (dead)
+                {
+                    currentHealth = 0f;
+                }
+                else
+                {
+                    EnterDeath(Vector3.zero);
+                }
+
+                RespawnStateApplied?.Invoke(
+                    nextHealth,
+                    worldPosition);
+                return;
+            }
+
+            if (dead)
+            {
+                dead = false;
+                invulnerableUntil = 0f;
+                RestoreInvulnerabilityRenderers();
+                CancelJump();
+                SetState(BossStateId.Chase);
+            }
+
+            currentHealth = nextHealth;
+            if (!healthSystemActive)
+            {
+                ActivateHealthSystem();
+            }
+
+            if (externalHeightLocked)
+            {
+                externalHeightY = worldPosition.y;
+            }
+
+            TeleportTo(
+                worldPosition,
+                transform.rotation);
+            RespawnStateApplied?.Invoke(
+                nextHealth,
+                worldPosition);
         }
 
         public void ReceiveHit(float amount, Vector3 knockback)

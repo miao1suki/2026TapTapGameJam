@@ -121,7 +121,15 @@ namespace PlanningEditorPrototype
             var keptIds = new HashSet<string>(keptBoxes.Select(b => b.id));
             int excludedButtons = Boxes(source).Count(b => !string.IsNullOrEmpty(b.doorOwnerId) &&
                 keptIds.Contains(b.doorOwnerId) && !keptIds.Contains(b.id));
-            detached = DetachExternalLinks(result) + excludedButtons;
+            int excludedBossMarkers = Boxes(source).Count(
+                b => !string.IsNullOrEmpty(
+                         b.bossRespawnOwnerId) &&
+                     keptIds.Contains(
+                         b.bossRespawnOwnerId) &&
+                     !keptIds.Contains(b.id));
+            detached = DetachExternalLinks(result) +
+                       excludedButtons +
+                       excludedBossMarkers;
             result.RefreshConnectorPaths();
             Bounds(result);
             return result;
@@ -161,6 +169,8 @@ namespace PlanningEditorPrototype
             {
                 box.NormalizeMechanismButtonLinks();
                 box.id = Map(box.id); box.doorOwnerId = Map(box.doorOwnerId);
+                box.bossRespawnOwnerId =
+                    Map(box.bossRespawnOwnerId);
                 box.mechanismBaseId = Map(box.mechanismBaseId);
                 var mappedButtons = new List<string>();
                 foreach (string buttonId in box.mechanismButtonIds)
@@ -342,6 +352,18 @@ namespace PlanningEditorPrototype
                 box.NormalizeMechanismButtonLinks();
                 if (!string.IsNullOrEmpty(box.doorOwnerId) && !ids.Contains(box.doorOwnerId))
                 { foreach (var room in doc.rooms) room.boxes.Remove(box); doc.assemblyPatches.Remove(box); count++; continue; }
+                if (!string.IsNullOrEmpty(
+                        box.bossRespawnOwnerId) &&
+                    !ids.Contains(
+                        box.bossRespawnOwnerId))
+                {
+                    foreach (var room in doc.rooms)
+                        room.boxes.Remove(box);
+                    doc.assemblyPatches.Remove(box);
+                    count++;
+                    continue;
+                }
+
                 if (!string.IsNullOrEmpty(box.mechanismBaseId) && !ids.Contains(box.mechanismBaseId)) { box.mechanismBaseId = null; box.mechanismBaseCellOffset = default; count++; }
                 int removedButtons = box.mechanismButtonIds.RemoveAll(id => !ids.Contains(id));
                 count += removedButtons;
