@@ -1,5 +1,14 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 TA RGB 故障接入 Test 场景
+
+- 负责人：Codex；分支 `codex/ta/rgb-glitch`。
+- 当前范围：只向 `Assets/Scenes/Test.unity` 增加 RGB 故障控制预设体，并在 `Assets/ta_source/RGB_seperate` 新增场景桥接脚本、Inspector 与使用说明；不改玩家、相机、渲染 Feature 或原有关卡对象的逻辑。
+- 触发方式：场景空父物体控制启停，子物体脚本驱动全屏效果；监听玩家死亡状态与重生事件，兼容摔死和存活时主动重生。
+- 已交付：`RgbGlitchSceneRig.prefab` 挂入 `Assets/Scenes/Test.unity`；子物体的 UI Toolkit Inspector 提供中文参数滑块及 Play 模式死亡/复活测试按钮，正式 `Gaming.unity` 不变。
+- 验证：临时纳入新增脚本的 `dotnet build Assembly-CSharp-Editor.csproj --no-restore` 通过（0 错误、18 个既有警告），生成 csproj 的临时编辑已撤销；预设体/场景 GUID、脚本引用、根节点及渲染接线完成静态核对。Unity 编辑器正打开本项目的 `RgbGlitchPreview` 场景，未在 `Test.unity` 中做 Play 画面验收。
+- 工作树中现有的字体、Recovery、VS Code、Rain 及 `RgbGlitchPreview.unity` 本地改动不纳入本任务。
+
 ## 2026-10-18 TA 全屏 RGB 故障表现
 
 - 后续调整：独立测试场景的预览组件增加中文 UI Toolkit Inspector 滑块；四色测试图案保存为场景对象，编辑模式可见。Play 后预览滑块覆盖 Renderer 参数并驱动全屏 Pass，离场恢复 Renderer 默认值；程序也可调用 `SetParameters` / `UseRendererDefaults`。

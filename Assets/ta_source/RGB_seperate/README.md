@@ -1,6 +1,14 @@
 # 全屏 RGB 故障效果
 
-Unity 6000.3.12f1 / URP 17.3.0。效果在游戏相机的透明物体和颜色 HSV Pass 之后、URP 后处理之前执行，覆盖整个相机画面。强度为 0 时不入队渲染 Pass。PC 和 Mobile Renderer 已接入 `RGB Glitch` Renderer Feature；不需要在场景里放控制器。
+Unity 6000.3.12f1 / URP 17.3.0。效果在游戏相机的透明物体和颜色 HSV Pass 之后、URP 后处理之前执行，覆盖整个相机画面。强度为 0 时不入队渲染 Pass。PC 和 Mobile Renderer 已接入 `RGB Glitch` Renderer Feature；程序直接调用 API 时不需要在场景里放控制器，也可使用下方的场景预设体。
+
+## 场景挂载与 Test 实测
+
+`Assets/Scenes/Test.unity` 已增量挂载 `RgbGlitchSceneRig.prefab`，不改原有玩家、相机、玩法代码。Hierarchy 中展开 **RGB Glitch (Full Screen) → Full Screen Effect**，选中子物体，在 Inspector 的 **触发与目标**、**画面参数** 中调节中文滑块。父物体或子物体组件的启停就是此场景的效果开关；进入 Play 后默认惊恐强度为 0.45，可立即看到全屏 RGB 分离、抽动和暗角。Inspector 的 **运行时测试** 可手动播放死亡强化与复活恢复。
+
+控制脚本自动查找场景玩家；玩家死亡状态由 `PlayerController.IsDead` 变化触发死亡强化，`RequestRespawn()` 完成时的 `CameraFollowRelocated` 事件触发恢复，因此摔死及存活时按 R 重生均可覆盖。禁用控制物体或离开场景会清空强度和参数覆盖。以后需要在其他场景以同样方式控制，可拖入 `RgbGlitchSceneRig.prefab`；同一时间只启用一个场景控制预设体。
+
+子物体是**控制器**，不是被处理的画面目标；它不需要放在相机、Canvas 或 Global Volume 之下。渲染范围仍是当前使用 PC/Mobile Renderer 的游戏 Base Camera 全屏，任何父子级外、由该相机渲染的物体也会被处理；Screen Space Overlay UI 不在此 Pass 内。编辑模式下可见控制预设体层级和参数，但真正的全屏画面变化只在 Play 模式显示。
 
 ## 给程序的接口
 
