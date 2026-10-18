@@ -1,12 +1,14 @@
 # 绿色钩子接入 API
 
-源码：`Assets/_Project/Code/Systems/GreenHook`。2026-10-17 更新：复查受阻回退与持续连接，补齐挂接后的超距检查；保留自由瞄准、四向拉取及连续换点。
+源码：`Assets/_Project/Code/Systems/GreenHook`。2026-10-18 更新：指针容差圈/边缘冗余、待机缓动与性能、挂绳红块被动供能；保留自由瞄准、四向拉取、持续连接及连续换点。
 
 ## 输入与控制所有权
 
 绿色能力仍由 `PlayerColorWheel → GreenHookAbility.TryLaunch` 发射，距离沿用 `PlayerInteractionSensor.ScanRadius`。待机预览与发射自由朝向指针，不吸附四向；端点保存真实点击位置的局部坐标，移动中的目标与玩家会更新绳子端点。出线点共用 `InteractionLinkEffect.SourceWorldPosition`（现有标准玩家为位置上移0.3格），无该组件时才使用后备偏移。红蓝表现不改。
 
-待机端点现跟随鼠标在玩家平面的实际位置（同方向不同距离也改变绳长），超过ScanRadius时仅将可见端点裁至范围边界；不再固定一格长度。`idleLengthCells`仅为缺少传感器时的后备范围。点击确认后仍以真实局部目标锚点为准，鼠标移动不会带走已挂接绳尖；发射5格/维持8格及0.4秒宽限不变。单根绿色LineRenderer持续复用，复用顶点数组并批量SetPositions，不为待机/发射/换点反复创建线条。
+待机端点跟随鼠标在玩家平面的实际位置（同方向不同距离也改变绳长），按`idleFollowSeconds`默认0.045秒指数缓动，位置偏移相对玩家计算，不拖慢出线起点。可见端点裁至基础范围加`launchRangeSlackCells`（默认0.5格）；`idleLengthCells`仅为缺少传感器时的后备范围。点击确认后仍以真实局部目标锚点为准，鼠标移动不会带走已挂接绳尖。绿色LineRenderer与顶点数组持续复用，不为待机/发射/换点反复创建线条。
+
+绿色选色时显示跟随真实指针的容差圈，`aimToleranceCells`默认半径0.65格；已挂接时也显示以方便换点。圈不跟随绳尖缓动，点击也不等待缓动。仅点击时做NonAlloc局部查询，按最近真实碰撞体表面挑选有效目标，稳定打破同距并列；空白处本身不是锚点。候选仍受交互Layer、颜色/目标资格、作者所属区域与整条路径房间约束；不可借大碰撞体跨房间。UI、暂停、搬运或额外演出锁时隐藏容差圈。红蓝点击规则不变。
 
 合法点击通过真实目标、发射范围、当前区域与能力资格检查后，当帧挂接并取得唯一控制句柄，立即开始拉取/荡绳，不等待绳头飞行。出线使用与换点相同的视觉插值（默认0.1秒），不参与命中与物理时序；无效点击不取得控制锁。不要恢复旧四向射线/高起点造成实际目标漏接、先锁人再等待命中的路径。旧伸出/收回字段与内部状态仅保留兼容，不是当前正常点击流程。
 
@@ -34,7 +36,7 @@ void SetGreenHookVelocity(Vector3 velocity);
 void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separationDistance);
 ```
 
-`ContactCubeMotion` 接管自身刚体并暂停接触反应，入钩时恢复玩家碰撞对；`GreenHookBodyMotion` 为基座接管刚体，结束后恢复原运动类型、重力、约束。基座没有迁移成 ContactCube，不改变信号契约。旧场景通过 MechanismBaseFeature.OnAttach 自动补齐运动组件，无需全量重建。
+`ContactCubeMotion` 接管自身刚体并暂停接触反应，入钩时恢复玩家碰撞对；挂接暂停不影响红块的被动`IEnergySource.IsEnergyAvailable`，拉到基座上不必先松绳即可供能。搬运中、未解锁或实体碰撞体关闭的红块仍不能供能。`GreenHookBodyMotion` 为基座接管刚体，结束后恢复原运动类型、重力、约束。基座没有迁移成 ContactCube，不改变信号契约。旧场景通过 MechanismBaseFeature.OnAttach 自动补齐运动组件，无需全量重建。
 
 `IsGreenHookPullActive`表示目标运动器仍拥有此次拉取。搬运、房间重置或禁用运动器会先结束该所有权；能力在下一次Update/FixedUpdate发现其已退出后清理绳子并归还自己的玩家锁，不能继续向已由搬运器控制的物体写速度。接触、受阻等正常等待不结束该所有权，因此不会触发自动松钩。
 
@@ -46,7 +48,7 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 
 ## 物理、边界与性能
 
-发射/换点范围仍是传感器 ScanRadius（标准玩家5格），不扩大可点击范围。挂接后才增加 `attachedRangeSlackCells`（默认3格），实际锚点距离连续超出该维持半径满 `attachedOutOfRangeGraceSeconds`（默认0.4秒）才释放；回到半径内清零计时，暂停不推进计时。标准玩家即发射5格、维持8格，并容忍短暂越过8格。距离按真实局部锚点变换后的坐标，不用鼠标、目标中心或插值绳尖；Update/FixedUpdate均检查，共用同一个连续超距计时。0.001世界单位另防数值误差。此冗余不放宽房间/通道边界、实体碰撞或目标资格；死亡/重生、离区及目标销毁/禁用仍清理。接触、双方不能移动或等待很久都不自动断开。
+发射/换点检查真实表面锚点，允许ScanRadius加`launchRangeSlackCells`，标准玩家为5+0.5格；光标圈只负责选择表面，不再叠加扩大锚点最大距离。挂接维持距离仍按基础ScanRadius加`attachedRangeSlackCells`（默认3格）计算，即标准8格，不再叠加发射边缘冗余。实际锚点距离连续超出维持半径满 `attachedOutOfRangeGraceSeconds`（默认0.4秒）才释放；回到半径内清零计时，暂停不推进计时。距离按真实局部锚点变换后的坐标，不用鼠标、目标中心或插值绳尖；Update/FixedUpdate均检查，共用同一个连续超距计时。0.001世界单位另防数值误差。此冗余不放宽房间/通道边界、实体碰撞或目标资格；死亡/重生、离区及目标销毁/禁用仍清理。接触、双方不能移动或等待很久都不自动断开。
 
 钩子以执行顺序 -50 在 PlayerController 固定更新前提交速度。`GreenHookPhysics.FreeDistance` 对下一步实体包围盒作无分配扫掠，忽略平行地面支撑、触发器、自身与拉动对端，尊重碰撞矩阵。不再用渲染帧 Transform 位移/累计停滞时间推断受阻。
 
@@ -56,7 +58,11 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 
 目标/玩家碰撞体在启动时缓存，不每个物理步重新分配层级数组。新增加/移除实体碰撞体的目标需重新挂接以刷新缓存；已有生长体修改同一碰撞体尺寸无需刷新。
 
+待机旋转不扫场景；格尺寸读取玩家缓存，UI阻挡检测复用PointerEventData/结果列表并只查询GraphicRaycaster，不执行会丢弃的物理射线和全结果排序。PlayerColorWheel统一调用DesktopCursorPolicy，避免逐帧解除桌面鼠标限制。绿线Shader在枝叶实际覆盖区间外跳过高开销曲线/花朵计算，仍保留四枝效果、不砍红蓝线条数。无需为连续指针跟随反复创建协程/Tween。
+
 ## 验证入口
+
+`Project.GreenHook.Editor.GreenHookAimAudit.Run`静音隔离验证容差/真实锚点、范围/跨房间、UI/暂停清理、复用与缓动、挂接供能/搬运排除、收集品无重力及复用。`MRoom3HookEnergyAudit.Run`使用MRoom3首个真实红块、基座与已绑定平台，运行真实输入/Update/FixedUpdate，不保存Scene。`RunBaseline`仅用于同夹具性能对照；当前Unity Mono的GC.GetAllocatedBytesForCurrentThread自检无效（已知分配仍返回0），不能据此宣称零分配，改查ProfilerRecorder的GC.Alloc事件数，不把标记Value冒充字节数。
 
 `Project.GreenHook.Editor.GreenHookVerification.Run` 仅允许隔离的 FlowRetirementProbe 项目且强制要求 -noaudio，使用真实 Physics.Simulate 验证拉物优先、受阻回退/重评估、插值、长时间不脱钩、控制锁、荡绳、基座、收集品推挤、四向尖刺与房间边界；另覆盖真实屏幕偏角发射、八象限、共享起点、单轴速度、换点输入和动量，不只绕过发射调用私有挂接方法。新增红/蓝块与基座四方向双方受阻650物理步、解除障碍自动继续、跳跃/交互主动结束、双方移动超距（渲染/物理入口）、最大范围荡绳及藤蔓/弹性植物锚点验证。基座按作者实际重力/刚体设置检查交还，不假定所有基座静止时均为运动学。
 

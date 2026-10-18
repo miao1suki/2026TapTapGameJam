@@ -8,6 +8,7 @@
 - ContactCube 只拥有状态、长度、实体子物体尺寸及反应水柱；不能由移动程序缩放根物体表达生长。根坐标是原始一格中心，增长保留此锚点。尺寸读取 GridCellSizeUtility，一体模型/BoxCollider 伸长，不生成节段。不可把它组为旧藤蔓母根。
 - 固定类型字段只供预制体作者配置，不提供运行时切色 API。Length、State、ColorId、GrowthDirection 只读，LengthChanged / StateChanged 提供状态通知。
 - `IsUnlocked` 只读。红块实现 `IEnergySource.IsEnergyAvailable`，需已解锁、实体启用且未处于搬运动画；任意红块可供能任意基座，不持久绑定特定红块。旧 Red_Battery 预制体保留 GUID，但已替换为红色 ContactCube 及运动/重置组件；新放置统一使用 Red_ContactCube。
+- 绿色钩子挂接只暂停红块主动接触反应，不暂停被动能源输出。拉到基座后，即使未按跳跃/交互松钩也立即按原接触规则供能；不能把`hookSuspended`当作能源不可用条件。搬运、锁色、禁用实体仍排除。
 
 ## 有限状态机
 

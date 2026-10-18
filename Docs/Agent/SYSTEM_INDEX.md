@@ -6,7 +6,7 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 新增独立绿色进阶关：`Assets/Scenes/MRoom3.unity`及同名planning/mvmap。仅新区域，4平台/3无重力基座、充能前进断电回位，6门/13保持按钮，尖刺朝通道。新图不用覆盖旧MRoom2或正式Gaming；交付必须带可编辑存档/meta，见 [MROOM3_IMPORT](../Developer/MROOM3_IMPORT.md)。
 
-三色连线：红蓝不再按1/3条截断，预热线条池、复用淡出状态、批量提交顶点；绿色待机绳尖跟鼠标实际位置且不超染色范围，挂接后仍跟目标。PC独立包有焦点时使用DesktopCursorPolicy限制鼠标在游戏窗口，失焦释放，Editor/安卓不锁定。见[连线说明](../../Assets/ta_source/LinkEffect/连接效果使用说明.md)和[绿绳API](Integration/GREEN_HOOK_API.md)。
+三色连线：红蓝不再按1/3条截断，预热线条池、复用淡出状态、批量提交顶点；绿色待机绳尖随真实鼠标位置缓动，默认容差圈0.65格/发射边缘额外0.5格，只点击时查目标，挂接后跟真实锚点。UI检测复用缓冲、绿线Shader裁去枝叶覆盖区外的重计算，PC光标共用DesktopCursorPolicy避免选色逐帧解锁；独立包有焦点时限制在游戏窗口，失焦释放，Editor/安卓不锁定。见[连线说明](../../Assets/ta_source/LinkEffect/连接效果使用说明.md)和[绿绳API](Integration/GREEN_HOOK_API.md)。
 
 植物障碍：同房间上下左右真实接触连通燃烧，斜角/孔洞不连通；一次组燃烧一次音效，沿用R/死亡/离区复原。见 [玩法说明](../Developer/GAMEPLAY_REFINEMENTS.md#植物障碍连通燃烧)。主菜单已接新OP `bmg_op`，Gaming保留atmosphere；Boss曲通过`AudioCueIds.MusicBoss`显式调用，见 [音频交接](Integration/AUDIO_HANDOVER.md)。
 
@@ -24,7 +24,7 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 颜色双阶段解锁与唯一标准玩家：见 [接入约定](Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。场景颜色和玩家能力分别查询；所有玩法场景共用 `Content/Player/Player.prefab`，新建空地图在原点生成并绑定玩家。
 
-移动端按键与转角：双侧跳跃、情境动作、多指独立持有与世界指针、设置内拖动/缩放/持久化布局；真实绿块外缘保护交接、横爬跳跃脱手，颜色能力持续选色。普通藤蔓及单格/竖向绿块补齐双侧向上露顶交接，遮挡顶部不提前翻顶，见 [CONTACT_CUBES_API](Integration/CONTACT_CUBES_API.md)。绿绳合法点击立即挂接，默认发射5格/维持8格、连续超距0.4秒才释放，见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。移动端说明见 [MOBILE_CONTROLS.md](../Developer/MOBILE_CONTROLS.md)。
+移动端按键与转角：双侧跳跃、情境动作、多指独立持有与世界指针、设置内拖动/缩放/持久化布局；真实绿块外缘保护交接、横爬跳跃脱手，颜色能力持续选色。普通藤蔓及单格/竖向绿块补齐双侧向上露顶交接，遮挡顶部不提前翻顶，见 [CONTACT_CUBES_API](Integration/CONTACT_CUBES_API.md)。绿绳合法点击立即挂接，基础5格并有0.5格发射边缘冗余，维持8格、连续超距0.4秒才释放，见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。移动端说明见 [MOBILE_CONTROLS.md](../Developer/MOBILE_CONTROLS.md)。
 
 编辑器响应与攀爬衔接：预览缓存/分层容器/视口裁剪、合并持久化与连续编辑延后落盘；蹬跳上升期间不被攀爬状态重新接管，适用于藤蔓、梯子与绿色接触方块。重生点首次激活/返回已激活点两种提示声已接线，见 [ROOM_LIFECYCLE_API](Integration/ROOM_LIFECYCLE_API.md) 和 [AUDIO_HANDOVER](Integration/AUDIO_HANDOVER.md)。
 
@@ -32,7 +32,7 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 画布边缘拖拽：世界/详情/装配共用定时自动平移，静止按住和拖过边界仍持续，释放/取消/失焦即停止；补偿抓取起点、不增加中间保存事务。使用与接入见 [关卡协作](Integration/PLANNING_COLLABORATION_API.md)，专项验证为 PlanningEdgePanAudit。
 
-绿钩子最新规则：自由指针瞄准，与红蓝共用出线点，合法点击立即挂接并接管运动，出线仅视觉。发射5格，挂接维持额外3格/连续超距0.4秒宽限。红蓝接触方块/基座每物理步四向优先拉物，受阻转拉玩家并重评估；绿色接触方块/生长体、藤蔓、弹性植物为保留动量的荡绳锚点，连接中直接点击切换挂点。成功挂接不因受阻/接触/等待脱钩，现有跳跃/交互主动结束。见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。无色收集品与四向尖刺已加入道具栏目，见 [使用说明](../Developer/WORLD_ITEMS.md)、[接入](Integration/WORLD_ITEMS_API.md)。
+绿钩子最新规则：自由指针瞄准，与红蓝共用出线点，合法点击立即挂接并接管运动，出线仅视觉。基础5格，发射/换点额外0.5格，挂接维持仍为基础加3格（8格）/连续超距0.4秒宽限。红蓝接触方块/基座每物理步四向优先拉物，受阻转拉玩家并重评估；红块挂绳不暂停被动供能，搬运仍暂停。绿色接触方块/生长体、藤蔓、弹性植物为保留动量的荡绳锚点，连接中直接点击切换挂点。成功挂接不因受阻/接触/等待脱钩，现有跳跃/交互主动结束。见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)。无色收集品关闭重力且保留物理推挤，旧实例/重置/复用自动适配；与四向尖刺均在道具栏目，见 [使用说明](../Developer/WORLD_ITEMS.md)、[接入](Integration/WORLD_ITEMS_API.md)。
 
 无色尖刺接触链（2026-10-17）：NeutralSpike + 子碰撞体 SpikeContactRelay，按合并实际占格生成方向触发区，保留空洞并支持房间重置；统一玩家死亡/复活保护，重生安全查询排除尖刺且不误跳过同地图地面。真实物理回归 HazardContactAudit 仅在静音隔离工程运行，见 WORLD_ITEMS_API。
 

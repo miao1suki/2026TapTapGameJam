@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Project.BlockFeatures;
 using Project.ColorBlocks;
 using Project.ContactCubes;
@@ -68,10 +69,23 @@ namespace Project.GreenHook
         [SerializeField, Min(0f)] private float waveHeight = .055f;
         [SerializeField, Min(0f)] private float noiseStrength = .75f;
         [SerializeField, Min(0f)] private float effectSpeed = 7f;
+        [SerializeField, Min(0f)] private float aimToleranceCells = .65f;
+        [SerializeField, Min(0f)] private float launchRangeSlackCells = .5f;
+        [SerializeField, Min(0f)] private float idleFollowSeconds = .045f;
 
         private LineRenderer line;
         private Vector3[] linePoints;
         private MaterialPropertyBlock properties;
+        private LineRenderer aimRing;
+        private Material aimRingMaterial;
+        private readonly Vector3[] ringPoints = new Vector3[48];
+        private readonly List<MonoBehaviour> targetBehaviours = new List<MonoBehaviour>(16);
+        private Collider[] aimHits = new Collider[64];
+        private Vector3 idleTipOffset;
+        private bool idleTipInitialized;
+        private float AimCellWorldSize => player != null ? player.GridCellWorldSize : hookCellWorldSize;
+        public float AimToleranceWorld => aimToleranceCells * AimCellWorldSize;
+        public float LaunchRangeWorld => (sensor != null ? sensor.ScanRadius : 0f) + launchRangeSlackCells * AimCellWorldSize;
         private IDisposable controlLock;
         private HookPhase phase;
         private IGreenHookTarget target;
@@ -141,6 +155,7 @@ namespace Project.GreenHook
         private void OnDisable()
         {
             CancelHook();
+            HideLine();
         }
 
         public void Tick(
@@ -148,13 +163,16 @@ namespace Project.GreenHook
             bool greenSelected)
         {
             pointerPosition = currentPointerPosition;
+            bool showAim = greenSelected && CanShowAimIndicator();
+            if (showAim) UpdateAimRing();
+            else HideAimRing();
             if (phase == HookPhase.Extending && !greenSelected) { CancelHook(); return; }
             if (phase != HookPhase.None)
             {
                 return;
             }
 
-            if (!greenSelected || !CanShowIdleIndicator())
+            if (!showAim)
             {
                 HideLine();
                 return;
@@ -194,49 +212,18 @@ namespace Project.GreenHook
                 return GreenHookLaunchResult.Rejected;
             }
 
-            if (!sensor.TryGetScreenHit(
-                    camera,
-                    screenPosition,
-                    out RaycastHit screenHit,
-                    QueryTriggerInteraction.Ignore))
-            {
-                if (TryGetPointerWorldPoint(
-                        camera,
-                        screenPosition,
-                        out Vector3 pointerWorldPoint) &&
-                    !IsWithinRange(pointerWorldPoint))
-                {
-                    return GreenHookLaunchResult.OutOfRange;
-                }
-
+            if (!TryGetPointerWorldPoint(camera, screenPosition, out Vector3 pointerWorld))
                 return GreenHookLaunchResult.Rejected;
-            }
-
-            if (!IsWithinRange(screenHit.point))
-            {
+            float reach = LaunchRangeWorld + AimToleranceWorld;
+            if (((Vector2)(pointerWorld - transform.position)).sqrMagnitude > reach * reach)
                 return GreenHookLaunchResult.OutOfRange;
-            }
-
-            if (!TryResolveHookTarget(
-                    screenHit,
-                    out IGreenHookTarget foundTarget) ||
-                foundTarget == null ||
-                (!ReferenceEquals(foundTarget, target) && !foundTarget.CanBeGreenHooked(gameObject)))
-            {
-                return GreenHookLaunchResult.Rejected;
-            }
-
-            Component targetComponent = foundTarget as Component;
-            if (!sensor.IsWithinRange(targetComponent))
-            {
-                return GreenHookLaunchResult.OutOfRange;
-            }
+            if (!TryFindAimTarget(camera, screenPosition, pointerWorld, out IGreenHookTarget foundTarget,
+                    out Vector3 targetPoint, out bool outsideRange))
+                return outsideRange ? GreenHookLaunchResult.OutOfRange : GreenHookLaunchResult.Rejected;
             if (foundTarget.GreenHookMotionMode == GreenHookMotionMode.PullTarget &&
                 GetTargetMotion(foundTarget.GreenHookTransform) == null)
                 return GreenHookLaunchResult.Rejected;
 
-            Vector3 clickPoint = screenHit.point;
-            Vector3 targetPoint = new Vector3(clickPoint.x, clickPoint.y, foundTarget.GreenHookTransform.position.z);
             Vector2 rawDirection = (Vector2)(targetPoint - ResolveSourcePoint());
             if (rawDirection.sqrMagnitude < .0001f)
             {
@@ -598,21 +585,21 @@ namespace Project.GreenHook
         }
 
         private bool TryResolveHookTarget(
-            RaycastHit hit,
+            Collider collider,
             out IGreenHookTarget target)
         {
             target = null;
-            if (hit.collider == null)
+            if (collider == null)
             {
                 return false;
             }
 
-            MonoBehaviour[] behaviours =
-                hit.collider.GetComponentsInParent<MonoBehaviour>(true);
-            for (int index = 0; index < behaviours.Length; index++)
+            targetBehaviours.Clear();
+            collider.GetComponentsInParent(false, targetBehaviours);
+            for (int index = 0; index < targetBehaviours.Count; index++)
             {
-                if (!(behaviours[index] is IGreenHookTarget candidate) ||
-                    !(behaviours[index] is Behaviour behaviour) ||
+                if (!(targetBehaviours[index] is IGreenHookTarget candidate) ||
+                    !(targetBehaviours[index] is Behaviour behaviour) ||
                     !behaviour.isActiveAndEnabled)
                 {
                     continue;
@@ -623,6 +610,58 @@ namespace Project.GreenHook
             }
 
             return false;
+        }
+
+        private bool TryFindAimTarget(Camera camera, Vector2 screen, Vector3 pointerWorld,
+            out IGreenHookTarget bestTarget, out Vector3 bestPoint, out bool outsideRange)
+        {
+            bestTarget = null; bestPoint = default; outsideRange = false;
+            float tolerance = AimToleranceWorld;
+            float bestDistance = float.PositiveInfinity;
+            int bestId = int.MaxValue;
+            // Click-only broad phase; idle rotation never scans the room. Z is
+            // the game's one-cell-deep plane, not a screen ray blocked by walls.
+            Vector3 half = new Vector3(Mathf.Max(.001f, tolerance), Mathf.Max(.001f, tolerance),
+                Mathf.Max(1f, AimCellWorldSize) * 2f);
+            int count;
+            do
+            {
+                count = Physics.OverlapBoxNonAlloc(pointerWorld, half, aimHits, Quaternion.identity,
+                    sensor.InteractionMask, QueryTriggerInteraction.Ignore);
+                if (count < aimHits.Length || aimHits.Length >= 4096) break;
+                Array.Resize(ref aimHits, aimHits.Length * 2);
+            } while (true);
+            // A saturated click buffer cannot safely select an arbitrary subset.
+            if (count == aimHits.Length) return false;
+            Ray ray = camera.ScreenPointToRay(screen);
+            RoomLifecycleManager manager = RoomLifecycleManager.ForScene(gameObject.scene);
+            string playerRegion = manager != null ? manager.FindRegion(GetPlayerCenter()) : null;
+            for (int i = 0; i < count; i++)
+            {
+                Collider shape = aimHits[i];
+                if (shape == null || shape.transform.IsChildOf(transform) ||
+                    !TryResolveHookTarget(shape, out IGreenHookTarget candidate) ||
+                    (!ReferenceEquals(candidate, target) && !candidate.CanBeGreenHooked(gameObject))) continue;
+                Transform anchor = candidate.GreenHookTransform;
+                if (anchor == null) continue;
+                var member = anchor.GetComponentInParent<RoomResetObject>();
+                if (manager != null && member != null && !string.IsNullOrEmpty(member.RegionId) &&
+                    member.RegionId != playerRegion) continue;
+                Plane plane = new Plane(Vector3.forward, anchor.position);
+                if (!plane.Raycast(ray, out float enter)) continue;
+                Vector3 pointerOnTargetPlane = ray.GetPoint(enter);
+                Vector3 point = shape.ClosestPoint(pointerOnTargetPlane);
+                point.z = anchor.position.z;
+                float distance = ((Vector2)(point - pointerOnTargetPlane)).sqrMagnitude;
+                if (distance > tolerance * tolerance + .000001f) continue;
+                if (!IsWithinRange(point)) { outsideRange = true; continue; }
+                if (!IsPathWithinRoom(point)) continue;
+                int id = (candidate as Component).GetInstanceID();
+                if (distance > bestDistance + .000001f ||
+                    Mathf.Abs(distance - bestDistance) <= .000001f && id >= bestId) continue;
+                bestDistance = distance; bestId = id; bestTarget = candidate; bestPoint = point;
+            }
+            return bestTarget != null;
         }
 
         private void BeginRetracting()
@@ -803,18 +842,62 @@ namespace Project.GreenHook
             // follows its real local target anchor, independent of the pointer.
             Vector3 end = pointerWorldPoint;
             Vector3 rangeCenter = sensor != null ? sensor.transform.position : transform.position;
-            float radius = sensor != null ? sensor.ScanRadius : GridCellSizeUtility.Resolve(this) * idleLengthCells;
-            end = rangeCenter + Vector3.ClampMagnitude(end - rangeCenter, radius);
-            UpdateLine(end, idleOpacity, 1f, 0f);
+            float radius = sensor != null ? sensor.ScanRadius : AimCellWorldSize * idleLengthCells;
+            radius += launchRangeSlackCells * AimCellWorldSize;
+            Vector3 desiredOffset = Vector3.ClampMagnitude(end - rangeCenter, radius);
+            if (!idleTipInitialized || idleFollowSeconds <= 0f) idleTipOffset = desiredOffset;
+            else idleTipOffset = Vector3.Lerp(idleTipOffset, desiredOffset,
+                1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(.001f, idleFollowSeconds)));
+            idleTipInitialized = true;
+            UpdateLine(rangeCenter + idleTipOffset, idleOpacity, 1f, 0f);
         }
 
-        private bool CanShowIdleIndicator()
+        private bool CanShowAimIndicator()
         {
             return player != null &&
-                   !player.IsControlLocked &&
+                   (!player.IsControlLocked || player.CanDriveGreenHook) &&
+                   !player.IsCarrying && !player.IsCarryBusy &&
                    !player.IsDead &&
                    Time.timeScale > 0f &&
                    !GameInput.IsPointerOverUi();
+        }
+
+        private void UpdateAimRing()
+        {
+            if (!TryGetPointerWorldPoint(Camera.main, pointerPosition, out Vector3 center)) { HideAimRing(); return; }
+            if (aimRing == null)
+            {
+                Shader shader = Shader.Find("Sprites/Default");
+                if (shader == null) return;
+                aimRingMaterial = new Material(shader) { name = "Green Aim Tolerance", hideFlags = HideFlags.DontSave };
+                var child = new GameObject("__GreenAimTolerance") { hideFlags = HideFlags.DontSave };
+                child.transform.SetParent(transform, false);
+                aimRing = child.AddComponent<LineRenderer>();
+                aimRing.useWorldSpace = true; aimRing.loop = true;
+                aimRing.positionCount = ringPoints.Length;
+                aimRing.sharedMaterial = aimRingMaterial;
+                aimRing.shadowCastingMode = ShadowCastingMode.Off;
+                aimRing.receiveShadows = false; aimRing.sortingOrder = 1001;
+            }
+            float radius = AimToleranceWorld;
+            center.z += cameraFacingOffset - .01f;
+            for (int i = 0; i < ringPoints.Length; i++)
+            {
+                float angle = i * (Mathf.PI * 2f / ringPoints.Length);
+                ringPoints[i] = center + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * radius;
+            }
+            aimRing.SetPositions(ringPoints);
+            aimRing.widthMultiplier = .025f * AimCellWorldSize;
+            float reach = LaunchRangeWorld + radius;
+            bool reachable = ((Vector2)(center - transform.position)).sqrMagnitude <= reach * reach;
+            Color tint = reachable ? new Color(.3f, 1f, .25f, .7f) : new Color(.55f, .65f, .55f, .3f);
+            aimRing.startColor = aimRing.endColor = tint;
+            aimRing.enabled = radius > 0f;
+        }
+
+        private void HideAimRing()
+        {
+            if (aimRing != null) aimRing.enabled = false;
         }
 
         private void UpdateLine(
@@ -926,6 +1009,8 @@ namespace Project.GreenHook
 
         private void HideLine()
         {
+            idleTipInitialized = false;
+            HideAimRing();
             if (line != null)
             {
                 line.enabled = false;
@@ -1090,8 +1175,8 @@ namespace Project.GreenHook
         private bool IsWithinRange(Vector3 point)
         {
             return sensor != null &&
-                   (point - transform.position).sqrMagnitude <=
-                   sensor.ScanRadius * sensor.ScanRadius;
+                   ((Vector2)(point - transform.position)).sqrMagnitude <=
+                   LaunchRangeWorld * LaunchRangeWorld + .000001f;
         }
 
         private bool IsPathWithinRoom(Vector3 end)
@@ -1208,6 +1293,7 @@ namespace Project.GreenHook
 
         private void OnDestroy()
         {
+            if (aimRingMaterial != null) Destroy(aimRingMaterial);
             if (ownsFallbackMaterial && hookMaterial != null)
             {
                 Destroy(hookMaterial);
@@ -1228,6 +1314,9 @@ namespace Project.GreenHook
             curveSegments = Mathf.Clamp(curveSegments, 2, 32);
             swingDamping = Mathf.Max(0f, swingDamping);
             retargetVisualSeconds = Mathf.Max(0f, retargetVisualSeconds);
+            aimToleranceCells = Mathf.Max(0f, aimToleranceCells);
+            launchRangeSlackCells = Mathf.Max(0f, launchRangeSlackCells);
+            idleFollowSeconds = Mathf.Max(0f, idleFollowSeconds);
         }
     }
 }

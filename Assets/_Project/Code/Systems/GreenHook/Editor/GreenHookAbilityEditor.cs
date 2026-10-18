@@ -22,13 +22,19 @@ namespace Project.GreenHook.Editor
                 "钩子可穿过方块，但不能跨出当前房间。"));
 
             Foldout idle = ProjectInspectorUtility.CreateFoldout(
-                "待机藤蔓头",
+                "瞄准与容差",
                 true);
+            idle.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "aimToleranceCells", "指针容差半径（格）",
+                "光标圆圈与实际命中半径一致；只在点击时查找圈内最近合法目标，默认0.65格。"));
+            idle.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "launchRangeSlackCells", "发射边缘冗余（格）",
+                "容差圈可选中基础染色圈外少量目标，默认额外0.5格，仍不能跨房间。"));
+            idle.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "idleFollowSeconds", "待机绳尖跟随时间（秒）",
+                "默认0.045秒指数缓动；仅影响表现，指针容差圈与点击使用真实指针，不延迟挂接。0为立即跟随。"));
             idle.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "idleLengthCells",
                 "无传感器时后备范围（格）",
-                "正常待机绳尖跟随鼠标位置，并限制在染色范围内；仅缺少传感器时使用此值。"));
+                "正常待机绳尖跟随鼠标位置，并限制在发射范围内；仅缺少传感器时使用此值。"));
             idle.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "idleOpacity",

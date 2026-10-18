@@ -22,13 +22,13 @@ namespace Project.Items
         private Rigidbody body;
         private Collider[] shapes;
         private bool[] shapeEnabled;
-        private bool originalGravity, originalKinematic;
+        private bool originalKinematic;
 
         private void EnsureState()
         {
             if (body != null) return;
             body = GetComponent<Rigidbody>();
-            originalGravity = body.useGravity; originalKinematic = body.isKinematic;
+            originalKinematic = body.isKinematic;
             shapes = GetComponentsInChildren<Collider>(true);
             shapeEnabled = new bool[shapes.Length];
             for (int i = 0; i < shapes.Length; i++) shapeEnabled[i] = shapes[i].enabled;
@@ -59,7 +59,9 @@ namespace Project.Items
         protected override void ResetItemState()
         {
             base.ResetItemState(); EnsureState();
-            body.useGravity = originalGravity; body.isKinematic = originalKinematic;
+            // Includes already-authored instances with the old serialized flag.
+            // Stay dynamic so cubes/bases can push it in either grid direction.
+            body.useGravity = false; body.isKinematic = originalKinematic;
             for (int i = 0; i < shapes.Length; i++) if (shapes[i] != null) shapes[i].enabled = shapeEnabled[i];
         }
         public void ResetForRoom()

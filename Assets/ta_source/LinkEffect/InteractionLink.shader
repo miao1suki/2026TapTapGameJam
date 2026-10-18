@@ -206,6 +206,12 @@ Shader "2026TapTap/Interaction Link"
                         float rootY = center + sin(rootX * 5.0 + _Time.y * speed * 0.3) * 0.014;
                         float direction = (seed > 0.5) ? 1.0 : -1.0;
                         float branchLength = min(0.38, max(0.14, lengthMeters * 0.16)) * lerp(0.84, 1.08, seed);
+                        // A branch occupies only this small x interval. Do not
+                        // run all 24 curve segments and four flowers for every
+                        // pixel along a long rotating ribbon (pixelation is a
+                        // visual snap, not a reduction in fragment invocations).
+                        [branch]
+                        if (p.x < rootX - 0.025 || p.x > rootX + max(branchLength + 0.04, branchLength * 0.42 + 0.24)) continue;
                         float branchGrowth = saturate((revealDistance - rootX) / max(0.08, branchLength * 0.75));
                         float2 root = float2(rootX, rootY);
                         branchMask = max(branchMask, CurvedBranch(p, root, direction,

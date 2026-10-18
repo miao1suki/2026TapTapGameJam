@@ -47,7 +47,9 @@ namespace Project.ContactCubes
         public CubeColor Color => color;
         public string ColorId => color == CubeColor.Red ? "red" : color == CubeColor.Blue ? "blue" : "green";
         public bool IsUnlocked => ColorRuntimeService.Existing != null && ColorRuntimeService.Existing.IsUnlocked(ColorId);
-        public bool IsEnergyAvailable => isActiveAndEnabled && IsUnlocked && color == CubeColor.Red && !carrySuspended && !hookSuspended && shape != null && shape.enabled;
+        // Hook ownership pauses cube reactions, not its passive electrical contact.
+        // Carrying still disables supply (and normally disables the real collider).
+        public bool IsEnergyAvailable => isActiveAndEnabled && IsUnlocked && color == CubeColor.Red && !carrySuspended && shape != null && shape.enabled;
         public bool IsHookSuspended => hookSuspended;
         public int Length { get; private set; }
         public int MaximumLength => maximumLength;

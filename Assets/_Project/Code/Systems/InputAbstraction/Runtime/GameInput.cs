@@ -1,4 +1,7 @@
 using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace Project.InputAbstraction
 {
@@ -8,6 +11,9 @@ namespace Project.InputAbstraction
     /// </summary>
     public static class GameInput
     {
+        private static readonly List<RaycastResult> uiHits = new List<RaycastResult>(32);
+        private static EventSystem pointerEventSystem;
+        private static PointerEventData pointerEvent;
         public static IInputSource Source
         {
             get
@@ -30,12 +36,29 @@ namespace Project.InputAbstraction
 
         public static bool IsPointerOverUi()
         {
-            var system = UnityEngine.EventSystems.EventSystem.current;
+            EventSystem system = EventSystem.current;
             if (system == null) return false;
-            var hits = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
-            system.RaycastAll(new UnityEngine.EventSystems.PointerEventData(system) { position = PointerPosition }, hits);
-            foreach (var hit in hits)
-                if (hit.module is UnityEngine.UI.GraphicRaycaster) return true;
+            Vector2 position = PointerPosition;
+            if (pointerEventSystem != system)
+            {
+                pointerEventSystem = system;
+                pointerEvent = new PointerEventData(system);
+            }
+            pointerEvent.Reset();
+            pointerEvent.position = position;
+            // We only ask whether UGUI blocks gameplay. RaycastAll also invokes
+            // scene PhysicsRaycasters and sorts hits which this query discards.
+            var raycasters = RaycasterManager.GetRaycasters();
+            for (int i = 0; i < raycasters.Count; i++)
+            {
+                if (!(raycasters[i] is GraphicRaycaster graphic) || !graphic.isActiveAndEnabled) continue;
+                uiHits.Clear();
+                graphic.Raycast(pointerEvent, uiHits);
+                if (uiHits.Count == 0) continue;
+                uiHits.Clear();
+                return true;
+            }
+            uiHits.Clear();
             return false;
         }
 

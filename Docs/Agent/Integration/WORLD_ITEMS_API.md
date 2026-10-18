@@ -4,7 +4,7 @@ Runtime：`Assets/_Project/Code/Systems/WorldItems/Runtime`。资源：`Assets/_
 
 ## 收集品
 
-`Project.Items.CollectiblePickup : DropItemBase, IRoomColorResettable`。普通球形实体碰撞用于推挤，子 Trigger 用于玩家接触；Rigidbody 锁 Z/旋转。接触其他道具不结算。三色接触方块与运动中的基座通过物理接触推动，无场景全量扫描。
+`Project.Items.CollectiblePickup : DropItemBase, IRoomColorResettable`。普通球形实体碰撞用于推挤，子 Trigger 用于玩家接触；Rigidbody无重力、锁 Z/旋转，仍为动态刚体以保留方块/基座推动。Prefab与新建工具默认关闭重力，启用、房间重置和对象池复用也强制关闭，兼容旧场景保存的useGravity=true，无需重建关卡。接触其他道具不结算。三色接触方块与运动中的基座通过物理接触推动，无场景全量扫描。
 
 通过 `CollectiblePickup.Collected` 静态事件取得 `(item, actor)`，用 `ItemId`、`Amount` 结算；订阅者在 Disable 时注销。或使用 Inspector 的 `onCollected` UnityEvent。事件只在拾取飞行完成后触发；中途房间重置取消动画，不发过期回调。
 

@@ -56,7 +56,7 @@ namespace Project.WorldItems.Editor
                 Object.DestroyImmediate(visual.GetComponent<Collider>());
                 visual.GetComponent<Renderer>().sharedMaterial = material;
                 var solid = root.AddComponent<SphereCollider>(); solid.radius = .275f;
-                var body = root.AddComponent<Rigidbody>(); body.mass = .25f; body.useGravity = true;
+                var body = root.AddComponent<Rigidbody>(); body.mass = .25f; body.useGravity = false;
                 body.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
                 body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 var trigger = new GameObject("拾取区域"); trigger.transform.SetParent(root.transform, false);
