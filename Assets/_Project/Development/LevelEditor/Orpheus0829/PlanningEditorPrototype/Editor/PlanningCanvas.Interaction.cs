@@ -66,6 +66,8 @@ namespace PlanningEditorPrototype
 
         private bool SupportsEdgePan()
         {
+            if (bossMarkerDragBox != null)
+                return true;
             if (mode == PlanningCanvasMode.World)
                 return mapTool == PlanningMapTool.Paint || mapTool == PlanningMapTool.Connector ||
                     mapTool == PlanningMapTool.Erase || mapTool == PlanningMapTool.Select ||
@@ -97,6 +99,11 @@ namespace PlanningEditorPrototype
 
         private void ContinuePointerDrag(Vector2 position)
         {
+            if (bossMarkerDragBox != null)
+            {
+                ContinueBossMarkerDrag(position);
+                return;
+            }
             if (mode == PlanningCanvasMode.World) HandleWorldPointerMove(position);
             else if (mode == PlanningCanvasMode.Assembly) HandleAssemblyPointerMove(position);
             else HandleDetailPointerMove(position);
@@ -111,7 +118,8 @@ namespace PlanningEditorPrototype
             {
                 dragCurrent = position;
                 ContinuePointerDrag(position);
-                if (mode == PlanningCanvasMode.World) CompleteWorldDrag();
+                if (bossMarkerDragBox != null) CompleteBossMarkerDrag();
+                else if (mode == PlanningCanvasMode.World) CompleteWorldDrag();
                 else if (mode == PlanningCanvasMode.Assembly) CompleteAssemblyDrag();
                 else CompleteDetailDrag();
                 // Its completion above already recorded the transaction.
@@ -122,6 +130,140 @@ namespace PlanningEditorPrototype
                 EndPointerAction();
                 completingPointer = false;
             }
+        }
+
+        private bool TryBeginBossMarkerDrag(Vector2 position)
+        {
+            if (mode == PlanningCanvasMode.World)
+            {
+                return false;
+            }
+
+            PlanningDetailTool tool = GetActiveDetailTool();
+            if (tool != PlanningDetailTool.Select &&
+                tool != PlanningDetailTool.Parameters)
+            {
+                return false;
+            }
+
+            PlanningRoom bestRoom = null;
+            PlanningBox bestBox = null;
+            float bestDistance = float.PositiveInfinity;
+            foreach (var item in AllBoxes())
+            {
+                if (mode == PlanningCanvasMode.Detail &&
+                    item.room?.id != selectedRoomId)
+                {
+                    continue;
+                }
+
+                if (!TryGetBossMarkerLayout(
+                        item.room,
+                        item.box,
+                        out _,
+                        out Vector2 marker,
+                        out _))
+                {
+                    continue;
+                }
+
+                RectInt rect = DisplayRect(
+                    item.room,
+                    item.box);
+                Rect hit = CellRect(
+                    rect.x,
+                    rect.y,
+                    1,
+                    1);
+                hit = new Rect(
+                    hit.x - 3f,
+                    hit.y - 3f,
+                    hit.width + 6f,
+                    hit.height + 6f);
+                if (!hit.Contains(position))
+                {
+                    continue;
+                }
+
+                float distance =
+                    Vector2.Distance(position, marker);
+                if (distance > bestDistance)
+                {
+                    continue;
+                }
+
+                bestDistance = distance;
+                bestRoom = item.room;
+                bestBox = item.box;
+            }
+
+            if (bestBox == null)
+            {
+                return false;
+            }
+
+            bossMarkerDragRoom = bestRoom;
+            bossMarkerDragBox = bestBox;
+            bossMarkerDragMoved = false;
+            selectedRoomId = bestRoom?.id;
+            selectedBoxId = bestBox.id;
+            SelectionChanged?.Invoke();
+            StatusChanged?.Invoke(
+                "左右拖动 Boss 复活标记，Y 坐标保持与重生点一致。");
+            return true;
+        }
+
+        private void ContinueBossMarkerDrag(Vector2 position)
+        {
+            if (bossMarkerDragBox == null)
+            {
+                return;
+            }
+
+            PlanningBox owner =
+                bossMarkerDragRoom?.boxes.Find(
+                    value => value.id ==
+                             bossMarkerDragBox
+                                 .bossRespawnOwnerId);
+            if (owner == null)
+            {
+                return;
+            }
+
+            RectInt rect = DisplayRect(
+                bossMarkerDragRoom,
+                owner);
+            Rect footprint = CellRect(
+                rect.x,
+                rect.y,
+                rect.width,
+                rect.height);
+            int localX = Mathf.RoundToInt(
+                (position.x - footprint.center.x) /
+                GridSize);
+            bossMarkerDragBox.x = owner.x + localX;
+            bossMarkerDragBox.y = owner.y;
+            bossMarkerDragBox.width =
+                bossMarkerDragBox.height = 1;
+            SetBossMarkerLocalX(
+                owner,
+                localX);
+            bossMarkerDragMoved = true;
+            MarkDirtyRepaint();
+        }
+
+        private void CompleteBossMarkerDrag()
+        {
+            if (bossMarkerDragBox != null &&
+                bossMarkerDragMoved)
+            {
+                NotifyDocumentChanged();
+                SelectionChanged?.Invoke();
+            }
+
+            bossMarkerDragRoom = null;
+            bossMarkerDragBox = null;
+            bossMarkerDragMoved = false;
         }
 
         private void OnCanvasCaptureOut(PointerCaptureOutEvent evt)

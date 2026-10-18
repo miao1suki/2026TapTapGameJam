@@ -16,6 +16,7 @@ namespace Project.Player
         [SerializeField, InspectorName("额外脚底偏移（美术像素）")] private int additionalVerticalOffsetPixels = -2;
         private PlayerController player;
         private CapsuleCollider capsule;
+        private Animator animator;
         private Renderer placeholder;
         private bool placeholderWasEnabled;
         private bool hasPresented;
@@ -54,6 +55,8 @@ namespace Project.Player
         {
             player = GetComponent<PlayerController>();
             capsule = GetComponent<CapsuleCollider>();
+            animator ??=
+                GetComponentInChildren<Animator>(true);
             cellWorldSize = GridCellSizeUtility.Resolve(player);
             if (animationSet == null) animationSet = Resources.Load<PlayerSpriteAnimationSet>("PlayerVisuals/PlayerSprites");
             if (spriteMaterial == null) spriteMaterial = Resources.Load<Material>("PlayerVisuals/PlayerSprite");
@@ -83,7 +86,13 @@ namespace Project.Player
         {
             if (visual == null || animationSet == null || player == null) return;
             PlayerStateId state = player.CurrentStateId;
-            bool suspended = state == PlayerStateId.Locked || state == PlayerStateId.Action;
+            bool timelineAnimatorTakeover =
+                state == PlayerStateId.Locked &&
+                animator != null &&
+                animator.isActiveAndEnabled;
+            bool suspended =
+                state == PlayerStateId.Action ||
+                timelineAnimatorTakeover;
             PlayerSpriteState requested = PlayerSpriteAnimationClock.Resolve(state, player.IsGrounded,
                 player.HorizontalVelocity, player.VerticalVelocity, player.MoveInput);
             // Static climbing holds its current pose instead of climbing in place.

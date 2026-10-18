@@ -26,8 +26,14 @@ namespace Project.BossLogic
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(Collider))]
-    public sealed class BossController : MonoBehaviour, IDamageable
+    public sealed class BossController :
+        MonoBehaviour,
+        IDamageable,
+        IBossRespawnStateReceiver
     {
+        [Header("身份")]
+        [SerializeField] private string bossDisplayName = "Boss";
+
         [Header("追击")]
         [SerializeField] private Transform target;
         [SerializeField] private string targetTag = "Player";
@@ -66,6 +72,7 @@ namespace Project.BossLogic
         [SerializeField, Min(0f)] private float lavaContactDamage = 1f;
         [SerializeField, Min(1)] private int maxHiddenObjectsPerFrame = 4;
         [SerializeField, Min(1f)] private float passThroughColliderHeight = 12f;
+        [SerializeField] private bool killPlayerOnContact = true;
 
         [Header("死亡")]
         [SerializeField] private bool destroyAfterDeath;
@@ -87,6 +94,13 @@ namespace Project.BossLogic
         private bool externalMotionControlsVertical;
         private bool externalHeightLocked;
         private float externalHeightY;
+        private bool executionControlled;
+        private bool executionMoving;
+        private float executionMoveSpeed;
+        private float executionHeightY;
+        private bool executionGravityWasEnabled;
+        private bool deathKinematicStateCaptured;
+        private bool deathPreviousKinematic;
         private float invulnerableUntil;
         private float invulnerabilityStartedAt;
         private bool healthSystemActive;
@@ -126,8 +140,15 @@ namespace Project.BossLogic
         public event Action<BossController>
             DefeatPresentationRequested;
         public event Action HealthSystemActivated;
+        public event Action<float, Vector3>
+            RespawnStateApplied;
+        public event Action ExecutionSequenceTerminated;
 
         public BossStateId State => state;
+        public string BossDisplayName =>
+            string.IsNullOrWhiteSpace(bossDisplayName)
+                ? gameObject.name
+                : bossDisplayName.Trim();
         public bool IsDead => dead;
         public float CurrentHealth => currentHealth;
         public float MaxHealth => maxHealth;
@@ -140,10 +161,15 @@ namespace Project.BossLogic
         public Rigidbody Body => body;
         public bool IsJumping => jumpActive;
         public bool IsExternallyControlled => externalMotionActive;
+        public bool IsExecutionControlled =>
+            executionControlled;
         public bool IsGrounded { get; private set; }
         public bool IsInvulnerable =>
             !dead && Time.time < invulnerableUntil;
         public bool IsHealthSystemActive => healthSystemActive;
+        public bool IsBossRespawnStateAvailable =>
+            isActiveAndEnabled;
+        public Vector3 WorldPosition => transform.position;
         public float InvulnerabilityRemaining =>
             Mathf.Max(0f, invulnerableUntil - Time.time);
         public Collider BodyCollider => bodyCollider;
@@ -231,6 +257,12 @@ namespace Project.BossLogic
                 return;
             }
 
+            if (executionControlled)
+            {
+                TickExecutionSequence();
+                return;
+            }
+
             Vector3 velocity = body.linearVelocity;
             if (jumpActive)
             {
@@ -313,8 +345,17 @@ namespace Project.BossLogic
             }
         }
 
+        private void OnEnable()
+        {
+            if (CompareTag("Boss"))
+            {
+                BossRespawnStateRegistry.Register(this);
+            }
+        }
+
         private void OnDisable()
         {
+            BossRespawnStateRegistry.Unregister(this);
             CancelJump();
             RestoreInvulnerabilityRenderers();
             pendingHiddenObjects.Clear();
@@ -399,6 +440,55 @@ namespace Project.BossLogic
             externalHeightLocked = false;
         }
 
+        public void BeginExecutionSequence(
+            float moveSpeedBlocksPerSecond)
+        {
+            if (dead || body == null)
+            {
+                return;
+            }
+
+            executionControlled = true;
+            executionMoving = false;
+            executionMoveSpeed =
+                Mathf.Max(0f, moveSpeedBlocksPerSecond) *
+                GridCellSizeUtility.Resolve(this);
+            executionHeightY = transform.position.y;
+            executionGravityWasEnabled = body.useGravity;
+            body.useGravity = false;
+            SetPassThroughTerrain(true);
+            Vector3 velocity = body.linearVelocity;
+            velocity.x = 0f;
+            velocity.y = 0f;
+            velocity.z = 0f;
+            body.linearVelocity = velocity;
+        }
+
+        public void StartExecutionMovement()
+        {
+            if (executionControlled && !dead)
+            {
+                executionMoving = true;
+            }
+        }
+
+        public void EndExecutionSequence()
+        {
+            if (!executionControlled)
+            {
+                return;
+            }
+
+            executionControlled = false;
+            executionMoving = false;
+            executionMoveSpeed = 0f;
+            if (body != null)
+            {
+                body.useGravity = executionGravityWasEnabled;
+            }
+            SetPassThroughTerrain(false);
+        }
+
         public void SetPassThroughTerrain(bool value)
         {
             if (bodyCollider != null)
@@ -477,6 +567,20 @@ namespace Project.BossLogic
                 position.y = externalHeightY;
                 body.position = position;
             }
+        }
+
+        private void TickExecutionSequence()
+        {
+            Vector3 velocity = body.linearVelocity;
+            velocity.x = executionMoving
+                ? executionMoveSpeed
+                : 0f;
+            velocity.y = Time.fixedDeltaTime > 0f
+                ? (executionHeightY - body.position.y) /
+                  Time.fixedDeltaTime
+                : 0f;
+            velocity.z = 0f;
+            body.linearVelocity = velocity;
         }
 
         private void UpdateGrounded()
@@ -664,8 +768,81 @@ namespace Project.BossLogic
             HealthSystemActivated?.Invoke();
         }
 
+        public void ApplyBossRespawnState(
+            float health,
+            Vector3 worldPosition)
+        {
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
+            float nextHealth = Mathf.Clamp(
+                health,
+                0f,
+                maxHealth);
+            if (nextHealth <= 0f)
+            {
+                TeleportTo(
+                    worldPosition,
+                    transform.rotation);
+                if (dead)
+                {
+                    currentHealth = 0f;
+                }
+                else
+                {
+                    EnterDeath(Vector3.zero);
+                }
+
+                RespawnStateApplied?.Invoke(
+                    nextHealth,
+                    worldPosition);
+                return;
+            }
+
+            if (dead)
+            {
+                RestoreBodyAfterDeath();
+                dead = false;
+                invulnerableUntil = 0f;
+                RestoreInvulnerabilityRenderers();
+                CancelJump();
+                SetState(BossStateId.Chase);
+            }
+
+            currentHealth = nextHealth;
+            if (!healthSystemActive)
+            {
+                ActivateHealthSystem();
+            }
+
+            if (externalHeightLocked)
+            {
+                externalHeightY = worldPosition.y;
+            }
+
+            TeleportTo(
+                worldPosition,
+                transform.rotation);
+            RespawnStateApplied?.Invoke(
+                nextHealth,
+                worldPosition);
+        }
+
         public void ReceiveHit(float amount, Vector3 knockback)
         {
+            if (executionControlled &&
+                !dead &&
+                amount > 0f)
+            {
+                currentHealth = 0f;
+                Damaged?.Invoke(amount, currentHealth);
+                ExecutionSequenceTerminated?.Invoke();
+                EnterDeath(knockback);
+                return;
+            }
+
             if (!healthSystemActive ||
                 dead ||
                 amount <= 0f ||
@@ -711,13 +888,28 @@ namespace Project.BossLogic
             }
 
             if (destroyOnlyWhileExternalMoving &&
-                !externalMotionActive)
+                !externalMotionActive &&
+                !executionControlled)
             {
                 return;
             }
 
-            if (other.GetComponentInParent<PlayerController>() != null ||
-                other.GetComponentInParent<BossController>() != null)
+            PlayerController player =
+                other.GetComponentInParent<PlayerController>();
+            if (player != null)
+            {
+                if (killPlayerOnContact &&
+                    player.isActiveAndEnabled &&
+                    !player.IsDead &&
+                    !player.IsRespawning)
+                {
+                    player.EnterDeath();
+                }
+
+                return;
+            }
+
+            if (other.GetComponentInParent<BossController>() != null)
             {
                 return;
             }
@@ -878,21 +1070,28 @@ namespace Project.BossLogic
 
             currentHealth = 0f;
             dead = true;
+            EndExecutionSequence();
             invulnerableUntil = 0f;
             pendingHiddenObjects.Clear();
             pendingHiddenObjectIds.Clear();
             RestoreInvulnerabilityRenderers();
             CancelJump();
             SetState(BossStateId.Death);
-            if (body != null && !body.isKinematic)
+            if (body != null)
             {
-                Vector3 velocity = Vector3.zero;
-                if (knockback.sqrMagnitude > 0f)
+                deathPreviousKinematic =
+                    body.isKinematic;
+                deathKinematicStateCaptured = true;
+                if (!body.isKinematic)
                 {
-                    velocity = knockback;
+                    body.linearVelocity =
+                        knockback.sqrMagnitude > 0f
+                            ? knockback
+                            : Vector3.zero;
+                    body.angularVelocity =
+                        Vector3.zero;
+                    body.isKinematic = true;
                 }
-
-                body.linearVelocity = velocity;
             }
 
             Died?.Invoke();
@@ -902,6 +1101,24 @@ namespace Project.BossLogic
             {
                 Destroy(gameObject, Mathf.Max(0f, destroyDelaySeconds));
             }
+        }
+
+        private void RestoreBodyAfterDeath()
+        {
+            if (body == null ||
+                !deathKinematicStateCaptured)
+            {
+                return;
+            }
+
+            if (body.isKinematic !=
+                deathPreviousKinematic)
+            {
+                body.isKinematic =
+                    deathPreviousKinematic;
+            }
+            deathKinematicStateCaptured = false;
+            body.WakeUp();
         }
 
         private void TickJump()

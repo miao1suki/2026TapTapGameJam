@@ -89,6 +89,8 @@ public sealed class ContactTimelineTriggerEditor : Editor
             "触发模式");
         triggerModeProperty = serializedObject.FindProperty("triggerMode");
         trigger.Add(triggerMode);
+        trigger.Add(ProjectInspectorUtility.CreateHelp(
+            "“进入播放，离开停止”用于区域状态型 Timeline；最后一个接触离开后停止并重置 Timeline，Playable 应在 OnGraphStop/暂停时释放自己的请求。"));
         cooldownRow = new VisualElement();
         cooldownRow.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
@@ -120,7 +122,17 @@ public sealed class ContactTimelineTriggerEditor : Editor
         RefreshTriggerModeVisibility();
         root.schedule.Execute(() =>
         {
-            colliderObject?.ApplyModifiedProperties();
+            if (target == null ||
+                serializedObject == null ||
+                serializedObject.targetObject == null)
+            {
+                return;
+            }
+            if (colliderObject != null &&
+                colliderObject.targetObject != null)
+            {
+                colliderObject.ApplyModifiedProperties();
+            }
             serializedObject.Update();
             RefreshColliderFields();
             RefreshTriggerModeVisibility();
@@ -146,12 +158,19 @@ public sealed class ContactTimelineTriggerEditor : Editor
 
         ContactTimelineTrigger trigger =
             target as ContactTimelineTrigger;
-        triggerSummary.text = repeatable
+        int mode = triggerModeProperty != null
+            ? triggerModeProperty.enumValueIndex
+            : 0;
+        triggerSummary.text = mode ==
+                              (int)ContactTimelineTriggerMode.Repeatable
             ? "当前触发模式：可重复触发" +
               (trigger != null
                   ? $" · 冷却 {trigger.RepeatCooldownSeconds:0.##} 秒"
                   : string.Empty)
-            : "当前触发模式：只触发一次";
+            : mode ==
+              (int)ContactTimelineTriggerMode.WhileInside
+                ? "当前触发模式：进入播放，离开停止"
+                : "当前触发模式：只触发一次";
     }
 
     private void RefreshColliderFields()
@@ -242,10 +261,14 @@ public sealed class ContactTimelineTriggerEditor : Editor
             "触发模式",
             () => trigger == null
                 ? "无"
-                : trigger.TriggerMode ==
-                  ContactTimelineTriggerMode.Once
-                    ? "只触发一次"
-                    : "可重复触发"));
+                : trigger.TriggerMode switch
+                {
+                    ContactTimelineTriggerMode.Once =>
+                        "只触发一次",
+                    ContactTimelineTriggerMode.Repeatable =>
+                        "可重复触发",
+                    _ => "进入播放，离开停止"
+                }));
         debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
             "剩余冷却",
             () => trigger == null

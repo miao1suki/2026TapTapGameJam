@@ -36,6 +36,8 @@
 
 三色接触方块的 RoomResetObject 在 Awake（早于重力/反应）捕获编辑器布置根位姿；归属保留为布置区域，不跟随搬运或水柱迁移。R 入口通过 BeforeRespawn 恢复来源和重生目标区域，RestorePose 后 RestoreState 清除速度/水柱/长度/攀附缓存。基础位姿不会在落地、搬运或按钮接触后重采样。
 
+平台兜底：启动扫描会显式注册所有 `MovingPlatformFeature` 和 `OneWayPlatform`，不要求它们先经过常规 BlockRuntime 注册。`RoomResetObject.RestoreState` 会在宿主重置之后再对所有移动平台无条件执行 `ResetForRoom`，确保停用/脱附状态下遗留的路线位置、承载玩家、时间轴和音频都回到作者原点。
+
 ## 输入与颜色
 
 开发者可通过 `PlayerController.ConfigureRespawn` 切换常规/加载转场复活，默认常规；两者都复用以下同一复位链。加载方式只在遮罩完整覆盖后调用复位，不切换场景、不改变区域或进度语义。接口与取消契约见 [PLAYER_RESPAWN_API.md](PLAYER_RESPAWN_API.md)。
@@ -49,6 +51,22 @@
 `PlayerRespawnPointRegistry.Bind(player, point)` 记录最近触碰。`TryFindPreferred(player, origin, out point)` 优先此绑定，旧链表优先级仅是无绑定的兼容后备。绑定为本次运行，未新增跨运行存档协议。
 
 默认触发半径 1.5 格。`RespawnAnchorFeature.IsCurrent` 与历史 `IsActivated` 分离，只有当前点使用 activatedMaterial；新绑定通知旧点恢复 inactiveMaterial。`CurrentChanged(bool)` 供美术表现监听，`IPlayerRespawnBindingListener.OnRespawnBindingChanged(player, current)` 是注册表的类型安全回调；禁用点会取消绑定。历史链激活不会点亮非当前点，重复绑定同一点不重复播放动画。
+
+`RespawnAnchorFeature` 直接保存 Boss 关卡重生数据：
+
+- `isBossArenaRespawnPoint`：是否在玩家复活后同步 Boss。
+- `bossRespawnHealth`：玩家完成复活后设置的 Boss 当前血量，按 Boss 最大值夹取。
+- `bossRespawnLocalX`：相对重生点的世界 X 偏移；Y 固定继承重生点，Z 也继承重生点。
+
+Boss 战复活兜底：`PlayerController.PerformRespawn` 在正常重生点解析后检查同场景活动 Boss。若没有任何 `IsRespawnPointAvailable` 且 `IsBossArenaRespawnPoint` 为真的已解锁出生点，则扫描同场景全部启用的 Boss 关出生点，即使尚未解锁也参与候选；按 `RespawnPosition.x` 取最左侧点作为本次复活目标，X 相同时按实例 ID 稳定选择。该目标继续走原有安全落位和 `IPlayerRespawnPreRoomResetListener` 链，因此 Boss 血量/位置重置不会被绕过；兜底不会改写玩家当前绑定出生点。
+
+`PlayerController` 在确定本次实际选中的重生点后、调用 `RoomLifecycleManager.BeforeRespawn` 之前，通过 `IPlayerRespawnPreRoomResetListener.OnPlayerRespawnBeforeRoomReset` 先发起 Boss 重置，再执行房间恢复。重生点只在开关开启时创建待应用请求；若 Boss 尚未由 Timeline 生成，请求保持等待，每 0.1 秒查询 `BossRespawnStateRegistry` 和 `Boss` Tag 后备查找。Boss 启用后会收到 `ApplyBossRespawnState(health, worldPosition)`，重生点随后回读 `CurrentHealth` / `WorldPosition`，Inspector 显示“已应用并检测（一致/不一致）”。不在重生点保存 Boss 引用，也不在玩家脚本里依赖 Boss 类型。
+
+运行时调试区提供“模拟应用 Boss 血量与位置”按钮，并显示待应用状态、最近检测血量和位置；用于确认后生成 Boss 是否真正收到状态。
+
+附属 `BossRespawnMarker` 是一对一 Scene 标记，没有 Collider/Renderer，不保存业务数据。Inspector 和关卡画布均只允许横向拖动；Y 始终与重生点一致。标记或标记组件被删除后会补建并重新绑定。规划参数中的 Boss 开关、血量和 X 与其他组件覆盖一样随组件存档保存。
+
+关卡参数窗口对重生点提供“生成 Boss 复活标记”，对应规划物体 `propEntryId = "__boss_respawn_marker"`。该标记格通过 `PlanningBox.bossRespawnOwnerId` 连接父重生点，不生成额外场景实体；拖动时只更新 X，Y 始终复制父重生点。标记格会随房间规划存档、片段导入导出和场景同步保留；删除后会按父点开关自动补回。
 
 玩家接近触发统一经 `RespawnAnchorFeature.ActivateForPlayer(player)`：激活链、切换当前绑定，并在首次解锁时播放 `CheckpointUnlock`，切回已解锁点时播放 `CheckpointSwitch`。`Activate()` 仍是静默历史激活入口；注册表本身不播声音，因此重生、初始化和链式解锁不会重复提示。
 

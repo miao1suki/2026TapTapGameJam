@@ -27,6 +27,7 @@ namespace Project.Rooms
         private readonly List<CollisionState> collisionStates = new List<CollisionState>();
         private readonly List<GameObject> replacements = new List<GameObject>();
         private readonly List<MonoBehaviour> resetComponents = new List<MonoBehaviour>();
+        private readonly List<MovingPlatformFeature> resetPlatforms = new List<MovingPlatformFeature>();
         private DoorController door;
         private DoorButton button;
         private DoorHint doorHint;
@@ -177,6 +178,11 @@ namespace Project.Rooms
                     (!(behaviour is BlockFeature feature) || feature.IsAttached) &&
                     (host == null || !(behaviour is BlockFeature))) resettable.ResetForRoom();
             }
+            // A platform can finish a route while detached/disabled. Host reset
+            // already reset attached features; only repair the remaining ones.
+            GetComponentsInChildren(true, resetPlatforms);
+            foreach (MovingPlatformFeature platform in resetPlatforms)
+                if (platform != null && !platform.IsAttached) platform.ResetForRoom();
             if (host == null) blockRuntime?.RefreshFeatureSet(true);
         }
 

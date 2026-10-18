@@ -6,6 +6,7 @@ namespace Project.BossLogic
     public sealed class BossHealthBarActivationPlayable : PlayableAsset
     {
         [SerializeField] private string bossTag = "Boss";
+        [SerializeField] private bool enableCameraSize = true;
 
         public override Playable CreatePlayable(
             PlayableGraph graph,
@@ -14,7 +15,8 @@ namespace Project.BossLogic
             BossHealthBarActivationBehaviour behaviour =
                 new BossHealthBarActivationBehaviour
                 {
-                    bossTag = bossTag
+                    bossTag = bossTag,
+                    enableCameraSize = enableCameraSize
                 };
             return ScriptPlayable<BossHealthBarActivationBehaviour>
                 .Create(graph, behaviour);
@@ -25,6 +27,7 @@ namespace Project.BossLogic
         PlayableBehaviour
     {
         public string bossTag = "Boss";
+        public bool enableCameraSize = true;
 
         private bool activated;
 
@@ -65,6 +68,12 @@ namespace Project.BossLogic
             }
 
             boss.ActivateHealthSystem();
+            if (enableCameraSize)
+            {
+                BossCameraSize cameraSize =
+                    boss.GetComponent<BossCameraSize>();
+                cameraSize?.RequestEnable();
+            }
             activated = true;
         }
     }
