@@ -4,6 +4,7 @@
 
 - 本轮微调：把每只萤火虫的两个相邻方像素改为单个方像素；动态网格由每只 3 个四边形减少到 2 个，原预设、运动、受惊与光照参数继续沿用。Unity 独立预览已重新导入并确认单个方形光点，Console 0 错误。
 - 本轮验证：`dotnet build Assembly-CSharp.csproj --no-restore` 0 警告、0 错误；规划存档检查与 `git diff --check` 通过。
+- 交接：单像素代码提交 `af26c24` 已随原萤火虫资源推送到 `origin/codex/ta/firefly-field`；正式场景未接线，整合者按需引用预设体。
 - 负责人：Codex；分支 `codex/ta/firefly-field`。
 - 范围：只新增 `Assets/ta_source/firefly` 中的萤火虫表现、可调预设体与独立预览场景；只读取 `Assets/Scenes/Test.unity` 对照格子和相机尺寸，不编辑该场景或正式玩法场景。
 - 接口：矩形活动范围、数量、常态游速、轨迹随机种子、受惊检测与更快的逃逸速度、弱范围补光及呼吸参数由 Inspector 调整。
