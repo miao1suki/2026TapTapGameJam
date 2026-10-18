@@ -1,5 +1,16 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 TA 萤火虫范围预设
+
+- 负责人：Codex；分支 `codex/ta/firefly-field`。
+- 范围：只新增 `Assets/ta_source/firefly` 中的萤火虫表现、可调预设体与独立预览场景；只读取 `Assets/Scenes/Test.unity` 对照格子和相机尺寸，不编辑该场景或正式玩法场景。
+- 接口：矩形活动范围、数量、常态游速、轨迹随机种子、受惊检测与更快的逃逸速度、弱范围补光及呼吸参数由 Inspector 调整。
+- 当前工作树已有字体资产改动与 `firefly.meta`；本任务沿用并提交原有目录 `.meta`，字体资产改动保持原样、不纳入提交。
+- 已交付：双像素合批动态网格、平滑噪声和邻域聚散、活动框边界约束、指定目标或玩家标签感知、受惊加速、三组可复现随机种子；柔和叠加光晕逐只呼吸，最多 4 盏固定跟随的弱点光补亮受灯光影响的材质。
+- 资源：`FireflyField.prefab`、Shader/材质、`FireflyPreview.unity`（3 个 1 单位参照块及自动穿越的测试物体）、`README.md`，均在 `Assets/ta_source/firefly`。独立预览不加入正式流程。
+- 视觉核对：Unity 6000.3.12f1 已导入并打开预览，Play 模式观察到弯曲游动、靠近避让、明暗呼吸，Console 0 错误。按参照块缩小默认光晕半径 0.30→0.22、光晕强度 0.24→0.17、点光强度 0.20→0.16；静态预览重新导入后核对 Inspector 参数生效。
+- 验证：`dotnet build Assembly-CSharp.csproj --no-restore` 0 警告、0 错误；10 个新增资源各有 `.meta`，GUID 唯一且预设/场景引用核对通过；`Ops/LevelMaps/Test-PlanningMapCommit.ps1` 通过。
+
 ## 2026-10-18 TA 岩浆流动与喷溅独立预览
 
 - 负责人：Codex；分支 `codex/ta/flow-magma`。
