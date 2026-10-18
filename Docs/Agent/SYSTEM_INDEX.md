@@ -1,5 +1,7 @@
 # 系统索引
 
+独立R2：`Assets/Scenes/R2/R2.unity`及同名planning／来源映射，Excel393墙格、三保持按钮同门、曲柄10格升降、两个绿根和8格可烧毁植物。场景三色启用、玩家仅蓝能力，固定AK114复用作者约束攀附；按策划要求暂不补蓝块，生长触发待程序协调，不替代正式Gaming、不改R1或R3。见 [R2说明](../Developer/R2_LEVEL.md)。Scene、planning、meta及依赖成套交付。
+
 主菜单改为真实Gaming近景与常驻MainMenu Canvas融合：新ButtonIcon四项竖排、27帧LOGO，首次开始相机拉远、返回反向运镜，不使用旧菜单黑圈/滚动背景。预览租约隔离玩家物理、输入与收集，不停用世界美术；重复开始先卸旧世界再载新世界，保留本次运行颜色进度，单帧底图交接与唯一相机/Listener/EventSystem。见[融合菜单](../Developer/WORLD_MENU_FUSION.md)与[场景流程](../Developer/GAME_FLOW.md)。
 
 Boss清障隐藏与持久机关进度分离：房间重置归还临时渲染/碰撞租约，不清门按钮进度，旧碰撞隐藏队列按ResetRevision失效。见[BOSS_ROOM_RESET_VISUALS](Integration/BOSS_ROOM_RESET_VISUALS.md)。两个移动平台已接新6/9帧48×16素材、14像素支撑上缘，旧占格/路线不扩大；新增红绿蓝单向平台栏目复用同一Prefab，颜色参数只影响外观与HSV图层。见[物体美术API](Integration/OBJECT_ARTWORK_API.md)。Scene/可编辑存档/meta/新增美术依赖仍必须成套交付。
