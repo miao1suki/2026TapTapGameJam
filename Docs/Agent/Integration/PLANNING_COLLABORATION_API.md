@@ -6,7 +6,7 @@
 
 共享的 LevelEditorPanel 在独立放置器和规划窗口中按颜色分组，只改变 Editor 展示，不修改栏目 ID、顺序、预制体或已放置实例。GetPropColorGroup 优先读取 ColorObject.BaseColorTypeId、ColorKeyPickup.ColorTypeId 及匹配组件路径/类型/序号的默认字段覆盖；无颜色组件时回退到预制体根节点 red/blue/green Layer。多色及未知颜色进入其他有色，未归色项进入无色。重复默认条目仍只隐藏显示副本，选择回调使用原始下标；参数模式继续走 EditPlanningDefaults。紧凑卡片不随剩余行宽拉伸，操作条与预览分开，分组折叠状态按项目写入 SessionState。
 
-方块栏目同样使用紧凑卡片与选中项操作条；GetBlockColorGroup 仅读取 LevelEditorBlockEntry.Color，HSV 低饱和、近黑及透明归无色，其余按色相进入红蓝绿或其他有色组。分类不代表运行时颜色归属，也不读取图片像素或迁移颜色组件。折叠状态使用独立的 LevelEditor.BlockGroup 项目会话键，保留原下标与数据；与道具共用 ConfigureCompactAddCard 样式。
+方块栏目同样使用紧凑卡片与选中项操作条；GetBlockColorGroup 仅读取 LevelEditorBlockEntry.Color，HSV 低饱和、近黑及透明归无色，其余按色相进入红蓝绿或其他有色组。分类不代表运行时颜色归属，也不读取图片像素或迁移颜色组件。折叠状态使用独立的 LevelEditor.BlockGroup 项目会话键，保留原下标与数据；与道具共用 ConfigureCompactAddCard 样式。方块列表 GeometryChangedEvent 以实际内容高度更新 ScrollView 高度（独立模式上限280、嵌入模式420），分组折叠/换行后道具栏目随内容收紧，超出上限仍滚动。
 
 ## 数据与事务
 

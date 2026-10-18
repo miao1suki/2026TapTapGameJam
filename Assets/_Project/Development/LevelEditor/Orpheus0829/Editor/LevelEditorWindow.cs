@@ -418,7 +418,15 @@ namespace Project.LevelEditor.Editor
             paletteList.style.paddingBottom = 4f;
 
             paletteScroll = new ScrollView();
-            paletteScroll.style.height = 240f;
+            paletteScroll.name = "block-palette-scroll";
+            paletteScroll.style.height = StyleKeyword.Auto;
+            paletteScroll.style.maxHeight = includeContextSections ? 280f : 420f;
+            paletteScroll.style.flexShrink = 0f;
+            paletteList.RegisterCallback<GeometryChangedEvent>(evt =>
+            {
+                paletteScroll.style.height = Mathf.Min(evt.newRect.height,
+                    includeContextSections ? 280f : 420f);
+            });
             paletteScroll.horizontalScrollerVisibility =
                 ScrollerVisibility.Hidden;
             paletteScroll.Add(paletteList);
@@ -427,6 +435,7 @@ namespace Project.LevelEditor.Editor
 
             Foldout propSection = new Foldout
             {
+                name = "prop-palette-section",
                 text = "道具栏目",
                 value = true
             };
@@ -711,7 +720,7 @@ namespace Project.LevelEditor.Editor
             float previewSize = Mathf.Max(28f, 98f * scale / 3f);
             if (paletteScroll != null)
             {
-                paletteScroll.style.height = includeContextSections ? 280f : 420f;
+                paletteScroll.style.maxHeight = includeContextSections ? 280f : 420f;
             }
 
             if (LevelEditorState.SelectedEntryIndex >= 0 && LevelEditorState.SelectedEntryIndex < count)
