@@ -40,6 +40,7 @@ public static class InteractionLinkBudgetAudit
         checks++;
     }
     private static object Get(object instance, string name) => instance.GetType().GetField(name, Hidden).GetValue(instance);
+    private static void Set(object instance, string name, object value) => instance.GetType().GetField(name, Hidden).SetValue(instance, value);
     private static void Call(object instance, string name) => instance.GetType().GetMethod(name, Hidden).Invoke(instance, null);
     private static GameObject Spawn(string path, Vector3 pos) => Object.Instantiate(
         AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/" + path + ".prefab"), pos, Quaternion.identity);
@@ -113,6 +114,7 @@ public static class InteractionLinkBudgetAudit
             var camera = new GameObject("AimCamera").AddComponent<Camera>(); camera.tag = "MainCamera";
             camera.orthographic = true; camera.orthographicSize = 7; camera.transform.position = origin + Vector3.back * 10;
             var hook = player.GetComponent<GreenHookAbility>();
+            Set(hook, "idleFollowSeconds", 0f); // Geometry test; eased following has its own aim audit.
             player.transform.position = origin; player.Motor.position = origin;
             var firstPoint = origin + new Vector3(1.5f, .8f, 0);
             hook.Tick(camera.WorldToScreenPoint(firstPoint), true);
@@ -122,7 +124,7 @@ public static class InteractionLinkBudgetAudit
             hook.Tick(camera.WorldToScreenPoint(secondPoint), true);
             Check(Vector2.Distance(greenLine.GetPosition(greenLine.positionCount - 1), secondPoint) < .002f, "same direction different distance changes green endpoint");
             hook.Tick(camera.WorldToScreenPoint(origin + Vector3.right * 50), true);
-            Check(Vector2.Distance(greenLine.GetPosition(greenLine.positionCount - 1), origin) <= player.GetComponent<PlayerInteractionSensor>().ScanRadius + .002f, "idle preview clips at launch range");
+            Check(Vector2.Distance(greenLine.GetPosition(greenLine.positionCount - 1), origin) <= hook.LaunchRangeWorld + .002f, "idle preview clips at launch range including configured slack");
             Check(Vector2.Distance(greenLine.GetPosition(0), effect.SourceWorldPosition) < .002f, "green shares red-blue player origin");
             Check(DesktopCursorPolicy.ResolveLockMode(true, true) == CursorLockMode.Confined, "focused desktop confines without recentering");
             Check(DesktopCursorPolicy.ResolveLockMode(true, false) == CursorLockMode.None, "desktop focus loss releases pointer");

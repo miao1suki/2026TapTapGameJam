@@ -253,8 +253,9 @@ namespace Project.Player
             }
 
             bool shouldShow = HasSelectedColor;
-            Cursor.visible = shouldShow;
-            Cursor.lockState = CursorLockMode.None;
+            // One owner for confinement: do not unlock here and re-confine later
+            // every frame while aiming on a multi-monitor desktop.
+            Project.InputAbstraction.DesktopCursorPolicy.Apply(shouldShow);
         }
 
         private void OpenWheel()

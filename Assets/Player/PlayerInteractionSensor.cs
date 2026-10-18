@@ -21,6 +21,7 @@ namespace Project.Player
         public IInteractionTarget CurrentTarget { get; private set; }
         public bool HasTarget => CurrentTarget != null;
         public float ScanRadius => scanRadius;
+        public int InteractionMask => interactionMask.value;
         private PlayerController player;
         private readonly List<MonoBehaviour> targetBehaviours = new List<MonoBehaviour>();
 
