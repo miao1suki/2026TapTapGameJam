@@ -164,6 +164,8 @@ namespace Project.Player
             new Collider[32];
         private readonly RaycastHit[] carryRayBuffer =
             new RaycastHit[32];
+        private readonly List<Collider> carryPlacedColliders =
+            new List<Collider>(8);
         private IPlayerCarryTarget selectedCarryTarget;
         private IPlayerCarryTarget highlightedCarryTarget;
         private float carryPrepareUntil = -1f;
@@ -2136,13 +2138,12 @@ namespace Project.Player
                 carryRayBuffer,
                 gridCellWorldSize * 1.1f,
                 ~0,
-                QueryTriggerInteraction.Collide);
+                QueryTriggerInteraction.Ignore);
+            if (count == carryRayBuffer.Length) return true;
             for (int index = 0; index < count; index++)
             {
                 Collider collider = carryRayBuffer[index].collider;
-                if (collider == null ||
-                    BelongsToPlayer(collider.transform) ||
-                    BelongsToSelectedCarryTarget(collider.transform))
+                if (!IsSolidCarryPlacementBlocker(collider))
                 {
                     continue;
                 }
@@ -2170,12 +2171,11 @@ namespace Project.Player
                 Quaternion.identity,
                 ~0,
                 QueryTriggerInteraction.Ignore);
+            if (count == carryDropBuffer.Length) return false;
             for (int index = 0; index < count; index++)
             {
                 Collider collider = carryDropBuffer[index];
-                if (collider == null ||
-                    BelongsToPlayer(collider.transform) ||
-                    BelongsToSelectedCarryTarget(collider.transform))
+                if (!IsSolidCarryPlacementBlocker(collider))
                 {
                     continue;
                 }
@@ -2209,6 +2209,8 @@ namespace Project.Player
             Vector3Int cell)
         {
             Vector2Int gridCell = new Vector2Int(cell.x, cell.y);
+            Bounds currentCell = new Bounds(CellToWorld(cell, transform.position.z),
+                Vector3.one * (gridCellWorldSize * .98f));
             IReadOnlyList<Project.LevelEditor.LevelEditorPlacedBlock>
                 blocks =
                     Project.LevelEditor.LevelEditorPlacedBlock.ActiveInstances;
@@ -2230,10 +2232,42 @@ namespace Project.Player
                     continue;
                 }
 
-                return true;
+                // ContainsCell is immutable authoring/reset data, not live occupancy.
+                // Re-check only matching candidates: burned/opened objects may retain
+                // their root, and a movable object's authored cell does not follow it.
+                // The world overlap below separately catches solids at their new pose.
+                block.GetComponentsInChildren(false, carryPlacedColliders);
+                for (int colliderIndex = 0; colliderIndex < carryPlacedColliders.Count; colliderIndex++)
+                {
+                    Collider collider = carryPlacedColliders[colliderIndex];
+                    if (IsSolidCarryPlacementBlocker(collider) &&
+                        CarryPlacementWorldBounds(collider).Intersects(currentCell)) return true;
+                }
             }
 
             return false;
+        }
+
+        private bool IsSolidCarryPlacementBlocker(Collider collider) =>
+            collider != null && collider.enabled && !collider.isTrigger &&
+            collider.gameObject.activeInHierarchy &&
+            !BelongsToPlayer(collider.transform) &&
+            !BelongsToSelectedCarryTarget(collider.transform);
+
+        private static Bounds CarryPlacementWorldBounds(Collider collider)
+        {
+            if (collider is not BoxCollider box) return collider.bounds;
+            // Read the current Transform, including moved children and parent scale,
+            // without forcing a global Physics.SyncTransforms for each preview frame.
+            Matrix4x4 matrix = box.transform.localToWorldMatrix;
+            Vector3 half = box.size * .5f;
+            Vector3 x = matrix.MultiplyVector(new Vector3(half.x, 0, 0));
+            Vector3 y = matrix.MultiplyVector(new Vector3(0, half.y, 0));
+            Vector3 z = matrix.MultiplyVector(new Vector3(0, 0, half.z));
+            return new Bounds(matrix.MultiplyPoint3x4(box.center), 2f * new Vector3(
+                Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x),
+                Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y),
+                Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z)));
         }
 
         private bool BelongsToPlayer(Transform candidate)
@@ -2980,7 +3014,7 @@ namespace Project.Player
 
         public void RequestRespawn()
         {
-            if (!isActiveAndEnabled || respawnInProgress) return;
+            if (!isActiveAndEnabled || respawnInProgress || GameplayPresentationGate.IsSuppressed) return;
             if (GameFlowController.Instance != null && GameFlowController.Instance.IsTransitioning) return;
             if (respawnMode != PlayerRespawnMode.LoadingTransition)
             {

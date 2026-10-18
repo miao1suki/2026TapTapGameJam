@@ -161,6 +161,7 @@ namespace Project.GameFlow
             bool playSound = true,
             bool immediate = false)
         {
+            if (value && GameplayPresentationGate.IsSuppressed) return;
             if (value && GameSceneLoader.Existing != null && GameSceneLoader.Existing.IsRespawnTransitioning) return;
             if (value && !IsGameplayScene())
             {
@@ -238,7 +239,7 @@ namespace Project.GameFlow
         {
             DesktopCursorPolicy.Apply(Cursor.visible);
             if (hudPlatform != GameInput.PlatformMode) RefreshPlatformHud();
-            if (MobileControlLayout.IsEditing || Project.Privacy.AndroidPrivacyPolicy.IsShowing) return;
+            if (GameplayPresentationGate.IsSuppressed || MobileControlLayout.IsEditing || Project.Privacy.AndroidPrivacyPolicy.IsShowing) return;
             if (IsInitialized &&
                 IsSystemUiSceneAvailable() &&
                 IsGameplayScene() &&

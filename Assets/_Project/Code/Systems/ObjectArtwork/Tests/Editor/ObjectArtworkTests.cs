@@ -102,7 +102,7 @@ namespace Project.ObjectArtwork.Tests
             var library = ObjectArtworkLibrary.Load();
             Assert.AreEqual(28, library.Find(MechanismArtworkKind.Crank).frames.Length);
             Assert.AreEqual(6, library.Find(MechanismArtworkKind.CrankPlatform).frames.Length);
-            Assert.AreEqual(8, library.Find(MechanismArtworkKind.MovingPlatform).frames.Length);
+            Assert.AreEqual(9, library.Find(MechanismArtworkKind.MovingPlatform).frames.Length);
             Assert.AreEqual(4, library.Find(MechanismArtworkKind.Door).frames.Length);
             Assert.AreEqual(3, library.doorIndicators.Length);
             foreach (var entry in library.mechanisms) foreach (var frame in entry.frames)

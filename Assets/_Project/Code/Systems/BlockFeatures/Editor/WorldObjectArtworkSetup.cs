@@ -57,8 +57,10 @@ namespace Project.BlockFeatures.Editor
             SliceMechanism(Source + "蓝绿按钮80ms每帧.png", 16, 16, Vector4.zero);
             Add(MechanismArtworkKind.RedButton, "按钮80ms每帧.png", 16, 16, 2);
             Add(MechanismArtworkKind.Crank, "曲柄40ms每帧.png", 16, 16, 28);
-            Add(MechanismArtworkKind.CrankPlatform, "移动平台80ms每帧.png", 48, 16, 6, border: new Vector4(8,0,8,0));
-            Add(MechanismArtworkKind.MovingPlatform, "自动平台80ms每帧.png", 48, 16, 8, border: new Vector4(8,0,8,0));
+            Add(MechanismArtworkKind.CrankPlatform, "43452C733652487AC26FD041686C880B.png", 48, 16, 6, border: new Vector4(8,0,8,0));
+            Add(MechanismArtworkKind.MovingPlatform, "BB587FC3F1E5565D857F67F813F19880.png", 48, 16, 9, border: new Vector4(8,0,8,0));
+            foreach (var platform in entries.Where(item => item.kind == MechanismArtworkKind.CrankPlatform || item.kind == MechanismArtworkKind.MovingPlatform))
+                platform.supportTopPixels = 14;
             Add(MechanismArtworkKind.RedCube, "0-2~4.png", 16, 16, 1, 80, top: 64);
             Add(MechanismArtworkKind.GreenCube, "0-2~4.png", 16, 16, 1, 48, top: 64);
             Add(MechanismArtworkKind.BlueCube, "0-2~4.png", 16, 16, 1, 112, top: 64);
@@ -130,6 +132,7 @@ namespace Project.BlockFeatures.Editor
                 library.doorClosed = SliceMechanism(closedPath, 16, 32, Vector4.zero)[0];
             }
             library.mechanisms = entries.ToArray(); EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
+            BuildColoredOneWayPlatforms();
             BuildSupplementArtwork();
             foreach (string folder in new[] { "Assets/_Project/Content/Mechanisms", "Assets/_Project/Content/ContactCubes", "Assets/_Project/Content/ColorBlocks/Prefabs" })
                 foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { folder }))
@@ -153,7 +156,8 @@ namespace Project.BlockFeatures.Editor
             if (library == null) throw new InvalidOperationException("缺少物体美术配置。");
             foreach (var kind in new[] { MechanismArtworkKind.CrankPlatform, MechanismArtworkKind.MovingPlatform })
             {
-                string source = Source + (kind == MechanismArtworkKind.CrankPlatform ? "移动平台80ms每帧.png" : "自动平台80ms每帧.png");
+                string source = Source + (kind == MechanismArtworkKind.CrankPlatform ? "43452C733652487AC26FD041686C880B.png" : "BB587FC3F1E5565D857F67F813F19880.png");
+                SliceMechanism(source, 48, 16, new Vector4(8, 0, 8, 0));
                 string path = Generated + "/" + kind + ".png";
                 File.Copy(source, path, true);
                 AssetDatabase.ImportAsset(path);
@@ -161,9 +165,101 @@ namespace Project.BlockFeatures.Editor
                 if (entry == null) throw new InvalidOperationException("缺少平台帧配置：" + kind);
                 entry.frames = SliceMechanism(path, 48, 16, new Vector4(8, 0, 8, 0));
                 entry.frameSeconds = .08f;
+                entry.supportTopPixels = 14;
             }
             EditorUtility.SetDirty(library);
             AssetDatabase.SaveAssetIfDirty(library);
+        }
+
+        // Only the three explicitly identified tiles are bound. The source sheet
+        // and all unrelated library entries are retained without guessing uses.
+        public static void BuildColoredOneWayPlatforms()
+        {
+            Folder(Generated);
+            const string sourcePath = Source + "f7c33d2f3280d20b1b7bbee97033c46c.png";
+            var importer = (TextureImporter)AssetImporter.GetAtPath(sourcePath);
+            importer.textureType = TextureImporterType.Sprite; importer.spriteImportMode = SpriteImportMode.Multiple;
+            importer.spritePixelsPerUnit = GridArtworkMetrics.PixelsPerCell;
+            importer.filterMode = FilterMode.Point; importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.npotScale = TextureImporterNPOTScale.None; importer.maxTextureSize = 128;
+            importer.wrapMode = TextureWrapMode.Clamp; importer.alphaIsTransparency = true;
+            var settings = new TextureImporterSettings(); importer.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect; settings.spriteGenerateFallbackPhysicsShape = false;
+            importer.SetTextureSettings(settings);
+            foreach (var target in new[] { "Standalone", "Android", "iPhone" })
+            {
+                var platform = importer.GetPlatformTextureSettings(target); platform.overridden = false;
+                importer.SetPlatformTextureSettings(platform);
+            }
+            #pragma warning disable CS0618
+            var slices = importer.spritesheet.Where(item => !item.name.StartsWith("OneWay_", StringComparison.Ordinal)).ToList();
+            #pragma warning restore CS0618
+            string[] names = { "Red", "Green", "Blue" };
+            for (int i = 0; i < 3; i++) slices.Add(new SpriteMetaData {
+                name = "OneWay_" + names[i], rect = new Rect(32 + i * 32, 0, 16, 16),
+                alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f, 0f) });
+            #pragma warning disable CS0618
+            importer.spritesheet = slices.ToArray();
+            #pragma warning restore CS0618
+            importer.SaveAndReimport();
+            string generated = Generated + "/ColoredOneWayPlatforms.png";
+            using (var image = new ImageScope(Read(sourcePath)))
+            {
+                var output = new Texture2D(48, 16, TextureFormat.RGBA32, false);
+                for (int i = 0; i < 3; i++)
+                {
+                    var pixels = image.Texture.GetPixels(32 + i * 32, 0, 16, 16);
+                    ClearBlackBackground(pixels);
+                    output.SetPixels(i * 16, 0, 16, 16, pixels);
+                }
+                File.WriteAllBytes(generated, output.EncodeToPNG()); UnityEngine.Object.DestroyImmediate(output);
+            }
+            AssetDatabase.ImportAsset(generated);
+            Sprite[] frames = SliceMechanism(generated, 16, 16, Vector4.zero);
+            var library = AssetDatabase.LoadAssetAtPath<ObjectArtworkLibrary>(Root + "/Objects.asset");
+            if (library == null) throw new InvalidOperationException("缺少物体美术配置。");
+            var entries = library.mechanisms.ToList();
+            for (int i = 0; i < 3; i++)
+            {
+                var kind = ObjectArtworkLibrary.OneWayPlatformKind(i + 1);
+                var entry = entries.FirstOrDefault(item => item.kind == kind);
+                if (entry == null) { entry = new MechanismArtworkEntry { kind = kind }; entries.Add(entry); }
+                entry.frames = new[] { frames[i] }; entry.supportTopPixels = 16;
+            }
+            library.mechanisms = entries.ToArray(); EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
+            BuildColoredOneWayPalette();
+            ObjectArtworkPlanningPreview.ClearCache();
+            RefreshOpenScenes();
+        }
+
+        private static void BuildColoredOneWayPalette()
+        {
+            const string palettePath = "Assets/_Project/Development/LevelEditor/Orpheus0829/LevelEditorPalette.asset";
+            var palette = AssetDatabase.LoadAssetAtPath<Project.LevelEditor.LevelEditorPalette>(palettePath);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Mechanisms/OneWayPlatform.prefab");
+            if (palette == null || prefab == null) throw new InvalidOperationException("缺少单向平台或关卡栏目。");
+            string[] ids = { "mechanism-oneway-red", "mechanism-oneway-green", "mechanism-oneway-blue" };
+            string[] labels = { "红色单向平台", "绿色单向平台", "蓝色单向平台" };
+            for (int i = 0; i < 3; i++)
+            {
+                var entry = palette.PropEntries.FirstOrDefault(item => item.EntryId == ids[i]);
+                if (entry == null)
+                {
+                    entry = new Project.LevelEditor.LevelEditorPropEntry(); entry.Configure(labels[i], prefab); palette.AddProp(entry);
+                    var serialized = new SerializedObject(palette);
+                    var values = serialized.FindProperty("propEntries");
+                    values.GetArrayElementAtIndex(values.arraySize - 1).FindPropertyRelative("entryId").stringValue = ids[i];
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    entry = palette.PropEntries.First(item => item.EntryId == ids[i]);
+                }
+                entry.Configure(labels[i], prefab);
+                var color = new Project.LevelEditor.LevelEditorComponentValueOverride();
+                color.Configure("", typeof(Project.Mechanisms.OneWayPlatform).FullName, 0, "appearanceColor", "Enum", (i + 1).ToString(), null);
+                var valuesToKeep = entry.ComponentValueOverrides.Where(value => !(value.ComponentTypeName == typeof(Project.Mechanisms.OneWayPlatform).FullName && value.PropertyPath == "appearanceColor")).ToList();
+                valuesToKeep.Add(color); entry.ReplaceComponentValueOverrides(valuesToKeep);
+            }
+            EditorUtility.SetDirty(palette); AssetDatabase.SaveAssetIfDirty(palette);
         }
 
         public static void BuildSupplementArtwork()

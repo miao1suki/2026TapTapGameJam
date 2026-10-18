@@ -116,6 +116,8 @@ namespace Project.BossLogic
         {
             public GameObject target;
             public int id;
+            public RoomResetObject roomObject;
+            public int resetRevision;
         }
 
         public event Action<BossStateId, BossStateId> StateChanged;
@@ -211,6 +213,12 @@ namespace Project.BossLogic
                 {
                     continue;
                 }
+
+                // A room reset can run between collision and this budgeted pass.
+                // Never hide a restored door/platform using a pre-reset contact.
+                if (pending.roomObject != null &&
+                    pending.roomObject.ResetRevision != pending.resetRevision)
+                    continue;
 
                 HideTouchedObject(target);
             }
@@ -748,11 +756,14 @@ namespace Project.BossLogic
                 return;
             }
 
+            RoomResetObject roomObject = target.GetComponent<RoomResetObject>();
             pendingHiddenObjects.Enqueue(
                 new PendingHiddenObject
                 {
                     target = target,
-                    id = id
+                    id = id,
+                    roomObject = roomObject,
+                    resetRevision = roomObject != null ? roomObject.ResetRevision : 0
                 });
         }
 

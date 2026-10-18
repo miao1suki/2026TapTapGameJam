@@ -250,6 +250,12 @@ namespace Project.Mechanisms
             RefreshHint();
             StateChanged?.Invoke(State);
         }
+        /// <summary>Release temporary hiding without rolling back door/button progress.</summary>
+        public void RefreshBlockingState()
+        {
+            if (blockingCollider != null)
+                blockingCollider.enabled = State == DoorState.Locked;
+        }
         private void HandleRoomReset() { if (resetWithRoom) ResetDoor(); }
         private void CleanupShot()
         {

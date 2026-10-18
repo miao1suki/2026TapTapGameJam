@@ -64,12 +64,14 @@ namespace Project.Items
                 : null;
 
         public bool CanCollect =>
+            !GameplayPresentationGate.IsSuppressed &&
             isActiveAndEnabled &&
             !collectionRequested &&
             !collectionFinished &&
             !IsAttracting;
 
         public bool CanAttract =>
+            !GameplayPresentationGate.IsSuppressed &&
             isActiveAndEnabled &&
             !attractionRequested &&
             !attractionFinished &&

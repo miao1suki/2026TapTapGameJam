@@ -176,7 +176,9 @@ namespace PlanningEditorPrototype
             if (!PlanningDoorUtility.IsPlatformEntry(box.propEntryId) && platform == null && !oneWay) return false;
             if (previewArtwork == null) previewArtwork = ObjectArtworkLibrary.Load();
             if (previewArtwork == null) return false;
-            var kind = oneWay || box.propEntryId == PlanningDoorUtility.OneWayPlatformEntryId ? MechanismArtworkKind.OneWayPlatform
+            var kind = oneWay ? ObjectArtworkPlanningPreview.OneWayKind(entry.Prefab.GetComponent<Project.Mechanisms.OneWayPlatform>(),
+                    box.hasComponentOverrides ? box.componentOverrides : entry.ComponentValueOverrides)
+                : box.propEntryId == PlanningDoorUtility.OneWayPlatformEntryId ? MechanismArtworkKind.OneWayPlatform
                 : box.propEntryId == PlanningMechanismUtility.LiftEntryId || platform != null && platform.IsCrankControlled
                 ? MechanismArtworkKind.CrankPlatform : MechanismArtworkKind.MovingPlatform;
             var sprite = previewArtwork.FirstFrame(kind);
@@ -215,7 +217,7 @@ namespace PlanningEditorPrototype
                 image.image = sprite.texture;
                 // Keep 16 authored pixels per cell. Partial end pieces crop instead of squeezing.
                 image.uv = PlatformArtworkLayout.SliceUV(sprite, count);
-                float thickness = PlatformArtworkLayout.VisibleThicknessCells(kind, sprite);
+                float thickness = PlatformArtworkLayout.VisibleThicknessCells(kind, sprite, previewArtwork);
                 // The crank and one-way collision strips are thinner than a grid
                 // cell. Align art to their actual support, not the nominal cell top.
                 image.style.left = target.center.x - width * .5f;

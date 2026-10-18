@@ -106,7 +106,8 @@ namespace Project.GameFlow
         }
         private void RefreshVisibility()
         {
-            bool show = LayoutEditing || (previewOnDesktop || GameInput.PlatformMode == InputPlatformMode.Mobile) &&
+            bool show = LayoutEditing || !GameplayPresentationGate.IsSuppressed &&
+                (previewOnDesktop || GameInput.PlatformMode == InputPlatformMode.Mobile) &&
                 Time.timeScale > 0 && (router == null || !router.IsPaused);
             if (visible == show) return;
             visible = show;

@@ -1,5 +1,14 @@
 # 玩家搬运与提示
 
+## 2026-10-18 运行时有效占用
+
+- `LevelEditorPlacedBlock.Cell/SizeCells/ContainsCell` 是作者布置及重置数据，不随重力、绿绳、平台运动或燃烧改写。不得只因为 `ContainsCell` 命中就拒绝放下。
+- PlayerController 用作者占格筛出候选，再用该候选**当前启用、活动、非Trigger的实体Collider与目标格相交**确认有效占用。Box从当前Transform计算世界包围盒，不为每帧预览调用全局Physics.SyncTransforms；子物体和后加Collider使用复用List读取，不缓存失效的启用状态/碰撞体清单。
+- 实体世界Overlap与搬运目标注册表继续检查物体的新位置；完整搬运体积与区域归属检查保留。烧毁植物、已关闭Collider的开门通道、隐藏/移走物体不能留下历史占格；原位恢复后按现有Collider立即重新阻挡。
+- 放置方向防薄墙射线、格子Overlap与作者候选核验统一忽略纯Trigger（包括水/交互检测区），但仍阻挡真实墙/实体。NonAlloc结果填满时保守拒绝，不因缓冲截断放进实体。
+- `CarryRuntimeOccupancyVerification.Run` 仅在静音FlowRetirementProbe隔离工程执行：真实MRoom2红块[-95,-19]向基座[-95,-13]右侧烧空格F拿起/Q放下、移动前后占用、8轮烧毁/R、合并孔洞、薄墙、水Trigger、动态子碰撞体、不同深度及热查询分配。不会保存Scene/planning；夹具临时关闭钥匙避免开局拾取演出抢控制权，生产场景不变。
+- 2026-10-18回归共142项：上述专用验证43项、MobileCarryRegression68项、CarryGround9项、FacingInteraction22项通过。不是新增R重置修复，原有植物/红块重置入口保持不变。
+
 ## 2026-10-16 朝向与落点预览
 
 - `PlayerController.FacingDirection` 为最后有效水平输入朝向（-1/1），与角色 Sprite 共用；释放移动不复原朝向。输入驱动在交互扫描前更新朝向。

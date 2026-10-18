@@ -19,12 +19,16 @@ namespace Project.GameFlow
         private static GameFlowController instance;
         private GameFlowSceneId? activeSceneId;
         private readonly List<EventSystem> suspendedEventSystems = new List<EventSystem>();
+        private WorldMenuPresentation worldMenu;
+        private bool gameplayHasStarted;
 
         public static GameFlowController Instance => instance;
         public GameSceneCatalog Catalog => catalog;
         public bool IsInitialized { get; private set; }
         public bool IsTransitioning { get; private set; }
         public GameFlowSceneId? ActiveSceneId => activeSceneId;
+        public WorldMenuPresentation WorldMenu => worldMenu;
+        public string LastTransitionFailure { get; private set; }
 
         public event Action InitializationCompleted;
         public event Action<GameFlowSceneId> TransitionStarted;
@@ -81,13 +85,12 @@ namespace Project.GameFlow
 
             instance = this;
             DontDestroyOnLoad(gameObject);
+            worldMenu = GetComponent<WorldMenuPresentation>();
+            if (worldMenu == null) worldMenu = gameObject.AddComponent<WorldMenuPresentation>();
+            if (initialScene == GameFlowSceneId.MainMenu) worldMenu.BeginPreview();
             StartupCameraGuard.CreateIfNeeded(transform);
             StartMenuController.SetExternalBackgroundScrollPaused(true);
-            if (!GameSceneLoader.Instance.AppEntryPlayed)
-            {
-                GameSceneLoader.Instance.TransitionOverlay
-                    .ShowBlackImmediate();
-            }
+            GameSceneLoader.Instance.UseWorldMenuPresentation();
         }
 
         private IEnumerator Start()
@@ -121,18 +124,7 @@ namespace Project.GameFlow
             InitializationCompleted?.Invoke();
             IsTransitioning = false;
 
-            GameSceneLoader loader = GameSceneLoader.Instance;
-            if (!loader.AppEntryPlayed)
-            {
-                loader.TransitionOverlay.ShowBlackImmediate();
-            }
-
             yield return TransitionRoutine(initialScene);
-            if (!loader.AppEntryPlayed)
-            {
-                yield return loader.PlayAppEntryReveal(
-                    ProjectDiscovery.FindFirst<StartMenuController>(true));
-            }
         }
 
         private void OnDestroy()
@@ -149,6 +141,10 @@ namespace Project.GameFlow
             LoadSceneMode mode)
         {
             EnsureSceneFlow(scene);
+            if (instance != null && instance.worldMenu != null && instance.worldMenu.IsPreviewing &&
+                instance.catalog != null && instance.catalog.TryGet(GameFlowSceneId.Gaming, out var gameplay) &&
+                scene.path == gameplay.ScenePath)
+                instance.worldMenu.StageWorld(scene);
         }
 
         private static void EnsureSceneFlow(Scene scene)
@@ -251,6 +247,13 @@ namespace Project.GameFlow
             if (!catalog.TryGet(target, out GameFlowSceneEntry entry))
             {
                 Debug.LogError($"Scene Catalog 中没有流程场景：{target}", this);
+                yield break;
+            }
+
+            if ((target == GameFlowSceneId.MainMenu || target == GameFlowSceneId.Gaming) &&
+                catalog.TryGet(GameFlowSceneId.MainMenu, out _) && catalog.TryGet(GameFlowSceneId.Gaming, out _))
+            {
+                yield return WorldMenuTransitionRoutine(target);
                 yield break;
             }
 
@@ -364,6 +367,166 @@ namespace Project.GameFlow
             activeSceneId = target;
             IsTransitioning = false;
             ActiveSceneChanged?.Invoke(target);
+        }
+
+        private IEnumerator WorldMenuTransitionRoutine(GameFlowSceneId target)
+        {
+            // Unity executes nested IEnumerator yields outside the caller's MoveNext. Drive
+            // that stack here so loader/component failures have one recoverable boundary.
+            var stack = new Stack<IEnumerator>();
+            stack.Push(WorldMenuTransitionSteps(target));
+            Exception failure = null;
+            while (stack.Count > 0)
+            {
+                object yielded = null;
+                bool next = false;
+                try
+                {
+                    next = stack.Peek().MoveNext();
+                    if (next) yielded = stack.Peek().Current;
+                }
+                catch (Exception exception) { failure = exception; }
+                if (failure != null) break;
+                if (!next)
+                {
+                    (stack.Pop() as IDisposable)?.Dispose();
+                    continue;
+                }
+                if (yielded is IEnumerator nested) stack.Push(nested);
+                else yield return yielded;
+            }
+            if (failure == null) yield break;
+            while (stack.Count > 0) (stack.Pop() as IDisposable)?.Dispose();
+            yield return RecoverWorldMenuTransition(failure);
+        }
+
+        private IEnumerator WorldMenuTransitionSteps(GameFlowSceneId target)
+        {
+            IsTransitioning = true;
+            LastTransitionFailure = null;
+            TransitionStarted?.Invoke(target);
+            GameSceneLoader loader = GameSceneLoader.Instance;
+            loader.UseWorldMenuPresentation();
+            catalog.TryGet(GameFlowSceneId.MainMenu, out GameFlowSceneEntry menuEntry);
+            catalog.TryGet(GameFlowSceneId.Gaming, out GameFlowSceneEntry gameEntry);
+            Scene menuScene = SceneManager.GetSceneByPath(menuEntry.ScenePath);
+            if (!menuScene.IsValid() || !menuScene.isLoaded)
+            {
+                // Returning from a directly launched level may not yet have a menu scene.
+                SuspendOutgoingEventSystems(menuEntry.ScenePath);
+                yield return loader.LoadSceneAsync(menuEntry.ScenePath, LoadSceneMode.Additive, false);
+                menuScene = SceneManager.GetSceneByPath(menuEntry.ScenePath);
+            }
+            StartMenuController menu = FindInScene<StartMenuController>(menuScene);
+            if (menu == null)
+                throw new InvalidOperationException("融合菜单缺少 StartMenuController。");
+            worldMenu.DisableMenuDevices(menuScene);
+            menu.SetBackgroundVisible(false);
+            menu.SetBackgroundScrollEnabled(false);
+            menu.SetPresented(true, false);
+            Scene world = worldMenu.ActiveWorld;
+            bool returning = target == GameFlowSceneId.MainMenu && activeSceneId == GameFlowSceneId.Gaming &&
+                world.IsValid() && world.isLoaded;
+            if (returning)
+            {
+                yield return worldMenu.ReturnToMenu(menu);
+            }
+            else
+            {
+                worldMenu.BeginPreview();
+                bool reload = target == GameFlowSceneId.Gaming && gameplayHasStarted;
+                Scene previousWorld = world;
+                if (reload && previousWorld.IsValid() && previousWorld.isLoaded)
+                {
+                    worldMenu.FreezeActiveWorld();
+                    yield return worldMenu.HoldCurrentFrame();
+                    // The still is rendered below the live menu. Unload the old registry owners
+                    // before loading matching room IDs again; never run duplicate Gaming worlds.
+                    worldMenu.SuspendWorldDevices(previousWorld);
+                    yield return SceneManager.UnloadSceneAsync(previousWorld);
+                    StartupCameraGuard.CreateIfNeeded(transform);
+                    world = default;
+                }
+                if (!world.IsValid() || !world.isLoaded)
+                {
+                    if (!reload) world = SceneManager.GetSceneByPath(gameEntry.ScenePath);
+                    if (!world.IsValid() || !world.isLoaded)
+                    {
+                        yield return loader.LoadSceneAsync(gameEntry.ScenePath, LoadSceneMode.Additive, false);
+                        for (int index = SceneManager.sceneCount - 1; index >= 0; index--)
+                        {
+                            Scene candidate = SceneManager.GetSceneAt(index);
+                            if (candidate.path == gameEntry.ScenePath && candidate.isLoaded &&
+                                (!reload || candidate.handle != previousWorld.handle)) { world = candidate; break; }
+                        }
+                    }
+                }
+                if (!world.IsValid() || !world.isLoaded)
+                    throw new InvalidOperationException("融合菜单无法加载 Gaming：" + gameEntry.ScenePath);
+                worldMenu.StageWorld(world);
+                SceneManager.SetActiveScene(world);
+                ActivateFlowScene(world);
+                // Follow and mode get one normal LateUpdate before the menu requests a close-up.
+                yield return null;
+                worldMenu.UseWorld(world, menu);
+                if (reload) yield return worldMenu.ReleaseFrameHold();
+                if (target == GameFlowSceneId.Gaming)
+                {
+                    yield return worldMenu.EnterGameplay(menu);
+                    gameplayHasStarted = true;
+                }
+                else menu.SetPresented(true);
+            }
+            suspendedEventSystems.Clear(); // Menu devices stay suspended for this shared-world lifetime.
+            activeSceneId = target;
+            IsTransitioning = false;
+            ActiveSceneChanged?.Invoke(target);
+        }
+
+        private IEnumerator RecoverWorldMenuTransition(Exception failure)
+        {
+            IsTransitioning = true;
+            LastTransitionFailure = failure.GetType().Name + ": " + failure.Message;
+            Debug.LogError("融合菜单切换失败，已回到可重试的主菜单。" + LastTransitionFailure, this);
+            // Keep interaction suppression and the handoff listener until failed world
+            // participants are gone. Restoring player colliders first could collect items.
+            worldMenu.BeginPreview();
+            var worlds = new List<Scene>();
+            worldMenu.CollectStagedWorlds(worlds);
+            if (catalog != null && catalog.TryGet(GameFlowSceneId.Gaming, out var gameEntry))
+            {
+                Scene incoming = SceneManager.GetSceneByPath(gameEntry.ScenePath);
+                if (incoming.IsValid() && incoming.isLoaded && !worlds.Contains(incoming)) worlds.Add(incoming);
+            }
+            foreach (Scene scene in worlds)
+            {
+                if (!scene.IsValid() || !scene.isLoaded) continue;
+                // A malformed catalog may point Gaming at the menu itself. Never unload
+                // the only recovery UI merely because a bad entry called it a world.
+                if (FindInScene<StartMenuController>(scene) != null) continue;
+                worldMenu.SuspendWorldDevices(scene);
+                AsyncOperation unload = SceneManager.UnloadSceneAsync(scene);
+                if (unload != null) yield return unload;
+            }
+            StartMenuController menu = ProjectDiscovery.FindFirst<StartMenuController>(true);
+            if (menu != null) SceneManager.SetActiveScene(menu.gameObject.scene);
+            suspendedEventSystems.Clear();
+            worldMenu.RecoverMenu(menu);
+            gameplayHasStarted = false;
+            activeSceneId = GameFlowSceneId.MainMenu;
+            IsTransitioning = false;
+            ActiveSceneChanged?.Invoke(GameFlowSceneId.MainMenu);
+        }
+
+        private static T FindInScene<T>(Scene scene) where T : Component
+        {
+            if (!scene.IsValid() || !scene.isLoaded) return null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                T found = root.GetComponentInChildren<T>(true);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         private void SuspendOutgoingEventSystems(string targetPath)

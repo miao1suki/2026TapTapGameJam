@@ -8,6 +8,8 @@ Runtime：`Assets/_Project/Code/Systems/WorldItems/Runtime`。资源：`Assets/_
 
 玩家碰撞过滤在启用/重置时读取`PlayerController.ActivePlayers`，并订阅`PlayerController.PlayerActivated`覆盖稍后生成或重新启用的玩家；不在每件收集品的Update/FixedUpdate轮询。仅记录本组件新建的忽略对，禁用时恢复并退订，不恢复其他系统原先建立的忽略对。拾取后关闭碰撞，复位重新启用碰撞时重建过滤。玩家的地面/搬运查询也必须尊重`Physics.GetIgnoreCollision`，不能把此推挤实体当作支撑或墙。
 
+菜单展示的`GameplayPresentationGate`只门控拾取资格，不跳过实体穿过过滤。真实关卡预览会暂时禁用玩家Collider；最后一个展示租约释放时，在Collider恢复之后发布`GameplayRestored`，收集品一次性重施已有玩家碰撞对，避免首次开始或重新开始后收集品挡路。订阅随组件启停配对，不增加逐帧扫描。专项包含真实`StageWorld→EndPreview→Physics.Simulate`穿过与Trigger收集。
+
 过滤与拾取资格还必须校验`other.attachedRigidbody == player.Motor`；不能只看Transform父层级。搬运中的独立刚体方块可能临时挂在玩家子节点下，不得因此忽略它与收集品的推挤碰撞，也不得把它当成玩家结算奖励。
 
 通过 `CollectiblePickup.Collected` 静态事件取得 `(item, actor)`，用 `ItemId`、`Amount` 结算；订阅者在 Disable 时注销。或使用 Inspector 的 `onCollected` UnityEvent。事件只在拾取飞行完成后触发一次，触发前已设置 `IsCollected=true`。接触已进入 `CollectionRequested` 后，R、死亡与离区不再中断收集飞行或恢复该物品，不丢失奖励，也不重复结算。

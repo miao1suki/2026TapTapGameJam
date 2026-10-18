@@ -25,7 +25,6 @@ namespace Project.GameFlow.Tests
 
             for (int entry = 0; entry < 2; entry++)
             {
-                yield return LoadForTest("Assets/_Project/Scenes/Playing/Gaming.unity");
                 Assert.That(GameFlowController.Instance.RequestTransition(GameFlowSceneId.Gaming), Is.True);
                 yield return WaitForScene(GameFlowSceneId.Gaming);
                 Assert.That(GameAudioService.Instance, Is.SameAs(audio));
@@ -37,7 +36,6 @@ namespace Project.GameFlow.Tests
 
                 var ui = Object.FindFirstObjectByType<GameUiRouter>();
                 Assert.That(ui, Is.Not.Null);
-                yield return LoadForTest("Assets/_Project/Scenes/Start/MainMenu.unity");
                 ui.SetPaused(true, false);
                 Assert.That(Time.timeScale, Is.Zero);
                 if (entry == 1) ui.ResumeGame(); // Leave while the normal close animation is pending.
