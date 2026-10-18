@@ -31,5 +31,9 @@ Material:
     m_Floats: []
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _IgnitionColor: {r: 1, g: 0.82, b: 0.38, a: 1}
+    - _FlameColor: {r: 1, g: 0.33, b: 0.12, a: 1}
+    - _EmberColor: {r: 0.7, g: 0.24, b: 0.24, a: 1}
+    - _CinderColor: {r: 0.17, g: 0.035, b: 0.05, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

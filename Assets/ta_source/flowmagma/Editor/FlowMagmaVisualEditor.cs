@@ -22,7 +22,7 @@ namespace Project.FlowMagma.Editor
             var script = new PropertyField(serializedObject.FindProperty("m_Script"), "脚本");
             script.SetEnabled(false);
             root.Add(script);
-            root.Add(new HelpBox("编辑模式显示静态波面和方块颗粒示意；Play 后开始流动与周期喷发，颗粒逐渐变暗。视觉组件不处理碰撞或伤害。", HelpBoxMessageType.Info));
+            root.Add(new HelpBox("编辑模式显示静态波面和方块颗粒示意；Play 后持续出现随机间隔的喷溅，偶尔连喷多颗。视觉组件不处理碰撞或伤害。", HelpBoxMessageType.Info));
 
             var flow = new Foldout { text = "流动与外形", value = true };
             Add(flow, "magmaMaterial", "岩浆材质");
@@ -35,12 +35,13 @@ namespace Project.FlowMagma.Editor
             root.Add(flow);
 
             var eruption = new Foldout { text = "喷发", value = true };
-            Add(eruption, "particlesPerSecond", "喷发速率（颗/秒）");
-            Add(eruption, "eruptionInterval", "喷发周期（秒）");
-            Add(eruption, "eruptionDuration", "每轮喷发时长（秒）");
+            Add(eruption, "particlesPerSecond", "平均喷出速率（次/秒）");
+            Add(eruption, "emissionIntervalRandomness", "喷出间隔随机幅度");
+            Add(eruption, "clusterChance", "连喷多颗概率");
             Add(eruption, "launchSpeed", "喷出初速（单位/秒）");
             Add(eruption, "fallSpeed", "下坠加速度（单位/秒²）");
             Add(eruption, "shrinkingParticleChance", "由大变小粒子占比");
+            Add(eruption, "largeParticleChance", "大颗粒占比");
             root.Add(eruption);
 
             var advanced = new Foldout { text = "粒子外观与高级设置", value = false };

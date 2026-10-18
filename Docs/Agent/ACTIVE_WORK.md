@@ -3,6 +3,9 @@
 ## 2026-10-18 TA 岩浆流动与喷溅独立预览
 
 - 负责人：Codex；分支 `codex/ta/flow-magma`。
+- 本轮调优范围：取消固定周期的喷发窗口，改为持续运行的随机间隔发射并偶发多颗喷溅；拓展方块颗粒从炽亮到暗红的多段配色、尺寸分层和缩小曲线。保留独立预览场景与正式玩法接线边界。
+- 本轮结果：平均每秒 10 次发射、间隔随机幅度默认 0.75、连喷多颗概率默认 0.22；预制体有约 22% 大颗粒，尺寸缩小型前期略大，随后缓慢收缩。喷溅材质新增亮黄橙、橙红、深红、余烬暗色四段可调颜色，单颗粒冷却进度略有随机偏移。
+- 本轮验证：编辑器程序集 `dotnet build Assembly-CSharp-Editor.csproj --no-restore` 通过（0 错误、46 条项目既有警告），规划存档检查和 `git diff --check` 通过；预制体新参数与 Shader 四段颜色的材质属性核对通过，Unity 已导入新版喷溅 Shader，日志未见相关错误。Play 画面观感仍待人工验收。
 - 本轮修正范围：预览岩浆喷溅改为源图下排的实心方块颗粒，取消泡泡环轮廓，并在生命周期中逐渐变暗；保留已有固定尺寸/逐渐缩小混合与运动接口。
 - 本轮实现：粒子 Shader 直接采样源图中亮红色 `49,111` 与暗红色 `61,111` 的两颗 2×2 方块，以每颗粒子的寿命比例插值颜色；晚期和落地停留阶段继续淡出。预制体粒子子物体、中文 Inspector 与使用说明改为方块颗粒描述。
 - 本轮验证：源图两颗方块像素分别为 `(246,83,50)` 与 `(178,62,62)`，均不透明；编辑器程序集 `dotnet build Assembly-CSharp-Editor.csproj --no-restore` 0 错误（46 条项目既有警告），规划存档检查与 `git diff --check` 通过。Unity 尚未对本轮 Shader 改动重新导入，Game 画面与 Shader GPU 编译待编辑器验收。
@@ -11,8 +14,8 @@
 - 调优验证：Unity 编辑器已重新导入对应 Shader/材质/预制体并加载预览 Scene，日志未见该资源导入错误；`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 通过（0 错误、18 条项目既有警告）；规划存档检查通过。调整后的 Play 画面仍待人工观感验收。
 - 范围：仅在 `Assets/ta_source/flowmagma` 新增图集岩浆流动、喷溅粒子、可复用预制体和 `StaticTest` 独立预览；不修改 `Assets/Scenes/Test.unity`、正式场景、现有 `Red_Lava` 玩法预制体或颜色反应。
 - 素材：任务开始时已有未跟踪的 `0-5 (1).png`、其 `.meta` 和 `flowmagma.meta`；保留其他人当前的字体资产改动。
-- 接口：Inspector 和运行时可调流速、波面幅度、喷发速率/周期/持续时间、喷出初速与落速，预留之后替换岩浆块视觉的位置。
-- 交付：`FlowMagmaVisual.prefab`、岩浆与泡沫 Shader/材质、`StaticTest/FlowMagmaPreview.unity`、中文调参 Inspector 和 `README.md`；预览场景仅有正交相机和视觉预制体。
+- 接口：Inspector 和运行时可调流速、波面幅度、平均发射速率、随机间隔、多颗连喷概率、喷出初速与落速，预留之后替换岩浆块视觉的位置。
+- 交付：`FlowMagmaVisual.prefab`、岩浆与方块颗粒 Shader/材质、`StaticTest/FlowMagmaPreview.unity`、中文调参 Inspector 和 `README.md`；预览场景仅有正交相机和视觉预制体。
 - 验证：新增资源及目录的 `.meta` 齐全、GUID 在 Assets 内唯一；`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 通过（0 错误、48 条项目既有警告）；`Ops/LevelMaps/Test-PlanningMapCommit.ps1` 通过。实际 Game 画面及 Shader 编译需在 Unity 编辑器打开预览场景验收。
 - 交接：本分支基于当时本地 `codex/ta/rgb-glitch` HEAD 创建；原工作树的字体资产改动与其他未跟踪资源未纳入本任务。正式岩浆块替换由后续接线任务负责。
 

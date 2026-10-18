@@ -114,15 +114,16 @@ MonoBehaviour:
   waveAmplitude: 0.008
   verticalWarpStrength: 0.006
   waveFrequency: 1.5
-  particlesPerSecond: 13
-  eruptionInterval: 2.4
-  eruptionDuration: 1.5
+  particlesPerSecond: 10
+  emissionIntervalRandomness: 0.75
+  clusterChance: 0.22
   launchSpeed: 1.2
   fallSpeed: 3.8
   settleChance: 0.3
   settleDuration: 0.65
   particleSize: 0.09
   shrinkingParticleChance: 0.55
+  largeParticleChance: 0.22
   sizeRandomness: 0.35
   trajectoryRandomness: 0.6
   particleLifetime: 1.8
