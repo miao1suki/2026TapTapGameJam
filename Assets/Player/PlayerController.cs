@@ -3045,6 +3045,9 @@ namespace Project.Player
                 requestedPosition = boundPoint.RespawnPosition;
             }
             else if (respawnPoint != null) requestedPosition = respawnPoint.position;
+            TryApplyBossArenaRespawnFallback(
+                ref selectedPoint,
+                ref requestedPosition);
             if (selectedPoint is
                 IPlayerRespawnPreRoomResetListener
                     preRoomResetListener)
@@ -3106,6 +3109,65 @@ namespace Project.Player
                 Time.time +
                 Mathf.Max(0f, respawnInvulnerabilitySeconds);
             CameraFollowRelocated?.Invoke();
+        }
+
+        private void TryApplyBossArenaRespawnFallback(
+            ref IPlayerRespawnPoint selectedPoint,
+            ref Vector3 requestedPosition)
+        {
+            IBossRespawnStateReceiver boss =
+                BossRespawnStateRegistry
+                    .FindAvailableInScene(gameObject.scene);
+            if (boss == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<RespawnAnchorFeature> anchors =
+                ProjectDiscovery.FindAll<RespawnAnchorFeature>(true);
+            RespawnAnchorFeature leftmostBossAnchor = null;
+            float leftmostX = float.PositiveInfinity;
+            int leftmostInstanceId = int.MaxValue;
+            for (int index = 0;
+                 index < anchors.Count;
+                 index++)
+            {
+                RespawnAnchorFeature anchor = anchors[index];
+                if (anchor == null ||
+                    !anchor.isActiveAndEnabled ||
+                    anchor.gameObject.scene != gameObject.scene ||
+                    !anchor.IsBossArenaRespawnPoint)
+                {
+                    continue;
+                }
+
+                if (anchor.IsRespawnPointAvailable)
+                {
+                    return;
+                }
+
+                float x = anchor.RespawnPosition.x;
+                int instanceId = anchor.GetInstanceID();
+                if (x > leftmostX ||
+                    Mathf.Approximately(x, leftmostX) &&
+                    instanceId >= leftmostInstanceId)
+                {
+                    continue;
+                }
+
+                leftmostX = x;
+                leftmostInstanceId = instanceId;
+                leftmostBossAnchor = anchor;
+            }
+
+            if (leftmostBossAnchor == null)
+            {
+                return;
+            }
+
+            selectedPoint = leftmostBossAnchor;
+            requestedPosition =
+                leftmostBossAnchor.RespawnPosition;
         }
 
         private Vector3 FindRandomRespawnPosition(

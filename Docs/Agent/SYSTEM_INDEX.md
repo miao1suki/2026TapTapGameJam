@@ -1,5 +1,9 @@
 # 系统索引
 
+通用传送目标：`TeleportAnchorFeature` 用任意字符串 ID 注册目标，`TeleportObject(GameObject, string)` 将对象移动到对应方块位置；默认 `Teleport_Block` 道具无碰撞、不可见，已加入关卡编辑器道具栏目。接入见 [传送目标 API](Integration/TELEPORT_ANCHOR_API.md)。
+
+Player Thinking 演出：Boss 死亡后同一导演切换到 `player_thinking.playable`，聚焦玩家并锁操作，WordNote 打字机逐句播放；`PlayerThinkingTimelinePlayable.SetCollectibleProgress` 按收集品 60% 分流。演出1黑屏传送 `Start`，演出2生成六份收集品，并在黑幕完全覆盖时先销毁收集品再传送 `End`，均倒放黑屏后释放操作与相机。见 [Player Thinking API](Integration/PLAYER_THINKING_API.md)。
+
 Scene编辑态正式2D由只读ArtworkScenePreview按变更缓存，旧尖刺不再等Play才换图；平台旧1格/批量独立占格裁原像素、单向平台独立素材、支撑面与旋转共用规则。藤蔓同列连续组链只采一根后分片，显示抵消作者缩放。见[美术约定](../Developer/ART_GRID_CONVENTIONS.md)与[物体美术API](Integration/OBJECT_ARTWORK_API.md)。绿色拉物保留自然重力，显式无重力基座优先；拉力仍四向，详见[绿绳API](Integration/GREEN_HOOK_API.md)。
 
 Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/非Play的SceneView可见，画布独立顶层与半透明放置预览；游戏中图片、占位模型和阴影不可见。资源与meta必须一起交付，见 [CONTACT_TIMELINE_API](Integration/CONTACT_TIMELINE_API.md)。普通藤蔓生长可分步托起顶部重力方块/堆叠并承载玩家，路径受阻停止，搬运/绿绳/燃烧/房间重置交还物理控制，见 [藤蔓托举](../Developer/VINE_GROWTH_LIFT.md)。
@@ -26,7 +30,11 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 Boss 关卡重生点：`RespawnAnchorFeature` 的“关卡类型”直接保存 Boss 开关、复活血量与相对 X；参数窗口可生成规划图中的 `Boss复活标记`，通过 `bossRespawnOwnerId` 与重生点连接并只允许 X 拖动。Boss 由 Timeline 后生成，`BossController` 启用时注册到 `BossRespawnStateRegistry`；重生点保留待应用请求，Boss 出现后自动下发并回读血量/坐标，Inspector 显示等待、已应用和一致性。见 [重生 API](Integration/ROOM_LIFECYCLE_API.md) 与 [Boss API](Integration/BOSS_CONTROLLER_API.md)。
 
+Boss 战复活兜底：同场景存在活动 Boss 且没有任何已解锁 Boss 关出生点时，`PlayerController` 会从同场景全部启用的 Boss 关出生点中选择 X 最小者作为本次复活目标，即使该点尚未解锁；安全落位和 Boss 血量/位置重置仍走原链，不改变当前绑定出生点。
+
 Boss HUD：`BossController.bossDisplayName` 提供显示名，`BossHealthBarUI` 使用 `Cubic_11 SDF` 在血条左侧动态创建名字；`BossMonitorUI` 同挂 Boss Health Canvas，独立正交相机输出 RenderTexture，屏幕左上角窗口固定约屏幕宽 23.3%、高 35%，`RectMask2D` 从中心展开/倒放，死亡延迟后与血条同步退场。监控相机不复制 Timeline 实时旋转，显示除 UI 外全部图层，避免透视穿帮和高频重建纹理。
+
+Boss 连线：`BossPlayerLinkEffect` 从 Boss 中心用三个 LineRenderer 和三份独立运行时材质分别设置火线/水线/藤蔓线 `_Style=1/2/3`，按 Boss–玩家距离插值透明度和 `_LineThickness`，远距近乎不可见，近距为普通线 1.5 倍。连线在 `HealthSystemActivated` 时按 `_RevealProgress` 生成，Boss 死亡时按 `_DissolveProgress` 消散。Boss 接触玩家由 `killPlayerOnContact` 直接触发玩家死亡。
 
 颜色双阶段解锁与唯一标准玩家：见 [接入约定](Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。场景颜色和玩家能力分别查询；所有玩法场景共用 `Content/Player/Player.prefab`，新建空地图在原点生成并绑定玩家。
 
@@ -111,7 +119,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本；新增对话轨道，不需要绑定对象，直接向常驻 `WordNote_UI` 申请同一画布中的消息。使用见 [对话轨道](../Developer/TIMELINE_DIALOGUE.md)，接入见 [API](Integration/TIMELINE_DIALOGUE_API.md) |
 | 玩家 / Boss Timeline 轨道 | `Assets/GJ_Tools/TimelineTools3D/AboutTimeline` | `PlayerTimelineTrack` 与 `BossTimelineTrack` 支持显式绑定或按 Tag 查找角色，驱动位移、跳跃、玩家输入锁和 Boss 追击状态。使用见 [玩家与 Boss 轨道](../Developer/TIMELINE_ACTOR_TRACKS.md)，接入见 [API](Integration/TIMELINE_ACTOR_TRACKS_API.md) |
 | 通用接触触发道具 | `Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/ContactTimelineTrigger.cs` | 独立 MonoBehaviour，挂在有 Collider 的道具上后自动隐藏 Renderer，通过 Trigger/Collision 接触播放绑定 Timeline；支持玩家、任意碰撞体或 Tag 筛选，不依赖颜色系统。“进入播放，离开停止”模式用于区域状态，SceneView 与关卡编辑器画布以金色虚线显示真实 Collider 范围。使用见 [接触触发](../Developer/CONTACT_TIMELINE.md)，接入见 [API](Integration/CONTACT_TIMELINE_API.md) |
-| Boss 控制器与右移马夫 | `Assets/Boss_Logic/BossController.cs`、`BossAnimationDriver.cs`、`BossRightMoveExecutor.cs`、`BossCameraSize.cs`、`BossDefeatTimelinePresenter.cs` | Controller 默认关闭自动目标追击，只响应 Timeline 和马夫指令，提供运动、跳跃、受击和死亡能力；Timeline 行走保留常规重力，所有 Boss 动作下游必须是 Controller。`BossRightMoveExecutor` 首次接管时记录 Boss 当前世界 Y，之后保持该高度切穿地形右移。`Boss_appear.playable` 由多条 `BossTimelineTrack`、全程玩家锁轨和 2D 相机轨组成，每个 Boss Clip 只做一个动作；末尾 Playable 同时激活血条与 Boss 存活期视野。`BossCameraSize` 通过 `CameraControlManager` 平滑申请玩法视野倍率，Timeline 镜头期间不覆盖演出，玩家死亡复活不重置。Boss 被击杀后由 `Boss_defeat.playable` 锁定玩家，1 秒移到 Boss、停留死亡位置 2 秒、额外发呆 1 秒、再用 1 秒回到玩家；回程开始时恢复战场视野。外部删除不触发死亡演出。Renderer 使用 `BossTop`、排序值 `32767` 和 Renderer Priority `32767`。 |
+| Boss 控制器与右移马夫 | `Assets/Boss_Logic/BossController.cs`、`BossAnimationDriver.cs`、`BossRightMoveExecutor.cs`、`BossCameraSize.cs`、`BossDefeatTimelinePresenter.cs` | Controller 默认关闭自动目标追击，只响应 Timeline 和马夫指令，提供运动、跳跃、受击和死亡能力；Timeline 行走保留常规重力，所有 Boss 动作下游必须是 Controller。`BossRightMoveExecutor` 首次接管时记录 Boss 当前世界 Y，之后保持该高度切穿地形右移。`Boss_appear.playable` 由多条 `BossTimelineTrack`、全程玩家锁轨和 2D 相机轨组成，每个 Boss Clip 只做一个动作；玩家锁先于相机 0.1 秒启动，末尾 Playable 同时激活血条与 Boss 存活期视野。`BossCameraSize` 通过 `CameraControlManager` 平滑申请玩法视野倍率，Timeline 镜头期间不覆盖演出，玩家死亡复活不重置。Boss 被击杀后由 `Boss_defeat.playable` 先保持原镜头发呆 1 秒，再用 1 秒框住玩家与 Boss 中点并播放六钥匙吸收，随后聚焦 Boss 完成死亡演出；普通外部删除不触发。Renderer 使用 `BossTop`、排序值 `32767` 和 Renderer Priority `32767`。 |
 | Boss 追击寻路（保留未挂载） | `Assets/Boss_Logic/Navigation` | 有向节点图 + A*，未来可用于其他 Boss/关卡；当前 Boss 预制体不挂载，不参与默认长廊战斗。使用见 [Boss 追击寻路](../Developer/BOSS_PATHFINDING.md)，接入见 [API](Integration/BOSS_PATHFINDING_API.md) |
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
 | 颜色物功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 提供固定形态、生命周期、信号、命令与调试；`BlockAbilityHost` 只按固定颜色组启停预制体已有组件；`CarryableFeature` 是能源方块和万能方块共用的独立搬运组件，能源由 `IColorObject` 门控，万能方块常态可搬 |

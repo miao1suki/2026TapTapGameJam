@@ -10,14 +10,19 @@ namespace Project.BossLogic
     {
         [SerializeField] private PlayableDirector director;
         [SerializeField] private TimelineAsset defeatTimeline;
+        [SerializeField] private TimelineAsset playerThinkingTimeline;
         [SerializeField]
         [Tooltip("只接受本物体 BossController 发出的死亡请求。")]
         private bool onlyPlayForThisBoss = true;
 
         private BossController boss;
+        private bool defeatPresentationActive;
+        private bool switchingToPlayerThinking;
 
         public PlayableDirector Director => director;
         public TimelineAsset DefeatTimeline => defeatTimeline;
+        public TimelineAsset PlayerThinkingTimeline =>
+            playerThinkingTimeline;
         public bool IsPlaying =>
             director != null &&
             director.state == PlayState.Playing;
@@ -94,12 +99,54 @@ namespace Project.BossLogic
                 director.Stop();
             }
 
+            defeatPresentationActive = true;
+            switchingToPlayerThinking = false;
             director.time = 0d;
             director.Play();
         }
 
+        private void Update()
+        {
+            if (!defeatPresentationActive ||
+                switchingToPlayerThinking ||
+                director == null ||
+                director.playableAsset != defeatTimeline)
+            {
+                return;
+            }
+
+            double duration = director.duration;
+            if (duration <= 0d ||
+                director.time < duration - .0001d)
+            {
+                return;
+            }
+
+            PlayPlayerThinking();
+        }
+
+        private void PlayPlayerThinking()
+        {
+            if (playerThinkingTimeline == null)
+            {
+                defeatPresentationActive = false;
+                return;
+            }
+
+            switchingToPlayerThinking = true;
+            defeatPresentationActive = false;
+            director.Stop();
+            director.playableAsset =
+                playerThinkingTimeline;
+            director.time = 0d;
+            director.Play();
+            switchingToPlayerThinking = false;
+        }
+
         public void StopDefeatPresentation()
         {
+            defeatPresentationActive = false;
+            switchingToPlayerThinking = false;
             if (director != null)
             {
                 director.Stop();

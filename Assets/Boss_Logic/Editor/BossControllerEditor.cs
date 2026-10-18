@@ -183,6 +183,11 @@ public sealed class BossControllerEditor : Editor
             "右移马夫接管、Boss 进入穿行状态时，把 BoxCollider 的本地上下的总高度扩到该值；停止穿行时恢复作者尺寸。"));
         survival.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
+            "killPlayerOnContact",
+            "碰到玩家直接击杀",
+            "Boss 碰到玩家时直接请求玩家死亡；该碰撞体之后不会再进入清障流程。"));
+        survival.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
             "destroyAfterDeath",
             "死亡后销毁"));
         survival.Add(ProjectInspectorUtility.CreateProperty(

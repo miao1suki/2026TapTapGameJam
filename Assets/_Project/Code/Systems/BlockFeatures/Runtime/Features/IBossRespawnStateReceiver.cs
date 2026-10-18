@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Project.BlockFeatures
 {
@@ -65,6 +66,35 @@ namespace Project.BlockFeatures
                 {
                     return receiver;
                 }
+            }
+
+            return null;
+        }
+
+        public static IBossRespawnStateReceiver
+            FindAvailableInScene(Scene scene)
+        {
+            for (int index = Receivers.Count - 1;
+                 index >= 0;
+                 index--)
+            {
+                IBossRespawnStateReceiver receiver =
+                    Receivers[index];
+                if (receiver == null ||
+                    receiver is Object obj && obj == null)
+                {
+                    Receivers.RemoveAt(index);
+                    continue;
+                }
+
+                if (receiver is not Component component ||
+                    component.gameObject.scene != scene ||
+                    !receiver.IsBossRespawnStateAvailable)
+                {
+                    continue;
+                }
+
+                return receiver;
             }
 
             return null;

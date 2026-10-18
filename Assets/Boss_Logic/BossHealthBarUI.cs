@@ -18,7 +18,7 @@ namespace Project.BossLogic
 
         [Header("Boss 名字")]
         [SerializeField] private TMP_FontAsset uiSdfFont;
-        [SerializeField, Min(8f)] private float nameFontSize = 34f;
+        [SerializeField, Min(8f)] private float nameFontSize = 57.8f;
         [SerializeField, Min(4f)] private float nameMinFontSize = 14f;
         [SerializeField, Min(0f)] private float nameMaxWidth = 260f;
         [SerializeField, Min(0f)] private float nameGap = 14f;
@@ -335,7 +335,9 @@ namespace Project.BossLogic
             nameRect.anchoredPosition =
                 new Vector2(-nameGap, 0f);
             nameRect.sizeDelta =
-                new Vector2(nameMaxWidth, barHeight);
+                new Vector2(
+                    nameMaxWidth,
+                    Mathf.Max(barHeight, nameFontSize * 1.2f));
 
             nameText =
                 nameObject.GetComponent<TextMeshProUGUI>();

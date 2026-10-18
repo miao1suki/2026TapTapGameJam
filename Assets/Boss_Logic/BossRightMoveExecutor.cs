@@ -32,6 +32,7 @@ namespace Project.BossLogic
         private bool playerRespawnPaused;
         private float nextPlayerLookupTime;
         private bool checkpointAssistActive;
+        private bool executionSuspended;
         private float checkpointAssistSpeedMultiplier = 1f;
         private float checkpointAssistTargetX;
         private float checkpointAssistTargetY;
@@ -63,6 +64,8 @@ namespace Project.BossLogic
             verticalTrackSpeedBlocksPerSecond;
         public bool IsCheckpointAssistActive =>
             checkpointAssistActive;
+        public bool IsExecutionSuspended =>
+            executionSuspended;
 
         private void Awake()
         {
@@ -90,6 +93,12 @@ namespace Project.BossLogic
         private void FixedUpdate()
         {
             if (controller == null || controller.IsDead)
+            {
+                StopOwnedMotion();
+                return;
+            }
+
+            if (executionSuspended)
             {
                 StopOwnedMotion();
                 return;
@@ -395,6 +404,16 @@ namespace Project.BossLogic
             moving = value;
             if (!value)
             {
+                StopOwnedMotion();
+            }
+        }
+
+        public void SetExecutionSuspended(bool suspended)
+        {
+            executionSuspended = suspended;
+            if (suspended)
+            {
+                ClearCheckpointAssist();
                 StopOwnedMotion();
             }
         }

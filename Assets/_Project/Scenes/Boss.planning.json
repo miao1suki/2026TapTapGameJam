@@ -155981,8 +155981,8 @@
                     "paletteEntryName": "",
                     "propEntryId": "mechanism-door-owned-button",
                     "propEntryName": "门按钮",
-                    "x": 49,
-                    "y": 40,
+                    "x": 52,
+                    "y": 41,
                     "width": 1,
                     "height": 1,
                     "isMerged": false,
@@ -156000,8 +156000,900 @@
                     "bossRespawnOwnerId": "",
                     "initialCrankPlatformCreated": false,
                     "mergeParts": [],
-                    "hasComponentOverrides": false,
-                    "componentOverrides": []
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Mechanisms.DoorButton",
+                            "componentIndex": 0,
+                            "propertyPath": "owner",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Mechanisms.DoorButton",
+                            "componentIndex": 0,
+                            "propertyPath": "visual",
+                            "valueType": "ObjectReference",
+                            "value": "reference:local",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.MechanismArtworkPresentation",
+                            "componentIndex": 0,
+                            "propertyPath": "artwork",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-3-d165ad6ea3838e7428e30ee380ad3c53-11400000-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.MechanismArtworkPresentation",
+                            "componentIndex": 0,
+                            "propertyPath": "visual",
+                            "valueType": "ObjectReference",
+                            "value": "reference:local",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.MechanismArtworkPresentation",
+                            "componentIndex": 0,
+                            "propertyPath": "kind",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Material",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LayerOverridePriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IsTrigger",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProvidesContacts",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":0.6000000238418579,\"y\":0.30000001192092898,\"z\":0.6000000238418579}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":0.0,\"y\":-0.3499999940395355,\"z\":0.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshFilter",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Mesh",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_CastShadows",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveShadows",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DynamicOccludee",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StaticShadowCaster",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MotionVectors",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReflectionProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingMode",
+                            "valueType": "Integer",
+                            "value": "2",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTraceProcedural",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlagsOverride",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlags",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SmallMeshCulling",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ForceMeshLod",
+                            "valueType": "Integer",
+                            "value": "-1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MeshLodSelectionBias",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RenderingLayerMask",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RendererPriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProbeAnchor",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeVolumeOverride",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ScaleInLightmap",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveGI",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PreserveUVs",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IgnoreNormalsForChartDetection",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ImportantGI",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StitchLightmapSeams",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MinimumChartSize",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxDistance",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxAngle",
+                            "valueType": "Float",
+                            "value": "89",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightmapParameters",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Button Model",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MaskInteraction",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_CastShadows",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveShadows",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DynamicOccludee",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StaticShadowCaster",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MotionVectors",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReflectionProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingMode",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTraceProcedural",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlagsOverride",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlags",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SmallMeshCulling",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ForceMeshLod",
+                            "valueType": "Integer",
+                            "value": "-1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MeshLodSelectionBias",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RenderingLayerMask",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RendererPriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProbeAnchor",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeVolumeOverride",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ScaleInLightmap",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveGI",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PreserveUVs",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IgnoreNormalsForChartDetection",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ImportantGI",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StitchLightmapSeams",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MinimumChartSize",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxDistance",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxAngle",
+                            "valueType": "Float",
+                            "value": "89",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightmapParameters",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MaskInteraction",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Sprite",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-1-ef3837466db1ddd4cab78ea9b6d66923-1284647483036081791-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Color",
+                            "valueType": "Color",
+                            "value": "{\"r\":1.0,\"g\":1.0,\"b\":1.0,\"a\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_FlipX",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_FlipY",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DrawMode",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size",
+                            "valueType": "Vector2",
+                            "value": "{\"x\":1.0,\"y\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AdaptiveModeThreshold",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SpriteTileMode",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Mechanism Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SpriteSortPoint",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Mechanisms.DoorButton",
+                            "componentIndex": 0,
+                            "propertyPath": "footTolerance",
+                            "valueType": "Float",
+                            "value": "0.15000000596046448",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Mechanisms.DoorButton",
+                            "componentIndex": 0,
+                            "propertyPath": "mode",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        }
+                    ]
                 },
                 {
                     "id": "box_15399523",
@@ -181121,7 +182013,7 @@
                     "paletteEntryName": "",
                     "propEntryId": "212cd7a2ff304a6288b4d850132de143",
                     "propEntryName": "平台",
-                    "x": 222,
+                    "x": 228,
                     "y": 19,
                     "width": 3,
                     "height": 1,
@@ -182353,7 +183245,7 @@
                     "paletteEntryName": "",
                     "propEntryId": "2213ef9dfa86490eb2383077eb5bd64e",
                     "propEntryName": "重力岩浆",
-                    "x": 222,
+                    "x": 228,
                     "y": 18,
                     "width": 1,
                     "height": 1,
@@ -184857,7 +185749,7 @@
                     "paletteEntryName": "",
                     "propEntryId": "212cd7a2ff304a6288b4d850132de143",
                     "propEntryName": "平台",
-                    "x": 243,
+                    "x": 245,
                     "y": 19,
                     "width": 3,
                     "height": 1,
@@ -186089,7 +186981,7 @@
                     "paletteEntryName": "",
                     "propEntryId": "2213ef9dfa86490eb2383077eb5bd64e",
                     "propEntryName": "重力岩浆",
-                    "x": 243,
+                    "x": 245,
                     "y": 18,
                     "width": 1,
                     "height": 1,
@@ -230836,7 +231728,7 @@
                     "propEntryId": "06e690b71b634be2909b6fecd7ecb627",
                     "propEntryName": "字幕激发道具",
                     "x": 11,
-                    "y": 40,
+                    "y": 41,
                     "width": 1,
                     "height": 1,
                     "isMerged": false,
@@ -230937,6 +231829,17 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
+                            "propertyPath": "cue.layer",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
                             "propertyPath": "cue.useManagerDefaults",
                             "valueType": "Boolean",
                             "value": "0",
@@ -230970,6 +231873,17 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
+                            "propertyPath": "cue.style.anchor",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
                             "propertyPath": "cue.style.offset",
                             "valueType": "Vector2",
                             "value": "{\"x\":0.0,\"y\":0.0}",
@@ -230981,9 +231895,31 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
+                            "propertyPath": "cue.style.inAnimation",
+                            "valueType": "Enum",
+                            "value": "12",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
                             "propertyPath": "cue.style.inCurve",
                             "valueType": "AnimationCurve",
                             "value": "{\"preWrapMode\":8,\"postWrapMode\":8}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.outAnimation",
+                            "valueType": "Enum",
+                            "value": "12",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -231017,17 +231953,6 @@
                             "propertyPath": "destroyAfterPlay",
                             "valueType": "Boolean",
                             "value": "0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
-                            "propertyPath": "showSign",
-                            "valueType": "Boolean",
-                            "value": "1",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -231093,7 +232018,7 @@
                             "componentIndex": 0,
                             "propertyPath": "m_Size",
                             "valueType": "Vector3",
-                            "value": "{\"x\":3.0,\"y\":12.0,\"z\":1.0}",
+                            "value": "{\"x\":3.0,\"y\":8.0,\"z\":1.0}",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -231762,6 +232687,17 @@
                             "componentPath": "Subtitle Sign Visual",
                             "componentTypeName": "UnityEngine.SpriteRenderer",
                             "componentIndex": 0,
+                            "propertyPath": "m_Sprite",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-1-24b74bdf22adc174aa895b9a93459a45-5213157417746651780-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
                             "propertyPath": "m_Color",
                             "valueType": "Color",
                             "value": "{\"r\":1.0,\"g\":1.0,\"b\":1.0,\"a\":1.0}",
@@ -231847,12 +232783,12 @@
                             }
                         },
                         {
-                            "componentPath": "Subtitle Sign Visual",
-                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "m_Sprite",
-                            "valueType": "ObjectReference",
-                            "value": "GlobalObjectId_V1-1-24b74bdf22adc174aa895b9a93459a45-5213157417746651780-0",
+                            "propertyPath": "cue.text",
+                            "valueType": "String",
+                            "value": "这里怎么怪怪的...",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -232015,18 +232951,71 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.layer",
-                            "valueType": "Enum",
+                            "propertyPath": "showSign",
+                            "valueType": "Boolean",
                             "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "box_f21b6d7f",
+                    "type": 9,
+                    "label": "",
+                    "paletteEntryId": "",
+                    "paletteEntryName": "",
+                    "propEntryId": "30265b9098d545388134efaefa2a7884",
+                    "propEntryName": "Timeline触发器",
+                    "x": 288,
+                    "y": 40,
+                    "width": 1,
+                    "height": 1,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "timeline",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-3-e327eb4d93c46e148b6ce059ff1fb156-11400000-0",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
                         },
                         {
                             "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.style.anchor",
+                            "propertyPath": "targetCollider",
+                            "valueType": "ObjectReference",
+                            "value": "reference:local",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "contactFilter",
                             "valueType": "Enum",
                             "value": "1",
                             "objectReferenceValue": {
@@ -232035,33 +233024,1067 @@
                         },
                         {
                             "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.style.inAnimation",
+                            "propertyPath": "triggerMode",
                             "valueType": "Enum",
-                            "value": "12",
+                            "value": "0",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
                         },
                         {
                             "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.style.outAnimation",
-                            "valueType": "Enum",
-                            "value": "12",
+                            "propertyPath": "restartIfPlaying",
+                            "valueType": "Boolean",
+                            "value": "1",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
                         },
                         {
                             "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.text",
+                            "propertyPath": "requestPlayerControlLockDuringTimeline",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "hideRenderersOnEnable",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "destroyAfterTrigger",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PlayableAsset",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                            "componentIndex": 0,
+                            "propertyPath": "m_InitialState",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                            "componentIndex": 0,
+                            "propertyPath": "m_WrapMode",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DirectorUpdateMode",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                            "componentIndex": 0,
+                            "propertyPath": "m_InitialTime",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Material",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LayerOverridePriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IsTrigger",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProvidesContacts",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":3.0,\"y\":8.0,\"z\":3.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshFilter",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Mesh",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_CastShadows",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveShadows",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DynamicOccludee",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StaticShadowCaster",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MotionVectors",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReflectionProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingMode",
+                            "valueType": "Integer",
+                            "value": "2",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTraceProcedural",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlagsOverride",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlags",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SmallMeshCulling",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ForceMeshLod",
+                            "valueType": "Integer",
+                            "value": "-1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MeshLodSelectionBias",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RenderingLayerMask",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RendererPriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProbeAnchor",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeVolumeOverride",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ScaleInLightmap",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveGI",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PreserveUVs",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IgnoreNormalsForChartDetection",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ImportantGI",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StitchLightmapSeams",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MinimumChartSize",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxDistance",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxAngle",
+                            "valueType": "Float",
+                            "value": "89",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightmapParameters",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MaskInteraction",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "repeatCooldownSeconds",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "box_dbe9c0ab",
+                    "type": 1,
+                    "label": "",
+                    "paletteEntryId": "b425a019bb3c476da08cd4065bd77862",
+                    "paletteEntryName": "白方块",
+                    "propEntryId": "",
+                    "propEntryName": "",
+                    "x": 308,
+                    "y": 40,
+                    "width": 16,
+                    "height": 7,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": []
+                },
+                {
+                    "id": "box_f3eeb399",
+                    "type": 1,
+                    "label": "",
+                    "paletteEntryId": "b425a019bb3c476da08cd4065bd77862",
+                    "paletteEntryName": "白方块",
+                    "propEntryId": "",
+                    "propEntryName": "",
+                    "x": 308,
+                    "y": 28,
+                    "width": 16,
+                    "height": 5,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": []
+                },
+                {
+                    "id": "box_4e79831e",
+                    "type": 1,
+                    "label": "",
+                    "paletteEntryId": "b425a019bb3c476da08cd4065bd77862",
+                    "paletteEntryName": "白方块",
+                    "propEntryId": "",
+                    "propEntryName": "",
+                    "x": 324,
+                    "y": 28,
+                    "width": 6,
+                    "height": 19,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": []
+                },
+                {
+                    "id": "box_1ba29225",
+                    "type": 9,
+                    "label": "",
+                    "paletteEntryId": "",
+                    "paletteEntryName": "",
+                    "propEntryId": "teleport-anchor-block",
+                    "propEntryName": "传送目标方块",
+                    "x": 309,
+                    "y": 39,
+                    "width": 1,
+                    "height": 1,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.TeleportAnchorFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "disableCollidersOnEnable",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.TeleportAnchorFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "hideRenderersOnEnable",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Material",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LayerOverridePriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IsTrigger",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProvidesContacts",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":1.0,\"y\":1.0,\"z\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshFilter",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Mesh",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_CastShadows",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveShadows",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DynamicOccludee",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StaticShadowCaster",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MotionVectors",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReflectionProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingMode",
+                            "valueType": "Integer",
+                            "value": "2",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTraceProcedural",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlagsOverride",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlags",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SmallMeshCulling",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ForceMeshLod",
+                            "valueType": "Integer",
+                            "value": "-1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MeshLodSelectionBias",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RenderingLayerMask",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RendererPriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProbeAnchor",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeVolumeOverride",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ScaleInLightmap",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveGI",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PreserveUVs",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IgnoreNormalsForChartDetection",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ImportantGI",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StitchLightmapSeams",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MinimumChartSize",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxDistance",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxAngle",
+                            "valueType": "Float",
+                            "value": "89",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightmapParameters",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MaskInteraction",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.TeleportAnchorFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "teleportId",
                             "valueType": "String",
-                            "value": "这里怎么怪怪的...",
+                            "value": "End",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }

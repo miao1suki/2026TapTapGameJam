@@ -12,7 +12,8 @@ namespace Project.BossLogic.Editor
         private const string BossPrefabPath =
             "Assets/_Project/Content/Boss/Boss(暂定).prefab";
         private const string SessionKey =
-            "BossWalkTimelineInstaller.AutoRun.10";
+            "BossWalkTimelineInstaller.AutoRun.11";
+        private const double CameraStartAfterPlayerLock = .1d;
         private const double ActionStart = 4d;
         private const double ActionDuration = 1.4d;
         private const double LandingHoldStart = 6d;
@@ -288,8 +289,9 @@ namespace Project.BossLogic.Editor
             {
                 SetClipWindow(
                     cameraTimelineClip,
-                    0d,
-                    FinalEventTime);
+                    CameraStartAfterPlayerLock,
+                    FinalEventTime -
+                    CameraStartAfterPlayerLock);
             }
 
             SerializedObject timelineObject =

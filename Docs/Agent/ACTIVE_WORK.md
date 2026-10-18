@@ -3,6 +3,7 @@
 ## 2026-10-18 Boss 关卡重生点附属标记
 
 - 分支：`boss修补`；范围：`RespawnAnchorFeature`、玩家复活完成回调、Boss 重生状态接口、Boss 标记 SceneEditor、关卡参数窗口与 PlanningCanvas。
+- 分支：`boss修补`；新增通用传送目标道具：`TeleportAnchorFeature` 使用任意字符串 ID 的全局静态注册表，API `TeleportObject(GameObject, string)` 将对象移动到对应目标；默认预制体 `Teleport_Block.prefab` 已加入道具栏目，运行时和 Scene 中均无碰撞、不可见。静态表在子系统注册时清空，运行时支持修改 ID 并注销旧注册。验证：Runtime/Editor Roslyn 编译通过；未运行 Unity Play Mode。
 - 数据：Boss 开关、复活血量、Boss 本地 X 直接保存在重生点组件；附属标记无 Collider/Renderer、不保存业务数据，只定位并跟随 X 字段，删除后由编辑器维护自动补建并重新链接。
 - 编辑：参数窗口可像门生成按钮一样创建 `Boss复活标记` 规划格，通过 `bossRespawnOwnerId` 连接重生点；Scene 与关卡画布都只允许沿 X 拖动，Y 始终继承重生点，位置不产生实体。
 - 边界：不改现有重生链、房间重置、Boss 入场/死亡 Timeline；玩家完成复活后通过类型接口通知所选重生点，再由重生点向 Boss 状态接收者下发血量与位置。
@@ -10,11 +11,23 @@
 - 顺序：玩家确定重生点后先通过 `IPlayerRespawnPreRoomResetListener` 请求 Boss 重置，再执行 `RoomLifecycleManager.BeforeRespawn` 房间恢复。
 - 弱追踪：`BossRightMoveExecutor` 在右移高度基础上增加玩家 Y 死区和格/秒追踪速度；死区内保持原高度，超出后只缓慢追到死区边缘。
 - 弱补助：`BossCheckpointAssistController` 监听重生点首次激活；玩家存活时按该点 Boss 位置启动临时水平加速和垂直辅助，玩家死亡立即取消，继续使用现有传送重置。
-- 相机：Side2D 镜头强制只保留平面 Yaw；Boss 死亡 Timeline 的镜头控制释放移到 4.99 秒最后一帧，并显式调用 `ReleaseTimelineControl(true)`。
+- 平台重置兜底：`RoomLifecycleManager` 主动注册全部 `MovingPlatformFeature` / `OneWayPlatform`；`RoomResetObject.RestoreState` 对移动平台无条件再执行 `ResetForRoom`，恢复路线原点而不再依赖宿主当前挂接状态。
+- Boss 处决 Timeline：已直接提交 `Boss_execution.playable` 与 `BossExecutionTrigger.prefab`，新增 `BossExecutionTimelineTrack` / `BossExecutionClip`；进入触发区域后由 Playable 暂停普通右移，正式 `CameraTimelineTrack` 先用 1.2 秒将 2D 镜头移到 Boss，期间锁定相机起始 Y，结束后再短曲线校正高度，随后 Boss 按 10 格/秒右移并持续跟拍。整段玩家操作锁由正式 `PlayerTimelineTrack` 持有，自然结束、Timeline 停止或销毁时统一释放。`BossExecutionClip` 改为通过 `PlayableGraph.GetResolver()` 获取真正的 `PlayableDirector`，并订阅 `ExecutionSequenceTerminated` 与 `Died`；任意死亡路径都会停止处决 Timeline，修复 owner 为空导致玩家锁和相机控制残留。execution 状态下任意正伤害直接归零并触发常规死亡 Timeline，不要求血条先激活。Boss 死亡镜头已从当前 Boss 机位开始保持，不再重复玩家到 Boss 的去程，结束时回玩家。
+- 场景接线：规划 JSON 里已有 `box_f21b6d7f`，但此前 `Boss.unity` 没有实际实例；现已在房间 1 坐标 `(288,40)` 直接补入 `BossExecutionTrigger` 预制体实例，世界位置 `(288.5,-40.5)`，碰撞范围 `3×8×3`，并重新关联规划 ID。未运行场景生成器。
+- Timeline 反序列化修复：Unity Editor 日志出现 `No script asset for BossExecutionClip`。原因是 `BossExecutionClip : PlayableAsset` 与 Track 放在 `BossExecutionTimelineTrack.cs` 中，Unity 要求可序列化脚本资产使用同名文件。现将 Clip 与 Behaviour 拆到 `BossExecutionClip.cs`，新 GUID 接回 `Boss_execution.playable`；Track GUID 保持不变。
+- Boss 死亡六钥匙前缀：`Boss_defeat.playable` 扩展到 `10` 秒。致命伤后先保持原镜头发呆 `1` 秒，再用 `1` 秒平滑移动到玩家与 Boss 完整 Collider/Renderer 包围盒的中点；构图到位后由 `BossKeyAbsorptionPlayable` 用 `3.5` 秒从玩家身体依次生成两红两蓝两绿六把钥匙并吸入 Boss，最后进入 `4.5` 秒死亡演出；普通死亡和处决死亡共用。视觉钥匙实例在未激活根下先关闭 Collider、拾取/掉落/飞行脚本、美术状态组件和子 Director，再激活，确保不会被玩家吸收、按解锁状态隐藏或结算颜色。共享 `CameraTimelineClip/Behaviour` 未修改，玩家锁轨只锁输入，不写玩家位置。钥匙缩放为 `0.55`、槽距 `0.52`，吸引单把 `0.9` 秒。Boss 死亡前缀期间临时 Kinematic 冻结刚体，复活时恢复，消除抽搐。验证：Runtime 静态编译通过；Timeline 时间点与对象 ID 静态检查通过；未运行 Unity Play Mode。
+- 玩家动画与操作锁解耦：`PlayerSpritePresentation` 不再因 `PlayerStateId.Locked` 一律暂停动画；只有玩家身上存在启用中的 `Animator` 且同时处于 `Locked` 时，才视为 Timeline 接管视觉动画并暂停。标准无 Animator 玩家在 Timeline 锁操作期间继续播放原动画。
+- Player Thinking 演出：Boss 死亡 Timeline 自然结束后，同一 PlayableDirector 切换 `player_thinking.playable`。演出聚焦玩家、锁操作，使用 WordNote Timeline 队列逐句打字机播放并直接消失；默认未接入收藏品数据时走演出2。`PlayerThinkingTimelinePlayable.SetCollectibleProgress(current,max)` 按 60% 分流；演出1黑屏传送 `Start`，演出2生成六份收集品，并在黑幕完全覆盖时先销毁六份演出收集品，再传送 `End`。两分支均在完全黑屏 1 秒内传送并倒放黑屏，结束后停止导演以释放玩家锁和相机轨。
+- 处决启动参数：Timeline 开始时先将 Boss 保持当前 X/Z、把 Y 瞬移到玩家当前 Y，再冻结马夫并进入镜头；之后 execution 固定保持启动时记录的 Y，不再持续跟踪玩家高度。右移默认速度改为 `10` 格/秒，Timeline 序列化值和 Inspector 默认值同步。`destroyOnlyWhileExternalMoving` 的伤害接触检查在 execution 中放行。
+- 相机：Side2D 镜头强制只保留平面 Yaw；Boss 死亡 Timeline 的镜头控制释放移到 `9.99` 秒最后一帧，并显式调用 `ReleaseTimelineControl(true)`。
+- 表现/接触：新增 `BossPlayerLinkEffect`，从 Boss 中心连接玩家；用三份独立运行时材质分别设置火线/水线/藤蔓线 `_Style=1/2/3` 叠加，距离越近透明度和线粗越高，最近为正统线的 1.5 倍。连线随血条激活生成，藤蔓按 `_RevealProgress` 生长，Boss 死亡时按 `_DissolveProgress` 消散；`BossController.killPlayerOnContact` 默认为真，Boss 接触玩家直接请求玩家死亡。
 - 相机：Boss 入场首段在等待后生成锚点前先申请正交 2D，避免首个渲染帧继续使用透视投影。
 - Boss HUD：BossController 新增显示名；血条左侧动态创建 Cubic_11 SDF 名字。Boss Health Canvas 新增 `BossMonitorUI`，使用独立正交相机与 RenderTexture，在屏幕左上角按约 23.3% 宽、35% 高显示 Boss（原 1/3×1/2 的 70%），中央展开/倒放收起，死亡 5 秒后与血条同步退场；监控相机显示除 UI 外全部图层，渲染倍率 1.5、最大宽度 2048。
+- Boss 名字排版：字号由 `34` 调整为 `57.8`，正好为原来的 `1.7` 倍；`BossHealthBarUI` 的名字文本框高度同步按字号扩容，避免 TMP 自动缩小。脚本默认值与 `Boss(暂定).prefab` 序列化值已同步。
+- Boss 复活兜底：`PlayerController.PerformRespawn` 在正常重生点解析后检查同场景活动 Boss；若当前没有任何已解锁的 Boss 关出生点，则扫描同场景全部启用的 Boss 关出生点，按 X 最小选择本次复活目标。兜底点即使尚未解锁也可被选中，之后继续走其安全落位和 Boss 血量/位置重置链，且不会改写玩家当前绑定出生点。验证：Runtime 静态编译通过；条件顺序与场景过滤静态检查通过；未运行 Unity Play Mode。
+- Boss 入场锁与镜头顺序：`Boss_appear.playable` 的玩家操作锁从 `0` 秒开始，相机轨延后到 `0.1` 秒启动并在原 `6.54` 秒结束；`BossWalkTimelineInstaller` 的自动同步窗口与 SessionKey 已更新，避免重载后回退为同帧启动。验证：Editor 静态编译通过；Timeline 起点、时长和安装器窗口静态检查通过；未运行 Unity Play Mode。
 - 玩家运动信号：`PlayerDied` 立即让右移马夫清外部移动；直接复活在落位完成时发 `PlayerRespawnCompleted`，过场复活在最后动画结束时发同名信号恢复右移。
-- 验证：Runtime/Editor Roslyn 编译通过；待 Unity 内验证开关显隐、生成按钮、规划格拖动、删除补建、Undo、规划保存、后生成 Boss 同步、复活前后右移暂停/恢复、弱 Y 追踪、出生点弱补助重定向/死亡取消、入场首帧投影、死亡末帧相机归还、监控窗比例/跟随/RenderTexture 释放和名字排版。
+- 验证：Runtime/Editor Roslyn 编译通过；待 Unity 内验证开关显隐、生成按钮、规划格拖动、删除补建、Undo、规划保存、后生成 Boss 同步、复活前后右移暂停/恢复、弱 Y 追踪、出生点弱补助重定向/死亡取消、三线距离表现、Boss 接触击杀、处决 Timeline 资产/镜头/5 格每秒移动/任意伤害秒杀/死亡接管、入场首帧投影、死亡末帧相机归还、监控窗比例/跟随/RenderTexture 释放和名字排版。
 
 ## 2026-10-18 区域镜头下移 Timeline
 

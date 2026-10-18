@@ -272,10 +272,10 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 0
+    m_Start: 0.1
     m_ClipIn: 0
     m_Asset: {fileID: 510000003}
-    m_Duration: 6.54
+    m_Duration: 6.44
     m_TimeScale: 1
     m_ParentTrack: {fileID: 510000002}
     m_EaseInDuration: 0
@@ -344,6 +344,7 @@ MonoBehaviour:
     m_Objects: []
   allowManualCamera: 0
   restoreOriginOnEnd: 1
+  returnTransitionDuration: 0.25
   entryTransitionDuration: 0
 --- !u!114 &510000003
 MonoBehaviour:

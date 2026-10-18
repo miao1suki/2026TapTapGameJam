@@ -94,6 +94,14 @@ namespace Project.Rooms
                 if (behaviour is IRoomColorResettable resettable && !(behaviour is ColorObject) &&
                     (!(behaviour is BlockFeature feature) || feature.IsAttached) &&
                     (host == null || !(behaviour is BlockFeature))) resettable.ResetForRoom();
+            // A platform can finish a route while detached/disabled. Host reset
+            // only visits attached features, so always restore authored motion.
+            foreach (MovingPlatformFeature platform in
+                     GetComponentsInChildren<MovingPlatformFeature>(
+                         true))
+            {
+                platform.ResetForRoom();
+            }
             if (host == null) GetComponent<BlockRuntime>()?.RefreshFeatureSet(true);
         }
 

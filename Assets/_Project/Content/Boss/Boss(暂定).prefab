@@ -102,7 +102,7 @@ MonoBehaviour:
   topOffset: 76
   dividerWidth: 4
   uiSdfFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
-  nameFontSize: 34
+  nameFontSize: 57.8
   nameMinFontSize: 14
   nameMaxWidth: 260
   nameGap: 14
@@ -166,6 +166,7 @@ GameObject:
   - component: {fileID: 900000006}
   - component: {fileID: 900000007}
   - component: {fileID: 900000008}
+  - component: {fileID: 900000009}
   m_Layer: 0
   m_Name: "Boss(\u6682\u5B9A)"
   m_TagString: Boss
@@ -306,7 +307,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e5bb16ee268408c920ada39d19b96ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossController
-  bossDisplayName: Boss
+  bossDisplayName: "\"\u62E6\u8DEF\u8005\""
   target: {fileID: 0}
   targetTag: Player
   enableAutonomousChase: 0
@@ -336,6 +337,7 @@ MonoBehaviour:
   lavaContactDamage: 1
   maxHiddenObjectsPerFrame: 4
   passThroughColliderHeight: 12
+  killPlayerOnContact: 1
   destroyAfterDeath: 0
   destroyDelaySeconds: 2
   defeatPresentationRequested:
@@ -452,6 +454,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossDefeatTimelinePresenter
   director: {fileID: 900000006}
   defeatTimeline: {fileID: 11400000, guid: d77843b46d7945f1b28b0190e981f459, type: 2}
+  playerThinkingTimeline: {fileID: 11400000, guid: a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3, type: 2}
   onlyPlayForThisBoss: 1
 --- !u!114 &900000008
 MonoBehaviour:
@@ -469,3 +472,40 @@ MonoBehaviour:
   maximumDurationSeconds: 15
   horizontalToleranceBlocks: 0.25
   verticalAssistSpeedBlocksPerSecond: 0.75
+--- !u!114 &900000009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4776779470644211574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24eb498b8f804a2d8dbbd474248cd65c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossPlayerLinkEffect
+  playerTag: Player
+  bossOffset: {x: 0, y: 0, z: 0}
+  playerOffset: {x: 0, y: 0.35, z: 0}
+  cameraFacingOffset: -0.18
+  redMaterial: {fileID: 2100000, guid: 01a8ab61e63d424b8f01a313dc4f98e2, type: 2}
+  blueMaterial: {fileID: 2100000, guid: 01a8ab61e63d424b8f01a313dc4f98e2, type: 2}
+  greenMaterial: {fileID: 2100000, guid: 01a8ab61e63d424b8f01a313dc4f98e2, type: 2}
+  redTint: {r: 1, g: 0.08, b: 0.08, a: 1}
+  blueTint: {r: 0.08, g: 0.28, b: 1, a: 1}
+  greenTint: {r: 0.08, g: 1, b: 0.08, a: 1}
+  generationDuration: 0.55
+  dissolveDuration: 0.3
+  minimumDistanceBlocks: 1.5
+  maximumDistanceBlocks: 18
+  farOpacity: 0.4
+  nearOpacity: 0.78
+  farLineThickness: 0.024
+  nearLineThickness: 0.9
+  lerpSharpness: 1
+  curveSegments: 20
+  arcHeight: 0.16
+  waveHeight: 0.055
+  styleSeparationRatio: 0.4
+  sortingLayerName: BossTop
+  sortingOrder: 32760
