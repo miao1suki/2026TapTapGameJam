@@ -90324,7 +90324,7 @@
       "kind": "green_cube",
       "cells": [
         [
-          -89,
+          -90,
           -21
         ]
       ],
@@ -90336,7 +90336,7 @@
       ],
       "rigid": true,
       "offset": [
-        2,
+        1,
         1
       ]
     },
@@ -91240,71 +91240,7 @@
       -46.48981285095215
     ]
   },
-  "unboundControls": [
-    {
-      "id": "mvmap14_room_0zfk6h97tk",
-      "label": "按钮 [room_0zfk6h97tk]",
-      "room": "房间 11",
-      "worldCell": [
-        -11,
-        6
-      ]
-    },
-    {
-      "id": "mvmap14_room_da3leeq6h6",
-      "label": "持续触发按钮 [room_da3leeq6h6]",
-      "room": "房间 11",
-      "worldCell": [
-        6,
-        15
-      ]
-    },
-    {
-      "id": "mvmap14_room_llonptobai",
-      "label": "Room 498 [room_llonptobai]",
-      "room": "房间 11",
-      "worldCell": [
-        -50,
-        17
-      ]
-    },
-    {
-      "id": "mvmap14_room_qhhluvy2u3",
-      "label": "Room 185 [room_qhhluvy2u3]",
-      "room": "房间 11",
-      "worldCell": [
-        -48,
-        -50
-      ]
-    },
-    {
-      "id": "mvmap14_room_yfjnzhdljw",
-      "label": "Room 548 [room_yfjnzhdljw]",
-      "room": "房间 11",
-      "worldCell": [
-        -14,
-        12
-      ]
-    },
-    {
-      "id": "mvmap14_room_7amayauxwh",
-      "label": "按钮 [room_7amayauxwh]",
-      "room": "房间 18",
-      "worldCell": [
-        -59,
-        -30
-      ]
-    },
-    {
-      "id": "mvmap14_room_har703dql7",
-      "label": "按钮 [room_har703dql7]",
-      "room": "房间 19",
-      "worldCell": [
-        -133,
-        -3
-      ]
-    }
-  ],
+  "unboundControls": [],
   "verification": {
     "unity": "6000.3.12f1",
     "authoredCells": 5743,
@@ -91313,7 +91249,225 @@
     "cameraOrthographicSize": 8,
     "repeatApplyAdded": 0,
     "repeatApplyDeleted": 0,
-    "playMode": false,
-    "build": false
+    "playMode": true,
+    "build": false,
+    "playModeScope": "隔离Gaming启动、14按钮真实脚部压力、9保持按钮门和4复活点通过；1浮空复活点由用户手动调整；未完整通关或构建。UnityEditor.Search索引异常单独记录。",
+    "playModeResult": "PASS 87 checks"
+  },
+  "stage2": {
+    "policy": "同房间按钮控制同房间门；多按钮、多门使用一次固定种子的随机分配并持久保存。保留已有有效绑定。",
+    "changes": {
+      "bindings": [
+        {
+          "roomId": "room_5c0def1a",
+          "room": "房间 11",
+          "buttonId": "mvmap14_room_llonptobai",
+          "buttonLabel": "Room 498 [room_llonptobai]",
+          "doorId": "box_a34e4730",
+          "doorLabel": "Room 333 [room_289hht8hqw]",
+          "buttonSourceCells": [
+            [
+              -52,
+              17
+            ]
+          ],
+          "doorSourceCells": [
+            [
+              -51,
+              -6
+            ],
+            [
+              -51,
+              -5
+            ]
+          ]
+        },
+        {
+          "roomId": "room_5c0def1a",
+          "room": "房间 11",
+          "buttonId": "mvmap14_room_yfjnzhdljw",
+          "buttonLabel": "Room 548 [room_yfjnzhdljw]",
+          "doorId": "mvmap14_room_v2hg55dm4a",
+          "doorLabel": "Room 549 [room_v2hg55dm4a]",
+          "buttonSourceCells": [
+            [
+              -14,
+              13
+            ]
+          ],
+          "doorSourceCells": [
+            [
+              -9,
+              12
+            ],
+            [
+              -9,
+              13
+            ]
+          ]
+        },
+        {
+          "roomId": "room_5c0def1a",
+          "room": "房间 11",
+          "buttonId": "mvmap14_room_da3leeq6h6",
+          "buttonLabel": "持续触发按钮 [room_da3leeq6h6]",
+          "doorId": "mvmap14_room_tjhpltaoqu",
+          "doorLabel": "Room 543 [room_tjhpltaoqu]",
+          "buttonSourceCells": [
+            [
+              6,
+              16
+            ]
+          ],
+          "doorSourceCells": [
+            [
+              -20,
+              3
+            ],
+            [
+              -20,
+              4
+            ]
+          ]
+        },
+        {
+          "roomId": "room_5c0def1a",
+          "room": "房间 11",
+          "buttonId": "mvmap14_room_qhhluvy2u3",
+          "buttonLabel": "Room 185 [room_qhhluvy2u3]",
+          "doorId": "mvmap14_room_xfmkfxqw00",
+          "doorLabel": "门 [room_xfmkfxqw00]",
+          "buttonSourceCells": [
+            [
+              -49,
+              -50
+            ]
+          ],
+          "doorSourceCells": [
+            [
+              -48,
+              14
+            ],
+            [
+              -48,
+              15
+            ]
+          ]
+        },
+        {
+          "roomId": "room_5c0def1a",
+          "room": "房间 11",
+          "buttonId": "mvmap14_room_0zfk6h97tk",
+          "buttonLabel": "按钮 [room_0zfk6h97tk]",
+          "doorId": "mvmap14_room_tjhpltaoqu",
+          "doorLabel": "Room 543 [room_tjhpltaoqu]",
+          "buttonSourceCells": [
+            [
+              -11,
+              7
+            ]
+          ],
+          "doorSourceCells": [
+            [
+              -20,
+              3
+            ],
+            [
+              -20,
+              4
+            ]
+          ]
+        },
+        {
+          "roomId": "mvmap14_region_18",
+          "room": "房间 18",
+          "buttonId": "mvmap14_room_7amayauxwh",
+          "buttonLabel": "按钮 [room_7amayauxwh]",
+          "doorId": "mvmap14_room_pp1kupp0o7",
+          "doorLabel": "门 [room_pp1kupp0o7]",
+          "buttonSourceCells": [
+            [
+              -61,
+              -31
+            ]
+          ],
+          "doorSourceCells": [
+            [
+              -59,
+              -32
+            ],
+            [
+              -59,
+              -31
+            ]
+          ]
+        },
+        {
+          "roomId": "mvmap14_region_19",
+          "room": "房间 19",
+          "buttonId": "mvmap14_room_har703dql7",
+          "buttonLabel": "按钮 [room_har703dql7]",
+          "doorId": "mvmap14_room_aq38ovtmfm",
+          "doorLabel": "门 [room_aq38ovtmfm]",
+          "buttonSourceCells": [
+            [
+              -137,
+              -3
+            ]
+          ],
+          "doorSourceCells": [
+            [
+              -143,
+              4
+            ],
+            [
+              -143,
+              5
+            ]
+          ]
+        }
+      ],
+      "contactCorrections": [
+        {
+          "boxId": "mvmap14_room_jds6m1dp1l",
+          "sourceId": "room_jds6m1dp1l",
+          "oldWorldCell": [
+            -89,
+            -21
+          ],
+          "newWorldCell": [
+            -90,
+            -21
+          ],
+          "reason": "保留JSON中绿块与Room430弹性植物的四向贴边；与已避让接缝的植物柱一起向左平移一格。"
+        }
+      ],
+      "doorsWithoutButtons": [
+        {
+          "room": "房间 16",
+          "id": "box_1eb332b6",
+          "label": "Room 313 [room_fxfr41ul0s]"
+        }
+      ]
+    },
+    "playerSceneOverride": {
+      "property": "lethalFallHeightBlocks",
+      "before": 10,
+      "after": 0,
+      "scope": "Gaming标准玩家实例",
+      "reason": "遵守当前无摔落死亡规范，保留共享Player.prefab与其他场景。"
+    },
+    "deferredCheckpoint": {
+      "sourceId": "room_enwc3kez1c",
+      "sourceCell": [
+        -37,
+        -10
+      ],
+      "worldCell": [
+        -36,
+        -10
+      ],
+      "reason": "六格内无落脚点，当前复活会回退起点；用户明确自行调整位置，本次保持原位。"
+    }
   }
 }
