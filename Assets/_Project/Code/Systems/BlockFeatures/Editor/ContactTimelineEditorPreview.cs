@@ -24,6 +24,9 @@ namespace Project.BlockFeatures.Editor
             Texture2D texture = Texture;
             Collider shape = trigger.GetComponent<Collider>();
             if (texture == null || shape == null) return;
+            DrawColliderRange(
+                shape,
+                (gizmoType & GizmoType.Selected) != 0);
             Bounds bounds = shape.bounds;
             Camera camera = SceneView.currentDrawingSceneView.camera;
             if (camera.WorldToViewportPoint(bounds.center).z <= 0f) return;
@@ -36,6 +39,70 @@ namespace Project.BlockFeatures.Editor
             GUI.DrawTexture(rect, texture, ScaleMode.ScaleToFit);
             GUI.color = previous;
             Handles.EndGUI();
+        }
+
+        private static void DrawColliderRange(
+            Collider collider,
+            bool selected)
+        {
+            if (collider == null || !collider.enabled)
+            {
+                return;
+            }
+
+            Matrix4x4 previousMatrix = Handles.matrix;
+            Color previousColor = Handles.color;
+            Handles.color = selected
+                ? new Color(1f, .78f, .3f, .9f)
+                : new Color(1f, .78f, .3f, .45f);
+            if (collider is BoxCollider box)
+            {
+                Handles.matrix =
+                    box.transform.localToWorldMatrix;
+                DrawDottedBox(
+                    new Bounds(
+                        box.center,
+                        box.size));
+            }
+            else
+            {
+                Handles.matrix = Matrix4x4.identity;
+                DrawDottedBox(collider.bounds);
+            }
+            Handles.matrix = previousMatrix;
+            Handles.color = previousColor;
+        }
+
+        private static void DrawDottedBox(Bounds bounds)
+        {
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+            Vector3[] corners =
+            {
+                new Vector3(min.x, min.y, min.z),
+                new Vector3(max.x, min.y, min.z),
+                new Vector3(max.x, min.y, max.z),
+                new Vector3(min.x, min.y, max.z),
+                new Vector3(min.x, max.y, min.z),
+                new Vector3(max.x, max.y, min.z),
+                new Vector3(max.x, max.y, max.z),
+                new Vector3(min.x, max.y, max.z),
+            };
+            int[,] edges =
+            {
+                { 0, 1 }, { 1, 2 }, { 2, 3 }, { 3, 0 },
+                { 4, 5 }, { 5, 6 }, { 6, 7 }, { 7, 4 },
+                { 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 },
+            };
+            for (int index = 0;
+                 index < edges.GetLength(0);
+                 index++)
+            {
+                Handles.DrawDottedLine(
+                    corners[edges[index, 0]],
+                    corners[edges[index, 1]],
+                    5f);
+            }
         }
     }
 }

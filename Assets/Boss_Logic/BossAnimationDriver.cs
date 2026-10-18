@@ -15,6 +15,9 @@ namespace Project.BossLogic
     {
         [SerializeField] private Animator animator;
         [SerializeField] private bool driveAnimator = true;
+        [SerializeField]
+        [Tooltip("开启后，死亡动画等待 Boss 死亡 Timeline 在第 1 秒调用 PlayDeathAnimationNow。")]
+        private bool waitForPresentationDeathTrigger;
         [SerializeField] private string chaseBoolParameter = "Chasing";
         [SerializeField] private string hitTriggerParameter = "Hit";
         [SerializeField] private string deathTriggerParameter = "Death";
@@ -29,6 +32,7 @@ namespace Project.BossLogic
             new UnityEvent();
 
         private BossController controller;
+        private bool deathAnimationTriggered;
 
         public event Action<BossStateId, BossStateId> StateForwarded;
 
@@ -39,6 +43,11 @@ namespace Project.BossLogic
             {
                 controller.StateChanged += OnStateChanged;
                 ApplyState(controller.State);
+                if (controller.State == BossStateId.Death &&
+                    !waitForPresentationDeathTrigger)
+                {
+                    TriggerDeathAnimation();
+                }
             }
         }
 
@@ -72,7 +81,10 @@ namespace Project.BossLogic
             }
             else if (next == BossStateId.Death)
             {
-                deathStarted?.Invoke();
+                if (!waitForPresentationDeathTrigger)
+                {
+                    TriggerDeathAnimation();
+                }
             }
             else if (next == BossStateId.Jump)
             {
@@ -82,6 +94,11 @@ namespace Project.BossLogic
 
         private void ApplyState(BossStateId state)
         {
+            if (state != BossStateId.Death)
+            {
+                deathAnimationTriggered = false;
+            }
+
             if (!driveAnimator || animator == null)
             {
                 return;
@@ -92,14 +109,40 @@ namespace Project.BossLogic
             {
                 SetTrigger(hitTriggerParameter);
             }
-            else if (state == BossStateId.Death)
-            {
-                SetTrigger(deathTriggerParameter);
-            }
             else if (state == BossStateId.Jump)
             {
                 SetTrigger(jumpTriggerParameter);
             }
+        }
+
+        public void PlayDeathAnimationNow()
+        {
+            if (controller == null)
+            {
+                controller = GetComponent<BossController>();
+            }
+
+            if (controller == null || !controller.IsDead)
+            {
+                return;
+            }
+
+            TriggerDeathAnimation();
+        }
+
+        private void TriggerDeathAnimation()
+        {
+            if (deathAnimationTriggered)
+            {
+                return;
+            }
+
+            deathAnimationTriggered = true;
+            if (driveAnimator && animator != null)
+            {
+                SetTrigger(deathTriggerParameter);
+            }
+            deathStarted?.Invoke();
         }
 
         private void SetBool(string parameter, bool value)

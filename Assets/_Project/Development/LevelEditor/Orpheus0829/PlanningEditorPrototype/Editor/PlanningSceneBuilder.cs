@@ -387,6 +387,12 @@ namespace PlanningEditorPrototype
                      boxIndex++)
                 {
                     PlanningBox box = layout.Room.boxes[boxIndex];
+                    if (box.propEntryId ==
+                        PlanningBox.BossRespawnMarkerEntryId)
+                    {
+                        continue;
+                    }
+
                     string waterKind = PlanningWaterLayerUtility.WaterKind(box, palette);
                     var layer = waterKind != null ? PlanningWaterLayerUtility.Layer(occupiedWater, waterKind) : occupied;
                     var external = waterKind != null ? PlanningWaterLayerUtility.Layer(existingWaterLayers, waterKind) : existingCells;
@@ -442,6 +448,12 @@ namespace PlanningEditorPrototype
                          boxIndex++)
                     {
                         PlanningBox box = assemblyPatches[boxIndex];
+                        if (box.propEntryId ==
+                            PlanningBox.BossRespawnMarkerEntryId)
+                        {
+                            continue;
+                        }
+
                         string patchWaterKind = PlanningWaterLayerUtility.WaterKind(box, palette);
                         var patchLayer = patchWaterKind != null ? PlanningWaterLayerUtility.Layer(occupiedWater, patchWaterKind) : occupied;
                         var patchExternal = patchWaterKind != null ? PlanningWaterLayerUtility.Layer(existingWaterLayers, patchWaterKind) : existingCells;
@@ -1245,6 +1257,13 @@ namespace PlanningEditorPrototype
             HashSet<Vector2Int> existingCells,
             Vector2Int localCell)
         {
+            if (box != null &&
+                box.propEntryId ==
+                PlanningBox.BossRespawnMarkerEntryId)
+            {
+                return true;
+            }
+
             if (!PlanningShapeUtility.Contains(box, localCell)) return false;
             if (!occupied.Add(cell) || existingCells.Contains(cell))
             {

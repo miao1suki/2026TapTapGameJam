@@ -39,6 +39,41 @@ public sealed class BossRightMoveExecutorEditor : Editor
             "Boss 受伤进入无敌后右移速度的倍率；1 为不减速，0.5 为半速，0 为暂时停止。"));
         root.Add(route);
 
+        Foldout playerPause = ProjectInspectorUtility.CreateFoldout(
+            "玩家复活暂停",
+            true);
+        playerPause.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "pauseWhilePlayerRespawning",
+            "玩家死亡时暂停右移",
+            "玩家死亡信号立即停止右移；直接复活完成或过场复活最后动画结束后恢复。"));
+        playerPause.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "playerTag",
+            "玩家标签"));
+        root.Add(playerPause);
+
+        Foldout verticalTracking =
+            ProjectInspectorUtility.CreateFoldout(
+                "弱垂直追踪",
+                true);
+        verticalTracking.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "enableWeakVerticalTracking",
+            "启用弱垂直追踪",
+            "Boss 只缓慢靠近玩家的高度，不会强制与玩家完全同高。"));
+        verticalTracking.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "verticalDeadbandBlocks",
+            "高度死区（格）",
+            "玩家与 Boss 高度差在该范围内时完全不改变高度。"));
+        verticalTracking.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "verticalTrackSpeedBlocksPerSecond",
+            "垂直追踪速度（格/秒）",
+            "超出死区后的最大高度变化速度。"));
+        root.Add(verticalTracking);
+
         BossRightMoveExecutor executor =
             target as BossRightMoveExecutor;
         Foldout debug = ProjectInspectorUtility.CreateFoldout(
@@ -66,6 +101,18 @@ public sealed class BossRightMoveExecutorEditor : Editor
             () => executor != null
                 ? executor.InvulnerableMoveSpeedMultiplier.ToString("0.##")
                 : "无"));
+        debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+            "玩家复活暂停",
+            () => executor != null &&
+                  executor.IsPausedForPlayerRespawn
+                ? "是"
+                : "否"));
+        debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+            "弱垂直追踪",
+            () => executor != null &&
+                  executor.IsWeakVerticalTrackingEnabled
+                ? $"{executor.VerticalTrackSpeedBlocksPerSecond:0.###} 格/秒 · 死区 {executor.VerticalDeadbandBlocks:0.###}"
+                : "关闭"));
         root.Add(debug);
 
         ProjectInspectorUtility.Bind(root, serializedObject);

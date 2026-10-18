@@ -14,6 +14,14 @@ public class CameraTimelineTrack : TrackAsset
     [Tooltip("轨道结束后平滑交还 Project 玩法相机；关闭时立即交还。")]
     public bool restoreOriginOnEnd = true;
 
+    [Tooltip("轨道结束后交还 Project 玩法相机的平滑时间。")]
+    [Min(0f)]
+    public float returnTransitionDuration = .25f;
+
+    [Tooltip("Timeline 接管相机时的投影切换时间；0 表示第一帧直接进入演出投影。")]
+    [Min(0f)]
+    public float entryTransitionDuration = .25f;
+
     protected override void OnCreateClip(TimelineClip clip)
     {
         clip.displayName = "Camera";

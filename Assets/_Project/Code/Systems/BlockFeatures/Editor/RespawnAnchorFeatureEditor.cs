@@ -22,6 +22,91 @@ namespace Project.BlockFeatures.Editor
             root.Add(ProjectInspectorUtility.CreateHelp(
                 "进入虚线范围后设为当前重生点。再次进入已激活的点也会更新绑定；死亡或重生操作返回最近触碰的点。"));
 
+            RespawnAnchorFeature feature =
+                (RespawnAnchorFeature)target;
+            Foldout levelType =
+                ProjectInspectorUtility.CreateFoldout(
+                    "关卡类型",
+                    true);
+            PropertyField bossToggle =
+                ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "isBossArenaRespawnPoint",
+                "是否为 Boss 关卡重生点",
+                "开启后，玩家从该点完成复活时同步设置 Boss 血量与位置。");
+            bossToggle.RegisterCallback<SerializedPropertyChangeEvent>(
+                _ =>
+                {
+                    serializedObject.ApplyModifiedProperties();
+                    feature.EnsureBossRespawnMarker(true);
+                    feature.ApplyBossRespawnMarkerState();
+                    EditorUtility.SetDirty(feature);
+                });
+            levelType.Add(bossToggle);
+            root.Add(levelType);
+
+            Foldout bossRespawn =
+                ProjectInspectorUtility.CreateFoldout(
+                    "Boss 关卡重生",
+                    true);
+            bossRespawn.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "bossRespawnHealth",
+                "复活后 Boss 血量",
+                "玩家从该点复活后，将 Boss 当前血量设置为该值。"));
+            PropertyField bossX =
+                ProjectInspectorUtility.CreateProperty(
+                    serializedObject,
+                    "bossRespawnLocalX",
+                    "Boss 横向位置（格）",
+                    "相对重生点的 X 偏移；Y 始终与重生点相同。");
+            bossX.RegisterCallback<SerializedPropertyChangeEvent>(
+                _ =>
+                {
+                    serializedObject.ApplyModifiedProperties();
+                    feature.ApplyBossRespawnMarkerState();
+                    EditorUtility.SetDirty(feature);
+                });
+            bossRespawn.Add(bossX);
+            var locateMarker = new Button(() =>
+            {
+                BossRespawnMarker marker =
+                    feature.EnsureBossRespawnMarker(true);
+                if (marker == null)
+                {
+                    return;
+                }
+
+                Selection.activeGameObject = marker.gameObject;
+                EditorGUIUtility.PingObject(marker.gameObject);
+                SceneView.lastActiveSceneView?.FrameSelected();
+            })
+            {
+                text = "定位附属标记"
+            };
+            locateMarker.style.marginTop = 4f;
+            bossRespawn.Add(locateMarker);
+            bossRespawn.Add(ProjectInspectorUtility.CreateHelp(
+                "附属标记没有 Collider 和 Renderer，只能沿世界 X 拖动。删除后会自动补建并重新链接。"));
+            root.Add(bossRespawn);
+
+            SerializedProperty bossEnabled =
+                serializedObject.FindProperty(
+                    "isBossArenaRespawnPoint");
+            void RefreshBossVisibility()
+            {
+                bool visible = bossEnabled != null &&
+                               bossEnabled.boolValue;
+                bossRespawn.style.display = visible
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
+                locateMarker.SetEnabled(visible);
+            }
+
+            RefreshBossVisibility();
+            levelType.schedule.Execute(RefreshBossVisibility)
+                .Every(100);
+
             Foldout activation =
                 ProjectInspectorUtility.CreateFoldout(
                     "激活设置",
@@ -112,8 +197,6 @@ namespace Project.BlockFeatures.Editor
             openChainButton.style.marginTop = 4f;
             openChainButton.style.marginBottom = 4f;
             chain.Add(openChainButton);
-            RespawnAnchorFeature feature =
-                (RespawnAnchorFeature)target;
             chain.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "出生点编号",
                 () => feature.DisplayLabel));
@@ -134,6 +217,26 @@ namespace Project.BlockFeatures.Editor
                 () => feature.IsRespawnPointAvailable
                     ? "是"
                     : "否"));
+            debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "Boss 同步状态",
+                () => feature.BossRespawnDebugStatus));
+            debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "待应用 Boss 状态",
+                () => feature.HasPendingBossRespawnState
+                    ? "是"
+                    : "否"));
+            debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "最近应用 Boss 血量",
+                () => feature.LastAppliedBossRespawnHealth >= 0
+                    ? feature.LastAppliedBossRespawnHealth
+                        .ToString()
+                    : "未应用"));
+            debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "最近应用 Boss 位置",
+                () => feature.LastAppliedBossRespawnHealth >= 0
+                    ? feature.LastAppliedBossRespawnPosition
+                        .ToString("F2")
+                    : "未应用"));
             var activateButton = new Button(
                 () => feature.ActivateForDebug())
             {
@@ -141,11 +244,22 @@ namespace Project.BlockFeatures.Editor
             };
             activateButton.style.marginTop = 4f;
             debug.Add(activateButton);
+            var bossDebugButton = new Button(
+                () => feature
+                    .RequestBossRespawnStateForDebug())
+            {
+                text = "模拟应用 Boss 血量与位置"
+            };
+            bossDebugButton.style.marginTop = 4f;
+            debug.Add(bossDebugButton);
             debug.schedule.Execute(() =>
             {
                 activateButton.SetEnabled(
                     Application.isPlaying &&
                     !feature.IsCurrent);
+                bossDebugButton.SetEnabled(
+                    Application.isPlaying &&
+                    feature.IsBossArenaRespawnPoint);
             }).Every(100);
             root.Add(debug);
 

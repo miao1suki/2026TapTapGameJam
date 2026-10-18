@@ -36,6 +36,7 @@
 - Inspector 只显示当前动作所需数据，以及 `spawnBoss` / `bossPrefab`；移动动作显示 `moveInput`，跳跃不显示目标或速度，运动开关显示开启状态，死亡无额外参数。
 - Boss 入场相机轨只允许正交 2D 运镜，使用 `CameraTimelineTrack` 时必须保持 `Side2D`，不得使用透视 3D 或 3D 环绕。
 - CameraTimelineClip 的 `anchorTag` 可按 Tag 查找片段有效期内的运镜锚点，留空时使用 `TimelineCamRig.target`。Boss 入场使用 `Boss`。
+- `CameraTimelineTrack.returnTransitionDuration` 控制轨道结束交还玩法相机时的平滑时间；Boss 死亡演出用镜头曲线的最后 1 秒回到原机位，轨道结束只保留极短清理过渡。
 - 角色轨不得直接改写 `TimelineCamRig.target`。相机 Clip 在自然末尾主动释放控制并恢复 `CameraControlManager.FocusTarget`，兼容 PlayableDirector 的 Hold 模式；不要只依赖 Graph 停止回调。
 
 行为在直接驱动 Rigidbody 时会临时切换为 Kinematic，并在结束、暂停或 Playable 销毁时恢复原状态；玩家轨可同时通过 `PlayerController.AcquireControlLock` 锁住输入。

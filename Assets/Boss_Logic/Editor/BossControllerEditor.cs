@@ -18,6 +18,16 @@ public sealed class BossControllerEditor : Editor
         root.Add(ProjectInspectorUtility.CreateHelp(
             "只负责追击、操作输入、受击、死亡和跳跃状态；Timeline 与马夫只下发命令，动画由 BossAnimationDriver 可选接入。"));
 
+        Foldout identity = ProjectInspectorUtility.CreateFoldout(
+            "身份",
+            true);
+        identity.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "bossDisplayName",
+            "Boss 名字",
+            "显示在 Boss 血条左侧。留空时使用物体名称。"));
+        root.Add(identity);
+
         Foldout chase = ProjectInspectorUtility.CreateFoldout(
             "追击设置",
             true);
@@ -171,6 +181,11 @@ public sealed class BossControllerEditor : Editor
             "passThroughColliderHeight",
             "穿行碰撞高度（本地）",
             "右移马夫接管、Boss 进入穿行状态时，把 BoxCollider 的本地上下的总高度扩到该值；停止穿行时恢复作者尺寸。"));
+        survival.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
+            "killPlayerOnContact",
+            "碰到玩家直接击杀",
+            "Boss 碰到玩家时直接请求玩家死亡；该碰撞体之后不会再进入清障流程。"));
         survival.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "destroyAfterDeath",

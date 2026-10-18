@@ -66,6 +66,29 @@ namespace Project.CameraModes.Tests
             }
         }
 
+        private sealed class FocusSource : ICameraControlSource
+        {
+            public string CameraControlName => "Focus Source";
+
+            public bool TryGetCameraState(
+                in CameraControlContext context,
+                out CameraState state)
+            {
+                state = new CameraState
+                {
+                    position =
+                        context.FocusPoint +
+                        Vector3.back * 10f,
+                    rotation = Quaternion.identity,
+                    projection =
+                        CameraProjectionMode.Orthographic,
+                    orthographicSize = 5f,
+                    fieldOfView = 50f,
+                };
+                return true;
+            }
+        }
+
         private GameObject cameraObject;
         private Camera cameraComponent;
         private CameraControlManager manager;
@@ -241,6 +264,199 @@ namespace Project.CameraModes.Tests
             Assert.That(cameraComponent.orthographic, Is.True);
             Assert.That(cameraComponent.orthographicSize, Is.EqualTo(8f).Within(.001f));
             handle.Release(CameraTransition.Immediate);
+        }
+
+        [Test]
+        public void LensMultiplierRequest_PersistsThroughOutputRefresh()
+        {
+            FixedSource gameplay = new FixedSource(
+                "Gameplay",
+                Vector3.zero,
+                CameraProjectionMode.Orthographic);
+            manager.RequestControl(
+                gameplay,
+                CameraControlPriorities.Gameplay,
+                CameraInterruptionPolicy.AllowHigherPriority,
+                CameraTransition.Immediate);
+            manager.RequestLensMultiplier(
+                this,
+                2f,
+                CameraTransition.Immediate);
+
+            manager.Tick(0f);
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(10f).Within(.001f));
+
+            manager.ApplyViewModeAuthorityImmediately();
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(10f).Within(.001f));
+        }
+
+        [Test]
+        public void LensMultiplier_DoesNotOverrideCutsceneCamera()
+        {
+            FixedSource gameplay = new FixedSource(
+                "Gameplay",
+                Vector3.zero,
+                CameraProjectionMode.Orthographic);
+            manager.RequestControl(
+                gameplay,
+                CameraControlPriorities.Gameplay,
+                CameraInterruptionPolicy.AllowHigherPriority,
+                CameraTransition.Immediate);
+            manager.RequestLensMultiplier(
+                this,
+                2f,
+                CameraTransition.Immediate);
+            FixedSource cutscene = new FixedSource(
+                "Cutscene",
+                Vector3.zero,
+                CameraProjectionMode.Orthographic);
+            cutscene.State = new CameraState
+            {
+                position = Vector3.zero,
+                rotation = Quaternion.identity,
+                projection =
+                    CameraProjectionMode.Orthographic,
+                orthographicSize = 3f,
+                fieldOfView = 50f,
+            };
+            CameraControlHandle cutsceneHandle =
+                manager.RequestControl(
+                    cutscene,
+                    CameraControlPriorities.Cutscene,
+                    CameraInterruptionPolicy
+                        .AllowHigherPriority,
+                    CameraTransition.Immediate);
+
+            manager.Tick(0f);
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(3f).Within(.001f));
+
+            cutsceneHandle.Release(
+                CameraTransition.Immediate);
+            manager.Tick(0f);
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(10f).Within(.001f));
+        }
+
+        [Test]
+        public void LensMultiplier_BlendsInAndOutLinearly()
+        {
+            FixedSource gameplay = new FixedSource(
+                "Gameplay",
+                Vector3.zero,
+                CameraProjectionMode.Orthographic);
+            manager.RequestControl(
+                gameplay,
+                CameraControlPriorities.Gameplay,
+                CameraInterruptionPolicy.AllowHigherPriority,
+                CameraTransition.Immediate);
+            CameraTransition linearSecond =
+                new CameraTransition
+                {
+                    duration = 1f,
+                    easing = AnimationCurve.Linear(
+                        0f,
+                        0f,
+                        1f,
+                        1f),
+                };
+            CameraLensRequestHandle handle =
+                manager.RequestLensMultiplier(
+                    this,
+                    2f,
+                    linearSecond);
+
+            manager.Tick(.5f);
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(7.5f).Within(.001f));
+
+            handle.Release(linearSecond);
+            manager.Tick(.5f);
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(6.25f).Within(.001f));
+        }
+
+        [Test]
+        public void RelativeLensMultiplier_MultipliesAbsoluteGameplayRequest()
+        {
+            FixedSource gameplay = new FixedSource(
+                "Gameplay",
+                Vector3.zero,
+                CameraProjectionMode.Orthographic);
+            manager.RequestControl(
+                gameplay,
+                CameraControlPriorities.Gameplay,
+                CameraInterruptionPolicy.AllowHigherPriority,
+                CameraTransition.Immediate);
+            manager.RequestLensMultiplier(
+                this,
+                2f,
+                CameraTransition.Immediate);
+            manager.RequestRelativeLensMultiplier(
+                this,
+                1.3f,
+                CameraTransition.Immediate);
+
+            manager.Tick(0f);
+
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(13f).Within(.001f));
+        }
+
+        [Test]
+        public void ViewOffset_IsAppliedToGameplayFocusOnly()
+        {
+            manager.RequestControl(
+                new FocusSource(),
+                CameraControlPriorities.Gameplay,
+                CameraInterruptionPolicy.AllowHigherPriority,
+                CameraTransition.Immediate);
+            manager.SetFocusPoint(
+                new Vector3(10f, 20f, 0f));
+            manager.RequestViewOffset(
+                this,
+                new Vector3(0f, -5f, 0f),
+                CameraTransition.Immediate);
+
+            manager.Tick(0f);
+
+            Assert.That(
+                cameraObject.transform.position,
+                Is.EqualTo(
+                    new Vector3(10f, 15f, -10f)));
+
+            FixedSource cutscene = new FixedSource(
+                "Cutscene",
+                new Vector3(0f, 100f, -10f),
+                CameraProjectionMode.Orthographic);
+            CameraControlHandle cutsceneHandle =
+                manager.RequestControl(
+                    cutscene,
+                    CameraControlPriorities.Cutscene,
+                    CameraInterruptionPolicy
+                        .AllowHigherPriority,
+                    CameraTransition.Immediate);
+            manager.Tick(0f);
+
+            Assert.That(
+                manager.CurrentViewOffset,
+                Is.EqualTo(
+                    new Vector3(0f, -5f, 0f)));
+            Assert.That(
+                cameraObject.transform.position,
+                Is.EqualTo(
+                    new Vector3(0f, 100f, -10f)));
+            cutsceneHandle.Release(
+                CameraTransition.Immediate);
         }
 
         private static void AssertMatricesEqual(Matrix4x4 expected, Matrix4x4 actual, float tolerance)

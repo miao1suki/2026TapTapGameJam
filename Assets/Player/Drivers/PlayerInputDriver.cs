@@ -183,7 +183,6 @@ namespace Project.Player
                 return;
             }
 
-            target.RefreshInteractionTarget();
             if (!carryInteractionConsumed)
             {
                 UpdateInteraction(target);

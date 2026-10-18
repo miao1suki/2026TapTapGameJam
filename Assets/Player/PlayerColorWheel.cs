@@ -328,9 +328,6 @@ namespace Project.Player
 
             if (!HasSelectedColor)
             {
-                Debug.Log(
-                    "[PlayerColorWheel] 左键交互失败：尚未选择颜色。",
-                    this);
                 AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                 return;
             }
@@ -350,9 +347,6 @@ namespace Project.Player
             Camera camera = Camera.main;
             if (camera == null || sensor == null)
             {
-                Debug.Log(
-                    "[PlayerColorWheel] 左键交互失败：缺少相机或交互传感器。",
-                    this);
                 ColorApplicationRejected?.Invoke();
                 AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
                 return;
@@ -387,11 +381,6 @@ namespace Project.Player
                 AudioCuePlayer.Play(AudioCueIds.NoticeDeny, .7f);
             }
 
-            Debug.Log(
-                success
-                    ? $"[PlayerColorWheel] 使用能力“{(HasSelectedColor ? selectedColorId : "无")}”成功与物体交互：{targetName}"
-                    : $"[PlayerColorWheel] 使用能力“{(HasSelectedColor ? selectedColorId : "无")}”与物体交互失败：{targetName}",
-                targetComponent != null ? targetComponent.gameObject : gameObject);
         }
 
         private void HandleGreenHookResult(

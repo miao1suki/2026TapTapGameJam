@@ -67,6 +67,10 @@ namespace Project.Rooms
                     RegisterObject(item.gameObject);
                 foreach (CarryableFeature item in root.GetComponentsInChildren<CarryableFeature>(true))
                     RegisterObject(item.gameObject);
+                foreach (MovingPlatformFeature platform in root.GetComponentsInChildren<MovingPlatformFeature>(true))
+                    RegisterObject(platform.gameObject);
+                foreach (Project.Mechanisms.OneWayPlatform platform in root.GetComponentsInChildren<Project.Mechanisms.OneWayPlatform>(true))
+                    RegisterObject(platform.gameObject);
                 foreach (Project.Mechanisms.DoorButton button in root.GetComponentsInChildren<Project.Mechanisms.DoorButton>(true))
                     RegisterObject(button.gameObject);
                 foreach (RoomResetObject member in root.GetComponentsInChildren<RoomResetObject>(true))
