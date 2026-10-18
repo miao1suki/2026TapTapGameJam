@@ -1,5 +1,15 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 TA 岩浆流动与喷溅独立预览
+
+- 负责人：Codex；分支 `codex/ta/flow-magma`。
+- 范围：仅在 `Assets/ta_source/flowmagma` 新增图集岩浆流动、喷溅粒子、可复用预制体和 `StaticTest` 独立预览；不修改 `Assets/Scenes/Test.unity`、正式场景、现有 `Red_Lava` 玩法预制体或颜色反应。
+- 素材：任务开始时已有未跟踪的 `0-5 (1).png`、其 `.meta` 和 `flowmagma.meta`；保留其他人当前的字体资产改动。
+- 接口：Inspector 和运行时可调流速、波面幅度、喷发速率/周期/持续时间、喷出初速与落速，预留之后替换岩浆块视觉的位置。
+- 交付：`FlowMagmaVisual.prefab`、岩浆与泡沫 Shader/材质、`StaticTest/FlowMagmaPreview.unity`、中文调参 Inspector 和 `README.md`；预览场景仅有正交相机和视觉预制体。
+- 验证：新增资源及目录的 `.meta` 齐全、GUID 在 Assets 内唯一；`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 通过（0 错误、48 条项目既有警告）；`Ops/LevelMaps/Test-PlanningMapCommit.ps1` 通过。实际 Game 画面及 Shader 编译需在 Unity 编辑器打开预览场景验收。
+- 交接：本分支基于当时本地 `codex/ta/rgb-glitch` HEAD 创建；原工作树的字体资产改动与其他未跟踪资源未纳入本任务。正式岩浆块替换由后续接线任务负责。
+
 ## 2026-10-18 TA RGB 死亡与 Boss 双预设
 
 - 负责人：Codex；分支 `codex/ta/rgb-glitch`。
