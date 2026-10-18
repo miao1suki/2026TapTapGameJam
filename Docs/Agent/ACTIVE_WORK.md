@@ -1,5 +1,15 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 TA 三色四帧雨滴
+
+- 负责人：Codex；分支 `codex/ta/rain-sprite-field`。
+- 范围：只新增 `Assets/ta_source/Rain` 的三色雨滴预设体、共享运行时表现、独立演示场景和使用说明；不接入正式 Gaming 场景。
+- 当前编辑场景：`Assets/ta_source/Rain/RainPreview.unity`（独立演示）。
+- 原始 Rain PNG 及其 `.meta` 是任务开始时已有的未跟踪素材；其余已有字体、Recovery 和 VS Code 本地更改由原所有者保留。
+- 交付：原图点采样、无 Mipmap 导入；蓝色实现后同逻辑生成红色和绿色预设体。三色各四帧，单张运行时网格控制宽高、雨滴大小、密度、落速、帧速、随机性、到底概率及位置噪波；`RainPreview.unity` 并排展示三色。
+- 文档：`Assets/ta_source/Rain/README.md` 与 `Docs/Agent/SYSTEM_INDEX.md`。
+- 验证：三色各四帧取样区均有非透明像素；Rain 目录资产与 `.meta` 一一对应、GUID 唯一，演示场景三个 Prefab 引用和材质/脚本引用检查通过；`git diff --check` 通过。此机 Unity Hub 只登记 2022 编辑器，没有 6000.3.12f1 可执行文件，因此未能做 Unity 编译或 Game 画面验收。
+
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
 
 ## 2026-10-16 TA 岩浆冷却蒸汽表现
