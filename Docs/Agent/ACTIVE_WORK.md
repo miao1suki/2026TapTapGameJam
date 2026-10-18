@@ -2086,3 +2086,10 @@
 - Unity6000.3.12f1隔离工程静态验证5743占格、837实例、6水流、相机8；重复增量应用新增0、删除0、保留837。实际Play Mode专项87项通过：14按钮真实脚部压力、9保持按钮门打开且跨房间重置后保留、4复活点返回本区。UnityEditor.Search索引异常单独记录，游戏脚本无运行异常；未执行完整通关或构建。
 - 原JSON复活点(-37,-10)，压缩后(-36,-10)，六格内无落脚点导致回退起点；用户明确自行调整，本次保持位置及复活算法。房间16的Room313没有同房间按钮，未跨房间接线；新增平台/曲柄信号关系仍待明确，涌现之泉继续跳过。
 - 成套交付Gaming.unity、同名planning与命名正式存档，meta GUID保持；映射与验证说明更新到MVMAP14_LAYOUT.md及layout-manifest.json。仅推送codex/codex/gaming-camera-size-8，不合并或推main。主Unity须重载磁盘Gaming，避免旧内存覆盖；字体、Boss Timeline及其他个人文件不纳入本次提交。
+
+### MVMap14 仅白色平台重建（已完成）
+
+- 用户明确重新建立Gaming，只将源JSON灰白色#8b93a6生成白色实体平台；其余颜色、无色、机关、钥匙及紫色分界均不生成。坐标严格使用源JSON的Y向上原坐标，保留分界空隙，不压缩平移。使用隔离Unity验证并成套更新场景和两份可编辑存档；保留基础玩家/相机/暂停框架。
+- 本轮明确取代59b28f8的混合物体布局：删除原837项，生成249个白色形状、4577个有效格；单一规划区域只为编辑存档，不生成分界实体。原形状/孔洞/坐标逐物体精确核对；场景内嵌、配套和命名存档一致，原meta GUID保持，基础玩家位置及相机/Side2D size8保持。
+- Unity6000.3.12f1隔离生成、保存重开、碰撞与占格、无玩法道具、无Missing Script检查通过；重复应用新增0、删除0、保留249。仅Editor专项，未完整Play Mode通关或构建。生成证据Library/WhiteOnly，布局清单Ops/LevelMaps/Map14/layout-manifest.json，说明MVMAP14_LAYOUT.md。
+- 按既有授权推送当前任务分支codex/codex/gaming-camera-size-8；不合并或推main。主Unity重新载入磁盘Gaming，勿用旧内存覆盖；字体/Boss Timeline及个人文件未纳入。
