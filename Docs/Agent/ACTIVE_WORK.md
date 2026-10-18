@@ -1865,3 +1865,10 @@
 - 已fetch origin/main至3932955；本窗口不合并、不推main，不用旧代码回退主线修复，由整合窗口保留主线后续功能并整合此关卡交付。
 - 场景内嵌规划与同名规划一致（12房间），命名存档备份至Library/FormalLevelDeliveryBackups后同步；三份布局结构一致。既有meta与新增GUID引用已核对；提交前执行AllTracked规划守卫及diff检查。
 - 保留本地字体缓存、栏目中文转义编码差异、定向气泡预览序列化，不混入关卡提交；没有新增未跟踪资源依赖。Unity6000.3.12f1，本轮未执行Unity编译、Play Mode、完整通关或打包，不将静态数据检查视为运行验收。
+
+## 2026-10-18 正式关卡17房间分支交付
+
+- 用户确认当前已保存Gaming为正式关卡后续基线；分支codex/level/main-20261017-03，起点main f81fd45；已获取origin/main f18d90a，本窗口只交付分支，不合并、不推main，主线后续功能与修复由整合者保留。
+- 范围：Gaming.unity、Gaming.planning.json、Content/LevelMaps/正式关卡.json及各自既有meta（GUID保持）；保留本次布局、出生点、实例参数和绑定，不全量重建地图。用户通过编辑器应用并保存后，三份规划数据一致（17房间）；命名存档同步前备份于Library/FormalLevelDeliveryBackups。
+- 验证：三份JSON结构一致、meta已跟踪、新增资源GUID引用存在；提交前执行AllTracked规划守卫与暂存diff检查。Unity6000.3.12f1，未运行本轮Unity编译、Play Mode、完整通关或打包，静态数据验证不代表游戏验收。
+- 字体缓存、栏目中文转义差异及定向气泡预览序列化仍保留本地，不纳入本次关卡交付；无新增未跟踪资源依赖。
