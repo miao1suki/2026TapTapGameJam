@@ -9,22 +9,27 @@ namespace Project.GreenHook
     public sealed class GreenHookBodyMotion : MonoBehaviour, IGreenHookMotion, IRoomColorResettable
     {
         private Rigidbody body;
+        private BoxCollider pullShape;
         private MechanismBaseFeature mechanism;
         private bool active, wasKinematic, usedGravity;
         private RigidbodyConstraints savedConstraints;
+        private float cellSize;
+        private HorizontalPhysicsClearance horizontalClearance;
         public Vector3 GreenHookPosition => body != null ? body.position : transform.position;
         public bool IsHookMoving => active;
         public bool IsGreenHookPullActive => active;
-        private void Awake() { body = GetComponent<Rigidbody>(); mechanism = GetComponent<MechanismBaseFeature>(); }
+        private void Awake() { body = GetComponent<Rigidbody>(); mechanism = GetComponent<MechanismBaseFeature>(); pullShape = GetComponentInChildren<BoxCollider>(); cellSize = Mathf.Max(.01f, GridCellSizeUtility.Resolve(this)); }
         public void BeginGreenHookPull()
         {
             if (active) return;
             if (body == null) body = GetComponent<Rigidbody>();
+            if (pullShape == null) pullShape = GetComponentInChildren<BoxCollider>();
             VineGrowthLift.Cancel(body);
             wasKinematic = body.isKinematic; usedGravity = body.useGravity; savedConstraints = body.constraints;
             if (mechanism == null) mechanism = GetComponent<MechanismBaseFeature>();
             active = true; body.isKinematic = false;
             body.useGravity = mechanism != null ? mechanism.UsesGravity : usedGravity;
+            if (body.useGravity) horizontalClearance.Apply(pullShape, cellSize);
             SetGreenHookVelocity(Vector3.zero);
         }
         public void SetGreenHookVelocity(Vector3 velocity)
@@ -33,10 +38,12 @@ namespace Project.GreenHook
             // The hook command is cardinal, not the total velocity: horizontal pull
             // (and waiting for the player) must not cancel natural falling.
             body.useGravity = mechanism != null ? mechanism.UsesGravity : usedGravity;
-            ApplyPullVelocity(body, velocity);
+            ApplyPullVelocity(body, velocity, pullShape);
         }
-        internal static void ApplyPullVelocity(Rigidbody targetBody, Vector3 velocity)
+        internal static void ApplyPullVelocity(Rigidbody targetBody, Vector3 velocity, BoxCollider shape = null)
         {
+            if (targetBody.useGravity && shape != null)
+                velocity = GreenHookPhysics.BrakeAcrossNarrowGap(targetBody, shape, velocity, Time.fixedDeltaTime);
             bool vertical = Mathf.Abs(velocity.y) > .00001f;
             bool horizontal = Mathf.Abs(velocity.x) > .00001f;
             targetBody.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ |

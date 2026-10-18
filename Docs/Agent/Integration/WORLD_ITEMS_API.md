@@ -10,13 +10,17 @@ Runtime：`Assets/_Project/Code/Systems/WorldItems/Runtime`。资源：`Assets/_
 
 过滤与拾取资格还必须校验`other.attachedRigidbody == player.Motor`；不能只看Transform父层级。搬运中的独立刚体方块可能临时挂在玩家子节点下，不得因此忽略它与收集品的推挤碰撞，也不得把它当成玩家结算奖励。
 
-通过 `CollectiblePickup.Collected` 静态事件取得 `(item, actor)`，用 `ItemId`、`Amount` 结算；订阅者在 Disable 时注销。或使用 Inspector 的 `onCollected` UnityEvent。事件只在拾取飞行完成后触发；中途房间重置取消动画，不发过期回调。
+通过 `CollectiblePickup.Collected` 静态事件取得 `(item, actor)`，用 `ItemId`、`Amount` 结算；订阅者在 Disable 时注销。或使用 Inspector 的 `onCollected` UnityEvent。事件只在拾取飞行完成后触发一次，触发前已设置 `IsCollected=true`。接触已进入 `CollectionRequested` 后，R、死亡与离区不再中断收集飞行或恢复该物品，不丢失奖励，也不重复结算。
 
 `DropItemBase.ResetForReuse()` 停止 Tween、调用可选 `IDropItemCollectionReset.ResetCollectionAnimation()`、重置收集/吸引标志及外观。`PickupFlightAnimator` 实现该复位契约，恢复子外观位姿、显隐与 Renderer。不得在每个道具子类重新写飞行 Tween。
 
-收集后仅在 `RecycleItem` 隐藏作者物体，不 Destroy；Rooms 已扫描 DropItemBase，区域重置保留作者身份和原位置。当前收集品非永久进度，重复收集默认可触发奖励；永久计分应由接入系统按稳定实例身份去重，不用临时 instanceID。
+收集后仅在 `RecycleItem` 隐藏作者物体，不 Destroy；`RoomResetObject.Persistent` 将已开始/已完成的普通收集品视作进度，区域复位不恢复其姿态、显隐或收集资格。未收集物仍正常还原布置位置。`ResetForRoom` 同样保护这两种收集状态；重新启用已收集对象会立即隐藏，不再发奖励。
+
+后续存档接口：`IsCollected` 为结算完成状态；`TryGetStableInstanceId(out string)` 用 Scene 路径、`PlanningBoxId`、`PlanningLocalCell` 生成稳定实例键，字符串长度前缀与 invariant 格坐标避免歧义；缺少作者身份返回 false，不以运行时 instanceID、当前位置或随机GUID代替。`ItemId` 是奖励类别，不是实例ID。存档加载可调用 `RestoreCollectedState()` 静默恢复已收集/隐藏状态，不重放动画或事件。**本组件不新增磁盘/全局存档服务；场景销毁重建、退出重进后的保留由后续存档所有者接入这些接口完成。**
 
 专项入口：`Project.WorldItems.Editor.CollectibleContactAudit.Run`，仅在`Library/FlowRetirementProbe`以`-noaudio`运行，覆盖真实Trigger拾取与无阻挡穿过、拾取飞行不锁玩家、晚生成玩家、启停/对象池/房间复位、原有忽略对所有权，以及三色方块/基座真实物理推挤。不要通过反射调用拾取处理器冒充物理触发测试；不保存作者Scene。
+
+`Project.WorldItems.Editor.CollectiblePersistenceAudit.Run` 专测收集飞行中/完成后的区域重置、复用防重复奖励、稳定实例键及静默恢复。共享 `DropItemBase.ResetForReuse` 契约不变，不把其他掉落物一律改成永久收集。
 
 ## 尖刺
 
@@ -29,6 +33,14 @@ Runtime：`Assets/_Project/Code/Systems/WorldItems/Runtime`。资源：`Assets/_
 玩家重生安全落点同时排除岩浆、无色尖刺与旧尖刺；只排除玩家自身层级的 Collider，不排除与玩家共享地图父物体的地面或危险物。
 
 真实物理回归入口：`HazardContactAudit.Run`，仅允许在 `Library/FlowRetirementProbe` 隔离工程运行。使用 Unity `-noaudio`，专项测试内也关闭 AudioListener；不得通过游戏音量 API 改写作者的音量偏好。覆盖四向、合并端点/孔洞、保护结束后的 Stay、房间重置、岩浆冷却/还原与重生安全，不反射直接调用伤害处理器。
+
+## 岩浆的实体遮挡
+
+`LavaHazardFeature`通过`LavaContactOcclusion`判断玩家是否真正接触裸露岩浆。方块填入岩浆格后，站在实体遮住的顶部不会受伤；不是让整格或整片岩浆免伤。按玩家与岩浆的实际相交区域减去实体Box覆盖，再以物理形状查询确认剩余裸露接触；支持多块接缝、稀疏合并与孔洞。Trigger、装饰、禁用碰撞体及与玩家忽略碰撞的物体不能遮挡；移开方块后危险立即恢复。不受伤时也不播放冷却/死亡声音。
+
+动态方块落稳可能比网格岩浆顶低一点：只对玩家实际落脚的支撑顶面容忍最多0.03格的物理解算薄层，不扩大侧面、不掩盖真实露边/缝隙或深处浸入。红/蓝方块尚未 `IsSettled` 时也须保留从上落脚的玩家碰撞，避免松钩切目标后短暂穿透进岩浆；旁侧/下方仍沿用空中规则，详见 CONTACT_CUBES_API。
+
+专项入口`LavaOcclusionAudit.Run`，静音隔离环境中走真实Trigger/PhysX接触，覆盖实体填坑、侧面/边缘裸露、移走方块、合并孔洞与冷却/房间重置；不直接反射调用伤害处理冒充接触测试。
 
 ## 编辑器
 

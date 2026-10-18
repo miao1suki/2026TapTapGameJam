@@ -188,11 +188,11 @@ namespace Project.GreenHook.Editor
                 var line = (LineRenderer)Get(hook, "line"); Vector3 oldTip = line.GetPosition(line.positionCount - 1);
                 input.Pointer = camera.WorldToScreenPoint(new Vector3(-2, 1, 0)); Aim(hook, input.Pointer);
                 Vector3 eased = line.GetPosition(line.positionCount - 1);
-                Check(eased.x < oldTip.x && eased.x > -2f, "idle tip eases toward cursor rather than snapping");
+                Check(Mathf.Abs(eased.x + 2f) < .002f && oldTip.x > 1.99f, "fast turn keeps exact pointer tip while only the interior bend eases");
                 Vector3 center = Vector3.zero;
                 for (int i = 0; i < ring.positionCount; i++) center += ring.GetPosition(i) / ring.positionCount;
                 Check(((Vector2)center - new Vector2(-2, 1)).magnitude < .002f,
-                    "click circle stays on raw pointer while rope tip eases");
+                    "circle and rope tip share the raw pointer");
                 Check(Mathf.Abs(Vector2.Distance(ring.GetPosition(0), center) - hook.AimToleranceWorld) < .002f,
                     "visible circle matches actual hit radius");
                 Set(hook, "idleFollowSeconds", 0f);

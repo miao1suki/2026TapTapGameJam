@@ -18,6 +18,9 @@ public static class HazardContactAudit
     private const string Flag = "HazardContactAudit.Running";
     private static int checks;
     private static double started;
+    private static GameObject resetLava, resetRoom;
+    private static PlayerController resetPlayer;
+    private static int resetFrame;
     private static void Check(bool success, string message)
     {
         if (!success) throw new InvalidOperationException("HAZARD CONTACT: " + message);
@@ -59,7 +62,8 @@ public static class HazardContactAudit
             foreach (string direction in new[] { "上", "下", "左", "右" })
             { VerifyMerged(direction, false); VerifyMerged(direction, true); }
             VerifyLava(); VerifyRespawnSafety();
-            Finish(true, "PASS " + checks);
+            resetFrame = Time.frameCount;
+            EditorApplication.update += VerifyLavaResetAfterFrame;
         }
         catch (Exception error) { Finish(false, error.ToString()); }
         finally { Physics.simulationMode = previous; }
@@ -191,10 +195,27 @@ public static class HazardContactAudit
         ColorRuntimeService.Instance.Unlock("blue");
         Check(feature.ApplyColor("blue", player.gameObject) && !lava.activeSelf, "blue cooling disables authored lava trigger");
         Move(player, origin); Check(!player.IsDead, "cooled lava cannot hurt");
-        member.RestorePose(); member.RestoreState(); Step(player);
-        Check(lava.activeSelf && ColorRuntimeService.Instance.IsUnlocked("red") && player.IsDead,
-            "room reset restores lava danger without relocking color");
-        Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(lava); Object.DestroyImmediate(managerObject);
+        resetLava = lava; resetRoom = managerObject; resetPlayer = player;
+        member.RestorePose(); member.RestoreState();
+        // The cooled replacement is a real solid until Destroy runs at end of frame.
+        // Do not expect damage through that still-present geometry during this frame.
+    }
+    private static void VerifyLavaResetAfterFrame()
+    {
+        if (EditorApplication.timeSinceStartup - started > 90) { Finish(false, "Lava reset frame timeout"); return; }
+        if (!EditorApplication.isPlaying || Time.frameCount <= resetFrame + 1) return;
+        EditorApplication.update -= VerifyLavaResetAfterFrame;
+        var previous = Physics.simulationMode;
+        try
+        {
+            Physics.simulationMode = SimulationMode.Script;
+            Step(resetPlayer);
+            Check(resetLava.activeSelf && ColorRuntimeService.Instance.IsUnlocked("red") && resetPlayer.IsDead,
+                "room reset restores lava danger without relocking color");
+            Finish(true, "PASS " + checks);
+        }
+        catch (Exception error) { Finish(false, error.ToString()); }
+        finally { Physics.simulationMode = previous; }
     }
     private static void VerifyRespawnSafety()
     {
@@ -219,6 +240,11 @@ public static class HazardContactAudit
     private static void Finish(bool passed, string message)
     {
         SessionState.SetBool(Flag, false); EditorApplication.update -= Tick;
+        EditorApplication.update -= VerifyLavaResetAfterFrame;
+        if (resetPlayer != null) Object.DestroyImmediate(resetPlayer.gameObject);
+        if (resetLava != null) Object.DestroyImmediate(resetLava);
+        if (resetRoom != null) Object.DestroyImmediate(resetRoom);
+        resetPlayer = null; resetLava = null; resetRoom = null;
         File.WriteAllText("Library/HazardContactResult.txt", message); Debug.Log(message);
         if (EditorApplication.isPlaying)
         { EditorApplication.ExitPlaymode(); EditorApplication.delayCall += () => EditorApplication.Exit(passed ? 0 : 1); }

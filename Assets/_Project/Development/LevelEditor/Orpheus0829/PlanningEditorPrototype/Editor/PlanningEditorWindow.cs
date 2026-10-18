@@ -3,6 +3,7 @@ using System.IO;
 using Project.LevelEditor;
 using Project.LevelEditor.Editor;
 using Project.SurfaceTiles.Editor;
+using Unity.Profiling;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditor.ShortcutManagement;
@@ -15,6 +16,7 @@ namespace PlanningEditorPrototype
 {
     public sealed partial class PlanningEditorWindow : EditorWindow
     {
+        private static readonly ProfilerMarker TickMarker = new ProfilerMarker("PlanningEditor.Tick");
         private enum PlanningWorkspaceMode
         {
             Map
@@ -381,6 +383,7 @@ namespace PlanningEditorPrototype
             SetMode(lastMode);
             viewReady = true;
             RefreshAll();
+            root.SetEnabled(!EditorApplication.isPlayingOrWillChangePlaymode);
         }
 
         private void OnEnable()
@@ -393,16 +396,39 @@ namespace PlanningEditorPrototype
             EditorApplication.update += Tick;
             EditorApplication.playModeStateChanged -= OnPlanningPlayModeChanged;
             EditorApplication.playModeStateChanged += OnPlanningPlayModeChanged;
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                SuspendAuthoring();
+            else
+                rootVisualElement.SetEnabled(true);
         }
 
         private void OnPlanningPlayModeChanged(PlayModeStateChange state)
         {
             canvas?.CancelPointerInteraction();
             if (state == PlayModeStateChange.ExitingEditMode && documentSavePending) SaveDocument();
-            if (state != PlayModeStateChange.EnteredEditMode || canvas == null) return;
+            if (state == PlayModeStateChange.ExitingEditMode || state == PlayModeStateChange.EnteredPlayMode)
+            {
+                SuspendAuthoring();
+                return;
+            }
+            if (state != PlayModeStateChange.EnteredEditMode) return;
+            rootVisualElement.SetEnabled(true);
+            nextLevelEditorRefreshTime = 0d;
+            nextPreviewRefreshTime = 0d;
+            if (canvas == null) return;
             // Runtime teardown is not an authoring deletion.
             CaptureSceneBindings();
             RememberBindings();
+        }
+
+        private void SuspendAuthoring()
+        {
+            rootVisualElement.SetEnabled(false);
+            if (!LevelEditorState.EditMode) return;
+            LevelEditorState.EditMode = false;
+            SurfaceTileEditorBridge.SetPainting(false);
+            LevelEditorViewLock.Exit();
+            SceneView.RepaintAll();
         }
 
         private void OnDisable()
@@ -439,11 +465,14 @@ namespace PlanningEditorPrototype
 
         private void Tick()
         {
-            if (embeddedLevelEditor == null)
+            // Authoring refreshes must not compete with gameplay even when the
+            // window is hidden behind a maximized Game view.
+            if (EditorApplication.isPlayingOrWillChangePlaymode || embeddedLevelEditor == null)
             {
                 return;
             }
 
+            using var tick = TickMarker.Auto();
             double now = EditorApplication.timeSinceStartup;
             if (now < nextLevelEditorRefreshTime)
             {

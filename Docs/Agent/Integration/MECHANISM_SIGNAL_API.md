@@ -18,6 +18,8 @@
 
 `ContactCube` 固定身份，红块实现 `IEnergySource`；`MechanismBaseFeature` 查询相邻能源并输出 `IMechanismSignalSource`，无能源独占绑定。不要改写旧能源的运动控制或直接写玩家坐标。
 
+`MechanismBaseFeature.IsPoweredBy(IEnergySource)` 只读验证该确切能源是否按已有方向/距离规则给此已启用、已通电基座供能，不把其他红块的信号冒认为当前来源。绿钩拉红块或基座**新接通**时暂停拉取、保留绳子并放行普通行走；再次点击可继续，已有接触作为新拉取的基线，不立即重停。此策略不改变基座/平台信号与碰撞体、不加隐式Timeline，见 GREEN_HOOK_API。
+
 `MovingPlatformFeature.BindBase(MechanismBaseFeature)` 将驱动改为 SignalControlled，替换信号来源并安全重新订阅；传 null 解绑，按所选模式原地停止或回原位。`IsMoving`、`PreviewStart/PreviewEnd`、`LinkedControls` 只读。既有 Any/All 信号组合仍可用，默认编辑器快捷绑定仅一个基座。
 
 `signalMotion`独立于路线几何：`MovingPlatformSignalMotion.PoweredPingPong=0`兼容旧存档（充能往返、断电停留），`PoweredEndpoint=1`充能至`Path.FirstEnd`并保持、断电回作者origin。仅SignalControlled生效，曲柄/自动不受影响。每次目标改变从当前格空间位置建立新缓动段，按剩余路程比例计时，复用既有扫掠检测与QueuePlatformDelta承载；遇实体阻挡不累计进度，清除后重试，不反向。该模式忽略端点停留，反复切换/Reset不瞬移，参数经通用组件覆盖持久保存，不增加规划版本。`SignalMotion`只读；解绑无信号时终点模式同样执行回原位，旧模式才原地停止。

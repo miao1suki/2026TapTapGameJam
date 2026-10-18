@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Project.ColorBlocks;
+using Project.LevelEditor;
 using Project.Player;
 using Project.Rooms;
 using UnityEngine;
@@ -18,7 +20,9 @@ namespace Project.Items
         public static event Action<CollectiblePickup, GameObject> Collected;
         public string ItemId => itemId;
         public int Amount => amount;
-        public bool CanBePushed => CanCollect && body != null && !body.isKinematic;
+        /// <summary>Settled gameplay progress; room reset/reuse must not clear it.</summary>
+        public bool IsCollected { get; private set; }
+        public bool CanBePushed => !IsCollected && CanCollect && body != null && !body.isKinematic;
         public Collider[] SolidColliders { get { EnsureState(); return shapes; } }
         private Rigidbody body;
         private Collider[] shapes;
@@ -34,6 +38,13 @@ namespace Project.Items
 
         protected override void OnEnable()
         {
+            if (IsCollected)
+            {
+                // An authored object or its parent may be enabled again. Do
+                // not run the shared reuse path and recreate a settled reward.
+                RecycleItem();
+                return;
+            }
             // Physics-only filtering belongs to the pickup, not to the player's
             // global layer: cubes and bases must still be able to push its body.
             PlayerController.PlayerActivated -= IgnorePlayerSolids;
@@ -102,6 +113,7 @@ namespace Project.Items
         }
         private void TryCollect(Collider other)
         {
+            if (IsCollected || other == null) return;
             var player = other.GetComponentInParent<PlayerController>();
             // A carried cube can temporarily be a descendant of the player,
             // but its independent body is not the collecting actor's body.
@@ -117,6 +129,8 @@ namespace Project.Items
         }
         protected override void OnCollectionFinished()
         {
+            if (IsCollected) return;
+            IsCollected = true;
             onCollected.Invoke(); Collected?.Invoke(this, CollectionActor);
         }
         protected override void RecycleItem()
@@ -126,6 +140,11 @@ namespace Project.Items
         protected override void ResetItemState()
         {
             base.ResetItemState(); EnsureState();
+            if (IsCollected)
+            {
+                SuspendCollectedBody();
+                return;
+            }
             // Includes already-authored instances with the old serialized flag.
             // Stay dynamic so cubes/bases can push it in either grid direction.
             body.useGravity = false; body.isKinematic = originalKinematic;
@@ -135,9 +154,57 @@ namespace Project.Items
         }
         public void ResetForRoom()
         {
+            // Contact has already entered the shared collection lifecycle.
+            // Keep its flight/callback alive across R, death, or leaving the
+            // region; otherwise a reset between contact and completion loses
+            // the reward, or recreates it for a second collection.
+            if (IsCollected || CollectionRequested) return;
             StopItemAnimations();
-            // Re-enter the shared lifecycle even when reset interrupts a collection flight.
             ResetForReuse();
+        }
+
+        /// <summary>
+        /// Stable author identity for a future save owner. ItemId identifies a
+        /// reward kind, not a world instance. No runtime instance ID, position,
+        /// or random GUID is substituted when author metadata is unavailable.
+        /// </summary>
+        public bool TryGetStableInstanceId(out string instanceId)
+        {
+            instanceId = null;
+            var placed = GetComponent<LevelEditorPlacedBlock>();
+            string scenePath = gameObject.scene.path;
+            if (placed == null || string.IsNullOrEmpty(placed.PlanningBoxId) || string.IsNullOrEmpty(scenePath))
+                return false;
+            Vector2Int cell = placed.PlanningLocalCell;
+            scenePath = scenePath.Replace('\\', '/');
+            string box = placed.PlanningBoxId;
+            // Length-prefix author strings so delimiters in an asset name or
+            // future planning ID cannot alias another valid key.
+            instanceId = string.Format(CultureInfo.InvariantCulture, "collectible:{0}:{1}:{2}:{3}:{4}:{5}",
+                scenePath.Length, scenePath, box.Length, box, cell.x, cell.y);
+            return true;
+        }
+
+        /// <summary>
+        /// Apply an already-settled record without awarding it again. This does
+        /// not read/write disk or own a global/session save collection.
+        /// </summary>
+        public void RestoreCollectedState()
+        {
+            IsCollected = true;
+            StopItemAnimations();
+            GetComponent<IDropItemCollectionReset>()?.ResetCollectionAnimation();
+            EnsureState();
+            SuspendCollectedBody();
+            RecycleItem();
+        }
+
+        private void SuspendCollectedBody()
+        {
+            if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+            body.useGravity = false;
+            body.isKinematic = true;
+            foreach (var shape in shapes) if (shape != null) shape.enabled = false;
         }
     }
 }

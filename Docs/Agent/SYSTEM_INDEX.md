@@ -1,12 +1,14 @@
 # 系统索引
 
+2026-10-18 录像回归：绿钩拉红块/基座新接通供能后暂停主动拉取、保留绳子并放行普通行走，重新点击继续；精确来源查询 `MechanismBaseFeature.IsPoweredBy` 不把他人的红块供能算给蓝块。红/蓝未落稳时保留玩家从上落脚碰撞；岩浆只补真实支撑顶面的少量物理解算薄层，露边仍危险。普通收集品已开始/已完成收集不随R/死亡/离区恢复，`IsCollected`、稳定作者实例键及 `RestoreCollectedState` 供后续存档接入，未实现跨场景/退出后的存档服务。接入见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)、[WORLD_ITEMS_API](Integration/WORLD_ITEMS_API.md)、[CONTACT_CUBES_API](Integration/CONTACT_CUBES_API.md)。
+
 Scene编辑态正式2D由只读ArtworkScenePreview按变更缓存，旧尖刺不再等Play才换图；平台旧1格/批量独立占格裁原像素、单向平台独立素材、支撑面与旋转共用规则。藤蔓同列连续组链只采一根后分片，显示抵消作者缩放。见[美术约定](../Developer/ART_GRID_CONVENTIONS.md)与[物体美术API](Integration/OBJECT_ARTWORK_API.md)。绿色拉物保留自然重力，显式无重力基座优先；拉力仍四向，详见[绿绳API](Integration/GREEN_HOOK_API.md)。
 
 Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/非Play的SceneView可见，画布独立顶层与半透明放置预览；游戏中图片、占位模型和阴影不可见。资源与meta必须一起交付，见 [CONTACT_TIMELINE_API](Integration/CONTACT_TIMELINE_API.md)。普通藤蔓生长可分步托起顶部重力方块/堆叠并承载玩家，路径受阻停止，搬运/绿绳/燃烧/房间重置交还物理控制，见 [藤蔓托举](../Developer/VINE_GROWTH_LIFT.md)。
 
 新增独立绿色进阶关：`Assets/Scenes/MRoom3.unity`及同名planning/mvmap。仅新区域，4平台/3无重力基座、充能前进断电回位，6门/13保持按钮，尖刺朝通道。新图不用覆盖旧MRoom2或正式Gaming；交付必须带可编辑存档/meta，见 [MROOM3_IMPORT](../Developer/MROOM3_IMPORT.md)。
 
-三色连线：红蓝均只显示最近一个有效逻辑目标，池预热1条、复用状态/顶点，旧多条字段不再生效，换点无旧线淡出叠加。绿色视觉由GreenHookVisualDriver在相机1000之后以LateUpdate1100每个渲染帧绘制，物理仍为FixedUpdate-50；固定噪波种子不随转向洗牌。待机绳尖随真实鼠标位置缓动，容差圈0.65格/发射边缘额外0.5格，仅点击查询；光标圈无呼吸、Overlay常亮且缓存几何，与玩家原有染色范围圈区分。UI检测复用缓冲、绿线Shader裁去枝叶覆盖区外的重计算，PC光标共用DesktopCursorPolicy；独立包有焦点时限制在游戏窗口，失焦释放，Editor/安卓不锁定。见[连线说明](../../Assets/ta_source/LinkEffect/连接效果使用说明.md)和[绿绳API](Integration/GREEN_HOOK_API.md)。
+三色连线：红蓝均只显示最近一个有效逻辑目标，池预热1条、复用状态/顶点，旧多条字段不再生效，换点无旧线淡出叠加。绿色视觉由GreenHookVisualDriver在相机1000之后以LateUpdate1100每个渲染帧绘制，物理仍为FixedUpdate-50；固定噪波种子不随转向洗牌。待机绳尖直接跟随真实鼠标位置，仅内部绳身小幅缓动；透视深度偏移保持屏幕投影。容差圈0.65格/发射边缘额外0.5格，仅点击查询；光标圈无呼吸、Overlay常亮且缓存几何，与玩家原有染色范围圈区分。UI检测复用缓冲、绿线Shader裁去枝叶覆盖区外的重计算，PC光标共用DesktopCursorPolicy；独立包有焦点时限制在游戏窗口，失焦释放，Editor/安卓不锁定。见[连线说明](../../Assets/ta_source/LinkEffect/连接效果使用说明.md)和[绿绳API](Integration/GREEN_HOOK_API.md)。
 
 连线池化专项采样另定位到ColorCatalog.Find的捕获式List.Find每次查询分配闭包/委托，现改顺序for循环、保留精确ID与首个匹配语义；不能只因LineRenderer复用便宣称整帧零分配，复测证据另记。
 
@@ -97,6 +99,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 音频资源 | `Assets/_Project/Content/Audio` | 22个音乐/环境声与46个SFX；63份音频登记为55个Cue。新OP接主菜单，Boss曲仅登记待触发点；两种重生点激活、搬运、基座启停、平台移动、气泡/浮力、6格落地、燃烧、岩浆冷却/触碰及菜单确认已接。解谜/秘密与独立浅水步行待触发点，区域环境声/其余BGM待规划。见 `Integration/AUDIO_HANDOVER.md` |
 | 相机 Manager/跟随/2D3D | `Assets/_Project/Code/Systems/CameraModes` | 旧功能保留；玩家驱动不再申请 2D/3D 切换，Timeline 优先级更高 |
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |
+| 鼠标整帧卡顿采样 | `Assets/_Project/Code/Systems/InputAbstraction/Editor/MouseMotionDiagnostics.cs` | Play时手动选择Tools/诊断/录制鼠标卡顿（10秒）；只保存本地Profiler与帧/事件数据，结束还原Profiler，不改设备、不联网。见[定位说明](../Developer/MOUSE_MOTION_DIAGNOSTICS.md)；虚拟Mouse压力测试不代表真实Windows消息路径已排除 |
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |
 | 基础玩家 | `Assets/Player` | `PlayerController` 仅保留马能力，`PlayerInputDriver` 负责默认输入；不含旧玩法 |
 | TA 交互像素连线预览 | `Assets/ta_source/LinkEffect` | 红蓝在PlayerInteractionSensor范围内只读预览最近一个有效逻辑目标，单线池复用、整线淡入，换点不叠加旧线淡出。蓝线外围水纹有独立强度参数，Shader按实际线长绘图；绿色实际钩绳由GreenHookAbility/VisualDriver负责，保留四枝效果并在相机之后每渲染帧刷新。场景接入见 [连接效果使用说明.md](../../Assets/ta_source/LinkEffect/连接效果使用说明.md) |

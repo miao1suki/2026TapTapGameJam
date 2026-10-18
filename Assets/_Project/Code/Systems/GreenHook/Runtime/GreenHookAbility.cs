@@ -102,6 +102,12 @@ namespace Project.GreenHook
         private float ropeLength;
         private string launchRegion;
         private Vector2 pullAxis;
+        private bool pausedForPowerContact;
+        private MechanismBaseFeature pulledBase;
+        private IEnergySource pulledEnergy;
+        private Collider[] powerContactHits = new Collider[32];
+        private HashSet<MechanismBaseFeature> previousPowerContacts = new HashSet<MechanismBaseFeature>();
+        private HashSet<MechanismBaseFeature> currentPowerContacts = new HashSet<MechanismBaseFeature>();
         private Vector3 retargetVisualStart;
         private float retargetVisualElapsed;
         [SerializeField, Min(0f)] private float swingAcceleration = 18f;
@@ -116,6 +122,7 @@ namespace Project.GreenHook
         private float outOfRangeSince = -1f;
         public bool IsSwinging => phase == HookPhase.Swinging;
         public bool IsPullingPlayer => pullingPlayer;
+        public bool IsPullPausedForPower => pausedForPowerContact && IsPulling;
 
         public void DriveInput(Vector2 move, bool release)
         {
@@ -283,6 +290,11 @@ namespace Project.GreenHook
             target = null;
             targetMotion = null;
             targetTransform = null;
+            pausedForPowerContact = false;
+            pulledBase = null;
+            pulledEnergy = null;
+            previousPowerContacts.Clear();
+            currentPowerContacts.Clear();
             phase = HookPhase.None;
             finishElapsed = 0f;
             pullingPlayer = false;
@@ -347,6 +359,14 @@ namespace Project.GreenHook
                 TickSwing(deltaTime);
                 return;
             }
+            if (!pausedForPowerContact) RefreshPowerContacts(false);
+            if (pausedForPowerContact)
+            {
+                // A successful socket connection is a deliberate resting point,
+                // not a reason to detach or pull the player into the mechanism.
+                StopPullMotion();
+                return;
+            }
             Vector3 targetCenter = GetTargetCenter(targetTransform);
             Vector3 targetSurfacePoint = GetTargetPoint(
                 targetTransform,
@@ -392,10 +412,46 @@ namespace Project.GreenHook
 
         private void StopPullMotion()
         {
+            pullingPlayer = false;
             targetMotion?.SetGreenHookVelocity(Vector3.zero);
             player?.SetGreenHookPullVelocity(this, Vector2.zero);
             if (player != null) player.SetGreenHookLocomotion(this, player.CanDriveGreenHook);
             swingVelocity = Vector2.zero;
+        }
+
+        private void RefreshPowerContacts(bool snapshot)
+        {
+            currentPowerContacts.Clear();
+            if (pulledBase != null && pulledBase.IsSignalActive) currentPowerContacts.Add(pulledBase);
+            if (pulledEnergy != null && pulledEnergy.IsEnergyAvailable && targetTransform != null)
+            {
+                // Local, non-allocating discovery only while pulling an energy
+                // source. No scene scan, registry polling, or idle-mouse query.
+                Bounds area = new Bounds(targetTransform.position, Vector3.zero);
+                foreach (Collider shape in targetColliders)
+                    if (shape != null && shape.enabled && !shape.isTrigger) area.Encapsulate(shape.bounds);
+                int count;
+                do
+                {
+                    count = Physics.OverlapBoxNonAlloc(area.center, area.extents + Vector3.one * hookCellWorldSize,
+                        powerContactHits, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+                    if (count < powerContactHits.Length || powerContactHits.Length >= 4096) break;
+                    Array.Resize(ref powerContactHits, powerContactHits.Length * 2);
+                } while (true);
+                if (count == powerContactHits.Length) return;
+                for (int index = 0; index < count; index++)
+                {
+                    MechanismBaseFeature foundation = powerContactHits[index].GetComponentInParent<MechanismBaseFeature>();
+                    if (foundation != null && !currentPowerContacts.Contains(foundation) && foundation.IsPoweredBy(pulledEnergy))
+                        currentPowerContacts.Add(foundation);
+                }
+            }
+            if (!snapshot)
+                foreach (MechanismBaseFeature foundation in currentPowerContacts)
+                    if (!previousPowerContacts.Contains(foundation)) { pausedForPowerContact = true; break; }
+            var previous = previousPowerContacts;
+            previousPowerContacts = currentPowerContacts;
+            currentPowerContacts = previous;
         }
 
         private void ReleaseHook(bool manual = false)
@@ -572,6 +628,11 @@ namespace Project.GreenHook
 
         private void StartAttachedMotion()
         {
+            pausedForPowerContact = false;
+            previousPowerContacts.Clear();
+            currentPowerContacts.Clear();
+            pulledBase = targetTransform.GetComponent<MechanismBaseFeature>();
+            pulledEnergy = targetTransform.GetComponent<IEnergySource>();
             phase = HookPhase.Pulling;
             if (target.GreenHookMotionMode == GreenHookMotionMode.Swing)
             {
@@ -595,12 +656,15 @@ namespace Project.GreenHook
                 targetMotion?.BeginGreenHookPull();
             }
             player.SetGreenHookLocomotion(this, !pullingPlayer);
+            // A deliberate click on an already-connected object means continue
+            // pulling it out. Only a subsequent new connection pauses again.
+            RefreshPowerContacts(true);
         }
 
         private void Retarget(IGreenHookTarget next, Vector3 point)
         {
             Vector3 previousPoint = line != null && line.enabled && line.positionCount > 0
-                ? line.GetPosition(line.positionCount - 1) - Vector3.forward * cameraFacingOffset
+                ? ProjectVisualDepth(line.GetPosition(line.positionCount - 1), -cameraFacingOffset)
                 : targetTransform.TransformPoint(localAnchor);
             if (!ReferenceEquals(next, target)) targetMotion?.EndGreenHookPull(false, Vector3.zero, 0f);
             target = next;
@@ -841,6 +905,11 @@ namespace Project.GreenHook
             controlLock?.Dispose();
             controlLock = null;
             phase = HookPhase.Finishing;
+            pausedForPowerContact = false;
+            pulledBase = null;
+            pulledEnergy = null;
+            previousPowerContacts.Clear();
+            currentPowerContacts.Clear();
             finishElapsed = 0f;
         }
 
@@ -882,7 +951,10 @@ namespace Project.GreenHook
             else idleTipOffset = Vector3.Lerp(idleTipOffset, desiredOffset,
                 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(.001f, idleFollowSeconds)));
             idleTipInitialized = true;
-            UpdateLine(rangeCenter + idleTipOffset, idleOpacity, 1f, 0f);
+            // Aiming must never trail the selection circle: smoothing the tip
+            // adds a phase delay on fast turns, even when rendering is fast.
+            // Keep the exact pointer endpoint and ease only the interior bend.
+            UpdateLine(rangeCenter + desiredOffset, idleOpacity, 1f, 0f);
         }
 
         private bool CanShowAimIndicator()
@@ -956,10 +1028,8 @@ namespace Project.GreenHook
                 return;
             }
 
-            sourcePoint = ResolveSourcePoint();
-            sourcePoint.z += cameraFacingOffset;
-            Vector3 targetPoint = destination;
-            targetPoint.z += cameraFacingOffset;
+            sourcePoint = ProjectVisualDepth(ResolveSourcePoint());
+            Vector3 targetPoint = ProjectVisualDepth(destination);
             Vector3 delta = targetPoint - sourcePoint;
             Vector3 side = Vector3.Cross(Vector3.forward, delta.normalized);
             int segments = Mathf.Clamp(curveSegments, 2, 32);
@@ -971,6 +1041,14 @@ namespace Project.GreenHook
                 GetMaterialFloat(LineThicknessId, .2f) * 3f);
 
             float length = 0f;
+            Vector3 idleBend = Vector3.zero;
+            if (phase == HookPhase.None && idleTipInitialized)
+            {
+                Vector3 rangeCenter = sensor != null ? sensor.transform.position : transform.position;
+                idleBend = rangeCenter + idleTipOffset - destination;
+                idleBend.z = 0f;
+                idleBend = Vector3.ClampMagnitude(idleBend, .12f * AimCellWorldSize);
+            }
             for (int index = 0; index <= segments; index++)
             {
                 float t = (float)index / segments;
@@ -992,6 +1070,7 @@ namespace Project.GreenHook
                     targetPoint,
                     t) +
                     side * envelope * (arcHeight + motion);
+                point += idleBend * envelope;
                 linePoints[index] = point;
                 if (index > 0) length += Vector3.Distance(linePoints[index - 1], point);
             }
@@ -1007,6 +1086,24 @@ namespace Project.GreenHook
             properties.SetFloat(LineLengthId, Mathf.Max(.01f, length));
             line.SetPropertyBlock(properties);
             line.enabled = true;
+        }
+
+        private Vector3 ProjectVisualDepth(Vector3 point) => ProjectVisualDepth(point, cameraFacingOffset);
+
+        private static Vector3 ProjectVisualDepth(Vector3 point, float depthOffset)
+        {
+            if (Mathf.Abs(depthOffset) < .00001f) return point;
+            Camera camera = Camera.main;
+            // A plain Z offset causes parallax in perspective. Move along the
+            // same screen ray, preserving the exact cursor/anchor projection.
+            if (camera != null)
+            {
+                Ray ray = camera.ViewportPointToRay(camera.WorldToViewportPoint(point));
+                Plane plane = new Plane(Vector3.forward, point + Vector3.forward * depthOffset);
+                if (plane.Raycast(ray, out float distance)) return ray.GetPoint(distance);
+            }
+            point.z += depthOffset;
+            return point;
         }
 
         private void EnsureLine()

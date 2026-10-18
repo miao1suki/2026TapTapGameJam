@@ -92,7 +92,6 @@ namespace Project.GreenHook.Editor
             Player.GetComponent<PlayerInputDriver>().enabled = false;
             Player.Motor.constraints = RigidbodyConstraints.FreezeAll;
             Hook = Player.GetComponent<GreenHookAbility>();
-            Set(Hook, "idleFollowSeconds", 0f);
             Camera = new GameObject("VisualCamera").AddComponent<Camera>();
             Camera.tag = "MainCamera"; Camera.orthographic = true; Camera.orthographicSize = 7;
             Camera.transform.position = Vector3.back * 10;
@@ -209,9 +208,16 @@ namespace Project.GreenHook.Editor
             for (int i = 0; i < ring.positionCount; i++) center += ring.GetPosition(i) / ring.positionCount;
             GreenHookVisualAudit.Check(Vector2.Distance(Camera.WorldToScreenPoint(center), Pointer) < .05f,
                 "circle uses final camera projection in same render frame " + Frame);
-            GreenHookVisualAudit.Check(Vector2.Distance(line.GetPosition(0),
-                Player.GetComponent<TaSource.LinkEffect.InteractionLinkEffect>().SourceWorldPosition) < .001f,
+            Vector3 origin = Player.GetComponent<TaSource.LinkEffect.InteractionLinkEffect>().SourceWorldPosition;
+            GreenHookVisualAudit.Check(Vector2.Distance(Camera.WorldToScreenPoint(line.GetPosition(0)),
+                Camera.WorldToScreenPoint(origin)) < .05f,
                 "rope source follows current visual player position " + Frame);
+            Ray pointerRay = Camera.ScreenPointToRay(Pointer);
+            new Plane(Vector3.forward, Player.transform.position).Raycast(pointerRay, out float pointerDepth);
+            Vector3 pointerWorld = pointerRay.GetPoint(pointerDepth);
+            Vector3 expectedTip = Player.transform.position + Vector3.ClampMagnitude(pointerWorld - Player.transform.position, Hook.LaunchRangeWorld);
+            GreenHookVisualAudit.Check(Vector2.Distance(Camera.WorldToScreenPoint(line.GetPosition(line.positionCount - 1)), Camera.WorldToScreenPoint(expectedTip)) < .05f,
+                "rope tip has no easing or perspective-depth delay behind pointer " + Frame);
             if (Frame < 180) return;
             GreenHookVisualAudit.Check(movingCameraFrames >= 170,
                 "camera-chain projection test includes continuous actual camera movement");

@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening;
 using Project.BlockFeatures;
 using Project.ColorBlocks;
 using Project.ContactCubes;
@@ -294,7 +295,8 @@ namespace Project.GreenHook.Editor
                 Vector3 targetStart = body.position;
                 Step(hook, player, 650);
                 Check(hook.IsPulling && hook.IsPullingPlayer && player.CanDriveGreenHook && player.ControlLockDepth == 1,
-                    label + " stays connected without timeout");
+                    label + " stays connected without timeout (hook=" + hook.IsHookActive + ", target=" + body.position +
+                    ", player=" + player.Motor.position + ", pullingPlayer=" + hook.IsPullingPlayer + ", depth=" + player.ControlLockDepth + ")");
                 Check((body.position - targetStart).sqrMagnitude < .001f &&
                     (player.Motor.position - origin).sqrMagnitude < .001f,
                     label + " neither body penetrates blockers (target=" + (body.position - targetStart) +
@@ -690,10 +692,20 @@ namespace Project.GreenHook.Editor
             Check(Mathf.Abs(body.position.x-205)<.001f && item.CanCollect,"collectible reset returns to author position");
             int collected=0; Action<CollectiblePickup,GameObject> listener=(pickup,actor)=>collected++;
             CollectiblePickup.Collected += listener;
-            Invoke(item,"OnTriggerEnter",player.GetComponent<Collider>());
+            player.transform.position = obj.transform.position;
+            player.Motor.position = obj.transform.position;
+            player.Motor.linearVelocity = Vector3.zero;
+            Physics.SyncTransforms();
+            for (int step = 0; step < 3; step++) Physics.Simulate(Time.fixedDeltaTime);
             Check(item.CollectionRequested && !item.CollectionFinished && obj.activeSelf,"collection waits for flight instead of early hide");
             item.ResetForRoom();
-            Check(item.CanCollect && collected==0 && !obj.GetComponent<Project.Pickups.PickupFlightAnimator>().IsPlaying,"reset cancels pending pickup and reward");
+            Check(item.CollectionRequested && !item.IsCollected && collected == 0 &&
+                obj.GetComponent<Project.Pickups.PickupFlightAnimator>().IsPlaying,
+                "room reset preserves accepted pickup flight and pending reward");
+            DOTween.CompleteAll(true);
+            Check(item.IsCollected && collected == 1 && !obj.activeSelf, "preserved flight settles exactly once");
+            item.ResetForRoom();
+            Check(item.IsCollected && !obj.activeSelf && collected == 1, "collected progress does not reset with the room");
             CollectiblePickup.Collected -= listener;
             Object.DestroyImmediate(obj);
             foreach (string direction in new[]{"上","下","左","右"})

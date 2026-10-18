@@ -6,7 +6,7 @@
 
 绿色能力仍由 `PlayerColorWheel → GreenHookAbility.TryLaunch` 发射，距离沿用 `PlayerInteractionSensor.ScanRadius`。待机预览与发射自由朝向指针，不吸附四向；端点保存真实点击位置的局部坐标，移动中的目标与玩家会更新绳子端点。出线点共用 `InteractionLinkEffect.SourceWorldPosition`（现有标准玩家为位置上移0.3格），无该组件时才使用后备偏移。红蓝表现不改。
 
-待机端点跟随鼠标在玩家平面的实际位置（同方向不同距离也改变绳长），按`idleFollowSeconds`默认0.045秒指数缓动，位置偏移相对玩家计算，不拖慢出线起点。可见端点裁至基础范围加`launchRangeSlackCells`（默认0.5格）；`idleLengthCells`仅为缺少传感器时的后备范围。点击确认后仍以真实局部目标锚点为准，鼠标移动不会带走已挂接绳尖。绿色LineRenderer与顶点数组持续复用，不为待机/发射/换点反复创建线条。
+待机端点每渲染帧直接跟随鼠标在玩家平面的实际位置（同方向不同距离也改变绳长），不能再对绳尖做指数插值造成快速转圈的相位滞后。`idleFollowSeconds`默认0.045秒仅平滑绳身内部、最多0.12格的弯曲，起点/尖端均不延迟。可见端点裁至基础范围加`launchRangeSlackCells`（默认0.5格）；`idleLengthCells`仅为缺少传感器时的后备范围。面向相机的Z偏移沿相同屏幕射线投影，避免透视下绳尖与鼠标错位；换点反投影保持同一可见端点。点击确认后仍以真实局部目标锚点为准，鼠标移动不会带走已挂接绳尖。绿色LineRenderer与顶点数组持续复用，不为待机/发射/换点反复创建线条。
 
 绿色选色时显示跟随真实指针的容差圈，`aimToleranceCells`默认半径0.65格；已挂接时也显示以方便换点。圈不跟随绳尖缓动，点击也不等待缓动。容差圈无呼吸动画，使用`Resources/GreenHookAimRing.shader`的Overlay队列、`ZTest Always`与`ZWrite Off`保持可见；只在中心/半径变化时更新缓存几何、可达状态变化时改色。不要与玩家原有、允许呼吸的染色范围圈混淆。仅点击时做NonAlloc局部查询，按最近真实碰撞体表面挑选有效目标，稳定打破同距并列；空白处本身不是锚点。候选仍受交互Layer、颜色/目标资格、作者所属区域与整条路径房间约束；不可借大碰撞体跨房间。UI、暂停、搬运或额外演出锁时隐藏容差圈。红蓝点击规则不变。
 
@@ -40,6 +40,8 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 
 `ContactCubeMotion` 接管自身刚体并暂停接触反应，入钩时恢复玩家碰撞对；挂接暂停不影响红块的被动`IEnergySource.IsEnergyAvailable`，拉到基座上不必先松绳即可供能。搬运中、未解锁或实体碰撞体关闭的红块仍不能供能。`GreenHookBodyMotion` 为基座接管刚体，结束后恢复原运动类型、重力、约束。基座没有迁移成 ContactCube，不改变信号契约。旧场景通过 MechanismBaseFeature.OnAttach 自动补齐运动组件，无需全量重建。
 
+2026-10-18 用户确认：拉红块或基座产生**新的成功供能接触**后暂停主动拉取，`IsPullPausedForPower`只读为true，仍保持绳子与单一所有权锁，普通玩家移动/重力可用；不会继续拉离基座，也不自动转拉玩家。再次点击同一物体或换目标才重新开始拉取；重击时快照已存在的供能接触，因此不会立即再次暂停，离开后新接通仍会暂停。红块仅按 `IsPoweredBy(该红块能源)` 检测，不因另一个红块供能误停蓝块；基座自身通电是其暂停依据。检测只在主动拉物物理步用局部NonAlloc/复用集合进行，暂停/待机不全场轮询。该暂停不冻结重力、不永久锁位置；不改变原机关压力/方向语义。主动松绳、目标失效、区域重置清理暂停状态，范围/房间规则仍有效。
+
 `IsGreenHookPullActive`表示目标运动器仍拥有此次拉取。搬运、房间重置或禁用运动器会先结束该所有权；能力在下一次Update/FixedUpdate发现其已退出后清理绳子并归还自己的玩家锁，不能继续向已由搬运器控制的物体写速度。接触、受阻等正常等待不结束该所有权，因此不会触发自动松钩。
 
 只有一个对象收到非零拉动命令；拉玩家时目标停止拉动而不是关闭重力，重新可拉时先停玩家拉动再动目标。红/蓝方块拉动期间保持重力；横向拉动及零命令保留物理解算后的竖直速度，离开台面会继续下落，不能把命令零值解释为锁死X/Y。基座以`MechanismBaseFeature.UsesGravity`为最高优先级：关闭重力的实例仍悬浮，开启的实例与方块一致。双方受阻或碰到彼此停止主动拉动，但保持连接、不清零普通行走速度，玩家仍可主动走开；不积累超时、不自动结束，解除障碍后不必重发。主动脱钩不执行跨房间搜索或位置吸附。
@@ -66,6 +68,10 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 
 目标/玩家碰撞体在启动时缓存，不每个物理步重新分配层级数组。新增加/移除实体碰撞体的目标需重新挂接以刷新缓存；已有生长体修改同一碰撞体尺寸无需刷新。
 
+红蓝方块与有重力基座的单格窄坑通行使用小幅、稳定的横向物理余量（每侧0.02格，接触偏移最多0.001格），不缩放图形或逻辑占格。红蓝在启用/几何重置时保持同一物理尺寸；有重力基座首次挂钩时应用，松钩不在井内扩回全宽。初始无重力基座及固定绿色攀爬体不套这条缩窄。足底支撑只接受0.01格加自身接触偏移，不能在0.075格空中提前FreezeY。窄坑探针仅对确认的相同高度Box坑沿适当限速，让等宽开口中存在真实下落物理步，不吸附/瞬移、不禁用重力、不强制把无重力物体拉下去。
+
+扫掠在补偿探针缩进之外另保留真实停止余量，并扣除双方接触偏移；可推动收集品的外层接触也相同处理。否则小正步长会被摩擦/接触解算吃掉，系统却永远判定物体可动，导致受阻后不转拉玩家。不能通过等待超时或渲染帧位移检测切换主轴/所有权。
+
 待机旋转不扫场景；格尺寸读取玩家缓存，UI阻挡检测复用PointerEventData/结果列表并只查询GraphicRaycaster，不执行会丢弃的物理射线和全结果排序。PlayerColorWheel统一调用DesktopCursorPolicy，避免逐帧解除桌面鼠标限制。绿线使用对象生命周期内固定的`visualNoiseSeed`，鼠标转向不重新洗牌曲线/枝叶噪波；Shader在枝叶实际覆盖区间外跳过高开销曲线/花朵计算，仍保留四枝效果。无需为连续指针跟随反复创建协程/Tween。
 
 红蓝`InteractionLinkEffect`只画最近一个可用逻辑目标，扫描结果先去重再按真实表面距离排序；同一多节物体不因子碰撞体增加条数。预热并复用1个LineRenderer、状态和顶点数组；旧`maxLinks`/`prewarmLinks`多条序列化值仅兼容读取，不再改变数量。换最近目标时立即归还旧状态，不叠加旧线淡出；仅没有新目标时允许单条旧线溶解退场。此限制只改变只读预览，不把实际红蓝点击命中改成强制最近目标。
@@ -77,6 +83,10 @@ void EndGreenHookPull(bool snapToGrid, Vector3 separationDirection, float separa
 本轮新增专项入口（由整合者在静音隔离工程统一执行，不能仅凭入口存在宣称通过）：`Project.Player.Editor.PlayerMotionFeelAudit.Run`覆盖挂绳普通行走、攀爬所有权/松绳保护、过期攀爬来源及落地脱钩起跳；`Project.GreenHook.Editor.GreenHookVisualAudit.Run`覆盖真实渲染帧/相机顺序、容差圈稳定、贴面滑动与松绳；`Project.WorldItems.Editor.CollectibleContactAudit.Run`覆盖真实Trigger穿越、迟到玩家/复用、碰撞忽略所有权与方块/基座推动；`OptionalMechanismTimelineAudit.Run`覆盖门/平台默认关闭、可选触发边沿及控制锁清理。不要在成员正在编辑的Scene内执行这些入口；本段不代表实机手感、性能或本轮测试已验收。
 
 `Project.GreenHook.Editor.GreenHookAimAudit.Run`静音隔离验证容差/真实锚点、范围/跨房间、UI/暂停清理、复用与缓动、挂接供能/搬运排除、收集品无重力及复用。`MRoom3HookEnergyAudit.Run`使用MRoom3首个真实红块、基座与已绑定平台，运行真实输入/Update/FixedUpdate，不保存Scene。`RunBaseline`仅用于同夹具性能对照；当前Unity Mono的GC.GetAllocatedBytesForCurrentThread自检无效（已知分配仍返回0），不能据此宣称零分配，改查ProfilerRecorder的GC.Alloc事件数，不把标记Value冒充字节数。
+
+`GreenHookPowerPauseAudit.Run`验证红块/基座新接通暂停、连续220步保持供能/单锁、玩家自由行走与重力、无重力基座优先、蓝块与其他供能来源隔离、再次点击/离开重连/换点/取消；仅静音隔离运行。`MRoom3HookEnergyAudit.Run`另覆盖首机关接通后继续保持2秒、自由行走、重新点击继续，以及录像区域实际红块拉入单格坑、松钩后玩家落脚在填坑方块上且无无敌保护；测试只定位玩家夹具，不移动作者方块或强制设为落稳，不保存作者Scene。
+
+`GreenHookNarrowGapAudit.Run`覆盖红/蓝、有重力/无重力基座、双方向和不同步长相位的一格井、松钩180步、重新拉出、薄墙、重复重置不累缩及真实足底；`GreenHookSceneProfile.RunNative`在隔离工程使用作者MRoom3、4K实际渲染与每帧64条虚拟Mouse原生InputSystem事件，对照原Shader/简单Shader/隐藏能力/三色与编辑器窗口。虚拟设备经过InputSystem和UI动作，但不经过Windows硬件消息泵，不能据此宣称用户快速移动真实鼠标造成的整帧停顿已解决。主机手动采样入口及证据边界见[鼠标卡顿诊断](../../Developer/MOUSE_MOTION_DIAGNOSTICS.md)。
 
 `Project.GreenHook.Editor.GreenHookVerification.Run` 仅允许隔离的 FlowRetirementProbe 项目且强制要求 -noaudio，使用真实 Physics.Simulate 验证拉物优先、受阻回退/重评估、插值、长时间不脱钩、控制锁、荡绳、基座、收集品推挤、四向尖刺与房间边界；另覆盖真实屏幕偏角发射、八象限、共享起点、单轴速度、换点输入和动量，不只绕过发射调用私有挂接方法。新增红/蓝块与基座四方向双方受阻650物理步、解除障碍自动继续、跳跃/交互主动结束、双方移动超距（渲染/物理入口）、最大范围荡绳及藤蔓/弹性植物锚点验证。基座按作者实际重力/刚体设置检查交还，不假定所有基座静止时均为运动学。
 

@@ -14,7 +14,7 @@ using Object = UnityEngine.Object;
 
 namespace Project.GreenHook.Editor
 {
-    /// <summary>Actual MRoom3 first base/cube, real input/update/physics, without saving the scene.</summary>
+    /// <summary>Actual MRoom3 power contact and filled lava pit; real input/physics, no scene save.</summary>
     public static class MRoom3HookEnergyAudit
     {
         private const string Flag = "MRoom3HookEnergyAudit";
@@ -27,7 +27,9 @@ namespace Project.GreenHook.Editor
         private static MechanismBaseFeature foundation;
         private static MovingPlatformFeature platform;
         private static Camera camera;
-        private static Vector3 platformStart;
+        private static Vector3 platformStart, heldCubePosition, freeWalkStart;
+        private static ContactCube pitCube;
+        private static LavaHazardFeature pitLava;
         private static TestInput input;
         public static void Run()
         {
@@ -70,7 +72,9 @@ namespace Project.GreenHook.Editor
                         .Single(p => p.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "mroom3_room_ohsi3r0eyu_0");
                     Check(!foundation.UsesGravity, "author's first base remains no-gravity");
                     Check(cube.IsUnlocked && cube.IsEnergyAvailable && !foundation.IsSignalActive, "first red and unpowered base ready");
-                    Vector3 start = new Vector3(foundation.transform.position.x - 1f, cube.transform.position.y, 0);
+                    // Match the video: player left of the closed vertical gate,
+                    // not overlapping that gate one cell left of the base.
+                    Vector3 start = new Vector3(foundation.transform.position.x - 2.5f, cube.transform.position.y, 0);
                     player.transform.position = start; player.Motor.position = start; player.Motor.linearVelocity = Vector3.zero;
                     // Use an independent test camera rather than fighting the scene camera manager.
                     foreach (var cam in Object.FindObjectsByType<Camera>(FindObjectsSortMode.None)) { cam.enabled = false; cam.tag = "Untagged"; }
@@ -94,13 +98,83 @@ namespace Project.GreenHook.Editor
                     Check(foundation.IsSignalActive && cube.IsEnergyAvailable, "first base powers before pressing Space");
                     Check(Vector3.Distance(platformStart, platform.transform.position) > .05f, "authored linked platform responds while rope remains attached");
                     Check(player.ControlLockDepth == 1, "energy signal does not detach or add control locks");
+                    Check(hook.IsPullPausedForPower, "new power contact pauses continued pulling without unhooking");
+                    heldCubePosition = cube.transform.position;
+                    stage = 3; next = Time.time + 2f;
+                }
+                else if (stage == 3)
+                {
+                    Check(foundation.IsSignalActive && hook.IsPullPausedForPower && hook.IsHookActive,
+                        "actual authored gate remains powered after two further seconds without manual release");
+                    Check(Vector3.Distance(heldCubePosition, cube.transform.position) < .04f,
+                        "red cube is not pulled back off the socket as the gate rises");
+                    freeWalkStart = player.transform.position;
+                    input.Move = Vector2.left;
+                    stage = 4; next = Time.time + .18f;
+                }
+                else if (stage == 4)
+                {
+                    Check(player.transform.position.x < freeWalkStart.x - .05f && player.ControlLockDepth == 1,
+                        "real input allows ordinary walking while powered rope remains attached");
+                    input.Move = Vector2.zero;
+                    heldCubePosition = cube.transform.position;
+                    input.Pointer = camera.WorldToScreenPoint(cube.transform.position);
+                    input.ClickFrame = Time.frameCount + 2;
+                    stage = 5; next = Time.time + .3f;
+                }
+                else if (stage == 5)
+                {
+                    Check(hook.IsHookActive && !hook.IsPullPausedForPower &&
+                        Vector3.Distance(heldCubePosition, cube.transform.position) > .05f,
+                        "real second click resumes pulling the same connected red cube");
                     input.ReleaseFrame = Time.frameCount + 2;
-                    stage = 3; next = Time.time + .2f;
+                    stage = 6; next = Time.time + .2f;
+                }
+                else if (stage == 6)
+                {
+                    Check(!hook.IsHookActive && !player.IsControlLocked, "ordinary jump/Space still releases rope");
+                    Check(!hook.IsPullPausedForPower, "manual release clears power-pause state");
+                    pitCube = Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None)
+                        .Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "mroom3_room_6txw6s17q6_0");
+                    pitLava = Object.FindObjectsByType<LavaHazardFeature>(FindObjectsSortMode.None)
+                        .Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "mroom3_room_xp50gt1f2f_0");
+                    Vector3 start = new Vector3(pitLava.transform.position.x - 2, pitCube.transform.position.y, 0);
+                    player.transform.position = start; player.Motor.position = start; player.Motor.linearVelocity = Vector3.zero;
+                    camera.transform.position = start + new Vector3(3, 0, -10);
+                    stage = 7; next = Time.time + .2f;
+                }
+                else if (stage == 7)
+                {
+                    Check(!player.IsDead && !player.IsInvulnerable, "actual lava fixture has no death/invulnerability masking");
+                    input.Pointer = camera.WorldToScreenPoint(pitCube.transform.position);
+                    input.ClickFrame = Time.frameCount + 2;
+                    stage = 8; next = Time.time + 1.6f;
+                }
+                else if (stage == 8)
+                {
+                    Check(hook.IsPulling && !hook.IsPullPausedForPower, "ordinary pit pull has no spurious base pause");
+                    Check(Mathf.Abs(pitCube.transform.position.x - pitLava.transform.position.x) < .08f &&
+                        pitCube.transform.position.y < pitLava.transform.position.y + 1.35f,
+                        "real input lets authored red cube fall into the one-cell lava pit: cube=" +
+                        pitCube.transform.position + " body=" + pitCube.GetComponent<Rigidbody>().position +
+                        " lava=" + pitLava.transform.position + " player=" + player.Motor.position);
+                    // Exercise the same old-target release collision transition
+                    // as the video's target switch, without a second pull moving
+                    // the fixture actor away from the infill during landing.
+                    // Only the actor is positioned; neither cube nor settling is forced.
+                    input.ReleaseFrame = Time.frameCount + 2;
+                    Vector3 landing = new Vector3(pitLava.transform.position.x, pitCube.transform.position.y + 2.4f, 0);
+                    player.transform.position = landing; player.Motor.position = landing;
+                    player.Motor.linearVelocity = Vector3.down;
+                    stage = 9; next = Time.time + 1.5f;
                 }
                 else
                 {
-                    Check(!hook.IsHookActive && !player.IsControlLocked, "ordinary jump/Space still releases rope");
-                    Check(foundation.IsSignalActive, "base stays powered after voluntary release");
+                    Check(!player.IsDead && !player.IsInvulnerable, "landing on authored infill survives without immunity");
+                    Check(player.IsGrounded && Mathf.Abs(pitCube.transform.position.y - pitLava.transform.position.y) < .06f &&
+                        Mathf.Abs(player.Motor.position.y - pitCube.transform.position.y - 1) < .12f,
+                        "player is physically supported above the filled lava pit, not passing through it: player=" +
+                        player.Motor.position + " cube=" + pitCube.transform.position + " grounded=" + player.IsGrounded);
                     Finish("PASS " + checks + " actual MRoom3 input/physics assertions", true);
                 }
             }
@@ -115,7 +189,7 @@ namespace Project.GreenHook.Editor
         }
         private sealed class TestInput : IInputSource
         {
-            public Vector2 Pointer;
+            public Vector2 Pointer, Move;
             public int ClickFrame = -1, ReleaseFrame = -1;
             public int ClickReads;
             public Vector2 PointerPosition => Pointer;
@@ -136,7 +210,7 @@ namespace Project.GreenHook.Editor
             public bool WasActionReleasedThisFrame(InputActionId action) => false;
             public InputActionTrigger GetActionTrigger(InputActionId action) => InputActionTrigger.Press;
             public float ReadAxis(InputActionId action) => 0;
-            public Vector2 ReadVector2(InputActionId action) => Vector2.zero;
+            public Vector2 ReadVector2(InputActionId action) => action == InputActionId.Move ? Move : Vector2.zero;
         }
     }
 }

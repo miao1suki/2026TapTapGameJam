@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using DG.Tweening;
 using Project.ColorBlocks;
 using Project.Items;
 using Project.Player;
@@ -137,11 +138,13 @@ namespace Project.WorldItems.Editor
                 player.Motor.position = new Vector3(95, 20, 0);
                 player.Motor.linearVelocity = Vector3.zero;
                 item.ResetForRoom();
-                Check(item.CanCollect && shape.enabled && Trigger(item).enabled && item.CanBePushed,
-                    "room reset restores trigger, solid, dynamic state, and collection eligibility");
-                Check(Physics.GetIgnoreCollision(shape, playerShape) &&
-                    !Physics.GetIgnoreCollision(Trigger(item), playerShape),
-                    "reset reapplies player-only solid filter after colliders were disabled");
+                Check(item.CollectionRequested && !item.IsCollected && !item.CanCollect &&
+                    item.GetComponent<PickupFlightAnimator>().IsPlaying && !shape.enabled && !Trigger(item).enabled,
+                    "room reset preserves an accepted collection flight instead of respawning a second reward");
+                DOTween.CompleteAll(true);
+                item.ResetForRoom();
+                Check(item.IsCollected && !item.gameObject.activeSelf && !item.CanCollect && !item.CanBePushed,
+                    "finished collection remains hidden and ineligible across subsequent room reset");
                 Check(!item.GetComponent<Rigidbody>().useGravity && player.ControlLockDepth == lockDepth,
                     "reset keeps floating pickup and leaves player locks untouched");
             }
