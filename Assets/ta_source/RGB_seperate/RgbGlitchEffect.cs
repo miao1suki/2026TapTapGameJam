@@ -33,6 +33,7 @@ namespace TapTap.TA.RgbGlitch
         private static RgbGlitchEffect instance;
         private static bool hasParameterOverride;
         private static Vector4 parameterOverride;
+        private static float separationJitterOverride;
         private Fade fear;
         private Fade death;
 
@@ -59,31 +60,40 @@ namespace TapTap.TA.RgbGlitch
             EnsureCreated().fear.Set(level, seconds);
 
         /// <summary>Increase the death layer to maximum while leaving the fear baseline intact.</summary>
-        public static void PlayDeath(float seconds = 0.25f) =>
+        public static void PlayDeath(float seconds = 0f) =>
             EnsureCreated().death.Set(1f, seconds);
 
         /// <summary>Fade the death layer out, returning to the current fear baseline.</summary>
-        public static void PlayRespawn(float seconds = 0.7f) =>
+        public static void PlayRespawn(float seconds = 1.2f) =>
             EnsureCreated().death.Set(0f, seconds);
 
         /// <summary>Override renderer tuning until UseRendererDefaults is called.</summary>
         public static void SetParameters(float vignetteDarkness, float shakeRate,
             float shakeStrength, float colorSeparationPixels)
         {
+            SetParameters(vignetteDarkness, shakeRate, shakeStrength,
+                colorSeparationPixels, 0.7f);
+        }
+
+        public static void SetParameters(float vignetteDarkness, float shakeRate,
+            float shakeStrength, float colorSeparationPixels, float colorSeparationJitter)
+        {
             parameterOverride = new Vector4(
                 Mathf.Clamp01(vignetteDarkness),
                 Mathf.Clamp(shakeRate, 1f, 40f),
                 Mathf.Clamp(shakeStrength, 0f, 0.04f),
                 Mathf.Clamp(colorSeparationPixels, 0f, 24f));
+            separationJitterOverride = Mathf.Clamp01(colorSeparationJitter);
             hasParameterOverride = true;
         }
 
         /// <summary>Remove the runtime override and use the active Renderer Asset values.</summary>
         public static void UseRendererDefaults() => hasParameterOverride = false;
 
-        internal static bool TryGetParameters(out Vector4 parameters)
+        internal static bool TryGetParameters(out Vector4 parameters, out float colorSeparationJitter)
         {
             parameters = parameterOverride;
+            colorSeparationJitter = separationJitterOverride;
             return hasParameterOverride;
         }
 

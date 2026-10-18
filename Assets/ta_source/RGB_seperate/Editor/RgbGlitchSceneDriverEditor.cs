@@ -38,6 +38,7 @@ namespace TapTap.TA.RgbGlitch.Editor
             tuning.Add(new PropertyField(serializedObject.FindProperty("shakeRate"), "抖动速率（次/秒）"));
             tuning.Add(new PropertyField(serializedObject.FindProperty("shakeStrength"), "抖动幅度（屏幕比例）"));
             tuning.Add(new PropertyField(serializedObject.FindProperty("colorSeparationPixels"), "色彩分离（像素）"));
+            tuning.Add(new PropertyField(serializedObject.FindProperty("colorSeparationJitter"), "色彩分离跳动（0～1）"));
             root.Add(tuning);
 
             var test = new Foldout { text = "运行时测试", value = false };

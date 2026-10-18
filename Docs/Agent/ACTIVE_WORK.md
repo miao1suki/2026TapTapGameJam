@@ -1,5 +1,21 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 TA RGB 死亡与 Boss 双预设
+
+- 负责人：Codex；分支 `codex/ta/rgb-glitch`。
+- 范围：仅在 `Assets/ta_source/RGB_seperate/预设版本` 新增死亡与 Boss 两套可拖入场景的预设体、各自独立演示场景及程序 AI 接入提示；复用现有 RGB Shader、Renderer Feature 和控制器，不改 Test 场景或原有玩家/相机玩法代码。
+- 场景：两个新演示 Scene，均复用现有四色预览材质；不修改用户本地已有的 `RgbGlitchPreview.unity`、字体、Rain、Recovery 工作树改动。
+- 交付：`RgbGlitchDeathPreset.prefab` 与 `RgbGlitchBossFearPreset.prefab` 分别提供强死亡／轻 Boss 参数；两个演示 Scene 各引用对应预设，死亡场景专用脚本只播放一次 2 秒死亡、4 秒复活触发；`程序AI接入提示.md` 说明接线、互斥和动态 Boss 渐变。编辑模式可见四色测试图案，正式 Test 场景接线不变。
+- 验证：临时将新增 Runtime/Editor 脚本纳入 Unity 生成的 csproj 后，`dotnet build Assembly-CSharp-Editor.csproj --no-restore` 通过（0 错误、18 个既有警告），随后撤销临时 csproj 编辑；7 个新资产和 8 个 `.meta` 一一对应且 GUID 唯一，两场景的材质/相机/预设体引用、死亡预设与 Test 原参数一致性静态检查通过；`Ops/LevelMaps/Test-PlanningMapCommit.ps1` 通过。Unity Game 画面和 Shader 编译仍待编辑器验收。
+
+## 2026-10-18 TA RGB 故障默认触发与色差动画调整
+
+- 负责人：Codex；分支 `codex/ta/rgb-glitch`。
+- 范围：将 Test 场景控制预设体的默认惊恐强度设为 0，使正常游玩时不显示效果、死亡时出现、复活后消退；为 RGB 各通道偏移新增独立跳动强度滑块，不依赖整屏采样抖动幅度。
+- 只改 `Assets/ta_source/RGB_seperate`、PC/Mobile Renderer 参数、相关说明和索引；不改玩家、相机、关卡原有逻辑，也不覆盖现有的 `RgbGlitchPreview.unity`、字体、Rain 或 Recovery 工作树改动。
+- 实现：控制预设体默认惊恐 0，启用时清理上一场景残留强度；受伤或摔死瞬间把死亡层设为 1 并保持，重生后按非缩放时间在 1.2 秒内 Lerp 渐退回 0，不自动循环；仍由现有玩家事件/状态驱动。Test 预设体调高抖动与色差默认值。新增 0～1 的“色彩分离跳动”控制红绿蓝各通道独立偏移，频率复用抖动速率，整屏抖动幅度为 0 时仍可单独跳动。
+- 验证：新增 Runtime/Editor C# 调用经 `dotnet build Assembly-CSharp-Editor.csproj --no-restore` 通过（0 错误，最终增量编译 18 个既有警告）；Shader 属性及预设体/Renderer 参数静态核对，Unity Play 画面和 Shader 编译仍待编辑器验收。
+
 ## 2026-10-18 TA RGB 故障接入 Test 场景
 
 - 负责人：Codex；分支 `codex/ta/rgb-glitch`。

@@ -16,6 +16,7 @@ Shader "Hidden/2026TapTap/RgbGlitch"
 
             float4 _RgbGlitchSettings;
             float _RgbSeparationPixels;
+            float _RgbSeparationJitter;
             float _RgbGlitchTime;
 
             float Hash(float value)
@@ -36,11 +37,26 @@ Shader "Hidden/2026TapTap/RgbGlitch"
                 float2 shiftedUv = saturate(uv + float2(
                     (globalShift + bandShift * 0.6) * _RgbGlitchSettings.w * intensity,
                     globalShift * _RgbGlitchSettings.w * intensity * 0.25));
-                float2 separation = float2(_RgbSeparationPixels / _ScreenParams.x * intensity, 0.0);
+                float2 separation = float2(_RgbSeparationPixels / _ScreenParams.x,
+                    _RgbSeparationPixels / _ScreenParams.y) * intensity;
+                float channelJitter = saturate(_RgbSeparationJitter) * intensity;
+                float redNoise = Hash(phase + 41.0) * 2.0 - 1.0;
+                float greenNoise = Hash(phase + 59.0) * 2.0 - 1.0;
+                float blueNoise = Hash(phase + 83.0) * 2.0 - 1.0;
+                float2 redUv = saturate(shiftedUv + float2(
+                    separation.x * (1.0 + redNoise * channelJitter),
+                    separation.y * greenNoise * channelJitter * 0.3));
+                float2 greenUv = saturate(shiftedUv + float2(
+                    separation.x * greenNoise * channelJitter * 0.4,
+                    separation.y * blueNoise * channelJitter * 0.2));
+                float2 blueUv = saturate(shiftedUv + float2(
+                    -separation.x * (1.0 + blueNoise * channelJitter),
+                    separation.y * redNoise * channelJitter * 0.3));
                 half4 center = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, shiftedUv);
-                half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(shiftedUv + separation)).r;
-                half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(shiftedUv - separation)).b;
-                half3 color = half3(red, center.g, blue);
+                half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, redUv).r;
+                half green = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, greenUv).g;
+                half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, blueUv).b;
+                half3 color = half3(red, green, blue);
                 float2 centered = (uv - 0.5) * float2(_ScreenParams.x / _ScreenParams.y, 1.0);
                 float vignette = smoothstep(0.22, 0.85, length(centered));
                 color *= 1.0 - vignette * _RgbGlitchSettings.y * intensity;

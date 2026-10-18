@@ -35,6 +35,7 @@ namespace TapTap.TA.RgbGlitch.Editor
             AddField(tuning, "shakeRate", "抖动速率（次/秒）");
             AddField(tuning, "shakeStrength", "抖动幅度（屏幕比例）");
             AddField(tuning, "colorSeparationPixels", "色彩分离（像素）");
+            AddField(tuning, "colorSeparationJitter", "色彩分离跳动（0～1）");
             root.Add(tuning);
 
             root.Bind(serializedObject);

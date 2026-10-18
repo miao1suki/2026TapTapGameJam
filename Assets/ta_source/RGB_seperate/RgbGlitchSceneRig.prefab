@@ -77,10 +77,11 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::TapTap.TA.RgbGlitch.RgbGlitchSceneDriver
   targetPlayer: {fileID: 0}
-  fearLevel: 0.45
+  fearLevel: 0
   vignetteDarkness: 0.65
   shakeRate: 15
-  shakeStrength: 0.012
-  colorSeparationPixels: 7
-  deathFadeSeconds: 0.25
-  respawnFadeSeconds: 0.7
+  shakeStrength: 0.018
+  colorSeparationPixels: 10
+  colorSeparationJitter: 0.85
+  deathFadeSeconds: 0
+  respawnFadeSeconds: 1.2

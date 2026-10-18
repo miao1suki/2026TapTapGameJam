@@ -18,6 +18,7 @@ MonoBehaviour:
   shakeRate: 15
   shakeStrength: 0.012
   colorSeparationPixels: 7
+  colorSeparationJitter: 0.7
 --- !u!114 &-6201215322045488281
 MonoBehaviour:
   m_ObjectHideFlags: 0

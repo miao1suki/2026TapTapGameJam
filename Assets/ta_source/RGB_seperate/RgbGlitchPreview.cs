@@ -10,6 +10,7 @@ namespace TapTap.TA.RgbGlitch
         [SerializeField, Range(1f, 40f)] private float shakeRate = 15f;
         [SerializeField, Range(0f, 0.04f)] private float shakeStrength = 0.012f;
         [SerializeField, Range(0f, 24f)] private float colorSeparationPixels = 7f;
+        [SerializeField, Range(0f, 1f)] private float colorSeparationJitter = 0.7f;
 
         private float lastFear = -1f;
         private float cycleTime;
@@ -17,7 +18,7 @@ namespace TapTap.TA.RgbGlitch
         private void Update()
         {
             RgbGlitchEffect.SetParameters(vignetteDarkness, shakeRate,
-                shakeStrength, colorSeparationPixels);
+                shakeStrength, colorSeparationPixels, colorSeparationJitter);
             if (!Mathf.Approximately(fearLevel, lastFear))
             {
                 RgbGlitchEffect.SetFear(fearLevel, 0f);

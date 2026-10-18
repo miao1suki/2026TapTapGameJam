@@ -12,6 +12,7 @@ namespace TapTap.TA.RgbGlitch
         [SerializeField, Range(1f, 40f)] private float shakeRate = 15f;
         [SerializeField, Range(0f, 0.04f)] private float shakeStrength = 0.012f;
         [SerializeField, Range(0f, 24f)] private float colorSeparationPixels = 7f;
+        [SerializeField, Range(0f, 1f)] private float colorSeparationJitter = 0.7f;
 
         private Material material;
         private GlitchPass pass;
@@ -22,6 +23,7 @@ namespace TapTap.TA.RgbGlitch
             public Material material;
             public Vector4 settings;
             public float separationPixels;
+            public float separationJitter;
             public float time;
         }
 
@@ -29,6 +31,7 @@ namespace TapTap.TA.RgbGlitch
         {
             private static readonly int SettingsId = Shader.PropertyToID("_RgbGlitchSettings");
             private static readonly int SeparationId = Shader.PropertyToID("_RgbSeparationPixels");
+            private static readonly int SeparationJitterId = Shader.PropertyToID("_RgbSeparationJitter");
             private static readonly int TimeId = Shader.PropertyToID("_RgbGlitchTime");
             private readonly RgbGlitchRendererFeature owner;
 
@@ -53,7 +56,12 @@ namespace TapTap.TA.RgbGlitch
                 var destination = graph.CreateTexture(descriptor);
                 var tuning = new Vector4(owner.vignetteDarkness, owner.shakeRate,
                     owner.shakeStrength, owner.colorSeparationPixels);
-                if (RgbGlitchEffect.TryGetParameters(out var overrideTuning)) tuning = overrideTuning;
+                float separationJitter = owner.colorSeparationJitter;
+                if (RgbGlitchEffect.TryGetParameters(out var overrideTuning, out var overrideJitter))
+                {
+                    tuning = overrideTuning;
+                    separationJitter = overrideJitter;
+                }
                 using (var builder = graph.AddRasterRenderPass<PassData>("RGB Glitch", out var data))
                 {
                     data.source = source;
@@ -64,6 +72,7 @@ namespace TapTap.TA.RgbGlitch
                         tuning.y,
                         tuning.z);
                     data.separationPixels = tuning.w;
+                    data.separationJitter = separationJitter;
                     data.time = Time.unscaledTime;
                     builder.UseTexture(source, AccessFlags.Read);
                     builder.SetRenderAttachment(destination, 0);
@@ -72,6 +81,7 @@ namespace TapTap.TA.RgbGlitch
                     {
                         context.cmd.SetGlobalVector(SettingsId, renderData.settings);
                         context.cmd.SetGlobalFloat(SeparationId, renderData.separationPixels);
+                        context.cmd.SetGlobalFloat(SeparationJitterId, renderData.separationJitter);
                         context.cmd.SetGlobalFloat(TimeId, renderData.time);
                         Blitter.BlitTexture(context.cmd, renderData.source, new Vector4(1, 1, 0, 0), renderData.material, 0);
                     });
