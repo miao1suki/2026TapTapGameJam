@@ -1,5 +1,7 @@
 # Gaming：MVMap14 仅白色平台
 
+> 历史阶段说明。当前关卡已保留作者后续制作内容，并按MVMap15划分房间，见[MVMAP15_ROOM_SPLIT.md](MVMAP15_ROOM_SPLIT.md)。
+
 当前版本按用户最新指示重新建立，只将源JSON中灰白色 `#8b93a6` 生成白色实体平台。不采用旧版名称优先映射；其他颜色、无色方块、机关、门、按钮、水、岩浆、植物、收集品和紫色分界线均不生成，旧关卡额外道具也已移除。
 
 - 源文件：`Ops/LevelMaps/Map14/source.mvmap.json`（map.mvmap (14).json）。源物体与原坐标清单见同目录 `layout-manifest.json`。
