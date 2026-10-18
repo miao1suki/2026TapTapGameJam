@@ -69,17 +69,27 @@ namespace Project.GameFlow
                 return;
             }
 
-            CameraFollowController follow =
-                ProjectDiscovery.FindFirst<CameraFollowController>();
+            // During an additive handoff another level may still be rendering its last frame.
+            // Bind only the camera owned by this level, never the outgoing global first match.
+            CameraFollowController follow = FindInOwnScene<CameraFollowController>();
             if (follow != null)
             {
                 follow.SetTarget(spawnedPlayer.transform, true);
                 follow.SetRequestedMode(CameraViewMode.Side2D, 0f, true);
             }
 
-            CameraModeController mode =
-                ProjectDiscovery.FindFirst<CameraModeController>();
+            CameraModeController mode = FindInOwnScene<CameraModeController>();
             mode?.SetFollowTarget(spawnedPlayer.transform, true);
+        }
+
+        private T FindInOwnScene<T>() where T : Component
+        {
+            foreach (GameObject root in gameObject.scene.GetRootGameObjects())
+            {
+                T found = root.GetComponentInChildren<T>(true);
+                if (found != null) return found;
+            }
+            return null;
         }
 
         private GameObject FindPlayerInOwnScene()

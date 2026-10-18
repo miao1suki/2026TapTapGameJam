@@ -125,6 +125,10 @@ namespace Project.BlockFeatures.Editor
                 if (library.plantBounce == null || library.plantBounce.Length == 0) return false;
                 preview = new PlanningArtworkPreview(library.plantBounce[Mathf.Clamp(library.plantIdleFrame, 0, library.plantBounce.Length - 1)], true);
             }
+            else if (prefab.TryGetComponent<OneWayPlatform>(out var oneWay))
+            {
+                preview = new PlanningArtworkPreview(library.FirstFrame(OneWayKind(oneWay, overrides)), true);
+            }
             else
             {
                 if (!TryGetKind(prefab, out var kind, out float rotation, out bool flip, out bool tile))
@@ -223,10 +227,20 @@ namespace Project.BlockFeatures.Editor
             else if (owner.TryGetComponent<NeutralLadder>(out var ladder)) { kind = ladder.SideFacing ? MechanismArtworkKind.LadderSide : MechanismArtworkKind.LadderFront; flip = ladder.SideFacing && ladder.WallSide == LadderWallSide.Left; tile = true; }
             else if (owner.GetComponent<NeutralSpike>() != null) { kind = MechanismArtworkKind.Spike; tile = true; var collider = owner.GetComponentInChildren<MeshCollider>(true); if (collider != null) rotation = collider.transform.localEulerAngles.z; }
             else if (owner.GetComponent<LavaHazardFeature>() != null) { kind = MechanismArtworkKind.Lava; tile = true; }
-            else if (owner.GetComponent<OneWayPlatform>() != null) { kind = MechanismArtworkKind.OneWayPlatform; tile = true; }
+            else if (owner.TryGetComponent<OneWayPlatform>(out var oneWay)) { kind = oneWay.ArtworkKind; tile = true; }
             else if (owner.TryGetComponent<MechanismArtworkPresentation>(out var presentation)) { kind = presentation.Kind; tile = kind == MechanismArtworkKind.Obsidian; }
             else return false;
             return true;
+        }
+
+        public static MechanismArtworkKind OneWayKind(OneWayPlatform platform, IReadOnlyList<LevelEditorComponentValueOverride> overrides)
+        {
+            int color = platform != null ? (int)platform.AppearanceColor : 0;
+            if (overrides != null) foreach (var value in overrides)
+                if (value != null && string.IsNullOrEmpty(value.ComponentPath) &&
+                    (value.ComponentTypeName == typeof(OneWayPlatform).FullName || value.ComponentTypeName == typeof(OneWayPlatform).AssemblyQualifiedName) &&
+                    value.PropertyPath == "appearanceColor" && int.TryParse(value.Value, out int selected)) color = selected;
+            return ObjectArtworkLibrary.OneWayPlatformKind(color);
         }
 
         private static PlanningArtworkPreview SampleVine(Sprite source, float width, int rows)

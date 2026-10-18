@@ -25,6 +25,7 @@ namespace Project.BlockFeatures
         private MechanismBaseFeature mechanismBase;
         private PlantObstacleFeature obstacle;
         private LavaHazardFeature lava;
+        private OneWayPlatform oneWay;
         private DoorHint hint;
         private ColorObject colorObject;
         private ColorKeyPickup colorKey;
@@ -103,6 +104,7 @@ namespace Project.BlockFeatures
                 if (volume != null) spikeDirection = volume.transform;
             }
             lava = GetComponent<LavaHazardFeature>();
+            oneWay = GetComponent<OneWayPlatform>();
             var cube = GetComponent<ContactCube>(); var key = GetComponent<ColorKeyPickup>();
             colorKey = key;
             kind = door != null ? MechanismArtworkKind.Door : button != null ? MechanismArtworkKind.DoorButton
@@ -116,7 +118,7 @@ namespace Project.BlockFeatures
                 : ladder != null ? ladder.SideFacing ? MechanismArtworkKind.LadderSide : MechanismArtworkKind.LadderFront
                 : spike != null ? MechanismArtworkKind.Spike
                 : lava != null ? MechanismArtworkKind.Lava
-                : GetComponent<OneWayPlatform>() != null ? MechanismArtworkKind.OneWayPlatform : kind;
+                : oneWay != null ? oneWay.ArtworkKind : kind;
             var entry = artwork.Find(kind);
             if (entry == null || entry.frames == null || entry.frames.Length == 0) return;
             footprint = GetComponent<BoxCollider>();
@@ -167,6 +169,7 @@ namespace Project.BlockFeatures
             if (ladder != null) ladder.PreserveLegacyFootprint();
             if (runtimeMaterial != Application.isPlaying) BindMaterial();
             if (button != null) kind = ObjectArtworkLibrary.DoorButtonKind(button.BindingIndex);
+            if (oneWay != null) kind = oneWay.ArtworkKind;
             var entry = artwork.Find(kind);
             if (entry == null || entry.frames == null || entry.frames.Length == 0) entry = artwork.Find(MechanismArtworkKind.DoorButton);
             if (entry == null || entry.frames == null || entry.frames.Length == 0) return;
@@ -176,7 +179,8 @@ namespace Project.BlockFeatures
             visual.enabled = isActiveAndEnabled && (!Application.isPlaying ||
                 ((colorKey == null || !colorKey.IsCollectionVisualComplete) &&
                  (colorObject == null || colorObject.IsActive) && (obstacle == null || obstacle.ShowsArtwork)));
-            visual.gameObject.layer = colorObject != null && colorObject.TargetRenderer != null ? colorObject.TargetRenderer.gameObject.layer : gameObject.layer;
+            visual.gameObject.layer = oneWay != null ? oneWay.ArtworkLayer
+                : colorObject != null && colorObject.TargetRenderer != null ? colorObject.TargetRenderer.gameObject.layer : gameObject.layer;
             int frame = 0;
             if (mechanismBase != null) frame = mechanismBase.IsSignalActive ? 1 : 0;
             else if (crank != null) frame = ObjectArtworkLibrary.ProgressFrame(crank.Progress, entry.frames.Length);
@@ -199,7 +203,7 @@ namespace Project.BlockFeatures
             }
             previousPosition = transform.position;
             var sprite = door != null && artwork.doorClosed != null ? artwork.doorClosed : entry.frames[Mathf.Clamp(frame, 0, entry.frames.Length - 1)];
-            if (platform != null || kind == MechanismArtworkKind.OneWayPlatform)
+            if (platform != null || oneWay != null)
             {
                 DisplayBounds(out _, out var platformSize);
                 Vector3 authorScale = transform.lossyScale;
@@ -214,6 +218,15 @@ namespace Project.BlockFeatures
                     mask ??= new MaterialPropertyBlock(); mask.Clear();
                     mask.SetFloat("_ColorMaskGroup", ColorAppearanceManager.GetGroupIndex(colorObject.BaseColorTypeId));
                     mask.SetFloat("_ColorMaskReal", 1); mask.SetFloat("_ColorMaskUseVertexAlpha", 1);
+                    mask.SetTexture("_ColorMaskAlphaTexture", sprite.texture); visual.SetPropertyBlock(mask);
+                }
+                else if (oneWay != null && Application.isPlaying)
+                {
+                    // Decoration-style HSV classification. Never use the color
+                    // reveal material: locked colors must not hide the platform.
+                    mask ??= new MaterialPropertyBlock(); mask.Clear();
+                    mask.SetFloat("_ColorMaskGroup", -1f); mask.SetFloat("_ColorMaskReal", 1f);
+                    mask.SetFloat("_ColorMaskUseVertexAlpha", 1f); mask.SetFloat("_ColorMaskOpacity", 1f);
                     mask.SetTexture("_ColorMaskAlphaTexture", sprite.texture); visual.SetPropertyBlock(mask);
                 }
             }
@@ -272,7 +285,7 @@ namespace Project.BlockFeatures
                 return;
             }
             bool tile = ladder != null || lava != null || obstacle != null || kind == MechanismArtworkKind.Obsidian || kind == MechanismArtworkKind.RedCube || kind == MechanismArtworkKind.GreenCube || kind == MechanismArtworkKind.BlueCube;
-            bool sliced = platform != null || kind == MechanismArtworkKind.OneWayPlatform;
+            bool sliced = platform != null || oneWay != null;
             bool verticalPlatform = sliced && ObjectArtworkLibrary.PlatformVisualIsVertical(new Vector2(Mathf.Abs(size.x * scale.x), Mathf.Abs(size.y * scale.y)));
             visual.flipX = ladder != null && ladder.SideFacing && ladder.WallSide == LadderWallSide.Left;
             // A narrow ladder trigger is not its art footprint. Its complete 16-pixel
@@ -289,15 +302,13 @@ namespace Project.BlockFeatures
                 {
                     visual.transform.localRotation = Quaternion.Euler(0, 0, 90);
                     visual.size = new Vector2(Mathf.Abs(size.y * scale.y) / cell, sprite.rect.height / sprite.pixelsPerUnit);
-                    // Native visible platform strip is 5/16 of a cell; preserve its
-                    // support edge while keeping the transparent 16-pixel frame.
-                    float visibleThickness = platform != null ? 5f / 16f : sprite.rect.height / sprite.pixelsPerUnit;
+                    float visibleThickness = PlatformArtworkLayout.VisibleThicknessCells(kind, sprite, artwork);
                     visual.transform.localPosition = new Vector3(center.x - size.x * .5f + visibleThickness * cell / Mathf.Max(.001f, Mathf.Abs(scale.x)), center.y, depth);
                 }
                 else
                 {
                     visual.size = new Vector2(Mathf.Abs(size.x * scale.x) / cell, tile ? Mathf.Abs(size.y * scale.y) / cell : sprite.rect.height / sprite.pixelsPerUnit);
-                    float visibleThickness = platform != null ? 5f / 16f : visual.size.y;
+                    float visibleThickness = sliced ? PlatformArtworkLayout.VisibleThicknessCells(kind, sprite, artwork) : visual.size.y;
                     float bottom = tile ? center.y - size.y * .5f : center.y + size.y * .5f - visibleThickness * cell / Mathf.Max(.001f, Mathf.Abs(scale.y));
                     visual.transform.localPosition = new Vector3(center.x, bottom, depth);
                 }
@@ -321,7 +332,8 @@ namespace Project.BlockFeatures
                 visual.transform.localPosition = horizontal ? new Vector3(center.x + size.x * .5f, center.y, center.z - size.z * .5f - .015f)
                     : new Vector3(center.x, bottom, center.z - size.z * .5f - .015f);
             }
-            if (shape != null && (tile || sliced)) shape.ApplySprite(visual, sliced);
+            if (shape != null && (tile || sliced)) shape.ApplySprite(visual, sliced,
+                sliced ? PlatformArtworkLayout.VisibleThicknessCells(kind, sprite, artwork) : 0f);
         }
         private void OnTransformParentChanged() => CacheGrid();
         private void CacheGrid()

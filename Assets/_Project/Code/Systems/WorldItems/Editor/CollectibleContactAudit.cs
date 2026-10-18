@@ -3,6 +3,7 @@ using System.IO;
 using DG.Tweening;
 using Project.ColorBlocks;
 using Project.Items;
+using Project.GameFlow;
 using Project.Player;
 using Project.Pickups;
 using UnityEditor;
@@ -57,6 +58,7 @@ namespace Project.WorldItems.Editor
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 VerifyTriggerPassThrough();
                 VerifyLatePlayerAndReuse();
+                VerifyMenuPreviewHandoff();
                 VerifyForeignIgnoreOwnership();
                 VerifyCarriedBodyIsolation();
                 foreach (string color in new[] { "Red", "Green", "Blue" })
@@ -182,6 +184,44 @@ namespace Project.WorldItems.Editor
                     "all reuse paths preserve trigger interaction");
             }
             finally { Object.DestroyImmediate(item.gameObject); Object.DestroyImmediate(player.gameObject); }
+        }
+
+        private static void VerifyMenuPreviewHandoff()
+        {
+            var root = new GameObject("menu physical handoff fixture");
+            var presentation = root.AddComponent<WorldMenuPresentation>();
+            presentation.BeginPreview();
+            var item = Item(new Vector3(600, 20, 0));
+            var player = Player(new Vector3(598, 20, 0));
+            try
+            {
+                var shape = item.GetComponent<Collider>();
+                var playerShape = player.GetComponent<Collider>();
+                Check(!item.CanCollect && Physics.GetIgnoreCollision(shape, playerShape),
+                    "preview blocks collection but not a late player's physical pass-through setup");
+                presentation.StageWorld(player.gameObject.scene);
+                Check(!playerShape.enabled && player.Motor.isKinematic,
+                    "real world-menu stage temporarily disables player's physical participant");
+                presentation.EndPreview();
+                Check(playerShape.enabled && !player.Motor.isKinematic &&
+                    Physics.GetIgnoreCollision(shape, playerShape),
+                    "real menu handoff reapplies pass-through after restoring player collider");
+                Check(!Physics.GetIgnoreCollision(Trigger(item), playerShape),
+                    "menu handoff keeps collection trigger live");
+                player.Motor.useGravity = false;
+                player.Motor.linearVelocity = Vector3.right * 5;
+                Step(50);
+                Check(player.Motor.position.x > 602.5f && player.Motor.linearVelocity.x > 4.9f,
+                    "after menu handoff real physics crosses pickup without a wall or slowdown");
+                Check(item.CollectionRequested,
+                    "after menu handoff real trigger collects while player crosses the pickup");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(item.gameObject);
+                Object.DestroyImmediate(player.gameObject);
+            }
         }
 
         private static void VerifyForeignIgnoreOwnership()

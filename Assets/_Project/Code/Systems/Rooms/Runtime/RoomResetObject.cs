@@ -28,6 +28,8 @@ namespace Project.Rooms
         private readonly List<GameObject> replacements = new List<GameObject>();
         public string RegionId => regionId;
         public RoomLifecycleManager Manager => manager;
+        /// <summary>Invalidates work queued against the object's previous room state.</summary>
+        public int ResetRevision { get; private set; }
         public Vector3 AuthoredWorldPosition =>
             originalParent != null
                 ? originalParent.TransformPoint(originalPosition)
@@ -59,9 +61,18 @@ namespace Project.Rooms
 
         public void RestorePose()
         {
+            ResetRevision++;
+            // Persistent means keep progress, not keep a temporary Boss visibility
+            // lease. Completed/collecting pickups remain protected by their own
+            // lifecycle, including disabled collection colliders.
+            if (Persistent && GetComponent<Project.Items.DropItemBase>() != null) return;
+            // Restore only the hide lease before skipping authored pose/state.
+            var hidden = GetComponent<Project.TemporaryObjectHideState>();
+            bool wasHidden = hidden != null && hidden.IsHidden;
+            hidden?.Restore();
+            if (wasHidden) GetComponent<DoorController>()?.RefreshBlockingState();
             if (Persistent) return;
             Capture();
-            GetComponent<Project.TemporaryObjectHideState>()?.Restore();
             GetComponent<Project.Items.DropItemBase>()?.CancelAttractionForRoomReset();
             GetComponent<CarryableFeature>()?.CancelCarry();
             foreach (var replacement in replacements) if (replacement != null) Destroy(replacement);

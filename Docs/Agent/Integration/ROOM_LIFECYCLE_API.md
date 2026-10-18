@@ -26,6 +26,8 @@
 
 门、一次按下保持模式的门按钮、门提示、锚点及 CollectionRequested 的颜色钥匙不恢复。普通 `CollectiblePickup` 在 `CollectionRequested` 或 `IsCollected` 后也不恢复，前者保持收集飞行与唯一结算，后者保持隐藏；未收集品仍恢复布置位置。持续压住模式的门按钮参与区域重置，取消按下状态并重新评估门；若释放持续信号，门关闭，但其他保持按钮的进度保留。DropItemBase.CancelAttractionForRoomReset 仅取消未结算磁吸/出现动画，不中断已开始收集的钥匙或上述受保护收集品。普通收集品的稳定身份与后续存档恢复接口见 WORLD_ITEMS_API；本轮不新增磁盘存档系统。
 
+`Persistent` 仅保留玩法进度，不保留 Boss 的临时隐藏。`RestorePose()` 在跳过持久对象姿态前归还 `TemporaryObjectHideState`，门再按当前 `DoorState` 恢复阻挡；已开始收集的掉落物仍由收集生命周期保护。每次恢复推进 `ResetRevision`，Boss 隐藏队列必须核对入队时版本，禁止在 R／死亡／离区后执行旧碰撞隐藏。详见 [BOSS_ROOM_RESET_VISUALS.md](BOSS_ROOM_RESET_VISUALS.md)。
+
 三色接触方块的 RoomResetObject 在 Awake（早于重力/反应）捕获编辑器布置根位姿；归属保留为布置区域，不跟随搬运或水柱迁移。R 入口通过 BeforeRespawn 恢复来源和重生目标区域，RestorePose 后 RestoreState 清除速度/水柱/长度/攀附缓存。基础位姿不会在落地、搬运或按钮接触后重采样。
 
 ## 输入与颜色
@@ -33,6 +35,8 @@
 开发者可通过 `PlayerController.ConfigureRespawn` 切换常规/加载转场复活，默认常规；两者都复用以下同一复位链。加载方式只在遮罩完整覆盖后调用复位，不切换场景、不改变区域或进度语义。接口与取消契约见 [PLAYER_RESPAWN_API.md](PLAYER_RESPAWN_API.md)。
 
 `PlayerInputDriver -> PlayerController.RequestRespawn()` 是已有 Respawn 动作入口，存活时也可请求。保持键位，不直接读 Keyboard。取消携带、清理玩家临时状态，恢复房间后再寻找安全落点，同步 Rigidbody 与 Transform。
+
+真实关卡作为主菜单背景时，`RequestRespawn()` 统一拒绝 `GameplayPresentationGate.IsSuppressed`；自动复活和手动R共用此入口。死亡后返回菜单不会在背景中复位房间或启动慢复活黑幕，进入正式游戏后再开放，不以改变重生规则或清空进度规避。
 
 死亡自动重生先检查 `PlayerController.CanAutomaticallyRespawn`，等待精灵死亡动画和配置的死亡Timeline表现时间完成，不在死亡当帧调用重生。主动 `RequestRespawn()` 不受此等待限制；暂停不会推进死亡播放或自动重生时间。重复死亡不会重置等待，手动复活后旧等待条件立即失效，无异步延迟回调。
 

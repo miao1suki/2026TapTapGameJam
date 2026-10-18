@@ -759,6 +759,7 @@ namespace Project.LevelEditor.Editor
                 {
                     { typeof(Project.Mechanisms.DoorController), "按钮解锁门" },
                     { typeof(Project.Mechanisms.DoorButton), "门按钮" },
+                    { typeof(Project.Mechanisms.OneWayPlatform), "单向平台" },
                     { typeof(Transform), "变换" },
                     { typeof(BoxCollider), "盒子碰撞体" },
                     { typeof(SphereCollider), "球体碰撞体" },

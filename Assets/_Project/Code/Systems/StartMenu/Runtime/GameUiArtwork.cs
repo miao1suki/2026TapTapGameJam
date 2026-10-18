@@ -10,6 +10,12 @@ namespace Project.StartMenu
         [InspectorName("设置按钮")] public Sprite settingsButton;
         [InspectorName("退出按钮")] public Sprite quitButton;
         [InspectorName("制作名单按钮")] public Sprite creditsButton;
+        [Header("场景融合开始菜单")]
+        [InspectorName("融合菜单按钮"), Tooltip("依次为开始游戏、制作名单、设置、退出。")] public Sprite[] worldMenuButtons;
+        [InspectorName("融合菜单选中按钮")] public Sprite[] worldMenuSelectedButtons;
+        [InspectorName("按钮左侧透明像素"), Tooltip("编辑器离线计算01/02不透明范围并集；运行时不读像素。")] public float[] worldMenuButtonLeftPadding;
+        [InspectorName("标题序列帧")] public Sprite[] worldMenuLogoFrames;
+        [Min(.02f), InspectorName("标题每帧秒数")] public float worldMenuLogoFrameSeconds = .08f;
         [InspectorName("暂停扇形"), Tooltip("依次为继续、设置、存档、收藏、返回主菜单、制作名单。")] public Sprite[] pauseIcons;
         [InspectorName("暂停扇形圆心"), Tooltip("相对于切片矩形的共同圆心，可位于矩形之外；不含底部阴影。")] public Vector2 pauseSectorPivot = new Vector2(-7f / 32f, 23f / 38f);
         [InspectorName("暂停扇形夹角")] public float pauseSectorAngle = 60f;

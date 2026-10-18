@@ -1,5 +1,11 @@
 # 系统索引
 
+主菜单改为真实Gaming近景与常驻MainMenu Canvas融合：新ButtonIcon四项竖排、27帧LOGO，首次开始相机拉远、返回反向运镜，不使用旧菜单黑圈/滚动背景。预览租约隔离玩家物理、输入与收集，不停用世界美术；重复开始先卸旧世界再载新世界，保留本次运行颜色进度，单帧底图交接与唯一相机/Listener/EventSystem。见[融合菜单](../Developer/WORLD_MENU_FUSION.md)与[场景流程](../Developer/GAME_FLOW.md)。
+
+Boss清障隐藏与持久机关进度分离：房间重置归还临时渲染/碰撞租约，不清门按钮进度，旧碰撞隐藏队列按ResetRevision失效。见[BOSS_ROOM_RESET_VISUALS](Integration/BOSS_ROOM_RESET_VISUALS.md)。两个移动平台已接新6/9帧48×16素材、14像素支撑上缘，旧占格/路线不扩大；新增红绿蓝单向平台栏目复用同一Prefab，颜色参数只影响外观与HSV图层。见[物体美术API](Integration/OBJECT_ARTWORK_API.md)。Scene/可编辑存档/meta/新增美术依赖仍必须成套交付。
+
+搬运占格区分作者布置与运行时实体：烧毁/打开/移走后的空位不保留旧格阻挡，当前位置实体仍拒绝重叠；R不改作者数据而恢复现有状态。放置射线忽略水与纯Trigger、真实薄墙仍挡，复用候选Collider列表且不逐帧SyncTransforms。接入与隔离回归见[搬运API](Integration/PLAYER_CARRY_API.md)。
+
 基座信号镜头可选收到/解除/双边沿，默认关；共享队列先基座再按序平台，或仅首个平台，等待不提前锁玩家。水与非岩浆所有物体同格，三种水类型可叠、同类生成去重、共同底色只画一次。红蓝指针0.65格容差严格不扩总范围；水蒸汽按点击列，钥匙2有效像素悬浮，红蓝接触水柱改TA水片/气泡并即时推送、玩家默认8格/秒。见[机关API](Integration/MECHANISM_SIGNAL_API.md)、[水API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[钥匙与水柱](../Developer/KEY_HOVER_AND_CONTACT_JETS.md)。关卡仍须Scene、planning及meta成套交付。
 
 TA 新效果已接入现有生命周期：流动岩浆精确保留孔洞、冷却蒸汽、三类植物燃烧、标准玩家死亡/Boss追逐RGB；PC/Mobile只追加RGB通道，不覆盖水/HSV/像素参数。雨区和萤火虫通过 `Tools/2026TapTap/关卡美术/创建雨区` / `创建萤火虫区域` 独立创建，固定16像素/格、Scene保存，不属于planning玩法物体；雨是颜色装饰，萤火虫是中性装饰且实时灯默认关闭。见 [TA_EFFECTS_API](Integration/TA_EFFECTS_API.md) 与 [使用说明](../Developer/TA_EFFECTS.md)。关卡交付仍须Scene+planning+meta成套。

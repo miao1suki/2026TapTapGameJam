@@ -88,7 +88,7 @@ namespace Project.LevelEditor
         }
 
         // Sprite artwork remains a single logical object; only the visible rectangles are tiled.
-        public void ApplySprite(SpriteRenderer source, bool topStrip)
+        public void ApplySprite(SpriteRenderer source, bool topStrip, float supportTopCells = 0f)
         {
             while (spriteParts.Count < rectangles.Count)
             {
@@ -120,7 +120,8 @@ namespace Project.LevelEditor
                 part.transform.localRotation = source.transform.localRotation;
                 Bounds b = RectBounds(rectangles[i]);
                 Vector3 scale = source.transform.localScale;
-                float visibleThickness = topStrip && source.sprite != null && source.sprite.rect.height == 16f ? 5f / 16f : source.size.y;
+                float visibleThickness = topStrip && supportTopCells > 0f ? supportTopCells
+                    : topStrip && source.sprite != null && source.sprite.rect.height == 16f ? 5f / 16f : source.size.y;
                 if (verticalStrip)
                 {
                     part.size = new Vector2(b.size.y / Mathf.Max(.0001f, Mathf.Abs(scale.x)), source.size.y);

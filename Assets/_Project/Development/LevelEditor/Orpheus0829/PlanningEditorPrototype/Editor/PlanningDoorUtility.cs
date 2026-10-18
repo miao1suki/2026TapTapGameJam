@@ -15,14 +15,18 @@ namespace PlanningEditorPrototype
         internal const string LeftSideLadderEntryId = "mechanism-ladder-side-left";
         internal const string MovingPlatformEntryId = "212cd7a2ff304a6288b4d850132de143";
         internal const string OneWayPlatformEntryId = "a6ec8d1c0f0c4d7fb9851a46a3ca6c49";
+        internal const string RedOneWayPlatformEntryId = "mechanism-oneway-red";
+        internal const string GreenOneWayPlatformEntryId = "mechanism-oneway-green";
+        internal const string BlueOneWayPlatformEntryId = "mechanism-oneway-blue";
         internal const string ButtonEntryId = "mechanism-door-owned-button";
         internal const string ButtonPath = "Assets/_Project/Content/Mechanisms/DoorButton.prefab";
         internal static bool IsDoor(PlanningBox box) => box != null && IsDoorEntry(box.propEntryId);
         internal static bool IsDoorEntry(string id) => id == DoorEntryId || id == HorizontalDoorEntryId;
         internal static bool IsLadderEntry(string id) => id == FrontLadderEntryId || id == SideLadderEntryId || id == LeftSideLadderEntryId;
-        internal static bool IsPlatformEntry(string id) => id == MovingPlatformEntryId || id == PlanningMechanismUtility.LiftEntryId || id == OneWayPlatformEntryId;
+        internal static bool IsColoredOneWayEntry(string id) => id == RedOneWayPlatformEntryId || id == GreenOneWayPlatformEntryId || id == BlueOneWayPlatformEntryId;
+        internal static bool IsPlatformEntry(string id) => id == MovingPlatformEntryId || id == PlanningMechanismUtility.LiftEntryId || id == OneWayPlatformEntryId || IsColoredOneWayEntry(id);
         internal static bool HasFixedFootprint(string id) => IsDoorEntry(id) || IsLadderEntry(id) || IsPlatformEntry(id);
-        internal static Vector2Int Footprint(string id) => IsLadderEntry(id) ? Vector2Int.one
+        internal static Vector2Int Footprint(string id) => IsLadderEntry(id) || IsColoredOneWayEntry(id) ? Vector2Int.one
             : IsPlatformEntry(id) ? new Vector2Int(3, 1)
             : id == HorizontalDoorEntryId ? new Vector2Int(2, 1) : new Vector2Int(1, 2);
         internal static LevelEditorPropEntry GetButtonEntry()

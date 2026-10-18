@@ -396,7 +396,11 @@ namespace Project.BlockFeatures.Editor
             bool vertical = ObjectArtworkLibrary.PlatformVisualIsVertical(new Vector2(bounds.size.x, bounds.size.y));
             float length = vertical ? bounds.size.y : bounds.size.x;
             float natural = art.Cells.x * cell;
-            float thickness = entry.owner.GetComponent<MovingPlatformFeature>() != null ? 5f / 16f * cell : art.Cells.y * cell;
+            var oneWay = entry.owner.GetComponent<OneWayPlatform>();
+            var platform = entry.owner.GetComponent<MovingPlatformFeature>();
+            var kind = oneWay != null ? oneWay.ArtworkKind : platform != null && platform.IsCrankControlled
+                ? MechanismArtworkKind.CrankPlatform : MechanismArtworkKind.MovingPlatform;
+            float thickness = PlatformArtworkLayout.VisibleThicknessCells(kind, art.Sprite, ObjectArtworkLibrary.Load()) * cell;
             float height = art.Cells.y * cell;
             for (float start = 0; start < length - .0001f; start += natural)
             {

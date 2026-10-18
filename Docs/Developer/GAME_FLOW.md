@@ -2,21 +2,22 @@
 
 正式入口是 `Assets/_Project/Scenes/Start/MainMenu.unity`，开始游戏后进入 `Assets/_Project/Scenes/Playing/Gaming.unity`。不再使用 Bootstrap、旧 Systems 场景、旧 Level_01～03 或 Ending。
 
-场景采用叠加加载交接。加载目标流程场景前暂停旧流程场景的 EventSystem，避免新旧 UI 同时启用；失败时恢复，成功卸载后清除引用。水体表现注销只停用并延迟销毁，不能在父节点禁用期间执行 SetParent。若旧测试包仍出现 Water Visual 改父节点报错，需使用当前源码重新打包；仅更新本地源码不会更新已安装包。
+场景采用真实世界融合菜单：MainMenu 常驻承载界面，启动时叠加预载 Gaming；Unity 实际活动 Scene 为 Gaming，逻辑流程仍是 MainMenu。只启用 Gaming 的 Camera、AudioListener 和 EventSystem，不复制关卡或重复创建菜单。水体表现注销只停用并延迟销毁，不能在父节点禁用期间执行 SetParent。
 
 MainMenu 的 `__GameFlow` 根持有 `GameFlowController`，开始按钮通过 `StartMenuFlowBridge` 请求 Gaming。Gaming 的 Main Camera 挂 `CameraControlManager`、`CameraModeController`、`CameraFollowController` 和 `LevelSceneContext`；`LevelSceneContext` 会按 `Player` Tag 找到玩家并接为相机随行目标。暂停与共享界面来自 `Content/UI/SharedGameUI.prefab`。
 
-正式加载过渡由 `GameSceneLoader` 统一驱动：
+菜单过渡由流程控制器的 `WorldMenuPresentation` 协调：
 
-- 进入 App：黑屏从开始按钮中心向外扩散。
-- 进入 Gaming：菜单内容和背景滚动冻结，加载文字显示，Gaming 以玩家为中心扩散揭示。
-- 返回 MainMenu：先以当前玩家为中心收黑，黑屏保持 0.5 秒，然后滚动背景从右侧回场，加载文字显示，菜单内容从右侧回场。
-- 退出游戏：主菜单按钮只发请求，黑屏从屏幕外反向缩圈吞噬画面，保持 1 秒后再退出。
-- 加载期间冻结菜单背景滚动；进入 Gaming 后玩家控制锁保持到黑屏扩散完成。
+- 进入 App：真实 Gaming 近景作为背景，左侧显示新动画 LOGO 与开始／制作名单／设置／退出美术按钮，不使用旧黑圈或滚动背景。
+- 首次开始：复用同一个预载世界，菜单淡出，相机平滑缩放到正常随行，结束后释放预览输入锁。
+- 返回 MainMenu：先立即解除暂停，在当前世界反向运镜并淡入菜单；不切换成假背景。
+- 再次开始：按原流程重置关卡对象并保留本次运行颜色进度。短期留存世界画面作交接底图，卸载旧 Gaming 后再加载新 Gaming，避免同房间 ID 的两套注册表并存。
+- 菜单预览采用独立控制锁租约，冻结玩家物理并抑制收集、玩法 UI 和输入，但不关闭世界美术、不清除其他系统的控制锁、不把全局时间设为零。
+- 退出按钮仍通过 StartMenuFlowBridge / GameSceneLoader 请求，不直接退出、不播放旧菜单黑圈。
 
-开发者可为玩家启用同一转场体系的加载式复活，保留原地关卡与房间重置流程，不重新加载场景。默认仍为常规方式，见 [复活表现](PLAYER_RESPAWN.md)。
+其他显式加载和开发者加载式复活仍由 `GameSceneLoader` / `GameTransitionOverlay` 管理。复活保留原地关卡与房间重置，不重新加载场景；默认仍为常规方式，见 [复活表现](PLAYER_RESPAWN.md)。
 
-MainMenu 场景存活期间每帧保证鼠标可见且不处于锁定状态，避免从玩法切回时继承染色或搬运阶段的隐藏鼠标状态。
+菜单展示时保证鼠标可见，PC 独立包有焦点时经 `DesktopCursorPolicy` 限制在当前游戏窗口；失焦释放，Editor／安卓不锁定。绝对指针与菜单点击保留。
 
 流程根在初始化时安装并初始化`GameAudioService`，随流程根跨场景保留。进入Gaming切换到Atmosphere E Minor循环音乐，返回菜单沿用菜单音乐。不要依靠已退役的Audio系统场景启动音乐切换。
 

@@ -1,5 +1,28 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-18 Boss重置外观、新平台与场景融合菜单（验证完成，整合交付）
+
+- 当前整合分支`codex/menu-reset-art-20261018`，用户授权多agent分工，最终只由当前整合窗口合并/推送main。并入上一轮已验证的搬运有效占格修复。
+- 范围：Boss房门/平台重置后模型或材质消失的共享生命周期根因；新平台动画、红绿蓝可配置单向平台外观；采用新LOGO/ButtonIcon和参考视频，将主菜单叠合真实Gaming背景、相机/UI平滑入退，不使用原进出游戏黑圈。慢加载复活等无关调用保持。
+- 分工：reset_visuals负责Rooms/ColorAppearance重置与专项验证；platform_art负责ObjectArtwork及单向平台颜色参数/栏目；menu_fusion负责GameFlow/StartMenu/UI。共享工作树不由worker切分支/提交，不并行启动Unity；整合者统一在静音FlowRetirementProbe运行。
+- 保留用户MRoom2/MRoom3/Pick、Boss Timeline、字体、插件、设置与删除；不全量重建Gaming、不覆盖作者参数/位置，不保存主Unity内存Scene。主菜单接线如需更新仅显式作用于MainMenu/prefab并核对对应planning。
+- 关卡交付仍需Scene、同名planning.json、meta和新增依赖成套；正式Gaming还需命名正式存档，不能只交Scene。美术源图/导入设置/生成切片/配置一并交付，16有效像素/格与旧逻辑占格分离。
+- Boss根因是Persistent对象提前返回遗留forceRenderingOff，以及预算化碰撞队列可在重置后再次隐藏；现在先释放临时隐藏、门按当前状态恢复碰撞，旧队列按ResetRevision失效，不重置门按钮进度或全局颜色。真实门/平台/标准玩家死亡、R连续8轮、离区与异步旧任务63项通过。
+- 新移动/曲柄动画采用9/6帧48×16、16有效像素/格，按可见支撑上缘14像素对齐，旧1/2/5格平台不扩大逻辑占格。红绿蓝单向平台共用Prefab与相同玩法，参数只改美术/HSV层；旧白色条目兼容。平台102项布局/GPU、15项Play与通用美术217项通过，横竖与墙支撑面截图已复看。
+- 新菜单真实Gaming动态背景、四按钮与27帧LOGO，首次开始不重载、再次开始卸旧后载新、GPU单帧交接、反向返回；CameraControlManager唯一运镜写入，不增加世界副本，不调用ResetProgress。主菜单OP显式路由，预载/换景临时Listener承接，菜单设备与Gameplay设备不双开。
+- 独立复核补齐四个联动边界：收集资格与实体穿过分离，展示租约释放在Collider恢复后一次性重施过滤；触控布局预览不受常驻HUD隐藏影响；菜单内自动/手动复活统一拒绝；加载/组件失败统一归还相机、截图、输入租约并恢复可重试菜单。收集品真实物理51项、正常主回归MenuFlow-5为167项/1076监听器帧通过；完整EditMode232/232、GameFlow PlayMode4/4通过。终版错误/布局专项MenuFailure-3为62项通过，包含真实GPU截图交接、空/不存在路径、缺相机管理器、恢复菜单及健康重试。
+- 日志在Library/MenuFusion-20261018，截图在FlowRetirementProbe/Library/WorldMenuFusionVerification和PlatformArtworkContactSheet.png；实际1280×720、1600×720、1024×768截图已复看。首轮Boss渐显等待/平台Bounds与GPU读回/错误夹具未打开GameView的问题只修测试夹具后重跑，真实回调与GPU断言不弱化；前轮发现的菜单音乐及Listener加载空档已修生产路径，终版无无Listener/重复Listener警告。最终48个修改/新增源码与meta及共享美术配置在主工程/隔离工程SHA256一致。
+- 测试均在静音D3D11隔离FlowRetirementProbe，不保存作者Scene或planning；35张菜单源图、3张平台源图及meta/生成切片/共享配置随代码交付。正式Gaming三份布局数据和用户MRoom2/MRoom3/Pick/BossTimeline/字体/设置SHA256未改。本轮没有新包/安卓实机验收。
+
+## 2026-10-18 搬运运行时占格修复（并入菜单与Boss整合）
+
+- 范围：PlayerController 放置检查与专用回归。以原作者占格作候选筛选，再核对当前位置、启用状态和实体碰撞；不让烧毁植物、已开启门或移走物体保留阻挡。水和纯Trigger不作为搬运实体墙。
+- 不修改用户 MRoom2/MRoom3/Gaming Scene 或 planning，不重建关卡、不改重生规则、机关绑定与颜色进度。当前 MRoom2 副本只在静音 FlowRetirementProbe 隔离工程测试。
+- 诊断已确认：基座[-95,-13]右侧植物烧毁后Collider已关闭但旧ContainsCell仍阻挡；红块移走原位同类误占。R入口连续8轮已正常恢复，修复不以清除作者记录规避问题。
+- 静音D3D11隔离验证共142项通过：真实MRoom2及有效占用43项、MobileCarryRegression68项、CarryGround9项、FacingInteraction22项；覆盖真实F/Q完成放置、8轮烧毁/R、移动后旧格释放/新格阻挡、薄墙、水Trigger、合并孔洞、后加/隐藏子碰撞体、深度、朝向与平滑让位。1000次预热作者候选查询80.707ms、0托管分配（编辑器环境，不是整帧或真机性能结论）。
+- 日志位于`Library/MRoom2CarryDiagnosis/`。首次夹具因用户出生点新增钥匙演出占用控制权而未成功F拾取；仅在隔离副本进入Play前临时停用钥匙，不绕过玩家拿起/放下流程；第二次43项通过。主工程与隔离工程PlayerController、专用验证源码SHA256一致，MRoom2 Scene/planning文件SHA256在验证后仍一致；未保存主Unity内存场景。
+- 交付关卡仍须Scene、同名planning.json、meta及新增依赖成套；仅运行时修复，不上传或覆盖用户尚未提交布局。该修复随上方菜单与Boss任务一并整合交付，未单独构建包。
+
 ## 2026-10-18 机关镜头、水层与颜色目标改善（验证完成，整合交付）
 
 - 整合分支：`codex/mechanism-water-20261018`，独立工作目录 `Library/TAIntegration-20261018`，不改用户打开的Scene及未提交MRoom2/MRoom3。

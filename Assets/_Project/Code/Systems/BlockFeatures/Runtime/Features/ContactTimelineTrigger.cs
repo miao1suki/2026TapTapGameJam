@@ -173,6 +173,7 @@ namespace Project.BlockFeatures
 
         private void TryContact(GameObject actor)
         {
+            if (GameplayPresentationGate.IsSuppressed) return;
             if (!isActiveAndEnabled || actor == null)
             {
                 return;

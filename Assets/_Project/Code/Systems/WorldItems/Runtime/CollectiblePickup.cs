@@ -49,12 +49,15 @@ namespace Project.Items
             // global layer: cubes and bases must still be able to push its body.
             PlayerController.PlayerActivated -= IgnorePlayerSolids;
             PlayerController.PlayerActivated += IgnorePlayerSolids;
+            GameplayPresentationGate.GameplayRestored -= RefreshPlayerSolids;
+            GameplayPresentationGate.GameplayRestored += RefreshPlayerSolids;
             base.OnEnable();
         }
 
         protected override void OnDisable()
         {
             PlayerController.PlayerActivated -= IgnorePlayerSolids;
+            GameplayPresentationGate.GameplayRestored -= RefreshPlayerSolids;
             RestorePlayerSolids();
             base.OnDisable();
         }
@@ -73,7 +76,8 @@ namespace Project.Items
 
         private void IgnorePlayerSolids(PlayerController player)
         {
-            if (!isActiveAndEnabled || !CanCollect || player == null) return;
+            // Presentation blocks collecting, not the persistent physical pass-through rule.
+            if (!isActiveAndEnabled || IsCollected || CollectionRequested || player == null) return;
             EnsureState();
             // Called only on activation/reset or when a player is enabled, never
             // as a per-pickup Update/FixedUpdate or a whole-scene search.
@@ -110,6 +114,12 @@ namespace Project.Items
                     pair.Item.gameObject.activeInHierarchy && pair.Player.gameObject.activeInHierarchy)
                     Physics.IgnoreCollision(pair.Item, pair.Player, false);
             playerCollisionPairs.Clear();
+        }
+
+        private void RefreshPlayerSolids()
+        {
+            if (isActiveAndEnabled)
+                foreach (var player in PlayerController.ActivePlayers) IgnorePlayerSolids(player);
         }
         private void TryCollect(Collider other)
         {
@@ -149,8 +159,7 @@ namespace Project.Items
             // Stay dynamic so cubes/bases can push it in either grid direction.
             body.useGravity = false; body.isKinematic = originalKinematic;
             for (int i = 0; i < shapes.Length; i++) if (shapes[i] != null) shapes[i].enabled = shapeEnabled[i];
-            if (isActiveAndEnabled)
-                foreach (var player in PlayerController.ActivePlayers) IgnorePlayerSolids(player);
+            RefreshPlayerSolids();
         }
         public void ResetForRoom()
         {

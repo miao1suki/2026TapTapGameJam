@@ -42,6 +42,10 @@ namespace Project.StartMenu
         private static bool externalBackgroundScrollPaused;
         private int lastScreenWidth;
         private int lastScreenHeight;
+        private Image worldMenuLogo;
+        private Sprite[] logoFrames;
+        private float logoFrameSeconds = .08f;
+        private int lastLogoFrame = -1;
 
         public event Action StartGameRequested;
         public event Action ExitGameRequested;
@@ -51,6 +55,7 @@ namespace Project.StartMenu
         public Transform StartButtonTransform =>
             startButton != null ? startButton.transform : null;
         public RectTransform MenuContentRoot => EnsureMenuContentRoot();
+        public bool IsPresented => canvas != null && canvas.enabled;
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -147,7 +152,13 @@ namespace Project.StartMenu
 
         private void Update()
         {
+            if (!IsPresented) return;
             Project.InputAbstraction.DesktopCursorPolicy.Apply(true);
+            if (worldMenuLogo != null && logoFrames != null && logoFrames.Length > 0)
+            {
+                int frame = (int)(Time.unscaledTime / logoFrameSeconds) % logoFrames.Length;
+                if (frame != lastLogoFrame) { lastLogoFrame = frame; worldMenuLogo.sprite = logoFrames[frame]; }
+            }
 
             if (backgroundScrollEnabled &&
                 !externalBackgroundScrollPaused &&
@@ -165,7 +176,10 @@ namespace Project.StartMenu
             }
         }
 
-        private void OnApplicationFocus(bool focused) => Project.InputAbstraction.DesktopCursorPolicy.Apply(true, focused);
+        private void OnApplicationFocus(bool focused)
+        {
+            if (IsPresented) Project.InputAbstraction.DesktopCursorPolicy.Apply(true, focused);
+        }
 
         private void ApplyAdaptiveCanvasScale()
         {
@@ -184,6 +198,22 @@ namespace Project.StartMenu
         public void ShowMain()
         {
             SetOnly(mainPanel);
+        }
+
+        public void SetPresented(bool value, bool interactive = true)
+        {
+            if (canvas != null) canvas.enabled = value;
+            CanvasGroup group = EnsureMenuContentCanvasGroup(EnsureMenuContentRoot());
+            group.interactable = value && interactive;
+            group.blocksRaycasts = value;
+        }
+
+        public void SetFusionContent(float visible, float slideDistance = -180f)
+        {
+            RectTransform root = EnsureMenuContentRoot();
+            CanvasGroup group = EnsureMenuContentCanvasGroup(root);
+            group.alpha = Mathf.Clamp01(visible);
+            root.anchoredPosition = new Vector2(Mathf.Lerp(slideDistance, 0f, visible), 0f);
         }
 
         public void SetBackgroundScrollEnabled(bool value)
@@ -321,6 +351,7 @@ namespace Project.StartMenu
             ApplyButtonArtwork(creditsButton, art.creditsButton, new Vector2(5,77));
             ApplyButtonArtwork(settingsButton, art.settingsButton, new Vector2(4,125));
             ApplyButtonArtwork(quitButton, art.quitButton, new Vector2(72,125));
+            ApplyWorldMenuArtwork(art);
             if (Application.isPlaying && creditsButton != null)
             {
                 creditsButton.onClick.RemoveListener(ShowCredits);
@@ -333,6 +364,63 @@ namespace Project.StartMenu
             {
                 foreach (Transform child in settingsPanel.GetComponentsInChildren<Transform>(true))
                     if (child.name == "Hint" || child.name == "Status") child.gameObject.SetActive(false);
+            }
+        }
+
+        private void ApplyWorldMenuArtwork(GameUiArtwork art)
+        {
+            if (art.worldMenuButtons == null || art.worldMenuButtons.Length != 4) return;
+            // The supplied black reference is a layout reference, never a runtime backdrop.
+            SetBackgroundVisible(false);
+            SetBackgroundScrollEnabled(false);
+            Button[] ordered = { startButton, creditsButton, settingsButton, quitButton };
+            for (int index = 0; index < ordered.Length; index++)
+            {
+                Button button = ordered[index];
+                Sprite sprite = art.worldMenuButtons[index];
+                if (button == null || sprite == null) continue;
+                ApplyButtonArtwork(button, sprite, Vector2.zero);
+                StartMenuUiFactory.SetTopLeft((RectTransform)button.transform,
+                    new Vector2(68f, -270f - index * 104f), new Vector2(368f, 96f));
+                // Keep a generous fixed hit area while aligning the actual art, not its
+                // transparent source canvas. One precomputed union offset serves both states.
+                Image hit = button.GetComponent<Image>();
+                hit.color = Color.clear;
+                Transform existingVisual = button.transform.Find("World Menu Artwork");
+                Image visual = existingVisual != null ? existingVisual.GetComponent<Image>() :
+                    StartMenuUiFactory.CreateImage("World Menu Artwork", button.transform, Color.white);
+                visual.sprite = sprite;
+                visual.preserveAspect = true;
+                visual.raycastTarget = false;
+                float left = art.worldMenuButtonLeftPadding != null && index < art.worldMenuButtonLeftPadding.Length
+                    ? art.worldMenuButtonLeftPadding[index] : 0f;
+                StartMenuUiFactory.SetTopLeft(visual.rectTransform, new Vector2(-left * 4f, 0f), sprite.rect.size * 4f);
+                button.targetGraphic = visual;
+                button.transition = Selectable.Transition.SpriteSwap;
+                Sprite selected = art.worldMenuSelectedButtons != null && index < art.worldMenuSelectedButtons.Length
+                    ? art.worldMenuSelectedButtons[index] : sprite;
+                SpriteState states = button.spriteState;
+                states.highlightedSprite = states.pressedSprite = states.selectedSprite = selected;
+                states.disabledSprite = sprite;
+                button.spriteState = states;
+                var navigation = button.navigation;
+                navigation.mode = Navigation.Mode.Explicit;
+                navigation.selectOnUp = ordered[(index + ordered.Length - 1) % ordered.Length];
+                navigation.selectOnDown = ordered[(index + 1) % ordered.Length];
+                button.navigation = navigation;
+            }
+            if (mainPanel != null && art.worldMenuLogoFrames != null && art.worldMenuLogoFrames.Length > 0)
+            {
+                Transform existing = mainPanel.transform.Find("Animated Logo");
+                worldMenuLogo = existing != null ? existing.GetComponent<Image>() :
+                    StartMenuUiFactory.CreateImage("Animated Logo", mainPanel.transform, Color.white);
+                worldMenuLogo.raycastTarget = false;
+                worldMenuLogo.preserveAspect = true;
+                StartMenuUiFactory.SetTopLeft(worldMenuLogo.rectTransform, new Vector2(24f, 0f), new Vector2(552f, 268f));
+                logoFrames = art.worldMenuLogoFrames;
+                logoFrameSeconds = Mathf.Max(.02f, art.worldMenuLogoFrameSeconds);
+                worldMenuLogo.sprite = logoFrames[0];
+                lastLogoFrame = -1;
             }
         }
 

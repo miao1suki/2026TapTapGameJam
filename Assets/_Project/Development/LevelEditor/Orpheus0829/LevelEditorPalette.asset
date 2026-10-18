@@ -3153,3 +3153,36 @@ MonoBehaviour:
       valueType: Boolean
       value: 0
       objectReferenceValue: {fileID: 0}
+  - entryId: mechanism-oneway-red
+    displayName: "\u7EA2\u8272\u5355\u5411\u5E73\u53F0"
+    prefab: {fileID: 7331628839969253367, guid: e45eeb89d3062084cb3d921e904d1d23, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.Mechanisms.OneWayPlatform
+      componentIndex: 0
+      propertyPath: appearanceColor
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+  - entryId: mechanism-oneway-green
+    displayName: "\u7EFF\u8272\u5355\u5411\u5E73\u53F0"
+    prefab: {fileID: 7331628839969253367, guid: e45eeb89d3062084cb3d921e904d1d23, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.Mechanisms.OneWayPlatform
+      componentIndex: 0
+      propertyPath: appearanceColor
+      valueType: Enum
+      value: 2
+      objectReferenceValue: {fileID: 0}
+  - entryId: mechanism-oneway-blue
+    displayName: "\u84DD\u8272\u5355\u5411\u5E73\u53F0"
+    prefab: {fileID: 7331628839969253367, guid: e45eeb89d3062084cb3d921e904d1d23, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.Mechanisms.OneWayPlatform
+      componentIndex: 0
+      propertyPath: appearanceColor
+      valueType: Enum
+      value: 3
+      objectReferenceValue: {fileID: 0}
