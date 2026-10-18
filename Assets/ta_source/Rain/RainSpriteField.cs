@@ -62,6 +62,7 @@ namespace Project.Rain
         private float lastSpeed;
         private float lastSpeedVariation;
         private bool previewDirty;
+        private int previewRevision;
 
         private void OnEnable()
         {
@@ -115,7 +116,9 @@ namespace Project.Rain
             uvs = new Vector2[count * 4];
             colors = new Color32[count * 4];
             int[] triangles = new int[count * 6];
-            random = new System.Random(randomSeed ^ GetInstanceID());
+            int seed = randomSeed ^ GetInstanceID();
+            if (!Application.IsPlaying(gameObject)) seed ^= previewRevision * 7919;
+            random = new System.Random(seed);
             mesh = new Mesh
             {
                 name = "Rain Sprite Field (generated)",
@@ -147,10 +150,18 @@ namespace Project.Rain
             lastSpeed = fallSpeed;
             lastSpeedVariation = speedVariation;
             Animate(0f);
+            if (!Application.IsPlaying(gameObject)) transform.hasChanged = false;
         }
 
         private void Update()
         {
+            if (!Application.IsPlaying(gameObject) && transform.hasChanged)
+            {
+                transform.hasChanged = false;
+                previewRevision++;
+                Build();
+                return;
+            }
             if (mesh == null)
             {
                 if (previewDirty) Build();
@@ -228,7 +239,10 @@ namespace Project.Rain
                 vertices[v + 2] = new Vector3(x - halfSize, y + halfSize, 0f);
                 vertices[v + 3] = new Vector3(x + halfSize, y + halfSize, 0f);
 
-                int frame = Mathf.FloorToInt(Mathf.Max(0f, drop.age) * frameRate * drop.animationScale + drop.framePhase) % FrameCount;
+                // Layout preview uses one still atlas frame; only Play cycles the four frames.
+                int frame = Application.IsPlaying(gameObject)
+                    ? Mathf.FloorToInt(Mathf.Max(0f, drop.age) * frameRate * drop.animationScale + drop.framePhase) % FrameCount
+                    : 0;
                 int frameColumn = frame % 2;
                 int frameRow = frame / 2;
                 float frameX = 320f + frameColumn * 32f;

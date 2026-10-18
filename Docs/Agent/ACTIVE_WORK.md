@@ -2,6 +2,7 @@
 
 ## 2026-10-18 TA 三色四帧雨滴
 
+- Scene 静态预览修正完成：编辑模式统一显示对应颜色的第一帧；手动移动雨区时重新抽取初始分布，静止时保持原样。Unity 6000.3.12f1 中已打开 `RainPreview.unity`，Scene 视图可见三色静态雨滴；手动移动红色雨区后分布重新抽取，撤销后场景位置恢复。雨滴运行时与 Inspector 独立编译 0 错误；Rain 文件也已同步到用户当前打开的 `codex/ta/rgb-glitch` 工作目录供即时查看，该目录的 RGB 改动不纳入雨滴分支提交。
 - 编辑预览任务：在独立雨滴工作树中让三个预设体在编辑模式立即显示静止雨滴；宽度与密度调整后刷新分布和实际数量，Inspector 显示宽度 × 密度对应的雨滴数（上限 512），Play 后才流动。初始雨滴全部从可见生命周期内分布，不再等待延迟发射。生成的预览 Mesh 不写入场景或预设体资产；仅修改 Rain 模块和自己的交接记录，保留当前 RGB 分支工作。
 - 验证：用 6000.3.12f1 安装目录内的 UnityEngine/UnityEditor 程序集独立编译 Rain 运行时与 UI Toolkit Inspector，0 错误、1 个 Unity 序列化字段未在 C# 内赋值的提示。完整 Unity batchmode 导入在 Package Manager 阶段因 `The "path" argument must be of type string. Received undefined` 提前退出，未执行场景内静态预览画面检查；临时验证脚本已移除。
 - 后续参数：三个雨滴预设体新增独立的大小随机幅度（默认 ±35%）和速度随机幅度（默认 ±30%）；每次雨滴重新出现时重抽尺寸和速度。把两者任一设为 0 可单独关闭该变化；Play 中修改基准值或随机幅度会重建当前网格。Inspector 和 Rain README 已同步。静态核对三个 Prefab 均序列化了新字段，网格按每滴尺寸绘制并扩大包围盒；Unity 6000.3.12f1 运行画面仍待对应编辑器验收。
@@ -13,7 +14,7 @@
 - 原始 Rain PNG 及其 `.meta` 是任务开始时已有的未跟踪素材；其余已有字体、Recovery 和 VS Code 本地更改由原所有者保留。
 - 交付：原图点采样、无 Mipmap 导入；蓝色实现后同逻辑生成红色和绿色预设体。三色各四帧，单张运行时网格控制宽高、雨滴大小、密度、落速、帧速、随机性、到底概率及位置噪波；`RainPreview.unity` 并排展示三色。
 - 文档：`Assets/ta_source/Rain/README.md` 与 `Docs/Agent/SYSTEM_INDEX.md`。
-- 验证：三色各四帧取样区均有非透明像素；Rain 目录资产与 `.meta` 一一对应、GUID 唯一，演示场景三个 Prefab 引用和材质/脚本引用检查通过；`git diff --check` 通过。此机 Unity Hub 只登记 2022 编辑器，没有 6000.3.12f1 可执行文件，因此未能做 Unity 编译或 Game 画面验收。
+- 验证：三色各四帧取样区均有非透明像素；Rain 目录资产与 `.meta` 一一对应、GUID 唯一，演示场景三个 Prefab 引用和材质/脚本引用检查通过；`git diff --check` 通过。后续在本机找到并使用 Unity 6000.3.12f1 编辑器，Scene 静态预览已完成画面检查；Play 画面仍待验收。
 
 关卡交付提醒：修改关卡必须同时交付 Scene、同名 `.planning.json`、各自 `.meta` 及新增资源依赖；禁止只推场景或把存档留在 Library。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`，小地图拼合使用“协作与片段”。
 
