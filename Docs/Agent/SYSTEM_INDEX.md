@@ -1,5 +1,7 @@
 # 系统索引
 
+道具栏目按红/蓝/绿/其他有色/无色分组，可折叠并显示数量；卡片宽度约缩至原1/3，完整名称可悬停查看，编辑/删除移至选中项操作条。沿用稳定栏目ID与参数模式入口。见[关卡编辑器](../Developer/LEVEL_EDITOR.md)与[规划协作接口](Integration/PLANNING_COLLABORATION_API.md)。
+
 道具参数窗口已显式提供Rigidbody“锁定位置/锁定旋转”X/Y/Z六轴勾选，支持实例覆盖保存/重开/恢复默认，弥补Unity隐藏字段未被通用属性遍历显示的问题。见[关卡编辑器](../Developer/LEVEL_EDITOR.md)与[规划协作接口](Integration/PLANNING_COLLABORATION_API.md)。
 
 基座信号镜头可选收到/解除/双边沿，默认关；共享队列先基座再按序平台，或仅首个平台，等待不提前锁玩家。水与非岩浆所有物体同格，三种水类型可叠、同类生成去重、共同底色只画一次。红蓝指针0.65格容差严格不扩总范围；水蒸汽按点击列，钥匙2有效像素悬浮，红蓝接触水柱改TA水片/气泡并即时推送、玩家默认8格/秒。见[机关API](Integration/MECHANISM_SIGNAL_API.md)、[水API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[钥匙与水柱](../Developer/KEY_HOVER_AND_CONTACT_JETS.md)。关卡仍须Scene、planning及meta成套交付。

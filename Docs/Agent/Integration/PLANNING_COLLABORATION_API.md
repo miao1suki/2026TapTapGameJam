@@ -2,6 +2,10 @@
 
 仅 Editor，源码在 `PlanningEditorPrototype/Editor`，沿用现有 `PlanningDocument` JSON、1:1 单元格和稳定 ID，不引入新运行时房间系统。使用说明见 [LEVEL_EDITOR_COLLABORATION.md](../../Developer/LEVEL_EDITOR_COLLABORATION.md)。
 
+## 道具栏目显示
+
+共享的 LevelEditorPanel 在独立放置器和规划窗口中按颜色分组，只改变 Editor 展示，不修改栏目 ID、顺序、预制体或已放置实例。GetPropColorGroup 优先读取 ColorObject.BaseColorTypeId、ColorKeyPickup.ColorTypeId 及匹配组件路径/类型/序号的默认字段覆盖；无颜色组件时回退到预制体根节点 red/blue/green Layer。多色及未知颜色进入其他有色，未归色项进入无色。重复默认条目仍只隐藏显示副本，选择回调使用原始下标；参数模式继续走 EditPlanningDefaults。紧凑卡片不随剩余行宽拉伸，操作条与预览分开，分组折叠状态按项目写入 SessionState。
+
 ## 数据与事务
 
 道具组件参数窗口 `LevelEditorPropComponentEditorWindow` 对Rigidbody显式绘制六轴约束勾选；Unity原生 `m_Constraints` 不在 `NextVisible` 枚举中，不能仅靠通用属性遍历展示。六个勾选只按位更新该字段，并复用 `CaptureOverride` / `LevelEditorComponentOverrideUtility` 的持久化、应用与重置路径，保存的是约束位掩码，不是六个独立字段。不要把预览对象或临时instanceID写回资产；源prefab保持不变。

@@ -433,8 +433,7 @@ namespace Project.LevelEditor.Editor
             };
             propList = new VisualElement();
             propList.style.width = Length.Percent(100f);
-            propList.style.flexDirection = FlexDirection.Row;
-            propList.style.flexWrap = Wrap.Wrap;
+            propList.style.flexDirection = FlexDirection.Column;
             propScroll = new ScrollView();
             propScroll.style.height = 220f;
             propScroll.horizontalScrollerVisibility =
@@ -892,13 +891,54 @@ namespace Project.LevelEditor.Editor
                 LevelEditorState.PaletteScale,
                 .5f,
                 1.5f);
-            float cardWidth = 124f * scale;
-            float cardHeight = 148f * scale;
+            float cardWidth = Mathf.Max(40f, 44f * scale);
+            float cardHeight = Mathf.Max(64f, 68f * scale);
+            float previewSize = Mathf.Max(28f, 98f * scale / 3f);
             if (propScroll != null)
             {
                 propScroll.style.height = includeContextSections
-                    ? Mathf.Clamp(cardHeight + 24f, 104f, 240f)
+                    ? 280f
                     : 420f;
+            }
+
+            if (palette != null && LevelEditorState.SelectedPropIndex >= 0 &&
+                LevelEditorState.SelectedPropIndex < count)
+            {
+                int selected = LevelEditorState.SelectedPropIndex;
+                var actions = Row();
+                actions.name = "prop-selection-actions";
+                var title = new Label(palette.PropEntries[selected].DisplayName);
+                title.style.flexGrow = 1f;
+                title.style.minWidth = 0f;
+                title.style.overflow = Overflow.Hidden;
+                title.tooltip = title.text;
+                actions.Add(title);
+                actions.Add(SmallButton("编辑", () => LevelEditorPropEntryWindow.OpenForEdit(selected)));
+                actions.Add(SmallButton("删除", () => RemovePropEntry(selected)));
+                propList.Add(actions);
+            }
+
+            string[] groupNames = { "红色道具", "蓝色道具", "绿色道具", "其他有色道具", "无色道具" };
+            string[] groupKeys = { "red", "blue", "green", "other", "neutral" };
+            var headings = new Foldout[groupNames.Length];
+            var grids = new VisualElement[groupNames.Length];
+            var groupCounts = new int[groupNames.Length];
+            for (int groupIndex = 0; groupIndex < groupNames.Length; groupIndex++)
+            {
+                string stateKey = "LevelEditor.PropGroup." + Application.dataPath + "." + groupKeys[groupIndex];
+                var heading = new Foldout {
+                    name = "prop-group-" + groupKeys[groupIndex],
+                    text = groupNames[groupIndex],
+                    value = SessionState.GetBool(stateKey, true) };
+                heading.RegisterValueChangedCallback(evt => SessionState.SetBool(stateKey, evt.newValue));
+                var grid = new VisualElement { name = "prop-grid-" + groupKeys[groupIndex] };
+                grid.style.flexDirection = FlexDirection.Row;
+                grid.style.flexWrap = Wrap.Wrap;
+                grid.style.paddingTop = 4f;
+                heading.Add(grid);
+                propList.Add(heading);
+                headings[groupIndex] = heading;
+                grids[groupIndex] = grid;
             }
 
             if (palette != null && count > 0)
@@ -917,13 +957,18 @@ namespace Project.LevelEditor.Editor
                                 previous.ComponentValueOverrides.Count == 0) { duplicate = true; break; }
                         }
                     if (duplicate) continue;
+                    int colorGroup = GetPropColorGroup(entry);
+                    groupCounts[colorGroup]++;
                     VisualElement cell = new VisualElement();
+                    cell.name = "prop-card-" + index;
+                    cell.tooltip = entry.DisplayName;
                     cell.style.width = cardWidth;
                     cell.style.minWidth = cardWidth;
-                    cell.style.flexGrow = 1f;
+                    cell.style.flexGrow = 0f;
+                    cell.style.flexShrink = 0f;
                     cell.style.height = cardHeight;
-                    cell.style.marginRight = 6f;
-                    cell.style.marginBottom = 6f;
+                    cell.style.marginRight = 4f;
+                    cell.style.marginBottom = 4f;
 
                     Button card = new Button(() =>
                     {
@@ -939,6 +984,10 @@ namespace Project.LevelEditor.Editor
                     };
                 card.style.width = Length.Percent(100f);
                 card.style.height = Length.Percent(100f);
+                card.style.marginLeft = 0f;
+                card.style.marginRight = 0f;
+                card.style.marginTop = 0f;
+                card.style.marginBottom = 0f;
                 card.style.flexDirection = FlexDirection.Column;
                 card.style.alignItems = Align.Center;
                 card.style.justifyContent = Justify.FlexStart;
@@ -979,51 +1028,99 @@ namespace Project.LevelEditor.Editor
                     pickingMode = PickingMode.Ignore
                 };
                 var previewFrame=new VisualElement { pickingMode=PickingMode.Ignore };
-                previewFrame.style.width=98f*scale; previewFrame.style.height=98f*scale; previewFrame.style.marginTop=6f*scale;
+                previewFrame.style.width=previewSize; previewFrame.style.height=previewSize; previewFrame.style.marginTop=3f;
+                previewFrame.style.flexShrink=0f;
                 image.style.position=Position.Absolute;
-                float artWidth=98f*scale,artHeight=98f*scale;
+                float artWidth=previewSize,artHeight=previewSize;
                 if (hasArtwork)
                 {
                     image.uv=artwork.UV;
                     bool vertical=Mathf.Abs(Mathf.DeltaAngle(artwork.RotationDegrees,0))%180>45;
                     Vector2 display=vertical ? new Vector2(artwork.Cells.y,artwork.Cells.x) : artwork.Cells;
-                    float fit=98f*scale/Mathf.Max(.001f,Mathf.Max(display.x,display.y));
+                    float fit=previewSize/Mathf.Max(.001f,Mathf.Max(display.x,display.y));
                     artWidth=artwork.Cells.x*fit; artHeight=artwork.Cells.y*fit;
                     image.style.rotate=new Rotate(new Angle(-artwork.RotationDegrees,AngleUnit.Degree));
                     image.style.scale=new Scale(new Vector3(artwork.FlipX ? -1 : 1,1,1));
                 }
                 image.style.width=artWidth; image.style.height=artHeight;
-                image.style.left=(98f*scale-artWidth)*.5f; image.style.top=(98f*scale-artHeight)*.5f;
+                image.style.left=(previewSize-artWidth)*.5f; image.style.top=(previewSize-artHeight)*.5f;
                 if (awaitingPreview)
                 {
                     pendingPropPreviews[image] = entry.Prefab;
                 }
                 previewFrame.Add(image); card.Add(previewFrame);
                 Label name = new Label(entry.DisplayName);
-                name.style.width = 116f * scale;
+                name.style.width = cardWidth - 4f;
                 name.style.fontSize =
-                    Mathf.Clamp(12f * scale, 10f, 16f);
+                    Mathf.Clamp(10f * scale, 10f, 12f);
                 name.style.whiteSpace = WhiteSpace.Normal;
+                name.style.maxHeight = 28f;
+                name.style.overflow = Overflow.Hidden;
                 name.style.unityTextAlign = TextAnchor.MiddleCenter;
                 name.pickingMode = PickingMode.Ignore;
-                name.style.marginTop = 4f * scale;
+                name.style.marginTop = 2f;
                 card.Add(name);
                 cell.Add(card);
 
-                if (captured == LevelEditorState.SelectedPropIndex)
-                {
-                    cell.Add(CreatePaletteCardActions(
-                        scale,
-                        () => LevelEditorPropEntryWindow.OpenForEdit(
-                            captured),
-                        () => RemovePropEntry(captured)));
-                }
-
-                    propList.Add(cell);
+                    grids[colorGroup].Add(cell);
                 }
             }
 
-            propList.Add(CreatePropAddCard(cardWidth, cardHeight));
+            for (int groupIndex = 0; groupIndex < headings.Length; groupIndex++)
+            {
+                headings[groupIndex].text = groupNames[groupIndex] + "（" + groupCounts[groupIndex] + "）";
+                headings[groupIndex].style.display = groupCounts[groupIndex] == 0
+                    ? DisplayStyle.None : DisplayStyle.Flex;
+            }
+            var add = CreatePropAddCard(cardWidth, cardHeight);
+            add.name = "prop-add-card";
+            add.style.flexGrow = 0f;
+            add.style.flexShrink = 0f;
+            foreach (var label in add.Query<Label>().ToList())
+            {
+                label.style.fontSize = label.text == "+" ? 22f : 10f;
+                label.style.width = cardWidth - 4f;
+                label.style.whiteSpace = WhiteSpace.Normal;
+            }
+            propList.Add(add);
+        }
+
+        internal static int GetPropColorGroup(LevelEditorPropEntry entry)
+        {
+            if (entry?.Prefab == null) return 4;
+            var colors = new HashSet<string>();
+            foreach (var color in entry.Prefab.GetComponentsInChildren<ColorObject>(true))
+                AddColor(ResolveColor(color, "baseColorTypeId", color.BaseColorTypeId));
+            foreach (var key in entry.Prefab.GetComponentsInChildren<ColorKeyPickup>(true))
+                AddColor(ResolveColor(key, "colorTypeId", key.ColorTypeId));
+            if (colors.Count == 0)
+            {
+                string layer = LayerMask.LayerToName(entry.Prefab.layer).ToLowerInvariant();
+                if (layer == "red" || layer == "blue" || layer == "green") colors.Add(layer);
+            }
+            if (colors.Count == 0) return 4;
+            if (colors.Count > 1) return 3;
+            foreach (string color in colors)
+                return color == "red" ? 0 : color == "blue" ? 1 : color == "green" ? 2 : 3;
+            return 4;
+
+            void AddColor(string color)
+            {
+                if (!string.IsNullOrWhiteSpace(color)) colors.Add(color.Trim().ToLowerInvariant());
+            }
+
+            string ResolveColor(Component component, string property, string fallback)
+            {
+                string path = AnimationUtility.CalculateTransformPath(component.transform, entry.Prefab.transform);
+                int index = System.Array.IndexOf(component.GetComponents(component.GetType()), component);
+                string result = fallback;
+                foreach (var value in entry.ComponentValueOverrides)
+                    if (value != null && value.ComponentPath == path &&
+                        value.ComponentTypeName == component.GetType().FullName &&
+                        value.ComponentIndex == index && value.PropertyPath == property)
+                        result = value.Value;
+                return result;
+            }
         }
 
         private static VisualElement CreatePropAddCard(
