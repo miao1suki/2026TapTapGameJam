@@ -21,7 +21,7 @@ using Object = UnityEngine.Object;
 /// <summary>Explicit R1 source import. Does not run at import or rebuild an existing scene.</summary>
 public static class R1LevelBuilder
 {
-    public const string Folder = "Assets/_Project/Development/LevelEditor/ILorR/R1";
+    public const string Folder = "Assets/Scenes/R1";
     public const string ScenePath = Folder + "/R1.unity";
     public const string SavePath = Folder + "/R1.planning.json";
     public const string PlayerPath = "Assets/_Project/Content/Player/Player.prefab";

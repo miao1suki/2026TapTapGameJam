@@ -4,7 +4,7 @@
 
 Unity 固定 **6000.3.12f1**。ILorR 本机用 Unity Hub 添加并打开 `C:\Unity Programs\2026TapTapGameJam-R1`，不要打开原目录来找本次 R1。
 
-Scene：`Assets/_Project/Development/LevelEditor/ILorR/R1/R1.unity`。
+Scene：`Assets/Scenes/R1/R1.unity`。场景、可编辑存档、设计源和专属脚本统一保存在 `Assets/Scenes/R1`；从原开发目录迁移时保留全部 `.meta` 和 GUID，布局及机关参数不变。
 
 在 Project 搜索 R1，双击该 Scene，再点 Play。继续制作使用现有融合关卡编辑器；同目录 `R1.planning.json` 是可编辑存档，必须与 Scene 和双方 meta 一起保存、交付。不要重新导入源图覆盖后续手工编辑。
 
@@ -32,6 +32,8 @@ Scene：`Assets/_Project/Development/LevelEditor/ILorR/R1/R1.unity`。
 
 分支 `codex/ilorr/r1-level`，基于开始制作时最新 main `a96af4b6353453b1634875f18831d8a50b2722cb`。原项目未提交修改保留原位。不制作 R2/R3，不合并或推送 main。
 
+2026-10-18 同步远端记录时，main 已更新到 18:02（北京时间）的 `ea961fb`，R1 原提交 `e7d0ec2` 为 18:28，仍基于制作开始时的 `a96af4b`。推送任务分支不会覆盖或回退 main，但当前 R1 不含该基线之后 main 的 4 个提交。合并预检查仅发现 `ACTIVE_WORK.md`、`SYSTEM_INDEX.md` 两份文档文字冲突；代码可自动合并不代表组合功能已验证。交由整合窗口保留双方记录并验证机关与水体等共同改动，worker 不自行合并或变基。
+
 复用规划模型、SceneBuilder、标准玩家、场景自有相机、SharedGameUI、RoomLifecycleManager、门按钮。补充共享曲柄进度、作者固定绿方块横向攀附、单实例自身几何与规划占格分离。普通未绑定曲柄、非固定方块默认行为不变。接口见 MECHANISM_SIGNAL_API、CONTACT_CUBES_API、PLANNING_COLLABORATION_API。
 
 `R1.design.json` 保留原黑格和标注。`R1LevelBuilder` 只显式执行，不在导入/开窗自动重建；Build 拒绝覆盖已有 R1。UpdateConfirmed 仅供源图迭代，后续手工编辑使用正常关卡编辑器。
@@ -39,6 +41,7 @@ Scene：`Assets/_Project/Development/LevelEditor/ILorR/R1/R1.unity`。
 ## 验证与限制
 
 - `R1LevelBuilder.Verify`：3378 项检查通过，包含逐格地形、对象占格/位置、标准玩家/相机、持久机关绑定、保存重载、无变更增量保留对象、片段导入 ID 重映射、删除来源清理关系。
+- 迁移到 `Assets/Scenes/R1` 后，重新导入、编译及上述 3378 项检查再次通过；场景/存档/运行脚本/meta 内容与原交付一致，仅生成工具目录常量更新。迁移后没有再次运行下述 Play 专项或打包。
 - `R1GameplayVerification.Run`：实际 Play 检查通过，包含出生安全、开局能力、双曲柄接续/单次累加/回落、独立左曲柄、双按钮开门、区域重置、13 格固定绿条底面抓附/横移/跳跃松手。门检查使用 TryPress API，不冒称踩踏通关。
 - 已检查实际运行全图截图。本机报告和截图留在 Library 的 R1Verification.txt、R1GameplayVerification.txt、R1Overview.png，不提交 Library。
 - 本机 Unity 启动有编辑器 Search 索引越界异常，来自 UnityEditor.Search；R1 编译及以上检查通过。没有因此擅自升级 Unity。
