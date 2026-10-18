@@ -16,6 +16,8 @@ namespace Project.Fireflies
         [SerializeField] private Vector2 areaSize = new Vector2(3f, 2f);
         [SerializeField, Range(0, MaximumCount)] private int fireflyCount = 22;
         [SerializeField, Min(0.005f)] private float pixelSize = 0.018f;
+        [SerializeField, Range(0.25f, 6f)] private float pixelSizeScale = 3f;
+        [SerializeField, Range(0f, 0.8f)] private float pixelSizeVariation = 0.35f;
 
         [Header("游动与随机性")]
         [SerializeField, Min(0.01f)] private float flightSpeed = 0.22f;
@@ -59,6 +61,7 @@ namespace Project.Fireflies
             public float pulsePhase;
             public float pulseRate;
             public float speedMultiplier;
+            public float pixelSizeMultiplier;
             public float scare;
             public float brightness;
         }
@@ -144,6 +147,8 @@ namespace Project.Fireflies
                     noiseX = (float)motionRandom.NextDouble() * 1000f,
                     noiseY = (float)motionRandom.NextDouble() * 1000f,
                     speedMultiplier = Mathf.Lerp(0.75f, 1.2f, (float)motionRandom.NextDouble()),
+                    pixelSizeMultiplier = Mathf.Lerp(1f - pixelSizeVariation, 1f + pixelSizeVariation,
+                        (float)motionRandom.NextDouble()),
                     pulsePhase = (float)pulseRandom.NextDouble() * Mathf.PI * 2f,
                     pulseRate = Mathf.Lerp(0.75f, 1.3f, (float)pulseRandom.NextDouble())
                 };
@@ -283,7 +288,8 @@ namespace Project.Fireflies
                 flies[i] = fly;
                 int v = i * 8;
                 SetQuad(v, fly.position, radius, -0.02f);
-                SetQuad(v + 4, fly.position, pixelSize * 0.5f, -0.025f);
+                SetQuad(v + 4, fly.position,
+                    pixelSize * pixelSizeScale * fly.pixelSizeMultiplier * 0.5f, -0.025f);
                 Color32 halo = new Color(haloColor.r, haloColor.g, haloColor.b,
                     glowIntensity * fly.brightness * haloColor.a);
                 Color32 pixel = new Color(pixelColor.r, pixelColor.g, pixelColor.b,

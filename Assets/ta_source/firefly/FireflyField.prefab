@@ -107,6 +107,8 @@ MonoBehaviour:
   areaSize: {x: 3, y: 2}
   fireflyCount: 22
   pixelSize: 0.018
+  pixelSizeScale: 3
+  pixelSizeVariation: 0.35
   flightSpeed: 0.22
   flightPrecision: 3.5
   flowSpeed: 0.45
