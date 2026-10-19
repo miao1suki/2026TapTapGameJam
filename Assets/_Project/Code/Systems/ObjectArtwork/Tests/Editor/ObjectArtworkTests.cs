@@ -5,6 +5,16 @@ namespace Project.ObjectArtwork.Tests
 {
     public sealed class ObjectArtworkTests
     {
+        [Test] public void LegacyNeutralOneWayUsesTheFormalSixteenPixelArtwork()
+        {
+            var entry = ObjectArtworkLibrary.Load().Find(MechanismArtworkKind.OneWayPlatform);
+            Assert.NotNull(entry); Assert.AreEqual(1, entry.frames.Length);
+            Assert.AreEqual(new Vector2(16, 16), entry.frames[0].rect.size);
+            Assert.AreEqual(16, entry.frames[0].pixelsPerUnit);
+            Assert.AreEqual(16, entry.supportTopPixels);
+            Assert.AreEqual(MechanismArtworkKind.OneWayPlatform, ObjectArtworkLibrary.OneWayPlatformKind(0));
+        }
+
         [Test] public void OriginalGreenBlueButtonSheetIsFourPixelPerfectFrames()
         {
             const string path = "Assets/_Project/Resources/26TAPTAP/物体道具/蓝绿按钮80ms每帧.png";

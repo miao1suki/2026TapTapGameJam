@@ -82,13 +82,20 @@ namespace Project.BlockFeatures.Editor
                     File.WriteAllBytes(path, output.EncodeToPNG()); UnityEngine.Object.DestroyImmediate(output); AssetDatabase.ImportAsset(path);
                     entries.Add(new MechanismArtworkEntry { kind = kind, frames = SliceMechanism(path, 16, 16, Vector4.zero) });
                 }
-            using (var image = new ImageScope(Read(Source + "0-2~4.png")))
+            using (var image = new ImageScope(Read(Source + "f7c33d2f3280d20b1b7bbee97033c46c.png")))
             {
-                var output = new Texture2D(48, 8, TextureFormat.RGBA32, false);
-                for (int i = 0; i < 3; i++) output.SetPixels(i * 16, 0, 16, 8, image.Texture.GetPixels(256 + i * 32, 88, 16, 8));
+                var output = new Texture2D(16, 16, TextureFormat.RGBA32, false);
+                var pixels = image.Texture.GetPixels(32, 0, 16, 16);
+                ClearBlackBackground(pixels);
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    float luminance = pixels[i].grayscale;
+                    pixels[i] = new Color(luminance, luminance, luminance, pixels[i].a);
+                }
+                output.SetPixels(pixels);
                 string path = Generated + "/OneWayPlatform.png";
                 File.WriteAllBytes(path, output.EncodeToPNG()); UnityEngine.Object.DestroyImmediate(output); AssetDatabase.ImportAsset(path);
-                entries.Add(new MechanismArtworkEntry { kind = MechanismArtworkKind.OneWayPlatform, frames = SliceMechanism(path, 48, 8, new Vector4(8,0,8,0)) });
+                entries.Add(new MechanismArtworkEntry { kind = MechanismArtworkKind.OneWayPlatform, frames = SliceMechanism(path, 16, 16, Vector4.zero), supportTopPixels = 16 });
             }
             using (var image = new ImageScope(Read(Source + "门80ms每帧.png")))
             {

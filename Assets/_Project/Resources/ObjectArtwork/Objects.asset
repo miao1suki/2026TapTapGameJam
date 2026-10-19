@@ -380,7 +380,7 @@ MonoBehaviour:
     frames:
     - {fileID: 1284647483036081791, guid: 38b3095d88670ac408a1fb53e50aca8f, type: 3}
     frameSeconds: 0.08
-    supportTopPixels: 0
+    supportTopPixels: 16
   - kind: 18
     frames:
     - {fileID: 1626053780491658355, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
