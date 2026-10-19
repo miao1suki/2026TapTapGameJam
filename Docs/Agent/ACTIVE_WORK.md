@@ -2486,3 +2486,9 @@
 - 在规划实例参数增加平台宽度（格），保存检查区域与占用，保留稳定ID及控制绑定；移动/曲柄平台核心路线、距离、速度前置，其他配置默认折叠。共享Inspector与参数窗口UI，不改用户Gaming存档与运行时规则。应用editor-ui与color-gameplay规范。
 - Unity6000.3.12f1隔离编译、平台23项检查及刚体约束21项回归通过：宽度草稿/保存/取消/占用拒绝/越界/失效实例、JSON与画布重开、6格平台及碰撞生成、核心分组/高级折叠、速度换算保存重开、曲柄速度来源、普通Inspector共用UI与源prefab不变。未人工截图验收或完整游戏构建。
 - 宽度从左侧固定位置向右增减，1～4096格；已合并平台须先解除合并。其他实体阻挡时先移开；保存后按原自动同步或应用场景流程更新。仅提交Editor源码/meta与说明，用户Gaming存档、字体、Boss Timeline等修改保留。按既有授权仅推当前任务分支。
+
+## 2026-10-19 Gaming 场景美术网格增量（分支交付）
+
+- 分支：`codex/codex/gaming-art-layer-20261019`。接收当前工作区已保存的 Gaming 美术网格改动；不纳入其他本地场景、字体、试验图、IDE 设置及未跟踪的 TileArtTrial 资源。
+- 成套提交 `Gaming.unity`、独立 `Gaming_Art.asset` 及 `.meta`，并包含该场景生成网格及目录 `.meta`。同名 `Gaming.planning.json` 与 `Content/LevelMaps/正式关卡.json` 未改动；本次是美术网格层，不修改关卡布局存档。
+- Unity 6000.3.12f1。只完成静态引用与 Git 暂存范围检查；未打开 Unity、运行 Play Mode 或构建。
