@@ -1,5 +1,7 @@
 # 系统索引
 
+当前关卡标准：ILorR1012最终R1 ff785ab／R2 308c65f／R3 48cb1e4已接收；以实际Scene为准，旧planning尚未精确回采，不能直接应用覆盖或宣称最终布局可从旧片段导入。Gaming设计沿用xianyu66web已推送MVMap17（原1406项全字段一致，main额外保留Start）；美术标准Irotin-dyx ad1a4dd已备份到远端codex/backup/irotin-gaming-art-20261019，此轮不再合其Gaming。后续美术替换与设计增量须保留已处理区域，详见[本轮整合](../Developer/AUTHOR_SCENE_BASELINES_2026-10-19.md)。旧默认单向平台补正式图去色版，原三色与逻辑占格不变。
+
 美术工作台N使用与规划M相同的全局菜单快捷键，从Project/Inspector等窗口可开关，文字输入和未完成笔画不抢键；图层最大偏移拆成左右/上下独立行，窄侧栏可见且支持Undo。见[导航](../Developer/GRID_ART_NAVIGATION.md)、[视差参数](../Developer/GRID_ART_PARALLAX.md)。
 
 GridArt移动贯穿细线已定位为图集切片边界采到透明邻像素：生成网格UV1保存各四边形采样边界，主图/颜色mask同步夹取样，不缩UV0、不改几何或美术比例；53份现有生成网格已补齐。GPU负对照480帧32292漏色像素，修复0；84项测试通过。见[工作台换算与接缝回归](../Developer/SCENE_ART_PIXEL_CONVERSION.md)。

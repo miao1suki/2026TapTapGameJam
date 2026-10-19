@@ -5,6 +5,10 @@
 - 分支 codex/urgent-r-level-delivery-20261019；按用户最新授权接收 ILorR1012 R1 ff785ab、R2 308c65f、R3 48cb1e4 最终 Scene，保留原字节及 planning/meta、R1 镜头依赖，不重建、不改 Gaming。
 - 三关手调尚未精确回采，旧 JSON 不可全量应用或直接片段导入最终布局；此限制未隐瞒为“同步完成”。详见 Docs/Developer/R_LEVEL_FINAL_SCENE_HANDOFF_2026-10-19.md。
 - 静态检查三个 Scene fileID 唯一、外部 GUID 可解析、JSON 可解析、配对提交门禁；未执行 Unity／Play／打包。
+## 2026-10-19 单向平台旧默认美术接入（紧急交接）
+
+- 分支 codex/fix-oneway-default-art-20261019：三色栏目与正式16像素图已存在，但旧中性单向平台仍引用旧48×8白色素材，导致旧关卡看似没有应用新版。保留Neutral枚举值与原占格/碰撞，改用正式红色图同轮廓的去色版，不擅自给旧实例指定颜色；已有三色图不变。
+- 原PNG GUID与Sprite fileID保持，完整16×16帧原比例平铺，支撑边16像素；同步生成工具与Prefab静态预览。补EditMode资源契约测试，静态diff检查通过；紧急交付尚未运行Unity测试，不宣称动态验收。
 
 ## 2026-10-19 美术工作台N键与偏移输入可读性（验证完成）
 
