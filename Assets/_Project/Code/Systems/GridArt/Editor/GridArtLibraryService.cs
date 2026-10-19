@@ -44,7 +44,7 @@ namespace Project.GridArt.Editor
         {
             if (Application.isPlaying || library == null) return 0;
             Undo.RecordObject(library, "汇入切片素材");
-            int count = GridArtSupplementLibrary.Import(library);
+            int count = GridArtSupplementLibrary.Import(library) + GridArtProjectLibrary.Import(library);
             foreach (string guid in AssetDatabase.FindAssets("t:SurfaceTilePalette", new[] { "Assets" }).OrderBy(g => g))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);

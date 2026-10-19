@@ -179,7 +179,7 @@ namespace Project.GridArt.Editor
             if (!Brush.autoTerrain && Brush.Size != Vector2Int.one) { status.text = "墙地铺绘请选择单格素材或自动地形。"; return; }
             if (sourcePending) RefreshLevelSource();
             var cells = SourceCells(sourceGroup);
-            if (cells.Count == 0) { status.text = "该范围内没有白块；先在关卡编辑器搭建墙地。"; return; }
+            if (cells.Count == 0) { status.text = "该范围内没有墙地块；先在关卡编辑器搭建黑块或白块等墙地。"; return; }
             var layer = Layer;
             if (layer.cells.Count > 0 && !layer.followLevel && !EditorUtility.DisplayDialog("铺绘墙地", "替换当前图层的美术？其他图层和玩法物体不变。", "替换", "取消")) return;
             Change("铺绘关卡墙地", () =>
@@ -195,19 +195,24 @@ namespace Project.GridArt.Editor
             if (panel == null) return;
             panel.Clear(); panel.Add(Heading("关卡墙地"));
             sourceSummary = new Label(levelSource?.label ?? "正在读取当前关卡…"); sourceSummary.style.whiteSpace = WhiteSpace.Normal; panel.Add(sourceSummary);
+            if (levelSource?.referenceOnlyNames.Count > 0)
+            {
+                var namesOnly = levelSource.referenceOnlyNames.OrderBy(n => n);
+                panel.Add(new HelpBox("橙色轮廓仅作定位参考，不是游戏美术：" + string.Join("、", namesOnly), HelpBoxMessageType.Info));
+            }
             var ids = new List<string> { "" }; var names = new List<string> { "整关墙地" };
             if (levelSource != null) foreach (var group in levelSource.groups) { ids.Add(group.id); names.Add(names.Contains(group.label) ? group.label+" · "+(names.Count+1) : group.label); }
             if (!ids.Contains(sourceGroup)) sourceGroup = "";
             var picker = new PopupField<string>("铺绘范围", names, ids.IndexOf(sourceGroup));
             picker.RegisterValueChangedCallback(e => { sourceGroup = ids[names.IndexOf(e.newValue)]; }); panel.Add(picker);
-            var follow = ActionButton("自动铺绘并跟随白块", () => FillLevel(true)); follow.name = "art-follow-level";
-            follow.tooltip = "当前层由关卡墙地自动生成，新增、擦除及合并白块后更新；手工装饰放其他图层。";
+            var follow = ActionButton("自动铺绘并跟随墙地块", () => FillLevel(true)); follow.name = "art-follow-level";
+            follow.tooltip = "当前层由黑块、白块及自定义墙地块自动生成，新增、擦除及合并后更新；手工装饰放其他图层。";
             panel.Add(follow); panel.Add(ActionButton("仅铺绘一次", () => FillLevel(false)));
             bool canFill = CanEditMap && Layer != null && !Layer.locked && Layer.visible && Brush != null && !EditorApplication.isPlayingOrWillChangePlaymode;
             follow.SetEnabled(canFill); panel.Children().OfType<Button>().ToList().ForEach(b => b.SetEnabled(canFill));
             if (Layer != null && Layer.followLevel)
             {
-                panel.Add(new HelpBox("当前层随白块更新；装饰请放到独立图层。", HelpBoxMessageType.Info));
+                panel.Add(new HelpBox("当前层随墙地块更新；装饰请放到独立图层。", HelpBoxMessageType.Info));
                 panel.Add(ActionButton("转为手工绘制", () => Change("转为手工美术", () => Layer.followLevel = false)));
             }
             panel.Add(ActionButton("刷新关卡轮廓", () => { RequestSource(); RefreshLevelSource(); }));

@@ -1,5 +1,9 @@
 # 系统索引
 
+共享场景素材库已按16有效像素/格清点为178项，新增边框、混合图集装饰和正式道具静态外观；保留旧笔刷编号/引用，自定义命名不覆盖。素材栏按视口自适应两列并兼容高DPI，入口“同步项目与切片素材”；范围/选区/排除项见[素材盘点](../Developer/SCENE_ART_LIBRARY.md)。黑白与旧Platform墙地块均可作为工作台参考，不改地图布局。
+
+主菜单触控布局修正WorldMainMenu的NativeFormat SDF引用，并恢复已有按钮/静态事件接线；见[移动操作](../Developer/MOBILE_CONTROLS.md)。PC隐私政策字体容量另见[核对说明](../Developer/PRIVACY_FONT_CAPACITY.md)：4096临时图集验证正文无缺字，但作者修复待保存交付；不覆盖用户字体WIP，也不增加另一套字体。
+
 美术工作台N键开关、自动定位真实房间，墙和正式2D道具作为默认35%透明的只读参考，可隐藏/调透明度；远景平移缩放仅变换和裁剪保留批次。雨/萤火按完整区域框绘并在工作台调参，独立Scene美术根、非planning物体。新萤火可见面默认-0.25格，光点/光晕同层，普通透明道具前显示、不透明墙仍遮挡。见[定位操作](../Developer/GRID_ART_NAVIGATION.md)、[关卡参照](../Developer/GRID_ART_LEVEL_REFERENCE.md)、[区域效果](../Developer/GRID_ART_REGION_EFFECTS.md)；效果须显式保存Scene，协作仍交Scene、同名planning、美术Map、素材及meta。
 
 收集品与 Boss 共用稳定作者 ID 的会话进度：30%入场，60%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。击败Boss且达到30%开放T/触控地图，显示房间/重生点/收集剩余，Boss房禁用；安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与工作台90°原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。协作仍须Scene、同名planning、meta与新增依赖成套交付。
@@ -89,7 +93,7 @@ Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全�
 
 重生点/弹性植物美术：`ObjectArtwork`配置与`WorldObjectSpritePresentation`表现，三态重生点、真实弹跳触发的6帧动画、合并植物按格重复，接入既有绿色HSV/共享透明材质。使用见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md)，接入见 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
 
-关卡美术工作台：`Code/Systems/GridArt`，UI Toolkit双侧栏、共享多图集素材库、直接读取当前关卡／房间／通道Solid白块并可联动铺绘，无需Hierarchy选择；自动保存美术／延后实时预览默认开启，显式“保存场景”交付Scene。支持Scene绘制、自动边角、多格装饰、同格多层透明叠图、多层XY视差预设／预览及每关独立持久化Mesh。自动底图不覆盖手工装饰；空闲不扫描、笔画不重建侧栏、未变生成网格复用。不改白块共享材质／玩法存档，跨Scene需独立副本；预留同UV法线与URP 3D受光，不代表2D Light已接入。独立示例在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
+关卡美术工作台：`Code/Systems/GridArt`，UI Toolkit双侧栏、共享多图集素材库、直接读取当前关卡／房间／通道中的黑块、白块及自定义墙地块并可联动铺绘，无需Hierarchy选择；旧Platform白块同样保留，非矩形合并不填孔洞，缺正式2D的道具仅绘定位轮廓。自动保存美术／延后实时预览默认开启，显式“保存场景”交付Scene。支持Scene绘制、自动边角、多格装饰、同格多层透明叠图、多层XY视差预设／预览及每关独立持久化Mesh。自动底图不覆盖手工装饰；空闲不扫描、笔画不重建侧栏、未变生成网格复用。不改方块共享材质／玩法存档，跨Scene需独立副本；预留同UV法线与URP 3D受光，不代表2D Light已接入。独立示例在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
 
 游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标和设置背景，预裁切产物位于`Art/Generated/GameUI`。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
 

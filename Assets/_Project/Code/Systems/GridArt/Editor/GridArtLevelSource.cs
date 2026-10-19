@@ -37,6 +37,7 @@ namespace Project.GridArt.Editor
         public readonly List<GridArtLevelGroup> groups = new List<GridArtLevelGroup>();
         public readonly List<GridArtLevelRoom> rooms = new List<GridArtLevelRoom>();
         public readonly List<GridArtLevelReferenceItem> referenceItems = new List<GridArtLevelReferenceItem>();
+        public readonly HashSet<string> referenceOnlyNames = new HashSet<string>();
         public string currentRoomId = "";
         public Rect worldBounds;
         public bool hasWorldBounds;

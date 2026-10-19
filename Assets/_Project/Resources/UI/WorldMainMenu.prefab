@@ -2797,7 +2797,7 @@ MonoBehaviour:
   settingsController: {fileID: 7504405477442725843}
   saveController: {fileID: 3821955952877549696}
   statusText: {fileID: 0}
-  uiSdfFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 3}
+  uiSdfFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
   uiFont: {fileID: 12800000, guid: b25ffa71628c50343ab7fdde6c642315, type: 3}
 --- !u!114 &2045816651949709993
 MonoBehaviour:
@@ -6766,7 +6766,7 @@ MonoBehaviour:
     m_LineSpacing: 1.1
   m_Text: "\u961F\u957F-\u7A0B\u5E8F/TA    \u767D\u55B5\u55B5\n\u526F\u961F\u957F-\u4E3B\u7B56\u5212   
     \u6EBA\u6C34\u7684\u54B8\u9C7C\u541B\n\u7B56\u5212    R\n\u7B56\u5212    <\u6BB5>\n\u7A0B\u5E8F   
-    \u81DE\u65E5\u4E0D\u518D\n\u7F8E\u672F    \u827E\u5C14\u56DB\u6B21\u65B9\n\u7F8E\u672F   
+    \u81FE\u65E5\u4E0D\u518D\n\u7F8E\u672F    \u827E\u5C14\u56DB\u6B21\u65B9\n\u7F8E\u672F   
     \u963F\u826F\nTA    Irotin\n\u97F3\u4E50    BK2049"
 --- !u!1 &7022352231542596693
 GameObject:

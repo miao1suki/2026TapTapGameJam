@@ -9,8 +9,8 @@
 .art-library { width: 250px; min-width: 220px; flex-shrink: 0; padding: 10px; background-color: rgb(33, 37, 44); }
 .art-inspector { width: 280px; flex-shrink: 0; padding: 10px; background-color: rgb(33, 37, 44); }
 .art-section-title { font-size: 14px; -unity-font-style: bold; margin-top: 10px; margin-bottom: 8px; }
-.art-brush-grid { flex-direction: row; flex-wrap: wrap; align-content: flex-start; }
-.art-workspace .art-brush { width: 102px; height: 94px; padding: 4px; margin: 3px; }
+.art-brush-grid { flex-direction: row; flex-wrap: wrap; align-content: flex-start; align-items: flex-start; }
+.art-workspace .art-brush { width: 88px; min-width: 0; flex-shrink: 0; height: 94px; padding: 4px; margin: 3px; }
 .art-brush-name { font-size: 11px; -unity-text-align: middle-center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #art-current-preview { height: 100px; margin-bottom: 8px; background-color: rgb(23, 27, 33); }
 .art-status { min-height: 28px; padding: 6px 12px; background-color: rgb(24, 28, 34); white-space: normal; }

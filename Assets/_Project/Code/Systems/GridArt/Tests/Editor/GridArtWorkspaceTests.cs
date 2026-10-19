@@ -512,14 +512,16 @@ namespace Project.GridArt.Tests
         {
             AddBrush();
             GridArtBrush original=library.brushes[0]; string originalKey=original.sourceKey;
-            Assert.That(GridArtSupplementLibrary.Import(library),Is.EqualTo(78));
-            Assert.That(library.brushes.Count,Is.EqualTo(79));
+            Assert.That(GridArtSupplementLibrary.Import(library),Is.EqualTo(96));
+            Assert.That(library.brushes.Count,Is.EqualTo(97));
             Assert.That(library.brushes[0],Is.SameAs(original));
             Assert.That(library.brushes[0].sourceKey,Is.EqualTo(originalKey));
             var imported=library.brushes.Skip(1).ToArray();
             Assert.That(imported.Select(b=>b.colorId).Distinct(),Is.EquivalentTo(new[] {"red","blue","green"}));
-            Assert.That(imported.Count(b=>b.category=="雨滴原图"),Is.EqualTo(24));
-            Assert.That(imported.Count(b=>b.category=="颜色装饰"),Is.EqualTo(54));
+            Assert.That(imported.Count(b=>b.category=="雨滴原图"),Is.EqualTo(12));
+            Assert.That(imported.Count(b=>b.category=="地面草饰·拆分片"),Is.EqualTo(24));
+            Assert.That(imported.Count(b=>b.category=="地面草饰·组合"),Is.EqualTo(12));
+            Assert.That(imported.Count(b=>b.category=="墙面波纹"),Is.EqualTo(6));
             Assert.That(imported.All(b=>AssetDatabase.Contains(b.sprite)),Is.True);
             var edge=imported.Where(b=>b.sourceKey.EndsWith("_8",StringComparison.Ordinal)).ToArray();
             Assert.That(edge.Length,Is.EqualTo(6));
@@ -538,6 +540,44 @@ namespace Project.GridArt.Tests
             var restored=AssetDatabase.LoadAssetAtPath<GridArtPalette>(path);
             Assert.That(restored.brushes.Select(b=>b.sourceKey),Is.EqualTo(keys));
             Assert.That(restored.brushes.Skip(1).All(b=>b.sprite!=null && AssetDatabase.Contains(b.sprite)),Is.True);
+        }
+
+        [Test] public void ProjectSceneSelectionsUseNativePixelsAndStableSlots()
+        {
+            AddBrush(); var first=library.brushes[0];
+            Assert.That(GridArtProjectLibrary.Import(library),Is.GreaterThan(55));
+            Assert.That(library.brushes[0],Is.SameAs(first));
+            var imported=library.brushes.Skip(1).ToArray();
+            Assert.That(imported.All(GridArtPixelLayout.IsNative),Is.True);
+            Assert.That(imported.Single(b=>b.sourceKey.EndsWith("#scene:frame_whole")).DisplaySize,Is.EqualTo(Vector2.one*5));
+            Assert.That(imported.Single(b=>b.sourceKey=="project-artwork:OneWayPlatform:idle").DisplaySize,Is.EqualTo(new Vector2(3,.5f)));
+            Assert.That(imported.Single(b=>b.sourceKey=="project-artwork:MovingPlatform:idle").DisplaySize,Is.EqualTo(new Vector2(3,1)));
+            Assert.That(imported.Single(b=>b.sourceKey=="project-artwork:RedCube:idle").colorId,Is.EqualTo("red"));
+            string[] keys=library.brushes.Select(b=>b.sourceKey).ToArray();
+            Assert.That(keys.Distinct().Count(),Is.EqualTo(keys.Length));
+            Assert.That(GridArtProjectLibrary.Import(library),Is.Zero);
+            Assert.That(library.brushes.Select(b=>b.sourceKey),Is.EqualTo(keys));
+        }
+
+        [Test] public void SupplementCorrectionsRetainCustomNamesAndLegacyUvs()
+        {
+            GridArtSupplementLibrary.Import(library);
+            var grass=library.brushes.Single(b=>b.sourceKey.EndsWith("#RainRaw_red_0_0"));
+            var sprite=grass.sprite; var size=grass.DisplaySize;
+            grass.label="红色雨滴图案 01"; grass.category="雨滴原图";
+            var custom=library.brushes.Single(b=>b.sourceKey.EndsWith("#RainRaw_red_0_1"));
+            custom.label="策划自命名"; custom.category="我的素材";
+            GridArtSupplementLibrary.Import(library);
+            Assert.That(grass.label,Does.Contain("地面草饰")); Assert.That(grass.category,Is.EqualTo("地面草饰·拆分片"));
+            Assert.That(grass.sprite,Is.SameAs(sprite)); Assert.That(grass.DisplaySize,Is.EqualTo(size));
+            Assert.That(custom.label,Is.EqualTo("策划自命名")); Assert.That(custom.category,Is.EqualTo("我的素材"));
+        }
+
+        [TestCase(180,1)] [TestCase(200,2)] [TestCase(216,2)] [TestCase(310,3)]
+        public void BrushCardsFitViewportWithoutHorizontalOverflow(float width,int columns)
+        {
+            Assert.That(GridArtBrushGrid.Columns(width),Is.EqualTo(columns));
+            Assert.That((GridArtBrushGrid.CardWidth(width)+6)*columns,Is.LessThanOrEqualTo(width));
         }
     }
 }

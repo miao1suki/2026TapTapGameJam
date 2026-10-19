@@ -21,9 +21,13 @@ namespace Project.GameFlow
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Install()
         {
+            EnsureSettingsIntegration();
+            data = null;
+        }
+        internal static void EnsureSettingsIntegration()
+        {
             Project.StartMenu.SettingsPanelController.TouchLayoutRequested -= OpenFromSettings;
             Project.StartMenu.SettingsPanelController.TouchLayoutRequested += OpenFromSettings;
-            data = null;
         }
         private static void OpenFromSettings(TMP_FontAsset font) => Open(font);
         private static Data Current

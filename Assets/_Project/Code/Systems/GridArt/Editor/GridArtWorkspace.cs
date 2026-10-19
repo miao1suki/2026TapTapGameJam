@@ -171,7 +171,7 @@ namespace Project.GridArt.Editor
                 int added = GridArtLibraryService.Import(map.palette, source.value, ppc.value); ArtChanged(true);
                 status.text = added > 0 ? "已添加 " + added + " 项素材" : "没有新增切片：请选择已切片图片或Sprite。";
             }));
-            sourceTools.Add(ActionButton("汇入所有切片库", () =>
+            sourceTools.Add(ActionButton("同步项目与切片素材", () =>
             {
                 if (map?.palette == null) return;
                 int added = GridArtLibraryService.Synchronize(map.palette); ArtChanged(true); status.text = "已汇入 " + added + " 项新素材";
@@ -201,8 +201,12 @@ namespace Project.GridArt.Editor
             if (!categories.Contains(category)) category = "全部";
             var filter = new PopupField<string>(categories, categories.IndexOf(category));
             filter.RegisterValueChangedCallback(e => { category = e.newValue; RefreshBrushes(); }); libraryPanel.Add(filter);
-            var scroll = new ScrollView { name = "art-library-scroll" }; scroll.style.flexGrow = 1;
-            brushList = new VisualElement(); brushList.AddToClassList("art-brush-grid"); scroll.Add(brushList); libraryPanel.Add(scroll); RefreshBrushes();
+            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "art-library-scroll",
+                horizontalScrollerVisibility=ScrollerVisibility.Hidden, verticalScrollerVisibility=ScrollerVisibility.AlwaysVisible };
+            scroll.style.flexGrow=1; scroll.style.minHeight=0; scroll.style.minWidth=0;
+            scroll.contentContainer.style.width=Length.Percent(100);
+            scroll.contentContainer.style.minWidth=0;
+            brushList = new GridArtBrushGrid(); scroll.Add(brushList); libraryPanel.Add(scroll); RefreshBrushes();
             if (map.palette != null && map.palette.brushes.Count > 0) brushIndex = Mathf.Clamp(brushIndex, 0, map.palette.brushes.Count - 1);
             inspectorPanel.Add(Heading("当前素材"));
             if (Brush != null)
@@ -279,6 +283,7 @@ namespace Project.GridArt.Editor
                 var label = new Label(brush.label) { pickingMode = PickingMode.Ignore }; label.AddToClassList("art-brush-name"); button.Add(label); brushList.Add(button); count++;
             }
             if (count == 0) brushList.Add(new Label("无匹配素材\n展开素材来源添加切片。"));
+            (brushList as GridArtBrushGrid)?.Reflow(true);
         }
 
         private void AddLayer(string name, float depth, float speed, int order) => Change("添加美术图层", () =>

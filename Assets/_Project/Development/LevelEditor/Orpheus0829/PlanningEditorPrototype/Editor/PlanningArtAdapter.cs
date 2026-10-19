@@ -57,25 +57,34 @@ namespace PlanningEditorPrototype
                 ResolveCurrentRoom(scene, snapshot);
                 return snapshot;
             }
-            var sceneGroup = new GridArtLevelGroup { id = "scene", label = "场景白块" };
+            var sceneGroup = new GridArtLevelGroup { id = "scene", label = "场景墙地块" };
+            var scenePalette = Palette();
             foreach (var root in scene.GetRootGameObjects())
                 foreach (var block in root.GetComponentsInChildren<LevelEditorPlacedBlock>(true))
                 {
                     float size = block.CellWorldSize; snapshot.cellSize = size;
                     if (block.IsProp)
                     {
+                        var target = new Rect((Vector2)block.Cell * size, (Vector2)block.SizeCells * size);
                         if (ObjectArtworkPlanningPreview.TryGet(block.gameObject, block.SizeCells, null, out var artwork))
-                            AddArtwork(snapshot, block.PlanningBoxId, new Rect((Vector2)block.Cell * size, (Vector2)block.SizeCells * size), artwork, size);
+                            AddArtwork(snapshot, block.PlanningBoxId, target, artwork, size);
+                        else AddPlaceholder(snapshot, block.PlanningBoxId, block.EntryName, target);
                         continue;
                     }
+                    Color tint = block.HasColorData ? block.EntryColor : Color.white;
+                    if (!block.HasColorData && scenePalette != null) foreach (var entry in scenePalette.Entries)
+                        if (entry != null && entry.DisplayName == block.EntryName) { tint = entry.Color; break; }
                     var shape = block.GetComponent<LevelEditorMergedShape>();
-                    if (shape == null) sceneGroup.bounds.Add(new Rect((Vector2)block.Cell*size, (Vector2)block.SizeCells*size));
+                    if (shape == null) AddWall(new Rect((Vector2)block.Cell*size, (Vector2)block.SizeCells*size));
                     else foreach (RectInt part in shape.Rectangles)
-                        sceneGroup.bounds.Add(new Rect(new Vector2(block.Cell.x+part.x,block.Cell.y+block.SizeCells.y-part.yMax)*size,(Vector2)part.size*size));
+                        AddWall(new Rect(new Vector2(block.Cell.x+part.x,block.Cell.y+block.SizeCells.y-part.yMax)*size,(Vector2)part.size*size));
+                    void AddWall(Rect rect)
+                    {
+                        sceneGroup.bounds.Add(rect);
+                        snapshot.AddReference(block.PlanningBoxId, new GridArtQuad(rect, new Rect(0, 0, 1, 1), Texture2D.whiteTexture), tint, GridArtReferenceLayer.Wall);
+                    }
                 }
             snapshot.groups.Add(sceneGroup);
-            foreach (var rect in sceneGroup.bounds) snapshot.AddReference("scene-wall", new GridArtQuad(rect,
-                new Rect(0, 0, 1, 1), Texture2D.whiteTexture), new Color(.8f, .82f, .86f), GridArtReferenceLayer.Wall);
             snapshot.RecalculateBounds(); return snapshot;
         }
 
@@ -141,9 +150,16 @@ namespace PlanningEditorPrototype
                         AddArtwork(snapshot, box.id, WorldRect(new RectInt(slice.Key + source.offset, Vector2Int.one)), slice.Value, 1);
                     continue;
                 }
-                if (source.entry?.Prefab == null) continue;
-                if (!ObjectArtworkPlanningPreview.TryGet(source.entry.Prefab, new Vector2(box.width, box.height),
-                    Values(source), out var artwork)) continue;
+                if (source.entry?.Prefab == null || !ObjectArtworkPlanningPreview.TryGet(source.entry.Prefab,
+                    new Vector2(box.width, box.height), Values(source), out var artwork))
+                {
+                    foreach (var part in PlanningShapeUtility.Rectangles(box))
+                    {
+                        var rect = part; rect.position += source.offset;
+                        AddPlaceholder(snapshot, box.id, source.entry?.DisplayName ?? box.propEntryName, WorldRect(rect));
+                    }
+                    continue;
+                }
                 if (box.propEntryId == PlanningDoorUtility.ButtonEntryId && box.doorButtonOrder > 0 && library != null)
                 {
                     Sprite sprite = library.FirstFrame(ObjectArtworkLibrary.DoorButtonKind(box.doorButtonOrder - 1));
@@ -162,12 +178,13 @@ namespace PlanningEditorPrototype
 
             void AddSource(PlanningBox box, Vector2Int offset, IList<PlanningBox> siblings, GridArtLevelGroup group)
             {
-                if (box.type == PlanningDetailType.Solid && string.IsNullOrEmpty(box.propEntryId) && string.IsNullOrEmpty(box.propEntryName))
+                // SceneBuilder chooses the block/prop path by the palette reference,
+                // not the legacy detail enum. Existing white blocks often use Platform.
+                if (string.IsNullOrEmpty(box.propEntryId) && string.IsNullOrEmpty(box.propEntryName))
                 {
                     Color tint = Color.white;
-                    if (palette != null) foreach (var entry in palette.Entries)
-                        if (entry != null && ((!string.IsNullOrEmpty(box.paletteEntryId) && entry.EntryId == box.paletteEntryId) ||
-                            string.IsNullOrEmpty(box.paletteEntryId) && entry.DisplayName == box.paletteEntryName)) { tint = entry.Color; break; }
+                    var block = FindBlockEntry(palette, box);
+                    if (block != null) tint = block.Color;
                     foreach (var part in PlanningShapeUtility.Rectangles(box))
                     {
                         var r = part; r.position += offset; Rect world = WorldRect(r); group.bounds.Add(world);
@@ -182,14 +199,50 @@ namespace PlanningEditorPrototype
             source.box.hasComponentOverrides ? source.box.componentOverrides : source.entry?.ComponentValueOverrides;
         private static Rect WorldRect(RectInt r) => new(r.x, -r.yMax, r.width, r.height);
 
+        private static LevelEditorBlockEntry FindBlockEntry(LevelEditorPalette palette, PlanningBox box)
+        {
+            if (palette == null) return null;
+            // Match SceneBuilder's ID -> name -> legacy-type -> first-entry fallback.
+            if (!string.IsNullOrEmpty(box.paletteEntryId)) foreach (var entry in palette.Entries)
+                if (entry != null && entry.EntryId == box.paletteEntryId) return entry;
+            if (!string.IsNullOrEmpty(box.paletteEntryName)) foreach (var entry in palette.Entries)
+                if (entry != null && entry.DisplayName == box.paletteEntryName) return entry;
+            string name = box.type switch
+            {
+                PlanningDetailType.Solid => "黑方块",
+                PlanningDetailType.Platform => "白方块",
+                PlanningDetailType.Hazard => "红方块",
+                PlanningDetailType.Water => "蓝方块",
+                _ => "绿方块"
+            };
+            foreach (var entry in palette.Entries) if (entry != null && entry.DisplayName == name) return entry;
+            return palette.Entries.Count > 0 ? palette.Entries[0] : null;
+        }
+
         private static LevelEditorPropEntry FindEntry(LevelEditorPalette palette, PlanningBox box)
         {
             if (box.propEntryId == PlanningDoorUtility.ButtonEntryId) return PlanningDoorUtility.GetButtonEntry();
             if (palette == null) return null;
-            foreach (var entry in palette.PropEntries)
-                if (entry != null && ((!string.IsNullOrEmpty(box.propEntryId) && entry.EntryId == box.propEntryId) ||
-                    string.IsNullOrEmpty(box.propEntryId) && !string.IsNullOrEmpty(box.propEntryName) && entry.DisplayName == box.propEntryName)) return entry;
+            if (!string.IsNullOrEmpty(box.propEntryId)) foreach (var entry in palette.PropEntries)
+                if (entry != null && entry.EntryId == box.propEntryId) return entry;
+            if (!string.IsNullOrEmpty(box.propEntryName)) foreach (var entry in palette.PropEntries)
+                if (entry != null && entry.DisplayName == box.propEntryName) return entry;
             return null;
+        }
+
+        private static void AddPlaceholder(GridArtLevelSnapshot snapshot, string id, string label, Rect rect)
+        {
+            // Read-only editor guide for markers/props without formal 2D art.
+            // Never instantiate a prefab, draw its 3D thumbnail or add it to wall fill.
+            snapshot.referenceOnlyNames.Add(string.IsNullOrEmpty(label) ? "未找到素材的道具" : label);
+            float edge = Mathf.Min(snapshot.cellSize / GridArtworkMetrics.PixelsPerCell, Mathf.Min(rect.width, rect.height) * .5f);
+            Color tint = new(.95f, .64f, .25f);
+            Add(new Rect(rect.x, rect.y, rect.width, edge));
+            Add(new Rect(rect.x, rect.yMax - edge, rect.width, edge));
+            Add(new Rect(rect.x, rect.y, edge, rect.height));
+            Add(new Rect(rect.xMax - edge, rect.y, edge, rect.height));
+            void Add(Rect strip) => snapshot.AddReference(id,
+                new GridArtQuad(strip, new Rect(0, 0, 1, 1), Texture2D.whiteTexture), tint, GridArtReferenceLayer.EditorOverlay);
         }
 
         private static void ResolveCurrentRoom(Scene scene, GridArtLevelSnapshot snapshot)

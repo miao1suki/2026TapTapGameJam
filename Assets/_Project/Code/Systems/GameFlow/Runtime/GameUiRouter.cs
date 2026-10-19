@@ -259,6 +259,9 @@ namespace Project.GameFlow
 
         private void OnEnable()
         {
+            // A script reload can clear the static settings bridge while the same-world
+            // main menu and its settings objects remain alive. Restore it idempotently.
+            MobileControlLayout.EnsureSettingsIntegration();
             BindFlow();
         }
 

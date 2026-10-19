@@ -167,11 +167,19 @@ namespace Project.StartMenu
 
         private void EnsureTouchLayoutButton()
         {
-            if (categoryList == null || categoryList.Find("Touch Layout") != null ||
+            if (categoryList == null ||
                 Project.InputAbstraction.GameInput.PlatformMode != Project.InputAbstraction.InputPlatformMode.Mobile) return;
-            Button layout = StartMenuUiFactory.CreateButton("Touch Layout", categoryList, "触控布局",
-                new Vector2(190f, 48f), OpenTouchLayout);
-            AddCategorySize(layout);
+            Button layout = categoryList.Find("Touch Layout")?.GetComponent<Button>();
+            if (layout == null)
+            {
+                layout = StartMenuUiFactory.CreateButton("Touch Layout", categoryList, "触控布局",
+                    new Vector2(190f, 48f), null);
+                AddCategorySize(layout);
+            }
+            // Runtime listeners are not retained by a prefab or a Play-mode script reload.
+            // A persistent menu can already have the view, but still need its action rebound.
+            layout.onClick.RemoveListener(OpenTouchLayout);
+            layout.onClick.AddListener(OpenTouchLayout);
         }
 
         private void OpenTouchLayout()
