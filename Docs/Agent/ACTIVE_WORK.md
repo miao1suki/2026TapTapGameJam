@@ -256,6 +256,17 @@
 - 锁修复：玩家锁轨缩短到 `0–6.52` 秒，在最终开战 Playable 前结束，避开 Hold 模式末帧；`ActorTimelineBehaviour` 同时在片段自然末尾主动释放控制锁，不依赖 `OnGraphStop`。
 - 地图恢复：Unity 重新导入期间 `Boss.json` 与 `Boss.planning.json` 被写成与场景不一致的版本，已从 HEAD 恢复为与 `Boss.unity` 一致的 `8d5ea0`；覆盖前的文件备份在 `Library/MapRecoveryBackup-20261018-1250`。
 - 验证：Unity 已完成脚本与 Timeline 资产导入，Editor.log 无 C# 编译错误；Boss 预制体与玩家锁轨序列化核对通过。EditMode 相机测试和完整入场/死亡实机流程仍待运行。
+## 2026-10-19 ILorR R1 左右镜像（完成，分支交付）
+
+- 用户要求将现有R1布局左右镜像，完成后现已明确授权推送；继续在现有 `codex/ilorr/r1-level` 和R1独立目录工作，不切换或合并main。推送前再次成功fetch，main仍为 `12d56fe153c647015c9d61ea12dfd7125d545135`，自制作镜像时的检查后无新增；制作镜像前的R1场景与main已整合的微调版一致，只有main的R1审计脚本另有兼容更新。
+- 以58格宽度的世界轴X=29镜像当前已保存Scene，保留全部试玩非整格微调和尺寸。同步规划占格、标注、出生点、对象网格信息及内嵌存档，保留稳定ID和机关引用。固定13格绿条需连同根与初始伸长方向翻转，不使用负缩放。
+- 只修改R1专属文件和自身文档；原Boss时间轴未提交改动保留，R2/R3、Gaming、标准玩家、Packages/ProjectSettings不动。修改前备份Scene与planning到本地Library。
+- Scene/配套planning/内嵌planning和标注均已镜像，meta和稳定ID不变，R1仍76根。原出口现左侧、两平台换边；固定绿条根为(39.5,-24.5,0)，正缩放绕Z180度后向左伸满13格，世界X=27～40，重置朝向正确。玩家Scene位置(41.5,-20.5,0)。未从旧Excel重建或取整任何微调。
+- Unity6000.3.12f1编译通过；受保护迁移641项、无改动增量应用158项、实际Play1664次断言通过（含逐帧重复采样）。真实绿条底面攀附/镜像横移/跳跃脱离/重置、共享曲柄接续和回落、独立曲柄、两保持按钮AND门均通过；门使用TryPress API。已查看1740×1320运行时全图，未打包或人工完整通关。首次迁移审计在内存中发现藤蔓父子重复移动，未保存；修正为按父子深度和原世界位姿各翻转一次后全部通过，不保留错误布局。
+- 原Scene与planning备份在Library/R1BeforeHorizontalMirror；报告R1HorizontalMirror.txt、R1MirrorNoOpVerification.txt、R1GameplayVerification.txt和R1Overview.png仅留Library。原Boss时间轴SHA256仍为7DB5E9AD86FE383EAFFE86D8A15E4CAC99FBC032745D97DCD00F89E3E6F00D71，不纳入任务提交。仅显式提交本任务文件，按用户授权普通推送R1分支，不合并或推送main、不强推、不创建PR。
+- 原整数planning与Scene手工Transform差异继续保留，绿条根朝向保存在Scene；无改动增量应用已验，删除后全量重建/源图重新导入未承诺保留微调。整合时成套带入Scene/planning/meta及R1专属工具/说明，不只复制JSON；见R1_LEVEL.md。R1仍在原任务分支，main新框架不自行合入；整合者继续保留main的场景流程与标准玩家。
+- 交付实现提交 `40fe66c2d40f64a44e4e96c1b8ee91bd5a0ded4a`，推送前远程R1为 `4dbeb6800bac80cbf0b9236658745d07360297b0`，为本地实现提交的直接父提交，可正常快进。场景、配套存档、原meta及新增编辑器脚本/meta成套，忽略目录与Boss改动不上传；整合仍由整合窗口处理。
+
 ## 2026-10-18 ILorR R1 试玩微调（保留已保存场景，独立分支交付）
 
 - 用户确认退出Play并保存，明确要求先推R2再推R1。本次仅交付R1已保存Scene及交接说明，不重建、吸附坐标或改动运行时代码；不包含Boss时间轴自动重序列化。
