@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Achievement_1012
   m_EditorClassIdentifier: Project.Achievements.Runtime::Project.Achievements.AchievementSO
   achievementId: 1012
-  displayName: "\u5567...\u53C8\u662F\u9B42\u6E38"
+  displayName: "\u989D...\u53C8\u662F\u9B42\u6E38"
   description: "\u8FD9\u4E48\u5BB9\u6613\u6B7B\u4E0D\u662F\u9B42\u6E38\u662F\u4EC0\u4E48\uFF1F"
   hidden: 0
   platformAchievementId: Die2

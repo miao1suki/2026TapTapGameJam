@@ -27,6 +27,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 90f4f69c10dbc42498a58d50ec7b2a1b, type: 2}
   - {fileID: 11400000, guid: 3ebc3bd9b3626a04ba90cc60d6da2058, type: 2}
   - {fileID: 11400000, guid: 3c850e3125e2082498c1d10442795260, type: 2}
-  catalogVersion: 69d73409423119b1b97eecea134ec190
+  catalogVersion: af030e77d1326d558b6d258cab5f9f48
   saveDirectoryOverride: 
   saveFileName: achievements.json

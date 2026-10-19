@@ -154,6 +154,30 @@ namespace Project.StartMenu
         private void Update()
         {
             if (!IsPresented) return;
+            if (settingsPanel != null &&
+                (settingsPanel.activeSelf ||
+                 (panelBackdrop != null &&
+                  panelBackdrop.gameObject.activeSelf)) &&
+                (Project.InputAbstraction.GameInput
+                     .WasTriggeredThisFrame(
+                         Project.InputAbstraction.InputActionId.Cancel) ||
+                 Project.InputAbstraction.GameInput
+                     .WasTriggeredThisFrame(
+                         Project.InputAbstraction.InputActionId.Pause)))
+            {
+                if (settingsPanel.activeSelf)
+                {
+                    settingsController?.TryTriggerBackButton();
+                }
+                else
+                {
+                    HidePanelBackdropImmediate();
+                    SetOnly(mainPanel);
+                }
+
+                return;
+            }
+
             Project.InputAbstraction.DesktopCursorPolicy.Apply(true);
             if (worldMenuLogo != null && logoFrames != null && logoFrames.Length > 0)
             {
@@ -805,6 +829,9 @@ namespace Project.StartMenu
                 {
                     panelBackdropTween = null;
                     SetOnly(settingsPanel);
+                    settingsPanel.transform.SetAsLastSibling();
+                    ApplyTypography();
+                    settingsController?.FocusBackButton();
                     if (pendingShowCredits)
                     {
                         pendingShowCredits = false;
@@ -926,6 +953,7 @@ namespace Project.StartMenu
 
         private void BindSubPanels()
         {
+            settingsController?.SetOpenLayoutEnabled(true);
             if (settingsController != null)
             {
                 settingsController.BackRequested -= ShowMain;

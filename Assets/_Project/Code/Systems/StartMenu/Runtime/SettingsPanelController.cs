@@ -1,6 +1,7 @@
 using System;
 using Project.Audio;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Project.StartMenu
@@ -36,6 +37,7 @@ namespace Project.StartMenu
         [SerializeField] private RectTransform categoryList;
         [SerializeField] private RectTransform contentRoot;
         private bool buttonsBound;
+        private bool openLayoutEnabled;
 
         public event Action BackRequested;
         public static event Action<TMPro.TMP_FontAsset> TouchLayoutRequested;
@@ -45,6 +47,41 @@ namespace Project.StartMenu
             if (backButton != null)
             {
                 backButton.gameObject.SetActive(value);
+            }
+        }
+
+        public void SetOpenLayoutEnabled(bool value)
+        {
+            openLayoutEnabled = value;
+            ApplyOpenLayout();
+        }
+
+        public bool TryTriggerBackButton()
+        {
+            KeyBindingPanelController keyBinding =
+                GetComponentInChildren<KeyBindingPanelController>(true);
+            if (keyBinding != null && keyBinding.IsRebinding)
+            {
+                return false;
+            }
+
+            if (backButton == null || !backButton.interactable)
+            {
+                return false;
+            }
+
+            backButton.onClick.Invoke();
+            return true;
+        }
+
+        public void FocusBackButton()
+        {
+            if (backButton != null &&
+                backButton.gameObject.activeInHierarchy &&
+                EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(
+                    backButton.gameObject);
             }
         }
 
@@ -163,8 +200,11 @@ namespace Project.StartMenu
             EnsurePrivacyButton();
             EnsureTouchLayoutButton();
             BindButtons();
+            StyleBackButtonAsClose();
+            ApplyTransparentPageBackgrounds();
             HideSmallHints();
             StartMenuUiFactory.ApplyInnerArtwork(transform);
+            ApplyOpenLayout();
         }
 
         private void EnsureTouchLayoutButton()
@@ -212,8 +252,159 @@ namespace Project.StartMenu
                     Project.InputAbstraction.InputPlatformMode.Mobile ? "手柄按键" : "按键映射";
                 RefreshSound();
                 ShowPage(0);
+                StyleBackButtonAsClose();
+                ApplyTransparentPageBackgrounds();
                 HideSmallHints();
                 StartMenuUiFactory.ApplyInnerArtwork(transform);
+                ApplyOpenLayout();
+            }
+        }
+
+        private void OnRectTransformDimensionsChange()
+        {
+            if (openLayoutEnabled)
+            {
+                ApplyOpenLayout();
+            }
+        }
+
+        private void ApplyOpenLayout()
+        {
+            if (!openLayoutEnabled ||
+                categoryList == null ||
+                contentRoot == null)
+            {
+                return;
+            }
+
+            RectTransform root = transform as RectTransform;
+            if (root == null ||
+                root.rect.width <= 1f ||
+                root.rect.height <= 1f)
+            {
+                return;
+            }
+
+            float widthScale = root.rect.width / 1360f;
+            float heightScale = root.rect.height / 720f;
+            float scale = Mathf.Clamp(
+                Mathf.Min(widthScale, heightScale) * 1.15f,
+                .85f,
+                1.65f);
+            float left = Mathf.Max(52f, root.rect.width * .04f);
+
+            categoryList.anchorMin = new Vector2(0f, 1f);
+            categoryList.anchorMax = new Vector2(0f, 1f);
+            categoryList.pivot = new Vector2(0f, 1f);
+            categoryList.anchoredPosition =
+                new Vector2(left, -118f);
+            categoryList.localScale = Vector3.one * scale;
+
+            RectTransform title =
+                transform.Find("Title") as RectTransform;
+            if (title != null)
+            {
+                title.anchorMin = new Vector2(0f, 1f);
+                title.anchorMax = new Vector2(0f, 1f);
+                title.pivot = new Vector2(0f, 1f);
+                title.anchoredPosition =
+                    new Vector2(left, -38f);
+                title.localScale = Vector3.one * scale;
+            }
+
+            float categoryRight =
+                left + categoryList.rect.width * scale;
+            float contentX =
+                categoryRight + 36f * scale;
+            float availableWidth = Mathf.Max(
+                320f,
+                root.rect.width - contentX -
+                Mathf.Max(32f, root.rect.width * .03f));
+            float contentWidth = Mathf.Max(
+                1f,
+                contentRoot.rect.width);
+            float contentScale = Mathf.Min(
+                scale,
+                availableWidth / contentWidth);
+
+            contentRoot.anchorMin = new Vector2(0f, 1f);
+            contentRoot.anchorMax = new Vector2(0f, 1f);
+            contentRoot.pivot = new Vector2(0f, 1f);
+            contentRoot.anchoredPosition =
+                new Vector2(contentX, -118f);
+            contentRoot.localScale =
+                Vector3.one * Mathf.Max(.75f, contentScale);
+        }
+
+        private void ApplyTransparentPageBackgrounds()
+        {
+            MakePageTransparent(soundPage);
+            MakePageTransparent(keyBindingPage);
+            MakePageTransparent(creditsPage);
+        }
+
+        private static void MakePageTransparent(GameObject page)
+        {
+            if (page == null)
+            {
+                return;
+            }
+
+            Image image = page.GetComponent<Image>();
+            if (image == null)
+            {
+                return;
+            }
+
+            image.color = Color.clear;
+            image.raycastTarget = false;
+        }
+
+        private void StyleBackButtonAsClose()
+        {
+            if (backButton == null)
+            {
+                return;
+            }
+
+            backButton.gameObject.name = "Close";
+            RectTransform rect =
+                backButton.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.one;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = Vector2.one;
+            rect.anchoredPosition = new Vector2(-26f, -26f);
+            rect.sizeDelta = new Vector2(48f, 48f);
+            rect.localScale = Vector3.one;
+
+            Image image = backButton.GetComponent<Image>();
+            Sprite closeSprite =
+                GameUiArtwork.Load()?.settingCloseButton;
+            if (image != null)
+            {
+                if (closeSprite != null)
+                {
+                    image.sprite = closeSprite;
+                    image.type = Image.Type.Simple;
+                }
+                image.color = Color.white;
+                image.preserveAspect = true;
+            }
+
+            ColorBlock colors = backButton.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor =
+                new Color(.94f, .96f, .96f, 1f);
+            colors.pressedColor =
+                new Color(.72f, .72f, .72f, 1f);
+            colors.selectedColor = colors.highlightedColor;
+            backButton.colors = colors;
+
+            Text[] labels =
+                backButton.GetComponentsInChildren<Text>(true);
+            for (int index = 0; index < labels.Length; index++)
+            {
+                labels[index].gameObject.SetActive(false);
             }
         }
 
@@ -330,7 +521,7 @@ namespace Project.StartMenu
             Image page = StartMenuUiFactory.CreateImage(
                 "Sound Page",
                 parent,
-                new Color(.07f, .1f, .13f, .9f));
+                Color.clear);
             StartMenuUiFactory.Stretch(page.rectTransform);
 
             Text heading = StartMenuUiFactory.CreateText(
@@ -432,7 +623,7 @@ namespace Project.StartMenu
             Image page = StartMenuUiFactory.CreateImage(
                 "Key Binding Page",
                 parent,
-                new Color(.07f, .1f, .13f, .9f));
+                Color.clear);
             StartMenuUiFactory.Stretch(page.rectTransform);
             KeyBindingPanelController panel =
                 page.gameObject.AddComponent<KeyBindingPanelController>();
@@ -445,7 +636,7 @@ namespace Project.StartMenu
             Image page = StartMenuUiFactory.CreateImage(
                 "Credits Page",
                 parent,
-                new Color(.07f, .1f, .13f, .9f));
+                Color.clear);
             StartMenuUiFactory.Stretch(page.rectTransform);
 
             Text title = StartMenuUiFactory.CreateText(

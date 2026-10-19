@@ -3,6 +3,7 @@
 ## 2026-10-19 设置内页 UI 美术替换
 
 - 新增 `Start Menu Panel Background.png`，由设置页背景同风格扩展为 `1024×576` 全屏版。开始菜单的设置与制作名单按钮共用 `StartMenuController` 动态全屏背景层：纯深色底托 + 背景图，从右侧滑入覆盖主菜单，完成后显示设置页；返回时先恢复主菜单，再向右滑出。`panelBackdropSlideDuration` 可调。
+- 开始菜单设置页原底部“返回”按钮重构为右上角 `Setting Close X`，保留同一个 `Button.onClick`。鼠标/触屏直接点击，`InputActionId.Cancel` 或 `Pause`（键盘 ESC、手柄 B/Start）也调用同一 X 回调；按键重绑定期间不关闭页面。打开设置后 EventSystem 焦点自动落到 X。
 - 范围仅设置、按键映射、存档等内页：新增 `Setting Button.png`、`Setting Slider Background.png`、`Setting Slider Fill.png`、`Setting Slider Handle.png`、`Setting Toggle Box.png`、`Setting Close X.png`，统一为现有像素 UI 风格的深色阶梯框、浅色高光和红色关闭按钮。
 - `StartMenuUiFactory.CreateInnerButton` 只供 `SettingsPanelController`、`KeyBindingPanelController`、`SavePanelController` 使用；主菜单四按钮和暂停轮盘按钮/扇区未改。Slider 与 Toggle 仅替换设置内页三段视觉。
 - 预制体里的 `Settings/KeyBinding/Save` 已存在旧控件不会走动态工厂，因此三个控制器在 `Awake/OnEnable/Refresh` 额外调用 `StartMenuUiFactory.ApplyInnerArtwork`，对现有 Button、Slider、Toggle 统一换皮；名为 `Close` 的按钮跳过，继续使用专用关闭 X。
@@ -14,6 +15,7 @@
 - 新增 `Save Slot Block.png`：奶油色存档块、深青阶梯框、橙色左侧识别条和青/橙底线。存档页 Viewport 改为透明，每个存档单列独立块排列，块内保留存档名与读取/保存/删除；空存档也使用同款块显示“暂无存档”。
 - 存档页灰色 `Status` 小字提示已停用；新建、删除、读取等业务状态仍写入数据，但不再显示灰色小字。
 - `SettingsPanelController` 与 `KeyBindingPanelController` 会停用设置内页的 `Hint/Status` 小字提示，不删除对象，也不影响存档业务状态提示。
+- 开始菜单设置启用单独展开式布局：Sound/Key Binding/Credits 内页根背景全透明，分类栏和内容区随 `SettingsPage` 宽高计算缩放，内容区按实际剩余宽度自适应，标题与左栏使用屏幕比例安全边距；不再固定缩在 930 宽区域。
 - 验证：StartMenu Runtime 与 GameFlow Runtime 按 Unity 实际 `rsp + rsp2` 参数编译通过；`git diff --check` 通过；未运行 Unity Play Mode，最终视觉与点击手感待实机验收。
 
 ## 2026-10-19 成就块美术
