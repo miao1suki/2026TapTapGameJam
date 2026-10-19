@@ -16,6 +16,11 @@
 Boss清障隐藏与持久机关进度分离：房间重置归还临时渲染/碰撞租约，不清门按钮进度，旧碰撞隐藏队列按ResetRevision失效。见[BOSS_ROOM_RESET_VISUALS](Integration/BOSS_ROOM_RESET_VISUALS.md)。两个移动平台已接新6/9帧48×16素材、14像素支撑上缘，旧占格/路线不扩大；新增红绿蓝单向平台栏目复用同一Prefab，颜色参数只影响外观与HSV图层。见[物体美术API](Integration/OBJECT_ARTWORK_API.md)。Scene/可编辑存档/meta/新增美术依赖仍必须成套交付。
 
 搬运占格区分作者布置与运行时实体：烧毁/打开/移走后的空位不保留旧格阻挡，当前位置实体仍拒绝重叠；R不改作者数据而恢复现有状态。放置射线忽略水与纯Trigger、真实薄墙仍挡，复用候选Collider列表且不逐帧SyncTransforms。接入与隔离回归见[搬运API](Integration/PLAYER_CARRY_API.md)。
+平台实例参数顶部可设置宽度（格），按有效区域与实体占用检查后保存；普通Inspector与规划窗口共用核心方向/距离/速度界面，其他参数折叠。普通平台速度换算原单程时间，曲柄联动速度由曲柄进度控制。见[关卡编辑器](../Developer/LEVEL_EDITOR.md)及[规划接口](Integration/PLANNING_COLLABORATION_API.md)。
+
+方块与道具栏目均按红/蓝/绿/其他有色/无色分组，可折叠并显示数量；卡片宽度约缩至原1/3，完整名称可悬停查看，编辑/删除移至选中项操作条。方块列表按内容收高，道具栏目紧跟其后。沿用稳定栏目ID与参数模式入口。见[关卡编辑器](../Developer/LEVEL_EDITOR.md)与[规划协作接口](Integration/PLANNING_COLLABORATION_API.md)。
+
+道具参数窗口已显式提供Rigidbody“锁定位置/锁定旋转”X/Y/Z六轴勾选，支持实例覆盖保存/重开/恢复默认，弥补Unity隐藏字段未被通用属性遍历显示的问题。见[关卡编辑器](../Developer/LEVEL_EDITOR.md)与[规划协作接口](Integration/PLANNING_COLLABORATION_API.md)。
 
 基座信号镜头可选收到/解除/双边沿，默认关；共享队列先基座再按序平台，或仅首个平台，等待不提前锁玩家。水与非岩浆所有物体同格，三种水类型可叠、同类生成去重、共同底色只画一次。红蓝指针0.65格容差严格不扩总范围；水蒸汽按点击列，钥匙2有效像素悬浮，红蓝接触水柱改TA水片/气泡并即时推送、玩家默认8格/秒。见[机关API](Integration/MECHANISM_SIGNAL_API.md)、[水API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[钥匙与水柱](../Developer/KEY_HOVER_AND_CONTACT_JETS.md)。关卡仍须Scene、planning及meta成套交付。
 独立 R1：`Assets/Scenes/R1/R1.unity`及同名planning；已采用远端16fb26f左右镜像版（实现40fe66c），只补main空字段的签名兼容，保留76实例及全部手动微调，不重复镜像、不全量重建。场景、设计源和专属脚本同目录，迁移保留全部GUID。Excel单格制作，不替代Gaming、不加入正式构建。含多位置曲柄共享进度、作者固定13格绿条横向攀附和单实例占格支持；开局仅玩家红能力、三色场景解锁。共享组的任一有效副柄制动基座均可冻结整组进度，解除后续转。操作及验证边界见[关卡说明](../Developer/R1_LEVEL.md)，接入见MECHANISM_SIGNAL_API、CONTACT_CUBES_API、PLANNING_COLLABORATION_API。

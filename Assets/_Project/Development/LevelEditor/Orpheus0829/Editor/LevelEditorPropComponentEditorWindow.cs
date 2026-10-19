@@ -20,6 +20,8 @@ namespace Project.LevelEditor.Editor
         private GameObject preview;
         private VisualElement componentList;
         private Label statusLabel;
+        private int draftPlatformWidth;
+        private Func<int, string> savePlatformWidth;
         private Action contextAction;
         private string contextActionLabel;
         private Action secondaryAction;
@@ -50,7 +52,9 @@ namespace Project.LevelEditor.Editor
             string thirdLabel = null,
             Action fourth = null,
             string fourthLabel = null,
-            Action<bool> bossRespawnToggle = null)
+            Action<bool> bossRespawnToggle = null,
+            int platformWidth = 0,
+            Func<int, string> applyPlatformWidth = null)
         {
             if (sourcePrefab == null)
             {
@@ -60,6 +64,8 @@ namespace Project.LevelEditor.Editor
             LevelEditorPropComponentEditorWindow window =
                 GetWindow<LevelEditorPropComponentEditorWindow>();
             window.prefab = sourcePrefab;
+            window.draftPlatformWidth = platformWidth;
+            window.savePlatformWidth = applyPlatformWidth;
             window.onSaved = saveCallback;
             window.contextAction = extraAction;
             window.contextActionLabel = extraActionLabel;
@@ -217,6 +223,18 @@ namespace Project.LevelEditor.Editor
                 draftOverrides,
                 false);
 
+            if (savePlatformWidth != null)
+            {
+                var width = new IntegerField("平台宽度（格）") { value = draftPlatformWidth, name = "platform-width", isDelayed = true };
+                width.tooltip = "从左侧固定位置向右调整，保存后更新规划占格，应用到场景后更新实体；1～4096格。";
+                width.RegisterValueChangedCallback(evt =>
+                {
+                    draftPlatformWidth = Mathf.Max(1, evt.newValue);
+                    width.SetValueWithoutNotify(draftPlatformWidth);
+                    statusLabel.text = "平台宽度已修改，尚未保存。";
+                });
+                componentList.Add(width);
+            }
             List<Component> components = new List<Component>(
                 preview.GetComponentsInChildren<Component>(true));
             components.RemoveAll(
@@ -225,6 +243,9 @@ namespace Project.LevelEditor.Editor
                              component is BossRespawnMarker);
             components.Sort((left, right) =>
             {
+                bool leftPlatform = Project.BlockFeatures.Editor.PlatformParameterUI.Applies(left);
+                bool rightPlatform = Project.BlockFeatures.Editor.PlatformParameterUI.Applies(right);
+                if (leftPlatform != rightPlatform) return leftPlatform ? -1 : 1;
                 bool leftDefault =
                     PropComponentPresentation.IsDefaultComponent(left);
                 bool rightDefault =
@@ -260,7 +281,7 @@ namespace Project.LevelEditor.Editor
             var section = new Foldout
             {
                 text = isDefault ? $"{title}（默认组件）" : title,
-                value = !isDefault
+                value = !isDefault && (prefab.GetComponent<MovingPlatformFeature>() == null && prefab.GetComponent<CrankPlatformFeature>() == null || Project.BlockFeatures.Editor.PlatformParameterUI.Applies(component))
             };
             section.style.marginTop = 5f;
 
@@ -286,6 +307,17 @@ namespace Project.LevelEditor.Editor
             var serializedObject = new SerializedObject(component);
             serializedObjects.Add(serializedObject);
             serializedObject.Update();
+            bool platform = Project.BlockFeatures.Editor.PlatformParameterUI.Applies(component);
+            var coreFields = platform
+                ? Project.BlockFeatures.Editor.PlatformParameterUI.Build(section, serializedObject, property =>
+                {
+                    CaptureOverride(component, property);
+                    statusLabel.text = "组件数值已修改，尚未保存。";
+                }) : new HashSet<string>();
+            if (component is Rigidbody)
+            {
+                BuildRigidbodyConstraints(section, component, serializedObject);
+            }
             SerializedProperty iterator =
                 serializedObject.GetIterator();
             bool hasVisibleField = false;
@@ -300,6 +332,7 @@ namespace Project.LevelEditor.Editor
                 {
                     continue;
                 }
+                if (coreFields.Contains(iterator.name)) continue;
 
                 hasVisibleField = true;
                 SerializedProperty property = iterator.Copy();
@@ -317,7 +350,7 @@ namespace Project.LevelEditor.Editor
                 {
                     if (!groups.TryGetValue(parameter.Group, out Foldout group))
                     {
-                        group = ProjectInspectorUtility.CreateFoldout(parameter.Group, true);
+                        group = ProjectInspectorUtility.CreateFoldout(parameter.Group, !platform);
                         groups.Add(parameter.Group, group);
                         section.Add(group);
                     }
@@ -714,9 +747,61 @@ namespace Project.LevelEditor.Editor
             });
         }
 
+        private void BuildRigidbodyConstraints(
+            VisualElement parent, Component component, SerializedObject serializedObject)
+        {
+            // Unity hides this native field from NextVisible.
+            SerializedProperty constraints = serializedObject.FindProperty("m_Constraints");
+            if (constraints == null) return;
+            var group = new Foldout { text = "位置与旋转锁定", value = true };
+            group.tooltip = "勾选后禁止刚体沿对应轴移动或旋转。";
+            parent.Add(group);
+            AddRow("锁定位置", "position", new[] {
+                RigidbodyConstraints.FreezePositionX,
+                RigidbodyConstraints.FreezePositionY,
+                RigidbodyConstraints.FreezePositionZ });
+            AddRow("锁定旋转", "rotation", new[] {
+                RigidbodyConstraints.FreezeRotationX,
+                RigidbodyConstraints.FreezeRotationY,
+                RigidbodyConstraints.FreezeRotationZ });
+
+            void AddRow(string label, string key, RigidbodyConstraints[] flags)
+            {
+                var row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row;
+                var caption = new Label(label);
+                caption.style.width = 90f;
+                row.Add(caption);
+                group.Add(row);
+                for (int index = 0; index < flags.Length; index++)
+                {
+                    RigidbodyConstraints flag = flags[index];
+                    string axis = new[] { "X", "Y", "Z" }[index];
+                    var toggle = new Toggle(axis) {
+                        name = "rigidbody-freeze-" + key + "-" + axis.ToLowerInvariant(),
+                        tooltip = label + " " + axis + " 轴" };
+                    toggle.style.minWidth = 55f;
+                    toggle.style.width = 65f;
+                    toggle.labelElement.style.minWidth = 0f;
+                    toggle.labelElement.style.width = 15f;
+                    toggle.SetValueWithoutNotify((constraints.intValue & (int)flag) != 0);
+                    toggle.RegisterValueChangedCallback(evt => {
+                        serializedObject.Update();
+                        int value = constraints.intValue;
+                        constraints.intValue = evt.newValue ? value | (int)flag : value & ~(int)flag;
+                        serializedObject.ApplyModifiedProperties();
+                        CaptureOverride(component, constraints);
+                    });
+                    row.Add(toggle);
+                }
+            }
+        }
+
         private static bool CanEditProperty(
             SerializedProperty property)
         {
+            if (property.serializedObject.targetObject is Rigidbody &&
+                property.propertyPath == "m_Constraints") return false;
             if (property.propertyPath == "m_Script" ||
                 property.propertyPath == "m_ObjectHideFlags" ||
                 property.propertyPath == "m_CorrespondingSourceObject" ||
@@ -786,6 +871,12 @@ namespace Project.LevelEditor.Editor
 
         private void SaveAndClose()
         {
+            string error = savePlatformWidth?.Invoke(draftPlatformWidth);
+            if (!string.IsNullOrEmpty(error))
+            {
+                statusLabel.text = error;
+                return;
+            }
             onSaved?.Invoke(draftOverrides);
             Close();
         }

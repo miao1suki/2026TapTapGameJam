@@ -2,7 +2,21 @@
 
 仅 Editor，源码在 `PlanningEditorPrototype/Editor`，沿用现有 `PlanningDocument` JSON、1:1 单元格和稳定 ID，不引入新运行时房间系统。使用说明见 [LEVEL_EDITOR_COLLABORATION.md](../../Developer/LEVEL_EDITOR_COLLABORATION.md)。
 
+## 方块与道具栏目显示
+
+共享的 LevelEditorPanel 在独立放置器和规划窗口中按颜色分组，只改变 Editor 展示，不修改栏目 ID、顺序、预制体或已放置实例。GetPropColorGroup 优先读取 ColorObject.BaseColorTypeId、ColorKeyPickup.ColorTypeId 及匹配组件路径/类型/序号的默认字段覆盖；无颜色组件时回退到预制体根节点 red/blue/green Layer。多色及未知颜色进入其他有色，未归色项进入无色。重复默认条目仍只隐藏显示副本，选择回调使用原始下标；参数模式继续走 EditPlanningDefaults。紧凑卡片不随剩余行宽拉伸，操作条与预览分开，分组折叠状态按项目写入 SessionState。
+
+方块栏目同样使用紧凑卡片与选中项操作条；GetBlockColorGroup 仅读取 LevelEditorBlockEntry.Color，HSV 低饱和、近黑及透明归无色，其余按色相进入红蓝绿或其他有色组。分类不代表运行时颜色归属，也不读取图片像素或迁移颜色组件。折叠状态使用独立的 LevelEditor.BlockGroup 项目会话键，保留原下标与数据；与道具共用 ConfigureCompactAddCard 样式。方块列表 GeometryChangedEvent 以实际内容高度更新 ScrollView 高度（独立模式上限280、嵌入模式420），分组折叠/换行后道具栏目随内容收紧，超出上限仍滚动。
+
+## 平台实例尺寸与核心参数
+
+LevelEditorPropComponentEditorWindow.Open 的可选 platformWidth / applyPlatformWidth 仅由规划实例入口传入。宽度为窗口草稿，SaveAndClose 先调用回调；返回错误时不保存任何覆盖、不关闭窗口。PlanningCanvas.ResizePlatform 按当前稳定ID查找，验证非播放、正宽度、非合并平台、房间有效格及实体占用后更新width/singleInstance；随后原onSaved写覆盖并触发一次文档事务。宽度保存在PlanningBox而非Transform覆盖，不改源prefab，SceneBuilder沿用整实例生成和尺寸签名。
+
+PlatformParameterUI 是Editor共用核心字段构建器；普通Inspector与规划预览均调用，返回字段集合防止旧遍历重复绘制。平均速度按Path.Span/travelDuration计算，编辑后只写已有travelDuration；曲柄驱动隐藏该入口，曲柄进度速度仍写原字段。其他组默认折叠，不变更Runtime参数格式、运动与绑定逻辑。
+
 ## 数据与事务
+
+道具组件参数窗口 `LevelEditorPropComponentEditorWindow` 对Rigidbody显式绘制六轴约束勾选；Unity原生 `m_Constraints` 不在 `NextVisible` 枚举中，不能仅靠通用属性遍历展示。六个勾选只按位更新该字段，并复用 `CaptureOverride` / `LevelEditorComponentOverrideUtility` 的持久化、应用与重置路径，保存的是约束位掩码，不是六个独立字段。不要把预览对象或临时instanceID写回资产；源prefab保持不变。
 
 - `PlanningFragmentUtility.Extract(source, owners, area, out detached)` 返回深拷贝；owners 为 null 表示不限所有者，area 为 null 表示不限矩形。裁剪后重锚局部坐标和 mergeParts，切过完整物体拒绝，不改源数据。
 - `Import(target, source, anchor, includePlayer, out detached)` 返回合并后的新文档，失败不写目标。anchor 是导入源房间占格包围盒左上格。内部房间/物体/合并原始片/门钥匙锁/区域 ID 全量重映射，门按钮、基座、曲柄绑定按新 ID 重连。跨片段绑定解除，孤立按钮移除；不能把绑定随意指向目标地图同名或旧 ID。

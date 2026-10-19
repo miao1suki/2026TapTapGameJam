@@ -326,9 +326,39 @@ namespace PlanningEditorPrototype
                         {
                             RemoveBossRespawnMarker(box.id);
                         }
-                    });
+                    },
+                    source.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() != null ? box.width : 0,
+                    source.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() != null
+                        ? width => ResizePlatform(box.id, width) : (Func<int, string>)null);
                 SelectionChanged?.Invoke(); return;
             }
+        }
+
+        internal string ResizePlatform(string id, int width)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return "播放模式下不能修改平台宽度。";
+            foreach (var current in AllBoxes())
+            {
+                var box = current.box;
+                if (box.id != id) continue;
+                if (width == box.width) return null;
+                if (width < 1 || width > 4096) return "平台宽度须为1～4096格。";
+                var source = FindPropEntry(box.propEntryId, box.propEntryName)?.Prefab;
+                if (source == null || source.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() == null)
+                    return "当前物体不是移动平台。";
+                if (box.isMerged) return "请先解除平台合并，再修改宽度。";
+                var area = new RectInt(box.x, box.y, width, box.height);
+                if (current.room != null && !CanPlaceLocalRect(current.room, area))
+                    return "平台宽度超出当前房间或通道的有效范围。";
+                foreach (var other in current.boxes)
+                    if (other != box && !PlanningWaterLayerUtility.IsWater(other, palette) && PlanningShapeUtility.Overlaps(other, area))
+                        return "平台加宽后会覆盖其他物体，请先移开相邻物体。";
+                box.width = width;
+                box.singleInstance = true;
+                // The normal override save callback emits one document transaction.
+                return null;
+            }
+            return "此平台已被删除或替换，请关闭窗口后重新选择。";
         }
 
         public void RemoveMissingSceneItems(IReadOnlyList<string> ids, IReadOnlyList<Vector2Int> cells)

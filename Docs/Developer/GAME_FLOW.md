@@ -55,3 +55,5 @@ Scene 视图锁定为 XY 正交平面，点击醒目的编辑模式按钮退出�
 `Tools/2026TapTap/关卡编辑器/重建默认瓦片库`，生成图集、预览材质和 `26TAPTAP_Palette.asset`。
 
 新关卡自行创建场景并保存；不使用已退役的标准流程初始化工具覆盖关卡。
+
+Gaming 的正常 Side2D 游玩镜头使用正交 size 8（垂直可见范围 16 格）；场景 Main Camera 与 CameraModeController.side2D.orthographicSize 保持一致，确保进入玩法后仍使用该视野。
