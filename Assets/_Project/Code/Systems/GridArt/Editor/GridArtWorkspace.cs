@@ -260,8 +260,20 @@ namespace Project.GridArt.Editor
             lockX.RegisterValueChangedCallback(e => { Change("锁定左右视差", () => Layer.lockParallaxX = e.newValue, false); factor.SetEnabled(!e.newValue); });
             lockY.RegisterValueChangedCallback(e => { Change("锁定上下视差", () => Layer.lockParallaxY = e.newValue, false); vertical.SetEnabled(!e.newValue); });
             config.Add(lockX); config.Add(lockY);
-            var maximum = new Vector2Field("最大偏移（格）") { value = Layer.maxParallaxOffset, tooltip = "相对初始位置的左右 / 上下最大位移；每轴0为不限。锁定轴完全不产生视差偏移。" };
-            maximum.RegisterValueChangedCallback(e => Change("视差偏移上限", () => Layer.maxParallaxOffset = Vector2.Max(Vector2.zero, e.newValue), false)); config.Add(maximum);
+            var limits = new VisualElement { name = "art-parallax-limits", tooltip = "相对初始位置的最大位移，单位为格；0为不限。锁定轴不产生视差偏移。" };
+            var limitsTitle = new Label("最大偏移（格；0 为不限）");
+            limitsTitle.style.whiteSpace = WhiteSpace.Normal; limits.Add(limitsTitle);
+            var maximumX = new FloatField("左右") { name = "art-parallax-limit-x", value = Layer.maxParallaxOffset.x, isDelayed = true };
+            var maximumY = new FloatField("上下") { name = "art-parallax-limit-y", value = Layer.maxParallaxOffset.y, isDelayed = true };
+            foreach (var field in new[] { maximumX, maximumY })
+            {
+                field.style.minWidth = 0; field.labelElement.style.minWidth = 40; field.labelElement.style.width = 40;
+                field.labelElement.style.flexShrink = 0;
+                limits.Add(field);
+            }
+            maximumX.RegisterValueChangedCallback(e => { float value = Mathf.Max(0,e.newValue); maximumX.SetValueWithoutNotify(value); Change("左右视差偏移上限", () => Layer.maxParallaxOffset = new Vector2(value,Layer.maxParallaxOffset.y), false); });
+            maximumY.RegisterValueChangedCallback(e => { float value = Mathf.Max(0,e.newValue); maximumY.SetValueWithoutNotify(value); Change("上下视差偏移上限", () => Layer.maxParallaxOffset = new Vector2(Layer.maxParallaxOffset.x,value), false); });
+            config.Add(limits);
             var actions = Row(); actions.Add(ActionButton("后移", () => MoveLayer(-1))); actions.Add(ActionButton("前移", () => MoveLayer(1)));
             actions.Add(ActionButton("删除", () => { if (EditorUtility.DisplayDialog("删除图层", "删除“" + Layer.label + "”及其美术内容？", "删除", "取消")) Change("删除图层", () => map.layers.RemoveAt(layerIndex)); })); config.Add(actions);
             inspectorPanel.Add(config);

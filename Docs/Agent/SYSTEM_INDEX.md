@@ -1,5 +1,7 @@
 # 系统索引
 
+美术工作台N使用与规划M相同的全局菜单快捷键，从Project/Inspector等窗口可开关，文字输入和未完成笔画不抢键；图层最大偏移拆成左右/上下独立行，窄侧栏可见且支持Undo。见[导航](../Developer/GRID_ART_NAVIGATION.md)、[视差参数](../Developer/GRID_ART_PARALLAX.md)。
+
 GridArt移动贯穿细线已定位为图集切片边界采到透明邻像素：生成网格UV1保存各四边形采样边界，主图/颜色mask同步夹取样，不缩UV0、不改几何或美术比例；53份现有生成网格已补齐。GPU负对照480帧32292漏色像素，修复0；84项测试通过。见[工作台换算与接缝回归](../Developer/SCENE_ART_PIXEL_CONVERSION.md)。
 
 TA Gaming美术ad1a4dd已整合：保留4层2424格与天气区域，远/近景先仅水平视差并限制4/2格。美术工作台支持独立X/Y速度、锁轴、每轴最大偏移（格，0不限）和双轴预览；Scene按Map图层id读取新设置，旧地图默认不锁不限，保持16有效像素/格。见[分轴视差](../Developer/GRID_ART_PARALLAX.md)。R1/R2仍待规划同步。

@@ -51,6 +51,56 @@ namespace Project.GridArt.Tests
             sprite.name = name; AssetDatabase.AddObjectToAsset(sprite, texture); return sprite;
         }
         private void AddBrush() => GridArtLibraryService.Add(library, Sprite("Tile"), Vector2.one, new Rect(0,0,1,1), "地面");
+        [UnityEngine.TestTools.UnityTest]
+        public System.Collections.IEnumerator OffsetFieldsRemainReadableInNarrowInspector()
+        {
+            AddBrush(); map.layers[0].maxParallaxOffset = new Vector2(123.456f,789.25f);
+            var w = Window();
+            try
+            {
+                w.position = new Rect(20,20,1200,800); w.Show();
+                for (int frame=0; frame<8; frame++) yield return null;
+                var x = w.rootVisualElement.Q<FloatField>("art-parallax-limit-x");
+                var y = w.rootVisualElement.Q<FloatField>("art-parallax-limit-y");
+                Assert.That(x,Is.Not.Null); Assert.That(y,Is.Not.Null);
+                Assert.That(x.value,Is.EqualTo(123.456f)); Assert.That(y.value,Is.EqualTo(789.25f));
+                foreach (var field in new[] { x,y })
+                {
+                    var input = field.Q(className:"unity-base-field__input");
+                    Assert.That(input,Is.Not.Null);
+                    Assert.That(input.worldBound.width,Is.GreaterThanOrEqualTo(100),"numeric value must not collapse in the standard 280px inspector");
+                    Assert.That(input.worldBound.xMax,Is.LessThanOrEqualTo(field.worldBound.xMax+1));
+                }
+                Assert.That(y.worldBound.yMin,Is.GreaterThanOrEqualTo(x.worldBound.yMax),"axes use separate rows");
+                Undo.IncrementCurrentGroup(); x.value = 12.5f; Undo.FlushUndoRecordObjects();
+                Undo.IncrementCurrentGroup(); y.value = 8.25f; Undo.FlushUndoRecordObjects();
+                Assert.That(map.layers[0].maxParallaxOffset,Is.EqualTo(new Vector2(12.5f,8.25f)));
+                Undo.PerformUndo();
+                Assert.That(map.layers[0].maxParallaxOffset,Is.EqualTo(new Vector2(12.5f,789.25f)));
+            }
+            finally { w.Close(); }
+        }
+
+        [Test]
+        public void NUsesGlobalMenuHotkeyAndAllowsNonSceneWindowFocus()
+        {
+            var type = typeof(GridArtWorkspaceShortcut);
+            var toggle = type.GetMethod("Toggle",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
+            var menu = (MenuItem)Attribute.GetCustomAttribute(toggle,typeof(MenuItem));
+            Assert.That(menu,Is.Not.Null); Assert.That(menu.menuItem,Does.EndWith(" _n"));
+            var host = ScriptableObject.CreateInstance<ShortcutHostWindow>();
+            bool editing = EditorGUIUtility.editingTextField;
+            try
+            {
+                EditorGUIUtility.editingTextField = false;
+                var canToggle = type.GetMethod("CanToggle",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
+                Assert.That(canToggle.Invoke(null,new object[] { host }),Is.EqualTo(true),"Project/Inspector-style windows must not require Scene focus");
+                EditorGUIUtility.editingTextField = true;
+                Assert.That(canToggle.Invoke(null,new object[] { host }),Is.EqualTo(false),"typing n must not close the window");
+            }
+            finally { EditorGUIUtility.editingTextField = editing; Object.DestroyImmediate(host); }
+        }
+        private sealed class ShortcutHostWindow : EditorWindow { }
         [TestCase(0)]
         [TestCase(1)]
         [TestCase(2)]
