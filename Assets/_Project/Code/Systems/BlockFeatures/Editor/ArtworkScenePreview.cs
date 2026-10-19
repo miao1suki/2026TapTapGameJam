@@ -246,6 +246,8 @@ namespace Project.BlockFeatures.Editor
         private static float Cell(GameObject owner) => Mathf.Max(.01f, GridCellSizeUtility.Resolve(owner.transform));
         private static Bounds Footprint(GameObject owner, float cell)
         {
+            if (owner.TryGetComponent<DoorController>(out var door) && door.TryGetPlanningWorldFootprint(out var doorBounds))
+                return doorBounds;
             // A button's thin pressure sensor is not its complete artwork cell.
             // Keep the same centre/pixel scale as runtime for all four facings.
             if (owner.GetComponent<Project.Mechanisms.DoorButton>() != null || owner.GetComponent<ButtonLockFeature>() != null)

@@ -72,9 +72,48 @@ namespace Project.Mechanisms
         public int PressedCount { get { int count = 0; foreach (var button in buttons) if (button != null && button.IsPressed) count++; return count; } }
         public event Action<DoorState> StateChanged;
 
+        /// <summary>
+        /// Legacy planning doors scale an already two-cell prefab by their occupied
+        /// cells. Keep the authored centre (including sub-cell edits), but do not
+        /// multiply the physical/art footprint twice. No Transform is rewritten.
+        /// </summary>
+        public bool TryGetPlanningFootprint(out Bounds localBounds)
+        {
+            localBounds = default;
+            var placed = GetComponent<Project.LevelEditor.LevelEditorPlacedBlock>();
+            var box = blockingCollider as BoxCollider;
+            if (box == null) box = GetComponent<BoxCollider>();
+            if (placed == null || box == null || box.transform != transform) return false;
+            var cells = placed.SizeCells;
+            // Old non-planning/one-cell markers retain the prefab's geometry.
+            if ((!horizontal && cells.y < 2) || (horizontal && cells.x < 2)) return false;
+            Vector3 scale = transform.lossyScale;
+            localBounds = new Bounds(box.center, new Vector3(
+                cells.x * placed.CellWorldSize / Mathf.Max(.001f, Mathf.Abs(scale.x)),
+                cells.y * placed.CellWorldSize / Mathf.Max(.001f, Mathf.Abs(scale.y)), box.size.z));
+            return true;
+        }
+
+        public bool TryGetPlanningWorldFootprint(out Bounds worldBounds)
+        {
+            worldBounds = default;
+            if (!TryGetPlanningFootprint(out var local)) return false;
+            var matrix = transform.localToWorldMatrix;
+            var x = matrix.MultiplyVector(Vector3.right * local.size.x);
+            var y = matrix.MultiplyVector(Vector3.up * local.size.y);
+            var z = matrix.MultiplyVector(Vector3.forward * local.size.z);
+            worldBounds = new Bounds(matrix.MultiplyPoint3x4(local.center), new Vector3(
+                Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x),
+                Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y),
+                Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z)));
+            return true;
+        }
+
         private void Awake()
         {
             if (blockingCollider == null) blockingCollider = GetComponent<Collider>();
+            if (TryGetPlanningFootprint(out var footprint) && blockingCollider is BoxCollider box)
+                box.size = footprint.size;
             closedRotation = hinge != null ? hinge.localRotation : Quaternion.identity;
             State = DoorState.Locked;
             SetButtons(buttons);

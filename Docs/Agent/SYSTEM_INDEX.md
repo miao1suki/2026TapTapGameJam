@@ -1,5 +1,7 @@
 # 系统索引
 
+重力蓝绿接触生长按四向主轴起长，落体浅穿地面不提前冻结；普通平台顶面的方块/基座与堆叠可自动随行，保留显式附着、作者重力/锁轴及搬运优先权，见[接触方块API](Integration/CONTACT_CUBES_API.md)与[机关API](Integration/MECHANISM_SIGNAL_API.md)。规划门的运行/预览边界统一避免双倍尺寸导致贴图下移；举一格物品可进入两格高通道，不缩小像素或碰撞，见[门](../Developer/DOORS.md)和[搬运](../Developer/PLAYER_CARRY.md)。
+
 2026-10-19集中整合：正式Gaming采用MVMap17（20房间，1406原物体＋1隐形Start），保留main现行修复；独立R3及可选PlatformMount已接入，R1不再次镜像；TA旧支线保留main网格/HSV/区域效果实现并补独立预览。旧交互图提案与旧Grow配置不恢复，详见[整合说明](../Developer/BRANCH_INTEGRATION_2026-10-19.md)。
 
 共享场景素材库已按16有效像素/格清点为178项，新增边框、混合图集装饰和正式道具静态外观；保留旧笔刷编号/引用，自定义命名不覆盖。素材栏按视口自适应两列并兼容高DPI，入口“同步项目与切片素材”；范围/选区/排除项见[素材盘点](../Developer/SCENE_ART_LIBRARY.md)。黑白与旧Platform墙地块均可作为工作台参考，不改地图布局。

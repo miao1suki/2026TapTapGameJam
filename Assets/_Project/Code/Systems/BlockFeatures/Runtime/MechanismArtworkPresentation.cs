@@ -256,6 +256,11 @@ namespace Project.BlockFeatures
         private void DisplayBounds(out Vector3 center, out Vector3 size)
         {
             center = Vector3.zero; size = Vector3.one;
+            if (door != null && door.TryGetPlanningFootprint(out var doorBounds))
+            {
+                center = doorBounds.center; size = doorBounds.size;
+                return;
+            }
             if (footprint != null)
             {
                 var toRoot = transform.worldToLocalMatrix * footprint.transform.localToWorldMatrix;

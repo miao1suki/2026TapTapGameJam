@@ -260,6 +260,7 @@ namespace Project.BlockFeatures
         private float holdRemaining;
         private bool movementAudioPlaying;
         private Collider[] platformSurfaces;
+        private PlatformLoadTransport loadTransport;
         private bool UsesPoweredEndpoint => driveMode == MovingPlatformDriveMode.SignalControlled &&
             signalMotion == MovingPlatformSignalMotion.PoweredEndpoint;
         public bool IsMoving => CanRunFeature && (UsesPoweredEndpoint
@@ -321,6 +322,7 @@ namespace Project.BlockFeatures
         {
             ResetTimeline();
             platformSurfaces = GetComponents<Collider>();
+            loadTransport ??= new PlatformLoadTransport(this);
             origin = transform.localPosition;
             ResetMotion();
             holdRemaining = 0f;
@@ -339,6 +341,7 @@ namespace Project.BlockFeatures
             UnsubscribeControls();
             if (crankController != null) crankController.UnregisterPlatform(this);
             carriedPlayers.Clear();
+            loadTransport?.Clear();
             RestoreOrigin();
         }
 
@@ -425,11 +428,16 @@ namespace Project.BlockFeatures
                 if (!active) return;
                 Vector3 desiredPosition = origin + GetOffset() * crankController.Progress;
                 Vector3 motion = desiredPosition - transform.localPosition;
+                if (motion.sqrMagnitude <= .00000001f) return;
+                loadTransport.Refresh(platformSurfaces, GridCellWorldSize);
+                Vector3 worldMotion = transform.parent != null ? transform.parent.TransformVector(motion) : motion;
+                if (!loadTransport.CanMove(worldMotion)) return;
                 if (motion.sqrMagnitude > .00000001f &&
                     (crankController.Progress <= .00001f || crankController.Progress >= .99999f)) reachedEndpoint = true;
                 RefreshStandingPlayers();
                 transform.localPosition = desiredPosition;
                 CarryPlayers(transform.parent != null ? transform.parent.TransformVector(motion) : motion);
+                loadTransport.Apply(worldMotion);
                 return;
             }
             EvaluateLinkedControls();
@@ -467,7 +475,9 @@ namespace Project.BlockFeatures
             Vector3 desired =
                 origin + (Vector3)path.Axis * (Mathf.Lerp(legStart, legEnd, curved) * GridCellWorldSize);
             Vector3 delta = desired - before;
-            if (reverseOnBlock && IsBlockedAlong(delta))
+            loadTransport.Refresh(platformSurfaces, GridCellWorldSize);
+            Vector3 worldDelta = transform.parent != null ? transform.parent.TransformVector(delta) : delta;
+            if (!loadTransport.CanMove(worldDelta) || reverseOnBlock && IsBlockedAlong(worldDelta))
             {
                 holdRemaining = 0f;
                 travelDirection *= -1;
@@ -480,6 +490,7 @@ namespace Project.BlockFeatures
             RefreshStandingPlayers();
             transform.localPosition = desired;
             CarryPlayers(transform.parent != null ? transform.parent.TransformVector(delta) : delta);
+            loadTransport.Apply(worldDelta);
             if (progress >= 1f)
             {
                 reachedEndpoint = true;
@@ -509,7 +520,9 @@ namespace Project.BlockFeatures
                 ? Mathf.Clamp01(easing.Evaluate(nextProgress)) : nextProgress;
             Vector3 desired = origin + (Vector3)path.Axis * (Mathf.Lerp(legStart, legEnd, curved) * GridCellWorldSize);
             Vector3 delta = desired - transform.localPosition;
-            if (reverseOnBlock && IsBlockedAlong(delta))
+            loadTransport.Refresh(platformSurfaces, GridCellWorldSize);
+            Vector3 worldDelta = transform.parent != null ? transform.parent.TransformVector(delta) : delta;
+            if (!loadTransport.CanMove(worldDelta) || reverseOnBlock && IsBlockedAlong(worldDelta))
             {
                 // Retry the remaining route when clear; never reverse away from the signal's target.
                 legStart = current;
@@ -521,6 +534,7 @@ namespace Project.BlockFeatures
             progress = nextProgress;
             if (nextProgress >= 1f) reachedEndpoint = true;
             CarryPlayers(transform.parent != null ? transform.parent.TransformVector(delta) : delta);
+            loadTransport.Apply(worldDelta);
         }
 
         protected override void OnResetForRoom()
@@ -532,6 +546,7 @@ namespace Project.BlockFeatures
             active = driveMode == MovingPlatformDriveMode.Automatic &&
                      startsActive;
             carriedPlayers.Clear();
+            loadTransport?.Clear();
             RestoreOrigin();
             SubscribeControls();
             EvaluateLinkedControls();
@@ -665,6 +680,7 @@ namespace Project.BlockFeatures
                     RaycastHit hit = platformHitBuffer[index];
                     if (hit.collider == null ||
                         hit.collider.transform.IsChildOf(transform) ||
+                        loadTransport != null && loadTransport.Contains(hit.collider.attachedRigidbody) ||
                         IsCarriedPlayer(hit.collider)) continue;
                     return true;
                 }

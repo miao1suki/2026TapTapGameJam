@@ -39,6 +39,7 @@ namespace Project.ContactCubes
         private float gravityProtectedUntil;
         private bool hadHorizontalPush;
         private bool greenHookActive;
+        private Vector3 pendingPlatformDelta;
         private float cellSize = 1f;
         private HorizontalPhysicsClearance horizontalClearance;
         // Logical color contact retains the authored grid face even though
@@ -55,6 +56,22 @@ namespace Project.ContactCubes
         public bool GravityProtected => Time.time < gravityProtectedUntil;
         public bool IsSuspended { get; private set; }
         public bool IsGreenHookPullActive => greenHookActive;
+        internal bool CanRideMovingPlatform => isActiveAndEnabled && !IsSuspended && !greenHookActive &&
+            !authoredKinematic && !IsAuthoredFixed && body != null && shape != null && shape.enabled &&
+            !VineGrowthLift.IsLifting(body) && velocities.Count == 0 &&
+            (platformMount == null || !platformMount.IsMounted);
+        internal bool CanAcceptPlatformDelta(Vector3 delta) =>
+            ((baseConstraints & RigidbodyConstraints.FreezePositionX) == 0 || Mathf.Abs(delta.x) < .00001f) &&
+            ((baseConstraints & RigidbodyConstraints.FreezePositionY) == 0 || Mathf.Abs(delta.y) < .00001f) &&
+            ((baseConstraints & RigidbodyConstraints.FreezePositionZ) == 0 || Mathf.Abs(delta.z) < .00001f);
+        internal void ApplyPlatformDelta(Vector3 delta)
+        {
+            if (!CanRideMovingPlatform || !CanAcceptPlatformDelta(delta)) return;
+            pendingPlatformDelta += delta;
+            // This is a support displacement, not a force or a new authored pose.
+            // Keep gravity, author locks and the normal reaction pipeline intact.
+            if (!body.isKinematic) body.WakeUp();
+        }
         public GreenHookMotionMode GreenHookMotionMode =>
             cube != null && cube.Color == CubeColor.Green ? GreenHookMotionMode.Swing : GreenHookMotionMode.PullTarget;
         public Transform GreenHookTransform => transform;
@@ -116,6 +133,7 @@ namespace Project.ContactCubes
             VineGrowthLift.Cancel(body);
             if (suspended && greenHookActive) EndGreenHookPull(false);
             IsSuspended = suspended; velocities.Clear(); hadHorizontalPush = false;
+            pendingPlatformDelta = Vector3.zero;
             gravityProtectedUntil = 0;
             if (suspended)
             {
@@ -266,6 +284,10 @@ namespace Project.ContactCubes
         }
         private void FixedUpdate()
         {
+            Vector3 platformDelta = pendingPlatformDelta;
+            pendingPlatformDelta = Vector3.zero;
+            try
+            {
             if (HasActivePlatformMount) return;
             RestoreMountInterpolation();
             if (VineGrowthLift.IsLifting(body)) { RestorePlayerCollision(); return; }
@@ -318,6 +340,23 @@ namespace Project.ContactCubes
                 velocity.z = 0; body.linearVelocity = velocity;
             }
             RefreshPlayerCollision();
+            }
+            finally
+            {
+                if (platformDelta.sqrMagnitude > .00000001f && CanRideMovingPlatform)
+                {
+                    // Runtime settling locks anchor a dynamic body in PhysX.
+                    // Release only those locks before moving its support pose;
+                    // author locks remain authoritative throughout simulation.
+                    body.constraints = baseConstraints;
+                    body.position += platformDelta;
+                    if (!body.isKinematic)
+                    {
+                        body.linearVelocity = Vector3.zero;
+                        body.WakeUp();
+                    }
+                }
+            }
         }
         private bool HasSupport()
         {
@@ -337,7 +376,11 @@ namespace Project.ContactCubes
                 if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<PlayerController>() != null ||
                     Physics.GetIgnoreLayerCollision(shape.gameObject.layer, hit.gameObject.layer) ||
                     Physics.GetIgnoreCollision(shape, hit)) continue;
-                if (supportHits[i].normal.y > .5f) return true;
+                // Do not freeze the body's Y while PhysX is still correcting a
+                // shallow floor penetration: that permanently embeds its foot
+                // and makes the adjacent growth cell look obstructed by floor.
+                if (supportHits[i].distance > .000001f && supportHits[i].normal.y > .5f &&
+                    bounds.min.y >= supportHits[i].point.y - cellSize * .001f) return true;
             }
             return false;
         }

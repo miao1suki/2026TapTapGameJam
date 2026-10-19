@@ -550,7 +550,10 @@ namespace Project.Player
                     : transform.position.y;
                 return new Vector3(
                     transform.position.x,
-                    top + gridCellWorldSize * .5f,
+                    // One effective art pixel of hand/support clearance absorbs
+                    // PhysX resting contact offsets in a genuinely two-cell tunnel.
+                    // Do not shrink the player or the carried object's pixel scale.
+                    top + gridCellWorldSize * .5f - Project.ObjectArtwork.GridArtworkMetrics.PixelWorldSize(gridCellWorldSize),
                     transform.position.z);
             }
         }

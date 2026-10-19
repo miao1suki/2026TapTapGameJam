@@ -58,6 +58,7 @@ namespace Project.ContactCubes.Editor
                 AudioListener.pause = true;
                 Physics.simulationMode = SimulationMode.Script;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
+                VerifyGravityGrowth(); Cleanup();
                 VerifyFallingPair(.01f, .01f, false); Cleanup();
                 VerifyFallingPair(.03f, .03f, false); Cleanup();
                 VerifyFallingPair(.005f, .05f, false); Cleanup();
@@ -124,6 +125,50 @@ namespace Project.ContactCubes.Editor
         }
 
         private static BoxCollider Shape(ContactCube cube) => cube.GetComponentInChildren<BoxCollider>();
+
+        private static void VerifyGravityGrowth()
+        {
+            foreach (float side in new[] { -1f, 1f })
+            {
+                VerifyGravityGrowthPair(side, false); Cleanup();
+                VerifyGravityGrowthPair(side, true); Cleanup();
+            }
+        }
+
+        private static void VerifyGravityGrowthPair(float blueSide, bool falling)
+        {
+            Vector3 origin = new Vector3(1950f, 20f, 0f);
+            Solid("Growth floor", origin + Vector3.down * .5f, new Vector3(20f, 1f, 3f));
+            Solid("Slightly raised blue support", origin + new Vector3(blueSide, -.49f, 0f), new Vector3(.98f, 1f, 1f));
+            float dropHeight = falling ? 3f : 0f;
+            if (falling) ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(false);
+            ContactCube blue = Spawn(CubeColor.Blue, origin + new Vector3(blueSide, .51f + dropHeight, 0f));
+            ContactCube green = Spawn(CubeColor.Green, origin + new Vector3(0f, .5f + dropHeight, 0f));
+            Physics.SyncTransforms();
+            if (falling)
+            {
+                Step(5);
+                Check(green.Length == 1 && green.State == CubeReactionState.Idle, "locked falling pair cannot react");
+                ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
+            }
+            Step(falling ? 320 : 240);
+            diagnostics.AppendLine($"gravity blue/green blueSide={blueSide}, falling={falling}, length={green.Length}, state={green.State}, blue={blue.transform.position:F6}, green={green.transform.position:F6}, axis={green.GrowthDirection:F6}");
+            if (green.Length < 4)
+            {
+                var controller = green.GetComponent<ContactCubeMotion>();
+                diagnostics.AppendLine($"settled={controller.IsSettled}, constraints={green.GetComponent<Rigidbody>().constraints}, foot={Shape(green).bounds.min.y:F6}");
+                foreach (var hit in (RaycastHit[])typeof(ContactCubeMotion).GetField("supportHits", Hidden).GetValue(controller))
+                    if (hit.collider != null) diagnostics.AppendLine($"support={hit.collider.name}, distance={hit.distance:F6}, point={hit.point:F6}, normal={hit.normal:F6}");
+            }
+            Check(green.Length >= 4, "gravity-enabled neighbouring blue/green grow along the floor");
+            Check(Vector3.Dot(green.GrowthDirection, Vector3.left * blueSide) > .999999f,
+                "resting solver offsets never tilt growth into the floor");
+            Check(green.GetComponent<ContactCubeMotion>().UsesGravity && blue.GetComponent<ContactCubeMotion>().UsesGravity,
+                "growth does not disable authored gravity");
+            green.GetComponent<ContactCubeMotion>().ResetForRoom();
+            green.ResetForRoom();
+            Check(green.Length == 1 && green.State == CubeReactionState.Idle, "gravity pair reaction resets");
+        }
 
         private static void Move(ContactCube cube, Vector3 position)
         {

@@ -22,6 +22,14 @@
 
 场景交付仍必须成套提交 Scene、同名可编辑 `.planning.json`、双方 `.meta` 和依赖，不能只交生成物。专项入口 `OptionalMechanismTimelineAudit.Run` 保留门/平台旧行为覆盖；新增 `MechanismSignalTimelineAudit.Run` 覆盖实际能源邻接、基座与多平台充能/断电顺序、仅首个、运行中取消及组件参数 JSON 往返。由整合者在 `Library/FlowRetirementProbe`（新专项也允许 `Library/MechanismSignalProbe`）静音运行，不能在用户工程直接执行。
 
+## 自动运输站顶物体
+
+移动平台默认运输真正落在其顶面的三色接触方块和基座，不需要策划增加 `PlatformMount`。局部顶面检测支持实际叠放的物体，以及站在这些物体上的玩家；侧边擦碰、跳起、正在手持、绿钩主动拉取、藤蔓顶升、作者固定或显式附着中的物体不重复接管。平台每个物理步只查询自身顶面及实际货物上方，不扫描全图、不创建逐帧数组。
+
+`PlatformLoadTransport` 只计算接触、完整位移的碰撞与区域许可，再请求 `ContactCubeMotion`／`MechanismBaseFeature` 应用支撑位移；不写它们的 Transform／刚体、不改作者位置、重力开关或原始锁轴。基座和供能红块一起随动，真实相邻供能继续工作。货物或其上玩家将碰到墙、顶板、作者区域边界时，平台停止／按原往返规则反向，不能继续挤压或穿透。清空接触集合不会改变房间重置所有权；平台、方块、基座分别走原恢复链。
+
+`PlatformLoadTransportAudit.Run` 只允许静音隔离 FlowRetirementProbe；覆盖有／无重力方块及基座的右／上／下运输、堆叠、防顶板挤压，以及真实红块供能基座一起落到绑定平台后持续供能行至终点。普通运输与下面的作者预设附着是两种不同关系。
+
 ## 可选平台附着物
 
 `PlatformMount` 保存一个 `MovingPlatformFeature` 与平台局部锚点（`Bind` 时通过 InverseTransformPoint 捕获），不将物体设为平台子级，避免合并平台的缩放拉伸物体。挂载协调器使用物理执行顺序200，在现有平台更新之后处理（包括旧 MonoImporter 的显式顺序覆盖），不修改旧平台执行顺序。曲柄等非接触方块由挂载组件跟随；接触方块由协调器请求 `ContactCubeMotion.ApplyPlatformMount`，仍只由方块自身运动器写入刚体，挂载时锁定位移并暂停重力，保留颜色接触反应。
