@@ -2499,3 +2499,9 @@
 - 分支：`codex/codex/gaming-art-layer-20261019`。接收当前工作区已保存的 Gaming 美术网格改动；不纳入其他本地场景、字体、试验图、IDE 设置及未跟踪的 TileArtTrial 资源。
 - 成套提交 `Gaming.unity`、独立 `Gaming_Art.asset` 及 `.meta`，并包含该场景生成网格及目录 `.meta`。同名 `Gaming.planning.json` 与 `Content/LevelMaps/正式关卡.json` 未改动；本次是美术网格层，不修改关卡布局存档。
 - Unity 6000.3.12f1。只完成静态引用与 Git 暂存范围检查；未打开 Unity、运行 Play Mode 或构建。
+
+## 2026-10-19 Gaming 与网格美术进度（基于最新 main 的分支交付）
+
+- 将当前已保存的本地进度带到 `origin/main` 后提交：Gaming 场景及独立 `Gaming_Art` 规划/烘焙网格、共享美术库、TileArtTrial 示例场景及其资源、MRoom2 场景改动和 Cubic_11 SDF 字体资源更新。排除 `.vscode` 本地设置。
+- Gaming 同名 `Gaming.planning.json` 与 `Content/LevelMaps/正式关卡.json` 本轮未改动；美术网格使用独立 `Gaming_Art.asset`。Unity 6000.3.12f1。
+- 验证：运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`；未运行 Play Mode 或构建。
