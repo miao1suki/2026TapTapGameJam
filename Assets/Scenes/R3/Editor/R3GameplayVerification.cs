@@ -42,7 +42,8 @@ public static class R3GameplayVerification
     private static readonly Vector3 Spawn=new Vector3(2.5f,-21.5f,0);
     public static void Run()
     {
-        if (!Application.dataPath.Replace('\\','/').EndsWith("/2026TapTapGameJam-R3/Assets") ||
+        string path=Application.dataPath.Replace('\\','/');
+        if (!(path.EndsWith("/2026TapTapGameJam-R3/Assets") || path.EndsWith("/Library/FlowRetirementProbe/Assets")) ||
             !Environment.GetCommandLineArgs().Contains("-noaudio")) throw new Exception("Silent isolated R3 worktree only");
         R3LevelBuilder.FinalAudit();
         EditorSceneManager.OpenScene(R3LevelBuilder.ScenePath);

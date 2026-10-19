@@ -191,8 +191,20 @@ namespace Project.BossLogic.Editor
             if(existing!=null)
             {
                 var a=existing.GetComponentInChildren<TeleportAnchorFeature>(true);
-                Require(a!=null && a.TeleportId=="Start" && Vector3.Distance(a.transform.localPosition,offset)<.00001f,
-                    "existing Start template has the same exact offset"); return existing;
+                Require(a!=null && a.TeleportId=="Start" && a.transform != existing.transform,
+                    "existing Start template has an independent Destination child");
+                if (Vector3.Distance(a.transform.localPosition,offset)>=.00001f)
+                {
+                    var editable=PrefabUtility.LoadPrefabContents(StartPrefab);
+                    try
+                    {
+                        editable.GetComponentInChildren<TeleportAnchorFeature>(true).transform.localPosition=offset;
+                        PrefabUtility.SaveAsPrefabAsset(editable,StartPrefab);
+                    }
+                    finally { PrefabUtility.UnloadPrefabContents(editable); }
+                    log.AppendLine("Updated tool-owned Start destination offset for the newly adopted map spawn.");
+                }
+                return AssetDatabase.LoadAssetAtPath<GameObject>(StartPrefab);
             }
             var root=new GameObject("正式游戏起点 Start");
             try
