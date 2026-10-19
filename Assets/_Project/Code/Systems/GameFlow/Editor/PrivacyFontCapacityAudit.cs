@@ -136,15 +136,15 @@ namespace Project.GameFlow.Editor
             scratch.hideFlags = HideFlags.HideAndDontSave;
             try
             {
-                bool warm = scratch.TryAddCharacters(common, out string commonMissing);
+                string commonMissing = AddAndFindMissing(scratch, common);
                 // Existing cache is additional atlas pressure, not a requirement merely because it was cached.
-                scratch.TryAddCharacters(cached, out string cachedMissing);
-                bool complete = scratch.TryAddCharacters(policy, out string policyMissing);
+                string cachedMissing = AddAndFindMissing(scratch, cached);
+                string policyMissing = AddAndFindMissing(scratch, policy);
                 return new CapacityResult
                 {
                     atlasSize = size,
                     commonUnique = Codepoints(common).Distinct().Count(),
-                    commonComplete = warm,
+                    commonComplete = commonMissing.Length == 0,
                     commonMissing = commonMissing ?? "",
                     commonMissingCodepoints = Describe(commonMissing ?? ""),
                     commonMissingCount = Codepoints(commonMissing ?? "").Distinct().Count(),
@@ -153,7 +153,7 @@ namespace Project.GameFlow.Editor
                     cachedMissing = cachedMissing ?? "",
                     cachedMissingCount = Codepoints(cachedMissing ?? "").Distinct().Count(),
                     policyUnique = Codepoints(policy).Distinct().Count(),
-                    policyComplete = complete,
+                    policyComplete = policyMissing.Length == 0,
                     policyMissing = policyMissing ?? "",
                     policyMissingCount = Codepoints(policyMissing ?? "").Distinct().Count(),
                     policyMissingCodepoints = Describe(policyMissing ?? ""),
@@ -169,6 +169,17 @@ namespace Project.GameFlow.Editor
                 if (material != null && !EditorUtility.IsPersistent(material)) Object.DestroyImmediate(material);
                 Object.DestroyImmediate(scratch);
             }
+        }
+
+        private static string AddAndFindMissing(TMP_FontAsset font, string text)
+        {
+            int[] requested = Codepoints(text).Distinct().ToArray();
+            if (requested.Length == 0) return "";
+            font.TryAddCharacters(requested.Select(value => (uint)value).ToArray(), out _);
+            // TMP returns false (and may echo the whole request as missing) when
+            // every requested glyph was already cached. Coverage must inspect the
+            // resulting font table, with no fallback font or implicit insertion.
+            return string.Concat(requested.Where(value => !font.HasCharacter(value)).Select(char.ConvertFromUtf32));
         }
 
         private static string CommonUiText(List<TextRequirement> requirements)

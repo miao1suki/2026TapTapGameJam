@@ -6,6 +6,19 @@ namespace Project.StartMenu
     {
         [InspectorName("主菜单背景")] public Texture2D menuBackground;
         [InspectorName("设置页背景")] public Sprite panelBackground;
+        [InspectorName("成就块背景")] public Sprite achievementBlock;
+        [InspectorName("成就解锁提示块")] public Sprite achievementUnlockBlock;
+        [InspectorName("成就解锁勾")] public Sprite achievementUnlockCheck;
+        [Header("设置界面")]
+        [InspectorName("设置按钮")] public Sprite settingButton;
+        [InspectorName("滑块背景")] public Sprite settingSliderBackground;
+        [InspectorName("滑块填充")] public Sprite settingSliderFill;
+        [InspectorName("滑块手柄")] public Sprite settingSliderHandle;
+        [InspectorName("设置勾选框")] public Sprite settingToggleBox;
+        [InspectorName("设置关闭X")] public Sprite settingCloseButton;
+        [InspectorName("设置页背景")] public Sprite settingsPageBackground;
+        [InspectorName("存档条目块")] public Sprite saveSlotBlock;
+        [InspectorName("开始菜单内页背景")] public Sprite startMenuPanelBackground;
         [InspectorName("开始按钮")] public Sprite startButton;
         [InspectorName("设置按钮")] public Sprite settingsButton;
         [InspectorName("退出按钮")] public Sprite quitButton;

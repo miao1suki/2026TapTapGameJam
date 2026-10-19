@@ -25,8 +25,9 @@ namespace Project.Achievements.Editor
                 "“触发一次”忽略数量和进度；\n" +
                 "“累计数量”使用增加计数；“完成百分比”使用增加进度，1 表示 1%。\n\n" +
                 "【显示接口】\n" +
-                "Canvas 后续实现 IAchievementUnlockReceiver 并注册，" +
-                "管理器只发送成就名字，不负责 UI 展示。\n\n" +
+                "常驻 WordNote_UI 上的 AchievementUnlockToastPresenter " +
+                "已实现 IAchievementUnlockReceiver 并注册；管理器只发送成就名字，" +
+                "不负责 UI 展示。\n\n" +
                 "【注意】\n" +
                 "管理器只负责逻辑和状态，不直接依赖 Canvas、输入或 Timeline。");
         }

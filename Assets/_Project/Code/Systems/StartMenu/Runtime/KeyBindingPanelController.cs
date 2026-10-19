@@ -38,6 +38,8 @@ namespace Project.StartMenu
         private bool buttonsBound;
         private bool lastGamepadConnected;
 
+        public bool IsRebinding => activeRebind != null;
+
         public void BuildStructure()
         {
             if (structureBuilt || rowList != null)
@@ -52,7 +54,8 @@ namespace Project.StartMenu
                 root = gameObject.AddComponent<Image>();
             }
 
-            root.color = new Color(.04f, .06f, .08f, .94f);
+            root.color = Color.clear;
+            root.raycastTarget = false;
 
             Text title = StartMenuUiFactory.CreateText(
                 "Title",
@@ -134,6 +137,8 @@ namespace Project.StartMenu
         {
             BuildStructure();
             BindButtons();
+            HideSmallHints();
+            StartMenuUiFactory.ApplyInnerArtwork(transform);
         }
 
         private void OnEnable()
@@ -142,6 +147,16 @@ namespace Project.StartMenu
             {
                 EnsureService();
                 Refresh();
+                HideSmallHints();
+                StartMenuUiFactory.ApplyInnerArtwork(transform);
+            }
+        }
+
+        private void HideSmallHints()
+        {
+            if (statusText != null)
+            {
+                statusText.gameObject.SetActive(false);
             }
         }
 
@@ -324,7 +339,7 @@ namespace Project.StartMenu
                     : editable
                         ? binding.DisplayName
                         : binding.DisplayName + "（组合）";
-            Button key = StartMenuUiFactory.CreateButton(
+            Button key = StartMenuUiFactory.CreateInnerButton(
                 "Key",
                 row.transform,
                 keyLabel,
@@ -351,7 +366,7 @@ namespace Project.StartMenu
                 InputActionInteractionPolicy.CanConfigureTrigger(actionId);
             bool clickAndHold =
                 InputActionInteractionPolicy.IsClickAndHold(actionId);
-            Button trigger = StartMenuUiFactory.CreateButton(
+            Button trigger = StartMenuUiFactory.CreateInnerButton(
                 "Trigger",
                 row.transform,
                 clickAndHold
@@ -640,7 +655,7 @@ namespace Project.StartMenu
 
         private Button CreateTab(Transform parent, string label)
         {
-            Button button = StartMenuUiFactory.CreateButton(
+            Button button = StartMenuUiFactory.CreateInnerButton(
                 label,
                 parent,
                 label,
@@ -656,7 +671,7 @@ namespace Project.StartMenu
 
         private Button CreateToolbarButton(Transform parent, string label)
         {
-            Button button = StartMenuUiFactory.CreateButton(
+            Button button = StartMenuUiFactory.CreateInnerButton(
                 label,
                 parent,
                 label,

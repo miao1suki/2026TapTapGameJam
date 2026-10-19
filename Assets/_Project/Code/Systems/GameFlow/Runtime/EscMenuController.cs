@@ -60,10 +60,6 @@ namespace Project.GameFlow
         [SerializeField] private Material wheelMaterial;
         [Tooltip("所有扇区共用的默认材质")]
         [SerializeField] private Material wheelSectorMaterial;
-        [Tooltip("子页面颜料过渡使用的笔画资源")]
-        [SerializeField] private Sprite paintStrokeSprite;
-        [Tooltip("子页面颜料过渡使用的材质")]
-        [SerializeField] private Material paintStrokeMaterial;
         [SerializeField] private Button[] wheelButtons;
         [SerializeField] private List<EscWheelOption> options =
             new List<EscWheelOption>();
@@ -444,13 +440,19 @@ namespace Project.GameFlow
                 float labelExtent = artwork.pauseSectorSpacing + 350f * artwork.pauseSectorPixelScale / 8f + 110f;
                 viewport.sizeDelta = new Vector2(Mathf.Max(viewport.sizeDelta.x, labelExtent * selectedScale + 32f), viewport.sizeDelta.y);
             }
-            if (artwork != null && artwork.panelBackground != null)
+            if (artwork != null &&
+                (artwork.settingsPageBackground != null ||
+                 artwork.panelBackground != null))
             {
                 foreach (GameObject page in new[] { settingsPage, savePage, collectionPage })
                 {
                     var pageImage = page != null ? page.GetComponent<Image>() : null;
                     if (pageImage == null) continue;
-                    pageImage.sprite = artwork.panelBackground;
+                    pageImage.sprite =
+                        artwork.settingsPageBackground != null
+                            ? artwork.settingsPageBackground
+                            : artwork.panelBackground;
+                    pageImage.type = Image.Type.Simple;
                     pageImage.color = Color.white;
                 }
             }
@@ -630,8 +632,11 @@ namespace Project.GameFlow
                     continue;
                 }
 
-                if (label.GetComponentInChildren<TextSdfMirror>(true) != null)
+                TextSdfMirror existing =
+                    label.GetComponentInChildren<TextSdfMirror>(true);
+                if (existing != null)
                 {
+                    existing.ApplyFont(uiSdfFont, material);
                     continue;
                 }
 
@@ -1017,7 +1022,6 @@ namespace Project.GameFlow
             ApplyTypography();
             canvas.alpha = 0f;
             SetBackdropVisible(false);
-            PlayPaint(page, color);
 
             pageTween?.Kill();
             Sequence sequence = DOTween.Sequence();
@@ -1086,65 +1090,6 @@ namespace Project.GameFlow
             {
                 mainPage.SetActive(true);
             }
-        }
-
-        private void PlayPaint(GameObject page, Color color)
-        {
-            Transform paintTransform = page.transform.Find("PaintLayer");
-            if (paintTransform == null)
-            {
-                return;
-            }
-
-            RectTransform rect = paintTransform as RectTransform;
-            Image image = paintTransform.GetComponent<Image>();
-            if (rect == null || image == null)
-            {
-                return;
-            }
-
-            paintTransform.SetAsFirstSibling();
-            if (paintStrokeSprite != null)
-            {
-                image.sprite = paintStrokeSprite;
-            }
-
-            if (paintStrokeMaterial != null)
-            {
-                image.material = paintStrokeMaterial;
-            }
-
-            image.color = new Color(
-                color.r,
-                color.g,
-                color.b,
-                .42f);
-            rect.anchoredPosition = new Vector2(-760f, 420f);
-            rect.localEulerAngles = new Vector3(0f, 0f, -14f);
-            rect.localScale = Vector3.one * .35f;
-
-            Sequence sequence = DOTween.Sequence();
-            sequence.SetUpdate(true);
-            sequence.Join(DOTween.To(
-                    () => rect.anchoredPosition,
-                    value => rect.anchoredPosition = value,
-                    new Vector2(170f, 280f),
-                    .42f)
-                .SetEase(Ease.OutQuart));
-            sequence.Join(rect
-                .DOScale(Vector3.one, .42f)
-                .SetEase(Ease.OutQuart));
-            sequence.Join(DOTween.To(
-                    () => image.color.a,
-                    value =>
-                    {
-                        Color current = image.color;
-                        current.a = value;
-                        image.color = current;
-                    },
-                    .12f,
-                    .42f)
-                .SetEase(Ease.OutQuart));
         }
 
         private Button CloseButtonForPage(GameObject page)

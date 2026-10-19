@@ -14,6 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.StartMenu.Runtime::Project.StartMenu.GameUiArtwork
   menuBackground: {fileID: 2800000, guid: 89ff5dff7d4ff9440a2fc78f8d29411f, type: 3}
   panelBackground: {fileID: 21300000, guid: fe70b9f0dad448f4392b28760e800d59, type: 3}
+  achievementBlock: {fileID: 21300000, guid: e167b8dc839ccd8418f7406c6a19330a, type: 3}
+  achievementUnlockBlock: {fileID: 21300000, guid: a8389aa9b12e45bfb46a599b41be6d74, type: 3}
+  achievementUnlockCheck: {fileID: 21300000, guid: 68d4d46d5741438085374279cd6affc0, type: 3}
+  settingButton: {fileID: 21300000, guid: f7bd347347574a3c95e9f2d09c9807b3, type: 3}
+  settingSliderBackground: {fileID: 21300000, guid: 07eb82b0b13f4f0fb4e03ff6381cc529, type: 3}
+  settingSliderFill: {fileID: 21300000, guid: 82c68773482b4390af34acf00c0f6d45, type: 3}
+  settingSliderHandle: {fileID: 21300000, guid: 08714ee837394aea96291c0fff233761, type: 3}
+  settingToggleBox: {fileID: 21300000, guid: 4e3dd62a50754a7cb99588a23e14dab7, type: 3}
+  settingCloseButton: {fileID: 21300000, guid: 92f7e625dc2748ab83d999da079ad624, type: 3}
+  settingsPageBackground: {fileID: 21300000, guid: 678cc5b1271d4dad9192807455c737b0, type: 3}
+  saveSlotBlock: {fileID: 21300000, guid: a791e71dd76b410faf2dea96f331c276, type: 3}
+  startMenuPanelBackground: {fileID: 21300000, guid: f88b339f9434438887e34f1454f6b71e, type: 3}
   startButton: {fileID: 21300000, guid: 883ad5ce96c16e24f9ae5d10d6e55b51, type: 3}
   settingsButton: {fileID: 21300000, guid: 9bdefc965cf3dee47ba84c78e2bc20c1, type: 3}
   quitButton: {fileID: 21300000, guid: 57c78f259c652904dac929f8927d8a3f, type: 3}

@@ -636,7 +636,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8145876353703936332
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2729,7 +2729,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6612024051154748350
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3009,16 +3009,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.72, g: 0.12, b: 0.12, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 92f7e625dc2748ab83d999da079ad624, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -3047,10 +3047,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 0.72, g: 0.12, b: 0.12, a: 1}
-    m_HighlightedColor: {r: 0.9, g: 0.24, b: 0.24, a: 1}
-    m_PressedColor: {r: 0.55, g: 0.08, b: 0.08, a: 1}
-    m_SelectedColor: {r: 0.9, g: 0.24, b: 0.24, a: 1}
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.94, g: 0.96, b: 0.96, a: 1}
+    m_PressedColor: {r: 0.72, g: 0.72, b: 0.72, a: 1}
+    m_SelectedColor: {r: 0.94, g: 0.96, b: 0.96, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.08
@@ -3214,7 +3214,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1984673346344809661
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5294,7 +5294,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &569953792592503402
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7927,8 +7927,6 @@ MonoBehaviour:
   wheelDecoration: {fileID: 6007657396477582499}
   wheelMaterial: {fileID: 0}
   wheelSectorMaterial: {fileID: 0}
-  paintStrokeSprite: {fileID: 0}
-  paintStrokeMaterial: {fileID: 0}
   wheelButtons:
   - {fileID: 697703978484543661}
   - {fileID: 7696368833028861632}
@@ -11200,7 +11198,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2427258276414191664
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12319,7 +12317,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2247937521266267163
 RectTransform:
   m_ObjectHideFlags: 0
@@ -12776,16 +12774,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.72, g: 0.12, b: 0.12, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 92f7e625dc2748ab83d999da079ad624, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -12814,10 +12812,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 0.72, g: 0.12, b: 0.12, a: 1}
-    m_HighlightedColor: {r: 0.9, g: 0.24, b: 0.24, a: 1}
-    m_PressedColor: {r: 0.55, g: 0.08, b: 0.08, a: 1}
-    m_SelectedColor: {r: 0.9, g: 0.24, b: 0.24, a: 1}
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.94, g: 0.96, b: 0.96, a: 1}
+    m_PressedColor: {r: 0.72, g: 0.72, b: 0.72, a: 1}
+    m_SelectedColor: {r: 0.94, g: 0.96, b: 0.96, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.08
@@ -13648,23 +13646,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ee466a6a8d648c6a4db5216294ef478, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Project.GameFlow.Runtime::Project.GameFlow.AchievementCollectionPresenter
-  rowHeight: 192
+  rowHeight: 216
   rowSpacing: 10
   columnSpacing: 12
   fillRowsFirst: 1
   horizontalPadding: 36
+  leftSafeInset: 64
   bottomPadding: 32
   topPadding: 88
   rowMaterial: {fileID: 0}
   completedSprite: {fileID: 0}
+  completedIconSize: 60
+  completedIconRightOffset: 20
   completedOverlayColor: {r: 0.32, g: 0.34, b: 0.36, a: 0.58}
   rowColor: {r: 1, g: 1, b: 1, a: 1}
   titleColor: {r: 0, g: 0, b: 0, a: 1}
-  descriptionColor: {r: 0.55, g: 0.58, b: 0.6, a: 1}
+  descriptionColor: {r: 0.28, g: 0.34, b: 0.38, a: 1}
   requirementColor: {r: 0, g: 0, b: 0, a: 1}
   completionColor: {r: 0.65, g: 1, b: 0.78, a: 1}
   titleFontSize: 36
-  descriptionFontSize: 16
+  descriptionFontScale: 0.9
+  hiddenQuestionText: "?"
+  hiddenLabelText: "\u5F85\u53D1\u73B0\u6210\u5C31"
+  hiddenQuestionFontSize: 96
+  hiddenLabelFontSize: 40
+  hiddenQuestionPosition: {x: 0, y: 12}
+  hiddenLabelPosition: {x: 0, y: -52}
 --- !u!1 &7904830693712067271
 GameObject:
   m_ObjectHideFlags: 0
@@ -15259,16 +15266,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.72, g: 0.12, b: 0.12, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 92f7e625dc2748ab83d999da079ad624, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -15297,10 +15304,10 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 0.72, g: 0.12, b: 0.12, a: 1}
-    m_HighlightedColor: {r: 0.9, g: 0.24, b: 0.24, a: 1}
-    m_PressedColor: {r: 0.55, g: 0.08, b: 0.08, a: 1}
-    m_SelectedColor: {r: 0.9, g: 0.24, b: 0.24, a: 1}
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.94, g: 0.96, b: 0.96, a: 1}
+    m_PressedColor: {r: 0.72, g: 0.72, b: 0.72, a: 1}
+    m_SelectedColor: {r: 0.94, g: 0.96, b: 0.96, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
     m_FadeDuration: 0.08
@@ -15626,6 +15633,7 @@ GameObject:
   - component: {fileID: 5735300009749987882}
   - component: {fileID: 172364439476180852}
   - component: {fileID: 1298070166121798536}
+  - component: {fileID: 1298070166121798537}
   m_Layer: 0
   m_Name: WordNote_UI
   m_TagString: Untagged
@@ -15792,6 +15800,47 @@ MonoBehaviour:
   sortingOrder: 1200
   canvasReferenceWidth: 1920
   canvasReferenceHeight: 1080
+--- !u!114 &1298070166121798537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8998689714274006927}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f23dd9b5c1342568ee2f4d64671c3f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Project.GameFlow.Runtime::Project.GameFlow.AchievementUnlockToastPresenter
+  unlockTitle: "\u8FBE\u6210\u6210\u5C31\uFF01"
+  font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+  titleColor: {r: 0.27, g: 0.29, b: 0.31, a: 1}
+  achievementNameColor: {r: 0, g: 0, b: 0, a: 1}
+  titleFontSize: 28
+  achievementNameFontSize: 44
+  minimumNameFontSize: 28
+  boldTitle: 0
+  boldAchievementName: 1
+  blockSprite: {fileID: 21300000, guid: a8389aa9b12e45bfb46a599b41be6d74, type: 3}
+  blockMaterial: {fileID: 0}
+  blockColor: {r: 1, g: 1, b: 1, a: 1}
+  checkSprite: {fileID: 21300000, guid: 68d4d46d5741438085374279cd6affc0, type: 3}
+  checkColor: {r: 1, g: 1, b: 1, a: 1}
+  checkSize: 52
+  checkGap: 14
+  checkVerticalOffset: 0
+  blockSize: {x: 560, y: 160}
+  bottomLeftOffset: {x: 48, y: 56}
+  contentPadding: {x: 42, y: 22}
+  titleHeight: 36
+  titleNameSpacing: 6
+  offscreenExtra: 80
+  enterDuration: 0.42
+  stayDuration: 3.2
+  exitDuration: 0.3
+  enterEase: 9
+  exitEase: 8
+  fadeWithSlide: 1
 --- !u!1 &9000103376963848399
 GameObject:
   m_ObjectHideFlags: 0

@@ -40,10 +40,12 @@
 
 主页面和暂停页面复用同一触控布局入口。`WorldMainMenu.prefab` 必须正确引用项目 `Cubic_11 SDF.asset`（NativeFormat 资源引用），由开始菜单初始化字体；不能依赖先进入游戏才获得字体。设置页面每次启用都会幂等绑定已有按钮，不能因已经存在 `Touch Layout` 子物体就跳过绑定；`GameUiRouter.OnEnable` 同步恢复跨程序集事件桥接，以支持编辑器 Play 中脚本重载后仍能从主菜单打开。打开、保存或取消布局不会释放融合菜单的玩家挂起租约，也不改变相机机位。
 
+设置背景入场动画完成后，分类按钮才可点击；触控布局与离线隐私页是设置上方的模态层。GameFlow安装缓存查询供主菜单判断是否有模态页，不引入StartMenu到GameFlow的反向引用。布局处理Cancel时消费当帧Cancel/Pause，避免同一次ESC/手柄返回在布局关闭后继续关闭底下的设置页；隐私页打开时同样不响应底层返回。布局取消不保存，政策页仍由自己的“返回”关闭。
+
 `HorizontalCubeVine` 只登记真实已解锁/落稳的攀爬表面；`PlayerController.ProtectClimbCorner`、`CancelClimbCorner` 与 `TickClimbCorner` 统一写运动速度。表面禁用、移动/尺寸变化、重置、死亡与控制锁均中断转角。不要由功能脚本直接搬玩家 Transform。
 
 ## 验证入口
 
 隔离工程 `Library/FlowRetirementProbe` 可执行 `Project.Player.Editor.ClimbMobileVerification.Run`，覆盖真实绿块转角、脱手、持续选色和布局保存；`MobileCarryRegressionVerification.Run`覆盖落点稳定、玩家安全分离、动画中途阻挡、两阶段能力锁、布局保存与手柄改键。输入编辑测试覆盖三指、双跳跃所有权、奔跑切换、左跳跃连跳标记、跟手图形和触摸容差。安卓包仅 Gaming，MainMenu是同场景逻辑状态，原生隐私流程见 `ANDROID_PRIVACY.md`；手感和隐私边界需真机验收。
 
-`Project.GameFlow.Tests.MobileLayoutPointerTests` 另覆盖真实主菜单/暂停设置触摸入口、模态层命中、选中拖动缩放、取消与保存，并模拟已有按钮与静态事件在脚本重载后丢失接线的恢复。正式构建仍仅打包 Gaming，MainMenu 是同场景逻辑状态。
+`Project.GameFlow.Tests.MobileLayoutPointerTests` 另覆盖真实主菜单/暂停设置触摸入口、模态层命中、选中拖动缩放、取消与保存，并模拟已有按钮与静态事件在脚本重载后丢失接线的恢复。回归有界等待真实射线命中而非仅等页面激活，覆盖真实Escape及模态先销毁/菜单后处理的最坏顺序、隐私模态保护和实际正文完整字形；合并远端新设置动画/4096字体后3项全通过。正式构建仍仅打包 Gaming，MainMenu 是同场景逻辑状态；未替代安卓新包真机验收。

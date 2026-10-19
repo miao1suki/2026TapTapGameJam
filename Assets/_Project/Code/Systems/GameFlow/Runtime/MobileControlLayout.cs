@@ -28,7 +28,9 @@ namespace Project.GameFlow
         {
             Project.StartMenu.SettingsPanelController.TouchLayoutRequested -= OpenFromSettings;
             Project.StartMenu.SettingsPanelController.TouchLayoutRequested += OpenFromSettings;
+            Project.StartMenu.StartMenuController.ModalInputBlocked = IsMenuInputBlocked;
         }
+        private static bool IsMenuInputBlocked() => IsEditing || Project.Privacy.AndroidPrivacyPolicy.IsShowing;
         private static void OpenFromSettings(TMP_FontAsset font) => Open(font);
         private static Data Current
         {
@@ -93,7 +95,14 @@ namespace Project.GameFlow
         private TMP_FontAsset font;
         private void Update()
         {
-            if (GameInput.WasTriggeredThisFrame(InputActionId.Cancel)) Destroy(gameObject);
+            if (GameInput.WasTriggeredThisFrame(InputActionId.Cancel))
+            {
+                // Escape can trigger both actions. Closing this top-level modal must
+                // not close its settings page or toggle the pause wheel underneath.
+                GameInput.ConsumeActionThisFrame(InputActionId.Cancel);
+                GameInput.ConsumeActionThisFrame(InputActionId.Pause);
+                Destroy(gameObject);
+            }
         }
         public void Build(TMP_FontAsset value)
         {
