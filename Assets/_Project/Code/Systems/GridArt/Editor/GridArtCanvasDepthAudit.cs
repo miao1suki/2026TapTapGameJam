@@ -54,6 +54,9 @@ namespace Project.GridArt.Editor
                 // its periodic source/persistence subscriptions before injection.
                 Invoke(window, "OnDisable");
                 Set(window, "autoSave", false); Set(window, "map", map); Set(window, "levelSource", snapshot);
+                // This checks artwork/reference compositing, not the hover brush.
+                // No selected layer prevents transient pre-layout hover arithmetic.
+                Set(window, "layerIndex", -1);
                 Set(window, "showLevelReference", true); Set(window, "levelReferenceOpacity", .5f);
                 Type type = typeof(GridArtWindow).GetNestedType("ArtCanvas", BindingFlags.NonPublic);
                 canvas = (VisualElement)Activator.CreateInstance(type, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
