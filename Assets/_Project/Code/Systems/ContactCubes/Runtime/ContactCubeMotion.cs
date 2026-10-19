@@ -24,9 +24,13 @@ namespace Project.ContactCubes
         [SerializeField, Min(0), InspectorName("绿钩子优先搜索半径（格）")] private int greenHookSnapSearchRadius = 2;
         private Rigidbody body;
         private ContactCube cube;
+        private PlatformMount platformMount;
         private BoxCollider shape;
         private RigidbodyConstraints baseConstraints;
         private bool authoredKinematic;
+        private RigidbodyInterpolation baseInterpolation;
+        private bool mountOwnsInterpolation;
+        private bool mountWasKinematic, mountUsedGravity;
         private readonly Dictionary<Component, Vector3> velocities = new Dictionary<Component, Vector3>();
         private readonly List<Component> deadSources = new List<Component>();
         private readonly Dictionary<Collider, bool> playerPairs = new Dictionary<Collider, bool>();
@@ -67,8 +71,10 @@ namespace Project.ContactCubes
         private void Awake()
         {
             body = GetComponent<Rigidbody>(); cube = GetComponent<ContactCube>(); shape = GetComponentInChildren<BoxCollider>();
+            platformMount = GetComponent<PlatformMount>();
             baseConstraints = body.constraints;
             authoredKinematic = body.isKinematic;
+            baseInterpolation = body.interpolation;
             if (shape != null) shape.isTrigger = false;
             cellSize = Mathf.Max(.01f, GridCellSizeUtility.Resolve(this));
             ApplyHorizontalClearance();
@@ -106,6 +112,7 @@ namespace Project.ContactCubes
         // Carry controller calls true while held, false after placing; it owns held poses.
         public void SuspendMotion(bool suspended)
         {
+            RestoreMountInterpolation();
             VineGrowthLift.Cancel(body);
             if (suspended && greenHookActive) EndGreenHookPull(false);
             IsSuspended = suspended; velocities.Clear(); hadHorizontalPush = false;
@@ -235,8 +242,32 @@ namespace Project.ContactCubes
                     nearby[i].GetComponentInParent<IPlayerCarrySeparationHost>() == null) return false;
             return true;
         }
+        private bool HasActivePlatformMount => !IsSuspended && !greenHookActive && platformMount != null && platformMount.IsMounted &&
+            shape != null && shape.enabled && (mountOwnsInterpolation || !body.isKinematic);
+        // PlatformMount invokes this after the platform has moved. The optional
+        // coordinator never writes a cube's Rigidbody or Transform itself.
+        internal void ApplyPlatformMount()
+        {
+            if (!HasActivePlatformMount) return;
+            // The platform moves without interpolation; do not visually lag it.
+            if (!mountOwnsInterpolation)
+            {
+                mountWasKinematic = body.isKinematic; mountUsedGravity = body.useGravity;
+                if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+                body.isKinematic = true;
+                body.interpolation = RigidbodyInterpolation.None;
+                mountOwnsInterpolation = true;
+            }
+            body.position = platformMount.TargetPosition;
+            body.useGravity = false;
+            body.constraints = baseConstraints;
+            IsSettled = true;
+            RefreshPlayerCollision();
+        }
         private void FixedUpdate()
         {
+            if (HasActivePlatformMount) return;
+            RestoreMountInterpolation();
             if (VineGrowthLift.IsLifting(body)) { RestorePlayerCollision(); return; }
             if (shape == null || !shape.enabled || IsSuspended ||
                 greenHookActive || authoredKinematic)
@@ -337,6 +368,15 @@ namespace Project.ContactCubes
                     pair.Value || !IsSettled && !topContact);
             }
         }
+        private void RestoreMountInterpolation()
+        {
+            if (!mountOwnsInterpolation || body == null) return;
+            body.interpolation = baseInterpolation;
+            body.isKinematic = mountWasKinematic;
+            body.useGravity = mountUsedGravity;
+            body.constraints = baseConstraints;
+            mountOwnsInterpolation = false;
+        }
         public void ResetForRoom()
         {
             VineGrowthLift.Cancel(body);
@@ -357,6 +397,7 @@ namespace Project.ContactCubes
         }
         private void OnDisable()
         {
+            RestoreMountInterpolation();
             VineGrowthLift.Cancel(body);
             if (greenHookActive)
             {
