@@ -30,6 +30,7 @@ namespace Project.LevelEditor.Editor
         private string thirdActionLabel;
         private Action fourthAction;
         private string fourthActionLabel;
+        private Action<bool> bossRespawnToggleCallback;
         private Action<List<LevelEditorComponentValueOverride>>
             onSaved;
         private readonly List<LevelEditorComponentValueOverride>
@@ -51,6 +52,7 @@ namespace Project.LevelEditor.Editor
             string thirdLabel = null,
             Action fourth = null,
             string fourthLabel = null,
+            Action<bool> bossRespawnToggle = null,
             int platformWidth = 0,
             Func<int, string> applyPlatformWidth = null)
         {
@@ -73,6 +75,8 @@ namespace Project.LevelEditor.Editor
             window.thirdActionLabel = thirdLabel;
             window.fourthAction = fourth;
             window.fourthActionLabel = fourthLabel;
+            window.bossRespawnToggleCallback =
+                bossRespawnToggle;
             window.draftOverrides.Clear();
             if (values != null)
             {
@@ -234,7 +238,9 @@ namespace Project.LevelEditor.Editor
             List<Component> components = new List<Component>(
                 preview.GetComponentsInChildren<Component>(true));
             components.RemoveAll(
-                component => component == null || component is Transform);
+                component => component == null ||
+                             component is Transform ||
+                             component is BossRespawnMarker);
             components.Sort((left, right) =>
             {
                 bool leftPlatform = Project.BlockFeatures.Editor.PlatformParameterUI.Applies(left);
@@ -317,6 +323,8 @@ namespace Project.LevelEditor.Editor
             bool hasVisibleField = false;
             bool enterChildren = true;
             var groups = new Dictionary<string, Foldout>();
+            var groupBindings =
+                new Dictionary<string, List<GroupFieldBinding>>();
             while (iterator.NextVisible(enterChildren))
             {
                 enterChildren = false;
@@ -371,6 +379,43 @@ namespace Project.LevelEditor.Editor
                     continue;
                 }
 
+                if (component is RespawnAnchorFeature &&
+                    property.name ==
+                    "isBossArenaRespawnPoint" &&
+                    bossRespawnToggleCallback != null)
+                {
+                    var bossToggle = new Toggle(label)
+                    {
+                        value = property.boolValue,
+                        tooltip = tooltip
+                    };
+                    bossToggle.RegisterValueChangedCallback(evt =>
+                    {
+                        property.boolValue = evt.newValue;
+                        serializedObject.ApplyModifiedProperties();
+                        CaptureOverride(component, property);
+                        bossRespawnToggleCallback(
+                            evt.newValue);
+                        statusLabel.text = evt.newValue
+                            ? "已生成 Boss 复活标记，尚未保存组件数值。"
+                            : "已删除 Boss 复活标记，尚未保存组件数值。";
+                    });
+                    fieldParent.Add(bossToggle);
+                    if (!string.IsNullOrWhiteSpace(tooltip))
+                    {
+                        Label help = new Label(tooltip);
+                        help.style.whiteSpace =
+                            WhiteSpace.Normal;
+                        help.style.fontSize = 11f;
+                        help.style.opacity = .7f;
+                        help.style.marginLeft = 4f;
+                        help.style.marginBottom = 6f;
+                        fieldParent.Add(help);
+                    }
+
+                    continue;
+                }
+
                 var field = new PropertyField(property.Copy(), label);
                 field.BindProperty(property);
                 field.label = label;
@@ -417,7 +462,63 @@ namespace Project.LevelEditor.Editor
                         field.TrackPropertyValue(condition, RefreshVisibility);
                     }
                 }
+
+                if (parameter != null &&
+                    !string.IsNullOrWhiteSpace(parameter.Group))
+                {
+                    if (!groupBindings.TryGetValue(
+                            parameter.Group,
+                            out List<GroupFieldBinding> bindings))
+                    {
+                        bindings = new List<GroupFieldBinding>();
+                        groupBindings.Add(
+                            parameter.Group,
+                            bindings);
+                    }
+
+                    bindings.Add(new GroupFieldBinding(
+                        field,
+                        description,
+                        parameter));
+                }
             }
+
+            void RefreshGroupVisibility()
+            {
+                foreach (KeyValuePair<string, Foldout> pair in groups)
+                {
+                    if (!groupBindings.TryGetValue(
+                            pair.Key,
+                            out List<GroupFieldBinding> bindings))
+                    {
+                        pair.Value.style.display =
+                            DisplayStyle.Flex;
+                        continue;
+                    }
+
+                    bool visible = false;
+                    for (int index = 0;
+                         index < bindings.Count;
+                         index++)
+                    {
+                        if (IsParameterVisible(
+                                serializedObject,
+                                bindings[index].Parameter))
+                        {
+                            visible = true;
+                            break;
+                        }
+                    }
+
+                    pair.Value.style.display = visible
+                        ? DisplayStyle.Flex
+                        : DisplayStyle.None;
+                }
+            }
+
+            RefreshGroupVisibility();
+            section.schedule.Execute(RefreshGroupVisibility)
+                .Every(100);
 
             if (!hasVisibleField)
             {
@@ -428,6 +529,32 @@ namespace Project.LevelEditor.Editor
             }
 
             return section;
+        }
+
+        private static bool IsParameterVisible(
+            SerializedObject serializedObject,
+            BlockParameterAttribute parameter)
+        {
+            if (parameter == null ||
+                string.IsNullOrWhiteSpace(
+                    parameter.VisibleWhenField))
+            {
+                return true;
+            }
+
+            SerializedProperty condition =
+                serializedObject.FindProperty(
+                    parameter.VisibleWhenField);
+            if (condition == null)
+            {
+                return true;
+            }
+
+            int value = condition.propertyType ==
+                        SerializedPropertyType.Boolean
+                ? condition.boolValue ? 1 : 0
+                : condition.intValue;
+            return parameter.MatchesVisibility(value);
         }
 
         private void BuildSubtitleTriggerFields(
@@ -793,6 +920,23 @@ namespace Project.LevelEditor.Editor
             }
         }
 
+        private sealed class GroupFieldBinding
+        {
+            internal GroupFieldBinding(
+                PropertyField field,
+                Label help,
+                BlockParameterAttribute parameter)
+            {
+                Field = field;
+                Help = help;
+                Parameter = parameter;
+            }
+
+            internal PropertyField Field { get; }
+            internal Label Help { get; }
+            internal BlockParameterAttribute Parameter { get; }
+        }
+
         private static class PropComponentPresentation
         {
             private static readonly Dictionary<string, string> Labels =
@@ -850,6 +994,7 @@ namespace Project.LevelEditor.Editor
                 {
                     { typeof(Project.Mechanisms.DoorController), "按钮解锁门" },
                     { typeof(Project.Mechanisms.DoorButton), "门按钮" },
+                    { typeof(Project.Mechanisms.OneWayPlatform), "单向平台" },
                     { typeof(Transform), "变换" },
                     { typeof(BoxCollider), "盒子碰撞体" },
                     { typeof(SphereCollider), "球体碰撞体" },

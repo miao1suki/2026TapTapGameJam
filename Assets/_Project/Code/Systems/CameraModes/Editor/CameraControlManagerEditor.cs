@@ -71,6 +71,18 @@ namespace Project.CameraModes.Editor
                 () => manager != null
                     ? manager.FocusPoint.ToString()
                     : "无"));
+            status.Add(CreateReadOnly(
+                "视野倍率申请",
+                () => manager != null &&
+                       manager.HasLensMultiplierRequest
+                    ? "已申请"
+                    : "无"));
+            status.Add(CreateReadOnly(
+                "当前视野倍率",
+                () => manager != null
+                    ? manager.CurrentLensMultiplier
+                        .ToString("0.###")
+                    : "无"));
             root.Add(status);
 
             var help = new HelpBox(

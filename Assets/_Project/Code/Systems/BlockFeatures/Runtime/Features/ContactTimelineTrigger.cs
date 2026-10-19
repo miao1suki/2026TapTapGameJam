@@ -7,6 +7,12 @@ using UnityEngine.Timeline;
 
 namespace Project.BlockFeatures
 {
+    /// <summary>Optional gameplay precondition. Rejected contact does not consume a once-only trigger.</summary>
+    public interface IContactTimelineCondition
+    {
+        bool CanPlayTimeline(GameObject actor);
+    }
+
     public enum ContactTimelineFilter
     {
         [InspectorName("任意碰撞体")] AnyCollider = 0,
@@ -17,7 +23,8 @@ namespace Project.BlockFeatures
     public enum ContactTimelineTriggerMode
     {
         [InspectorName("只触发一次")] Once = 0,
-        [InspectorName("可重复触发")] Repeatable = 1
+        [InspectorName("可重复触发")] Repeatable = 1,
+        [InspectorName("进入播放，离开停止")] WhileInside = 2
     }
 
     [DisallowMultipleComponent]
@@ -40,6 +47,7 @@ namespace Project.BlockFeatures
         [SerializeField] private bool destroyAfterTrigger;
 
         private readonly HashSet<int> contacts = new HashSet<int>();
+        private readonly List<MonoBehaviour> conditions = new List<MonoBehaviour>();
         private Renderer[] renderers = System.Array.Empty<Renderer>();
         private bool[] originalRendererStates = System.Array.Empty<bool>();
         private PlayableDirector director;
@@ -56,6 +64,9 @@ namespace Project.BlockFeatures
         public float RepeatCooldownSeconds => repeatCooldownSeconds;
         public bool RequestsPlayerControlLock =>
             requestPlayerControlLockDuringTimeline;
+        public bool StopsWhenContactEnds =>
+            triggerMode ==
+            ContactTimelineTriggerMode.WhileInside;
         public bool ControlLockActive => controlLockHandle != null;
         public float CooldownRemaining => triggerMode ==
                                           ContactTimelineTriggerMode.Repeatable
@@ -173,6 +184,7 @@ namespace Project.BlockFeatures
 
         private void TryContact(GameObject actor)
         {
+            if (GameplayPresentationGate.IsSuppressed) return;
             if (!isActiveAndEnabled || actor == null)
             {
                 return;
@@ -195,6 +207,11 @@ namespace Project.BlockFeatures
                 return;
             }
 
+            GetComponents(conditions);
+            foreach (MonoBehaviour component in conditions)
+                if (component != null && component.isActiveAndEnabled &&
+                    component is IContactTimelineCondition condition && !condition.CanPlayTimeline(actor)) return;
+
             int id = actor.transform.root.GetInstanceID();
             if (!contacts.Add(id))
             {
@@ -205,7 +222,9 @@ namespace Project.BlockFeatures
             nextAvailableTime =
                 Time.time + Mathf.Max(0f, repeatCooldownSeconds);
             PlayTimeline(actor);
-            if (destroyAfterTrigger)
+            if (destroyAfterTrigger &&
+                triggerMode !=
+                ContactTimelineTriggerMode.WhileInside)
             {
                 Destroy(gameObject);
             }
@@ -219,6 +238,22 @@ namespace Project.BlockFeatures
             }
 
             contacts.Remove(actor.transform.root.GetInstanceID());
+            if (triggerMode ==
+                    ContactTimelineTriggerMode.WhileInside &&
+                contacts.Count == 0)
+            {
+                StopPersistentTimeline();
+            }
+        }
+
+        private void StopPersistentTimeline()
+        {
+            if (director != null)
+            {
+                director.Stop();
+                director.time = 0d;
+            }
+            ReleasePlayerControlLock();
         }
 
         private bool MatchesFilter(GameObject actor)

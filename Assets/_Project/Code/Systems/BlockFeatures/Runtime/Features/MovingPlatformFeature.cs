@@ -6,6 +6,13 @@ using UnityEngine;
 
 namespace Project.BlockFeatures
 {
+    public enum MovingPlatformBodyOrientation
+    {
+        [InspectorName("随占格（兼容旧关卡）")] Auto = 0,
+        [InspectorName("横向平台")] Horizontal = 1,
+        [InspectorName("竖向平台")] Vertical = 2
+    }
+
     public enum MovingPlatformRoute
     {
         [InspectorName("平面游荡")] Horizontal = 0,
@@ -49,6 +56,13 @@ namespace Project.BlockFeatures
     [DefaultExecutionOrder(-150)]
     public sealed class MovingPlatformFeature : BlockFeature
     {
+        // Only the planner's shape tool changes this together with the logical
+        // footprint/collider. A standalone parameter would desynchronise them.
+        [SerializeField, HideInInspector] private MovingPlatformBodyOrientation bodyOrientation;
+        public MovingPlatformBodyOrientation BodyOrientation => bodyOrientation;
+        public bool IsArtworkVertical(Vector2 dimensions) => bodyOrientation == MovingPlatformBodyOrientation.Vertical ||
+            bodyOrientation == MovingPlatformBodyOrientation.Auto && dimensions.y > dimensions.x;
+
         [BlockParameter(Label = "路线配置", Group = "移动路线", Order = -1,
             Tooltip = "单向路线从布置位置出发后往返；双侧路线可分别设置两端距离。原路线保留旧存档配置。")]
         [SerializeField] private MovingPlatformPathMode pathMode;

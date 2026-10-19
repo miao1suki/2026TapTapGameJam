@@ -1,5 +1,174 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-19 共享场景美术素材与素材栏排布（验证完成，整合交付）
+
+- 用户授权检查背景、墙地、小装饰及混在道具图集中的场景素材，按16有效像素/格标准接入共享素材库；修复素材栏可用宽度下仍为单列的问题。沿用taptap-editor-ui规范，追加稳定槽位，不重排旧笔刷，不改现有地图布局。
+- 与上一轮黑白参考修复一起验证后合并推送main；仅提交本窗口相关代码、素材库与生成依赖和文档，不包含用户MRoom/Pick/Timeline/插件等WIP；字体仅按下述用户明确授权备份后采用远端。保留主Unity未保存Scene；Unity验证继续在隔离工程串行静音执行，本轮不打包。
+- 共享库从99项增至178项，追加79项；包含tail边框、混合图集草饰/波纹及47款正式道具静态外观。旧99槽位顺序、源Sprite GUID/localId与尺寸保留，不将动画板/标签/玩法逻辑塞进素材库；16有效像素/格，tail经RGBA核实4倍导出，最右15px立柱不拉宽。误标雨滴的旧键保留，仅修工具默认分类/名称，用户自定义值不覆盖。用法和来源选区见SCENE_ART_LIBRARY.md。
+- 素材栏按实际视口宽度排两列，计入150%高DPI边距取整，搜索/分类后同样重排；仅几何变化/刷新时计算，不逐帧扫描。黑白墙地参考修复与本轮一起交付，未保存或重建用户关卡。
+- GridArt EditMode69项、主菜单/暂停设置真实触摸3项通过，0失败0跳过；共享库专项224项核对原像素、Point/无Mip/无缩放/无压缩、重复同步、真实920/1280点窗口布局和GPU素材总览。报告/截图仅留Library。未做Android新包/真机验收。
+- 主菜单触控布局根因为WorldMainMenu的SDF字体引用类型错误（type3→NativeFormat type2）；补已有按钮及静态事件的幂等重绑，模拟脚本重载后可打开/拖动/取消/保存/重开，融合菜单租约和相机不变。
+- 同源TTF、真实菜单预热+599政策字容量验证：2048缺246，4096缺0。署名原误写“臞日不再”，按用户确认在正式主菜单/共享暂停/旧兼容菜单更正为“臾日不再”，源TTF支持；更正后全部UI采样字和政策均无缺字。
+- 推送前远端main新增b652ce9（存档成就/UI/4096字体）。用户明确同意备份后采用远端字体，原字体及meta完整备份于Library/BeforeIncomingMain-20261019-Cubic-cd244ccb011e477aade216dec315be5e（原字体SHA256 D9C2942EE604792BC248E785AC00715BEF0043C6FD9E2926C3B84E05CE6C83E7）；未保存主Unity场景，其他MRoom/Pick/Timeline/插件WIP保留。整合保留双方交接、远端内页美术和本地触控幂等接线，补远端设置动画后的模态返回保护；实际触摸3项复验全通过，包括取消当帧不穿透、隐私模态及生产4096字体的正文完整字形。首轮等待只看active导致动画/Canvas重排未完成时误点，现有界等待真实入口射线命中，严格命中断言保留。
+- 最终容量审计源4096×4096，采样UI缺0/政策599字缺0、源文件字节不变；更大远端缓存下2048对照缺278。修正审计对TMP全缓存请求返回false的误判，改查添加后的真实字体字符表，未放宽缺字标准。报告为privacy-font-incoming-main-audit-2.log及mobile-menu-incoming-main-tests-2.xml，仅留Library。不宣称成就/存档全流程或双端新包已验收，详见PRIVACY_FONT_CAPACITY.md。
+- 最后拉取跟进9a693a0（仅da142e5字体动态缓存清理）：源TTF/90点/9边距/4096容量未变，动态初始纹理1×1及空字符表属按需生成。按远端文件原样接入；从这一空缓存文件再次运行真实触摸/政策全文回归3项全通过（mobile-menu-final-font-cold-tests.xml）。原本地字体备份仍保留，未改动用户Scene/存档WIP。
+
+## 2026-10-19 工作台黑白块参考缺失（修复验证完成，随共享库整合）
+
+- 用户截图Pick_Art中道具可见、白块缺失；已确认Pick白块仍用旧Platform枚举，而适配器仅接受Solid。修复只读参考分类，与SceneBuilder按propEntry判定一致；黑白及其他方块栏目都需显示，保留孔洞、颜色和真实位置，不改类型/布局/用户美术存档。
+- 黑块、白块和自定义颜色块均显示并参与墙地联动；旧ID按名称回退，无规划场景读取保留实例颜色（缺旧颜色字段时按名称查栏目）及合并孔洞。五类无正式2D素材的道具/标记改为只读橙色轮廓，右栏明确列名；显式隐藏告示牌仍不显示，轮廓不加入自动墙地或游戏渲染器。按钮文字改为“自动铺绘并跟随墙地块”。
+- 隔离静音D3D11：补充黑白块34项、原参考23项、真实挂接窗口/N/跨场景交互20项、GridArt EditMode63项全通过，0失败0跳过。已核对当前Pick80、MRoom2 72、MRoom3 57、Gaming249条非道具块记录，读后来源字节不变。实际UI Toolkit GPU读回验证黑白及默认35%透明度，并复看真实Pick参考图片（22885个可见亮色像素）；图像/报告仅在隔离工程Library，不交付为素材。
+- 继续沿用保留批次，不新增逐帧Scene扫描。Navigation隔离Unity退出阶段仍有原生JobTempAlloc提示，未产生用例失败；不把测试通过表述为所有关卡人工验收。本轮未提交/推送或打包，无新构建。
+- 协作交付仍须Scene、同名planning、美术Map、meta及新增依赖成套；不保存主Unity内存Scene，不改用户Pick/MRoom/字体/Timeline/插件。
+## 2026-10-19 设置内页 UI 美术替换
+
+- 新增 `Start Menu Panel Background.png`，由设置页背景同风格扩展为 `1024×576` 全屏版。开始菜单的设置与制作名单按钮共用 `StartMenuController` 动态全屏背景层：纯深色底托 + 背景图，从右侧滑入覆盖主菜单，完成后显示设置页；返回时先恢复主菜单，再向右滑出。`panelBackdropSlideDuration` 可调。
+- 开始菜单设置页原底部“返回”按钮重构为右上角 `Setting Close X`，保留同一个 `Button.onClick`。鼠标/触屏直接点击，`InputActionId.Cancel` 或 `Pause`（键盘 ESC、手柄 B/Start）也调用同一 X 回调；按键重绑定期间不关闭页面。打开设置后 EventSystem 焦点自动落到 X。
+- 范围仅设置、按键映射、存档等内页：新增 `Setting Button.png`、`Setting Slider Background.png`、`Setting Slider Fill.png`、`Setting Slider Handle.png`、`Setting Toggle Box.png`、`Setting Close X.png`，统一为现有像素 UI 风格的深色阶梯框、浅色高光和红色关闭按钮。
+- `StartMenuUiFactory.CreateInnerButton` 只供 `SettingsPanelController`、`KeyBindingPanelController`、`SavePanelController` 使用；主菜单四按钮和暂停轮盘按钮/扇区未改。Slider 与 Toggle 仅替换设置内页三段视觉。
+- 预制体里的 `Settings/KeyBinding/Save` 已存在旧控件不会走动态工厂，因此三个控制器在 `Awake/OnEnable/Refresh` 额外调用 `StartMenuUiFactory.ApplyInnerArtwork`，对现有 Button、Slider、Toggle 统一换皮；名为 `Close` 的按钮跳过，继续使用专用关闭 X。
+- 设置/存档/收藏子页右上角关闭按钮改用新 `Setting Close X` Sprite，原文字 X 对象保留但停用；旧按钮、Slider 和关闭资源均未删除。
+- 三个 `PaintLayer` 占位对象保留但停用，`EscMenuController` 已移除 `PlayPaint` 调用、方法及 `paintStrokeSprite/Material` 字段；`GameFlow/SKILL.md` 同步记录当前不重建颜料占位层。
+- `TextSdfMirror` 新增可重复 `ApplyFont`；`StartMenuTypography` 与 `EscMenuController` 遇到已有镜像不再直接跳过，而是把其字体重新绑定为 `Cubic_11 SDF`。两个 UI 预制体审计到的 SDF 字体 GUID 均为 `97e10da648522f547bbec66357199a2a`。
+- 新增 `Settings Page Background.png`，使用粗黑/奶油像素框、简洁蓝青底面、暖白/橙绿点缀和透明阶梯笔触左边；设置、存档、收藏三页统一使用。原 `Panel Background.png` 蓝色网格作为旧资源保留但不再作为默认页面背景。背景使用 Simple 拉伸，避免九宫格把左侧笔触拉直。
+- 三页内容增加左侧安全区：设置与存档响应式布局右移 `64`，收藏标题与两列列表额外右移 `64`，右侧关闭 X 保持原位。
+- 新增 `Save Slot Block.png`：奶油色存档块、深青阶梯框、橙色左侧识别条和青/橙底线。存档页 Viewport 改为透明，每个存档单列独立块排列，块内保留存档名与读取/保存/删除；空存档也使用同款块显示“暂无存档”。
+- 存档页灰色 `Status` 小字提示已停用；新建、删除、读取等业务状态仍写入数据，但不再显示灰色小字。
+- `SettingsPanelController` 与 `KeyBindingPanelController` 会停用设置内页的 `Hint/Status` 小字提示，不删除对象，也不影响存档业务状态提示。
+- 开始菜单设置启用单独展开式布局：Sound/Key Binding/Credits 内页根背景全透明，分类栏和内容区随 `SettingsPage` 宽高计算缩放，内容区按实际剩余宽度自适应，标题与左栏使用屏幕比例安全边距；不再固定缩在 930 宽区域。
+- 验证：StartMenu Runtime 与 GameFlow Runtime 按 Unity 实际 `rsp + rsp2` 参数编译通过；`git diff --check` 通过；未运行 Unity Play Mode，最终视觉与点击手感待实机验收。
+
+## 2026-10-19 成就块美术
+
+- 分支：`存档成就`；新增 `Assets/_Project/Art/Generated/GameUI/Achievement Block.png`，`192×112` 透明像素卡面，使用纯白底、中性灰阶梯边框和浅灰底带；不保留蓝色外框、青色识别条、暖橙底线或四角铆钉。
+- 新增独立 `Assets/_Project/Art/Generated/GameUI/Achievement Unlock Block.png`，`256×128`、Point Filter、无 Mipmap、无压缩，九宫格边距 `24/20/24/20`；使用同一中性白灰风格供左下角成就解锁提示专用。
+- 新增独立 `Assets/_Project/Art/Generated/GameUI/Achievement Unlock Check.png`，`64×64` 透明像素勾，本体为绿色，不使用底图、方框或背景；作为独立 Image 放在解锁块文字左侧，尺寸、间距和 tint 可调。
+- 设置页 `StartMenuUiFactory.CreateToggle` 原来用纯色方块充当勾，现改为复用同一透明绿色像素勾；保留原深色 Toggle 方框，勾使用 Simple、Preserve Aspect 和 `3px` 内边距，关闭时仍由 Toggle 隐藏。
+- Sprite 使用 Point Filter、无 Mipmap、无压缩与 `16px` 九宫格边；通过 `GameUiArtwork.achievementBlock` 自动提供给运行时动态创建的 `AchievementCollectionPresenter`，无需修改场景实例。
+- `AchievementCollectionPresenter` 优先使用可选 `rowSprite`，空引用时读取统一 UI 美术资源；背景 Image 使用 `Sliced` 模式。预制体行高同步为 `216`，标题下移避开九宫格上边框，简介改用更清晰的深灰，完成遮罩与图片逻辑不变。
+- 收藏页完成态已改为纯视觉：灰色整块遮罩与右侧绿色像素勾都不参与射线检测，成就行不再挂 `Toggle` 或任何 `Selectable`；成就数据变化时只刷新遮罩和勾的显示状态。
+- 完成勾默认尺寸提升为 `60×60`、右侧偏移 `20`，两项均可在 Inspector 调整；设置 Toggle 内同款勾内边距收紧到 `1px`。成就完成后条件栏继续显示最终条件文本（如 `1/1`），不再替换为“已完成”。
+- 成就简介字号改为标题字号的 `90%`（由 `descriptionFontScale` 配置，当前 `36×0.9` 取整为 `32`），简介文本区增高到 `40`，条件行下移并保留两行容量。
+- 条件文本区域改为占据卡片下半部完整可用宽度（左右各 `28px`、底部对齐九宫格内框），单行条件使用垂直居中，多行条件仍可向下扩展；条件区又下移至 `-128`，高度 `68`。
+- `AchievementSO.Hidden` 为真且尚未解锁时，收藏页隐藏标题、简介和条件，改为显示居中大字 `?` 与下方大号“待发现成就”；解锁后自动切回真实成就内容并按普通完成态显示灰色遮罩和完成勾。现有隐藏成就为 `1005/1006/1007`。
+- 收藏列表 Viewport 新增全透明 `Image` 射线接收面；成就行仍不可点击，但滚轮事件可命中并冒泡到外层 `ScrollRect`，恢复鼠标滚轮上下滚动。
+- `AchievementUnlockToastPresenter` 实现既有 `IAchievementUnlockReceiver`，挂载到 `WordNote_UI`，在左下角按队列显示绿色勾、`达成成就！` 与成就名；入/停留/出分别 `0.42/3.2/0.3` 秒，左入左出并使用 DOTween `SetUpdate(true)`，字体、块 Sprite、勾 Sprite、材质、尺寸、颜色、字号和动画参数均可调。
+- 验证：`Project.StartMenu.Runtime` 与 `Project.GameFlow.Runtime` 按 Unity 实际 `rsp + rsp2` 参数静态编译通过；新块蓝色像素为 `0`，绿色勾左上角 Alpha 为 `0` 且全部实体像素为绿色；未运行 Unity Play Mode。
+
+## 2026-10-19 玩家死亡原因
+
+- 分支：`存档成就`；范围：`PlayerController`、可选 `PlayerHealth`、岩浆、尖刺、NeutralSpike 与 Boss 接触。
+- 新增 `PlayerDeathCause` 四类：`Fall`、`Lava`、`Spike`、`Boss`。玩家记录 `LastDeathCause`、`LastDeathSource`，并在明确原因时广播 `DeathCauseResolved`；无参 `EnterDeath()` 保留给旧测试和非正式调用，此时原因为空。
+- 正式路径：摔落直接传 `Fall`；岩浆无论有没有 `PlayerHealth` 都传 `Lava`；两种尖刺传 `Spike`；Boss 接触传 `Boss`。若旧角色仍带可选 `PlayerHealth`，其伤害接口会透传原因，不要求新增该组件。
+- 成就接入：新增 `PlayerDied`、`PlayerFallDeath`、`PlayerLavaDeath`、`PlayerSpikeDeath`、`PlayerBossDeath` 信号；`PlayerDeathAchievementRouter` 固定映射数据盒 `1001/1003`（摔死 1/10 次）、`1002/1004`（尖刺 1/10 次）、`1011/1014`（岩浆死 1/10 次）、`1012/1013`（总死亡 50/5 次）。补齐 `1012` 缺失的完成根节点 `0001`。
+- 验证：Runtime 静态编译通过；`git diff --check` 通过；未运行 Unity Play Mode。
+
+## 2026-10-18 工作台关卡参照、快捷开关与TA区域（验证完成，整合交付）
+
+- 用户授权并行完善N键开关、真实房间定位、可调透明度的关卡参照层，以及可框绘/调参的萤火虫和雨区域；萤火虫默认在玩家/普通道具的摄像机侧，但墙体仍遮挡。复用TA固定像素、数量预算和现有Scene独立根，不把整区缩进单格、不污染玩法planning。
+- 与前一轮收集/Boss/地图/尖刺/重力改动一起收尾验证，当前窗口已获本轮合并推送授权。保留主Unity未保存Scene、用户原有素材/插件/字体修改；隔离串行运行Unity，不另造运行场景或跨场景Boss传送。
+- 分工：collectible_spike_art只读关卡参照数据/适配器/批次层；rotation_gravity窗口/快捷键/房间定位；collection_boss_contract TA区域桥接/参数/默认深度；root负责地图收尾和整合验证。
+- 静音隔离D3D11：真实挂接窗口/N/跨场景定位20项、关卡参照23项、TA工作台区域22项、原雨区115项、原萤火38项、GridArt现有EditMode63项通过。万格参考合批、100次平移缩放几何复用、透明物保序、非矩形水/连续藤蔓/竖平台原像素裁切均覆盖。
+- 首轮回归查出切场景可能沿用旧视图和首次Fit早于侧栏布局，已加场景身份幂等重绑及只在首次定位时随viewport居中；手动视图不强制重置。GPU对照验证萤火核心/光晕覆盖普通透明道具、墙面同时遮住两者，未改ZTest为Always。
+- 区域效果Scene保存/重载、Undo/Redo和非1格尺寸通过；实时预览与保存仍由工作台处理，不修改玩法planning。不宣称全关卡人工通关或新包真机验收；本轮无重新打包。旧萤火作者根不强行迁移，可在区域参数调可见平面。
+- 交付持续提醒Scene、同名planning、美术Map、素材库、meta和新增依赖成套，不能只交生成Scene。
+
+## 2026-10-18 收集进度、尖刺状态、传送地图与方块重力（验证完成，待本轮整合推送）
+
+- 当前整合窗口按用户授权并行：collectible_spike_art负责新收集品图/大小尖刺与击杀染血；collection_boss_contract负责统一收集进度与Boss结局/入口契约；rotation_gravity负责工作台90度旋转、三色方块标准重力开关及固定绿衍生物攀爬；整合者负责全局传送地图、输入/相机/玩家安全传送、Start锚点及串行隔离验证。
+- 保留用户未提交MRoom2/MRoom3/Pick、美术、字体、Timeline、插件及删除，不保存主Unity内存场景。后续用户已授权与工作台一起合并推送；本轮不构建新包。
+- 传送按收集达到30%且Boss已击败开放，Boss战及Boss房禁止；只去已激活非Boss重生点，复用房间与玩家/相机控制链。收集进度仅会话数据并留后续存档接口，尖刺运行染血不进存档。
+- 关卡协作仍必须交Scene、同名planning、meta及新增依赖，正式Gaming另含命名正式存档；不得仅交生成Scene。
+- 静音隔离D3D11验证：地图95项、真实Gaming菜单往返98项、收集/Boss56项、美术/尖刺56项、三色重力/90度旋转/固定衍生物攀附167项、生成美术资源18项通过。地图房间层补CanvasRenderer后实际截图已复看。传送落位严格同房间，额外控制租约按启用代际失效，菜单同步关闭地图，Start/End不会被Boss复活点劫持。
+- 正式Gaming新增隐形Start，全部837原记录/精确Transform保留，现838条；Boss仅原入口局部切Gate模板。三份正式JSON一致，Start/Gate真实重建和导入依赖通过，不全量重建或提前合入所有独立地图。收集进度保留未来存档API，当前没有退出后磁盘保存；独立Boss未合进Gaming前找不到Start只拒绝/提示，不加载场景。
+
+## 2026-10-18 共享曲柄制动修复与独立关卡快速复查（完成，未推送）
+
+- 用户授权修复共享副曲柄制动，并采用远端最新R1；本轮只替换R1专属Scene、配套planning/设计源/验证工具，不整分支合并、不覆盖Gaming、菜单、标准玩家及用户未提交改动。
+- 主曲柄统一汇总本组有效曲柄的制动基座，保留每个曲柄的独立持久绑定；任一基座通电时暂停同一份进度，解除后继续。补验证主/副柄制动、恢复及解绑，不增加逐帧场景扫描。
+- 快速检查R1/R2/R3及策划分支固定悬空绿块的作者约束、攀附、生长和重置路径；Unity只在Library静音隔离工程串行验证，不保存主Unity内存Scene。远端R1采用16fb26f（镜像实现40fe66c），不会再次执行镜像迁移。
+- 补做远端R1在main的无改动同步发现旧planningSignature缺少main新增的空Boss归属字段，严格字符串比较会重建作者对象。仅对R1做显式元数据迁移，先在隔离副本归一旧签名，再验证76实例ID/精确位姿都不变才允许保存；不放宽全局参数比较，不全量重建。
+- Scene、同名planning、meta及新增依赖始终成套交付；本轮没有重新打包或推送授权。
+- 隔离复验：SharedCrankBrakeAudit 24项；远端镜像R1真实Play 1130项（包含逐帧重复采样），R2 Play 44项，R3来源116/Scene规划1552/Play33766项（含逐帧附着跟随）通过。R3四固定绿根真实蓝命中生长至端点、重置，及普通绿块/可动方块重力回归通过；R3源码与附着依赖仅临时放隔离副本，已移回其Library保留，不合入主工作树。
+- 最后恢复为当前main生产源码（不带R3依赖），归一R1的76个元数据签名，保存重载/无改动同步158项及标准玩家蓝点击生长220项通过；未改远端R1布局、朝向、手动微调和机关参数。最初R1无改动检查确实失败，原因与修复如上，未将旧通过报告冒充本轮结果。编译无C#错误，当前任务范围git diff --check通过。
+- 策划分支b2d0e18另含刚体六轴锁定UI（aa0ecda）和3个FreezeAll/禁搬运绿块：已静态核对位掩码捕获/保存和配置，未将其Gaming或其他编辑器改动合入，也未宣称此分支整图Play通过。末次fetch仍是main12d56fe/R1 16fb26f/R2 d2c2809/R3 e04e422。用户其他未提交Scene/存档/字体/Timeline/插件不在本轮写入范围。
+- 报告位于Library/FlowRetirementProbe/Library及Library/RoomPhysics-20261018；未做三个关卡完整入口到出口通关、双端包或真机验收。R1使用者请重新加载本次Scene/配套planning，避免旧编辑器内存再保存覆盖；继续提醒协作交付存档及meta。
+
+## 2026-10-18 ILorR R1/R2 合入 main（整合验证完成）
+
+- 用户在当前窗口明确授权整合R1/R2并放进main；此授权仅限本轮，不转授其他worker。独立目录Library/R1R2Integration-FlowRetirementProbe-20261018、整合分支codex/ilorr/integrate-r1-r2-20261018，基于origin/main的8bd0c87，保留main全部进度。
+- 合入origin/codex/ilorr/r1-level的4dbeb68（含已保存微调）与origin/codex/ilorr/r2-level的d2c2809。只新增两个独立Scene及配套存档/依赖、合入必要共享支持；不拼入Gaming、不改构建列表、不做R3。
+- R1 Scene保持微调版逐字节内容，不重建或用旧planning覆盖；已有Scene/planning差异与非整格微调按R1_LEVEL说明保留。R2不增加蓝块；main已有玩家蓝色点击绿接触方块功能，整合后需验证而非回退该功能。
+- 保留原主目录三项未提交美术改动并核对SHA256；R1/R2用户工作目录不切分支、不打开或保存其内存Scene。文档冲突保留双方记录，并以main最新单Gaming同世界菜单／蓝点击生长契约为准。正式Gaming及配套存档、Player.prefab、ProjectSettings、Packages均与8bd0c87一致。
+- Unity6000.3.12f1静音隔离复验通过：R1微调版Play2220次断言（含逐帧共享进度），R2来源436、场景/存档2017、Play44，main蓝点击生长220，规划机关绑定12、协作存档36；C#编译无错误。R1双按钮用TryPress API，R2三按钮用真实脚部触发，不冒称完整路线通关。
+- 审计仅扩展静音隔离入口：R1出生读取已保存Scene位置；R2在未保存临时场景测试旧签名新增空bossRespawnOwnerId字段的首次迁移及第二次无变更应用，补Physics.SyncTransforms后真实Collider占格2017项通过；原Scene/planning/meta与两分支交付完全一致。早期审计尝试的旧无变更假设／未导入Library副本／未同步物理夹具未通过，仅修验证方式，不改布局或运行时生长规则；自动写入的R2空字段已核对并撤销。
+- 两关开局权限、固定／普通绿块、共享／独立曲柄、保持按钮门、植物燃烧及区域复原均按专项复验。未重新做真实GameView、入口到出口人工通关、双端包或真机验收；R1规划仍未回采手动Transform微调，禁止从旧planning重建。Unity Search原生索引越界仍可见，非关卡断言或C#错误，未升级引擎。
+- 推送前再次刷新main；仅在远端仍可正常快进且三项原目录美术改动不重叠时，更新本地主项目并普通推送main，不强推。验证产生的临时协作Scene已清理，报告保留Library，不提交测试副产物或凭据。
+
+## 2026-10-18 紧急双端 Gaming 出包（构建完成，整合交付）
+
+- 用户要求尽量15分钟内交付Android/Windows，允许非阻断问题后续迭代，并明确授权合并推送；正式地图采用策划最新56126c3的Gaming Scene、同名planning及命名存档，保留本地新版菜单、单世界流程和运镜。
+- 已将origin/main的Boss等进度整合，RoomResetObject保留非分配缓存与未挂接平台复原，PlanningCanvas同时保留平台形状及Boss重生点标记维护。用户未提交MRoom2/MRoom3/Pick、字体等不作为此次关卡交付。
+- Android按键采用新图左侧方形版本（方向/跳跃30×30），保留原触控范围与个人布局；Windows/Android使用Resources/临时ICON.png。资源生成与构建仅在隔离FlowRetirementProbe，不保存主Unity内存Scene。
+- 唯一打包启动场景Gaming，非Development、无Profiler、无运行时网络权限；旧包从Builds移至Library备份以免误用。新地图交接注明7个按钮及部分信号未接线，本轮不猜测补绑定，不声称完整关卡通关。
+- 蓝色点击绿块按玩家网格行决定四向，已伸长锁方向、回单格可改向；持续至最大，真实实体/玩家占新增格暂停，不以整格扩张把玩家吞入，移开后继续。首轮真实PhysX测试发现穿透后改为安全占位策略，终版验证结果待追加。
+- 双端构建成功：Windows 0错误/5警告，Android ARM64 IL2CPP 0错误/9警告。仅Gaming进入BuildPlayer；Windows启动烟测未见异常。最终APK无uses-permission，debuggable=false、cleartext=false，PrivacyActivity为唯一Launcher，UnityPlayerActivity不导出，v2签名验证通过。未做Android真机或完整通关。
+- 产物在Builds/形之彩-20261018-Gaming正式测试，旧6套包移至Library/PreviousBuilds-20261018可恢复。SHA256、验证范围与后续事项见Docs/Developer/RELEASE_GAMING_2026-10-18.md；本轮未保存主Unity内存Scene，用户字体、Boss Timeline及MRoom2/MRoom3/Pick留在工作树。
+- 此前旧图专项通过切房12095、菜单165/843帧、故障36、按钮42、Boss63、TA195、岩浆显示10项，不是最新20房间图的全流程重验。新增连续单格平台合并专项未通过、拒绝原因待查；安全生长版第三轮134项处因夹具未移开阻挡玩家而失败，仅修审计重跑，不改已打包生产逻辑。用户要求本轮先包，非阻断问题后续处理。
+- 终版BlueContactCubeGrowthAudit第四轮220项通过，覆盖4方向×3格尺寸、真实鼠标命中、伸长后锁轴/回缩后改向、玩家占格暂停/移开恢复、实体阻挡、颜色门控与R/死亡/离区。第四轮只调整夹具移开占位玩家，包内生产代码未变。
+
+## 2026-10-18 紧急包手机按键与双端图标（urgent_mobile_icons）
+
+- 范围仅手机HUD美术、TouchPressFeedback图形与独立MobileArtworkSetup生成入口。采用B31A4497C97A51CF13A50549B8241494.png左侧30×30方向/跳跃版本，动作34×28等比；下组为按下帧，纵向偏移185像素。图标为用户新增Resources/临时ICON.png，未使用Timeline棍母。
+- 保留124触摸矩形、14触摸容差、独立手指/双跳跃/情境显隐/奔跑开关和ShapeOfColor.TouchLayout.v1个人布局；不保存主Unity内存Scene，不改玩法、流程、平台或房间。worker不切分支、不提交、不并行启动Unity。
+- root串行在隔离工程执行Project.Player.Editor.MobileArtworkSetup.Build，生成26张Sprite及meta、Point/FullRect/无Mip/无压缩并设置默认、Standalone与Android图标；需将生成资源和ProjectSettings/ProjectSettings.asset及图标meta同步回主工程。随后可运行MobileArtworkSetup.Validate。当前worker完成静态diff检查与原图像素矩形验证，Unity编译/生成/包验证由root串行完成。
+
+## 2026-10-18 切房性能、按钮共格与四向、拉取接触及菜单清理（进行中）
+
+- 分支`codex/room-physics-menu-20261018`；用户授权多agent，分别负责Rooms切区性能、按钮搬运/四向、GreenHook与基座，整合者负责岩浆层级、玩家精灵下移2有效像素、新菜单旧底板清理与启动黑屏。Unity验证由整合者串行在静音FlowRetirementProbe运行。
+- 不保存主Unity内存Scene，不覆盖用户MRoom2/MRoom3/Pick、BossTimeline、字体、插件、设置与删除；正式Gaming布局与两份存档保留。不用关闭房间重置/无限接触容差规避问题；保持持久进度、绳索主动解除与像素标准。
+- 玩家仅显示图像下移2/16格，碰撞不移动；按钮同一种物体用四向实例参数，重力方块可压入同格；岩浆只修表现遮挡不放宽伤害。
+- 用户追加确认：发布直接启动Gaming，同一世界叠加新版主菜单；开始/返回只做相反运镜与UI动画，不再装卸Gaming。旧MainMenu仅兼容入口，清理旧蓝底，但保留用户未提交的MainMenu.planning。
+- 用户追加平台：编辑器新放置提供横放/竖放/单格形状，外观朝向独立于路线；单格裁取原素材而非把三格压缩，旧地图平台原占格、移动参数和绑定保留。
+- 交付关卡变更仍需Scene、同名planning.json、meta与新增依赖成套；正式Gaming还需命名正式存档。当前请求未另行授权合并/推送，完成验证后交接。
+## 2026-10-18 ILorR R2 独立关卡（验证完成，分支交付）
+
+- 分支 `codex/ilorr/r2-level`，独立目录 `C:/Unity Programs/2026TapTapGameJam-R2`；新任务开始时基于 main `2ab461c6d7c83da8e4ccfd2e437741db035a2b7c`。
+- 范围：只读解析策划《关卡设计.xlsx》的 R2，在 `Assets/Scenes/R2` 新建独立 Scene、同名 planning、来源映射及必要工具/说明。不做 R3，不改正式 Gaming、共享玩家或 R1。
+- 用户同时在 R1 目录测试并微调；不切换其分支、不保存其内存场景、不暂存其文件。R2 的 Unity 导入/验证只在 R2 独立目录进行。
+- 用户本次明确授权“R2 搭完直接推送”，只推任务分支；未来推送仍须用户当前明确要求。每次推送前刷新 main，检查新增提交及改动重叠，不自行 merge/rebase、推 main 或建 PR。
+- 已核对来源一格对应游戏一格，R2 位于 Sheet1 F97:BK129；灰色轨迹/生长极限只作设计标注。用户已确认场景三色解锁、玩家仅蓝能力；三保持按钮全部按下开同一门；竖门占 Y96:Y97；AN112 曲柄驱动 AF118:AI118 上升10格至第108行，松手下降。Y96 原本是空白，因此未擅自移除其他黑格；区域顶边扩到第96行以容纳门。
+- 来源只读提取：393 个黑色地形格；三个保持按钮 AC104/AB112/AL125、AN112 曲柄、AF109:AI109 平台（标注轨迹 AG108:AG118）、两件收集品 AX105/AP118、入 BK115/出 Y97。Excel SHA256 `3bbbcfb212928fab7fcb2db7f96ca27089bdbb521434d8754a0251aad1cddd92`。
+- 最终确认：AK114向右至AU114（最长11格），固定不落下、不可搬运；BG115向左至AY115（最长9格）沿用普通物理。AR116不生长，和AO117/AP117/AQ117/AR117/AO118/AQ118/AR118共8格均为可烧毁植物，AP118保留收集品空洞。AX98:AX104开局完整藤蔓，其余水/岩浆/弹性植物/尖刺按来源占格。
+- 用户最新要求暂不增加蓝块，等其向程序确认功能。交付场景无蓝色接触方块，不扩展玩家蓝色染色触发生长；绿块生长缺触发来源是明确保留的待协调项，不作为已通关结论。
+- 已交付：Scene、同名planning、来源映射及meta，55个作者对象、393个黑墙格；生成器拒绝覆盖已有Scene/存档。共享绿块只补识别作者FreezePosition固定状态的攀附支持（与R1同一最小修复，整合时去重），不改默认运动、增长/缩短触发。
+- Unity 6000.3.12f1 静音D3D11独立目录验证：来源436项、场景/存档1522项、实际Play 43项通过。覆盖真实脚部三按钮AND开门/保持、曲柄升满10格及回落、8格植物燃烧/复原、真实收集与进度、固定绿块生长碰撞/底面攀附/移动/跳跃脱手/红块缩短、房间重置。生长测试仅用内存临时蓝块，未保存到交付Scene。
+- 已复看1856×1152真实Game View全图；离屏Camera.Render未正确呈现所有地形，不作为交付证据。结果在Library/R2Preflight.txt、R2Verification.txt、R2GameplayVerification.txt、R2GameView.png，不提交日志/图片。未执行完整入口到出口人工通关、正式包或真机验收；Unity Search索引和退出Audio Manager清理有原生告警，未修改无关系统。
+- 推送前检查main已到 `fa34fd8b14ee1210537ed0ceb9451697cbe5b21f`，比任务基线新增8提交；R2文件及两个共享运行时文件没有同路径改动，ACTIVE_WORK/SYSTEM_INDEX有共同编辑。main的Player/Rooms/Camera/编辑器依赖另有变化；本轮验证针对任务基线，整合者合入时须保留双方文档并在最新main复验，不自行merge/rebase。
+
+## 2026-10-18 Boss重置外观、新平台与场景融合菜单（验证完成，整合交付）
+
+- 当前整合分支`codex/menu-reset-art-20261018`，用户授权多agent分工，最终只由当前整合窗口合并/推送main。并入上一轮已验证的搬运有效占格修复。
+- 范围：Boss房门/平台重置后模型或材质消失的共享生命周期根因；新平台动画、红绿蓝可配置单向平台外观；采用新LOGO/ButtonIcon和参考视频，将主菜单叠合真实Gaming背景、相机/UI平滑入退，不使用原进出游戏黑圈。慢加载复活等无关调用保持。
+- 分工：reset_visuals负责Rooms/ColorAppearance重置与专项验证；platform_art负责ObjectArtwork及单向平台颜色参数/栏目；menu_fusion负责GameFlow/StartMenu/UI。共享工作树不由worker切分支/提交，不并行启动Unity；整合者统一在静音FlowRetirementProbe运行。
+- 保留用户MRoom2/MRoom3/Pick、Boss Timeline、字体、插件、设置与删除；不全量重建Gaming、不覆盖作者参数/位置，不保存主Unity内存Scene。主菜单接线如需更新仅显式作用于MainMenu/prefab并核对对应planning。
+- 关卡交付仍需Scene、同名planning.json、meta和新增依赖成套；正式Gaming还需命名正式存档，不能只交Scene。美术源图/导入设置/生成切片/配置一并交付，16有效像素/格与旧逻辑占格分离。
+- Boss根因是Persistent对象提前返回遗留forceRenderingOff，以及预算化碰撞队列可在重置后再次隐藏；现在先释放临时隐藏、门按当前状态恢复碰撞，旧队列按ResetRevision失效，不重置门按钮进度或全局颜色。真实门/平台/标准玩家死亡、R连续8轮、离区与异步旧任务63项通过。
+- 新移动/曲柄动画采用9/6帧48×16、16有效像素/格，按可见支撑上缘14像素对齐，旧1/2/5格平台不扩大逻辑占格。红绿蓝单向平台共用Prefab与相同玩法，参数只改美术/HSV层；旧白色条目兼容。平台102项布局/GPU、15项Play与通用美术217项通过，横竖与墙支撑面截图已复看。
+- 新菜单真实Gaming动态背景、四按钮与27帧LOGO，首次开始不重载、再次开始卸旧后载新、GPU单帧交接、反向返回；CameraControlManager唯一运镜写入，不增加世界副本，不调用ResetProgress。主菜单OP显式路由，预载/换景临时Listener承接，菜单设备与Gameplay设备不双开。
+- 独立复核补齐四个联动边界：收集资格与实体穿过分离，展示租约释放在Collider恢复后一次性重施过滤；触控布局预览不受常驻HUD隐藏影响；菜单内自动/手动复活统一拒绝；加载/组件失败统一归还相机、截图、输入租约并恢复可重试菜单。收集品真实物理51项、正常主回归MenuFlow-5为167项/1076监听器帧通过；完整EditMode232/232、GameFlow PlayMode4/4通过。终版错误/布局专项MenuFailure-3为62项通过，包含真实GPU截图交接、空/不存在路径、缺相机管理器、恢复菜单及健康重试。
+- 日志在Library/MenuFusion-20261018，截图在FlowRetirementProbe/Library/WorldMenuFusionVerification和PlatformArtworkContactSheet.png；实际1280×720、1600×720、1024×768截图已复看。首轮Boss渐显等待/平台Bounds与GPU读回/错误夹具未打开GameView的问题只修测试夹具后重跑，真实回调与GPU断言不弱化；前轮发现的菜单音乐及Listener加载空档已修生产路径，终版无无Listener/重复Listener警告。最终48个修改/新增源码与meta及共享美术配置在主工程/隔离工程SHA256一致。
+- 测试均在静音D3D11隔离FlowRetirementProbe，不保存作者Scene或planning；35张菜单源图、3张平台源图及meta/生成切片/共享配置随代码交付。正式Gaming三份布局数据和用户MRoom2/MRoom3/Pick/BossTimeline/字体/设置SHA256未改。本轮没有新包/安卓实机验收。
+
+## 2026-10-18 搬运运行时占格修复（并入菜单与Boss整合）
+
+- 范围：PlayerController 放置检查与专用回归。以原作者占格作候选筛选，再核对当前位置、启用状态和实体碰撞；不让烧毁植物、已开启门或移走物体保留阻挡。水和纯Trigger不作为搬运实体墙。
+- 不修改用户 MRoom2/MRoom3/Gaming Scene 或 planning，不重建关卡、不改重生规则、机关绑定与颜色进度。当前 MRoom2 副本只在静音 FlowRetirementProbe 隔离工程测试。
+- 诊断已确认：基座[-95,-13]右侧植物烧毁后Collider已关闭但旧ContainsCell仍阻挡；红块移走原位同类误占。R入口连续8轮已正常恢复，修复不以清除作者记录规避问题。
+- 静音D3D11隔离验证共142项通过：真实MRoom2及有效占用43项、MobileCarryRegression68项、CarryGround9项、FacingInteraction22项；覆盖真实F/Q完成放置、8轮烧毁/R、移动后旧格释放/新格阻挡、薄墙、水Trigger、合并孔洞、后加/隐藏子碰撞体、深度、朝向与平滑让位。1000次预热作者候选查询80.707ms、0托管分配（编辑器环境，不是整帧或真机性能结论）。
+- 日志位于`Library/MRoom2CarryDiagnosis/`。首次夹具因用户出生点新增钥匙演出占用控制权而未成功F拾取；仅在隔离副本进入Play前临时停用钥匙，不绕过玩家拿起/放下流程；第二次43项通过。主工程与隔离工程PlayerController、专用验证源码SHA256一致，MRoom2 Scene/planning文件SHA256在验证后仍一致；未保存主Unity内存场景。
+- 交付关卡仍须Scene、同名planning.json、meta及新增依赖成套；仅运行时修复，不上传或覆盖用户尚未提交布局。该修复随上方菜单与Boss任务一并整合交付，未单独构建包。
+
 ## 2026-10-18 机关镜头、水层与颜色目标改善（验证完成，整合交付）
 
 - 整合分支：`codex/mechanism-water-20261018`，独立工作目录 `Library/TAIntegration-20261018`，不改用户打开的Scene及未提交MRoom2/MRoom3。
@@ -14,6 +183,81 @@
 - 日志在Library/MechanismWater-*，截图/报告在FlowRetirementProbe/Library；首轮编译跨程序集依赖已正确分层、镜头夹具按标准玩家Director基线计数、正式关卡旧签名按持久化内容比较，保留首轮失败日志。协作保存首次出现一次File.Replace短暂IO竞争，同源码重跑及终版均36项通过，未弱化原子替换或外部冲突保护；具体占用进程未定位。后续若复现，专项处理失败保留待存状态，不能删旧文件再Move。
 - 本轮没有构建包、改网络/Android设置，也不提交无关用户MRoom2/MRoom3/Pick、Boss Timeline、字体、插件、设置和删除。独立目录内测试，不切换/保存主Unity内存Scene。
 - 交付关卡必须Scene、同名planning.json、meta和正式关卡共享存档成套，不能只上传场景。策划新增布局与已有修复做增量合并，不全量重建。
+
+## 2026-10-18 Boss 关卡重生点附属标记
+
+- 分支：`boss修补`；范围：`RespawnAnchorFeature`、玩家复活完成回调、Boss 重生状态接口、Boss 标记 SceneEditor、关卡参数窗口与 PlanningCanvas。
+- 分支：`boss修补`；新增通用传送目标道具：`TeleportAnchorFeature` 使用任意字符串 ID 的全局静态注册表，API `TeleportObject(GameObject, string)` 将对象移动到对应目标；默认预制体 `Teleport_Block.prefab` 已加入道具栏目，运行时和 Scene 中均无碰撞、不可见。静态表在子系统注册时清空，运行时支持修改 ID 并注销旧注册。验证：Runtime/Editor Roslyn 编译通过；未运行 Unity Play Mode。
+- 数据：Boss 开关、复活血量、Boss 本地 X 直接保存在重生点组件；附属标记无 Collider/Renderer、不保存业务数据，只定位并跟随 X 字段，删除后由编辑器维护自动补建并重新链接。
+- 编辑：参数窗口可像门生成按钮一样创建 `Boss复活标记` 规划格，通过 `bossRespawnOwnerId` 连接重生点；Scene 与关卡画布都只允许沿 X 拖动，Y 始终继承重生点，位置不产生实体。
+- 边界：不改现有重生链、房间重置、Boss 入场/死亡 Timeline；玩家完成复活后通过类型接口通知所选重生点，再由重生点向 Boss 状态接收者下发血量与位置。
+- 动态生成：BossController 启用时注册 `BossRespawnStateRegistry`；重生点保存待应用请求，Boss 后生成后自动应用并回读血量/坐标，Inspector 显示等待/已应用及一致性。
+- 顺序：玩家确定重生点后先通过 `IPlayerRespawnPreRoomResetListener` 请求 Boss 重置，再执行 `RoomLifecycleManager.BeforeRespawn` 房间恢复。
+- 弱追踪：`BossRightMoveExecutor` 在右移高度基础上增加玩家 Y 死区和格/秒追踪速度；死区内保持原高度，超出后只缓慢追到死区边缘。
+- 弱补助：`BossCheckpointAssistController` 监听重生点首次激活；玩家存活时按该点 Boss 位置启动临时水平加速和垂直辅助，玩家死亡立即取消，继续使用现有传送重置。
+- 平台重置兜底：`RoomLifecycleManager` 主动注册全部 `MovingPlatformFeature` / `OneWayPlatform`；`RoomResetObject.RestoreState` 对移动平台无条件再执行 `ResetForRoom`，恢复路线原点而不再依赖宿主当前挂接状态。
+- Boss 处决 Timeline：已直接提交 `Boss_execution.playable` 与 `BossExecutionTrigger.prefab`，新增 `BossExecutionTimelineTrack` / `BossExecutionClip`；进入触发区域后由 Playable 暂停普通右移，正式 `CameraTimelineTrack` 先用 1.2 秒将 2D 镜头移到 Boss，期间锁定相机起始 Y，结束后再短曲线校正高度，随后 Boss 按 10 格/秒右移并持续跟拍。整段玩家操作锁由正式 `PlayerTimelineTrack` 持有，自然结束、Timeline 停止或销毁时统一释放。`BossExecutionClip` 改为通过 `PlayableGraph.GetResolver()` 获取真正的 `PlayableDirector`，并订阅 `ExecutionSequenceTerminated` 与 `Died`；任意死亡路径都会停止处决 Timeline，修复 owner 为空导致玩家锁和相机控制残留。execution 状态下任意正伤害直接归零并触发常规死亡 Timeline，不要求血条先激活。Boss 死亡镜头已从当前 Boss 机位开始保持，不再重复玩家到 Boss 的去程，结束时回玩家。
+- 场景接线：规划 JSON 里已有 `box_f21b6d7f`，但此前 `Boss.unity` 没有实际实例；现已在房间 1 坐标 `(288,40)` 直接补入 `BossExecutionTrigger` 预制体实例，世界位置 `(288.5,-40.5)`，碰撞范围 `3×8×3`，并重新关联规划 ID。未运行场景生成器。
+- Timeline 反序列化修复：Unity Editor 日志出现 `No script asset for BossExecutionClip`。原因是 `BossExecutionClip : PlayableAsset` 与 Track 放在 `BossExecutionTimelineTrack.cs` 中，Unity 要求可序列化脚本资产使用同名文件。现将 Clip 与 Behaviour 拆到 `BossExecutionClip.cs`，新 GUID 接回 `Boss_execution.playable`；Track GUID 保持不变。
+- Boss 死亡六钥匙前缀：`Boss_defeat.playable` 扩展到 `10` 秒。致命伤后先保持原镜头发呆 `1` 秒，再用 `1` 秒平滑移动到玩家与 Boss 完整 Collider/Renderer 包围盒的中点；构图到位后由 `BossKeyAbsorptionPlayable` 用 `3.5` 秒从玩家身体依次生成两红两蓝两绿六把钥匙并吸入 Boss，最后进入 `4.5` 秒死亡演出；普通死亡和处决死亡共用。视觉钥匙实例在未激活根下先关闭 Collider、拾取/掉落/飞行脚本、美术状态组件和子 Director，再激活，确保不会被玩家吸收、按解锁状态隐藏或结算颜色。共享 `CameraTimelineClip/Behaviour` 未修改，玩家锁轨只锁输入，不写玩家位置。钥匙缩放为 `0.55`、槽距 `0.52`，吸引单把 `0.9` 秒。Boss 死亡前缀期间临时 Kinematic 冻结刚体，复活时恢复，消除抽搐。验证：Runtime 静态编译通过；Timeline 时间点与对象 ID 静态检查通过；未运行 Unity Play Mode。
+- 玩家动画与操作锁解耦：`PlayerSpritePresentation` 不再因 `PlayerStateId.Locked` 一律暂停动画；只有玩家身上存在启用中的 `Animator` 且同时处于 `Locked` 时，才视为 Timeline 接管视觉动画并暂停。标准无 Animator 玩家在 Timeline 锁操作期间继续播放原动画。
+- Player Thinking 演出：Boss 死亡 Timeline 自然结束后，同一 PlayableDirector 切换 `player_thinking.playable`。演出聚焦玩家、锁操作，使用 WordNote Timeline 队列逐句打字机播放并直接消失；默认未接入收藏品数据时走演出2。`PlayerThinkingTimelinePlayable.SetCollectibleProgress(current,max)` 按 60% 分流；演出1黑屏传送 `Start`，演出2生成六份收集品，并在黑幕完全覆盖时先销毁六份演出收集品，再传送 `End`。两分支均在完全黑屏 1 秒内传送并倒放黑屏，结束后停止导演以释放玩家锁和相机轨。
+- 处决启动参数：Timeline 开始时先将 Boss 保持当前 X/Z、把 Y 瞬移到玩家当前 Y，再冻结马夫并进入镜头；之后 execution 固定保持启动时记录的 Y，不再持续跟踪玩家高度。右移默认速度改为 `10` 格/秒，Timeline 序列化值和 Inspector 默认值同步。`destroyOnlyWhileExternalMoving` 的伤害接触检查在 execution 中放行。
+- 相机：Side2D 镜头强制只保留平面 Yaw；Boss 死亡 Timeline 的镜头控制释放移到 `9.99` 秒最后一帧，并显式调用 `ReleaseTimelineControl(true)`。
+- 表现/接触：新增 `BossPlayerLinkEffect`，从 Boss 中心连接玩家；用三份独立运行时材质分别设置火线/水线/藤蔓线 `_Style=1/2/3` 叠加，距离越近透明度和线粗越高，最近为正统线的 1.5 倍。连线随血条激活生成，藤蔓按 `_RevealProgress` 生长，Boss 死亡时按 `_DissolveProgress` 消散；`BossController.killPlayerOnContact` 默认为真，Boss 接触玩家直接请求玩家死亡。
+- 相机：Boss 入场首段在等待后生成锚点前先申请正交 2D，避免首个渲染帧继续使用透视投影。
+- Boss HUD：BossController 新增显示名；血条左侧动态创建 Cubic_11 SDF 名字。Boss Health Canvas 新增 `BossMonitorUI`，使用独立正交相机与 RenderTexture，在屏幕左上角按约 23.3% 宽、35% 高显示 Boss（原 1/3×1/2 的 70%），中央展开/倒放收起，死亡 5 秒后与血条同步退场；监控相机显示除 UI 外全部图层，渲染倍率 1.5、最大宽度 2048。
+- Boss 名字排版：字号由 `34` 调整为 `57.8`，正好为原来的 `1.7` 倍；`BossHealthBarUI` 的名字文本框高度同步按字号扩容，避免 TMP 自动缩小。脚本默认值与 `Boss(暂定).prefab` 序列化值已同步。
+- Boss 复活兜底：`PlayerController.PerformRespawn` 在正常重生点解析后检查同场景活动 Boss；若当前没有任何已解锁的 Boss 关出生点，则扫描同场景全部启用的 Boss 关出生点，按 X 最小选择本次复活目标。兜底点即使尚未解锁也可被选中，之后继续走其安全落位和 Boss 血量/位置重置链，且不会改写玩家当前绑定出生点。验证：Runtime 静态编译通过；条件顺序与场景过滤静态检查通过；未运行 Unity Play Mode。
+- Boss 入场锁与镜头顺序：`Boss_appear.playable` 的玩家操作锁从 `0` 秒开始，相机轨延后到 `0.1` 秒启动并在原 `6.54` 秒结束；`BossWalkTimelineInstaller` 的自动同步窗口与 SessionKey 已更新，避免重载后回退为同帧启动。验证：Editor 静态编译通过；Timeline 起点、时长和安装器窗口静态检查通过；未运行 Unity Play Mode。
+- 玩家运动信号：`PlayerDied` 立即让右移马夫清外部移动；直接复活在落位完成时发 `PlayerRespawnCompleted`，过场复活在最后动画结束时发同名信号恢复右移。
+- 验证：Runtime/Editor Roslyn 编译通过；待 Unity 内验证开关显隐、生成按钮、规划格拖动、删除补建、Undo、规划保存、后生成 Boss 同步、复活前后右移暂停/恢复、弱 Y 追踪、出生点弱补助重定向/死亡取消、三线距离表现、Boss 接触击杀、处决 Timeline 资产/镜头/5 格每秒移动/任意伤害秒杀/死亡接管、入场首帧投影、死亡末帧相机归还、监控窗比例/跟随/RenderTexture 释放和名字排版。
+
+## 2026-10-18 区域镜头下移 Timeline
+
+- 分支：`boss修补`；范围：`camera_down.playable`、`CameraDownPlayable`、相机镜头/焦点请求、`ContactTimelineTrigger` 区域模式与 SceneView 范围虚线。
+- 效果：进入触发器后，在当前玩法视野基础上再乘 `1.3`，焦点向下偏移 `5` 格；离开最后一个接触时停止 Timeline，Playable 释放两个请求并平滑恢复。
+- 解耦：Timeline 只向 `CameraControlManager` 提交相对倍率和世界焦点偏移请求；表现层不写 Camera、不写跟随组件，Cutscene 相机不消费玩法偏移。
+- 编辑器：Timeline 触发器新增“进入播放，离开停止”，非 Play SceneView 与关卡编辑器画布用与门连接线一致的金色虚线绘制真实 Collider 范围；关卡画布读取布置覆盖后的中心/尺寸。
+- 验证：待 Unity 退出 Play 后编译并做进入/离开区域、无 Timeline、Cutscene 优先级及虚线范围检查。
+
+## 2026-10-18 Boss 死亡 Timeline 与视角回归
+
+- 分支：`boss修补`；范围：Boss 死亡演出 Timeline、Boss 预制体、玩家 Timeline 锁、Boss 视野恢复时机及接入文档。
+- 目标：Boss 被击杀后通过 `defeatPresentationRequested` 播放独立 Timeline；镜头平滑移到 Boss，停留死亡演出 2 秒（后续可替换为实际动画时长），再额外停留 1 秒，最后 1 秒平滑回到玩家镜头。玩家操作锁覆盖整段演出。
+- 边界：普通外部删除不触发 `EnterDeath`，因此不会播放死亡表演；Boss 视野倍率不在 `Died` 时自动恢复，而由死亡 Timeline 在返回阶段通过 Playable 调用恢复。
+- 资产：已生成 `Boss_defeat.playable` 并完成预制体 `PlayableDirector`、`BossDefeatTimelinePresenter` 和 `defeatPresentationRequested` 事件接线；Timeline 为 5 秒，含玩家锁、Boss 动画触发、镜头去程/停留/回程和视野恢复 Playable。
+- 验证：静态检查通过；Unity 当前仍在 Play，退出后需重新编译并验证死亡触发、镜头回归和普通 Destroy 不播演出。
+
+## 2026-10-18 Boss 入场锁与存活期视野
+
+- 分支：`boss修补`；范围：Boss 入场 Timeline、玩家 Timeline 轨道、`CameraControlManager`、`BossCameraSize`、Boss 预制体及接入文档。
+- 目标：入场 Timeline 用完整时长的 `PlayerTimelineTrack` 锁住玩家；Boss 存活且没有 Timeline 相机接管时，向玩法相机申请可调倍率的视野扩大，默认 `2` 倍。启用与结束均平滑过渡，玩家死亡复活不撤销该请求，Boss 死亡时才恢复。
+- 边界：Boss 专属生命周期与 Inspector 位于 `Assets/Boss_Logic`；倍率请求、Cutscene 优先级隔离和唯一 Camera 写入仍归 `CameraControlManager`。不直接写 Camera，不修改 Boss 物理参数或玩家相机跟随数值。
+- 锁修复：玩家锁轨缩短到 `0–6.52` 秒，在最终开战 Playable 前结束，避开 Hold 模式末帧；`ActorTimelineBehaviour` 同时在片段自然末尾主动释放控制锁，不依赖 `OnGraphStop`。
+- 地图恢复：Unity 重新导入期间 `Boss.json` 与 `Boss.planning.json` 被写成与场景不一致的版本，已从 HEAD 恢复为与 `Boss.unity` 一致的 `8d5ea0`；覆盖前的文件备份在 `Library/MapRecoveryBackup-20261018-1250`。
+- 验证：Unity 已完成脚本与 Timeline 资产导入，Editor.log 无 C# 编译错误；Boss 预制体与玩家锁轨序列化核对通过。EditMode 相机测试和完整入场/死亡实机流程仍待运行。
+## 2026-10-18 ILorR R1 试玩微调（保留已保存场景，独立分支交付）
+
+- 用户确认退出Play并保存，明确要求先推R2再推R1。本次仅交付R1已保存Scene及交接说明，不重建、吸附坐标或改动运行时代码；不包含Boss时间轴自动重序列化。
+- 已核对7个作者根位姿变化：4段地形（其中一段还改宽度）、右侧及下方曲柄、玩家；另保留Unity保存的URP灯光组件和UI Canvas通道字段。Scene中的精确位置和尺寸为本轮试玩版本，不用原Excel重新生成覆盖。
+- 同名planning与Scene内嵌planning语义一致，均仍为原76对象设计；手工Transform变化未回采到规划数据。Scene与planning/meta成套保留，但重新应用旧planning会恢复旧位置。后续需策划确认如何将含非整格坐标的微调转入规划；本次不擅自取整、扩展编辑器或覆盖Scene。
+- 本次核对已保存文件、内嵌/配对JSON及meta，不把原3378项源图检查、原Play专项当作微调版重新通过；未重新执行人工通关或打包。功能说明中的初始占格仅作基线，当前微调见R1_LEVEL.md。
+- 已检查最新origin/main为`fa34fd8b14ee1210537ed0ceb9451697cbe5b21f`，R1仍基于`a96af4b`；双方历史共同修改PlanningCanvas/PlanningSceneBuilder及机关/规划文档，R1 Scene没有main同路径改动。只推`codex/ilorr/r1-level`，不自行merge/rebase；整合者应保留双方共享工具/文档并复验最新main依赖。R1/R2固定绿块攀附修复相同，整合时去重。
+
+## 2026-10-18 ILorR R1 Excel 关卡制作（完成，独立分支交付）
+
+- 分支：`codex/ilorr/r1-level`，从最新 `origin/main` 的 `a96af4b6353453b1634875f18831d8a50b2722cb` 创建；独立工作目录 `C:\Unity Programs\2026TapTapGameJam-R1`。原项目 main 的 Boss 时间轴及三份美术资源未提交修改保留原位，不携入本任务。
+- 范围：只制作 Excel《关卡设计》中 R1 的独立 Scene 与同名可编辑 planning JSON、meta 和必要依赖；按用户要求迁移到 `Assets/Scenes/R1`，场景/存档/设计源/专属脚本成套移动并保留全部 GUID，工具与说明路径已同步。不制作 R2/R3，不覆盖 Gaming 或正式关卡命名存档，不改正式场景流程和构建列表。
+- 已读取 R1 单元格、填色和文字标注并与截图对照；主图范围为 Sheet1 的 F6:BK46。只分析原 Excel，不改原文件。
+- 已按策划确认生成独立 R1.unity、R1.planning.json、meta 和可复核 R1.design.json；445 格地形（原446，仅移除BK10让位门）、76 个作者物体、标准玩家K40、场景自有相机/共享UI/区域生命周期。只开放玩家红染色、三色场景全解锁，普通跳跃保留默认4格；标注不生成实体。
+- 平台初始按确认移到轨迹底端：左P18:S18上升10格、右AX36:BA36上升14格。M10独立控制左平台；BH27与AT33共享右平台同一进度，切换不清零、只推进和回落一次。共享绑定复用crankOwnerId，补齐运行时、编辑器绑定/采集、增量重连和片段持久关系，不改普通未共享曲柄。
+- 出口门BK10:BK11，H23/U26按钮均一次保持且全部达成才开门。两条竖藤开局完整。原X30:AJ30横藤按策划要求改为初始13格固定绿方块，不下落且不可搬运，复用既有横向攀附；仅补作者固定约束识别及单实例逻辑占格，不新增横藤玩法。水流向上，绿块极限8/9/9格；所有修改及操作见Docs/Developer/R1_LEVEL.md。
+- Unity6000.3.12f1独立目录静音验证：R1LevelBuilder.Verify 3378项通过，包含逐格地形、场景/存档一致、重开、无变更增量保留对象、片段共享ID重映射及删除源清理；R1GameplayVerification实际Play1613项通过，含出生、开局能力、双曲柄接续/单次推进/回落、独立左曲柄、双按钮门与区域重置、固定13格绿条真实底面抓附/横移/跳跃松手；已查看全图截图。门检查用TryPress API，不宣称完成踩踏通关。
+- 未验收：完整入口到出口路线、手感难度、人工窗口操作与打包。UnityEditor.Search启动索引出现一次越界异常，R1编译/验证均通过，未升级引擎。验证日志/截图在本机Library/Logs忽略目录。原项目4项修改保留；验证导致本任务目录Boss时间轴8行空白重序列化，结束前只还原该已知自动改动，不交付Boss变化。
+- main 基线核对：2026-10-18 刷新远端后为 `ea961fb`（北京时间18:02）；R1原提交 `e7d0ec2`（18:28）仍基于制作开始时的 `a96af4b`，当前分支不含main后续4个提交。推送只更新自己的分支，不覆盖main。`git merge-tree`仅模拟合并，未改工作区/分支：代码可自动合并，`ACTIVE_WORK.md`与`SYSTEM_INDEX.md`存在文字冲突，整合者须保留双方记录并做组合验证；worker不自行merge/rebase。
+- 目录迁移验收：用户保存关闭Unity后成套迁移17份文件（含根目录meta），16份内容与原提交逐字节一致，仅R1LevelBuilder的一行目录常量调整；移除空旧作者目录及其meta。Unity6000.3.12f1静音批处理重新导入/编译并执行R1LevelBuilder.Verify，新位置3378项通过、退出码0；迁移后未再跑完整Play专项或打包。R1目录外既有Boss时间轴未提交改动哈希保持不变，不纳入提交。
+- ILorR 后续推送要求（用户最新明确约束）：只有用户当前明确说“推送／上传”时，才可执行该次push；完成制作、验证或本地提交不授权自动推送，过去的上传指令不构成后续持续授权。每次获准push前都重新fetch并检查origin/main的新提交，不能仅依赖任务开始时拉取的记录；与当前分支比较未包含的提交、重叠文件及冲突风险，有更新先向用户说明，检查失败不得声称main已核对。用户决定暂不处理main整合、继续独立分支工作；不因检查而自行merge/rebase、覆盖本地改动或强推，仍由原整合窗口处理main。
 
 ## 2026-10-17 移动平台按钮连线
 
@@ -2158,3 +2402,14 @@
 - 在规划实例参数增加平台宽度（格），保存检查区域与占用，保留稳定ID及控制绑定；移动/曲柄平台核心路线、距离、速度前置，其他配置默认折叠。共享Inspector与参数窗口UI，不改用户Gaming存档与运行时规则。应用editor-ui与color-gameplay规范。
 - Unity6000.3.12f1隔离编译、平台23项检查及刚体约束21项回归通过：宽度草稿/保存/取消/占用拒绝/越界/失效实例、JSON与画布重开、6格平台及碰撞生成、核心分组/高级折叠、速度换算保存重开、曲柄速度来源、普通Inspector共用UI与源prefab不变。未人工截图验收或完整游戏构建。
 - 宽度从左侧固定位置向右增减，1～4096格；已合并平台须先解除合并。其他实体阻挡时先移开；保存后按原自动同步或应用场景流程更新。仅提交Editor源码/meta与说明，用户Gaming存档、字体、Boss Timeline等修改保留。按既有授权仅推当前任务分支。
+
+## 2026-10-18 音频资源与实际接线TXT盘点（当前对话）
+
+- 范围：只读核对音频交接、全部音频文件、AudioCatalog、运行时调用及Scene/Prefab/Timeline直接引用；生成Docs/AUDIO_INVENTORY_AND_USAGE_2026-10-18.txt，不修改音频、源码、场景、配置，不启动Unity、不提交推送。
+- 完成：Docs/AUDIO_INVENTORY_AND_USAGE_2026-10-18.txt逐项覆盖68个音频（16音乐/6环境/46音效），解析55Cue引用63文件、37有运行时入口的Cue覆盖42文件；列出预计用途、实际触发/源码行号、Prefab/Scene依赖及26个未接播放文件。已检查68唯一条目与路径、GUID映射；当前Resources/UI/WorldMainMenu.prefab缺失导致菜单/游玩路由只能判代码接入，启动需另验，已在TXT注明。只做静态审计，无Unity运行/试听/编译/打包，无提交推送。
+
+## Codex / 同步最新 main 并保留本地地图
+
+- 用户明确授权合入main，且禁止修改或覆盖现有关卡。合入e18c6bf，保留平台宽度与Boss复活点参数接口；现有场景、planning、LevelMaps、地图导入数据和本地Boss Timeline沿用当前分支，不把本地未提交地图纳入提交。
+- 更新前备份Library/RepoSyncBackup/20261019_153640，123文件含场景/存档/meta与本地改动，合入后逐项SHA256校验。仅本地同步，不推main。
+- 合并候选已在Unity6000.3.12f1隔离编译通过，平台参数23项与刚体约束21项回归通过；现有地图文件差异为0。远端新增R1/R2地图作为新资源加入，现有地图不替换；未完整通关或构建。

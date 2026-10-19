@@ -1327,6 +1327,7 @@ namespace PlanningEditorPrototype
             waterEditing.style.marginBottom = 8;
             waterEditing.RegisterValueChangedCallback(evt => { waterEditingMode = evt.newValue; canvas?.SetWaterEditing(evt.newValue); });
             panel.Add(waterEditing);
+            panel.Add(BuildPlatformShapeTools());
             panel.Add(BuildWorldToolPanel());
 
             blockEditorFoldout = new Foldout
@@ -2532,6 +2533,7 @@ namespace PlanningEditorPrototype
             Project.GridArt.Editor.GridArtLevelSource.NotifyChanged();
             canvas.CapturePlayerStart();
             document.RefreshConnectorPaths();
+            canvas.NormalizeBossRespawnMarkers();
             RecordPlanningChange();
             // History stays immediate; batch disk persistence after the input burst.
             // Closing/switching scene, saving the Scene and explicit save/apply still flush synchronously.
@@ -2932,6 +2934,7 @@ namespace PlanningEditorPrototype
 
         private void RefreshInspector()
         {
+            RefreshPlatformShapeSelection();
             if (inspector == null)
             {
                 return;

@@ -20,6 +20,21 @@ namespace Project.CameraModes
             public ICameraControlSource source;
         }
 
+        private sealed class LensMultiplierRequest
+        {
+            public int id;
+            public object owner;
+            public float multiplier;
+            public bool relative;
+        }
+
+        private sealed class ViewOffsetRequest
+        {
+            public int id;
+            public object owner;
+            public Vector3 offset;
+        }
+
         [Header("Output (only this component writes Camera data)")]
         [SerializeField]
         [Tooltip("实际被写入的 Unity Camera。其他运行时脚本不应直接修改它。")]
@@ -38,8 +53,14 @@ namespace Project.CameraModes
         private bool useUnscaledTime = true;
 
         private readonly List<ControlRequest> requests = new List<ControlRequest>();
+        private readonly List<LensMultiplierRequest> lensRequests =
+            new List<LensMultiplierRequest>();
+        private readonly List<ViewOffsetRequest> viewOffsetRequests =
+            new List<ViewOffsetRequest>();
         private int nextId = 1;
         private long nextOrder = 1;
+        private int nextLensRequestId = 1;
+        private int nextViewOffsetRequestId = 1;
         private ControlRequest activeRequest;
         private CameraState currentState;
         private CameraState transitionStartState;
@@ -50,6 +71,18 @@ namespace Project.CameraModes
         private bool isTransitioning;
         private bool focusPointWasSetExternally;
         private ICameraViewModeAuthority viewModeAuthority;
+        private float currentLensMultiplier = 1f;
+        private float requestedLensMultiplier = 1f;
+        private float lensTransitionStart = 1f;
+        private float lensTransitionElapsed;
+        private float lensTransitionDuration;
+        private AnimationCurve lensTransitionEasing;
+        private Vector3 currentViewOffset;
+        private Vector3 requestedViewOffset;
+        private Vector3 viewOffsetTransitionStart;
+        private float viewOffsetTransitionElapsed;
+        private float viewOffsetTransitionDuration;
+        private AnimationCurve viewOffsetTransitionEasing;
 
         public event Action<string, string> ActiveControlChanged;
         public event Action<CameraControlHandle> TransitionCompleted;
@@ -60,6 +93,12 @@ namespace Project.CameraModes
         public string ActiveControlName => activeRequest?.source?.CameraControlName;
         public int ActivePriority => activeRequest?.priority ?? int.MinValue;
         public bool IsTransitioning => isTransitioning;
+        public float CurrentLensMultiplier => currentLensMultiplier;
+        public float RequestedLensMultiplier => requestedLensMultiplier;
+        public bool HasLensMultiplierRequest => lensRequests.Count > 0;
+        public Vector3 CurrentViewOffset => currentViewOffset;
+        public Vector3 RequestedViewOffset => requestedViewOffset;
+        public bool HasViewOffsetRequest => viewOffsetRequests.Count > 0;
         public float NormalizedTransitionTime => !isTransitioning || activeTransition.duration <= 0f
             ? 1f
             : Mathf.Clamp01(transitionElapsed / activeTransition.duration);
@@ -135,7 +174,24 @@ namespace Project.CameraModes
             }
 
             CameraState state = currentState;
-            ApplyViewModeProjection(ref state, activeRequest?.source);
+            if (activeRequest != null)
+            {
+                CameraControlContext context =
+                    new CameraControlContext(
+                        ResolveSourceFocusPoint(),
+                        0f);
+                if (!activeRequest.source.TryGetCameraState(
+                        context,
+                        out state))
+                {
+                    state = currentState;
+                }
+            }
+
+            ApplyViewModeProjection(
+                ref state,
+                activeRequest?.source);
+            ApplyLensMultiplier(ref state);
             currentState = state;
             ApplyStableState(currentState);
         }
@@ -169,7 +225,8 @@ namespace Project.CameraModes
         {
             if (keepCurrentFocus)
             {
-                fallbackFocusPoint = ResolveFocusPoint();
+                fallbackFocusPoint =
+                    ResolveBaseFocusPoint();
             }
 
             focusTarget = null;
@@ -237,6 +294,149 @@ namespace Project.CameraModes
             }
 
             return true;
+        }
+
+        public CameraLensRequestHandle RequestLensMultiplier(
+            object owner,
+            float multiplier,
+            CameraTransition transition = default)
+        {
+            EnsureInitialized();
+            LensMultiplierRequest request =
+                new LensMultiplierRequest
+                {
+                    id = nextLensRequestId++,
+                    owner = owner,
+                    multiplier =
+                        Mathf.Max(1f, multiplier),
+                    relative = false
+                };
+            lensRequests.Add(request);
+            ReevaluateLensMultiplier(transition);
+            return new CameraLensRequestHandle(
+                this,
+                request.id);
+        }
+
+        public CameraLensRequestHandle RequestRelativeLensMultiplier(
+            object owner,
+            float multiplier,
+            CameraTransition transition = default)
+        {
+            EnsureInitialized();
+            LensMultiplierRequest request =
+                new LensMultiplierRequest
+                {
+                    id = nextLensRequestId++,
+                    owner = owner,
+                    multiplier =
+                        Mathf.Max(1f, multiplier),
+                    relative = true
+                };
+            lensRequests.Add(request);
+            ReevaluateLensMultiplier(transition);
+            return new CameraLensRequestHandle(
+                this,
+                request.id);
+        }
+
+        public bool SetLensMultiplier(
+            CameraLensRequestHandle handle,
+            float multiplier,
+            CameraTransition transition = default)
+        {
+            LensMultiplierRequest request =
+                FindLensRequest(handle);
+            if (request == null)
+            {
+                return false;
+            }
+
+            request.multiplier =
+                Mathf.Max(1f, multiplier);
+            ReevaluateLensMultiplier(transition);
+            return true;
+        }
+
+        public bool ReleaseLensMultiplier(
+            CameraLensRequestHandle handle,
+            CameraTransition transition = default)
+        {
+            LensMultiplierRequest request =
+                FindLensRequest(handle);
+            if (request == null)
+            {
+                return false;
+            }
+
+            lensRequests.Remove(request);
+            ReevaluateLensMultiplier(transition);
+            return true;
+        }
+
+        public bool IsLensRequestValid(
+            CameraLensRequestHandle handle)
+        {
+            return FindLensRequest(handle) != null;
+        }
+
+        public CameraViewOffsetRequestHandle RequestViewOffset(
+            object owner,
+            Vector3 worldOffset,
+            CameraTransition transition = default)
+        {
+            EnsureInitialized();
+            ViewOffsetRequest request =
+                new ViewOffsetRequest
+                {
+                    id = nextViewOffsetRequestId++,
+                    owner = owner,
+                    offset = worldOffset
+                };
+            viewOffsetRequests.Add(request);
+            ReevaluateViewOffset(transition);
+            return new CameraViewOffsetRequestHandle(
+                this,
+                request.id);
+        }
+
+        public bool SetViewOffset(
+            CameraViewOffsetRequestHandle handle,
+            Vector3 worldOffset,
+            CameraTransition transition = default)
+        {
+            ViewOffsetRequest request =
+                FindViewOffsetRequest(handle);
+            if (request == null)
+            {
+                return false;
+            }
+
+            request.offset = worldOffset;
+            ReevaluateViewOffset(transition);
+            return true;
+        }
+
+        public bool ReleaseViewOffset(
+            CameraViewOffsetRequestHandle handle,
+            CameraTransition transition = default)
+        {
+            ViewOffsetRequest request =
+                FindViewOffsetRequest(handle);
+            if (request == null)
+            {
+                return false;
+            }
+
+            viewOffsetRequests.Remove(request);
+            ReevaluateViewOffset(transition);
+            return true;
+        }
+
+        public bool IsViewOffsetRequestValid(
+            CameraViewOffsetRequestHandle handle)
+        {
+            return FindViewOffsetRequest(handle) != null;
         }
 
         public bool ForceTakeControl(CameraControlHandle handle, CameraTransition transition = default)
@@ -324,6 +524,8 @@ namespace Project.CameraModes
                 return;
             }
 
+            TickLensTransition(Mathf.Max(0f, deltaTime));
+            TickViewOffsetTransition(Mathf.Max(0f, deltaTime));
             if (activeRequest == null)
             {
                 ApplyViewModeAuthorityImmediately();
@@ -331,7 +533,7 @@ namespace Project.CameraModes
             }
 
             CameraControlContext context = new CameraControlContext(
-                ResolveFocusPoint(),
+                ResolveSourceFocusPoint(),
                 Mathf.Max(0f, deltaTime));
             if (!activeRequest.source.TryGetCameraState(context, out CameraState targetState))
             {
@@ -339,6 +541,7 @@ namespace Project.CameraModes
             }
 
             ApplyViewModeProjection(ref targetState, activeRequest.source);
+            ApplyLensMultiplier(ref targetState);
             SanitizeState(ref targetState);
             if (!isTransitioning)
             {
@@ -409,6 +612,24 @@ namespace Project.CameraModes
 
         private Vector3 ResolveFocusPoint()
         {
+            return ResolveBaseFocusPoint() +
+                   currentViewOffset;
+        }
+
+        private Vector3 ResolveSourceFocusPoint()
+        {
+            if (activeRequest != null &&
+                activeRequest.priority >=
+                CameraControlPriorities.Cutscene)
+            {
+                return ResolveBaseFocusPoint();
+            }
+
+            return ResolveFocusPoint();
+        }
+
+        private Vector3 ResolveBaseFocusPoint()
+        {
             if (!focusPointWasSetExternally && focusTarget != null)
             {
                 fallbackFocusPoint = focusTarget.position;
@@ -425,6 +646,200 @@ namespace Project.CameraModes
             }
 
             return requests.Find(item => item.id == handle.Id);
+        }
+
+        private LensMultiplierRequest FindLensRequest(
+            CameraLensRequestHandle handle)
+        {
+            if (handle.Manager != this ||
+                handle.Id == 0)
+            {
+                return null;
+            }
+
+            return lensRequests.Find(
+                item => item.id == handle.Id);
+        }
+
+        private ViewOffsetRequest FindViewOffsetRequest(
+            CameraViewOffsetRequestHandle handle)
+        {
+            if (handle.Manager != this ||
+                handle.Id == 0)
+            {
+                return null;
+            }
+
+            return viewOffsetRequests.Find(
+                item => item.id == handle.Id);
+        }
+
+        private void ReevaluateLensMultiplier(
+            CameraTransition transition)
+        {
+            float absolute = 1f;
+            float relative = 1f;
+            for (int index = 0;
+                 index < lensRequests.Count;
+                 index++)
+            {
+                LensMultiplierRequest request =
+                    lensRequests[index];
+                if (request.relative)
+                {
+                    relative *= Mathf.Max(
+                        1f,
+                        request.multiplier);
+                }
+                else
+                {
+                    absolute = Mathf.Max(
+                        absolute,
+                        request.multiplier);
+                }
+            }
+
+            BeginLensTransition(
+                absolute * relative,
+                transition);
+        }
+
+        private void BeginLensTransition(
+            float target,
+            CameraTransition transition)
+        {
+            requestedLensMultiplier =
+                Mathf.Max(1f, target);
+            if (Mathf.Approximately(
+                    currentLensMultiplier,
+                    requestedLensMultiplier))
+            {
+                lensTransitionElapsed = 0f;
+                lensTransitionDuration = 0f;
+                lensTransitionEasing = null;
+                return;
+            }
+
+            lensTransitionStart =
+                currentLensMultiplier;
+            lensTransitionElapsed = 0f;
+            lensTransitionDuration =
+                Mathf.Max(0f, transition.duration);
+            lensTransitionEasing =
+                transition.easing;
+            if (lensTransitionDuration <= 0f)
+            {
+                currentLensMultiplier =
+                    requestedLensMultiplier;
+                lensTransitionEasing = null;
+            }
+        }
+
+        private void TickLensTransition(float deltaTime)
+        {
+            if (lensTransitionDuration <= 0f)
+            {
+                return;
+            }
+
+            lensTransitionElapsed += deltaTime;
+            float normalizedTime = Mathf.Clamp01(
+                lensTransitionElapsed /
+                lensTransitionDuration);
+            float easedTime =
+                lensTransitionEasing == null
+                    ? normalizedTime
+                    : Mathf.Clamp01(
+                        lensTransitionEasing.Evaluate(
+                            normalizedTime));
+            currentLensMultiplier = Mathf.LerpUnclamped(
+                lensTransitionStart,
+                requestedLensMultiplier,
+                easedTime);
+            if (normalizedTime >= 1f)
+            {
+                currentLensMultiplier =
+                    requestedLensMultiplier;
+                lensTransitionDuration = 0f;
+                lensTransitionEasing = null;
+            }
+        }
+
+        private void ReevaluateViewOffset(
+            CameraTransition transition)
+        {
+            Vector3 target = Vector3.zero;
+            for (int index = 0;
+                 index < viewOffsetRequests.Count;
+                 index++)
+            {
+                target +=
+                    viewOffsetRequests[index].offset;
+            }
+
+            BeginViewOffsetTransition(
+                target,
+                transition);
+        }
+
+        private void BeginViewOffsetTransition(
+            Vector3 target,
+            CameraTransition transition)
+        {
+            requestedViewOffset = target;
+            if ((currentViewOffset - target)
+                    .sqrMagnitude <= .0000001f)
+            {
+                viewOffsetTransitionElapsed = 0f;
+                viewOffsetTransitionDuration = 0f;
+                viewOffsetTransitionEasing = null;
+                return;
+            }
+
+            viewOffsetTransitionStart =
+                currentViewOffset;
+            viewOffsetTransitionElapsed = 0f;
+            viewOffsetTransitionDuration =
+                Mathf.Max(0f, transition.duration);
+            viewOffsetTransitionEasing =
+                transition.easing;
+            if (viewOffsetTransitionDuration <= 0f)
+            {
+                currentViewOffset = target;
+                viewOffsetTransitionEasing = null;
+            }
+        }
+
+        private void TickViewOffsetTransition(
+            float deltaTime)
+        {
+            if (viewOffsetTransitionDuration <= 0f)
+            {
+                return;
+            }
+
+            viewOffsetTransitionElapsed += deltaTime;
+            float normalizedTime = Mathf.Clamp01(
+                viewOffsetTransitionElapsed /
+                viewOffsetTransitionDuration);
+            float easedTime =
+                viewOffsetTransitionEasing == null
+                    ? normalizedTime
+                    : Mathf.Clamp01(
+                        viewOffsetTransitionEasing.Evaluate(
+                            normalizedTime));
+            currentViewOffset =
+                Vector3.LerpUnclamped(
+                    viewOffsetTransitionStart,
+                    requestedViewOffset,
+                    easedTime);
+            if (normalizedTime >= 1f)
+            {
+                currentViewOffset =
+                    requestedViewOffset;
+                viewOffsetTransitionDuration = 0f;
+                viewOffsetTransitionEasing = null;
+            }
         }
 
         private void ReevaluateActiveRequest(CameraTransition transition, bool currentWasReleased)
@@ -508,13 +923,17 @@ namespace Project.CameraModes
                 return;
             }
 
-            CameraControlContext context = new CameraControlContext(ResolveFocusPoint(), 0f);
+            CameraControlContext context =
+                new CameraControlContext(
+                    ResolveSourceFocusPoint(),
+                    0f);
             if (!activeRequest.source.TryGetCameraState(context, out CameraState state))
             {
                 return;
             }
 
             ApplyViewModeProjection(ref state, activeRequest.source);
+            ApplyLensMultiplier(ref state);
             SanitizeState(ref state);
             currentState = state;
             transitionStartState = state;
@@ -556,6 +975,22 @@ namespace Project.CameraModes
                 state.orthographicSize = size;
                 state.fieldOfView = fieldOfView;
             }
+        }
+
+        private void ApplyLensMultiplier(
+            ref CameraState state)
+        {
+            if (activeRequest == null ||
+                activeRequest.priority >=
+                CameraControlPriorities.Cutscene)
+            {
+                return;
+            }
+
+            state.orthographicSize = Mathf.Max(
+                .01f,
+                state.orthographicSize *
+                currentLensMultiplier);
         }
 
         private static CameraState LerpState(CameraState from, CameraState to, float amount)

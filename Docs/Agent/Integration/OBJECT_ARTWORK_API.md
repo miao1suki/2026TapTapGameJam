@@ -1,5 +1,13 @@
 # 物体美术接入
 
+## 2026-10-18 平台新图与三色单向平台
+
+曲柄平台更新为`43452C733652487AC26FD041686C880B.png`的6×48×16帧，自动平台更新为`BB587FC3F1E5565D857F67F813F19880.png`的9×48×16帧，仍0.08秒/帧。完整帧、旧实体占格/路线/绑定均保留，不通过扩平台或抬碰撞消缝。新增`MechanismArtworkEntry.supportTopPixels`（新版14）为完整帧底到可见支撑顶边的原像素距离，`PlatformArtworkLayout.VisibleThicknessCells(kind,sprite,library)`统一读取；Scene代理、规划、运行和`LevelEditorMergedShape.ApplySprite`一致，不再硬编码旧5像素条。
+
+三色单向平台仅是同一`OneWayPlatform`的`appearanceColor`参数，Neutral=0兼容旧白色，Red/Green/Blue=1/2/3。新栏目稳定ID为`mechanism-oneway-red/green/blue`，通过既有ComponentValueOverrides保存枚举，默认1×1；旧白色ID及3×1默认占格不改。三色16×16帧来自新增小图底排，天然1格，改参数只换图与视觉Layer；不能添加ColorObject、颜色能力反应或未解锁实体门控。中性共享Sprite材质+ColorCatalog视觉Layer采用装饰HSV语义，隐藏/启用、碰撞和房间归属仍由原组件负责。
+
+窄生成入口`WorldObjectArtworkSetup.BuildPlatformFrames()`和`BuildColoredOneWayPlatforms()`只改相关图集/源图导入设置、Objects.asset与三色栏目，不保存Scene/planning；保留其他库条目、TA藤蔓、告示牌及持久SpriteID。隔离入口`PlatformArtworkRefreshAudit.BuildAndVerify`生成并检查尺寸、支撑面、旧短平台、颜色覆盖/去黑、重复生成身份，并输出真实GPU横竖平台/三色单向平台对照图`Library/PlatformArtworkContactSheet.png`；`RunPlayVerification`检查锁色、解锁与房间重置后三色平台都保持可见可站立。完整美术GPU回归仍由`ArtGridRefinementAudit.Run`执行。产物必须连同png.meta、Objects.asset、LevelEditorPalette.asset与三个源图.meta一起交付，不同步Library。
+
 流动岩浆/蓝色冷却蒸汽与三类植物燃烧已接入TA正式表现，旧场景通过共享配置后备生效，不重建布局。燃烧使用原Renderer的MPB及Sprite/HSV共用轮廓；藤蔓保留192帧及自顶向下玩法次序。详见 [TA_EFFECTS_API](TA_EFFECTS_API.md)。下文“静态岩浆”指无TA配置时的原后备。
 
 ## 统一像素尺度与关卡预览

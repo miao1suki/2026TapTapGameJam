@@ -28,7 +28,7 @@ namespace Project.ContactCubes
         {
             current.Clear();
             currentSides.Clear();
-            if (cube.IsUnlocked && cube.Color == CubeColor.Green && motion.IsSettled && shape.enabled &&
+            if (cube.IsUnlocked && cube.Color == CubeColor.Green && motion.IsStableClimbAnchor && shape.enabled &&
                 PlayerController.HasAutomaticClimbCandidate)
             {
                 float cell = GridCellSizeUtility.Resolve(this);

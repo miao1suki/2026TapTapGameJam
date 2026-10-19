@@ -222,6 +222,9 @@ namespace Project.GameFlow
         {
             if (sceneId == GameFlowSceneId.MainMenu)
             {
+                // MainMenu stays loaded over the live level; OnEnable is no longer a
+                // reliable menu-entry signal. Route music from the logical flow state.
+                AudioCuePlayer.Play(ResolveCatalog(), AudioCueIds.MusicMenuOpening);
                 return;
             }
 

@@ -43,6 +43,7 @@ namespace Project.InputAbstraction
                 "<Gamepad>/select");
             AddButtonAction(map, InputActionId.PointerPrimary, "<Mouse>/leftButton", "<Touchscreen>/primaryTouch/press");
             AddButtonAction(map, InputActionId.PointerSecondary, "<Mouse>/rightButton");
+            AddButtonAction(map, InputActionId.WorldMap, "<Keyboard>/t");
             return asset;
         }
 
@@ -111,6 +112,9 @@ namespace Project.InputAbstraction
             EnsureInteractBindings(map);
             EnsureDropBindings(map);
             EnsureRespawnAction(map);
+            InputAction worldMap = map.FindAction(GetName(InputActionId.WorldMap), false);
+            if (worldMap == null) worldMap = map.AddAction(GetName(InputActionId.WorldMap), InputActionType.Button);
+            EnsureBinding(worldMap, "<Keyboard>/t");
             InputAction pointer = map.FindAction(GetName(InputActionId.PointerPrimary), false);
             if (pointer != null)
             {

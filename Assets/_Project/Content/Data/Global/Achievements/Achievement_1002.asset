@@ -13,12 +13,19 @@ MonoBehaviour:
   m_Name: Achievement_1002
   m_EditorClassIdentifier: Project.Achievements.Runtime::Project.Achievements.AchievementSO
   achievementId: 1002
-  displayName: "\u65B0\u6210\u5C31 1002"
-  description: 
+  displayName: "\u8FD9\u91CC\u600E\u4E48\u6709\u5757\u5C16\u523A!?"
+  description: "\u4E00\u6B21...\u5C0F\u5C0F\u7684\u5931\u8BEF\u800C\u5DF2"
   hidden: 0
-  platformAchievementId: 
-  conditions: []
+  platformAchievementId: Spike1
+  conditions:
+  - conditionId: 0001
+    mode: 1
+    targetCount: 1
+    targetProgress: 100
+    textPrefix: "\u88AB\u5C16\u523A\u624E\u6B7B"
+    textSuffix: "\u6B21"
+    editorPosition: {x: 40, y: 40}
   logicNodes: []
-  rootNodeId: 
+  rootNodeId: 0001
   lockConditionIds: []
-  rootEditorPosition: {x: 0, y: 0}
+  rootEditorPosition: {x: 477.33334, y: 0.66667175}

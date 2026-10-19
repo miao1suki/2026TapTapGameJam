@@ -12,22 +12,44 @@ namespace Project.BlockFeatures
         private static readonly HashSet<(int scene, float size, int x, int y)> walls = new HashSet<(int, float, int, int)>();
         public static bool Covered(Component owner, Vector3 point, float cellSize)
         {
-            if (revision != LevelEditorPlacedBlock.ActiveRevision)
+            if (revision != LevelEditorPlacedBlock.SolidRevision)
             {
                 walls.Clear();
                 foreach (var block in LevelEditorPlacedBlock.ActiveInstances)
                 {
                     if (block == null || block.IsProp) continue;
-                    var collider = block.GetComponent<Collider>();
-                    if (collider == null || !collider.enabled || collider.isTrigger || block.GetComponent<WaterVisualFeature>() != null) continue;
-                    for (int y = block.Cell.y; y < block.Cell.y + block.SizeCells.y; y++)
-                        for (int x = block.Cell.x; x < block.Cell.x + block.SizeCells.x; x++)
-                            if (block.ContainsCell(new Vector2Int(x,y))) walls.Add((block.gameObject.scene.handle, block.CellWorldSize, x, y));
+                    if (block.GetComponent<WaterVisualFeature>() != null) continue;
+                    var shape = block.GetComponent<LevelEditorMergedShape>();
+                    if (shape != null)
+                    {
+                        foreach (var volume in shape.Volumes) AddWallVolume(block, volume);
+                    }
+                    else AddWallVolume(block, block.GetComponent<Collider>());
                 }
-                revision = LevelEditorPlacedBlock.ActiveRevision;
+                revision = LevelEditorPlacedBlock.SolidRevision;
             }
             return walls.Contains((owner.gameObject.scene.handle, cellSize,
                 Mathf.FloorToInt(point.x / cellSize), Mathf.FloorToInt(point.y / cellSize)));
+        }
+
+        private static void AddWallVolume(LevelEditorPlacedBlock block, Collider volume)
+        {
+            if (volume == null || !volume.enabled || volume.isTrigger || !volume.gameObject.activeInHierarchy) return;
+            float cell = block.CellWorldSize;
+            Bounds bounds = volume.bounds;
+            int minX = Mathf.FloorToInt(bounds.min.x / cell + .001f);
+            int minY = Mathf.FloorToInt(bounds.min.y / cell + .001f);
+            int maxX = Mathf.CeilToInt(bounds.max.x / cell - .001f);
+            int maxY = Mathf.CeilToInt(bounds.max.y / cell - .001f);
+            // Use current solid volumes, not original author cells, after an
+            // explicitly notified wall movement/reset. Merged holes stay empty.
+            for (int y = minY; y < maxY; y++)
+                for (int x = minX; x < maxX; x++)
+                {
+                    var center = new Vector3((x + .5f) * cell, (y + .5f) * cell, bounds.center.z);
+                    if ((volume.ClosestPoint(center) - center).sqrMagnitude <= cell * cell * .000004f)
+                        walls.Add((block.gameObject.scene.handle, cell, x, y));
+                }
         }
 
         public static bool TryVisiblePoint(WaterVisualFeature owner, Collider volume, Vector3 origin, float radius, out Vector3 point)

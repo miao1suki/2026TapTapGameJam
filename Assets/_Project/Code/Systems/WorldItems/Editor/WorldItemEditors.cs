@@ -17,6 +17,7 @@ namespace Project.WorldItems.Editor
             var settings = ProjectInspectorUtility.CreateFoldout("收集设置");
             settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "itemId", "收集品编号"));
             settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "amount", "数量"));
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "excludedFromProgress", "仅演出，不计入进度"));
             settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "onCollected", "收集完成"));
             root.Add(settings);
             var state = ProjectInspectorUtility.CreateFoldout("运行状态", false);
@@ -38,7 +39,15 @@ namespace Project.WorldItems.Editor
             var root = ProjectInspectorUtility.CreateRoot(serializedObject);
             root.Add(ProjectInspectorUtility.CreateTitle("无色尖刺"));
             root.Add(ProjectInspectorUtility.CreateScriptField(serializedObject));
-            root.Add(ProjectInspectorUtility.CreateHelp("触碰尖刺区域使玩家死亡；复活保护期间不生效。不接收染色，不改变底层墙壁碰撞。方向由预制体设置。"));
+            var settings = ProjectInspectorUtility.CreateFoldout("尖刺设置");
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "size", "尺寸"));
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "initiallyBloody", "初始带血"));
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "facing", "朝向")); root.Add(settings);
+            var state = ProjectInspectorUtility.CreateFoldout("运行状态", false);
+            state.Add(ProjectInspectorUtility.CreateReadOnlyRow("本次击杀染血格数", () => target is NeutralSpike spike ? spike.BloodyCellCount.ToString() : "—"));
+            root.Add(state);
+            root.Add(ProjectInspectorUtility.CreateHelp("触碰可见尖刺使玩家死亡；保护期不生效。击杀后只有命中的格变血，R、死亡和离区不清除；运行染血不写入存档。旧预制体方向可继续沿用，也可改为上下左右。"));
+            ProjectInspectorUtility.Bind(root, serializedObject);
             return root;
         }
     }

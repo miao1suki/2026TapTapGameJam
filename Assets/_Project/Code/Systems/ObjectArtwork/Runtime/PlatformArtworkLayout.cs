@@ -40,9 +40,16 @@ namespace Project.ObjectArtwork
             return sprite;
         }
 
-        public static float VisibleThicknessCells(MechanismArtworkKind kind, Sprite sprite) =>
-            kind == MechanismArtworkKind.OneWayPlatform && sprite != null
+        // This is the support edge measured from the complete frame's bottom,
+        // not the opaque strip height. New animations keep two transparent rows
+        // above and below their 12-pixel strip; aligning by strip height leaves a gap.
+        public static float VisibleThicknessCells(MechanismArtworkKind kind, Sprite sprite, ObjectArtworkLibrary library = null)
+        {
+            float top = library != null ? library.Find(kind)?.supportTopPixels ?? 0 : 0;
+            if (top > 0) return top / GridArtworkMetrics.PixelsPerCell;
+            return ObjectArtworkLibrary.IsOneWayPlatform(kind) && sprite != null
                 ? sprite.rect.height / GridArtworkMetrics.PixelsPerCell : 5f / 16f;
+        }
 
         public static void ClearCache()
         {

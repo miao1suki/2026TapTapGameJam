@@ -15,6 +15,10 @@ namespace Project.ContactCubes
         ICarryMotionParticipant,
         IGreenHookTarget, IGreenHookMotion
     {
+        [BlockParameter(Label = "启用重力", Group = "物理", Order = 0,
+            Tooltip = "三色方块均可单独设置。关闭后空闲悬浮，仍可搬运、接触反应或被绿钩拉动；保留作者刚体的锁轴设置。")]
+        [SerializeField, InspectorName("启用重力")]
+        private bool useGravity = true;
         [SerializeField, Min(0), InspectorName("水平喷出重力保护（秒）")] private float launchGravityGrace = .25f;
         [SerializeField, Min(.001f), InspectorName("落稳竖直速度容差")] private float settleVelocity = .08f;
         [SerializeField, Min(0), InspectorName("绿钩子优先搜索半径（格）")] private int greenHookSnapSearchRadius = 2;
@@ -22,6 +26,7 @@ namespace Project.ContactCubes
         private ContactCube cube;
         private BoxCollider shape;
         private RigidbodyConstraints baseConstraints;
+        private bool authoredKinematic;
         private readonly Dictionary<Component, Vector3> velocities = new Dictionary<Component, Vector3>();
         private readonly List<Component> deadSources = new List<Component>();
         private readonly Dictionary<Collider, bool> playerPairs = new Dictionary<Collider, bool>();
@@ -36,6 +41,13 @@ namespace Project.ContactCubes
         // the physical box has a small clearance for equal-width openings.
         public Vector3 LogicalContactShapeSize => horizontalClearance.LogicalSize(shape);
         public bool IsSettled { get; private set; }
+        // Author-pinned shapes need no invisible support collider for climbing.
+        // Runtime settling locks do not count as author constraints.
+        public bool IsAuthoredFixed => (baseConstraints & RigidbodyConstraints.FreezePosition) == RigidbodyConstraints.FreezePosition;
+        public bool UsesGravity => useGravity;
+        public bool IsStableClimbAnchor => !IsSuspended && !greenHookActive &&
+            (IsSettled || IsAuthoredFixed || authoredKinematic ||
+             !useGravity && !hadHorizontalPush && velocities.Count == 0);
         public bool GravityProtected => Time.time < gravityProtectedUntil;
         public bool IsSuspended { get; private set; }
         public bool IsGreenHookPullActive => greenHookActive;
@@ -51,14 +63,25 @@ namespace Project.ContactCubes
             !IsSuspended &&
             !greenHookActive &&
             body != null &&
-            !body.isKinematic;
+            (!body.isKinematic || !useGravity || cube.Color == CubeColor.Green);
         private void Awake()
         {
             body = GetComponent<Rigidbody>(); cube = GetComponent<ContactCube>(); shape = GetComponentInChildren<BoxCollider>();
             baseConstraints = body.constraints;
+            authoredKinematic = body.isKinematic;
             if (shape != null) shape.isTrigger = false;
             cellSize = Mathf.Max(.01f, GridCellSizeUtility.Resolve(this));
             ApplyHorizontalClearance();
+        }
+        public void ConfigureGravity(bool enabled)
+        {
+            useGravity = enabled;
+            if (body != null && !IsSuspended && !greenHookActive)
+            {
+                body.useGravity = useGravity && !authoredKinematic;
+                if (!useGravity && !body.isKinematic) body.linearVelocity = Vector3.zero;
+                body.isKinematic = authoredKinematic || !useGravity;
+            }
         }
         private void OnEnable()
         {
@@ -96,8 +119,10 @@ namespace Project.ContactCubes
             else
             {
                 body.position = transform.position; body.rotation = transform.rotation;
-                body.isKinematic = false; body.useGravity = true; body.constraints = baseConstraints;
+                body.isKinematic = false;
                 body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero;
+                body.isKinematic = authoredKinematic || !useGravity;
+                body.useGravity = useGravity && !authoredKinematic; body.constraints = baseConstraints;
             }
         }
         public void SetCarrySuspended(bool suspended)
@@ -121,8 +146,9 @@ namespace Project.ContactCubes
             hadHorizontalPush = false;
             IsSettled = false;
             body.isKinematic = false;
-            body.useGravity = true;
+            body.useGravity = useGravity;
             body.constraints =
+                baseConstraints |
                 RigidbodyConstraints.FreezeRotation |
                 RigidbodyConstraints.FreezePositionZ;
             body.linearVelocity = new Vector3(0f, body.linearVelocity.y, 0f);
@@ -138,8 +164,10 @@ namespace Project.ContactCubes
                 return;
             }
 
-            body.useGravity = true;
+            body.useGravity = useGravity;
             GreenHookBodyMotion.ApplyPullVelocity(body, velocity, shape);
+            // Pull ownership may relax runtime settling locks, never author locks.
+            body.constraints |= baseConstraints;
         }
 
 
@@ -179,10 +207,11 @@ namespace Project.ContactCubes
                 body.position = finalPosition;
                 body.rotation = transform.rotation;
                 body.isKinematic = false;
-                body.useGravity = true;
-                body.constraints = baseConstraints;
                 body.linearVelocity = Vector3.zero;
                 body.angularVelocity = Vector3.zero;
+                body.isKinematic = authoredKinematic || !useGravity;
+                body.useGravity = useGravity && !authoredKinematic;
+                body.constraints = baseConstraints;
             }
             Physics.SyncTransforms();
             if (snapToGrid)
@@ -202,6 +231,7 @@ namespace Project.ContactCubes
             if (count == nearby.Length) return false;
             for (int i = 0; i < count; i++)
                 if (nearby[i] != null && !nearby[i].transform.IsChildOf(transform) &&
+                    !Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(nearby[i]) &&
                     nearby[i].GetComponentInParent<IPlayerCarrySeparationHost>() == null) return false;
             return true;
         }
@@ -209,7 +239,7 @@ namespace Project.ContactCubes
         {
             if (VineGrowthLift.IsLifting(body)) { RestorePlayerCollision(); return; }
             if (shape == null || !shape.enabled || IsSuspended ||
-                greenHookActive || body.isKinematic)
+                greenHookActive || authoredKinematic)
             {
                 return;
             }
@@ -217,6 +247,19 @@ namespace Project.ContactCubes
                 if (pair.Key == null || !pair.Key.gameObject.activeInHierarchy || (pair.Key is Behaviour behaviour && !behaviour.isActiveAndEnabled)) deadSources.Add(pair.Key);
             foreach (var source in deadSources) velocities.Remove(source);
             Vector3 flow = Vector3.zero; foreach (Vector3 velocity in velocities.Values) flow += velocity;
+            bool flowing = flow.sqrMagnitude > .0001f;
+            if (!useGravity && !flowing)
+            {
+                if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+                body.useGravity = false;
+                body.constraints = baseConstraints;
+                body.isKinematic = true;
+                IsSettled = true;
+                hadHorizontalPush = false;
+                RefreshPlayerCollision();
+                return;
+            }
+            if (body.isKinematic) body.isKinematic = false;
             bool horizontal = Mathf.Abs(flow.x) > .01f && Mathf.Abs(flow.y) < .01f;
             if (horizontal && !hadHorizontalPush)
             {
@@ -224,8 +267,7 @@ namespace Project.ContactCubes
                 body.linearVelocity = new Vector3(flow.x, 0, 0);
             }
             hadHorizontalPush = horizontal;
-            body.useGravity = !GravityProtected;
-            bool flowing = flow.sqrMagnitude > .0001f;
+            body.useGravity = useGravity && !GravityProtected;
             bool supported = HasSupport();
             IsSettled = !GravityProtected && supported &&
                 (IsSettled && !flowing || Mathf.Abs(body.linearVelocity.y) <= settleVelocity);
@@ -303,7 +345,8 @@ namespace Project.ContactCubes
                 EndGreenHookPull(false);
             }
             velocities.Clear(); gravityProtectedUntil = 0; hadHorizontalPush = false; IsSettled = false;
-            SetCarrySuspended(false); body.linearVelocity = Vector3.zero;
+            SetCarrySuspended(false);
+            if (!body.isKinematic) body.linearVelocity = Vector3.zero;
             ApplyHorizontalClearance();
             RestorePlayerCollision();
         }
@@ -321,7 +364,7 @@ namespace Project.ContactCubes
             }
             if (cube != null) { cube.PushRequested -= OnPush; cube.LengthChanged -= OnGeometryChanged; }
             velocities.Clear(); RestorePlayerCollision();
-            if (body != null) { body.useGravity = true; body.constraints = baseConstraints; }
+            if (body != null) { body.useGravity = useGravity && !authoredKinematic; body.constraints = baseConstraints; body.isKinematic = authoredKinematic || !useGravity; }
         }
 
         private void CalibrateToNearestGridCell()

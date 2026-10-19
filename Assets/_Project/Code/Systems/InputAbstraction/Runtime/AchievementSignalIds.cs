@@ -6,6 +6,11 @@ namespace Project.InputAbstraction
         public const string PlayerLanded = "PlayerLanded";
         public const string PlayerActionStarted = "PlayerActionStarted";
         public const string PlayerActionCompleted = "PlayerActionCompleted";
+        public const string PlayerDied = "PlayerDied";
+        public const string PlayerFallDeath = "PlayerFallDeath";
+        public const string PlayerLavaDeath = "PlayerLavaDeath";
+        public const string PlayerSpikeDeath = "PlayerSpikeDeath";
+        public const string PlayerBossDeath = "PlayerBossDeath";
         public const string LadderClimbStarted = "LadderClimbStarted";
         public const string LadderClimbEnded = "LadderClimbEnded";
         public const string LevelGoalReached = "LevelGoalReached";

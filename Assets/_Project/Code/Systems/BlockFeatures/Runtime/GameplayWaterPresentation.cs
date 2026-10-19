@@ -14,6 +14,7 @@ namespace Project.BlockFeatures
     {
         private static readonly HashSet<GameplayWaterPresentation> active = new HashSet<GameplayWaterPresentation>();
         private static int revision;
+        private static int wallRevision = -1;
         private int builtRevision = -1;
         private WaterVisualFeature owner;
         private WaterPresentationSettings settings;
@@ -24,7 +25,6 @@ namespace Project.BlockFeatures
         private LevelEditorMergedShape shape;
         private MeshFilter neutralFilter;
         private Mesh originalNeutralMesh;
-        private int wallRevision = -1;
         private float cellSize = 1f;
         private Vector4 flowSettings;
         public int SurfaceCellCount { get; private set; }
@@ -35,7 +35,7 @@ namespace Project.BlockFeatures
         private float CellSize => cellSize;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetRegistry() { active.Clear(); revision = 0; }
+        private static void ResetRegistry() { active.Clear(); revision = 0; wallRevision = -1; }
 
         public void Initialize(WaterVisualFeature feature, WaterPresentationSettings configuration)
         {
@@ -71,7 +71,7 @@ namespace Project.BlockFeatures
             if (bounds != lastBounds) { lastBounds = bounds; revision++; }
             Vector4 nextSettings = ReadFlowSettings();
             if (nextSettings != flowSettings) { flowSettings = nextSettings; revision++; }
-            if (wallRevision != LevelEditorPlacedBlock.ActiveRevision) { wallRevision = LevelEditorPlacedBlock.ActiveRevision; revision++; }
+            if (wallRevision != LevelEditorPlacedBlock.SolidRevision) { wallRevision = LevelEditorPlacedBlock.SolidRevision; revision++; }
             if (builtRevision != revision) Rebuild();
         }
 

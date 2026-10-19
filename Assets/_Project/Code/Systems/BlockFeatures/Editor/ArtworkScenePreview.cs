@@ -246,6 +246,10 @@ namespace Project.BlockFeatures.Editor
         private static float Cell(GameObject owner) => Mathf.Max(.01f, GridCellSizeUtility.Resolve(owner.transform));
         private static Bounds Footprint(GameObject owner, float cell)
         {
+            // A button's thin pressure sensor is not its complete artwork cell.
+            // Keep the same centre/pixel scale as runtime for all four facings.
+            if (owner.GetComponent<Project.Mechanisms.DoorButton>() != null || owner.GetComponent<ButtonLockFeature>() != null)
+                return new Bounds(owner.transform.position, Vector3.one * cell);
             if (owner.TryGetComponent<LevelEditorMergedShape>(out var shape)) return shape.WorldBounds;
             var box = owner.GetComponent<BoxCollider>();
             if (owner.TryGetComponent<ContactCube>(out _))
@@ -344,7 +348,8 @@ namespace Project.BlockFeatures.Editor
                     else
                     {
                         float width = art.Cells.x * cell, height = art.Cells.y * cell;
-                        float bottom = owner.GetComponent<ColorKeyPickup>() != null ? bounds.center.y - height * .5f : bounds.min.y;
+                        float bottom = owner.GetComponent<ColorKeyPickup>() != null || owner.GetComponent<Project.Items.CollectiblePickup>() != null
+                            ? bounds.center.y - height * .5f : bounds.min.y;
                         var door = owner.GetComponent<DoorController>();
                         if (door != null && door.IsHorizontal)
                         {
@@ -393,10 +398,16 @@ namespace Project.BlockFeatures.Editor
         }
         private static void AddPlatform(Entry entry, PlanningArtworkPreview art, Bounds bounds, float cell)
         {
-            bool vertical = ObjectArtworkLibrary.PlatformVisualIsVertical(new Vector2(bounds.size.x, bounds.size.y));
+            var platform = entry.owner.GetComponent<MovingPlatformFeature>();
+            Vector2 dimensions = new Vector2(bounds.size.x, bounds.size.y);
+            bool vertical = platform != null ? platform.IsArtworkVertical(dimensions)
+                : ObjectArtworkLibrary.PlatformVisualIsVertical(dimensions);
             float length = vertical ? bounds.size.y : bounds.size.x;
             float natural = art.Cells.x * cell;
-            float thickness = entry.owner.GetComponent<MovingPlatformFeature>() != null ? 5f / 16f * cell : art.Cells.y * cell;
+            var oneWay = entry.owner.GetComponent<OneWayPlatform>();
+            var kind = oneWay != null ? oneWay.ArtworkKind : platform != null && platform.IsCrankControlled
+                ? MechanismArtworkKind.CrankPlatform : MechanismArtworkKind.MovingPlatform;
+            float thickness = PlatformArtworkLayout.VisibleThicknessCells(kind, art.Sprite, ObjectArtworkLibrary.Load()) * cell;
             float height = art.Cells.y * cell;
             for (float start = 0; start < length - .0001f; start += natural)
             {

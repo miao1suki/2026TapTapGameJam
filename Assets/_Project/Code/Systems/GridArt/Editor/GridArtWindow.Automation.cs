@@ -24,13 +24,19 @@ namespace Project.GridArt.Editor
         internal bool IsStroking => canvas != null && canvas.IsStroking || GridArtScenePainter.IsStroking;
         private void BindAutomation()
         {
+            boundSceneKey = SceneKey;
+            boundSceneHandle = SceneManager.GetActiveScene().handle;
             autoSave = EditorPrefs.GetBool(SceneKey + ".AutoSave", true);
             autoPreview = EditorPrefs.GetBool(SceneKey + ".AutoPreview", true);
             rootVisualElement.Q<Toggle>("art-autosave")?.SetValueWithoutNotify(autoSave);
             rootVisualElement.Q<Toggle>("art-autopreview")?.SetValueWithoutNotify(autoPreview);
             savePending = buildPending = false; saveError = null;
             sourceGroup = Layer != null && Layer.followLevel ? Layer.sourceGroup : "";
+            showLevelReference = EditorPrefs.GetBool(SceneKey + ".ShowReference", true);
+            levelReferenceOpacity = Mathf.Clamp01(EditorPrefs.GetFloat(SceneKey + ".ReferenceOpacity", .35f));
+            selectedReferenceRoom = EditorPrefs.GetString(SceneKey + ".ReferenceRoom", "");
             levelSource = null; sourceCellCache.Clear(); guides.Clear();
+            canvas?.UpdateReference();
             diskSignature = DiskSignature(map);
             RequestSource();
             // A saved map is sufficient to restore the preview even if the Scene was not saved.
@@ -72,7 +78,9 @@ namespace Project.GridArt.Editor
         }
         private void AutomationTick()
         {
-            if (automationBusy || EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || EditorApplication.isUpdating || IsStroking) return;
+            if (automationBusy || EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || EditorApplication.isUpdating) return;
+            RebindSceneIfNeeded();
+            if (IsStroking) return;
             double now = EditorApplication.timeSinceStartup;
             if (sourcePending && now >= sourceAt) RefreshLevelSource();
             if (now >= saveAt && (autoSave && savePending || autoPreview && buildPending)) FlushPending(false);
@@ -110,6 +118,12 @@ namespace Project.GridArt.Editor
         }
         private void SaveAll()
         {
+            if (map == null)
+            {
+                if(!IsStroking && !EditorApplication.isPlayingOrWillChangePlaymode && !string.IsNullOrEmpty(SceneManager.GetActiveScene().path))
+                    EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+                return;
+            }
             if (!CanEditMap || IsStroking || EditorApplication.isPlayingOrWillChangePlaymode) return;
             // Explicit save may save the whole Scene; autosave deliberately does not.
             bool previous = autoSave; autoSave = true;
@@ -131,12 +145,14 @@ namespace Project.GridArt.Editor
         }
         private void RefreshLevelSource()
         {
+            RebindSceneIfNeeded();
             sourcePending = false;
             try
             {
-                if (GridArtLevelSource.Read == null) { if(sourceSummary!=null) sourceSummary.text="关卡来源尚未连接"; return; }
+                if (GridArtLevelSource.Read == null) { levelSource=null; canvas?.UpdateReference(); RefreshNavigation(); if(sourceSummary!=null) sourceSummary.text="关卡来源尚未连接"; return; }
                 levelSource = GridArtLevelSource.Read.Invoke(SceneManager.GetActiveScene());
                 sourceCellCache.Clear(); guides.Clear();
+                if(levelSource == null) { canvas?.UpdateReference(); RefreshNavigation(); return; }
                 float size = map != null ? map.cellSize : levelSource.cellSize;
                 foreach (var g in levelSource.groups) foreach (var r in g.bounds)
                     guides.Add(new Rect(r.position / size, r.size / size));
@@ -146,9 +162,9 @@ namespace Project.GridArt.Editor
                         if (layer.followLevel && map.palette.Get(layer.sourceBrush) != null)
                             changed |= GridArtLevelSource.Synchronize(layer, SourceCells(layer.sourceGroup));
                 if (changed) { map.revision++; EditorUtility.SetDirty(map); ArtChanged(); }
-                RefreshSourcePanel(); canvas?.RepaintView();
+                RefreshNavigation(); RefreshSourcePanel(); canvas?.UpdateReference();
             }
-            catch (Exception e) { levelSource=null; sourceCellCache.Clear(); guides.Clear(); canvas?.RepaintView(); if (sourceSummary != null) sourceSummary.text = e.Message; }
+            catch (Exception e) { levelSource=null; sourceCellCache.Clear(); guides.Clear(); RefreshNavigation(); canvas?.UpdateReference(); if (sourceSummary != null) sourceSummary.text = e.Message; }
         }
         private HashSet<Vector2Int> SourceCells(string group)
         {
@@ -163,12 +179,12 @@ namespace Project.GridArt.Editor
             if (!Brush.autoTerrain && Brush.Size != Vector2Int.one) { status.text = "墙地铺绘请选择单格素材或自动地形。"; return; }
             if (sourcePending) RefreshLevelSource();
             var cells = SourceCells(sourceGroup);
-            if (cells.Count == 0) { status.text = "该范围内没有白块；先在关卡编辑器搭建墙地。"; return; }
+            if (cells.Count == 0) { status.text = "该范围内没有墙地块；先在关卡编辑器搭建黑块或白块等墙地。"; return; }
             var layer = Layer;
             if (layer.cells.Count > 0 && !layer.followLevel && !EditorUtility.DisplayDialog("铺绘墙地", "替换当前图层的美术？其他图层和玩法物体不变。", "替换", "取消")) return;
             Change("铺绘关卡墙地", () =>
             {
-                layer.sourceGroup = sourceGroup; layer.sourceBrush = brushIndex; layer.followLevel = linked;
+                layer.sourceGroup = sourceGroup; layer.sourceBrush = brushIndex; layer.sourceQuarterTurns = BrushQuarterTurns; layer.followLevel = linked;
                 GridArtLevelSource.Synchronize(layer, cells);
             });
             canvas?.FrameAll();
@@ -179,19 +195,24 @@ namespace Project.GridArt.Editor
             if (panel == null) return;
             panel.Clear(); panel.Add(Heading("关卡墙地"));
             sourceSummary = new Label(levelSource?.label ?? "正在读取当前关卡…"); sourceSummary.style.whiteSpace = WhiteSpace.Normal; panel.Add(sourceSummary);
+            if (levelSource?.referenceOnlyNames.Count > 0)
+            {
+                var namesOnly = levelSource.referenceOnlyNames.OrderBy(n => n);
+                panel.Add(new HelpBox("橙色轮廓仅作定位参考，不是游戏美术：" + string.Join("、", namesOnly), HelpBoxMessageType.Info));
+            }
             var ids = new List<string> { "" }; var names = new List<string> { "整关墙地" };
             if (levelSource != null) foreach (var group in levelSource.groups) { ids.Add(group.id); names.Add(names.Contains(group.label) ? group.label+" · "+(names.Count+1) : group.label); }
             if (!ids.Contains(sourceGroup)) sourceGroup = "";
             var picker = new PopupField<string>("铺绘范围", names, ids.IndexOf(sourceGroup));
             picker.RegisterValueChangedCallback(e => { sourceGroup = ids[names.IndexOf(e.newValue)]; }); panel.Add(picker);
-            var follow = ActionButton("自动铺绘并跟随白块", () => FillLevel(true)); follow.name = "art-follow-level";
-            follow.tooltip = "当前层由关卡墙地自动生成，新增、擦除及合并白块后更新；手工装饰放其他图层。";
+            var follow = ActionButton("自动铺绘并跟随墙地块", () => FillLevel(true)); follow.name = "art-follow-level";
+            follow.tooltip = "当前层由黑块、白块及自定义墙地块自动生成，新增、擦除及合并后更新；手工装饰放其他图层。";
             panel.Add(follow); panel.Add(ActionButton("仅铺绘一次", () => FillLevel(false)));
             bool canFill = CanEditMap && Layer != null && !Layer.locked && Layer.visible && Brush != null && !EditorApplication.isPlayingOrWillChangePlaymode;
             follow.SetEnabled(canFill); panel.Children().OfType<Button>().ToList().ForEach(b => b.SetEnabled(canFill));
             if (Layer != null && Layer.followLevel)
             {
-                panel.Add(new HelpBox("当前层随白块更新；装饰请放到独立图层。", HelpBoxMessageType.Info));
+                panel.Add(new HelpBox("当前层随墙地块更新；装饰请放到独立图层。", HelpBoxMessageType.Info));
                 panel.Add(ActionButton("转为手工绘制", () => Change("转为手工美术", () => Layer.followLevel = false)));
             }
             panel.Add(ActionButton("刷新关卡轮廓", () => { RequestSource(); RefreshLevelSource(); }));

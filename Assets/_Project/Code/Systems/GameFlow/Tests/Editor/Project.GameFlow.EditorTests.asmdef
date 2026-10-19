@@ -4,7 +4,9 @@
   "references": [
     "Project.GameFlow.Runtime",
     "Project.GameFlow.Editor",
-    "Project.Shared.Runtime"
+    "Project.Shared.Runtime",
+    "Project.StartMenu.Runtime",
+    "Unity.UGUI"
   ],
   "includePlatforms": [
     "Editor"

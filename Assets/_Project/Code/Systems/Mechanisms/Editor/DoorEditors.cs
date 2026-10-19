@@ -82,6 +82,7 @@ namespace Project.Mechanisms.Editor
             var owner = new UnityEditor.UIElements.PropertyField(serializedObject.FindProperty("owner"));
             owner.SetEnabled(false);
             settings.Add(owner);
+            settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"facing","按钮朝向","同一单格按钮的压力方向。只按90度旋转16像素素材，不拉伸。"));
             settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"mode","触发模式","一次按下保持：保存已按进度；持续压住：松开、重生或离开房间时取消触发。"));
             settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject,"footTolerance","脚部容差（格）","玩家脚部或三色接触方块底面压入触发区后按下。"));
             settings.Add(new UnityEditor.UIElements.PropertyField(serializedObject.FindProperty("visual")));

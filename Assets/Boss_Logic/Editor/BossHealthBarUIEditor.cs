@@ -25,6 +25,19 @@ public sealed class BossHealthBarUIEditor : Editor
         Add(layout, "dividerWidth", "分段黑线宽度");
         root.Add(layout);
 
+        Foldout name = ProjectInspectorUtility.CreateFoldout(
+            "Boss 名字",
+            true);
+        Add(name, "uiSdfFont", "统一 SDF 字体");
+        Add(name, "nameFontSize", "名字字号");
+        Add(name, "nameMinFontSize", "自动缩小下限");
+        Add(name, "nameMaxWidth", "名字最大宽度");
+        Add(name, "nameGap", "与血条间距");
+        Add(name, "nameColor", "名字颜色");
+        Add(name, "nameOutlineWidth", "描边宽度");
+        Add(name, "nameOutlineColor", "描边颜色");
+        root.Add(name);
+
         Foldout frame = ProjectInspectorUtility.CreateFoldout(
             "外框",
             true);

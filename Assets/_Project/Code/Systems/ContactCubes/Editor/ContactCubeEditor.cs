@@ -5,6 +5,29 @@ using UnityEngine.UIElements;
 
 namespace Project.ContactCubes.Editor
 {
+    [CustomEditor(typeof(BlueContactCubeGrowthTarget))]
+    public sealed class BlueContactCubeGrowthTargetEditor : UnityEditor.Editor
+    {
+        public override VisualElement CreateInspectorGUI()
+        {
+            var root = new VisualElement();
+            root.Add(new Label("蓝能力触发生长") { style = { fontSize = 17, unityFontStyleAndWeight = FontStyle.Bold } });
+            root.Add(new Label("绿色接触方块自动配置。长度和速度沿用接触方块参数。"));
+            var state = new Foldout { text = "运行状态", value = true };
+            var status = new Label(); state.Add(status); root.Add(state);
+            root.schedule.Execute(() =>
+            {
+                if (target is BlueContactCubeGrowthTarget receiver)
+                {
+                    ContactCube cube = receiver.GetComponent<ContactCube>();
+                    status.text = Application.isPlaying && cube != null
+                        ? $"持续生长：{(cube.IsPlayerGrowthRequested ? "已请求" : "无")}　方向：{cube.GrowthDirection}"
+                        : "未运行";
+                }
+            }).Every(250);
+            return root;
+        }
+    }
     [CustomEditor(typeof(CubeWaterJetArtwork))]
     public sealed class CubeWaterJetArtworkEditor : UnityEditor.Editor
     {
@@ -26,11 +49,14 @@ namespace Project.ContactCubes.Editor
         public override VisualElement CreateInspectorGUI()
         {
             var root = new VisualElement();
+            root.Add(new Label("接触方块运动") { style = { fontSize = 17, unityFontStyleAndWeight = FontStyle.Bold } });
             var settings = new Foldout { text = "运动设置", value = true };
+            settings.Add(new PropertyField(serializedObject.FindProperty("useGravity"), "启用重力"));
+            settings.Add(new HelpBox("红、绿、蓝共用此实例参数。关闭后保持悬浮；原有刚体锁轴不改变。", HelpBoxMessageType.Info));
             settings.Add(new PropertyField(serializedObject.FindProperty("launchGravityGrace"), "水平喷出重力保护（秒）"));
             settings.Add(new PropertyField(serializedObject.FindProperty("settleVelocity"), "落稳竖直速度容差")); root.Add(settings);
             var state = new Label(); root.Add(state);
-            root.schedule.Execute(() => { if (target is ContactCubeMotion motion) state.text = Application.isPlaying ? $"{(motion.IsSuspended ? "已挂起" : motion.IsSettled ? "已落稳" : "空中")}　{(motion.GravityProtected ? "重力保护" : "")}" : "未运行"; }).Every(250);
+            root.schedule.Execute(() => { if (target is ContactCubeMotion motion) state.text = Application.isPlaying ? $"{(motion.IsSuspended ? "已挂起" : motion.IsSettled ? "已落稳" : "空中")}　重力：{(motion.UsesGravity ? "开启" : "关闭")}　攀爬锚点：{motion.IsStableClimbAnchor}" : "未运行"; }).Every(250);
             return root;
         }
     }
@@ -79,7 +105,7 @@ namespace Project.ContactCubes.Editor
             Add(jet,"jetBubbleDensity","气泡密度（排/格）"); Add(jet,"jetBubbleSpeed","气泡速度（格/秒）"); root.Add(jet);
             var debug = new Foldout { text = "运行状态", value = true };
             var label = new Label(); debug.Add(label); root.Add(debug);
-            root.schedule.Execute(() => { if (target is ContactCube cube) label.text = Application.isPlaying ? $"状态：{StateName(cube.State)}　长度：{cube.Length} 格" : "未运行"; }).Every(250);
+            root.schedule.Execute(() => { if (target is ContactCube cube) label.text = Application.isPlaying ? $"状态：{StateName(cube.State)}　长度：{cube.Length} 格　蓝点击生长：{(cube.IsPlayerGrowthRequested ? "已请求" : "无")}" : "未运行"; }).Every(250);
             return root;
         }
         private static string StateName(CubeReactionState state) => state == CubeReactionState.Growing ? "生长" : state == CubeReactionState.Shrinking ? "缩短" : state == CubeReactionState.Locked ? "锁长" : "静止";

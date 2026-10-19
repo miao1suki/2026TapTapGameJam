@@ -15,7 +15,7 @@ MonoBehaviour:
   persistentScenePaths: []
   flowScenes:
   - id: 0
-    scenePath: Assets/_Project/Scenes/Start/MainMenu.unity
+    scenePath: Assets/_Project/Scenes/Playing/Gaming.unity
     gameplay: 0
   - id: 10
     scenePath: Assets/_Project/Scenes/Playing/Gaming.unity

@@ -6,11 +6,32 @@
 
 道具参数窗口已显式提供Rigidbody“锁定位置/锁定旋转”X/Y/Z六轴勾选，支持实例覆盖保存/重开/恢复默认，弥补Unity隐藏字段未被通用属性遍历显示的问题。见[关卡编辑器](../Developer/LEVEL_EDITOR.md)与[规划协作接口](Integration/PLANNING_COLLABORATION_API.md)。
 
+共享场景素材库已按16有效像素/格清点为178项，新增边框、混合图集装饰和正式道具静态外观；保留旧笔刷编号/引用，自定义命名不覆盖。素材栏按视口自适应两列并兼容高DPI，入口“同步项目与切片素材”；范围/选区/排除项见[素材盘点](../Developer/SCENE_ART_LIBRARY.md)。黑白与旧Platform墙地块均可作为工作台参考，不改地图布局。
+
+主菜单触控布局修正WorldMainMenu的NativeFormat SDF引用，并恢复已有按钮/静态事件接线；布局/隐私模态保护下层设置，布局Cancel消费同帧返回，见[移动操作](../Developer/MOBILE_CONTROLS.md)。PC隐私政策已接远端4096字体修复，本地旧字体经用户确认完整备份后替换，不增加另一套字体；实际正文字符及采样容量通过，见[核对说明](../Developer/PRIVACY_FONT_CAPACITY.md)。署名按确认更正为“臾日不再”。
+
+美术工作台N键开关、自动定位真实房间，墙和正式2D道具作为默认35%透明的只读参考，可隐藏/调透明度；远景平移缩放仅变换和裁剪保留批次。雨/萤火按完整区域框绘并在工作台调参，独立Scene美术根、非planning物体。新萤火可见面默认-0.25格，光点/光晕同层，普通透明道具前显示、不透明墙仍遮挡。见[定位操作](../Developer/GRID_ART_NAVIGATION.md)、[关卡参照](../Developer/GRID_ART_LEVEL_REFERENCE.md)、[区域效果](../Developer/GRID_ART_REGION_EFFECTS.md)；效果须显式保存Scene，协作仍交Scene、同名planning、美术Map、素材及meta。
+
+收集品与 Boss 共用稳定作者 ID 的会话进度：30%入场，60%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。击败Boss且达到30%开放T/触控地图，显示房间/重生点/收集剩余，Boss房禁用；安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与工作台90°原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。协作仍须Scene、同名planning、meta与新增依赖成套交付。
+
+主菜单与游玩采用同一Gaming场景：正式构建仅Gaming，首帧自动安装纯UI WorldMainMenu prefab，新ButtonIcon四项竖排与27帧LOGO；开始平滑退镜、返回反向，期间不加载/卸载场景、不截图、不重置进度，唯一世界Camera/Listener/EventSystem始终启用。旧MainMenu文件只作编辑器兼容重定向，其旧蓝底/布局移除。见[融合菜单](../Developer/WORLD_MENU_FUSION.md)与[场景流程](../Developer/GAME_FLOW.md)。
+
+独立R2：`Assets/Scenes/R2/R2.unity`及同名planning／来源映射，Excel393墙格、三保持按钮同门、曲柄10格升降、两个绿根和8格可烧毁植物。场景三色启用、玩家仅蓝能力，固定AK114复用作者约束攀附；不额外补蓝块，整合main已有玩家蓝能力点击绿块生长入口，不替代正式Gaming、不改R1或R3。见 [R2说明](../Developer/R2_LEVEL.md)。Scene、planning、meta及依赖成套交付。
+
+Boss清障隐藏与持久机关进度分离：房间重置归还临时渲染/碰撞租约，不清门按钮进度，旧碰撞隐藏队列按ResetRevision失效。见[BOSS_ROOM_RESET_VISUALS](Integration/BOSS_ROOM_RESET_VISUALS.md)。两个移动平台已接新6/9帧48×16素材、14像素支撑上缘，旧占格/路线不扩大；新增红绿蓝单向平台栏目复用同一Prefab，颜色参数只影响外观与HSV图层。见[物体美术API](Integration/OBJECT_ARTWORK_API.md)。Scene/可编辑存档/meta/新增美术依赖仍必须成套交付。
+
+搬运占格区分作者布置与运行时实体：烧毁/打开/移走后的空位不保留旧格阻挡，当前位置实体仍拒绝重叠；R不改作者数据而恢复现有状态。放置射线忽略水与纯Trigger、真实薄墙仍挡，复用候选Collider列表且不逐帧SyncTransforms。接入与隔离回归见[搬运API](Integration/PLAYER_CARRY_API.md)。
+
 基座信号镜头可选收到/解除/双边沿，默认关；共享队列先基座再按序平台，或仅首个平台，等待不提前锁玩家。水与非岩浆所有物体同格，三种水类型可叠、同类生成去重、共同底色只画一次。红蓝指针0.65格容差严格不扩总范围；水蒸汽按点击列，钥匙2有效像素悬浮，红蓝接触水柱改TA水片/气泡并即时推送、玩家默认8格/秒。见[机关API](Integration/MECHANISM_SIGNAL_API.md)、[水API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[钥匙与水柱](../Developer/KEY_HOVER_AND_CONTACT_JETS.md)。关卡仍须Scene、planning及meta成套交付。
+独立 R1：`Assets/Scenes/R1/R1.unity`及同名planning；已采用远端16fb26f左右镜像版（实现40fe66c），只补main空字段的签名兼容，保留76实例及全部手动微调，不重复镜像、不全量重建。场景、设计源和专属脚本同目录，迁移保留全部GUID。Excel单格制作，不替代Gaming、不加入正式构建。含多位置曲柄共享进度、作者固定13格绿条横向攀附和单实例占格支持；开局仅玩家红能力、三色场景解锁。共享组的任一有效副柄制动基座均可冻结整组进度，解除后续转。操作及验证边界见[关卡说明](../Developer/R1_LEVEL.md)，接入见MECHANISM_SIGNAL_API、CONTACT_CUBES_API、PLANNING_COLLABORATION_API。
 
 TA 新效果已接入现有生命周期：流动岩浆精确保留孔洞、冷却蒸汽、三类植物燃烧、标准玩家死亡/Boss追逐RGB；PC/Mobile只追加RGB通道，不覆盖水/HSV/像素参数。雨区和萤火虫通过 `Tools/2026TapTap/关卡美术/创建雨区` / `创建萤火虫区域` 独立创建，固定16像素/格、Scene保存，不属于planning玩法物体；雨是颜色装饰，萤火虫是中性装饰且实时灯默认关闭。见 [TA_EFFECTS_API](Integration/TA_EFFECTS_API.md) 与 [使用说明](../Developer/TA_EFFECTS.md)。关卡交付仍须Scene+planning+meta成套。
 
 2026-10-18 录像回归：绿钩拉红块/基座新接通供能后暂停主动拉取、保留绳子并放行普通行走，重新点击继续；精确来源查询 `MechanismBaseFeature.IsPoweredBy` 不把他人的红块供能算给蓝块。红/蓝未落稳时保留玩家从上落脚碰撞；岩浆只补真实支撑顶面的少量物理解算薄层，露边仍危险。普通收集品已开始/已完成收集不随R/死亡/离区恢复，`IsCollected`、稳定作者实例键及 `RestoreCollectedState` 供后续存档接入，未实现跨场景/退出后的存档服务。接入见 [GREEN_HOOK_API](Integration/GREEN_HOOK_API.md)、[WORLD_ITEMS_API](Integration/WORLD_ITEMS_API.md)、[CONTACT_CUBES_API](Integration/CONTACT_CUBES_API.md)。
+
+通用传送目标：`TeleportAnchorFeature` 用任意字符串 ID 注册目标，`TeleportObject(GameObject, string)` 将对象移动到对应方块位置；默认 `Teleport_Block` 道具无碰撞、不可见，已加入关卡编辑器道具栏目。接入见 [传送目标 API](Integration/TELEPORT_ANCHOR_API.md)。
+
+Player Thinking 演出：Boss 死亡后同一导演切换到 `player_thinking.playable`，聚焦玩家并锁操作，WordNote 打字机逐句播放；`PlayerThinkingTimelinePlayable.SetCollectibleProgress` 按收集品 60% 分流。演出1黑屏传送 `Start`，演出2生成六份收集品，并在黑幕完全覆盖时先销毁收集品再传送 `End`，均倒放黑屏后释放操作与相机。见 [Player Thinking API](Integration/PLAYER_THINKING_API.md)。
 
 Scene编辑态正式2D由只读ArtworkScenePreview按变更缓存，旧尖刺不再等Play才换图；平台旧1格/批量独立占格裁原像素、单向平台独立素材、支撑面与旋转共用规则。藤蔓同列连续组链只采一根后分片，显示抵消作者缩放。见[美术约定](../Developer/ART_GRID_CONVENTIONS.md)与[物体美术API](Integration/OBJECT_ARTWORK_API.md)。绿色拉物保留自然重力，显式无重力基座优先；拉力仍四向，详见[绿绳API](Integration/GREEN_HOOK_API.md)。
 
@@ -35,6 +56,14 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 自动同步删除记忆已按规划文档版本隔离；重导入/队友更新不能沿用旧版 `(ID,格)` 推断删除，实例重建先重新查找。MRoom2开窗误删已从完整第二版成套恢复（188项、456墙格、61水格）；仅重新加载Scene/重开窗口，不能保存旧内存覆盖。专项 `PlanningAutoSyncAudit` 和链路说明见 [协作API](Integration/PLANNING_COLLABORATION_API.md)。
 
 开发者复活方式：标准玩家默认常规，可用 `PlayerController.ConfigureRespawn(LoadingTransition, seconds)` 切换慢速收黑/加载背景/原路退场，沿用既有区域及重生点恢复，不换场景、不清进度；支持Inspector调试、重复请求和中断清理。见 [接入API](Integration/PLAYER_RESPAWN_API.md)、[复活表现](../Developer/PLAYER_RESPAWN.md)。
+
+Boss 关卡重生点：`RespawnAnchorFeature` 的“关卡类型”直接保存 Boss 开关、复活血量与相对 X；参数窗口可生成规划图中的 `Boss复活标记`，通过 `bossRespawnOwnerId` 与重生点连接并只允许 X 拖动。Boss 由 Timeline 后生成，`BossController` 启用时注册到 `BossRespawnStateRegistry`；重生点保留待应用请求，Boss 出现后自动下发并回读血量/坐标，Inspector 显示等待、已应用和一致性。见 [重生 API](Integration/ROOM_LIFECYCLE_API.md) 与 [Boss API](Integration/BOSS_CONTROLLER_API.md)。
+
+Boss 战复活兜底：存在活动Boss且没有已解锁Boss出生点时，只从玩家死亡所属房间内选X最小的启用Boss点，未解锁也可兜底；不能因最终Gaming含Boss而劫持普通房间的复活。无房间管理器的独立旧工作场景保留同场景兜底；剧情Start/End有普通专用兜底，不再回旧Boss点。
+
+Boss HUD：`BossController.bossDisplayName` 提供显示名，`BossHealthBarUI` 使用 `Cubic_11 SDF` 在血条左侧动态创建名字；`BossMonitorUI` 同挂 Boss Health Canvas，独立正交相机输出 RenderTexture，屏幕左上角窗口固定约屏幕宽 23.3%、高 35%，`RectMask2D` 从中心展开/倒放，死亡延迟后与血条同步退场。监控相机不复制 Timeline 实时旋转，显示除 UI 外全部图层，避免透视穿帮和高频重建纹理。
+
+Boss 连线：`BossPlayerLinkEffect` 从 Boss 中心用三个 LineRenderer 和三份独立运行时材质分别设置火线/水线/藤蔓线 `_Style=1/2/3`，按 Boss–玩家距离插值透明度和 `_LineThickness`，远距近乎不可见，近距为普通线 1.5 倍。连线在 `HealthSystemActivated` 时按 `_RevealProgress` 生成，Boss 死亡时按 `_DissolveProgress` 消散。Boss 接触玩家由 `killPlayerOnContact` 直接触发玩家死亡。
 
 颜色双阶段解锁与唯一标准玩家：见 [接入约定](Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。场景颜色和玩家能力分别查询；所有玩法场景共用 `Content/Player/Player.prefab`，新建空地图在原点生成并绑定玩家。
 
@@ -66,13 +95,13 @@ Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全�
 
 藤蔓外观使用TA192帧序列图集（ObjectArtwork），整根单SpriteRenderer、按生长长度适配、燃烧倒放及长成末段循环；仍走集中绿色HSV/共享材质透明交接，不再回退实时粒子。构建前检查序列帧和材质完整性，缺配置阻止出包。移动端额外像素化参数与PC一致，烘焙精灵不进入实时粒子像素遮罩。弹性植物底部贴齐格子。水序列帧尚未交付，保留现有水效果。见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md) 和 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
 
-双平台测试：SharedGameUI 的 MobileGameplayControls 提供多指方向/跳跃/Sprint/交互/左右放下与暂停/重生/选色，ScreenSafeArea 与 Expand Canvas 适配横屏比例及安全区。输入仍走 GameInput，触摸边沿在下一帧统一发布；合并气泡柱使用碰撞体底部而非中心判断上浮。正式包仅 MainMenu/Gaming，应用名和 APK 为“形之彩”。见 [双平台操作与构建](../Developer/ANDROID_AND_PC_TEST_BUILDS.md)。
+双平台测试：SharedGameUI 的 MobileGameplayControls 提供多指方向/跳跃/Sprint/交互/左右放下与暂停/重生/选色，ScreenSafeArea 与 Expand Canvas 适配横屏比例及安全区。输入仍走 GameInput，触摸边沿在下一帧统一发布；合并气泡柱使用碰撞体底部而非中心判断上浮。新正式包仅 Gaming 单场景，菜单为同景 UI；应用名和 APK 为“形之彩”。见 [双平台操作与构建](../Developer/ANDROID_AND_PC_TEST_BUILDS.md)。
 
 重生点/弹性植物美术：`ObjectArtwork`配置与`WorldObjectSpritePresentation`表现，三态重生点、真实弹跳触发的6帧动画、合并植物按格重复，接入既有绿色HSV/共享透明材质。使用见 [OBJECT_ARTWORK.md](../Developer/OBJECT_ARTWORK.md)，接入见 [OBJECT_ARTWORK_API.md](Integration/OBJECT_ARTWORK_API.md)。
 
-关卡美术工作台：`Code/Systems/GridArt`，UI Toolkit双侧栏、共享多图集素材库、直接读取当前关卡／房间／通道Solid白块并可联动铺绘，无需Hierarchy选择；自动保存美术／延后实时预览默认开启，显式“保存场景”交付Scene。支持Scene绘制、自动边角、多格装饰、同格多层透明叠图、多层XY视差预设／预览及每关独立持久化Mesh。自动底图不覆盖手工装饰；空闲不扫描、笔画不重建侧栏、未变生成网格复用。不改白块共享材质／玩法存档，跨Scene需独立副本；预留同UV法线与URP 3D受光，不代表2D Light已接入。独立示例在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
+关卡美术工作台：`Code/Systems/GridArt`，UI Toolkit双侧栏、共享多图集素材库、直接读取当前关卡／房间／通道中的黑块、白块及自定义墙地块并可联动铺绘，无需Hierarchy选择；旧Platform白块同样保留，非矩形合并不填孔洞，缺正式2D的道具仅绘定位轮廓。自动保存美术／延后实时预览默认开启，显式“保存场景”交付Scene。支持Scene绘制、自动边角、多格装饰、同格多层透明叠图、多层XY视差预设／预览及每关独立持久化Mesh。自动底图不覆盖手工装饰；空闲不扫描、笔画不重建侧栏、未变生成网格复用。不改方块共享材质／玩法存档，跨Scene需独立副本；预留同UV法线与URP 3D受光，不代表2D Light已接入。独立示例在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
 
-游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标和设置背景，预裁切产物位于`Art/Generated/GameUI`。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
+游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标、设置/存档/收藏背景、设置内页按钮/Slider/Toggle/关闭X、存档独立块、成就解锁块与透明绿色像素勾，预裁切产物位于`Art/Generated/GameUI`。开始菜单设置与制作名单共用全屏内页背景：纯深色底托加 `Start Menu Panel Background`，从右侧滑入、向右滑出；Sound/Key Binding/Credits 内页透明并按页面尺寸展开，不再固定为 930 宽。开始菜单设置页右上角 X 与暂停页共用 `Setting Close X`，鼠标/触屏、ESC/Cancel、手柄 B/Start 全部汇入同一 `Button.onClick`。暂停三页统一使用简洁蓝青像素背景与透明阶梯笔触左边，旧蓝色网格作为旧资源保留；三页内容均增加左侧安全区，右侧关闭 X 不动。存档页使用透明滚动区和单列独立块，空存档也使用同款块；设置、按键映射、存档灰色 Hint/Status 小字停用。内页新材质由 Settings/KeyBinding/Save 控制器对动态和序列化旧控件统一应用，主菜单四按钮和暂停轮盘保持原资源；设置页动态 Toggle 也复用绿色勾。所有 UI SDF 镜像绑定 `Cubic_11 SDF`，已有镜像会重新绑定而不是跳过。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
 
 主角像素表现：`Assets/Player/PlayerSpritePresentation.cs`，7套动作35帧，读取现有玩家状态；按24源像素自然显示1.5格、物理仍1×1格，不新增碰撞体，死亡优先、演出冻结与复活恢复。唯一标准Player.prefab已接线，裸PlayerController运行时自动补齐。最新比例见 [美术约定](../Developer/ART_GRID_CONVENTIONS.md)。
 
@@ -105,7 +134,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 非颜色门与绑定按钮 | `Assets/_Project/Code/Systems/Mechanisms` | 道具门1×2、自动/追加专属按钮、玩家踩踏按钮、全部按下后开门；Timeline默认关闭，可选真实按钮按下/开门触发。平台可选镜头同样默认关闭；不使用E、不接收颜色交互。见 Integration/DOOR_API.md、Integration/MECHANISM_SIGNAL_API.md 与 Developer/DOORS.md |
 | 无色梯子、横门与门提示 | `Assets/_Project/Code/Systems/Mechanisms` | 正面/侧面梯子复用攀爬；独立横门 2×1；每门唯一提示按总数/已按数量更新，新绑定上限三个。见 Integration/NEUTRAL_MECHANISMS_API.md 与 Developer/NEUTRAL_MECHANISMS.md；本地开发待验收 |
 | 选择性像素化 | `Assets/_Project/Code/Systems/Pixelization`、`Assets/ta_source/PixelEffect` | 当前 PC 启用 TA Stencil 路径及其像素参数，关闭重复内置像素化；HSV 保持开启且在其后执行。内置路径的 Rendering Layer 128/描边 API 不控制 TA Shader。见 Integration/PIXELIZATION_API.md |
-| 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 正式序列固定为 `Assets/_Project/Scenes/Start/MainMenu.unity` → `Assets/_Project/Scenes/Playing/Gaming.unity`；MainMenu 持 `GameFlowController`/`StartMenuFlowBridge`，Gaming 持玩家、相机管理和 `SharedGameUI` 暂停界面。Bootstrap、旧 Systems、旧三关和 Ending 不再使用 |
+| 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 正式构建单Gaming；自动安装GameFlow与纯UI WorldMainMenu，同世界内切逻辑菜单/玩法，开始及返回不重载，旧MainMenu仅兼容；玩家、相机及SharedGameUI仍由Gaming持有。Bootstrap、旧Systems、旧三关和Ending不再使用 |
 | 音频资源 | `Assets/_Project/Content/Audio` | 22个音乐/环境声与46个SFX；63份音频登记为55个Cue。新OP接主菜单，Boss曲仅登记待触发点；两种重生点激活、搬运、基座启停、平台移动、气泡/浮力、6格落地、燃烧、岩浆冷却/触碰及菜单确认已接。解谜/秘密与独立浅水步行待触发点，区域环境声/其余BGM待规划。见 `Integration/AUDIO_HANDOVER.md` |
 | 相机 Manager/跟随/2D3D | `Assets/_Project/Code/Systems/CameraModes` | 旧功能保留；玩家驱动不再申请 2D/3D 切换，Timeline 优先级更高 |
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |
@@ -116,11 +145,11 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | TA 染色覆盖效果 | `Assets/ta_source/GivingColor` | 独立 URP 透明覆盖 Shader 读取原材质纹理 Alpha，按红色燃烧、蓝色四次叠染、绿色逐级分叉播放；材质 Inspector 可调速度、噪波和像素化。只在玩家染色成功后短暂显示，完成后渐隐并露出原玩法改色结果；不覆盖水与岩浆生成的深蓝固体块，不覆盖蒸汽和植物反应。开局能力、解锁及目标原颜色由原程序管理；Test 场景文件不作接线修改；见 [使用说明.md](../../Assets/ta_source/GivingColor/使用说明.md) |
 | 掉落物与拾取飞行 | `Assets/_Project/Code/Shared/Runtime/DropItemBase.cs`、`Assets/_Project/Code/Systems/PickupPresentation` | 基类负责感知后的磁吸、收集生命周期；颜色钥匙触碰结算并播放 DOTween 四段飞行与镜头；Pick 场景保留测试物 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
-| 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、块材质和达成图片 |
+| 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、九宫格块美术和达成图片。完成态的灰色整块遮罩与绿色像素勾仅为显示，不挂 Toggle/Selectable、不接收射线；完成后条件栏继续显示最终条件文本而不是“已完成”。隐藏成就在解锁前显示居中大问号与“待发现成就”，解锁后才揭示真实内容。运行时由 `AchievementUnlockToastPresenter` 实现 `IAchievementUnlockReceiver`，在 `WordNote_UI` 画布左下角用独立九宫格块和透明绿色像素勾排队显示“达成成就！”与成就名，左入停留后左出，所有字体、块/勾 Sprite、材质、尺寸和动画参数可配置 |
 | Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本；新增对话轨道，不需要绑定对象，直接向常驻 `WordNote_UI` 申请同一画布中的消息。使用见 [对话轨道](../Developer/TIMELINE_DIALOGUE.md)，接入见 [API](Integration/TIMELINE_DIALOGUE_API.md) |
 | 玩家 / Boss Timeline 轨道 | `Assets/GJ_Tools/TimelineTools3D/AboutTimeline` | `PlayerTimelineTrack` 与 `BossTimelineTrack` 支持显式绑定或按 Tag 查找角色，驱动位移、跳跃、玩家输入锁和 Boss 追击状态。使用见 [玩家与 Boss 轨道](../Developer/TIMELINE_ACTOR_TRACKS.md)，接入见 [API](Integration/TIMELINE_ACTOR_TRACKS_API.md) |
-| 通用接触触发道具 | `Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/ContactTimelineTrigger.cs` | 独立 MonoBehaviour，挂在有 Collider 的道具上后自动隐藏 Renderer，通过 Trigger/Collision 接触播放绑定 Timeline；支持玩家、任意碰撞体或 Tag 筛选，不依赖颜色系统。使用见 [接触触发](../Developer/CONTACT_TIMELINE.md)，接入见 [API](Integration/CONTACT_TIMELINE_API.md) |
-| Boss 控制器与右移马夫 | `Assets/Boss_Logic/BossController.cs`、`BossAnimationDriver.cs`、`BossRightMoveExecutor.cs` | Controller 默认关闭自动目标追击，只响应 Timeline 和马夫指令，提供运动、跳跃、受击和死亡能力；Timeline 行走保留常规重力，所有 Boss 动作下游必须是 Controller。`BossRightMoveExecutor` 首次接管时记录 Boss 当前世界 Y，之后保持该高度切穿地形右移。`Boss_appear.playable` 由多条 `BossTimelineTrack` 加 2D 相机轨组成，每个 Boss Clip 只做一个动作。选中怪物 Clip 时 Scene 视图显示轨迹。Renderer 使用 `BossTop`、排序值 `32767` 和 Renderer Priority `32767`。 |
+| 通用接触触发道具 | `Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/ContactTimelineTrigger.cs` | 独立 MonoBehaviour，挂在有 Collider 的道具上后自动隐藏 Renderer，通过 Trigger/Collision 接触播放绑定 Timeline；支持玩家、任意碰撞体或 Tag 筛选，不依赖颜色系统。“进入播放，离开停止”模式用于区域状态，SceneView 与关卡编辑器画布以金色虚线显示真实 Collider 范围。使用见 [接触触发](../Developer/CONTACT_TIMELINE.md)，接入见 [API](Integration/CONTACT_TIMELINE_API.md) |
+| Boss 控制器与右移马夫 | `Assets/Boss_Logic/BossController.cs`、`BossAnimationDriver.cs`、`BossRightMoveExecutor.cs`、`BossCameraSize.cs`、`BossDefeatTimelinePresenter.cs` | Controller 默认关闭自动目标追击，只响应 Timeline 和马夫指令，提供运动、跳跃、受击和死亡能力；Timeline 行走保留常规重力，所有 Boss 动作下游必须是 Controller。`BossRightMoveExecutor` 首次接管时记录 Boss 当前世界 Y，之后保持该高度切穿地形右移。`Boss_appear.playable` 由多条 `BossTimelineTrack`、全程玩家锁轨和 2D 相机轨组成，每个 Boss Clip 只做一个动作；玩家锁先于相机 0.1 秒启动，末尾 Playable 同时激活血条与 Boss 存活期视野。`BossCameraSize` 通过 `CameraControlManager` 平滑申请玩法视野倍率，Timeline 镜头期间不覆盖演出，玩家死亡复活不重置。Boss 被击杀后由 `Boss_defeat.playable` 先保持原镜头发呆 1 秒，再用 1 秒框住玩家与 Boss 中点并播放六钥匙吸收，随后聚焦 Boss 完成死亡演出；普通外部删除不触发。Renderer 使用 `BossTop`、排序值 `32767` 和 Renderer Priority `32767`。 |
 | Boss 追击寻路（保留未挂载） | `Assets/Boss_Logic/Navigation` | 有向节点图 + A*，未来可用于其他 Boss/关卡；当前 Boss 预制体不挂载，不参与默认长廊战斗。使用见 [Boss 追击寻路](../Developer/BOSS_PATHFINDING.md)，接入见 [API](Integration/BOSS_PATHFINDING_API.md) |
 | 方块瓦片绘制/烘焙/切片 | `Assets/_Project/Code/Systems/SurfaceTiles` | 旧工具保留，导入UI改为UI Toolkit，无素材 |
 | 颜色物功能组件契约 | `Assets/_Project/Code/Systems/BlockFeatures` | `BlockFeature`/`BlockRuntime` 提供固定形态、生命周期、信号、命令与调试；`BlockAbilityHost` 只按固定颜色组启停预制体已有组件；`CarryableFeature` 是能源方块和万能方块共用的独立搬运组件，能源由 `IColorObject` 门控，万能方块常态可搬 |

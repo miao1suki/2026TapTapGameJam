@@ -43,7 +43,13 @@ namespace Project.BlockFeatures
         public event System.Action AppearanceReset;
 
         protected override void OnAttach() => WorldObjectSpritePresentation.Ensure(gameObject);
-        protected override void OnResetForRoom() { RestoreBurn(); AppearanceReset?.Invoke(); }
+        protected override void OnResetForRoom()
+        {
+            RestoreBurn();
+            AppearanceReset?.Invoke();
+            foreach (var player in PlayerController.ActivePlayers)
+                if (player != null) player.ExitBounceSurface(this);
+        }
 
         public float GetRiseCells(float fallCells, bool jumpHeld) => fallCells > highFallThresholdCells && jumpHeld ? highRiseCells : normalRiseCells;
         public bool TryGetBounceSpeed(PlayerController player, float fallDistance, float downwardSpeed, out float verticalSpeed)

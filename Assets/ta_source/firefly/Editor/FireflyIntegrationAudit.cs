@@ -208,8 +208,8 @@ namespace Project.Fireflies.Editor
             try
             {
                 root = editor.CreateInspectorGUI();
-                Check(root != null && root.Query<IMGUIContainer>().ToList().Count == 0 && root.Query<PropertyField>().ToList().Count == 29,
-                    "all 28 component properties plus script use Chinese native UI Toolkit");
+                Check(root != null && root.Query<IMGUIContainer>().ToList().Count == 0 && root.Query<PropertyField>().ToList().Count == 30,
+                    "all 29 component properties plus script use Chinese native UI Toolkit");
                 Check(root.Query<Button>().ToList().Any(button => button.text == "打开萤火虫区域创建"), "Inspector has visible creation entry");
             }
             finally { root?.Unbind(); Object.DestroyImmediate(editor); Object.DestroyImmediate(field.gameObject); }

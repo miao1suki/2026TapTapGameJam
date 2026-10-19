@@ -41,7 +41,7 @@ namespace Project.GridArt.Editor
             float size = target.Map.cellSize;
             var low = dragging && target.RectangleMode ? Vector2Int.Min(start, cell) : cell;
             Vector3 origin = new Vector3(low.x * size, low.y * size, target.Layer.depth);
-            var extent = (dragging && target.RectangleMode ? (Vector2)(Vector2Int.Max(start, cell) - low + Vector2Int.one) : target.Brush.autoTerrain ? Vector2.one : target.Brush.DisplaySize) * size;
+            var extent = (dragging && target.RectangleMode ? (Vector2)(Vector2Int.Max(start, cell) - low + Vector2Int.one) : target.Brush.autoTerrain ? Vector2.one : target.BrushDisplaySize) * size;
             Handles.DrawSolidRectangleWithOutline(new[] { origin, origin + Vector3.up * extent.y,
                 origin + new Vector3(extent.x, extent.y), origin + Vector3.right * extent.x },
                 new Color(.2f, .75f, 1, .1f), new Color(.2f, .75f, 1));
@@ -71,7 +71,7 @@ namespace Project.GridArt.Editor
                     var rect = new RectInt(Vector2Int.Min(start, cell), new Vector2Int(Mathf.Abs(start.x-cell.x)+1, Mathf.Abs(start.y-cell.y)+1));
                     if ((long)rect.width * rect.height <= 4096)
                     {
-                        var step = erase || target.Brush.autoTerrain ? Vector2Int.one : target.Brush.Size;
+                        var step = erase || target.Brush.autoTerrain ? Vector2Int.one : target.BrushFootprint;
                         for (int y = rect.yMin; y < rect.yMax; y += step.y) for (int x = rect.xMin; x < rect.xMax; x += step.x) Paint(new Vector2Int(x,y));
                     }
                 }

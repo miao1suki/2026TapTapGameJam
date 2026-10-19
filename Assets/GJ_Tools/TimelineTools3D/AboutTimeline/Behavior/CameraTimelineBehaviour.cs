@@ -62,6 +62,14 @@ public class CameraTimelineBehaviour : PlayableBehaviour
             return;
         }
 
+        float currentTime = (float)playable.GetTime();
+        // Projection must be requested before waiting for a late-spawned
+        // anchor; otherwise the first rendered frame can stay perspective.
+        RequestClipMode(
+            rig,
+            currentTime,
+            totalDuration);
+
         if (!_inited)
         {
             if (!ApplyAnchorOverride(rig))
@@ -103,12 +111,7 @@ public class CameraTimelineBehaviour : PlayableBehaviour
             return;
         }
 
-        float currentTime = (float)playable.GetTime();
         float deltaTime = Mathf.Max(0f, (float)info.deltaTime);
-        RequestClipMode(
-            rig,
-            currentTime,
-            totalDuration);
         Vector3 currentPosition = rig.CurrentPosition;
         Quaternion currentRotation = rig.CurrentRotation;
         Transform anchor = rig.AnchorTransform;
@@ -171,16 +174,23 @@ public class CameraTimelineBehaviour : PlayableBehaviour
                 0f,
                 1f,
                 currentTime / trackDuration);
+            Vector3 trackedPosition = Vector3.Lerp(
+                _originWorldPos,
+                trackTargetPosition,
+                trackProgress);
+            Quaternion trackedRotation = Quaternion.Slerp(
+                _originWorldRot,
+                trackTargetRotation,
+                trackProgress);
+            ApplyOrthographicConstraints(
+                rig,
+                ref trackedPosition,
+                ref trackedRotation,
+                _originWorldPos);
             ApplyShot(
                 rig,
-                Vector3.Lerp(
-                    _originWorldPos,
-                    trackTargetPosition,
-                    trackProgress),
-                Quaternion.Slerp(
-                    _originWorldRot,
-                    trackTargetRotation,
-                    trackProgress));
+                trackedPosition,
+                trackedRotation);
             return;
         }
 
@@ -433,6 +443,17 @@ public class CameraTimelineBehaviour : PlayableBehaviour
             return;
         }
 
+        if (clip.modeRequest ==
+                TimelineCameraModeRequest.Side2D ||
+            clip.constrainOrthographicAxes &&
+            IsOrthographicMode(rig))
+        {
+            float yaw = clip.overrideSide2DYaw
+                ? clip.side2DYawDegrees
+                : rig.PlanarYaw;
+            rotation = Quaternion.Euler(0f, yaw, 0f);
+        }
+
         rig.SetShotTransform(
             position,
             rotation);
@@ -652,7 +673,14 @@ public class CameraTimelineMixerBehaviour : PlayableBehaviour
                 track != null && track.allowManualCamera;
             _rig.SetReturnMode(
                 track == null || track.restoreOriginOnEnd);
-            _rig.Acquire(_rig.ReturnTransitionDuration);
+            _rig.SetReturnDurationForCurrentShot(
+                track != null
+                    ? track.returnTransitionDuration
+                    : _rig.ReturnTransitionDuration);
+            _rig.Acquire(
+                track != null
+                    ? track.entryTransitionDuration
+                    : _rig.ReturnTransitionDuration);
             _hasControl = true;
         }
         else if (!hasActiveClip && _hasControl && !HasRemainingClip(playable))

@@ -16,6 +16,14 @@ namespace Project.Player
         [InspectorName("加载转场复活")] LoadingTransition = 1
     }
 
+    public enum PlayerDeathCause
+    {
+        Fall = 0,
+        Lava = 1,
+        Spike = 2,
+        Boss = 3
+    }
+
     public enum PlayerStateId
     {
         Normal = 0,
@@ -137,6 +145,18 @@ namespace Project.Player
         public float RespawnLoadingSeconds => float.IsFinite(respawnLoadingSeconds) ? Mathf.Max(0f, respawnLoadingSeconds) : 2f;
         public bool IsRespawning => respawnInProgress;
         public event Action RespawnCompleted;
+        public event Action PlayerDied;
+        public event Action<
+            PlayerDeathCause,
+            UnityEngine.Object>
+            DeathCauseResolved;
+        public event Action PlayerRespawnCompleted;
+        public PlayerDeathCause? LastDeathCause { get; private set; }
+        public UnityEngine.Object LastDeathSource
+        {
+            get;
+            private set;
+        }
 
         /// <summary>Developer-owned mode; changing it affects the next respawn, not an active transition.</summary>
         public void ConfigureRespawn(PlayerRespawnMode mode, float loadingSeconds = 2f)
@@ -164,6 +184,8 @@ namespace Project.Player
             new Collider[32];
         private readonly RaycastHit[] carryRayBuffer =
             new RaycastHit[32];
+        private readonly List<Collider> carryPlacedColliders =
+            new List<Collider>(8);
         private IPlayerCarryTarget selectedCarryTarget;
         private IPlayerCarryTarget highlightedCarryTarget;
         private float carryPrepareUntil = -1f;
@@ -197,6 +219,11 @@ namespace Project.Player
         private bool enteredClimbDuringFall;
         private float invulnerableUntil;
         private int lockDepth;
+        private int travelSafetyDepth;
+        // Disable invalidates every outstanding lease before a new activation
+        // can acquire control. Late disposals must not release a newer owner.
+        private int controlLockEpoch;
+        private bool travelSafetyWasKinematic;
         private PlayerHealth health;
         private Vector3 initialRespawnPosition;
         private Vector3 deathPosition;
@@ -469,7 +496,7 @@ namespace Project.Player
         public bool IsOnBounceSurface => bounceSurfaces.Count > 0;
         public bool LandedThisStep => landedThisStep;
         public bool IsInvulnerable =>
-            !dead && (respawnInProgress || Time.time < invulnerableUntil);
+            !dead && (respawnInProgress || travelSafetyDepth > 0 || Time.time < invulnerableUntil);
         public float InvulnerabilityRemaining =>
             Mathf.Max(0f, invulnerableUntil - Time.time);
         public string GravityMode
@@ -545,7 +572,9 @@ namespace Project.Player
         public event Action CarryPlacementRejected;
         private static readonly string[] Signals = { AchievementSignalIds.PlayerJumped,
             AchievementSignalIds.PlayerLanded, AchievementSignalIds.PlayerActionStarted,
-            AchievementSignalIds.PlayerActionCompleted };
+            AchievementSignalIds.PlayerActionCompleted, AchievementSignalIds.PlayerDied,
+            AchievementSignalIds.PlayerFallDeath, AchievementSignalIds.PlayerLavaDeath,
+            AchievementSignalIds.PlayerSpikeDeath, AchievementSignalIds.PlayerBossDeath };
         public IReadOnlyList<string> GetAchievementSignalIds() => Signals;
 
         private void Awake()
@@ -658,6 +687,8 @@ namespace Project.Player
         }
         private void OnDisable()
         {
+            controlLockEpoch++;
+            RestoreTravelSafety();
             if (respawnLoader != null) respawnLoader.CancelRespawnTransition(transform);
             FinishRespawnPresentation(false);
             carryPlacementPreview?.Dispose();
@@ -1416,6 +1447,12 @@ namespace Project.Player
                 return;
             }
 
+            if (heldInteractionTarget == null &&
+                (interactHeld || interactTriggered))
+            {
+                interactionSensor?.RefreshTarget();
+            }
+
             if (heldInteractionTarget != null)
             {
                 bool facingHeldTarget = heldInteractionTarget is not Component heldComponent ||
@@ -2136,13 +2173,12 @@ namespace Project.Player
                 carryRayBuffer,
                 gridCellWorldSize * 1.1f,
                 ~0,
-                QueryTriggerInteraction.Collide);
+                QueryTriggerInteraction.Ignore);
+            if (count == carryRayBuffer.Length) return true;
             for (int index = 0; index < count; index++)
             {
                 Collider collider = carryRayBuffer[index].collider;
-                if (collider == null ||
-                    BelongsToPlayer(collider.transform) ||
-                    BelongsToSelectedCarryTarget(collider.transform))
+                if (!IsSolidCarryPlacementBlocker(collider))
                 {
                     continue;
                 }
@@ -2170,12 +2206,11 @@ namespace Project.Player
                 Quaternion.identity,
                 ~0,
                 QueryTriggerInteraction.Ignore);
+            if (count == carryDropBuffer.Length) return false;
             for (int index = 0; index < count; index++)
             {
                 Collider collider = carryDropBuffer[index];
-                if (collider == null ||
-                    BelongsToPlayer(collider.transform) ||
-                    BelongsToSelectedCarryTarget(collider.transform))
+                if (!IsSolidCarryPlacementBlocker(collider))
                 {
                     continue;
                 }
@@ -2209,6 +2244,8 @@ namespace Project.Player
             Vector3Int cell)
         {
             Vector2Int gridCell = new Vector2Int(cell.x, cell.y);
+            Bounds currentCell = new Bounds(CellToWorld(cell, transform.position.z),
+                Vector3.one * (gridCellWorldSize * .98f));
             IReadOnlyList<Project.LevelEditor.LevelEditorPlacedBlock>
                 blocks =
                     Project.LevelEditor.LevelEditorPlacedBlock.ActiveInstances;
@@ -2230,10 +2267,43 @@ namespace Project.Player
                     continue;
                 }
 
-                return true;
+                // ContainsCell is immutable authoring/reset data, not live occupancy.
+                // Re-check only matching candidates: burned/opened objects may retain
+                // their root, and a movable object's authored cell does not follow it.
+                // The world overlap below separately catches solids at their new pose.
+                block.GetComponentsInChildren(false, carryPlacedColliders);
+                for (int colliderIndex = 0; colliderIndex < carryPlacedColliders.Count; colliderIndex++)
+                {
+                    Collider collider = carryPlacedColliders[colliderIndex];
+                    if (IsSolidCarryPlacementBlocker(collider) &&
+                        CarryPlacementWorldBounds(collider).Intersects(currentCell)) return true;
+                }
             }
 
             return false;
+        }
+
+        private bool IsSolidCarryPlacementBlocker(Collider collider) =>
+            collider != null && collider.enabled && !collider.isTrigger &&
+            !Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(collider) &&
+            collider.gameObject.activeInHierarchy &&
+            !BelongsToPlayer(collider.transform) &&
+            !BelongsToSelectedCarryTarget(collider.transform);
+
+        private static Bounds CarryPlacementWorldBounds(Collider collider)
+        {
+            if (collider is not BoxCollider box) return collider.bounds;
+            // Read the current Transform, including moved children and parent scale,
+            // without forcing a global Physics.SyncTransforms for each preview frame.
+            Matrix4x4 matrix = box.transform.localToWorldMatrix;
+            Vector3 half = box.size * .5f;
+            Vector3 x = matrix.MultiplyVector(new Vector3(half.x, 0, 0));
+            Vector3 y = matrix.MultiplyVector(new Vector3(0, half.y, 0));
+            Vector3 z = matrix.MultiplyVector(new Vector3(0, 0, half.z));
+            return new Bounds(matrix.MultiplyPoint3x4(box.center), 2f * new Vector3(
+                Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x),
+                Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y),
+                Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z)));
         }
 
         private bool BelongsToPlayer(Transform candidate)
@@ -2523,7 +2593,9 @@ namespace Project.Player
                             lastLandingFallDistance,
                             count))
                     {
-                        EnterDeath();
+                        EnterDeath(
+                            PlayerDeathCause.Fall,
+                            gameObject);
                         return;
                     }
 
@@ -2948,14 +3020,39 @@ namespace Project.Player
 
         public void EnterDeath()
         {
+            EnterDeathCore(null, null);
+        }
+
+        public void EnterDeath(
+            PlayerDeathCause cause,
+            UnityEngine.Object source = null)
+        {
+            EnterDeathCore(cause, source);
+        }
+
+        private void EnterDeathCore(
+            PlayerDeathCause? cause,
+            UnityEngine.Object source)
+        {
             if (dead || respawnInProgress)
             {
                 return;
             }
 
+            LastDeathCause = cause;
+            LastDeathSource = source;
             bool wasLocked = IsControlLocked;
             deathPosition = transform.position;
             dead = true;
+            PlayerDied?.Invoke();
+            Emit(AchievementSignalIds.PlayerDied);
+            if (cause.HasValue)
+            {
+                EmitDeathCauseSignal(cause.Value);
+                DeathCauseResolved?.Invoke(
+                    cause.Value,
+                    source);
+            }
             AudioCuePlayer.Play(AudioCueIds.PlayerDie);
             float presentationSeconds = spritePresentation != null && spritePresentation.isActiveAndEnabled
                 ? spritePresentation.DeathAnimationDuration : 0f;
@@ -2978,14 +3075,34 @@ namespace Project.Player
             }
         }
 
+        private void EmitDeathCauseSignal(
+            PlayerDeathCause cause)
+        {
+            switch (cause)
+            {
+                case PlayerDeathCause.Fall:
+                    Emit(AchievementSignalIds.PlayerFallDeath);
+                    break;
+                case PlayerDeathCause.Lava:
+                    Emit(AchievementSignalIds.PlayerLavaDeath);
+                    break;
+                case PlayerDeathCause.Spike:
+                    Emit(AchievementSignalIds.PlayerSpikeDeath);
+                    break;
+                case PlayerDeathCause.Boss:
+                    Emit(AchievementSignalIds.PlayerBossDeath);
+                    break;
+            }
+        }
+
         public void RequestRespawn()
         {
-            if (!isActiveAndEnabled || respawnInProgress) return;
+            if (!isActiveAndEnabled || respawnInProgress || GameplayPresentationGate.IsSuppressed) return;
             if (GameFlowController.Instance != null && GameFlowController.Instance.IsTransitioning) return;
             if (respawnMode != PlayerRespawnMode.LoadingTransition)
             {
                 PerformRespawn();
-                RespawnCompleted?.Invoke();
+                NotifyRespawnCompleted();
                 return;
             }
 
@@ -3011,7 +3128,13 @@ namespace Project.Player
             if (!wasRespawning || !completed) return;
             // The protected interval starts when the player can see and control the character again.
             invulnerableUntil = Time.time + Mathf.Max(0f, respawnInvulnerabilitySeconds);
+            NotifyRespawnCompleted();
+        }
+
+        private void NotifyRespawnCompleted()
+        {
             RespawnCompleted?.Invoke();
+            PlayerRespawnCompleted?.Invoke();
         }
 
         private void PerformRespawn()
@@ -3023,19 +3146,30 @@ namespace Project.Player
             runner?.Stop();
             ClearDeathControlState();
             Vector3 requestedPosition = initialRespawnPosition;
+            IPlayerRespawnPoint selectedPoint = null;
             if (PlayerRespawnPointRegistry.TryFindPreferred(this, deathPosition, out IPlayerRespawnPoint boundPoint))
+            {
+                selectedPoint = boundPoint;
                 requestedPosition = boundPoint.RespawnPosition;
+            }
             else if (respawnPoint != null) requestedPosition = respawnPoint.position;
+            TryApplyBossArenaRespawnFallback(
+                ref selectedPoint,
+                ref requestedPosition);
+            if (selectedPoint is
+                IPlayerRespawnPreRoomResetListener
+                    preRoomResetListener)
+            {
+                preRoomResetListener
+                    .OnPlayerRespawnBeforeRoomReset(this);
+            }
             Project.Rooms.RoomLifecycleManager.BeforeRespawn(this, requestedPosition);
             Vector3 targetPosition;
-            if (PlayerRespawnPointRegistry.TryFindPreferred(
-                    this,
-                    deathPosition,
-                    out IPlayerRespawnPoint registeredPoint))
+            if (selectedPoint != null)
             {
                 targetPosition = FindSafeRespawnPosition(
-                    registeredPoint.RespawnPosition,
-                    registeredPoint.RespawnRadiusBlocks,
+                    selectedPoint.RespawnPosition,
+                    selectedPoint.RespawnRadiusBlocks,
                     deathPosition);
             }
             else if (respawnPoint != null)
@@ -3083,6 +3217,70 @@ namespace Project.Player
                 Time.time +
                 Mathf.Max(0f, respawnInvulnerabilitySeconds);
             CameraFollowRelocated?.Invoke();
+        }
+
+        private void TryApplyBossArenaRespawnFallback(
+            ref IPlayerRespawnPoint selectedPoint,
+            ref Vector3 requestedPosition)
+        {
+            if (selectedPoint is StoryRespawnPoint) return;
+            IBossRespawnStateReceiver boss =
+                BossRespawnStateRegistry
+                    .FindAvailableInScene(gameObject.scene);
+            if (boss == null)
+            {
+                return;
+            }
+
+            IReadOnlyList<RespawnAnchorFeature> anchors =
+                ProjectDiscovery.FindAll<RespawnAnchorFeature>(true);
+            var roomManager = Project.Rooms.RoomLifecycleManager.ForScene(gameObject.scene);
+            string deathRegion = roomManager != null ? roomManager.FindRegion(deathPosition) : null;
+            RespawnAnchorFeature leftmostBossAnchor = null;
+            float leftmostX = float.PositiveInfinity;
+            int leftmostInstanceId = int.MaxValue;
+            for (int index = 0;
+                 index < anchors.Count;
+                 index++)
+            {
+                RespawnAnchorFeature anchor = anchors[index];
+                if (anchor == null ||
+                    !anchor.isActiveAndEnabled ||
+                    anchor.gameObject.scene != gameObject.scene ||
+                    !anchor.IsBossArenaRespawnPoint ||
+                    roomManager != null && (string.IsNullOrEmpty(deathRegion) ||
+                        roomManager.FindRegion(anchor.transform.position) != deathRegion))
+                {
+                    continue;
+                }
+
+                if (anchor.IsRespawnPointAvailable)
+                {
+                    return;
+                }
+
+                float x = anchor.RespawnPosition.x;
+                int instanceId = anchor.GetInstanceID();
+                if (x > leftmostX ||
+                    Mathf.Approximately(x, leftmostX) &&
+                    instanceId >= leftmostInstanceId)
+                {
+                    continue;
+                }
+
+                leftmostX = x;
+                leftmostInstanceId = instanceId;
+                leftmostBossAnchor = anchor;
+            }
+
+            if (leftmostBossAnchor == null)
+            {
+                return;
+            }
+
+            selectedPoint = leftmostBossAnchor;
+            requestedPosition =
+                leftmostBossAnchor.RespawnPosition;
         }
 
         private Vector3 FindRandomRespawnPosition(
@@ -3205,6 +3403,15 @@ namespace Project.Player
 
         private void OnDied()
         {
+            if (health != null &&
+                health.LastDeathCause.HasValue)
+            {
+                EnterDeath(
+                    health.LastDeathCause.Value,
+                    health.LastDeathSource);
+                return;
+            }
+
             EnterDeath();
         }
 
@@ -3265,7 +3472,7 @@ namespace Project.Player
             ReleaseHeldInteraction();
             CancelCarryState();
             colorWheel?.CloseWheel();
-            if (motor != null)
+            if (motor != null && !motor.isKinematic)
             {
                 motor.linearVelocity = Vector3.zero;
                 motor.angularVelocity = Vector3.zero;
@@ -3278,6 +3485,98 @@ namespace Project.Player
             pendingPlatformDelta = Vector3.zero;
             ReleaseHeldInteraction();
             CancelCarryState();
+        }
+
+        /// <summary>Relocate within the world and replace stale story/Boss respawn ownership.</summary>
+        public bool TryTeleportToStoryAnchor(TeleportAnchorFeature anchor)
+        {
+            if (anchor == null || anchor.gameObject.scene != gameObject.scene || dead || respawnInProgress) return false;
+            Vector3 destination = anchor.transform.position;
+            PrepareForRoomReset();
+            runner?.Stop();
+            Project.Rooms.RoomLifecycleManager.BeforeRespawn(this, destination);
+            ClearDeathControlState();
+            if (motor != null)
+            {
+                motor.position = destination;
+                if (!motor.isKinematic) motor.linearVelocity = motor.angularVelocity = Vector3.zero;
+            }
+            transform.position = destination;
+            Physics.SyncTransforms();
+            // Story return must not leave the old Boss checkpoint bound. This
+            // session-only fallback is replaced normally by the next real point.
+            PlayerRespawnPointRegistry.Bind(this, new StoryRespawnPoint(destination));
+            invulnerableUntil = Time.time + Mathf.Max(0f, respawnInvulnerabilitySeconds);
+            CameraFollowRelocated?.Invoke();
+            return true;
+        }
+
+        private sealed class StoryRespawnPoint : IPlayerRespawnPoint
+        {
+            public StoryRespawnPoint(Vector3 position) { RespawnPosition = position; }
+            public bool IsRespawnPointAvailable => true;
+            public Vector3 RespawnPosition { get; }
+            public int RespawnPriority => -1;
+            public float RespawnRadiusBlocks => 0f;
+        }
+
+        /// <summary>Checkpoint travel is not a death/respawn: no Boss reset or health reward.</summary>
+        public bool TryTravelToCheckpoint(RespawnAnchorFeature point)
+        {
+            if (point == null || !point.IsRespawnPointAvailable || point.IsBossArenaRespawnPoint ||
+                point.gameObject.scene != gameObject.scene || dead || respawnInProgress)
+                return false;
+            var roomManager = Project.Rooms.RoomLifecycleManager.ForScene(gameObject.scene);
+            string destinationRegion = roomManager?.FindRegion(point.RespawnPosition);
+            if (roomManager != null && string.IsNullOrEmpty(destinationRegion)) return false;
+            // Only the destination may be prepared before validation. A blocked
+            // destination must not reset the current puzzle or change ownership.
+            roomManager?.PrepareCheckpointDestination(this, point.RespawnPosition);
+            Physics.SyncTransforms();
+            Vector3 destination = default;
+            bool found = false;
+            // Deterministic nearby grounded choices; never silently fall back to game start.
+            for (int i = 0; i < 9 && !found; i++)
+            {
+                float offset = i == 0 ? 0f : ((i + 1) / 2) * .375f * (i % 2 == 0 ? -1f : 1f);
+                if (Mathf.Abs(offset) > point.RespawnRadiusBlocks) continue;
+                Vector3 candidate = point.RespawnPosition + Vector3.right * offset * gridCellWorldSize;
+                found = TryGetGroundedRespawnPosition(candidate, out destination) &&
+                    (roomManager == null || roomManager.FindRegion(destination) == destinationRegion) &&
+                    IsTravelPositionUnblocked(destination);
+            }
+            if (!found) return false;
+            PrepareForRoomReset();
+            runner?.Stop();
+            roomManager?.CommitCheckpointTravel(this, destination);
+            ClearDeathControlState();
+            if (motor != null)
+            {
+                motor.position = destination;
+                if (!motor.isKinematic) motor.linearVelocity = motor.angularVelocity = Vector3.zero;
+            }
+            transform.position = destination;
+            Physics.SyncTransforms();
+            PlayerRespawnPointRegistry.Bind(this, point);
+            invulnerableUntil = Time.time + Mathf.Max(0f, respawnInvulnerabilitySeconds);
+            CameraFollowRelocated?.Invoke();
+            return true;
+        }
+
+        private bool IsTravelPositionUnblocked(Vector3 position)
+        {
+            if (capsule == null) return false;
+            Vector3 shift = position - transform.position;
+            Bounds bounds = capsule.bounds;
+            float radius = Mathf.Min(bounds.extents.x, bounds.extents.z) * .96f;
+            Vector3 center = bounds.center + shift;
+            float halfAxis = Mathf.Max(0f, bounds.extents.y - radius - .015f * gridCellWorldSize);
+            int count = Physics.OverlapCapsuleNonAlloc(center + Vector3.up * halfAxis,
+                center - Vector3.up * halfAxis, radius, respawnOverlapBuffer, ~0, QueryTriggerInteraction.Ignore);
+            if (count >= respawnOverlapBuffer.Length) return false;
+            for (int i = 0; i < count; i++)
+                if (respawnOverlapBuffer[i] != null && !respawnOverlapBuffer[i].transform.IsChildOf(transform)) return false;
+            return true;
         }
 
         public void SetControlLocked(bool locked)
@@ -3298,6 +3597,49 @@ namespace Project.Player
             return new ControlLockHandle(this);
         }
 
+        /// <summary>Map-owned safety lease; movement and body ownership stay in the controller.</summary>
+        public IDisposable AcquireTravelSafetyLock(object owner)
+        {
+            PrepareForRoomReset();
+            IDisposable control = AcquireControlLock(owner);
+            if (travelSafetyDepth++ == 0 && motor != null)
+            {
+                travelSafetyWasKinematic = motor.isKinematic;
+                if (!motor.isKinematic)
+                {
+                    motor.linearVelocity = motor.angularVelocity = Vector3.zero;
+                    motor.isKinematic = true;
+                }
+            }
+            return new TravelSafetyHandle(this, control);
+        }
+
+        private void RestoreTravelSafety()
+        {
+            if (travelSafetyDepth == 0) return;
+            travelSafetyDepth = 0;
+            if (motor != null) motor.isKinematic = travelSafetyWasKinematic;
+        }
+
+        private sealed class TravelSafetyHandle : IDisposable
+        {
+            private PlayerController owner;
+            private IDisposable control;
+            private readonly int epoch;
+            public TravelSafetyHandle(PlayerController owner, IDisposable control)
+            { this.owner = owner; this.control = control; epoch = owner.controlLockEpoch; }
+            public void Dispose()
+            {
+                if (owner != null && epoch == owner.controlLockEpoch && owner.travelSafetyDepth > 0)
+                {
+                    if (owner.travelSafetyDepth == 1) owner.RestoreTravelSafety();
+                    else owner.travelSafetyDepth--;
+                }
+                owner = null;
+                control?.Dispose(); control = null;
+            }
+        }
+
         private void ReleaseControlLock()
         {
             SetControlLocked(false);
@@ -3306,10 +3648,12 @@ namespace Project.Player
         private sealed class ControlLockHandle : IDisposable
         {
             private PlayerController owner;
+            private readonly int epoch;
 
             public ControlLockHandle(PlayerController owner)
             {
                 this.owner = owner;
+                epoch = owner.controlLockEpoch;
             }
 
             public void Dispose()
@@ -3321,7 +3665,7 @@ namespace Project.Player
 
                 PlayerController current = owner;
                 owner = null;
-                current.ReleaseControlLock();
+                if (epoch == current.controlLockEpoch) current.ReleaseControlLock();
             }
         }
 

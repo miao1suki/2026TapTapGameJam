@@ -45,6 +45,17 @@ namespace Project.GameFlow
             out GameFlowSceneId id)
         {
             string normalized = Normalize(scenePath);
+            // Menu is now a presentation state in Gaming. Path inference (e.g. the
+            // editor's level context tool) must still identify the physical level.
+            for (int index = 0; index < flowScenes.Length; index++)
+            {
+                GameFlowSceneEntry entry = flowScenes[index];
+                if (entry != null && entry.IsGameplay && Normalize(entry.ScenePath) == normalized)
+                {
+                    id = entry.Id;
+                    return true;
+                }
+            }
             for (int index = 0; index < flowScenes.Length; index++)
             {
                 GameFlowSceneEntry entry = flowScenes[index];

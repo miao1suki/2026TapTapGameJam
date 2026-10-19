@@ -2743,6 +2743,10 @@ MonoBehaviour:
       valueType: Boolean
       value: 0
       objectReferenceValue: {fileID: 0}
+  - entryId: teleport-anchor-block
+    displayName: "\u4F20\u9001\u76EE\u6807\u65B9\u5757"
+    prefab: {fileID: 8800000000000000001, guid: 2f6e8c4a1b3d47e9a5c6b7d8e9f0a1b2, type: 3}
+    componentValueOverrides: []
   - entryId: 329a02cf35ad419187d87a7be94a441e
     displayName: "\u5411\u53F3\u6C34\u6D41\uFF08\u65E0\u6C14\u6CE1\uFF09"
     prefab: {fileID: 75558634237822655, guid: c3b01d303480df34cbc923067aa838d5, type: 3}
@@ -3152,4 +3156,145 @@ MonoBehaviour:
       propertyPath: showFlowBubbles
       valueType: Boolean
       value: 0
+      objectReferenceValue: {fileID: 0}
+  - entryId: mechanism-oneway-red
+    displayName: "\u7EA2\u8272\u5355\u5411\u5E73\u53F0"
+    prefab: {fileID: 7331628839969253367, guid: e45eeb89d3062084cb3d921e904d1d23, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.Mechanisms.OneWayPlatform
+      componentIndex: 0
+      propertyPath: appearanceColor
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+  - entryId: mechanism-oneway-green
+    displayName: "\u7EFF\u8272\u5355\u5411\u5E73\u53F0"
+    prefab: {fileID: 7331628839969253367, guid: e45eeb89d3062084cb3d921e904d1d23, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.Mechanisms.OneWayPlatform
+      componentIndex: 0
+      propertyPath: appearanceColor
+      valueType: Enum
+      value: 2
+      objectReferenceValue: {fileID: 0}
+  - entryId: mechanism-oneway-blue
+    displayName: "\u84DD\u8272\u5355\u5411\u5E73\u53F0"
+    prefab: {fileID: 7331628839969253367, guid: e45eeb89d3062084cb3d921e904d1d23, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.Mechanisms.OneWayPlatform
+      componentIndex: 0
+      propertyPath: appearanceColor
+      valueType: Enum
+      value: 3
+      objectReferenceValue: {fileID: 0}
+  - entryId: b34a6f0b5dfd490dbc8d98c810e8bc13
+    displayName: "\u6B63\u5F0F\u6E38\u620F\u8D77\u70B9\uFF08Start\uFF09"
+    prefab: {fileID: 4826492902689664692, guid: 9e800151df918ee45817ae3e51d33ab3, type: 3}
+    componentValueOverrides: []
+  - entryId: 28e981bfb733401eb334ec945bf9eb75
+    displayName: "Boss\u5165\u573A\uFF08\u6536\u96C630%\uFF09"
+    prefab: {fileID: 1327030446003617908, guid: b4c282373881ff94694a14af72ec0b13, type: 3}
+    componentValueOverrides: []
+  - entryId: world-spike-small
+    displayName: "\u5C0F\u5C16\u523A\xB7\u666E\u901A"
+    prefab: {fileID: 5076576429525912484, guid: c6ef16f112fc80541bfce6e50e18ef77, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: size
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: initiallyBloody
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: facing
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+  - entryId: world-spike-small-bloody
+    displayName: "\u5C0F\u5C16\u523A\xB7\u5E26\u8840"
+    prefab: {fileID: 5076576429525912484, guid: c6ef16f112fc80541bfce6e50e18ef77, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: size
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: initiallyBloody
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: facing
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+  - entryId: world-spike-large
+    displayName: "\u5927\u5C16\u523A\xB7\u666E\u901A"
+    prefab: {fileID: 5076576429525912484, guid: c6ef16f112fc80541bfce6e50e18ef77, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: size
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: initiallyBloody
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: facing
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+  - entryId: world-spike-large-bloody
+    displayName: "\u5927\u5C16\u523A\xB7\u5E26\u8840"
+    prefab: {fileID: 5076576429525912484, guid: c6ef16f112fc80541bfce6e50e18ef77, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: size
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: initiallyBloody
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: facing
+      valueType: Enum
+      value: 1
       objectReferenceValue: {fileID: 0}

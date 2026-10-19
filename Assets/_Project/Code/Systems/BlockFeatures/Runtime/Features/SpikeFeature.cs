@@ -58,6 +58,7 @@ namespace Project.BlockFeatures
 
         protected override void OnResetForRoom()
         {
+            DisconnectAllPlayers();
             nextDamageTimes.Clear();
         }
 
@@ -75,14 +76,25 @@ namespace Project.BlockFeatures
         private void ApplyDamage(PlayerController player)
         {
             PlayerHealth health = player.GetComponent<PlayerHealth>();
-            if (health == null || health.IsDead)
+            if (player.IsDead || player.IsInvulnerable)
             {
                 return;
             }
 
             nextDamageTimes[player.GetInstanceID()] =
                 Time.time + damageInterval;
-            health.TakeDamage(damage);
+            if (health != null)
+            {
+                health.TakeDamage(
+                    damage,
+                    PlayerDeathCause.Spike,
+                    this);
+                return;
+            }
+
+            player.EnterDeath(
+                PlayerDeathCause.Spike,
+                this);
         }
     }
 }

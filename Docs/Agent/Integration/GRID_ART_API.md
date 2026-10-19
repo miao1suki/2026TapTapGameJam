@@ -13,10 +13,10 @@
 ## 编辑器API
 
 - `GridArtWindow.OpenForGrid(size,reference)`：关卡入口，新图继承格尺寸；自动由适配器刷新轮廓，不再依赖Hierarchy选择。新图同Scene存为`<scene>_Art.asset`。关卡ScenePainter在美术绘制时退出事件处理，避免一笔画两种物体。
-- `GridArtLevelSource.Read(Scene)`：由Assembly-CSharp-Editor的PlanningArtAdapter注册委托，返回世界XY的GridArtLevelSnapshot/Group，避免GridArt.Editor反向引用关卡程序集。优先DocumentForScene，次选同名planning.json，最后读取非道具PlacedBlock占格；规划Y向下坐标只在适配器转换。包含房间/通道/装配补丁的Solid，排除玩法道具、水及区域范围。
+- `GridArtLevelSource.Read(Scene)`：由Assembly-CSharp-Editor的PlanningArtAdapter注册委托，返回世界XY的GridArtLevelSnapshot/Group，避免GridArt.Editor反向引用关卡程序集。优先DocumentForScene，次选同名planning.json，再选场景内嵌规划，最后只读PlacedBlock；规划Y向下坐标只在适配器转换。`groups.bounds`仅含房间/通道/装配补丁中的非道具墙地块（黑、白、自定义块及旧Platform标记），按实际合并覆盖保留孔洞，不混入道具、水和区域。`referenceItems`另含正式2D道具/水/定位轮廓，`referenceOnlyNames`说明缺正式素材的轮廓；它们不能当作自动墙地来源，也不能写入游戏渲染器。
 - `GridArtLevelSource.NotifyChanged()`：关卡加载、笔画结束、规划撤回发出失效通知；工作台延后0.35秒合并读取。Hierarchy事件只失效，不在回调中全场扫描。Synchronize只替换联动层，内容相同不改版本/列表，不覆盖手工层。没有工作台订阅时不采集快照。
 - `Shared()`：创建／加载共享库；首次从当前tail图裁20纹样与白线边框，不改源图、不引用旧开发图集。
-- `Synchronize(library)`：追加SurfaceTilePalette切片及已确认的静态颜色装饰/雨滴原图，排除Plugins／Development／测试。新槽位按有效源像素计算，旧槽位不静默改变显示尺寸。窗口聚焦同步共享库，也可手动，不每帧扫描项目。
+- `Synchronize(library)`：追加SurfaceTilePalette切片、GridArtSupplementLibrary的混合图集静态装饰、GridArtProjectLibrary的墙地／边框／正式道具静态外观。排除Plugins／Development／测试及整张动画板。新槽位按有效源像素计算，旧槽位不静默改变显示尺寸。只更正已知生成默认名称／分类，不覆盖自命名；正式外观按稳定kind/state键更新引用，不将重新生成的Sprite视为新物体。窗口聚焦同步共享库，也可手动，不每帧扫描项目。详见[盘点与裁区](../../Developer/SCENE_ART_LIBRARY.md)。
 - `Import(library,source,pixelsPerCell)`：单Sprite或已切片图片全部Sprite；旧参数为源码兼容保留，新导入统一16有效源像素/格，不改变源图设置。切图器新方案无缩放，容量不足明确失败。旧切图方案仍保留兼容，显式转换后重新生成。
 - `Connect(map,destination)`：先校验失效编号，复制原库定义、重映射所有图层并录Undo；来源库GUID＋原槽位去重，保留自定义尺寸／规则／法线，不修改原库。不要直接换已有绘图的palette引用。
 - `GridArtGeometry.Cells(bounds,size,limit)`：轴对齐包围盒格中心覆盖、去重、十万格上限；合并前后相同轮廓等价，不是非矩形精确投影。
@@ -27,6 +27,8 @@
 GridArtWindow.Automation负责0.65秒延后自动保存/预览，两个开关默认true、按项目/Scene记忆。保存只限Map/Palette，关闭/重编译/切Scene补存完成笔画；进入Play前刷新源。Scene变化后不得向新Scene应用旧Map。SaveAll显式保存Scene，自动流程不保存整Scene。关闭实时预览时保留手动刷新入口。美术资产磁盘签名冲突停止覆盖并备份Library/GridArtRecovery。
 
 窗口不每帧重建；滑条只使画布失效，不销毁正在拖动的控件；笔画结束只更新画布/状态，不重建侧栏。未变图层缓存、视口剔除、复用绘制列表。GridArtLayer.Set/Erase使用非序列化格索引，直接改cells列表或通过Undo恢复后须InvalidateLookup；多格图的擦除仍覆盖整个占格。保留素材滚动位置、Foldout与每图视图。素材表单直接在工作台编辑，库Inspector保留为维护入口。
+
+`GridArtBrushGrid`按ScrollView视口实际宽度确定列数，只在GeometryChanged或筛选重建时布局；默认250点侧栏两列，横向滚条关闭。卡宽扣除边距与高DPI取整余量，选中描边不改列数；禁止回退为逐帧重建或按屏幕像素代替UI点计算。
 
 画布`RepaintView()`只变更预览父节点的translate/scale、256图块批次可见性与顶层参考线，不失效瓦片几何；`Invalidate()`用于数据/素材/视差变化。`GridArtPreviewBatch`按原排序中连续同纹理片段分批，不按纹理全局重排，保持透明叠图顺序。预览坐标以32显示单位/格缓存，显示变换为zoom/32；不参与地图存储或运行时Mesh。不要在generateVisualContent中修改UI树。
 
@@ -40,7 +42,7 @@ SetCamera、RebaseParallax、ParallaxOffset API保持。LateUpdate10000只读跟
 
 颜色装饰：brush.colorId为空代表无色；layer.colorId为空继承各素材、none强制无色、其他ID覆盖。PlanningArtAdapter注入GridArtColorSource.Read，从现有ColorCatalog取id/displayName/unityLayer；禁止硬编码层号/层名。BuildQuads携带colorId；Apply按颜色ID额外拆批，同图集三色不能合到同Renderer。没有ColorBlock、颜色交互、逐装饰Update。GridArtScene序列化colorBindings，在生成及运行OnEnable时一次性设置MPB：atlas alpha、Group=-1、Real=1、UseVertexAlpha=0、Opacity=材质_BaseColor.a，避免装饰卷入初始/真实材质交接，也不依赖不可序列化的Editor MPB。运行时HSV由现有SelectiveHsvRendererFeature处理。
 
-仅固定XY。联动底图随白块更新，但手工美术不自动随房间移动；未实现背景循环、缩放补偿、转向重投影、动画、多地形过渡；不可恢复退役总拼框架。
+仅固定XY。联动底图随黑白及自定义墙地块更新，但手工美术不自动随房间移动；未实现背景循环、缩放补偿、转向重投影、动画、多地形过渡；不可恢复退役总拼框架。
 
 SurfaceTiles六面保留：AuthoringService/ScenePainter/MeshBuilder拒绝持久化Prefab源和PrefabStage，记录实例覆盖，不ApplyPrefabInstance。Bake先保存Scene、以Scene GUID隔离；仍要求单源图集，统一多源走GridArt。
 

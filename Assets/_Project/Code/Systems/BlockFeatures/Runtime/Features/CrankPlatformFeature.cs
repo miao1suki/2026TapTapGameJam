@@ -21,9 +21,37 @@ namespace Project.BlockFeatures
     {
         [BlockParameter(Label = "载人下降倍率", Group = "平台", Order = 2)]
         [SerializeField, Min(1f)] private float loadedDescentMultiplier = 3f;
-        [BlockParameter(Label = "制动基座", Group = "平台", Order = 3, Tooltip = "基座通电时停止升降，包括玩家操作。")]
+        [BlockParameter(Label = "制动基座", Group = "平台", Order = 3, Tooltip = "基座通电时停止升降，包括玩家操作；共享组内任一有效曲柄的基座均可制动整组。")]
         [SerializeField] private MechanismBaseFeature brakeBase;
         private readonly HashSet<MovingPlatformFeature> platforms = new HashSet<MovingPlatformFeature>();
+        // A secondary handle shares one authoritative progress value, not a
+        // second platform drive. Bindings are persisted by PlanningBox ID.
+        [BlockParameter(Label = "共享进度曲柄", Group = "平台", Order = 4,
+            Tooltip = "可选：作为另一个曲柄的操作位置；共用进度、回弹和制动。不能串联或循环绑定。")]
+        [SerializeField] private CrankPlatformFeature sharedController;
+        private readonly HashSet<CrankPlatformFeature> sharedHandles = new HashSet<CrankPlatformFeature>();
+        public CrankPlatformFeature SharedController => sharedController;
+        public bool BindSharedController(CrankPlatformFeature source)
+        {
+            sharedHandles.RemoveWhere(handle => handle == null);
+            if (source == this || source != null &&
+                (source.sharedController != null || sharedHandles.Count > 0)) return false;
+            if (sharedController != null)
+            {
+                sharedController.sharedHandles.Remove(this);
+                sharedController.SignalChanged -= ForwardSharedSignal;
+            }
+            StopCrankAudio();
+            engaged = false;
+            sharedController = source;
+            if (source != null)
+            {
+                source.sharedHandles.Add(this);
+                source.SignalChanged += ForwardSharedSignal;
+            }
+            return true;
+        }
+        private void ForwardSharedSignal(bool active) => SignalChanged?.Invoke(active && CanRunFeature);
         public MechanismBaseFeature BrakeBase => brakeBase;
         public IReadOnlyCollection<MovingPlatformFeature> Platforms => platforms;
         // Compatibility for legacy callers. New callers use Platforms/BindCrank.
@@ -37,6 +65,10 @@ namespace Project.BlockFeatures
             {
                 foreach (var platform in platforms)
                     if (platform != null && platform.IsDriveAvailable && platform.HasStandingPlayer) return true;
+                foreach (var handle in sharedHandles)
+                    if (handle != null && handle.CanRunFeature)
+                        foreach (var platform in handle.platforms)
+                            if (platform != null && platform.IsDriveAvailable && platform.HasStandingPlayer) return true;
                 return false;
             }
         }
@@ -101,13 +133,15 @@ namespace Project.BlockFeatures
         private float idleStartedAt;
         private AnimationClip playingClip;
 
-        public float Progress => Mathf.Clamp01(progress);
+        public float Progress => sharedController != null && sharedController != this && sharedController.sharedController == null
+            ? Mathf.Clamp01(sharedController.progress) : Mathf.Clamp01(progress);
         public bool IsSignalActive =>
-            progress >= .999f && CanRunFeature;
+            Progress >= .999f && CanRunFeature && (sharedController == null || sharedController.CanRunFeature);
         public event Action<bool> SignalChanged;
 
         protected override void OnAttach()
         {
+            if (sharedController != null && !BindSharedController(sharedController)) BindSharedController(null);
             engaged = false;
             progress = 0f;
             idleStartedAt = Time.time;
@@ -120,6 +154,11 @@ namespace Project.BlockFeatures
 
         protected override void OnDetach()
         {
+            if (sharedController != null)
+            {
+                sharedController.sharedHandles.Remove(this);
+                sharedController.SignalChanged -= ForwardSharedSignal;
+            }
             StopCrankAudio(false);
             engaged = false;
             progress = 0f;
@@ -128,13 +167,17 @@ namespace Project.BlockFeatures
 
         protected override void OnTick(float deltaTime)
         {
-            if (brakeBase != null && brakeBase.IsSignalActive)
+            if (sharedController != null) return; // Only the group owner advances time.
+            if (IsGroupBraked())
             {
                 StopCrankAudio();
                 return;
             }
             bool wasComplete = IsSignalActive;
-            if (engaged)
+            bool anyEngaged = engaged;
+            foreach (var handle in sharedHandles)
+                if (handle != null && handle.CanRunFeature && handle.engaged) anyEngaged = true;
+            if (anyEngaged)
             {
                 bool isTurning = progress < 1f && progressPerSecond > 0f && deltaTime > 0f;
                 if (!isTurning) StopCrankAudio();
@@ -170,6 +213,15 @@ namespace Project.BlockFeatures
             }
         }
 
+        private bool IsGroupBraked()
+        {
+            if (brakeBase != null && brakeBase.IsSignalActive) return true;
+            foreach (var handle in sharedHandles)
+                if (handle != null && handle.sharedController == this && handle.CanRunFeature &&
+                    handle.brakeBase != null && handle.brakeBase.IsSignalActive) return true;
+            return false;
+        }
+
         protected override void OnResetForRoom()
         {
             StopCrankAudio(false);
@@ -177,13 +229,17 @@ namespace Project.BlockFeatures
             progress = 0f;
             idleStartedAt = Time.time;
             playingClip = null;
+            if (sharedController != null) return;
+            foreach (var handle in sharedHandles)
+                if (handle != null) handle.engaged = false;
             SignalChanged?.Invoke(false);
             foreach (var platform in platforms) if (platform != null) platform.SnapToCrankProgress();
         }
 
         public bool CanInteract(GameObject interactor)
         {
-            if (!CanRunFeature || interactor == null)
+            if (!CanRunFeature || interactor == null ||
+                sharedController != null && !sharedController.CanRunFeature)
             {
                 return false;
             }
@@ -217,6 +273,7 @@ namespace Project.BlockFeatures
         {
             engaged = false;
             idleStartedAt = Time.time;
+            if (sharedController != null) sharedController.idleStartedAt = Time.time;
         }
 
         public void SetSignal(bool active, Component source)
@@ -225,6 +282,10 @@ namespace Project.BlockFeatures
             {
                 return;
             }
+
+            if (sharedController != null) { sharedController.SetSignal(active, source); return; }
+            foreach (var handle in sharedHandles)
+                if (handle != null) handle.engaged = false;
 
             progress = active ? 1f : 0f;
             foreach (var platform in platforms) if (platform != null) platform.SnapToCrankProgress();
@@ -238,6 +299,7 @@ namespace Project.BlockFeatures
         {
             values.Add(new BlockDebugValue("平台载人", HasStandingPlayer ? "有人" : "无人"));
             values.Add(new BlockDebugValue("绑定平台数", platforms.Count));
+            values.Add(new BlockDebugValue("共享进度", sharedController != null ? sharedController.name : "本曲柄"));
             values.Add(new BlockDebugValue(
                 "曲柄进度",
                 $"{Progress:P0}"));

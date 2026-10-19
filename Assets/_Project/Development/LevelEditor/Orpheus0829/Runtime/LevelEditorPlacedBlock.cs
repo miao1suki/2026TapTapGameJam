@@ -13,6 +13,8 @@ namespace Project.LevelEditor
         private static readonly Dictionary<LevelEditorPlacedBlock, int> activeIndices = new Dictionary<LevelEditorPlacedBlock, int>();
         public static IReadOnlyList<LevelEditorPlacedBlock> ActiveInstances => activeInstances;
         public static int ActiveRevision { get; private set; }
+        /// <summary>Wall topology only; ordinary prop/reaction lifetimes do not invalidate water meshes.</summary>
+        public static int SolidRevision { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRegistry()
@@ -20,6 +22,7 @@ namespace Project.LevelEditor
             activeInstances.Clear();
             activeIndices.Clear();
             ActiveRevision++;
+            SolidRevision++;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -36,6 +39,7 @@ namespace Project.LevelEditor
             activeIndices.Add(this, activeInstances.Count);
             activeInstances.Add(this);
             ActiveRevision++;
+            if (!isProp) SolidRevision++;
         }
         [SerializeField] private Vector2Int cell;
         [SerializeField] private Vector2Int sizeCells = Vector2Int.one;
@@ -80,6 +84,7 @@ namespace Project.LevelEditor
             bool valueIsProp = false,
             float valueCellWorldSize = 1f)
         {
+            bool affectedWall = !isProp || !valueIsProp;
             cell = valueCell;
             entryName = valueEntryName;
             entryColor = valueColor;
@@ -89,18 +94,29 @@ namespace Project.LevelEditor
             sizeCells = Vector2Int.one;
             SetCellWorldSize(valueCellWorldSize);
             ActiveRevision++;
+            if (affectedWall) SolidRevision++;
             ApplyEntryColor();
         }
 
         public void SetCellWorldSize(float value)
         {
-            cellWorldSize = Mathf.Max(.01f, value);
+            float next = Mathf.Max(.01f, value);
+            if (cellWorldSize == next) return;
+            cellWorldSize = next;
+            NotifySolidGeometryChanged();
         }
 
         public void SetSizeCells(Vector2Int value)
         {
             sizeCells = new Vector2Int(Mathf.Max(1, value.x), Mathf.Max(1, value.y));
             ActiveRevision++;
+            NotifySolidGeometryChanged();
+        }
+
+        /// <summary>Call after changing a wall's actual Transform/collider geometry at runtime.</summary>
+        public void NotifySolidGeometryChanged()
+        {
+            if (!isProp) SolidRevision++;
         }
 
         public void ApplyEntryColor()
@@ -153,6 +169,7 @@ namespace Project.LevelEditor
             activeInstances.RemoveAt(lastIndex);
             activeIndices.Remove(this);
             ActiveRevision++;
+            if (!isProp) SolidRevision++;
         }
     }
 }

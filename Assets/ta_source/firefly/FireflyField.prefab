@@ -106,6 +106,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   areaSize: {x: 3, y: 2}
   fireflyCount: 22
+  renderDepthCells: -0.25
   flightSpeed: 0.22
   flightPrecision: 3.5
   flowSpeed: 0.45

@@ -11,14 +11,14 @@ namespace Project.GridArt.Editor
 {
     public sealed partial class GridArtWindow
     {
-        private VisualElement libraryPanel, inspectorPanel, brushList;
+        private VisualElement libraryPanel, inspectorPanel, brushList, navigationPanel;
         private string search = "", category = "全部";
         private bool scenePainting;
         private Vector2 previewTravel;
         internal bool ScenePainting => scenePainting;
         internal bool RectangleMode => rectangle;
         internal bool EraseMode => erase;
-        internal bool PaintSceneCell(Vector2Int p, bool remove) => remove ? Layer.Erase(p, map.palette) : Layer.Set(p, brushIndex);
+        internal bool PaintSceneCell(Vector2Int p, bool remove) => remove ? Layer.Erase(p, map.palette) : Layer.Set(p, brushIndex,BrushQuarterTurns);
         internal void CommitSceneStroke() { ArtChanged(); }
         internal void StopScenePainting() { scenePainting = false; GridArtScenePainter.SetTarget(null); rootVisualElement.Q<Toggle>("scene-paint")?.SetValueWithoutNotify(false); }
         private void EndPreview() { previewTravel = Vector2.zero; rootVisualElement.Q<Slider>("parallax-preview")?.SetValueWithoutNotify(0); canvas?.Invalidate(); }
@@ -40,8 +40,8 @@ namespace Project.GridArt.Editor
             var apply = ActionButton("刷新场景", Apply); apply.name = "art-apply"; header.Add(apply);
             var save = ActionButton("保存场景", SaveAll); save.name = "art-save"; save.AddToClassList("art-primary"); header.Add(save); root.Add(header);
             var tools = Row(); tools.AddToClassList("art-toolbar");
-            var draw = ActionButton("绘制", () => { EndPreview(); erase = false; Refresh(); }); draw.name = "art-draw"; tools.Add(draw);
-            var remove = ActionButton("擦除", () => { EndPreview(); erase = true; Refresh(); }); remove.name = "art-erase"; tools.Add(remove);
+            var draw = ActionButton("绘制", () => { EndPreview(); EffectCancelGesture(); effectMode = 0; erase = false; Refresh(); }); draw.name = "art-draw"; tools.Add(draw);
+            var remove = ActionButton("擦除", () => { EndPreview(); EffectCancelGesture(); effectMode = 0; erase = true; Refresh(); }); remove.name = "art-erase"; tools.Add(remove);
             var rect = new Toggle("框选") { value = rectangle }; rect.RegisterValueChangedCallback(e => rectangle = e.newValue); tools.Add(rect);
             var scene = new Toggle("场景绘制") { value = scenePainting, name = "scene-paint" };
             scene.tooltip = "在Scene视图当前美术层平面绘制；松开鼠标后应用该笔画。Esc退出。";
@@ -49,10 +49,11 @@ namespace Project.GridArt.Editor
             {
                 if (e.newValue && (!CanEditMap || Brush == null || Layer == null))
                 { scene.SetValueWithoutNotify(false); status.text = "请先选择本关美术图、图层和素材。"; return; }
-                if (e.newValue) EndPreview();
+                if (e.newValue) { EndPreview(); EffectCancelGesture(); effectMode = 0; RefreshEffectsPanel(); }
                 scenePainting = e.newValue; GridArtScenePainter.SetTarget(e.newValue ? this : null);
             }); tools.Add(scene);
-            tools.Add(ActionButton("居中", () => canvas?.FrameAll()));
+            tools.Add(ActionButton("定位关卡", () => canvas?.FrameLevel()));
+            tools.Add(ActionButton("已绘美术", () => canvas?.FrameAll()));
             tools.Add(ActionButton("切片导入", () => EditorApplication.ExecuteMenuItem("Tools/2026TapTap/方块贴画/导入不规则瓦片图")));
             var spacer = new VisualElement(); spacer.style.flexGrow = 1; tools.Add(spacer);
             tools.Add(ActionButton("素材栏", () => TogglePanel(libraryPanel)));
@@ -67,17 +68,59 @@ namespace Project.GridArt.Editor
             var content = Row(); content.style.flexGrow = 1; content.style.minHeight = 0;
             libraryPanel = new VisualElement { name="art-library-panel" }; libraryPanel.AddToClassList("art-library"); content.Add(libraryPanel);
             var center = new VisualElement(); center.style.flexGrow = 1; center.style.minWidth = 180;
+            navigationPanel = new VisualElement { name = "art-navigation" }; center.Add(navigationPanel);
             canvas = new ArtCanvas(this); canvas.style.flexGrow = 1; center.Add(canvas);
             var previewRow = Row();
             var preview = new Slider("视差预览", -16, 16) { value = 0, showInputField = true, name = "parallax-preview" }; preview.style.flexGrow = 1;
             preview.tooltip = "模拟镜头水平移动，不修改场景相机或美术数据。";
             preview.RegisterValueChangedCallback(e => { previewTravel = new Vector2(e.newValue, 0); canvas.Invalidate(); });
             previewRow.Add(preview); previewRow.Add(ActionButton("复位", EndPreview)); center.Add(previewRow);
-            center.Add(new Label("左键绘制 · 右键擦除 · 中键平移 · 滚轮缩放") { name = "art-canvas-hint" }); content.Add(center);
+            center.Add(new Label("左键绘制 · 右键擦除 · 中键平移 · 滚轮缩放 · N 开关工作台") { name = "art-canvas-hint" }); content.Add(center);
             inspectorPanel = new ScrollView { name="art-inspector-panel" }; inspectorPanel.AddToClassList("art-inspector"); content.Add(inspectorPanel);
             sidebar = inspectorPanel; root.Add(content);
             status = new Label(); status.AddToClassList("art-status"); root.Add(status);
+            RefreshNavigation();
             Refresh();
+        }
+
+        private void RefreshNavigation()
+        {
+            if(navigationPanel == null) return;
+            navigationPanel.Clear();
+            var rooms = levelSource?.rooms;
+            if (rooms != null && !rooms.Any(room => room.id == selectedReferenceRoom))
+                selectedReferenceRoom = rooms.Any(room => room.id == levelSource.currentRoomId)
+                    ? levelSource.currentRoomId : rooms.FirstOrDefault()?.id ?? "";
+            var row = Row(); row.style.flexWrap = Wrap.Wrap;
+            if(rooms != null && rooms.Count > 0)
+            {
+                var labels = rooms.Select((room,index) => string.IsNullOrEmpty(room.label) ? "房间 " + (index + 1) : room.label).ToList();
+                for(int i = 0; i < labels.Count; i++)
+                    if(labels.Count(label => label == labels[i]) > 1) labels[i] += " · " + (i + 1);
+                int current = Mathf.Max(0,rooms.FindIndex(room => room.id == selectedReferenceRoom));
+                var picker = new PopupField<string>("房间", labels, current) { name = "art-reference-room" };
+                picker.style.flexGrow = 1; picker.labelElement.style.minWidth = 32; picker.labelElement.style.width = 32;
+                picker.RegisterValueChangedCallback(evt =>
+                {
+                    selectedReferenceRoom = rooms[labels.IndexOf(evt.newValue)].id;
+                    EditorPrefs.SetString(SceneKey + ".ReferenceRoom",selectedReferenceRoom);
+                    if (!IsStroking) canvas?.FrameRoom(selectedReferenceRoom);
+                });
+                row.Add(picker);
+            }
+            else row.Add(new Label(levelSource == null ? "正在读取当前关卡…" : "当前关卡未划分房间"));
+            var locate = ActionButton("定位房间", () => { if(!IsStroking) canvas?.FrameRoom(selectedReferenceRoom); });
+            locate.name = "art-frame-room"; locate.SetEnabled(rooms != null && rooms.Count > 0); row.Add(locate);
+            navigationPanel.Add(row);
+            var referenceRow = Row();
+            var visible = new Toggle("关卡参考") { name = "art-reference-visible", value = showLevelReference };
+            visible.tooltip = "仅切换工作台里的关卡参考，不改变游戏中物体的显示与碰撞。";
+            visible.RegisterValueChangedCallback(evt => { showLevelReference=evt.newValue; EditorPrefs.SetBool(SceneKey+".ShowReference",showLevelReference); canvas?.RepaintView(); });
+            referenceRow.Add(visible);
+            var opacity = new Slider("透明度", .05f, 1f) { name = "art-reference-opacity", value = levelReferenceOpacity, showInputField = true };
+            opacity.style.flexGrow = 1; opacity.labelElement.style.minWidth = 44; opacity.labelElement.style.width = 44;
+            opacity.RegisterValueChangedCallback(evt => { levelReferenceOpacity=Mathf.Clamp01(evt.newValue); EditorPrefs.SetFloat(SceneKey+".ReferenceOpacity",levelReferenceOpacity); canvas?.RepaintView(); });
+            referenceRow.Add(opacity); navigationPanel.Add(referenceRow);
         }
 
         private static VisualElement Row() { var r = new VisualElement(); r.style.flexDirection = FlexDirection.Row; return r; }
@@ -105,7 +148,7 @@ namespace Project.GridArt.Editor
             rootVisualElement.Q<Button>("art-new")?.SetEnabled(editing);
             rootVisualElement.Q<Button>("art-copy")?.SetEnabled(editing && map != null);
             rootVisualElement.Q<Button>("art-apply")?.SetEnabled(editing && CanEditMap && map.palette != null);
-            rootVisualElement.Q<Button>("art-save")?.SetEnabled(editing && map != null);
+            rootVisualElement.Q<Button>("art-save")?.SetEnabled(editing && !string.IsNullOrEmpty(SceneManager.GetActiveScene().path));
             rootVisualElement.Q<Toggle>("scene-paint")?.SetEnabled(editing && CanEditMap && Brush != null && Layer != null);
             if (scenePainting && (!CanEditMap || Brush == null || Layer == null)) StopScenePainting();
             rootVisualElement.Q<Button>("art-draw")?.EnableInClassList("art-selected", !erase);
@@ -128,7 +171,7 @@ namespace Project.GridArt.Editor
                 int added = GridArtLibraryService.Import(map.palette, source.value, ppc.value); ArtChanged(true);
                 status.text = added > 0 ? "已添加 " + added + " 项素材" : "没有新增切片：请选择已切片图片或Sprite。";
             }));
-            sourceTools.Add(ActionButton("汇入所有切片库", () =>
+            sourceTools.Add(ActionButton("同步项目与切片素材", () =>
             {
                 if (map?.palette == null) return;
                 int added = GridArtLibraryService.Synchronize(map.palette); ArtChanged(true); status.text = "已汇入 " + added + " 项新素材";
@@ -147,6 +190,7 @@ namespace Project.GridArt.Editor
                 inspectorPanel.Add(Heading("开始布置"));
                 inspectorPanel.Add(new HelpBox("创建本关美术图后，选择素材，自动铺绘墙地或直接绘制。", HelpBoxMessageType.Info));
                 inspectorPanel.Add(ActionButton("创建本关美术图", () => CreateMap(levelSource?.cellSize ?? 1)));
+                BuildEffectsPanel(inspectorPanel);
                 inspectorPanel.Add(ActionButton("打开独立示例", () => EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡美术/打开美术测试场景")));
                 status.text = "未选择美术图 · 玩法碰撞保持独立"; return;
             }
@@ -157,19 +201,33 @@ namespace Project.GridArt.Editor
             if (!categories.Contains(category)) category = "全部";
             var filter = new PopupField<string>(categories, categories.IndexOf(category));
             filter.RegisterValueChangedCallback(e => { category = e.newValue; RefreshBrushes(); }); libraryPanel.Add(filter);
-            var scroll = new ScrollView { name = "art-library-scroll" }; scroll.style.flexGrow = 1;
-            brushList = new VisualElement(); brushList.AddToClassList("art-brush-grid"); scroll.Add(brushList); libraryPanel.Add(scroll); RefreshBrushes();
+            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "art-library-scroll",
+                horizontalScrollerVisibility=ScrollerVisibility.Hidden, verticalScrollerVisibility=ScrollerVisibility.AlwaysVisible };
+            scroll.style.flexGrow=1; scroll.style.minHeight=0; scroll.style.minWidth=0;
+            scroll.contentContainer.style.width=Length.Percent(100);
+            scroll.contentContainer.style.minWidth=0;
+            brushList = new GridArtBrushGrid(); scroll.Add(brushList); libraryPanel.Add(scroll); RefreshBrushes();
             if (map.palette != null && map.palette.brushes.Count > 0) brushIndex = Mathf.Clamp(brushIndex, 0, map.palette.brushes.Count - 1);
             inspectorPanel.Add(Heading("当前素材"));
             if (Brush != null)
             {
-                inspectorPanel.Add(new Image { sprite = Brush.autoTerrain ? Brush.GetPiece(4) : Brush.sprite, scaleMode = ScaleMode.ScaleToFit, name = "art-current-preview" });
+                var currentPreview = new Image { sprite = Brush.autoTerrain ? Brush.GetPiece(4) : Brush.sprite, scaleMode = ScaleMode.ScaleToFit, name = "art-current-preview" };
+                currentPreview.style.rotate = new Rotate(new Angle(-BrushQuarterTurns * 90));
+                inspectorPanel.Add(currentPreview);
                 inspectorPanel.Add(new Label(Brush.label));
-                inspectorPanel.Add(new Label(Brush.autoTerrain ? "自动连接边缘与拐角" : "尺寸 " + Brush.DisplaySize.x.ToString("0.##") + " × " + Brush.DisplaySize.y.ToString("0.##") + " 格"));
+                inspectorPanel.Add(new Label(Brush.autoTerrain ? "自动连接边缘与拐角" : "尺寸 " + BrushDisplaySize.x.ToString("0.##") + " × " + BrushDisplaySize.y.ToString("0.##") + " 格"));
+                var rotation = Row();
+                rotation.Add(ActionButton("逆时针90°", () => RotateBrush(1)));
+                rotation.Add(new Label($"{BrushQuarterTurns * 90}°"));
+                rotation.Add(ActionButton("顺时针90°", () => RotateBrush(-1)));
+                rotation.tooltip = "仅影响接下来放置的图案，不修改共享素材；长方形宽高自动交换，不拉伸原像素。";
+                rotation.SetEnabled(!Brush.autoTerrain && !IsStroking);
+                inspectorPanel.Add(rotation);
                 if (Brush.autoTerrain && !Brush.HasInnerCorners) inspectorPanel.Add(new HelpBox("缺少内拐角素材，暂用中心图。", HelpBoxMessageType.Warning));
                 inspectorPanel.Add(BuildBrushSettings());
             }
             var sourcePanel = new VisualElement { name = "art-level-source" }; inspectorPanel.Add(sourcePanel); RefreshSourcePanel();
+            BuildEffectsPanel(inspectorPanel);
             inspectorPanel.Add(Heading("美术图层"));
             foreach (int i in OrderedLayers.Reverse())
             {
@@ -225,10 +283,18 @@ namespace Project.GridArt.Editor
                 var label = new Label(brush.label) { pickingMode = PickingMode.Ignore }; label.AddToClassList("art-brush-name"); button.Add(label); brushList.Add(button); count++;
             }
             if (count == 0) brushList.Add(new Label("无匹配素材\n展开素材来源添加切片。"));
+            (brushList as GridArtBrushGrid)?.Reflow(true);
         }
 
         private void AddLayer(string name, float depth, float speed, int order) => Change("添加美术图层", () =>
         { map.layers.Add(new GridArtLayer { label = name, depth = depth, parallax = Vector2.one * speed, sortingOrder = order }); layerIndex = map.layers.Count - 1; });
+
+        private void RotateBrush(int delta)
+        {
+            if (IsStroking || Brush == null || Brush.autoTerrain) return;
+            brushQuarterTurns = GridArtRotation.Normalize(brushQuarterTurns + delta);
+            RememberSelection(); Refresh(); SceneView.RepaintAll();
+        }
         private void CopyMap()
         {
             if (map == null || EditorApplication.isPlayingOrWillChangePlaymode) return;

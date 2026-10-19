@@ -387,6 +387,12 @@ namespace PlanningEditorPrototype
                      boxIndex++)
                 {
                     PlanningBox box = layout.Room.boxes[boxIndex];
+                    if (box.propEntryId ==
+                        PlanningBox.BossRespawnMarkerEntryId)
+                    {
+                        continue;
+                    }
+
                     string waterKind = PlanningWaterLayerUtility.WaterKind(box, palette);
                     var layer = waterKind != null ? PlanningWaterLayerUtility.Layer(occupiedWater, waterKind) : occupied;
                     var external = waterKind != null ? PlanningWaterLayerUtility.Layer(existingWaterLayers, waterKind) : existingCells;
@@ -442,6 +448,12 @@ namespace PlanningEditorPrototype
                          boxIndex++)
                     {
                         PlanningBox box = assemblyPatches[boxIndex];
+                        if (box.propEntryId ==
+                            PlanningBox.BossRespawnMarkerEntryId)
+                        {
+                            continue;
+                        }
+
                         string patchWaterKind = PlanningWaterLayerUtility.WaterKind(box, palette);
                         var patchLayer = patchWaterKind != null ? PlanningWaterLayerUtility.Layer(occupiedWater, patchWaterKind) : occupied;
                         var patchExternal = patchWaterKind != null ? PlanningWaterLayerUtility.Layer(existingWaterLayers, patchWaterKind) : existingCells;
@@ -1245,6 +1257,13 @@ namespace PlanningEditorPrototype
             HashSet<Vector2Int> existingCells,
             Vector2Int localCell)
         {
+            if (box != null &&
+                box.propEntryId ==
+                PlanningBox.BossRespawnMarkerEntryId)
+            {
+                return true;
+            }
+
             if (!PlanningShapeUtility.Contains(box, localCell)) return false;
             if (!occupied.Add(cell) || existingCells.Contains(cell))
             {
@@ -1316,6 +1335,17 @@ namespace PlanningEditorPrototype
             }
             var values=box.hasComponentOverrides ? box.componentOverrides : defaults;
             LevelEditorComponentOverrideUtility.ApplyOverrides(placed.gameObject,values,false);
+            if (fittedPlatform && placed.TryGetComponent<Project.BlockFeatures.MovingPlatformFeature>(out var platformBody) &&
+                platformBody.BodyOrientation == Project.BlockFeatures.MovingPlatformBodyOrientation.Vertical &&
+                placed.TryGetComponent<BoxCollider>(out var platformCollider))
+            {
+                // Rotate only the physical strip, not the moving root / world-space
+                // route. Old Auto data and its authored collision remain untouched.
+                Vector3 shape = platformCollider.size, pivot = platformCollider.center;
+                platformCollider.size = new Vector3(shape.y, shape.x, shape.z);
+                platformCollider.center = new Vector3(-pivot.y, pivot.x, pivot.z);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(platformCollider);
+            }
             if(box.isMerged || fittedLadder || fittedPlatform && box.singleInstance)
             {
                 placed.transform.localScale=Vector3.Scale(placed.transform.localScale,new Vector3(box.width,box.height,1));
@@ -1324,6 +1354,11 @@ namespace PlanningEditorPrototype
                 placed.Configure(bottomCell,placed.EntryName,placed.EntryColor,!placed.IsProp && !FindEntry(palette,box).UsesPrefabDirectly,placed.IsProp,CellSize);
                 placed.SetSizeCells(new Vector2Int(box.width,box.height));
             }
+            // Some single-instance props own their real geometry. Preserve the
+            // logical footprint without multiplying it into the root scale.
+            if (box.singleInstance && !box.isMerged && !fittedLadder && !fittedPlatform &&
+                !PlanningDoorUtility.HasFixedFootprint(box.propEntryId))
+                placed.SetSizeCells(new Vector2Int(box.width, box.height));
             if (box.isMerged && PlanningShapeUtility.IsIrregular(box))
             {
                 var coverage = new List<RectInt>();

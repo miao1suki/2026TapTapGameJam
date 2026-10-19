@@ -71,9 +71,9 @@ public static class PlayerPixelScaleAudit
                 Check(Mathf.Abs(px - 1f / 16f) < .00001f && Mathf.Abs(py - px) < .00001f,
                     "animation pixels remain square at1/16 cell independent of parent scale " + scale);
                 float expectedBottom = instance.transform.TransformPoint(center).y -
-                    Mathf.Max(height, radius * 2) * Mathf.Abs(scale.y) * .5f - .08f;
+                    Mathf.Max(height, radius * 2) * Mathf.Abs(scale.y) * .5f - .08f - 2f / 16f;
                 float actualBottom = visual.transform.position.y - visual.sprite.pivot.y * py;
-                Check(Mathf.Abs(actualBottom - expectedBottom) < .0001f, "frame bottom preserves existing feet offset " + scale);
+                Check(Mathf.Abs(actualBottom - expectedBottom) < .0001f, "frame bottom adds two art pixels below existing feet offset " + scale);
                 Check(capsule.radius == radius && capsule.height == height && capsule.center == center,
                     "visual refresh cannot alter capsule " + scale);
             }

@@ -240,6 +240,13 @@ namespace Project.BlockFeatures
             DisconnectAllPlayers();
             ResetGrowth();
             RestoreBurnedSegments();
+            // Reset does not detach/recreate unchanged presentation anymore.
+            // Restore the authored length immediately rather than interpolating
+            // from a burned/extended pose during the next room visit.
+            visualProgress = visualTarget;
+            visibleCells = targetCells;
+            sequenceIdleTime = 0f;
+            lastPose = -1;
             if (Root == this && vineRenderer != null)
                 ColorAppearanceManager.Instance.RegisterVine(vineRenderer);
         }
@@ -416,6 +423,7 @@ namespace Project.BlockFeatures
 
         private void DisconnectAllPlayers()
         {
+            if (climbingPlayers.Count == 0) return;
             var ids = new List<int>(climbingPlayers.Keys);
             for (int index = 0; index < ids.Count; index++)
             {

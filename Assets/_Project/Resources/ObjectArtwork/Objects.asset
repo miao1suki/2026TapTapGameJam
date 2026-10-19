@@ -41,6 +41,7 @@ MonoBehaviour:
   - {fileID: -5539269187273655995, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
   - {fileID: -3899164701299856617, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
   neutralSpriteMaterial: {fileID: 2100000, guid: 6f3b43c614931a441a1add6a105f460f, type: 2}
+  neutralMeshMaterial: {fileID: 2100000, guid: 46397876d320bb849bbb8a01f3c7bf54, type: 2}
   colorSpriteMaterial: {fileID: 2100000, guid: f346b369988561a469bb65d54f8be33c, type: 2}
   respawnFrameSeconds: 0.08
   plantFrameSeconds: 0.08
@@ -250,26 +251,31 @@ MonoBehaviour:
     - {fileID: -6287503803897879949, guid: 750e45be2bf1b5b4892175805fce5d12, type: 3}
     - {fileID: -7478735858822295273, guid: 750e45be2bf1b5b4892175805fce5d12, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 1
     frames:
     - {fileID: 1284647483036081791, guid: ef3837466db1ddd4cab78ea9b6d66923, type: 3}
     - {fileID: -3826572569901313554, guid: ef3837466db1ddd4cab78ea9b6d66923, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 16
     frames:
     - {fileID: 1284647483036081791, guid: a76d68fe89e420e4ab299362498d7f5e, type: 3}
     - {fileID: -3826572569901313554, guid: a76d68fe89e420e4ab299362498d7f5e, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 17
     frames:
     - {fileID: 1284647483036081791, guid: eab1f2a1ad73b1445bc8d376a86cc981, type: 3}
     - {fileID: -3826572569901313554, guid: eab1f2a1ad73b1445bc8d376a86cc981, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 12
     frames:
     - {fileID: 1284647483036081791, guid: a6a8761dc81be114d876db2bd589230b, type: 3}
     - {fileID: -3826572569901313554, guid: a6a8761dc81be114d876db2bd589230b, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 2
     frames:
     - {fileID: 1284647483036081791, guid: 830ac61451ca01048a86f0ad031cab22, type: 3}
@@ -301,6 +307,7 @@ MonoBehaviour:
     - {fileID: 7464247669748880243, guid: 830ac61451ca01048a86f0ad031cab22, type: 3}
     - {fileID: -8702779367139091993, guid: 830ac61451ca01048a86f0ad031cab22, type: 3}
     frameSeconds: 0.04
+    supportTopPixels: 0
   - kind: 4
     frames:
     - {fileID: 1284647483036081791, guid: c4575b6a17dc4fd4a9d880f4fe040d8b, type: 3}
@@ -310,6 +317,7 @@ MonoBehaviour:
     - {fileID: 1156548507724070335, guid: c4575b6a17dc4fd4a9d880f4fe040d8b, type: 3}
     - {fileID: 6726267277922430994, guid: c4575b6a17dc4fd4a9d880f4fe040d8b, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 14
   - kind: 3
     frames:
     - {fileID: 1284647483036081791, guid: e0c5d537972a2824985e2c31b7905872, type: 3}
@@ -320,64 +328,115 @@ MonoBehaviour:
     - {fileID: 6726267277922430994, guid: e0c5d537972a2824985e2c31b7905872, type: 3}
     - {fileID: 4555850692910757299, guid: e0c5d537972a2824985e2c31b7905872, type: 3}
     - {fileID: -762531089268122602, guid: e0c5d537972a2824985e2c31b7905872, type: 3}
+    - {fileID: -5866107705763832660, guid: e0c5d537972a2824985e2c31b7905872, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 14
   - kind: 5
     frames:
     - {fileID: 1284647483036081791, guid: 058dd5b7242115641b21b2be73e989cc, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 6
     frames:
     - {fileID: 1284647483036081791, guid: 69da890face2a6c4c822ff753daa68d6, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 7
     frames:
     - {fileID: 1284647483036081791, guid: 7bdea5f71ae3e294fafee2c5056ccb06, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 8
     frames:
     - {fileID: 1284647483036081791, guid: 88efe44b03205ae419b7c80f07ca7892, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 9
     frames:
     - {fileID: 1284647483036081791, guid: adcfc244cbe80d64bab9eb3dd34adec4, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 10
     frames:
     - {fileID: 1284647483036081791, guid: ed28021c98269424fb5e7052caeef683, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 15
     frames:
     - {fileID: 1284647483036081791, guid: 61862ec6c3273e5478f205d0b6442000, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 13
     frames:
     - {fileID: 1284647483036081791, guid: d100f295e2176894a91fb632c51ab316, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 14
     frames:
     - {fileID: 1284647483036081791, guid: 42fc722259446aa4282689e60e6beec2, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 11
     frames:
     - {fileID: 1284647483036081791, guid: 38b3095d88670ac408a1fb53e50aca8f, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 18
     frames:
     - {fileID: 1626053780491658355, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 19
     frames:
     - {fileID: -298081613838670490, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
     - {fileID: 1106490514604871238, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 20
     frames:
     - {fileID: -6960679804039842356, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
   - kind: 21
     frames:
     - {fileID: -5533367892921092500, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
     frameSeconds: 0.08
+    supportTopPixels: 0
+  - kind: 22
+    frames:
+    - {fileID: 1284647483036081791, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 16
+  - kind: 23
+    frames:
+    - {fileID: -3826572569901313554, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 16
+  - kind: 24
+    frames:
+    - {fileID: -6287503803897879949, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 16
+  - kind: 25
+    frames:
+    - {fileID: -8508692759138541806, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 0
+  - kind: 26
+    frames:
+    - {fileID: 3448934539961798037, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 0
+  - kind: 27
+    frames:
+    - {fileID: -39341299418349734, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 0
+  - kind: 28
+    frames:
+    - {fileID: 425478242701086130, guid: c15bcc4ddebc0b14e8c29787c17e934b, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 0
   doorIndicators:
   - {fileID: 1284647483036081791, guid: f0667e8d7daeb5247aa3fc58cc48f4b7, type: 3}
   - {fileID: -3826572569901313554, guid: f0667e8d7daeb5247aa3fc58cc48f4b7, type: 3}

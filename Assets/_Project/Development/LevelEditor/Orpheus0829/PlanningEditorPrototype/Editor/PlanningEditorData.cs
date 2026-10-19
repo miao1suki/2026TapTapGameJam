@@ -72,6 +72,11 @@ namespace PlanningEditorPrototype
     [Serializable]
     public sealed class PlanningBox
     {
+        public const string BossRespawnMarkerEntryId =
+            "__boss_respawn_marker";
+        public const string BossRespawnMarkerEntryName =
+            "Boss复活标记";
+
         public string id;
         public PlanningDetailType type;
         public string label;
@@ -92,6 +97,7 @@ namespace PlanningEditorPrototype
         public string mechanismButtonId;
         public List<string> mechanismButtonIds = new List<string>();
         public string crankOwnerId;
+        public string bossRespawnOwnerId;
         public bool initialCrankPlatformCreated;
         public List<string> mergeParts = new List<string>();
         public bool hasComponentOverrides;

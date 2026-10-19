@@ -1,0 +1,444 @@
+{
+  "sourceWorkbook": "关卡设计.xlsx",
+  "sourceSha256": "3bbbcfb212928fab7fcb2db7f96ca27089bdbb521434d8754a0251aad1cddd92",
+  "sheet": "Sheet1",
+  "terrainRange": "F97:BK129",
+  "origin": "F96",
+  "designConfirmed": true,
+  "confirmedRules": [
+    "1 Excel cell = 1 game cell; annotations are not physical objects",
+    "393 black terrain cells; no other level imported",
+    "Door Y96:Y97; AC104 / AB112 / AL125 all latched and required",
+    "Platform AF118:AI118 rises 10 cells via AN112 crank, release returns down",
+    "All scene colors; blue player ability only; default standard player jump",
+    "AK114 -> AU114: fixed, not carryable, total maximum length 11; ordinary contact growth/shrink",
+    "BG115 -> AY115: total maximum length 9; ordinary contact cube physics",
+    "AR116 and the seven green cells surrounding AP118 are burnable plant obstacles; preserve collectible hole",
+    "Do not add a blue cube or change shared growth triggers"
+  ],
+  "pendingRules": [
+    "Green cube growth trigger awaits designer/programmer confirmation. Delivered layout intentionally contains no blue contact cube."
+  ],
+  "wallRuns": [
+    {
+      "row": 97,
+      "firstColumn": 6,
+      "lastColumn": 24
+    },
+    {
+      "row": 97,
+      "firstColumn": 26,
+      "lastColumn": 63
+    },
+    {
+      "row": 98,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 98,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 99,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 99,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 100,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 100,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 101,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 101,
+      "firstColumn": 55,
+      "lastColumn": 57
+    },
+    {
+      "row": 101,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 102,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 102,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 103,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 103,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 104,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 104,
+      "firstColumn": 61,
+      "lastColumn": 63
+    },
+    {
+      "row": 105,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 105,
+      "firstColumn": 28,
+      "lastColumn": 30
+    },
+    {
+      "row": 105,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 106,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 106,
+      "firstColumn": 17,
+      "lastColumn": 19
+    },
+    {
+      "row": 106,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 107,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 107,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 108,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 108,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 109,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 109,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 110,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 110,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 111,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 111,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 112,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 112,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 113,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 113,
+      "firstColumn": 27,
+      "lastColumn": 29
+    },
+    {
+      "row": 113,
+      "firstColumn": 38,
+      "lastColumn": 46
+    },
+    {
+      "row": 113,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 114,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 114,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 115,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 116,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 116,
+      "firstColumn": 40,
+      "lastColumn": 43
+    },
+    {
+      "row": 116,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 117,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 117,
+      "firstColumn": 40,
+      "lastColumn": 40
+    },
+    {
+      "row": 117,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 118,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 118,
+      "firstColumn": 40,
+      "lastColumn": 40
+    },
+    {
+      "row": 118,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 119,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 119,
+      "firstColumn": 40,
+      "lastColumn": 44
+    },
+    {
+      "row": 119,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 120,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 120,
+      "firstColumn": 32,
+      "lastColumn": 44
+    },
+    {
+      "row": 120,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 121,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 121,
+      "firstColumn": 40,
+      "lastColumn": 44
+    },
+    {
+      "row": 121,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 122,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 122,
+      "firstColumn": 40,
+      "lastColumn": 44
+    },
+    {
+      "row": 122,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 123,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 123,
+      "firstColumn": 40,
+      "lastColumn": 44
+    },
+    {
+      "row": 123,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 124,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 124,
+      "firstColumn": 40,
+      "lastColumn": 44
+    },
+    {
+      "row": 124,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 125,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 125,
+      "firstColumn": 40,
+      "lastColumn": 44
+    },
+    {
+      "row": 125,
+      "firstColumn": 59,
+      "lastColumn": 63
+    },
+    {
+      "row": 126,
+      "firstColumn": 6,
+      "lastColumn": 6
+    },
+    {
+      "row": 126,
+      "firstColumn": 17,
+      "lastColumn": 19
+    },
+    {
+      "row": 126,
+      "firstColumn": 37,
+      "lastColumn": 63
+    },
+    {
+      "row": 127,
+      "firstColumn": 6,
+      "lastColumn": 14
+    },
+    {
+      "row": 127,
+      "firstColumn": 17,
+      "lastColumn": 19
+    },
+    {
+      "row": 127,
+      "firstColumn": 37,
+      "lastColumn": 63
+    },
+    {
+      "row": 128,
+      "firstColumn": 6,
+      "lastColumn": 19
+    },
+    {
+      "row": 128,
+      "firstColumn": 37,
+      "lastColumn": 63
+    },
+    {
+      "row": 129,
+      "firstColumn": 6,
+      "lastColumn": 63
+    }
+  ],
+  "growingCubes": [
+    { "id": "cube_green_upper", "column": "AK", "row": 114, "targetColumn": "AU", "targetRow": 114, "pinned": true },
+    { "id": "cube_green_entrance", "column": "BG", "row": 115, "targetColumn": "AY", "targetRow": 115, "pinned": false }
+  ],
+  "obstacleCells": [
+    { "column": "AR", "row": 116 },
+    { "column": "AO", "row": 117 },
+    { "column": "AP", "row": 117 },
+    { "column": "AQ", "row": 117 },
+    { "column": "AR", "row": 117 },
+    { "column": "AO", "row": 118 },
+    { "column": "AQ", "row": 118 },
+    { "column": "AR", "row": 118 }
+  ],
+  "blueCubes": []
+}

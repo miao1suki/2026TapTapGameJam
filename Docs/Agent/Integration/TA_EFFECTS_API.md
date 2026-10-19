@@ -13,6 +13,8 @@
 
 流动、蒸汽和燃烧均以每格 16 个有效像素采样，抵消作者父级缩放，不改变关卡占格、尖刺/实体碰撞或美术比例。
 
+正式岩浆是底层环境：`LavaHazardFeature` 的面片位于实体前表面之后，`FlowMagmaVisual` 本体/喷溅排序分别为 -10/-9，不能以更靠前的透明队列覆盖填入的搬运方块。这里仅调整绘制顺序，伤害仍由实际暴露接触及 `LavaContactOcclusion` 判断。房间重置即使复用面片，也须解除旧玩家接触。
+
 岩浆喷溅采用 TA 新版持续随机间隔/偶发簇发、实心颗粒、四阶段冷却变暗，不沿用旧的周期静默窗口/空心环。大小可有整数像素层级，宽高和边缘仍按16像素/格对齐，新生至少2像素，缩小最少1像素；不是任意小数缩放素材。正式横流速度保留0.28。
 
 ## 死亡 / Boss RGB
@@ -25,7 +27,7 @@ PC/Mobile Renderer 均显式引用 `RgbGlitchRendererFeature` 及 Shader；仅 P
 
 ## 雨区与协作
 
-`Tools/2026TapTap/关卡美术/创建雨区` 创建独立 Scene 根对象；选择三色、范围、位置、密度和固定种子。不是全关默认下雨，也不是关卡生成根内的玩法物体；当前工作台只做静态图层，不假称雨区已经写入 planning/工作台画笔。
+`Tools/2026TapTap/关卡美术/创建雨区` 创建独立 Scene 根对象；选择三色、范围、位置、密度和固定种子。关卡美术工作台的“区域效果 · 雨 / 萤火”也可直接框画、选择与调参；画布显示完整区域Bounds，不把密集效果压进单格。两入口都不是全关默认下雨，不进入关卡生成根或planning。接线与保存边界见 [工作台区域API](GRID_ART_EFFECTS_API.md)。
 
 `RainSpriteField.Configure(color, areaCells, dropsPerCell, seed)`；每区一个 Mesh、最多 512 颗、每滴固定 16×16 源像素/1 格，不随机缩放。固定种子和父级缩放补偿，移动不重抽分布。雨仅是颜色 Layer 装饰，初始褪色随场景颜色解锁恢复；不加 `ColorObject`、能力、交互线、物理或房间玩法重置。
 
@@ -41,6 +43,8 @@ HSV 遮罩采样图集 Alpha × 顶点 Alpha × 材质 Alpha，裁切 0.01，与
 
 它是中性美术，不因绿色光晕而当作绿色能力物体，不加颜色Layer、ColorObject、碰撞、能力线或房间重置。只读玩家位置用于靠近驱散，不接管玩家运动。保存和片段交付边界与雨区相同：Scene+planning成套，独立美术根不包含在玩法存档片段中。
 
+工作台可直接框画与调整萤火范围。新创建根默认Z=0，`renderDepthCells`默认-0.25格，仅移动硬点与光晕的共同可见平面，不移动房间定位根；透明角色/道具后绘制，实体墙仍通过LEqual深度遮挡。旧Scene的作者根位置不自动重写，雨保持原背景深度。
+
 ## 验证入口
 
 只在静音 `Library/FlowRetirementProbe` 隔离工程运行，不修改用户正在编辑的场景。
@@ -51,5 +55,6 @@ HSV 遮罩采样图集 Alpha × 顶点 Alpha × 材质 Alpha，裁切 0.01，与
 - `TAEffectsGpuAudit.Run`：PC/Mobile 两套实际 RenderGraph 画面与 RGB 开/关对照，不等同于安卓真机验证。
 - `Project.Rain.Editor.RainIntegrationAudit.Run`：三色帧、像素比例、确定种子、512 上限、HSV 透明轮廓、Undo、Scene 保存重载。
 - `Project.Fireflies.Editor.FireflyIntegrationAudit.Run`：中性归属、单硬像素真实GPU、缩放旋转补偿、编辑缓存、128只/4灯预算、Undo和Scene保存重载。
+- `Project.Rain.Editor.GridArtEffectsIntegrationAudit.Run`：工作台委托桥、完整Bounds、非1格尺寸、创建/Undo/保存重载，以及萤火真实GPU透明道具前景与实体墙遮挡。
 
 新效果不增加任何联网、局域网发现、遥测或构建权限。

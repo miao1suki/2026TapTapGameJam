@@ -23,14 +23,19 @@ namespace Project.Mechanisms
         [SerializeField, InspectorName("所属门")] private DoorController owner;
         [BlockParameter(Label = "触发模式", Group = "踩踏", Order = -1)]
         [SerializeField, InspectorName("触发模式")] private DoorButtonMode mode;
+        [BlockParameter(Label = "按钮朝向", Group = "踩踏", Order = -2,
+            Tooltip = "按钮朝向的一面接受玩家或三色方块压力；只旋转原16像素素材，不改变占格。")]
+        [SerializeField, InspectorName("按钮朝向")] private ButtonFacing facing;
         [BlockParameter(Label = "脚部容差（格）", Group = "踩踏", Order = 0)]
         [SerializeField, Min(0f)] private float footTolerance = .15f;
         [SerializeField, InspectorName("按钮模型")] private Renderer visual;
         private BoxCollider pressTrigger;
         private Collider[] contacts = new Collider[16];
         private MaterialPropertyBlock properties;
+        private bool geometryDirty;
         public DoorController Owner => owner;
         public DoorButtonMode Mode => mode;
+        public ButtonFacing Facing => facing;
         public bool Persistent => mode == DoorButtonMode.Latched;
         public DoorButtonState State { get; private set; }
         public bool IsPressed => State == DoorButtonState.Pressed;
@@ -48,11 +53,16 @@ namespace Project.Mechanisms
         private void Awake()
         {
             pressTrigger = GetComponent<BoxCollider>();
-            pressTrigger.isTrigger = true;
             // Applies to existing Scene instances as well as newly placed prefabs.
-            pressTrigger.center = new Vector3(0f, -.35f, 0f);
-            pressTrigger.size = new Vector3(.6f, .3f, .6f);
+            ButtonPressureGeometry.Configure(pressTrigger, facing);
+            geometryDirty = false;
             ResetButton();
+        }
+        private void OnValidate()
+        {
+            // Editor previews are read-only. Only the running pressure sensor is
+            // normalized here; serialized collider overrides are not rewritten.
+            geometryDirty = true;
         }
         public void SetOwner(DoorController value)
         {
@@ -64,14 +74,17 @@ namespace Project.Mechanisms
         private void OnDestroy() { if (owner != null) owner.ForgetButton(this); }
         private void FixedUpdate()
         {
+            if (geometryDirty || pressTrigger != null && !pressTrigger.isTrigger)
+            { ButtonPressureGeometry.Configure(pressTrigger, facing); geometryDirty = false; }
             if (Persistent && IsPressed) return;
             if (pressTrigger == null || !pressTrigger.enabled) { if (!Persistent) SetPressed(false, null); return; }
-            GameObject actor = FindPressureActor(pressTrigger, footTolerance * GridCellSizeUtility.Resolve(this), ref contacts);
+            GameObject actor = FindPressureActor(pressTrigger, footTolerance * GridCellSizeUtility.Resolve(this), ref contacts, facing);
             if (actor != null) TryPress(actor);
             else if (!Persistent) SetPressed(false,null);
         }
 
-        internal static GameObject FindPressureActor(BoxCollider pressTrigger, float tolerance, ref Collider[] contacts)
+        internal static GameObject FindPressureActor(BoxCollider pressTrigger, float tolerance, ref Collider[] contacts,
+            ButtonFacing facing = ButtonFacing.Up)
         {
             Transform frame = pressTrigger.transform;
             Vector3 scale = frame.lossyScale;
@@ -84,11 +97,12 @@ namespace Project.Mechanisms
                 System.Array.Resize(ref contacts,contacts.Length * 2);
             } while (contacts.Length <= 4096);
             for (int i = 0; i < count; i++)
-                if (TryGetPressureActor(contacts[i], pressTrigger, tolerance, out var actor)) return actor;
+                if (TryGetPressureActor(contacts[i], pressTrigger, tolerance, facing, out var actor)) return actor;
             return null;
         }
 
-        private static bool TryGetPressureActor(Collider other, BoxCollider pressTrigger, float tolerance, out GameObject actor)
+        private static bool TryGetPressureActor(Collider other, BoxCollider pressTrigger, float tolerance,
+            ButtonFacing facing, out GameObject actor)
         {
             actor = null;
             if (other == null || other.isTrigger || !other.enabled) return false;
@@ -98,9 +112,8 @@ namespace Project.Mechanisms
             if (player != null && player.isActiveAndEnabled && !player.IsDead) { feetCollider = player.GetComponent<CapsuleCollider>(); actor = player.gameObject; }
             else if (cube != null && cube.isActiveAndEnabled) { feetCollider = other; actor = cube.gameObject; }
             if (actor == null || feetCollider == null || !feetCollider.enabled) { actor = null; return false; }
-            float feetY = feetCollider.bounds.min.y;
-            Bounds area = pressTrigger.bounds;
-            if (feetY < area.min.y - tolerance || feetY > area.max.y + tolerance) { actor = null; return false; }
+            if (!ButtonPressureGeometry.TouchesPressureFace(feetCollider.bounds, pressTrigger, facing, tolerance))
+            { actor = null; return false; }
             return true;
         }
 

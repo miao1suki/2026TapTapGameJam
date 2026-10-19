@@ -9,7 +9,8 @@ namespace Project.GridArt
     {
         public Vector2Int position;
         public int brush;
-        public GridArtCell(Vector2Int value, int index) { position = value; brush = index; }
+        public int quarterTurns;
+        public GridArtCell(Vector2Int value, int index, int rotation = 0) { position = value; brush = index; quarterTurns = GridArtRotation.Normalize(rotation); }
     }
 
     [Serializable]
@@ -28,6 +29,7 @@ namespace Project.GridArt
         public bool followLevel;
         public string sourceGroup = "";
         public int sourceBrush;
+        public int sourceQuarterTurns;
         public List<GridArtCell> cells = new List<GridArtCell>();
         [NonSerialized] private Dictionary<Vector2Int, int> lookup;
         [NonSerialized] private int lookupCount = -1;
@@ -48,13 +50,14 @@ namespace Project.GridArt
             if (i < cells.Count && cells[i].position == p) return i;
             InvalidateLookup(); EnsureLookup(); return lookup.TryGetValue(p, out i) ? i : -1;
         }
-        public bool Set(Vector2Int p, int brush)
+        public bool Set(Vector2Int p, int brush, int quarterTurns = 0)
         {
+            quarterTurns = GridArtRotation.Normalize(quarterTurns);
             int i = Find(p);
-            if (i >= 0 && cells[i].brush == brush) return false;
+            if (i >= 0 && cells[i].brush == brush && cells[i].quarterTurns == quarterTurns) return false;
             largeCells = null;
-            if (i >= 0) cells[i].brush = brush;
-            else { lookup[p] = cells.Count; cells.Add(new GridArtCell(p, brush)); lookupCount = cells.Count; }
+            if (i >= 0) { cells[i].brush = brush; cells[i].quarterTurns = quarterTurns; }
+            else { lookup[p] = cells.Count; cells.Add(new GridArtCell(p, brush, quarterTurns)); lookupCount = cells.Count; }
             return true;
         }
         public bool Erase(Vector2Int p, GridArtPalette palette)
@@ -66,7 +69,7 @@ namespace Project.GridArt
                 foreach (var c in cells)
                 {
                     var b = palette != null ? palette.Get(c.brush) : null;
-                    if (b != null && !b.autoTerrain && b.Size != Vector2Int.one) largeCells.Add((c.position,b.Size));
+                    if (b != null && !b.autoTerrain && b.Size != Vector2Int.one) largeCells.Add((c.position,GridArtRotation.Size(b.Size,c.quarterTurns)));
                 }
             }
             bool Remove(Vector2Int position)
@@ -80,6 +83,20 @@ namespace Project.GridArt
                 if (new RectInt(largeCells[i].position,largeCells[i].size).Contains(p))
                 { changed |= Remove(largeCells[i].position); largeCells.RemoveAt(i); }
             return changed;
+        }
+    }
+
+    /// <summary>Only orthogonal turns: source pixels stay square, with no resampling.</summary>
+    public static class GridArtRotation
+    {
+        public static int Normalize(int turns) => (turns % 4 + 4) % 4;
+        public static Vector2 Size(Vector2 value, int turns) => Normalize(turns) % 2 == 0 ? value : new Vector2(value.y,value.x);
+        public static Vector2Int Size(Vector2Int value, int turns) => Normalize(turns) % 2 == 0 ? value : new Vector2Int(value.y,value.x);
+        public static Vector2 SampleUV(Rect uv, int corner, int turns)
+        {
+            // World-space corners: bottom-left, top-left, top-right, bottom-right.
+            int index = (corner + Normalize(turns)) % 4;
+            return new Vector2(index < 2 ? uv.xMin : uv.xMax, index == 1 || index == 2 ? uv.yMax : uv.yMin);
         }
     }
 

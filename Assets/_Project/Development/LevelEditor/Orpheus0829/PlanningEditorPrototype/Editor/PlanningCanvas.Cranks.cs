@@ -19,7 +19,7 @@ namespace PlanningEditorPrototype
                 cell = new Vector2Int(x,y);
                 var rect = new RectInt(cell, Vector2Int.one);
                 if (cell == new Vector2Int(crank.x,crank.y) || !CanPlaceLocalRect(room,rect)) continue;
-                if (PlanningDoorUtility.CanPlace(room.boxes,rect)) return true;
+                if (PlanningDoorUtility.CanPlace(room.boxes,rect, palette)) return true;
             }
             cell = default; return false;
         }

@@ -14,10 +14,66 @@ MonoBehaviour:
   m_EditorClassIdentifier: Project.StartMenu.Runtime::Project.StartMenu.GameUiArtwork
   menuBackground: {fileID: 2800000, guid: 89ff5dff7d4ff9440a2fc78f8d29411f, type: 3}
   panelBackground: {fileID: 21300000, guid: fe70b9f0dad448f4392b28760e800d59, type: 3}
+  achievementBlock: {fileID: 21300000, guid: e167b8dc839ccd8418f7406c6a19330a, type: 3}
+  achievementUnlockBlock: {fileID: 21300000, guid: a8389aa9b12e45bfb46a599b41be6d74, type: 3}
+  achievementUnlockCheck: {fileID: 21300000, guid: 68d4d46d5741438085374279cd6affc0, type: 3}
+  settingButton: {fileID: 21300000, guid: f7bd347347574a3c95e9f2d09c9807b3, type: 3}
+  settingSliderBackground: {fileID: 21300000, guid: 07eb82b0b13f4f0fb4e03ff6381cc529, type: 3}
+  settingSliderFill: {fileID: 21300000, guid: 82c68773482b4390af34acf00c0f6d45, type: 3}
+  settingSliderHandle: {fileID: 21300000, guid: 08714ee837394aea96291c0fff233761, type: 3}
+  settingToggleBox: {fileID: 21300000, guid: 4e3dd62a50754a7cb99588a23e14dab7, type: 3}
+  settingCloseButton: {fileID: 21300000, guid: 92f7e625dc2748ab83d999da079ad624, type: 3}
+  settingsPageBackground: {fileID: 21300000, guid: 678cc5b1271d4dad9192807455c737b0, type: 3}
+  saveSlotBlock: {fileID: 21300000, guid: a791e71dd76b410faf2dea96f331c276, type: 3}
+  startMenuPanelBackground: {fileID: 21300000, guid: f88b339f9434438887e34f1454f6b71e, type: 3}
   startButton: {fileID: 21300000, guid: 883ad5ce96c16e24f9ae5d10d6e55b51, type: 3}
   settingsButton: {fileID: 21300000, guid: 9bdefc965cf3dee47ba84c78e2bc20c1, type: 3}
   quitButton: {fileID: 21300000, guid: 57c78f259c652904dac929f8927d8a3f, type: 3}
   creditsButton: {fileID: 21300000, guid: 45f1009114db6674d83c9e5979f4f018, type: 3}
+  worldMenuButtons:
+  - {fileID: 21300000, guid: 39f39e57e7f6c614ebd318f429d3096d, type: 3}
+  - {fileID: 21300000, guid: a2d139490c8b179429b348787f102edd, type: 3}
+  - {fileID: 21300000, guid: 78c08809f442aed41b8fa0180ece3ed7, type: 3}
+  - {fileID: 21300000, guid: 21ed7fada6cbc9248b5f8ea24cf7128c, type: 3}
+  worldMenuSelectedButtons:
+  - {fileID: 21300000, guid: 31feae8c313c6ff43bc060c44f3c0baa, type: 3}
+  - {fileID: 21300000, guid: 20869defdd5424441981ef104cf4ba4c, type: 3}
+  - {fileID: 21300000, guid: 4d791a1b80af5d34580dbbae46c77781, type: 3}
+  - {fileID: 21300000, guid: 03d4336b8e1e62e4b905847a7151a0b3, type: 3}
+  worldMenuButtonLeftPadding:
+  - 2
+  - 1
+  - 20
+  - 20
+  worldMenuLogoFrames:
+  - {fileID: 21300000, guid: 2c700665b7c54524db5cc718e7db45e9, type: 3}
+  - {fileID: 21300000, guid: dd1c08b61598b3d458b3f104768e27ea, type: 3}
+  - {fileID: 21300000, guid: d55d68f49aabfdf48ac32bfb8edf960d, type: 3}
+  - {fileID: 21300000, guid: 4c817141b93cd74478c5f095b23e26af, type: 3}
+  - {fileID: 21300000, guid: 3a957090a6cf2334086ebdebeef36168, type: 3}
+  - {fileID: 21300000, guid: 45185c2776a63894fb551b4da8737328, type: 3}
+  - {fileID: 21300000, guid: ceb93438196ea2f4cbe1bf302d59d7db, type: 3}
+  - {fileID: 21300000, guid: 35c04f66bd657294cae9dedf2ee83a18, type: 3}
+  - {fileID: 21300000, guid: 1ff2d1d273ed3d947b97f6d61a35ade4, type: 3}
+  - {fileID: 21300000, guid: f86d8c3a74326cf43a9f9ad47ebe4ab3, type: 3}
+  - {fileID: 21300000, guid: 8f386cc27a65a4c43af19aba4695a31f, type: 3}
+  - {fileID: 21300000, guid: 22305ab205760bd4d8509d01851dac11, type: 3}
+  - {fileID: 21300000, guid: 6e2f2481766f9e24ba0badf826d055aa, type: 3}
+  - {fileID: 21300000, guid: 5efcfdbb4929c174da1ed95054f872d8, type: 3}
+  - {fileID: 21300000, guid: 078f7fd530b8b6340a3d6308e5f581e3, type: 3}
+  - {fileID: 21300000, guid: 5a9d3279f36f5b047b47838d001f5213, type: 3}
+  - {fileID: 21300000, guid: 8b5f2f2ad5e8b62478fb922441d31eab, type: 3}
+  - {fileID: 21300000, guid: 910b1181af1c394408d58e4ec84e682a, type: 3}
+  - {fileID: 21300000, guid: c57292e3be33ac14cbbe95d9958bc773, type: 3}
+  - {fileID: 21300000, guid: 60664c61194c0db43b4859a74451f20d, type: 3}
+  - {fileID: 21300000, guid: 80a7c6b61f6ab1d42a1242a966da1450, type: 3}
+  - {fileID: 21300000, guid: 9e6c47939ca61a64092e894ce82e8a1b, type: 3}
+  - {fileID: 21300000, guid: 9134a515a9701ba4fba5cc8c8ca324f8, type: 3}
+  - {fileID: 21300000, guid: 7dfb2173839d29a4e88fe5e2479ecf76, type: 3}
+  - {fileID: 21300000, guid: 6cea7ae07a1f51443ba29f559ea596fd, type: 3}
+  - {fileID: 21300000, guid: 809b2dc3acf6a484f98748cc65821b4c, type: 3}
+  - {fileID: 21300000, guid: d9560dfae97c7de40ba470e6b80a77dd, type: 3}
+  worldMenuLogoFrameSeconds: 0.08
   pauseIcons:
   - {fileID: 21300000, guid: b5241aa86712f9b499ab96f1dbe15fa0, type: 3}
   - {fileID: 21300000, guid: 6c21506e39fbe1b44b8603ebe11f3be8, type: 3}

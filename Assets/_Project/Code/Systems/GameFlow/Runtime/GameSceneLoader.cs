@@ -55,6 +55,13 @@ namespace Project.GameFlow
             EnsureTransitionOverlay();
         public bool AppEntryPlayed => appEntryPlayed;
 
+        public void UseWorldMenuPresentation()
+        {
+            CancelRespawnTransition();
+            appEntryPlayed = true;
+            if (transitionOverlay != null) transitionOverlay.ResetPresentation();
+        }
+
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -336,8 +343,16 @@ namespace Project.GameFlow
             }
 
             CancelRespawnTransition();
-            AsyncOperation operation =
-                SceneManager.LoadSceneAsync(scenePath, mode);
+            AsyncOperation operation;
+#if UNITY_EDITOR
+            // The Unity PlayMode runner replaces build settings with its runner scene.
+            // Asset loading here keeps real-entry tests on the production flow instead of preloading duplicates.
+            if (!Application.CanStreamedLevelBeLoaded(scenePath))
+                operation = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
+                    scenePath, new LoadSceneParameters(mode));
+            else
+#endif
+                operation = SceneManager.LoadSceneAsync(scenePath, mode);
             if (operation != null && showLoading)
             {
                 activeOperation = operation;
@@ -474,6 +489,18 @@ namespace Project.GameFlow
 
         private IEnumerator ApplicationQuitRoutine()
         {
+            if (GameplayPresentationGate.IsSuppressed)
+            {
+                StartMenuController menu = ProjectDiscovery.FindFirst<StartMenuController>(true);
+                if (menu != null)
+                    yield return menu.SlideMenuContentOutAsync(-220f, .3f, Ease.InCubic);
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+#else
+                Application.Quit();
+#endif
+                yield break;
+            }
             GameTransitionOverlay overlay = EnsureTransitionOverlay();
             GameTransitionSettings settings = ResolveTransitionSettings();
             StartMenuController.SetExternalBackgroundScrollPaused(true);

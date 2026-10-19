@@ -62,6 +62,11 @@ namespace PlanningEditorPrototype
             a.type == b.type && (a.paletteEntryId ?? "") == (b.paletteEntryId ?? "") &&
             (a.paletteEntryName ?? "") == (b.paletteEntryName ?? "") && (a.propEntryId ?? "") == (b.propEntryId ?? "") && (a.propEntryName ?? "") == (b.propEntryName ?? "");
 
+        private static bool IsBossRespawnMarker(PlanningBox box) =>
+            box != null &&
+            box.propEntryId ==
+            PlanningBox.BossRespawnMarkerEntryId;
+
         private void CompleteMergeSelection()
         {
             var start = CellAt(dragStart);
@@ -103,7 +108,8 @@ namespace PlanningEditorPrototype
             foreach (var item in AllBoxes())
             {
                 if (!mergeSelection.Contains(item.box.id)) continue;
-                if (item.box.singleInstance || PlanningDoorUtility.IsDoor(item.box) || !string.IsNullOrEmpty(item.box.doorOwnerId))
+                if ((item.box.singleInstance && !PlanningPlatformShapeUtility.SupportsEntry(item.box.propEntryId)) ||
+                    PlanningDoorUtility.IsDoor(item.box) || !string.IsNullOrEmpty(item.box.doorOwnerId))
                 { ValidationFailed?.Invoke("门与绑定按钮不能合并。"); return; }
                 if (owner != null && (owner != item.boxes || !SameKind(items[0], item.box)))
                 { ValidationFailed?.Invoke("请选择同一房间中的同种物体。"); return; }
@@ -123,9 +129,19 @@ namespace PlanningEditorPrototype
             }
             if (!PlanningMechanismUtility.CanMerge(items))
             { ValidationFailed?.Invoke("控制器绑定不同，请先绑定同一曲柄或基座再合并。"); return; }
+            bool platform = PlanningPlatformShapeUtility.SupportsEntry(items[0].propEntryId);
+            if (platform && !PlanningPlatformShapeUtility.CanMerge(items,
+                FindPropEntry(items[0].propEntryId, items[0].propEntryName), new RectInt(minX, minY, maxX-minX, maxY-minY), cells.Count, out string platformReason))
+            { ValidationFailed?.Invoke(platformReason ?? "平台素材入口不可用，未修改原平台。"); return; }
             var merged = items[0].Clone();
             merged.id = PlanningDocument.NewId("box"); merged.x=minX; merged.y=minY; merged.width=maxX-minX; merged.height=maxY-minY;
             merged.isMerged = true; merged.mergeParts = new List<string>();
+            if (platform)
+            {
+                if (!merged.hasComponentOverrides) CapturePlacementDefaults(merged);
+                merged.singleInstance = true;
+                PlanningPlatformShapeUtility.SetOrientation(merged, merged.height > merged.width);
+            }
             foreach (var item in items)
             {
                 if (item.isMerged && item.mergeParts != null && item.mergeParts.Count > 0)
@@ -211,7 +227,18 @@ namespace PlanningEditorPrototype
                 string thirdLabel = null;
                 Action fourthAction = null;
                 string fourthLabel = null;
-                if (PlanningDoorUtility.IsDoor(box))
+                if (source.GetComponent<
+                        Project.BlockFeatures
+                            .RespawnAnchorFeature>() != null)
+                {
+                    primaryAction =
+                        () => AddBossRespawnMarker(box.id);
+                    primaryLabel = "生成 Boss 复活标记";
+                    secondaryAction =
+                        () => RemoveBossRespawnMarker(box.id);
+                    secondaryLabel = "删除 Boss 复活标记";
+                }
+                else if (PlanningDoorUtility.IsDoor(box))
                 {
                     primaryAction = () => AddDoorButton(box.id);
                     primaryLabel = "添加门按钮";
@@ -224,6 +251,8 @@ namespace PlanningEditorPrototype
                     secondaryLabel = "绑定制动基座";
                     thirdAction = () => ClearBaseBinding(box.id);
                     thirdLabel = "解除制动基座绑定";
+                    fourthAction = () => { if (string.IsNullOrEmpty(box.crankOwnerId)) BeginSignalBinding(box.id); else ClearSignalBinding(box.id); };
+                    fourthLabel = string.IsNullOrEmpty(box.crankOwnerId) ? "绑定共享曲柄" : "解除共享曲柄";
                 }
                 else if (PlanningMechanismUtility.IsLift(source))
                 {
@@ -251,8 +280,30 @@ namespace PlanningEditorPrototype
                         foreach (var current in AllBoxes())
                             if (current.box.id == box.id)
                             {
+                                PlanningPlatformShapeUtility.PreserveOrientation(current.box, values, prop?.ComponentValueOverrides);
+                                bool hadMarker =
+                                    current.boxes.Exists(
+                                        value =>
+                                            IsBossRespawnMarker(
+                                                value) &&
+                                            value
+                                                .bossRespawnOwnerId ==
+                                            current.box.id);
                                 current.box.hasComponentOverrides=true;
                                 current.box.componentOverrides=values;
+                                if (hadMarker &&
+                                    !HasBossOwnerOverride(
+                                        values,
+                                        "isBossArenaRespawnPoint"))
+                                {
+                                    SetBossOwnerEnabled(
+                                        current.box,
+                                        true);
+                                }
+
+                                SyncBossMarkerBoxForOwner(
+                                    current.box,
+                                    current.boxes);
                                 NotifyDocumentChanged(); return;
                             }
                     }, "实例参数 · " + (source.name),
@@ -264,6 +315,17 @@ namespace PlanningEditorPrototype
                     thirdLabel,
                     fourthAction,
                     fourthLabel,
+                    enabled =>
+                    {
+                        if (enabled)
+                        {
+                            AddBossRespawnMarker(box.id);
+                        }
+                        else
+                        {
+                            RemoveBossRespawnMarker(box.id);
+                        }
+                    },
                     source.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() != null ? box.width : 0,
                     source.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() != null
                         ? width => ResizePlatform(box.id, width) : (Func<int, string>)null);
@@ -332,6 +394,9 @@ namespace PlanningEditorPrototype
         private PlanningBox movingBox;
         private Vector2 movingBoxStart;
         private Vector2Int movingBoxOrigin;
+        private PlanningRoom bossMarkerDragRoom;
+        private PlanningBox bossMarkerDragBox;
+        private bool bossMarkerDragMoved;
         private Vector2Int lastPaintCell = new Vector2Int(int.MinValue, int.MinValue);
         private Vector2Int assemblyStrokeStart;
         private Vector2Int assemblyStrokeEnd;
@@ -536,6 +601,8 @@ namespace PlanningEditorPrototype
                     out int offsetX,
                     out int offsetY,
                     out _);
+                var authoredBossMarkers =
+                    room.boxes.FindAll(IsBossRespawnMarker);
                 var syncedBoxes = new List<PlanningBox>();
                 for (int blockIndex = 0;
                      blockIndex < blocks.Length;
@@ -588,6 +655,8 @@ namespace PlanningEditorPrototype
                     if (block.GetComponent<Project.BlockFeatures.CrankPlatformFeature>() is Project.BlockFeatures.CrankPlatformFeature importedCrank)
                     {
                         box.singleInstance = true; box.initialCrankPlatformCreated = importedCrank.InitialPlatformCreated;
+                        box.crankOwnerId = importedCrank.SharedController != null
+                            ? importedCrank.SharedController.GetComponent<LevelEditorPlacedBlock>()?.PlanningBoxId : null;
                     }
                     if (block.GetComponent<Project.BlockFeatures.MovingPlatformFeature>() is Project.BlockFeatures.MovingPlatformFeature importedPlatform)
                     {
@@ -656,6 +725,25 @@ namespace PlanningEditorPrototype
                     syncedBoxes.Add(box);
                 }
 
+                for (int index = 0;
+                     index < authoredBossMarkers.Count;
+                     index++)
+                {
+                    PlanningBox marker =
+                        authoredBossMarkers[index];
+                    if (string.IsNullOrEmpty(
+                            marker.bossRespawnOwnerId) ||
+                        !syncedBoxes.Exists(
+                            value => value.id ==
+                                     marker
+                                         .bossRespawnOwnerId))
+                    {
+                        continue;
+                    }
+
+                    syncedBoxes.Add(marker.Clone());
+                }
+
                 if (BoxesMatch(room.boxes, syncedBoxes))
                 {
                     for (int boxIndex = 0;
@@ -715,7 +803,10 @@ namespace PlanningEditorPrototype
                     a.paletteEntryName != b.paletteEntryName || a.propEntryName != b.propEntryName ||
                     a.crankOwnerId != b.crankOwnerId || a.mechanismBaseId != b.mechanismBaseId ||
                     !a.mechanismButtonIds.SequenceEqual(b.mechanismButtonIds) ||
-                    a.doorOwnerId != b.doorOwnerId || a.doorButtonOrder != b.doorButtonOrder)
+                    a.doorOwnerId != b.doorOwnerId ||
+                    a.doorButtonOrder != b.doorButtonOrder ||
+                    a.bossRespawnOwnerId !=
+                    b.bossRespawnOwnerId)
                 {
                     return false;
                 }
@@ -1241,6 +1332,7 @@ namespace PlanningEditorPrototype
             InvalidatePreviewData();
             document?.Normalize();
             EnsureInitialCrankPlatforms();
+            NormalizeBossRespawnMarkers();
             selectedRoomId = document != null && document.rooms.Count > 0
                 ? document.rooms[0].id
                 : null;
@@ -1253,6 +1345,62 @@ namespace PlanningEditorPrototype
             UpdatePlayerOverlay();
             MarkDirtyRepaint();
             SelectionChanged?.Invoke();
+        }
+
+        internal void NormalizeBossRespawnMarkers()
+        {
+            if (document == null)
+            {
+                return;
+            }
+
+            for (int roomIndex = 0;
+                 roomIndex < document.rooms.Count;
+                 roomIndex++)
+            {
+                PlanningRoom room =
+                    document.rooms[roomIndex];
+                var owners =
+                    new List<PlanningBox>();
+                for (int boxIndex = 0;
+                     boxIndex < room.boxes.Count;
+                     boxIndex++)
+                {
+                    PlanningBox box = room.boxes[boxIndex];
+                    if (!IsBossRespawnMarker(box))
+                    {
+                        owners.Add(box);
+                    }
+                }
+
+                room.boxes.RemoveAll(
+                    value => IsBossRespawnMarker(value) &&
+                             !owners.Exists(
+                                 owner =>
+                                     owner.id ==
+                                     value
+                                         .bossRespawnOwnerId));
+                for (int index = 0;
+                     index < owners.Count;
+                     index++)
+                {
+                    PlanningBox owner = owners[index];
+                    if (FindPropEntry(
+                            owner.propEntryId,
+                            owner.propEntryName)?.Prefab?
+                        .GetComponent<
+                            Project.BlockFeatures
+                                .RespawnAnchorFeature>() ==
+                        null)
+                    {
+                        continue;
+                    }
+
+                    SyncBossMarkerBoxForOwner(
+                        owner,
+                        room.boxes);
+                }
+            }
         }
 
         public void BeginRoomPlacement()
@@ -1845,6 +1993,7 @@ namespace PlanningEditorPrototype
                     1f);
             }
 
+            DrawBossRespawnMarkers(painter);
             DrawDoorLinks(painter);
             DrawRectanglePreview(painter);
             DrawHoverCell(painter);
@@ -2036,6 +2185,7 @@ namespace PlanningEditorPrototype
                 }
             }
 
+            DrawBossRespawnMarkers(painter);
             DrawDoorLinks(painter);
             DrawRectanglePreview(painter);
             DrawHoverCell(painter);
@@ -2383,7 +2533,7 @@ namespace PlanningEditorPrototype
                 if (!TryFindAssemblyOwner(cell, sx, sy, out room, out local)) room = null;
             }
             bool valid = false;
-            Vector2Int size = PlanningDoorUtility.Footprint(detailPropEntryId);
+            Vector2Int size = PlacementFootprint(detailPropEntryId);
             if (room != null)
             {
                 RectInt allowed = room.isConnector ? GetConnectorDetailBounds(room) :
@@ -2391,7 +2541,7 @@ namespace PlanningEditorPrototype
                 var door = new PlanningBox(PlanningDetailType.Prop, new RectInt(local, size))
                     { propEntryId = detailPropEntryId };
                 valid = CanPlaceLocalRect(room, new RectInt(local, size)) &&
-                    PlanningDoorUtility.CanPlace(room.boxes, new RectInt(local, size)) &&
+                    PlanningDoorUtility.CanPlace(room.boxes, new RectInt(local, size), palette) &&
                     (!PlanningDoorUtility.IsDoor(door) || PlanningDoorUtility.TryFindButtonCell(room.boxes, door, allowed, out _, c => CanPlaceLocalRect(room, new RectInt(c, Vector2Int.one))));
             }
             Rect footprint = CellRect(cell.x, cell.y, size.x, size.y);
@@ -2744,6 +2894,12 @@ namespace PlanningEditorPrototype
                 this,
                 evt.pointerId);
             BeginEdgePan(position);
+            if (TryBeginBossMarkerDrag(position))
+            {
+                MarkDirtyRepaint();
+                evt.StopPropagation();
+                return;
+            }
             if (mode == PlanningCanvasMode.World)
             {
                 HandleWorldPointerDown(position, evt.ctrlKey || evt.commandKey || evt.shiftKey);
@@ -2839,12 +2995,16 @@ namespace PlanningEditorPrototype
             // Clear before releasing: capture-out is synchronous on some panels.
             int previousPan = panPointerId, previousDrag = dragPointerId;
             bool moved = movingBox != null && movingBoxOrigin != new Vector2Int(movingBox.x, movingBox.y);
+            bool bossMarkerMoved = bossMarkerDragMoved;
             isPanning = false;
             isDragging = false;
             panPointerId = -1;
             dragPointerId = -1;
             panButton = -1;
             movingBox = null;
+            bossMarkerDragRoom = null;
+            bossMarkerDragBox = null;
+            bossMarkerDragMoved = false;
             worldMoving = false;
             StopEdgePan();
             if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
@@ -2853,7 +3013,7 @@ namespace PlanningEditorPrototype
             if (previousDrag >= 0 && this.HasPointerCapture(previousDrag)) this.ReleasePointer(previousDrag);
             // Interrupted drags have already changed coordinates. Persist that one move,
             // never an unfinished paint/erase marquee or a preview-only world move.
-            if (moved) { NotifyDocumentChanged(); SelectionChanged?.Invoke(); }
+            if (moved || bossMarkerMoved) { NotifyDocumentChanged(); SelectionChanged?.Invoke(); }
             lastPaintCell = new Vector2Int(int.MinValue, int.MinValue);
         }
 
@@ -3039,7 +3199,7 @@ namespace PlanningEditorPrototype
                 int maxY = Mathf.Max(start.y, end.y);
                 if (IsPlacingDoor)
                 {
-                    Vector2Int size = PlanningDoorUtility.Footprint(detailPropEntryId);
+                    Vector2Int size = PlacementFootprint(detailPropEntryId);
                     minX = start.x; maxX = start.x + size.x - 1;
                     minY = start.y;
                     maxY = start.y + size.y - 1;
@@ -3221,7 +3381,7 @@ namespace PlanningEditorPrototype
                     new RectInt(local.x, local.y, 1, 1));
                 ApplyDetailSelection(box);
                 if (!CanEditPlacement(box)) return;
-                Vector2Int size = IsPlacingDoor ? PlanningDoorUtility.Footprint(detailPropEntryId) : new Vector2Int(box.width, box.height);
+                Vector2Int size = IsPlacingDoor ? PlacementFootprint(detailPropEntryId) : new Vector2Int(box.width, box.height);
                 if (!CanPlaceLocalRect(owner, new RectInt(new Vector2Int(box.x, box.y), size))) return;
                 if (owner.boxes.Exists(b => SameKind(b, box) && PlanningShapeUtility.Contains(b, new Vector2Int(box.x, box.y)))) return;
                 RectInt allowed = owner.GetLocalAllowedRect(WorldBlockCellWidth, WorldBlockCellHeight);
@@ -3268,17 +3428,18 @@ namespace PlanningEditorPrototype
             {
                 box.width = box.height = 1; box.singleInstance = true;
                 if (!CanPlaceLocalRect(room, new RectInt(box.x,box.y,1,1)) ||
-                    !PlanningDoorUtility.CanPlace(room.boxes,new RectInt(box.x,box.y,1,1)) || !TryFindCrankPlatformCell(room,box,out _))
+                    !PlanningDoorUtility.CanPlace(room.boxes,new RectInt(box.x,box.y,1,1), palette) || !TryFindCrankPlatformCell(room,box,out _))
                 { StatusChanged?.Invoke("曲柄及附近升降平台需要空格。"); return false; }
                 return true;
             }
             if (!PlanningDoorUtility.HasFixedFootprint(box.propEntryId)) return true;
-            Vector2Int size = PlanningDoorUtility.Footprint(box.propEntryId);
+            Vector2Int size = PlacementFootprint(box.propEntryId);
             box.width = size.x;
             box.height = size.y;
             box.singleInstance = true;
+            ApplyPlatformPlacementShape(box);
             if (!CanPlaceLocalRect(room, new RectInt(box.x, box.y, size.x, size.y)) ||
-                !PlanningDoorUtility.CanPlace(room.boxes, new RectInt(box.x, box.y, size.x, size.y)))
+                !PlanningDoorUtility.CanPlace(room.boxes, new RectInt(box.x, box.y, size.x, size.y), palette))
             { StatusChanged?.Invoke($"物体需要连续的 {size.x}×{size.y} 空格。"); return false; }
             if (!PlanningDoorUtility.IsDoor(box)) return true;
             if (!PlanningDoorUtility.TryFindButtonCell(room.boxes, box, allowed, out _, c => CanPlaceLocalRect(room, new RectInt(c, Vector2Int.one))))
@@ -3306,10 +3467,465 @@ namespace PlanningEditorPrototype
             StatusChanged?.Invoke("此门已删除，请重新选择。");
         }
 
+        private void AddBossRespawnMarker(string ownerId)
+        {
+            foreach (var item in AllBoxes())
+            {
+                if (item.box.id != ownerId ||
+                    item.room == null ||
+                    FindPropEntry(
+                        item.box.propEntryId,
+                        item.box.propEntryName)?.Prefab?
+                        .GetComponent<
+                            Project.BlockFeatures
+                                .RespawnAnchorFeature>() ==
+                    null)
+                {
+                    continue;
+                }
+
+                SetBossOwnerEnabled(item.box, true);
+                SyncBossMarkerBoxForOwner(
+                    item.box,
+                    item.boxes);
+                PlanningBox marker = item.boxes.Find(
+                    value => IsBossRespawnMarker(value) &&
+                             value.bossRespawnOwnerId ==
+                             item.box.id);
+                selectedRoomId = item.room.id;
+                selectedBoxId = marker?.id;
+                NotifyDocumentChanged();
+                SelectionChanged?.Invoke();
+                MarkDirtyRepaint();
+                StatusChanged?.Invoke(
+                    "已生成 Boss 复活标记，只允许沿 X 拖动。");
+                return;
+            }
+        }
+
+        private void RemoveBossRespawnMarker(string ownerId)
+        {
+            foreach (var item in AllBoxes())
+            {
+                if (item.box.id != ownerId)
+                {
+                    continue;
+                }
+
+                SetBossOwnerEnabled(item.box, false);
+                item.boxes.RemoveAll(
+                    value => IsBossRespawnMarker(value) &&
+                             value.bossRespawnOwnerId ==
+                             ownerId);
+                NotifyDocumentChanged();
+                SelectionChanged?.Invoke();
+                MarkDirtyRepaint();
+                StatusChanged?.Invoke(
+                    "已删除 Boss 复活标记。");
+                return;
+            }
+        }
+
+        private void SyncBossMarkerBoxForOwner(
+            PlanningBox owner,
+            List<PlanningBox> boxes)
+        {
+            if (owner == null || boxes == null)
+            {
+                return;
+            }
+
+            bool enabled = ReadBoolOverride(
+                GetBossOwnerOverrides(owner),
+                "isBossArenaRespawnPoint",
+                false);
+            var markers = boxes.FindAll(
+                value => IsBossRespawnMarker(value) &&
+                         value.bossRespawnOwnerId ==
+                         owner.id);
+            if (!enabled)
+            {
+                for (int index = 0;
+                     index < markers.Count;
+                     index++)
+                {
+                    boxes.Remove(markers[index]);
+                }
+
+                return;
+            }
+
+            float localX = ReadFloatOverride(
+                GetBossOwnerOverrides(owner),
+                "bossRespawnLocalX",
+                0f);
+            PlanningBox marker = markers.Count > 0
+                ? markers[0]
+                : null;
+            if (marker == null)
+            {
+                marker = new PlanningBox(
+                    PlanningDetailType.Prop,
+                    new RectInt(
+                        owner.x + Mathf.RoundToInt(localX),
+                        owner.y,
+                        1,
+                        1))
+                {
+                    propEntryId =
+                        PlanningBox.BossRespawnMarkerEntryId,
+                    propEntryName =
+                        PlanningBox.BossRespawnMarkerEntryName,
+                    singleInstance = true,
+                    bossRespawnOwnerId = owner.id
+                };
+                boxes.Add(marker);
+            }
+            else
+            {
+                marker.x = owner.x +
+                           Mathf.RoundToInt(localX);
+                marker.y = owner.y;
+                marker.width = marker.height = 1;
+                marker.singleInstance = true;
+                marker.bossRespawnOwnerId = owner.id;
+                for (int index = 1;
+                     index < markers.Count;
+                     index++)
+                {
+                    boxes.Remove(markers[index]);
+                }
+            }
+        }
+
+        private IReadOnlyList<LevelEditorComponentValueOverride>
+            GetBossOwnerOverrides(PlanningBox owner)
+        {
+            LevelEditorPropEntry prop = FindPropEntry(
+                owner.propEntryId,
+                owner.propEntryName);
+            return owner.hasComponentOverrides
+                ? owner.componentOverrides
+                : prop?.ComponentValueOverrides;
+        }
+
+        private void SetBossOwnerEnabled(
+            PlanningBox owner,
+            bool enabled)
+        {
+            SetBossOwnerOverride(
+                owner,
+                "isBossArenaRespawnPoint",
+                "Boolean",
+                enabled ? "1" : "0");
+        }
+
+        private void SetBossOwnerOverride(
+            PlanningBox owner,
+            string propertyPath,
+            string valueType,
+            string text)
+        {
+            if (owner == null)
+            {
+                return;
+            }
+
+            LevelEditorPropEntry prop = FindPropEntry(
+                owner.propEntryId,
+                owner.propEntryName);
+            if (!owner.hasComponentOverrides)
+            {
+                owner.hasComponentOverrides = true;
+                owner.componentOverrides =
+                    new List<LevelEditorComponentValueOverride>();
+                if (prop?.ComponentValueOverrides != null)
+                {
+                    for (int index = 0;
+                         index < prop.ComponentValueOverrides.Count;
+                         index++)
+                    {
+                        LevelEditorComponentValueOverride source =
+                            prop.ComponentValueOverrides[index];
+                        if (source != null)
+                        {
+                            owner.componentOverrides.Add(
+                                source.Clone());
+                        }
+                    }
+                }
+            }
+
+            owner.componentOverrides ??=
+                new List<LevelEditorComponentValueOverride>();
+            string typeName =
+                typeof(Project.BlockFeatures.RespawnAnchorFeature)
+                    .FullName;
+            for (int index =
+                     owner.componentOverrides.Count - 1;
+                 index >= 0;
+                 index--)
+            {
+                LevelEditorComponentValueOverride value =
+                    owner.componentOverrides[index];
+                if (value != null &&
+                    string.IsNullOrEmpty(value.ComponentPath) &&
+                    value.ComponentTypeName == typeName &&
+                    value.PropertyPath == propertyPath)
+                {
+                    owner.componentOverrides.RemoveAt(index);
+                }
+            }
+
+            var overrideValue =
+                new LevelEditorComponentValueOverride();
+            overrideValue.Configure(
+                string.Empty,
+                typeName,
+                0,
+                propertyPath,
+                valueType,
+                text,
+                null);
+            owner.componentOverrides.Add(overrideValue);
+        }
+
+        private void DrawBossRespawnMarkers(Painter2D painter)
+        {
+            foreach (var item in AllBoxes())
+            {
+                if (mode == PlanningCanvasMode.Detail &&
+                    item.room?.id != selectedRoomId)
+                {
+                    continue;
+                }
+
+                if (!TryGetBossMarkerLayout(
+                        item.room,
+                        item.box,
+                        out Vector2 anchor,
+                        out Vector2 marker,
+                        out _))
+                {
+                    continue;
+                }
+
+                Color color =
+                    new Color(1f, .62f, .25f, .95f);
+                for (float distance = 0f;
+                     distance < Vector2.Distance(anchor, marker);
+                     distance += 10f)
+                {
+                    Vector2 start = Vector2.Lerp(
+                        anchor,
+                        marker,
+                        distance /
+                        Mathf.Max(
+                            .001f,
+                            Vector2.Distance(anchor, marker)));
+                    Vector2 end = Vector2.Lerp(
+                        anchor,
+                        marker,
+                        Mathf.Min(
+                            distance + 5f,
+                            Vector2.Distance(anchor, marker)) /
+                        Mathf.Max(
+                            .001f,
+                            Vector2.Distance(anchor, marker)));
+                    DrawLine(painter, start, end, color, 1.5f);
+                }
+
+                Rect markerRect = new Rect(
+                    marker.x - 6f,
+                    marker.y - 6f,
+                    12f,
+                    12f);
+                StrokeRect(painter, markerRect, color, 2f);
+                DrawLine(
+                    painter,
+                    marker - Vector2.right * 4f,
+                    marker + Vector2.right * 4f,
+                    color,
+                    1.5f);
+                DrawLine(
+                    painter,
+                    marker - Vector2.up * 4f,
+                    marker + Vector2.up * 4f,
+                    color,
+                    1.5f);
+            }
+        }
+
+        private bool TryGetBossMarkerLayout(
+            PlanningRoom room,
+            PlanningBox box,
+            out Vector2 anchor,
+            out Vector2 marker,
+            out float localX)
+        {
+            anchor = default;
+            marker = default;
+            localX = 0f;
+            if (!IsBossRespawnMarker(box) ||
+                room == null ||
+                string.IsNullOrEmpty(
+                    box.bossRespawnOwnerId))
+            {
+                return false;
+            }
+
+            PlanningBox owner = room.boxes.Find(
+                value => value.id ==
+                         box.bossRespawnOwnerId);
+            if (owner == null)
+            {
+                return false;
+            }
+
+            RectInt ownerRect = DisplayRect(room, owner);
+            RectInt markerRect = DisplayRect(room, box);
+            anchor = CellRect(
+                ownerRect.x,
+                ownerRect.y,
+                ownerRect.width,
+                ownerRect.height).center;
+            marker = CellRect(
+                markerRect.x,
+                markerRect.y,
+                1,
+                1).center;
+            localX = markerRect.x - ownerRect.x;
+            return true;
+        }
+
+        private static bool ReadBoolOverride(
+            IReadOnlyList<LevelEditorComponentValueOverride> values,
+            string propertyPath,
+            bool fallback)
+        {
+            if (values == null)
+            {
+                return fallback;
+            }
+
+            string typeName =
+                typeof(Project.BlockFeatures.RespawnAnchorFeature)
+                    .FullName;
+            for (int index = 0; index < values.Count; index++)
+            {
+                LevelEditorComponentValueOverride value =
+                    values[index];
+                if (value != null &&
+                    string.IsNullOrEmpty(value.ComponentPath) &&
+                    value.ComponentTypeName == typeName &&
+                    value.PropertyPath == propertyPath)
+                {
+                    return value.Value == "1";
+                }
+            }
+
+            return fallback;
+        }
+
+        private static bool HasBossOwnerOverride(
+            IReadOnlyList<LevelEditorComponentValueOverride> values,
+            string propertyPath)
+        {
+            if (values == null)
+            {
+                return false;
+            }
+
+            string typeName =
+                typeof(Project.BlockFeatures.RespawnAnchorFeature)
+                    .FullName;
+            for (int index = 0; index < values.Count; index++)
+            {
+                LevelEditorComponentValueOverride value =
+                    values[index];
+                if (value != null &&
+                    string.IsNullOrEmpty(value.ComponentPath) &&
+                    value.ComponentTypeName == typeName &&
+                    value.PropertyPath == propertyPath)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static float ReadFloatOverride(
+            IReadOnlyList<LevelEditorComponentValueOverride> values,
+            string propertyPath,
+            float fallback)
+        {
+            if (values == null)
+            {
+                return fallback;
+            }
+
+            string typeName =
+                typeof(Project.BlockFeatures.RespawnAnchorFeature)
+                    .FullName;
+            for (int index = 0; index < values.Count; index++)
+            {
+                LevelEditorComponentValueOverride value =
+                    values[index];
+                if (value == null ||
+                    !string.IsNullOrEmpty(value.ComponentPath) ||
+                    value.ComponentTypeName != typeName ||
+                    value.PropertyPath != propertyPath)
+                {
+                    continue;
+                }
+
+                return float.TryParse(
+                    value.Value,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo
+                        .InvariantCulture,
+                    out float parsed)
+                    ? parsed
+                    : fallback;
+            }
+
+            return fallback;
+        }
+
+        private void SetBossMarkerLocalX(
+            PlanningBox owner,
+            float localX)
+        {
+            LevelEditorPropEntry prop = FindPropEntry(
+                owner.propEntryId,
+                owner.propEntryName);
+            Project.BlockFeatures.RespawnAnchorFeature anchorFeature =
+                prop?.Prefab != null
+                    ? prop.Prefab.GetComponent<
+                        Project.BlockFeatures
+                            .RespawnAnchorFeature>()
+                    : null;
+            if (anchorFeature == null)
+            {
+                return;
+            }
+
+            SetBossOwnerOverride(
+                owner,
+                "bossRespawnLocalX",
+                "Float",
+                localX.ToString(
+                    "R",
+                    System.Globalization.CultureInfo
+                        .InvariantCulture));
+        }
+
         private void DrawDoorLinks(Painter2D painter)
         {
             if (editWaterLayer) return;
             DrawMechanismLinks(painter);
+            DrawContactTimelineRanges(painter);
             var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
             foreach (var item in items)
             {
@@ -3395,6 +4011,13 @@ namespace PlanningEditorPrototype
             }
             if (pickingSignalSource)
             {
+                if (IsCrankBox(consumer) && (selected.id == consumer.id || !IsCrankBox(selected) ||
+                    !string.IsNullOrEmpty(selected.crankOwnerId) ||
+                    AllBoxes().Any(item => IsCrankBox(item.box) && item.box.crankOwnerId == consumer.id)))
+                {
+                    StatusChanged?.Invoke("请选择另一独立曲柄；共享曲柄不能串联或循环绑定。");
+                    return;
+                }
                 if (selectedPrefab.GetComponent<Project.BlockFeatures.CrankPlatformFeature>() != null)
                 {
                     consumer.crankOwnerId = selected.id;
@@ -3402,7 +4025,7 @@ namespace PlanningEditorPrototype
                     pickingSignalSource = false;
                     NotifyDocumentChanged();
                     MarkDirtyRepaint();
-                    StatusChanged?.Invoke("已绑定曲柄；平台进入曲柄控制。");
+                    StatusChanged?.Invoke(IsCrankBox(consumer) ? "已共享曲柄进度；两个位置控制同一组平台。" : "已绑定曲柄；平台进入曲柄控制。");
                     return;
                 }
 
@@ -3476,6 +4099,141 @@ namespace PlanningEditorPrototype
                 }
             }
         }
+
+        private void DrawContactTimelineRanges(
+            Painter2D painter)
+        {
+            Color color =
+                new Color(1f, .78f, .3f, .9f);
+            foreach (var item in AllBoxes())
+            {
+                if (mode == PlanningCanvasMode.Detail &&
+                    item.room?.id != selectedRoomId)
+                {
+                    continue;
+                }
+
+                LevelEditorPropEntry entry = FindPropEntry(
+                    item.box.propEntryId,
+                    item.box.propEntryName);
+                GameObject prefab = entry?.Prefab;
+                if (prefab == null ||
+                    prefab.GetComponent<
+                        Project.BlockFeatures
+                            .ContactTimelineTrigger>() ==
+                    null)
+                {
+                    continue;
+                }
+
+                BoxCollider collider =
+                    prefab.GetComponent<BoxCollider>();
+                Vector3 size = collider != null
+                    ? collider.size
+                    : Vector3.one;
+                Vector3 center = collider != null
+                    ? collider.center
+                    : Vector3.zero;
+                IReadOnlyList<
+                    LevelEditorComponentValueOverride>
+                    overrides = item.box
+                        .hasComponentOverrides
+                        ? item.box.componentOverrides
+                        : entry.ComponentValueOverrides;
+                if (overrides != null)
+                {
+                    foreach (LevelEditorComponentValueOverride
+                             value in overrides)
+                    {
+                        if (value == null)
+                        {
+                            continue;
+                        }
+
+                        if (value.PropertyPath == "m_Size")
+                        {
+                            size = ParseVector3(
+                                value.Value,
+                                size);
+                        }
+                        else if (
+                            value.PropertyPath ==
+                            "m_Center")
+                        {
+                            center = ParseVector3(
+                                value.Value,
+                                center);
+                        }
+                    }
+                }
+
+                RectInt rect = DisplayRect(
+                    item.room,
+                    item.box);
+                Rect footprint = CellRect(
+                    rect.x,
+                    rect.y,
+                    rect.width,
+                    rect.height);
+                float width = Mathf.Max(
+                    GridSize,
+                    Mathf.Abs(size.x) * GridSize);
+                float height = Mathf.Max(
+                    GridSize,
+                    Mathf.Abs(size.y) * GridSize);
+                Vector2 rangeCenter =
+                    footprint.center +
+                    new Vector2(
+                        center.x,
+                        -center.y) * GridSize;
+                Rect range = Rect.MinMaxRect(
+                    rangeCenter.x - width * .5f,
+                    rangeCenter.y - height * .5f,
+                    rangeCenter.x + width * .5f,
+                    rangeCenter.y + height * .5f);
+                Dashed(
+                    painter,
+                    new Vector2(range.xMin, range.yMin),
+                    new Vector2(range.xMax, range.yMin),
+                    color);
+                Dashed(
+                    painter,
+                    new Vector2(range.xMax, range.yMin),
+                    new Vector2(range.xMax, range.yMax),
+                    color);
+                Dashed(
+                    painter,
+                    new Vector2(range.xMax, range.yMax),
+                    new Vector2(range.xMin, range.yMax),
+                    color);
+                Dashed(
+                    painter,
+                    new Vector2(range.xMin, range.yMax),
+                    new Vector2(range.xMin, range.yMin),
+                    color);
+            }
+        }
+
+        private static Vector3 ParseVector3(
+            string value,
+            Vector3 fallback)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return fallback;
+            }
+
+            try
+            {
+                return JsonUtility.FromJson<Vector3>(
+                    value);
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+
         private void Dashed(Painter2D painter, Vector2 start, Vector2 end, Color color)
         {
             if (!PlanningPlatformPathUtility.ClipLine(contentRect, ref start, ref end)) return;

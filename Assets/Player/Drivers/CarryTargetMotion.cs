@@ -78,7 +78,8 @@ namespace Project.Player
             for (int i = 0; i < count; i++)
             {
                 Collider other = placementHits[i];
-                if (other == null || other.transform.IsChildOf(root)) continue;
+                if (other == null || other.transform.IsChildOf(root) ||
+                    Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(other)) continue;
                 if (carrier != null && other.transform.IsChildOf(carrier) && separationHost != null) continue;
                 return false;
             }

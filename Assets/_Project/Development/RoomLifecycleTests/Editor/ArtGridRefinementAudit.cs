@@ -69,11 +69,12 @@ public static class ArtGridRefinementAudit
         Check(ExportScale("Assets/_Project/Resources/26TAPTAP/场景背景/tail.png") == 4, "tail is exact RGBA 4x nearest-neighbor export");
         Check(ExportScale("Assets/_Project/Art/Generated/ObjectArtwork/Respawn Current.png") == 1, "respawn animation is not a 2x export");
         Check(ExportScale("Assets/_Project/Art/Generated/ObjectArtwork/Respawn States.png") == 1, "respawn stills are not a 2x export");
-        Check(ExportScale("Assets/_Project/Resources/26TAPTAP/物体道具/移动平台80ms每帧.png") == 1, "moving platform source pixels are native");
+        Check(ExportScale("Assets/_Project/Resources/26TAPTAP/物体道具/43452C733652487AC26FD041686C880B.png") == 1, "new crank platform source pixels are native");
+        Check(ExportScale("Assets/_Project/Resources/26TAPTAP/物体道具/BB587FC3F1E5565D857F67F813F19880.png") == 1, "new moving platform source pixels are native");
     }
     private static void Assets()
     {
-        foreach (var pair in new[] { (MechanismArtworkKind.CrankPlatform, 6), (MechanismArtworkKind.MovingPlatform, 8) })
+        foreach (var pair in new[] { (MechanismArtworkKind.CrankPlatform, 6), (MechanismArtworkKind.MovingPlatform, 9) })
         {
             var frames = artwork.Find(pair.Item1).frames;
             Check(frames.Length == pair.Item2 && frames.All(frame => frame.rect.size == new Vector2(48, 16)), pair.Item1 + " preserves complete 48x16 frame and original frame count");

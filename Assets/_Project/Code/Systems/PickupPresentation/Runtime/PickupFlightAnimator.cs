@@ -42,6 +42,18 @@ namespace Project.Pickups
 
         public bool IsPlaying { get; private set; }
 
+        /// <summary>Bind the complete presentation before collection starts; never steal an active flight.</summary>
+        public bool BindVisual(Transform value)
+        {
+            if (IsPlaying || value == null) return false;
+            if (visual == value) return true;
+            ResetCollectionAnimation();
+            visual = value;
+            capturedVisual = false;
+            CaptureVisual();
+            return true;
+        }
+
         private void Reset()
         {
             pickupCollider = GetComponent<Collider>();

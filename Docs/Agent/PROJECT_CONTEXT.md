@@ -3,6 +3,8 @@
 项目：2026TapTap；远程：`https://github.com/miao1suki/2026TapTapGameJam.git`。
 Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未导入旧项目设置。
 
+当前正式图以FORMAL_LEVEL_DELIVERY顶部20房间基线为准，本轮仅加隐形Start锚点，现838条物体；下文17房间是先前整合记录，不可据此回退地图。各策划工作场景最终导入同一Gaming；Boss门槛/结局/地图不引入跨场景加载。
+
 场景美术统一16个有效美术像素对应1格。编码尺寸需扣除已验证的导出倍率（tail为4倍），不拉伸以迁就碰撞；24像素玩家外观为1.5格而物理仍1格。修改物体、关卡预览、贴花或背景前读 [美术换算约定](../Developer/ART_GRID_CONVENTIONS.md) 和 [工作台换算](../Developer/SCENE_ART_PIXEL_CONVERSION.md)。基座默认有重力，可实例关闭；MRoom2第二版三基座保持无重力。新增颜色装饰仅归属颜色层，不是可交互颜色物体，不能授予能力或参与房间玩法重置。
 
 当前是一份从旧项目筛选而来的基础框架，不是旧游戏整体复制。
@@ -14,6 +16,11 @@ Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未�
 
 门按钮默认一次按下保持，持续压住模式则在松开、R 或离区时重置，取消持续信号会关门但保留其他保持按钮进度。三色接触方块/可搬运方块禁止跨布置区域迁移，跨区放下被拒绝、越界回到作者位置；玩家离区取消携带并复原来源区。
 Timeline 现提供独立对话轨道：轨道不绑定对象，直接向常驻 `WordNote_UI` 申请使用权，与原 API 消息共用同一画布、位置队列、堆叠和动画系统。Timeline 只负责申请和释放本次消息，不接管玩家、颜色系统或房间状态。
+Boss 入场先由覆盖全程的 `PlayerTimelineTrack` 按 `Player` Tag 锁住玩法操作，相机轨延迟 0.1 秒再启动，并由末尾 Playable 同时激活血条和 `BossCameraSize`。视野扩大通过 `CameraControlManager` 的独立镜头倍率请求平滑生效；Timeline 相机优先级更高时不覆盖演出，玩家死亡复活不撤销。Boss 被击败后由 `Boss_defeat.playable` 先保持原镜头发呆 1 秒，再用 1 秒平滑框住玩家与 Boss 的中点，随后播放 3.5 秒六钥匙吸收并接死亡位置停留与回程；普通外部删除不触发。
+重生点组件可直接标记为 Boss 关卡重生点，并保存复活后的 Boss 血量与相对 X。复活链在房间重置前先发 Boss 重置请求；Boss 由 Timeline 后生成，不建立启动时引用：控制器启用时自注册，重生点先保存待应用状态，Boss 出现后自动应用并回读血量/坐标。关卡参数窗口生成通过稳定 ID 连接的规划标记格，标记格只允许 X 拖动。实际 Scene 附属标记无实体，删除后自动补建。
+Boss 战复活另有兜底：存在活动 Boss 且当前没有已解锁的 Boss 出生点时，只在玩家死亡所属房间内选择 X 最小的启用 Boss 出生点；不能因最终 Gaming 含有 Boss 就把其他房间的复活劫持过去。无房间管理器的独立旧工作场景保留同场景兜底。剧情 Start/End 返回绑定专用普通重生兜底，不再被旧 Boss 点覆盖。
+Boss HUD 使用 `BossDisplayName` 在分段血条左侧显示 Cubic_11 SDF 名字；同 Canvas 的 `BossMonitorUI` 通过独立正交相机和 RenderTexture 在屏幕左上角显示约 `23.3%×35%` 屏幕的实时 Boss 窗口，从中心展开、倒放退场，并在死亡延迟 5 秒后与血条同步隐藏。监控相机渲染除 UI 外全部图层，窗口比例、纹理尺寸和渲染分辨率均按 Canvas 实际尺寸自适应。
+Boss 从中心向玩家连接火线、水线、藤蔓线三套现有样式；三份独立运行时材质分别设置 `_Style=1/2/3`。距离越近越粗越明显，最近达到普通线条 1.5 倍。连线随血条激活生成，藤蔓沿线生长，Boss 死亡时按交互线同样的噪波溶解退场。Boss 接触玩家会直接触发玩家死亡。
 
 基础迁移时排除：绳/线、梯子、移动平台玩法、视差平台投影碰撞/深度吸附、2D小拼/总拼/3D合并、旧地图代理同步、旧关卡、旧测试脏数据、美术/音效素材、瓦片库与烘焙贴画、QQ bot 运维源码和私密配置。之后由音频成员在新项目单独交付的 `Assets/_Project/Content/Audio` 不属于“旧素材迁移”，已纳入当前仓库。
 成就中的旧玩法信号名字保留仅为兼容枚举/协议，不代表玩法可用。不要重新引入对应实现。
@@ -24,9 +31,9 @@ Timeline 现提供独立对话轨道：轨道不绑定对象，直接向常驻 `
 - `Assets/_Project/Code/Systems/<Feature>`：功能源码，Runtime/Editor/Tests 分开。
 - `Assets/Player`：基础玩家及 Timeline 动作适配。
 - `Assets/GJ_Tools/TimelineTools3D`：保留的旧 Timeline 工具（兼容路径）。
-- `Assets/_Project/Scenes/Start/MainMenu.unity`：唯一正式启动场景，持有 `GameFlowController` 和开始菜单流程桥。
-- `Assets/_Project/Scenes/Playing/Gaming.unity`：唯一正式玩法场景，持有玩家、玩法相机和共享暂停 UI。
-- 正式场景序列固定为 `MainMenu -> Gaming`；Bootstrap、旧五个 Systems 场景、旧 `Flow` 目录、Level_01～03 和 Ending 均退役，不再恢复。
+- `Assets/_Project/Scenes/Start/MainMenu.unity`：仅旧编辑器兼容入口，新美术界面预览，运行重定向 Gaming，不进入正式构建。
+- `Assets/_Project/Scenes/Playing/Gaming.unity`：唯一正式启动与玩法场景，持有玩家、玩法相机和共享暂停 UI；启动前帧自动安装共享 `Resources/UI/WorldMainMenu.prefab`。
+- 正式流程为同一 Gaming 世界内的 MainMenu/Gaming 两个逻辑态。开始、返回、再次开始都不加载或卸载场景，不重置进度；相机通过同一 Manager 租约平滑入退。Bootstrap、旧五个 Systems 场景、旧 `Flow` 目录、Level_01～03 和 Ending 均退役，不再恢复。
 - `Assets/_Project/Development/<Feature>/<AuthorOrTask>`：独立实验；不默认加入正式构建。
 - `Assets/_Project/Content`：正式流程的 prefab、catalog 和配置。
 - `Assets/_Project/Content/Audio/Music` 与 `SFX`：游戏实际使用的音频及其 `.meta`；音频成员按 `.agents/skills/taptap-audio-worker/SKILL.md` 交付。

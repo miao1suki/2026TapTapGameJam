@@ -1,22 +1,23 @@
 # 运行与场景
 
-正式入口是 `Assets/_Project/Scenes/Start/MainMenu.unity`，开始游戏后进入 `Assets/_Project/Scenes/Playing/Gaming.unity`。不再使用 Bootstrap、旧 Systems 场景、旧 Level_01～03 或 Ending。
+正式入口及唯一构建场景是 `Assets/_Project/Scenes/Playing/Gaming.unity`。MainMenu 只是该世界的 UI 展示状态，不是加载的第二份场景。旧 `Scenes/Start/MainMenu.unity` 保留新美术编辑器预览并在运行时重定向，不进入构建。不再使用 Bootstrap、旧 Systems 场景、旧 Level_01～03 或 Ending。
 
-场景采用叠加加载交接。加载目标流程场景前暂停旧流程场景的 EventSystem，避免新旧 UI 同时启用；失败时恢复，成功卸载后清除引用。水体表现注销只停用并延迟销毁，不能在父节点禁用期间执行 SetParent。若旧测试包仍出现 Water Visual 改父节点报错，需使用当前源码重新打包；仅更新本地源码不会更新已安装包。
+场景采用同世界菜单：Gaming 首帧前自动安装纯 UI `Resources/UI/WorldMainMenu.prefab`，逻辑流程初始为 MainMenu。只使用始终启用的 Gaming Camera、AudioListener 和 EventSystem，不预载第二场景、不复制关卡或重复创建菜单。水体表现注销只停用并延迟销毁，不能在父节点禁用期间执行 SetParent。
 
-MainMenu 的 `__GameFlow` 根持有 `GameFlowController`，开始按钮通过 `StartMenuFlowBridge` 请求 Gaming。Gaming 的 Main Camera 挂 `CameraControlManager`、`CameraModeController`、`CameraFollowController` 和 `LevelSceneContext`；`LevelSceneContext` 会按 `Player` Tag 找到玩家并接为相机随行目标。暂停与共享界面来自 `Content/UI/SharedGameUI.prefab`。
+自动流程根持有 `GameFlowController`，开始按钮通过 `StartMenuFlowBridge` 请求 Gaming 逻辑态。Gaming 的 Main Camera 挂 `CameraControlManager`、`CameraModeController`、`CameraFollowController` 和 `LevelSceneContext`；`LevelSceneContext` 仅首次按 `Player` Tag 绑定玩家，不在菜单过渡中重复 Snap。暂停与共享界面来自 `Content/UI/SharedGameUI.prefab`。
 
-正式加载过渡由 `GameSceneLoader` 统一驱动：
+菜单过渡由流程控制器的 `WorldMenuPresentation` 协调：
 
-- 进入 App：黑屏从开始按钮中心向外扩散。
-- 进入 Gaming：菜单内容和背景滚动冻结，加载文字显示，Gaming 以玩家为中心扩散揭示。
-- 返回 MainMenu：先以当前玩家为中心收黑，黑屏保持 0.5 秒，然后滚动背景从右侧回场，加载文字显示，菜单内容从右侧回场。
-- 退出游戏：主菜单按钮只发请求，黑屏从屏幕外反向缩圈吞噬画面，保持 1 秒后再退出。
-- 加载期间冻结菜单背景滚动；进入 Gaming 后玩家控制锁保持到黑屏扩散完成。
+- 进入 App：真实 Gaming 近景作为背景，左侧显示新动画 LOGO 与开始／制作名单／设置／退出美术按钮，不使用旧黑圈或滚动背景。
+- 开始：菜单淡出，相机平滑缩放到正常随行，镜头租约保留至最终帧后才释放，结束后释放预览输入锁。
+- 返回 MainMenu：先立即解除暂停，在当前世界反向运镜并淡入菜单；不切换成假背景。
+- 再次开始：继续同一世界与玩家，保留房间与颜色进度；不重载、不截图，不触发关卡重置。
+- 菜单预览采用独立控制锁租约，冻结玩家物理并抑制收集、玩法 UI 和输入，但不关闭世界美术、不清除其他系统的控制锁、不把全局时间设为零。
+- 退出按钮仍通过 StartMenuFlowBridge / GameSceneLoader 请求，不直接退出、不播放旧菜单黑圈。
 
-开发者可为玩家启用同一转场体系的加载式复活，保留原地关卡与房间重置流程，不重新加载场景。默认仍为常规方式，见 [复活表现](PLAYER_RESPAWN.md)。
+其他显式加载和开发者加载式复活仍由 `GameSceneLoader` / `GameTransitionOverlay` 管理。复活保留原地关卡与房间重置，不重新加载场景；默认仍为常规方式，见 [复活表现](PLAYER_RESPAWN.md)。
 
-MainMenu 场景存活期间每帧保证鼠标可见且不处于锁定状态，避免从玩法切回时继承染色或搬运阶段的隐藏鼠标状态。
+菜单展示时保证鼠标可见，PC 独立包有焦点时经 `DesktopCursorPolicy` 限制在当前游戏窗口；失焦释放，Editor／安卓不锁定。绝对指针与菜单点击保留。
 
 流程根在初始化时安装并初始化`GameAudioService`，随流程根跨场景保留。进入Gaming切换到Atmosphere E Minor循环音乐，返回菜单沿用菜单音乐。不要依靠已退役的Audio系统场景启动音乐切换。
 
@@ -24,7 +25,7 @@ MainMenu 场景存活期间每帧保证鼠标可见且不处于锁定状态，�
 
 菜单 `Tools/2026TapTap/场景/场景导航与关卡入口` 显示实际存在的主菜单、项目场景、开发测试场景，不再列出旧系统与固定三关。新增场景后可点击“刷新列表”。
 
-已接线界面保存在 `Assets/_Project/Content/UI/MainMenuUI.prefab`（开始/设置/存档）和 `SharedGameUI.prefab`（暂停/收藏品/设置/存档/HUD/提示）。美术、内部引用及动画保留，可放到自己的关卡。SharedGameUI 自带服务初始化及 EventSystem；场景必须仅有一个 EventSystem，勿重复添加。独立暂停仍走原输入映射，跨场景菜单跳转和流程存档读取需后续配置新的流程控制器/catalog。
+开始界面为纯 UI `Resources/UI/WorldMainMenu.prefab`（作者入口 `Content/UI/MainMenuUI.prefab` 同步新美术）；`SharedGameUI.prefab` 保存暂停/收藏品/设置/存档/HUD/提示。SharedGameUI 自带服务初始化及 EventSystem；场景必须仅有一个 EventSystem，菜单不得增加自己的设备。独立地图保持直接游玩，正式 Gaming 的隔离玩法审计可在流程初始化后显式调用仅 Editor 的 `EnterGameplayImmediatelyForDevelopment()`。
 
 WordNote_UI 已保留在 SharedGameUI.prefab 内，文字提示通过 WordNoteUI API 调用。输入、音频、成就、相机等代码保留，但删除系统场景后不保证它们自动存在，各自按实际关卡需求放置。
 

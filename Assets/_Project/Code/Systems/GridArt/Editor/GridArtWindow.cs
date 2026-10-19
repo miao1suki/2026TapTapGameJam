@@ -15,6 +15,10 @@ namespace Project.GridArt.Editor
         [SerializeField] private GridArtMap map;
         [SerializeField] private int layerIndex;
         [SerializeField] private int brushIndex;
+        [SerializeField] private int brushQuarterTurns;
+        internal int BrushQuarterTurns => Brush != null && !Brush.autoTerrain ? GridArtRotation.Normalize(brushQuarterTurns) : 0;
+        internal Vector2Int BrushFootprint => Brush != null ? GridArtRotation.Size(Brush.Size,BrushQuarterTurns) : Vector2Int.one;
+        internal Vector2 BrushDisplaySize => Brush != null ? GridArtRotation.Size(Brush.DisplaySize,BrushQuarterTurns) : Vector2.one;
         private ArtCanvas canvas;
         private VisualElement sidebar;
         private ObjectField mapField;
@@ -22,6 +26,11 @@ namespace Project.GridArt.Editor
         private bool erase, rectangle = true;
         private readonly List<Rect> guides = new List<Rect>();
         private bool showGuides = true;
+        private bool showLevelReference = true;
+        private float levelReferenceOpacity = .35f;
+        private string selectedReferenceRoom = "";
+        private string boundSceneKey;
+        private int boundSceneHandle;
         private string SceneKey
         {
             get
@@ -61,6 +70,7 @@ namespace Project.GridArt.Editor
             AssemblyReloadEvents.beforeAssemblyReload += FlushBeforeReload;
             EditorSceneManager.sceneSaving += ArtSceneSaving;
             EditorSceneManager.activeSceneChangedInEditMode += SceneChanged;
+            EditorSceneManager.sceneOpened += SceneOpened;
             EditorApplication.playModeStateChanged += PlayChanged;
         }
         private void OnDisable()
@@ -74,15 +84,29 @@ namespace Project.GridArt.Editor
             AssemblyReloadEvents.beforeAssemblyReload -= FlushBeforeReload;
             EditorSceneManager.sceneSaving -= ArtSceneSaving;
             EditorSceneManager.activeSceneChangedInEditMode -= SceneChanged;
+            EditorSceneManager.sceneOpened -= SceneOpened;
             EditorApplication.playModeStateChanged -= PlayChanged;
             canvas?.RememberView();
         }
         private void FlushBeforeReload() { StopScenePainting(); canvas?.CancelStroke(); FlushPending(true); }
         private void ArtSceneSaving(Scene scene, string path) { if (map != null && scene == SceneManager.GetActiveScene()) { if (sourcePending) RefreshLevelSource(); FlushPending(false); } }
-        private void SceneChanged(Scene before, Scene after) { StopScenePainting(); canvas?.CancelStroke(); FlushDataForPreviousScene(); canvas?.RememberView(); BindRemembered(); BindAutomation(); canvas?.RestoreView(); Refresh(); }
+        private void SceneChanged(Scene before, Scene after) => RebindSceneIfNeeded();
+        private void SceneOpened(Scene scene, OpenSceneMode mode) => RebindSceneIfNeeded();
+        private void RebindSceneIfNeeded()
+        {
+            var scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid() || boundSceneKey == SceneKey && boundSceneHandle == scene.handle) return;
+            // OpenScene and the active-scene notification are not a single UI update.
+            // Make rebinding idempotent, and also call it before reading a new source.
+            StopScenePainting(); canvas?.CancelStroke(); FlushDataForPreviousScene();
+            canvas?.RememberView(); RememberSelection();
+            BindRemembered(); BindAutomation(); canvas?.RestoreView();
+            RefreshNavigation(); Refresh();
+        }
         private void PlayChanged(PlayModeStateChange state) { if (state == PlayModeStateChange.ExitingEditMode) { StopScenePainting(); canvas?.CancelStroke(); if(sourcePending) RefreshLevelSource(); FlushPending(false); } }
         private void OnFocus()
         {
+            RebindSceneIfNeeded();
             if (map?.palette != null && AssetDatabase.GetAssetPath(map.palette) == GridArtLibraryService.SharedPath)
                 GridArtLibraryService.Synchronize(map.palette);
             RequestSource();
@@ -112,13 +136,14 @@ namespace Project.GridArt.Editor
         }
         private string SelectionKey => "2026TapTap.GridArt.Selection." + Hash128.Compute(Application.dataPath) + "." + AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(map));
         private void RememberSelection()
-        { if (map != null) { EditorPrefs.SetInt(SelectionKey+".Layer",layerIndex); EditorPrefs.SetInt(SelectionKey+".Brush",brushIndex); } }
+        { if (map != null) { EditorPrefs.SetInt(SelectionKey+".Layer",layerIndex); EditorPrefs.SetInt(SelectionKey+".Brush",brushIndex); EditorPrefs.SetInt(SelectionKey+".Rotation",BrushQuarterTurns); } }
         private void RestoreSelection()
         {
             if (map == null) { layerIndex=brushIndex=0; return; }
             int initial=map.layers.FindIndex(l=>l.label=="墙地表面");
             layerIndex=Mathf.Clamp(EditorPrefs.GetInt(SelectionKey+".Layer",Mathf.Max(0,initial)),0,Mathf.Max(0,map.layers.Count-1));
             brushIndex=EditorPrefs.GetInt(SelectionKey+".Brush",0);
+            brushQuarterTurns=GridArtRotation.Normalize(EditorPrefs.GetInt(SelectionKey+".Rotation",0));
         }
         public void CreateGUI()
         {
@@ -191,9 +216,19 @@ namespace Project.GridArt.Editor
             private Vector2 pointer;
             private int gesture = -1, pointerId, strokeGroup;
             private bool dirty, canceled, eraseStroke;
-            public bool IsStroking => gesture >= 0 && gesture != 2;
+            private bool effectGesture;
+            private bool needsInitialFrame;
+            private Rect? initialFrameBounds;
+            private string restoredViewKey;
+            public bool IsStroking => effectGesture || gesture >= 0 && gesture != 2;
             public void CancelStroke()
             {
+                if(effectGesture)
+                {
+                    effectGesture = false; owner.EffectCancelGesture();
+                    if(this.HasPointerCapture(pointerId)) this.ReleasePointer(pointerId);
+                    RepaintView(); return;
+                }
                 if (!IsStroking) return;
                 gesture = -1; dirty = false; Undo.RevertAllDownToGroup(strokeGroup);
                 if (this.HasPointerCapture(pointerId)) this.ReleasePointer(pointerId);
@@ -202,11 +237,14 @@ namespace Project.GridArt.Editor
             private List<(GridArtQuad, Color)> quads;
             private readonly Dictionary<GridArtLayer, List<GridArtQuad>> layerQuads = new Dictionary<GridArtLayer, List<GridArtQuad>>();
             private readonly VisualElement artwork, overlay;
+            private readonly GridArtLevelReference reference;
             private readonly List<GridArtPreviewBatch> batches = new List<GridArtPreviewBatch>();
             private Vector2Int lastHover;
             public ArtCanvas(GridArtWindow window)
             {
                 owner = window; focusable = true; style.overflow = Overflow.Hidden; style.backgroundColor = new Color(.09f,.11f,.14f);
+                reference = new GridArtLevelReference { name = "art-level-reference", pickingMode = PickingMode.Ignore };
+                reference.StretchToParentSize(); Add(reference);
                 artwork = new VisualElement { name = "artwork-cache", pickingMode = PickingMode.Ignore, usageHints = UsageHints.DynamicTransform };
                 artwork.style.position = Position.Absolute;
                 artwork.style.width = artwork.style.height = 0;
@@ -214,17 +252,29 @@ namespace Project.GridArt.Editor
                 Add(artwork);
                 overlay = new VisualElement { name = "art-overlay", pickingMode = PickingMode.Ignore };
                 overlay.StretchToParentSize(); overlay.generateVisualContent += Draw; Add(overlay);
-                RegisterCallback<GeometryChangedEvent>(e => RepaintView());
+                RegisterCallback<GeometryChangedEvent>(e =>
+                {
+                    // A source refresh can change the reference toolbar height after
+                    // initial framing. Keep that initial fit centered until navigation,
+                    // rather than persisting an offset from the previous layout.
+                    if (initialFrameBounds.HasValue && !IsStroking && e.oldRect.size != e.newRect.size)
+                        Frame(initialFrameBounds.Value, true);
+                    else TryInitialFrame();
+                    RepaintView();
+                });
                 RegisterCallback<PointerDownEvent>(Down); RegisterCallback<PointerMoveEvent>(Move);
                 RegisterCallback<PointerUpEvent>(Up); RegisterCallback<PointerCaptureOutEvent>(e =>
                 {
+                    if(effectGesture) { effectGesture=false; owner.EffectCancelGesture(); RepaintView(); }
                     if (gesture >= 0 && gesture != 2 && dirty && owner.map != null)
                     {
                         owner.map.revision++; EditorUtility.SetDirty(owner.map); Undo.CollapseUndoOperations(strokeGroup); owner.ArtChanged();
                     }
                     gesture = -1;
                 });
-                RegisterCallback<WheelEvent>(e => { var before = e.localMousePosition; float old = zoom; zoom = Mathf.Clamp(zoom * Mathf.Exp(-e.delta.y * .04f), .75f, 192); pan = before + (pan - before) * (zoom / old); e.StopPropagation(); RepaintView(); RememberView(); });
+                RegisterCallback<DetachFromPanelEvent>(evt => { if(effectGesture) CancelStroke(); });
+                RegisterCallback<FocusOutEvent>(evt => { if(effectGesture) CancelStroke(); });
+                RegisterCallback<WheelEvent>(e => { if(IsStroking) return; needsInitialFrame = false; var before = e.localMousePosition; float old = zoom; zoom = Mathf.Clamp(zoom * Mathf.Exp(-e.delta.y * .04f), .75f, 192); pan = before + (pan - before) * (zoom / old); e.StopPropagation(); RepaintView(); RememberView(); });
                 RegisterCallback<KeyDownEvent>(e =>
                 {
                     if (e.keyCode == KeyCode.Escape) { CancelStroke(); e.StopPropagation(); RepaintView(); }
@@ -232,24 +282,68 @@ namespace Project.GridArt.Editor
                 });
                 RegisterCallback<AttachToPanelEvent>(e => RestoreView());
             }
-            private string Key => "2026TapTap.GridArt.View." + Hash128.Compute(Application.dataPath) + "." + (owner.map != null ? AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(owner.map)) : "none");
-            public void RememberView() { EditorPrefs.SetFloat(Key + ".Zoom", zoom); EditorPrefs.SetFloat(Key + ".X", pan.x); EditorPrefs.SetFloat(Key + ".Y", pan.y); }
-            public void RestoreView() { zoom = EditorPrefs.GetFloat(Key + ".Zoom", 32); pan = new Vector2(EditorPrefs.GetFloat(Key + ".X", 240), EditorPrefs.GetFloat(Key + ".Y", 320)); RepaintView(); }
+            private string Key => owner.SceneKey + ".View." + (owner.map != null ? AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(owner.map)) : "reference-only");
+            public void RememberView()
+            {
+                initialFrameBounds = null;
+                PersistView();
+            }
+            private void PersistView()
+            {
+                // SceneChanged arrives after Unity changed its active scene. Save under
+                // the key captured when this view was restored, never the new scene's key.
+                if (needsInitialFrame || string.IsNullOrEmpty(restoredViewKey)) return;
+                EditorPrefs.SetFloat(restoredViewKey + ".Zoom", zoom); EditorPrefs.SetFloat(restoredViewKey + ".X", pan.x); EditorPrefs.SetFloat(restoredViewKey + ".Y", pan.y);
+            }
+            public void RestoreView()
+            {
+                initialFrameBounds = null;
+                restoredViewKey = Key; needsInitialFrame = !EditorPrefs.HasKey(Key + ".Zoom");
+                zoom = EditorPrefs.GetFloat(Key + ".Zoom", 32); pan = new Vector2(EditorPrefs.GetFloat(Key + ".X", 240), EditorPrefs.GetFloat(Key + ".Y", 320));
+                UpdateReference(); TryInitialFrame(); RepaintView();
+            }
+            public void UpdateReference()
+            {
+                reference.Configure(owner.levelSource);
+                TryInitialFrame(); RepaintView();
+            }
+            private void TryInitialFrame()
+            {
+                if (!needsInitialFrame || owner.levelSource == null || contentRect.width < 100 || contentRect.height < 100 || IsStroking) return;
+                if (!FrameRoom(owner.selectedReferenceRoom) && !FrameLevel()) FrameAll();
+            }
+            public bool FrameRoom(string id)
+            {
+                if (owner.levelSource == null || string.IsNullOrEmpty(id)) return false;
+                var room = owner.levelSource.rooms.FirstOrDefault(item => item.id == id);
+                return room != null && FrameWorld(room.boundsWorld);
+            }
+            public bool FrameLevel() => owner.levelSource != null && owner.levelSource.hasWorldBounds && FrameWorld(owner.levelSource.worldBounds);
+            private bool FrameWorld(Rect world)
+            {
+                float size = Mathf.Max(.01f, owner.map != null ? owner.map.cellSize : owner.levelSource?.cellSize ?? 1f);
+                return Frame(new Rect(world.position / size, world.size / size));
+            }
+            private bool Frame(Rect bounds, bool preserveInitialFit = false)
+            {
+                if (IsStroking || contentRect.width < 100 || contentRect.height < 100 || bounds.width <= 0 || bounds.height <= 0) return false;
+                bool initial = preserveInitialFit || needsInitialFrame;
+                zoom = Mathf.Clamp(Mathf.Min((contentRect.width - 48) / Mathf.Max(1,bounds.width), (contentRect.height - 48) / Mathf.Max(1,bounds.height)),.75f,64);
+                pan = contentRect.center + new Vector2(-bounds.center.x,bounds.center.y)*zoom;
+                needsInitialFrame = false; initialFrameBounds = initial ? bounds : null;
+                PersistView(); RepaintView(); return true;
+            }
             public void FrameAll()
             {
-                if (owner.map == null) return;
                 bool found = false; Rect bounds = default;
-                foreach (var layer in owner.map.layers) foreach (var q in GridArtBuilder.BuildQuads(layer, owner.map.palette))
+                if(owner.map != null) foreach (var layer in owner.map.layers) foreach (var q in GridArtBuilder.BuildQuads(layer, owner.map.palette))
                 {
                     bounds = found ? Rect.MinMaxRect(Mathf.Min(bounds.xMin,q.bounds.xMin),Mathf.Min(bounds.yMin,q.bounds.yMin),Mathf.Max(bounds.xMax,q.bounds.xMax),Mathf.Max(bounds.yMax,q.bounds.yMax)) : q.bounds;
                     found = true;
                 }
                 if (!found) foreach (var guide in owner.guides)
                 { bounds = found ? Rect.MinMaxRect(Mathf.Min(bounds.xMin, guide.xMin), Mathf.Min(bounds.yMin, guide.yMin), Mathf.Max(bounds.xMax, guide.xMax), Mathf.Max(bounds.yMax, guide.yMax)) : guide; found = true; }
-                if (!found) return;
-                zoom = Mathf.Clamp(Mathf.Min((contentRect.width - 48) / Mathf.Max(1,bounds.width), (contentRect.height - 48) / Mathf.Max(1,bounds.height)),.75f,64);
-                pan = contentRect.center + new Vector2(-bounds.center.x,bounds.center.y)*zoom;
-                RememberView(); RepaintView();
+                if (found) Frame(bounds); else FrameLevel();
             }
             public void Invalidate() { quads = null; layerQuads.Clear(); RepaintView(); }
             private Vector2Int Cell(Vector2 p) => new Vector2Int(Mathf.FloorToInt((p.x - pan.x) / zoom), Mathf.FloorToInt((pan.y - p.y) / zoom));
@@ -257,9 +351,19 @@ namespace Project.GridArt.Editor
             private static RectInt Selection(Vector2Int a, Vector2Int b) => new RectInt(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Abs(a.x - b.x) + 1, Mathf.Abs(a.y - b.y) + 1);
             private void Down(PointerDownEvent e)
             {
-                if (gesture >= 0) return;
+                if (gesture >= 0 || effectGesture) return;
                 if (e.button != 2 && owner.previewTravel.sqrMagnitude > .0001f) { owner.status.text = "视差预览中 · 点击复位后继续绘制"; e.StopPropagation(); return; }
                 Focus(); pointer = e.localPosition; start = last = Cell(pointer); pointerStart = pointer; panStart = pan;
+                if (e.button == 2) needsInitialFrame = false;
+                if (e.button != 2 && owner.EffectToolActive)
+                {
+                    if(owner.EffectPointerDown(start,e.button))
+                    {
+                        pointerId=e.pointerId; effectGesture=true; this.CapturePointer(pointerId);
+                        e.StopPropagation(); RepaintView();
+                    }
+                    return;
+                }
                 if (e.button != 2 && (!owner.CanEditMap || owner.Layer == null || owner.Layer.locked || owner.Layer.followLevel || !owner.Layer.visible || owner.map.palette == null || owner.Brush == null || EditorApplication.isPlayingOrWillChangePlaymode)) return;
                 gesture = e.button; pointerId = e.pointerId; dirty = canceled = false; eraseStroke = owner.erase || e.button == 1;
                 this.CapturePointer(e.pointerId); e.StopPropagation();
@@ -269,6 +373,7 @@ namespace Project.GridArt.Editor
             private void Move(PointerMoveEvent e)
             {
                 pointer = e.localPosition;
+                if(effectGesture) { owner.EffectPointerMove(Cell(pointer)); e.StopPropagation(); RepaintView(); return; }
                 if (gesture == 2) pan = panStart + pointer - pointerStart;
                 else if (gesture >= 0 && !owner.rectangle)
                 {
@@ -282,13 +387,19 @@ namespace Project.GridArt.Editor
             }
             private void Up(PointerUpEvent e)
             {
+                if(effectGesture)
+                {
+                    effectGesture=false; owner.EffectPointerUp(Cell(e.localPosition));
+                    if(this.HasPointerCapture(pointerId)) this.ReleasePointer(pointerId);
+                    e.StopPropagation(); RepaintView(); return;
+                }
                 if (gesture < 0) return;
                 if (gesture != 2 && owner.rectangle && !canceled)
                 {
                     var rect = Selection(start, Cell(e.localPosition));
                     if ((long)rect.width * rect.height <= 4096)
                     {
-                        Vector2Int step = eraseStroke || owner.Brush.autoTerrain ? Vector2Int.one : owner.Brush.Size;
+                        Vector2Int step = eraseStroke || owner.Brush.autoTerrain ? Vector2Int.one : owner.BrushFootprint;
                         for (int y = rect.yMin; y < rect.yMax; y += step.y)
                             for (int x = rect.xMin; x < rect.xMax; x += step.x) Paint(new Vector2Int(x,y));
                     }
@@ -301,7 +412,7 @@ namespace Project.GridArt.Editor
             private void Paint(Vector2Int p)
             {
                 if (owner.Layer == null) return;
-                bool changed = eraseStroke ? owner.Layer.Erase(p, owner.map.palette) : owner.Layer.Set(p, owner.brushIndex);
+                bool changed = owner.PaintSceneCell(p,eraseStroke);
                 dirty |= changed; if (changed) { quads = null; layerQuads.Remove(owner.Layer); }
             }
             public void RepaintView()
@@ -317,7 +428,7 @@ namespace Project.GridArt.Editor
                             if (layer.visible) foreach (var q in cached)
                             {
                                 Vector2 offset = Vector2.Scale(owner.previewTravel, Vector2.one - layer.parallax);
-                                quads.Add((new GridArtQuad(new Rect(q.bounds.position + offset, q.bounds.size), q.uv, q.texture, q.normal, q.colorId), layer.tint));
+                                quads.Add((new GridArtQuad(new Rect(q.bounds.position + offset, q.bounds.size), q.uv, q.texture, q.normal, q.colorId, q.quarterTurns), layer.tint));
                             }
                         }
                     artwork.Clear(); batches.Clear();
@@ -331,6 +442,9 @@ namespace Project.GridArt.Editor
                 }
                 artwork.style.translate = new Translate(pan.x, pan.y);
                 artwork.style.scale = new Scale(Vector3.one * (zoom / GridArtPreviewBatch.Units));
+                float size = Mathf.Max(.01f, owner.map != null ? owner.map.cellSize : owner.levelSource?.cellSize ?? 1f);
+                reference.SetView(pan, zoom / size, contentRect);
+                reference.SetReferenceVisibility(owner.showLevelReference, owner.levelReferenceOpacity);
                 foreach (var batch in batches) batch.SetVisible(Screen(batch.Bounds).Overlaps(contentRect));
                 overlay.MarkDirtyRepaint();
             }
@@ -348,9 +462,11 @@ namespace Project.GridArt.Editor
                     }
                     painter.Stroke();
                 }
+                owner.DrawEffectOverlay(painter,Screen,contentRect);
+                if(owner.EffectToolActive) return;
                 if (owner.Layer == null) return;
                 RectInt selected = Selection(start, Cell(pointer));
-                Rect area = gesture >= 0 && gesture != 2 && owner.rectangle ? new Rect(selected.position, selected.size) : new Rect(Cell(pointer), owner.Brush != null && !owner.Brush.autoTerrain ? owner.Brush.Size : Vector2Int.one);
+                Rect area = gesture >= 0 && gesture != 2 && owner.rectangle ? new Rect(selected.position, selected.size) : new Rect(Cell(pointer), owner.Brush != null && !owner.Brush.autoTerrain ? owner.BrushDisplaySize : Vector2.one);
                 Rect box = Screen(area); painter.strokeColor = eraseStroke && gesture >= 0 || owner.erase ? new Color(1,.3f,.25f) : new Color(.25f,.8f,1);
                 painter.lineWidth = 2; painter.BeginPath(); painter.MoveTo(box.min); painter.LineTo(new Vector2(box.xMax,box.yMin)); painter.LineTo(box.max); painter.LineTo(new Vector2(box.xMin,box.yMax)); painter.ClosePath(); painter.Stroke();
             }

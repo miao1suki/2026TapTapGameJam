@@ -135,8 +135,16 @@ namespace Project.BlockFeatures
 
         protected override void OnResetForRoom()
         {
-            StopAllLifts();
-            base.OnResetForRoom();
+            // Disconnecting contacts is cleanup, not a physical top exit. A
+            // player still inside/above the volume must not re-register lift,
+            // restart bubble audio or receive an exit boost during room reset.
+            disconnecting = true;
+            try
+            {
+                StopAllLifts();
+                base.OnResetForRoom();
+            }
+            finally { disconnecting = false; }
         }
 
         public override void CollectDebugValues(

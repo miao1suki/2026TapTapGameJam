@@ -30,6 +30,10 @@ public sealed class BossAnimationDriverEditor : Editor
             "驱动 Animator 参数"));
         animator.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
+            "waitForPresentationDeathTrigger",
+            "死亡动画等待演出触发"));
+        animator.Add(ProjectInspectorUtility.CreateProperty(
+            serializedObject,
             "chaseBoolParameter",
             "追击布尔参数"));
         animator.Add(ProjectInspectorUtility.CreateProperty(

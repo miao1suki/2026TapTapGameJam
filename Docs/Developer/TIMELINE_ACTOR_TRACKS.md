@@ -18,6 +18,8 @@ Boss 入场有额外硬约束：每个 Boss Clip 只能做“发呆 / 移动 / �
 
 角色片段不直接改写 `TimelineCamRig.target`。相机片段可在“锚点 Tag”填写角色 Tag（Boss 入场为 `Boss`）；片段只在自己的有效期内覆盖锚点，结束或暂停时恢复原目标。CamRig 的控制权在相机 Clip 自然结束时释放，兼容 PlayableDirector 的 Hold 模式，不依赖 Graph 停止。
 
+`CameraTimelineTrack` 的“结束返回时间”控制自然结束后交还玩法相机时的平滑时间。需要自定义完整去程和回程时，可以让 Clip 的 `motionCurve` 先到目标、保持、再回到起点，轨道返回时间只负责最后收尾；Boss 死亡演出就使用这一方式。
+
 ## 运动
 
 片段支持四种运动模式：

@@ -208,6 +208,28 @@ namespace Project.LevelEditor.Editor
                     serializedObject.ApplyModifiedPropertiesWithoutUndo();
                 }
             }
+
+            Project.BlockFeatures.RespawnAnchorFeature[] anchors =
+                root.GetComponentsInChildren<
+                    Project.BlockFeatures.RespawnAnchorFeature>(true);
+            for (int index = 0; index < anchors.Length; index++)
+            {
+                Project.BlockFeatures.RespawnAnchorFeature anchor =
+                    anchors[index];
+                if (anchor == null)
+                {
+                    continue;
+                }
+
+                if (anchor.IsBossArenaRespawnPoint)
+                {
+                    anchor.EnsureBossRespawnMarker(
+                        true,
+                        recordUndo);
+                }
+
+                anchor.ApplyBossRespawnMarkerState();
+            }
         }
 
         public static void RestorePrefabDefaults(

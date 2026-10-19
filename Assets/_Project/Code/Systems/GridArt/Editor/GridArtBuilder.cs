@@ -16,8 +16,10 @@ namespace Project.GridArt.Editor
         public readonly Texture2D texture;
         public readonly Texture2D normal;
         public readonly string colorId;
-        public GridArtQuad(Rect area, Rect sample, Texture2D source, Texture2D normalMap = null, string color = "")
-        { bounds = area; uv = sample; texture = source; normal = normalMap; colorId = color; }
+        public readonly int quarterTurns;
+        public Vector2 UV(int corner) => GridArtRotation.SampleUV(uv,corner,quarterTurns);
+        public GridArtQuad(Rect area, Rect sample, Texture2D source, Texture2D normalMap = null, string color = "", int rotation = 0)
+        { bounds = area; uv = sample; texture = source; normal = normalMap; colorId = color; quarterTurns = GridArtRotation.Normalize(rotation); }
     }
 
     public static class GridArtBuilder
@@ -35,7 +37,7 @@ namespace Project.GridArt.Editor
                 string colorId = string.IsNullOrEmpty(layer.colorId) ? brush.colorId : layer.colorId == "none" ? "" : layer.colorId;
                 if (!brush.autoTerrain)
                 {
-                    Add(result, brush.sprite, new Rect(cell.position, brush.DisplaySize), brush.contentRect, brush.normalMap, colorId);
+                    Add(result, brush.sprite, new Rect(cell.position, GridArtRotation.Size(brush.DisplaySize, cell.quarterTurns)), brush.contentRect, brush.normalMap, colorId, cell.quarterTurns);
                     continue;
                 }
                 for (int q = 0; q < 4; q++)
@@ -53,7 +55,7 @@ namespace Project.GridArt.Editor
             return result;
         }
 
-        private static void Add(List<GridArtQuad> result, Sprite sprite, Rect bounds, Rect? part, Texture2D normal, string colorId)
+        private static void Add(List<GridArtQuad> result, Sprite sprite, Rect bounds, Rect? part, Texture2D normal, string colorId, int rotation = 0)
         {
             if (sprite == null) return;
             if (sprite.packed) throw new InvalidOperationException("美术网格笔刷暂不支持已打包 Sprite，请使用独立原图切片。");
@@ -67,7 +69,7 @@ namespace Project.GridArt.Editor
             }
             result.Add(new GridArtQuad(bounds,
                 new Rect(sample.x / sprite.texture.width, sample.y / sprite.texture.height,
-                    sample.width / sprite.texture.width, sample.height / sprite.texture.height), sprite.texture, normal, colorId));
+                    sample.width / sprite.texture.width, sample.height / sprite.texture.height), sprite.texture, normal, colorId, rotation));
         }
 
         public static int ColorLayer(string colorId)
@@ -93,8 +95,7 @@ namespace Project.GridArt.Editor
                 vertices.Add(new Vector3(q.bounds.xMin, q.bounds.yMax) * size);
                 vertices.Add(new Vector3(q.bounds.xMax, q.bounds.yMax) * size);
                 vertices.Add(new Vector3(q.bounds.xMax, q.bounds.yMin) * size);
-                uv.Add(new Vector2(q.uv.xMin, q.uv.yMin)); uv.Add(new Vector2(q.uv.xMin, q.uv.yMax));
-                uv.Add(new Vector2(q.uv.xMax, q.uv.yMax)); uv.Add(new Vector2(q.uv.xMax, q.uv.yMin));
+                uv.Add(q.UV(0)); uv.Add(q.UV(1)); uv.Add(q.UV(2)); uv.Add(q.UV(3));
                 triangles.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
             }
         }

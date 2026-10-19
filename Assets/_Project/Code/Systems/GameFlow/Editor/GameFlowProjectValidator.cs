@@ -30,9 +30,10 @@ namespace Project.GameFlow.Editor
                 CheckPath(scene.path, errors);
                 if (!seen.Add(scene.path)) errors.Add("构建场景重复：" + scene.path);
             }
-            if (seen.Count == 0) errors.Add("未配置启用的构建场景。");
+            if (!seen.Contains(GameFlowSceneScaffolder.GamingPath)) errors.Add("正式构建必须从 Gaming 启动。");
+            if (seen.Contains(GameFlowSceneScaffolder.MainMenuPath)) errors.Add("MainMenu 仅为兼容入口，不得加入正式构建。");
             report = errors.Count == 0
-                ? "场景配置检查通过。当前流程为 MainMenu → Gaming。"
+                ? "场景配置检查通过。Gaming 单场景启动，同场景菜单与游玩。"
                 : "场景配置检查失败：\n- " + string.Join("\n- ", errors);
             return errors.Count == 0;
         }

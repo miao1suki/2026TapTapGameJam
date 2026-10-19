@@ -10,7 +10,7 @@ namespace Project.ContactCubes
     public enum CubeColor { [InspectorName("红")] Red, [InspectorName("绿")] Green, [InspectorName("蓝")] Blue }
     public enum CubeReactionState { [InspectorName("静止")] Idle, [InspectorName("生长")] Growing, [InspectorName("缩短")] Shrinking, [InspectorName("锁长")] Locked }
 
-    // Fixed identity; keys unlock abilities, never player-click recoloring.
+    // Fixed identity; blue clicks can request green growth, never recolor a cube.
     [DisallowMultipleComponent]
     public sealed class ContactCube : MonoBehaviour,
         IRoomColorResettable,
@@ -47,6 +47,8 @@ namespace Project.ContactCubes
         private ContactCubeMotion motion;
         private bool carrySuspended;
         private bool hookSuspended;
+        private bool playerGrowthRequested;
+        public bool IsPlayerGrowthRequested => playerGrowthRequested;
         public void SetCarrySuspended(bool suspended)
         {
             carrySuspended = suspended;
@@ -81,6 +83,13 @@ namespace Project.ContactCubes
             motion = GetComponent<ContactCubeMotion>();
             cellSize = GridCellSizeUtility.Resolve(this);
             ResetForRoom();
+            // Existing scene instances need the same click entry as newly placed prefabs.
+            if (color == CubeColor.Green && GetComponent<BlueContactCubeGrowthTarget>() == null)
+                gameObject.AddComponent<BlueContactCubeGrowthTarget>();
+            // Legacy authored instances may predate the climbing adapter. Growth
+            // changes the one real collider; it must not need separate child vines.
+            if (color == CubeColor.Green && motion != null && GetComponent<HorizontalCubeVine>() == null)
+                gameObject.AddComponent<HorizontalCubeVine>();
         }
         private void FixedUpdate()
         {
@@ -226,6 +235,35 @@ namespace Project.ContactCubes
         }
         private static Vector3 Abs(Vector3 value) => new Vector3(Mathf.Abs(value.x), Mathf.Abs(value.y), Mathf.Abs(value.z));
         public static CubeReactionState Evaluate(bool red, bool blue) => red && blue ? CubeReactionState.Locked : blue ? CubeReactionState.Growing : red ? CubeReactionState.Shrinking : CubeReactionState.Idle;
+        internal bool CanRequestPlayerGrowth => color == CubeColor.Green && CanEmitContactReactions && Length < maximumLength;
+        internal bool RequestPlayerGrowth(Vector3 playerCenter)
+        {
+            if (!CanRequestPlayerGrowth) return false;
+            // Repeated clicks neither postpone the next step nor turn an extended body.
+            if (Length == 1)
+                localGrowthDirection = transform.InverseTransformDirection(PlayerGrowthDirection(playerCenter));
+            playerGrowthRequested = true;
+            return true;
+        }
+        private Vector3 PlayerGrowthDirection(Vector3 playerCenter)
+        {
+            Vector3 root = transform.position;
+            var manager = Project.Rooms.RoomLifecycleManager.ForScene(gameObject.scene);
+            Vector3 gridRoot = manager != null ? manager.transform.InverseTransformPoint(root) : root;
+            Vector3 gridPlayer = manager != null ? manager.transform.InverseTransformPoint(playerCenter) : playerCenter;
+            // Resting physics can straddle an exact grid boundary by a few millimetres.
+            bool sameRow = Mathf.Abs(gridPlayer.y - gridRoot.y) <= cellSize * .01f ||
+                Mathf.FloorToInt(gridPlayer.y / cellSize) == Mathf.FloorToInt(gridRoot.y / cellSize);
+            if (!sameRow) return playerCenter.y < root.y ? Vector3.down : Vector3.up;
+            return playerCenter.x < root.x ? Vector3.right : Vector3.left;
+        }
+        internal void CancelPlayerGrowth()
+        {
+            if (!playerGrowthRequested) return;
+            playerGrowthRequested = false;
+            elapsed = 0;
+            TickReaction(0f);
+        }
         private void TickReaction(float dt)
         {
             if (color != CubeColor.Green) return;
@@ -235,7 +273,7 @@ namespace Project.ContactCubes
                 if (neighbour.Color == CubeColor.Red) red = true;
                 if (neighbour.Color == CubeColor.Blue && (blue == null || neighbour.GetInstanceID() < blue.GetInstanceID())) blue = neighbour;
             }
-            CubeReactionState next = Evaluate(red, blue != null);
+            CubeReactionState next = Evaluate(red, blue != null || playerGrowthRequested);
             if (State != next || selectedBlue != blue)
             {
                 elapsed = 0; selectedBlue = blue;
@@ -248,14 +286,47 @@ namespace Project.ContactCubes
             if (State == CubeReactionState.Growing)
             {
                 // Direction is fixed while extended; never swing an existing long body.
-                if (Length == 1 && blue != null)
+                if (Length == 1 && blue != null && !playerGrowthRequested)
                 {
                     Vector3 away = transform.position - blue.transform.position;
                     if (away.sqrMagnitude > .0001f) localGrowthDirection = transform.InverseTransformDirection(away.normalized);
                 }
-                SetLength(Mathf.Min(Length + 1, maximumLength));
+                if (Length < maximumLength && CanGrowOneCell()) SetLength(Length + 1);
+                if (Length >= maximumLength) playerGrowthRequested = false;
             }
             else SetLength(Mathf.Max(1, Length - 1));
+        }
+        private bool CanGrowOneCell()
+        {
+            // Only the newly occupied cell is tested: a supporting floor beside
+            // the original body must not block growth along a clear face.
+            Quaternion rotation = transform.rotation * Quaternion.FromToRotation(Vector3.right, localGrowthDirection);
+            Vector3 center = transform.TransformPoint(localGrowthDirection * (Length * cellSize));
+            Vector3 half = Vector3.Scale(Vector3.one * (cellSize * .5f), Abs(transform.lossyScale));
+            // Ignore touching faces while still rejecting thin walls anywhere in the new cell.
+            float skin = cellSize * .001f;
+            half = new Vector3(Mathf.Max(skin, half.x - skin), Mathf.Max(skin, half.y - skin), Mathf.Max(skin, half.z - skin));
+            int count;
+            do
+            {
+                count = Physics.OverlapBoxNonAlloc(center, half, hits, rotation, ~0, QueryTriggerInteraction.Ignore);
+                if (count < hits.Length) break;
+                if (hits.Length >= 4096) return false;
+                Array.Resize(ref hits, hits.Length * 2);
+            } while (true);
+            for (int index = 0; index < count; index++)
+            {
+                Collider hit = hits[index];
+                if (hit == null || hit.transform.IsChildOf(transform) ||
+                    Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(hit) ||
+                    Physics.GetIgnoreLayerCollision(shape.gameObject.layer, hit.gameObject.layer) ||
+                    Physics.GetIgnoreCollision(shape, hit)) continue;
+                // A player occupying the added cell blocks this whole-cell step
+                // too. Never resize a collider around a player and rely on deep
+                // penetration recovery; the pending request resumes when clear.
+                return false;
+            }
+            return true;
         }
         private void SetLength(int value)
         {
@@ -295,6 +366,7 @@ namespace Project.ContactCubes
         }
         private void ClearContacts()
         {
+            playerGrowthRequested = false;
             neighbours.Clear(); touchingTargets.Clear(); appliedTargets.Clear(); selectedBlue = null; elapsed = 0;
             collisionNeighbours.Clear(); staleCollisionNeighbours.Clear();
             if (State != CubeReactionState.Idle) { State = CubeReactionState.Idle; StateChanged?.Invoke(State); }

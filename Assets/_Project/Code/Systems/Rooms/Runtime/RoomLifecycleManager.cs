@@ -4,6 +4,7 @@ using Project.BlockFeatures;
 using Project.LevelEditor;
 using Project.Player;
 using UnityEngine;
+using Unity.Profiling;
 
 namespace Project.Rooms
 {
@@ -28,6 +29,8 @@ namespace Project.Rooms
         private readonly Dictionary<Vector2Int, string> owners = new Dictionary<Vector2Int, string>();
         private readonly Dictionary<string, List<RoomResetObject>> members = new Dictionary<string, List<RoomResetObject>>();
         private readonly List<RoomResetObject> confinedItems = new List<RoomResetObject>();
+        private readonly List<RoomResetObject> resetSnapshot = new List<RoomResetObject>();
+        private static readonly ProfilerMarker ResetRegionMarker = new ProfilerMarker("Gameplay.Room.ResetRegion");
         private string currentRegionId;
         private bool resetting;
         public string CurrentRegionId => currentRegionId;
@@ -67,6 +70,10 @@ namespace Project.Rooms
                     RegisterObject(item.gameObject);
                 foreach (CarryableFeature item in root.GetComponentsInChildren<CarryableFeature>(true))
                     RegisterObject(item.gameObject);
+                foreach (MovingPlatformFeature platform in root.GetComponentsInChildren<MovingPlatformFeature>(true))
+                    RegisterObject(platform.gameObject);
+                foreach (Project.Mechanisms.OneWayPlatform platform in root.GetComponentsInChildren<Project.Mechanisms.OneWayPlatform>(true))
+                    RegisterObject(platform.gameObject);
                 foreach (Project.Mechanisms.DoorButton button in root.GetComponentsInChildren<Project.Mechanisms.DoorButton>(true))
                     RegisterObject(button.gameObject);
                 foreach (RoomResetObject member in root.GetComponentsInChildren<RoomResetObject>(true))
@@ -168,17 +175,19 @@ namespace Project.Rooms
         public void ResetRegion(string id)
         {
             if (resetting || string.IsNullOrEmpty(id) || !members.TryGetValue(id, out var list)) return;
+            using var marker = ResetRegionMarker.Auto();
             resetting = true;
             try
             {
                 // Restore all poses first so cross-object links evaluate against authored positions.
-                var snapshot = list.ToArray();
-                foreach (var member in snapshot) if (member != null) member.RestorePose();
-                foreach (var member in snapshot) if (member != null) member.RestoreState();
+                resetSnapshot.Clear();
+                resetSnapshot.AddRange(list);
+                foreach (var member in resetSnapshot) if (member != null) member.RestorePose();
+                foreach (var member in resetSnapshot) if (member != null) member.RestoreState();
                 Physics.SyncTransforms();
                 RegionReset?.Invoke(id);
             }
-            finally { resetting = false; }
+            finally { resetSnapshot.Clear(); resetting = false; }
         }
 
         public static RoomLifecycleManager ForScene(UnityEngine.SceneManagement.Scene scene)
@@ -197,6 +206,25 @@ namespace Project.Rooms
             manager.ResetRegion(origin);
             if (next != origin) manager.ResetRegion(next);
             manager.currentRegionId = next;
+        }
+
+        public void PrepareCheckpointDestination(PlayerController target, Vector3 destination)
+        {
+            if (target == null || target.gameObject.scene != gameObject.scene) return;
+            string origin = FindRegion(target.transform.position);
+            string next = FindRegion(destination);
+            if (!string.IsNullOrEmpty(next) && next != origin) ResetRegion(next);
+        }
+
+        public void CommitCheckpointTravel(PlayerController target, Vector3 destination)
+        {
+            if (target == null || target.gameObject.scene != gameObject.scene) return;
+            player = target;
+            string origin = FindRegion(target.transform.position);
+            string next = FindRegion(destination);
+            if (origin != next) ResetRegion(origin);
+            currentRegionId = next;
+            if (origin != next) RegionChanged?.Invoke(origin, next);
         }
 
         public static void ResetCurrentRooms()

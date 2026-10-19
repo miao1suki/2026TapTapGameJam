@@ -6,6 +6,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Project.InputAbstraction;
 using Project.Privacy;
+using Project.StartMenu;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -25,9 +26,97 @@ namespace Project.GameFlow.Tests
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
         private GameObject root, eventRoot;
         private Touchscreen screen;
+        private Keyboard keyboard;
         private bool hadLayout;
         private string previousLayout;
         private InputPlatformMode previousPlatform;
+        private System.IDisposable previewLease;
+
+        [UnityTest]
+        public IEnumerator WorldMenuSettings_ReceivesTouch_AndRebindsRetainedButtonAndBridge()
+        {
+            hadLayout = PlayerPrefs.HasKey(Key); previousLayout = PlayerPrefs.GetString(Key);
+            MobileControlLayout.Reset();
+            var input = InputService.EnsureInstance(); previousPlatform = input.ConfiguredPlatformMode;
+            typeof(InputService).GetField("platformMode", Private).SetValue(input, InputPlatformMode.Mobile);
+            eventRoot = new GameObject("World Menu Layout Input", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            eventRoot.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
+            screen = InputSystem.AddDevice<Touchscreen>();
+            keyboard = InputSystem.AddDevice<Keyboard>();
+            previewLease = GameplayPresentationGate.Suppress();
+            root = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Resources/UI/WorldMainMenu.prefab"));
+            var menu = root.GetComponentInChildren<StartMenuController>();
+            Assert.IsNotNull(typeof(StartMenuController).GetField("uiSdfFont", Private).GetValue(menu),
+                "WorldMainMenu must resolve its serialized Cubic_11 SDF asset; a missing font makes the layout entry silently unusable.");
+            Assert.IsNotNull(StartMenuTypography.SdfFont, "The instantiated menu must configure shared typography before settings opens.");
+            menu.SetPresented(true);
+            menu.ShowSettings();
+            var settings = root.GetComponentInChildren<SettingsPanelController>(true);
+            yield return WaitForSettings(settings);
+            var entry = (RectTransform)settings.transform.Find("Category List/Touch Layout");
+            Assert.IsNotNull(entry, "The main menu must have the same mobile entry as the pause menu.");
+            yield return Tap(entry);
+            Assert.IsTrue(MobileControlLayout.IsEditing, "Actual main-menu touch must open the layout, not only a direct Open() call.");
+            var editor = Object.FindFirstObjectByType<MobileControlLayoutEditor>();
+            var preview = editor.GetComponentInChildren<MobileGameplayControls>(true);
+            Assert.IsTrue(preview.LayoutEditing && preview.Controls.gameObject.activeInHierarchy);
+            Assert.That(preview.Controls.Cast<Transform>().All(x => x.gameObject.activeInHierarchy), Is.True);
+            Assert.IsTrue(GameplayPresentationGate.IsSuppressed, "Opening layout cannot release the menu's gameplay preview lease.");
+            yield return Tap((RectTransform)editor.transform.Find("工具栏/取消"));
+            Assert.IsFalse(MobileControlLayout.IsEditing);
+            Assert.IsFalse(PlayerPrefs.HasKey(Key));
+
+            yield return Tap(entry);
+            Assert.IsTrue(MobileControlLayout.IsEditing);
+            yield return CancelInput(Object.FindFirstObjectByType<MobileControlLayoutEditor>(), menu);
+            Assert.IsFalse(MobileControlLayout.IsEditing, "Actual Cancel input must close the top-level layout modal.");
+            yield return null;
+            Assert.IsTrue(settings.gameObject.activeInHierarchy && menu.IsPresented,
+                "The same Cancel/Pause input must not escape through to the underlying main-menu settings.");
+            Assert.IsFalse(PlayerPrefs.HasKey(Key), "Cancel input cannot persist edits.");
+
+            var privacyEntry = (RectTransform)settings.transform.Find("Category List/Privacy Policy");
+            yield return Tap(privacyEntry);
+            Assert.IsTrue(AndroidPrivacyPolicy.IsShowing);
+            yield return CancelInput();
+            Assert.IsTrue(AndroidPrivacyPolicy.IsShowing,
+                "The policy viewer remains open until its own Return button is used.");
+            Assert.IsTrue(settings.gameObject.activeInHierarchy,
+                "Cancel/Pause must not close settings underneath the policy viewer either.");
+            var policyCanvas = Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None).Single(c => c.name == "隐私政策");
+            yield return Tap((RectTransform)policyCanvas.transform.Find("返回"));
+            Assert.IsFalse(AndroidPrivacyPolicy.IsShowing);
+            Assert.IsTrue(settings.gameObject.activeInHierarchy);
+
+            // Serialized/runtime-created views survive a Play-mode script reload, their
+            // nonpersistent UnityEvent listeners and static bridge do not.
+            entry.GetComponent<Button>().onClick.RemoveAllListeners();
+            typeof(SettingsPanelController).GetField("TouchLayoutRequested", BindingFlags.Static | BindingFlags.NonPublic)
+                .SetValue(null, null);
+            var router = eventRoot.AddComponent<GameUiRouter>();
+            router.enabled = false; router.enabled = true;
+            menu.ShowMain(); menu.ShowSettings();
+            yield return WaitForSettings(settings);
+            Assert.That(settings.transform.Find("Category List/Touch Layout"), Is.SameAs(entry));
+            Assert.That(settings.transform.Find("Category List").Cast<Transform>().Count(t => t.name == "Touch Layout"), Is.EqualTo(1));
+            yield return Tap(entry);
+            Assert.IsTrue(MobileControlLayout.IsEditing, "Re-enabled settings must repair both a retained button and the static bridge.");
+            editor = Object.FindFirstObjectByType<MobileControlLayoutEditor>();
+            preview = editor.GetComponentInChildren<MobileGameplayControls>();
+            var right = (RectTransform)preview.Controls.Find("右");
+            yield return Tap(right);
+            yield return Tap((RectTransform)editor.transform.Find("工具栏/放大"));
+            Assert.That(right.sizeDelta.x, Is.EqualTo(134));
+            yield return Tap((RectTransform)editor.transform.Find("工具栏/保存"));
+            Assert.IsFalse(MobileControlLayout.IsEditing);
+            Assert.IsTrue(PlayerPrefs.HasKey(Key));
+            Assert.IsTrue(settings.gameObject.activeInHierarchy && menu.IsPresented);
+            yield return Tap(entry);
+            editor = Object.FindFirstObjectByType<MobileControlLayoutEditor>();
+            preview = editor.GetComponentInChildren<MobileGameplayControls>();
+            Assert.That(preview.Controls.Find("右").GetComponent<RectTransform>().sizeDelta.x, Is.EqualTo(134));
+            yield return Tap((RectTransform)editor.transform.Find("工具栏/取消"));
+        }
 
         [UnityTest]
         public IEnumerator OfflinePolicy_CanScrollAndClose_WithoutLeavingTheGame()
@@ -47,7 +136,17 @@ namespace Project.GameFlow.Tests
             var canvas = Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None).Single(c => c.name == "隐私政策");
             var scroll = canvas.GetComponentInChildren<ScrollRect>();
             Assert.That(scroll.content.rect.height, Is.GreaterThan(scroll.viewport.rect.height));
-            StringAssert.Contains("如何联系我们", scroll.content.GetComponent<TextMeshProUGUI>().text);
+            var body = scroll.content.GetComponent<TextMeshProUGUI>();
+            string policyText = AndroidPrivacyPolicy.PlainText(Resources.Load<TextAsset>("Privacy/privacy-policy").text);
+            Assert.That(body.text, Is.EqualTo(policyText), "The actual viewer must render the entire current bundled policy.");
+            StringAssert.Contains("如何联系我们", body.text);
+            Assert.That(body.font, Is.SameAs(font));
+            body.ForceMeshUpdate();
+            string visibleCharacters = new string(policyText.Where(c => !char.IsWhiteSpace(c)).Distinct().ToArray());
+            bool hasCharacters = body.font.HasCharacters(visibleCharacters, out uint[] missing,
+                searchFallbacks: false, tryAddCharacter: false);
+            Assert.IsTrue(hasCharacters,
+                "The actual policy font is missing: " + string.Join(", ", (missing ?? new uint[0]).Select(c => $"U+{c:X4}")));
             yield return Tap((RectTransform)canvas.transform.Find("返回"));
             Assert.IsFalse(AndroidPrivacyPolicy.IsShowing);
         }
@@ -120,6 +219,59 @@ namespace Project.GameFlow.Tests
             Assert.That(hits.Count, Is.GreaterThan(0), rect.name);
             Assert.That(hits[0].gameObject, Is.EqualTo(rect.gameObject), "Underlying pause/settings must not intercept " + rect.name);
         }
+        private IEnumerator WaitForSettings(SettingsPanelController settings)
+        {
+            float deadline = Time.realtimeSinceStartup + 3f;
+            var hits = new List<RaycastResult>();
+            RectTransform entry = null;
+            bool ready = false;
+            do
+            {
+                // activeInHierarchy flips inside the backdrop completion callback,
+                // before sibling order and the canvas graphic depths have settled.
+                yield return null;
+                if (!settings.gameObject.activeInHierarchy) continue;
+                Canvas.ForceUpdateCanvases();
+                entry = settings.transform.Find("Category List/Touch Layout") as RectTransform;
+                if (entry == null) continue;
+                var pointer = new PointerEventData(EventSystem.current)
+                {
+                    position = RectTransformUtility.WorldToScreenPoint(null, entry.position)
+                };
+                hits.Clear();
+                EventSystem.current.RaycastAll(pointer, hits);
+                ready = hits.Count > 0 && hits[0].gameObject == entry.gameObject;
+            }
+            while (!ready && Time.realtimeSinceStartup < deadline);
+
+            Assert.IsTrue(settings.gameObject.activeInHierarchy, "Settings must become active after its backdrop animation.");
+            Assert.IsNotNull(entry, "The active mobile settings page must contain Touch Layout.");
+            string topHit = hits.Count == 0 ? "none" : hits[0].gameObject.name;
+            Assert.IsTrue(ready,
+                $"Settings never became touch-ready; top hit={topHit}, page sibling={settings.transform.GetSiblingIndex()}, " +
+                $"parent={settings.transform.parent?.name}. A persistent backdrop ordering problem must not be hidden by animation waits.");
+        }
+        private IEnumerator CancelInput(MobileControlLayoutEditor firstModal = null, StartMenuController laterMenu = null)
+        {
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(UnityEngine.InputSystem.Key.Escape));
+            if (firstModal != null)
+            {
+                // Force the worst order with a real device/action event: the modal
+                // handles Cancel and is already gone before the menu's Update runs.
+                InputSystem.Update();
+                Assert.IsTrue(GameInput.WasTriggeredThisFrame(InputActionId.Cancel));
+                var modalRoot = firstModal.gameObject;
+                typeof(MobileControlLayoutEditor).GetMethod("Update", Private).Invoke(firstModal, null);
+                Object.DestroyImmediate(modalRoot);
+                Assert.IsFalse(MobileControlLayout.IsEditing);
+                typeof(StartMenuController).GetMethod("Update", Private).Invoke(laterMenu, null);
+            }
+            yield return null;
+            yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            yield return null;
+            yield return null;
+        }
         private IEnumerator Tap(RectTransform rect)
         {
             AssertTopHit(rect);
@@ -144,6 +296,8 @@ namespace Project.GameFlow.Tests
             if (root != null) Object.Destroy(root);
             if (eventRoot != null) Object.Destroy(eventRoot);
             if (screen != null && screen.added) InputSystem.RemoveDevice(screen);
+            if (keyboard != null && keyboard.added) InputSystem.RemoveDevice(keyboard);
+            previewLease?.Dispose(); previewLease = null;
             if (InputService.Instance != null) typeof(InputService).GetField("platformMode", Private).SetValue(InputService.Instance, previousPlatform);
             Time.timeScale = 1; AudioListener.pause = false;
             if (hadLayout) PlayerPrefs.SetString(Key, previousLayout); else PlayerPrefs.DeleteKey(Key);

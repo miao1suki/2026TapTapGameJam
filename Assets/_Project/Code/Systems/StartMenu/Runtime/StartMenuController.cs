@@ -37,26 +37,40 @@ namespace Project.StartMenu
         [SerializeField] private TMP_FontAsset uiSdfFont;
         [Tooltip("Cubic_11 TTF源字体，供运行时生成文本和编辑器布局使用")]
         [SerializeField] private Font uiFont;
+        [SerializeField, Min(0f)] private float panelBackdropSlideDuration = .28f;
         private bool buttonsBound;
         private bool backgroundScrollEnabled = true;
         private static bool externalBackgroundScrollPaused;
         private int lastScreenWidth;
         private int lastScreenHeight;
+        private Image worldMenuLogo;
+        private Sprite[] logoFrames;
+        private float logoFrameSeconds = .08f;
+        private int lastLogoFrame = -1;
+        private RectTransform panelBackdrop;
+        private Tween panelBackdropTween;
+        private bool pendingShowCredits;
 
         public event Action StartGameRequested;
         public event Action ExitGameRequested;
+
+        // The owning flow installs one cached query for overlays above this menu.
+        // Keep the dependency pointing from GameFlow to StartMenu, not the reverse.
+        public static Func<bool> ModalInputBlocked { private get; set; }
 
         public Canvas Canvas => canvas;
         public RawImage Background => background;
         public Transform StartButtonTransform =>
             startButton != null ? startButton.transform : null;
         public RectTransform MenuContentRoot => EnsureMenuContentRoot();
+        public bool IsPresented => canvas != null && canvas.enabled;
 
         [RuntimeInitializeOnLoadMethod(
             RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetExternalBackgroundScrollPause()
         {
             externalBackgroundScrollPaused = false;
+            ModalInputBlocked = null;
         }
 
         public void BuildView()
@@ -69,11 +83,6 @@ namespace Project.StartMenu
             if (canvas == null)
             {
                 canvas = BuildCanvas();
-            }
-
-            if (background == null)
-            {
-                background = BuildBackground(canvas.transform);
             }
 
             if (mainPanel == null)
@@ -143,11 +152,44 @@ namespace Project.StartMenu
             {
                 saveController.BackRequested -= ShowStartChoice;
             }
+
+            panelBackdropTween?.Kill(false);
         }
 
         private void Update()
         {
+            if (!IsPresented) return;
+            if (!(ModalInputBlocked?.Invoke() ?? false) &&
+                settingsPanel != null &&
+                (settingsPanel.activeSelf ||
+                 (panelBackdrop != null &&
+                  panelBackdrop.gameObject.activeSelf)) &&
+                (Project.InputAbstraction.GameInput
+                     .WasTriggeredThisFrame(
+                         Project.InputAbstraction.InputActionId.Cancel) ||
+                 Project.InputAbstraction.GameInput
+                     .WasTriggeredThisFrame(
+                         Project.InputAbstraction.InputActionId.Pause)))
+            {
+                if (settingsPanel.activeSelf)
+                {
+                    settingsController?.TryTriggerBackButton();
+                }
+                else
+                {
+                    HidePanelBackdropImmediate();
+                    SetOnly(mainPanel);
+                }
+
+                return;
+            }
+
             Project.InputAbstraction.DesktopCursorPolicy.Apply(true);
+            if (worldMenuLogo != null && logoFrames != null && logoFrames.Length > 0)
+            {
+                int frame = (int)(Time.unscaledTime / logoFrameSeconds) % logoFrames.Length;
+                if (frame != lastLogoFrame) { lastLogoFrame = frame; worldMenuLogo.sprite = logoFrames[frame]; }
+            }
 
             if (backgroundScrollEnabled &&
                 !externalBackgroundScrollPaused &&
@@ -165,7 +207,10 @@ namespace Project.StartMenu
             }
         }
 
-        private void OnApplicationFocus(bool focused) => Project.InputAbstraction.DesktopCursorPolicy.Apply(true, focused);
+        private void OnApplicationFocus(bool focused)
+        {
+            if (IsPresented) Project.InputAbstraction.DesktopCursorPolicy.Apply(true, focused);
+        }
 
         private void ApplyAdaptiveCanvasScale()
         {
@@ -183,7 +228,30 @@ namespace Project.StartMenu
 
         public void ShowMain()
         {
+            if (panelBackdrop != null &&
+                panelBackdrop.gameObject.activeSelf)
+            {
+                HidePanelBackdrop();
+                return;
+            }
+
             SetOnly(mainPanel);
+        }
+
+        public void SetPresented(bool value, bool interactive = true)
+        {
+            if (canvas != null) canvas.enabled = value;
+            CanvasGroup group = EnsureMenuContentCanvasGroup(EnsureMenuContentRoot());
+            group.interactable = value && interactive;
+            group.blocksRaycasts = value;
+        }
+
+        public void SetFusionContent(float visible, float slideDistance = -180f)
+        {
+            RectTransform root = EnsureMenuContentRoot();
+            CanvasGroup group = EnsureMenuContentCanvasGroup(root);
+            group.alpha = Mathf.Clamp01(visible);
+            root.anchoredPosition = new Vector2(Mathf.Lerp(slideDistance, 0f, visible), 0f);
         }
 
         public void SetBackgroundScrollEnabled(bool value)
@@ -286,11 +354,6 @@ namespace Project.StartMenu
         {
             var art = GameUiArtwork.Load();
             if (art == null) return;
-            if (background != null && art.menuBackground != null)
-            {
-                background.texture = art.menuBackground;
-                background.color = Color.white;
-            }
             if (mainPanel != null)
             {
                 var panel = mainPanel.GetComponent<Image>();
@@ -317,10 +380,7 @@ namespace Project.StartMenu
                     }
                 }
             }
-            ApplyButtonArtwork(startButton, art.startButton, new Vector2(6,21));
-            ApplyButtonArtwork(creditsButton, art.creditsButton, new Vector2(5,77));
-            ApplyButtonArtwork(settingsButton, art.settingsButton, new Vector2(4,125));
-            ApplyButtonArtwork(quitButton, art.quitButton, new Vector2(72,125));
+            ApplyWorldMenuArtwork(art);
             if (Application.isPlaying && creditsButton != null)
             {
                 creditsButton.onClick.RemoveListener(ShowCredits);
@@ -336,10 +396,67 @@ namespace Project.StartMenu
             }
         }
 
+        private void ApplyWorldMenuArtwork(GameUiArtwork art)
+        {
+            if (art.worldMenuButtons == null || art.worldMenuButtons.Length != 4) return;
+            // The supplied black reference is a layout reference, never a runtime backdrop.
+            SetBackgroundVisible(false);
+            SetBackgroundScrollEnabled(false);
+            Button[] ordered = { startButton, creditsButton, settingsButton, quitButton };
+            for (int index = 0; index < ordered.Length; index++)
+            {
+                Button button = ordered[index];
+                Sprite sprite = art.worldMenuButtons[index];
+                if (button == null || sprite == null) continue;
+                ApplyButtonArtwork(button, sprite, Vector2.zero);
+                StartMenuUiFactory.SetTopLeft((RectTransform)button.transform,
+                    new Vector2(68f, -270f - index * 104f), new Vector2(368f, 96f));
+                // Keep a generous fixed hit area while aligning the actual art, not its
+                // transparent source canvas. One precomputed union offset serves both states.
+                Image hit = button.GetComponent<Image>();
+                hit.color = Color.clear;
+                Transform existingVisual = button.transform.Find("World Menu Artwork");
+                Image visual = existingVisual != null ? existingVisual.GetComponent<Image>() :
+                    StartMenuUiFactory.CreateImage("World Menu Artwork", button.transform, Color.white);
+                visual.sprite = sprite;
+                visual.preserveAspect = true;
+                visual.raycastTarget = false;
+                float left = art.worldMenuButtonLeftPadding != null && index < art.worldMenuButtonLeftPadding.Length
+                    ? art.worldMenuButtonLeftPadding[index] : 0f;
+                StartMenuUiFactory.SetTopLeft(visual.rectTransform, new Vector2(-left * 4f, 0f), sprite.rect.size * 4f);
+                button.targetGraphic = visual;
+                button.transition = Selectable.Transition.SpriteSwap;
+                Sprite selected = art.worldMenuSelectedButtons != null && index < art.worldMenuSelectedButtons.Length
+                    ? art.worldMenuSelectedButtons[index] : sprite;
+                SpriteState states = button.spriteState;
+                states.highlightedSprite = states.pressedSprite = states.selectedSprite = selected;
+                states.disabledSprite = sprite;
+                button.spriteState = states;
+                var navigation = button.navigation;
+                navigation.mode = Navigation.Mode.Explicit;
+                navigation.selectOnUp = ordered[(index + ordered.Length - 1) % ordered.Length];
+                navigation.selectOnDown = ordered[(index + 1) % ordered.Length];
+                button.navigation = navigation;
+            }
+            if (mainPanel != null && art.worldMenuLogoFrames != null && art.worldMenuLogoFrames.Length > 0)
+            {
+                Transform existing = mainPanel.transform.Find("Animated Logo");
+                worldMenuLogo = existing != null ? existing.GetComponent<Image>() :
+                    StartMenuUiFactory.CreateImage("Animated Logo", mainPanel.transform, Color.white);
+                worldMenuLogo.raycastTarget = false;
+                worldMenuLogo.preserveAspect = true;
+                StartMenuUiFactory.SetTopLeft(worldMenuLogo.rectTransform, new Vector2(24f, 0f), new Vector2(552f, 268f));
+                logoFrames = art.worldMenuLogoFrames;
+                logoFrameSeconds = Mathf.Max(.02f, art.worldMenuLogoFrameSeconds);
+                worldMenuLogo.sprite = logoFrames[0];
+                lastLogoFrame = -1;
+            }
+        }
+
         private void ShowCredits()
         {
-            ShowSettings();
-            settingsController?.ShowCredits();
+            AudioCuePlayer.PlayUiConfirm();
+            OpenSettingsPanel(true);
         }
 
         private static void ApplyButtonArtwork(Button button, Sprite sprite, Vector2 topLeft)
@@ -384,18 +501,20 @@ namespace Project.StartMenu
 
         public void ShowStartChoice()
         {
+            HidePanelBackdropImmediate();
             SetOnly(startChoicePanel);
         }
 
         public void ShowSettings()
         {
             AudioCuePlayer.PlayUiConfirm();
-            SetOnly(settingsPanel);
+            OpenSettingsPanel(false);
         }
 
         public void ShowSave()
         {
             AudioCuePlayer.PlayUiConfirm();
+            HidePanelBackdropImmediate();
             SetOnly(savePanel);
             saveController?.Refresh();
         }
@@ -404,6 +523,7 @@ namespace Project.StartMenu
         {
             AudioCuePlayer.PlayUiConfirm();
             SaveSlotInfo last = SaveGameService.GetMostRecentSlot();
+            if (statusText == null) return;
             statusText.text = last == null
                 ? "没有可继续的存档。"
                 : $"将读取存档：{last.displayName}；进入游戏的逻辑暂未接线。";
@@ -637,6 +757,7 @@ namespace Project.StartMenu
         {
             if (menuContentRoot != null)
             {
+                EnsurePanelBackdrop();
                 return menuContentRoot;
             }
 
@@ -647,6 +768,7 @@ namespace Project.StartMenu
                     as RectTransform;
                 if (menuContentRoot != null)
                 {
+                    EnsurePanelBackdrop();
                     return menuContentRoot;
                 }
             }
@@ -680,7 +802,141 @@ namespace Project.StartMenu
                 }
             }
 
+            EnsurePanelBackdrop();
             return menuContentRoot;
+        }
+
+        private void OpenSettingsPanel(bool showCredits)
+        {
+            if (settingsPanel == null)
+            {
+                return;
+            }
+
+            EnsurePanelBackdrop();
+            pendingShowCredits = showCredits;
+            panelBackdropTween?.Kill(false);
+            panelBackdrop.gameObject.SetActive(true);
+            int settingsIndex = settingsPanel.transform.GetSiblingIndex();
+            panelBackdrop.SetSiblingIndex(settingsIndex);
+
+            float width = Mathf.Max(1f, menuContentRoot.rect.width);
+            panelBackdrop.anchoredPosition =
+                new Vector2(width, 0f);
+            panelBackdropTween = DOTween.To(
+                    () => panelBackdrop.anchoredPosition.x,
+                    value => panelBackdrop.anchoredPosition =
+                        new Vector2(value, 0f),
+                    0f,
+                    panelBackdropSlideDuration)
+                .SetEase(Ease.OutCubic)
+                .SetUpdate(true)
+                .OnComplete(() =>
+                {
+                    panelBackdropTween = null;
+                    SetOnly(settingsPanel);
+                    settingsPanel.transform.SetAsLastSibling();
+                    ApplyTypography();
+                    settingsController?.FocusBackButton();
+                    if (pendingShowCredits)
+                    {
+                        pendingShowCredits = false;
+                        settingsController?.ShowCredits();
+                    }
+                });
+        }
+
+        private void HidePanelBackdrop()
+        {
+            if (panelBackdrop == null)
+            {
+                SetOnly(mainPanel);
+                return;
+            }
+
+            pendingShowCredits = false;
+            panelBackdropTween?.Kill(false);
+            SetOnly(mainPanel);
+            float width = Mathf.Max(1f, menuContentRoot.rect.width);
+            panelBackdropTween = DOTween.To(
+                    () => panelBackdrop.anchoredPosition.x,
+                    value => panelBackdrop.anchoredPosition =
+                        new Vector2(value, 0f),
+                    width,
+                    panelBackdropSlideDuration)
+                .SetEase(Ease.InCubic)
+                .SetUpdate(true)
+                .OnComplete(() =>
+                {
+                    panelBackdropTween = null;
+                    panelBackdrop.gameObject.SetActive(false);
+                    panelBackdrop.anchoredPosition = Vector2.zero;
+                });
+        }
+
+        private void HidePanelBackdropImmediate()
+        {
+            pendingShowCredits = false;
+            panelBackdropTween?.Kill(false);
+            panelBackdropTween = null;
+            if (panelBackdrop != null)
+            {
+                panelBackdrop.anchoredPosition = Vector2.zero;
+                panelBackdrop.gameObject.SetActive(false);
+            }
+        }
+
+        private void EnsurePanelBackdrop()
+        {
+            if (menuContentRoot == null)
+            {
+                return;
+            }
+
+            bool created = false;
+            if (panelBackdrop == null)
+            {
+                Transform existing =
+                    menuContentRoot.Find("Panel Backdrop");
+                panelBackdrop = existing as RectTransform;
+            }
+
+            if (panelBackdrop == null)
+            {
+                GameObject root = new GameObject(
+                    "Panel Backdrop",
+                    typeof(RectTransform),
+                    typeof(Image));
+                root.transform.SetParent(menuContentRoot, false);
+                panelBackdrop =
+                    root.GetComponent<RectTransform>();
+                StartMenuUiFactory.Stretch(panelBackdrop);
+                Image underlay = root.GetComponent<Image>();
+                underlay.color =
+                    new Color(.035f, .07f, .085f, 1f);
+                underlay.raycastTarget = true;
+
+                GameObject art = new GameObject(
+                    "Background Art",
+                    typeof(RectTransform),
+                    typeof(Image));
+                art.transform.SetParent(root.transform, false);
+                RectTransform artRect =
+                    art.GetComponent<RectTransform>();
+                StartMenuUiFactory.Stretch(artRect);
+                Image image = art.GetComponent<Image>();
+                image.sprite =
+                    GameUiArtwork.Load()?.startMenuPanelBackground;
+                image.type = Image.Type.Simple;
+                image.color = Color.white;
+                image.raycastTarget = false;
+                created = true;
+            }
+
+            if (created)
+            {
+                panelBackdrop.gameObject.SetActive(false);
+            }
         }
 
         private CanvasGroup EnsureMenuContentCanvasGroup(
@@ -703,6 +959,7 @@ namespace Project.StartMenu
 
         private void BindSubPanels()
         {
+            settingsController?.SetOpenLayoutEnabled(true);
             if (settingsController != null)
             {
                 settingsController.BackRequested -= ShowMain;

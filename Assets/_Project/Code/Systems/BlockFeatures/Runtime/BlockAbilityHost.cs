@@ -93,7 +93,7 @@ namespace Project.BlockFeatures
         /// <summary>
         /// Rebuilds feature activation from the fixed color state.
         /// </summary>
-        public void RefreshActivation()
+        public void RefreshActivation(bool preserveAttachedFeatures = false)
         {
             if (applying || runtime == null || colorObject == null)
             {
@@ -141,7 +141,7 @@ namespace Project.BlockFeatures
                     return;
                 }
 
-                runtime.RefreshFeatureSet(true);
+                runtime.RefreshFeatureSet(true, preserveAttachedFeatures);
                 if (debugLog)
                 {
                     Debug.Log(
@@ -204,9 +204,9 @@ namespace Project.BlockFeatures
         {
             RefreshFeatureBuffer();
             foreach (BlockFeature feature in features)
-                if (feature != null && feature.IsAttached && !(feature is ButtonLockFeature)) feature.ResetForRoom();
-            if (colorObject == null) runtime?.RefreshFeatureSet(true);
-            else RefreshActivation();
+                if (feature != null && feature.IsAttached && !(feature is ButtonLockFeature button && button.Persistent)) feature.ResetForRoom();
+            if (colorObject == null) runtime?.RefreshFeatureSet(true, true);
+            else RefreshActivation(true);
         }
 
         private static bool ValidateProfile(

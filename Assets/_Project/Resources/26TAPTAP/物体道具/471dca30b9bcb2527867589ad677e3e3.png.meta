@@ -1,7 +1,16 @@
 fileFormatVersion: 2
 guid: 24b74bdf22adc174aa895b9a93459a45
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: -8508692759138541806
+    second: Spike_Bloody
+  - first:
+      213: 3448934539961798037
+    second: Spike_Large
+  - first:
+      213: -39341299418349734
+    second: Spike_LargeBloody
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -299,6 +308,72 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
+      name: Spike_Bloody
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 304
+        width: 16
+        height: 16
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21fdb9c340d0be980800000000000000
+      internalID: -8508692759138541806
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Spike_Large
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 288
+        width: 16
+        height: 16
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 59d8ffbd0b31ddf20800000000000000
+      internalID: 3448934539961798037
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Spike_LargeBloody
+      rect:
+        serializedVersion: 2
+        x: 384
+        y: 288
+        width: 16
+        height: 16
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5fba2feb4b347ff0800000000000000
+      internalID: -39341299418349734
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
       name: Base_00
       rect:
         serializedVersion: 2
@@ -411,6 +486,9 @@ TextureImporter:
       Sign_04: -8628735654483159503
       Sign_05: 3136566099455051159
       Sign_06: 1808974218479773267
+      Spike_Bloody: -8508692759138541806
+      Spike_Large: 3448934539961798037
+      Spike_LargeBloody: -39341299418349734
       Spike_White: 1626053780491658355
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
