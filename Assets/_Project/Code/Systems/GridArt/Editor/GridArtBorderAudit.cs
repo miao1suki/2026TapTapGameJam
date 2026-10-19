@@ -21,27 +21,41 @@ namespace Project.GridArt.Editor
                 var sizes = palette.brushes.Select(b => b.DisplaySize).ToArray();
                 var originals = palette.brushes.Select(b => b.sprite).ToArray();
                 GridArtBorderLibrary.Ensure(palette);
-                Check(keys.SequenceEqual(palette.brushes.Select(b => b.sourceKey)), "brush slots/keys unchanged");
-                Check(sizes.SequenceEqual(palette.brushes.Select(b => b.DisplaySize)), "native brush sizes unchanged");
-                Check(originals.SequenceEqual(palette.brushes.Select(b => b.sprite)), "ordinary source sprites unchanged");
+                Check(keys.SequenceEqual(palette.brushes.Take(keys.Length).Select(b => b.sourceKey)), "old brush slots/keys unchanged");
+                Check(sizes.SequenceEqual(palette.brushes.Take(keys.Length).Select(b => b.DisplaySize)), "old native brush sizes unchanged");
+                Check(originals.SequenceEqual(palette.brushes.Take(keys.Length).Select(b => b.sprite)), "ordinary source sprites unchanged");
+                string newGuid = AssetDatabase.AssetPathToGUID(GridArtAuthorBorderLibrary.SourcePath);
+                Check(palette.brushes.Count(b => b.sourceKey != null && b.sourceKey.StartsWith(newGuid + "#")) == 20,
+                    "12 authored white edge/corner and 8 ornament selections appended once");
+                Check(palette.brushes.Select(b => b.sourceKey).Distinct().Count() == palette.brushes.Count, "no duplicated source slots");
+                var importer = (TextureImporter)AssetImporter.GetAtPath(GridArtAuthorBorderLibrary.SourcePath);
+                Check(!importer.mipmapEnabled && importer.filterMode == FilterMode.Point && importer.npotScale == TextureImporterNPOTScale.None &&
+                    importer.textureCompression == TextureImporterCompression.Uncompressed && importer.maxTextureSize >= 256,
+                    "point/native size/no mipmaps/no compression");
                 int index = palette.brushes.FindIndex(b => b.sourceKey != null && b.sourceKey.EndsWith("#frame") && b.autoTerrain);
                 Check(index >= 0, "original white-border slot retained");
                 var brush = palette.brushes[index];
                 Check(brush.HasInnerCorners && GridArtPixelLayout.IsNative(brush), "all 13 rule slices are native 16px");
                 var atlas = brush.pieces[0].texture;
+                Check(AssetDatabase.GetAssetPath(atlas) == GridArtAuthorBorderLibrary.SourcePath, "automatic border uses artist source, not generated approximation");
+                Check(Project.ObjectArtwork.GridArtworkMetrics.ExactExportScale(atlas.GetPixels32(), atlas.width, atlas.height) == 1,
+                    "new source is native, not the legacy four-times export");
                 for (int slot = 0; slot < 13; slot++)
                 {
                     var sprite = brush.pieces[slot];
                     Check(sprite.texture == atlas && sprite.rect.size == Vector2.one * 16, "one native atlas slice " + slot);
+                    Vector2Int origin = GridArtAuthorBorderLibrary.WhiteOrigins[slot];
+                    Check(sprite.rect.position == new Vector2(origin.x, atlas.height - origin.y - 16), "exact artist crop/orientation " + slot);
                     int white = 0;
                     for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++)
                     {
-                        var color = atlas.GetPixel(slot * 16 + x, y);
+                        var color = atlas.GetPixel((int)sprite.rect.x + x, (int)sprite.rect.y + y);
                         if (color.r < .5f) continue;
                         white++;
                         Check(x < 4 || x >= 12 || y < 4 || y >= 12, "white border lies at cell boundary, not middle: " + slot);
                     }
                     Check(slot == 4 ? white == 0 : white > 0, "edges/outer/inner corners have real pixels " + slot);
+                    if (slot >= 9) Check(white == 8, "artist concave corner keeps its eight original white pixels " + slot);
                 }
                 var layer = new GridArtLayer();
                 layer.Set(Vector2Int.zero, index); layer.Set(Vector2Int.right, index); layer.Set(Vector2Int.up, index);

@@ -1,5 +1,7 @@
 # 系统索引
 
+美术补充内外角图已按原生1倍接入：共享库198项，原白线自动槽直接使用13个美术片，追加12白线边角与8纹饰片，旧索引不变。新图不套tail4倍规则，见[白线说明](../Developer/GRID_ART_WHITE_BORDER.md)。R1/R2最终Scene待作者规划回采同步后再合入，当前明确排除。
+
 美术工作台按实际Z分为背景缓存→关卡参考→表面/前景缓存→工具覆盖，远景不再遮住墙地与道具参考；平移缩放复用两侧批次，不改作者深度或关卡。白线自动边框保留原笔刷槽位，改用13张原像素贴边规则，含内外角与孔洞；普通原图装饰片不改，见[白线说明](../Developer/GRID_ART_WHITE_BORDER.md)。光照方案仅分析，未修改渲染配置，见[光照与可见性评估](../Developer/LIGHTING_VISIBILITY_ASSESSMENT.md)。
 
 重力蓝绿接触生长按四向主轴起长，落体浅穿地面不提前冻结；普通平台顶面的方块/基座与堆叠可自动随行，保留显式附着、作者重力/锁轴及搬运优先权，见[接触方块API](Integration/CONTACT_CUBES_API.md)与[机关API](Integration/MECHANISM_SIGNAL_API.md)。规划门的运行/预览边界统一避免双倍尺寸导致贴图下移；举一格物品可进入两格高通道，不缩小像素或碰撞，见[门](../Developer/DOORS.md)和[搬运](../Developer/PLAYER_CARRY.md)。

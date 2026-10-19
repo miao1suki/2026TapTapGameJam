@@ -16,6 +16,13 @@ namespace Project.GridArt.Editor
             string key = AssetDatabase.AssetPathToGUID(GridArtProjectLibrary.BackgroundPath) + "#frame";
             var brush = palette.brushes.FirstOrDefault(b => b.sourceKey == key && b.autoTerrain);
             if (brush == null) return false;
+            // Prefer the artist's actual inner/outer corners; retain the legacy atlas as fallback only.
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(GridArtAuthorBorderLibrary.SourcePath) != null)
+            {
+                string before = EditorJsonUtility.ToJson(palette);
+                GridArtAuthorBorderLibrary.Ensure(palette, brush);
+                return before != EditorJsonUtility.ToJson(palette);
+            }
             string path = AssetDatabase.GetAssetPath(palette);
             var assets = AssetDatabase.LoadAllAssetsAtPath(path);
             var atlas = assets.OfType<Texture2D>().FirstOrDefault(t => t.name == AtlasName);

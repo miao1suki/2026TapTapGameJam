@@ -85,7 +85,9 @@ namespace Project.GridArt.Editor
                 for(int i=0;i<artwork.doorWhiteIndicators.Length;i++)
                     Add("project-artwork:door-white:"+i,"白色门符号 "+(i+1),"门饰符号",artwork.doorWhiteIndicators[i]);
             }
+            int beforeBorder = library.brushes.Count;
             GridArtBorderLibrary.Ensure(library);
+            added += library.brushes.Count - beforeBorder;
             return added;
         }
         private static string ColorOf(MechanismArtworkKind kind)
