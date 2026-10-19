@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cf29910b44345ddab63c1d6420ab8e3, type: 3}
+  m_Name: TravelMapSettings
+  m_EditorClassIdentifier:
+  font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+  requiredCollectibleRatio: 0.3
+  zoomOutSeconds: 0.3
+  travelSeconds: 0.65
+  zoomInSeconds: 0.4

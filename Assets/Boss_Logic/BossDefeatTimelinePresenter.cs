@@ -1,4 +1,5 @@
 using Project.CameraModes;
+using Project.Items;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
@@ -135,6 +136,8 @@ namespace Project.BossLogic
 
             switchingToPlayerThinking = true;
             defeatPresentationActive = false;
+            CollectibleProgressSnapshot progress = CollectibleProgressService.GetWorldProgress();
+            PlayerThinkingTimelinePlayable.SetCollectibleProgress(progress.Collected, progress.Total);
             director.Stop();
             director.playableAsset =
                 playerThinkingTimeline;

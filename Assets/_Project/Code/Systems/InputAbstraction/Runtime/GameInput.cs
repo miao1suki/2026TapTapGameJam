@@ -14,6 +14,11 @@ namespace Project.InputAbstraction
         private static readonly List<RaycastResult> uiHits = new List<RaycastResult>(32);
         private static EventSystem pointerEventSystem;
         private static PointerEventData pointerEvent;
+        private static readonly Dictionary<InputActionId, int> consumedFrames = new Dictionary<InputActionId, int>();
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetFrameConsumption() => consumedFrames.Clear();
+        public static void ConsumeActionThisFrame(InputActionId action) => consumedFrames[action] = Time.frameCount;
+        private static bool IsConsumed(InputActionId action) => consumedFrames.TryGetValue(action, out int frame) && frame == Time.frameCount;
         public static IInputSource Source
         {
             get
@@ -66,13 +71,13 @@ namespace Project.InputAbstraction
             Source.IsActionPressed(action);
 
         public static bool WasPressedThisFrame(InputActionId action) =>
-            Source.WasActionPressedThisFrame(action);
+            !IsConsumed(action) && Source.WasActionPressedThisFrame(action);
 
         public static bool WasTriggeredThisFrame(InputActionId action) =>
-            Source.WasActionTriggeredThisFrame(action);
+            !IsConsumed(action) && Source.WasActionTriggeredThisFrame(action);
 
         public static bool WasReleasedThisFrame(InputActionId action) =>
-            Source.WasActionReleasedThisFrame(action);
+            !IsConsumed(action) && Source.WasActionReleasedThisFrame(action);
 
         public static InputActionTrigger GetActionTrigger(InputActionId action) =>
             Source.GetActionTrigger(action);

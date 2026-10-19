@@ -348,7 +348,8 @@ namespace Project.BlockFeatures.Editor
                     else
                     {
                         float width = art.Cells.x * cell, height = art.Cells.y * cell;
-                        float bottom = owner.GetComponent<ColorKeyPickup>() != null ? bounds.center.y - height * .5f : bounds.min.y;
+                        float bottom = owner.GetComponent<ColorKeyPickup>() != null || owner.GetComponent<Project.Items.CollectiblePickup>() != null
+                            ? bounds.center.y - height * .5f : bounds.min.y;
                         var door = owner.GetComponent<DoorController>();
                         if (door != null && door.IsHorizontal)
                         {

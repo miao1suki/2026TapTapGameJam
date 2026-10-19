@@ -133,7 +133,7 @@ namespace Project.BlockFeatures.Editor
             }
             library.mechanisms = entries.ToArray(); EditorUtility.SetDirty(library); AssetDatabase.SaveAssetIfDirty(library);
             BuildColoredOneWayPlatforms();
-            BuildSupplementArtwork();
+            Project.WorldItems.Editor.WorldItemArtworkSetup.Build();
             foreach (string folder in new[] { "Assets/_Project/Content/Mechanisms", "Assets/_Project/Content/ContactCubes", "Assets/_Project/Content/ColorBlocks/Prefabs" })
                 foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { folder }))
                 {
@@ -287,7 +287,7 @@ namespace Project.BlockFeatures.Editor
             };
             #pragma warning disable CS0618
             var entries = importer.spritesheet.Where(entry => !entry.name.StartsWith("Sign_", StringComparison.Ordinal) &&
-                entry.name != "Spike_White" && entry.name != "Base_00" && entry.name != "Base_01" && entry.name != "Plant_Obstacle" && entry.name != "Obsidian").ToList();
+                !entry.name.StartsWith("Spike_", StringComparison.Ordinal) && entry.name != "Base_00" && entry.name != "Base_01" && entry.name != "Plant_Obstacle" && entry.name != "Obsidian").ToList();
             #pragma warning restore CS0618
             importer.GetSourceTextureWidthAndHeight(out _, out int height);
             for (int i = 0; i < rectangles.Length; i++)
@@ -299,6 +299,12 @@ namespace Project.BlockFeatures.Editor
             }
             // Use one authored cell, not two cells squeezed into the same volume.
             entries.Add(new SpriteMetaData { name = "Spike_White", rect = new Rect(368,height-32,16,16),
+                alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
+            entries.Add(new SpriteMetaData { name = "Spike_Bloody", rect = new Rect(384,height-32,16,16),
+                alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
+            entries.Add(new SpriteMetaData { name = "Spike_Large", rect = new Rect(368,height-48,16,16),
+                alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
+            entries.Add(new SpriteMetaData { name = "Spike_LargeBloody", rect = new Rect(384,height-48,16,16),
                 alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
             entries.Add(new SpriteMetaData { name = "Base_00", rect = new Rect(16,height-48,16,16),
                 alignment = (int)SpriteAlignment.BottomCenter, pivot = new Vector2(.5f,0f) });
@@ -326,6 +332,9 @@ namespace Project.BlockFeatures.Editor
                 entry.frames = names.Select(name => sprites.First(sprite => sprite.name == name)).ToArray();
             }
             Assign(MechanismArtworkKind.Spike, "Spike_White");
+            Assign(MechanismArtworkKind.BloodySpike, "Spike_Bloody");
+            Assign(MechanismArtworkKind.LargeSpike, "Spike_Large");
+            Assign(MechanismArtworkKind.BloodyLargeSpike, "Spike_LargeBloody");
             Assign(MechanismArtworkKind.MechanismBase, "Base_00", "Base_01");
             Assign(MechanismArtworkKind.PlantObstacle, "Plant_Obstacle");
             Assign(MechanismArtworkKind.Obsidian, "Obsidian");

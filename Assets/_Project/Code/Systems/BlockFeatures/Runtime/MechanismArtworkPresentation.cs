@@ -3,6 +3,7 @@ using Project.ContactCubes;
 using Project.Mechanisms;
 using Project.ObjectArtwork;
 using Project.WorldItems;
+using Project.Items;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -50,6 +51,7 @@ namespace Project.BlockFeatures
             owner.GetComponent<ColorKeyPickup>() != null || owner.GetComponent<ButtonLockFeature>() != null ||
             owner.GetComponent<OneWayPlatform>() != null || owner.GetComponent<NeutralLadder>() != null || owner.GetComponent<LavaHazardFeature>() != null ||
             owner.GetComponent<NeutralSpike>() != null || owner.GetComponent<MechanismBaseFeature>() != null ||
+            owner.GetComponent<CollectiblePickup>() != null ||
             owner.GetComponent<PlantObstacleFeature>() != null || owner.GetComponent<MechanismArtworkPresentation>() != null;
 
         public static MechanismArtworkPresentation Ensure(GameObject owner)
@@ -116,7 +118,8 @@ namespace Project.BlockFeatures
                 : mechanismBase != null ? MechanismArtworkKind.MechanismBase
                 : obstacle != null ? MechanismArtworkKind.PlantObstacle
                 : ladder != null ? ladder.SideFacing ? MechanismArtworkKind.LadderSide : MechanismArtworkKind.LadderFront
-                : spike != null ? MechanismArtworkKind.Spike
+                : spike != null ? spike.ArtworkKind
+                : GetComponent<CollectiblePickup>() != null ? MechanismArtworkKind.Collectible
                 : lava != null ? MechanismArtworkKind.Lava
                 : oneWay != null ? oneWay.ArtworkKind : kind;
             var entry = artwork.Find(kind);
@@ -170,6 +173,7 @@ namespace Project.BlockFeatures
             if (runtimeMaterial != Application.isPlaying) BindMaterial();
             if (button != null) kind = ObjectArtworkLibrary.DoorButtonKind(button.BindingIndex);
             if (oneWay != null) kind = oneWay.ArtworkKind;
+            if (spike != null) kind = spike.ArtworkKind;
             var entry = artwork.Find(kind);
             if (entry == null || entry.frames == null || entry.frames.Length == 0) entry = artwork.Find(MechanismArtworkKind.DoorButton);
             if (entry == null || entry.frames == null || entry.frames.Length == 0) return;
@@ -290,7 +294,7 @@ namespace Project.BlockFeatures
             }
             if (spike != null)
             {
-                Quaternion rotation = spikeDirection != null ? Quaternion.Inverse(transform.rotation) * spikeDirection.rotation : Quaternion.identity;
+                Quaternion rotation = Quaternion.Euler(0, 0, spike.ArtworkRotationDegrees);
                 bool sideways = Mathf.Abs((rotation * Vector3.right).y) > .9f;
                 visual.drawMode = SpriteDrawMode.Tiled;
                 visual.tileMode = SpriteTileMode.Continuous;
@@ -300,6 +304,8 @@ namespace Project.BlockFeatures
                     sprite.rect.height / sprite.pixelsPerUnit);
                 Vector3 baseEdge = rotation * (Vector3.down * .5f);
                 visual.transform.localPosition = center + new Vector3(baseEdge.x * size.x, baseEdge.y * size.y, -size.z * .5f - .015f);
+                spike.RenderArtwork(visual, artwork.FirstFrame(ObjectArtworkLibrary.SpikeKind(spike.Size == NeutralSpike.SpikeSize.Large, false)),
+                    artwork.FirstFrame(ObjectArtworkLibrary.SpikeKind(spike.Size == NeutralSpike.SpikeSize.Large, true)), cell, artwork.neutralMeshMaterial);
                 return;
             }
             bool tile = ladder != null || lava != null || obstacle != null || kind == MechanismArtworkKind.Obsidian || kind == MechanismArtworkKind.RedCube || kind == MechanismArtworkKind.GreenCube || kind == MechanismArtworkKind.BlueCube;
@@ -346,7 +352,7 @@ namespace Project.BlockFeatures
                     visual.transform.localScale = localScale;
                 }
                 // Bottom-pivot sprites fit the complete footprint, including the door's two cells.
-                float bottom = colorKey != null
+                float bottom = colorKey != null || kind == MechanismArtworkKind.Collectible
                     ? center.y - sprite.rect.height / GridArtworkMetrics.PixelsPerCell * cell * .5f / Mathf.Max(.001f, Mathf.Abs(scale.y))
                     : button != null ? -.5f : center.y - size.y * .5f;
                 visual.transform.localPosition = horizontal ? new Vector3(center.x + size.x * .5f, center.y, center.z - size.z * .5f - .015f)

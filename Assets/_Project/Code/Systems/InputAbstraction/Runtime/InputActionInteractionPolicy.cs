@@ -74,6 +74,8 @@ namespace Project.InputAbstraction
                     return "辅助点击（右键）";
                 case InputActionId.Respawn:
                     return "重生";
+                case InputActionId.WorldMap:
+                    return "传送地图";
                 default:
                     return actionId.ToString();
             }

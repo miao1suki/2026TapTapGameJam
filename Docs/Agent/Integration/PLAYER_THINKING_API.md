@@ -10,7 +10,7 @@
 
 ## 收藏品进度 API
 
-外部在进入演出前设置：
+BossDefeatTimelinePresenter在进入演出前自动从普通成就收集品进度服务读取全会话世界的真实数量。最终Boss与迁移关卡统一合入Gaming，不新增跨场景加载架构。直接播放演出时也会读取真实进度；开发者仍可显式提供测试数据：
 
 ```csharp
 PlayerThinkingTimelinePlayable.SetCollectibleProgress(
@@ -22,8 +22,14 @@ PlayerThinkingTimelinePlayable.SetCollectibleProgress(
 
 - `current / maximum >= 0.6`：播放演出 2。
 - `< 0.6`：播放演出 1。
-- 尚未调用 API、最大值小于等于 0 或调用 `ClearCollectibleProgress()`：默认播放演出 2。
+- 最大值小于等于0不再默认成功，播放演出1；`ClearCollectibleProgress()`清除测试覆盖，下次直接播放时读取场景进度。
 - 静态值在子系统注册时重置。
+- 临时生成的六份演出收集品在启用前显式标记`SetExcludedFromProgress(true)`，不增加全局/房间统计的分母或奖励。
+- `HasSufficientCollectibles(current, maximum, threshold=.6f)`提供相同的纯判断；恰好60%进入成功分支。
+
+## Boss入口与传送地图状态
+
+见[收集进度与Boss流程](COLLECTIBLE_BOSS_PROGRESS_API.md)。Boss入口的30%门槛与结局的60%门槛是两个判断，不可混用；`BossCollectibleEntryGate`只挂在明确的Boss入场Timeline触发器，不影响其他触发器。
 
 ## 共同内容
 
@@ -47,7 +53,8 @@ PlayerThinkingTimelinePlayable.SetCollectibleProgress(
 随后使用 `GameTransitionOverlay` 收黑，完全黑屏保持 `1` 秒，期间通过：
 
 ```csharp
-TeleportAnchorFeature.TeleportObject(player, "Start");
+TeleportAnchorFeature.TryGetAnchor("Start", out var start);
+controller.TryTeleportToStoryAnchor(start);
 ```
 
 传送到 `Start` 目标，再倒放黑屏并结束。
@@ -64,7 +71,8 @@ TeleportAnchorFeature.TeleportObject(player, "Start");
 最后一句消失后等待 `2` 秒并收黑；画面完全变黑时立即销毁六份演出收集品，再保持黑屏 `1` 秒，通过：
 
 ```csharp
-TeleportAnchorFeature.TeleportObject(player, "End");
+TeleportAnchorFeature.TryGetAnchor("End", out var end);
+controller.TryTeleportToStoryAnchor(end);
 ```
 
 传送到 `End` 目标，再倒放黑屏。画面完全恢复后停止 Timeline，释放操作与相机。
@@ -74,3 +82,5 @@ TeleportAnchorFeature.TeleportObject(player, "End");
 - 至少放置一个 `Teleport_Block.prefab`，其 `teleportId` 填 `Start`。
 - 至少放置一个 `Teleport_Block.prefab`，其 `teleportId` 填 `End`。
 - 目标方块可以放在任意位置，默认无碰撞且不可见。
+- Start/End必须与当前玩家处于同一场景；独立Boss开发测试缺少锚点时只警告并正常揭幕，不自动加载Gaming。
+- 锚点返回通过玩家控制器处理运动、房间、相机及会话复活绑定；回Start后再次死亡不会返回旧Boss重生点。

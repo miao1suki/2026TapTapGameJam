@@ -17,6 +17,7 @@ namespace Project.Fireflies
         [Header("活动框与数量")]
         [SerializeField] private Vector2 areaSize = new Vector2(3f, 2f);
         [SerializeField, Range(0, MaximumCount)] private int fireflyCount = 22;
+        [SerializeField, InspectorName("可见平面（格）")] private float renderDepthCells = -.25f;
 
         [Header("游动与随机性")]
         [SerializeField, Min(0.01f)] private float flightSpeed = 0.22f;
@@ -88,6 +89,7 @@ namespace Project.Fireflies
         public Mesh GeneratedMesh => mesh;
         public int ActiveLightCount => lights?.Length ?? 0;
         public int GeometryRevision { get; private set; }
+        public float RenderDepthCells => renderDepthCells;
 
         private void OnEnable()
         {
@@ -102,6 +104,7 @@ namespace Project.Fireflies
             fleeSpeed = Mathf.Max(flightSpeed * 1.1f, fleeSpeed);
             fireflyCount = Mathf.Clamp(fireflyCount, 0, MaximumCount);
             realtimeLightCount = Mathf.Clamp(realtimeLightCount, 0, MaximumLights);
+            if (!float.IsFinite(renderDepthCells)) renderDepthCells = -.25f;
             dirty = true;
         }
 
@@ -221,6 +224,13 @@ namespace Project.Fireflies
             if (isActiveAndEnabled) Rebuild();
         }
 
+        /// <summary>Moves only the visible plane. The area root and its room-space coordinates stay unchanged.</summary>
+        public void SetRenderDepthCells(float value)
+        {
+            renderDepthCells = float.IsFinite(value) ? value : -.25f;
+            if (isActiveAndEnabled && mesh != null) Draw();
+        }
+
 #if UNITY_EDITOR
         public void RefreshPreview()
         {
@@ -328,8 +338,11 @@ namespace Project.Fireflies
                 fly.brightness = Mathf.Lerp(0.38f, 1f, breath);
                 flies[i] = fly;
                 int v = i * 8;
-                SetQuad(v, fly.position, radius, -0.02f);
-                SetQuad(v + 4, fly.position, .5f / GridArtworkMetrics.PixelsPerCell, -0.025f);
+                // Both submeshes share the same adjustable visible plane. ZTest stays LEqual:
+                // ordinary transparent art is followed by this overlay, while opaque wall
+                // front faces (normally -0.5 cell) still occlude the default -0.25 plane.
+                SetQuad(v, fly.position, radius, renderDepthCells);
+                SetQuad(v + 4, fly.position, .5f / GridArtworkMetrics.PixelsPerCell, renderDepthCells);
                 Color32 halo = new Color(haloColor.r, haloColor.g, haloColor.b,
                     glowIntensity * fly.brightness * haloColor.a);
                 Color32 pixel = new Color(pixelColor.r, pixelColor.g, pixelColor.b,

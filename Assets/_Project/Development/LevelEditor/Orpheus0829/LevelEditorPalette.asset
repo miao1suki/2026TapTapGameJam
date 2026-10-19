@@ -3190,3 +3190,111 @@ MonoBehaviour:
       valueType: Enum
       value: 3
       objectReferenceValue: {fileID: 0}
+  - entryId: b34a6f0b5dfd490dbc8d98c810e8bc13
+    displayName: "\u6B63\u5F0F\u6E38\u620F\u8D77\u70B9\uFF08Start\uFF09"
+    prefab: {fileID: 4826492902689664692, guid: 9e800151df918ee45817ae3e51d33ab3, type: 3}
+    componentValueOverrides: []
+  - entryId: 28e981bfb733401eb334ec945bf9eb75
+    displayName: "Boss\u5165\u573A\uFF08\u6536\u96C630%\uFF09"
+    prefab: {fileID: 1327030446003617908, guid: b4c282373881ff94694a14af72ec0b13, type: 3}
+    componentValueOverrides: []
+  - entryId: world-spike-small
+    displayName: "\u5C0F\u5C16\u523A\xB7\u666E\u901A"
+    prefab: {fileID: 5076576429525912484, guid: c6ef16f112fc80541bfce6e50e18ef77, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: size
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: initiallyBloody
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: facing
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+  - entryId: world-spike-small-bloody
+    displayName: "\u5C0F\u5C16\u523A\xB7\u5E26\u8840"
+    prefab: {fileID: 5076576429525912484, guid: c6ef16f112fc80541bfce6e50e18ef77, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: size
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: initiallyBloody
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: facing
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+  - entryId: world-spike-large
+    displayName: "\u5927\u5C16\u523A\xB7\u666E\u901A"
+    prefab: {fileID: 5076576429525912484, guid: c6ef16f112fc80541bfce6e50e18ef77, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: size
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: initiallyBloody
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: facing
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+  - entryId: world-spike-large-bloody
+    displayName: "\u5927\u5C16\u523A\xB7\u5E26\u8840"
+    prefab: {fileID: 5076576429525912484, guid: c6ef16f112fc80541bfce6e50e18ef77, type: 3}
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: size
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: initiallyBloody
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.WorldItems.NeutralSpike
+      componentIndex: 0
+      propertyPath: facing
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}

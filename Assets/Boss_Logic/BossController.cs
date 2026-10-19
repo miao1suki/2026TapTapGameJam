@@ -347,6 +347,8 @@ namespace Project.BossLogic
 
         private void OnEnable()
         {
+            BossTravelProgress.Register(this);
+            if (healthSystemActive && !dead) BossTravelProgress.BeginFight(this);
             if (CompareTag("Boss"))
             {
                 BossRespawnStateRegistry.Register(this);
@@ -355,6 +357,7 @@ namespace Project.BossLogic
 
         private void OnDisable()
         {
+            BossTravelProgress.Unregister(this);
             BossRespawnStateRegistry.Unregister(this);
             CancelJump();
             RestoreInvulnerabilityRenderers();
@@ -765,6 +768,7 @@ namespace Project.BossLogic
             }
 
             healthSystemActive = true;
+            BossTravelProgress.BeginFight(this);
             HealthSystemActivated?.Invoke();
         }
 
@@ -812,6 +816,7 @@ namespace Project.BossLogic
             }
 
             currentHealth = nextHealth;
+            BossTravelProgress.BeginFight(this);
             if (!healthSystemActive)
             {
                 ActivateHealthSystem();
@@ -1094,6 +1099,7 @@ namespace Project.BossLogic
                 }
             }
 
+            BossTravelProgress.Defeat(this);
             Died?.Invoke();
             DefeatPresentationRequested?.Invoke(this);
             defeatPresentationRequested?.Invoke(this);

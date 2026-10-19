@@ -42,19 +42,19 @@ namespace Project.GridArt.Editor
             var mesh = context.Allocate(count * 4, count * 6, items[begin].quad.texture);
             for (int j = 0; j < count; j++)
             {
-                var item = items[begin + j]; Rect r = item.quad.bounds, uv = item.quad.uv;
+                var item = items[begin + j]; Rect r = item.quad.bounds;
                 float x0 = (r.xMin - Bounds.xMin) * Units, x1 = (r.xMax - Bounds.xMin) * Units;
                 float y0 = (Bounds.yMax - r.yMax) * Units, y1 = (Bounds.yMax - r.yMin) * Units;
-                mesh.SetNextVertex(V(x0, y0, uv.xMin, uv.yMax, item.color));
-                mesh.SetNextVertex(V(x1, y0, uv.xMax, uv.yMax, item.color));
-                mesh.SetNextVertex(V(x1, y1, uv.xMax, uv.yMin, item.color));
-                mesh.SetNextVertex(V(x0, y1, uv.xMin, uv.yMin, item.color));
+                mesh.SetNextVertex(V(x0, y0, item.quad.UV(1), item.color));
+                mesh.SetNextVertex(V(x1, y0, item.quad.UV(2), item.color));
+                mesh.SetNextVertex(V(x1, y1, item.quad.UV(3), item.color));
+                mesh.SetNextVertex(V(x0, y1, item.quad.UV(0), item.color));
                 ushort i = (ushort)(j * 4);
                 mesh.SetNextIndex(i); mesh.SetNextIndex((ushort)(i + 1)); mesh.SetNextIndex((ushort)(i + 2));
                 mesh.SetNextIndex((ushort)(i + 2)); mesh.SetNextIndex((ushort)(i + 3)); mesh.SetNextIndex(i);
             }
         }
-        private static Vertex V(float x, float y, float u, float v, Color color) => new Vertex
-        { position = new Vector3(x, y, Vertex.nearZ), uv = new Vector2(u, v), tint = color };
+        private static Vertex V(float x, float y, Vector2 uv, Color color) => new Vertex
+        { position = new Vector3(x, y, Vertex.nearZ), uv = uv, tint = color };
     }
 }

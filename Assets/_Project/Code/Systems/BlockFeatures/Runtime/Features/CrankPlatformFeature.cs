@@ -21,7 +21,7 @@ namespace Project.BlockFeatures
     {
         [BlockParameter(Label = "载人下降倍率", Group = "平台", Order = 2)]
         [SerializeField, Min(1f)] private float loadedDescentMultiplier = 3f;
-        [BlockParameter(Label = "制动基座", Group = "平台", Order = 3, Tooltip = "基座通电时停止升降，包括玩家操作。")]
+        [BlockParameter(Label = "制动基座", Group = "平台", Order = 3, Tooltip = "基座通电时停止升降，包括玩家操作；共享组内任一有效曲柄的基座均可制动整组。")]
         [SerializeField] private MechanismBaseFeature brakeBase;
         private readonly HashSet<MovingPlatformFeature> platforms = new HashSet<MovingPlatformFeature>();
         // A secondary handle shares one authoritative progress value, not a
@@ -168,7 +168,7 @@ namespace Project.BlockFeatures
         protected override void OnTick(float deltaTime)
         {
             if (sharedController != null) return; // Only the group owner advances time.
-            if (brakeBase != null && brakeBase.IsSignalActive)
+            if (IsGroupBraked())
             {
                 StopCrankAudio();
                 return;
@@ -211,6 +211,15 @@ namespace Project.BlockFeatures
             {
                 SignalChanged?.Invoke(IsSignalActive);
             }
+        }
+
+        private bool IsGroupBraked()
+        {
+            if (brakeBase != null && brakeBase.IsSignalActive) return true;
+            foreach (var handle in sharedHandles)
+                if (handle != null && handle.sharedController == this && handle.CanRunFeature &&
+                    handle.brakeBase != null && handle.brakeBase.IsSignalActive) return true;
+            return false;
         }
 
         protected override void OnResetForRoom()

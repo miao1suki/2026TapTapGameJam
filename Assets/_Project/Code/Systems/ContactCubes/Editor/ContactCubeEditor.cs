@@ -49,11 +49,14 @@ namespace Project.ContactCubes.Editor
         public override VisualElement CreateInspectorGUI()
         {
             var root = new VisualElement();
+            root.Add(new Label("接触方块运动") { style = { fontSize = 17, unityFontStyleAndWeight = FontStyle.Bold } });
             var settings = new Foldout { text = "运动设置", value = true };
+            settings.Add(new PropertyField(serializedObject.FindProperty("useGravity"), "启用重力"));
+            settings.Add(new HelpBox("红、绿、蓝共用此实例参数。关闭后保持悬浮；原有刚体锁轴不改变。", HelpBoxMessageType.Info));
             settings.Add(new PropertyField(serializedObject.FindProperty("launchGravityGrace"), "水平喷出重力保护（秒）"));
             settings.Add(new PropertyField(serializedObject.FindProperty("settleVelocity"), "落稳竖直速度容差")); root.Add(settings);
             var state = new Label(); root.Add(state);
-            root.schedule.Execute(() => { if (target is ContactCubeMotion motion) state.text = Application.isPlaying ? $"{(motion.IsSuspended ? "已挂起" : motion.IsSettled ? "已落稳" : "空中")}　{(motion.GravityProtected ? "重力保护" : "")}" : "未运行"; }).Every(250);
+            root.schedule.Execute(() => { if (target is ContactCubeMotion motion) state.text = Application.isPlaying ? $"{(motion.IsSuspended ? "已挂起" : motion.IsSettled ? "已落稳" : "空中")}　重力：{(motion.UsesGravity ? "开启" : "关闭")}　攀爬锚点：{motion.IsStableClimbAnchor}" : "未运行"; }).Every(250);
             return root;
         }
     }

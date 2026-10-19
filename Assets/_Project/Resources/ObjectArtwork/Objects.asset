@@ -41,6 +41,7 @@ MonoBehaviour:
   - {fileID: -5539269187273655995, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
   - {fileID: -3899164701299856617, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
   neutralSpriteMaterial: {fileID: 2100000, guid: 6f3b43c614931a441a1add6a105f460f, type: 2}
+  neutralMeshMaterial: {fileID: 2100000, guid: 46397876d320bb849bbb8a01f3c7bf54, type: 2}
   colorSpriteMaterial: {fileID: 2100000, guid: f346b369988561a469bb65d54f8be33c, type: 2}
   respawnFrameSeconds: 0.08
   plantFrameSeconds: 0.08
@@ -416,6 +417,26 @@ MonoBehaviour:
     - {fileID: -6287503803897879949, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
     frameSeconds: 0.08
     supportTopPixels: 16
+  - kind: 25
+    frames:
+    - {fileID: -8508692759138541806, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 0
+  - kind: 26
+    frames:
+    - {fileID: 3448934539961798037, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 0
+  - kind: 27
+    frames:
+    - {fileID: -39341299418349734, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 0
+  - kind: 28
+    frames:
+    - {fileID: 425478242701086130, guid: c15bcc4ddebc0b14e8c29787c17e934b, type: 3}
+    frameSeconds: 0.08
+    supportTopPixels: 0
   doorIndicators:
   - {fileID: 1284647483036081791, guid: f0667e8d7daeb5247aa3fc58cc48f4b7, type: 3}
   - {fileID: -3826572569901313554, guid: f0667e8d7daeb5247aa3fc58cc48f4b7, type: 3}

@@ -9,6 +9,7 @@ using Project.Mechanisms;
 using Project.ObjectArtwork;
 using Project.Subtitles;
 using Project.WorldItems;
+using Project.Items;
 using UnityEditor;
 using UnityEngine;
 
@@ -129,6 +130,21 @@ namespace Project.BlockFeatures.Editor
             {
                 preview = new PlanningArtworkPreview(library.FirstFrame(OneWayKind(oneWay, overrides)), true);
             }
+            else if (prefab.TryGetComponent<NeutralSpike>(out var spike))
+            {
+                int selectedSize = (int)spike.Size, selectedFacing = 0;
+                bool bloody = spike.InitiallyBloody;
+                if (overrides != null) foreach (var value in overrides)
+                {
+                    if (value == null || !string.IsNullOrEmpty(value.ComponentPath) ||
+                        value.ComponentTypeName != typeof(NeutralSpike).FullName && value.ComponentTypeName != typeof(NeutralSpike).AssemblyQualifiedName) continue;
+                    if (value.PropertyPath == "size") int.TryParse(value.Value, out selectedSize);
+                    if (value.PropertyPath == "facing") int.TryParse(value.Value, out selectedFacing);
+                    if (value.PropertyPath == "initiallyBloody") bloody = value.Value == "True" || value.Value == "true" || value.Value == "1";
+                }
+                float rotation = selectedFacing == 1 ? 0 : selectedFacing == 2 ? 180 : selectedFacing == 3 ? 90 : selectedFacing == 4 ? -90 : spike.ArtworkRotationDegrees;
+                preview = new PlanningArtworkPreview(library.FirstFrame(ObjectArtworkLibrary.SpikeKind(selectedSize == 1, bloody)), true, rotation);
+            }
             else
             {
                 if (!TryGetKind(prefab, out var kind, out float rotation, out bool flip, out bool tile))
@@ -229,7 +245,8 @@ namespace Project.BlockFeatures.Editor
             else if (owner.GetComponent<MechanismBaseFeature>() != null) kind = MechanismArtworkKind.MechanismBase;
             else if (owner.GetComponent<PlantObstacleFeature>() != null) { kind = MechanismArtworkKind.PlantObstacle; tile = true; }
             else if (owner.TryGetComponent<NeutralLadder>(out var ladder)) { kind = ladder.SideFacing ? MechanismArtworkKind.LadderSide : MechanismArtworkKind.LadderFront; flip = ladder.SideFacing && ladder.WallSide == LadderWallSide.Left; tile = true; }
-            else if (owner.GetComponent<NeutralSpike>() != null) { kind = MechanismArtworkKind.Spike; tile = true; var collider = owner.GetComponentInChildren<MeshCollider>(true); if (collider != null) rotation = collider.transform.localEulerAngles.z; }
+            else if (owner.TryGetComponent<NeutralSpike>(out var spike)) { kind = spike.ArtworkKind; tile = true; rotation = spike.ArtworkRotationDegrees; }
+            else if (owner.GetComponent<CollectiblePickup>() != null) kind = MechanismArtworkKind.Collectible;
             else if (owner.GetComponent<LavaHazardFeature>() != null) { kind = MechanismArtworkKind.Lava; tile = true; }
             else if (owner.TryGetComponent<OneWayPlatform>(out var oneWay)) { kind = oneWay.ArtworkKind; tile = true; }
             else if (owner.TryGetComponent<MechanismArtworkPresentation>(out var presentation)) { kind = presentation.Kind; tile = kind == MechanismArtworkKind.Obsidian; }

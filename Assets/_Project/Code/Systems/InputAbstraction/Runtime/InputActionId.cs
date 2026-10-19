@@ -24,6 +24,7 @@ namespace Project.InputAbstraction
         Respawn = 15,
         DropLeft = 16,
         DropRight = 17,
+        WorldMap = 18,
     }
 
     public enum InputActionTrigger

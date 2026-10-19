@@ -29,6 +29,9 @@ public static class R1GameplayVerification
     private static Vector3 horizontalStart;
     private static bool IsIntegrationProbe => Application.dataPath.Replace('\\', '/')
         .Contains("/Library/R1R2Integration-FlowRetirementProbe-");
+    private static bool Mirrored => SessionState.GetBool(Flag + ".Mirrored", false);
+    private static Vector3 LayoutPoint(Vector3 point) => Mirrored ? new Vector3(58 - point.x, point.y, point.z) : point;
+    private static Vector3 LayoutDirection(Vector3 direction) => Mirrored ? new Vector3(-direction.x, direction.y, direction.z) : direction;
 
     public static void Run()
     {
@@ -37,10 +40,12 @@ public static class R1GameplayVerification
         EditorSceneManager.OpenScene(R1LevelBuilder.ScenePath);
         var authoredPlayer = Object.FindFirstObjectByType<PlayerController>();
         if (authoredPlayer == null) throw new Exception("R1 authored player missing");
-        // Planner adjustments belong to the Scene; never rebuild from the older planning spawn.
         SessionState.SetFloat(Flag + ".SpawnX", authoredPlayer.transform.position.x);
         SessionState.SetFloat(Flag + ".SpawnY", authoredPlayer.transform.position.y);
         SessionState.SetFloat(Flag + ".SpawnZ", authoredPlayer.transform.position.z);
+        var bar = Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None)
+            .Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "r1_green_horizontal");
+        SessionState.SetBool(Flag + ".Mirrored", (bar.transform.rotation * Vector3.right).x < -.99f);
         SessionState.SetBool(Flag, true); Resume(); EditorApplication.EnterPlaymode();
     }
     [InitializeOnLoadMethod] private static void Resume()
@@ -85,11 +90,12 @@ public static class R1GameplayVerification
                 var bar = Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None).Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "r1_green_horizontal");
                 Check(bar.Length == 13 && bar.GetComponent<ContactCubeMotion>().IsAuthoredFixed, "fixed bar starts at 13 cells");
                 var bounds = bar.GetComponentInChildren<BoxCollider>().bounds;
-                Check(Mathf.Abs(bounds.min.x - 18) < .01f && Mathf.Abs(bounds.max.x - 31) < .01f && Mathf.Abs(bounds.min.y + 25) < .01f, "bar occupies exact X30:AJ30 without geometry scaling");
+                Check(Mathf.Abs(bounds.min.x - (Mirrored ? 27 : 18)) < .01f && Mathf.Abs(bounds.max.x - (Mirrored ? 40 : 31)) < .01f && Mathf.Abs(bounds.min.y + 25) < .01f, "bar occupies exact reflected footprint without geometry scaling");
+                Check(Vector3.Dot(bar.GrowthDirection, LayoutDirection(Vector3.right)) > .99f, "bar initial growth direction matches layout orientation");
                 if (!IsIntegrationProbe) CaptureOverview();
                 playerLock = player.AcquireControlLock(typeof(R1GameplayVerification));
                 oldConstraints = player.Motor.constraints; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
-                MoveTo(lower.transform.position + Vector3.right);
+                MoveTo(lower.transform.position + LayoutDirection(Vector3.right));
                 Check(lower.TryInteract(player.gameObject), "secondary handle accepts nearby player");
                 lastProgress = right.Progress; Next();
             }
@@ -102,7 +108,7 @@ public static class R1GameplayVerification
                 Check(right.Progress > .15f && right.Progress < .5f, "secondary increases progress once, not twice per frame");
                 Check(Mathf.Abs(platform.transform.position.y - (-30.5f + 14 * right.Progress)) < .35f, "right platform follows real shared progress");
                 beforeSwitch = right.Progress; lower.EndInteract(player.gameObject);
-                MoveTo(right.transform.position + Vector3.left);
+                MoveTo(right.transform.position + LayoutDirection(Vector3.left));
                 Check(right.TryInteract(player.gameObject), "primary handle accepts player after switching");
                 Check(Mathf.Abs(right.Progress - beforeSwitch) < .001f, "switching handles does not reset progress");
                 Next();
@@ -121,7 +127,7 @@ public static class R1GameplayVerification
                 if (elapsed < .9f) return;
                 Check(right.Progress < beforeSwitch - .03f && Mathf.Abs(right.Progress - lower.Progress) < .0001f, "one shared rebound after both released");
                 // Existing single-handle path is still independent.
-                MoveTo(left.transform.position + Vector3.left);
+                MoveTo(left.transform.position + LayoutDirection(Vector3.left));
                 Check(left.TryInteract(player.gameObject), "left single crank still accepts input");
                 Next();
             }
@@ -145,7 +151,7 @@ public static class R1GameplayVerification
             {
                 if (elapsed < 1.2f) return;
                 Check(door.State == DoorState.Unlocked && door.Buttons.All(b => b.IsPressed), "both buttons open exit");
-                MoveTo(new Vector3(5.5f, -34.5f, 0));
+                MoveTo(LayoutPoint(new Vector3(5.5f, -34.5f, 0)));
                 RoomLifecycleManager.ResetCurrentRooms(); Next();
             }
             else if (stage == 7)
@@ -158,7 +164,7 @@ public static class R1GameplayVerification
                 playerLock?.Dispose(); playerLock = null;
                 player.Motor.constraints = oldConstraints;
                 player.GetComponent<PlayerInputDriver>().enabled = false;
-                MoveTo(new Vector3(24.5f, -25.515f, 0)); player.Motor.linearVelocity = Vector3.zero;
+                MoveTo(LayoutPoint(new Vector3(24.5f, -25.515f, 0))); player.Motor.linearVelocity = Vector3.zero;
                 Next();
             }
             else if (stage == 8)
@@ -169,9 +175,9 @@ public static class R1GameplayVerification
             }
             else if (stage == 9)
             {
-                player.SetMoveInput(Vector2.right);
+                player.SetMoveInput(Mirrored ? Vector2.left : Vector2.right);
                 if (elapsed < .5f) return;
-                Check(player.transform.position.x > horizontalStart.x + .4f && Mathf.Abs(player.transform.position.y - horizontalStart.y) < .15f, "horizontal traversal maintains underside height");
+                Check((player.transform.position.x - horizontalStart.x) * (Mirrored ? -1 : 1) > .4f && Mathf.Abs(player.transform.position.y - horizontalStart.y) < .15f, "horizontal traversal maintains underside height");
                 player.SetMoveInput(Vector2.zero); player.RequestJump(); Next();
             }
             else if (stage == 10)
@@ -179,8 +185,9 @@ public static class R1GameplayVerification
                 if (elapsed < .12f) return;
                 Check(!player.IsHorizontalClimbing, "jump detaches from horizontal bar");
                 var bar = Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None).Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "r1_green_horizontal");
-                Check(Vector3.Distance(bar.transform.position, new Vector3(18.5f, -24.5f, 0)) < .001f, "fixed bar never falls or drifts");
-                Finish(true, $"PASS {checks} assertions in actual Play; saved authored spawn, starting colors, shared handles/switch/rebound, independent left crank, all-buttons door, room reset, exact fixed 13-cell bar, real underside attach/traverse/jump release. Door activation uses TryPress API, not a full player route completion. No render acceptance claimed; integration skips offscreen overview.");
+                Check(Vector3.Distance(bar.transform.position, LayoutPoint(new Vector3(18.5f, -24.5f, 0))) < .001f, "fixed bar never falls or drifts");
+                Check(Vector3.Dot(bar.GrowthDirection, LayoutDirection(Vector3.right)) > .99f, "room reset preserves reflected bar direction");
+                Finish(true, $"PASS {checks} assertions in actual Play; mirrored={Mirrored}; saved authored spawn, starting colors, shared handles/switch/rebound, independent crank, all-buttons door, room reset, exact fixed 13-cell bar and reset direction, real underside attach/traverse/jump release. Door activation uses TryPress API, not a full player route completion. Integration skips offscreen overview; standalone image: Library/R1Overview.png.");
             }
         }
         catch (Exception e) { Finish(false, e.ToString()); }

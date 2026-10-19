@@ -13,7 +13,7 @@ namespace Project.Fireflies.Editor
         public const string PrefabPath = "Assets/ta_source/firefly/FireflyField.prefab";
         [SerializeField] private Vector2 areaCells = new Vector2(3, 2);
         [SerializeField] private int count = 22;
-        [SerializeField] private Vector3 centerPosition = new Vector3(0, 0, 1);
+        [SerializeField] private Vector3 centerPosition = Vector3.zero;
         [SerializeField] private int layoutSeed = 107;
         [SerializeField] private int motionSeed = 293;
         [SerializeField] private int pulseSeed = 521;

@@ -7,6 +7,12 @@ using UnityEngine.Timeline;
 
 namespace Project.BlockFeatures
 {
+    /// <summary>Optional gameplay precondition. Rejected contact does not consume a once-only trigger.</summary>
+    public interface IContactTimelineCondition
+    {
+        bool CanPlayTimeline(GameObject actor);
+    }
+
     public enum ContactTimelineFilter
     {
         [InspectorName("任意碰撞体")] AnyCollider = 0,
@@ -41,6 +47,7 @@ namespace Project.BlockFeatures
         [SerializeField] private bool destroyAfterTrigger;
 
         private readonly HashSet<int> contacts = new HashSet<int>();
+        private readonly List<MonoBehaviour> conditions = new List<MonoBehaviour>();
         private Renderer[] renderers = System.Array.Empty<Renderer>();
         private bool[] originalRendererStates = System.Array.Empty<bool>();
         private PlayableDirector director;
@@ -199,6 +206,11 @@ namespace Project.BlockFeatures
             {
                 return;
             }
+
+            GetComponents(conditions);
+            foreach (MonoBehaviour component in conditions)
+                if (component != null && component.isActiveAndEnabled &&
+                    component is IContactTimelineCondition condition && !condition.CanPlayTimeline(actor)) return;
 
             int id = actor.transform.root.GetInstanceID();
             if (!contacts.Add(id))

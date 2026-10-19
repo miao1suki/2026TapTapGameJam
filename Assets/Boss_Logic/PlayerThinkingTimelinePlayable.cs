@@ -5,6 +5,7 @@ using Project.BlockFeatures;
 using Project.GameFlow;
 using Project.Items;
 using Project.Pickups;
+using Project.Player;
 using Project.Rooms;
 using Project.WordNote;
 using TMPro;
@@ -82,6 +83,9 @@ namespace Project.BossLogic
         {
             PlayerThinkingBehaviour.ClearCollectibleProgress();
         }
+
+        public static bool HasSufficientCollectibles(int current, int maximum, float threshold = .6f) =>
+            new CollectibleProgressSnapshot(current, maximum).MeetsRatio(threshold);
 
         internal static PlayableDirector FindDirector(
             PlayableGraph graph,
@@ -263,6 +267,18 @@ namespace Project.BossLogic
                 return;
             }
 
+            // Directly playing this asset also uses real progress, without
+            // requiring the defeat presenter or a manually supplied override.
+            if (!collectibleProgressConfigured)
+            {
+                Transform player = FindPlayer();
+                if (player != null)
+                {
+                    CollectibleProgressSnapshot progress = CollectibleProgressService.GetWorldProgress();
+                    SetCollectibleProgress(progress.Collected, progress.Total);
+                }
+            }
+
             running = true;
             runner = GameSceneLoader.Instance;
             routine = runner.StartCoroutine(
@@ -431,14 +447,16 @@ namespace Project.BossLogic
                     fullyBlackHoldSeconds);
             }
 
-            if (player == null ||
-                !TeleportAnchorFeature.TeleportObject(
-                    player.gameObject,
-                    destinationId))
+            PlayerController controller = player != null ? player.GetComponentInParent<PlayerController>() : null;
+            bool teleported = controller != null &&
+                TeleportAnchorFeature.TryGetAnchor(destinationId, out TeleportAnchorFeature localDestination) &&
+                localDestination.gameObject.scene == controller.gameObject.scene &&
+                controller.TryTeleportToStoryAnchor(localDestination);
+            if (!teleported)
             {
                 Debug.LogWarning(
-                    "[PlayerThinking] 传送失败，目标 ID=" +
-                    destinationId);
+                    "[PlayerThinking] 同场景传送失败，目标 ID=" + destinationId +
+                    "。正式关卡与Boss将统一位于Gaming；独立Boss测试请配置本场景锚点，不会自动加载其他场景。");
             }
             yield return null;
             yield return overlay.RevealFromAsync(
@@ -587,11 +605,10 @@ namespace Project.BossLogic
             if (!collectibleProgressConfigured ||
                 maximumCollectibleCount <= 0)
             {
-                return true;
+                return false;
             }
-            return currentCollectibleCount /
-                   (float)maximumCollectibleCount >=
-                   sufficientThreshold;
+            return PlayerThinkingTimelinePlayable.HasSufficientCollectibles(currentCollectibleCount,
+                maximumCollectibleCount, sufficientThreshold);
         }
 
         private static Transform FindPlayer()
@@ -642,6 +659,7 @@ namespace Project.BossLogic
                  index < pickups.Length;
                  index++)
             {
+                pickups[index].SetExcludedFromProgress(true);
                 pickups[index].enabled = false;
             }
 

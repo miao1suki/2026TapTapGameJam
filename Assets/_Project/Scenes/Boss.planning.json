@@ -200631,8 +200631,8 @@
                     "label": "",
                     "paletteEntryId": "",
                     "paletteEntryName": "",
-                    "propEntryId": "30265b9098d545388134efaefa2a7884",
-                    "propEntryName": "Timeline触发器",
+                    "propEntryId": "28e981bfb733401eb334ec945bf9eb75",
+                    "propEntryName": "Boss入场（收集30%）",
                     "x": 17,
                     "y": 39,
                     "width": 1,
@@ -200671,7 +200671,7 @@
                             "componentIndex": 0,
                             "propertyPath": "targetCollider",
                             "valueType": "ObjectReference",
-                            "value": "reference:local",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -201200,6 +201200,50 @@
                             "propertyPath": "m_Size",
                             "valueType": "Vector3",
                             "value": "{\"x\":5.0,\"y\":20.0,\"z\":4.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BossLogic.BossCollectibleEntryGate",
+                            "componentIndex": 0,
+                            "propertyPath": "minimumRatio",
+                            "valueType": "Float",
+                            "value": "0.3",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BossLogic.BossCollectibleEntryGate",
+                            "componentIndex": 0,
+                            "propertyPath": "returnDestinationId",
+                            "valueType": "String",
+                            "value": "Start",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BossLogic.BossCollectibleEntryGate",
+                            "componentIndex": 0,
+                            "propertyPath": "returnPoint",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BossLogic.BossCollectibleEntryGate",
+                            "componentIndex": 0,
+                            "propertyPath": "showHint",
+                            "valueType": "Boolean",
+                            "value": "1",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }

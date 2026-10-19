@@ -52,7 +52,9 @@
 
 ### 多位置曲柄共享进度
 
-`CrankPlatformFeature.BindSharedController(owner)` 把当前曲柄作为另一独立曲柄的操作位置；`SharedController` 只读。两处交互仍分别检查玩家到本地曲柄的距离，只有 owner 每帧推进一次进度；另一处 Progress/信号跟随 owner，切换位置不清零、不把两份回弹相加。松手等待、每秒转动/回弹、制动使用 owner 配置；载人检测包括组内平台。空绑定恢复独立控制，拒绝自身、串联和循环共享；停用释放本地交互，区域重置恢复组进度。
+`CrankPlatformFeature.BindSharedController(owner)` 把当前曲柄作为另一独立曲柄的操作位置；`SharedController` 只读。两处交互仍分别检查玩家到本地曲柄的距离，只有 owner 每帧推进一次进度；另一处 Progress/信号跟随 owner，切换位置不清零、不把两份回弹相加。松手等待、每秒转动/回弹使用 owner 配置；制动汇总 owner 及所有有效副柄各自的 `BrakeBase`，任一通电即暂停整组前进和回弹，全部解除后延续原进度。保留每个柄独立的持久绑定，停用、解绑或销毁的副柄不再制动旧组；载人检测包括组内平台。空绑定恢复独立控制，拒绝自身、串联和循环共享；停用释放本地交互，区域重置恢复组进度。
+
+`SharedCrankBrakeAudit.Run` 仅允许静音 FlowRetirementProbe，验证主/副柄制动、恢复、停用重启、解绑重绑和销毁；真实平台移动仍由R1 Play专项验证，不把控制器夹具当作完整通关。
 
 复用 `PlanningBox.crankOwnerId`：用于平台时仍表示控制曲柄，用于曲柄时表示共享进度 owner。SceneBuilder 按稳定 ID 重连并记录 Prefab 覆盖，既有片段 ID 重映射和缺失来源清理同样生效，不新增存档字段或 instanceID。融合编辑器曲柄参数窗口提供“绑定共享曲柄／解除共享曲柄”；主、从应放在同一重置区域。Scene 手工绑定不替代规划文档绑定。
 

@@ -2,6 +2,14 @@
   "sourceWorkbook": "关卡设计.xlsx",
   "sheet": "Sheet1",
   "range": "F6:BK46",
+  "layoutTransform": {
+    "kind": "horizontalMirror",
+    "axisWorldX": 29,
+    "worldPointRule": "x' = 58 - x; y and z unchanged",
+    "planningRectangleRule": "x' = 58 - x - width",
+    "sourceCellsAreOriginalWorkbook": true,
+    "preserveSavedSceneManualAdjustments": true
+  },
   "confirmedChanges": [
     "BK10 clear for BK10:BK11 exit door; H23 and U26 both latched and required",
     "Platforms start at P18:S18 and AX36:BA36; rise 10 and 14 cells",

@@ -4,6 +4,7 @@ using System.Globalization;
 using Project.ColorBlocks;
 using Project.LevelEditor;
 using Project.Player;
+using Project.Pickups;
 using Project.Rooms;
 using UnityEngine;
 using UnityEngine.Events;
@@ -16,10 +17,12 @@ namespace Project.Items
     {
         [SerializeField, InspectorName("收集品编号")] private string itemId = "collectible";
         [SerializeField, Min(1), InspectorName("数量")] private int amount = 1;
+        [SerializeField, InspectorName("仅演出，不计入收集进度")] private bool excludedFromProgress;
         [SerializeField, InspectorName("收集完成")] private UnityEvent onCollected = new UnityEvent();
         public static event Action<CollectiblePickup, GameObject> Collected;
         public string ItemId => itemId;
         public int Amount => amount;
+        public bool ExcludedFromProgress => excludedFromProgress;
         /// <summary>Settled gameplay progress; room reset/reuse must not clear it.</summary>
         public bool IsCollected { get; private set; }
         public bool CanBePushed => !IsCollected && CanCollect && body != null && !body.isKinematic;
@@ -38,6 +41,8 @@ namespace Project.Items
 
         protected override void OnEnable()
         {
+            if (CollectibleProgressService.Register(this) && !IsCollected)
+                RestoreCollectedState();
             if (IsCollected)
             {
                 // An authored object or its parent may be enabled again. Do
@@ -52,6 +57,19 @@ namespace Project.Items
             GameplayPresentationGate.GameplayRestored -= RefreshPlayerSolids;
             GameplayPresentationGate.GameplayRestored += RefreshPlayerSolids;
             base.OnEnable();
+        }
+
+        private void Start()
+        {
+            if (CollectibleProgressService.Register(this) && !IsCollected) RestoreCollectedState();
+        }
+
+        /// <summary>Call before enabling a cosmetic/scripted clone.</summary>
+        public void SetExcludedFromProgress(bool value)
+        {
+            excludedFromProgress = value;
+            if (value) CollectibleProgressService.Exclude(this);
+            else CollectibleProgressService.Register(this);
         }
 
         protected override void OnDisable()
@@ -136,11 +154,16 @@ namespace Project.Items
             if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
             body.isKinematic = true;
             foreach (var shape in shapes) if (shape != null) shape.enabled = false;
+            // The updated 2D artwork is a sibling of the legacy sphere visual.
+            // Move the now-suspended root so both old and new layouts share the
+            // existing animation lifecycle, without a second cosmetic Tween.
+            GetComponent<PickupFlightAnimator>()?.BindVisual(transform);
         }
         protected override void OnCollectionFinished()
         {
             if (IsCollected) return;
             IsCollected = true;
+            CollectibleProgressService.RecordCollected(this);
             onCollected.Invoke(); Collected?.Invoke(this, CollectionActor);
         }
         protected override void RecycleItem()
@@ -201,6 +224,7 @@ namespace Project.Items
         public void RestoreCollectedState()
         {
             IsCollected = true;
+            CollectibleProgressService.RecordCollected(this);
             StopItemAnimations();
             GetComponent<IDropItemCollectionReset>()?.ResetCollectionAnimation();
             EnsureState();

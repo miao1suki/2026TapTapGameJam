@@ -86,6 +86,10 @@ namespace Project.ContactCubes
             // Existing scene instances need the same click entry as newly placed prefabs.
             if (color == CubeColor.Green && GetComponent<BlueContactCubeGrowthTarget>() == null)
                 gameObject.AddComponent<BlueContactCubeGrowthTarget>();
+            // Legacy authored instances may predate the climbing adapter. Growth
+            // changes the one real collider; it must not need separate child vines.
+            if (color == CubeColor.Green && motion != null && GetComponent<HorizontalCubeVine>() == null)
+                gameObject.AddComponent<HorizontalCubeVine>();
         }
         private void FixedUpdate()
         {

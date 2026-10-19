@@ -20,7 +20,11 @@ namespace Project.ObjectArtwork
         [InspectorName("黑曜石")] Obsidian,
         [InspectorName("红色单向平台")] RedOneWayPlatform,
         [InspectorName("绿色单向平台")] GreenOneWayPlatform,
-        [InspectorName("蓝色单向平台")] BlueOneWayPlatform
+        [InspectorName("蓝色单向平台")] BlueOneWayPlatform,
+        [InspectorName("小尖刺·带血")] BloodySpike,
+        [InspectorName("大尖刺")] LargeSpike,
+        [InspectorName("大尖刺·带血")] BloodyLargeSpike,
+        [InspectorName("成就收集品")] Collectible
     }
     [System.Serializable]
     public sealed class MechanismArtworkEntry
@@ -38,6 +42,7 @@ namespace Project.ObjectArtwork
         public Sprite[] respawnCurrent = System.Array.Empty<Sprite>();
         public Sprite[] plantBounce = System.Array.Empty<Sprite>();
         public Material neutralSpriteMaterial;
+        public Material neutralMeshMaterial;
         public Material colorSpriteMaterial;
         public float respawnFrameSeconds = .08f;
         public float plantFrameSeconds = .08f;
@@ -61,6 +66,9 @@ namespace Project.ObjectArtwork
             : color == 3 ? MechanismArtworkKind.BlueOneWayPlatform : MechanismArtworkKind.OneWayPlatform;
         public static bool IsOneWayPlatform(MechanismArtworkKind kind) => kind == MechanismArtworkKind.OneWayPlatform ||
             kind == MechanismArtworkKind.RedOneWayPlatform || kind == MechanismArtworkKind.GreenOneWayPlatform || kind == MechanismArtworkKind.BlueOneWayPlatform;
+        public static MechanismArtworkKind SpikeKind(bool large, bool bloody) => large
+            ? bloody ? MechanismArtworkKind.BloodyLargeSpike : MechanismArtworkKind.LargeSpike
+            : bloody ? MechanismArtworkKind.BloodySpike : MechanismArtworkKind.Spike;
 
         // Three symbols keep their authored locations; shorter lists remain centered.
         public static Vector3 DoorIndicatorOffset(int index, int count) => new Vector3(0f,

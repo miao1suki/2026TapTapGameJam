@@ -1,5 +1,9 @@
 # 系统索引
 
+美术工作台N键开关、自动定位真实房间，墙和正式2D道具作为默认35%透明的只读参考，可隐藏/调透明度；远景平移缩放仅变换和裁剪保留批次。雨/萤火按完整区域框绘并在工作台调参，独立Scene美术根、非planning物体。新萤火可见面默认-0.25格，光点/光晕同层，普通透明道具前显示、不透明墙仍遮挡。见[定位操作](../Developer/GRID_ART_NAVIGATION.md)、[关卡参照](../Developer/GRID_ART_LEVEL_REFERENCE.md)、[区域效果](../Developer/GRID_ART_REGION_EFFECTS.md)；效果须显式保存Scene，协作仍交Scene、同名planning、美术Map、素材及meta。
+
+收集品与 Boss 共用稳定作者 ID 的会话进度：30%入场，60%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。击败Boss且达到30%开放T/触控地图，显示房间/重生点/收集剩余，Boss房禁用；安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与工作台90°原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。协作仍须Scene、同名planning、meta与新增依赖成套交付。
+
 主菜单与游玩采用同一Gaming场景：正式构建仅Gaming，首帧自动安装纯UI WorldMainMenu prefab，新ButtonIcon四项竖排与27帧LOGO；开始平滑退镜、返回反向，期间不加载/卸载场景、不截图、不重置进度，唯一世界Camera/Listener/EventSystem始终启用。旧MainMenu文件只作编辑器兼容重定向，其旧蓝底/布局移除。见[融合菜单](../Developer/WORLD_MENU_FUSION.md)与[场景流程](../Developer/GAME_FLOW.md)。
 
 独立R2：`Assets/Scenes/R2/R2.unity`及同名planning／来源映射，Excel393墙格、三保持按钮同门、曲柄10格升降、两个绿根和8格可烧毁植物。场景三色启用、玩家仅蓝能力，固定AK114复用作者约束攀附；不额外补蓝块，整合main已有玩家蓝能力点击绿块生长入口，不替代正式Gaming、不改R1或R3。见 [R2说明](../Developer/R2_LEVEL.md)。Scene、planning、meta及依赖成套交付。
@@ -9,7 +13,7 @@ Boss清障隐藏与持久机关进度分离：房间重置归还临时渲染/碰
 搬运占格区分作者布置与运行时实体：烧毁/打开/移走后的空位不保留旧格阻挡，当前位置实体仍拒绝重叠；R不改作者数据而恢复现有状态。放置射线忽略水与纯Trigger、真实薄墙仍挡，复用候选Collider列表且不逐帧SyncTransforms。接入与隔离回归见[搬运API](Integration/PLAYER_CARRY_API.md)。
 
 基座信号镜头可选收到/解除/双边沿，默认关；共享队列先基座再按序平台，或仅首个平台，等待不提前锁玩家。水与非岩浆所有物体同格，三种水类型可叠、同类生成去重、共同底色只画一次。红蓝指针0.65格容差严格不扩总范围；水蒸汽按点击列，钥匙2有效像素悬浮，红蓝接触水柱改TA水片/气泡并即时推送、玩家默认8格/秒。见[机关API](Integration/MECHANISM_SIGNAL_API.md)、[水API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[钥匙与水柱](../Developer/KEY_HOVER_AND_CONTACT_JETS.md)。关卡仍须Scene、planning及meta成套交付。
-独立 R1：`Assets/Scenes/R1/R1.unity`及同名planning；场景、设计源和专属脚本同目录，迁移保留全部GUID。Excel单格制作，不替代Gaming、不加入正式构建。含多位置曲柄共享进度、作者固定13格绿条横向攀附和单实例占格支持；开局仅玩家红能力、三色场景解锁。操作及验证边界见[关卡说明](../Developer/R1_LEVEL.md)，接入见MECHANISM_SIGNAL_API、CONTACT_CUBES_API、PLANNING_COLLABORATION_API。
+独立 R1：`Assets/Scenes/R1/R1.unity`及同名planning；已采用远端16fb26f左右镜像版（实现40fe66c），只补main空字段的签名兼容，保留76实例及全部手动微调，不重复镜像、不全量重建。场景、设计源和专属脚本同目录，迁移保留全部GUID。Excel单格制作，不替代Gaming、不加入正式构建。含多位置曲柄共享进度、作者固定13格绿条横向攀附和单实例占格支持；开局仅玩家红能力、三色场景解锁。共享组的任一有效副柄制动基座均可冻结整组进度，解除后续转。操作及验证边界见[关卡说明](../Developer/R1_LEVEL.md)，接入见MECHANISM_SIGNAL_API、CONTACT_CUBES_API、PLANNING_COLLABORATION_API。
 
 TA 新效果已接入现有生命周期：流动岩浆精确保留孔洞、冷却蒸汽、三类植物燃烧、标准玩家死亡/Boss追逐RGB；PC/Mobile只追加RGB通道，不覆盖水/HSV/像素参数。雨区和萤火虫通过 `Tools/2026TapTap/关卡美术/创建雨区` / `创建萤火虫区域` 独立创建，固定16像素/格、Scene保存，不属于planning玩法物体；雨是颜色装饰，萤火虫是中性装饰且实时灯默认关闭。见 [TA_EFFECTS_API](Integration/TA_EFFECTS_API.md) 与 [使用说明](../Developer/TA_EFFECTS.md)。关卡交付仍须Scene+planning+meta成套。
 
@@ -45,7 +49,7 @@ Timeline触发器编辑器标记使用 `UI/棍母.png`，道具栏/关卡画布/
 
 Boss 关卡重生点：`RespawnAnchorFeature` 的“关卡类型”直接保存 Boss 开关、复活血量与相对 X；参数窗口可生成规划图中的 `Boss复活标记`，通过 `bossRespawnOwnerId` 与重生点连接并只允许 X 拖动。Boss 由 Timeline 后生成，`BossController` 启用时注册到 `BossRespawnStateRegistry`；重生点保留待应用请求，Boss 出现后自动下发并回读血量/坐标，Inspector 显示等待、已应用和一致性。见 [重生 API](Integration/ROOM_LIFECYCLE_API.md) 与 [Boss API](Integration/BOSS_CONTROLLER_API.md)。
 
-Boss 战复活兜底：同场景存在活动 Boss 且没有任何已解锁 Boss 关出生点时，`PlayerController` 会从同场景全部启用的 Boss 关出生点中选择 X 最小者作为本次复活目标，即使该点尚未解锁；安全落位和 Boss 血量/位置重置仍走原链，不改变当前绑定出生点。
+Boss 战复活兜底：存在活动Boss且没有已解锁Boss出生点时，只从玩家死亡所属房间内选X最小的启用Boss点，未解锁也可兜底；不能因最终Gaming含Boss而劫持普通房间的复活。无房间管理器的独立旧工作场景保留同场景兜底；剧情Start/End有普通专用兜底，不再回旧Boss点。
 
 Boss HUD：`BossController.bossDisplayName` 提供显示名，`BossHealthBarUI` 使用 `Cubic_11 SDF` 在血条左侧动态创建名字；`BossMonitorUI` 同挂 Boss Health Canvas，独立正交相机输出 RenderTexture，屏幕左上角窗口固定约屏幕宽 23.3%、高 35%，`RectMask2D` 从中心展开/倒放，死亡延迟后与血条同步退场。监控相机不复制 Timeline 实时旋转，显示除 UI 外全部图层，避免透视穿帮和高频重建纹理。
 

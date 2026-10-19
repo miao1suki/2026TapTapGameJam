@@ -24,6 +24,7 @@ namespace Project.Fireflies.Editor
             var main = Group(root, "范围与外观", true);
             Field(main, "areaSize", "活动范围（格）");
             Field(main, "fireflyCount", "萤火虫数量");
+            Field(main, "renderDepthCells", "可见平面（格）");
             Field(main, "haloColor", "光晕颜色");
             Field(main, "pixelColor", "光点颜色");
             Field(main, "glowRadius", "光晕半径（格）");

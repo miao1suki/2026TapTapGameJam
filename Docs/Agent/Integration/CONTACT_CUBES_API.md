@@ -63,7 +63,9 @@
 
 ## 区域生命周期
 
-作者可通过 Rigidbody 的 FreezePosition 三轴锁定布置固定绿块，`ContactCubeMotion.IsAuthoredFixed` 只识别 Awake 捕获的作者约束，不把运行中落稳临时锁定当成固定配置。HorizontalCubeVine 对这种固定绿块也允许沿用原底面横向攀附，不需要虚构支撑碰撞；普通未固定方块仍须落稳。R1的X30:AJ30使用initialLength=maximumLength=13、FreezeAll且禁用CarryableFeature，根在最左格；R2的AK114使用initialLength=1、maximumLength=11和相同固定/不可搬运配置，保留原接触生长／缩短、main已有玩家蓝色点击生长和房间重置。两关共用一份固定攀附支持，不拉伸根缩放表达长度，也不回退最新main的生长规则。
+作者可通过 Rigidbody 的 FreezePosition 三轴锁定布置固定绿块，`ContactCubeMotion.IsAuthoredFixed` 只识别 Awake 捕获的作者约束，不把运行中落稳临时锁定当成固定配置。HorizontalCubeVine 对这种固定绿块也允许沿用原底面横向攀附，不需要虚构支撑碰撞；普通未固定方块仍须落稳。R1原X30:AJ30使用initialLength=maximumLength=13、FreezeAll且禁用CarryableFeature；当前远端镜像版根在(39.5,-24.5,0)，向左伸13格，原标注名称只作来源标识。R2的AK114使用initialLength=1、maximumLength=11和相同固定/不可搬运配置，保留原接触生长／缩短、main已有玩家蓝色点击生长和房间重置。两关共用一份固定攀附支持，不拉伸根缩放表达长度，也不回退最新main的生长规则。
+
+2026-10-18快速复查还覆盖远端R3的四个固定绿根：在隔离副本带齐其平台附着依赖后，实际蓝色命中生长端点、重置和普通未固定方块重力回归通过。R3及其PlatformMount支持本轮未合入主工作树；策划分支的刚体锁定UI和三个FreezeAll/禁搬运绿块另作静态核对，不声称已测试其整张新Gaming地图或已合入该UI。
 
 预制体有 RoomResetObject，规划生成按既有区域绑定。ResetForRoom 清空接触/水柱/计时并恢复初始长度、初始轴，位置由 RoomResetObject 统一恢复。不清除钥匙进度，不销毁作者方块。
 

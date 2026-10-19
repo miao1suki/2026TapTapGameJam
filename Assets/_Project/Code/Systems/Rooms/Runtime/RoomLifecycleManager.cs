@@ -208,6 +208,25 @@ namespace Project.Rooms
             manager.currentRegionId = next;
         }
 
+        public void PrepareCheckpointDestination(PlayerController target, Vector3 destination)
+        {
+            if (target == null || target.gameObject.scene != gameObject.scene) return;
+            string origin = FindRegion(target.transform.position);
+            string next = FindRegion(destination);
+            if (!string.IsNullOrEmpty(next) && next != origin) ResetRegion(next);
+        }
+
+        public void CommitCheckpointTravel(PlayerController target, Vector3 destination)
+        {
+            if (target == null || target.gameObject.scene != gameObject.scene) return;
+            player = target;
+            string origin = FindRegion(target.transform.position);
+            string next = FindRegion(destination);
+            if (origin != next) ResetRegion(origin);
+            currentRegionId = next;
+            if (origin != next) RegionChanged?.Invoke(origin, next);
+        }
+
         public static void ResetCurrentRooms()
         {
             foreach (var manager in Live.ToArray())

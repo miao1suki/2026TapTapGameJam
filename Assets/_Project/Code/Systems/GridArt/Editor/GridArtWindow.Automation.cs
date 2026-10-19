@@ -24,13 +24,19 @@ namespace Project.GridArt.Editor
         internal bool IsStroking => canvas != null && canvas.IsStroking || GridArtScenePainter.IsStroking;
         private void BindAutomation()
         {
+            boundSceneKey = SceneKey;
+            boundSceneHandle = SceneManager.GetActiveScene().handle;
             autoSave = EditorPrefs.GetBool(SceneKey + ".AutoSave", true);
             autoPreview = EditorPrefs.GetBool(SceneKey + ".AutoPreview", true);
             rootVisualElement.Q<Toggle>("art-autosave")?.SetValueWithoutNotify(autoSave);
             rootVisualElement.Q<Toggle>("art-autopreview")?.SetValueWithoutNotify(autoPreview);
             savePending = buildPending = false; saveError = null;
             sourceGroup = Layer != null && Layer.followLevel ? Layer.sourceGroup : "";
+            showLevelReference = EditorPrefs.GetBool(SceneKey + ".ShowReference", true);
+            levelReferenceOpacity = Mathf.Clamp01(EditorPrefs.GetFloat(SceneKey + ".ReferenceOpacity", .35f));
+            selectedReferenceRoom = EditorPrefs.GetString(SceneKey + ".ReferenceRoom", "");
             levelSource = null; sourceCellCache.Clear(); guides.Clear();
+            canvas?.UpdateReference();
             diskSignature = DiskSignature(map);
             RequestSource();
             // A saved map is sufficient to restore the preview even if the Scene was not saved.
@@ -72,7 +78,9 @@ namespace Project.GridArt.Editor
         }
         private void AutomationTick()
         {
-            if (automationBusy || EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || EditorApplication.isUpdating || IsStroking) return;
+            if (automationBusy || EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || EditorApplication.isUpdating) return;
+            RebindSceneIfNeeded();
+            if (IsStroking) return;
             double now = EditorApplication.timeSinceStartup;
             if (sourcePending && now >= sourceAt) RefreshLevelSource();
             if (now >= saveAt && (autoSave && savePending || autoPreview && buildPending)) FlushPending(false);
@@ -110,6 +118,12 @@ namespace Project.GridArt.Editor
         }
         private void SaveAll()
         {
+            if (map == null)
+            {
+                if(!IsStroking && !EditorApplication.isPlayingOrWillChangePlaymode && !string.IsNullOrEmpty(SceneManager.GetActiveScene().path))
+                    EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+                return;
+            }
             if (!CanEditMap || IsStroking || EditorApplication.isPlayingOrWillChangePlaymode) return;
             // Explicit save may save the whole Scene; autosave deliberately does not.
             bool previous = autoSave; autoSave = true;
@@ -131,12 +145,14 @@ namespace Project.GridArt.Editor
         }
         private void RefreshLevelSource()
         {
+            RebindSceneIfNeeded();
             sourcePending = false;
             try
             {
-                if (GridArtLevelSource.Read == null) { if(sourceSummary!=null) sourceSummary.text="关卡来源尚未连接"; return; }
+                if (GridArtLevelSource.Read == null) { levelSource=null; canvas?.UpdateReference(); RefreshNavigation(); if(sourceSummary!=null) sourceSummary.text="关卡来源尚未连接"; return; }
                 levelSource = GridArtLevelSource.Read.Invoke(SceneManager.GetActiveScene());
                 sourceCellCache.Clear(); guides.Clear();
+                if(levelSource == null) { canvas?.UpdateReference(); RefreshNavigation(); return; }
                 float size = map != null ? map.cellSize : levelSource.cellSize;
                 foreach (var g in levelSource.groups) foreach (var r in g.bounds)
                     guides.Add(new Rect(r.position / size, r.size / size));
@@ -146,9 +162,9 @@ namespace Project.GridArt.Editor
                         if (layer.followLevel && map.palette.Get(layer.sourceBrush) != null)
                             changed |= GridArtLevelSource.Synchronize(layer, SourceCells(layer.sourceGroup));
                 if (changed) { map.revision++; EditorUtility.SetDirty(map); ArtChanged(); }
-                RefreshSourcePanel(); canvas?.RepaintView();
+                RefreshNavigation(); RefreshSourcePanel(); canvas?.UpdateReference();
             }
-            catch (Exception e) { levelSource=null; sourceCellCache.Clear(); guides.Clear(); canvas?.RepaintView(); if (sourceSummary != null) sourceSummary.text = e.Message; }
+            catch (Exception e) { levelSource=null; sourceCellCache.Clear(); guides.Clear(); RefreshNavigation(); canvas?.UpdateReference(); if (sourceSummary != null) sourceSummary.text = e.Message; }
         }
         private HashSet<Vector2Int> SourceCells(string group)
         {
@@ -168,7 +184,7 @@ namespace Project.GridArt.Editor
             if (layer.cells.Count > 0 && !layer.followLevel && !EditorUtility.DisplayDialog("铺绘墙地", "替换当前图层的美术？其他图层和玩法物体不变。", "替换", "取消")) return;
             Change("铺绘关卡墙地", () =>
             {
-                layer.sourceGroup = sourceGroup; layer.sourceBrush = brushIndex; layer.followLevel = linked;
+                layer.sourceGroup = sourceGroup; layer.sourceBrush = brushIndex; layer.sourceQuarterTurns = BrushQuarterTurns; layer.followLevel = linked;
                 GridArtLevelSource.Synchronize(layer, cells);
             });
             canvas?.FrameAll();
