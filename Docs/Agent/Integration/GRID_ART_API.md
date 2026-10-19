@@ -32,6 +32,8 @@ GridArtWindow.Automation负责0.65秒延后自动保存/预览，两个开关默
 
 画布`RepaintView()`只变更预览父节点的translate/scale、256图块批次可见性与顶层参考线，不失效瓦片几何；`Invalidate()`用于数据/素材/视差变化。`GridArtPreviewBatch`按原排序中连续同纹理片段分批，不按纹理全局重排，保持透明叠图顺序。预览坐标以32显示单位/格缓存，显示变换为zoom/32；不参与地图存储或运行时Mesh。不要在generateVisualContent中修改UI树。
 
+工作台合成分为背景（`depth > 0`）、只读关卡参考、表面/前景（`depth <= 0`）、工具覆盖四段；远景与近景不能因同纹理合批跨过关卡参考。每段内按绘制顺序、再由远到近排序。`background-artwork-cache`和`artwork-cache`同步同一pan/zoom并复用批次，不能把所有美术重新塞到参考物上方；这不会修改地图的深度、占格或存档。关卡参考的显隐/透明度设置仍独立生效。
+
 两套关卡画布共用`GridViewportDrawing`：显示线间隔至少16点、总数预算320，2的幂次整格LOD与世界原点对齐，直接提交线条四边形，避免密集Painter2D交叉路径细分。它只接收显示坐标，不负责鼠标命中、吸附或坐标迁移。房间所有权使用`PlanningOwnerPreview`缓存精确矩形覆盖和孔洞/外轮廓，文档修改必须走`InvalidatePreviewData`；不能以缓存几何替换实际存档cells。组装预览按每个房间一次求原点，不在每个box上扫描整房间。
 
 ## 渲染与兼容

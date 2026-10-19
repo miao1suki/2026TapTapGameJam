@@ -1,5 +1,7 @@
 # 系统索引
 
+美术工作台按实际Z分为背景缓存→关卡参考→表面/前景缓存→工具覆盖，远景不再遮住墙地与道具参考；平移缩放复用两侧批次，不改作者深度或关卡。白线自动边框保留原笔刷槽位，改用13张原像素贴边规则，含内外角与孔洞；普通原图装饰片不改，见[白线说明](../Developer/GRID_ART_WHITE_BORDER.md)。光照方案仅分析，未修改渲染配置，见[光照与可见性评估](../Developer/LIGHTING_VISIBILITY_ASSESSMENT.md)。
+
 重力蓝绿接触生长按四向主轴起长，落体浅穿地面不提前冻结；普通平台顶面的方块/基座与堆叠可自动随行，保留显式附着、作者重力/锁轴及搬运优先权，见[接触方块API](Integration/CONTACT_CUBES_API.md)与[机关API](Integration/MECHANISM_SIGNAL_API.md)。规划门的运行/预览边界统一避免双倍尺寸导致贴图下移；举一格物品可进入两格高通道，不缩小像素或碰撞，见[门](../Developer/DOORS.md)和[搬运](../Developer/PLAYER_CARRY.md)。
 
 2026-10-19集中整合：正式Gaming采用MVMap17（20房间，1406原物体＋1隐形Start），保留main现行修复；独立R3及可选PlatformMount已接入，R1不再次镜像；TA旧支线保留main网格/HSV/区域效果实现并补独立预览。旧交互图提案与旧Grow配置不恢复，详见[整合说明](../Developer/BRANCH_INTEGRATION_2026-10-19.md)。

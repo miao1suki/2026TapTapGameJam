@@ -66,7 +66,7 @@ namespace Project.GridArt.Tests
             try
             {
                 var canvas = (VisualElement)w.GetType().GetField("canvas",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(w);
-                var artwork = canvas.Q("artwork-cache"); var overlay = canvas.Q("art-overlay");
+                var artwork = canvas.Q("background-artwork-cache"); var overlay = canvas.Q("art-overlay");
                 Assert.That(artwork.childCount,Is.GreaterThan(0));
                 Assert.That(canvas.IndexOf(overlay),Is.GreaterThan(canvas.IndexOf(artwork)));
                 var originalBatches = artwork.Children().ToArray();
@@ -80,6 +80,37 @@ namespace Project.GridArt.Tests
                 map.layers[0].Set(new Vector2Int(30,0),0);
                 canvas.GetType().GetMethod("Invalidate").Invoke(canvas,null);
                 Assert.That(artwork.Children().First(),Is.Not.SameAs(originalBatches[0]));
+            }
+            finally { Object.DestroyImmediate(w); }
+        }
+
+        [Test] public void BackgroundAndForegroundCannotBatchAcrossLevelReferencePlane()
+        {
+            AddBrush();
+            map.layers[0].depth = 5f;
+            map.layers[0].sortingOrder = 1000; // Still behind gameplay, despite the old large order.
+            map.layers[0].Set(Vector2Int.zero, 0);
+            var front = new GridArtLayer { depth = -.51f, sortingOrder = -1000 };
+            front.Set(Vector2Int.zero, 0); map.layers.Add(front);
+            string serialized = EditorJsonUtility.ToJson(map);
+            var w = Window();
+            try
+            {
+                var canvas = (VisualElement)w.GetType().GetField("canvas",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(w);
+                var background = canvas.Q("background-artwork-cache");
+                var reference = canvas.Q("art-level-reference");
+                var foreground = canvas.Q("artwork-cache");
+                Assert.That(canvas.IndexOf(background), Is.LessThan(canvas.IndexOf(reference)));
+                Assert.That(canvas.IndexOf(reference), Is.LessThan(canvas.IndexOf(foreground)));
+                Assert.That(background.childCount, Is.EqualTo(1));
+                Assert.That(foreground.childCount, Is.EqualTo(1), "same texture cannot combine background and foreground");
+                var before = background.Children().Concat(foreground.Children()).ToArray();
+                Field(canvas,"pan",new Vector2(190,220)); Field(canvas,"zoom",12f);
+                canvas.GetType().GetMethod("RepaintView").Invoke(canvas,null);
+                CollectionAssert.AreEqual(before, background.Children().Concat(foreground.Children()).ToArray());
+                Assert.That(background.style.translate, Is.EqualTo(foreground.style.translate));
+                Assert.That(background.style.scale, Is.EqualTo(foreground.style.scale));
+                Assert.That(EditorJsonUtility.ToJson(map), Is.EqualTo(serialized));
             }
             finally { Object.DestroyImmediate(w); }
         }
@@ -123,7 +154,7 @@ namespace Project.GridArt.Tests
                 Field(canvas,"pan",new Vector2(240,320)); Field(canvas,"zoom",32f);
                 canvas.GetType().GetMethod("RepaintView").Invoke(canvas,null); w.Repaint();
                 for(int i=0;i<5;i++) yield return null;
-                var artwork=canvas.Q("artwork-cache"); var batch=artwork.Children().Single();
+                var artwork=canvas.Q("background-artwork-cache"); var batch=artwork.Children().Single();
                 int rebuilds=0; batch.generateVisualContent+=context=>rebuilds++;
                 batch.MarkDirtyRepaint(); w.Repaint();
                 for(int i=0;i<5;i++) yield return null;
