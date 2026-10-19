@@ -11250,6 +11250,28 @@
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.Rigidbody",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Constraints",
+                            "valueType": "Integer",
+                            "value": "126",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.CarryableFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Enabled",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
                         }
                     ]
                 },
@@ -11288,6 +11310,28 @@
                             "propertyPath": "maximumLength",
                             "valueType": "Integer",
                             "value": "9",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.Rigidbody",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Constraints",
+                            "valueType": "Integer",
+                            "value": "126",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.CarryableFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Enabled",
+                            "valueType": "Boolean",
+                            "value": "0",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
