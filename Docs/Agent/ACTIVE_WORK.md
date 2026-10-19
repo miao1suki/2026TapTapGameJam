@@ -1,5 +1,11 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-19 R1／R2／R3 最终场景急件接收
+
+- 分支 codex/urgent-r-level-delivery-20261019；按用户最新授权接收 ILorR1012 R1 ff785ab、R2 308c65f、R3 48cb1e4 最终 Scene，保留原字节及 planning/meta、R1 镜头依赖，不重建、不改 Gaming。
+- 三关手调尚未精确回采，旧 JSON 不可全量应用或直接片段导入最终布局；此限制未隐瞒为“同步完成”。详见 Docs/Developer/R_LEVEL_FINAL_SCENE_HANDOFF_2026-10-19.md。
+- 静态检查三个 Scene fileID 唯一、外部 GUID 可解析、JSON 可解析、配对提交门禁；未执行 Unity／Play／打包。
+
 ## 2026-10-19 美术工作台N键与偏移输入可读性（验证完成）
 
 - 独立分支codex/fix-art-hotkey-limit-fields-20261019，使用taptap-editor-ui规范；只改编辑器入口与图层参数布局，不改Scene、存档、美术尺寸或Runtime视差规则。
