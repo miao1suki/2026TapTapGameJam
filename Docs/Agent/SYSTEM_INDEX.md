@@ -13,7 +13,7 @@
 
 主菜单与游玩采用同一Gaming场景：正式构建仅Gaming，首帧自动安装纯UI WorldMainMenu prefab，新ButtonIcon四项竖排与27帧LOGO；开始平滑退镜、返回反向，期间不加载/卸载场景、不截图、不重置进度，唯一世界Camera/Listener/EventSystem始终启用。旧MainMenu文件只作编辑器兼容重定向，其旧蓝底/布局移除。见[融合菜单](../Developer/WORLD_MENU_FUSION.md)与[场景流程](../Developer/GAME_FLOW.md)。
 
-独立R2：`Assets/Scenes/R2/R2.unity`及同名planning／来源映射，Excel393墙格、三保持按钮同门、曲柄10格升降、两个绿根和8格可烧毁植物。场景三色启用、玩家仅蓝能力，固定AK114复用作者约束攀附；不额外补蓝块，整合main已有玩家蓝能力点击绿块生长入口，不替代正式Gaming、不改R1或R3。见 [R2说明](../Developer/R2_LEVEL.md)。Scene、planning、meta及依赖成套交付。
+独立R2（2026-10-19 R2 final version）：`Assets/Scenes/R2/R2.unity`为策划最终已保存Scene，含地形/按钮微调、删除原AK114绿根、平台16格行程、曲柄回落进度速度0.08及默认Size12。场景三色启用、玩家仅蓝能力，不额外补蓝块，不替代Gaming或改构建列表。Scene及原配套planning/meta/依赖成套保留，但本轮手调尚未回采规划，复制地形还共用旧规划ID；不能重应用旧planning或用它重建最终布局。分支基线a672bb6，推送前main为b5f1ff9，整合须保留main共享修复，详见 [R2说明](../Developer/R2_LEVEL.md)。
 
 Boss清障隐藏与持久机关进度分离：房间重置归还临时渲染/碰撞租约，不清门按钮进度，旧碰撞隐藏队列按ResetRevision失效。见[BOSS_ROOM_RESET_VISUALS](Integration/BOSS_ROOM_RESET_VISUALS.md)。两个移动平台已接新6/9帧48×16素材、14像素支撑上缘，旧占格/路线不扩大；新增红绿蓝单向平台栏目复用同一Prefab，颜色参数只影响外观与HSV图层。见[物体美术API](Integration/OBJECT_ARTWORK_API.md)。Scene/可编辑存档/meta/新增美术依赖仍必须成套交付。
 

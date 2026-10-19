@@ -156,6 +156,14 @@
 - 用户追加确认：发布直接启动Gaming，同一世界叠加新版主菜单；开始/返回只做相反运镜与UI动画，不再装卸Gaming。旧MainMenu仅兼容入口，清理旧蓝底，但保留用户未提交的MainMenu.planning。
 - 用户追加平台：编辑器新放置提供横放/竖放/单格形状，外观朝向独立于路线；单格裁取原素材而非把三格压缩，旧地图平台原占格、移动参数和绑定保留。
 - 交付关卡变更仍需Scene、同名planning.json、meta与新增依赖成套；正式Gaming还需命名正式存档。当前请求未另行授权合并/推送，完成验证后交接。
+## 2026-10-19 ILorR：R2 final version（静态核对完成，分支交付）
+
+- 用户明确授权推送R2，并标注“R2 final version”。只在 `codex/ilorr/r2-level` 提交磁盘上已保存的 `Assets/Scenes/R2/R2.unity` 及本条交接和R2说明；配套planning、meta、设计源和既有依赖已跟踪，显式一起核对。不合并、rebase、推main或建PR。
+- 保留用户全部Scene精确位置、非整数尺寸、对象增删和参数微调；不从Excel、旧planning或生成器重建。配对planning及Scene内嵌规划仍为旧设计数据，不能冒称已回采本轮Scene手调；交接须明确Scene权威及重应用旧规划的风险。
+- 本地基线 `a672bb6`，已刷新main到 `b5f1ff9`（新增1提交，共享重力生长、门占格及平台承载修复）；R2 Scene/planning没有main同路径变更。新main未自行合入，整合者须保留最新共享功能，按最终Scene叠加并复验，不以旧分支覆盖main。
+- 排除R1/R3 Scene、字体动态缓存，以及区域相机公共Runtime/Inspector/审计及其未提交说明。Scene静态引用检查通过：366个唯一序列化对象、33个非内置资产GUID均可解析，无悬空本地fileID；R2没有引用区域镜头补丁。规划可解析且已跟踪，暂存Scene的Test-PlanningMapCommit检查通过，差异空白检查通过。本轮未改源码，不新跑Unity编译、Play、全路线或打包；需人工验收最终通行、三按钮同门、16格平台往返/载物及Size12视野。
+- Scene SHA256 `105DBBD26ED19FA35F1F0D033ACBC19AD8591EB34D0E2F7DDCBBE7FDA4B88099`；planning仍为 `9E066516CE10854E85FFAF96D56C1A342FF86582AFB441B1A09C0A13191464C9`。提交前完整Scene/planning及双方meta副本保留在本地Library/R2BeforeFinalPush-20261019-1831；不上传备份。复制地形沿用旧规划ID，不擅自修ID/取整回采或应用旧规划；详见R2_LEVEL最终版段落。
+
 ## 2026-10-18 ILorR R2 独立关卡（验证完成，分支交付）
 
 - 分支 `codex/ilorr/r2-level`，独立目录 `C:/Unity Programs/2026TapTapGameJam-R2`；新任务开始时基于 main `2ab461c6d7c83da8e4ccfd2e437741db035a2b7c`。
