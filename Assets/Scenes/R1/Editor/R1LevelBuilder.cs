@@ -27,6 +27,7 @@ public static class R1LevelBuilder
     public const string PlayerPath = "Assets/_Project/Content/Player/Player.prefab";
     private static int checks;
     [Serializable] private sealed class Source { public List<PlanningCell> cells; }
+    [Serializable] private sealed class OverrideSignature { public List<LevelEditorComponentValueOverride> values; }
     private static void Check(bool condition, string message)
     {
         checks++;
@@ -103,6 +104,11 @@ public static class R1LevelBuilder
         Parameter(green1, typeof(ContactCube), "maximumLength", "Integer", "8");
         Parameter(green2, typeof(ContactCube), "maximumLength", "Integer", "9");
         Parameter(green3, typeof(ContactCube), "maximumLength", "Integer", "9");
+        foreach (var pinned in new[] { green2, green3 })
+        {
+            Parameter(pinned, typeof(Rigidbody), "m_Constraints", "Integer", ((int)RigidbodyConstraints.FreezeAll).ToString());
+            Parameter(pinned, typeof(CarryableFeature), "m_Enabled", "Boolean", "0");
+        }
         for (int row = 11; row <= 22; row++) Box("ladder_" + row, "中性梯子 K" + row, "LadderFront", "K", row);
         for (int row = 28; row <= 32; row++) Box("vine_left_" + row, "左藤蔓 I" + row, "Green_Ladder", "I", row);
         for (int row = 17; row <= 25; row++) Box("vine_middle_" + row, "中间藤蔓 Z" + row, "Green_Ladder", "Z", row);
@@ -191,6 +197,77 @@ public static class R1LevelBuilder
         PlanningSceneBuilder.SuppressSceneUndo = true;
         try { Check(PlanningSceneBuilder.TryApplyDocument(doc, out var message), message); }
         finally { PlanningSceneBuilder.SuppressSceneUndo = false; }
+    }
+
+    /// <summary>Explicit migration of two saved instances, without applying/rebuilding the map.</summary>
+    public static void PinGreenCubes()
+    {
+        checks = 0;
+        Check(Application.dataPath.Replace('\\', '/').EndsWith("/2026TapTapGameJam-R1/Assets"), "dedicated R1 worktree only");
+        Check(Application.isBatchMode && !EditorApplication.isPlaying, "closed author editor; batch edit only");
+        const string backup = "Library/R1BeforeFixedGreenCubes-20261019";
+        Directory.CreateDirectory(backup);
+        foreach (var path in new[] { ScenePath, SavePath })
+        {
+            var destination = Path.Combine(backup, Path.GetFileName(path));
+            Check(!File.Exists(destination), "refuse to overwrite existing backup " + destination);
+            File.Copy(path, destination);
+        }
+        var scene = EditorSceneManager.OpenScene(ScenePath);
+        var doc = PlanningSaveStore.Read(SavePath);
+        var manager = Object.FindFirstObjectByType<RoomLifecycleManager>();
+        Check(manager != null && PlanningDocument.FromPersistentJson(manager.PlanningJson).ToPersistentJson() == doc.ToPersistentJson(),
+            "embedded and paired document agree before editing");
+        var blocks = Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None);
+        Check(blocks.Length == 76 && doc.rooms.Count == 1 && doc.rooms[0].boxes.Count == 76, "all 76 authored roots retained");
+        var poses = blocks.ToDictionary(p => p.PlanningBoxId,
+            p => (position: p.transform.position, rotation: p.transform.rotation, scale: p.transform.localScale));
+        var signatures = blocks.ToDictionary(p => p.PlanningBoxId, p => p.PlanningSignature);
+        var targets = new[] { "r1_cube_green_left", "r1_cube_green_lower" };
+        foreach (var id in targets)
+        {
+            var placed = blocks.Single(p => p.PlanningBoxId == id);
+            var box = doc.rooms[0].boxes.Single(b => b.id == id);
+            var body = placed.GetComponent<Rigidbody>();
+            var carry = placed.GetComponent<CarryableFeature>();
+            Check(placed.GetComponent<ContactCube>().Color == CubeColor.Green && body != null && carry != null, "expected green cube " + id);
+            Check(!box.componentOverrides.Any(v => v.ComponentTypeName == typeof(Rigidbody).FullName && v.PropertyPath == "m_Constraints") &&
+                !box.componentOverrides.Any(v => v.ComponentTypeName == typeof(CarryableFeature).FullName && v.PropertyPath == "m_Enabled"),
+                "pin migration has not already been applied " + id);
+            Parameter(box, typeof(Rigidbody), "m_Constraints", "Integer", ((int)RigidbodyConstraints.FreezeAll).ToString());
+            Parameter(box, typeof(CarryableFeature), "m_Enabled", "Boolean", "0");
+            body.constraints = RigidbodyConstraints.FreezeAll;
+            carry.enabled = false;
+            placed.SetPlanningSource(box.id, JsonUtility.ToJson(box.PersistentClone()) + JsonUtility.ToJson(new OverrideSignature
+            { values = LevelEditorComponentOverrideUtility.PersistentValues(box.componentOverrides) }), new Vector2Int(box.x, box.y));
+            foreach (var component in new Component[] { body, carry, placed })
+            {
+                EditorUtility.SetDirty(component);
+                if (PrefabUtility.IsPartOfPrefabInstance(component)) PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+            }
+        }
+        manager.Configure(new List<RoomRegion>(manager.Regions), manager.CellSize, doc.ToPersistentJson(true));
+        EditorUtility.SetDirty(manager);
+        PlanningSaveStore.Save(SavePath, doc);
+        Check(EditorSceneManager.SaveScene(scene), "save targeted scene edit");
+        EditorSceneManager.OpenScene(ScenePath);
+        var after = Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None);
+        Check(after.Length == poses.Count, "no author root added or removed");
+        foreach (var placed in after)
+        {
+            var before = poses[placed.PlanningBoxId];
+            Check(Vector3.Distance(placed.transform.position, before.position) < .00001f &&
+                Quaternion.Angle(placed.transform.rotation, before.rotation) < .001f && placed.transform.localScale == before.scale,
+                "exact saved pose unchanged " + placed.PlanningBoxId);
+            if (targets.Contains(placed.PlanningBoxId))
+                Check(placed.GetComponent<Rigidbody>().constraints == RigidbodyConstraints.FreezeAll &&
+                    !placed.GetComponent<CarryableFeature>().enabled, "saved fixed and noncarryable " + placed.PlanningBoxId);
+            else Check(placed.PlanningSignature == signatures[placed.PlanningBoxId], "unrelated signature unchanged " + placed.PlanningBoxId);
+        }
+        Check(PlanningDocument.FromPersistentJson(Object.FindFirstObjectByType<RoomLifecycleManager>().PlanningJson).ToPersistentJson() ==
+            PlanningSaveStore.Read(SavePath).ToPersistentJson(), "embedded and paired planning agree after reload");
+        File.WriteAllText("Library/R1PinnedGreenCubesMigration.txt", $"PASS {checks} assertions; only K31/N39 constraints and carry enabled state changed, all 76 exact author poses preserved. Backup: {backup}.");
+        Debug.Log(File.ReadAllText("Library/R1PinnedGreenCubesMigration.txt"));
     }
     public static void Verify()
     {

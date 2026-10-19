@@ -639,6 +639,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 173793852}
     m_Modifications:
+    - target: {fileID: 114889900001, guid: e6be6b93be6bade4a8cba59f999293df, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1176152236921107016, guid: e6be6b93be6bade4a8cba59f999293df, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0
@@ -711,6 +715,10 @@ PrefabInstance:
       propertyPath: maximumLength
       value: 9
       objectReference: {fileID: 0}
+    - target: {fileID: 7182695641383611229, guid: e6be6b93be6bade4a8cba59f999293df, type: 3}
+      propertyPath: m_Constraints
+      value: 126
+      objectReference: {fileID: 0}
     - target: {fileID: 8442352184101056303, guid: e6be6b93be6bade4a8cba59f999293df, type: 3}
       propertyPath: regionId
       value: ilorr_r1
@@ -767,7 +775,7 @@ MonoBehaviour:
   isProp: 1
   planningBoxId: r1_cube_green_lower
   planningSignature: "{\"id\":\"r1_cube_green_lower\",\"type\":9,\"label\":\"\u7EFF\u65B9\u5757
-    N39\uFF08\u751F\u957F\u6781\u9650 N31\uFF09\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"97fd6aadaf914371b15e08d67827dbc8\",\"propEntryName\":\"\u7EFF\u8272\u63A5\u89E6\u65B9\u5757\",\"x\":49,\"y\":33,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":true,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.ContactCubes.ContactCube\",\"componentIndex\":0,\"propertyPath\":\"maximumLength\",\"valueType\":\"Integer\",\"value\":\"9\",\"objectReferenceValue\":{\"instanceID\":0}}]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.ContactCubes.ContactCube\",\"componentIndex\":0,\"propertyPath\":\"maximumLength\",\"valueType\":\"Integer\",\"value\":\"9\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
+    N39\uFF08\u751F\u957F\u6781\u9650 N31\uFF09\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"97fd6aadaf914371b15e08d67827dbc8\",\"propEntryName\":\"\u7EFF\u8272\u63A5\u89E6\u65B9\u5757\",\"x\":49,\"y\":33,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":true,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.ContactCubes.ContactCube\",\"componentIndex\":0,\"propertyPath\":\"maximumLength\",\"valueType\":\"Integer\",\"value\":\"9\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.Rigidbody\",\"componentIndex\":0,\"propertyPath\":\"m_Constraints\",\"valueType\":\"Integer\",\"value\":\"126\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.CarryableFeature\",\"componentIndex\":0,\"propertyPath\":\"m_Enabled\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}}]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.ContactCubes.ContactCube\",\"componentIndex\":0,\"propertyPath\":\"maximumLength\",\"valueType\":\"Integer\",\"value\":\"9\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.Rigidbody\",\"componentIndex\":0,\"propertyPath\":\"m_Constraints\",\"valueType\":\"Integer\",\"value\":\"126\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.CarryableFeature\",\"componentIndex\":0,\"propertyPath\":\"m_Enabled\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
   planningLocalCell: {x: 49, y: 33}
 --- !u!1 &89821240
 GameObject:
@@ -7721,6 +7729,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 173793852}
     m_Modifications:
+    - target: {fileID: 114889900001, guid: e6be6b93be6bade4a8cba59f999293df, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1176152236921107016, guid: e6be6b93be6bade4a8cba59f999293df, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0
@@ -7793,6 +7805,10 @@ PrefabInstance:
       propertyPath: maximumLength
       value: 9
       objectReference: {fileID: 0}
+    - target: {fileID: 7182695641383611229, guid: e6be6b93be6bade4a8cba59f999293df, type: 3}
+      propertyPath: m_Constraints
+      value: 126
+      objectReference: {fileID: 0}
     - target: {fileID: 8442352184101056303, guid: e6be6b93be6bade4a8cba59f999293df, type: 3}
       propertyPath: regionId
       value: ilorr_r1
@@ -7849,7 +7865,7 @@ MonoBehaviour:
   isProp: 1
   planningBoxId: r1_cube_green_left
   planningSignature: "{\"id\":\"r1_cube_green_left\",\"type\":9,\"label\":\"\u7EFF\u65B9\u5757
-    K31\uFF08\u751F\u957F\u6781\u9650 K23\uFF09\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"97fd6aadaf914371b15e08d67827dbc8\",\"propEntryName\":\"\u7EFF\u8272\u63A5\u89E6\u65B9\u5757\",\"x\":52,\"y\":25,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":true,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.ContactCubes.ContactCube\",\"componentIndex\":0,\"propertyPath\":\"maximumLength\",\"valueType\":\"Integer\",\"value\":\"9\",\"objectReferenceValue\":{\"instanceID\":0}}]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.ContactCubes.ContactCube\",\"componentIndex\":0,\"propertyPath\":\"maximumLength\",\"valueType\":\"Integer\",\"value\":\"9\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
+    K31\uFF08\u751F\u957F\u6781\u9650 K23\uFF09\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"97fd6aadaf914371b15e08d67827dbc8\",\"propEntryName\":\"\u7EFF\u8272\u63A5\u89E6\u65B9\u5757\",\"x\":52,\"y\":25,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":true,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.ContactCubes.ContactCube\",\"componentIndex\":0,\"propertyPath\":\"maximumLength\",\"valueType\":\"Integer\",\"value\":\"9\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.Rigidbody\",\"componentIndex\":0,\"propertyPath\":\"m_Constraints\",\"valueType\":\"Integer\",\"value\":\"126\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.CarryableFeature\",\"componentIndex\":0,\"propertyPath\":\"m_Enabled\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}}]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.ContactCubes.ContactCube\",\"componentIndex\":0,\"propertyPath\":\"maximumLength\",\"valueType\":\"Integer\",\"value\":\"9\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.Rigidbody\",\"componentIndex\":0,\"propertyPath\":\"m_Constraints\",\"valueType\":\"Integer\",\"value\":\"126\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.CarryableFeature\",\"componentIndex\":0,\"propertyPath\":\"m_Enabled\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
   planningLocalCell: {x: 52, y: 25}
 --- !u!1 &1152553952
 GameObject:
@@ -16436,6 +16452,18 @@ MonoBehaviour:
     0,\n                            \"propertyPath\": \"maximumLength\",\n                           
     \"valueType\": \"Integer\",\n                            \"value\": \"9\",\n                           
     \"objectReferenceValue\": {\n                                \"instanceID\":
+    0\n                            }\n                        },\n                       
+    {\n                            \"componentPath\": \"\",\n                           
+    \"componentTypeName\": \"UnityEngine.Rigidbody\",\n                           
+    \"componentIndex\": 0,\n                            \"propertyPath\": \"m_Constraints\",\n                           
+    \"valueType\": \"Integer\",\n                            \"value\": \"126\",\n                           
+    \"objectReferenceValue\": {\n                                \"instanceID\":
+    0\n                            }\n                        },\n                       
+    {\n                            \"componentPath\": \"\",\n                           
+    \"componentTypeName\": \"Project.BlockFeatures.CarryableFeature\",\n                           
+    \"componentIndex\": 0,\n                            \"propertyPath\": \"m_Enabled\",\n                           
+    \"valueType\": \"Boolean\",\n                            \"value\": \"0\",\n                           
+    \"objectReferenceValue\": {\n                                \"instanceID\":
     0\n                            }\n                        }\n                   
     ]\n                },\n                {\n                    \"id\": \"r1_cube_green_lower\",\n                   
     \"type\": 9,\n                    \"label\": \"\u7EFF\u65B9\u5757 N39\uFF08\u751F\u957F\u6781\u9650
@@ -16457,6 +16485,18 @@ MonoBehaviour:
     \"Project.ContactCubes.ContactCube\",\n                            \"componentIndex\":
     0,\n                            \"propertyPath\": \"maximumLength\",\n                           
     \"valueType\": \"Integer\",\n                            \"value\": \"9\",\n                           
+    \"objectReferenceValue\": {\n                                \"instanceID\":
+    0\n                            }\n                        },\n                       
+    {\n                            \"componentPath\": \"\",\n                           
+    \"componentTypeName\": \"UnityEngine.Rigidbody\",\n                           
+    \"componentIndex\": 0,\n                            \"propertyPath\": \"m_Constraints\",\n                           
+    \"valueType\": \"Integer\",\n                            \"value\": \"126\",\n                           
+    \"objectReferenceValue\": {\n                                \"instanceID\":
+    0\n                            }\n                        },\n                       
+    {\n                            \"componentPath\": \"\",\n                           
+    \"componentTypeName\": \"Project.BlockFeatures.CarryableFeature\",\n                           
+    \"componentIndex\": 0,\n                            \"propertyPath\": \"m_Enabled\",\n                           
+    \"valueType\": \"Boolean\",\n                            \"value\": \"0\",\n                           
     \"objectReferenceValue\": {\n                                \"instanceID\":
     0\n                            }\n                        }\n                   
     ]\n                },\n                {\n                    \"id\": \"r1_ladder_11\",\n                   
