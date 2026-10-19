@@ -79,3 +79,9 @@ ProjectInspectorUtility.CreateReadOnlyRow 新增可选 owner 参数；捕获Unit
 ## 装配图临时修饰键工具
 
 PlanningCanvas 的 GetActiveDetailTool 按装配图局部修饰键状态覆盖工具：Alt优先Erase，其次Shift为Box；不改LevelEditorState.Tool或detailEntry/Prop选择。Pointer事件校准修饰键，KeyDown/KeyUp支持左右Alt/Shift；工具变化用EndPointerAction取消未提交矩形。白笔刷在ApplyDetailSelection中引用栏目白方块（优先既有稳定ID，其次名称），保留其默认组件覆盖，不应用当前道具的固定尺寸。放置、擦除、房间/通道归属、编辑层和DocumentChanged批量事务沿用现有流程。FocusOut/Detach/SetMode及窗口OnLostFocus清除状态。
+
+## 右键实例参数与关闭自动保存
+
+PlanningCanvas在非World模式将右键按下标记为参数单击候选，移动超过4个UI单位后转入原平移；释放时先清理捕获，再调用既有EditParametersAt。命中顺序/孔洞/水层/详情区域筛选沿用现有逻辑；不能将平移或捕获丢失误作单击。
+
+LevelEditorPropComponentEditorWindow的TrySaveDraft统一显式保存、关闭OnDisable与窗口复用前保存；关闭先Blur提交延迟字段，用初始JSON+宽度比较避免无修改事务，通过宽度验证后深拷贝覆盖交给onSaved。显式放弃和已保存会跳过关闭重复提交。非法草稿关闭后延迟重开保留内容，仍须通过原校验；预览在finally中释放。实例命中入口调用SaveOpenSession后再读取覆盖，避免重开同物体拿到保存前旧值。

@@ -272,6 +272,7 @@ namespace PlanningEditorPrototype
                     fourthAction = () => ClearSignalBinding(box.id);
                     fourthLabel = "清空信号源绑定";
                 }
+                if (!LevelEditorPropComponentEditorWindow.SaveOpenSession()) return;
                 LevelEditorPropComponentEditorWindow.Open(source,
                     box.hasComponentOverrides ? box.componentOverrides : box.type == PlanningDetailType.Prop ? prop?.ComponentValueOverrides : entry?.ComponentValueOverrides,
                     values =>
@@ -387,6 +388,8 @@ namespace PlanningEditorPrototype
         private int panPointerId = -1;
         private int panButton = -1;
         private Vector2 panLastPosition;
+        private Vector2 panStartPosition;
+        private bool rightClickParameters;
         private bool isDragging;
         private int dragPointerId = -1;
         private Vector2 dragStart;
@@ -2884,6 +2887,8 @@ namespace PlanningEditorPrototype
                 panPointerId = evt.pointerId;
                 panButton = evt.button;
                 panLastPosition = position;
+                panStartPosition = position;
+                rightClickParameters = evt.button == 1 && mode != PlanningCanvasMode.World;
                 PointerCaptureHelper.CapturePointer(
                     this,
                     evt.pointerId);
@@ -2936,6 +2941,11 @@ namespace PlanningEditorPrototype
             {
                 if ((evt.pressedButtons & (1 << panButton)) == 0 || !this.HasPointerCapture(panPointerId))
                 { EndPointerAction(); return; }
+                if (rightClickParameters)
+                {
+                    if ((position - panStartPosition).sqrMagnitude <= 16f) return;
+                    rightClickParameters = false;
+                }
                 pan += position - panLastPosition;
                 panLastPosition = position;
                 UpdateDetailPreviewImages();
@@ -2997,7 +3007,13 @@ namespace PlanningEditorPrototype
             {
                 CompletePointerDrag(evt.localPosition);
             }
-            else if (isPanning && evt.pointerId == panPointerId && evt.button == panButton) EndPointerAction();
+            else if (isPanning && evt.pointerId == panPointerId && evt.button == panButton)
+            {
+                bool openParameters = rightClickParameters &&
+                    (evt.localPosition - (Vector3)panStartPosition).sqrMagnitude <= 16f;
+                EndPointerAction();
+                if (openParameters) EditParametersAt(evt.localPosition);
+            }
             MarkDirtyRepaint();
             evt.StopPropagation();
         }
@@ -3013,6 +3029,7 @@ namespace PlanningEditorPrototype
             panPointerId = -1;
             dragPointerId = -1;
             panButton = -1;
+            rightClickParameters = false;
             movingBox = null;
             bossMarkerDragRoom = null;
             bossMarkerDragBox = null;

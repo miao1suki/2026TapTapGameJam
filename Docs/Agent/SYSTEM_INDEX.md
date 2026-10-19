@@ -173,3 +173,5 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 三色接触方块道具参数顶部提供固定位置快捷开关，保存为既有Rigidbody约束覆盖，保留旋转位。共享Inspector只读行可绑定owner，在对象销毁后停止刷新；重生点与房间Inspector已接入。见关卡编辑器说明与规划协作API。
 
 装配图支持按住Alt临时擦除、Shift临时绘制白方块（Alt优先），释放恢复原工具与栏目选择；失焦/换视图清理，沿用矩形编辑与历史事务。见LEVEL_EDITOR与PLANNING_COLLABORATION_API。
+
+详情/装配图右键单击打开实例组件参数，拖动仍平移；组件面板关闭自动保存，显式“放弃修改”丢弃，非法平台宽度保留草稿。见LEVEL_EDITOR与PLANNING_COLLABORATION_API。
