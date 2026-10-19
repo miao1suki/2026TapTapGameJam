@@ -10,6 +10,7 @@ namespace Project.GridArt
         public Transform root;
         public Vector3 restPosition;
         public Vector2 parallax = Vector2.one;
+        [NonSerialized] public GridArtLayer settings;
     }
 
     [Serializable]
@@ -34,7 +35,12 @@ namespace Project.GridArt
         private bool initialized;
         public bool IsBuiltFor(int revision, string hash) => appliedRevision == revision && appliedPaletteHash == hash;
         public void SetBuildSignature(int revision, string hash) { appliedRevision = revision; appliedPaletteHash = hash; }
-        public void SetBindings(GridArtLayerBinding[] values) { bindings = values; initialized = false; }
+        public void SetBindings(GridArtLayerBinding[] values) { bindings = values; ResolveSettings(); initialized = false; }
+        private void ResolveSettings()
+        {
+            foreach (var binding in bindings)
+                binding.settings = map != null ? map.layers.Find(layer => layer.id == binding.id) : null;
+        }
         public void SetColorBindings(GridArtColorBinding[] values) { colorBindings = values; ApplyColorMasks(); }
         private void ApplyColorMasks()
         {
@@ -63,17 +69,33 @@ namespace Project.GridArt
                 if (binding.root != null) binding.root.localPosition = binding.restPosition;
             initialized = false;
         }
-        public static Vector3 ParallaxOffset(Vector3 cameraDelta, Vector2 factor, float pixelUnit)
+        public static Vector3 ParallaxOffset(Vector3 cameraDelta, Vector2 factor, float pixelUnit,
+            bool lockX = false, bool lockY = false, Vector2 maximum = default)
         {
-            var offset = new Vector3(cameraDelta.x * (1f - factor.x), cameraDelta.y * (1f - factor.y), 0);
-            if (pixelUnit > 0)
+            float Axis(float delta, float speed, bool locked, float limit)
             {
-                offset.x = Mathf.Round(offset.x / pixelUnit) * pixelUnit;
-                offset.y = Mathf.Round(offset.y / pixelUnit) * pixelUnit;
+                if (locked) return 0;
+                float offset = delta * (1f - speed);
+                if (limit > 0) offset = Mathf.Clamp(offset, -limit, limit);
+                if (pixelUnit > 0)
+                {
+                    offset = Mathf.Round(offset / pixelUnit) * pixelUnit;
+                    // Quantize the limit inward too: never overshoot it or introduce a fractional art pixel.
+                    if (limit > 0)
+                    {
+                        float snappedLimit = Mathf.Floor(limit / pixelUnit) * pixelUnit;
+                        offset = Mathf.Clamp(offset, -snappedLimit, snappedLimit);
+                    }
+                }
+                return offset;
             }
-            return offset;
+            return new Vector3(Axis(cameraDelta.x, factor.x, lockX, maximum.x),
+                Axis(cameraDelta.y, factor.y, lockY, maximum.y), 0);
         }
-        private void OnEnable() { initialized = false; ApplyColorMasks(); }
+        public static Vector3 LayerOffset(Vector3 delta, GridArtLayer layer, float cellSize, int pixelsPerCell)
+            => ParallaxOffset(delta, layer.parallax, pixelsPerCell > 0 ? cellSize / pixelsPerCell : 0,
+                layer.lockParallaxX, layer.lockParallaxY, layer.maxParallaxOffset * cellSize);
+        private void OnEnable() { initialized = false; ResolveSettings(); ApplyColorMasks(); }
         private void OnDisable()
         {
             foreach (var binding in bindings)
@@ -94,7 +116,9 @@ namespace Project.GridArt
             float unit = pixelsPerCell > 0 && map != null ? map.cellSize / pixelsPerCell : 0f;
             foreach (var binding in bindings)
                 if (binding.root != null)
-                    binding.root.localPosition = binding.restPosition + ParallaxOffset(delta, binding.parallax, unit);
+                    binding.root.localPosition = binding.restPosition + (binding.settings != null
+                        ? LayerOffset(delta, binding.settings, map.cellSize, pixelsPerCell)
+                        : ParallaxOffset(delta, binding.parallax, unit));
         }
     }
 }

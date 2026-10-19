@@ -438,7 +438,7 @@ namespace Project.GridArt.Editor
                             if (!layerQuads.TryGetValue(layer,out var cached)) layerQuads[layer]=cached=GridArtBuilder.BuildQuads(layer,owner.map.palette);
                             if (layer.visible) foreach (var q in cached)
                             {
-                                Vector2 offset = Vector2.Scale(owner.previewTravel, Vector2.one - layer.parallax);
+                                Vector2 offset = GridArtScene.LayerOffset(owner.previewTravel, layer, 1f, Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell);
                                 quads.Add((new GridArtQuad(new Rect(q.bounds.position + offset, q.bounds.size), q.uv, q.texture, q.normal, q.colorId, q.quarterTurns), layer.tint));
                                 if (layer.depth > 0f) backgroundQuadCount++;
                             }

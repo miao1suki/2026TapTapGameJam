@@ -7,7 +7,7 @@
 ## 数据所有权
 
 - GridArtMap每关独立，世界XY原点0，格中心`(cell+.5)*cellSize`，负坐标Floor，与房间／装配图一致。ownerSceneGuid首次应用设置；跨Scene只读，需独立副本。
-- GridArtLayer稳定Guid，存显隐、锁定、depth、parallax、tint、sortingOrder、lighting3D；followLevel/sourceGroup/sourceBrush定义自动底图，cells为生成占格缓存。空sourceGroup表示整关，其他为稳定房间/通道ID。自动层不接受指针绘制，关闭联动后可手绘；装饰放独立层。sortingOrder=int.MinValue兼容旧值layerIndex-100；显式值不随插层变化。
+- GridArtLayer稳定Guid，存显隐、锁定、depth、parallax、tint、sortingOrder、lighting3D；新增lockParallaxX/Y（默认false）与maxParallaxOffset（每轴格数，0不限），预览/运行统一GridArtScene.LayerOffset。Scene绑定OnEnable/SetBindings时按id解析Map设置，不需重烘网格；旧缺字段保持原行为。见[视差说明](../../Developer/GRID_ART_PARALLAX.md)。followLevel/sourceGroup/sourceBrush定义自动底图，cells为生成占格缓存。空sourceGroup表示整关，其他为稳定房间/通道ID。自动层不接受指针绘制，关闭联动后可手绘；装饰放独立层。sortingOrder=int.MinValue兼容旧值layerIndex-100；显式值不随插层变化。
 - 默认库GridArtLibraryService.SharedPath：`Assets/_Project/Content/Art/SceneArtLibrary.asset`。地图仍存整数笔刷编号，禁止重排／删除既有槽位。sourceKey采用资产GUID/localId、切片库GUID＋稳定tile.Id或来源库GUID＋槽位，不用InstanceID。切片生成器会重建Sprite子资产，同步必须按tile.Id修复原槽位的Sprite引用，不得仅靠Sprite localId去重；已配置显示尺寸和规则不自动覆盖。
 - brush.size为排布／擦除占格，visualSize>0为实际显示格数，否则兼容旧Size；contentRect为Sprite有效内容裁区；normalMap为同尺寸图集。新导入按GridArtworkMetrics（16有效源像素/格）计算visualSize，sourcePixelScale仅用于确证的整数导出。tail1408×704已逐RGBA块确证4倍，旧库64px单块仍为1格；不是4格。详见[换算标准](../../Developer/SCENE_ART_PIXEL_CONVERSION.md)。
 - GridArtScene输出不增加Collider、BlockRuntime、颜色接口、重置脚本或相机控制权。玩法合并不删美术。输出根需世界原点、无旋转、缩放1且独立于共享Prefab。“美术层_”子树只放生成内容。

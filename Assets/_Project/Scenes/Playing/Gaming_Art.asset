@@ -22,6 +22,9 @@ MonoBehaviour:
     locked: 0
     depth: 5
     parallax: {x: 0.3, y: 0.3}
+    lockParallaxX: 0
+    lockParallaxY: 1
+    maxParallaxOffset: {x: 4, y: 0}
     tint: {r: 1, g: 1, b: 1, a: 1}
     colorId: 
     lighting3D: 0
@@ -6553,6 +6556,9 @@ MonoBehaviour:
     locked: 0
     depth: 2
     parallax: {x: 0.7, y: 0.7}
+    lockParallaxX: 0
+    lockParallaxY: 1
+    maxParallaxOffset: {x: 2, y: 0}
     tint: {r: 1, g: 1, b: 1, a: 1}
     colorId: 
     lighting3D: 0
