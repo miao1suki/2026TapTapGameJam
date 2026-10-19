@@ -88,16 +88,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.TimelineAsset
   m_Version: 0
   m_Tracks:
-  - {fileID: 510000000}
   - {fileID: 570000000}
-  - {fileID: 530000000}
-  - {fileID: 540000000}
-  - {fileID: 550000000}
-  - {fileID: 510000002}
-  - {fileID: 61840179850562536}
   - {fileID: 560000000}
-  - {fileID: 2990056630330397635}
-  m_FixedDuration: 6.55
+  m_FixedDuration: 20
   m_EditorSettings:
     m_Framerate: 60
     m_ScenePreview: 1
@@ -118,7 +111,7 @@ MonoBehaviour:
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0
-  m_Muted: 0
+  m_Muted: 1
   m_CustomPlayableFullTypename: 
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
@@ -210,8 +203,8 @@ MonoBehaviour:
   actorTag: Boss
   useTrackBinding: 1
   motionMode: 0
-  useOwnerAsOrigin: 0
-  targetOffset: {x: -9.07, y: -33.33, z: 0}
+  useOwnerAsOrigin: 1
+  targetOffset: {x: -16.57, y: 4.17, z: 0}
   motionDuration: 2
   jumpArcHeight: 1
   motionCurve:
@@ -265,7 +258,7 @@ MonoBehaviour:
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0
-  m_Muted: 0
+  m_Muted: 1
   m_CustomPlayableFullTypename: 
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
@@ -510,7 +503,7 @@ MonoBehaviour:
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0
-  m_Muted: 0
+  m_Muted: 1
   m_CustomPlayableFullTypename: 
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
@@ -657,7 +650,7 @@ MonoBehaviour:
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0
-  m_Muted: 0
+  m_Muted: 1
   m_CustomPlayableFullTypename: 
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
@@ -804,7 +797,7 @@ MonoBehaviour:
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0
-  m_Muted: 0
+  m_Muted: 1
   m_CustomPlayableFullTypename: 
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
@@ -946,7 +939,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 82cd92ffc29383742932b27ca414c80f, type: 3}
-  m_Name: Boss Health Activation
+  m_Name: Boss Appear Cinematic
   m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.PlayableTrack
   m_Version: 3
   m_AnimClip: {fileID: 0}
@@ -958,10 +951,10 @@ MonoBehaviour:
   m_Children: []
   m_Clips:
   - m_Version: 1
-    m_Start: 6.54
+    m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 560000001}
-    m_Duration: 0.01
+    m_Duration: 20
     m_TimeScale: 1
     m_ParentTrack: {fileID: 560000000}
     m_EaseInDuration: 0
@@ -1025,7 +1018,7 @@ MonoBehaviour:
     m_PreExtrapolationMode: 0
     m_PostExtrapolationTime: 0
     m_PreExtrapolationTime: 0
-    m_DisplayName: Activate Boss Health
+    m_DisplayName: Boss Appear Cinematic
   m_Markers:
     m_Objects: []
 --- !u!114 &560000001
@@ -1037,11 +1030,32 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c5a3e1d2b4f4a6c8d9e0f1a2b3c4d5e, type: 3}
-  m_Name: BossHealthBarActivationPlayable
-  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossHealthBarActivationPlayable
-  bossTag: Boss
-  enableCameraSize: 1
+  m_Script: {fileID: 11500000, guid: fcf243baf04e46d69cc01458432f322a, type: 3}
+  m_Name: BossAppearCinematicPlayable
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossAppearCinematicPlayable
+  bossPrefab: {fileID: 900000002, guid: 01bc5f4083bb9ab45ab94a6b023e8464, type: 3}
+  font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+  warningLine: "别急着走啊，你以为我能让你如愿?"
+  questionLine: "？"
+  alarmLine: "不好！"
+  introFreezeSeconds: 1
+  warningDisplaySeconds: 1.8
+  questionDisplaySeconds: 1
+  alarmDisplaySeconds: 1
+  messageFontSize: 72
+  typewriterCharactersPerSecond: 12
+  glitchTransitionSeconds: 0.48
+  glitchMinAlpha: 0.35
+  glitchMaxAlpha: 1
+  glitchHorizontalJitter: 18
+  glitchVerticalJitter: 4
+  glitchColorSeparation: 0.85
+  playerCameraOffset: {x: 0, y: 0, z: -10}
+  bossSpawnOffsetFromPlayer: {x: -7, y: 13, z: 0}
+  fallAccelerationBlocksPerSecondSquared: 24
+  fallMaximumSpeedBlocksPerSecond: 20
+  landingHoldSeconds: 1
+  cameraReleaseSeconds: 0.25
 --- !u!114 &570000000
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1067,7 +1081,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 570000001}
-    m_Duration: 6.52
+    m_Duration: 20
     m_TimeScale: 1
     m_ParentTrack: {fileID: 570000000}
     m_EaseInDuration: 0
@@ -1151,7 +1165,7 @@ MonoBehaviour:
   motionMode: 0
   useOwnerAsOrigin: 0
   targetOffset: {x: 0, y: 0, z: 0}
-  motionDuration: 6.52
+  motionDuration: 20
   jumpArcHeight: 1
   motionCurve:
     serializedVersion: 2
@@ -1205,7 +1219,7 @@ MonoBehaviour:
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0
-  m_Muted: 0
+  m_Muted: 1
   m_CustomPlayableFullTypename: 
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
@@ -1297,7 +1311,7 @@ MonoBehaviour:
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0
-  m_Muted: 0
+  m_Muted: 1
   m_CustomPlayableFullTypename: 
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}

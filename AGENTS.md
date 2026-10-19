@@ -18,6 +18,7 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 7. 修改玩家屏幕提示、按键说明、搬运提示、复活提示或 `WordNote_UI` 时，必须先读 `.agents/skills/taptap-word-note/SKILL.md`，并完整读取其中指定的 `Assets/_Project/Code/Systems/WordNote/SKILL.md`。
 8. 新增或修改任何游戏内文字、UGUI/TMP 文本、开始菜单、暂停界面、HUD、字幕、提示、成就、设置或动态生成文本时，必须先读 `.agents/skills/taptap-typography/SKILL.md`。
 9. 修改场景启动、MainMenu、Gaming、场景跳转、关卡入口、玩法相机随行或暂停预制体接线时，必须先读 `.agents/skills/taptap-scene-flow/SKILL.md`。
+10. 新增、迁移或修改 Boss 出场、Boss 死亡、处决、真假结局及其 Timeline Playable 时，必须先读 `.agents/skills/taptap-boss-timeline-migration/SKILL.md`。Timeline 演出只允许使用触发器/Director 的局部坐标；现有通用轨道不足时，在 Playable 轨道放自制脚本，不改 Timeline 工具包来写 Boss 专属逻辑。
 
 先验证当前目录是 Unity 项目且 `git remote get-url origin` 为上述仓库；不匹配立即停止写入和推送。
 不在旧项目实现功能，不向旧仓库推送，不复制整个旧 Assets/ProjectSettings。

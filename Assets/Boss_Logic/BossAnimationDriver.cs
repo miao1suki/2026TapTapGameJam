@@ -22,6 +22,12 @@ namespace Project.BossLogic
         [SerializeField] private string hitTriggerParameter = "Hit";
         [SerializeField] private string deathTriggerParameter = "Death";
         [SerializeField] private string jumpTriggerParameter = "Jump";
+        [SerializeField]
+        [Tooltip("Animator 没有死亡状态时，演出等待的默认秒数。")]
+        [Min(0f)]
+        private float deathAnimationFallbackSeconds = 2f;
+        [SerializeField]
+        private string deathStateName = "Death";
         [SerializeField] private BossStateEvent stateChanged =
             new BossStateEvent();
         [SerializeField] private UnityEvent hitStarted =
@@ -33,8 +39,56 @@ namespace Project.BossLogic
 
         private BossController controller;
         private bool deathAnimationTriggered;
+        private float deathAnimationStartedAt;
 
         public event Action<BossStateId, BossStateId> StateForwarded;
+        public float DeathAnimationDurationSeconds
+        {
+            get
+            {
+                if (animator != null &&
+                    !string.IsNullOrWhiteSpace(
+                        deathStateName))
+                {
+                    AnimatorStateInfo info =
+                        animator.GetCurrentAnimatorStateInfo(0);
+                    if (info.IsName(deathStateName) &&
+                        info.length > 0f)
+                    {
+                        return info.length;
+                    }
+                }
+
+                return Mathf.Max(
+                    0f,
+                    deathAnimationFallbackSeconds);
+            }
+        }
+
+        public float DeathAnimationElapsedSeconds =>
+            deathAnimationTriggered
+                ? Mathf.Max(
+                    0f,
+                    Time.time - deathAnimationStartedAt)
+                : 0f;
+
+        public float DeathAnimationProgress
+        {
+            get
+            {
+                float duration =
+                    DeathAnimationDurationSeconds;
+                return duration <= 0f
+                    ? 1f
+                    : Mathf.Clamp01(
+                        DeathAnimationElapsedSeconds /
+                        duration);
+            }
+        }
+
+        public bool IsDeathAnimationComplete =>
+            deathAnimationTriggered &&
+            DeathAnimationProgress >= 1f;
 
         private void OnEnable()
         {
@@ -138,6 +192,7 @@ namespace Project.BossLogic
             }
 
             deathAnimationTriggered = true;
+            deathAnimationStartedAt = Time.time;
             if (driveAnimator && animator != null)
             {
                 SetTrigger(deathTriggerParameter);

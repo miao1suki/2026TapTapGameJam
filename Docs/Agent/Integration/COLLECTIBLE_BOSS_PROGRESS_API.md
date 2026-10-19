@@ -24,7 +24,7 @@ CollectibleProgressService.Changed += RefreshMap;
 
 ## Boss入口与结局
 
-`BossCollectibleEntryGate`挂在Boss入场的`ContactTimelineTrigger`同物体，默认最低比例0.3、返回ID为`Start`。低于比例拒绝本次Timeline，不消费Once机会；返回当前玩家同场景的Start，也允许明确覆写同场景Transform/锚点。没有同场景目标时只拒绝并输出明确警告，不猜位置、不加载其他场景。挂接通过可复用的`IContactTimelineCondition`，无条件组件的既有触发器行为不变。
+`BossCollectibleEntryGate`挂在Boss入场的`ContactTimelineTrigger`同物体，顶部`gateEnabled`总开关默认开启。关闭时直接放行Timeline，不检查收集比例，也不执行返回传送；触发器自身模式和其他条件组件保持原行为。启用时默认最低比例0.3、返回ID为`Start`。低于比例拒绝本次Timeline，不消费Once机会；返回当前玩家同场景的Start，也允许明确覆写同场景Transform/锚点。没有同场景目标时只拒绝并输出明确警告，不猜位置、不加载其他场景。挂接通过可复用的`IContactTimelineCondition`，无条件组件的既有触发器行为不变。
 
 锚点返回统一调用`PlayerController.TryTeleportToStoryAnchor`，由控制器清理绳/攀爬/积水等运动状态、通知房间生命周期、保持外部控制锁、定位相机并将下一次死亡的会话回退点绑定到目标。默认Start不会只移动Transform后还保留旧Boss重生点；明确配置的旧Transform覆写路径保持兼容。
 

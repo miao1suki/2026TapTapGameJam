@@ -1,5 +1,73 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-19 Boss 出场相机完全固定（编译通过，待 Play 回归）
+
+- 分支 `boss_last`。删除 `BossAppearCinematicBehaviour` 中遗留的 `MoveToOpenArea` / `ReturnToPlayer` 状态和全部镜头横移代码；`Boss_appear.playable` 同步移除 `cameraLeftDistanceBlocks`、`cameraMoveSeconds`、`cameraReturnSeconds` 旧序列化字段。
+- 当前顺序：锁玩家 -> 故障字幕 -> 打字机问号 -> 原地生成 Boss 并假加速度下落 -> 回到玩家同高 -> 停留 1 秒 -> 打字机“不好！” -> 开战。整个过程每帧只写播放开始时的玩家位置加 `playerCameraOffset`，不向左平移、不追踪 Boss、不回程运镜。
+- `BossAppearCameraGuard` 继续在最高 `LateUpdate` 执行顺序锁定 Camera Transform 和镜头参数；Playable 清理时销毁守卫并交还 `CameraControlManager`。
+- Unity 6000.3.12f1 当前 `Assembly-CSharp.rsp` 与 `Assembly-CSharp-Editor.rsp` 静态编译 0 error，仅既有 obsolete/hide warning；未运行 Play Mode。
+
+## 2026-10-19 story_start 开场 Timeline（编译通过，待挂接）
+
+- 分支 `boss_last`。新增通用 Story Timeline `story_start.playable`，不放入 `Boss_Logic`；用户后续自行挂到 Timeline 激发器。
+- 行为：检查并锁玩家 -> 四周黑幕向中心覆盖 -> 镜头倍率 `1.4×` -> 中央打字机分段字幕（每段显示 2 秒、间隔 0.5 秒）-> 玩家左移 16 格但镜头保持 -> 黑幕从中心向四周反向揭开 -> 玩家向右走回原位并同步恢复镜头倍率 -> 最终分段字幕 -> 交还镜头和玩家操作。
+- 实现遵守 Boss Timeline Skill 的通用约束：空间数据、速度、倍率、时长、分段文本全部序列化；使用现有 `WordNoteUI`、`CameraControlManager`/`TimelineCamRig` 和玩家控制锁。
+- 资产不放在 `Boss_Logic`，路径为 `Assets/_Project/Content/GameFlow/story_start.playable`；脚本放在 `Assets/_Project/Code/StoryStart`，避免 `Project.GameFlow.Runtime` asmdef 缺少 Player/WordNote/Timeline 引用。玩家以播放时位置为基准，左移 16 格，不使用世界坐标。
+- Unity 6000.3.12f1 重新生成 `Project.GameFlow.Runtime.ref.dll` 后，Assembly-CSharp、Project.GameFlow.Runtime 与 Editor 编译均为 0 error，仅既有警告；Timeline 尚未放入场景激发器，未运行 Play Mode。
+
+## 2026-10-19 Boss 字幕激发器幽灵修复（验证完成）
+
+- 分支 `boss_last`。目标对象 `box_74d8d100`，内容 `这里怎么怪怪的...`。规划 JSON `(17,41)`、Scene 签名 `(11,41)`、实际 Transform `(1.5,-39.5)` 三者脱节，导致对象仍触发但编辑器无法按 ID/格定位。
+- 将规划记录、Scene 内嵌规划、`LevelEditorPlacedBlock` 签名/局部格、Transform 和对象名统一到最左侧弹性植物 `box_d59ace69` 所在的规划 `(9,42)` / Scene 格 `(-4,-41)`。
+- 校验：两份规划 JSON 哈希一致、字幕 ID 唯一、字幕与弹性植物同格；Scene 中该 ID 仅一个实例，Transform `(-3.5,-40.5)`、cell `(-4,-41)`、planningLocalCell `(9,42)`、签名和 Scene 内嵌规划坐标全部一致。
+
+## 2026-10-19 Boss 自然死亡/处决死亡统一（编译通过，待 Play 回归）
+
+- 分支 `boss_last`。`Boss_defeat.playable` 改为自然死亡共享演出，`Boss_execution.playable` 改为处决入口；两者使用同一 `BossDeathCinematicPlayable` 状态机，处决受伤后从 Boss 故障闪烁节点接入后续自然死亡流程。
+- 处决入口高度修正：Timeline 初始化后先保持 Boss X/Z 不变，把 Y 设为玩家当前 Y 向下 3 格，再进入 0.5 秒镜头与右移。
+- 自然死亡：锁玩家 -> 传送最近已激活重生点 -> 关闭 Boss 接触击杀 -> 镜头到 Boss -> 慢速受伤闪烁 -> 两句 Boss 故障字幕 -> 回玩家、朝向 Boss、玩家闪两下 -> 六钥匙竖列抽出并呼吸悬停 -> 玩家打字机字幕 -> 0.5 秒后钥匙逐个进入 Boss -> 最终 Boss 故障字幕 -> 死亡动画检测（默认 2 秒） -> Boss 视觉与碰撞删除 -> 回玩家。
+- 处决死亡：锁玩家 -> 0.5 秒后快速镜头 -> 镜头进度一半时 Boss 以 10 格/秒右移；执行序列从开始即接管 Boss，任意正伤害直接致命 -> 从 Boss 故障闪烁节点切入同一演出。
+- 玩家字幕使用打字机出入，Boss 字幕使用 RGB 故障出入，全部位于底部队列并显示 2 秒。六钥匙演出会禁用拾取/物理/子 Timeline，仅在演出中显示。
+- 删除旧 `BossExecutionClip` 与 `BossExecutionTimelineTrack`；旧死亡相机、动画触发和双目标相机轨静音。新增独立场景级 Player Thinking Director，使 Boss 可先删除再进入真假结局。
+- Unity 6000.3.12f1 Runtime 与 Editor 编译 0 error，仅既有警告；未运行 Play Mode。
+
+## 2026-10-19 Boss 出场演出重排（编译通过，待 Play 回归）
+
+- 分支 `boss_last`。范围：`Boss_appear.playable`、Boss 专用出场 Playable、WordNote 故障通道及其 API/文档；保留当前 Boss Scene、规划 JSON、字体和其他 WIP。
+- 出场相机最终收敛：Boss appear 全程相机固定在玩家初始位置加固定偏移，不执行任何横移；Boss 仍按原规则从 `X-7 / Y+13` 下落到玩家高度。
+- 出场相机独占：`BossAppearCinematicBehaviour` 直接实现 `ICameraControlSource`/`ICameraLensOverrideSource`，通过 `CameraControlManager.RequestControl(..., CameraControlPriorities.Debug, BlockAll)` 持有最高优先级相机源，不再与任何 CameraTimelineTrack 共用 `TimelineCamRig._shotState`。
+- 最终相机守卫：新增 `BossAppearCameraGuard`（ExecutionOrder 10000），在 all Timeline/CameraControlManager LateUpdate 之后直接锁定 Camera Transform 与镜头参数；appear 清理时销毁守卫。
+- 出场相机轨彻底移除：`Boss_appear.playable` 的 `m_Tracks` 只保留玩家锁轨和 `BossAppearCinematicPlayable`，旧 CameraTimelineTrack、Boss 走跳轨和旧对话轨不再进入 PlayableGraph。
+- 出场镜头旧状态机已删除，不再保留向左空地移动或返回玩家的阶段。
+- 出场下落再次修正：不再依赖 Rigidbody 重力、Collider 或地面命中，改为 BossController 临时 Kinematic 并接管固定 X/Z，以可调加速度计算 Y 位移，直到与玩家 Y 完全一致后进入盯视；appear 初始机位改为玩家位置 + 固定 `playerCameraOffset`，不再继承拾取/旧镜头高度；镜头仍只改 X，Y/Z 固定。
+- 出场镜头修正：镜头只沿 X 轴朝玩家左侧 10 格平移，Y/Z 保持播放开始时高度；Boss 生成偏移为玩家当前位置 `X-7 / Y+13`。实际日志显示其他 Camera Timeline 会和 appear 共用同一 `TimelineCamRig._shotState`，后写入者会把镜头拉到钥匙等目标。现在 appear 启动时会主动停止其他正在播放的 Camera Timeline，强制清理并持续恢复自身租约；初始机位由玩家位置建立。Boss 不再依赖物理下落，而是 Kinematic 固定 X/Z 按加速度计算 Y，到玩家同高后锁住演示位置。
+- 新演出顺序：锁玩家 1 秒 -> 故障字幕“别急着走啊，你以为我能让你如愿?” -> 同位置打字机“？” -> 玩家 `X-7 / Y+13` 生成未追迹 Boss -> 假加速度下落到玩家同高 -> 固定机位停留 1 秒 -> 打字机“不好！” -> 交接相机/玩家并开启 Boss 追击、血条与监控。
+- 所有镜头、生成点和距离仍使用 `BossTimelinePerformanceFrame` 的激发器局部坐标；现有 Timeline 工具包不做 Boss 专属改动。
+- `WordNoteAnimation` 新增 `Glitch`，按玩家死亡 RGB 效果使用 60Hz Perlin 抖动、透明度脉冲和红/蓝双影错位；透明度上下限、横纵抖动和色彩分离强度可编辑，使用 DOTween 与现有 Timeline 消息申请入口。
+- `Boss_appear.playable` 旧 Boss 生成/走/跳、旧相机和旧对话轨均静音；保留全程玩家锁轨，并把 Boss Health Activation 轨改为新的 `BossAppearCinematicPlayable`。Unity 6000.3.12f1 Runtime 与 Editor 编译 0 error，仅既有警告；未运行 Play Mode。
+
+## 2026-10-19 Boss Timeline 迁移局部坐标（编译通过，待 Play 回归）
+
+- 分支 `boss_last`。新增 `.agents/skills/taptap-boss-timeline-migration/SKILL.md` 并登记到根 `AGENTS.md`：Timeline 演出禁止世界坐标，统一以 owning `ContactTimelineTrigger` 为表演坐标系；脚本驱动的死亡轨以 owning `PlayableDirector` 自身为基准。现有通用轨道不足时，在 Playable 轨道放自制脚本，不改 `TimelineTools3D`。
+- 新增 `BossTimelinePerformanceFrame`，从 `PlayableGraph` 解析 `PlayableDirector`，再用 `TransformPoint/TransformVector` 处理局部点与方向；缺 Director 或坐标系时明确报错并停止对应演出。
+- `Boss_appear.playable` 的 Boss 生成点由世界坐标 `(-9.07,-33.33)` 改为激发器局部 `(-16.57,4.17)`，并恢复 `useOwnerAsOrigin=1`；删除会按硬编码时间重写场次的 `BossWalkTimelineInstaller`。
+- `BossCameraPlayable`、`CameraDownPlayable`、`BossKeyAbsorptionPlayable`、`PlayerThinkingTimelinePlayable` 的相机偏移、镜头下移、钥匙吸附/悬浮、收集品排列和黑屏中心均改为表演坐标系局部数据；新增悬浮、旋转、收集品数量/间距/高度/缩放等可编辑参数。
+- 保留当前未提交的 Boss Scene、两份 Boss 规划 JSON、字体资产及其他分支 WIP；未保存或重建主 Unity 场景。Unity 6000.3.12f1 最新 Tundra 脚本构建成功，未运行 Play Mode。
+
+## 2026-10-19 Boss 静态白块合并与移除吃方块（编译通过，场景待生成）
+
+- 分支 `boss_last`。用户后续调整机关后重新合并 Boss 静态白块：`469` 个白块合并为 `1` 个保留孔洞的 `box_9b9d1215`，规划 box 从 `771` 降到 `303`，`2708` 个占用格前后集合完全一致，`302` 个道具/机关未改动。`Boss.planning.json` 与 `Content/LevelMaps/Boss.json` 内容一致，修改前后备份保存在 `Library/PlanningMergeBackups`。
+- `BossController` 删除碰撞后隐藏/停用普通物体、岩浆或机关，以及每帧隐藏队列和房间恢复隐藏链路；Boss 不再吃方块。玩家接触死亡、岩浆伤害、无敌闪烁、死亡演出和右移暂停逻辑保留。
+- 严格保留原穿行与伤害行为：`SetPassThroughTerrain(true)` 仍按 `passThroughColliderHeight=12` 临时拉高 Trigger 碰撞，`destroyOnlyWhileExternalMoving` 仍限制入场/Timeline 期间误结算接触伤害；仅删除“接触对象被隐藏”这一结果。
+- `BossCollectibleEntryGate` 顶部新增“是否启用该组件”总开关，默认开启；关闭时跳过收集比例检查和失败返回传送，直接允许绑定触发器播放 Timeline。
+- 新增 `camera_close.playable` 与独立 `CameraClosePlayable`：进入 WhileInside 触发器时通过 `CameraControlManager.RequestLensScale` 平滑申请 `0.5×` 视野，离开停止 Director 时释放恢复。新增镜头缩放正数租约及进入/退出缓动回归用例，不改 Timeline 原生脚本。
+- `CameraCloseBehaviour` 额外直接订阅 `PlayableDirector.stopped`，不再只依赖 Playable Pause/GraphStop 回调；`WhileInside` 触发器退出停止 Director 时会无条件释放镜头缩放租约。
+- Boss JSON 中 `box_c8670190` 的 `ContactTimelineTrigger.triggerMode` 已由 `0`（Once）修为 `2`（WhileInside）；两份 JSON 保持一致，离开触发器后会停止 `camera_close` 并释放镜头缩放租约。
+- `BossRightMoveExecutor` 的高度死区默认值和 Boss 预制体实例值均由 `2` 改为 `0`；弱垂直追踪现在持续以配置速度追随玩家 Y，不再保留 2 格高度容差。
+- Boss 复活链改为房间重建后才应用 Boss 归位：新增复活后置监听，Boss 归位前销毁 Boss 左边缘至 Boss 中心 X 范围内相交的全部普通/重力岩浆。Boss 存活期间通过玩家疾跑租约禁用疾跑，死亡或禁用时自动释放。
+- Inspector 文案、BOSS_CONTROLLER API/开发者文档同步；`BossRoomResetVisualAudit` 改为直接使用通用 `TemporaryObjectHideState` 验证房间恢复视觉，不再依赖 Boss 隐藏队列。
+- Unity 6000.3.12f1 使用当前完整 `Assembly-CSharp.rsp` 与 `Assembly-CSharp-Editor.rsp` 编译通过，0 error，仅既有 obsolete/hide warning。未运行 Play Mode；主 Unity 仍有未保存 Boss Scene，未保存或重建场景。
+
 ## 2026-10-19 Gaming 重力生长、门偏移、平台载物与携带通道（验证完成，整合交付）
 
 - 用户授权修复并合并推送；从a672bb6在隔离工作树的codex/fix-gaming-growth-door-transport处理，主项目未提交Scene/存档/插件等保留，不保存主Unity内存Scene。

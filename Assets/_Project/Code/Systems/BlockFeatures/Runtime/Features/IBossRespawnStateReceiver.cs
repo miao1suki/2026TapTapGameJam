@@ -9,6 +9,7 @@ namespace Project.BlockFeatures
         bool IsBossRespawnStateAvailable { get; }
         float CurrentHealth { get; }
         Vector3 WorldPosition { get; }
+        void PrepareForBossRespawn();
         void ApplyBossRespawnState(float health, Vector3 worldPosition);
     }
 

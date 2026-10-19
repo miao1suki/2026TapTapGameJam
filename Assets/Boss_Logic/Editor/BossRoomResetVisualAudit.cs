@@ -16,7 +16,7 @@ using Object = UnityEngine.Object;
 
 namespace Project.BossLogic.Editor
 {
-    /// <summary>Real prefab / Boss budgeted hide / R lifecycle regression, never saves authoring scenes.</summary>
+    /// <summary>Real prefab hide / R lifecycle regression, never saves authoring scenes.</summary>
     public static class BossRoomResetVisualAudit
     {
         private const string Flag = "BossRoomResetVisualAudit.Running";
@@ -26,7 +26,6 @@ namespace Project.BossLogic.Editor
         private static int phase, checks;
         private static RoomLifecycleManager rooms;
         private static PlayerController player;
-        private static BossController boss;
         private static DoorController door;
         private static DoorButton button;
         private static MovingPlatformFeature platform;
@@ -95,7 +94,6 @@ namespace Project.BossLogic.Editor
                         { phase--; Delay(.02); break; }
                         VerifyComplete();
                         VerifyDoorProgress();
-                        VerifyQueueRevision();
                         VerifyRepeatedResets();
                         VerifyLeaveAndDeath();
                         BeginUnload();
@@ -142,14 +140,6 @@ namespace Project.BossLogic.Editor
             doorReset = Member(door.gameObject);
             platformReset = Member(platform.gameObject);
             Member(button.gameObject);
-            var bossObject = new GameObject("Audit Boss");
-            bossObject.SetActive(false);
-            bossObject.transform.position = new Vector3(1000f, 1000f, 0f);
-            bossObject.AddComponent<BoxCollider>();
-            bossObject.AddComponent<Rigidbody>().useGravity = false;
-            boss = bossObject.AddComponent<BossController>();
-            Set(boss, "enableAutonomousChase", false);
-            bossObject.SetActive(true);
             Check(doorArt.Visual != null && platformArt.Visual != null, "real door/platform prefabs have artwork renderers");
         }
 
@@ -211,23 +201,6 @@ namespace Project.BossLogic.Editor
             Check(door.State == DoorState.Unlocked && button.IsPressed && !door.GetComponent<Collider>().enabled,
                 "restoring hide lease keeps button progress and current open collider, not old closed snapshot");
             Check(doorReset.Persistent, "door remains persistent rather than bypassing progress contract");
-        }
-
-        private static void VerifyQueueRevision()
-        {
-            foreach (var owner in new[] { door.gameObject, platform.gameObject })
-            {
-                Invoke(boss, "QueueTouchedObject", owner);
-                int revision = owner.GetComponent<RoomResetObject>().ResetRevision;
-                player.RequestRespawn();
-                Check(owner.GetComponent<RoomResetObject>().ResetRevision != revision, "real R invalidates queued old contact for " + owner.name);
-                Invoke(boss, "LateUpdate");
-                Check(owner.GetComponent<TemporaryObjectHideState>()?.IsHidden != true,
-                    "pre-reset budgeted hide cannot hide freshly restored " + owner.name);
-                Hide(owner);
-                Check(owner.GetComponent<TemporaryObjectHideState>().IsHidden, "new post-reset contact can still hide " + owner.name);
-                player.RequestRespawn();
-            }
         }
 
         private static void VerifyRepeatedResets()
@@ -296,7 +269,12 @@ namespace Project.BossLogic.Editor
         }
         private static GameObject Prefab(string path, Vector3 position) =>
             Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path), position, Quaternion.identity);
-        private static void Hide(GameObject owner) { Invoke(boss, "QueueTouchedObject", owner); Invoke(boss, "LateUpdate"); }
+        private static void Hide(GameObject owner)
+        {
+            var state = owner.GetComponent<Project.TemporaryObjectHideState>() ??
+                        owner.AddComponent<Project.TemporaryObjectHideState>();
+            state.Hide();
+        }
         private static void Set(object target, string field, object value) => target.GetType().GetField(field, Hidden).SetValue(target, value);
         private static object Invoke(object target, string method, params object[] values) => target.GetType().GetMethod(method, Hidden).Invoke(target, values);
         private static void Delay(double seconds) => next = EditorApplication.timeSinceStartup + seconds;

@@ -95,6 +95,8 @@ TopRight
 - `startSpeed` / `endSpeed`：初末速度。
 - `easePower`：变速比例。
 - `useTypewriter` / `typewriterCharactersPerSecond`：打字机逐字出现/消失及速度。
+- `useGlitch`：故障闪烁；`glitchMinAlpha`、`glitchMaxAlpha`、`glitchHorizontalJitter`、`glitchVerticalJitter`、`glitchColorSeparation` 控制透明度、位置抖动和红/蓝双影错位，节奏参考玩家死亡 RGB 效果的 60Hz Perlin 抖动。
+  `WordNoteAnimation.Glitch` 也可直接作为入场或退场动画。
 
 所有动画使用 DOTween 和 `SetUpdate(true)`，暂停 `Time.timeScale` 不阻塞界面消息。
 

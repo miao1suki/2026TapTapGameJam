@@ -66,7 +66,7 @@ public sealed class BossRightMoveExecutorEditor : Editor
             serializedObject,
             "verticalDeadbandBlocks",
             "高度死区（格）",
-            "玩家与 Boss 高度差在该范围内时完全不改变高度。"));
+            "玩家与 Boss 高度差在该范围内时完全不改变高度；设为 0 会持续追随玩家 Y。"));
         verticalTracking.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "verticalTrackSpeedBlocksPerSecond",

@@ -60,7 +60,7 @@
 
 Boss 战复活兜底：`PlayerController.PerformRespawn` 在正常重生点解析后检查同场景活动 Boss。若没有任何 `IsRespawnPointAvailable` 且 `IsBossArenaRespawnPoint` 为真的已解锁出生点，则扫描同场景全部启用的 Boss 关出生点，即使尚未解锁也参与候选；按 `RespawnPosition.x` 取最左侧点作为本次复活目标，X 相同时按实例 ID 稳定选择。该目标继续走原有安全落位和 `IPlayerRespawnPreRoomResetListener` 链，因此 Boss 血量/位置重置不会被绕过；兜底不会改写玩家当前绑定出生点。
 
-`PlayerController` 在确定本次实际选中的重生点后、调用 `RoomLifecycleManager.BeforeRespawn` 之前，通过 `IPlayerRespawnPreRoomResetListener.OnPlayerRespawnBeforeRoomReset` 先发起 Boss 重置，再执行房间恢复。重生点只在开关开启时创建待应用请求；若 Boss 尚未由 Timeline 生成，请求保持等待，每 0.1 秒查询 `BossRespawnStateRegistry` 和 `Boss` Tag 后备查找。Boss 启用后会收到 `ApplyBossRespawnState(health, worldPosition)`，重生点随后回读 `CurrentHealth` / `WorldPosition`，Inspector 显示“已应用并检测（一致/不一致）”。不在重生点保存 Boss 引用，也不在玩家脚本里依赖 Boss 类型。
+`PlayerController` 在确定本次实际选中的重生点后、调用 `RoomLifecycleManager.BeforeRespawn` 之前，通过 `IPlayerRespawnPreRoomResetListener.OnPlayerRespawnBeforeRoomReset` 建立 Boss 待应用请求；房间恢复完成后通过 `IPlayerRespawnPostRoomResetListener.OnPlayerRespawnAfterRoomReset` 才应用 Boss 状态。这样顺序固定为“房间重建 → Boss 复活前清障 → Boss 归位”。若 Boss 尚未由 Timeline 生成，请求保持等待，每 0.1 秒查询 `BossRespawnStateRegistry` 和 `Boss` Tag 后备查找。Boss 可用后先调用 `PrepareForBossRespawn()`，再收到 `ApplyBossRespawnState(health, worldPosition)`；重生点随后回读 `CurrentHealth` / `WorldPosition`，Inspector 显示“已应用并检测（一致/不一致）”。不在重生点保存 Boss 引用，也不在玩家脚本里依赖 Boss 类型。
 
 运行时调试区提供“模拟应用 Boss 血量与位置”按钮，并显示待应用状态、最近检测血量和位置；用于确认后生成 Boss 是否真正收到状态。
 

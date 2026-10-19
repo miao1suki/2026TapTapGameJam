@@ -65,12 +65,9 @@ namespace Project.BossLogic
         [SerializeField, Min(0f)] private float invulnerabilitySeconds = 4f;
         [SerializeField, Min(.01f)] private float invulnerabilityFlashInterval = .08f;
 
-        [Header("碰撞清除")]
-        [SerializeField] private bool destroyTouchedObjects = true;
+        [Header("接触伤害")]
         [SerializeField] private bool destroyOnlyWhileExternalMoving = true;
-        [SerializeField] private bool useRoomResetForDestroyedObjects = true;
         [SerializeField, Min(0f)] private float lavaContactDamage = 1f;
-        [SerializeField, Min(1)] private int maxHiddenObjectsPerFrame = 4;
         [SerializeField, Min(1f)] private float passThroughColliderHeight = 12f;
         [SerializeField] private bool killPlayerOnContact = true;
 
@@ -101,12 +98,21 @@ namespace Project.BossLogic
         private bool executionGravityWasEnabled;
         private bool deathKinematicStateCaptured;
         private bool deathPreviousKinematic;
+        private bool presentationFallStateCaptured;
+        private bool presentationFallPreviousKinematic;
+        private bool presentationFallPreviousGravity;
+        private RigidbodyInterpolation
+            presentationFallPreviousInterpolation;
+        private CollisionDetectionMode
+            presentationFallPreviousCollisionMode;
         private float invulnerableUntil;
         private float invulnerabilityStartedAt;
         private bool healthSystemActive;
         private bool authoredColliderIsTrigger;
         private Vector3 authoredColliderSize;
         private bool authoredColliderSizeCaptured;
+        private PlayerController sprintLockedPlayer;
+        private IDisposable sprintLockHandle;
         private BossStateId state = BossStateId.Chase;
         private bool jumpActive;
         private float jumpElapsed;
@@ -115,23 +121,11 @@ namespace Project.BossLogic
         private Vector3 jumpTargetPosition;
         private readonly List<RendererFlashState> rendererFlashStates =
             new List<RendererFlashState>();
-        private readonly Queue<PendingHiddenObject> pendingHiddenObjects =
-            new Queue<PendingHiddenObject>();
-        private readonly HashSet<int> pendingHiddenObjectIds =
-            new HashSet<int>();
 
         private struct RendererFlashState
         {
             public Renderer renderer;
             public bool initiallyEnabled;
-        }
-
-        private struct PendingHiddenObject
-        {
-            public GameObject target;
-            public int id;
-            public RoomResetObject roomObject;
-            public int resetRevision;
         }
 
         public event Action<BossStateId, BossStateId> StateChanged;
@@ -155,6 +149,8 @@ namespace Project.BossLogic
         public Transform Target => target;
         public bool AutonomousChaseEnabled => enableAutonomousChase;
         public bool TrackingEnabled => trackingEnabled;
+        public bool PlayerContactKillEnabled =>
+            killPlayerOnContact;
         public int FacingDirection => facingDirection;
         public float MoveSpeed => moveSpeed;
         public float WalkSpeed => walkSpeed;
@@ -217,37 +213,6 @@ namespace Project.BossLogic
                 ResolveTarget(false);
             }
 
-        }
-
-        private void LateUpdate()
-        {
-            int budget = Mathf.Max(1, maxHiddenObjectsPerFrame);
-            while (budget > 0 &&
-                   pendingHiddenObjects.Count > 0)
-            {
-                PendingHiddenObject pending =
-                    pendingHiddenObjects.Dequeue();
-                budget--;
-                pendingHiddenObjectIds.Remove(pending.id);
-                GameObject target = pending.target;
-                if (target == null)
-                {
-                    continue;
-                }
-
-                if (!target.activeInHierarchy)
-                {
-                    continue;
-                }
-
-                // A room reset can run between collision and this budgeted pass.
-                // Never hide a restored door/platform using a pre-reset contact.
-                if (pending.roomObject != null &&
-                    pending.roomObject.ResetRevision != pending.resetRevision)
-                    continue;
-
-                HideTouchedObject(target);
-            }
         }
 
         private void FixedUpdate()
@@ -347,6 +312,7 @@ namespace Project.BossLogic
 
         private void OnEnable()
         {
+            AcquirePlayerSprintLock();
             BossTravelProgress.Register(this);
             if (healthSystemActive && !dead) BossTravelProgress.BeginFight(this);
             if (CompareTag("Boss"))
@@ -357,17 +323,17 @@ namespace Project.BossLogic
 
         private void OnDisable()
         {
+            ReleasePlayerSprintLock();
             BossTravelProgress.Unregister(this);
             BossRespawnStateRegistry.Unregister(this);
             CancelJump();
             RestoreInvulnerabilityRenderers();
-            pendingHiddenObjects.Clear();
-            pendingHiddenObjectIds.Clear();
         }
 
         public void SetTarget(Transform value)
         {
             target = value;
+            AcquirePlayerSprintLock();
         }
 
         public void SetAutonomousChaseEnabled(bool value)
@@ -389,6 +355,79 @@ namespace Project.BossLogic
 
                 body.linearVelocity = velocity;
             }
+        }
+
+        public void SetPlayerContactKillEnabled(
+            bool value)
+        {
+            killPlayerOnContact = value;
+        }
+
+        public void BeginPresentationFall()
+        {
+            if (dead || body == null)
+            {
+                return;
+            }
+
+            presentationFallPreviousKinematic =
+                body.isKinematic;
+            presentationFallPreviousGravity =
+                body.useGravity;
+            presentationFallPreviousInterpolation =
+                body.interpolation;
+            presentationFallPreviousCollisionMode =
+                body.collisionDetectionMode;
+            presentationFallStateCaptured = true;
+            if (bodyCollider != null)
+            {
+                bodyCollider.enabled = false;
+            }
+            body.isKinematic = true;
+            body.useGravity = false;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.interpolation =
+                RigidbodyInterpolation.Interpolate;
+            body.collisionDetectionMode =
+                CollisionDetectionMode.ContinuousSpeculative;
+        }
+
+        public void SetPresentationFallPosition(
+            Vector3 worldPosition)
+        {
+            transform.position = worldPosition;
+            if (body != null)
+            {
+                body.position = worldPosition;
+            }
+        }
+
+        public void EndPresentationFall(
+            Vector3 worldPosition)
+        {
+            SetPresentationFallPosition(worldPosition);
+            if (bodyCollider != null)
+            {
+                bodyCollider.enabled = true;
+            }
+            if (body != null && presentationFallStateCaptured)
+            {
+                body.isKinematic =
+                    presentationFallPreviousKinematic;
+                body.useGravity =
+                    presentationFallPreviousGravity;
+                body.interpolation =
+                    presentationFallPreviousInterpolation;
+                body.collisionDetectionMode =
+                    presentationFallPreviousCollisionMode;
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+                body.WakeUp();
+            }
+            presentationFallStateCaptured = false;
+            ClearExternalMotion();
+            ClearExternalHeight();
         }
 
         public void SetExternalMove(
@@ -813,6 +852,7 @@ namespace Project.BossLogic
                 RestoreInvulnerabilityRenderers();
                 CancelJump();
                 SetState(BossStateId.Chase);
+                AcquirePlayerSprintLock();
             }
 
             currentHealth = nextHealth;
@@ -833,6 +873,11 @@ namespace Project.BossLogic
             RespawnStateApplied?.Invoke(
                 nextHealth,
                 worldPosition);
+        }
+
+        public void PrepareForBossRespawn()
+        {
+            ClearLavaInRespawnSweep();
         }
 
         public void ReceiveHit(float amount, Vector3 knockback)
@@ -885,7 +930,6 @@ namespace Project.BossLogic
         private void HandleTouchedObject(Collider other)
         {
             if (dead ||
-                !destroyTouchedObjects ||
                 other == null ||
                 other.transform.IsChildOf(transform))
             {
@@ -921,68 +965,14 @@ namespace Project.BossLogic
                 return;
             }
 
-            RoomResetObject reset =
-                other.GetComponentInParent<RoomResetObject>();
             LavaHazardFeature lava =
                 other.GetComponentInParent<LavaHazardFeature>();
-            GameObject target = reset != null
-                ? reset.gameObject
-                : other.attachedRigidbody != null
-                    ? other.attachedRigidbody.gameObject
-                    : other.gameObject;
-
             if (lava != null &&
                 !IsInvulnerable &&
                 lavaContactDamage > 0f)
             {
                 ReceiveHit(lavaContactDamage, Vector3.zero);
             }
-
-            QueueTouchedObject(target);
-        }
-
-        private void QueueTouchedObject(GameObject target)
-        {
-            if (target == null ||
-                !target.activeInHierarchy)
-            {
-                return;
-            }
-
-            int id = target.GetInstanceID();
-            if (!pendingHiddenObjectIds.Add(id))
-            {
-                return;
-            }
-
-            RoomResetObject roomObject = target.GetComponent<RoomResetObject>();
-            pendingHiddenObjects.Enqueue(
-                new PendingHiddenObject
-                {
-                    target = target,
-                    id = id,
-                    roomObject = roomObject,
-                    resetRevision = roomObject != null ? roomObject.ResetRevision : 0
-                });
-        }
-
-        private void HideTouchedObject(GameObject target)
-        {
-            if (useRoomResetForDestroyedObjects)
-            {
-                TemporaryObjectHideState state =
-                    target.GetComponent<TemporaryObjectHideState>();
-                if (state == null)
-                {
-                    state = target.AddComponent<
-                        TemporaryObjectHideState>();
-                }
-
-                state.Hide();
-                return;
-            }
-
-            target.SetActive(false);
         }
 
         private void BeginInvulnerability()
@@ -1077,10 +1067,9 @@ namespace Project.BossLogic
 
             currentHealth = 0f;
             dead = true;
+            ReleasePlayerSprintLock();
             EndExecutionSequence();
             invulnerableUntil = 0f;
-            pendingHiddenObjects.Clear();
-            pendingHiddenObjectIds.Clear();
             RestoreInvulnerabilityRenderers();
             CancelJump();
             SetState(BossStateId.Death);
@@ -1177,6 +1166,7 @@ namespace Project.BossLogic
                  player.CompareTag(targetTag)))
             {
                 target = player.transform;
+                AcquirePlayerSprintLock();
                 return;
             }
 
@@ -1184,6 +1174,135 @@ namespace Project.BossLogic
                 ? null
                 : GameObject.FindGameObjectWithTag(targetTag);
             target = tagged != null ? tagged.transform : null;
+            AcquirePlayerSprintLock();
+        }
+
+        private void AcquirePlayerSprintLock()
+        {
+            if (dead)
+            {
+                ReleasePlayerSprintLock();
+                return;
+            }
+
+            PlayerController player =
+                target != null
+                    ? target.GetComponentInParent<PlayerController>()
+                    : null;
+            player ??=
+                ProjectDiscovery.FindFirst<PlayerController>();
+            if (player != null &&
+                player.gameObject.scene != gameObject.scene)
+            {
+                player = null;
+            }
+            if (player == null)
+            {
+                return;
+            }
+
+            if (ReferenceEquals(
+                    player,
+                    sprintLockedPlayer) &&
+                sprintLockHandle != null)
+            {
+                return;
+            }
+
+            ReleasePlayerSprintLock();
+            sprintLockedPlayer = player;
+            sprintLockHandle =
+                player.AcquireSprintLock(this);
+        }
+
+        private void ReleasePlayerSprintLock()
+        {
+            sprintLockHandle?.Dispose();
+            sprintLockHandle = null;
+            sprintLockedPlayer = null;
+        }
+
+        private void ClearLavaInRespawnSweep()
+        {
+            if (!Application.isPlaying ||
+                bodyCollider == null)
+            {
+                return;
+            }
+
+            Bounds bossBounds = bodyCollider.bounds;
+            float leftX = bossBounds.min.x;
+            float rightX = transform.position.x;
+            if (rightX < leftX)
+            {
+                (leftX, rightX) =
+                    (rightX, leftX);
+            }
+
+            IReadOnlyList<LavaHazardFeature> hazards =
+                ProjectDiscovery.FindAll<LavaHazardFeature>(true);
+            for (int index = 0;
+                 index < hazards.Count;
+                 index++)
+            {
+                LavaHazardFeature lava = hazards[index];
+                if (lava == null ||
+                    lava.gameObject.scene != gameObject.scene)
+                {
+                    continue;
+                }
+
+                if (!TryGetWorldBounds(
+                        lava.gameObject,
+                        out Bounds lavaBounds) ||
+                    lavaBounds.max.x < leftX ||
+                    lavaBounds.min.x > rightX)
+                {
+                    continue;
+                }
+
+                lava.gameObject.SetActive(false);
+                Destroy(lava.gameObject);
+            }
+        }
+
+        private static bool TryGetWorldBounds(
+            GameObject owner,
+            out Bounds bounds)
+        {
+            Collider[] colliders =
+                owner.GetComponentsInChildren<Collider>(true);
+            bool found = false;
+            bounds = default;
+            for (int index = 0;
+                 index < colliders.Length;
+                 index++)
+            {
+                Collider collider = colliders[index];
+                if (collider == null)
+                {
+                    continue;
+                }
+
+                if (!found)
+                {
+                    bounds = collider.bounds;
+                    found = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(
+                        collider.bounds);
+                }
+            }
+
+            if (!found)
+            {
+                bounds = new Bounds(
+                    owner.transform.position,
+                    Vector3.zero);
+            }
+            return true;
         }
 
         private void SetState(BossStateId next)

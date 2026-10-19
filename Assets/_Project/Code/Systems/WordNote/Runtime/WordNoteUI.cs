@@ -51,7 +51,8 @@ namespace Project.WordNote
         [InspectorName("下方淡入淡出")] FadeMoveDown = 9,
         [InspectorName("缩放")] Scale = 10,
         [InspectorName("缩放淡入淡出")] FadeScale = 11,
-        [InspectorName("打字机")] Typewriter = 12
+        [InspectorName("打字机")] Typewriter = 12,
+        [InspectorName("故障")] Glitch = 13
     }
 
     public enum WordNoteColor
@@ -110,6 +111,13 @@ namespace Project.WordNote
         public bool useScale;
         public bool useTypewriter;
         [Min(1f)] public float typewriterCharactersPerSecond = 20f;
+        public bool useGlitch;
+        [Range(0f, 1f)] public float glitchMinAlpha = .35f;
+        [Range(0f, 1f)] public float glitchMaxAlpha = 1f;
+        [Min(0f)] public float glitchHorizontalJitter = 18f;
+        [Min(0f)] public float glitchVerticalJitter = 4f;
+        [Range(0f, 1f)]
+        public float glitchColorSeparation = .85f;
         [Min(0f)] public float duration = .25f;
         public Vector2 startPosition;
         public Vector2 endPosition;
@@ -138,6 +146,15 @@ namespace Project.WordNote
                 useTypewriter = useTypewriter,
                 typewriterCharactersPerSecond =
                     typewriterCharactersPerSecond,
+                useGlitch = useGlitch,
+                glitchMinAlpha = glitchMinAlpha,
+                glitchMaxAlpha = glitchMaxAlpha,
+                glitchHorizontalJitter =
+                    glitchHorizontalJitter,
+                glitchVerticalJitter =
+                    glitchVerticalJitter,
+                glitchColorSeparation =
+                    glitchColorSeparation,
                 startPosition = startPosition,
                 endPosition = endPosition,
                 startAlpha = startAlpha,
@@ -250,6 +267,8 @@ namespace Project.WordNote
         public CanvasGroup Group;
         public TextMeshProUGUI Text;
         public Material RuntimeMaterial;
+        public TextMeshProUGUI GlitchRedText;
+        public TextMeshProUGUI GlitchBlueText;
     }
 
     public sealed class WordNoteHandle
@@ -889,6 +908,22 @@ namespace Project.WordNote
             bool typewriter =
                 motion.useTypewriter ||
                 animation == WordNoteAnimation.Typewriter;
+            bool glitch =
+                motion.useGlitch ||
+                animation == WordNoteAnimation.Glitch;
+            if (glitch)
+            {
+                EnsureGlitchGhosts(view);
+            }
+            Color originalTextColor =
+                view.Text != null
+                    ? view.Text.color
+                    : Color.white;
+            Color originalOutlineColor =
+                view.RuntimeMaterial != null
+                    ? view.RuntimeMaterial.GetColor(
+                        ShaderUtilities.ID_OutlineColor)
+                    : Color.black;
             if (typewriter)
             {
                 duration = Mathf.Max(
@@ -938,6 +973,30 @@ namespace Project.WordNote
                                 startScale,
                                 endScale,
                                 ease));
+                        if (glitch)
+                        {
+                            ApplyGlitch(
+                                view,
+                                message,
+                                motion,
+                                progress,
+                                entering,
+                                message.StackOffset +
+                                Vector2.Lerp(
+                                    startPosition,
+                                    endPosition,
+                                    ease),
+                                Mathf.Lerp(
+                                    startAlpha,
+                                    endAlpha,
+                                    ease),
+                                Vector3.Lerp(
+                                    startScale,
+                                    endScale,
+                                    ease),
+                                originalTextColor,
+                                originalOutlineColor);
+                        }
                         if (typewriter)
                         {
                             ApplyTypewriter(
@@ -965,6 +1024,10 @@ namespace Project.WordNote
 
             if (message.ImmediateExitRequested)
             {
+                RestoreGlitchColors(
+                    view,
+                    originalTextColor,
+                    originalOutlineColor);
                 yield break;
             }
 
@@ -981,6 +1044,217 @@ namespace Project.WordNote
                     1f,
                     entering);
             }
+            RestoreGlitchColors(
+                view,
+                originalTextColor,
+                originalOutlineColor);
+        }
+
+        private static void ApplyGlitch(
+            WordNoteView view,
+            WordNoteMessage message,
+            WordNoteMotionSettings motion,
+            float progress,
+            bool entering,
+            Vector2 basePosition,
+            float baseAlpha,
+            Vector3 baseScale,
+            Color originalTextColor,
+            Color originalOutlineColor)
+        {
+            float glitchTime =
+                Time.unscaledTime * 60f +
+                (message != null ? message.Id : 0);
+            float envelope = 1f - Mathf.Clamp01(progress);
+            float x = (
+                Mathf.PerlinNoise(glitchTime, 0f) *
+                    2f -
+                1f) *
+                Mathf.Max(0f, motion.glitchHorizontalJitter) *
+                envelope;
+            float y = (
+                Mathf.PerlinNoise(0f, glitchTime) *
+                    2f -
+                1f) *
+                Mathf.Max(0f, motion.glitchVerticalJitter) *
+                envelope;
+            float alpha = entering
+                ? Mathf.Lerp(
+                    motion.glitchMinAlpha,
+                    motion.glitchMaxAlpha,
+                    Mathf.Clamp01(progress))
+                : Mathf.Lerp(
+                    baseAlpha,
+                    0f,
+                    Mathf.Clamp01(progress));
+            alpha *= .8f +
+                     .2f * Mathf.PerlinNoise(
+                         glitchTime * 2f,
+                         1f);
+            if (progress > .86f)
+            {
+                alpha = Mathf.Lerp(
+                    alpha,
+                    baseAlpha,
+                    Mathf.InverseLerp(.86f, 1f, progress));
+            }
+
+            view.Group.alpha = Mathf.Clamp01(alpha);
+            view.Rect.anchoredPosition =
+                basePosition + new Vector2(x, y);
+            view.Rect.localScale = baseScale;
+
+            int channel = Mathf.Abs(
+                Mathf.FloorToInt(glitchTime)) % 3;
+            Color tint = channel == 0
+                ? Color.red
+                : channel == 1
+                    ? Color.green
+                    : Color.blue;
+            float colorWeight =
+                Mathf.Clamp01(
+                    motion.glitchColorSeparation) *
+                envelope;
+            if (view.Text != null)
+            {
+                view.Text.color = originalTextColor;
+            }
+            if (view.RuntimeMaterial != null)
+            {
+                view.RuntimeMaterial.SetColor(
+                    ShaderUtilities.ID_OutlineColor,
+                    Color.Lerp(
+                        originalOutlineColor,
+                        tint,
+                        colorWeight));
+            }
+
+            float separation =
+                14f * colorWeight;
+            ApplyGlitchGhost(
+                view.GlitchRedText,
+                new Color(1f, .12f, .12f, 1f),
+                colorWeight,
+                basePosition +
+                new Vector2(-separation, y));
+            ApplyGlitchGhost(
+                view.GlitchBlueText,
+                new Color(.12f, .32f, 1f, 1f),
+                colorWeight,
+                basePosition +
+                new Vector2(separation, -y));
+        }
+
+        private static void RestoreGlitchColors(
+            WordNoteView view,
+            Color textColor,
+            Color outlineColor)
+        {
+            if (view.Text != null)
+            {
+                view.Text.color = textColor;
+            }
+            if (view.RuntimeMaterial != null)
+            {
+                view.RuntimeMaterial.SetColor(
+                    ShaderUtilities.ID_OutlineColor,
+                    outlineColor);
+            }
+            if (view.GlitchRedText != null)
+            {
+                view.GlitchRedText.gameObject
+                    .SetActive(false);
+            }
+            if (view.GlitchBlueText != null)
+            {
+                view.GlitchBlueText.gameObject
+                    .SetActive(false);
+            }
+        }
+
+        private static void EnsureGlitchGhosts(
+            WordNoteView view)
+        {
+            if (view == null ||
+                view.Text == null ||
+                view.GlitchRedText != null)
+            {
+                return;
+            }
+
+            view.GlitchRedText = CreateGlitchGhost(
+                view,
+                "GlitchRed");
+            view.GlitchBlueText = CreateGlitchGhost(
+                view,
+                "GlitchBlue");
+        }
+
+        private static TextMeshProUGUI CreateGlitchGhost(
+            WordNoteView view,
+            string objectName)
+        {
+            GameObject ghostObject = new GameObject(
+                objectName,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(TextMeshProUGUI));
+            ghostObject.transform.SetParent(
+                view.Rect,
+                false);
+            RectTransform rect =
+                ghostObject.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.pivot = new Vector2(.5f, .5f);
+
+            TextMeshProUGUI text =
+                ghostObject.GetComponent<
+                    TextMeshProUGUI>();
+            text.font = view.Text.font;
+            text.fontMaterial = view.RuntimeMaterial;
+            text.fontSize = view.Text.fontSize;
+            text.fontStyle = view.Text.fontStyle;
+            text.richText = view.Text.richText;
+            text.alignment = view.Text.alignment;
+            text.textWrappingMode =
+                view.Text.textWrappingMode;
+            text.overflowMode = view.Text.overflowMode;
+            text.text = view.Text.text;
+            text.raycastTarget = false;
+            text.color = Color.clear;
+            ghostObject.SetActive(false);
+            return text;
+        }
+
+        private static void ApplyGlitchGhost(
+            TextMeshProUGUI ghost,
+            Color tint,
+            float strength,
+            Vector2 position)
+        {
+            if (ghost == null)
+            {
+                return;
+            }
+
+            bool visible = strength > .001f;
+            if (ghost.gameObject.activeSelf != visible)
+            {
+                ghost.gameObject.SetActive(visible);
+            }
+            if (!visible)
+            {
+                return;
+            }
+
+            Color color = tint;
+            color.a = Mathf.Clamp01(strength * .8f);
+            ghost.color = color;
+            ((RectTransform)ghost.transform)
+                .anchoredPosition = position;
         }
 
         private static void ApplyTypewriter(

@@ -413,6 +413,76 @@ namespace Project.CameraModes.Tests
         }
 
         [Test]
+        public void LensScaleRequest_ShrinksBelowBaseAndRestoresOnRelease()
+        {
+            FixedSource gameplay = new FixedSource(
+                "Gameplay",
+                Vector3.zero,
+                CameraProjectionMode.Orthographic);
+            manager.RequestControl(
+                gameplay,
+                CameraControlPriorities.Gameplay,
+                CameraInterruptionPolicy.AllowHigherPriority,
+                CameraTransition.Immediate);
+            CameraLensRequestHandle handle =
+                manager.RequestLensScale(
+                    this,
+                    .5f,
+                    CameraTransition.Immediate);
+
+            manager.Tick(0f);
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(2.5f).Within(.001f));
+
+            handle.Release(CameraTransition.Immediate);
+            manager.Tick(0f);
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(5f).Within(.001f));
+        }
+
+        [Test]
+        public void LensScaleRequest_BlendsInAndOutLinearly()
+        {
+            FixedSource gameplay = new FixedSource(
+                "Gameplay",
+                Vector3.zero,
+                CameraProjectionMode.Orthographic);
+            manager.RequestControl(
+                gameplay,
+                CameraControlPriorities.Gameplay,
+                CameraInterruptionPolicy.AllowHigherPriority,
+                CameraTransition.Immediate);
+            CameraTransition linearSecond =
+                new CameraTransition
+                {
+                    duration = 1f,
+                    easing = AnimationCurve.Linear(
+                        0f,
+                        0f,
+                        1f,
+                        1f),
+                };
+            CameraLensRequestHandle handle =
+                manager.RequestLensScale(
+                    this,
+                    .5f,
+                    linearSecond);
+
+            manager.Tick(.5f);
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(3.75f).Within(.001f));
+
+            handle.Release(linearSecond);
+            manager.Tick(.5f);
+            Assert.That(
+                cameraComponent.orthographicSize,
+                Is.EqualTo(4.375f).Within(.001f));
+        }
+
+        [Test]
         public void ViewOffset_IsAppliedToGameplayFocusOnly()
         {
             manager.RequestControl(

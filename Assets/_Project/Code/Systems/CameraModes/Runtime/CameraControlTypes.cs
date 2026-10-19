@@ -131,6 +131,16 @@ namespace Project.CameraModes
                 transition);
         }
 
+        public void SetScale(
+            float scale,
+            CameraTransition transition = default)
+        {
+            manager?.SetLensScale(
+                this,
+                scale,
+                transition);
+        }
+
         public void Release(CameraTransition transition = default)
         {
             manager?.ReleaseLensMultiplier(this, transition);

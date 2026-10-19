@@ -196,6 +196,9 @@ namespace Project.Player
         private IInteractionHoldTarget heldInteractionTarget;
         private Vector2 movement;
         private bool sprint;
+        private readonly Dictionary<object, int> sprintLockSources =
+            new Dictionary<object, int>();
+        private int sprintLockEpoch;
         private float jumpUntil = -1, groundedUntil = -1;
         private float airborneSince = -1f;
         private float lastAirTime;
@@ -229,6 +232,14 @@ namespace Project.Player
         private Vector3 deathPosition;
         private PlayerSpritePresentation spritePresentation;
         private float automaticRespawnReadyAt;
+        private bool presentationMotionStateCaptured;
+        private bool presentationMotionPreviousKinematic;
+        private bool presentationMotionPreviousGravity;
+        private bool presentationMotionPreviousDetectCollisions;
+        private RigidbodyInterpolation
+            presentationMotionPreviousInterpolation;
+        private CollisionDetectionMode
+            presentationMotionPreviousCollisionMode;
         private float gridCellWorldSize = 1f;
         private readonly Collider[] respawnOverlapBuffer =
             new Collider[32];
@@ -691,6 +702,8 @@ namespace Project.Player
         private void OnDisable()
         {
             controlLockEpoch++;
+            sprintLockEpoch++;
+            sprintLockSources.Clear();
             RestoreTravelSafety();
             if (respawnLoader != null) respawnLoader.CancelRespawnTransition(transform);
             FinishRespawnPresentation(false);
@@ -1259,7 +1272,7 @@ namespace Project.Player
                 return;
             }
 
-            sprint = value;
+            sprint = value && !IsSprintLocked;
         }
         public void RequestJump()
         {
@@ -3167,6 +3180,13 @@ namespace Project.Player
                     .OnPlayerRespawnBeforeRoomReset(this);
             }
             Project.Rooms.RoomLifecycleManager.BeforeRespawn(this, requestedPosition);
+            if (selectedPoint is
+                IPlayerRespawnPostRoomResetListener
+                    postRoomResetListener)
+            {
+                postRoomResetListener
+                    .OnPlayerRespawnAfterRoomReset(this);
+            }
             Vector3 targetPosition;
             if (selectedPoint != null)
             {
@@ -3490,6 +3510,122 @@ namespace Project.Player
             CancelCarryState();
         }
 
+        public bool BeginPresentationMotion()
+        {
+            if (motor == null)
+            {
+                return false;
+            }
+
+            presentationMotionPreviousKinematic =
+                motor.isKinematic;
+            presentationMotionPreviousGravity =
+                motor.useGravity;
+            presentationMotionPreviousDetectCollisions =
+                motor.detectCollisions;
+            presentationMotionPreviousInterpolation =
+                motor.interpolation;
+            presentationMotionPreviousCollisionMode =
+                motor.collisionDetectionMode;
+            presentationMotionStateCaptured = true;
+            motor.linearVelocity = Vector3.zero;
+            motor.angularVelocity = Vector3.zero;
+            motor.isKinematic = true;
+            motor.useGravity = false;
+            motor.detectCollisions = false;
+            motor.interpolation =
+                RigidbodyInterpolation.Interpolate;
+            motor.collisionDetectionMode =
+                CollisionDetectionMode.ContinuousSpeculative;
+            return true;
+        }
+
+        public void SetPresentationPosition(
+            Vector3 worldPosition)
+        {
+            transform.position = worldPosition;
+            if (motor != null)
+            {
+                motor.position = worldPosition;
+            }
+        }
+
+        public void EndPresentationMotion()
+        {
+            if (motor != null &&
+                presentationMotionStateCaptured)
+            {
+                motor.isKinematic =
+                    presentationMotionPreviousKinematic;
+                motor.useGravity =
+                    presentationMotionPreviousGravity;
+                motor.detectCollisions =
+                    presentationMotionPreviousDetectCollisions;
+                motor.interpolation =
+                    presentationMotionPreviousInterpolation;
+                motor.collisionDetectionMode =
+                    presentationMotionPreviousCollisionMode;
+                motor.linearVelocity = Vector3.zero;
+                motor.angularVelocity = Vector3.zero;
+                motor.WakeUp();
+            }
+            presentationMotionStateCaptured = false;
+        }
+
+        public bool TryTeleportToNearestRespawnForPresentation()
+        {
+            if (dead || respawnInProgress)
+            {
+                return false;
+            }
+
+            Vector3 preferred = initialRespawnPosition;
+            float radius = respawnRandomRadiusBlocks;
+            if (PlayerRespawnPointRegistry.TryFindNearestAvailable(
+                    transform.position,
+                    out IPlayerRespawnPoint point))
+            {
+                preferred = point.RespawnPosition;
+                radius = point.RespawnRadiusBlocks;
+            }
+            else if (respawnPoint != null)
+            {
+                preferred = respawnPoint.position;
+            }
+
+            Vector3 destination = FindSafeRespawnPosition(
+                preferred,
+                radius,
+                transform.position);
+            PrepareForRoomReset();
+            runner?.Stop();
+            ClearDeathControlState();
+            if (motor != null)
+            {
+                motor.position = destination;
+                motor.linearVelocity = Vector3.zero;
+                motor.angularVelocity = Vector3.zero;
+            }
+            transform.position = destination;
+            Physics.SyncTransforms();
+            invulnerableUntil =
+                Time.time +
+                Mathf.Max(0f, respawnInvulnerabilitySeconds);
+            CameraFollowRelocated?.Invoke();
+            return true;
+        }
+
+        public void FaceWorldPosition(Vector3 worldPosition)
+        {
+            float deltaX =
+                worldPosition.x - transform.position.x;
+            if (Mathf.Abs(deltaX) > .01f)
+            {
+                FacingDirection =
+                    deltaX < 0f ? -1 : 1;
+            }
+        }
+
         /// <summary>Relocate within the world and replace stale story/Boss respawn ownership.</summary>
         public bool TryTeleportToStoryAnchor(TeleportAnchorFeature anchor)
         {
@@ -3600,6 +3736,80 @@ namespace Project.Player
             return new ControlLockHandle(this);
         }
 
+        public bool IsSprintLocked
+        {
+            get
+            {
+                PruneDestroyedSprintLocks();
+                return sprintLockSources.Count > 0;
+            }
+        }
+
+        public IDisposable AcquireSprintLock(object owner)
+        {
+            object source = owner ?? this;
+            PruneDestroyedSprintLocks();
+            sprintLockSources.TryGetValue(
+                source,
+                out int depth);
+            sprintLockSources[source] = depth + 1;
+            sprint = false;
+            return new SprintLockHandle(
+                this,
+                source,
+                sprintLockEpoch);
+        }
+
+        private void ReleaseSprintLock(
+            object source,
+            int epoch)
+        {
+            if (source == null ||
+                epoch != sprintLockEpoch)
+            {
+                return;
+            }
+
+            if (!sprintLockSources.TryGetValue(
+                    source,
+                    out int depth))
+            {
+                return;
+            }
+
+            if (depth <= 1)
+            {
+                sprintLockSources.Remove(source);
+            }
+            else
+            {
+                sprintLockSources[source] =
+                    depth - 1;
+            }
+        }
+
+        private void PruneDestroyedSprintLocks()
+        {
+            if (sprintLockSources.Count == 0)
+            {
+                return;
+            }
+
+            var expired = new List<object>();
+            foreach (object source in sprintLockSources.Keys)
+            {
+                if (source is UnityEngine.Object unityObject &&
+                    unityObject == null)
+                {
+                    expired.Add(source);
+                }
+            }
+            foreach (object source in expired)
+            {
+                sprintLockSources.Remove(source);
+            }
+        }
+
         /// <summary>Map-owned safety lease; movement and body ownership stay in the controller.</summary>
         public IDisposable AcquireTravelSafetyLock(object owner)
         {
@@ -3669,6 +3879,39 @@ namespace Project.Player
                 PlayerController current = owner;
                 owner = null;
                 if (epoch == current.controlLockEpoch) current.ReleaseControlLock();
+            }
+        }
+
+        private sealed class SprintLockHandle : IDisposable
+        {
+            private PlayerController owner;
+            private object source;
+            private readonly int epoch;
+
+            public SprintLockHandle(
+                PlayerController owner,
+                object source,
+                int epoch)
+            {
+                this.owner = owner;
+                this.source = source;
+                this.epoch = epoch;
+            }
+
+            public void Dispose()
+            {
+                if (owner == null)
+                {
+                    return;
+                }
+
+                PlayerController current = owner;
+                object currentSource = source;
+                owner = null;
+                source = null;
+                current.ReleaseSprintLock(
+                    currentSource,
+                    epoch);
             }
         }
 

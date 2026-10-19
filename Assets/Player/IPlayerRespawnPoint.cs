@@ -229,4 +229,10 @@ namespace Project.Player
         void OnPlayerRespawnBeforeRoomReset(
             PlayerController player);
     }
+
+    public interface IPlayerRespawnPostRoomResetListener
+    {
+        void OnPlayerRespawnAfterRoomReset(
+            PlayerController player);
+    }
 }

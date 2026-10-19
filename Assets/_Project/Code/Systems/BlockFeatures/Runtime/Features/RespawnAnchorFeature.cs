@@ -13,6 +13,7 @@ namespace Project.BlockFeatures
         IPlayerRespawnPoint,
         IPlayerRespawnBindingListener,
         IPlayerRespawnPreRoomResetListener,
+        IPlayerRespawnPostRoomResetListener,
         IRespawnAnchorChainProvider,
         IRespawnAnchorStateProvider
     {
@@ -433,6 +434,11 @@ namespace Project.BlockFeatures
             nextBossRespawnLookupTime = 0f;
             bossRespawnDebugStatus =
                 "等待 Boss 生成";
+        }
+
+        public void OnPlayerRespawnAfterRoomReset(
+            PlayerController player)
+        {
             TryApplyPendingBossRespawnState();
         }
 
@@ -491,6 +497,7 @@ namespace Project.BlockFeatures
                 return;
             }
 
+            receiver.PrepareForBossRespawn();
             receiver.ApplyBossRespawnState(
                 pendingBossRespawnHealth,
                 pendingBossRespawnPosition);

@@ -24,7 +24,7 @@ namespace Project.BossLogic
         [Header("弱垂直追踪")]
         [SerializeField] private bool enableWeakVerticalTracking = true;
         [SerializeField, Min(0f)]
-        private float verticalDeadbandBlocks = 2f;
+        private float verticalDeadbandBlocks;
         [SerializeField, Min(0f)]
         private float verticalTrackSpeedBlocksPerSecond = .18f;
 

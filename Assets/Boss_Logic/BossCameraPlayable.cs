@@ -17,8 +17,10 @@ namespace Project.BossLogic
         [SerializeField] private BossCameraPlayableMode mode;
         [SerializeField] private string bossTag = "Boss";
         [SerializeField] private string playerTag = "Player";
+        [Tooltip("相对表演坐标系的方向偏移，运行时叠加到 Boss 中心。")]
         [SerializeField] private Vector3 bossCameraOffset =
             new Vector3(0f, 2f, -10f);
+        [Tooltip("相对表演坐标系的方向偏移，运行时叠加到玩家中心。")]
         [SerializeField] private Vector3 playerFocusOffset =
             new Vector3(0f, 0f, -10f);
         [SerializeField, Min(0f)]
@@ -36,6 +38,10 @@ namespace Project.BossLogic
             PlayableGraph graph,
             GameObject owner)
         {
+            PlayableDirector resolvedDirector =
+                BossTimelinePerformanceFrame.ResolveDirector(
+                    graph,
+                    owner);
             BossCameraBehaviour behaviour =
                 new BossCameraBehaviour
                 {
@@ -51,7 +57,8 @@ namespace Project.BossLogic
                         dualTargetTransitionDuration,
                     framePadding = framePadding,
                     keepBaseOrthographicMinimum =
-                        keepBaseOrthographicMinimum
+                        keepBaseOrthographicMinimum,
+                    director = resolvedDirector
                 };
             return ScriptPlayable<BossCameraBehaviour>
                 .Create(graph, behaviour);
@@ -73,8 +80,10 @@ namespace Project.BossLogic
         public float dualTargetTransitionDuration = 1f;
         public float framePadding = 1.2f;
         public bool keepBaseOrthographicMinimum = true;
+        public PlayableDirector director;
 
         private TimelineCamRig rig;
+        private BossTimelinePerformanceFrame frame;
         private CameraViewModeRequestHandle viewModeHandle;
         private Transform boss;
         private Transform player;
@@ -188,6 +197,13 @@ namespace Project.BossLogic
             {
                 return false;
             }
+            if (!BossTimelinePerformanceFrame.TryResolve(
+                    director,
+                    nameof(BossCameraPlayable),
+                    out frame))
+            {
+                return false;
+            }
 
             rig = manager.GetComponent<TimelineCamRig>() ??
                   manager.gameObject.AddComponent<
@@ -219,7 +235,8 @@ namespace Project.BossLogic
         private void ApplyBossApproach(float time)
         {
             Vector3 target =
-                boss.position + bossCameraOffset;
+                boss.position +
+                frame.ToWorldOffset(bossCameraOffset);
             Vector3 position;
             if (time < approachDuration)
             {
@@ -337,7 +354,8 @@ namespace Project.BossLogic
                 baseOrthographicSize,
                 baseFieldOfView);
             rig.SetShotTransform(
-                player.position + playerFocusOffset,
+                player.position +
+                frame.ToWorldOffset(playerFocusOffset),
                 Quaternion.Euler(
                     0f,
                     rig.PlanarYaw,
@@ -468,6 +486,7 @@ namespace Project.BossLogic
             }
 
             rig = null;
+            frame = default;
             boss = null;
             player = null;
             playerColliders =

@@ -26,6 +26,7 @@ namespace Project.CameraModes
             public object owner;
             public float multiplier;
             public bool relative;
+            public bool scale;
         }
 
         private sealed class ViewOffsetRequest
@@ -318,6 +319,34 @@ namespace Project.CameraModes
                 request.id);
         }
 
+        /// <summary>
+        /// Requests a positive scale factor that composes with normal lens
+        /// multipliers. Unlike gameplay enlargement requests, this may shrink
+        /// the camera below its base size.
+        /// </summary>
+        public CameraLensRequestHandle RequestLensScale(
+            object owner,
+            float scale,
+            CameraTransition transition = default)
+        {
+            EnsureInitialized();
+            LensMultiplierRequest request =
+                new LensMultiplierRequest
+                {
+                    id = nextLensRequestId++,
+                    owner = owner,
+                    multiplier =
+                        Mathf.Max(.01f, scale),
+                    relative = false,
+                    scale = true
+                };
+            lensRequests.Add(request);
+            ReevaluateLensMultiplier(transition);
+            return new CameraLensRequestHandle(
+                this,
+                request.id);
+        }
+
         public CameraLensRequestHandle RequestRelativeLensMultiplier(
             object owner,
             float multiplier,
@@ -354,6 +383,25 @@ namespace Project.CameraModes
 
             request.multiplier =
                 Mathf.Max(1f, multiplier);
+            ReevaluateLensMultiplier(transition);
+            return true;
+        }
+
+        public bool SetLensScale(
+            CameraLensRequestHandle handle,
+            float scale,
+            CameraTransition transition = default)
+        {
+            LensMultiplierRequest request =
+                FindLensRequest(handle);
+            if (request == null ||
+                !request.scale)
+            {
+                return false;
+            }
+
+            request.multiplier =
+                Mathf.Max(.01f, scale);
             ReevaluateLensMultiplier(transition);
             return true;
         }
@@ -679,13 +727,20 @@ namespace Project.CameraModes
         {
             float absolute = 1f;
             float relative = 1f;
+            float scale = 1f;
             for (int index = 0;
                  index < lensRequests.Count;
                  index++)
             {
                 LensMultiplierRequest request =
                     lensRequests[index];
-                if (request.relative)
+                if (request.scale)
+                {
+                    scale *= Mathf.Max(
+                        .01f,
+                        request.multiplier);
+                }
+                else if (request.relative)
                 {
                     relative *= Mathf.Max(
                         1f,
@@ -700,7 +755,7 @@ namespace Project.CameraModes
             }
 
             BeginLensTransition(
-                absolute * relative,
+                absolute * relative * scale,
                 transition);
         }
 
@@ -709,7 +764,7 @@ namespace Project.CameraModes
             CameraTransition transition)
         {
             requestedLensMultiplier =
-                Mathf.Max(1f, target);
+                Mathf.Max(.01f, target);
             if (Mathf.Approximately(
                     currentLensMultiplier,
                     requestedLensMultiplier))

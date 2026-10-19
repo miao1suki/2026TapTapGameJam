@@ -32,6 +32,8 @@ player.RequestRespawn();
 
 `GameSceneLoader.RespawnPhase` 提供六阶段状态，`IsRespawnTransitioning` 仅表示复活表现。底层 `TryStartRespawnTransition(owner, seconds, restoreWhileCovered, finished)` 不负责玩家复位或控制锁，玩法应优先使用 `PlayerController`，避免绕过房间契约。
 
+Boss Timeline 可在不执行完整复活的情况下调用 `TryTeleportToNearestRespawnForPresentation()`：按当前位置查找最近已激活重生点，复用安全落点检测、清空玩家速度并给予复活保护；没有可用重生点时回退配置出生点/初始位置。该接口只做演出期迁移，不触发死亡成就、房间复活链或广播 `RespawnCompleted`。`FaceWorldPosition(Vector3)` 用于演出中强制角色朝向 Boss。
+
 ## 中断
 
 `CancelRespawnTransition(owner)` 只取消匹配的所有者；空参数供正式流程抢占。返回菜单、加载其他场景、退出、玩家禁用/销毁和加载器禁用均清理 Tween、背景、黑幕、输入拦截与本次控制锁。正式流程随后接管同一遮罩。

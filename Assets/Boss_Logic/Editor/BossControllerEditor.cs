@@ -129,10 +129,10 @@ public sealed class BossControllerEditor : Editor
 
         root.Add(ProjectInspectorUtility.CreateDivider());
         Foldout survival = ProjectInspectorUtility.CreateFoldout(
-            "碰撞清除、受击与无敌",
+            "受击、无敌与接触伤害",
             true);
         survival.Add(ProjectInspectorUtility.CreateHelp(
-            "调试区：右移阶段碰到物体时清除，岩浆会先造成一次伤害；无敌期间身体闪烁，但仍会清除岩浆和其他物体。"));
+            "右移阶段碰到岩浆会结算一次伤害；无敌期间身体闪烁。Boss 不再隐藏或移除任何方块。"));
         survival.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "maxHealth",
@@ -150,32 +150,17 @@ public sealed class BossControllerEditor : Editor
             serializedObject,
             "invulnerabilitySeconds",
             "受击无敌时间（秒）",
-            "受击后免疫后续伤害的时间；无敌期间仍然会清除碰到的岩浆和物体。"));
+            "受击后免疫后续伤害的时间。"));
         survival.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "invulnerabilityFlashInterval",
             "无敌闪烁间隔（秒）",
             "身体显示/隐藏切换的间隔。"));
-        survival.Add(ProjectInspectorUtility.CreateDivider());
-        survival.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "destroyTouchedObjects",
-            "碰撞隐藏物体"));
         survival.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "destroyOnlyWhileExternalMoving",
-            "仅外部移动时隐藏",
-            "默认只在右移马夫接管后隐藏障碍，避免入场碰撞影响脚下地图。"));
-        survival.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "useRoomResetForDestroyedObjects",
-            "隐藏后随房间恢复",
-            "有 RoomResetObject 的关卡物体按房间生命周期隐藏并恢复；其他对象直接停用，不再销毁。"));
-        survival.Add(ProjectInspectorUtility.CreateProperty(
-            serializedObject,
-            "maxHiddenObjectsPerFrame",
-            "每帧最多隐藏",
-            "碰撞只负责登记目标，实际隐藏延迟到 LateUpdate 并限制每帧数量，避免一次物理回调停用大量对象。"));
+            "仅移动中结算接触伤害",
+            "右移马夫或 execution 接管时才处理岩浆与玩家接触，避免入场碰撞误触发。"));
         survival.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "passThroughColliderHeight",
@@ -185,7 +170,7 @@ public sealed class BossControllerEditor : Editor
             serializedObject,
             "killPlayerOnContact",
             "碰到玩家直接击杀",
-            "Boss 碰到玩家时直接请求玩家死亡；该碰撞体之后不会再进入清障流程。"));
+            "Boss 碰到玩家时直接请求玩家死亡。"));
         survival.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "destroyAfterDeath",

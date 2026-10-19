@@ -56,9 +56,9 @@ IBossRespawnStateReceiver.ApplyBossRespawnState(
 右移马夫新增弱垂直追踪：
 
 - `enableWeakVerticalTracking`：是否跟随玩家高度，默认开启。
-- `verticalDeadbandBlocks`：玩家与 Boss 的高度差死区，默认 `2` 格；死区内目标高度完全不变。
-- `verticalTrackSpeedBlocksPerSecond`：超出死区后的最大高度变化速度，默认 `0.18` 格/秒。
-- 追踪目标是玩家高度减去死区边界，不强制让两者完全同高；实际世界位移使用 `GridCellSizeUtility` 的格尺寸。
+- `verticalDeadbandBlocks`：玩家与 Boss 的高度差死区，当前默认 `0` 格；Boss 会持续追随玩家 Y，不再保留高度容差。
+- `verticalTrackSpeedBlocksPerSecond`：无死区追随时的最大高度变化速度，默认 `0.18` 格/秒。
+- 追踪目标直接取玩家高度，但受上述速度限制，不瞬移贴齐；实际世界位移使用 `GridCellSizeUtility` 的格尺寸。
 - 玩家死亡立即停止右移；标准复活落位后恢复，加载转场复活在最后 `FinishRespawnPresentation` 后恢复。
 
 出生点弱补助：
@@ -71,18 +71,25 @@ IBossRespawnStateReceiver.ApplyBossRespawnState(
 
 玩家接触与连线：
 
-- `BossController.killPlayerOnContact` 默认开启；碰到玩家父级上的 `PlayerController` 时调用 `EnterDeath`，然后跳过对该玩家碰撞体的清障处理。
+- `BossController.killPlayerOnContact` 默认开启；碰到玩家父级上的 `PlayerController` 时调用 `EnterDeath`。
 - `BossPlayerLinkEffect` 只做显示，不产生碰撞、伤害或交互。
 - 三个 `LineRenderer` 各使用一份运行时材质实例，分别直接设置 `_Style=1/2/3`、火线/水线/藤蔓线颜色和参数，避免 MaterialPropertyBlock 回退到材质默认 `_Style=0`。
 - 连线起点固定为 Boss 中心；`HealthSystemActivated` 时用 `_RevealProgress` 生成，Boss `Died` 时用 `_DissolveProgress` 按玩家交互线的噪波方式消散。
 - 距离越远，`_Opacity` 和 `_LineThickness` 越低；最远实体不透明度为 `0.4`，最近为 `0.78`，距离曲线使用 `1.35` 次幂让中段变化更平缓。当前整条粗细曲线为上一版的 3 倍，最远 `0.024`、最近 `0.9`，最近有效线粗为普通线的 `1.5` 倍。三条线的中心距按当前线粗的 `0.4` 倍计算，使其保持约 `60%` 重叠。曲线分段、弧高、波动、样式间距、排序图层与距离区间均可调。
 
+Boss 存活规则：
+
+- Boss 启用且未死亡时通过 `PlayerController.AcquireSprintLock` 持有疾跑锁；玩家即使继续输入疾跑也不会加速。
+- Boss 进入死亡或禁用时释放同一租约，之后玩家可重新使用疾跑。
+- 玩家每次实际复活时，Boss 状态应用延后到房间重建之后；`PrepareForBossRespawn()` 先销毁场景中与 Boss 碰撞体左边缘至 Boss 当前中心 X 范围相交的全部 `LavaHazardFeature`，同时覆盖普通岩浆与重力岩浆。
+- 清障完成后才执行 `ApplyBossRespawnState` 血量与位置归位。
+
 ## 分离边界
 
 - `BossController` 只写 Rigidbody、目标、状态和受击数值。
 - `BossRightMoveExecutor` 只下发右移与高度命令，不修改 Boss 速度、重力或跳跃能力。
-- `BossController.SetPassThroughTerrain(bool)` 只切换碰撞体 Trigger 状态；Timeline 期间默认关闭，右移马夫启动后开启。
-- Boss 预制体根缩放为 3；作者碰撞为本地 `1×1×1` BoxCollider。`SetPassThroughTerrain(true)` 时按 `passThroughColliderHeight`（默认 12）临时拉高碰撞，世界空间约 `3×36×3` 格；退出穿行时恢复作者尺寸。
+- `BossController.SetPassThroughTerrain(bool)` 切换碰撞体 Trigger 状态；Timeline 期间默认关闭，右移马夫启动后开启。
+- Boss 预制体根缩放为 3；作者碰撞为本地 `1×1×1` BoxCollider。`SetPassThroughTerrain(true)` 时按 `passThroughColliderHeight`（默认 12）临时拉高碰撞，世界空间约 `3×36×3` 格；退出穿行时恢复作者尺寸。该碰撞体不再用于隐藏或移除物体。
 - 动画、Timeline 和动作实现只听事件，不反向驱动控制状态。
 - `BossAnimationDriver` 可以完全不配置 Animator；控制器仍然工作。
 - `RequestJumpTo(Vector3 worldTargetPosition)` 请求物理跳跃；`RequestJump(Vector2 direction, float distance)` 按方向请求。目标超出最大跳高、最大垂直速度或自身水平速度时拒绝，不会瞬移追人。跳跃物理参数只由 `BossController` 的 Inspector 配置。
@@ -95,17 +102,24 @@ IBossRespawnStateReceiver.ApplyBossRespawnState(
 
 - Timeline 资源：`Assets/_Project/Content/Boss/Timelines/Boss_appear.playable`
 - `BossIntroTrack` / `BossIntroClip` / `BossIntroBehaviour` 已废除，不再作为可用接口。
-- 入场由多条 `BossTimelineTrack` 组成：生成/发呆、并行移动输入、跳跃请求、落地停顿、开启运动。
-- 入场另有一条覆盖 `0–6.52` 的 `PlayerTimelineTrack`，按 `Player` Tag 解析角色并开启 `lockControlWhileClip`。该轨道在最终开战事件前 `0.02` 秒结束，避免 Hold 模式的末帧暂停未触发释放；行为层还会在片段自然末尾主动清理锁。
-- 玩家锁从 `0` 秒开始；相机轨在锁生效后延迟 `0.1` 秒启动，并在 `6.54` 秒结束，避免“锁操作”和“移动镜头”同帧开始。`BossWalkTimelineInstaller` 已同步该窗口，重新导入时不会恢复成同时启动。
+- 入场资产只有一条覆盖全程的 `PlayerTimelineTrack` 和一条 Boss 专用 `BossAppearCinematicPlayable` 轨道。
+- `PlayerTimelineTrack` 从 `0` 秒锁住 `Player` Tag；实际演出由 `BossAppearCinematicPlayable` 完成并主动停表，Timeline 的 `20` 秒固定时长只作为安全上限。
+- 当前 `Boss_appear.playable` 的轨道列表只保留一条覆盖全程的玩家锁轨和一条 Boss 专用 `BossAppearCinematicPlayable`；旧 Boss 走/跳、旧相机轨和旧对话轨已从 `m_Tracks` 移除。相机全程固定在玩家初始位置，不横移、不跟 Boss；Boss 在玩家 `X-7 / Y+13` 生成并假加速度下落至玩家同高，之后播放盯视、警告并开战。
+- appear 不通过共享 `TimelineCamRig` 抢 `_shotState`，而是直接作为最高优先级 `ICameraControlSource` 向 `CameraControlManager` 注册；其他相机轨即使残留也不能覆盖镜头 Y。
+- 演出期间额外启用 `BossAppearCameraGuard`，在 `LateUpdate` 最高执行顺序最后锁定 Camera Transform 和镜头参数；这是 Boss appear 的最终画面兜底，结束时随 Playable 清理。
 - Boss 入场触发器场景实例的 `requestPlayerControlLockDuringTimeline` 继续保持开启，作为场景入口保险；它通过 `IPlayerControlLockTarget` 申请锁，Timeline 结束、停止、重置或禁用时释放。
 - `BossTimelineClip` 每个 Clip 只能配置一个动作；`spawnBoss` 为真时使用 `bossPrefab` 生成，其他 Clip 通过 `Boss` Tag 查找已生成 Boss。
-- 移动输入与跳跃请求同时处于 `4–5.4` 秒；Timeline 不直接写 Transform/Rigidbody，也不传送或纠偏最终位置。
-- 相机使用 `CameraTimelineTrack`，入场资源只允许 2D 正交运镜。
-- 相机轨结束时释放 Timeline 相机控制，并把 `TimelineCamRig.target` 交回 `CameraControlManager.FocusTarget`。
+- Boss 生成与其他显式空间演出使用 `BossTimelinePerformanceFrame`：优先取 owning `PlayableDirector` 所在物体的 `ContactTimelineTrigger`，脚本驱动的死亡轨则取 Director 自身；所有点/偏移都是表演坐标系局部值。
+- `Boss_appear.playable` 的生成 `targetOffset` 已改为激发器局部坐标，整张地图或触发器平移、旋转时不需要改演出数值。
+- 出场相机完全固定：初始机位由玩家位置 + `playerCameraOffset=(0,0,-10)` 建立；进入 appear 时停止其他正在播放且包含 `CameraTimelineTrack` 的 Director，强制释放残留 `TimelineCamRig` 租约，之后字幕、下落、盯视和警告阶段每帧只写同一个固定机位，不存在左移或回程运镜。
+- Boss 生成使用 `bossSpawnOffsetFromPlayer=(-7,13,0)`。`BeginPresentationFall()` 将 Boss 临时设为 Kinematic、关闭 Collider，`SetPresentationFallPosition()` 每帧只更新由加速度计算出的 Y，因此不会受地面、高台或天花板影响；演示结束后 `EndPresentationFall()` 恢复原刚体和 Collider。
+- 普通死亡、处决、真/假结局的相机、钥匙吸附、收集品和黑屏演出参数均序列化在 Timeline/Playable 中；通用 `TimelineTools3D` 不为 Boss 专属演出改代码。
+- Boss 下落由 Playable 调用 `BeginPresentationFall()` / `SetPresentationFallPosition()` 完成，不写刚体速度。
+- 入场资源不再包含 `CameraTimelineTrack`；相机由 Playable 的最高优先级控制租约和 `BossAppearCameraGuard` 共同固定。
+- 演出结束时销毁相机守卫、释放控制租约，并把相机交回 `CameraControlManager`。
 - Side2D 镜头强制使用平面 Yaw，不再把 LookRotation 的 3D 俯仰写回相机。
-- Boss 死亡 Timeline 的相机控制释放在 `9.99` 秒最后一帧执行，并显式调用 `ReleaseTimelineControl(true)`，避免相机轨持续到 `10` 秒后重新接管。
-- 最后一帧 `BossHealthBarActivationPlayable` 同时开启血条和 `BossCameraSize`。
+- Boss 死亡 Timeline 的相机释放仍按死亡 Playable 的序列化时长执行。
+- 出场完成时由 `BossAppearCinematicPlayable` 同时开启追击、血条、监控和 `BossCameraSize`。
 
 ## Boss 存活期视野接口
 
@@ -129,6 +143,8 @@ handle.Release(CameraTransition.Ease(1f));
 - `RequestDisable()`：平滑恢复倍率 `1`。
 - `SetRequested(bool)`：统一开关接口。
 - `requestOnEnable` 默认关闭，因此 Boss 出生时不会自动扩大视野。
+
+区域型缩小视野使用独立 Timeline `Assets/_Project/Content/Boss/Timelines/camera_close.playable`。它由 `ContactTimelineTrigger` 的“进入播放，离开停止”模式驱动，进入申请 `0.5×` 平滑缩放，离开停止 Director 后释放请求并恢复；不修改任何 Timeline 原生轨道脚本。接入见 [Camera Close](CAMERA_CLOSE_TIMELINE_API.md)。
 - 组件不再订阅 `BossController.Died`。击败 Timeline 在返回镜头开始时通过 `BossDeathCameraRestorePlayable` 调用 `RequestDisable()`；普通玩家死亡/复活和外部对象销毁路径互不影响。
 
 ## Boss 死亡 Timeline
@@ -136,33 +152,25 @@ handle.Release(CameraTransition.Ease(1f));
 - Timeline：`Assets/_Project/Content/Boss/Timelines/Boss_defeat.playable`
 - 播放器：`BossDefeatTimelinePresenter`，挂在 Boss 预制体，并由 `BossController.defeatPresentationRequested` 调用。
 - 只响应 `EnterDeath` 发出的击败事件；外部 `Destroy` 不触发 `EnterDeath`，因此不会播放。
-- 时长 `10` 秒：致命伤后先保持原镜头发呆 `1` 秒；第 `1–2` 秒平滑移动到玩家与 Boss 包围盒的中点；第 `2–5.5` 秒播放六钥匙吸收前缀；之后接原有 `4.5` 秒死亡演出。
-- 死亡 Timeline 自然到尾后，`BossDefeatTimelinePresenter` 使用同一个 `PlayableDirector` 切换到 `player_thinking.playable`；两条死亡路径共用后续思考演出。
-- 六钥匙前缀由 `BossKeyAbsorptionPlayable` 驱动：按红、蓝、绿顺序重复两轮，从玩家身体依次生成六把颜色钥匙，浮到玩家头顶后沿曲线吸入 Boss 中心；全部吸收后才进入原死亡镜头和死亡动画。
-- 钥匙视觉缩放为 prefab 基础尺寸的 `0.55`，横向槽位间距 `0.52`，吸引阶段单把 `0.9` 秒、相邻间隔 `0.15` 秒，完整吸引在 `3.5` 秒内结束。
-- 玩家锁轨只通过 `PlayerController.AcquireControlLock` 锁输入，`motionMode=None`、`driveRigidbody=0`，不写玩家 Transform/Rigidbody 位置。
-- `1–5.49` 秒由 Boss 专用的 `BossCameraPlayable` 双目标模式取景：按 `Player`/`Boss` Tag 查找双方，镜头中心取两者完整 Collider/Renderer 包围盒中点，并按包围盒尺寸、屏幕宽高比和 `1.2` 世界单位边距计算正交视野。`dualTargetTransitionDuration=1` 让镜头从致命伤时的机位和视野平滑过渡到双目标构图，随后保持到吸收结束。共享 `CameraTimelineClip/Behaviour` 不增加 Boss 专用字段。
-- 演出钥匙直接实例化 `ColorKey_red/blue/green.prefab`。实例先挂在未激活的专用根节点下，关闭全部 Collider、`ColorKeyPickup`、`DropItemBase`、`PickupFlightAnimator`、`MechanismArtworkPresentation` 和子 `PlayableDirector` 后再激活，因此只作为视觉对象，不会被玩家吸收、重复解锁、受当前解锁状态改材质或触发房间逻辑。
-- 六钥匙全部吸收后的 `5.5` 秒，由第二条 `CameraTimelineTrack` 聚焦 Boss；随后死亡 Timeline 只观看 Boss 的死亡演出。
-- 玩家使用 `PlayerTimelineTrack`，按 `Player` Tag 查找并锁定全部普通操作。
-- 第 `5.5` 秒的 `BossDeathAnimationTriggerPlayable` 调用 `BossAnimationDriver.PlayDeathAnimationNow()`，让死亡动画在发呆、钥匙吸收和镜头到位后再开始。
-- 致命伤害进入 Death 时缓存 Boss 的 Kinematic 状态、清零速度并临时设为 Kinematic，避免死亡前缀期间受物理接触抽搐；Boss 复活时恢复原刚体状态。
-- 返回开始时刻由 `BossDeathCameraRestorePlayable` 恢复 `BossCameraSize`。
-- 后续有真实死亡动画时，扩展 `5.5–9.5` 秒的停留区间并同步 Timeline 总时长即可；不需要修改玩家锁定或相机回归逻辑。
+- 当前资产由一条覆盖全程的 `PlayerTimelineTrack` 和 `BossDeathCinematicPlayable(mode=Natural)` 组成；旧双目标相机、旧死亡镜头、旧动画触发和视野恢复轨已静音。
+- 开局同时锁玩家、把玩家传送到最近的已激活重生点、关闭 Boss 接触击杀；镜头平滑移到 Boss 时 Boss 开始慢速 Renderer 闪烁。
+- 镜头到位并等待 `1` 秒后，依次播放 Boss 故障字幕 `咳咳……`、`嘁，你以为我没留后手吗！`；两句都显示 `2` 秒，走底部 WordNote 队列。
+- 字幕结束后镜头回玩家，玩家强制面向 Boss，并完整闪烁两次。随后六把钥匙按红/蓝/绿两轮从玩家身体逐把抽出，在玩家上方排成竖直列并呼吸悬停。
+- 全部钥匙悬停 `1` 秒后播放玩家打字机字幕 `身体好难受……使不上劲`；再等 `0.5` 秒，钥匙逐把曲线进入 Boss，镜头同步移到 Boss。
+- Boss 播放故障字幕 `哈哈哈哈……我不好过你也别想好过！` 后调用 `BossAnimationDriver.PlayDeathAnimationNow()`；驱动通过 Animator 死亡状态长度或 `deathAnimationFallbackSeconds`（默认 `2` 秒）提供播放进度。
+- 死亡动画完成时先隐藏 Boss 全部 Renderer/Collider，再回镜头到玩家；随后启动独立场景级 Player Thinking Director，再删除 Boss 物体并进入 `player_thinking.playable`。
+- 独立 Player Thinking Director 避免结局 Timeline 随 Boss 删除而中断；`Boss Post Death Director` 在沉思 Timeline 停止后自动清理。
+- 演出钥匙关闭 Collider、`ColorKeyPickup`、`DropItemBase`、`PickupFlightAnimator`、`MechanismArtworkPresentation`、子 `PlayableDirector` 与 `RoomResetObject`，仅作为视觉对象存在。
 
 ## Boss 处决 Timeline
 
-- 运行时轨道：`BossExecutionTimelineTrack` / `BossExecutionClip`。
-- `BossExecutionClip` 是独立 `PlayableAsset` 脚本资产，必须保存在同名 `BossExecutionClip.cs`；不能与 Track 共用脚本文件，否则 Unity 会报 `No script asset for BossExecutionClip` 并生成无行为的 Timeline Clip。
 - 直接资产：`Assets/_Project/Content/Boss/Timelines/Boss_execution.playable` 和 `Assets/_Project/Content/Boss/BossExecutionTrigger.prefab`。
 - 玩家进入 Trigger 后播放 Timeline；`PlayerTimelineTrack` 按 `Player` Tag 覆盖整段锁定普通操作，在 Clip 自然结束、Timeline 停止或销毁时由 `ActorTimelineBehaviour` 统一释放。`ContactTimelineTrigger` 不再额外申请玩家锁，避免双锁。
-- `Boss_execution.playable` 使用 Boss 专用的 `BossCameraPlayable` 跟随模式：前 `1.2` 秒锁定相机起始 Y，只做 X/Z 追踪；随后 `0.48` 秒校正到 Boss 机位高度并持续跟拍。`BossExecutionClip` 只控制 Boss 执行行为；共享 `CameraTimelineClip/Behaviour` 未修改。
-- 处决 Trigger 的 `PlayableDirector` 必须从 `PlayableGraph.GetResolver()` 解析；resolver 失败时才反查正在播放且包含 `BossExecutionTimelineTrack` 的 Timeline。不要用 Clip 的绑定 owner 获取导演；该轨无绑定对象，owner 为空时 `Stop()` 会静默失效，玩家锁和相机轨都不会释放。处决行为同时订阅 `ExecutionSequenceTerminated` 与 `BossController.Died`，任何死亡路径都会停止处决 Timeline 并释放其官方玩家锁轨和相机轨。
-- 启动时先把 Boss 的 Y 瞬移到 `Player` Tag 对应玩家当前 Y，再冻结普通右移；与相机轨同步等待 `1.2` 秒后，以 `10` 格/秒开始右移。之后 execution 固定保持启动时记录的 Y，不再持续跟踪玩家高度；X/Z 不变。
-- `destroyOnlyWhileExternalMoving` 的清障/伤害接触入口在 execution 期间同样放行，避免右移马夫暂停后岩浆与伤害道具的 Trigger 被过滤。
-- execution 状态下任何正伤害都会直接清零血量，不要求血条或普通受伤入口已经激活；随后停止处决 Timeline 并释放玩家锁，再触发现有 `Boss_defeat.playable` 死亡演出。
-- Boss 已在处决镜头内，因此 `Boss_defeat.playable` 的 `motionCurve` 从 Boss 机位值开始保持；不再接一段玩家机位到 Boss 的去程。死亡演出最后仍按原曲线回玩家并释放死亡 Timeline 的玩家锁与相机控制。
-- Timeline 默认时长 `120` 秒；未受伤时保持处决运行，受伤后由死亡 Timeline 接管。
+- 当前资产由一条 `120` 秒玩家锁轨和 `BossDeathCinematicPlayable(mode=Execution)` 组成；旧 `BossExecutionClip`、`BossExecutionTimelineTrack` 与旧处决相机轨已移除/静音。
+- 开局立刻锁玩家、关闭 Boss 接触击杀、暂停普通右移，先保持 Boss X/Z 不变并把 Y 对齐到玩家当前 Y 向下 `3` 格，再把 Boss 切入 execution 控制；因此从开局起任何正伤害都会直接致命。
+- 等待 `0.5` 秒后，镜头以更快的 `0.55` 秒插值移向 Boss；镜头进度到两者距离的一半时，Boss 开始以 `10` 格/秒向右移动，镜头继续追踪。
+- 受击后 Boss 进入同一个故障闪烁节点，后续字幕、玩家闪烁、六钥匙、死亡动画、删除 Boss 与真假结局和自然死亡完全共用。
+- Timeline 默认时长 `120` 秒；未受伤时持续处决追踪，受击后进入共享死亡收束。
 - `ContactTimelineTrigger` 默认仅玩家、只触发一次；位置和触发区域大小由场景实例自行摆放。
 
 ## 事件
@@ -173,22 +181,27 @@ handle.Release(CameraTransition.Ease(1f));
 - `DefeatPresentationRequested(BossController boss)`
 - `BossAnimationDriver.StateForwarded(previous, next)`
 
-## 碰撞隐藏与受击无敌
+死亡演出接口：
 
-`BossController` 提供同一调试分区内的生存与清障参数：
+- `BossAnimationDriver.PlayDeathAnimationNow()`：在演出指定阶段触发死亡动画。
+- `BossAnimationDriver.DeathAnimationProgress` / `IsDeathAnimationComplete`：优先读取 Animator 当前 `Death` 状态长度，没有状态时使用 `deathAnimationFallbackSeconds`。
+- `BossController.SetPlayerContactKillEnabled(bool)`：Timeline 期间关闭或恢复 Boss 接触击杀。
+- `PlayerController.TryTeleportToNearestRespawnForPresentation()`：锁操作期间把玩家移到最近已激活重生点的安全落点，并给予复活保护时间。
+- `PlayerController.FaceWorldPosition(Vector3)`：演出中强制角色朝向世界位置。
+
+## 受击、无敌与接触伤害
+
+`BossController` 提供同一调试分区内的生存与接触伤害参数：
 
 - `maxHealth` / `startingHealth`：最大及初始受击值，当前默认均为 9。
-- `destroyTouchedObjects`：保留原序列化字段名，行为已改为开启碰撞物体隐藏。
-- `destroyOnlyWhileExternalMoving`：默认开启，只在右移马夫接管或 Boss execution 状态下处理清障与伤害接触，避免入场落地删除地形。
-- `useRoomResetForDestroyedObjects`：开启时通过 `TemporaryObjectHideState` 隐藏并支持 `RoomResetObject` 恢复；关闭时仍回退为直接停用对象。
-- `maxHiddenObjectsPerFrame`：碰撞回调只把唯一目标加入延迟队列，`LateUpdate` 每帧最多实际隐藏该数量，默认 4。
-- 启用房间恢复时，实际隐藏使用 `Project.TemporaryObjectHideState`，只关闭 Renderer、Collider，并缓存后切换 3D Rigidbody 的 Kinematic/重力状态；对象保持激活，`RoomResetObject.RestorePose` 会恢复这些状态。
+- `destroyOnlyWhileExternalMoving`：只有右移马夫或 execution 接管时处理岩浆与玩家接触伤害。
 - `lavaContactDamage`：岩浆首次接触伤害，默认 1。
+- `passThroughColliderHeight`：穿行阶段的本地碰撞高度，默认 12；停止穿行后恢复作者尺寸。
 - `invulnerabilitySeconds`：受击后无敌时间，当前默认 4 秒。
 - `invulnerabilityFlashInterval`：无敌期间 Renderer 启用/关闭切换间隔，默认 0.08 秒。
 - 无敌开始时自动收集 Boss 自身及当前全部子 Renderer，并保留每个 Renderer 原始启用状态；后续加入的手部动画等 Renderer 会在下一次受伤进入无敌时自动纳入，无需手工配置。
 
-隐藏始终跳过玩家和其他 `BossController`。碰撞目标按实例 ID 去重，避免同一物体的多个 Collider 重复排队；实际停用不发生在物理回调内。岩浆接触在非无敌时先调用 `ReceiveHit(lavaContactDamage, Vector3.zero)`，随后无论是否处于无敌都排队隐藏该岩浆对象。`ReceiveHit` 在无敌期间忽略所有后续伤害；普通受伤只扣血、进入无敌和闪烁，不切换 `Hit`、不施加硬直或击退，也不会打断跳跃。死亡时立即停止闪烁并恢复正常 Renderer 状态。
+Boss 不再隐藏、停用或销毁普通方块、机关和岩浆，也不会给接触对象添加隐藏状态。只有右移马夫或 execution 接管阶段才处理伤害接触，避免入场和 Timeline 演出误触岩浆。岩浆接触在非无敌时调用 `ReceiveHit(lavaContactDamage, Vector3.zero)`；`ReceiveHit` 在无敌期间忽略后续伤害。普通受伤只扣血、进入无敌和闪烁，不切换 `Hit`、不施加硬直或击退，也不会打断跳跃。死亡时立即停止闪烁并恢复正常 Renderer 状态。
 
 血量归零进入 Death 时，`BossRightMoveExecutor` 通过 `StateChanged` 立即停止外部右移并恢复原碰撞状态。控制器同时广播 `DefeatPresentationRequested(BossController)`，并调用 Inspector 中可配置的 `defeatPresentationRequested` UnityEvent。该接口预留给后续玩家 Timeline 桥接组件；控制器本身不持有 `PlayableDirector`。
 
