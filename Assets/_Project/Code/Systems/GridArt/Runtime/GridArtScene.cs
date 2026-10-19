@@ -53,6 +53,7 @@ namespace Project.GridArt
                 properties.SetFloat("_ColorMaskGroup",-1f);
                 properties.SetFloat("_ColorMaskReal",1f);
                 properties.SetFloat("_ColorMaskUseVertexAlpha",0f);
+                properties.SetFloat("_GridArtSliceClamp",1f);
                 Material material = binding.renderer.sharedMaterial;
                 Texture texture = material != null && material.HasProperty("_BaseMap") ? material.GetTexture("_BaseMap") : binding.alphaTexture;
                 float opacity = material != null && material.HasProperty("_BaseColor") ? material.GetColor("_BaseColor").a : 1f;

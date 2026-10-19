@@ -51,6 +51,31 @@ namespace Project.GridArt.Tests
             sprite.name = name; AssetDatabase.AddObjectToAsset(sprite, texture); return sprite;
         }
         private void AddBrush() => GridArtLibraryService.Add(library, Sprite("Tile"), Vector2.one, new Rect(0,0,1,1), "地面");
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        public void BakedSliceClampPreservesGeometryAndUnmodifiedUvs(int rotation)
+        {
+            AddBrush(); map.layers[0].Set(new Vector2Int(-100,-25),0);
+            map.layers[0].cells[0].quarterTurns = rotation;
+            var quads = GridArtBuilder.BuildQuads(map.layers[0],library);
+            var output = GridArtBuilder.Apply(map,scene,false);
+            var mesh = output.GetComponentInChildren<MeshFilter>().sharedMesh;
+            var bounds = new System.Collections.Generic.List<Vector4>(); mesh.GetUVs(1,bounds);
+            Assert.That(bounds.Count,Is.EqualTo(mesh.vertexCount));
+            var rect = quads[0].uv;
+            for (int corner=0; corner<4; corner++)
+            {
+                Assert.That(mesh.uv[corner],Is.EqualTo(quads[0].UV(corner)),"must not shrink or stretch interpolated artwork UVs");
+                Assert.That(bounds[corner],Is.EqualTo(new Vector4(rect.xMin,rect.yMin,rect.xMax,rect.yMax)));
+            }
+            Assert.That(mesh.bounds.size,Is.EqualTo(new Vector3(1,1,0)));
+            mesh.SetUVs(1,new System.Collections.Generic.List<Vector4>());
+            GridArtBuilder.Apply(map,scene,false);
+            mesh.GetUVs(1,bounds);
+            Assert.That(bounds.Count,Is.EqualTo(4),"reapply must upgrade an old mesh even when positions and UV0 match");
+        }
         private static object Invoke(object target, string method, params object[] args) => target.GetType().GetMethod(method, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(target,args);
         private static void Field(object target, string name, object value) => target.GetType().GetField(name,System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(target,value);
         private GridArtWindow Window()

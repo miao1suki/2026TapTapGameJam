@@ -81,12 +81,14 @@ namespace Project.GridArt.Editor
         {
             public readonly List<Vector3> vertices = new List<Vector3>();
             public readonly List<Vector2> uv = new List<Vector2>();
+            public readonly List<Vector4> sampleBounds = new List<Vector4>();
             public readonly List<int> triangles = new List<int>();
             public bool Matches(Mesh mesh)
             {
                 if (mesh == null || mesh.subMeshCount == 0 || mesh.vertexCount != vertices.Count || mesh.GetIndexCount(0) != (uint)triangles.Count) return false;
                 mesh.GetVertices(compareVertices); mesh.GetUVs(0, compareUv);
-                return compareVertices.SequenceEqual(vertices) && compareUv.SequenceEqual(uv);
+                mesh.GetUVs(1, compareBounds);
+                return compareVertices.SequenceEqual(vertices) && compareUv.SequenceEqual(uv) && compareBounds.SequenceEqual(sampleBounds);
             }
             public void Add(GridArtQuad q, float size)
             {
@@ -96,11 +98,14 @@ namespace Project.GridArt.Editor
                 vertices.Add(new Vector3(q.bounds.xMax, q.bounds.yMax) * size);
                 vertices.Add(new Vector3(q.bounds.xMax, q.bounds.yMin) * size);
                 uv.Add(q.UV(0)); uv.Add(q.UV(1)); uv.Add(q.UV(2)); uv.Add(q.UV(3));
+                var rect = new Vector4(q.uv.xMin, q.uv.yMin, q.uv.xMax, q.uv.yMax);
+                for (int corner = 0; corner < 4; corner++) sampleBounds.Add(rect);
                 triangles.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
             }
         }
         private static readonly List<Vector3> compareVertices = new List<Vector3>();
         private static readonly List<Vector2> compareUv = new List<Vector2>();
+        private static readonly List<Vector4> compareBounds = new List<Vector4>();
         private static void Record(UnityEngine.Object target, bool enabled) { if (enabled) Undo.RecordObject(target, "应用关卡美术"); }
         private static void Created(UnityEngine.Object target, bool enabled) { if (enabled) Undo.RegisterCreatedObjectUndo(target, "应用关卡美术"); }
         private static void Destroy(UnityEngine.Object target, bool enabled) { if (enabled) Undo.DestroyObjectImmediate(target); else UnityEngine.Object.DestroyImmediate(target); }
@@ -195,6 +200,7 @@ namespace Project.GridArt.Editor
                         Record(mesh, recordUndo);
                         mesh.Clear(); mesh.name = name; mesh.indexFormat = IndexFormat.UInt32;
                         mesh.SetVertices(pair.Value.vertices); mesh.SetUVs(0, pair.Value.uv);
+                        mesh.SetUVs(1, pair.Value.sampleBounds);
                         mesh.SetTriangles(pair.Value.triangles, 0); mesh.RecalculateBounds(); EditorUtility.SetDirty(mesh);
                         mesh.RecalculateNormals(); mesh.RecalculateTangents();
                         AssetDatabase.SaveAssetIfDirty(mesh);

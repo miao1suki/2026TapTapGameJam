@@ -27,12 +27,21 @@ namespace Project.GridArt.Editor
                 {
                     Check(renderer.sharedMaterial != null && renderer.sharedMaterial.shader != null, "art material and shader available");
                     Check(renderer.GetComponent<MeshFilter>().sharedMesh != null, "generated art mesh available");
+                    var mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
+                    var slices = new System.Collections.Generic.List<Vector4>(); mesh.GetUVs(1,slices);
+                    Check(slices.Count == mesh.vertexCount, "existing Gaming generated mesh includes per-quad sampling bounds");
                     Check(renderer.sharedMaterial.GetTexture("_BaseMap") != null, "art source texture available");
                 }
                 var camera = new GameObject("audit camera").AddComponent<Camera>();
                 camera.transform.position = new Vector3(0, 0, -10);
                 // These are runtime-only callbacks; opening a Scene in EditMode does not dispatch them.
                 typeof(GridArtScene).GetMethod("OnEnable", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(output, null);
+                foreach (var renderer in output.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    if (renderer.gameObject.layer == 0) continue; // Neutral art does not enter HSV masks.
+                    var properties = new MaterialPropertyBlock(); renderer.GetPropertyBlock(properties);
+                    Check(properties.GetFloat("_GridArtSliceClamp") == 1, "Gaming alpha mask uses the same slice clamp");
+                }
                 output.SetCamera(camera);
                 var update = typeof(GridArtScene).GetMethod("LateUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                 update.Invoke(output, null);
