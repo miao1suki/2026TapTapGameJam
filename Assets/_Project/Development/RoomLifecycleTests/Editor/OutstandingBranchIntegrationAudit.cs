@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using PlanningEditorPrototype;
 using Project.BlockFeatures;
@@ -30,6 +31,13 @@ public static class OutstandingBranchIntegrationAudit
         int code=0;
         try
         {
+            var signature=typeof(PlanningSceneBuilder).GetMethod("SamePlanningSignature",BindingFlags.Static|BindingFlags.NonPublic);
+            Check(signature!=null,"legacy optional-link signature compatibility exists");
+            bool Same(string a,string b)=>(bool)signature.Invoke(null,new object[]{a,b});
+            Check(Same("{\"id\":\"a\"}","{\"id\":\"a\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\"}"),"absent optional links equal empty defaults");
+            Check(!Same("{\"id\":\"a\"}","{\"id\":\"a\",\"platformMountId\":\"lift\"}"),"real mount change remains significant");
+            Check(!Same("{\"id\":\"a\",\"width\":1}","{\"id\":\"a\",\"width\":3,\"platformMountId\":\"\"}"),"geometry change remains significant");
+            Check(Same("{\"part\":\"{\\\"id\\\":\\\"a\\\"}\"}","{\"part\":\"{\\\"id\\\":\\\"a\\\",\\\"platformMountId\\\":\\\"\\\"}\"}"),"legacy merged-part escaped optional link migrates");
             const string scenePath="Assets/_Project/Scenes/Playing/Gaming.unity";
             var doc=PlanningDocument.FromPersistentJson(File.ReadAllText(Path.ChangeExtension(scenePath,"planning.json")));
             var formal=PlanningDocument.FromPersistentJson(File.ReadAllText("Assets/_Project/Content/LevelMaps/正式关卡.json"));
@@ -60,7 +68,22 @@ public static class OutstandingBranchIntegrationAudit
             Check(start.GetComponentsInChildren<Renderer>(true).Length==0 && start.GetComponentsInChildren<Collider>(true).Length==0,"Start is invisible and nonblocking");
             Check(roots.SelectMany(r=>r.GetComponentsInChildren<Camera>(true)).Count(c=>c.enabled)==1,"one active world camera");
             Check(EditorBuildSettings.scenes.Count(s=>s.enabled)==1 && EditorBuildSettings.scenes.Single(s=>s.enabled).path==scenePath,"single Gaming build entry retained");
-            foreach(string path in new[]{"Assets/ta_source/Rain/RainPreview.unity","Assets/ta_source/firefly/FireflyPreview.unity","Assets/ta_source/flowmagma/StaticTest/FlowMagmaPreview.unity"})
+            var before=placed.ToDictionary(p=>p.PlanningBoxId,p=>(id:p.GetInstanceID(),position:p.transform.position,rotation:p.transform.rotation,scale:p.transform.localScale));
+            try
+            {
+                PlanningSceneBuilder.SuppressSceneUndo=true;
+                Check(PlanningSceneBuilder.TryApplyDocument(doc,out var result),"actual Gaming no-op apply: "+result);
+                var after=scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<LevelEditorPlacedBlock>(true)).ToArray();
+                Check(after.Length==before.Count,"Gaming no-op apply does not add or remove author objects");
+                foreach(var p in after)
+                {
+                    var old=before[p.PlanningBoxId];
+                    Check(p.GetInstanceID()==old.id && Vector3.Distance(p.transform.position,old.position)<.0001f && Quaternion.Angle(p.transform.rotation,old.rotation)<.001f && p.transform.localScale==old.scale,
+                        "Gaming no-op preserves exact instance and manual pose "+p.PlanningBoxId);
+                }
+            }
+            finally {PlanningSceneBuilder.SuppressSceneUndo=false;}
+            foreach(string path in new[]{"Assets/ta_source/Rain/RainPreview.unity","Assets/ta_source/firefly/FireflyPreview.unity","Assets/ta_source/flowmagma/StaticTest/FlowMagmaPreview.unity","Assets/ta_source/Particle/Grow/Animation.unity"})
             {
                 var preview=EditorSceneManager.OpenScene(path);
                 foreach(var r in preview.GetRootGameObjects()) foreach(var t in r.GetComponentsInChildren<Transform>(true))

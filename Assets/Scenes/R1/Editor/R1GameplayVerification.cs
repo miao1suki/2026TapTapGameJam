@@ -31,7 +31,8 @@ public static class R1GameplayVerification
     private static ContactCube[] pinnedCubes;
     private static GameObject[] contactFixtures;
     private static bool IsIntegrationProbe => Application.dataPath.Replace('\\', '/')
-        .Contains("/Library/R1R2Integration-FlowRetirementProbe-");
+        .Contains("/Library/R1R2Integration-FlowRetirementProbe-") ||
+        Application.dataPath.Replace('\\', '/').EndsWith("/Library/FlowRetirementProbe/Assets");
     private static bool Mirrored => SessionState.GetBool(Flag + ".Mirrored", false);
     private static Vector3 LayoutPoint(Vector3 point) => Mirrored ? new Vector3(58 - point.x, point.y, point.z) : point;
     private static Vector3 LayoutDirection(Vector3 direction) => Mirrored ? new Vector3(-direction.x, direction.y, direction.z) : direction;
