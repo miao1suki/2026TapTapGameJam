@@ -223,6 +223,8 @@ namespace Project.LevelEditor.Editor
                 draftOverrides,
                 false);
 
+            BuildContactCubeFixedPosition(componentList);
+
             if (savePlatformWidth != null)
             {
                 var width = new IntegerField("平台宽度（格）") { value = draftPlatformWidth, name = "platform-width", isDelayed = true };
@@ -747,6 +749,47 @@ namespace Project.LevelEditor.Editor
             });
         }
 
+        private void BuildContactCubeFixedPosition(VisualElement parent)
+        {
+            var cube = preview.GetComponent<Project.ContactCubes.ContactCube>();
+            if (cube == null || !cube.TryGetComponent<Rigidbody>(out var body)) return;
+
+            var serializedBody = new SerializedObject(body);
+            serializedObjects.Add(serializedBody);
+            var constraints = serializedBody.FindProperty("m_Constraints");
+            if (constraints == null) return;
+
+            var fixedPosition = new Toggle("固定位置（锁定 X / Y / Z）")
+            {
+                name = "contact-cube-fixed-position",
+                tooltip = "勾选锁定三个位置轴；取消解除三个位置轴锁定。旋转约束保持不变，保存组件数值后生效。"
+            };
+            fixedPosition.style.marginBottom = 6f;
+            void Refresh()
+            {
+                if (body == null) return;
+                serializedBody.Update();
+                fixedPosition.SetValueWithoutNotify(
+                    (constraints.intValue & (int)RigidbodyConstraints.FreezePosition) ==
+                    (int)RigidbodyConstraints.FreezePosition);
+            }
+            fixedPosition.RegisterValueChangedCallback(evt =>
+            {
+                if (body == null) return;
+                serializedBody.Update();
+                int axes = (int)RigidbodyConstraints.FreezePosition;
+                constraints.intValue = evt.newValue
+                    ? constraints.intValue | axes
+                    : constraints.intValue & ~axes;
+                serializedBody.ApplyModifiedProperties();
+                CaptureOverride(body, constraints);
+                statusLabel.text = "固定位置已修改，尚未保存。";
+            });
+            fixedPosition.TrackSerializedObjectValue(serializedBody, _ => Refresh());
+            Refresh();
+            parent.Add(fixedPosition);
+        }
+
         private void BuildRigidbodyConstraints(
             VisualElement parent, Component component, SerializedObject serializedObject)
         {
@@ -785,6 +828,12 @@ namespace Project.LevelEditor.Editor
                     toggle.labelElement.style.minWidth = 0f;
                     toggle.labelElement.style.width = 15f;
                     toggle.SetValueWithoutNotify((constraints.intValue & (int)flag) != 0);
+                    toggle.TrackSerializedObjectValue(serializedObject, _ =>
+                    {
+                        if (component == null) return;
+                        serializedObject.Update();
+                        toggle.SetValueWithoutNotify((constraints.intValue & (int)flag) != 0);
+                    });
                     toggle.RegisterValueChangedCallback(evt => {
                         serializedObject.Update();
                         int value = constraints.intValue;

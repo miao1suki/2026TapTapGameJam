@@ -11,6 +11,55 @@ namespace PlanningEditorPrototype
         private double edgePanLastTime;
         private bool edgePanTracking;
         private bool completingPointer;
+        private bool assemblyAltHeld;
+        private bool assemblyShiftHeld;
+        private bool HasTemporaryAssemblyTool => mode == PlanningCanvasMode.Assembly &&
+            (assemblyAltHeld || assemblyShiftHeld);
+        private bool IsTemporaryWhiteBrush => mode == PlanningCanvasMode.Assembly &&
+            assemblyShiftHeld && !assemblyAltHeld;
+
+        private void UpdateTemporaryAssemblyTools(bool alt, bool shift)
+        {
+            if (mode != PlanningCanvasMode.Assembly) return;
+            if (assemblyAltHeld == alt && assemblyShiftHeld == shift) return;
+            // A marquee belongs to the tool that started it. Never reinterpret
+            // an unfinished selection/erase/paint rectangle after a modifier changes.
+            if (assemblyAltHeld != alt || !alt && assemblyShiftHeld != shift)
+                EndPointerAction();
+            assemblyAltHeld = alt;
+            assemblyShiftHeld = shift;
+            UpdatePlayerOverlay();
+            StatusChanged?.Invoke(alt ? "临时擦除：左键拖框，松开 Alt 恢复原工具。" :
+                shift ? "临时白方块：左键拖框，松开 Shift 恢复原工具。" : "已恢复原工具。");
+            UpdateTriggerPlacementPreview();
+            MarkDirtyRepaint();
+        }
+
+        internal void ResetTemporaryAssemblyTools()
+        {
+            if (!assemblyAltHeld && !assemblyShiftHeld) return;
+            EndPointerAction();
+            assemblyAltHeld = assemblyShiftHeld = false;
+            UpdatePlayerOverlay();
+            UpdateTriggerPlacementPreview();
+            MarkDirtyRepaint();
+        }
+
+        private bool HandleTemporaryToolKey(KeyCode key, bool pressed, bool alt, bool shift)
+        {
+            if (mode != PlanningCanvasMode.Assembly) return false;
+            bool altKey = key == KeyCode.LeftAlt || key == KeyCode.RightAlt;
+            bool shiftKey = key == KeyCode.LeftShift || key == KeyCode.RightShift;
+            if (!altKey && !shiftKey) return false;
+            UpdateTemporaryAssemblyTools(altKey ? pressed : alt, shiftKey ? pressed : shift);
+            return true;
+        }
+
+        private void OnTemporaryToolKeyUp(KeyUpEvent evt)
+        {
+            if (HandleTemporaryToolKey(evt.keyCode, false, evt.altKey, evt.shiftKey))
+                evt.StopPropagation();
+        }
 
         private void InitializeEdgePan()
         {

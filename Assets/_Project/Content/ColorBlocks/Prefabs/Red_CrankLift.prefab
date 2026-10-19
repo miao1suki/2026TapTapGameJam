@@ -235,7 +235,9 @@ MonoBehaviour:
   useFeatureMaterial: 1
   featureMaterial: {fileID: 0}
   featureRenderers: []
+  pathMode: 0
   route: 1
+  reverseRoute: 0
   travelBlocks: 4
   travelDuration: 2
   holdAtEnds: 0.25
@@ -264,7 +266,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   reverseOnBlock: 0
-  driveMode: 2
+  driveMode: 1
   crankController: {fileID: 0}
   startsActive: 1
   linkedControls: []

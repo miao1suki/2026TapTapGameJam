@@ -960,10 +960,12 @@ namespace PlanningEditorPrototype
             RegisterCallback<PointerCaptureOutEvent>(OnCanvasCaptureOut);
             RegisterCallback<PointerLeaveEvent>(OnPointerLeave);
             RegisterCallback<KeyDownEvent>(OnKeyDown);
+            RegisterCallback<KeyUpEvent>(OnTemporaryToolKeyUp);
+            RegisterCallback<FocusOutEvent>(_ => ResetTemporaryAssemblyTools());
             RegisterCallback<GeometryChangedEvent>(
                 _ => UpdateDetailPreviewImages());
             RegisterCallback<AttachToPanelEvent>(_ => { EditorApplication.projectChanged -= RefreshArtworkPreviews; EditorApplication.projectChanged += RefreshArtworkPreviews; });
-            RegisterCallback<DetachFromPanelEvent>(_ => { EditorApplication.projectChanged -= RefreshArtworkPreviews; CancelPointerInteraction(); });
+            RegisterCallback<DetachFromPanelEvent>(_ => { EditorApplication.projectChanged -= RefreshArtworkPreviews; ResetTemporaryAssemblyTools(); CancelPointerInteraction(); });
             BuildPreviewLayers();
             BuildPlayerOverlay();
             schedule.Execute(RefreshRegionLabels).Every(100);
@@ -1043,7 +1045,7 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            playerOverlay.pickingMode = !editWaterLayer && LevelEditorState.Tool == LevelEditorTool.Player &&
+            playerOverlay.pickingMode = !HasTemporaryAssemblyTool && !editWaterLayer && LevelEditorState.Tool == LevelEditorTool.Player &&
                 !EditorApplication.isPlayingOrWillChangePlaymode
                 ? PickingMode.Position : PickingMode.Ignore;
 
@@ -1207,6 +1209,7 @@ namespace PlanningEditorPrototype
 
         private void OnPlayerPointerDown(PointerDownEvent evt)
         {
+            if (mode == PlanningCanvasMode.Assembly && (evt.altKey || evt.shiftKey)) return;
             if (editWaterLayer || evt.button != 0 || LevelEditorState.Tool != LevelEditorTool.Player ||
                 EditorApplication.isPlayingOrWillChangePlaymode ||
                 !playerOverlay.worldBound.Contains(evt.position))
@@ -1452,6 +1455,7 @@ namespace PlanningEditorPrototype
         public void SetMode(PlanningCanvasMode value)
         {
             EndPointerAction();
+            ResetTemporaryAssemblyTools();
             isPlacingRoom = false;
             mode = value;
             waterPreviewCells.Clear();
@@ -1483,8 +1487,13 @@ namespace PlanningEditorPrototype
             MarkDirtyRepaint();
         }
 
-        private static PlanningDetailTool GetActiveDetailTool()
+        private PlanningDetailTool GetActiveDetailTool()
         {
+            if (mode == PlanningCanvasMode.Assembly)
+            {
+                if (assemblyAltHeld) return PlanningDetailTool.Erase;
+                if (assemblyShiftHeld) return PlanningDetailTool.Box;
+            }
             switch (LevelEditorState.Tool)
             {
                 case LevelEditorTool.Select:
@@ -2520,7 +2529,7 @@ namespace PlanningEditorPrototype
                 2f);
         }
 
-        private bool IsPlacingDoor => mode != PlanningCanvasMode.World &&
+        private bool IsPlacingDoor => !IsTemporaryWhiteBrush && mode != PlanningCanvasMode.World &&
             GetActiveDetailTool() == PlanningDetailTool.Box && PlanningDoorUtility.HasFixedFootprint(detailPropEntryId);
 
         private void DrawDoorPlacementPreview(Painter2D painter, Vector2Int cell)
@@ -2845,6 +2854,7 @@ namespace PlanningEditorPrototype
             if (isDragging || isPanning) CancelPointerInteraction();
             if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
             Focus();
+            UpdateTemporaryAssemblyTools(evt.altKey, evt.shiftKey);
             Vector2 position = evt.localPosition;
             UpdateHover(position);
             if (!string.IsNullOrEmpty(bindingConsumerId))
@@ -2894,7 +2904,7 @@ namespace PlanningEditorPrototype
                 this,
                 evt.pointerId);
             BeginEdgePan(position);
-            if (TryBeginBossMarkerDrag(position))
+            if (!HasTemporaryAssemblyTool && TryBeginBossMarkerDrag(position))
             {
                 MarkDirtyRepaint();
                 evt.StopPropagation();
@@ -2919,6 +2929,7 @@ namespace PlanningEditorPrototype
 
         private void OnPointerMove(PointerMoveEvent evt)
         {
+            UpdateTemporaryAssemblyTools(evt.altKey, evt.shiftKey);
             Vector2 position = evt.localPosition;
             UpdateHover(position);
             if (isPanning && evt.pointerId == panPointerId)
@@ -2975,6 +2986,7 @@ namespace PlanningEditorPrototype
 
         private void OnPointerUp(PointerUpEvent evt)
         {
+            UpdateTemporaryAssemblyTools(evt.altKey, evt.shiftKey);
             if (evt.pointerId != panPointerId &&
                 evt.pointerId != dragPointerId)
             {
@@ -3019,6 +3031,11 @@ namespace PlanningEditorPrototype
 
         private void OnKeyDown(KeyDownEvent evt)
         {
+            if (HandleTemporaryToolKey(evt.keyCode, true, evt.altKey, evt.shiftKey))
+            {
+                evt.StopPropagation();
+                return;
+            }
             if (mode == PlanningCanvasMode.World && evt.keyCode == KeyCode.Delete)
             {
                 DeleteWorldSelection(); evt.StopPropagation(); return;
@@ -3404,6 +3421,18 @@ namespace PlanningEditorPrototype
 
         private void ApplyDetailSelection(PlanningBox box)
         {
+            if (IsTemporaryWhiteBrush)
+            {
+                var white = palette?.Entries.FirstOrDefault(entry =>
+                    entry.EntryId == "b425a019bb3c476da08cd4065bd77862") ??
+                    palette?.Entries.FirstOrDefault(entry => entry.DisplayName == "白方块");
+                box.type = PlanningDetailType.Platform;
+                box.propEntryId = box.propEntryName = string.Empty;
+                box.paletteEntryId = white?.EntryId ?? string.Empty;
+                box.paletteEntryName = white?.DisplayName ?? "白方块";
+                CapturePlacementDefaults(box);
+                return;
+            }
             if (!string.IsNullOrEmpty(detailPropEntryId))
             {
                 box.type = PlanningDetailType.Prop;

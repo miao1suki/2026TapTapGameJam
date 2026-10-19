@@ -12,7 +12,7 @@
 
 LevelEditorPropComponentEditorWindow.Open 的可选 platformWidth / applyPlatformWidth 仅由规划实例入口传入。宽度为窗口草稿，SaveAndClose 先调用回调；返回错误时不保存任何覆盖、不关闭窗口。PlanningCanvas.ResizePlatform 按当前稳定ID查找，验证非播放、正宽度、非合并平台、房间有效格及实体占用后更新width/singleInstance；随后原onSaved写覆盖并触发一次文档事务。宽度保存在PlanningBox而非Transform覆盖，不改源prefab，SceneBuilder沿用整实例生成和尺寸签名。
 
-PlatformParameterUI 是Editor共用核心字段构建器；普通Inspector与规划预览均调用，返回字段集合防止旧遍历重复绘制。平均速度按Path.Span/travelDuration计算，编辑后只写已有travelDuration；曲柄驱动隐藏该入口，曲柄进度速度仍写原字段。其他组默认折叠，不变更Runtime参数格式、运动与绑定逻辑。
+PlatformParameterUI 是Editor共用核心字段构建器；普通Inspector与规划预览均调用，返回字段集合防止旧遍历重复绘制。平均速度按Path.Span/travelDuration计算，编辑后只写已有travelDuration；曲柄驱动保留显示速度与单程时间但禁用编辑，并拦截速度写入回调；切换驱动后恢复可编辑，曲柄进度速度仍写原字段。Red_CrankLift 显式保存 pathMode=Legacy、route=Vertical、reverseRoute=false、driveMode=SignalControlled；不重写实例覆盖或地图。其他组默认折叠，不变更Runtime参数格式、运动与绑定逻辑。
 
 ## 数据与事务
 
@@ -69,3 +69,13 @@ PlatformParameterUI 是Editor共用核心字段构建器；普通Inspector与规
 `PlanningEdgePanAudit.Run` 使用真实附着窗口的定时回调验证静止边缘持续平移、四向跨界、三视图拖拽、绘制/区域框选、世界起点补偿、单次事务以及释放/取消/丢捕获停止；不以直接调用 TickEdgePan 代替持续滚动验证。仅在隔离工程执行。
 
 `PlanningAutoSyncAudit.Run` 依赖隔离工程内完整 MRoom2 第二版；可用 `Library/PlanningAutoSyncPrevious.json`（第一版仅作为过期会话夹具）重现现场，无此本机文件则生成合成旧版本。使用附着的真实窗口和 Editor 更新循环覆盖旧缓存开窗、重复应用/重开、无版本缓存、外部生成实例替换，以及开窗/关窗期间真正删除与撤回；结束时还原夹具 Scene/规划文件，不在主工程执行。
+
+## 三色方块固定位置快捷项
+
+LevelEditorPropComponentEditorWindow 仅对含 ContactCube 与 Rigidbody 的根物体绘制顶部固定位置 Toggle。按位设置/清除 FreezePosition，保留旋转位；复用 m_Constraints 覆盖与现有保存、取消、恢复默认流程，不加Runtime字段、不改源prefab。快捷项与逐轴字段通过TrackSerializedObjectValue刷新，仍允许逐轴微调。
+
+ProjectInspectorUtility.CreateReadOnlyRow 新增可选 owner 参数；捕获Unity组件的刷新委托应传入该组件，销毁后显示“对象已移除”并暂停定时项，不吞掉有效对象的其他异常。重生点/房间Inspector已接入；重生点额外定时显隐和按钮回调也检查目标存活。
+
+## 装配图临时修饰键工具
+
+PlanningCanvas 的 GetActiveDetailTool 按装配图局部修饰键状态覆盖工具：Alt优先Erase，其次Shift为Box；不改LevelEditorState.Tool或detailEntry/Prop选择。Pointer事件校准修饰键，KeyDown/KeyUp支持左右Alt/Shift；工具变化用EndPointerAction取消未提交矩形。白笔刷在ApplyDetailSelection中引用栏目白方块（优先既有稳定ID，其次名称），保留其默认组件覆盖，不应用当前道具的固定尺寸。放置、擦除、房间/通道归属、编辑层和DocumentChanged批量事务沿用现有流程。FocusOut/Detach/SetMode及窗口OnLostFocus清除状态。

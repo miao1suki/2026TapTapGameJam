@@ -1,6 +1,6 @@
 # 系统索引
 
-平台实例参数顶部可设置宽度（格），按有效区域与实体占用检查后保存；普通Inspector与规划窗口共用核心方向/距离/速度界面，其他参数折叠。普通平台速度换算原单程时间，曲柄联动速度由曲柄进度控制。见[关卡编辑器](../Developer/LEVEL_EDITOR.md)及[规划接口](Integration/PLANNING_COLLABORATION_API.md)。
+平台实例参数顶部可设置宽度（格），按有效区域与实体占用检查后保存；普通Inspector与规划窗口共用核心方向/距离/速度界面，其他参数折叠。普通平台速度换算原单程时间，曲柄升降平台默认信号驱动/上下游荡，参数布局相同；联动时速度和单程时间显示但禁用，由曲柄进度控制。见[关卡编辑器](../Developer/LEVEL_EDITOR.md)及[规划接口](Integration/PLANNING_COLLABORATION_API.md)。
 
 方块与道具栏目均按红/蓝/绿/其他有色/无色分组，可折叠并显示数量；卡片宽度约缩至原1/3，完整名称可悬停查看，编辑/删除移至选中项操作条。方块列表按内容收高，道具栏目紧跟其后。沿用稳定栏目ID与参数模式入口。见[关卡编辑器](../Developer/LEVEL_EDITOR.md)与[规划协作接口](Integration/PLANNING_COLLABORATION_API.md)。
 
@@ -169,3 +169,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 各模块随源码的 README 是旧实现参考；与这里冲突时以本项目最新说明为准，不复原被排除的场景与玩法。
 
 每次关卡协作交付必须带Scene、同名planning.json、meta及新增资源依赖；不能只推送Scene。运行时修复不授权全量重建、覆盖或丢弃策划已有布局，正式Gaming遵循FORMAL_LEVEL_DELIVERY的增量整合约定。
+
+三色接触方块道具参数顶部提供固定位置快捷开关，保存为既有Rigidbody约束覆盖，保留旋转位。共享Inspector只读行可绑定owner，在对象销毁后停止刷新；重生点与房间Inspector已接入。见关卡编辑器说明与规划协作API。
+
+装配图支持按住Alt临时擦除、Shift临时绘制白方块（Alt优先），释放恢复原工具与栏目选择；失焦/换视图清理，沿用矩形编辑与历史事务。见LEVEL_EDITOR与PLANNING_COLLABORATION_API。

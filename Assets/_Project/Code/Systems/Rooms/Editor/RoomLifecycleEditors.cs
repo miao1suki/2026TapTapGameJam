@@ -26,9 +26,9 @@ namespace Project.Rooms.Editor
             settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "player", "玩家"));
             settings.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "autoRespawnOnDeath", "死亡后自动重生"));
             root.Add(settings);
-            root.Add(ProjectInspectorUtility.CreateReadOnlyRow("当前区域", () => ((RoomLifecycleManager)target).CurrentRegionId ?? "区域外"));
-            root.Add(ProjectInspectorUtility.CreateReadOnlyRow("区域数量", () => ((RoomLifecycleManager)target).Regions.Count.ToString()));
-            var reset = new Button(() => { var manager = (RoomLifecycleManager)target; manager.ResetRegion(manager.CurrentRegionId); }) { text = "重置当前区域" };
+            root.Add(ProjectInspectorUtility.CreateReadOnlyRow("当前区域", () => ((RoomLifecycleManager)target).CurrentRegionId ?? "区域外", owner: target));
+            root.Add(ProjectInspectorUtility.CreateReadOnlyRow("区域数量", () => ((RoomLifecycleManager)target).Regions.Count.ToString(), owner: target));
+            var reset = new Button(() => { var manager = (RoomLifecycleManager)target; if (manager != null) manager.ResetRegion(manager.CurrentRegionId); }) { text = "重置当前区域" };
             reset.SetEnabled(Application.isPlaying); root.Add(reset);
             root.Add(ProjectInspectorUtility.CreateHelp("区域边界来自关卡编辑器世界图。离开区域或重生会恢复物体的布置状态，保留门、按钮、钥匙及颜色解锁进度。"));
             ProjectInspectorUtility.Bind(root, serializedObject); return root;
@@ -74,7 +74,7 @@ namespace Project.Rooms.Editor
             var root = ProjectInspectorUtility.CreateRoot(serializedObject);
             root.Add(ProjectInspectorUtility.CreateTitle("区域物体"));
             root.Add(ProjectInspectorUtility.CreateProperty(serializedObject, "regionId", "所属区域 ID", "由关卡编辑器自动设置；手动放置时留空可在启动时按位置识别。"));
-            root.Add(ProjectInspectorUtility.CreateReadOnlyRow("重置策略", () => ((RoomResetObject)target).Persistent ? "保留状态" : "恢复布置状态"));
+            root.Add(ProjectInspectorUtility.CreateReadOnlyRow("重置策略", () => ((RoomResetObject)target).Persistent ? "保留状态" : "恢复布置状态", owner: target));
             ProjectInspectorUtility.Bind(root, serializedObject); return root;
         }
     }

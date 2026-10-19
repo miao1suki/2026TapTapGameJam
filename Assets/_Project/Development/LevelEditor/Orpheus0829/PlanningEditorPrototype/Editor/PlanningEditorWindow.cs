@@ -460,6 +460,7 @@ namespace PlanningEditorPrototype
 
         private void OnLostFocus()
         {
+            canvas?.ResetTemporaryAssemblyTools();
             canvas?.CancelPointerInteraction();
         }
 
@@ -1301,6 +1302,7 @@ namespace PlanningEditorPrototype
                 SetMode(PlanningCanvasMode.Detail));
             Button assembly = TopButton("装配图", () =>
                 SetMode(PlanningCanvasMode.Assembly));
+            assembly.tooltip = "按住 Alt 临时擦除，按住 Shift 临时绘制白方块；松开恢复原工具，同时按住时 Alt 优先。";
             modeButtons[PlanningCanvasMode.World] = world;
             modeButtons[PlanningCanvasMode.Detail] = detail;
             modeButtons[PlanningCanvasMode.Assembly] = assembly;
