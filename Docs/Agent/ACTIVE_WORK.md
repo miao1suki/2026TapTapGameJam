@@ -1,5 +1,48 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-19 设置内页 UI 美术替换
+
+- 新增 `Start Menu Panel Background.png`，由设置页背景同风格扩展为 `1024×576` 全屏版。开始菜单的设置与制作名单按钮共用 `StartMenuController` 动态全屏背景层：纯深色底托 + 背景图，从右侧滑入覆盖主菜单，完成后显示设置页；返回时先恢复主菜单，再向右滑出。`panelBackdropSlideDuration` 可调。
+- 开始菜单设置页原底部“返回”按钮重构为右上角 `Setting Close X`，保留同一个 `Button.onClick`。鼠标/触屏直接点击，`InputActionId.Cancel` 或 `Pause`（键盘 ESC、手柄 B/Start）也调用同一 X 回调；按键重绑定期间不关闭页面。打开设置后 EventSystem 焦点自动落到 X。
+- 范围仅设置、按键映射、存档等内页：新增 `Setting Button.png`、`Setting Slider Background.png`、`Setting Slider Fill.png`、`Setting Slider Handle.png`、`Setting Toggle Box.png`、`Setting Close X.png`，统一为现有像素 UI 风格的深色阶梯框、浅色高光和红色关闭按钮。
+- `StartMenuUiFactory.CreateInnerButton` 只供 `SettingsPanelController`、`KeyBindingPanelController`、`SavePanelController` 使用；主菜单四按钮和暂停轮盘按钮/扇区未改。Slider 与 Toggle 仅替换设置内页三段视觉。
+- 预制体里的 `Settings/KeyBinding/Save` 已存在旧控件不会走动态工厂，因此三个控制器在 `Awake/OnEnable/Refresh` 额外调用 `StartMenuUiFactory.ApplyInnerArtwork`，对现有 Button、Slider、Toggle 统一换皮；名为 `Close` 的按钮跳过，继续使用专用关闭 X。
+- 设置/存档/收藏子页右上角关闭按钮改用新 `Setting Close X` Sprite，原文字 X 对象保留但停用；旧按钮、Slider 和关闭资源均未删除。
+- 三个 `PaintLayer` 占位对象保留但停用，`EscMenuController` 已移除 `PlayPaint` 调用、方法及 `paintStrokeSprite/Material` 字段；`GameFlow/SKILL.md` 同步记录当前不重建颜料占位层。
+- `TextSdfMirror` 新增可重复 `ApplyFont`；`StartMenuTypography` 与 `EscMenuController` 遇到已有镜像不再直接跳过，而是把其字体重新绑定为 `Cubic_11 SDF`。两个 UI 预制体审计到的 SDF 字体 GUID 均为 `97e10da648522f547bbec66357199a2a`。
+- 新增 `Settings Page Background.png`，使用粗黑/奶油像素框、简洁蓝青底面、暖白/橙绿点缀和透明阶梯笔触左边；设置、存档、收藏三页统一使用。原 `Panel Background.png` 蓝色网格作为旧资源保留但不再作为默认页面背景。背景使用 Simple 拉伸，避免九宫格把左侧笔触拉直。
+- 三页内容增加左侧安全区：设置与存档响应式布局右移 `64`，收藏标题与两列列表额外右移 `64`，右侧关闭 X 保持原位。
+- 新增 `Save Slot Block.png`：奶油色存档块、深青阶梯框、橙色左侧识别条和青/橙底线。存档页 Viewport 改为透明，每个存档单列独立块排列，块内保留存档名与读取/保存/删除；空存档也使用同款块显示“暂无存档”。
+- 存档页灰色 `Status` 小字提示已停用；新建、删除、读取等业务状态仍写入数据，但不再显示灰色小字。
+- `SettingsPanelController` 与 `KeyBindingPanelController` 会停用设置内页的 `Hint/Status` 小字提示，不删除对象，也不影响存档业务状态提示。
+- 开始菜单设置启用单独展开式布局：Sound/Key Binding/Credits 内页根背景全透明，分类栏和内容区随 `SettingsPage` 宽高计算缩放，内容区按实际剩余宽度自适应，标题与左栏使用屏幕比例安全边距；不再固定缩在 930 宽区域。
+- 验证：StartMenu Runtime 与 GameFlow Runtime 按 Unity 实际 `rsp + rsp2` 参数编译通过；`git diff --check` 通过；未运行 Unity Play Mode，最终视觉与点击手感待实机验收。
+
+## 2026-10-19 成就块美术
+
+- 分支：`存档成就`；新增 `Assets/_Project/Art/Generated/GameUI/Achievement Block.png`，`192×112` 透明像素卡面，使用纯白底、中性灰阶梯边框和浅灰底带；不保留蓝色外框、青色识别条、暖橙底线或四角铆钉。
+- 新增独立 `Assets/_Project/Art/Generated/GameUI/Achievement Unlock Block.png`，`256×128`、Point Filter、无 Mipmap、无压缩，九宫格边距 `24/20/24/20`；使用同一中性白灰风格供左下角成就解锁提示专用。
+- 新增独立 `Assets/_Project/Art/Generated/GameUI/Achievement Unlock Check.png`，`64×64` 透明像素勾，本体为绿色，不使用底图、方框或背景；作为独立 Image 放在解锁块文字左侧，尺寸、间距和 tint 可调。
+- 设置页 `StartMenuUiFactory.CreateToggle` 原来用纯色方块充当勾，现改为复用同一透明绿色像素勾；保留原深色 Toggle 方框，勾使用 Simple、Preserve Aspect 和 `3px` 内边距，关闭时仍由 Toggle 隐藏。
+- Sprite 使用 Point Filter、无 Mipmap、无压缩与 `16px` 九宫格边；通过 `GameUiArtwork.achievementBlock` 自动提供给运行时动态创建的 `AchievementCollectionPresenter`，无需修改场景实例。
+- `AchievementCollectionPresenter` 优先使用可选 `rowSprite`，空引用时读取统一 UI 美术资源；背景 Image 使用 `Sliced` 模式。预制体行高同步为 `216`，标题下移避开九宫格上边框，简介改用更清晰的深灰，完成遮罩与图片逻辑不变。
+- 收藏页完成态已改为纯视觉：灰色整块遮罩与右侧绿色像素勾都不参与射线检测，成就行不再挂 `Toggle` 或任何 `Selectable`；成就数据变化时只刷新遮罩和勾的显示状态。
+- 完成勾默认尺寸提升为 `60×60`、右侧偏移 `20`，两项均可在 Inspector 调整；设置 Toggle 内同款勾内边距收紧到 `1px`。成就完成后条件栏继续显示最终条件文本（如 `1/1`），不再替换为“已完成”。
+- 成就简介字号改为标题字号的 `90%`（由 `descriptionFontScale` 配置，当前 `36×0.9` 取整为 `32`），简介文本区增高到 `40`，条件行下移并保留两行容量。
+- 条件文本区域改为占据卡片下半部完整可用宽度（左右各 `28px`、底部对齐九宫格内框），单行条件使用垂直居中，多行条件仍可向下扩展；条件区又下移至 `-128`，高度 `68`。
+- `AchievementSO.Hidden` 为真且尚未解锁时，收藏页隐藏标题、简介和条件，改为显示居中大字 `?` 与下方大号“待发现成就”；解锁后自动切回真实成就内容并按普通完成态显示灰色遮罩和完成勾。现有隐藏成就为 `1005/1006/1007`。
+- 收藏列表 Viewport 新增全透明 `Image` 射线接收面；成就行仍不可点击，但滚轮事件可命中并冒泡到外层 `ScrollRect`，恢复鼠标滚轮上下滚动。
+- `AchievementUnlockToastPresenter` 实现既有 `IAchievementUnlockReceiver`，挂载到 `WordNote_UI`，在左下角按队列显示绿色勾、`达成成就！` 与成就名；入/停留/出分别 `0.42/3.2/0.3` 秒，左入左出并使用 DOTween `SetUpdate(true)`，字体、块 Sprite、勾 Sprite、材质、尺寸、颜色、字号和动画参数均可调。
+- 验证：`Project.StartMenu.Runtime` 与 `Project.GameFlow.Runtime` 按 Unity 实际 `rsp + rsp2` 参数静态编译通过；新块蓝色像素为 `0`，绿色勾左上角 Alpha 为 `0` 且全部实体像素为绿色；未运行 Unity Play Mode。
+
+## 2026-10-19 玩家死亡原因
+
+- 分支：`存档成就`；范围：`PlayerController`、可选 `PlayerHealth`、岩浆、尖刺、NeutralSpike 与 Boss 接触。
+- 新增 `PlayerDeathCause` 四类：`Fall`、`Lava`、`Spike`、`Boss`。玩家记录 `LastDeathCause`、`LastDeathSource`，并在明确原因时广播 `DeathCauseResolved`；无参 `EnterDeath()` 保留给旧测试和非正式调用，此时原因为空。
+- 正式路径：摔落直接传 `Fall`；岩浆无论有没有 `PlayerHealth` 都传 `Lava`；两种尖刺传 `Spike`；Boss 接触传 `Boss`。若旧角色仍带可选 `PlayerHealth`，其伤害接口会透传原因，不要求新增该组件。
+- 成就接入：新增 `PlayerDied`、`PlayerFallDeath`、`PlayerLavaDeath`、`PlayerSpikeDeath`、`PlayerBossDeath` 信号；`PlayerDeathAchievementRouter` 固定映射数据盒 `1001/1003`（摔死 1/10 次）、`1002/1004`（尖刺 1/10 次）、`1011/1014`（岩浆死 1/10 次）、`1012/1013`（总死亡 50/5 次）。补齐 `1012` 缺失的完成根节点 `0001`。
+- 验证：Runtime 静态编译通过；`git diff --check` 通过；未运行 Unity Play Mode。
+
 ## 2026-10-18 工作台关卡参照、快捷开关与TA区域（验证完成，整合交付）
 
 - 用户授权并行完善N键开关、真实房间定位、可调透明度的关卡参照层，以及可框绘/调参的萤火虫和雨区域；萤火虫默认在玩家/普通道具的摄像机侧，但墙体仍遮挡。复用TA固定像素、数量预算和现有Scene独立根，不把整区缩进单格、不污染玩法planning。

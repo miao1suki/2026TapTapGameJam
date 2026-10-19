@@ -594,7 +594,7 @@ namespace Project.Achievements
 
             AchievementRuntimeState state =
                 GetRuntimeState(achievement, false);
-            if (state == null || state.IsUnlocked)
+            if (state == null)
             {
                 return string.Empty;
             }

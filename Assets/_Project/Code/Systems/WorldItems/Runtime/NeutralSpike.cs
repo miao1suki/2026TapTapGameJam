@@ -153,9 +153,12 @@ namespace Project.WorldItems
         {
             if (!isActiveAndEnabled || other == null) return;
             var player = other.GetComponentInParent<PlayerController>();
-            if (player == null || player.IsDead || player.IsInvulnerable) return;
-            player.EnterDeath();
-            if (player.IsDead && !initiallyBloody && bloodyCells.Add(cell)) artworkRevision++;
+            if (player != null && !player.IsDead && !player.IsInvulnerable)
+            {
+                player.EnterDeath(PlayerDeathCause.Spike, this);
+                if (!initiallyBloody && bloodyCells.Add(cell))
+                    artworkRevision++;
+            }
         }
 
         /// <summary>One batched mesh, with independent UV per lethal cell; no renderer per tooth.</summary>

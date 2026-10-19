@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Project.Achievements;
+using Project.StartMenu;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,20 +10,25 @@ namespace Project.GameFlow
     public sealed class AchievementCollectionPresenter : MonoBehaviour
     {
         [Header("Layout")]
-        [SerializeField, Min(72f)] private float rowHeight = 192f;
+        [SerializeField, Min(72f)] private float rowHeight = 216f;
         [SerializeField, Min(0f)] private float rowSpacing = 10f;
         [SerializeField, Min(0f)] private float columnSpacing = 12f;
         [Tooltip("新增成就优先从左到右填满当前行")]
         [SerializeField] private bool fillRowsFirst = true;
         [SerializeField, Min(0f)] private float horizontalPadding = 36f;
+        [SerializeField, Min(0f)] private float leftSafeInset = 64f;
         [SerializeField, Min(0f)] private float bottomPadding = 32f;
         [SerializeField, Min(0f)] private float topPadding = 88f;
 
         [Header("Visual Assets")]
+        [Tooltip("成就块像素边框；留空时读取 GameUiArtwork")]
+        [SerializeField] private Sprite rowSprite;
         [Tooltip("每个成就块的材质")]
         [SerializeField] private Material rowMaterial;
         [Tooltip("成就达成后贴在块右侧的图片")]
         [SerializeField] private Sprite completedSprite;
+        [SerializeField, Min(16f)] private float completedIconSize = 60f;
+        [SerializeField] private float completedIconRightOffset = 20f;
         [Tooltip("成就达成后覆盖整块的灰色遮罩")]
         [SerializeField] private Color completedOverlayColor =
             new Color(.32f, .34f, .36f, .58f);
@@ -31,14 +37,25 @@ namespace Project.GameFlow
         [SerializeField] private Color rowColor = Color.white;
         [SerializeField] private Color titleColor = Color.black;
         [SerializeField] private Color descriptionColor =
-            new Color(.55f, .58f, .6f, 1f);
+            new Color(.28f, .34f, .38f, 1f);
         [SerializeField] private Color requirementColor = Color.black;
         [SerializeField] private Color completionColor =
             new Color(.65f, 1f, .78f, 1f);
 
         [Header("Typography")]
         [SerializeField, Min(1f)] private int titleFontSize = 36;
-        [SerializeField, Min(1f)] private int descriptionFontSize = 16;
+        [SerializeField, Range(.1f, 1f)]
+        private float descriptionFontScale = .9f;
+
+        [Header("隐藏成就")]
+        [SerializeField] private string hiddenQuestionText = "?";
+        [SerializeField] private string hiddenLabelText = "待发现成就";
+        [SerializeField, Min(1f)] private float hiddenQuestionFontSize = 96f;
+        [SerializeField, Min(1f)] private float hiddenLabelFontSize = 40f;
+        [SerializeField] private Vector2 hiddenQuestionPosition =
+            new Vector2(0f, 12f);
+        [SerializeField] private Vector2 hiddenLabelPosition =
+            new Vector2(0f, -52f);
 
         private sealed class RowView
         {
@@ -46,8 +63,11 @@ namespace Project.GameFlow
             public GameObject Root;
             public GameObject Overlay;
             public GameObject Completion;
-            public Toggle Toggle;
+            public Text Title;
+            public Text Description;
             public Text Requirement;
+            public Text HiddenQuestion;
+            public Text HiddenLabel;
         }
 
         private readonly List<RowView> rows =
@@ -143,6 +163,12 @@ namespace Project.GameFlow
 
         private void EnsureLayout()
         {
+            if (rowSprite == null)
+            {
+                rowSprite =
+                    GameUiArtwork.Load()?.achievementBlock;
+            }
+
             if (scrollRect == null)
             {
                 Transform oldPlaceholder = transform.Find("Placeholder");
@@ -159,7 +185,7 @@ namespace Project.GameFlow
                 scrollTransform.anchorMin = Vector2.zero;
                 scrollTransform.anchorMax = Vector2.one;
                 scrollTransform.offsetMin = new Vector2(
-                    horizontalPadding,
+                    horizontalPadding + leftSafeInset,
                     bottomPadding);
                 scrollTransform.offsetMax = new Vector2(
                     -horizontalPadding,
@@ -181,6 +207,9 @@ namespace Project.GameFlow
                 viewport.offsetMin = Vector2.zero;
                 viewport.offsetMax = Vector2.zero;
                 viewportObject.AddComponent<RectMask2D>();
+                Image viewportRaycast = viewportObject.AddComponent<Image>();
+                viewportRaycast.color = new Color(1f, 1f, 1f, 0f);
+                viewportRaycast.raycastTarget = true;
 
                 GameObject contentObject = CreateRectObject(
                     "Content",
@@ -216,6 +245,16 @@ namespace Project.GameFlow
                 scroll.viewport = viewport;
                 scroll.content = content;
                 scrollRect = scroll;
+
+                RectTransform pageTitle =
+                    transform.Find("Title") as RectTransform;
+                if (pageTitle != null)
+                {
+                    Vector2 titlePosition =
+                        pageTitle.anchoredPosition;
+                    titlePosition.x += leftSafeInset;
+                    pageTitle.anchoredPosition = titlePosition;
+                }
             }
 
             if (emptyLabel == null)
@@ -285,6 +324,12 @@ namespace Project.GameFlow
                 rowObject.GetComponent<RectTransform>();
             Image background = rowObject.AddComponent<Image>();
             background.color = rowColor;
+            background.raycastTarget = false;
+            if (rowSprite != null)
+            {
+                background.sprite = rowSprite;
+                background.type = Image.Type.Sliced;
+            }
             if (rowMaterial != null)
             {
                 background.material = rowMaterial;
@@ -305,14 +350,17 @@ namespace Project.GameFlow
             title.text = achievement.DisplayName;
             SetRect(
                 title.rectTransform,
-                new Vector2(18f, -8f),
-                new Vector2(-76f, 46f),
+                new Vector2(28f, -22f),
+                new Vector2(-80f, 46f),
                 new Vector2(0f, 1f));
 
             Text description = CreateText(
                 "Description",
                 rowObject.transform,
-                descriptionFontSize,
+                Mathf.Max(
+                    1,
+                    Mathf.RoundToInt(
+                        titleFontSize * descriptionFontScale)),
                 TextAnchor.UpperLeft,
                 descriptionColor);
             description.text = string.IsNullOrWhiteSpace(
@@ -321,24 +369,58 @@ namespace Project.GameFlow
                 : achievement.Description;
             SetRect(
                 description.rectTransform,
-                new Vector2(18f, -60f),
-                new Vector2(-76f, 26f),
+                new Vector2(28f, -70f),
+                new Vector2(-80f, 40f),
                 new Vector2(0f, 1f));
 
             Text requirement = CreateText(
                 "Requirement",
                 rowObject.transform,
                 titleFontSize,
-                TextAnchor.UpperLeft,
+                TextAnchor.MiddleLeft,
                 requirementColor);
             requirement.text = BuildRequirement(achievement);
             SetRect(
                 requirement.rectTransform,
-                new Vector2(18f, -92f),
-                new Vector2(-76f, 92f),
+                new Vector2(28f, -128f),
+                new Vector2(-56f, 68f),
                 new Vector2(0f, 1f));
 
-            Toggle toggle = CreateCompletion(
+            bool hiddenBeforeUnlock =
+                achievement.Hidden && !unlocked;
+            Text hiddenQuestion = CreateText(
+                "Hidden Question",
+                rowObject.transform,
+                Mathf.RoundToInt(hiddenQuestionFontSize),
+                TextAnchor.MiddleCenter,
+                titleColor);
+            hiddenQuestion.fontStyle = FontStyle.Bold;
+            hiddenQuestion.text = hiddenQuestionText;
+            SetCenteredRect(
+                hiddenQuestion.rectTransform,
+                hiddenQuestionPosition,
+                new Vector2(120f, 110f));
+
+            Text hiddenLabel = CreateText(
+                "Hidden Label",
+                rowObject.transform,
+                Mathf.RoundToInt(hiddenLabelFontSize),
+                TextAnchor.MiddleCenter,
+                titleColor);
+            hiddenLabel.fontStyle = FontStyle.Bold;
+            hiddenLabel.text = hiddenLabelText;
+            SetCenteredRect(
+                hiddenLabel.rectTransform,
+                hiddenLabelPosition,
+                new Vector2(420f, 52f));
+
+            title.gameObject.SetActive(!hiddenBeforeUnlock);
+            description.gameObject.SetActive(!hiddenBeforeUnlock);
+            requirement.gameObject.SetActive(!hiddenBeforeUnlock);
+            hiddenQuestion.gameObject.SetActive(hiddenBeforeUnlock);
+            hiddenLabel.gameObject.SetActive(hiddenBeforeUnlock);
+
+            CreateCompletion(
                 rowObject.transform,
                 unlocked,
                 out GameObject overlay,
@@ -349,19 +431,28 @@ namespace Project.GameFlow
                 Root = rowObject,
                 Overlay = overlay,
                 Completion = completion,
-                Toggle = toggle,
+                Title = title,
+                Description = description,
                 Requirement = requirement,
+                HiddenQuestion = hiddenQuestion,
+                HiddenLabel = hiddenLabel,
             };
             rowsById[achievement.AchievementId] = rowView;
             return rowView;
         }
 
-        private Toggle CreateCompletion(
+        private void CreateCompletion(
             Transform parent,
             bool unlocked,
             out GameObject overlay,
             out GameObject completion)
         {
+            if (completedSprite == null)
+            {
+                completedSprite =
+                    GameUiArtwork.Load()?.achievementUnlockCheck;
+            }
+
             GameObject overlayObject = CreateRectObject(
                 "Completed Overlay",
                 parent);
@@ -386,21 +477,19 @@ namespace Project.GameFlow
                 new Vector2(1f, .5f);
             completionRect.pivot = new Vector2(1f, .5f);
             completionRect.anchoredPosition =
-                new Vector2(-20f, 0f);
-            completionRect.sizeDelta = new Vector2(48f, 48f);
+                new Vector2(-completedIconRightOffset, 0f);
+            completionRect.sizeDelta = new Vector2(
+                completedIconSize,
+                completedIconSize);
 
             Image completionImage =
                 completionObject.AddComponent<Image>();
             completionImage.sprite = completedSprite;
-            completionImage.color = completionColor;
+            completionImage.color = completedSprite != null
+                ? Color.white
+                : completionColor;
             completionImage.preserveAspect = true;
             completionImage.raycastTarget = false;
-            Toggle toggle =
-                completionObject.AddComponent<Toggle>();
-            toggle.targetGraphic = completionImage;
-            toggle.interactable = false;
-            toggle.transition = Selectable.Transition.None;
-            toggle.isOn = unlocked;
 
             Text fallbackCheck = CreateText(
                 "Fallback Check",
@@ -415,10 +504,8 @@ namespace Project.GameFlow
             fallbackCheck.rectTransform.offsetMax = Vector2.zero;
             fallbackCheck.gameObject.SetActive(
                 unlocked && completedSprite == null);
-            toggle.graphic = fallbackCheck;
             completionObject.SetActive(unlocked);
             completion = completionObject;
-            return toggle;
         }
 
         private string BuildRequirement(AchievementSO achievement)
@@ -432,12 +519,6 @@ namespace Project.GameFlow
                     achievement.AchievementId))
             {
                 return "已锁定";
-            }
-
-            if (achievementManager.IsUnlocked(
-                    achievement.AchievementId))
-            {
-                return "已完成";
             }
 
             string current = achievementManager
@@ -472,9 +553,17 @@ namespace Project.GameFlow
 
                 bool unlocked = achievementManager.IsUnlocked(
                     pair.Key);
+                bool hiddenBeforeUnlock =
+                    row.Achievement.Hidden && !unlocked;
                 row.Overlay.SetActive(unlocked);
                 row.Completion.SetActive(unlocked);
-                row.Toggle.isOn = unlocked;
+                row.Title.gameObject.SetActive(!hiddenBeforeUnlock);
+                row.Description.gameObject.SetActive(!hiddenBeforeUnlock);
+                row.Requirement.gameObject.SetActive(!hiddenBeforeUnlock);
+                row.HiddenQuestion.gameObject.SetActive(
+                    hiddenBeforeUnlock);
+                row.HiddenLabel.gameObject.SetActive(
+                    hiddenBeforeUnlock);
                 row.Requirement.text = BuildRequirement(
                     row.Achievement);
             }
@@ -545,6 +634,18 @@ namespace Project.GameFlow
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(1f, 1f);
             rect.pivot = pivot;
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = sizeDelta;
+        }
+
+        private static void SetCenteredRect(
+            RectTransform rect,
+            Vector2 anchoredPosition,
+            Vector2 sizeDelta)
+        {
+            rect.anchorMin = new Vector2(.5f, .5f);
+            rect.anchorMax = new Vector2(.5f, .5f);
+            rect.pivot = new Vector2(.5f, .5f);
             rect.anchoredPosition = anchoredPosition;
             rect.sizeDelta = sizeDelta;
         }

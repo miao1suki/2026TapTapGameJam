@@ -10,10 +10,16 @@ namespace Project.Player
         [SerializeField, Min(0f)] private float startingHealth = 5f;
         private float currentHealth;
         private PlayerController controller;
+        private PlayerDeathCause? lastDeathCause;
+        private UnityEngine.Object lastDeathSource;
 
         public float MaxHealth => maxHealth;
         public float CurrentHealth => currentHealth;
         public bool IsDead => currentHealth <= 0f;
+        public PlayerDeathCause? LastDeathCause =>
+            lastDeathCause;
+        public UnityEngine.Object LastDeathSource =>
+            lastDeathSource;
         public event Action<float, float> Changed;
         public event Action Died;
         public event Action Revived;
@@ -36,6 +42,22 @@ namespace Project.Player
 
         public void TakeDamage(float amount)
         {
+            ApplyDamage(amount, null, null);
+        }
+
+        public void TakeDamage(
+            float amount,
+            PlayerDeathCause cause,
+            UnityEngine.Object source = null)
+        {
+            ApplyDamage(amount, cause, source);
+        }
+
+        private void ApplyDamage(
+            float amount,
+            PlayerDeathCause? cause,
+            UnityEngine.Object source)
+        {
             if (amount <= 0f ||
                 IsDead ||
                 (controller != null && controller.IsInvulnerable))
@@ -43,6 +65,10 @@ namespace Project.Player
                 return;
             }
 
+            bool lethal =
+                currentHealth - amount <= 0f;
+            lastDeathCause = lethal ? cause : null;
+            lastDeathSource = lethal ? source : null;
             SetHealth(currentHealth - amount);
         }
 

@@ -142,6 +142,11 @@ PlayerJumped
 PlayerLanded
 PlayerActionStarted
 PlayerActionCompleted
+PlayerDied
+PlayerFallDeath
+PlayerLavaDeath
+PlayerSpikeDeath
+PlayerBossDeath
 LadderClimbStarted
 LadderClimbEnded
 
@@ -172,6 +177,16 @@ ProjectionTeleport
 DamageTaken
 EntityDied
 HitTarget
+```
+
+玩家死亡由 `PlayerController` 统一发出 `PlayerDied` 和对应原因信号。
+`PlayerDeathAchievementRouter` 当前固定映射数据盒：
+
+```text
+PlayerFallDeath  -> 1001、1003
+PlayerSpikeDeath -> 1002、1004
+PlayerLavaDeath  -> 1011、1014
+PlayerDied       -> 1012、1013
 ```
 
 `AchievementSignalBridge` 也提供 `Emit`、`EmitWithName`、`EmitWithCount`、

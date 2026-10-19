@@ -90,6 +90,126 @@ namespace Project.StartMenu
             return button;
         }
 
+        public static Button CreateInnerButton(
+            string name,
+            Transform parent,
+            string label,
+            Vector2 size,
+            Action onClick,
+            Color? backgroundColor = null)
+        {
+            Button button = CreateButton(
+                name,
+                parent,
+                label,
+                size,
+                onClick,
+                backgroundColor);
+            Image image = button.targetGraphic as Image;
+            Sprite sprite = GameUiArtwork.Load()?.settingButton;
+            if (image != null && sprite != null)
+            {
+                image.sprite = sprite;
+                image.type = Image.Type.Sliced;
+            }
+
+            return button;
+        }
+
+        public static void ApplyInnerArtwork(Transform root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            GameUiArtwork artwork = GameUiArtwork.Load();
+            if (artwork == null)
+            {
+                return;
+            }
+
+            Button[] buttons =
+                root.GetComponentsInChildren<Button>(true);
+            for (int index = 0; index < buttons.Length; index++)
+            {
+                Button button = buttons[index];
+                if (button == null || button.name == "Close")
+                {
+                    continue;
+                }
+
+                Image image = button.targetGraphic as Image;
+                if (image == null)
+                {
+                    image = button.GetComponent<Image>();
+                }
+
+                if (image != null && artwork.settingButton != null)
+                {
+                    image.sprite = artwork.settingButton;
+                    image.type = Image.Type.Sliced;
+                }
+            }
+
+            Slider[] sliders =
+                root.GetComponentsInChildren<Slider>(true);
+            for (int index = 0; index < sliders.Length; index++)
+            {
+                Slider slider = sliders[index];
+                if (slider == null)
+                {
+                    continue;
+                }
+
+                Transform backgroundTransform =
+                    slider.transform.Find("Background");
+                Image background = backgroundTransform != null
+                    ? backgroundTransform.GetComponent<Image>()
+                    : null;
+                if (background != null &&
+                    artwork.settingSliderBackground != null)
+                {
+                    background.sprite = artwork.settingSliderBackground;
+                    background.type = Image.Type.Sliced;
+                }
+
+                Image fill = slider.fillRect != null
+                    ? slider.fillRect.GetComponent<Image>()
+                    : null;
+                if (fill != null && artwork.settingSliderFill != null)
+                {
+                    fill.sprite = artwork.settingSliderFill;
+                    fill.type = Image.Type.Sliced;
+                }
+
+                Image handle = slider.handleRect != null
+                    ? slider.handleRect.GetComponent<Image>()
+                    : null;
+                if (handle != null && artwork.settingSliderHandle != null)
+                {
+                    handle.sprite = artwork.settingSliderHandle;
+                    handle.preserveAspect = true;
+                }
+            }
+
+            Toggle[] toggles =
+                root.GetComponentsInChildren<Toggle>(true);
+            for (int index = 0; index < toggles.Length; index++)
+            {
+                Toggle toggle = toggles[index];
+                Image background = toggle != null
+                    ? toggle.targetGraphic as Image
+                    : null;
+                if (background != null &&
+                    artwork.settingToggleBox != null)
+                {
+                    background.sprite = artwork.settingToggleBox;
+                    background.type = Image.Type.Sliced;
+                }
+            }
+        }
+
         public static Toggle CreateToggle(
             string name,
             Transform parent,
@@ -109,7 +229,15 @@ namespace Project.StartMenu
                 "Box",
                 root,
                 new Color(.12f, .22f, .31f, 1f));
+            background.raycastTarget = true;
             background.rectTransform.sizeDelta = new Vector2(28f, 28f);
+            Sprite toggleSprite =
+                GameUiArtwork.Load()?.settingToggleBox;
+            if (toggleSprite != null)
+            {
+                background.sprite = toggleSprite;
+                background.type = Image.Type.Sliced;
+            }
             LayoutElement boxElement =
                 background.gameObject.AddComponent<LayoutElement>();
             boxElement.preferredWidth = 28f;
@@ -119,7 +247,20 @@ namespace Project.StartMenu
                 "Checkmark",
                 background.transform,
                 new Color(.31f, .84f, .57f, 1f));
-            Stretch(checkmark.rectTransform, 7f, 7f);
+            Sprite checkmarkSprite =
+                GameUiArtwork.Load()?.achievementUnlockCheck;
+            if (checkmarkSprite != null)
+            {
+                checkmark.sprite = checkmarkSprite;
+                checkmark.color = Color.white;
+                checkmark.preserveAspect = true;
+                checkmark.raycastTarget = false;
+                Stretch(checkmark.rectTransform, 1f, 1f);
+            }
+            else
+            {
+                Stretch(checkmark.rectTransform, 7f, 7f);
+            }
 
             Text text = CreateText(
                 "Label",
@@ -136,6 +277,7 @@ namespace Project.StartMenu
             Toggle toggle = root.gameObject.AddComponent<Toggle>();
             toggle.targetGraphic = background;
             toggle.graphic = checkmark;
+            toggle.interactable = true;
             toggle.isOn = false;
             toggle.onValueChanged.AddListener(value => onChanged?.Invoke(value));
             return toggle;
@@ -157,6 +299,12 @@ namespace Project.StartMenu
                 root,
                 new Color(.11f, .18f, .24f, 1f));
             Stretch(background.rectTransform, 8f, 11f);
+            GameUiArtwork artwork = GameUiArtwork.Load();
+            if (artwork?.settingSliderBackground != null)
+            {
+                background.sprite = artwork.settingSliderBackground;
+                background.type = Image.Type.Sliced;
+            }
 
             RectTransform fillArea = CreateRect("Fill Area", root);
             fillArea.anchorMin = new Vector2(0f, .25f);
@@ -169,6 +317,11 @@ namespace Project.StartMenu
                 fillArea,
                 new Color(.22f, .62f, .88f, 1f));
             Stretch(fill.rectTransform);
+            if (artwork?.settingSliderFill != null)
+            {
+                fill.sprite = artwork.settingSliderFill;
+                fill.type = Image.Type.Sliced;
+            }
 
             Image handle = CreateImage(
                 "Handle",
@@ -177,7 +330,12 @@ namespace Project.StartMenu
             handle.rectTransform.anchorMin = new Vector2(.5f, .5f);
             handle.rectTransform.anchorMax = new Vector2(.5f, .5f);
             handle.rectTransform.pivot = new Vector2(.5f, .5f);
-            handle.rectTransform.sizeDelta = new Vector2(18f, 26f);
+            handle.rectTransform.sizeDelta = new Vector2(20f, 28f);
+            if (artwork?.settingSliderHandle != null)
+            {
+                handle.sprite = artwork.settingSliderHandle;
+                handle.preserveAspect = true;
+            }
 
             Slider slider = root.gameObject.AddComponent<Slider>();
             slider.fillRect = fill.rectTransform;

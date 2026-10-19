@@ -15,6 +15,8 @@ namespace Project.StartMenu
         [SerializeField] private Button backButton;
         [SerializeField] private Button createSlotButton;
         [SerializeField] private bool allowSaving;
+        [SerializeField] private Sprite saveSlotSprite;
+        [SerializeField] private Material saveSlotMaterial;
         private bool buttonsBound;
 
         public event Action BackRequested;
@@ -122,7 +124,7 @@ namespace Project.StartMenu
             ScrollRect scroll = StartMenuUiFactory.CreateVerticalScroll(
                 "Save Slots",
                 transform,
-                new Color(.025f, .04f, .055f, .72f),
+                Color.clear,
                 out RectTransform content);
             RectTransform scrollRect = scroll.GetComponent<RectTransform>();
             StartMenuUiFactory.SetTopLeft(
@@ -131,7 +133,7 @@ namespace Project.StartMenu
                 new Vector2(830f, 360f));
             slotList = content;
 
-            createSlotButton = StartMenuUiFactory.CreateButton(
+            createSlotButton = StartMenuUiFactory.CreateInnerButton(
                 "Create Empty Save",
                 transform,
                 "新建空存档",
@@ -143,7 +145,7 @@ namespace Project.StartMenu
                 new Vector2(48f, -526f),
                 new Vector2(180f, 42f));
 
-            backButton = StartMenuUiFactory.CreateButton(
+            backButton = StartMenuUiFactory.CreateInnerButton(
                 "Back",
                 transform,
                 "返回",
@@ -167,15 +169,7 @@ namespace Project.StartMenu
             IReadOnlyList<SaveSlotInfo> slots = SaveGameService.GetSlots();
             if (slots.Count == 0)
             {
-                Text empty = StartMenuUiFactory.CreateText(
-                    "Empty",
-                    slotList,
-                    "暂无存档。",
-                    18,
-                    TextAnchor.MiddleCenter,
-                    new Color(.72f, .82f, .9f, .8f));
-                LayoutElement element = empty.gameObject.AddComponent<LayoutElement>();
-                element.preferredHeight = 80f;
+                CreateEmptySlotBlock();
                 return;
             }
 
@@ -193,6 +187,9 @@ namespace Project.StartMenu
             }
 
             BindButtons();
+            HideSmallHints();
+            ApplySaveListPresentation();
+            StartMenuUiFactory.ApplyInnerArtwork(transform);
         }
 
         private void OnEnable()
@@ -200,6 +197,9 @@ namespace Project.StartMenu
             if (Application.isPlaying)
             {
                 Refresh();
+                HideSmallHints();
+                ApplySaveListPresentation();
+                StartMenuUiFactory.ApplyInnerArtwork(transform);
             }
         }
 
@@ -227,27 +227,42 @@ namespace Project.StartMenu
             Image row = StartMenuUiFactory.CreateImage(
                 "Save Slot",
                 slotList,
-                new Color(.1f, .16f, .21f, .92f));
+                Color.white);
+            row.raycastTarget = false;
+            if (saveSlotSprite == null)
+            {
+                saveSlotSprite =
+                    GameUiArtwork.Load()?.saveSlotBlock;
+            }
+            if (saveSlotSprite != null)
+            {
+                row.sprite = saveSlotSprite;
+                row.type = Image.Type.Sliced;
+            }
+            if (saveSlotMaterial != null)
+            {
+                row.material = saveSlotMaterial;
+            }
             VerticalLayoutGroup layout =
                 row.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(12, 12, 7, 7);
-            layout.spacing = 3f;
+            layout.padding = new RectOffset(26, 20, 12, 10);
+            layout.spacing = 8f;
             layout.childControlHeight = true;
             layout.childControlWidth = true;
             layout.childForceExpandHeight = false;
             layout.childForceExpandWidth = true;
             LayoutElement rowElement =
                 row.gameObject.AddComponent<LayoutElement>();
-            rowElement.preferredHeight = 92f;
+            rowElement.preferredHeight = 112f;
 
             Text name = StartMenuUiFactory.CreateText(
                 "Name",
                 row.transform,
                 slot.displayName,
-                18,
+                26,
                 TextAnchor.MiddleLeft,
-                new Color(.92f, .98f, 1f, 1f));
-            name.gameObject.AddComponent<LayoutElement>().preferredHeight = 24f;
+                new Color(.06f, .09f, .1f, 1f));
+            name.gameObject.AddComponent<LayoutElement>().preferredHeight = 30f;
 
             RectTransform actions = StartMenuUiFactory.CreateRect(
                 "Actions",
@@ -260,9 +275,9 @@ namespace Project.StartMenu
             actionLayout.childForceExpandWidth = false;
             actionLayout.childForceExpandHeight = false;
             actions.gameObject.AddComponent<LayoutElement>()
-                .preferredHeight = 30f;
+                .preferredHeight = 32f;
 
-            Button load = StartMenuUiFactory.CreateButton(
+            Button load = StartMenuUiFactory.CreateInnerButton(
                 "Load",
                 actions,
                 "读取",
@@ -276,7 +291,7 @@ namespace Project.StartMenu
 
             if (allowSaving)
             {
-                Button save = StartMenuUiFactory.CreateButton(
+                Button save = StartMenuUiFactory.CreateInnerButton(
                     "Save",
                     actions,
                     "保存",
@@ -289,7 +304,7 @@ namespace Project.StartMenu
                 saveElement.preferredHeight = 28f;
             }
 
-            Button delete = StartMenuUiFactory.CreateButton(
+            Button delete = StartMenuUiFactory.CreateInnerButton(
                 "Delete",
                 actions,
                 "删除",
@@ -305,6 +320,79 @@ namespace Project.StartMenu
                 delete.gameObject.AddComponent<LayoutElement>();
             deleteElement.preferredWidth = 80f;
             deleteElement.preferredHeight = 28f;
+        }
+
+        private void CreateEmptySlotBlock()
+        {
+            Image row = StartMenuUiFactory.CreateImage(
+                "Empty Save Slot",
+                slotList,
+                Color.white);
+            row.raycastTarget = false;
+            if (saveSlotSprite == null)
+            {
+                saveSlotSprite =
+                    GameUiArtwork.Load()?.saveSlotBlock;
+            }
+            if (saveSlotSprite != null)
+            {
+                row.sprite = saveSlotSprite;
+                row.type = Image.Type.Sliced;
+            }
+            if (saveSlotMaterial != null)
+            {
+                row.material = saveSlotMaterial;
+            }
+
+            LayoutElement element =
+                row.gameObject.AddComponent<LayoutElement>();
+            element.preferredHeight = 112f;
+            Text empty = StartMenuUiFactory.CreateText(
+                "Empty",
+                row.transform,
+                "暂无存档",
+                26,
+                TextAnchor.MiddleCenter,
+                new Color(.06f, .09f, .1f, 1f));
+            StartMenuUiFactory.Stretch(
+                empty.rectTransform,
+                24f,
+                12f);
+        }
+
+        private void ApplySaveListPresentation()
+        {
+            if (slotList == null)
+            {
+                return;
+            }
+
+            Transform viewport = slotList.parent;
+            Image viewportImage = viewport != null
+                ? viewport.GetComponent<Image>()
+                : null;
+            if (viewportImage != null)
+            {
+                viewportImage.color = Color.clear;
+                viewportImage.raycastTarget = true;
+            }
+
+            VerticalLayoutGroup layout =
+                slotList.GetComponent<VerticalLayoutGroup>();
+            if (layout != null)
+            {
+                layout.padding = new RectOffset(0, 0, 0, 0);
+                layout.spacing = 12f;
+                layout.childAlignment = TextAnchor.UpperLeft;
+            }
+        }
+
+        private void HideSmallHints()
+        {
+            if (statusText != null)
+            {
+                statusText.gameObject.SetActive(false);
+            }
         }
 
         private void RequestLoad(SaveSlotInfo slot)
