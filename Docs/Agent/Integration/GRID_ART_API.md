@@ -1,11 +1,13 @@
 # GridArt 接入与维护
 
+补充美术内外角：`GridArtAuthorBorderLibrary`按明确选区导入256×190原生图，原白线自动槽改13个真实切片，追加20个手动边角/纹饰、3色草地（colorId=red/blue/green）与第二版2个中心纹样。共享库203项；旧笔刷索引和Sprite对象保留，不能把新图套tail4倍倍率。导入可幂等同步，参见[白线来源与规则](../../Developer/GRID_ART_WHITE_BORDER.md)。
+
 独立关卡美术，不替代PlanningDocument、SurfaceTiles或玩法碰撞。操作见[开发者说明](../../Developer/GRID_ART.md)。遵守taptap-editor-ui、EDITOR_UI_STANDARD。
 
 ## 数据所有权
 
 - GridArtMap每关独立，世界XY原点0，格中心`(cell+.5)*cellSize`，负坐标Floor，与房间／装配图一致。ownerSceneGuid首次应用设置；跨Scene只读，需独立副本。
-- GridArtLayer稳定Guid，存显隐、锁定、depth、parallax、tint、sortingOrder、lighting3D；followLevel/sourceGroup/sourceBrush定义自动底图，cells为生成占格缓存。空sourceGroup表示整关，其他为稳定房间/通道ID。自动层不接受指针绘制，关闭联动后可手绘；装饰放独立层。sortingOrder=int.MinValue兼容旧值layerIndex-100；显式值不随插层变化。
+- GridArtLayer稳定Guid，存显隐、锁定、depth、parallax、tint、sortingOrder、lighting3D；新增lockParallaxX/Y（默认false）与maxParallaxOffset（每轴格数，0不限），预览/运行统一GridArtScene.LayerOffset。Scene绑定OnEnable/SetBindings时按id解析Map设置，不需重烘网格；旧缺字段保持原行为。见[视差说明](../../Developer/GRID_ART_PARALLAX.md)。followLevel/sourceGroup/sourceBrush定义自动底图，cells为生成占格缓存。空sourceGroup表示整关，其他为稳定房间/通道ID。自动层不接受指针绘制，关闭联动后可手绘；装饰放独立层。sortingOrder=int.MinValue兼容旧值layerIndex-100；显式值不随插层变化。
 - 默认库GridArtLibraryService.SharedPath：`Assets/_Project/Content/Art/SceneArtLibrary.asset`。地图仍存整数笔刷编号，禁止重排／删除既有槽位。sourceKey采用资产GUID/localId、切片库GUID＋稳定tile.Id或来源库GUID＋槽位，不用InstanceID。切片生成器会重建Sprite子资产，同步必须按tile.Id修复原槽位的Sprite引用，不得仅靠Sprite localId去重；已配置显示尺寸和规则不自动覆盖。
 - brush.size为排布／擦除占格，visualSize>0为实际显示格数，否则兼容旧Size；contentRect为Sprite有效内容裁区；normalMap为同尺寸图集。新导入按GridArtworkMetrics（16有效源像素/格）计算visualSize，sourcePixelScale仅用于确证的整数导出。tail1408×704已逐RGBA块确证4倍，旧库64px单块仍为1格；不是4格。详见[换算标准](../../Developer/SCENE_ART_PIXEL_CONVERSION.md)。
 - GridArtScene输出不增加Collider、BlockRuntime、颜色接口、重置脚本或相机控制权。玩法合并不删美术。输出根需世界原点、无旋转、缩放1且独立于共享Prefab。“美术层_”子树只放生成内容。
@@ -31,6 +33,8 @@ GridArtWindow.Automation负责0.65秒延后自动保存/预览，两个开关默
 `GridArtBrushGrid`按ScrollView视口实际宽度确定列数，只在GeometryChanged或筛选重建时布局；默认250点侧栏两列，横向滚条关闭。卡宽扣除边距与高DPI取整余量，选中描边不改列数；禁止回退为逐帧重建或按屏幕像素代替UI点计算。
 
 画布`RepaintView()`只变更预览父节点的translate/scale、256图块批次可见性与顶层参考线，不失效瓦片几何；`Invalidate()`用于数据/素材/视差变化。`GridArtPreviewBatch`按原排序中连续同纹理片段分批，不按纹理全局重排，保持透明叠图顺序。预览坐标以32显示单位/格缓存，显示变换为zoom/32；不参与地图存储或运行时Mesh。不要在generateVisualContent中修改UI树。
+
+工作台合成分为背景（`depth > 0`）、只读关卡参考、表面/前景（`depth <= 0`）、工具覆盖四段；远景与近景不能因同纹理合批跨过关卡参考。每段内按绘制顺序、再由远到近排序。`background-artwork-cache`和`artwork-cache`同步同一pan/zoom并复用批次，不能把所有美术重新塞到参考物上方；这不会修改地图的深度、占格或存档。关卡参考的显隐/透明度设置仍独立生效。
 
 两套关卡画布共用`GridViewportDrawing`：显示线间隔至少16点、总数预算320，2的幂次整格LOD与世界原点对齐，直接提交线条四边形，避免密集Painter2D交叉路径细分。它只接收显示坐标，不负责鼠标命中、吸附或坐标迁移。房间所有权使用`PlanningOwnerPreview`缓存精确矩形覆盖和孔洞/外轮廓，文档修改必须走`InvalidatePreviewData`；不能以缓存几何替换实际存档cells。组装预览按每个房间一次求原点，不在每个box上扫描整房间。
 

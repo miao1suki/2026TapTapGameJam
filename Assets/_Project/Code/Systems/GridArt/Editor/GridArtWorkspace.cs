@@ -21,7 +21,7 @@ namespace Project.GridArt.Editor
         internal bool PaintSceneCell(Vector2Int p, bool remove) => remove ? Layer.Erase(p, map.palette) : Layer.Set(p, brushIndex,BrushQuarterTurns);
         internal void CommitSceneStroke() { ArtChanged(); }
         internal void StopScenePainting() { scenePainting = false; GridArtScenePainter.SetTarget(null); rootVisualElement.Q<Toggle>("scene-paint")?.SetValueWithoutNotify(false); }
-        private void EndPreview() { previewTravel = Vector2.zero; rootVisualElement.Q<Slider>("parallax-preview")?.SetValueWithoutNotify(0); canvas?.Invalidate(); }
+        private void EndPreview() { previewTravel = Vector2.zero; rootVisualElement.Q<Slider>("parallax-preview")?.SetValueWithoutNotify(0); rootVisualElement.Q<Slider>("parallax-preview-y")?.SetValueWithoutNotify(0); canvas?.Invalidate(); }
         private const string StylePath = "Assets/_Project/Code/Systems/GridArt/Editor/GridArtWorkspace.uss";
 
         private void BuildWorkspace()
@@ -71,10 +71,12 @@ namespace Project.GridArt.Editor
             navigationPanel = new VisualElement { name = "art-navigation" }; center.Add(navigationPanel);
             canvas = new ArtCanvas(this); canvas.style.flexGrow = 1; center.Add(canvas);
             var previewRow = Row();
-            var preview = new Slider("视差预览", -16, 16) { value = 0, showInputField = true, name = "parallax-preview" }; preview.style.flexGrow = 1;
+            var preview = new Slider("左右预览", -16, 16) { value = 0, showInputField = true, name = "parallax-preview" }; preview.style.flexGrow = 1;
             preview.tooltip = "模拟镜头水平移动，不修改场景相机或美术数据。";
-            preview.RegisterValueChangedCallback(e => { previewTravel = new Vector2(e.newValue, 0); canvas.Invalidate(); });
-            previewRow.Add(preview); previewRow.Add(ActionButton("复位", EndPreview)); center.Add(previewRow);
+            preview.RegisterValueChangedCallback(e => { previewTravel.x = e.newValue; canvas.Invalidate(); });
+            var previewY = new Slider("上下预览", -16, 16) { value = 0, showInputField = true, name = "parallax-preview-y" }; previewY.style.flexGrow = 1;
+            previewY.RegisterValueChangedCallback(e => { previewTravel.y = e.newValue; canvas.Invalidate(); });
+            previewRow.Add(preview); previewRow.Add(previewY); previewRow.Add(ActionButton("复位", EndPreview)); center.Add(previewRow);
             center.Add(new Label("左键绘制 · 右键擦除 · 中键平移 · 滚轮缩放 · N 开关工作台") { name = "art-canvas-hint" }); content.Add(center);
             inspectorPanel = new ScrollView { name="art-inspector-panel" }; inspectorPanel.AddToClassList("art-inspector"); content.Add(inspectorPanel);
             sidebar = inspectorPanel; root.Add(content);
@@ -247,9 +249,31 @@ namespace Project.GridArt.Editor
             var name = new TextField("名称") { value = Layer.label, isDelayed = true }; name.RegisterValueChangedCallback(e => Change("图层名称", () => Layer.label = e.newValue)); config.Add(name);
             var locked = new Toggle("锁定") { value = Layer.locked }; locked.RegisterValueChangedCallback(e => Change("锁定图层", () => Layer.locked = e.newValue)); config.Add(locked);
             config.Add(GridArtColorField.Build(Layer.colorId, true, value => Change("图层颜色归属", () => Layer.colorId = value)));
-            var factor = new Slider("视差速度", 0, 1.5f) { value = Layer.parallax.x, showInputField = true };
+            var factor = new Slider("左右视差速度", 0, 1.5f) { value = Layer.parallax.x, showInputField = true };
             factor.tooltip = "1为普通世界物体；越小越远；超过1为前景。";
-            factor.RegisterValueChangedCallback(e => Change("视差速度", () => Layer.parallax = Vector2.one * e.newValue, false)); config.Add(factor);
+            factor.RegisterValueChangedCallback(e => Change("左右视差速度", () => Layer.parallax = new Vector2(e.newValue, Layer.parallax.y), false)); config.Add(factor);
+            var vertical = new Slider("上下视差速度", 0, 1.5f) { value = Layer.parallax.y, showInputField = true };
+            vertical.RegisterValueChangedCallback(e => Change("上下视差速度", () => Layer.parallax = new Vector2(Layer.parallax.x, e.newValue), false)); config.Add(vertical);
+            var lockX = new Toggle("锁定左右位移") { value = Layer.lockParallaxX };
+            var lockY = new Toggle("锁定上下位移") { value = Layer.lockParallaxY };
+            factor.SetEnabled(!Layer.lockParallaxX); vertical.SetEnabled(!Layer.lockParallaxY);
+            lockX.RegisterValueChangedCallback(e => { Change("锁定左右视差", () => Layer.lockParallaxX = e.newValue, false); factor.SetEnabled(!e.newValue); });
+            lockY.RegisterValueChangedCallback(e => { Change("锁定上下视差", () => Layer.lockParallaxY = e.newValue, false); vertical.SetEnabled(!e.newValue); });
+            config.Add(lockX); config.Add(lockY);
+            var limits = new VisualElement { name = "art-parallax-limits", tooltip = "相对初始位置的最大位移，单位为格；0为不限。锁定轴不产生视差偏移。" };
+            var limitsTitle = new Label("最大偏移（格；0 为不限）");
+            limitsTitle.style.whiteSpace = WhiteSpace.Normal; limits.Add(limitsTitle);
+            var maximumX = new FloatField("左右") { name = "art-parallax-limit-x", value = Layer.maxParallaxOffset.x, isDelayed = true };
+            var maximumY = new FloatField("上下") { name = "art-parallax-limit-y", value = Layer.maxParallaxOffset.y, isDelayed = true };
+            foreach (var field in new[] { maximumX, maximumY })
+            {
+                field.style.minWidth = 0; field.labelElement.style.minWidth = 40; field.labelElement.style.width = 40;
+                field.labelElement.style.flexShrink = 0;
+                limits.Add(field);
+            }
+            maximumX.RegisterValueChangedCallback(e => { float value = Mathf.Max(0,e.newValue); maximumX.SetValueWithoutNotify(value); Change("左右视差偏移上限", () => Layer.maxParallaxOffset = new Vector2(value,Layer.maxParallaxOffset.y), false); });
+            maximumY.RegisterValueChangedCallback(e => { float value = Mathf.Max(0,e.newValue); maximumY.SetValueWithoutNotify(value); Change("上下视差偏移上限", () => Layer.maxParallaxOffset = new Vector2(Layer.maxParallaxOffset.x,value), false); });
+            config.Add(limits);
             var actions = Row(); actions.Add(ActionButton("后移", () => MoveLayer(-1))); actions.Add(ActionButton("前移", () => MoveLayer(1)));
             actions.Add(ActionButton("删除", () => { if (EditorUtility.DisplayDialog("删除图层", "删除“" + Layer.label + "”及其美术内容？", "删除", "取消")) Change("删除图层", () => map.layers.RemoveAt(layerIndex)); })); config.Add(actions);
             inspectorPanel.Add(config);

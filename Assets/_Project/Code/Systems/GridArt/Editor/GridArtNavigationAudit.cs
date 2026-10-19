@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using UnityEditor.ShortcutManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -136,11 +135,12 @@ namespace Project.GridArt.Editor
                     window.Focus();canvas.Focus();
                     Check(GridArtWorkspaceShortcut.CanToggle(window), "N remains available with canvas focus");
                     typeof(GridArtWorkspaceShortcut).GetMethod("Toggle",BindingFlags.Static|BindingFlags.NonPublic)
-                        .Invoke(null,new object[]{default(ShortcutArguments)});
+                        .Invoke(null,null);
                     Check(window == null, "N shortcut closes existing workbench without creating a second instance");
-                    SceneView.GetWindow<SceneView>().Focus();
-                    typeof(GridArtWorkspaceShortcut).GetMethod("Toggle",BindingFlags.Static|BindingFlags.NonPublic)
-                        .Invoke(null,new object[]{default(ShortcutArguments)});
+                    var browser = EditorWindow.GetWindow(typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser"));
+                    browser.Focus();
+                    Check(GridArtWorkspaceShortcut.CanToggle(browser), "N can reopen from Project without clicking Scene first");
+                    Check(EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡美术/切换窗口"), "global menu hotkey entry executes like planning M");
                     window=Resources.FindObjectsOfTypeAll<GridArtWindow>().Single();phase=5;return;
                 }
                 if(phase == 5)

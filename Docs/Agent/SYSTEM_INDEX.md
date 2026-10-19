@@ -1,5 +1,17 @@
 # 系统索引
 
+当前关卡标准：ILorR1012最终R1 ff785ab／R2 308c65f／R3 48cb1e4已接收；以实际Scene为准，旧planning尚未精确回采，不能直接应用覆盖或宣称最终布局可从旧片段导入。Gaming设计沿用xianyu66web已推送MVMap17（原1406项全字段一致，main额外保留Start）；美术标准Irotin-dyx ad1a4dd已备份到远端codex/backup/irotin-gaming-art-20261019，此轮不再合其Gaming。后续美术替换与设计增量须保留已处理区域，详见[本轮整合](../Developer/AUTHOR_SCENE_BASELINES_2026-10-19.md)。旧默认单向平台补正式图去色版，原三色与逻辑占格不变。
+
+美术工作台N使用与规划M相同的全局菜单快捷键，从Project/Inspector等窗口可开关，文字输入和未完成笔画不抢键；图层最大偏移拆成左右/上下独立行，窄侧栏可见且支持Undo。见[导航](../Developer/GRID_ART_NAVIGATION.md)、[视差参数](../Developer/GRID_ART_PARALLAX.md)。
+
+GridArt移动贯穿细线已定位为图集切片边界采到透明邻像素：生成网格UV1保存各四边形采样边界，主图/颜色mask同步夹取样，不缩UV0、不改几何或美术比例；53份现有生成网格已补齐。GPU负对照480帧32292漏色像素，修复0；84项测试通过。见[工作台换算与接缝回归](../Developer/SCENE_ART_PIXEL_CONVERSION.md)。
+
+TA Gaming美术ad1a4dd已整合：保留4层2424格与天气区域，远/近景先仅水平视差并限制4/2格。美术工作台支持独立X/Y速度、锁轴、每轴最大偏移（格，0不限）和双轴预览；Scene按Map图层id读取新设置，旧地图默认不锁不限，保持16有效像素/格。见[分轴视差](../Developer/GRID_ART_PARALLAX.md)。R1/R2仍待规划同步。
+
+美术补充内外角及第二版按原生1倍接入：共享库203项，原白线自动槽直接使用13个美术片，追加12白线边角、8纹饰片、3色草地与新版2个中心纹样，旧索引不变。草地接既有颜色归属/HSV，不拉伸透明框。新图不套tail4倍规则，见[白线说明](../Developer/GRID_ART_WHITE_BORDER.md)。R1/R2最终Scene待作者规划回采同步后再合入，当前明确排除。
+
+美术工作台按实际Z分为背景缓存→关卡参考→表面/前景缓存→工具覆盖，远景不再遮住墙地与道具参考；平移缩放复用两侧批次，不改作者深度或关卡。白线自动边框保留原笔刷槽位，改用13张原像素贴边规则，含内外角与孔洞；普通原图装饰片不改，见[白线说明](../Developer/GRID_ART_WHITE_BORDER.md)。光照方案仅分析，未修改渲染配置，见[光照与可见性评估](../Developer/LIGHTING_VISIBILITY_ASSESSMENT.md)。
+
 重力蓝绿接触生长按四向主轴起长，落体浅穿地面不提前冻结；普通平台顶面的方块/基座与堆叠可自动随行，保留显式附着、作者重力/锁轴及搬运优先权，见[接触方块API](Integration/CONTACT_CUBES_API.md)与[机关API](Integration/MECHANISM_SIGNAL_API.md)。规划门的运行/预览边界统一避免双倍尺寸导致贴图下移；举一格物品可进入两格高通道，不缩小像素或碰撞，见[门](../Developer/DOORS.md)和[搬运](../Developer/PLAYER_CARRY.md)。
 
 2026-10-19集中整合：正式Gaming采用MVMap17（20房间，1406原物体＋1隐形Start），保留main现行修复；独立R3及可选PlatformMount已接入，R1不再次镜像；TA旧支线保留main网格/HSV/区域效果实现并补独立预览。旧交互图提案与旧Grow配置不恢复，详见[整合说明](../Developer/BRANCH_INTEGRATION_2026-10-19.md)。

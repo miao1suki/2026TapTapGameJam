@@ -46,7 +46,9 @@ namespace Project.GridArt.Editor
         public GridArtBrush Brush => map != null && map.palette != null ? map.palette.Get(brushIndex) : null;
         internal bool CanEditMap => map != null && (string.IsNullOrEmpty(map.ownerSceneGuid) || map.ownerSceneGuid == AssetDatabase.AssetPathToGUID(SceneManager.GetActiveScene().path));
         private int LayerOrder(int index) => map.layers[index].sortingOrder == int.MinValue ? index - 100 : map.layers[index].sortingOrder;
-        private IEnumerable<int> OrderedLayers => Enumerable.Range(0,map.layers.Count).OrderBy(LayerOrder);
+        private IEnumerable<int> OrderedLayers => Enumerable.Range(0,map.layers.Count)
+            .OrderBy(index => map.layers[index].depth > 0f ? 0 : 1)
+            .ThenBy(LayerOrder).ThenByDescending(index => map.layers[index].depth);
 
         [MenuItem("Tools/2026TapTap/关卡美术/网格美术编辑器")]
         public static void Open() => GetWindow<GridArtWindow>("网格美术");
@@ -236,19 +238,19 @@ namespace Project.GridArt.Editor
             }
             private List<(GridArtQuad, Color)> quads;
             private readonly Dictionary<GridArtLayer, List<GridArtQuad>> layerQuads = new Dictionary<GridArtLayer, List<GridArtQuad>>();
-            private readonly VisualElement artwork, overlay;
+            private readonly VisualElement backgroundArtwork, artwork, overlay;
+            private int backgroundQuadCount;
             private readonly GridArtLevelReference reference;
             private readonly List<GridArtPreviewBatch> batches = new List<GridArtPreviewBatch>();
             private Vector2Int lastHover;
             public ArtCanvas(GridArtWindow window)
             {
                 owner = window; focusable = true; style.overflow = Overflow.Hidden; style.backgroundColor = new Color(.09f,.11f,.14f);
+                backgroundArtwork = CreateArtworkContainer("background-artwork-cache");
+                Add(backgroundArtwork);
                 reference = new GridArtLevelReference { name = "art-level-reference", pickingMode = PickingMode.Ignore };
                 reference.StretchToParentSize(); Add(reference);
-                artwork = new VisualElement { name = "artwork-cache", pickingMode = PickingMode.Ignore, usageHints = UsageHints.DynamicTransform };
-                artwork.style.position = Position.Absolute;
-                artwork.style.width = artwork.style.height = 0;
-                artwork.style.transformOrigin = new TransformOrigin(0, 0);
+                artwork = CreateArtworkContainer("artwork-cache");
                 Add(artwork);
                 overlay = new VisualElement { name = "art-overlay", pickingMode = PickingMode.Ignore };
                 overlay.StretchToParentSize(); overlay.generateVisualContent += Draw; Add(overlay);
@@ -281,6 +283,14 @@ namespace Project.GridArt.Editor
                     if ((e.ctrlKey || e.commandKey) && e.keyCode == KeyCode.Z) { if (e.shiftKey) Undo.PerformRedo(); else Undo.PerformUndo(); e.StopPropagation(); }
                 });
                 RegisterCallback<AttachToPanelEvent>(e => RestoreView());
+            }
+            private static VisualElement CreateArtworkContainer(string name)
+            {
+                var container = new VisualElement { name = name, pickingMode = PickingMode.Ignore, usageHints = UsageHints.DynamicTransform };
+                container.style.position = Position.Absolute;
+                container.style.width = container.style.height = 0;
+                container.style.transformOrigin = new TransformOrigin(0, 0);
+                return container;
             }
             private string Key => owner.SceneKey + ".View." + (owner.map != null ? AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(owner.map)) : "reference-only");
             public void RememberView()
@@ -420,6 +430,7 @@ namespace Project.GridArt.Editor
                 if (quads == null)
                 {
                     quads = new List<(GridArtQuad, Color)>();
+                    backgroundQuadCount = 0;
                     if (owner.map != null && owner.map.palette != null)
                         foreach (int index in owner.OrderedLayers)
                         {
@@ -427,21 +438,27 @@ namespace Project.GridArt.Editor
                             if (!layerQuads.TryGetValue(layer,out var cached)) layerQuads[layer]=cached=GridArtBuilder.BuildQuads(layer,owner.map.palette);
                             if (layer.visible) foreach (var q in cached)
                             {
-                                Vector2 offset = Vector2.Scale(owner.previewTravel, Vector2.one - layer.parallax);
+                                Vector2 offset = GridArtScene.LayerOffset(owner.previewTravel, layer, 1f, Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell);
                                 quads.Add((new GridArtQuad(new Rect(q.bounds.position + offset, q.bounds.size), q.uv, q.texture, q.normal, q.colorId, q.quarterTurns), layer.tint));
+                                if (layer.depth > 0f) backgroundQuadCount++;
                             }
                         }
-                    artwork.Clear(); batches.Clear();
+                    backgroundArtwork.Clear(); artwork.Clear(); batches.Clear();
                     for (int begin = 0; begin < quads.Count;)
                     {
                         int end = begin + 1;
-                        while (end < quads.Count && end - begin < 256 && quads[end].Item1.texture == quads[begin].Item1.texture) end++;
+                        // Do not merge across the level-reference plane even when
+                        // both layers use the same texture (e.g. solid wall brushes).
+                        int limit = begin < backgroundQuadCount ? backgroundQuadCount : quads.Count;
+                        while (end < limit && end - begin < 256 && quads[end].Item1.texture == quads[begin].Item1.texture) end++;
                         var batch = new GridArtPreviewBatch(quads, begin, end - begin);
-                        batches.Add(batch); artwork.Add(batch); begin = end;
+                        batches.Add(batch); (begin < backgroundQuadCount ? backgroundArtwork : artwork).Add(batch); begin = end;
                     }
                 }
                 artwork.style.translate = new Translate(pan.x, pan.y);
                 artwork.style.scale = new Scale(Vector3.one * (zoom / GridArtPreviewBatch.Units));
+                backgroundArtwork.style.translate = artwork.style.translate;
+                backgroundArtwork.style.scale = artwork.style.scale;
                 float size = Mathf.Max(.01f, owner.map != null ? owner.map.cellSize : owner.levelSource?.cellSize ?? 1f);
                 reference.SetView(pan, zoom / size, contentRect);
                 reference.SetReferenceVisibility(owner.showLevelReference, owner.levelReferenceOpacity);

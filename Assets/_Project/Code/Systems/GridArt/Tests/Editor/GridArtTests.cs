@@ -8,6 +8,62 @@ namespace Project.GridArt.Tests
 {
     public sealed class GridArtTests
     {
+        [TestCase(false, false, 4, 2)]
+        [TestCase(true, false, 0, 2)]
+        [TestCase(false, true, 4, 0)]
+        [TestCase(true, true, 0, 0)]
+        public void ParallaxAxesClampIndependently(bool lockX, bool lockY, float x, float y)
+        {
+            var result = GridArtScene.ParallaxOffset(new Vector3(100, 100, 10), Vector2.one * .5f, 1f/16,
+                lockX, lockY, new Vector2(4, 2));
+            Assert.That(result, Is.EqualTo(new Vector3(x, y, 0)));
+            Assert.That(GridArtScene.ParallaxOffset(new Vector3(-100, -100, 10), Vector2.one * .5f, 1f/16,
+                lockX, lockY, new Vector2(4, 2)), Is.EqualTo(-result));
+        }
+        [TestCase(.01f, 0)]
+        [TestCase(.1f, .0625f)]
+        [TestCase(1.02f, 1)]
+        public void ParallaxLimitNeverExceedsThresholdOrSplitsPixels(float limit, float expected)
+        {
+            Assert.That(GridArtScene.ParallaxOffset(Vector3.one * 100, Vector2.zero, 1f/16,
+                false, false, new Vector2(limit, limit)), Is.EqualTo(new Vector3(expected, expected, 0)));
+        }
+        [Test] public void ParallaxCellScaleMatchesEditorPreviewAndDoesNotAccumulate()
+        {
+            var layer = new GridArtLayer { parallax = new Vector2(.2f, .6f), maxParallaxOffset = new Vector2(3, 2) };
+            Vector3 travel = new Vector3(80, -90, 1000);
+            var preview = GridArtScene.LayerOffset(travel, layer, 1, 16);
+            Assert.That(GridArtScene.LayerOffset(travel * 2.5f, layer, 2.5f, 16), Is.EqualTo(preview * 2.5f));
+            Assert.That(GridArtScene.LayerOffset(Vector3.zero, layer, 1, 16), Is.EqualTo(Vector3.zero));
+            Assert.That(GridArtScene.LayerOffset(travel, layer, 1, 16), Is.EqualTo(preview));
+        }
+        [Test] public void LegacyParallaxRemainsUnlimitedAndUnlocked()
+        {
+            var layer = JsonUtility.FromJson<GridArtLayer>("{\"parallax\":{\"x\":0.5,\"y\":0.25}}");
+            Assert.That(GridArtScene.LayerOffset(new Vector3(80, 80, 0), layer, 1, 16), Is.EqualTo(new Vector3(40, 60, 0)));
+        }
+        [Test] public void ExistingSceneBindingsReadMapSettingsWithoutMeshRebuild()
+        {
+            var root = new GameObject("parallax fixture");
+            var child = new GameObject("layer"); child.transform.SetParent(root.transform);
+            var cameraObject = new GameObject("camera"); var camera = cameraObject.AddComponent<Camera>();
+            var map = ScriptableObject.CreateInstance<GridArtMap>();
+            try
+            {
+                var layer = new GridArtLayer { parallax=Vector2.zero, lockParallaxY=true, maxParallaxOffset=new Vector2(2, 0) };
+                map.layers.Add(layer);
+                var scene = root.AddComponent<GridArtScene>(); scene.map = map; scene.SetCamera(camera);
+                scene.SetBindings(new[] { new GridArtLayerBinding { id=layer.id, root=child.transform, restPosition=new Vector3(0,0,5), parallax=Vector2.zero } });
+                var update = typeof(GridArtScene).GetMethod("LateUpdate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                update.Invoke(scene, null); camera.transform.position = new Vector3(100,100,0); update.Invoke(scene, null);
+                Assert.That(child.transform.localPosition, Is.EqualTo(new Vector3(2,0,5)));
+                camera.transform.position = Vector3.zero; update.Invoke(scene, null);
+                Assert.That(child.transform.localPosition, Is.EqualTo(new Vector3(0,0,5)));
+                scene.enabled = false;
+                Assert.That(child.transform.localPosition, Is.EqualTo(new Vector3(0,0,5)));
+            }
+            finally { Object.DestroyImmediate(root); Object.DestroyImmediate(cameraObject); Object.DestroyImmediate(map); }
+        }
         [TestCase(false,false,false,GridArtCorner.OuterCorner)]
         [TestCase(true,false,false,GridArtCorner.HorizontalEdge)]
         [TestCase(false,true,false,GridArtCorner.VerticalEdge)]

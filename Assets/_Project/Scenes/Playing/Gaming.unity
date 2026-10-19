@@ -18003,6 +18003,96 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_87z3rq5ned\",\"type\":9,\"label\":\"\u91CD\u751F\u70B9
     [room_87z3rq5ned]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"5f6a7b8c9d0e4f1a2b3c4d5e6f708192\",\"propEntryName\":\"\u91CD\u751F\u70B9\",\"x\":51,\"y\":4,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 51, y: 4}
+--- !u!1 &183630806
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 183630807}
+  - component: {fileID: 183630809}
+  - component: {fileID: 183630808}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 55cb5a9324604325ad9c972952b55659_24b74bdf22adc174aa895b9a93459a45_flat_-1_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &183630807
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 183630806}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1316486364}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &183630808
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 183630806}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 7ed9e357e0113234fbc7162ee3bbe872, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &183630809
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 183630806}
+  m_Mesh: {fileID: 4300000, guid: a5343d9385a03b84ea928f28fc95548d, type: 2}
 --- !u!1001 &184542819
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20728,6 +20818,79 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 207922309}
   m_Mesh: {fileID: 0}
+--- !u!1001 &210603783
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1001, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_Name
+      value: "\u8424\u706B\u866B\u533A\u57DF"
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -67.68
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 40.29
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1003, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: areaSize.x
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: areaSize.y
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: fireflyCount
+      value: 6
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
 --- !u!1001 &211011076
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -26322,6 +26485,165 @@ MonoBehaviour:
   planningBoxId: box_0c42377d
   planningSignature: "{\"id\":\"box_0c42377d\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"234025e375b248bfbb8ac4dca60021fa\",\"propEntryName\":\"\u6C34\u6E90\",\"x\":18,\"y\":4,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 18, y: 4}
+--- !u!1001 &281243189
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1001, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_Name
+      value: "\u8424\u706B\u866B\u533A\u57DF"
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -10.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 39.66
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1003, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: areaSize.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: areaSize.y
+      value: 5
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+--- !u!1 &281689888
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 281689889}
+  - component: {fileID: 281689891}
+  - component: {fileID: 281689890}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 f2498052a0dd4dd3b951519d23f48262_b8de2073d3e11024094c3f754c658974_flat_-2_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &281689889
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 281689888}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872665351}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &281689890
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 281689888}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: df3717934f80b4447b1a581395ad8e1b, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -99
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &281689891
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 281689888}
+  m_Mesh: {fileID: 4300000, guid: a02e16c9118629c4ca05cd86d3a7c674, type: 2}
 --- !u!1001 &282025967
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -27801,6 +28123,44 @@ MonoBehaviour:
   planningBoxId: box_2ea8ec19
   planningSignature: "{\"id\":\"box_2ea8ec19\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"234025e375b248bfbb8ac4dca60021fa\",\"propEntryName\":\"\u6C34\u6E90\",\"x\":13,\"y\":8,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 13, y: 8}
+--- !u!1 &306377394
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 306377395}
+  m_Layer: 0
+  m_Name: "\u7F8E\u672F\u5C42_777f4b155c2a4ee282e9d2a4580675ec \xB7 \u573A\u666F\u88C5\u9970"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &306377395
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 306377394}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -0.55}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1831054142}
+  - {fileID: 2025310371}
+  - {fileID: 1665437585}
+  - {fileID: 1378245413}
+  - {fileID: 1394208218}
+  - {fileID: 656148371}
+  - {fileID: 1327766475}
+  m_Father: {fileID: 753769110}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &306652254
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32642,6 +33002,96 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_2waw85ig2e_5\",\"type\":9,\"label\":\"Room
     231 [room_2waw85ig2e]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"b1789be1339f4f5b897ef3177788da37\",\"propEntryName\":\"\u85E4\u8513\",\"x\":67,\"y\":17,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockAbilityHost\",\"componentIndex\":0,\"propertyPath\":\"debugLog\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"useFeatureMaterial\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"featureMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"allowGrowthFromColor\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthSegmentPrefab\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-1-6b76282023783344dbda362f140793df-1994381073939666919-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growInstantly\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineParticlePrefab\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"baseColorTypeId\",\"valueType\":\"String\",\"value\":\"green\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"targetRenderer\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"unlockedMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Material\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_LayerOverridePriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_IsTrigger\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_ProvidesContacts\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Size\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":1.0,\\\"y\\\":1.0,\\\"z\\\":1.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Center\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshFilter\",\"componentIndex\":0,\"propertyPath\":\"m_Mesh\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_CastShadows\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveShadows\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_DynamicOccludee\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StaticShadowCaster\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MotionVectors\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReflectionProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingMode\",\"valueType\":\"Integer\",\"value\":\"2\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTraceProcedural\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlagsOverride\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlags\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_SmallMeshCulling\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ForceMeshLod\",\"valueType\":\"Integer\",\"value\":\"-1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MeshLodSelectionBias\",\"valueType\":\"Float\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RenderingLayerMask\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RendererPriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ProbeAnchor\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeVolumeOverride\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ScaleInLightmap\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveGI\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_PreserveUVs\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_IgnoreNormalsForChartDetection\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ImportantGI\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StitchLightmapSeams\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MinimumChartSize\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxDistance\",\"valueType\":\"Float\",\"value\":\"0.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxAngle\",\"valueType\":\"Float\",\"value\":\"89\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightmapParameters\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MaskInteraction\",\"valueType\":\"Enum\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDispatchPasses\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDebugEvents\",\"valueType\":\"Integer\",\"value\":\"128\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbSpeedMultiplier\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbEnterDistanceGrid\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"naturalSlideSpeed\",\"valueType\":\"Float\",\"value\":\"1.2000000476837158\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"fastSlideSpeed\",\"valueType\":\"Float\",\"value\":\"4.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"maxGrowthBlocks\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthInterval\",\"valueType\":\"Float\",\"value\":\"0.18000000715255737\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"grownParticleTime\",\"valueType\":\"Float\",\"value\":\"32.430000305175781\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"visualGrowthDuration\",\"valueType\":\"Float\",\"value\":\"2.2999999523162842\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineThickness\",\"valueType\":\"Float\",\"value\":\"3\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"burnSegmentDuration\",\"valueType\":\"Float\",\"value\":\"0.44999998807907104\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineWidth\",\"valueType\":\"Float\",\"value\":\"1.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"initialParticleTime\",\"valueType\":\"Float\",\"value\":\"30.899999618530273\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
   planningLocalCell: {x: 67, y: 17}
+--- !u!1 &369547647
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 369547648}
+  - component: {fileID: 369547650}
+  - component: {fileID: 369547649}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 55cb5a9324604325ad9c972952b55659_b8de2073d3e11024094c3f754c658974_flat_-2_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &369547648
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369547647}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1316486364}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &369547649
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369547647}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: f8e6177051eea5141aa52e4f9eacfb91, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &369547650
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 369547647}
+  m_Mesh: {fileID: 4300000, guid: 2c4d754e899db3c4a9e3382e48968f42, type: 2}
 --- !u!1001 &370123138
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -34227,6 +34677,96 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_zs2zs26bje_40\",\"type\":9,\"label\":\"\u5C16\u523A
     [room_zs2zs26bje]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"8517534dbc924331886ebb64686e0a96\",\"propEntryName\":\"\u5C16\u523A\xB7\u4E0B\",\"x\":60,\"y\":42,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 60, y: 42}
+--- !u!1 &382424997
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 382424998}
+  - component: {fileID: 382425000}
+  - component: {fileID: 382424999}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 1d98327824e6401184614943ee79271e_b8de2073d3e11024094c3f754c658974_flat_-3_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &382424998
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 382424997}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 708130152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &382424999
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 382424997}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 6b7051a5d1277bd4e8485666616601c7, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &382425000
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 382424997}
+  m_Mesh: {fileID: 4300000, guid: 5d7728df386714744a77cc306059cf75, type: 2}
 --- !u!1001 &384265197
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -42348,6 +42888,96 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 507154920}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &511445248
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 511445249}
+  - component: {fileID: 511445251}
+  - component: {fileID: 511445250}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 f2498052a0dd4dd3b951519d23f48262_24b74bdf22adc174aa895b9a93459a45_flat_-3_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &511445249
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 511445248}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872665351}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &511445250
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 511445248}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 1aad1f32bc72adb47bebb3ce0a45b608, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -99
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &511445251
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 511445248}
+  m_Mesh: {fileID: 4300000, guid: 124cd97afcfcd464f835a9b4f9658938, type: 2}
 --- !u!1 &512369832
 GameObject:
   m_ObjectHideFlags: 0
@@ -46892,6 +47522,96 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 562213791}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &564566637
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 564566638}
+  - component: {fileID: 564566640}
+  - component: {fileID: 564566639}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 1d98327824e6401184614943ee79271e_b8de2073d3e11024094c3f754c658974_flat_-2_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &564566638
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 564566637}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 708130152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &564566639
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 564566637}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 6b7051a5d1277bd4e8485666616601c7, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &564566640
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 564566637}
+  m_Mesh: {fileID: 4300000, guid: 10f9efaef9f551c49b86cd5af19527ae, type: 2}
 --- !u!1001 &567281068
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -53527,6 +54247,96 @@ MonoBehaviour:
   planningBoxId: box_bd1c283c
   planningSignature: "{\"id\":\"box_bd1c283c\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"234025e375b248bfbb8ac4dca60021fa\",\"propEntryName\":\"\u6C34\u6E90\",\"x\":44,\"y\":29,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 44, y: 29}
+--- !u!1 &656148370
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 656148371}
+  - component: {fileID: 656148373}
+  - component: {fileID: 656148372}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 777f4b155c2a4ee282e9d2a4580675ec_b8de2073d3e11024094c3f754c658974_flat_0_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &656148371
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 656148370}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 306377395}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &656148372
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 656148370}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 062cf0282aac4184daf6223f6f0f69d0, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -80
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &656148373
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 656148370}
+  m_Mesh: {fileID: 4300000, guid: 32170322b0811854697f86438e6607f4, type: 2}
 --- !u!1001 &659053937
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -58497,6 +59307,44 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 707378735}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &708130151
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 708130152}
+  m_Layer: 0
+  m_Name: "\u7F8E\u672F\u5C42_1d98327824e6401184614943ee79271e \xB7 \u8FDC\u666F\u80CC\u666F"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &708130152
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 708130151}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 382424998}
+  - {fileID: 564566638}
+  - {fileID: 1417032793}
+  - {fileID: 1156786057}
+  - {fileID: 2126568883}
+  - {fileID: 1636217267}
+  - {fileID: 753376849}
+  m_Father: {fileID: 753769110}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &710216180
 GameObject:
   m_ObjectHideFlags: 0
@@ -59396,6 +60244,96 @@ Transform:
   - {fileID: 38196342}
   m_Father: {fileID: 1789231226}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &722890797
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 722890798}
+  - component: {fileID: 722890800}
+  - component: {fileID: 722890799}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 55cb5a9324604325ad9c972952b55659_b8de2073d3e11024094c3f754c658974_flat_-3_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &722890798
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 722890797}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1316486364}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &722890799
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 722890797}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: f8e6177051eea5141aa52e4f9eacfb91, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &722890800
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 722890797}
+  m_Mesh: {fileID: 4300000, guid: 60d06c08cdec1fd4a9d58c712a552b4b, type: 2}
 --- !u!1001 &723200974
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -61604,6 +62542,179 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_nz84sas0nl_1\",\"type\":9,\"label\":\"Room
     423 [room_nz84sas0nl]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"b1789be1339f4f5b897ef3177788da37\",\"propEntryName\":\"\u85E4\u8513\",\"x\":4,\"y\":41,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockAbilityHost\",\"componentIndex\":0,\"propertyPath\":\"debugLog\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"useFeatureMaterial\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"featureMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"allowGrowthFromColor\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthSegmentPrefab\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-1-6b76282023783344dbda362f140793df-1994381073939666919-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growInstantly\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineParticlePrefab\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"baseColorTypeId\",\"valueType\":\"String\",\"value\":\"green\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"targetRenderer\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"unlockedMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Material\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_LayerOverridePriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_IsTrigger\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_ProvidesContacts\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Size\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":1.0,\\\"y\\\":1.0,\\\"z\\\":1.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Center\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshFilter\",\"componentIndex\":0,\"propertyPath\":\"m_Mesh\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_CastShadows\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveShadows\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_DynamicOccludee\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StaticShadowCaster\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MotionVectors\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReflectionProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingMode\",\"valueType\":\"Integer\",\"value\":\"2\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTraceProcedural\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlagsOverride\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlags\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_SmallMeshCulling\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ForceMeshLod\",\"valueType\":\"Integer\",\"value\":\"-1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MeshLodSelectionBias\",\"valueType\":\"Float\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RenderingLayerMask\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RendererPriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ProbeAnchor\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeVolumeOverride\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ScaleInLightmap\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveGI\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_PreserveUVs\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_IgnoreNormalsForChartDetection\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ImportantGI\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StitchLightmapSeams\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MinimumChartSize\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxDistance\",\"valueType\":\"Float\",\"value\":\"0.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxAngle\",\"valueType\":\"Float\",\"value\":\"89\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightmapParameters\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MaskInteraction\",\"valueType\":\"Enum\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDispatchPasses\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDebugEvents\",\"valueType\":\"Integer\",\"value\":\"128\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbSpeedMultiplier\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbEnterDistanceGrid\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"naturalSlideSpeed\",\"valueType\":\"Float\",\"value\":\"1.2000000476837158\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"fastSlideSpeed\",\"valueType\":\"Float\",\"value\":\"4.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"maxGrowthBlocks\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthInterval\",\"valueType\":\"Float\",\"value\":\"0.18000000715255737\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"grownParticleTime\",\"valueType\":\"Float\",\"value\":\"32.430000305175781\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"visualGrowthDuration\",\"valueType\":\"Float\",\"value\":\"2.2999999523162842\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineThickness\",\"valueType\":\"Float\",\"value\":\"3\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"burnSegmentDuration\",\"valueType\":\"Float\",\"value\":\"0.44999998807907104\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineWidth\",\"valueType\":\"Float\",\"value\":\"1.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"initialParticleTime\",\"valueType\":\"Float\",\"value\":\"30.899999618530273\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
   planningLocalCell: {x: 4, y: 41}
+--- !u!1 &753376848
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 753376849}
+  - component: {fileID: 753376851}
+  - component: {fileID: 753376850}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 1d98327824e6401184614943ee79271e_b8de2073d3e11024094c3f754c658974_flat_0_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &753376849
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 753376848}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 708130152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &753376850
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 753376848}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 6b7051a5d1277bd4e8485666616601c7, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &753376851
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 753376848}
+  m_Mesh: {fileID: 4300000, guid: 7ae803168b5fe7744ad484edc105fd84, type: 2}
+--- !u!1 &753769108
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 753769110}
+  - component: {fileID: 753769109}
+  m_Layer: 0
+  m_Name: "\u7F8E\u672F\u7F51\u683C \xB7 Gaming_Art"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &753769109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 753769108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da9241724e90bb84eb6fb7bf0e1a71cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Project.GridArt.Runtime::Project.GridArt.GridArtScene
+  map: {fileID: 11400000, guid: 7c88bc3afdbcbe84b9654b3b8fc50416, type: 2}
+  targetCamera: {fileID: 0}
+  pixelsPerCell: 16
+  bindings:
+  - id: 1d98327824e6401184614943ee79271e
+    root: {fileID: 708130152}
+    restPosition: {x: 0, y: 0, z: 5}
+    parallax: {x: 0.3, y: 0.3}
+  - id: f2498052a0dd4dd3b951519d23f48262
+    root: {fileID: 1872665351}
+    restPosition: {x: 0, y: 0, z: 2}
+    parallax: {x: 0.7, y: 0.7}
+  - id: 55cb5a9324604325ad9c972952b55659
+    root: {fileID: 1316486364}
+    restPosition: {x: 0, y: 0, z: -0.51}
+    parallax: {x: 1, y: 1}
+  - id: 777f4b155c2a4ee282e9d2a4580675ec
+    root: {fileID: 306377395}
+    restPosition: {x: 0, y: 0, z: -0.55}
+    parallax: {x: 1, y: 1}
+  colorBindings:
+  - renderer: {fileID: 1510862515}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1189528813}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 795990920}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1665437583}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1378245411}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1394208216}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  appliedRevision: 357
+  appliedPaletteHash: 4bb93326a11656965e3a7be2a8853f7a
+--- !u!4 &753769110
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 753769108}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 708130152}
+  - {fileID: 1872665351}
+  - {fileID: 1316486364}
+  - {fileID: 306377395}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &757776975
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -64957,6 +66068,96 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_8hz571gdlb_5\",\"type\":9,\"label\":\"Room
     116 [room_8hz571gdlb]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"b1789be1339f4f5b897ef3177788da37\",\"propEntryName\":\"\u85E4\u8513\",\"x\":31,\"y\":17,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockAbilityHost\",\"componentIndex\":0,\"propertyPath\":\"debugLog\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"useFeatureMaterial\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"featureMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"allowGrowthFromColor\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthSegmentPrefab\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-1-6b76282023783344dbda362f140793df-1994381073939666919-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growInstantly\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineParticlePrefab\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"baseColorTypeId\",\"valueType\":\"String\",\"value\":\"green\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"targetRenderer\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"unlockedMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Material\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_LayerOverridePriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_IsTrigger\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_ProvidesContacts\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Size\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":1.0,\\\"y\\\":1.0,\\\"z\\\":1.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Center\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshFilter\",\"componentIndex\":0,\"propertyPath\":\"m_Mesh\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_CastShadows\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveShadows\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_DynamicOccludee\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StaticShadowCaster\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MotionVectors\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReflectionProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingMode\",\"valueType\":\"Integer\",\"value\":\"2\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTraceProcedural\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlagsOverride\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlags\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_SmallMeshCulling\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ForceMeshLod\",\"valueType\":\"Integer\",\"value\":\"-1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MeshLodSelectionBias\",\"valueType\":\"Float\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RenderingLayerMask\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RendererPriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ProbeAnchor\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeVolumeOverride\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ScaleInLightmap\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveGI\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_PreserveUVs\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_IgnoreNormalsForChartDetection\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ImportantGI\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StitchLightmapSeams\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MinimumChartSize\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxDistance\",\"valueType\":\"Float\",\"value\":\"0.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxAngle\",\"valueType\":\"Float\",\"value\":\"89\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightmapParameters\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MaskInteraction\",\"valueType\":\"Enum\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDispatchPasses\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDebugEvents\",\"valueType\":\"Integer\",\"value\":\"128\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbSpeedMultiplier\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbEnterDistanceGrid\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"naturalSlideSpeed\",\"valueType\":\"Float\",\"value\":\"1.2000000476837158\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"fastSlideSpeed\",\"valueType\":\"Float\",\"value\":\"4.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"maxGrowthBlocks\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthInterval\",\"valueType\":\"Float\",\"value\":\"0.18000000715255737\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"grownParticleTime\",\"valueType\":\"Float\",\"value\":\"32.430000305175781\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"visualGrowthDuration\",\"valueType\":\"Float\",\"value\":\"2.2999999523162842\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineThickness\",\"valueType\":\"Float\",\"value\":\"3\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"burnSegmentDuration\",\"valueType\":\"Float\",\"value\":\"0.44999998807907104\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineWidth\",\"valueType\":\"Float\",\"value\":\"1.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"initialParticleTime\",\"valueType\":\"Float\",\"value\":\"30.899999618530273\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
   planningLocalCell: {x: 31, y: 17}
+--- !u!1 &795990919
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 795990922}
+  - component: {fileID: 795990921}
+  - component: {fileID: 795990920}
+  m_Layer: 9
+  m_Name: "\u7F51\u683C\u5757 f2498052a0dd4dd3b951519d23f48262_24b74bdf22adc174aa895b9a93459a45_flat_0_0_c9be56dac49c76818b3886036bde03850"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!23 &795990920
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 795990919}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 1aad1f32bc72adb47bebb3ce0a45b608, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -99
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &795990921
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 795990919}
+  m_Mesh: {fileID: 4300000, guid: 057fd544610bf664a8c0aebf99553a5e, type: 2}
+--- !u!4 &795990922
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 795990919}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872665351}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &799223210
 GameObject:
   m_ObjectHideFlags: 0
@@ -68798,6 +69999,186 @@ MonoBehaviour:
   planningBoxId: box_4fe0cb28
   planningSignature: "{\"id\":\"box_4fe0cb28\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"04b7a2d6735b4d0cbce343ab1293d6e0\",\"propEntryName\":\"\u84DD\u8272\u94A5\u5319\",\"x\":52,\"y\":28,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 52, y: 28}
+--- !u!1 &837861924
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 837861925}
+  - component: {fileID: 837861927}
+  - component: {fileID: 837861926}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 55cb5a9324604325ad9c972952b55659_b8de2073d3e11024094c3f754c658974_flat_0_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &837861925
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837861924}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1316486364}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &837861926
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837861924}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: f8e6177051eea5141aa52e4f9eacfb91, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &837861927
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837861924}
+  m_Mesh: {fileID: 4300000, guid: ffcc7dee1445e654b811726a6cf47f9c, type: 2}
+--- !u!1 &837901797
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 837901798}
+  - component: {fileID: 837901800}
+  - component: {fileID: 837901799}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 55cb5a9324604325ad9c972952b55659_b8de2073d3e11024094c3f754c658974_flat_0_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &837901798
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837901797}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1316486364}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &837901799
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837901797}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: f8e6177051eea5141aa52e4f9eacfb91, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &837901800
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 837901797}
+  m_Mesh: {fileID: 4300000, guid: 83d743163f501b6478d615da591c73ef, type: 2}
 --- !u!1 &840585455
 GameObject:
   m_ObjectHideFlags: 0
@@ -98426,6 +99807,96 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_nkcvxuqclm_0\",\"type\":9,\"label\":\"Room
     132 [room_nkcvxuqclm]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"b1789be1339f4f5b897ef3177788da37\",\"propEntryName\":\"\u85E4\u8513\",\"x\":15,\"y\":11,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockAbilityHost\",\"componentIndex\":0,\"propertyPath\":\"debugLog\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"useFeatureMaterial\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"featureMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"allowGrowthFromColor\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthSegmentPrefab\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-1-6b76282023783344dbda362f140793df-1994381073939666919-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growInstantly\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineParticlePrefab\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"baseColorTypeId\",\"valueType\":\"String\",\"value\":\"green\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"targetRenderer\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"unlockedMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Material\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_LayerOverridePriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_IsTrigger\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_ProvidesContacts\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Size\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":1.0,\\\"y\\\":1.0,\\\"z\\\":1.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Center\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshFilter\",\"componentIndex\":0,\"propertyPath\":\"m_Mesh\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_CastShadows\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveShadows\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_DynamicOccludee\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StaticShadowCaster\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MotionVectors\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReflectionProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingMode\",\"valueType\":\"Integer\",\"value\":\"2\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTraceProcedural\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlagsOverride\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlags\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_SmallMeshCulling\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ForceMeshLod\",\"valueType\":\"Integer\",\"value\":\"-1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MeshLodSelectionBias\",\"valueType\":\"Float\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RenderingLayerMask\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RendererPriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ProbeAnchor\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeVolumeOverride\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ScaleInLightmap\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveGI\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_PreserveUVs\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_IgnoreNormalsForChartDetection\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ImportantGI\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StitchLightmapSeams\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MinimumChartSize\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxDistance\",\"valueType\":\"Float\",\"value\":\"0.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxAngle\",\"valueType\":\"Float\",\"value\":\"89\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightmapParameters\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MaskInteraction\",\"valueType\":\"Enum\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDispatchPasses\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDebugEvents\",\"valueType\":\"Integer\",\"value\":\"128\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbSpeedMultiplier\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbEnterDistanceGrid\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"naturalSlideSpeed\",\"valueType\":\"Float\",\"value\":\"1.2000000476837158\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"fastSlideSpeed\",\"valueType\":\"Float\",\"value\":\"4.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"maxGrowthBlocks\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthInterval\",\"valueType\":\"Float\",\"value\":\"0.18000000715255737\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"grownParticleTime\",\"valueType\":\"Float\",\"value\":\"32.430000305175781\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"visualGrowthDuration\",\"valueType\":\"Float\",\"value\":\"2.2999999523162842\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineThickness\",\"valueType\":\"Float\",\"value\":\"3\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"burnSegmentDuration\",\"valueType\":\"Float\",\"value\":\"0.44999998807907104\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineWidth\",\"valueType\":\"Float\",\"value\":\"1.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"initialParticleTime\",\"valueType\":\"Float\",\"value\":\"30.899999618530273\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
   planningLocalCell: {x: 15, y: 11}
+--- !u!1 &1156786056
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1156786057}
+  - component: {fileID: 1156786059}
+  - component: {fileID: 1156786058}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 1d98327824e6401184614943ee79271e_b8de2073d3e11024094c3f754c658974_flat_-1_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1156786057
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1156786056}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 708130152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1156786058
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1156786056}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 6b7051a5d1277bd4e8485666616601c7, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1156786059
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1156786056}
+  m_Mesh: {fileID: 4300000, guid: 4ff265adce6a4ae449cf04e55aca8141, type: 2}
 --- !u!1001 &1161107952
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -100878,6 +102349,96 @@ MonoBehaviour:
   planningBoxId: box_5416b27f
   planningSignature: "{\"id\":\"box_5416b27f\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"234025e375b248bfbb8ac4dca60021fa\",\"propEntryName\":\"\u6C34\u6E90\",\"x\":20,\"y\":5,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 20, y: 5}
+--- !u!1 &1189528812
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1189528815}
+  - component: {fileID: 1189528814}
+  - component: {fileID: 1189528813}
+  m_Layer: 10
+  m_Name: "\u7F51\u683C\u5757 f2498052a0dd4dd3b951519d23f48262_24b74bdf22adc174aa895b9a93459a45_flat_-1_1_c19608f57ba6b9655f2815bcc8334cd32"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!23 &1189528813
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1189528812}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 1aad1f32bc72adb47bebb3ce0a45b608, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -99
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1189528814
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1189528812}
+  m_Mesh: {fileID: 4300000, guid: 466a21e5cd4cbc34a9ac8574b9e5f92d, type: 2}
+--- !u!4 &1189528815
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1189528812}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872665351}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1191208534
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -102325,6 +103886,96 @@ MonoBehaviour:
   planningBoxId: box_5f23cf40
   planningSignature: "{\"id\":\"box_5f23cf40\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"234025e375b248bfbb8ac4dca60021fa\",\"propEntryName\":\"\u6C34\u6E90\",\"x\":20,\"y\":10,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 20, y: 10}
+--- !u!1 &1200659735
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1200659736}
+  - component: {fileID: 1200659738}
+  - component: {fileID: 1200659737}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 f2498052a0dd4dd3b951519d23f48262_b8de2073d3e11024094c3f754c658974_flat_-3_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1200659736
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1200659735}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872665351}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1200659737
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1200659735}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: df3717934f80b4447b1a581395ad8e1b, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -99
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1200659738
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1200659735}
+  m_Mesh: {fileID: 4300000, guid: 158dcff5967f42545810d7d728791aef, type: 2}
 --- !u!1 &1201208154
 GameObject:
   m_ObjectHideFlags: 0
@@ -110503,6 +112154,44 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_d0gxqx5toi_2\",\"type\":9,\"label\":\"Room
     526 [room_d0gxqx5toi]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"b1789be1339f4f5b897ef3177788da37\",\"propEntryName\":\"\u85E4\u8513\",\"x\":20,\"y\":11,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockAbilityHost\",\"componentIndex\":0,\"propertyPath\":\"debugLog\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"useFeatureMaterial\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"featureMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"allowGrowthFromColor\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthSegmentPrefab\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-1-6b76282023783344dbda362f140793df-1994381073939666919-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growInstantly\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineParticlePrefab\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"baseColorTypeId\",\"valueType\":\"String\",\"value\":\"green\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"targetRenderer\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"unlockedMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Material\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_LayerOverridePriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_IsTrigger\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_ProvidesContacts\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Size\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":1.0,\\\"y\\\":1.0,\\\"z\\\":1.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Center\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshFilter\",\"componentIndex\":0,\"propertyPath\":\"m_Mesh\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_CastShadows\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveShadows\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_DynamicOccludee\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StaticShadowCaster\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MotionVectors\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReflectionProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingMode\",\"valueType\":\"Integer\",\"value\":\"2\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTraceProcedural\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlagsOverride\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlags\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_SmallMeshCulling\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ForceMeshLod\",\"valueType\":\"Integer\",\"value\":\"-1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MeshLodSelectionBias\",\"valueType\":\"Float\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RenderingLayerMask\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RendererPriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ProbeAnchor\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeVolumeOverride\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ScaleInLightmap\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveGI\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_PreserveUVs\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_IgnoreNormalsForChartDetection\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ImportantGI\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StitchLightmapSeams\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MinimumChartSize\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxDistance\",\"valueType\":\"Float\",\"value\":\"0.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxAngle\",\"valueType\":\"Float\",\"value\":\"89\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightmapParameters\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MaskInteraction\",\"valueType\":\"Enum\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDispatchPasses\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDebugEvents\",\"valueType\":\"Integer\",\"value\":\"128\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbSpeedMultiplier\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbEnterDistanceGrid\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"naturalSlideSpeed\",\"valueType\":\"Float\",\"value\":\"1.2000000476837158\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"fastSlideSpeed\",\"valueType\":\"Float\",\"value\":\"4.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"maxGrowthBlocks\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthInterval\",\"valueType\":\"Float\",\"value\":\"0.18000000715255737\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"grownParticleTime\",\"valueType\":\"Float\",\"value\":\"32.430000305175781\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"visualGrowthDuration\",\"valueType\":\"Float\",\"value\":\"2.2999999523162842\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineThickness\",\"valueType\":\"Float\",\"value\":\"3\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"burnSegmentDuration\",\"valueType\":\"Float\",\"value\":\"0.44999998807907104\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineWidth\",\"valueType\":\"Float\",\"value\":\"1.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"initialParticleTime\",\"valueType\":\"Float\",\"value\":\"30.899999618530273\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
   planningLocalCell: {x: 20, y: 11}
+--- !u!1 &1316486363
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1316486364}
+  m_Layer: 0
+  m_Name: "\u7F8E\u672F\u5C42_55cb5a9324604325ad9c972952b55659 \xB7 \u5899\u5730\u8868\u9762"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1316486364
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1316486363}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: -0.51}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 722890798}
+  - {fileID: 183630807}
+  - {fileID: 2089754301}
+  - {fileID: 369547648}
+  - {fileID: 1592060507}
+  - {fileID: 837901798}
+  - {fileID: 837861925}
+  m_Father: {fileID: 753769110}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1316925075
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -111647,6 +113336,96 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1324493090}
   m_Mesh: {fileID: 0}
+--- !u!1 &1327766474
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1327766475}
+  - component: {fileID: 1327766477}
+  - component: {fileID: 1327766476}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 777f4b155c2a4ee282e9d2a4580675ec_b8de2073d3e11024094c3f754c658974_flat_-1_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1327766475
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1327766474}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 306377395}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1327766476
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1327766474}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 062cf0282aac4184daf6223f6f0f69d0, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -80
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1327766477
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1327766474}
+  m_Mesh: {fileID: 4300000, guid: 20201c2c7b42ce742af96f1b98d65e26, type: 2}
 --- !u!1 &1329991477
 GameObject:
   m_ObjectHideFlags: 0
@@ -116855,6 +118634,96 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_p2xhrhfs7a\",\"type\":9,\"label\":\"\u6536\u96C6\u54C1
     [room_p2xhrhfs7a]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"ea43d7e742e4499da897f965db829096\",\"propEntryName\":\"\u6536\u96C6\u54C1\",\"x\":12,\"y\":29,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 12, y: 29}
+--- !u!1 &1378245410
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1378245413}
+  - component: {fileID: 1378245412}
+  - component: {fileID: 1378245411}
+  m_Layer: 10
+  m_Name: "\u7F51\u683C\u5757 777f4b155c2a4ee282e9d2a4580675ec_24b74bdf22adc174aa895b9a93459a45_flat_0_1_c19608f57ba6b9655f2815bcc8334cd32"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!23 &1378245411
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1378245410}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 065defcb389a0d94c87b34064e20fa8e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -80
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1378245412
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1378245410}
+  m_Mesh: {fileID: 4300000, guid: af38e230e9b706746bfdfae429133c2a, type: 2}
+--- !u!4 &1378245413
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1378245410}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 306377395}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1383014960
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -118101,6 +119970,96 @@ MonoBehaviour:
   planningBoxId: box_e6f9f9de
   planningSignature: "{\"id\":\"box_e6f9f9de\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"234025e375b248bfbb8ac4dca60021fa\",\"propEntryName\":\"\u6C34\u6E90\",\"x\":47,\"y\":30,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 47, y: 30}
+--- !u!1 &1394208215
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1394208218}
+  - component: {fileID: 1394208217}
+  - component: {fileID: 1394208216}
+  m_Layer: 10
+  m_Name: "\u7F51\u683C\u5757 777f4b155c2a4ee282e9d2a4580675ec_24b74bdf22adc174aa895b9a93459a45_flat_0_0_c19608f57ba6b9655f2815bcc8334cd32"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!23 &1394208216
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1394208215}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 065defcb389a0d94c87b34064e20fa8e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -80
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1394208217
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1394208215}
+  m_Mesh: {fileID: 4300000, guid: 710d226aaee0ff0418f3b3ce336c4a7a, type: 2}
+--- !u!4 &1394208218
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1394208215}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 306377395}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1394402091
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -120733,6 +122692,96 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1415443085}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1417032792
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1417032793}
+  - component: {fileID: 1417032795}
+  - component: {fileID: 1417032794}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 1d98327824e6401184614943ee79271e_b8de2073d3e11024094c3f754c658974_flat_-2_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1417032793
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1417032792}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 708130152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1417032794
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1417032792}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 6b7051a5d1277bd4e8485666616601c7, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1417032795
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1417032792}
+  m_Mesh: {fileID: 4300000, guid: 113748e31f08bf34eb0212a6b437f497, type: 2}
 --- !u!1 &1418549860
 GameObject:
   m_ObjectHideFlags: 0
@@ -128896,6 +130945,96 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_fz3kyyaq0z\",\"type\":9,\"label\":\"\u91CD\u751F\u70B9
     [room_fz3kyyaq0z]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"5f6a7b8c9d0e4f1a2b3c4d5e6f708192\",\"propEntryName\":\"\u91CD\u751F\u70B9\",\"x\":19,\"y\":39,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 19, y: 39}
+--- !u!1 &1510862514
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1510862517}
+  - component: {fileID: 1510862516}
+  - component: {fileID: 1510862515}
+  m_Layer: 10
+  m_Name: "\u7F51\u683C\u5757 f2498052a0dd4dd3b951519d23f48262_24b74bdf22adc174aa895b9a93459a45_flat_-1_0_c19608f57ba6b9655f2815bcc8334cd32"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!23 &1510862515
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1510862514}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 1aad1f32bc72adb47bebb3ce0a45b608, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -99
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1510862516
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1510862514}
+  m_Mesh: {fileID: 4300000, guid: 6cbf0482a9d259c4cb0592fa36dcc0b4, type: 2}
+--- !u!4 &1510862517
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1510862514}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872665351}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1514703703
 GameObject:
   m_ObjectHideFlags: 0
@@ -135423,6 +137562,96 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_n7615az1f6_5\",\"type\":9,\"label\":\"\u5C16\u523A
     [room_n7615az1f6]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"cd2415a7f7764496a6b04d1e1ad8eeb1\",\"propEntryName\":\"\u5C16\u523A\xB7\u4E0A\",\"x\":63,\"y\":45,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 63, y: 45}
+--- !u!1 &1592060506
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1592060507}
+  - component: {fileID: 1592060509}
+  - component: {fileID: 1592060508}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 55cb5a9324604325ad9c972952b55659_b8de2073d3e11024094c3f754c658974_flat_-1_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1592060507
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592060506}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1316486364}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1592060508
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592060506}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: f8e6177051eea5141aa52e4f9eacfb91, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1592060509
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592060506}
+  m_Mesh: {fileID: 4300000, guid: f265d678bd5e24645a51149dd93607b9, type: 2}
 --- !u!1 &1592438835
 GameObject:
   m_ObjectHideFlags: 0
@@ -140391,6 +142620,96 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_todaykwnog_1\",\"type\":9,\"label\":\"Room
     361 [room_todaykwnog]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"b1789be1339f4f5b897ef3177788da37\",\"propEntryName\":\"\u85E4\u8513\",\"x\":58,\"y\":12,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockAbilityHost\",\"componentIndex\":0,\"propertyPath\":\"debugLog\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"useFeatureMaterial\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"featureMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"allowGrowthFromColor\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthSegmentPrefab\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-1-6b76282023783344dbda362f140793df-1994381073939666919-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growInstantly\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineParticlePrefab\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"baseColorTypeId\",\"valueType\":\"String\",\"value\":\"green\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"targetRenderer\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.ColorBlocks.ColorObject\",\"componentIndex\":0,\"propertyPath\":\"unlockedMaterial\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Material\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_LayerOverridePriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_IsTrigger\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_ProvidesContacts\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Size\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":1.0,\\\"y\\\":1.0,\\\"z\\\":1.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.BoxCollider\",\"componentIndex\":0,\"propertyPath\":\"m_Center\",\"valueType\":\"Vector3\",\"value\":\"{\\\"x\\\":0.0,\\\"y\\\":0.0,\\\"z\\\":0.0}\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshFilter\",\"componentIndex\":0,\"propertyPath\":\"m_Mesh\",\"valueType\":\"ObjectReference\",\"value\":\"GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_CastShadows\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveShadows\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_DynamicOccludee\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StaticShadowCaster\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MotionVectors\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReflectionProbeUsage\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingMode\",\"valueType\":\"Integer\",\"value\":\"2\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTraceProcedural\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlagsOverride\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RayTracingAccelStructBuildFlags\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_SmallMeshCulling\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ForceMeshLod\",\"valueType\":\"Integer\",\"value\":\"-1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MeshLodSelectionBias\",\"valueType\":\"Float\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RenderingLayerMask\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_RendererPriority\",\"valueType\":\"Integer\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ProbeAnchor\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightProbeVolumeOverride\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ScaleInLightmap\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ReceiveGI\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_PreserveUVs\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_IgnoreNormalsForChartDetection\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_ImportantGI\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_StitchLightmapSeams\",\"valueType\":\"Boolean\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MinimumChartSize\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxDistance\",\"valueType\":\"Float\",\"value\":\"0.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_AutoUVMaxAngle\",\"valueType\":\"Float\",\"value\":\"89\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_LightmapParameters\",\"valueType\":\"ObjectReference\",\"value\":\"\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"UnityEngine.MeshRenderer\",\"componentIndex\":0,\"propertyPath\":\"m_MaskInteraction\",\"valueType\":\"Enum\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDispatchPasses\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.BlockRuntime\",\"componentIndex\":0,\"propertyPath\":\"maxDebugEvents\",\"valueType\":\"Integer\",\"value\":\"128\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbSpeedMultiplier\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"climbEnterDistanceGrid\",\"valueType\":\"Float\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"naturalSlideSpeed\",\"valueType\":\"Float\",\"value\":\"1.2000000476837158\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"fastSlideSpeed\",\"valueType\":\"Float\",\"value\":\"4.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"maxGrowthBlocks\",\"valueType\":\"Integer\",\"value\":\"4\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"growthInterval\",\"valueType\":\"Float\",\"value\":\"0.18000000715255737\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"grownParticleTime\",\"valueType\":\"Float\",\"value\":\"32.430000305175781\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"visualGrowthDuration\",\"valueType\":\"Float\",\"value\":\"2.2999999523162842\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineThickness\",\"valueType\":\"Float\",\"value\":\"3\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"burnSegmentDuration\",\"valueType\":\"Float\",\"value\":\"0.44999998807907104\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"vineWidth\",\"valueType\":\"Float\",\"value\":\"1.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.ClimbableVineFeature\",\"componentIndex\":0,\"propertyPath\":\"initialParticleTime\",\"valueType\":\"Float\",\"value\":\"30.899999618530273\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
   planningLocalCell: {x: 58, y: 12}
+--- !u!1 &1636217266
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1636217267}
+  - component: {fileID: 1636217269}
+  - component: {fileID: 1636217268}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 1d98327824e6401184614943ee79271e_b8de2073d3e11024094c3f754c658974_flat_-1_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1636217267
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1636217266}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 708130152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1636217268
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1636217266}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 6b7051a5d1277bd4e8485666616601c7, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1636217269
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1636217266}
+  m_Mesh: {fileID: 4300000, guid: fc6d9e429a989a7419003f0597c2be83, type: 2}
 --- !u!1001 &1637920357
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -143655,6 +145974,96 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1664732671}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1665437582
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1665437585}
+  - component: {fileID: 1665437584}
+  - component: {fileID: 1665437583}
+  m_Layer: 10
+  m_Name: "\u7F51\u683C\u5757 777f4b155c2a4ee282e9d2a4580675ec_24b74bdf22adc174aa895b9a93459a45_flat_-1_1_c19608f57ba6b9655f2815bcc8334cd32"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!23 &1665437583
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665437582}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 065defcb389a0d94c87b34064e20fa8e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -80
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1665437584
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665437582}
+  m_Mesh: {fileID: 4300000, guid: 802020205467cea48aca23f879b8526a, type: 2}
+--- !u!4 &1665437585
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665437582}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 306377395}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1665662134
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -144666,6 +147075,79 @@ MonoBehaviour:
   planningSignature: "{\"id\":\"mvmap16_room_zs2zs26bje_37\",\"type\":9,\"label\":\"\u5C16\u523A
     [room_zs2zs26bje]\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"cd2415a7f7764496a6b04d1e1ad8eeb1\",\"propEntryName\":\"\u5C16\u523A\xB7\u4E0A\",\"x\":59,\"y\":46,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 59, y: 46}
+--- !u!1001 &1681223474
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1001, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_Name
+      value: "\u84DD\u8272\u96E8\u533A"
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 8.51
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 37.29
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1003, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: density
+      value: 3.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: areaWidth
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
+      propertyPath: areaHeight
+      value: 13
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 410d6cfd76824f9cb1d1b211b4990ef6, type: 3}
 --- !u!1 &1681390898
 GameObject:
   m_ObjectHideFlags: 0
@@ -254847,6 +257329,96 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1830712155}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1831054141
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1831054142}
+  - component: {fileID: 1831054144}
+  - component: {fileID: 1831054143}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 777f4b155c2a4ee282e9d2a4580675ec_24b74bdf22adc174aa895b9a93459a45_flat_-1_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1831054142
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1831054141}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 306377395}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1831054143
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1831054141}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 065defcb389a0d94c87b34064e20fa8e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -80
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1831054144
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1831054141}
+  m_Mesh: {fileID: 4300000, guid: d330f1bc24228244c89eeb0cccaec30b, type: 2}
 --- !u!1 &1831080391
 GameObject:
   m_ObjectHideFlags: 0
@@ -257348,6 +259920,75 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1848512864}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1849155635
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1001, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_Name
+      value: "\u8424\u706B\u866B\u533A\u57DF"
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6.08
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 7.42
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1003, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: areaSize.x
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: areaSize.y
+      value: 5
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
 --- !u!1 &1850074722
 GameObject:
   m_ObjectHideFlags: 0
@@ -259539,6 +262180,43 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1872419625}
   m_Mesh: {fileID: 0}
+--- !u!1 &1872665350
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1872665351}
+  m_Layer: 0
+  m_Name: "\u7F8E\u672F\u5C42_f2498052a0dd4dd3b951519d23f48262 \xB7 \u8FD1\u666F\u80CC\u666F"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1872665351
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1872665350}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 511445249}
+  - {fileID: 1200659736}
+  - {fileID: 281689889}
+  - {fileID: 1510862517}
+  - {fileID: 1189528815}
+  - {fileID: 795990922}
+  m_Father: {fileID: 753769110}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1872798170
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -262663,6 +265341,10 @@ PrefabInstance:
     - target: {fileID: 5470575615320527249, guid: 6c96e03140ddece4bbd9e4983de17a43, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6078123672695023536, guid: 6c96e03140ddece4bbd9e4983de17a43, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6649411383887287476, guid: 6c96e03140ddece4bbd9e4983de17a43, type: 3}
       propertyPath: m_TextStyleHashCode
@@ -274054,6 +276736,96 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2024795202}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2025310370
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2025310371}
+  - component: {fileID: 2025310373}
+  - component: {fileID: 2025310372}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 777f4b155c2a4ee282e9d2a4580675ec_24b74bdf22adc174aa895b9a93459a45_flat_0_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2025310371
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2025310370}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 306377395}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &2025310372
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2025310370}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 065defcb389a0d94c87b34064e20fa8e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -80
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &2025310373
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2025310370}
+  m_Mesh: {fileID: 4300000, guid: f242fc8512facb34584d87083fa9bc3a, type: 2}
 --- !u!1001 &2025703691
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -278400,6 +281172,96 @@ MonoBehaviour:
   planningBoxId: box_f5a42bbb
   planningSignature: "{\"id\":\"box_f5a42bbb\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"234025e375b248bfbb8ac4dca60021fa\",\"propEntryName\":\"\u6C34\u6E90\",\"x\":13,\"y\":6,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 13, y: 6}
+--- !u!1 &2089754300
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2089754301}
+  - component: {fileID: 2089754303}
+  - component: {fileID: 2089754302}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 55cb5a9324604325ad9c972952b55659_24b74bdf22adc174aa895b9a93459a45_flat_0_0"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2089754301
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089754300}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1316486364}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &2089754302
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089754300}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 7ed9e357e0113234fbc7162ee3bbe872, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &2089754303
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2089754300}
+  m_Mesh: {fileID: 4300000, guid: 87fda7f2b652b6c45bcc2ca4220ada30, type: 2}
 --- !u!1001 &2090292475
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -281641,6 +284503,96 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2125002875}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &2126568882
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2126568883}
+  - component: {fileID: 2126568885}
+  - component: {fileID: 2126568884}
+  m_Layer: 0
+  m_Name: "\u7F51\u683C\u5757 1d98327824e6401184614943ee79271e_b8de2073d3e11024094c3f754c658974_flat_0_1"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2126568883
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2126568882}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 708130152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &2126568884
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2126568882}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 6b7051a5d1277bd4e8485666616601c7, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -100
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &2126568885
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2126568882}
+  m_Mesh: {fileID: 4300000, guid: f227b66cc91387c41bcc5edf71f3d17a, type: 2}
 --- !u!1 &2128130420
 GameObject:
   m_ObjectHideFlags: 0
@@ -283887,3 +286839,8 @@ SceneRoots:
   - {fileID: 1405113962}
   - {fileID: 1789231226}
   - {fileID: 1900000020}
+  - {fileID: 1849155635}
+  - {fileID: 281243189}
+  - {fileID: 753769110}
+  - {fileID: 1681223474}
+  - {fileID: 210603783}

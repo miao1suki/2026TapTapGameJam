@@ -24,6 +24,7 @@ Shader "Hidden/2026TapTap/ColorObjectMask"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma target 3.5
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Assets/_Project/Code/Systems/ObjectArtwork/Runtime/GridArtworkSampling.hlsl"
             #include "Assets/ta_source/Burn/PlantBurnSampling.hlsl"
@@ -32,17 +33,20 @@ Shader "Hidden/2026TapTap/ColorObjectMask"
             float _ColorMaskUseVertexAlpha;
             float _ColorMaskOpacity;
             float _ColorMaskGroup, _ColorMaskReal;
+            float _GridArtSliceClamp;
+            float4 _ColorMaskAlphaTexture_TexelSize;
             float _ArtworkPixelWorldSize;
             float4 _ArtworkPixelUVRect;
             float4 _ArtworkPixelTextureSize;
             float4 _ColorAppearanceBaseAlpha, _ColorAppearanceRealAlpha;
-            struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; float4 color : COLOR; float2 surface : TEXCOORD1; };
-            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float alpha : TEXCOORD1; float2 worldXY : TEXCOORD2; float2 surface : TEXCOORD3; };
+            struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; float4 color : COLOR; float4 surface : TEXCOORD1; };
+            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float alpha : TEXCOORD1; float2 worldXY : TEXCOORD2; float2 surface : TEXCOORD3; nointerpolation float4 slice : TEXCOORD4; };
             Varyings Vert(Attributes input)
             {
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv;
+                output.slice = input.surface;
                 output.worldXY = TransformObjectToWorld(input.positionOS.xyz).xy;
                 output.surface = float2(TransformObjectToWorld(float3(0,input.surface.x,0)).y, input.surface.y);
                 output.alpha = lerp(1, input.color.a, saturate(_ColorMaskUseVertexAlpha));
@@ -51,6 +55,11 @@ Shader "Hidden/2026TapTap/ColorObjectMask"
             half4 Frag(Varyings input) : SV_Target
             {
                 float2 uv = GridArtworkSampleUV(input.uv, input.worldXY, _ArtworkPixelWorldSize, _ArtworkPixelUVRect, _ArtworkPixelTextureSize.xy);
+                if (_GridArtSliceClamp > .5 && all(input.slice.zw > input.slice.xy))
+                {
+                    float2 inset = min(_ColorMaskAlphaTexture_TexelSize.xy * .5, (input.slice.zw-input.slice.xy)*.5);
+                    uv = clamp(uv, input.slice.xy+inset, input.slice.zw-inset);
+                }
                 half alpha = SAMPLE_TEXTURE2D(_ColorMaskAlphaTexture, sampler_ColorMaskAlphaTexture, uv).a * input.alpha * _ColorMaskOpacity;
                 float contour = PlantBurnContour(TEXTURE2D_ARGS(_ColorMaskAlphaTexture,sampler_ColorMaskAlphaTexture),uv,
                     _ArtworkPixelUVRect,_ArtworkPixelTextureSize.xy,alpha,input.alpha * _ColorMaskOpacity);
