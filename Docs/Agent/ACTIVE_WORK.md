@@ -262,6 +262,14 @@
 - 锁修复：玩家锁轨缩短到 `0–6.52` 秒，在最终开战 Playable 前结束，避开 Hold 模式末帧；`ActorTimelineBehaviour` 同时在片段自然末尾主动释放控制锁，不依赖 `OnGraphStop`。
 - 地图恢复：Unity 重新导入期间 `Boss.json` 与 `Boss.planning.json` 被写成与场景不一致的版本，已从 HEAD 恢复为与 `Boss.unity` 一致的 `8d5ea0`；覆盖前的文件备份在 `Library/MapRecoveryBackup-20261018-1250`。
 - 验证：Unity 已完成脚本与 Timeline 资产导入，Editor.log 无 C# 编译错误；Boss 预制体与玩家锁轨序列化核对通过。EditMode 相机测试和完整入场/死亡实机流程仍待运行。
+## 2026-10-19 ILorR：R1 final version（静态核对完成，分支交付）
+
+- 用户明确授权推送R1并注明“R1 final version”。只在 `codex/ilorr/r1-level` 提交当前已保存Scene、同名planning及meta、R1SpringCameraGuide运行时/中文Inspector/专项及meta、R1说明/API和本条交接；不修改布局、不回采取整、不从Excel或旧规划重建。
+- 当前Scene含用户地形/植物/颜色方块/出生点等微调，R1局部镜头保留手动Size16、范围3×6、上移0.5及普通Size12；Scene和整数planning仍有未同步手调，整合以保存Scene为准，不能直接重应用旧规划。
+- 本地基线 `a672bb6`；刷新远端main到 `dc9b16d`，新增3提交涉及共享生长/门/平台载物及美术工具，没有改R1独立文件。只普通推本分支，不自行合并/rebase、推main或建PR；整合须保留main最新共享实现并复验。
+- 排除R2/R3 Scene、字体动态缓存、公共ContactTimelineTrigger区域镜头代码/Inspector/审计及对应通用说明。已重新读取Git worker、场景流程与编辑器UI规范；镜头代码此前Unity6000.3.12f1编译及74项编辑态专项通过，本次未改源码，不重跑长Play/通关/打包。当前Scene静态检查通过：484个唯一序列化对象、32个非内置资产GUID均可解析，无悬空本地fileID；配对planning可解析且已显式暂存，Test-PlanningMapCommit及暂存差异检查通过。最终路线、出生安全、双按钮门、共享曲柄及镜头触发/落地恢复由策划验收。
+- Scene SHA256 `5BE80A6A812F90F6E2DD7C95B4BFC6F53B7FB6D04C3860A93A2C496E89B03A9E`；planning `45231DFBB866388470F0EBA776CDF03E25BBA30AE0B458942BA4FF4B522E40EC`；完整副本仅保留本地Library/R1BeforeFinalPush-20261019-1847。Scene有75个规划标记根，复制地形和上弹性植物存在重复规划ID；planning仍有77条及Scene已删除物体/未生成Timeline，出生点也不同。只原样交付，不假称已完成回采；整合注意和依赖详见R1_LEVEL及R1_SPRING_CAMERA_API。
+
 ## 2026-10-19 ILorR R1 固定微调阶段交付（区域镜头开发暂缓）
 
 - 用户当前明确要求先推送阶段进度，供其他协作者整合main，随后等待用户通知继续。本次只交付下条已完成的K31/N39固定微调：两个实例的FreezeAll、禁搬运覆盖及配套Scene/planning、专属迁移/验证工具和说明。区域镜头仅完成现有接口调查，尚未编辑任何相机或Timeline源码，不包含未完成镜头功能。

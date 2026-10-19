@@ -1,5 +1,7 @@
 # 系统索引
 
+R1 final version（2026-10-19）：以保存的独立R1 Scene为准，包含最终布局、出生点及U26→Q41:S41下弹性植物镜头；普通Size12、提示手动Size16、范围3×6/上移0.5，落到指定植物才恢复。可选自动入镜，中文面板可调范围/尺寸/过渡，只经CameraControlManager，不自动安装到R2/R3/Gaming。Scene与77条planning成套交付，但手调、复制物体ID和出生点仍未完全回采，不能用旧planning重建最终布局。基线a672bb6，推送前main为dc9b16d，整合须保留main共享修复；见[策划说明](../Developer/R1_LEVEL.md)与[镜头API](Integration/R1_SPRING_CAMERA_API.md)。
+
 2026-10-19集中整合：正式Gaming采用MVMap17（20房间，1406原物体＋1隐形Start），保留main现行修复；独立R3及可选PlatformMount已接入，R1不再次镜像；TA旧支线保留main网格/HSV/区域效果实现并补独立预览。旧交互图提案与旧Grow配置不恢复，详见[整合说明](../Developer/BRANCH_INTEGRATION_2026-10-19.md)。
 
 共享场景素材库已按16有效像素/格清点为178项，新增边框、混合图集装饰和正式道具静态外观；保留旧笔刷编号/引用，自定义命名不覆盖。素材栏按视口自适应两列并兼容高DPI，入口“同步项目与切片素材”；范围/选区/排除项见[素材盘点](../Developer/SCENE_ART_LIBRARY.md)。黑白与旧Platform墙地块均可作为工作台参考，不改地图布局。
