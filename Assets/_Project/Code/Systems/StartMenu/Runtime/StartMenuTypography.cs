@@ -42,6 +42,7 @@ namespace Project.StartMenu
                 source.GetComponentInChildren<TextSdfMirror>(true);
             if (existing != null)
             {
+                existing.ApplyFont(font, font.material);
                 return existing;
             }
 

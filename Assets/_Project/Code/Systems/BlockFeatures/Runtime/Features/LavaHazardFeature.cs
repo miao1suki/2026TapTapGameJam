@@ -137,13 +137,18 @@ namespace Project.BlockFeatures
             if (health == null)
             {
                 AudioCuePlayer.Play(AudioCueIds.LavaCool);
-                player.EnterDeath();
+                player.EnterDeath(
+                    PlayerDeathCause.Lava,
+                    this);
                 return;
             }
-            if (health != null && !health.IsDead)
+            if (!health.IsDead)
             {
                 AudioCuePlayer.Play(AudioCueIds.LavaCool);
-                health.TakeDamage(health.MaxHealth);
+                health.TakeDamage(
+                    health.MaxHealth,
+                    PlayerDeathCause.Lava,
+                    this);
             }
         }
 

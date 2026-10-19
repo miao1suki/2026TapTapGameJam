@@ -13,19 +13,19 @@ MonoBehaviour:
   m_Name: Achievement_1001
   m_EditorClassIdentifier: Project.Achievements.Runtime::Project.Achievements.AchievementSO
   achievementId: 1001
-  displayName: Test
-  description: "\u8FDB\u5165\u6E38\u620F\u4E16\u754C"
+  displayName: "\u4E00\u5931\u8DB3\u6210\u5343\u53E4\u6068"
+  description: "\u989D......\u6454\u5F97\u6709\u70B9\u75BC"
   hidden: 0
-  platformAchievementId: 
+  platformAchievementId: Fall1
   conditions:
   - conditionId: 0001
-    mode: 0
+    mode: 1
     targetCount: 1
     targetProgress: 100
-    textPrefix: "\u70B9\u51FB\u5F00\u59CB\u6E38\u620F"
-    textSuffix: 
-    editorPosition: {x: -294.66666, y: 36}
+    textPrefix: "\u6454\u843D\u81F4\u4F7F\u81EA\u8EAB\u6B7B\u4EA1"
+    textSuffix: "\u6B21"
+    editorPosition: {x: 40, y: 40}
   logicNodes: []
   rootNodeId: 0001
   lockConditionIds: []
-  rootEditorPosition: {x: 40, y: 40}
+  rootEditorPosition: {x: 552, y: 0.66667175}

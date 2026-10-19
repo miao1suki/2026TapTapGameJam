@@ -12,6 +12,7 @@ namespace Project.GameFlow
         [SerializeField, Min(.5f)] private float minScale = .85f;
         [SerializeField, Min(.5f)] private float maxScale = 1.65f;
         [SerializeField, Min(0f)] private float contentGap = 36f;
+        [SerializeField, Min(0f)] private float leftSafeInset = 64f;
 
         private RectTransform root;
         private RectTransform categoryList;
@@ -91,6 +92,13 @@ namespace Project.GameFlow
                 maxScale);
 
             SetScale(categoryList, scale);
+            if (categoryList != null)
+            {
+                Vector2 categoryPosition =
+                    categoryList.anchoredPosition;
+                categoryPosition.x = 52f + leftSafeInset;
+                categoryList.anchoredPosition = categoryPosition;
+            }
             float categoryRight = categoryList != null
                 ? categoryList.anchoredPosition.x +
                   categoryList.rect.width * scale
@@ -113,8 +121,17 @@ namespace Project.GameFlow
 
             SetScale(contentRoot, contentScale);
             SetScale(title, scale);
+            if (title != null)
+            {
+                Vector2 titlePosition = title.anchoredPosition;
+                titlePosition.x = 52f + leftSafeInset;
+                title.anchoredPosition = titlePosition;
+            }
             SetBottom(status, new Vector2(contentX, 30f), scale);
-            SetBottom(back, new Vector2(52f, 24f), scale);
+            SetBottom(
+                back,
+                new Vector2(52f + leftSafeInset, 24f),
+                scale);
             applying = false;
         }
 

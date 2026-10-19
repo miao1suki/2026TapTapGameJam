@@ -903,7 +903,9 @@ namespace Project.BossLogic
                     !player.IsDead &&
                     !player.IsRespawning)
                 {
-                    player.EnterDeath();
+                    player.EnterDeath(
+                        PlayerDeathCause.Boss,
+                        this);
                 }
 
                 return;

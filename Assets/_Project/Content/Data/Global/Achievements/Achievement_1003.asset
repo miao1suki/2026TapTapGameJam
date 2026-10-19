@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1000000000000000000000000000003, type: 3}
+  m_Name: Achievement_1003
+  m_EditorClassIdentifier: Project.Achievements.Runtime::Project.Achievements.AchievementSO
+  achievementId: 1003
+  displayName: "\u4E00\u5931\u8DB3\u6210\u4E07\u53E4\u6068"
+  description: "\u4E3A\u4EC0\u4E48\u6211\u8FD9\u4E48\u8106\uFF1F\u6211\u96BE\u9053\u662F\u679C\u51BB\u4EBA\u5417......\u4E0D\u5BF9\u8FD8\u771F\u662F"
+  hidden: 0
+  platformAchievementId: Fall2
+  conditions:
+  - conditionId: 0001
+    mode: 1
+    targetCount: 10
+    targetProgress: 100
+    textPrefix: "\u6454\u843D\u81F4\u4F7F\u81EA\u8EAB\u6B7B\u4EA1"
+    textSuffix: "\u6B21"
+    editorPosition: {x: 40, y: 40}
+  logicNodes: []
+  rootNodeId: 0001
+  lockConditionIds: []
+  rootEditorPosition: {x: 521.3333, y: 52.66667}

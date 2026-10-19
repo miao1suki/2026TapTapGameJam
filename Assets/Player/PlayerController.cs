@@ -16,6 +16,14 @@ namespace Project.Player
         [InspectorName("加载转场复活")] LoadingTransition = 1
     }
 
+    public enum PlayerDeathCause
+    {
+        Fall = 0,
+        Lava = 1,
+        Spike = 2,
+        Boss = 3
+    }
+
     public enum PlayerStateId
     {
         Normal = 0,
@@ -138,7 +146,17 @@ namespace Project.Player
         public bool IsRespawning => respawnInProgress;
         public event Action RespawnCompleted;
         public event Action PlayerDied;
+        public event Action<
+            PlayerDeathCause,
+            UnityEngine.Object>
+            DeathCauseResolved;
         public event Action PlayerRespawnCompleted;
+        public PlayerDeathCause? LastDeathCause { get; private set; }
+        public UnityEngine.Object LastDeathSource
+        {
+            get;
+            private set;
+        }
 
         /// <summary>Developer-owned mode; changing it affects the next respawn, not an active transition.</summary>
         public void ConfigureRespawn(PlayerRespawnMode mode, float loadingSeconds = 2f)
@@ -549,7 +567,9 @@ namespace Project.Player
         public event Action CarryPlacementRejected;
         private static readonly string[] Signals = { AchievementSignalIds.PlayerJumped,
             AchievementSignalIds.PlayerLanded, AchievementSignalIds.PlayerActionStarted,
-            AchievementSignalIds.PlayerActionCompleted };
+            AchievementSignalIds.PlayerActionCompleted, AchievementSignalIds.PlayerDied,
+            AchievementSignalIds.PlayerFallDeath, AchievementSignalIds.PlayerLavaDeath,
+            AchievementSignalIds.PlayerSpikeDeath, AchievementSignalIds.PlayerBossDeath };
         public IReadOnlyList<string> GetAchievementSignalIds() => Signals;
 
         private void Awake()
@@ -2566,7 +2586,9 @@ namespace Project.Player
                             lastLandingFallDistance,
                             count))
                     {
-                        EnterDeath();
+                        EnterDeath(
+                            PlayerDeathCause.Fall,
+                            gameObject);
                         return;
                     }
 
@@ -2991,15 +3013,39 @@ namespace Project.Player
 
         public void EnterDeath()
         {
+            EnterDeathCore(null, null);
+        }
+
+        public void EnterDeath(
+            PlayerDeathCause cause,
+            UnityEngine.Object source = null)
+        {
+            EnterDeathCore(cause, source);
+        }
+
+        private void EnterDeathCore(
+            PlayerDeathCause? cause,
+            UnityEngine.Object source)
+        {
             if (dead || respawnInProgress)
             {
                 return;
             }
 
+            LastDeathCause = cause;
+            LastDeathSource = source;
             bool wasLocked = IsControlLocked;
             deathPosition = transform.position;
             dead = true;
             PlayerDied?.Invoke();
+            Emit(AchievementSignalIds.PlayerDied);
+            if (cause.HasValue)
+            {
+                EmitDeathCauseSignal(cause.Value);
+                DeathCauseResolved?.Invoke(
+                    cause.Value,
+                    source);
+            }
             AudioCuePlayer.Play(AudioCueIds.PlayerDie);
             float presentationSeconds = spritePresentation != null && spritePresentation.isActiveAndEnabled
                 ? spritePresentation.DeathAnimationDuration : 0f;
@@ -3019,6 +3065,26 @@ namespace Project.Player
             if (!wasLocked)
             {
                 ControlLockChanged?.Invoke(true);
+            }
+        }
+
+        private void EmitDeathCauseSignal(
+            PlayerDeathCause cause)
+        {
+            switch (cause)
+            {
+                case PlayerDeathCause.Fall:
+                    Emit(AchievementSignalIds.PlayerFallDeath);
+                    break;
+                case PlayerDeathCause.Lava:
+                    Emit(AchievementSignalIds.PlayerLavaDeath);
+                    break;
+                case PlayerDeathCause.Spike:
+                    Emit(AchievementSignalIds.PlayerSpikeDeath);
+                    break;
+                case PlayerDeathCause.Boss:
+                    Emit(AchievementSignalIds.PlayerBossDeath);
+                    break;
             }
         }
 
@@ -3325,6 +3391,15 @@ namespace Project.Player
 
         private void OnDied()
         {
+            if (health != null &&
+                health.LastDeathCause.HasValue)
+            {
+                EnterDeath(
+                    health.LastDeathCause.Value,
+                    health.LastDeathSource);
+                return;
+            }
+
             EnterDeath();
         }
 

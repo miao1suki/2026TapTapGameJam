@@ -15,6 +15,18 @@ MonoBehaviour:
   achievements:
   - {fileID: 11400000, guid: f56175e9758031b4f89c5d3d2f0ce9ce, type: 2}
   - {fileID: 11400000, guid: 75ec895967791f44eb8200d33eccddd7, type: 2}
-  catalogVersion: dbea1755f1d8c78eee676ad47d2e0233
+  - {fileID: 11400000, guid: 7a28f5fdbd0657f4495b98ec965f3a50, type: 2}
+  - {fileID: 11400000, guid: 803f9fde0c737cd47b2f7f8edd623236, type: 2}
+  - {fileID: 11400000, guid: 9fa90beeac54fa24ea2d6d1183ba8315, type: 2}
+  - {fileID: 11400000, guid: eed87e432ff35824b9f50b84ffca04ca, type: 2}
+  - {fileID: 11400000, guid: f8bff84e2292f18428d270182391f22f, type: 2}
+  - {fileID: 11400000, guid: e174b31366b5ae94dac72a1ed8bd3b00, type: 2}
+  - {fileID: 11400000, guid: a3227d03264448e46ac0442b0d509b6a, type: 2}
+  - {fileID: 11400000, guid: f6a912abd7594324ab1133beff8602b5, type: 2}
+  - {fileID: 11400000, guid: 56085cb951d774545816c6561caf3339, type: 2}
+  - {fileID: 11400000, guid: 90f4f69c10dbc42498a58d50ec7b2a1b, type: 2}
+  - {fileID: 11400000, guid: 3ebc3bd9b3626a04ba90cc60d6da2058, type: 2}
+  - {fileID: 11400000, guid: 3c850e3125e2082498c1d10442795260, type: 2}
+  catalogVersion: 69d73409423119b1b97eecea134ec190
   saveDirectoryOverride: 
   saveFileName: achievements.json

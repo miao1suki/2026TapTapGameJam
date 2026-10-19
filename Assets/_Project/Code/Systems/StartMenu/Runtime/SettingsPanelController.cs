@@ -91,21 +91,21 @@ namespace Project.StartMenu
                 new Vector2(52f, -118f),
                 new Vector2(190f, 390f));
 
-            soundTabButton = StartMenuUiFactory.CreateButton(
+            soundTabButton = StartMenuUiFactory.CreateInnerButton(
                 "Sound",
                 categoryList,
                 "声音",
                 new Vector2(190f, 48f),
                 null);
             AddCategorySize(soundTabButton);
-            keyBindingTabButton = StartMenuUiFactory.CreateButton(
+            keyBindingTabButton = StartMenuUiFactory.CreateInnerButton(
                 "Key Binding",
                 categoryList,
                 "按键映射",
                 new Vector2(190f, 48f),
                 null);
             AddCategorySize(keyBindingTabButton);
-            creditsTabButton = StartMenuUiFactory.CreateButton(
+            creditsTabButton = StartMenuUiFactory.CreateInnerButton(
                 "Credits",
                 categoryList,
                 "制作人员",
@@ -137,7 +137,7 @@ namespace Project.StartMenu
                 new Vector2(276f, -600f),
                 new Vector2(930f, 24f));
 
-            backButton = StartMenuUiFactory.CreateButton(
+            backButton = StartMenuUiFactory.CreateInnerButton(
                 "Back",
                 transform,
                 "返回",
@@ -163,13 +163,15 @@ namespace Project.StartMenu
             EnsurePrivacyButton();
             EnsureTouchLayoutButton();
             BindButtons();
+            HideSmallHints();
+            StartMenuUiFactory.ApplyInnerArtwork(transform);
         }
 
         private void EnsureTouchLayoutButton()
         {
             if (categoryList == null || categoryList.Find("Touch Layout") != null ||
                 Project.InputAbstraction.GameInput.PlatformMode != Project.InputAbstraction.InputPlatformMode.Mobile) return;
-            Button layout = StartMenuUiFactory.CreateButton("Touch Layout", categoryList, "触控布局",
+            Button layout = StartMenuUiFactory.CreateInnerButton("Touch Layout", categoryList, "触控布局",
                 new Vector2(190f, 48f), OpenTouchLayout);
             AddCategorySize(layout);
         }
@@ -195,7 +197,7 @@ namespace Project.StartMenu
         private void EnsurePrivacyButton()
         {
             if (categoryList == null || categoryList.Find("Privacy Policy") != null) return;
-            Button privacy = StartMenuUiFactory.CreateButton("Privacy Policy", categoryList, "隐私政策",
+            Button privacy = StartMenuUiFactory.CreateInnerButton("Privacy Policy", categoryList, "隐私政策",
                 new Vector2(190f, 48f), OpenPrivacyPolicy);
             AddCategorySize(privacy);
         }
@@ -210,6 +212,27 @@ namespace Project.StartMenu
                     Project.InputAbstraction.InputPlatformMode.Mobile ? "手柄按键" : "按键映射";
                 RefreshSound();
                 ShowPage(0);
+                HideSmallHints();
+                StartMenuUiFactory.ApplyInnerArtwork(transform);
+            }
+        }
+
+        private void HideSmallHints()
+        {
+            if (statusText != null)
+            {
+                statusText.gameObject.SetActive(false);
+            }
+
+            Text[] labels = GetComponentsInChildren<Text>(true);
+            for (int index = 0; index < labels.Length; index++)
+            {
+                Text label = labels[index];
+                if (label != null &&
+                    (label.name == "Hint" || label.name == "Status"))
+                {
+                    label.gameObject.SetActive(false);
+                }
             }
         }
 

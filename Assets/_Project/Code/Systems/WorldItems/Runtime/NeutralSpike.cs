@@ -99,7 +99,8 @@ namespace Project.WorldItems
         {
             if (!isActiveAndEnabled || other == null) return;
             var player = other.GetComponentInParent<PlayerController>();
-            if (player != null && !player.IsDead && !player.IsInvulnerable) player.EnterDeath();
+            if (player != null && !player.IsDead && !player.IsInvulnerable)
+                player.EnterDeath(PlayerDeathCause.Spike, this);
         }
     }
 }

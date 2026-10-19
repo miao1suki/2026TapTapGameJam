@@ -87,7 +87,7 @@ Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全�
 
 关卡美术工作台：`Code/Systems/GridArt`，UI Toolkit双侧栏、共享多图集素材库、直接读取当前关卡／房间／通道Solid白块并可联动铺绘，无需Hierarchy选择；自动保存美术／延后实时预览默认开启，显式“保存场景”交付Scene。支持Scene绘制、自动边角、多格装饰、同格多层透明叠图、多层XY视差预设／预览及每关独立持久化Mesh。自动底图不覆盖手工装饰；空闲不扫描、笔画不重建侧栏、未变生成网格复用。不改白块共享材质／玩法存档，跨Scene需独立副本；预留同UV法线与URP 3D受光，不代表2D Light已接入。独立示例在Development/GridArt/TileArtTrial。见 [操作与素材评估](../Developer/GRID_ART.md)、[接入API](Integration/GRID_ART_API.md)。
 
-游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标和设置背景，预裁切产物位于`Art/Generated/GameUI`。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
+游戏UI美术：`Resources/UI/GameUiArtwork.asset`统一开始菜单、三色能力轮盘、暂停图标、设置/存档/收藏背景、设置内页按钮/Slider/Toggle/关闭X、存档独立块、成就解锁块与透明绿色像素勾，预裁切产物位于`Art/Generated/GameUI`。开始菜单设置与制作名单共用全屏内页背景：纯深色底托加 `Start Menu Panel Background`，从右侧滑入、向右滑出。暂停三页统一使用简洁蓝青像素背景与透明阶梯笔触左边，旧蓝色网格作为旧资源保留；三页内容均增加左侧安全区，右侧关闭 X 不动。存档页使用透明滚动区和单列独立块，空存档也使用同款块；设置、按键映射、存档灰色 Hint/Status 小字停用。内页新材质由 Settings/KeyBinding/Save 控制器对动态和序列化旧控件统一应用，主菜单四按钮和暂停轮盘保持原资源；设置页动态 Toggle 也复用绿色勾。所有 UI SDF 镜像绑定 `Cubic_11 SDF`，已有镜像会重新绑定而不是跳过。启动、能力门控与暂停操作仍由原组件负责；水中玩家使用裁剪/深度精灵Shader进入水下底图。素材接入与验证见 [GAME_UI_ARTWORK.md](../Developer/GAME_UI_ARTWORK.md)。
 
 主角像素表现：`Assets/Player/PlayerSpritePresentation.cs`，7套动作35帧，读取现有玩家状态；按24源像素自然显示1.5格、物理仍1×1格，不新增碰撞体，死亡优先、演出冻结与复活恢复。唯一标准Player.prefab已接线，裸PlayerController运行时自动补齐。最新比例见 [美术约定](../Developer/ART_GRID_CONVENTIONS.md)。
 
@@ -131,7 +131,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | TA 染色覆盖效果 | `Assets/ta_source/GivingColor` | 独立 URP 透明覆盖 Shader 读取原材质纹理 Alpha，按红色燃烧、蓝色四次叠染、绿色逐级分叉播放；材质 Inspector 可调速度、噪波和像素化。只在玩家染色成功后短暂显示，完成后渐隐并露出原玩法改色结果；不覆盖水与岩浆生成的深蓝固体块，不覆盖蒸汽和植物反应。开局能力、解锁及目标原颜色由原程序管理；Test 场景文件不作接线修改；见 [使用说明.md](../../Assets/ta_source/GivingColor/使用说明.md) |
 | 掉落物与拾取飞行 | `Assets/_Project/Code/Shared/Runtime/DropItemBase.cs`、`Assets/_Project/Code/Systems/PickupPresentation` | 基类负责感知后的磁吸、收集生命周期；颜色钥匙触碰结算并播放 DOTween 四段飞行与镜头；Pick 场景保留测试物 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
-| 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、块材质和达成图片 |
+| 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、九宫格块美术和达成图片。完成态的灰色整块遮罩与绿色像素勾仅为显示，不挂 Toggle/Selectable、不接收射线；完成后条件栏继续显示最终条件文本而不是“已完成”。隐藏成就在解锁前显示居中大问号与“待发现成就”，解锁后才揭示真实内容。运行时由 `AchievementUnlockToastPresenter` 实现 `IAchievementUnlockReceiver`，在 `WordNote_UI` 画布左下角用独立九宫格块和透明绿色像素勾排队显示“达成成就！”与成就名，左入停留后左出，所有字体、块/勾 Sprite、材质、尺寸和动画参数可配置 |
 | Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本；新增对话轨道，不需要绑定对象，直接向常驻 `WordNote_UI` 申请同一画布中的消息。使用见 [对话轨道](../Developer/TIMELINE_DIALOGUE.md)，接入见 [API](Integration/TIMELINE_DIALOGUE_API.md) |
 | 玩家 / Boss Timeline 轨道 | `Assets/GJ_Tools/TimelineTools3D/AboutTimeline` | `PlayerTimelineTrack` 与 `BossTimelineTrack` 支持显式绑定或按 Tag 查找角色，驱动位移、跳跃、玩家输入锁和 Boss 追击状态。使用见 [玩家与 Boss 轨道](../Developer/TIMELINE_ACTOR_TRACKS.md)，接入见 [API](Integration/TIMELINE_ACTOR_TRACKS_API.md) |
 | 通用接触触发道具 | `Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/ContactTimelineTrigger.cs` | 独立 MonoBehaviour，挂在有 Collider 的道具上后自动隐藏 Renderer，通过 Trigger/Collision 接触播放绑定 Timeline；支持玩家、任意碰撞体或 Tag 筛选，不依赖颜色系统。“进入播放，离开停止”模式用于区域状态，SceneView 与关卡编辑器画布以金色虚线显示真实 Collider 范围。使用见 [接触触发](../Developer/CONTACT_TIMELINE.md)，接入见 [API](Integration/CONTACT_TIMELINE_API.md) |

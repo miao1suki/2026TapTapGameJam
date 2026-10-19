@@ -11,6 +11,7 @@ namespace Project.GameFlow
         [SerializeField, Min(.1f)] private float scaleBoost = 1.15f;
         [SerializeField, Min(.5f)] private float minScale = .85f;
         [SerializeField, Min(.5f)] private float maxScale = 1.65f;
+        [SerializeField, Min(0f)] private float leftSafeInset = 64f;
 
         private RectTransform root;
         private RectTransform title;
@@ -93,23 +94,23 @@ namespace Project.GameFlow
 
             SetTopLeft(
                 title,
-                new Vector2(54f, -42f) * scale,
+                new Vector2(54f + leftSafeInset, -42f) * scale,
                 scale);
             SetTopLeft(
                 status,
-                new Vector2(56f, -96f) * scale,
+                new Vector2(56f + leftSafeInset, -96f) * scale,
                 scale);
             SetTopLeft(
                 slotList,
-                new Vector2(48f, -142f) * scale,
+                new Vector2(48f + leftSafeInset, -142f) * scale,
                 scale);
             SetBottom(
                 createSlot,
-                new Vector2(48f, 24f) * scale,
+                new Vector2(48f + leftSafeInset, 24f) * scale,
                 scale);
             SetBottom(
                 back,
-                new Vector2(246f, 24f) * scale,
+                new Vector2(246f + leftSafeInset, 24f) * scale,
                 scale);
             SetTopRight(
                 close,

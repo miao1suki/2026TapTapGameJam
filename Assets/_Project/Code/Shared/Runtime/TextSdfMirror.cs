@@ -71,6 +71,34 @@ namespace Project.UI
             CopyText();
         }
 
+        public void ApplyFont(
+            TMP_FontAsset font,
+            Material material)
+        {
+            if (font == null)
+            {
+                return;
+            }
+
+            target = GetComponent<TextMeshProUGUI>();
+            if (target == null)
+            {
+                target = gameObject.AddComponent<TextMeshProUGUI>();
+            }
+
+            target.font = font;
+            if (material != null)
+            {
+                target.fontSharedMaterial = material;
+            }
+            else if (font.material != null)
+            {
+                target.fontSharedMaterial = font.material;
+            }
+
+            CopyText();
+        }
+
         private void LateUpdate()
         {
             CopyText();
