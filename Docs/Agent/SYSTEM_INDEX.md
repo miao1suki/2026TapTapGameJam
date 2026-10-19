@@ -1,5 +1,7 @@
 # 系统索引
 
+2026-10-19集中整合：正式Gaming采用MVMap17（20房间，1406原物体＋1隐形Start），保留main现行修复；独立R3及可选PlatformMount已接入，R1不再次镜像；TA旧支线保留main网格/HSV/区域效果实现并补独立预览。旧交互图提案与旧Grow配置不恢复，详见[整合说明](../Developer/BRANCH_INTEGRATION_2026-10-19.md)。
+
 共享场景素材库已按16有效像素/格清点为178项，新增边框、混合图集装饰和正式道具静态外观；保留旧笔刷编号/引用，自定义命名不覆盖。素材栏按视口自适应两列并兼容高DPI，入口“同步项目与切片素材”；范围/选区/排除项见[素材盘点](../Developer/SCENE_ART_LIBRARY.md)。黑白与旧Platform墙地块均可作为工作台参考，不改地图布局。
 
 主菜单触控布局修正WorldMainMenu的NativeFormat SDF引用，并恢复已有按钮/静态事件接线；布局/隐私模态保护下层设置，布局Cancel消费同帧返回，见[移动操作](../Developer/MOBILE_CONTROLS.md)。PC隐私政策已接远端4096字体修复，本地旧字体经用户确认完整备份后替换，不增加另一套字体；实际正文字符及采样容量通过，见[核对说明](../Developer/PRIVACY_FONT_CAPACITY.md)。署名按确认更正为“臾日不再”。
