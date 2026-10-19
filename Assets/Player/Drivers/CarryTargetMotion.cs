@@ -27,6 +27,8 @@ namespace Project.Player
         private Vector3 dropDestination;
         private float dropDeadline;
         private Transform carrier;
+        private float carryCell = 1f;
+        private float carryBottomOffset = -.5f;
         private IPlayerCarrySeparationHost separationHost;
         private readonly RaycastHit[] carryHits = new RaycastHit[128];
 
@@ -104,14 +106,15 @@ namespace Project.Player
 
             CacheTargets();
             carrier = carrierTransform;
+            var player = carrier != null ? carrier.GetComponent<PlayerController>() : null;
+            carryCell = player != null ? player.GridCellWorldSize : Project.BlockFeatures.GridCellSizeUtility.Resolve(root);
+            Bounds solidBounds = GetPlacementBounds(root.position);
+            carryBottomOffset = solidBounds.size.sqrMagnitude > .00001f ? solidBounds.min.y - root.position.y : -carryCell * .5f;
             separationHost = carrier != null ? carrier.GetComponent<IPlayerCarrySeparationHost>() : null;
             originalPosition = root.position;
             originalScale = root.localScale;
             originalSiblingIndex = root.GetSiblingIndex();
-            currentAnchor = new Vector3(
-                anchorWorldPosition.x,
-                anchorWorldPosition.y,
-                originalPosition.z);
+            currentAnchor = ResolveAnchor(anchorWorldPosition);
             playerCenter = playerWorldCenter;
             IsCarrying = true;
             IsDropAnimating = false;
@@ -174,10 +177,7 @@ namespace Project.Player
 
         public void UpdateAnchor(Vector3 anchorWorldPosition)
         {
-            currentAnchor = new Vector3(
-                anchorWorldPosition.x,
-                anchorWorldPosition.y,
-                originalPosition.z);
+            currentAnchor = ResolveAnchor(anchorWorldPosition);
             if (!IsCarrying || IsDropAnimating ||
                 movingToCarrier || root == null)
             {
@@ -187,13 +187,23 @@ namespace Project.Player
             root.position = currentAnchor;
         }
 
+        private Vector3 ResolveAnchor(Vector3 nominalAnchor)
+        {
+            nominalAnchor.z = originalPosition.z;
+            // The host describes the centre of a nominal one-cell item. Support
+            // the actual solid bottom instead: tall/offset shapes must not sink
+            // into the player or incorrectly fit under a two-cell ceiling.
+            nominalAnchor.y -= carryCell * .5f + carryBottomOffset;
+            return nominalAnchor;
+        }
+
         public Vector3 ConstrainDisplacement(Vector3 anchor, Vector3 displacement, float skin)
         {
             if (!IsCarrying || IsDropAnimating || IsResetAnimating || colliders == null)
                 return displacement;
 
             // Query the intended head pose, not the interpolated render pose or pickup Tween.
-            anchor.z = originalPosition.z;
+            anchor = ResolveAnchor(anchor);
             Vector3 offset = anchor - root.position;
             Vector3 result = Vector3.zero;
             for (int axis = 0; axis < 3; axis++)
@@ -325,7 +335,7 @@ namespace Project.Player
             waitingForSeparation = false;
             IsDropAnimating = false;
             // The player's anchor may have moved while the object was in flight.
-            if (separationHost is IPlayerCarryHost host) currentAnchor = host.CarryAnchorWorldPosition;
+            if (separationHost is IPlayerCarryHost host) currentAnchor = ResolveAnchor(host.CarryAnchorWorldPosition);
             root.position = currentAnchor;
         }
 

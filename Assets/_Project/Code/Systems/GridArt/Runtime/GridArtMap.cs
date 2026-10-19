@@ -22,6 +22,10 @@ namespace Project.GridArt
         public bool locked;
         public float depth = 2f;
         public Vector2 parallax = Vector2.one;
+        public bool lockParallaxX;
+        public bool lockParallaxY;
+        // Maximum displacement from the authored position, in world cells. Zero is unlimited.
+        public Vector2 maxParallaxOffset;
         public Color tint = Color.white;
         public string colorId = ""; // Empty inherits each brush; "none" forces neutral.
         public bool lighting3D;

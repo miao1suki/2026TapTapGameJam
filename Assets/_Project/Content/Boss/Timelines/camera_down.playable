@@ -127,4 +127,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.CameraDownPlayable
   relativeSizeMultiplier: 1.3
   focusDownBlocks: 5
+  triggerLocalDown: {x: 0, y: -1, z: 0}
   blendDuration: 0.35

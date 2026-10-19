@@ -20,6 +20,8 @@ namespace Project.BossLogic
     {
         [SerializeField] private TMP_FontAsset font;
         [SerializeField] private GameObject collectiblePrefab;
+        [SerializeField, Min(1)]
+        private int collectibleCount = 6;
         [SerializeField, Min(1f)] private float fontSize = 72f;
         [SerializeField, Min(1f)]
         private float typewriterCharactersPerSecond = 18f;
@@ -28,11 +30,25 @@ namespace Project.BossLogic
         [SerializeField, Min(0f)]
         private float branchTwoFinalGapSeconds = 2f;
         [SerializeField, Min(0f)]
+        private float sequenceStartDelaySeconds = .15f;
+        [SerializeField, Min(0f)]
         private float collectibleRevealStagger = .35f;
         [SerializeField, Min(.05f)]
         private float collectibleRiseDuration = .65f;
         [SerializeField, Min(0f)]
         private float collectiblePrepareSeconds = 2f;
+        [Tooltip("相对表演坐标系的方向偏移，运行时叠加到玩家中心。")]
+        [SerializeField]
+        private Vector3 collectibleBodyOffset =
+            new Vector3(0f, .4f, 0f);
+        [SerializeField, Min(0f)]
+        private float collectibleBaseHeight = 1.75f;
+        [SerializeField, Min(0f)]
+        private float collectibleSlotSpacing = .36f;
+        [SerializeField, Min(0f)]
+        private float collectibleSlotArcHeight = .14f;
+        [SerializeField, Min(0f)]
+        private float collectibleBobScale = 1.035f;
         [SerializeField, Min(0f)]
         private float collectibleBobHeight = .08f;
         [SerializeField, Min(.05f)]
@@ -45,6 +61,9 @@ namespace Project.BossLogic
         private float fullyBlackHoldSeconds = 1f;
         [SerializeField, Min(0f)]
         private float sufficientThreshold = .6f;
+        [SerializeField]
+        private Vector2 blackScreenCenter =
+            new Vector2(.5f, .5f);
         [SerializeField] private string startDestinationId = "Start";
         [SerializeField] private string endDestinationId = "End";
         [SerializeField]
@@ -155,6 +174,7 @@ namespace Project.BossLogic
                 {
                     font = font,
                     collectiblePrefab = collectiblePrefab,
+                    collectibleCount = collectibleCount,
                     fontSize = fontSize,
                     typewriterCharactersPerSecond =
                         typewriterCharactersPerSecond,
@@ -162,12 +182,24 @@ namespace Project.BossLogic
                     lineGapSeconds = lineGapSeconds,
                     branchTwoFinalGapSeconds =
                         branchTwoFinalGapSeconds,
+                    sequenceStartDelaySeconds =
+                        sequenceStartDelaySeconds,
                     collectibleRevealStagger =
                         collectibleRevealStagger,
                     collectibleRiseDuration =
                         collectibleRiseDuration,
                     collectiblePrepareSeconds =
                         collectiblePrepareSeconds,
+                    collectibleBodyOffset =
+                        collectibleBodyOffset,
+                    collectibleBaseHeight =
+                        collectibleBaseHeight,
+                    collectibleSlotSpacing =
+                        collectibleSlotSpacing,
+                    collectibleSlotArcHeight =
+                        collectibleSlotArcHeight,
+                    collectibleBobScale =
+                        collectibleBobScale,
                     collectibleBobHeight =
                         collectibleBobHeight,
                     collectibleBobDuration =
@@ -178,6 +210,8 @@ namespace Project.BossLogic
                         fullyBlackHoldSeconds,
                     sufficientThreshold =
                         sufficientThreshold,
+                    blackScreenCenter =
+                        blackScreenCenter,
                     startDestinationId =
                         startDestinationId,
                     endDestinationId = endDestinationId,
@@ -201,20 +235,30 @@ namespace Project.BossLogic
 
         public TMP_FontAsset font;
         public GameObject collectiblePrefab;
+        public int collectibleCount = 6;
         public float fontSize = 72f;
         public float typewriterCharactersPerSecond = 18f;
         public float lineHoldSeconds = 1.2f;
         public float lineGapSeconds = 1f;
         public float branchTwoFinalGapSeconds = 2f;
+        public float sequenceStartDelaySeconds = .15f;
         public float collectibleRevealStagger = .35f;
         public float collectibleRiseDuration = .65f;
         public float collectiblePrepareSeconds = 2f;
+        public Vector3 collectibleBodyOffset =
+            new Vector3(0f, .4f, 0f);
+        public float collectibleBaseHeight = 1.75f;
+        public float collectibleSlotSpacing = .36f;
+        public float collectibleSlotArcHeight = .14f;
+        public float collectibleBobScale = 1.035f;
         public float collectibleBobHeight = .08f;
         public float collectibleBobDuration = .8f;
         public float blackCoverSpeed = .72f;
         public float blackSoftness;
         public float fullyBlackHoldSeconds = 1f;
         public float sufficientThreshold = .6f;
+        public Vector2 blackScreenCenter =
+            new Vector2(.5f, .5f);
         public string startDestinationId = "Start";
         public string endDestinationId = "End";
         public string[] openingLines;
@@ -306,7 +350,11 @@ namespace Project.BossLogic
 
         private IEnumerator RunSequence()
         {
-            yield return new WaitForSeconds(.15f);
+            if (sequenceStartDelaySeconds > 0f)
+            {
+                yield return new WaitForSeconds(
+                    sequenceStartDelaySeconds);
+            }
             yield return PlayLines(
                 openingLines,
                 lineGapSeconds);
@@ -437,7 +485,7 @@ namespace Project.BossLogic
             overlay.ResetPresentation();
             yield return overlay.CoverFromCenterAsync(
                 player,
-                new Vector2(.5f, .5f),
+                blackScreenCenter,
                 blackCoverSpeed,
                 blackSoftness);
             DestroyCollectibles();
@@ -461,7 +509,7 @@ namespace Project.BossLogic
             yield return null;
             yield return overlay.RevealFromAsync(
                 player,
-                new Vector2(.5f, .5f),
+                blackScreenCenter,
                 blackCoverSpeed,
                 blackSoftness);
             overlay.ResetPresentation();
@@ -479,14 +527,20 @@ namespace Project.BossLogic
             {
                 yield break;
             }
+            if (!BossTimelinePerformanceFrame.TryResolve(
+                    director,
+                    nameof(PlayerThinkingTimelinePlayable),
+                    out BossTimelinePerformanceFrame frame))
+            {
+                yield break;
+            }
 
             collectibleRoot =
                 new GameObject("PlayerThinking收集品");
-            collectibleRoot.transform.SetParent(
-                player,
-                false);
             collectibleRoot.SetActive(false);
-            const int count = 6;
+            int count = Mathf.Max(1, collectibleCount);
+            Vector3 localPlayer =
+                frame.ToLocalPoint(player.position);
             var slots = new List<Vector3>(count);
             var baseScales =
                 new List<Vector3>(count);
@@ -499,25 +553,31 @@ namespace Project.BossLogic
                         collectiblePrefab,
                         collectibleRoot.transform);
                 DisableCollectibleGameplay(instance);
-                instance.transform.localPosition =
-                    new Vector3(0f, .4f, 0f);
+                Vector3 baseScale =
+                    instance.transform.localScale;
+                instance.transform.position =
+                    frame.ToWorldPoint(
+                        localPlayer +
+                        collectibleBodyOffset);
                 instance.transform.localScale =
                     Vector3.zero;
                 collectibles.Add(instance.transform);
-                baseScales.Add(
-                    Vector3.one);
+                baseScales.Add(baseScale);
                 float centered =
                     index - (count - 1) * .5f;
                 float normalized =
                     centered /
                     Mathf.Max(1f, (count - 1) * .5f);
                 slots.Add(
-                    new Vector3(
-                        centered * .36f,
-                        1.75f +
-                        (1f - normalized * normalized) *
-                        .14f,
-                        0f));
+                    frame.ToWorldPoint(
+                        localPlayer +
+                        new Vector3(
+                            centered *
+                            collectibleSlotSpacing,
+                            collectibleBaseHeight +
+                            (1f - normalized * normalized) *
+                            collectibleSlotArcHeight,
+                            0f)));
             }
             collectibleRoot.SetActive(true);
 
@@ -529,7 +589,7 @@ namespace Project.BossLogic
                 Sequence sequence = DOTween.Sequence()
                     .SetUpdate(true)
                     .SetTarget(item);
-                sequence.Join(item.DOLocalMove(
+                sequence.Join(item.DOMove(
                         slots[index],
                         collectibleRiseDuration)
                     .SetEase(Ease.OutCubic));
@@ -551,7 +611,7 @@ namespace Project.BossLogic
             {
                 Transform item = collectibles[index];
                 float baseY = slots[index].y;
-                item.DOLocalMoveY(
+                item.DOMoveY(
                         baseY + collectibleBobHeight,
                         collectibleBobDuration)
                     .SetLoops(-1, LoopType.Yoyo)
@@ -559,7 +619,8 @@ namespace Project.BossLogic
                     .SetUpdate(true)
                     .SetTarget(item);
                 item.DOScale(
-                        baseScales[index] * 1.035f,
+                        baseScales[index] *
+                        collectibleBobScale,
                         collectibleBobDuration)
                     .SetLoops(-1, LoopType.Yoyo)
                     .SetEase(Ease.InOutSine)

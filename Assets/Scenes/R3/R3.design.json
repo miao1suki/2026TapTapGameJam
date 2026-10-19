@@ -1,0 +1,1414 @@
+{
+  "designConfirmed": true,
+  "workbook": "关卡设计.xlsx",
+  "sheet": "Sheet1",
+  "sha256": "3bbbcfb212928fab7fcb2db7f96ca27089bdbb521434d8754a0251aad1cddd92",
+  "sourceRange": "X75:CZ101",
+  "originColumn": 24,
+  "originRow": 75,
+  "notes": "下方 R2 内容不导入；保留共用边界 BK98:BK101；只移除经确认的 CZ78 黑墙。",
+  "originalWallCount": 552,
+  "wallCount": 551,
+  "wallRuns": [
+    {
+      "row": 75,
+      "firstColumn": 24,
+      "lastColumn": 104
+    },
+    {
+      "row": 76,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 76,
+      "firstColumn": 55,
+      "lastColumn": 82
+    },
+    {
+      "row": 76,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 77,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 77,
+      "firstColumn": 55,
+      "lastColumn": 78
+    },
+    {
+      "row": 77,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 78,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 78,
+      "firstColumn": 58,
+      "lastColumn": 78
+    },
+    {
+      "row": 79,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 79,
+      "firstColumn": 58,
+      "lastColumn": 78
+    },
+    {
+      "row": 80,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 80,
+      "firstColumn": 31,
+      "lastColumn": 33
+    },
+    {
+      "row": 80,
+      "firstColumn": 58,
+      "lastColumn": 71
+    },
+    {
+      "row": 80,
+      "firstColumn": 88,
+      "lastColumn": 91
+    },
+    {
+      "row": 80,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 81,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 81,
+      "firstColumn": 58,
+      "lastColumn": 71
+    },
+    {
+      "row": 81,
+      "firstColumn": 88,
+      "lastColumn": 88
+    },
+    {
+      "row": 81,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 82,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 82,
+      "firstColumn": 58,
+      "lastColumn": 71
+    },
+    {
+      "row": 82,
+      "firstColumn": 88,
+      "lastColumn": 88
+    },
+    {
+      "row": 82,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 83,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 83,
+      "firstColumn": 63,
+      "lastColumn": 71
+    },
+    {
+      "row": 83,
+      "firstColumn": 88,
+      "lastColumn": 88
+    },
+    {
+      "row": 83,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 84,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 84,
+      "firstColumn": 63,
+      "lastColumn": 71
+    },
+    {
+      "row": 84,
+      "firstColumn": 88,
+      "lastColumn": 88
+    },
+    {
+      "row": 84,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 85,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 85,
+      "firstColumn": 63,
+      "lastColumn": 67
+    },
+    {
+      "row": 85,
+      "firstColumn": 88,
+      "lastColumn": 91
+    },
+    {
+      "row": 85,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 86,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 86,
+      "firstColumn": 63,
+      "lastColumn": 67
+    },
+    {
+      "row": 86,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 87,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 87,
+      "firstColumn": 63,
+      "lastColumn": 67
+    },
+    {
+      "row": 87,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 88,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 88,
+      "firstColumn": 63,
+      "lastColumn": 67
+    },
+    {
+      "row": 88,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 89,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 89,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 90,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 90,
+      "firstColumn": 48,
+      "lastColumn": 52
+    },
+    {
+      "row": 90,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 91,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 91,
+      "firstColumn": 82,
+      "lastColumn": 84
+    },
+    {
+      "row": 91,
+      "firstColumn": 89,
+      "lastColumn": 95
+    },
+    {
+      "row": 91,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 92,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 92,
+      "firstColumn": 82,
+      "lastColumn": 84
+    },
+    {
+      "row": 92,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 93,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 93,
+      "firstColumn": 76,
+      "lastColumn": 78
+    },
+    {
+      "row": 93,
+      "firstColumn": 80,
+      "lastColumn": 84
+    },
+    {
+      "row": 93,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 94,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 94,
+      "firstColumn": 34,
+      "lastColumn": 40
+    },
+    {
+      "row": 94,
+      "firstColumn": 58,
+      "lastColumn": 63
+    },
+    {
+      "row": 94,
+      "firstColumn": 76,
+      "lastColumn": 78
+    },
+    {
+      "row": 94,
+      "firstColumn": 80,
+      "lastColumn": 84
+    },
+    {
+      "row": 94,
+      "firstColumn": 94,
+      "lastColumn": 96
+    },
+    {
+      "row": 94,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 95,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 95,
+      "firstColumn": 34,
+      "lastColumn": 40
+    },
+    {
+      "row": 95,
+      "firstColumn": 58,
+      "lastColumn": 63
+    },
+    {
+      "row": 95,
+      "firstColumn": 72,
+      "lastColumn": 78
+    },
+    {
+      "row": 95,
+      "firstColumn": 80,
+      "lastColumn": 84
+    },
+    {
+      "row": 95,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 96,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 96,
+      "firstColumn": 29,
+      "lastColumn": 40
+    },
+    {
+      "row": 96,
+      "firstColumn": 58,
+      "lastColumn": 63
+    },
+    {
+      "row": 96,
+      "firstColumn": 72,
+      "lastColumn": 78
+    },
+    {
+      "row": 96,
+      "firstColumn": 80,
+      "lastColumn": 84
+    },
+    {
+      "row": 96,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 97,
+      "firstColumn": 24,
+      "lastColumn": 24
+    },
+    {
+      "row": 97,
+      "firstColumn": 26,
+      "lastColumn": 63
+    },
+    {
+      "row": 97,
+      "firstColumn": 72,
+      "lastColumn": 78
+    },
+    {
+      "row": 97,
+      "firstColumn": 80,
+      "lastColumn": 84
+    },
+    {
+      "row": 97,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 98,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 98,
+      "firstColumn": 72,
+      "lastColumn": 78
+    },
+    {
+      "row": 98,
+      "firstColumn": 80,
+      "lastColumn": 84
+    },
+    {
+      "row": 98,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 99,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 99,
+      "firstColumn": 72,
+      "lastColumn": 78
+    },
+    {
+      "row": 99,
+      "firstColumn": 80,
+      "lastColumn": 84
+    },
+    {
+      "row": 99,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 100,
+      "firstColumn": 63,
+      "lastColumn": 63
+    },
+    {
+      "row": 100,
+      "firstColumn": 72,
+      "lastColumn": 78
+    },
+    {
+      "row": 100,
+      "firstColumn": 80,
+      "lastColumn": 84
+    },
+    {
+      "row": 100,
+      "firstColumn": 104,
+      "lastColumn": 104
+    },
+    {
+      "row": 101,
+      "firstColumn": 63,
+      "lastColumn": 104
+    }
+  ],
+  "removedWalls": [
+    {
+      "column": "CZ",
+      "row": 78
+    }
+  ],
+  "waterCells": [
+    {
+      "column": "CV",
+      "row": 76
+    },
+    {
+      "column": "CW",
+      "row": 76
+    },
+    {
+      "column": "CX",
+      "row": 76
+    },
+    {
+      "column": "CY",
+      "row": 76
+    },
+    {
+      "column": "CV",
+      "row": 77
+    },
+    {
+      "column": "CW",
+      "row": 77
+    },
+    {
+      "column": "CX",
+      "row": 77
+    },
+    {
+      "column": "CY",
+      "row": 77
+    },
+    {
+      "column": "CV",
+      "row": 78
+    },
+    {
+      "column": "CW",
+      "row": 78
+    },
+    {
+      "column": "CX",
+      "row": 78
+    },
+    {
+      "column": "CY",
+      "row": 78
+    },
+    {
+      "column": "CV",
+      "row": 79
+    },
+    {
+      "column": "CW",
+      "row": 79
+    },
+    {
+      "column": "CX",
+      "row": 79
+    },
+    {
+      "column": "CY",
+      "row": 79
+    },
+    {
+      "column": "CV",
+      "row": 80
+    },
+    {
+      "column": "CW",
+      "row": 80
+    },
+    {
+      "column": "CX",
+      "row": 80
+    },
+    {
+      "column": "CY",
+      "row": 80
+    },
+    {
+      "column": "CV",
+      "row": 81
+    },
+    {
+      "column": "CW",
+      "row": 81
+    },
+    {
+      "column": "CX",
+      "row": 81
+    },
+    {
+      "column": "CY",
+      "row": 81
+    },
+    {
+      "column": "CV",
+      "row": 82
+    },
+    {
+      "column": "CW",
+      "row": 82
+    },
+    {
+      "column": "CX",
+      "row": 82
+    },
+    {
+      "column": "CY",
+      "row": 82
+    },
+    {
+      "column": "CV",
+      "row": 83
+    },
+    {
+      "column": "CW",
+      "row": 83
+    },
+    {
+      "column": "CX",
+      "row": 83
+    },
+    {
+      "column": "CY",
+      "row": 83
+    },
+    {
+      "column": "CW",
+      "row": 84
+    },
+    {
+      "column": "CX",
+      "row": 84
+    },
+    {
+      "column": "CY",
+      "row": 84
+    },
+    {
+      "column": "CW",
+      "row": 85
+    },
+    {
+      "column": "CX",
+      "row": 85
+    },
+    {
+      "column": "CY",
+      "row": 85
+    },
+    {
+      "column": "CW",
+      "row": 86
+    },
+    {
+      "column": "CX",
+      "row": 86
+    },
+    {
+      "column": "CY",
+      "row": 86
+    },
+    {
+      "column": "CW",
+      "row": 87
+    },
+    {
+      "column": "CX",
+      "row": 87
+    },
+    {
+      "column": "CY",
+      "row": 87
+    },
+    {
+      "column": "CW",
+      "row": 88
+    },
+    {
+      "column": "CX",
+      "row": 88
+    },
+    {
+      "column": "CY",
+      "row": 88
+    },
+    {
+      "column": "CX",
+      "row": 89
+    },
+    {
+      "column": "CY",
+      "row": 89
+    },
+    {
+      "column": "CX",
+      "row": 90
+    },
+    {
+      "column": "CY",
+      "row": 90
+    },
+    {
+      "column": "CX",
+      "row": 91
+    },
+    {
+      "column": "CY",
+      "row": 91
+    },
+    {
+      "column": "CX",
+      "row": 92
+    },
+    {
+      "column": "CY",
+      "row": 92
+    },
+    {
+      "column": "CY",
+      "row": 93
+    },
+    {
+      "column": "CY",
+      "row": 94
+    },
+    {
+      "column": "CY",
+      "row": 95
+    },
+    {
+      "column": "CY",
+      "row": 96
+    }
+  ],
+  "lavaCells": [
+    {
+      "column": "CA",
+      "row": 94
+    },
+    {
+      "column": "AO",
+      "row": 95
+    },
+    {
+      "column": "AP",
+      "row": 95
+    },
+    {
+      "column": "AQ",
+      "row": 95
+    },
+    {
+      "column": "AR",
+      "row": 95
+    },
+    {
+      "column": "AS",
+      "row": 95
+    },
+    {
+      "column": "AT",
+      "row": 95
+    },
+    {
+      "column": "AU",
+      "row": 95
+    },
+    {
+      "column": "AV",
+      "row": 95
+    },
+    {
+      "column": "AW",
+      "row": 95
+    },
+    {
+      "column": "AX",
+      "row": 95
+    },
+    {
+      "column": "AY",
+      "row": 95
+    },
+    {
+      "column": "AZ",
+      "row": 95
+    },
+    {
+      "column": "BA",
+      "row": 95
+    },
+    {
+      "column": "BB",
+      "row": 95
+    },
+    {
+      "column": "BC",
+      "row": 95
+    },
+    {
+      "column": "BD",
+      "row": 95
+    },
+    {
+      "column": "BE",
+      "row": 95
+    },
+    {
+      "column": "CA",
+      "row": 95
+    },
+    {
+      "column": "AO",
+      "row": 96
+    },
+    {
+      "column": "AP",
+      "row": 96
+    },
+    {
+      "column": "AQ",
+      "row": 96
+    },
+    {
+      "column": "AR",
+      "row": 96
+    },
+    {
+      "column": "AS",
+      "row": 96
+    },
+    {
+      "column": "AT",
+      "row": 96
+    },
+    {
+      "column": "AU",
+      "row": 96
+    },
+    {
+      "column": "AV",
+      "row": 96
+    },
+    {
+      "column": "AW",
+      "row": 96
+    },
+    {
+      "column": "AX",
+      "row": 96
+    },
+    {
+      "column": "AY",
+      "row": 96
+    },
+    {
+      "column": "AZ",
+      "row": 96
+    },
+    {
+      "column": "BA",
+      "row": 96
+    },
+    {
+      "column": "BB",
+      "row": 96
+    },
+    {
+      "column": "BC",
+      "row": 96
+    },
+    {
+      "column": "BD",
+      "row": 96
+    },
+    {
+      "column": "BE",
+      "row": 96
+    },
+    {
+      "column": "BL",
+      "row": 96
+    },
+    {
+      "column": "BM",
+      "row": 96
+    },
+    {
+      "column": "BN",
+      "row": 96
+    },
+    {
+      "column": "BO",
+      "row": 96
+    },
+    {
+      "column": "BP",
+      "row": 96
+    },
+    {
+      "column": "BQ",
+      "row": 96
+    },
+    {
+      "column": "BR",
+      "row": 96
+    },
+    {
+      "column": "BS",
+      "row": 96
+    },
+    {
+      "column": "CA",
+      "row": 96
+    },
+    {
+      "column": "BL",
+      "row": 97
+    },
+    {
+      "column": "BM",
+      "row": 97
+    },
+    {
+      "column": "BN",
+      "row": 97
+    },
+    {
+      "column": "BO",
+      "row": 97
+    },
+    {
+      "column": "BP",
+      "row": 97
+    },
+    {
+      "column": "BQ",
+      "row": 97
+    },
+    {
+      "column": "BR",
+      "row": 97
+    },
+    {
+      "column": "BS",
+      "row": 97
+    },
+    {
+      "column": "CA",
+      "row": 97
+    },
+    {
+      "column": "BL",
+      "row": 98
+    },
+    {
+      "column": "BM",
+      "row": 98
+    },
+    {
+      "column": "BN",
+      "row": 98
+    },
+    {
+      "column": "BO",
+      "row": 98
+    },
+    {
+      "column": "BP",
+      "row": 98
+    },
+    {
+      "column": "BQ",
+      "row": 98
+    },
+    {
+      "column": "BR",
+      "row": 98
+    },
+    {
+      "column": "BS",
+      "row": 98
+    },
+    {
+      "column": "CA",
+      "row": 98
+    },
+    {
+      "column": "CG",
+      "row": 98
+    },
+    {
+      "column": "CI",
+      "row": 98
+    },
+    {
+      "column": "CJ",
+      "row": 98
+    },
+    {
+      "column": "CK",
+      "row": 98
+    },
+    {
+      "column": "CL",
+      "row": 98
+    },
+    {
+      "column": "CM",
+      "row": 98
+    },
+    {
+      "column": "CN",
+      "row": 98
+    },
+    {
+      "column": "CO",
+      "row": 98
+    },
+    {
+      "column": "CP",
+      "row": 98
+    },
+    {
+      "column": "CQ",
+      "row": 98
+    },
+    {
+      "column": "CR",
+      "row": 98
+    },
+    {
+      "column": "CS",
+      "row": 98
+    },
+    {
+      "column": "CT",
+      "row": 98
+    },
+    {
+      "column": "CU",
+      "row": 98
+    },
+    {
+      "column": "CV",
+      "row": 98
+    },
+    {
+      "column": "CW",
+      "row": 98
+    },
+    {
+      "column": "CX",
+      "row": 98
+    },
+    {
+      "column": "CY",
+      "row": 98
+    },
+    {
+      "column": "BL",
+      "row": 99
+    },
+    {
+      "column": "BM",
+      "row": 99
+    },
+    {
+      "column": "BN",
+      "row": 99
+    },
+    {
+      "column": "BO",
+      "row": 99
+    },
+    {
+      "column": "BP",
+      "row": 99
+    },
+    {
+      "column": "BQ",
+      "row": 99
+    },
+    {
+      "column": "BR",
+      "row": 99
+    },
+    {
+      "column": "BS",
+      "row": 99
+    },
+    {
+      "column": "CA",
+      "row": 99
+    },
+    {
+      "column": "CG",
+      "row": 99
+    },
+    {
+      "column": "CI",
+      "row": 99
+    },
+    {
+      "column": "CJ",
+      "row": 99
+    },
+    {
+      "column": "CK",
+      "row": 99
+    },
+    {
+      "column": "CL",
+      "row": 99
+    },
+    {
+      "column": "CM",
+      "row": 99
+    },
+    {
+      "column": "CN",
+      "row": 99
+    },
+    {
+      "column": "CO",
+      "row": 99
+    },
+    {
+      "column": "CP",
+      "row": 99
+    },
+    {
+      "column": "CQ",
+      "row": 99
+    },
+    {
+      "column": "CR",
+      "row": 99
+    },
+    {
+      "column": "CS",
+      "row": 99
+    },
+    {
+      "column": "CT",
+      "row": 99
+    },
+    {
+      "column": "CU",
+      "row": 99
+    },
+    {
+      "column": "CV",
+      "row": 99
+    },
+    {
+      "column": "CW",
+      "row": 99
+    },
+    {
+      "column": "CX",
+      "row": 99
+    },
+    {
+      "column": "CY",
+      "row": 99
+    },
+    {
+      "column": "BL",
+      "row": 100
+    },
+    {
+      "column": "BM",
+      "row": 100
+    },
+    {
+      "column": "BN",
+      "row": 100
+    },
+    {
+      "column": "BO",
+      "row": 100
+    },
+    {
+      "column": "BP",
+      "row": 100
+    },
+    {
+      "column": "BQ",
+      "row": 100
+    },
+    {
+      "column": "BR",
+      "row": 100
+    },
+    {
+      "column": "BS",
+      "row": 100
+    },
+    {
+      "column": "CA",
+      "row": 100
+    },
+    {
+      "column": "CG",
+      "row": 100
+    },
+    {
+      "column": "CI",
+      "row": 100
+    },
+    {
+      "column": "CJ",
+      "row": 100
+    },
+    {
+      "column": "CK",
+      "row": 100
+    },
+    {
+      "column": "CL",
+      "row": 100
+    },
+    {
+      "column": "CM",
+      "row": 100
+    },
+    {
+      "column": "CN",
+      "row": 100
+    },
+    {
+      "column": "CO",
+      "row": 100
+    },
+    {
+      "column": "CP",
+      "row": 100
+    },
+    {
+      "column": "CQ",
+      "row": 100
+    },
+    {
+      "column": "CR",
+      "row": 100
+    },
+    {
+      "column": "CS",
+      "row": 100
+    },
+    {
+      "column": "CT",
+      "row": 100
+    },
+    {
+      "column": "CU",
+      "row": 100
+    },
+    {
+      "column": "CV",
+      "row": 100
+    },
+    {
+      "column": "CW",
+      "row": 100
+    },
+    {
+      "column": "CX",
+      "row": 100
+    },
+    {
+      "column": "CY",
+      "row": 100
+    }
+  ],
+  "vineCells": [
+    {
+      "column": "AF",
+      "row": 81
+    },
+    {
+      "column": "AF",
+      "row": 82
+    },
+    {
+      "column": "AF",
+      "row": 83
+    },
+    {
+      "column": "BL",
+      "row": 89
+    },
+    {
+      "column": "BL",
+      "row": 90
+    },
+    {
+      "column": "BL",
+      "row": 91
+    },
+    {
+      "column": "BL",
+      "row": 92
+    },
+    {
+      "column": "BL",
+      "row": 93
+    }
+  ],
+  "growingCubes": [
+    {
+      "id": "cube_green_left",
+      "column": "AC",
+      "row": 82,
+      "targetColumn": "AE",
+      "targetRow": 82,
+      "pinned": true
+    },
+    {
+      "id": "cube_green_middle",
+      "column": "AS",
+      "row": 82,
+      "targetColumn": "AK",
+      "targetRow": 82,
+      "pinned": true
+    },
+    {
+      "id": "cube_green_up",
+      "column": "AW",
+      "row": 89,
+      "targetColumn": "AW",
+      "targetRow": 82,
+      "pinned": true
+    },
+    {
+      "id": "cube_green_right",
+      "column": "CN",
+      "row": 89,
+      "targetColumn": "CN",
+      "targetRow": 79,
+      "pinned": true
+    }
+  ],
+  "spawn": {
+    "column": "Z",
+    "row": 96
+  },
+  "door": {
+    "column": "CZ",
+    "row": 78,
+    "width": 1,
+    "height": 2
+  },
+  "buttons": [
+    {
+      "column": "CL",
+      "row": 79
+    },
+    {
+      "column": "AY",
+      "row": 89
+    }
+  ],
+  "collectibles": [
+    {
+      "column": "AF",
+      "row": 84
+    },
+    {
+      "column": "CL",
+      "row": 84
+    }
+  ],
+  "lift": {
+    "column": "CG",
+    "row": 97,
+    "width": 4,
+    "height": 1,
+    "topRow": 88,
+    "sourceRow": 92,
+    "crankColumn": "CI",
+    "crankRow": 96,
+    "redColumn": "CG",
+    "redRow": 96,
+    "blueColumn": "CJ",
+    "blueRow": 96,
+    "releaseReturns": true,
+    "attachmentRule": "red_blue_detach_on_carry_until_room_reset; crank_always_mounted",
+    "submergedAtStart": false,
+    "renderBehindLava": false
+  },
+  "sceneColors": [
+    "red",
+    "green",
+    "blue"
+  ],
+  "playerAbilities": [
+    "blue"
+  ]
+}

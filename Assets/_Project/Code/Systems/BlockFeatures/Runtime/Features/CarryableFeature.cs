@@ -26,6 +26,7 @@ namespace Project.BlockFeatures
         private IPlayerCarryHost carryPlayer;
         private IColorObject colorObject;
         private ICarryMotionParticipant motionParticipant;
+        private PlatformMount platformMount;
         private TextMeshPro indicator;
         private Material indicatorMaterial;
         private TMP_FontAsset indicatorMaterialFont;
@@ -120,6 +121,7 @@ namespace Project.BlockFeatures
         {
             colorObject = GetComponent<IColorObject>();
             motionParticipant = GetComponent<ICarryMotionParticipant>();
+            platformMount = GetComponent<PlatformMount>();
         }
 
         private void OnEnable()
@@ -179,6 +181,7 @@ namespace Project.BlockFeatures
                 return false;
             }
 
+            platformMount?.DetachForCarry();
             carryPlayer = player;
             AudioCuePlayer.Play(AudioCueIds.BlockPickup);
             return true;

@@ -29,22 +29,21 @@
 8. 跳跃通过 `RequestJump` 或 `RequestJumpTo` 请求；只有目标在最大跳高、最大垂直速度和水平速度能力内才会执行，进入 Jump 后由 Rigidbody 按配置时长完成物理弹道，向下跳不会被起跳点的地面判定提前取消。
 9. 需要接 Timeline/动作时，订阅 `StateChanged`、`hitStarted`、`jumpStarted`、`deathStarted` 或直接使用 `StateForwarded`。
 
-## 碰撞隐藏与无敌调试
+## 受击、无敌与接触伤害
 
-Inspector 的“碰撞隐藏、受击与无敌”分区集中放置生存、清障和闪烁参数：
+Inspector 的“受击、无敌与接触伤害”分区集中放置生存和闪烁参数：
 
-- Boss 开始由右移马夫接管后，碰到非玩家、非 Boss 物体会隐藏，不再销毁对象。
+- Boss 不再吃方块，也不会隐藏、停用或销毁任何普通物体、机关或岩浆。
+- 碰到玩家时仍会直接触发玩家死亡。
 - Boss 当前最大和初始血量均为 9。
-- 有房间生命周期组件的物体按原有生命周期隐藏，R 或离区恢复；其他对象直接停用，减少销毁造成的卡顿。
-- 碰撞回调只登记唯一目标，不直接停用对象；`LateUpdate` 按“每帧最多隐藏”预算逐个处理，避免物理回调中同时移除大量 Collider 造成峰值。
-- 实际隐藏使用 `TemporaryObjectHideState`：只关闭 Renderer、Collider，并临时把 3D Rigidbody 切为 Kinematic/关闭重力，不 `SetActive(false)` 整棵对象，避免触发大量 `OnDisable`、UI/美术刷新和房间生命周期回调。
-- 重复碰撞通过实例 ID 去重；同一物体的多个子 Collider 不会重复排队。穿过地形开关只在状态真的改变时写入 Collider。
+- 穿行碰撞高度、仅移动中结算接触伤害等原有运动和伤害参数保持不变。
+- 受击后进入无敌并持续闪烁，期间不结算后续伤害。
 - 碰岩浆时先扣一次“岩浆单次伤害”，默认 1，然后进入默认 4 秒无敌。
-- 无敌期间任何伤害都不再结算，但岩浆照样会被隐藏。
+- 岩浆不会因 Boss 接触而隐藏或停用；只有右移马夫或 execution 状态下的接触才结算伤害。
 - 普通受伤没有硬直和击退，也不会取消跳跃；右移不会停止，只是在无敌期间按“无敌时右移速度倍率”减速，当前默认 0.7，4 秒内等效移动 7 格。
 - 整个 Boss 对象按“无敌闪烁间隔”显隐；进入无敌时会自动收集自身及当前全部子 Renderer，包括后续加入的手部动画，不需要手工配置。
-- 如果不想在入场阶段隐藏脚下地图，保留“仅外部移动时隐藏”开启。
 - 血量归零后右移立即停止，并调用 `defeatPresentationRequested`。Boss 预制体已把该事件绑定到 `BossDefeatTimelinePresenter`，由它播放独立的 `Boss_defeat.playable`。
+- Boss 存活期间禁用玩家疾跑，死亡或禁用后释放；每次玩家复活时，先完成房间重建，再销毁 Boss 左边缘到 Boss 当前中心 X 范围内的普通/重力岩浆，最后让 Boss 按重生点配置归位。
 
 ## Boss 血条
 
@@ -85,32 +84,15 @@ Timeline 不保存玩家或 Boss 的世界坐标。去程和回程以播放前�
 
 ## Boss 入场 Timeline
 
-`Assets/_Project/Content/Boss/Timelines/Boss_appear.playable` 不再使用 `BossIntroTrack` / `BossIntroClip`。当前总时长为 `6.55` 秒，由五条 `BossTimelineTrack`、一条覆盖全程的 `PlayerTimelineTrack`、一条 2D 相机轨、一条对话轨和一条末尾 Playable 轨组成：
+`Assets/_Project/Content/Boss/Timelines/Boss_appear.playable` 不再使用 `BossIntroTrack` / `BossIntroClip`，也不再包含镜头轨。资产只保留一条覆盖全程的 `PlayerTimelineTrack` 和一条 Boss 专用 `BossAppearCinematicPlayable`。
 
-- 生成/发呆：生成 Boss 到当前场景编辑态玩家位置 `(-9.07, -33.33, 0)`，保持 `2.1333333` 秒。
-- 并行移动输入：与跳跃同时从 `4` 秒持续到 `5.4` 秒，只向 `BossController.SetWalkInput` 写入向右输入；Walk 速度为控制器参数 `3` 格/秒。
-- 关闭运动：确认 Boss 运动门处于关闭状态。
-- 跳跃输入：与移动 Track 同时从 `4` 秒持续到 `5.4` 秒，只向 `BossController.RequestJump()` 发送一次请求；弹道、重力、惯性、碰撞和落点均由控制器与物理决定。
-- 实际结果：向右移动约 `1.4` 秒后停在 X 约 `-4.87`，再受重力落入场景中世界 X `-7…-2`、碰撞顶面 Y `-41` 的弹性植物组。
-- 落地发呆：从 `6` 秒保持 `0.55` 秒，覆盖 Boss 在约 `6.02` 秒首次接触植物后的半秒停顿，Timeline 于 `6.55` 秒结束。
-- 开启运动、血条与 Boss 视野：在 `6.54` 秒打开运动门、激活血条，并向 `BossCameraSize` 发送开启请求，随后释放玩家控制。
-- 对话：从 `1.0166667` 秒开始，展示时长延长为 `2.7916667` 秒，在 `3.8083333` 秒消失；字号为 `84`，启用加粗，WordNote 显示时长参数为 `5` 秒。
-- 台词 Clip 在 `3.8083333` 秒释放，并播放 `0.18` 秒退场动画，完整淡出到 `3.9883333` 秒；Boss 移动与跳跃输入从 `4` 秒开始，确保文字完全消失后才行动。
-- 末尾 Playable：调用 `BossController.ActivateHealthSystem()`，血条初始化后才开放受伤；同时调用 `BossCameraSize.RequestEnable()`。
-- 玩家锁：Timeline 内有一条从 `0` 到 `6.52` 秒的 `PlayerTimelineTrack` 锁轨，按 `Player` Tag 查找标准玩家，并锁定移动、跳跃、交互、搬运和染色。它在最终开战事件前 `0.02` 秒结束，避开 Hold 模式末帧，并由行为层在自然末尾主动释放。
-- 场景触发器仍保留“播放期间申请玩家控制锁”作为场景入口保险，但入场玩法锁不再只依赖它。
+- `0–1` 秒：锁住玩家操作，镜头固定在玩家播放开始位置加 `playerCameraOffset=(0,0,-10)`。
+- `1` 秒后：底部以故障动画显示“别急着走啊，你以为我能让你如愿?”，随后以打字机形式显示“？”。
+- 问号结束后：在玩家当前位置 `X-7 / Y+13` 生成 Boss；Boss 不开启追迹，由 Playable 以可调加速度假下落到玩家同高。
+- 落地后：固定机位停留 `1` 秒，再以打字机形式显示“不好！”。文字结束后交还玩家与相机权限，开启追击、血条、监控和 `BossCameraSize`。
+- 整个过程中没有左移、没有 Boss 跟随和没有回程运镜；`BossAppearCameraGuard` 在最高 `LateUpdate` 执行顺序锁住实际 Camera Transform 与镜头参数。
 
-每个 Boss Clip 只能有一个动作。面板只显示当前动作的数据，以及 `spawnBoss` / `bossPrefab`；移动动作只显示 `moveInput`，跳跃不显示目标或速度。Boss Timeline 是操作输入层，不保存“最终走到哪里、跳多高、落在哪”等结果数据；这些都由 `BossController`、刚体、重力和场景碰撞决定。Actor Timeline 层不得直接写 Boss 的 Rigidbody 或 Transform。相机轨只允许 2D 正交运镜，负责跟随 Boss。
-
-移动输入 Track 调用 `BossController.SetWalkInput`，跳跃 Track 调用 `BossController.RequestJump()`。两条 Track 处于同一时间窗口，因此 Boss 可以边向右移动边受重力跳跃。Timeline 不传送、不纠偏，也不在片段结束时改回位置。
-
-相机轨结束后会把 `TimelineCamRig.target` 恢复为 `CameraControlManager.FocusTarget`，并释放 Timeline 相机控制权，让玩法相机重新跟随玩家。
-
-相机 Clip 使用“锚点 Tag = Boss”显式跟随 Boss，不再由 Boss 行为 Clip 偷偷改写相机目标。释放发生在相机 Clip 到达自然末尾时，不依赖 `OnGraphStop`：当前 PlayableDirector 使用 Hold 模式，播放到末帧后只会停住，不会销毁 Graph，因此旧实现一直等不到 Graph 停止回调，控制权会留在 Timeline。
-
-2D 相机轨的目标高度为 `-0.3`，进入 Boss 机位时正交视野扩大 `1.15` 倍。正交镜头只使用固定平面 Yaw，完全忽略角色 Transform 的旋转，避免角色转身或镜头移动时露出方块顶面和 3D 侧壁。
-
-Boss 根物体使用 `3×3×3` 缩放，外观和碰撞同步放大。入场时保持本地 `1×1×1` BoxCollider；右移马夫接管后临时把本地高度拉到 `12`，在世界空间覆盖约 `3×36×3` 格，保证经过路线上下高低处都会被吞噬，停止穿行时恢复作者碰撞。血条 Canvas 用 `1/3` 缩放抵消父物体比例。
+所有空间偏移均为激发器局部值，时长、字号、打字速度、故障参数、下落速度和停留时间均序列化在 Playable 资产中。Boss 根物体使用 `3×3×3` 缩放，外观和碰撞同步放大；血条 Canvas 用 `1/3` 缩放抵消父物体比例。
 
 ## Boss 存活期视野
 

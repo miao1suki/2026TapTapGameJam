@@ -49,6 +49,10 @@ PlatformParameterUI 是Editor共用核心字段构建器；普通Inspector与规
 
 预览独立排序水→物品，选取/擦除顺序相反。“仅水层”筛选同时覆盖参数、移动、合并、绘制与装配擦除；前景层 opacity=0.2，玩家覆盖层不接受点击。窗口重建必须恢复实际开关值，不仅更新 Toggle 外观。
 
+## 平台附着关系
+
+`PlanningBox.platformMountId` 为可选平台稳定 ID，空值兼容旧存档。SceneBuilder 的机关绑定结束阶段按生成实例的 PlanningBoxId 重连 `PlatformMount`，保存 prefab override；来源无效或解除则移除实例挂载组件。Canvas 回采、作者布局比较和合并快照包含此字段。片段导入深层重映射，导出失去外部来源时清理并计数；平台删除清理失效 ID，平台合并转向合并体，拆成多个来源时清除歧义绑定，不猜测另一平台。不能依赖 Scene-only 组件改动替代规划数据，也不因此允许地图实体和岩浆同格。
+
 ## 不规则合并与覆盖
 
 自身管理几何的普通单实例道具（例如初始伸长接触方块）以 `singleInstance=true` 保存完整逻辑 width/height，SceneBuilder 写入 LevelEditorPlacedBlock.SizeCells，但不重复拉伸根缩放；几何仍归道具组件所有。合并、固定规格门、梯子和平台保留原处理。R1 的 13×1 固定绿条使用此路径，根锚点在最左格、initialLength=13。共享曲柄使用既有 crankOwnerId，片段重映射、来源删除和 Scene 重建仍走稳定 ID，不存临时引用。

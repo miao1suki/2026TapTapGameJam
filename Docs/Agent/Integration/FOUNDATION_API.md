@@ -71,7 +71,7 @@ Renderer，同时保留 Collider。需要单独覆盖样式时，关闭
 
 目标可实现 `ICameraFollowRelocationSource.CameraFollowRelocated`，重定位完成后发送通知。PlayerController在死亡/主动重生完成后发送；跟随组件自动订阅，保持当前焦点并平滑追至新位置，追赶期间忽略大距离吸附、死区和瞬移观察提前量。也可直接调用 `NotifyTargetRelocated()`，不修改实际Camera。显式 `Snap()` / `SetTarget(target, true)` 仍立即定位；暂停不推进追赶，切换目标和禁用会解绑事件。
 Timeline使用 `TimelineCamRig.Acquire/Release/SetShotTransform` 通过Manager接管；保留旧演出API，不给玩家自动开放手动视角切换。
-玩法视野倍率使用独立镜头请求：`CameraControlManager.RequestLensMultiplier(owner, multiplier, transition)` 返回 `CameraLensRequestHandle`，通过 `Set` / `Release` 更新或释放。绝对请求取最高值；`RequestRelativeLensMultiplier` 在绝对倍率基础上再相乘，适合区域型效果。`RequestViewOffset` 返回 `CameraViewOffsetRequestHandle`，按世界偏移相加并平滑混合焦点。两类请求都只在当前控制源优先级低于 `Cutscene` 时影响玩法相机；请求与玩家对象解耦，玩家死亡/复活不会重置。Boss 的持有者和生命周期封装见 `Assets/Boss_Logic/BossCameraSize.cs`。
+玩法视野倍率使用独立镜头请求：`CameraControlManager.RequestLensMultiplier(owner, multiplier, transition)` 返回 `CameraLensRequestHandle`，通过 `Set` / `Release` 更新或释放。普通绝对请求取最高值；`RequestRelativeLensMultiplier` 在绝对倍率基础上再相乘，适合放大区域。`RequestLensScale` 接受正数并继续乘到最终倍率，可低于 1，用于临时缩小视野；对应句柄通过 `SetScale` / `Release` 更新或释放。`RequestViewOffset` 返回 `CameraViewOffsetRequestHandle`，按世界偏移相加并平滑混合焦点。所有请求都只在当前控制源优先级低于 `Cutscene` 时影响玩法相机；请求与玩家对象解耦，玩家死亡/复活不会重置。Boss 的持有者和生命周期封装见 `Assets/Boss_Logic/BossCameraSize.cs`，区域 Timeline 见 [Camera Close](CAMERA_CLOSE_TIMELINE_API.md)。
 
 ## 玩家（基础子集）
 
@@ -81,6 +81,7 @@ API：`Motor`、`IsGrounded`、`IsControlLocked`、`CurrentStateId`、`TryPlayAc
 外部演出可通过 `IPlayerControlLockTarget.AcquireControlLock(owner)` 获取引用计数控制锁；释放返回的 `IDisposable` 才解除。锁定期间移动、跳跃、交互、搬运、染色和普通动作输入都会被清空并停止处理。
 掉落物感知范围由“拾取感知半径（格）”配置，并通过 `PickupSenseRadiusBlocks`、`PickupSenseRadiusWorld` 和 `IsWithinPickupSenseRange(worldPosition)` 提供给磁吸拾取流程；该范围按关卡网格格数换算，不使用世界单位直接填写。
 控制锁采用引用计数；每次加锁必须同一调用方配对解锁，禁用会清空。
+疾跑可使用独立引用计数租约：`PlayerController.AcquireSprintLock(owner)` 返回 `IDisposable`。存在任意租约时 `IsSprintLocked` 为真，疾跑输入保持关闭；最后一个租约释放后，下一次疾跑输入恢复。该锁不禁止移动、跳跃或颜色能力。
 `PlayerActionRunner` 播放Timeline，动作遵循优先级及 Interruptible，LockMovement只锁基础motor。
 死亡状态由 `PlayerHealth.Died` 或致死高度判定进入 `PlayerStateId.Death` 后封锁普通操作并播放可配置 `deathAction`，Timeline 保持最后一帧。游玩角色参数中的“致死高度（格）”控制实际落地时的摔落死亡阈值；落入水中、可用弹性植物或下落期间进入过攀爬会免除。复活后按“复活无敌时间（秒）”忽略伤害和摔落致死；岩浆持续触发致死，因此无敌结束后仍停留在岩浆中会死亡。重生优先使用默认复活点或注册的 `IPlayerRespawnPoint`；没有复活点时在死亡位置四格内随机寻找可落地位置，向下吸附到实体地面后再检查岩浆。多个已激活重生点按 `RespawnPriority` 取最大值，重生锚的 `RespawnRadiusBlocks` 控制每个锚点自己的安全随机半径；`IRespawnAnchorChainProvider` / `IRespawnAnchorStateProvider` 提供后续存档所需的链表快照与状态回灌接口，`RespawnAnchorChainRuntime.CaptureSaveData` / `TryRestoreSaveData` 负责整链保存数据读写。
 事件：`ActionStarted/ActionCompleted/ControlLockChanged/TimelineSignalReceived`，`PlayerHealth` 另有 `Died/Revived`。

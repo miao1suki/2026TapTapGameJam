@@ -9,12 +9,55 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d7a9c2e1b8f4e63a5c9d0f1e2b3c4d5, type: 3}
-  m_Name: BossExecutionClip
-  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossExecutionClip
+  m_Script: {fileID: 11500000, guid: 3d1e5f7a9b2c4d6e8f0a1b3c5d7e9f21, type: 3}
+  m_Name: BossDeathCinematicPlayable
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossDeathCinematicPlayable
+  mode: 1
   bossTag: Boss
-  cameraMoveDuration: 1.2
-  moveSpeedBlocksPerSecond: 10
+  playerTag: Player
+  font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+  redKeyPrefab: {fileID: 6622805535834104132, guid: 83e6e8f43f4f1d54289447a18295ca37, type: 3}
+  blueKeyPrefab: {fileID: 8140128999958426686, guid: 0c5be6edd719d03459d2e3ac01c4307f, type: 3}
+  greenKeyPrefab: {fileID: 491305582336558569, guid: 6c8401f9adab9d841ba785f52b4f9623, type: 3}
+  copiesPerColor: 2
+  firstBossLine: "咳咳……"
+  secondBossLine: "嘁，你以为我没留后手吗！"
+  playerLine: "身体好难受……使不上劲"
+  finalBossLine: "哈哈哈哈……我不好过你也别想好过！"
+  messageFontSize: 72
+  typewriterCharactersPerSecond: 12
+  messageDisplaySeconds: 2
+  glitchTransitionSeconds: 0.48
+  glitchMinAlpha: 0.35
+  glitchMaxAlpha: 1
+  glitchHorizontalJitter: 18
+  glitchVerticalJitter: 4
+  glitchColorSeparation: 0.85
+  bossCameraOffset: {x: 0, y: 2, z: -10}
+  playerCameraOffset: {x: 0, y: 0, z: -10}
+  naturalCameraMoveSeconds: 1
+  executionCameraMoveSeconds: 0.55
+  cameraReturnSeconds: 1
+  cameraReleaseSeconds: 0.25
+  bossFlickerInterval: 0.16
+  bossFlickerLeadSeconds: 1
+  executionStartDelaySeconds: 0.5
+  executionBossHeightOffsetBlocks: -3
+  executionMoveSpeedBlocksPerSecond: 10
+  playerFlickerInterval: 0.09
+  keyBodyOffset: {x: 0, y: 0.4, z: 0}
+  keyColumnBaseHeight: 1.45
+  keyColumnSpacing: 0.42
+  keyEmergeStagger: 0.18
+  keyEmergeDuration: 0.38
+  keyHoverBobHeight: 0.04
+  keyHoverBobSpeed: 3.2
+  keyPlayerLineDelaySeconds: 1
+  keyAbsorbDelaySeconds: 0.5
+  keyAbsorbStagger: 0.12
+  keyAbsorbDuration: 0.45
+  bossKeyAbsorbOffset: {x: 0, y: 0.45, z: 0}
+  deathAnimationFallbackSeconds: 2
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -53,7 +96,7 @@ MonoBehaviour:
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0
-  m_Muted: 0
+  m_Muted: 1
   m_CustomPlayableFullTypename: 
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
@@ -458,9 +501,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1028c26bbf864209888a68ad8fa2d792, type: 3}
-  m_Name: "Boss \u5904\u51B3\u63A7\u5236"
-  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossExecutionTimelineTrack
+  m_Script: {fileID: 11500000, guid: 82cd92ffc29383742932b27ca414c80f, type: 3}
+  m_Name: Boss Execution Death Cinematic
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.PlayableTrack
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0

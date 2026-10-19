@@ -19,6 +19,8 @@ namespace Project.BossLogic
         private BossController boss;
         private bool defeatPresentationActive;
         private bool switchingToPlayerThinking;
+        private bool suppressDefeatPresentation;
+        private PlayableDirector standalonePlayerThinkingDirector;
 
         public PlayableDirector Director => director;
         public TimelineAsset DefeatTimeline => defeatTimeline;
@@ -27,6 +29,8 @@ namespace Project.BossLogic
         public bool IsPlaying =>
             director != null &&
             director.state == PlayState.Playing;
+        public bool IsDefeatPresentationSuppressed =>
+            suppressDefeatPresentation;
 
         private void Awake()
         {
@@ -41,6 +45,10 @@ namespace Project.BossLogic
         public void PlayDefeatPresentation(
             BossController defeatedBoss)
         {
+            if (suppressDefeatPresentation)
+            {
+                return;
+            }
             if (onlyPlayForThisBoss &&
                 boss != null &&
                 defeatedBoss != null &&
@@ -106,6 +114,16 @@ namespace Project.BossLogic
             director.Play();
         }
 
+        public void SetDefeatPresentationSuppressed(
+            bool value)
+        {
+            suppressDefeatPresentation = value;
+            if (value)
+            {
+                defeatPresentationActive = false;
+            }
+        }
+
         private void Update()
         {
             if (!defeatPresentationActive ||
@@ -138,12 +156,60 @@ namespace Project.BossLogic
             defeatPresentationActive = false;
             CollectibleProgressSnapshot progress = CollectibleProgressService.GetWorldProgress();
             PlayerThinkingTimelinePlayable.SetCollectibleProgress(progress.Collected, progress.Total);
-            director.Stop();
-            director.playableAsset =
-                playerThinkingTimeline;
-            director.time = 0d;
-            director.Play();
+            director?.Stop();
+            PlayStandalonePlayerThinking();
             switchingToPlayerThinking = false;
+        }
+
+        public bool PlayPlayerThinkingAfterDefeat()
+        {
+            if (playerThinkingTimeline == null)
+            {
+                Debug.LogWarning(
+                    "[BossDefeatTimeline] 未配置玩家沉思 Timeline，无法进入结局。",
+                    this);
+                return false;
+            }
+
+            defeatPresentationActive = false;
+            switchingToPlayerThinking = true;
+            CollectibleProgressSnapshot progress =
+                CollectibleProgressService.GetWorldProgress();
+            PlayerThinkingTimelinePlayable.SetCollectibleProgress(
+                progress.Collected,
+                progress.Total);
+            bool started = PlayStandalonePlayerThinking();
+            switchingToPlayerThinking = false;
+            return started;
+        }
+
+        private bool PlayStandalonePlayerThinking()
+        {
+            if (standalonePlayerThinkingDirector != null)
+            {
+                standalonePlayerThinkingDirector.Stop();
+                if (standalonePlayerThinkingDirector.gameObject != null)
+                {
+                    Destroy(
+                        standalonePlayerThinkingDirector.gameObject);
+                }
+                standalonePlayerThinkingDirector = null;
+            }
+
+            GameObject directorObject = new GameObject(
+                "Boss Post Death Director");
+            standalonePlayerThinkingDirector =
+                directorObject.AddComponent<PlayableDirector>();
+            standalonePlayerThinkingDirector.playableAsset =
+                playerThinkingTimeline;
+            standalonePlayerThinkingDirector.time = 0d;
+            BossPostDeathDirectorLifetime lifetime =
+                directorObject.AddComponent<
+                    BossPostDeathDirectorLifetime>();
+            lifetime.Bind(standalonePlayerThinkingDirector);
+            standalonePlayerThinkingDirector.Play();
+            return standalonePlayerThinkingDirector.state ==
+                   PlayState.Playing;
         }
 
         public void StopDefeatPresentation()
@@ -170,4 +236,5 @@ namespace Project.BossLogic
             }
         }
     }
+
 }

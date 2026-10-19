@@ -1,5 +1,145 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-19 Boss 出场相机完全固定（编译通过，待 Play 回归）
+
+- 分支 `boss_last`。删除 `BossAppearCinematicBehaviour` 中遗留的 `MoveToOpenArea` / `ReturnToPlayer` 状态和全部镜头横移代码；`Boss_appear.playable` 同步移除 `cameraLeftDistanceBlocks`、`cameraMoveSeconds`、`cameraReturnSeconds` 旧序列化字段。
+- 当前顺序：锁玩家 -> 故障字幕 -> 打字机问号 -> 原地生成 Boss 并假加速度下落 -> 回到玩家同高 -> 停留 1 秒 -> 打字机“不好！” -> 开战。整个过程每帧只写播放开始时的玩家位置加 `playerCameraOffset`，不向左平移、不追踪 Boss、不回程运镜。
+- `BossAppearCameraGuard` 继续在最高 `LateUpdate` 执行顺序锁定 Camera Transform 和镜头参数；Playable 清理时销毁守卫并交还 `CameraControlManager`。
+- Unity 6000.3.12f1 当前 `Assembly-CSharp.rsp` 与 `Assembly-CSharp-Editor.rsp` 静态编译 0 error，仅既有 obsolete/hide warning；未运行 Play Mode。
+
+## 2026-10-19 story_start 开场 Timeline（编译通过，待挂接）
+
+- 分支 `boss_last`。新增通用 Story Timeline `story_start.playable`，不放入 `Boss_Logic`；用户后续自行挂到 Timeline 激发器。
+- 行为：检查并锁玩家 -> 四周黑幕向中心覆盖 -> 镜头倍率 `1.4×` -> 中央打字机分段字幕（每段显示 2 秒、间隔 0.5 秒）-> 玩家左移 16 格但镜头保持 -> 黑幕从中心向四周反向揭开 -> 玩家向右走回原位并同步恢复镜头倍率 -> 最终分段字幕 -> 交还镜头和玩家操作。
+- 实现遵守 Boss Timeline Skill 的通用约束：空间数据、速度、倍率、时长、分段文本全部序列化；使用现有 `WordNoteUI`、`CameraControlManager`/`TimelineCamRig` 和玩家控制锁。
+- 资产不放在 `Boss_Logic`，路径为 `Assets/_Project/Content/GameFlow/story_start.playable`；脚本放在 `Assets/_Project/Code/StoryStart`，避免 `Project.GameFlow.Runtime` asmdef 缺少 Player/WordNote/Timeline 引用。玩家以播放时位置为基准，左移 16 格，不使用世界坐标。
+- Unity 6000.3.12f1 重新生成 `Project.GameFlow.Runtime.ref.dll` 后，Assembly-CSharp、Project.GameFlow.Runtime 与 Editor 编译均为 0 error，仅既有警告；Timeline 尚未放入场景激发器，未运行 Play Mode。
+
+## 2026-10-19 Boss 字幕激发器幽灵修复（验证完成）
+
+- 分支 `boss_last`。目标对象 `box_74d8d100`，内容 `这里怎么怪怪的...`。规划 JSON `(17,41)`、Scene 签名 `(11,41)`、实际 Transform `(1.5,-39.5)` 三者脱节，导致对象仍触发但编辑器无法按 ID/格定位。
+- 将规划记录、Scene 内嵌规划、`LevelEditorPlacedBlock` 签名/局部格、Transform 和对象名统一到最左侧弹性植物 `box_d59ace69` 所在的规划 `(9,42)` / Scene 格 `(-4,-41)`。
+- 校验：两份规划 JSON 哈希一致、字幕 ID 唯一、字幕与弹性植物同格；Scene 中该 ID 仅一个实例，Transform `(-3.5,-40.5)`、cell `(-4,-41)`、planningLocalCell `(9,42)`、签名和 Scene 内嵌规划坐标全部一致。
+
+## 2026-10-19 Boss 自然死亡/处决死亡统一（编译通过，待 Play 回归）
+
+- 分支 `boss_last`。`Boss_defeat.playable` 改为自然死亡共享演出，`Boss_execution.playable` 改为处决入口；两者使用同一 `BossDeathCinematicPlayable` 状态机，处决受伤后从 Boss 故障闪烁节点接入后续自然死亡流程。
+- 处决入口高度修正：Timeline 初始化后先保持 Boss X/Z 不变，把 Y 设为玩家当前 Y 向下 3 格，再进入 0.5 秒镜头与右移。
+- 自然死亡：锁玩家 -> 传送最近已激活重生点 -> 关闭 Boss 接触击杀 -> 镜头到 Boss -> 慢速受伤闪烁 -> 两句 Boss 故障字幕 -> 回玩家、朝向 Boss、玩家闪两下 -> 六钥匙竖列抽出并呼吸悬停 -> 玩家打字机字幕 -> 0.5 秒后钥匙逐个进入 Boss -> 最终 Boss 故障字幕 -> 死亡动画检测（默认 2 秒） -> Boss 视觉与碰撞删除 -> 回玩家。
+- 处决死亡：锁玩家 -> 0.5 秒后快速镜头 -> 镜头进度一半时 Boss 以 10 格/秒右移；执行序列从开始即接管 Boss，任意正伤害直接致命 -> 从 Boss 故障闪烁节点切入同一演出。
+- 玩家字幕使用打字机出入，Boss 字幕使用 RGB 故障出入，全部位于底部队列并显示 2 秒。六钥匙演出会禁用拾取/物理/子 Timeline，仅在演出中显示。
+- 删除旧 `BossExecutionClip` 与 `BossExecutionTimelineTrack`；旧死亡相机、动画触发和双目标相机轨静音。新增独立场景级 Player Thinking Director，使 Boss 可先删除再进入真假结局。
+- Unity 6000.3.12f1 Runtime 与 Editor 编译 0 error，仅既有警告；未运行 Play Mode。
+
+## 2026-10-19 Boss 出场演出重排（编译通过，待 Play 回归）
+
+- 分支 `boss_last`。范围：`Boss_appear.playable`、Boss 专用出场 Playable、WordNote 故障通道及其 API/文档；保留当前 Boss Scene、规划 JSON、字体和其他 WIP。
+- 出场相机最终收敛：Boss appear 全程相机固定在玩家初始位置加固定偏移，不执行任何横移；Boss 仍按原规则从 `X-7 / Y+13` 下落到玩家高度。
+- 出场相机独占：`BossAppearCinematicBehaviour` 直接实现 `ICameraControlSource`/`ICameraLensOverrideSource`，通过 `CameraControlManager.RequestControl(..., CameraControlPriorities.Debug, BlockAll)` 持有最高优先级相机源，不再与任何 CameraTimelineTrack 共用 `TimelineCamRig._shotState`。
+- 最终相机守卫：新增 `BossAppearCameraGuard`（ExecutionOrder 10000），在 all Timeline/CameraControlManager LateUpdate 之后直接锁定 Camera Transform 与镜头参数；appear 清理时销毁守卫。
+- 出场相机轨彻底移除：`Boss_appear.playable` 的 `m_Tracks` 只保留玩家锁轨和 `BossAppearCinematicPlayable`，旧 CameraTimelineTrack、Boss 走跳轨和旧对话轨不再进入 PlayableGraph。
+- 出场镜头旧状态机已删除，不再保留向左空地移动或返回玩家的阶段。
+- 出场下落再次修正：不再依赖 Rigidbody 重力、Collider 或地面命中，改为 BossController 临时 Kinematic 并接管固定 X/Z，以可调加速度计算 Y 位移，直到与玩家 Y 完全一致后进入盯视；appear 初始机位改为玩家位置 + 固定 `playerCameraOffset`，不再继承拾取/旧镜头高度；镜头仍只改 X，Y/Z 固定。
+- 出场镜头修正：镜头只沿 X 轴朝玩家左侧 10 格平移，Y/Z 保持播放开始时高度；Boss 生成偏移为玩家当前位置 `X-7 / Y+13`。实际日志显示其他 Camera Timeline 会和 appear 共用同一 `TimelineCamRig._shotState`，后写入者会把镜头拉到钥匙等目标。现在 appear 启动时会主动停止其他正在播放的 Camera Timeline，强制清理并持续恢复自身租约；初始机位由玩家位置建立。Boss 不再依赖物理下落，而是 Kinematic 固定 X/Z 按加速度计算 Y，到玩家同高后锁住演示位置。
+- 新演出顺序：锁玩家 1 秒 -> 故障字幕“别急着走啊，你以为我能让你如愿?” -> 同位置打字机“？” -> 玩家 `X-7 / Y+13` 生成未追迹 Boss -> 假加速度下落到玩家同高 -> 固定机位停留 1 秒 -> 打字机“不好！” -> 交接相机/玩家并开启 Boss 追击、血条与监控。
+- 所有镜头、生成点和距离仍使用 `BossTimelinePerformanceFrame` 的激发器局部坐标；现有 Timeline 工具包不做 Boss 专属改动。
+- `WordNoteAnimation` 新增 `Glitch`，按玩家死亡 RGB 效果使用 60Hz Perlin 抖动、透明度脉冲和红/蓝双影错位；透明度上下限、横纵抖动和色彩分离强度可编辑，使用 DOTween 与现有 Timeline 消息申请入口。
+- `Boss_appear.playable` 旧 Boss 生成/走/跳、旧相机和旧对话轨均静音；保留全程玩家锁轨，并把 Boss Health Activation 轨改为新的 `BossAppearCinematicPlayable`。Unity 6000.3.12f1 Runtime 与 Editor 编译 0 error，仅既有警告；未运行 Play Mode。
+
+## 2026-10-19 Boss Timeline 迁移局部坐标（编译通过，待 Play 回归）
+
+- 分支 `boss_last`。新增 `.agents/skills/taptap-boss-timeline-migration/SKILL.md` 并登记到根 `AGENTS.md`：Timeline 演出禁止世界坐标，统一以 owning `ContactTimelineTrigger` 为表演坐标系；脚本驱动的死亡轨以 owning `PlayableDirector` 自身为基准。现有通用轨道不足时，在 Playable 轨道放自制脚本，不改 `TimelineTools3D`。
+- 新增 `BossTimelinePerformanceFrame`，从 `PlayableGraph` 解析 `PlayableDirector`，再用 `TransformPoint/TransformVector` 处理局部点与方向；缺 Director 或坐标系时明确报错并停止对应演出。
+- `Boss_appear.playable` 的 Boss 生成点由世界坐标 `(-9.07,-33.33)` 改为激发器局部 `(-16.57,4.17)`，并恢复 `useOwnerAsOrigin=1`；删除会按硬编码时间重写场次的 `BossWalkTimelineInstaller`。
+- `BossCameraPlayable`、`CameraDownPlayable`、`BossKeyAbsorptionPlayable`、`PlayerThinkingTimelinePlayable` 的相机偏移、镜头下移、钥匙吸附/悬浮、收集品排列和黑屏中心均改为表演坐标系局部数据；新增悬浮、旋转、收集品数量/间距/高度/缩放等可编辑参数。
+- 保留当前未提交的 Boss Scene、两份 Boss 规划 JSON、字体资产及其他分支 WIP；未保存或重建主 Unity 场景。Unity 6000.3.12f1 最新 Tundra 脚本构建成功，未运行 Play Mode。
+
+## 2026-10-19 Boss 静态白块合并与移除吃方块（编译通过，场景待生成）
+
+- 分支 `boss_last`。用户后续调整机关后重新合并 Boss 静态白块：`469` 个白块合并为 `1` 个保留孔洞的 `box_9b9d1215`，规划 box 从 `771` 降到 `303`，`2708` 个占用格前后集合完全一致，`302` 个道具/机关未改动。`Boss.planning.json` 与 `Content/LevelMaps/Boss.json` 内容一致，修改前后备份保存在 `Library/PlanningMergeBackups`。
+- `BossController` 删除碰撞后隐藏/停用普通物体、岩浆或机关，以及每帧隐藏队列和房间恢复隐藏链路；Boss 不再吃方块。玩家接触死亡、岩浆伤害、无敌闪烁、死亡演出和右移暂停逻辑保留。
+- 严格保留原穿行与伤害行为：`SetPassThroughTerrain(true)` 仍按 `passThroughColliderHeight=12` 临时拉高 Trigger 碰撞，`destroyOnlyWhileExternalMoving` 仍限制入场/Timeline 期间误结算接触伤害；仅删除“接触对象被隐藏”这一结果。
+- `BossCollectibleEntryGate` 顶部新增“是否启用该组件”总开关，默认开启；关闭时跳过收集比例检查和失败返回传送，直接允许绑定触发器播放 Timeline。
+- 新增 `camera_close.playable` 与独立 `CameraClosePlayable`：进入 WhileInside 触发器时通过 `CameraControlManager.RequestLensScale` 平滑申请 `0.5×` 视野，离开停止 Director 时释放恢复。新增镜头缩放正数租约及进入/退出缓动回归用例，不改 Timeline 原生脚本。
+- `CameraCloseBehaviour` 额外直接订阅 `PlayableDirector.stopped`，不再只依赖 Playable Pause/GraphStop 回调；`WhileInside` 触发器退出停止 Director 时会无条件释放镜头缩放租约。
+- Boss JSON 中 `box_c8670190` 的 `ContactTimelineTrigger.triggerMode` 已由 `0`（Once）修为 `2`（WhileInside）；两份 JSON 保持一致，离开触发器后会停止 `camera_close` 并释放镜头缩放租约。
+- `BossRightMoveExecutor` 的高度死区默认值和 Boss 预制体实例值均由 `2` 改为 `0`；弱垂直追踪现在持续以配置速度追随玩家 Y，不再保留 2 格高度容差。
+- Boss 复活链改为房间重建后才应用 Boss 归位：新增复活后置监听，Boss 归位前销毁 Boss 左边缘至 Boss 中心 X 范围内相交的全部普通/重力岩浆。Boss 存活期间通过玩家疾跑租约禁用疾跑，死亡或禁用时自动释放。
+- Inspector 文案、BOSS_CONTROLLER API/开发者文档同步；`BossRoomResetVisualAudit` 改为直接使用通用 `TemporaryObjectHideState` 验证房间恢复视觉，不再依赖 Boss 隐藏队列。
+- Unity 6000.3.12f1 使用当前完整 `Assembly-CSharp.rsp` 与 `Assembly-CSharp-Editor.rsp` 编译通过，0 error，仅既有 obsolete/hide warning。未运行 Play Mode；主 Unity 仍有未保存 Boss Scene，未保存或重建场景。
+
+## 2026-10-19 R1／R2／R3 最终场景急件接收
+
+- 分支 codex/urgent-r-level-delivery-20261019；按用户最新授权接收 ILorR1012 R1 ff785ab、R2 308c65f、R3 48cb1e4 最终 Scene，保留原字节及 planning/meta、R1 镜头依赖，不重建、不改 Gaming。
+- 三关手调尚未精确回采，旧 JSON 不可全量应用或直接片段导入最终布局；此限制未隐瞒为“同步完成”。详见 Docs/Developer/R_LEVEL_FINAL_SCENE_HANDOFF_2026-10-19.md。
+- 静态检查三个 Scene fileID 唯一、外部 GUID 可解析、JSON 可解析、配对提交门禁；未执行 Unity／Play／打包。
+## 2026-10-19 单向平台旧默认美术接入（紧急交接）
+
+- 分支 codex/fix-oneway-default-art-20261019：三色栏目与正式16像素图已存在，但旧中性单向平台仍引用旧48×8白色素材，导致旧关卡看似没有应用新版。保留Neutral枚举值与原占格/碰撞，改用正式红色图同轮廓的去色版，不擅自给旧实例指定颜色；已有三色图不变。
+- 原PNG GUID与Sprite fileID保持，完整16×16帧原比例平铺，支撑边16像素；同步生成工具与Prefab静态预览。补EditMode资源契约测试，静态diff检查通过；紧急交付尚未运行Unity测试，不宣称动态验收。
+
+## 2026-10-19 美术工作台N键与偏移输入可读性（验证完成）
+
+- 独立分支codex/fix-art-hotkey-limit-fields-20261019，使用taptap-editor-ui规范；只改编辑器入口与图层参数布局，不改Scene、存档、美术尺寸或Runtime视差规则。
+- N改用与规划M相同的Unity菜单快捷键分发，移除Scene/工作台/Planning窗口白名单，保留编辑文字、运行/编译与未完成绘制保护；最大偏移拆成独立左右/上下数值行，避免窄栏Vector2Field挤掉输入。
+- 隔离Unity6000.3.12f1编译通过；GridArt86/86测试通过，含默认280像素侧栏中两轴输入宽度不少于100、原值显示、独立修改及Undo。首次新用例同帧两次编辑被Undo合组，夹具显式分组模拟两次用户提交后通过，未改产品Undo或放宽断言。导航22断言通过，实际ProjectBrowser聚焦执行全局菜单关闭/重开、文字/绘制保护、视图恢复和Scene不标脏均验证；未模拟操作系统物理按键。
+
+## 2026-10-19 移动时贯穿白/青线（修复验证完成）
+
+- 独立分支 `codex/fix-grid-art-moving-seams-20261019`，基于 edc3a93；不改主目录未保存 Scene、关卡布局、R1/R2 或源图。
+- 实际 URP/D3D11 GPU 测试确认：连续黑色 tail 背景在相机亚像素移动时，切片边界插值会取到相邻透明像素，漏出后方青色；240 帧基线漏色16146像素。并非雨滴密度或作者应删掉的白色边框。
+- 修复仅为网格增加每四边形采样边界，并在主图/HSV alpha mask 内将采样夹到切片内 texel 中心；UV0、顶点、16有效像素/格与作者布局不变。已生成网格只补 UV1，不重建正式布局。
+- 隔离 FlowRetirementProbe：主图/HSV mask、三档缩放、40位置、1/4倍目标各480帧，旧网格负对照32292漏色像素，修复0；无MSAA路径也复现，非仅MSAA现象。新增四种旋转的UV0/几何不变与旧网格重应用升级测试。
+- NUnit 84/84通过；首轮83/84中旧画布重绘计数时序用例失败一次，完整重跑84/84通过，未改画布实现或放宽断言。实际Gaming174断言通过（含所有现有生成网格UV1、颜色层mask标志、视差轴限位/往返），正式Scene未保存、2424格美术布局不变。C#与实际GPU shader编译通过；未新打PC/Android包，不能代替TA真机复测。
+- 已补53份版本控制生成网格，仅UV1数据；不需要策划删图、改图或重建正式关卡。旧外部分支的生成网格若覆盖这些资产，需重新“应用美术”升级；不能把旧生成资产当作新基线覆盖修复。
+
+## 2026-10-19 TA Gaming 美术整合与有界分轴视差（验证完成，整合交付）
+
+- 用户授权合并TA ad1a4dd到main并参照成熟视差控制优化；隔离分支codex/art-parallax-limits-20261019，保留主项目未提交场景/存档/插件；R1/R2继续等待规划同步，不合入。
+- 使用taptap-editor-ui规范；参考ProCamera2D官方独立X/Y与重设偏移、Godot官方分轴倍率与滚动边界，复用现有单相机/层根渲染，不引插件或运行联网。新增每层锁轴、分轴速度、最大偏移格数；共用计算后按1/16格向内限幅，绝对位置往返不积分。运行启用按id读Map，不要求旧Scene重烘网格；旧地图默认不锁、不限。
+- TA 4层2424美术格/索引/旋转/生成资源/天气区域保留；远景锁Y、左右最大4格，近景锁Y、左右最大2格，墙地/装饰维持速度1。只给美术Map加参数，不改planning或玩法布局。工作台增双轴预览与复位，Undo/保存沿用原链。操作及参考链接见GRID_ART_PARALLAX.md。
+- Unity6000.3.12f1静音隔离GridArt测试80/80通过；实际Gaming资源引用/2424格/往返限幅/锁轴/禁用复原141断言通过。首轮单测失败为EditMode fixture用SendMessage触发生命周期断言，改为反射；首次Scene审计因EditMode不自动调用运行组件OnEnable而未解析Map，显式模拟OnEnable后按原断言通过，未放宽产品断言。主Unity内存场景不保存，不构建，不宣称完整游戏流程验收。
+
+## 2026-10-19 美术补充内外角（验证完成，整合交付）
+
+- 用户授权处理场景背景新图并合并推送，明确排除尚未同步规划的R1/R2。隔离分支codex/art-author-corners-20261019，不改场景与planning。
+- 使用taptap-editor-ui与16有效像素/格换算规范；新图256×190是原生1倍，显式16×16切片、Point/无Mip/无压缩/不缩NPOT。原白线自动槽更新为美术提供的13片，不再用旧图推导内角；追加12白线手动片＋8纹饰片，不重排旧编号，不猜造纹饰内角。
+- 共享库203项、原154个子对象ID全部保留；旧生成图集/原Sprite不删除，两版新图和meta成套提交。补齐red/blue/green三色草地，保持16×16透明框和两像素草尖，不拉伸；第二版逐RGBA比对只有两块16×16中心纹样新增，作为手动片追加，不改变自动黑中心。自定义名称不覆盖，重复同步不追加重复项；旧普通装饰片和作者地图位姿不动。
+- Unity6000.3.12f1静音FlowRetirementProbe：GridArt EditMode70/70；真实原片选区/朝向/内角像素/配置/幂等/拼接及草地归属447断言通过；真实共享库两列布局、native尺度、去重、旧引用与GPU缩略图251断言通过。已人工核对实际BuildQuads单格、直条、L形和孔洞拼接预览，以及203项GPU总览（含三色草地及两新增中心纹样）。日志/截图仅Library，本轮不构建、不更改Scene/planning/渲染设置。
+- 推送前拉取确认仅R1 ff785ab、R2 308c65f未合入；按用户选择等规划回采同步后再整合，不接入其最终Scene或附带相机脚本。本地共享库只有Unity重序列化缓存变化，独立保留，不混入交付；主项目场景/存档/Timeline/插件WIP不暂存。
+
+## 2026-10-19 美术工作台远景遮挡与白线边框（验证完成，整合交付）
+
+- 用户要求快速修复远景刷图遮住玩法参考/场景物体，并合并推送。隔离分支codex/fix-grid-art-background-depth从b5f1ff9处理，主项目Scene/存档/插件WIP不触碰，不改待分析的光照方案。
+- 按taptap-editor-ui规范并行检查工作台画布合成与真实Scene深度/透明排序，保留16有效像素/格和作者布局，不以删除背景或修改关卡碰撞解决。
+- 画布改为正Z背景缓存→关卡参考→零/负Z表面前景缓存→工具覆盖，同纹理不跨参考平面合批；参考显隐/透明度继续有效，平移缩放只变换缓存。不修改运行Shader或作者图层深度。
+- 后加白线问题同步完成：旧自动边框规则片有6有效像素留白且缺四内角，改原#frame槽为13张16×16贴边规则，原4像素线宽、原图、旧Sprite、178笔刷编号与地图位置不改。共享库新增图集及13Sprite子资源；原有140子对象ID全部保留，无需重画。普通原始装饰切片不变。
+- 静音隔离Unity6000.3.12f1：GridArt EditMode70/70；白线规则/像素/幂等414断言及实际BuildQuads的单格、直条、L角、孔洞预览；真实URP场景深度8断言；真实ArtCanvas GPU显隐/透明度/背景前景合成18断言通过。截图人工核对；未做双端构建或正式图全流程测试。
+- 首轮审计URP asmdef依赖编译失败已移除不必要直接引用；Canvas审计前两次因隔离面板异步附着读取未布局视图导致NaN/黑图失败，修fixture预热后原颜色断言全部通过，未放宽断言或以测试结果冒充产品修复。报告/截图仅Library/FlowRetirementProbe/Library。未保存主Unity内存Scene，主项目WIP不暂存。
+- 先前光照需求仅源码与官方资料分析，建议保持当前URP并增加独立墙遮挡可见性遮罩，详见LIGHTING_VISIBILITY_ASSESSMENT.md；未实施或修改任何光照配置。
+
+## 2026-10-19 Gaming 重力生长、门偏移、平台载物与携带通道（验证完成，整合交付）
+
+- 用户授权修复并合并推送；从a672bb6在隔离工作树的codex/fix-gaming-growth-door-transport处理，主项目未提交Scene/存档/插件等保留，不保存主Unity内存Scene。
+- 用户已澄清不按旧坐标：验证空中受重力蓝绿块解锁/落地后的生长，以及普通投放到平台的红块＋基座自供能运输；不等待另一份地图、不猜改布局。后加举基座进入两格高通道一并处理。
+- 并行门外观与平台载物，主窗口负责重力生长与串行静音FlowRetirementProbe验证；不全量重建Gaming、不改变作者重力/固定锁轴、路线或绑定。
+- 生长改为首次接触取主轴四向，防止落体接触的微小高度差产生斜向生长；支撑探针不把零距离/浅穿地面误当落稳后锁Y。平台通过本地有界NonAlloc顶面查询承载普通红蓝绿块、基座及堆叠，各自运动组件处理支撑位移并只释放运行时落稳锁，保留作者锁、重力、房间边界与显式PlatformMount；搬运/绿钩/藤蔓托举不抢写。
+- 门规划占格不再重复乘两格预制体尺寸，运行碰撞、Scene预览和正式二维图使用同一逻辑边界，保留手调Transform/中心。携带承托点下留1个有效美术像素且按真实实体底边换算，尺寸不缩放；两格高物品仍需三格通道。
+- 隔离静音Unity6000.3.12f1：门23扇/204断言；真实Play携带51断言；蓝能力原回归220断言；最终运输版重力生长与红蓝水柱1536断言通过。平台12种方向/重力/载物组合、阻顶、堆叠、自供能全程3365断言通过，再补实际Unity自然FixedUpdate投放/持续供能/3格终点运输共35254断言通过；脚本meta顺序显式-150，与已有类属性一致，先平台再方块运动。新增运输后的R3原附着/曲柄/搬运/固定根生长真实Play33502断言通过。逐步断言数不等于独立用例数。日志仅Library，不保存关卡，不打包，不宣称策划最新未推场景全流程验收。
+- 未改Scene、planning、Packages或ProjectSettings。原失败已记录定位并修正：生长斜向与落稳锁、动态载物被settle锁锚回、自然审计API参数编译错误；未放宽碰撞及路径到达断言。整合只提交本次源码/meta、隔离审计和文档，main原有WIP不暂存；不保存主Unity旧内存场景。
+
+## 2026-10-19 未整合支线集中合并（验证完成，整合交付）
+
+- 用户授权合并并推送现有待整合支线；明确采用策划MVMap17正式Gaming，保留main代码、美术、菜单修复和Start/Boss门槛接线。独立R3仍不进入正式构建。
+- 在Library/BranchIntegration-20261019隔离Git工作树整合，主项目MRoom/Pick/Timeline/插件等未提交改动及主Unity内存场景不触碰；旧TA/R1支线逐项核对已移植内容，不恢复退役交互图、旧场景流程或旧配置。
+- 遵循颜色玩法、场景流程及编辑器UI规范；验证在静音FlowRetirementProbe串行运行，完成后补充结果，不打包。
+- 合并策划b2d0e18的MVMap17与平台/栏目参数UI、R3 e04e422和附着依赖、R1镜像交付及刷新后新收到4372c46的K31/N39固定根。TA firefly及祖先、rain、旧Grow与交互图退役交接支线已审查并补齐合并祖先关系；采用main已有正式集成，不回退HSV/像素标准、网格区域效果、旧项目设置或退役图实现，缺失独立预览作为非构建场景保留。详细取舍见BRANCH_INTEGRATION_2026-10-19.md。
+- MVMap17全部1406原记录/位置/参数/绑定/元数据不变，仅新增精确新出生位置的隐形Start，最终1407条。Start工具适配新出生小数偏移，保持无碰撞/无Renderer；Boss已有30%门槛模板与同场景Start去向仍保留，无需重写独立BossScene。三份正式规划结构一致，不全量重建地图，不加入R3到构建。
+- 回归发现新增platformMountId空字段会让旧签名失配、重建手调物体；SamePlanningSignature仅兼容空的新可选附着/Boss标记字段（含合并嵌套记录），非空绑定/尺寸/其他参数仍严格比较。实际Gaming无改动应用1407物体全保留实例及精确Transform，R1全部76根同样保留；未保存测试姿态。
+- Unity6000.3.12f1静音D3D11隔离：最终整合审计5227断言、R3来源116/场景与存档1552、真实Play33472断言通过；R1镜像无改动应用158、最新固定根真实Play181049断言通过。Play计数含逐帧重复采样，不代表同数量独立用例。覆盖R3载人曲柄往返、红蓝/曲柄跟随、搬走脱离/重置重新附着、固定绿根生长，R1两固定根真实蓝接触长9/红接触缩1/重置、禁搬运及原门/共享曲柄/攀附。
+- 编译无C#错误、diff检查及成套关卡提交检查通过。BossStart首轮因旧模板偏移保护正确拒绝，修工具后重跑通过；R1首轮因旧签名空字段重建失败，补兼容后真实回归通过。报告仅留主项目及隔离项目Library中的branch-merge-*.log、OutstandingBranchIntegrationAudit.txt、R1/R3GameplayVerification.txt。未进行MVMap17全流程通关、双端构建/真机、整个存档/成就/Boss结局流程验收。
+- 主项目MRoom2/MRoom3/Pick、Boss Timeline、插件等原有WIP不暂存不提交，主Unity不保存或切换场景；完成后仅正常快进main与普通推送，禁止强推。成员同步后关闭旧编辑窗口、从磁盘重开Gaming，避免旧内存覆盖新地图。
+
 ## 2026-10-19 共享场景美术素材与素材栏排布（验证完成，整合交付）
 
 - 用户授权检查背景、墙地、小装饰及混在道具图集中的场景素材，按16有效像素/格标准接入共享素材库；修复素材栏可用宽度下仍为单列的问题。沿用taptap-editor-ui规范，追加稳定槽位，不重排旧笔刷，不改现有地图布局。
@@ -93,6 +233,19 @@
 - 最后恢复为当前main生产源码（不带R3依赖），归一R1的76个元数据签名，保存重载/无改动同步158项及标准玩家蓝点击生长220项通过；未改远端R1布局、朝向、手动微调和机关参数。最初R1无改动检查确实失败，原因与修复如上，未将旧通过报告冒充本轮结果。编译无C#错误，当前任务范围git diff --check通过。
 - 策划分支b2d0e18另含刚体六轴锁定UI（aa0ecda）和3个FreezeAll/禁搬运绿块：已静态核对位掩码捕获/保存和配置，未将其Gaming或其他编辑器改动合入，也未宣称此分支整图Play通过。末次fetch仍是main12d56fe/R1 16fb26f/R2 d2c2809/R3 e04e422。用户其他未提交Scene/存档/字体/Timeline/插件不在本轮写入范围。
 - 报告位于Library/FlowRetirementProbe/Library及Library/RoomPhysics-20261018；未做三个关卡完整入口到出口通关、双端包或真机验收。R1使用者请重新加载本次Scene/配套planning，避免旧编辑器内存再保存覆盖；继续提醒协作交付存档及meta。
+## 2026-10-19 ILorR R3 独立关卡（已完成，获准推送分支）
+
+- 用户本轮要求开始搭 R3；基于重新 fetch 后的 origin/main `12d56fe153c647015c9d61ea12dfd7125d545135`，新建分支 `codex/ilorr/r3-level`，独立目录 `C:/Unity Programs/2026TapTapGameJam-R3`。只制作独立 R3 Scene、同名 planning、meta、设计来源和必要说明；不改正式 Gaming、构建列表、标准玩家或 R1/R2。
+- 原主目录三项 TileLibrary 美术改动及 R1/R2 测试目录保留原位；不切换其分支、不保存其内存 Scene。用户现已明确要求按协作守则推送本关分支；本次不合并或推送 main，不创建 PR。
+- 已只读提取《关卡设计.xlsx》Sheet1 的 R3 填色、文字和连通占格，并交叉查看原表渲染；源文件 SHA256 `3bbbcfb212928fab7fcb2db7f96ca27089bdbb521434d8754a0251aad1cddd92`。每格对应游戏一格，轨迹和生长极限非实体；下方 R2 的颜色和地形不得混入 R3。
+- 用户最终确认：独立试玩出生 Z96，保留 Y97 入口洞，不落入缺少下方 R2 的空洞；开局同 R2：场景三色启用、玩家仅蓝能力。AC82→AE82、AS82→AK82、AW89→AW82、CN89→CN79，四绿根均固定不落且不可搬运。AY89/CL79 两保持按钮全部按下开同一竖门 CZ78:CZ79，只移除 CZ78 黑墙。
+- 用户最终确认 CG92:CJ92 为曲柄平台；运行检查确认第100行方案会使蓝块开局冷却整片岩浆后，用户改为放到岩浆上方、不进入岩浆：底端 CG97:CJ97，上端第88行，行程9格，附着红块/蓝块/曲柄为 CG96/CJ96/CI96。保留全部原岩浆占格和现有颜色反应，不加岩浆重叠豁免或特殊遮挡。松手按现有默认规则回落；红蓝可搬走，搬起后脱离，曲柄始终跟随；房间重置恢复作者附着状态。
+- 范围补充：现有平台没有道具附着功能，本次为明确需求添加可选 PlatformMount 与规划 platformMountId 稳定绑定，ContactCubeMotion 保持唯一刚体写入者；持久化/片段重映射/来源删除/Scene 重建配套支持。默认不绑定，不改旧关卡布局或普通平台规则。
+- 已完成 `Assets/Scenes/R3/R3.unity`、同名 planning、双方 meta、设计来源和说明：原552黑格，仅移除CZ78后551格；59水格、135岩浆格、8格开局完整竖藤。剔除下方R2内容但保留BK98:BK101共用边界。来源 `designConfirmed=true`；使用标准 Player、独立相机与共享 UI，未改变正式流程。
+- Unity6000.3.12f1最终编译无C#错误。来源/片段116项、场景与存档1552项、实际Play13699项断言通过（Play含逐帧重复采样）：Z96闲置安全、三场景色/仅蓝能力、真实玩家站平台随曲柄升9格/松手回落、三个附着物跟随、红蓝实际BeginCarry/Drop脱离/重置重新附着、拒绝搬起不脱离、两个真实脚部按钮保持及AND门、四绿根通过蓝色命中接收器长到各指定终点/重置、普通无挂载红块重力与插值回归。携带/生长夹具使用同房间瞬移，携带定位另用调试SetSignal；不冒称输入端完整操作或全程通关。
+- 最终真实1856×1152 GameView全图、平台底端及载人升至顶端画面已查看，截图与报告仅在Library。开局5片原岩浆均完好；为消除挂载迟滞，采用后序挂载协调与方块运动器单一写入，挂载临时运动学/无重力/无插值，搬起/解除/停用恢复原模式。不修改旧平台执行顺序；早期动态FreezeAll跟随及错误薄平台验收假设已弃用。
+- 未做入口到出口人工完整通关、双端或Mac构建、窗口手工编辑全流程，也未重跑R1/R2全部玩法。R1/R2、Gaming、标准Player、Packages/ProjectSettings无差异；主目录三项原美术SHA256再次核对未变。整合者须带入PlatformMount与规划/运动/搬运依赖，不只复制Scene；使用见 `Docs/Developer/R3_LEVEL.md`。
+- 分支交付：实现提交 `2a98111a3f54f1d79276fa6cab00616d1c968cea`，33个任务文件含Scene/planning/meta、共享依赖与文档。推送前已成功 `git fetch origin --prune` 并只读核对远程main仍为 `12d56fe153c647015c9d61ea12dfd7125d545135`，与R3基线一致、没有新增main提交；远程R3分支尚不存在。仅普通推送 `codex/ilorr/r3-level` 并设置该分支上游，不自行合并、rebase、强推或修改其他工作目录。
 
 ## 2026-10-18 ILorR R1/R2 合入 main（整合验证完成）
 
@@ -237,6 +390,33 @@
 - 锁修复：玩家锁轨缩短到 `0–6.52` 秒，在最终开战 Playable 前结束，避开 Hold 模式末帧；`ActorTimelineBehaviour` 同时在片段自然末尾主动释放控制锁，不依赖 `OnGraphStop`。
 - 地图恢复：Unity 重新导入期间 `Boss.json` 与 `Boss.planning.json` 被写成与场景不一致的版本，已从 HEAD 恢复为与 `Boss.unity` 一致的 `8d5ea0`；覆盖前的文件备份在 `Library/MapRecoveryBackup-20261018-1250`。
 - 验证：Unity 已完成脚本与 Timeline 资产导入，Editor.log 无 C# 编译错误；Boss 预制体与玩家锁轨序列化核对通过。EditMode 相机测试和完整入场/死亡实机流程仍待运行。
+## 2026-10-19 ILorR R1 固定微调阶段交付（区域镜头开发暂缓）
+
+- 用户当前明确要求先推送阶段进度，供其他协作者整合main，随后等待用户通知继续。本次只交付下条已完成的K31/N39固定微调：两个实例的FreezeAll、禁搬运覆盖及配套Scene/planning、专属迁移/验证工具和说明。区域镜头仅完成现有接口调查，尚未编辑任何相机或Timeline源码，不包含未完成镜头功能。
+- 推送前重新fetch成功，`origin/main`为`e18c6bfe49585a5fdb4075a0a3e1065271881b68`；远程R1与本地HEAD原为同一`16fb26f`，可以普通快进推送。只推`codex/ilorr/r1-level`，不合并/rebase、不推main、不创建PR。
+- **整合注意：main已经对R1的Scene/planning做过`R1PlanningSchemaUpgrade`存档格式迁移，当前R1任务分支未包含该迁移。整合者应以main现有格式和全部手工位姿为基准，叠加本次两绿块的固定/禁搬运参数，同时更新对应实例签名及内嵌/配对planning；不要用旧分支Scene/planning整份覆盖main的格式升级，也不要从旧Excel全量重建。** 本次没有改动共享运行时或旧分支基线。
+- 沿用本次固定微调已完成的Unity编译、保存重载、无改动应用及专项Play结果；阶段交付仅复核差异、报告、配套文件检查，不重复长Play。用户要求后续以必要检查和人工验收清单为主。Boss时间轴原有改动保持不变且不提交；区域镜头恢复开发后需实现“用户自定范围/Size，进入扩大、离开恢复、镜头持续随行”。
+
+## 2026-10-19 ILorR R1 K31/N39 固定微调（验证完成，本地待试玩）
+
+- 用户确认保存场景/关卡存档并关闭R1 Unity。只在现有R1分支处理 `r1_cube_green_left`（K31）及 `r1_cube_green_lower`（N39），保持左右镜像、76个作者根、所有精确位姿和原9格生长上限；不全量重建Scene。
+- 复用已有固定横向绿条的作者Rigidbody FreezeAll与禁用CarryableFeature配置，同步两项PlanningBox覆盖、Scene元数据签名与内嵌/配对planning。不引入main的新无重力实现：关闭重力仍可搬运，且该实现尚未进入R1分支。
+- 原Boss时间轴未提交改动保留，R2/R3、主项目main、共享Runtime、标准Player与Packages/ProjectSettings不动。本次未获推送授权，不推送或整合main。应用前备份Scene/存档，完成后执行保存重载、无改动同步和真实Play专项。
+- 专用R1目录Unity6000.3.12f1静音批处理已完成迁移及编译；保存重载165项、无改动增量同步158项通过，76作者根实例与精确位姿全保留。对比备份planning，除两对象新增的4项固定/搬运参数覆盖外，全部数据相同。Scene仅2组Prefab参数、相应签名和内嵌planning发生预期变化。
+- 真实Play269901次断言通过，大多数为逐编辑器帧重复检查，并非同数量独立用例。验证两绿根不下落/漂移、Carry API拒绝拿起、临时真实蓝块接触长至9格、临时红块接触缩至1格、重置后初始长度及固定/禁搬运保持，同时回归共享/独立曲柄、双按钮门、13格绿条底面攀附/移动/跳跃。测试接触源只存在内存，从未保存；未做人工全路线通关或打包。
+- 备份 `Library/R1BeforeFixedGreenCubes-20261019`，迁移/无改动/Play报告及日志只留Library。Unity退出有既有Audio Manager清理提示，无C#编译或审计失败。Boss时间轴SHA256仍为7DB5E9AD86FE383EAFFE86D8A15E4CAC99FBC032745D97DCD00F89E3E6F00D71；不纳入任务交付。仅本地保存修改，未提交/推送。
+
+## 2026-10-19 ILorR R1 左右镜像（完成，分支交付）
+
+- 用户要求将现有R1布局左右镜像，完成后现已明确授权推送；继续在现有 `codex/ilorr/r1-level` 和R1独立目录工作，不切换或合并main。推送前再次成功fetch，main仍为 `12d56fe153c647015c9d61ea12dfd7125d545135`，自制作镜像时的检查后无新增；制作镜像前的R1场景与main已整合的微调版一致，只有main的R1审计脚本另有兼容更新。
+- 以58格宽度的世界轴X=29镜像当前已保存Scene，保留全部试玩非整格微调和尺寸。同步规划占格、标注、出生点、对象网格信息及内嵌存档，保留稳定ID和机关引用。固定13格绿条需连同根与初始伸长方向翻转，不使用负缩放。
+- 只修改R1专属文件和自身文档；原Boss时间轴未提交改动保留，R2/R3、Gaming、标准玩家、Packages/ProjectSettings不动。修改前备份Scene与planning到本地Library。
+- Scene/配套planning/内嵌planning和标注均已镜像，meta和稳定ID不变，R1仍76根。原出口现左侧、两平台换边；固定绿条根为(39.5,-24.5,0)，正缩放绕Z180度后向左伸满13格，世界X=27～40，重置朝向正确。玩家Scene位置(41.5,-20.5,0)。未从旧Excel重建或取整任何微调。
+- Unity6000.3.12f1编译通过；受保护迁移641项、无改动增量应用158项、实际Play1664次断言通过（含逐帧重复采样）。真实绿条底面攀附/镜像横移/跳跃脱离/重置、共享曲柄接续和回落、独立曲柄、两保持按钮AND门均通过；门使用TryPress API。已查看1740×1320运行时全图，未打包或人工完整通关。首次迁移审计在内存中发现藤蔓父子重复移动，未保存；修正为按父子深度和原世界位姿各翻转一次后全部通过，不保留错误布局。
+- 原Scene与planning备份在Library/R1BeforeHorizontalMirror；报告R1HorizontalMirror.txt、R1MirrorNoOpVerification.txt、R1GameplayVerification.txt和R1Overview.png仅留Library。原Boss时间轴SHA256仍为7DB5E9AD86FE383EAFFE86D8A15E4CAC99FBC032745D97DCD00F89E3E6F00D71，不纳入任务提交。仅显式提交本任务文件，按用户授权普通推送R1分支，不合并或推送main、不强推、不创建PR。
+- 原整数planning与Scene手工Transform差异继续保留，绿条根朝向保存在Scene；无改动增量应用已验，删除后全量重建/源图重新导入未承诺保留微调。整合时成套带入Scene/planning/meta及R1专属工具/说明，不只复制JSON；见R1_LEVEL.md。R1仍在原任务分支，main新框架不自行合入；整合者继续保留main的场景流程与标准玩家。
+- 交付实现提交 `40fe66c2d40f64a44e4e96c1b8ee91bd5a0ded4a`，推送前远程R1为 `4dbeb6800bac80cbf0b9236658745d07360297b0`，为本地实现提交的直接父提交，可正常快进。场景、配套存档、原meta及新增编辑器脚本/meta成套，忽略目录与Boss改动不上传；整合仍由整合窗口处理。
+
 ## 2026-10-18 ILorR R1 试玩微调（保留已保存场景，独立分支交付）
 
 - 用户确认退出Play并保存，明确要求先推R2再推R1。本次仅交付R1已保存Scene及交接说明，不重建、吸附坐标或改动运行时代码；不包含Boss时间轴自动重序列化。
@@ -2299,6 +2479,10 @@
 - 验证：三份JSON结构一致、meta已跟踪、新增资源GUID引用存在；提交前执行AllTracked规划守卫与暂存diff检查。Unity6000.3.12f1，未运行本轮Unity编译、Play Mode、完整通关或打包，静态数据验证不代表游戏验收。
 - 字体缓存、栏目中文转义差异及定向气泡预览序列化仍保留本地，不纳入本次关卡交付；无新增未跟踪资源依赖。
 
+## 2026-10-18 音频资源与实际接线TXT盘点（当前对话）
+
+- 范围：只读核对音频交接、全部音频文件、AudioCatalog、运行时调用及Scene/Prefab/Timeline直接引用；生成Docs/AUDIO_INVENTORY_AND_USAGE_2026-10-18.txt，不修改音频、源码、场景、配置，不启动Unity、不提交推送。
+- 完成：Docs/AUDIO_INVENTORY_AND_USAGE_2026-10-18.txt逐项覆盖68个音频（16音乐/6环境/46音效），解析55Cue引用63文件、37有运行时入口的Cue覆盖42文件；列出预计用途、实际触发/源码行号、Prefab/Scene依赖及26个未接播放文件。已检查68唯一条目与路径、GUID映射；当前Resources/UI/WorldMainMenu.prefab缺失导致菜单/游玩路由只能判代码接入，启动需另验，已在TXT注明。只做静态审计，无Unity运行/试听/编译/打包，无提交推送。
 ## 2026-10-18 Gaming 主相机视野调整（当前关卡基线分支交付）
 
 - 分支：codex/codex/gaming-camera-size-8。范围：正式 Gaming.unity 的 Main Camera 与 CameraModeController.Side2D 正交 size，由 5 调整为 8。
@@ -2472,3 +2656,15 @@
 - 用户保存后，Gaming场景内嵌规划与同名存档深度一致：21房间、2604条规划物体。只同步命名正式关卡.json，场景与同名存档不重建、不更改方块排列；Scene、两份存档及既有meta成套交付。
 - 仅提交推送当前codex/codex/gaming-camera-size-8分支，不改main。未完成验证的曲柄承载/下落速度源码、字体和私人文件排除，保留本地。地图快照和哈希备份在Library/LevelUpload-*。
 - 三份布局一致性与规划存档提交检查通过；此提交不声称完整通关或游戏构建。此前最新main/R1-R3/MRoom2-MRoom3更新在隔离工程编译成功、六个目标Scene GUID静态检查无缺失，但尚未应用至用户项目；后续应用须以本次新地图快照重新做保护合并，不能采用旧的保护树覆盖新图。
+## 2026-10-19 Gaming 场景美术网格增量（分支交付）
+
+- 分支：`codex/codex/gaming-art-layer-20261019`。接收当前工作区已保存的 Gaming 美术网格改动；不纳入其他本地场景、字体、试验图、IDE 设置及未跟踪的 TileArtTrial 资源。
+- 成套提交 `Gaming.unity`、独立 `Gaming_Art.asset` 及 `.meta`，并包含该场景生成网格及目录 `.meta`。同名 `Gaming.planning.json` 与 `Content/LevelMaps/正式关卡.json` 未改动；本次是美术网格层，不修改关卡布局存档。
+- Unity 6000.3.12f1。只完成静态引用与 Git 暂存范围检查；未打开 Unity、运行 Play Mode 或构建。
+
+
+## Codex / 保留当前地图同步最新仓库（2026-10-20）
+
+- 最新main 1722c59仅合入本地当前任务分支；不修改或推送main，不推送本次本地更新。Gaming场景及两份地图存档/meta按更新前最新本地快照逐字节保留；用户关卡已先通过5e88e7c上传。
+- R1、R3使用main中的作者最终版，R2场景取作者d3fac6a最新保存版本；MRoom2/MRoom3及配套可编辑存档/meta均保留完整。用户确认MRoom1指MRoom3。
+- 源码更新采用远端现有PlatformLoadTransport/PlatformMount承载实现，替代已备份但未完成验证的本地承载原型；下落速度字段/UI保留为未提交功能。Unity6000.3.12f1隔离编译通过；Gaming和五个工作关卡的Scene GUID依赖静态检查无缺失。未完整游戏通关或构建。

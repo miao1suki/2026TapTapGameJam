@@ -24,9 +24,13 @@ namespace Project.ContactCubes
         [SerializeField, Min(0), InspectorName("绿钩子优先搜索半径（格）")] private int greenHookSnapSearchRadius = 2;
         private Rigidbody body;
         private ContactCube cube;
+        private PlatformMount platformMount;
         private BoxCollider shape;
         private RigidbodyConstraints baseConstraints;
         private bool authoredKinematic;
+        private RigidbodyInterpolation baseInterpolation;
+        private bool mountOwnsInterpolation;
+        private bool mountWasKinematic, mountUsedGravity;
         private readonly Dictionary<Component, Vector3> velocities = new Dictionary<Component, Vector3>();
         private readonly List<Component> deadSources = new List<Component>();
         private readonly Dictionary<Collider, bool> playerPairs = new Dictionary<Collider, bool>();
@@ -35,6 +39,7 @@ namespace Project.ContactCubes
         private float gravityProtectedUntil;
         private bool hadHorizontalPush;
         private bool greenHookActive;
+        private Vector3 pendingPlatformDelta;
         private float cellSize = 1f;
         private HorizontalPhysicsClearance horizontalClearance;
         // Logical color contact retains the authored grid face even though
@@ -51,6 +56,22 @@ namespace Project.ContactCubes
         public bool GravityProtected => Time.time < gravityProtectedUntil;
         public bool IsSuspended { get; private set; }
         public bool IsGreenHookPullActive => greenHookActive;
+        internal bool CanRideMovingPlatform => isActiveAndEnabled && !IsSuspended && !greenHookActive &&
+            !authoredKinematic && !IsAuthoredFixed && body != null && shape != null && shape.enabled &&
+            !VineGrowthLift.IsLifting(body) && velocities.Count == 0 &&
+            (platformMount == null || !platformMount.IsMounted);
+        internal bool CanAcceptPlatformDelta(Vector3 delta) =>
+            ((baseConstraints & RigidbodyConstraints.FreezePositionX) == 0 || Mathf.Abs(delta.x) < .00001f) &&
+            ((baseConstraints & RigidbodyConstraints.FreezePositionY) == 0 || Mathf.Abs(delta.y) < .00001f) &&
+            ((baseConstraints & RigidbodyConstraints.FreezePositionZ) == 0 || Mathf.Abs(delta.z) < .00001f);
+        internal void ApplyPlatformDelta(Vector3 delta)
+        {
+            if (!CanRideMovingPlatform || !CanAcceptPlatformDelta(delta)) return;
+            pendingPlatformDelta += delta;
+            // This is a support displacement, not a force or a new authored pose.
+            // Keep gravity, author locks and the normal reaction pipeline intact.
+            if (!body.isKinematic) body.WakeUp();
+        }
         public GreenHookMotionMode GreenHookMotionMode =>
             cube != null && cube.Color == CubeColor.Green ? GreenHookMotionMode.Swing : GreenHookMotionMode.PullTarget;
         public Transform GreenHookTransform => transform;
@@ -67,8 +88,10 @@ namespace Project.ContactCubes
         private void Awake()
         {
             body = GetComponent<Rigidbody>(); cube = GetComponent<ContactCube>(); shape = GetComponentInChildren<BoxCollider>();
+            platformMount = GetComponent<PlatformMount>();
             baseConstraints = body.constraints;
             authoredKinematic = body.isKinematic;
+            baseInterpolation = body.interpolation;
             if (shape != null) shape.isTrigger = false;
             cellSize = Mathf.Max(.01f, GridCellSizeUtility.Resolve(this));
             ApplyHorizontalClearance();
@@ -106,9 +129,11 @@ namespace Project.ContactCubes
         // Carry controller calls true while held, false after placing; it owns held poses.
         public void SuspendMotion(bool suspended)
         {
+            RestoreMountInterpolation();
             VineGrowthLift.Cancel(body);
             if (suspended && greenHookActive) EndGreenHookPull(false);
             IsSuspended = suspended; velocities.Clear(); hadHorizontalPush = false;
+            pendingPlatformDelta = Vector3.zero;
             gravityProtectedUntil = 0;
             if (suspended)
             {
@@ -235,8 +260,36 @@ namespace Project.ContactCubes
                     nearby[i].GetComponentInParent<IPlayerCarrySeparationHost>() == null) return false;
             return true;
         }
+        private bool HasActivePlatformMount => !IsSuspended && !greenHookActive && platformMount != null && platformMount.IsMounted &&
+            shape != null && shape.enabled && (mountOwnsInterpolation || !body.isKinematic);
+        // PlatformMount invokes this after the platform has moved. The optional
+        // coordinator never writes a cube's Rigidbody or Transform itself.
+        internal void ApplyPlatformMount()
+        {
+            if (!HasActivePlatformMount) return;
+            // The platform moves without interpolation; do not visually lag it.
+            if (!mountOwnsInterpolation)
+            {
+                mountWasKinematic = body.isKinematic; mountUsedGravity = body.useGravity;
+                if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+                body.isKinematic = true;
+                body.interpolation = RigidbodyInterpolation.None;
+                mountOwnsInterpolation = true;
+            }
+            body.position = platformMount.TargetPosition;
+            body.useGravity = false;
+            body.constraints = baseConstraints;
+            IsSettled = true;
+            RefreshPlayerCollision();
+        }
         private void FixedUpdate()
         {
+            Vector3 platformDelta = pendingPlatformDelta;
+            pendingPlatformDelta = Vector3.zero;
+            try
+            {
+            if (HasActivePlatformMount) return;
+            RestoreMountInterpolation();
             if (VineGrowthLift.IsLifting(body)) { RestorePlayerCollision(); return; }
             if (shape == null || !shape.enabled || IsSuspended ||
                 greenHookActive || authoredKinematic)
@@ -287,6 +340,23 @@ namespace Project.ContactCubes
                 velocity.z = 0; body.linearVelocity = velocity;
             }
             RefreshPlayerCollision();
+            }
+            finally
+            {
+                if (platformDelta.sqrMagnitude > .00000001f && CanRideMovingPlatform)
+                {
+                    // Runtime settling locks anchor a dynamic body in PhysX.
+                    // Release only those locks before moving its support pose;
+                    // author locks remain authoritative throughout simulation.
+                    body.constraints = baseConstraints;
+                    body.position += platformDelta;
+                    if (!body.isKinematic)
+                    {
+                        body.linearVelocity = Vector3.zero;
+                        body.WakeUp();
+                    }
+                }
+            }
         }
         private bool HasSupport()
         {
@@ -306,7 +376,11 @@ namespace Project.ContactCubes
                 if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<PlayerController>() != null ||
                     Physics.GetIgnoreLayerCollision(shape.gameObject.layer, hit.gameObject.layer) ||
                     Physics.GetIgnoreCollision(shape, hit)) continue;
-                if (supportHits[i].normal.y > .5f) return true;
+                // Do not freeze the body's Y while PhysX is still correcting a
+                // shallow floor penetration: that permanently embeds its foot
+                // and makes the adjacent growth cell look obstructed by floor.
+                if (supportHits[i].distance > .000001f && supportHits[i].normal.y > .5f &&
+                    bounds.min.y >= supportHits[i].point.y - cellSize * .001f) return true;
             }
             return false;
         }
@@ -337,6 +411,15 @@ namespace Project.ContactCubes
                     pair.Value || !IsSettled && !topContact);
             }
         }
+        private void RestoreMountInterpolation()
+        {
+            if (!mountOwnsInterpolation || body == null) return;
+            body.interpolation = baseInterpolation;
+            body.isKinematic = mountWasKinematic;
+            body.useGravity = mountUsedGravity;
+            body.constraints = baseConstraints;
+            mountOwnsInterpolation = false;
+        }
         public void ResetForRoom()
         {
             VineGrowthLift.Cancel(body);
@@ -357,6 +440,7 @@ namespace Project.ContactCubes
         }
         private void OnDisable()
         {
+            RestoreMountInterpolation();
             VineGrowthLift.Cancel(body);
             if (greenHookActive)
             {

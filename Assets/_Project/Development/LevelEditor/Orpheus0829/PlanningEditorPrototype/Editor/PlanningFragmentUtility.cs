@@ -181,6 +181,7 @@ namespace PlanningEditorPrototype
                 }
                 box.mechanismButtonIds = mappedButtons;
                 box.crankOwnerId = Map(box.crankOwnerId);
+                box.platformMountId = Map(box.platformMountId);
                 if (string.IsNullOrEmpty(box.mechanismBaseId)) box.mechanismBaseCellOffset = default;
                 box.sceneBlock = null;
                 for (int i = 0; i < box.mergeParts.Count; i++)
@@ -380,6 +381,7 @@ namespace PlanningEditorPrototype
                 int removedButtons = box.mechanismButtonIds.RemoveAll(id => !ids.Contains(id));
                 count += removedButtons;
                 if (!string.IsNullOrEmpty(box.crankOwnerId) && !ids.Contains(box.crankOwnerId)) { box.crankOwnerId = null; count++; }
+                if (!string.IsNullOrEmpty(box.platformMountId) && !ids.Contains(box.platformMountId)) { box.platformMountId = null; count++; }
             }
             return count;
         }

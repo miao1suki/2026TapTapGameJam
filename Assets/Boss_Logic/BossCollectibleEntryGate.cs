@@ -12,17 +12,20 @@ namespace Project.BossLogic
     [AddComponentMenu("2026TapTap/Boss/收集进度入场门槛")]
     public sealed class BossCollectibleEntryGate : MonoBehaviour, IContactTimelineCondition
     {
+        [SerializeField, InspectorName("是否启用该组件")] private bool gateEnabled = true;
         [SerializeField, Range(0f, 1f), InspectorName("入场所需收集比例")] private float minimumRatio = .3f;
         [SerializeField, InspectorName("未达标返回传送ID")] private string returnDestinationId = "Start";
         [SerializeField, InspectorName("门外返回位置（优先）")] private Transform returnPoint;
         [SerializeField, InspectorName("显示未达标提示")] private bool showHint = true;
         private float nextRejection;
+        public bool GateEnabled => gateEnabled;
         public float MinimumRatio => minimumRatio;
         public CollectibleProgressSnapshot Progress => CollectibleProgressService.GetWorldProgress();
-        public bool CanEnter => Progress.MeetsRatio(minimumRatio);
+        public bool CanEnter => !gateEnabled || Progress.MeetsRatio(minimumRatio);
 
         public bool CanPlayTimeline(GameObject actor)
         {
+            if (!gateEnabled) return true;
             PlayerController player = actor != null ? actor.GetComponentInParent<PlayerController>() : null;
             if (player == null) return false;
             if (CanEnter) return true;

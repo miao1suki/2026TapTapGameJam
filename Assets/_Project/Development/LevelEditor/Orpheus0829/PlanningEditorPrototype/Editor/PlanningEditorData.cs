@@ -97,6 +97,7 @@ namespace PlanningEditorPrototype
         public string mechanismButtonId;
         public List<string> mechanismButtonIds = new List<string>();
         public string crankOwnerId;
+        public string platformMountId;
         public string bossRespawnOwnerId;
         public bool initialCrankPlatformCreated;
         public List<string> mergeParts = new List<string>();

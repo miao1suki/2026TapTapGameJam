@@ -390,20 +390,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.PlayerThinkingTimelinePlayable
   font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
   collectiblePrefab: {fileID: 1869276672004954081, guid: 2eba6d8ce3c1b004cbaef2b615d7bf71, type: 3}
+  collectibleCount: 6
   fontSize: 72
   typewriterCharactersPerSecond: 18
   lineHoldSeconds: 1.2
   lineGapSeconds: 1
   branchTwoFinalGapSeconds: 2
+  sequenceStartDelaySeconds: 0.15
   collectibleRevealStagger: 0.35
   collectibleRiseDuration: 0.65
   collectiblePrepareSeconds: 2
+  collectibleBodyOffset: {x: 0, y: 0.4, z: 0}
+  collectibleBaseHeight: 1.75
+  collectibleSlotSpacing: 0.36
+  collectibleSlotArcHeight: 0.14
+  collectibleBobScale: 1.035
   collectibleBobHeight: 0.08
   collectibleBobDuration: 0.8
   blackCoverSpeed: 0.72
   blackSoftness: 0
   fullyBlackHoldSeconds: 1
   sufficientThreshold: 0.6
+  blackScreenCenter: {x: 0.5, y: 0.5}
   startDestinationId: Start
   endDestinationId: End
   openingLines:

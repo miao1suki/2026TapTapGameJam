@@ -118,6 +118,10 @@ namespace Project.BossLogic.Editor
             var gate = gateObject.AddComponent<BossCollectibleEntryGate>();
             new SerializedObject(gate).Update();
             SerializedObject gateData = new SerializedObject(gate);
+            Check(gateData.FindProperty("gateEnabled").boolValue, "Boss entry gate defaults to enabled");
+            gateData.FindProperty("gateEnabled").boolValue = false; gateData.ApplyModifiedPropertiesWithoutUndo();
+            Check(gate.CanPlayTimeline(playerObject), "disabled Boss entry gate bypasses the progress threshold");
+            gateData.FindProperty("gateEnabled").boolValue = true; gateData.ApplyModifiedPropertiesWithoutUndo();
             Check(gateData.FindProperty("returnDestinationId").stringValue == "Start", "Boss entry rejection defaults to formal Start anchor");
             gateData.FindProperty("showHint").boolValue = false; gateData.ApplyModifiedPropertiesWithoutUndo();
             gateData.FindProperty("returnDestinationId").stringValue = string.Empty; gateData.ApplyModifiedPropertiesWithoutUndo();
@@ -230,6 +234,31 @@ namespace Project.BossLogic.Editor
             BossController boss = bossObject.AddComponent<BossController>();
             boss.Body.useGravity = false;
             Check(BossTravelProgress.GetState(scene).BossRegionId == b.id, "Boss room captured from initial position");
+            player.SetSprintInput(true);
+            Check(boss != null && player.IsSprintLocked && !player.SprintRequested,
+                "living Boss acquires the player sprint lock");
+            Physics.SyncTransforms();
+            GameObject normalLava = Object.Instantiate(
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/_Project/Content/ColorBlocks/Prefabs/Red_Lava.prefab"),
+                new Vector3(106.25f, 20.5f, 0f),
+                Quaternion.identity); Objects.Add(normalLava);
+            GameObject gravityLava = Object.Instantiate(
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/_Project/Content/ColorBlocks/Prefabs/Red_GravityLava.prefab"),
+                new Vector3(106.25f, 20.5f, 0f),
+                Quaternion.identity); Objects.Add(gravityLava);
+            GameObject outsideLava = Object.Instantiate(
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/_Project/Content/ColorBlocks/Prefabs/Red_Lava.prefab"),
+                new Vector3(107.5f, 20.5f, 0f),
+                Quaternion.identity); Objects.Add(outsideLava);
+            Physics.SyncTransforms();
+            boss.PrepareForBossRespawn();
+            Check(!normalLava.activeSelf && !gravityLava.activeSelf,
+                "Boss respawn sweep clears normal and gravity lava inside left-to-center X range");
+            Check(outsideLava.activeSelf,
+                "Boss respawn sweep preserves lava outside left-to-center X range");
             VerifyRoomScopedRespawn(player, boss, oldBossPoint, startAnchor);
             boss.transform.position = new Vector3(100.5f, 20.5f, 0f); boss.Body.position = boss.transform.position;
             boss.ActivateHealthSystem();
@@ -238,6 +267,9 @@ namespace Project.BossLogic.Editor
                 "entering Boss fight gates map and chase does not change excluded room");
             boss.Kill(); state = BossTravelProgress.GetState(scene);
             Check(state.HasEnteredBoss && state.HasDefeatedBoss && !state.IsBossFightActive, "real Boss death unlock state is retained");
+            player.SetSprintInput(true);
+            Check(!player.IsSprintLocked && player.SprintRequested,
+                "Boss death releases the player sprint lock");
             BossTravelState otherSceneState = BossTravelProgress.GetState(emptyBossScene);
             Check(otherSceneState.HasEnteredBoss && otherSceneState.HasDefeatedBoss && !otherSceneState.IsBossFightActive &&
                 otherSceneState.BossRegionId == null && !BossTravelProgress.IsBossScene(scene) && !BossTravelProgress.IsBossScene(emptyBossScene),

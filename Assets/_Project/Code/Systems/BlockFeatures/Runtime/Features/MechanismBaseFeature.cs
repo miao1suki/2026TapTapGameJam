@@ -99,8 +99,22 @@ namespace Project.BlockFeatures
         private Rigidbody motionBody;
         private GreenHookBodyMotion hookMotion;
         private Collider supportShape;
+        private RigidbodyConstraints authoredConstraints;
+        private bool capturedConstraints;
+        private Vector3 pendingPlatformDelta;
         private readonly RaycastHit[] supportHits = new RaycastHit[32];
         public bool UsesGravity => useGravity;
+        internal bool CanRideMovingPlatform => CanRunFeature && motionBody != null && !carrySuspended &&
+            (authoredConstraints & RigidbodyConstraints.FreezePosition) != RigidbodyConstraints.FreezePosition &&
+            !VineGrowthLift.IsLifting(motionBody) && (hookMotion == null || !hookMotion.IsHookMoving);
+        internal bool CanAcceptPlatformDelta(Vector3 delta) =>
+            ((authoredConstraints & RigidbodyConstraints.FreezePositionX) == 0 || Mathf.Abs(delta.x) < .00001f) &&
+            ((authoredConstraints & RigidbodyConstraints.FreezePositionY) == 0 || Mathf.Abs(delta.y) < .00001f) &&
+            ((authoredConstraints & RigidbodyConstraints.FreezePositionZ) == 0 || Mathf.Abs(delta.z) < .00001f);
+        internal void ApplyPlatformDelta(Vector3 delta)
+        {
+            if (CanRideMovingPlatform && CanAcceptPlatformDelta(delta)) pendingPlatformDelta += delta;
+        }
 
         public bool IsSignalActive => powered && CanRunFeature && !carrySuspended;
         public GreenHookMotionMode GreenHookMotionMode =>
@@ -115,6 +129,7 @@ namespace Project.BlockFeatures
             suppressNextScanTimeline = false;
             motionBody = GetComponent<Rigidbody>();
             if (motionBody == null) motionBody = gameObject.AddComponent<Rigidbody>();
+            if (!capturedConstraints) { authoredConstraints = motionBody.constraints; capturedConstraints = true; }
             supportShape = GetComponent<Collider>();
             hookMotion = GetComponent<GreenHookBodyMotion>() ?? gameObject.AddComponent<GreenHookBodyMotion>();
             // Also upgrades already-authored scene instances without a map rebuild.
@@ -169,6 +184,7 @@ namespace Project.BlockFeatures
 
         public void SetCarrySuspended(bool suspended)
         {
+            pendingPlatformDelta = Vector3.zero;
             if (suspended) VineGrowthLift.Cancel(motionBody);
             if (carrySuspended == suspended) return;
             carrySuspended = suspended;
@@ -210,6 +226,13 @@ namespace Project.BlockFeatures
         private void FixedUpdate()
         {
             if (CanRunFeature) RefreshGravityMotion();
+            Vector3 delta = pendingPlatformDelta; pendingPlatformDelta = Vector3.zero;
+            if (delta.sqrMagnitude > .00000001f && CanRideMovingPlatform && CanAcceptPlatformDelta(delta))
+            {
+                motionBody.constraints = authoredConstraints | RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
+                motionBody.position += delta;
+                if (!motionBody.isKinematic) { motionBody.linearVelocity = Vector3.zero; motionBody.WakeUp(); }
+            }
         }
 
         private void RefreshGravityMotion()
@@ -225,7 +248,7 @@ namespace Project.BlockFeatures
             if (motionBody.isKinematic) motionBody.isKinematic = false;
             if (!motionBody.useGravity) motionBody.useGravity = true;
             bool supported = HasSolidSupport() && Mathf.Abs(motionBody.linearVelocity.y) <= .08f;
-            var constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ |
+            var constraints = authoredConstraints | RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ |
                 RigidbodyConstraints.FreezePositionX | (supported ? RigidbodyConstraints.FreezePositionY : RigidbodyConstraints.None);
             if (motionBody.constraints != constraints) motionBody.constraints = constraints;
         }

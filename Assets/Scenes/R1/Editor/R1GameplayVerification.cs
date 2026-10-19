@@ -27,8 +27,12 @@ public static class R1GameplayVerification
     private static RigidbodyConstraints oldConstraints;
     private static IDisposable playerLock;
     private static Vector3 horizontalStart;
+    private static readonly string[] PinnedIds = { "r1_cube_green_left", "r1_cube_green_lower" };
+    private static ContactCube[] pinnedCubes;
+    private static GameObject[] contactFixtures;
     private static bool IsIntegrationProbe => Application.dataPath.Replace('\\', '/')
-        .Contains("/Library/R1R2Integration-FlowRetirementProbe-");
+        .Contains("/Library/R1R2Integration-FlowRetirementProbe-") ||
+        Application.dataPath.Replace('\\', '/').EndsWith("/Library/FlowRetirementProbe/Assets");
     private static bool Mirrored => SessionState.GetBool(Flag + ".Mirrored", false);
     private static Vector3 LayoutPoint(Vector3 point) => Mirrored ? new Vector3(58 - point.x, point.y, point.z) : point;
     private static Vector3 LayoutDirection(Vector3 direction) => Mirrored ? new Vector3(-direction.x, direction.y, direction.z) : direction;
@@ -37,12 +41,18 @@ public static class R1GameplayVerification
     {
         if ((!Application.dataPath.Replace('\\', '/').EndsWith("/2026TapTapGameJam-R1/Assets") && !IsIntegrationProbe) ||
             !Environment.GetCommandLineArgs().Contains("-noaudio")) throw new Exception("Silent R1 worktree only");
+        R1HorizontalMirror.VerifySaved();
         EditorSceneManager.OpenScene(R1LevelBuilder.ScenePath);
         var authoredPlayer = Object.FindFirstObjectByType<PlayerController>();
         if (authoredPlayer == null) throw new Exception("R1 authored player missing");
         SessionState.SetFloat(Flag + ".SpawnX", authoredPlayer.transform.position.x);
         SessionState.SetFloat(Flag + ".SpawnY", authoredPlayer.transform.position.y);
         SessionState.SetFloat(Flag + ".SpawnZ", authoredPlayer.transform.position.z);
+        foreach (var id in PinnedIds)
+        {
+            var block = Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None).Single(p => p.PlanningBoxId == id);
+            SessionState.SetString(Flag + ".Pose." + id, JsonUtility.ToJson(block.transform.position));
+        }
         var bar = Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None)
             .Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "r1_green_horizontal");
         SessionState.SetBool(Flag + ".Mirrored", (bar.transform.rotation * Vector3.right).x < -.99f);
@@ -73,12 +83,22 @@ public static class R1GameplayVerification
             if (EditorApplication.timeSinceStartup > deadline) throw new Exception("Play verification timed out");
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < 1f) return;
             float elapsed = Time.time - stageTime;
+            if (stage > 0) VerifyPinnedCubes();
             if (stage == 0)
             {
                 var service = ColorRuntimeService.Instance;
                 Check(new[] { "red", "green", "blue" }.All(service.IsUnlocked), "all three scene colors unlocked");
                 Check(service.IsAbilityUnlocked("red") && !service.IsAbilityUnlocked("green") && !service.IsAbilityUnlocked("blue"), "red-only player ability");
                 player = Object.FindFirstObjectByType<PlayerController>();
+                pinnedCubes = PinnedIds.Select(id => Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None)
+                    .Single(p => p.PlanningBoxId == id).GetComponent<ContactCube>()).ToArray();
+                VerifyPinnedCubes();
+                foreach (var cube in pinnedCubes)
+                {
+                    Check(cube.Length == 1, "pinned green retains one-cell initial length");
+                    Check(!cube.GetComponent<CarryableFeature>().CanCarry(player) &&
+                        !cube.GetComponent<CarryableFeature>().BeginCarry(player), "fixed green rejects actual carry API");
+                }
                 var authoredSpawn = new Vector3(SessionState.GetFloat(Flag + ".SpawnX", float.NaN),
                     SessionState.GetFloat(Flag + ".SpawnY", float.NaN), SessionState.GetFloat(Flag + ".SpawnZ", float.NaN));
                 Check(!player.IsDead && Vector3.Distance(player.transform.position, authoredSpawn) < .2f, "standard player stands safely at the saved authored spawn");
@@ -187,10 +207,80 @@ public static class R1GameplayVerification
                 var bar = Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None).Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "r1_green_horizontal");
                 Check(Vector3.Distance(bar.transform.position, LayoutPoint(new Vector3(18.5f, -24.5f, 0))) < .001f, "fixed bar never falls or drifts");
                 Check(Vector3.Dot(bar.GrowthDirection, LayoutDirection(Vector3.right)) > .99f, "room reset preserves reflected bar direction");
-                Finish(true, $"PASS {checks} assertions in actual Play; mirrored={Mirrored}; saved authored spawn, starting colors, shared handles/switch/rebound, independent crank, all-buttons door, room reset, exact fixed 13-cell bar and reset direction, real underside attach/traverse/jump release. Door activation uses TryPress API, not a full player route completion. Integration skips offscreen overview; standalone image: Library/R1Overview.png.");
+                player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                MoveTo(new Vector3(29, -10, 0));
+                contactFixtures = CreateContactFixtures("Blue_ContactCube");
+                Next();
+            }
+            else if (stage == 11)
+            {
+                if (!pinnedCubes.All(c => c.Length == 9))
+                {
+                    Check(elapsed < 15f, "both fixed green cubes grow to original 9-cell maximum");
+                    return;
+                }
+                Check(pinnedCubes.All(c => Vector3.Dot(c.GrowthDirection, Vector3.up) > .99f), "fixed roots still grow away from real blue contact");
+                ClearContactFixtures();
+                contactFixtures = CreateContactFixtures("Red_ContactCube");
+                Next();
+            }
+            else if (stage == 12)
+            {
+                if (!pinnedCubes.All(c => c.Length == 1))
+                {
+                    Check(elapsed < 15f, "both fixed green cubes shrink to one cell on real red contact");
+                    return;
+                }
+                ClearContactFixtures();
+                RoomLifecycleManager.ResetCurrentRooms();
+                Next();
+            }
+            else if (stage == 13)
+            {
+                if (elapsed < .4f) return;
+                VerifyPinnedCubes();
+                Check(pinnedCubes.All(c => c.Length == 1), "room reset restores pinned initial lengths");
+                Finish(true, $"PASS {checks} assertions in actual Play; mirrored={Mirrored}; saved authored spawn, starting colors, shared handles/switch/rebound, independent crank, all-buttons door, room reset, exact fixed 13-cell bar and reset direction, real underside attach/traverse/jump release. K31/N39 remain at exact authored positions, reject carry, grow to 9 on blue contact, shrink to 1 on red contact and remain fixed after room reset. Growth sources are temporary in-memory fixtures, never saved. Door activation uses TryPress API, not a full player route completion. Integration skips offscreen overview; standalone image: Library/R1Overview.png.");
             }
         }
         catch (Exception e) { Finish(false, e.ToString()); }
+    }
+    private static void VerifyPinnedCubes()
+    {
+        for (int i = 0; i < pinnedCubes.Length; i++)
+        {
+            var cube = pinnedCubes[i];
+            var authored = JsonUtility.FromJson<Vector3>(SessionState.GetString(Flag + ".Pose." + PinnedIds[i], "{}"));
+            Check(Vector3.Distance(cube.transform.position, authored) < .001f, "fixed root never falls or drifts " + PinnedIds[i]);
+            Check(cube.GetComponent<Rigidbody>().constraints == RigidbodyConstraints.FreezeAll &&
+                cube.GetComponent<ContactCubeMotion>().IsAuthoredFixed, "author locks survive lifecycle " + PinnedIds[i]);
+            Check(!cube.GetComponent<CarryableFeature>().enabled && !cube.GetComponent<CarryableFeature>().CanCarryNow,
+                "carry remains disabled " + PinnedIds[i]);
+        }
+    }
+    private static GameObject[] CreateContactFixtures(string name)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ContactCubes/" + name + ".prefab");
+        Check(prefab != null, "real contact prefab available " + name);
+        return pinnedCubes.Select(cube =>
+        {
+            var fixture = Object.Instantiate(prefab, cube.transform.position + Vector3.down, Quaternion.identity);
+            fixture.name = "Temporary R1 pin audit " + name;
+            fixture.GetComponent<CarryableFeature>().enabled = false;
+            fixture.GetComponent<ContactCubeMotion>().enabled = false;
+            var body = fixture.GetComponent<Rigidbody>();
+            body.constraints = RigidbodyConstraints.FreezeAll;
+            body.useGravity = false;
+            Physics.SyncTransforms();
+            return fixture;
+        }).ToArray();
+    }
+    private static void ClearContactFixtures()
+    {
+        if (contactFixtures == null) return;
+        foreach (var fixture in contactFixtures)
+            if (fixture != null) { fixture.SetActive(false); Object.Destroy(fixture); }
+        contactFixtures = null;
     }
     private static void CaptureOverview()
     {
@@ -211,6 +301,7 @@ public static class R1GameplayVerification
     private static void Finish(bool success, string report)
     {
         EditorApplication.update -= Tick; SessionState.EraseBool(Flag);
+        ClearContactFixtures();
         if (lower != null && player != null) lower.EndInteract(player.gameObject);
         if (right != null && player != null) right.EndInteract(player.gameObject);
         if (left != null && player != null) left.EndInteract(player.gameObject);

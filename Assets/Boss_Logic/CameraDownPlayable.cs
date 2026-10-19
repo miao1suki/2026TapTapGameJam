@@ -12,6 +12,10 @@ namespace Project.BossLogic
         private float relativeSizeMultiplier = 1.3f;
         [SerializeField, Min(0f)]
         private float focusDownBlocks = 5f;
+        [Tooltip("表演坐标系中的下移方向，长度由 focusDownBlocks 决定。")]
+        [SerializeField]
+        private Vector3 triggerLocalDown =
+            new Vector3(0f, -1f, 0f);
         [SerializeField, Min(0f)]
         private float blendDuration = .35f;
 
@@ -19,6 +23,10 @@ namespace Project.BossLogic
             PlayableGraph graph,
             GameObject owner)
         {
+            PlayableDirector resolvedDirector =
+                BossTimelinePerformanceFrame.ResolveDirector(
+                    graph,
+                    owner);
             CameraDownBehaviour behaviour =
                 new CameraDownBehaviour
                 {
@@ -26,8 +34,11 @@ namespace Project.BossLogic
                         relativeSizeMultiplier,
                     focusDownBlocks =
                         focusDownBlocks,
+                    triggerLocalDown =
+                        triggerLocalDown,
                     blendDuration =
-                        blendDuration
+                        blendDuration,
+                    director = resolvedDirector
                 };
             return ScriptPlayable<CameraDownBehaviour>
                 .Create(graph, behaviour);
@@ -39,9 +50,13 @@ namespace Project.BossLogic
     {
         public float relativeSizeMultiplier = 1.3f;
         public float focusDownBlocks = 5f;
+        public Vector3 triggerLocalDown =
+            new Vector3(0f, -1f, 0f);
         public float blendDuration = .35f;
+        public PlayableDirector director;
 
         private CameraControlManager manager;
+        private BossTimelinePerformanceFrame frame;
         private CameraLensRequestHandle lensHandle;
         private CameraViewOffsetRequestHandle offsetHandle;
         private bool warnedMissingCamera;
@@ -62,6 +77,13 @@ namespace Project.BossLogic
                 }
                 return;
             }
+            if (!BossTimelinePerformanceFrame.TryResolve(
+                    director,
+                    nameof(CameraDownPlayable),
+                    out frame))
+            {
+                return;
+            }
 
             warnedMissingCamera = false;
             CameraTransition transition =
@@ -79,7 +101,7 @@ namespace Project.BossLogic
                 ? GridCellSizeUtility.Resolve(player)
                 : 1f;
             Vector3 offset =
-                Vector3.down *
+                frame.ToWorldOffset(triggerLocalDown) *
                 Mathf.Max(0f, focusDownBlocks) *
                 Mathf.Max(.01f, cellSize);
             offsetHandle =
@@ -122,6 +144,7 @@ namespace Project.BossLogic
             }
             lensHandle = default;
             offsetHandle = default;
+            frame = default;
         }
 
         private static CameraControlManager ResolveManager()

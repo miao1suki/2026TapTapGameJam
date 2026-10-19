@@ -10,6 +10,10 @@
 - `IsUnlocked` 只读。红块实现 `IEnergySource.IsEnergyAvailable`，需已解锁、实体启用且未处于搬运动画；任意红块可供能任意基座，不持久绑定特定红块。旧 Red_Battery 预制体保留 GUID，但已替换为红色 ContactCube 及运动/重置组件；新放置统一使用 Red_ContactCube。
 - 绿色钩子挂接只暂停红块主动接触反应，不暂停被动能源输出。拉到基座后，即使未按跳跃/交互松钩也立即按原接触规则供能；不能把`hookSuspended`当作能源不可用条件。搬运、锁色、禁用实体仍排除。
 
+## 可选平台挂载
+
+实例可通过规划 `platformMountId` 附着于移动平台。`PlatformMount` 不缩放或父子化方块，挂载时由 `ContactCubeMotion` 保持唯一刚体写入，锚点随平台运动；颜色接触反应不关闭。`CarryableFeature.BeginCarry` 只有成功后才使其脱离，放下后正常物理、不自动再附着；房间重置恢复初始位置及挂载。未挂载预制体／旧关卡行为不变。协议与持久化见 [机关 API](MECHANISM_SIGNAL_API.md#可选平台附着物)。
+
 ## 有限状态机
 
 | 绿色当前接触或生长请求 | 状态 | 行为 |
@@ -36,6 +40,8 @@
 `CubeWaterJet.FixedUpdate`自身也检查当前蓝/红资格及真实接触，不能依赖两个组件执行先后而多推一个物理步。红块挂钩时仍可被蓝块作为接触/被动能量来源；蓝块自身挂钩仍暂停主动反应。真实落稳水柱不得因支撑探针过长、把蓝块锁在空中离开接触壳而断流。
 
 ## 运动对接
+
+2026-10-19 重力生长校正：蓝绿真实接触从单格开始生长时，将蓝块→绿根的方向取根局部XY主轴四向，避免两块落稳高度仅差0.01格就把新增实体斜插入地板。已伸长仍锁原方向，不改变作者重力、最大长度或生长间隔。足底BoxCast的起点重叠伪命中（零距离、无有效接触点）和超过0.001格的地板穿透不能触发落稳FreezeY，须等PhysX完成纠正；新增格仍严格拒绝真实墙和玩家，不增加穿墙豁免。
 
 `ContactCube.PushRequested(Component source, Vector3 velocity, float deltaTime)`：每个物理步发出速度请求；离开水柱时发出零速度。ContactCubeMotion 按 source 保存并相加速度源，统一写方块 Rigidbody。反应组件不写根位移。后续如替换运动控制器，先禁用 ContactCubeMotion，不能同时运行两个刚体写入者。
 

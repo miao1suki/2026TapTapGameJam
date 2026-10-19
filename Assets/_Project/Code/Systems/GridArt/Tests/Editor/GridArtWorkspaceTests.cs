@@ -51,6 +51,81 @@ namespace Project.GridArt.Tests
             sprite.name = name; AssetDatabase.AddObjectToAsset(sprite, texture); return sprite;
         }
         private void AddBrush() => GridArtLibraryService.Add(library, Sprite("Tile"), Vector2.one, new Rect(0,0,1,1), "地面");
+        [UnityEngine.TestTools.UnityTest]
+        public System.Collections.IEnumerator OffsetFieldsRemainReadableInNarrowInspector()
+        {
+            AddBrush(); map.layers[0].maxParallaxOffset = new Vector2(123.456f,789.25f);
+            var w = Window();
+            try
+            {
+                w.position = new Rect(20,20,1200,800); w.Show();
+                for (int frame=0; frame<8; frame++) yield return null;
+                var x = w.rootVisualElement.Q<FloatField>("art-parallax-limit-x");
+                var y = w.rootVisualElement.Q<FloatField>("art-parallax-limit-y");
+                Assert.That(x,Is.Not.Null); Assert.That(y,Is.Not.Null);
+                Assert.That(x.value,Is.EqualTo(123.456f)); Assert.That(y.value,Is.EqualTo(789.25f));
+                foreach (var field in new[] { x,y })
+                {
+                    var input = field.Q(className:"unity-base-field__input");
+                    Assert.That(input,Is.Not.Null);
+                    Assert.That(input.worldBound.width,Is.GreaterThanOrEqualTo(100),"numeric value must not collapse in the standard 280px inspector");
+                    Assert.That(input.worldBound.xMax,Is.LessThanOrEqualTo(field.worldBound.xMax+1));
+                }
+                Assert.That(y.worldBound.yMin,Is.GreaterThanOrEqualTo(x.worldBound.yMax),"axes use separate rows");
+                Undo.IncrementCurrentGroup(); x.value = 12.5f; Undo.FlushUndoRecordObjects();
+                Undo.IncrementCurrentGroup(); y.value = 8.25f; Undo.FlushUndoRecordObjects();
+                Assert.That(map.layers[0].maxParallaxOffset,Is.EqualTo(new Vector2(12.5f,8.25f)));
+                Undo.PerformUndo();
+                Assert.That(map.layers[0].maxParallaxOffset,Is.EqualTo(new Vector2(12.5f,789.25f)));
+            }
+            finally { w.Close(); }
+        }
+
+        [Test]
+        public void NUsesGlobalMenuHotkeyAndAllowsNonSceneWindowFocus()
+        {
+            var type = typeof(GridArtWorkspaceShortcut);
+            var toggle = type.GetMethod("Toggle",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
+            var menu = (MenuItem)Attribute.GetCustomAttribute(toggle,typeof(MenuItem));
+            Assert.That(menu,Is.Not.Null); Assert.That(menu.menuItem,Does.EndWith(" _n"));
+            var host = ScriptableObject.CreateInstance<ShortcutHostWindow>();
+            bool editing = EditorGUIUtility.editingTextField;
+            try
+            {
+                EditorGUIUtility.editingTextField = false;
+                var canToggle = type.GetMethod("CanToggle",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
+                Assert.That(canToggle.Invoke(null,new object[] { host }),Is.EqualTo(true),"Project/Inspector-style windows must not require Scene focus");
+                EditorGUIUtility.editingTextField = true;
+                Assert.That(canToggle.Invoke(null,new object[] { host }),Is.EqualTo(false),"typing n must not close the window");
+            }
+            finally { EditorGUIUtility.editingTextField = editing; Object.DestroyImmediate(host); }
+        }
+        private sealed class ShortcutHostWindow : EditorWindow { }
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        public void BakedSliceClampPreservesGeometryAndUnmodifiedUvs(int rotation)
+        {
+            AddBrush(); map.layers[0].Set(new Vector2Int(-100,-25),0);
+            map.layers[0].cells[0].quarterTurns = rotation;
+            var quads = GridArtBuilder.BuildQuads(map.layers[0],library);
+            var output = GridArtBuilder.Apply(map,scene,false);
+            var mesh = output.GetComponentInChildren<MeshFilter>().sharedMesh;
+            var bounds = new System.Collections.Generic.List<Vector4>(); mesh.GetUVs(1,bounds);
+            Assert.That(bounds.Count,Is.EqualTo(mesh.vertexCount));
+            var rect = quads[0].uv;
+            for (int corner=0; corner<4; corner++)
+            {
+                Assert.That(mesh.uv[corner],Is.EqualTo(quads[0].UV(corner)),"must not shrink or stretch interpolated artwork UVs");
+                Assert.That(bounds[corner],Is.EqualTo(new Vector4(rect.xMin,rect.yMin,rect.xMax,rect.yMax)));
+            }
+            Assert.That(mesh.bounds.size,Is.EqualTo(new Vector3(1,1,0)));
+            mesh.SetUVs(1,new System.Collections.Generic.List<Vector4>());
+            GridArtBuilder.Apply(map,scene,false);
+            mesh.GetUVs(1,bounds);
+            Assert.That(bounds.Count,Is.EqualTo(4),"reapply must upgrade an old mesh even when positions and UV0 match");
+        }
         private static object Invoke(object target, string method, params object[] args) => target.GetType().GetMethod(method, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(target,args);
         private static void Field(object target, string name, object value) => target.GetType().GetField(name,System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(target,value);
         private GridArtWindow Window()
@@ -66,7 +141,7 @@ namespace Project.GridArt.Tests
             try
             {
                 var canvas = (VisualElement)w.GetType().GetField("canvas",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(w);
-                var artwork = canvas.Q("artwork-cache"); var overlay = canvas.Q("art-overlay");
+                var artwork = canvas.Q("background-artwork-cache"); var overlay = canvas.Q("art-overlay");
                 Assert.That(artwork.childCount,Is.GreaterThan(0));
                 Assert.That(canvas.IndexOf(overlay),Is.GreaterThan(canvas.IndexOf(artwork)));
                 var originalBatches = artwork.Children().ToArray();
@@ -80,6 +155,37 @@ namespace Project.GridArt.Tests
                 map.layers[0].Set(new Vector2Int(30,0),0);
                 canvas.GetType().GetMethod("Invalidate").Invoke(canvas,null);
                 Assert.That(artwork.Children().First(),Is.Not.SameAs(originalBatches[0]));
+            }
+            finally { Object.DestroyImmediate(w); }
+        }
+
+        [Test] public void BackgroundAndForegroundCannotBatchAcrossLevelReferencePlane()
+        {
+            AddBrush();
+            map.layers[0].depth = 5f;
+            map.layers[0].sortingOrder = 1000; // Still behind gameplay, despite the old large order.
+            map.layers[0].Set(Vector2Int.zero, 0);
+            var front = new GridArtLayer { depth = -.51f, sortingOrder = -1000 };
+            front.Set(Vector2Int.zero, 0); map.layers.Add(front);
+            string serialized = EditorJsonUtility.ToJson(map);
+            var w = Window();
+            try
+            {
+                var canvas = (VisualElement)w.GetType().GetField("canvas",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(w);
+                var background = canvas.Q("background-artwork-cache");
+                var reference = canvas.Q("art-level-reference");
+                var foreground = canvas.Q("artwork-cache");
+                Assert.That(canvas.IndexOf(background), Is.LessThan(canvas.IndexOf(reference)));
+                Assert.That(canvas.IndexOf(reference), Is.LessThan(canvas.IndexOf(foreground)));
+                Assert.That(background.childCount, Is.EqualTo(1));
+                Assert.That(foreground.childCount, Is.EqualTo(1), "same texture cannot combine background and foreground");
+                var before = background.Children().Concat(foreground.Children()).ToArray();
+                Field(canvas,"pan",new Vector2(190,220)); Field(canvas,"zoom",12f);
+                canvas.GetType().GetMethod("RepaintView").Invoke(canvas,null);
+                CollectionAssert.AreEqual(before, background.Children().Concat(foreground.Children()).ToArray());
+                Assert.That(background.style.translate, Is.EqualTo(foreground.style.translate));
+                Assert.That(background.style.scale, Is.EqualTo(foreground.style.scale));
+                Assert.That(EditorJsonUtility.ToJson(map), Is.EqualTo(serialized));
             }
             finally { Object.DestroyImmediate(w); }
         }
@@ -123,7 +229,7 @@ namespace Project.GridArt.Tests
                 Field(canvas,"pan",new Vector2(240,320)); Field(canvas,"zoom",32f);
                 canvas.GetType().GetMethod("RepaintView").Invoke(canvas,null); w.Repaint();
                 for(int i=0;i<5;i++) yield return null;
-                var artwork=canvas.Q("artwork-cache"); var batch=artwork.Children().Single();
+                var artwork=canvas.Q("background-artwork-cache"); var batch=artwork.Children().Single();
                 int rebuilds=0; batch.generateVisualContent+=context=>rebuilds++;
                 batch.MarkDirtyRepaint(); w.Repaint();
                 for(int i=0;i<5;i++) yield return null;

@@ -288,8 +288,15 @@ namespace Project.ContactCubes
                 // Direction is fixed while extended; never swing an existing long body.
                 if (Length == 1 && blue != null && !playerGrowthRequested)
                 {
-                    Vector3 away = transform.position - blue.transform.position;
-                    if (away.sqrMagnitude > .0001f) localGrowthDirection = transform.InverseTransformDirection(away.normalized);
+                    Vector3 away = transform.InverseTransformDirection(transform.position - blue.transform.position);
+                    // Gravity and PhysX contact offsets leave neighbouring roots
+                    // a few millimetres off-grid. Growth still occupies whole
+                    // cells: a diagonal centre vector would rotate the new OBB
+                    // into its supporting floor (or a neighbouring wall).
+                    if (Mathf.Max(Mathf.Abs(away.x), Mathf.Abs(away.y)) > .0001f)
+                        localGrowthDirection = Mathf.Abs(away.y) > Mathf.Abs(away.x)
+                            ? (away.y > 0f ? Vector3.up : Vector3.down)
+                            : (away.x > 0f ? Vector3.right : Vector3.left);
                 }
                 if (Length < maximumLength && CanGrowOneCell()) SetLength(Length + 1);
                 if (Length >= maximumLength) playerGrowthRequested = false;

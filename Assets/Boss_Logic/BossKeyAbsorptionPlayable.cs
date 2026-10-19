@@ -21,14 +21,23 @@ namespace Project.BossLogic
         [SerializeField, Min(0f)] private float assemblyHold = .3f;
         [SerializeField, Min(0f)] private float attractStagger = .12f;
         [SerializeField, Min(.01f)] private float attractDuration = .42f;
+        [Tooltip("相对表演坐标系的方向偏移，运行时叠加到玩家中心。")]
         [SerializeField] private Vector3 playerBodyOffset =
             new Vector3(0f, .5f, 0f);
         [SerializeField, Min(0f)] private float hoverHeight = 1.5f;
         [SerializeField, Min(0f)] private float slotSpacing = .36f;
         [SerializeField, Min(0f)] private float slotArcHeight = .18f;
+        [SerializeField, Min(0f)] private float hoverBobAmplitude = .025f;
+        [SerializeField, Min(0f)] private float hoverBobSpeed = 3.5f;
+        [SerializeField, Min(0f)] private float emergeSpinDegrees = 180f;
+        [SerializeField, Min(0f)] private float hoverSpinDegrees = 180f;
+        [SerializeField, Min(0f)] private float hoverWobbleDegrees = 8f;
+        [SerializeField, Min(0f)] private float hoverWobbleSpeed = 7f;
+        [Tooltip("相对表演坐标系的方向偏移，运行时叠加到 Boss 中心。")]
         [SerializeField] private Vector3 bossAbsorbOffset =
             new Vector3(0f, .5f, 0f);
         [SerializeField, Min(0f)] private float attractArcHeight = .55f;
+        [SerializeField, Min(0f)] private float attractSpinDegrees = 360f;
         [SerializeField, Min(0f)] private float visualScaleMultiplier = 1f;
         [SerializeField] private string sortingLayerName = "BossTop";
         [SerializeField] private int sortingOrder = 32760;
@@ -37,6 +46,10 @@ namespace Project.BossLogic
             PlayableGraph graph,
             GameObject owner)
         {
+            PlayableDirector resolvedDirector =
+                BossTimelinePerformanceFrame.ResolveDirector(
+                    graph,
+                    owner);
             BossKeyAbsorptionBehaviour behaviour =
                 new BossKeyAbsorptionBehaviour
                 {
@@ -53,12 +66,20 @@ namespace Project.BossLogic
                     hoverHeight = hoverHeight,
                     slotSpacing = slotSpacing,
                     slotArcHeight = slotArcHeight,
+                    hoverBobAmplitude = hoverBobAmplitude,
+                    hoverBobSpeed = hoverBobSpeed,
+                    emergeSpinDegrees = emergeSpinDegrees,
+                    hoverSpinDegrees = hoverSpinDegrees,
+                    hoverWobbleDegrees = hoverWobbleDegrees,
+                    hoverWobbleSpeed = hoverWobbleSpeed,
                     bossAbsorbOffset = bossAbsorbOffset,
                     attractArcHeight = attractArcHeight,
+                    attractSpinDegrees = attractSpinDegrees,
                     visualScaleMultiplier =
                         visualScaleMultiplier,
                     sortingLayerName = sortingLayerName,
-                    sortingOrder = sortingOrder
+                    sortingOrder = sortingOrder,
+                    director = resolvedDirector
                 };
             return ScriptPlayable<BossKeyAbsorptionBehaviour>
                 .Create(graph, behaviour);
@@ -96,18 +117,27 @@ namespace Project.BossLogic
         public float hoverHeight = 1.5f;
         public float slotSpacing = .36f;
         public float slotArcHeight = .18f;
+        public float hoverBobAmplitude = .025f;
+        public float hoverBobSpeed = 3.5f;
+        public float emergeSpinDegrees = 180f;
+        public float hoverSpinDegrees = 180f;
+        public float hoverWobbleDegrees = 8f;
+        public float hoverWobbleSpeed = 7f;
         public Vector3 bossAbsorbOffset =
             new Vector3(0f, .5f, 0f);
         public float attractArcHeight = .55f;
+        public float attractSpinDegrees = 360f;
         public float visualScaleMultiplier = 1f;
         public string sortingLayerName = "BossTop";
         public int sortingOrder = 32760;
+        public PlayableDirector director;
 
         private readonly List<CinematicKey> keys =
             new List<CinematicKey>();
         private GameObject cinematicRoot;
         private Transform player;
         private Transform boss;
+        private BossTimelinePerformanceFrame frame;
         private bool initialized;
         private bool failed;
         private int sortingLayerId;
@@ -179,7 +209,8 @@ namespace Project.BossLogic
                         Quaternion.Euler(
                             0f,
                             0f,
-                            progress * 180f);
+                            progress *
+                            emergeSpinDegrees);
                     continue;
                 }
 
@@ -198,9 +229,12 @@ namespace Project.BossLogic
                         Quaternion.Euler(
                             0f,
                             0f,
-                            180f +
-                            Mathf.Sin(time * 7f + index) *
-                            8f);
+                            hoverSpinDegrees +
+                            Mathf.Sin(
+                                time *
+                                hoverWobbleSpeed +
+                                index) *
+                            hoverWobbleDegrees);
                     continue;
                 }
 
@@ -209,10 +243,14 @@ namespace Project.BossLogic
                     key.attractStart,
                     key.attractEnd);
                 Vector3 target =
-                    boss.position + bossAbsorbOffset;
+                    boss.position +
+                    frame.ToWorldOffset(
+                        bossAbsorbOffset);
                 Vector3 control =
                     Vector3.Lerp(hover, target, .5f) +
-                    Vector3.up * attractArcHeight;
+                    frame.ToWorldOffset(
+                        Vector3.up *
+                        attractArcHeight);
                 key.transform.position =
                     QuadraticBezier(
                         hover,
@@ -227,7 +265,9 @@ namespace Project.BossLogic
                     Quaternion.Euler(
                         0f,
                         0f,
-                        180f + attract * 360f);
+                        hoverSpinDegrees +
+                        attract *
+                        attractSpinDegrees);
                 if (time >= key.attractEnd)
                 {
                     key.removed = true;
@@ -275,6 +315,13 @@ namespace Project.BossLogic
             {
                 return false;
             }
+            if (!BossTimelinePerformanceFrame.TryResolve(
+                    director,
+                    nameof(BossKeyAbsorptionPlayable),
+                    out frame))
+            {
+                return false;
+            }
 
             player = playerController.transform;
             boss = bossController.transform;
@@ -283,15 +330,24 @@ namespace Project.BossLogic
 
             cinematicRoot =
                 new GameObject("Boss六钥匙吸收演出");
+            cinematicRoot.transform.SetParent(
+                frame.Anchor,
+                false);
             cinematicRoot.SetActive(false);
             List<GameObject> prefabs =
                 BuildPrefabOrder();
             int count = prefabs.Count;
             Vector3 body =
-                player.position + playerBodyOffset;
+                player.position +
+                frame.ToWorldOffset(
+                    playerBodyOffset);
             Vector3 head =
                 player.position +
-                Vector3.up * hoverHeight;
+                frame.ToWorldOffset(
+                    new Vector3(
+                        0f,
+                        hoverHeight,
+                        0f));
             float emergeTotal =
                 Mathf.Max(0, count - 1) *
                 emergeStagger +
@@ -389,10 +445,11 @@ namespace Project.BossLogic
                 1f -
                 normalized * normalized;
             return head +
-                   new Vector3(
-                       centered * slotSpacing,
-                       arc * slotArcHeight,
-                       0f);
+                   frame.ToWorldOffset(
+                       new Vector3(
+                           centered * slotSpacing,
+                           arc * slotArcHeight,
+                           0f));
         }
 
         private Vector3 GetHoverPosition(
@@ -401,9 +458,12 @@ namespace Project.BossLogic
             float time)
         {
             return slot +
-                   Vector3.up *
-                   (Mathf.Sin(time * 3.5f + index) *
-                    .025f);
+                   frame.ToWorldOffset(Vector3.up) *
+                   (Mathf.Sin(
+                        time *
+                        hoverBobSpeed +
+                        index) *
+                    hoverBobAmplitude);
         }
 
         private static float SmoothProgress(
@@ -583,6 +643,7 @@ namespace Project.BossLogic
             cinematicRoot = null;
             player = null;
             boss = null;
+            frame = default;
             initialized = false;
             failed = false;
         }

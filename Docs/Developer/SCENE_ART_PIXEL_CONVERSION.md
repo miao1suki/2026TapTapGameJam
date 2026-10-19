@@ -44,4 +44,12 @@ tail旧库单格布局经有效像素核实本来正确，无需扩大为4格。
 
 ## 回归
 
+### 移动时的贯穿接缝
+
+GridArt 网格的 UV0 仍精确覆盖原切片，不将半 texel 内缩直接写进 UV0（那会重新分配内部像素宽度）。每个四边形额外在 UV1 保存同一份原始采样矩形；Unlit 片元仅将最终采样限制在这个矩形内的 texel 中心范围。即使移动相机时光栅插值略超出边界，也不会读到旁边的透明像素。旋转/四分之一自动地形使用各自真实采样矩形，不扩大几何、不裁去作者的透明边缘、不改变16有效像素/格。
+
+GridArtScene 的颜色绑定单独开启 `_GridArtSliceClamp`，HSV alpha mask 使用相同 UV1 边界；普通物体与岩浆原有的 UV1 语义不改变。旧生成网格重新应用美术时会检测并补齐 UV1，本次已补齐版本控制内53份生成网格，不改 Scene、规划/美术存档、原图、GUID或作者布局。
+
+`GridArtMovingSeamAudit.Run` 仅允许隔离 `Library/FlowRetirementProbe` 执行，必须使用真实 GPU（不能 `-nographics`）。实际 tail 黑色切片铺2000格，在负世界坐标、三档缩放、40个相机亚像素位置测试主图与遮罩；每路分别请求1/4倍 MSAA 的目标。`-gridArtLegacyControl` 删除测试夹具 UV1 作为负对照，480帧出现32292个漏色像素（普通无MSAA路径同样复现），修复480帧为0；未通过关闭雨、遮掉特效、加粗图块或改变视差隐藏问题。URP最终MSAA是否启用仍由管线配置决定，报告中的MSAA数值表示请求值。
+
 GridArtPixelTests覆盖16/32/48×8/15像素尺寸、tail4倍、图集留白裁区、逻辑占格独立和图层颜色覆盖。SurfaceTileNativePixelTests覆盖新旧创建API、默认配置、严格原像素生成与容量不足失败。GridArtWorkspaceTests包含同图集三色拆批、场景保存重载后OnEnable恢复alpha mask。编辑视口专项使用EditorInteractionAudit.Run。

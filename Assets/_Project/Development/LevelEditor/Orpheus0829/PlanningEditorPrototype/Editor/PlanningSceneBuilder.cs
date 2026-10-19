@@ -854,7 +854,7 @@ namespace PlanningEditorPrototype
                 old.IsProp != desired.IsProp ||
                 old.CellWorldSize != desired.CellWorldSize ||
                 old.SizeCells != desired.SizeCells ||
-                old.PlanningSignature != desired.PlanningSignature ||
+                !SamePlanningSignature(old.PlanningSignature, desired.PlanningSignature) ||
                 PrefabUtility.GetCorrespondingObjectFromSource(
                     old.gameObject) !=
                 PrefabUtility.GetCorrespondingObjectFromSource(
@@ -875,7 +875,7 @@ namespace PlanningEditorPrototype
             for (int index = 0; index < oldChildren.Length; index++)
             {
                 if (oldChildren[index].Cell != desiredChildren[index].Cell ||
-                    oldChildren[index].PlanningSignature != desiredChildren[index].PlanningSignature ||
+                    !SamePlanningSignature(oldChildren[index].PlanningSignature, desiredChildren[index].PlanningSignature) ||
                     oldChildren[index].EntryName !=
                     desiredChildren[index].EntryName)
                 {
@@ -884,6 +884,25 @@ namespace PlanningEditorPrototype
             }
 
             return true;
+        }
+
+        // Adding an unused optional link must not rebuild old author instances and
+        // discard hand-adjusted transforms. Non-empty links and every other field
+        // remain significant. ReconcileContainer migrates retained signatures once.
+        private static bool SamePlanningSignature(string left, string right)
+        {
+            if (left == right) return true;
+            return left != null && right != null && StripEmptyOptionalLinks(left) == StripEmptyOptionalLinks(right);
+        }
+
+        private static string StripEmptyOptionalLinks(string value)
+        {
+            foreach (string field in new[] { "platformMountId", "bossRespawnOwnerId" })
+            {
+                value = value.Replace(",\"" + field + "\":\"\"", "")
+                    .Replace(",\\\"" + field + "\\\":\\\"\\\"", "");
+            }
+            return value;
         }
 
         private static int CountPlacedBlocks(GameObject root)
