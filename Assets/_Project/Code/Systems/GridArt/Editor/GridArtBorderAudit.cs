@@ -25,8 +25,17 @@ namespace Project.GridArt.Editor
                 Check(sizes.SequenceEqual(palette.brushes.Take(keys.Length).Select(b => b.DisplaySize)), "old native brush sizes unchanged");
                 Check(originals.SequenceEqual(palette.brushes.Take(keys.Length).Select(b => b.sprite)), "ordinary source sprites unchanged");
                 string newGuid = AssetDatabase.AssetPathToGUID(GridArtAuthorBorderLibrary.SourcePath);
-                Check(palette.brushes.Count(b => b.sourceKey != null && b.sourceKey.StartsWith(newGuid + "#")) == 20,
+                Check(palette.brushes.Count(b => b.sourceKey != null && b.sourceKey.StartsWith(newGuid + "#")) == 23,
                     "12 authored white edge/corner and 8 ornament selections appended once");
+                string[] colors = { "red", "blue", "green" };
+                for (int i = 0; i < 3; i++)
+                {
+                    var grass = palette.brushes.Single(b => b.sourceKey == newGuid + "#grass:" + i);
+                    Check(grass.colorId == colors[i] && GridArtPixelLayout.IsNative(grass), "grass native size and HSV channel " + i);
+                    Check(grass.sprite.rect == new Rect(176 + i * 32, 0, 16, 16), "grass native crop preserves transparent padding " + i);
+                }
+                string extraGuid = AssetDatabase.AssetPathToGUID(GridArtAuthorBorderLibrary.SupplementPath);
+                Check(palette.brushes.Count(b => b.sourceKey != null && b.sourceKey.StartsWith(extraGuid + "#")) == 2, "only two new supplement cells appended");
                 Check(palette.brushes.Select(b => b.sourceKey).Distinct().Count() == palette.brushes.Count, "no duplicated source slots");
                 var importer = (TextureImporter)AssetImporter.GetAtPath(GridArtAuthorBorderLibrary.SourcePath);
                 Check(!importer.mipmapEnabled && importer.filterMode == FilterMode.Point && importer.npotScale == TextureImporterNPOTScale.None &&

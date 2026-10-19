@@ -9,6 +9,7 @@ namespace Project.GridArt.Editor
     public static class GridArtAuthorBorderLibrary
     {
         public const string SourcePath = "Assets/_Project/Resources/26TAPTAP/场景背景/297124ef87a31676fc7d123431cbcbaa.png";
+        public const string SupplementPath = "Assets/_Project/Resources/26TAPTAP/场景背景/2f891a031596a583f63dfa7be93f1a4c.png";
         // Source coordinates use the image's top-left origin. No rotation, resampling or generated elbows.
         public static readonly Vector2Int[] WhiteOrigins = {
             new(96,142), new(64,174), new(32,142),
@@ -32,16 +33,17 @@ namespace Project.GridArt.Editor
             string guid = AssetDatabase.AssetPathToGUID(SourcePath);
             var assets = AssetDatabase.LoadAllAssetsAtPath(path);
             bool changed = false;
-            Sprite Slice(string name, Vector2Int origin)
+            Sprite Slice(string name, Vector2Int origin, Texture2D source = null)
             {
-                Rect rect = new(origin.x, texture.height - origin.y - 16, 16, 16);
-                var sprite = assets.OfType<Sprite>().FirstOrDefault(s => s.name == name && s.texture == texture && s.rect == rect);
+                source = source == null ? texture : source;
+                Rect rect = new(origin.x, source.height - origin.y - 16, 16, 16);
+                var sprite = assets.OfType<Sprite>().FirstOrDefault(s => s.name == name && s.texture == source && s.rect == rect);
                 if (sprite != null) return sprite;
-                sprite = Sprite.Create(texture, rect, Vector2.one * .5f, 16, 0, SpriteMeshType.FullRect);
+                sprite = Sprite.Create(source, rect, Vector2.one * .5f, 16, 0, SpriteMeshType.FullRect);
                 sprite.name = name; AssetDatabase.AddObjectToAsset(sprite, palette); changed = true;
                 return sprite;
             }
-            void Add(string key, string label, string category, Sprite sprite)
+            void Add(string key, string label, string category, Sprite sprite, string color = "")
             {
                 var brush = palette.brushes.FirstOrDefault(b => b.sourceKey == key);
                 if (brush != null)
@@ -50,7 +52,7 @@ namespace Project.GridArt.Editor
                     return;
                 }
                 palette.brushes.Add(new GridArtBrush { sourceKey = key, label = label, category = category,
-                    sprite = sprite, size = Vector2Int.one, visualSize = Vector2.one, sourcePixelScale = 1 });
+                    sprite = sprite, size = Vector2Int.one, visualSize = Vector2.one, sourcePixelScale = 1, colorId = color });
                 changed = true;
             }
             if (automatic.pieces == null || automatic.pieces.Length != 13)
@@ -66,6 +68,22 @@ namespace Project.GridArt.Editor
             for (int i = 0; i < 9; i++)
                 if (i != 4) Add(guid + "#ornament:" + i, "纹饰边框·" + directions[i] + "（新图）", "边框·美术纹饰",
                     Slice("ArtistOrnamentBorder_" + i, new Vector2Int(176 + i % 3 * 32, 46 + i / 3 * 32)));
+            string[] colors = { "red", "blue", "green" };
+            string[] colorNames = { "红", "蓝", "绿" };
+            for (int i = 0; i < 3; i++)
+                Add(guid + "#grass:" + i, colorNames[i] + "色草地", "地面草饰·三色",
+                    Slice("ArtistGrass_" + i, new Vector2Int(176 + i * 32, 174)), colors[i]);
+            var supplement = AssetDatabase.LoadAssetAtPath<Texture2D>(SupplementPath);
+            if (supplement != null)
+            {
+                if (supplement.width != 256 || supplement.height != 190)
+                    throw new InvalidOperationException("补充图尺寸变化，请核对新增切片。");
+                string supplementGuid = AssetDatabase.AssetPathToGUID(SupplementPath);
+                Add(supplementGuid + "#center:white", "白线纹样·中心", "边框·美术纹饰",
+                    Slice("ArtistSupplementWhiteCenter", new Vector2Int(64, 78), supplement));
+                Add(supplementGuid + "#center:ornament", "纹饰边框·中心", "边框·美术纹饰",
+                    Slice("ArtistSupplementOrnamentCenter", new Vector2Int(208, 78), supplement));
+            }
             if (changed) EditorUtility.SetDirty(palette);
             return true;
         }
