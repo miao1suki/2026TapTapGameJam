@@ -8659,9 +8659,9 @@
                     "paletteEntryName": "白方块",
                     "propEntryId": "",
                     "propEntryName": "",
-                    "x": 64,
+                    "x": 65,
                     "y": 5,
-                    "width": 4,
+                    "width": 3,
                     "height": 1,
                     "isMerged": true,
                     "singleInstance": false,
@@ -8679,7 +8679,6 @@
                     "bossRespawnOwnerId": "",
                     "initialCrankPlatformCreated": false,
                     "mergeParts": [
-                        "{\"id\":\"r3_wall_8_cell_64_5\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":64,\"y\":5,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
                         "{\"id\":\"r3_wall_8_cell_65_5\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":65,\"y\":5,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
                         "{\"id\":\"r3_wall_8_cell_66_5\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":66,\"y\":5,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
                         "{\"id\":\"r3_wall_8_cell_67_5\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":67,\"y\":5,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}"
@@ -8737,43 +8736,6 @@
                         "{\"id\":\"r3_wall_9_cell_80_24\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":80,\"y\":24,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
                         "{\"id\":\"r3_wall_9_cell_80_25\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":80,\"y\":25,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
                         "{\"id\":\"r3_wall_9_cell_80_26\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":80,\"y\":26,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}"
-                    ],
-                    "hasComponentOverrides": false,
-                    "componentOverrides": []
-                },
-                {
-                    "id": "r3_wall_10",
-                    "type": 0,
-                    "label": "实体地形",
-                    "paletteEntryId": "b425a019bb3c476da08cd4065bd77862",
-                    "paletteEntryName": "白方块",
-                    "propEntryId": "",
-                    "propEntryName": "",
-                    "x": 64,
-                    "y": 6,
-                    "width": 1,
-                    "height": 5,
-                    "isMerged": true,
-                    "singleInstance": false,
-                    "doorOwnerId": "",
-                    "doorButtonOrder": 0,
-                    "mechanismBaseId": "",
-                    "mechanismBaseCellOffset": {
-                        "x": 0,
-                        "y": 0
-                    },
-                    "mechanismButtonId": "",
-                    "mechanismButtonIds": [],
-                    "crankOwnerId": "",
-                    "platformMountId": "",
-                    "bossRespawnOwnerId": "",
-                    "initialCrankPlatformCreated": false,
-                    "mergeParts": [
-                        "{\"id\":\"r3_wall_10_cell_64_6\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":64,\"y\":6,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
-                        "{\"id\":\"r3_wall_10_cell_64_7\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":64,\"y\":7,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
-                        "{\"id\":\"r3_wall_10_cell_64_8\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":64,\"y\":8,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
-                        "{\"id\":\"r3_wall_10_cell_64_9\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":64,\"y\":9,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
-                        "{\"id\":\"r3_wall_10_cell_64_10\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":64,\"y\":10,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}"
                     ],
                     "hasComponentOverrides": false,
                     "componentOverrides": []
@@ -8889,7 +8851,7 @@
                     "propEntryId": "",
                     "propEntryName": "",
                     "x": 65,
-                    "y": 10,
+                    "y": 9,
                     "width": 3,
                     "height": 1,
                     "isMerged": true,
@@ -8908,9 +8870,9 @@
                     "bossRespawnOwnerId": "",
                     "initialCrankPlatformCreated": false,
                     "mergeParts": [
-                        "{\"id\":\"r3_wall_13_cell_65_10\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":65,\"y\":10,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
-                        "{\"id\":\"r3_wall_13_cell_66_10\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":66,\"y\":10,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
-                        "{\"id\":\"r3_wall_13_cell_67_10\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":67,\"y\":10,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}"
+                        "{\"id\":\"r3_wall_13_cell_65_9\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":65,\"y\":9,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
+                        "{\"id\":\"r3_wall_13_cell_66_9\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":66,\"y\":9,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}",
+                        "{\"id\":\"r3_wall_13_cell_67_9\",\"type\":0,\"label\":\"实体地形\",\"paletteEntryId\":\"b425a019bb3c476da08cd4065bd77862\",\"paletteEntryName\":\"白方块\",\"propEntryId\":\"\",\"propEntryName\":\"\",\"x\":67,\"y\":9,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}"
                     ],
                     "hasComponentOverrides": false,
                     "componentOverrides": []
@@ -10839,13 +10801,13 @@
                 {
                     "id": "r3_cube_red",
                     "type": 9,
-                    "label": "平台红块（搬起后脱离）",
+                    "label": "红块（可搬运）",
                     "paletteEntryId": "",
                     "paletteEntryName": "",
                     "propEntryId": "1b9aae04512d422c827d95dd1f66ba45",
                     "propEntryName": "红色接触方块",
-                    "x": 61,
-                    "y": 21,
+                    "x": 71,
+                    "y": 15,
                     "width": 1,
                     "height": 1,
                     "isMerged": false,
@@ -10860,7 +10822,7 @@
                     "mechanismButtonId": "",
                     "mechanismButtonIds": [],
                     "crankOwnerId": "",
-                    "platformMountId": "r3_lift",
+                    "platformMountId": "",
                     "bossRespawnOwnerId": "",
                     "initialCrankPlatformCreated": false,
                     "mergeParts": [],

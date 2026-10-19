@@ -1,5 +1,14 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-19 ILorR：R3 final version（授权分支交付）
+
+- 用户授权提交并推送现有codex/ilorr/r3-level，明确9格L形绿块由本人主动删除；以当前已保存Scene为最终试玩版本，不补回、不全量重建。只清理同名/内嵌planning中的9个残留r3_fixed_green_l_*记录，保留其他场景人工修改、曲柄新位置/附着锚点及所有WIP。
+- 已检查远端main：继续基于a672bb69制作，main已有新提交但不在本次自行合并；仅推自己的R3分支，不推main，不夹带R1/R2 Scene、字体或公共区域相机代码/文档。Scene、同名planning及meta成套交付。
+- 原Scene/planning/meta/说明和交接文档备份在Library/R3Final-Before-20261019；验证限静态数据、引用及成套提交门禁，不重跑Play或打包。首次创建用的R3来源/通关审计不适用于最终手调布局，不以旧图回退。
+- 已清除两份planning的9格L形残留；Scene除内嵌planning外与交付前备份逐字一致。默认Size=12、曲柄精确位置(61.770416,-21.88,0)及新附着锚点保留。59条planning、52个带来源Scene根中的既有9个缺失快照ID及2个重复来源ID不自动修复，清单见R3_LEVEL的final交接；整合者以Scene为准回采后再应用规划，不能直接重建覆盖。
+- 本轮不改任何Runtime/Editor代码，保留所有无关WIP；远端main检查为edc3a93，本地基于a672bb69落后8提交，只正常推送codex/ilorr/r3-level。完成静态及成套暂存检查后以feat(r3): R3 final version交付，未做新的Unity编译、Play、通关或双端打包。
+- 23项final静态检查通过：两份JSON一致、只删获准9条记录、其他Scene内容逐字不变、无悬空本地引用、meta/GUID保持、Size与曲柄锚点保持，新增灯光引用来自已锁定URP17.3.0而非漏交脚本。既有规划回采差异作为明确限制交接，不以初版审计或静态检查冒充final通关。
+
 ## 2026-10-19 未整合支线集中合并（验证完成，整合交付）
 
 - 用户授权合并并推送现有待整合支线；明确采用策划MVMap17正式Gaming，保留main代码、美术、菜单修复和Start/Boss门槛接线。独立R3仍不进入正式构建。
