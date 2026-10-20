@@ -1,0 +1,140 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfda56da833e2384a9677cd3c976a436, type: 3}
+  m_Name: enter_boss
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.TimelineAsset
+  m_Version: 0
+  m_Tracks:
+  - {fileID: 752000000}
+  m_FixedDuration: 120
+  m_EditorSettings:
+    m_Framerate: 60
+    m_ScenePreview: 1
+  m_DurationMode: 0
+  m_MarkerTrack: {fileID: 0}
+--- !u!114 &752000000
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82cd92ffc29383742932b27ca414c80f, type: 3}
+  m_Name: Enter Boss Gate
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.PlayableTrack
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips:
+  - m_Version: 1
+    m_Start: 0
+    m_ClipIn: 0
+    m_Asset: {fileID: 752000001}
+    m_Duration: 120
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: 752000000}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: enter_boss
+  m_Markers:
+    m_Objects: []
+--- !u!114 &752000001
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4b7a1c6e2f3485a9b0c7d1e6f2a8c93, type: 3}
+  m_Name: EnterBossTimelinePlayable
+  m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.EnterBossTimelinePlayable
+  settings:
+    minimumCollectibleRatio: 0.3
+    font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+    fontSize: 72
+    typewriterCharactersPerSecond: 18
+    lineHoldSeconds: 1
+    insufficientLine: "\u6211\u8EAB\u4E0A\u7684\u8C03\u8272\u677F\u597D\u50CF\u8FD8\u4E0D\u8DB3\u4EE5\u6FC0\u6D3B\u55B7\u6CC9...."
+    returnLine: "\u8FD8\u662F\u56DE\u53BB\u518D\u6536\u96C6\u4E00\u4E9B\u5427"
+    startDestinationId: Start
+    blackScreenCenter: {x: 0.5, y: 0.5}
+    blackCoverSpeed: 0.72
+    blackSoftness: 0
+    fullyBlackHoldSeconds: 0.1

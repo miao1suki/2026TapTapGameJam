@@ -1,4 +1,6 @@
+using System;
 using Project.BlockFeatures;
+using Project.InputAbstraction;
 using Project.Items;
 using Project.Player;
 using Project.Rooms;
@@ -47,6 +49,8 @@ namespace Project.BossLogic
                 {
                     if (!player.TryTeleportToStoryAnchor(destinationAnchor))
                         Debug.LogWarning("[BossEntry] 同场景返回锚点暂不可用：" + returnDestinationId, this);
+                    else if (IsStartReturn())
+                        EmitReturnedHome(player);
                     return false;
                 }
                 // Explicit author Transform overrides retain their legacy path;
@@ -65,6 +69,8 @@ namespace Project.BossLogic
                 }
                 player.transform.position = destination.position;
                 Physics.SyncTransforms();
+                if (IsStartReturn())
+                    EmitReturnedHome(player);
             }
             else
             {
@@ -72,6 +78,23 @@ namespace Project.BossLogic
                     returnDestinationId + "。正式Boss与关卡统一合入Gaming并使用Start；独立Boss测试请显式配置本场景锚点，不会自动切换场景。", this);
             }
             return false;
+        }
+
+        private bool IsStartReturn()
+        {
+            return string.Equals(
+                returnDestinationId,
+                "Start",
+                StringComparison.Ordinal);
+        }
+
+        private static void EmitReturnedHome(
+            PlayerController player)
+        {
+            GameplaySignalHub.Emit(
+                AchievementSignalIds
+                    .LowCollectibleReturnHome,
+                player.gameObject);
         }
     }
 }

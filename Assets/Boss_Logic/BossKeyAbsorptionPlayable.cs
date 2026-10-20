@@ -140,7 +140,6 @@ namespace Project.BossLogic
         private BossTimelinePerformanceFrame frame;
         private bool initialized;
         private bool failed;
-        private int sortingLayerId;
 
         public override void OnBehaviourPlay(
             Playable playable,
@@ -325,8 +324,6 @@ namespace Project.BossLogic
 
             player = playerController.transform;
             boss = bossController.transform;
-            sortingLayerId =
-                ResolveSortingLayer(sortingLayerName);
 
             cinematicRoot =
                 new GameObject("Boss六钥匙吸收演出");
@@ -367,7 +364,11 @@ namespace Project.BossLogic
                 instance.name =
                     prefab.name + "_Cinematic";
                 DisableGameplay(instance);
-                ApplySorting(instance);
+                MechanismArtworkPresentation
+                    .PrepareCinematicClone(
+                        instance,
+                        sortingLayerName,
+                        sortingOrder);
 
                 Vector3 slot =
                     BuildHoverSlot(
@@ -585,41 +586,6 @@ namespace Project.BossLogic
             {
                 artworks[index].enabled = false;
             }
-        }
-
-        private void ApplySorting(GameObject instance)
-        {
-            SpriteRenderer[] sprites =
-                instance.GetComponentsInChildren<
-                    SpriteRenderer>(true);
-            for (int index = 0;
-                 index < sprites.Length;
-                 index++)
-            {
-                if (sortingLayerId != 0)
-                {
-                    sprites[index].sortingLayerID =
-                        sortingLayerId;
-                }
-                sprites[index].sortingOrder =
-                    sortingOrder;
-            }
-        }
-
-        private static int ResolveSortingLayer(
-            string layerName)
-        {
-            SortingLayer[] layers = SortingLayer.layers;
-            for (int index = 0;
-                 index < layers.Length;
-                 index++)
-            {
-                if (layers[index].name == layerName)
-                {
-                    return layers[index].id;
-                }
-            }
-            return 0;
         }
 
         private void Cleanup()

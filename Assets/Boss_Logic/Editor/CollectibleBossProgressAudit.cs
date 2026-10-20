@@ -200,6 +200,9 @@ namespace Project.BossLogic.Editor
                 "an explicitly higher seven-digit threshold is not rounded down to 60 percent");
             Check(new CollectibleProgressSnapshot(3, 10).MeetsRatio(.3f) &&
                 !new CollectibleProgressSnapshot(2, 10).MeetsRatio(.3f), "30 percent uses the same exact integer rule");
+            Check(EnterBossTimelinePlayable.HasSufficientCollectibles(3, 10) &&
+                !EnterBossTimelinePlayable.HasSufficientCollectibles(2, 10),
+                "enter_boss accepts exactly 30 percent and rejects below it");
             Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(0, 0), "missing denominator no longer defaults success");
             manager.ResetRegion(a.id); manager.ResetRegion(b.id);
             progress = CollectibleProgressService.GetSceneProgress(scene);

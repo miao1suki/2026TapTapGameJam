@@ -1922,7 +1922,357 @@ MonoBehaviour:
   - entryId: 30265b9098d545388134efaefa2a7884
     displayName: "Timeline\u89E6\u53D1\u5668"
     prefab: {fileID: 720000000, guid: bddaf753a9eb458c8f4945ee3a29a8ed, type: 3}
-    componentValueOverrides: []
+    componentValueOverrides:
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ContactTimelineTrigger
+      componentIndex: 0
+      propertyPath: timeline
+      valueType: ObjectReference
+      value: reference:null
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ContactTimelineTrigger
+      componentIndex: 0
+      propertyPath: targetCollider
+      valueType: ObjectReference
+      value: reference:local
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ContactTimelineTrigger
+      componentIndex: 0
+      propertyPath: contactFilter
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ContactTimelineTrigger
+      componentIndex: 0
+      propertyPath: triggerMode
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ContactTimelineTrigger
+      componentIndex: 0
+      propertyPath: restartIfPlaying
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ContactTimelineTrigger
+      componentIndex: 0
+      propertyPath: requestPlayerControlLockDuringTimeline
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ContactTimelineTrigger
+      componentIndex: 0
+      propertyPath: hideRenderersOnEnable
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ContactTimelineTrigger
+      componentIndex: 0
+      propertyPath: destroyAfterTrigger
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.Playables.PlayableDirector
+      componentIndex: 0
+      propertyPath: m_PlayableAsset
+      valueType: ObjectReference
+      value: reference:null
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.Playables.PlayableDirector
+      componentIndex: 0
+      propertyPath: m_InitialState
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.Playables.PlayableDirector
+      componentIndex: 0
+      propertyPath: m_WrapMode
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.Playables.PlayableDirector
+      componentIndex: 0
+      propertyPath: m_DirectorUpdateMode
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.Playables.PlayableDirector
+      componentIndex: 0
+      propertyPath: m_InitialTime
+      valueType: Float
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Material
+      valueType: ObjectReference
+      value: reference:null
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_LayerOverridePriority
+      valueType: Integer
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_IsTrigger
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_ProvidesContacts
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Size
+      valueType: Vector3
+      value: '{"x":3.0,"y":3.0,"z":3.0}'
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.BoxCollider
+      componentIndex: 0
+      propertyPath: m_Center
+      valueType: Vector3
+      value: '{"x":0.0,"y":0.0,"z":0.0}'
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshFilter
+      componentIndex: 0
+      propertyPath: m_Mesh
+      valueType: ObjectReference
+      value: GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0
+      objectReferenceValue: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_CastShadows
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ReceiveShadows
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_DynamicOccludee
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_StaticShadowCaster
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MotionVectors
+      valueType: Enum
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_LightProbeUsage
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ReflectionProbeUsage
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTracingMode
+      valueType: Integer
+      value: 2
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTraceProcedural
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTracingAccelStructBuildFlagsOverride
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RayTracingAccelStructBuildFlags
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_SmallMeshCulling
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ForceMeshLod
+      valueType: Integer
+      value: -1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MeshLodSelectionBias
+      valueType: Float
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RenderingLayerMask
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_RendererPriority
+      valueType: Integer
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ProbeAnchor
+      valueType: ObjectReference
+      value: reference:null
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_LightProbeVolumeOverride
+      valueType: ObjectReference
+      value: reference:null
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ScaleInLightmap
+      valueType: Float
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ReceiveGI
+      valueType: Integer
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_PreserveUVs
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_IgnoreNormalsForChartDetection
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_ImportantGI
+      valueType: Boolean
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_StitchLightmapSeams
+      valueType: Boolean
+      value: 1
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MinimumChartSize
+      valueType: Integer
+      value: 4
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_AutoUVMaxDistance
+      valueType: Float
+      value: 0.5
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_AutoUVMaxAngle
+      valueType: Float
+      value: 89
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_LightmapParameters
+      valueType: ObjectReference
+      value: reference:null
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: UnityEngine.MeshRenderer
+      componentIndex: 0
+      propertyPath: m_MaskInteraction
+      valueType: Enum
+      value: 0
+      objectReferenceValue: {fileID: 0}
+    - componentPath: 
+      componentTypeName: Project.BlockFeatures.ContactTimelineTrigger
+      componentIndex: 0
+      propertyPath: repeatCooldownSeconds
+      valueType: Float
+      value: 0.5
+      objectReferenceValue: {fileID: 0}
   - entryId: 74f1a151737a42fe81707157cdfb7206
     displayName: "\u5411\u5DE6\u6C34\u6D41"
     prefab: {fileID: 75558634237822655, guid: c3b01d303480df34cbc923067aa838d5, type: 3}

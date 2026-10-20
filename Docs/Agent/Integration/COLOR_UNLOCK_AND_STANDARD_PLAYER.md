@@ -21,6 +21,8 @@ ColorRuntimeService API：
 | SetAllUnlockedForCurrentSession | 只调试场景颜色，不授予玩家能力 |
 | UnlockAllAbilitiesForCurrentSession | 独立调试玩家能力，不激活场景颜色 |
 
+编辑器调试入口：`Tools/2026TapTap/调试/颜色与收藏品调试`。窗口仅在 Play Mode 允许修改：可一键调用 `SetAllUnlockedForCurrentSession(true)` 与 `UnlockAllAbilitiesForCurrentSession()` 解锁六把钥匙；收藏品区域显示当前已获得数量和最大可获得数量，并提供目标数量输入、应用数量、设为 0、设为最大和刷新按钮。调试地图按当前 Scene 所有 `RespawnAnchorFeature` 与已注册 `TeleportAnchorFeature` 的世界 XY 相对位置布点，支持 `1×～4×` 缩放和双向滚动；重生点按钮会先确保目标已激活，再调用 `PlayerController.TryRestoreLoadedRunPosition` 走真实复活、房间重置和 Boss 重生链，传送方块按钮通过现有 `TeleportObject` API 移动玩家。
+
 场景物体、三色搬运块、功能组件的原有激活门控保持 IsUnlocked；PlayerColorWheel 与 PickWheelPrototype 的显示/选色必须用 IsAbilityUnlocked。不要将全部 IsUnlocked 调用全局替换，三色物体自身的接触反应不依赖玩家能力。
 
 两种进度本轮均为当前运行会话进度，不新增跨运行存档协议。新游戏沿用现有 ResetProgress 调用。

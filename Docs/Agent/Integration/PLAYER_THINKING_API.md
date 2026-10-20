@@ -22,6 +22,7 @@ PlayerThinkingTimelinePlayable.SetCollectibleProgress(
 
 - `current / maximum >= 0.6`：播放演出 2。
 - `< 0.6`：播放演出 1。
+- 判定进入 `< 0.6` 的演出1分支时立即发出 `FakeEndingReached`，成就提示先于后续字幕、传送和黑幕出现。
 - 最大值小于等于0不再默认成功，播放演出1；`ClearCollectibleProgress()`清除测试覆盖，下次直接播放时读取场景进度。
 - 静态值在子系统注册时重置。
 - 临时生成的六份演出收集品在启用前显式标记`SetExcludedFromProgress(true)`，不增加全局/房间统计的分母或奖励。
@@ -61,7 +62,7 @@ controller.TryTeleportToStoryAnchor(start);
 
 ## 演出 2
 
-六份 `Collectible.prefab` 依次从玩家身体出现，排列到头顶并持续呼吸律动。等待 `2` 秒后播放：
+六份 `Collectible.prefab` 依次从玩家身体出现，排列到头顶并持续呼吸律动。每份演出副本在关闭玩法组件后调用 `MechanismArtworkPresentation.PrepareCinematicClone`，显示当前最新收集品 Sprite，不显示预制体遗留占位图。等待 `2` 秒后播放：
 
 ```text
 终于

@@ -11,6 +11,17 @@ namespace Project.InputAbstraction
         public const string PlayerLavaDeath = "PlayerLavaDeath";
         public const string PlayerSpikeDeath = "PlayerSpikeDeath";
         public const string PlayerBossDeath = "PlayerBossDeath";
+        public const string ColorAbilityUsed = "ColorAbilityUsed";
+        public const string CollectibleProgress30 =
+            "CollectibleProgress30";
+        public const string CollectibleProgress60 =
+            "CollectibleProgress60";
+        public const string LowCollectibleReturnHome =
+            "LowCollectibleReturnHome";
+        public const string FakeEndingReached =
+            "FakeEndingReached";
+        public const string TrueEndingReached =
+            "TrueEndingReached";
         public const string LadderClimbStarted = "LadderClimbStarted";
         public const string LadderClimbEnded = "LadderClimbEnded";
         public const string LevelGoalReached = "LevelGoalReached";

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Project.InputAbstraction;
 using Project.Rooms;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -56,12 +57,14 @@ namespace Project.Items
             public bool Scanned;
         }
         private static readonly Dictionary<string, Catalog> Catalogs = new Dictionary<string, Catalog>(StringComparer.Ordinal);
+        private static int notificationSuppression;
         public static event Action Changed;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Initialize()
         {
             Catalogs.Clear();
+            notificationSuppression = 0;
             Changed = null;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -148,13 +151,44 @@ namespace Project.Items
             changed |= collected && !entry.Collected;
             entry.Collected |= collected;
             if (entry.Collected && stableId != null) catalog.CollectedIds.Add(stableId);
-            if (changed) Changed?.Invoke();
+            if (changed) NotifyChanged();
             return entry.Collected;
         }
 
         internal static void RecordCollected(CollectiblePickup item)
         {
             Register(item);
+            EmitProgressAchievementSignals(item);
+        }
+
+        private static void EmitProgressAchievementSignals(
+            CollectiblePickup item)
+        {
+            if (item == null)
+            {
+                return;
+            }
+
+            CollectibleProgressSnapshot progress =
+                GetWorldProgress();
+            if (progress.MeetsRatio(.3f))
+            {
+                GameplaySignalHub.Emit(
+                    AchievementSignalIds
+                        .CollectibleProgress30,
+                    item.gameObject,
+                    progress.Collected,
+                    progress.Ratio * 100f);
+            }
+            if (progress.MeetsRatio(.6f))
+            {
+                GameplaySignalHub.Emit(
+                    AchievementSignalIds
+                        .CollectibleProgress60,
+                    item.gameObject,
+                    progress.Collected,
+                    progress.Ratio * 100f);
+            }
         }
 
         internal static void Exclude(CollectiblePickup item)
@@ -166,7 +200,7 @@ namespace Project.Items
             if (catalog.Entries.TryGetValue(key, out Entry entry) && entry.Source == item)
             {
                 catalog.Entries.Remove(key);
-                Changed?.Invoke();
+                NotifyChanged();
             }
         }
 
@@ -184,6 +218,185 @@ namespace Project.Items
                     if (entry.Collected) collected += entry.Amount;
                 }
             return new CollectibleProgressSnapshot(collected, total);
+        }
+
+        /// <summary>
+        /// Debug-only exact mutation. Returns false without changing anything
+        /// when the requested amount cannot be represented by authored amounts.
+        /// </summary>
+        public static bool TrySetWorldCollectedCountForDebug(
+            int desired,
+            out int applied,
+            out string error)
+        {
+            applied = 0;
+            error = string.Empty;
+            for (int index = 0;
+                 index < SceneManager.sceneCount;
+                 index++)
+            {
+                EnsureScene(SceneManager.GetSceneAt(index));
+            }
+
+            var entries = new List<Entry>();
+            foreach (Catalog catalog in Catalogs.Values)
+            {
+                entries.AddRange(
+                    catalog.Entries.Values);
+            }
+            entries.Sort(
+                (left, right) =>
+                    string.CompareOrdinal(
+                        left.Key,
+                        right.Key));
+
+            int total = 0;
+            for (int index = 0;
+                 index < entries.Count;
+                 index++)
+            {
+                total += entries[index].Amount;
+            }
+            CollectibleProgressSnapshot current =
+                GetWorldProgress();
+            applied = current.Collected;
+            if (desired < 0 || desired > total)
+            {
+                error =
+                    $"目标数量必须在 0 到 {total} 之间。";
+                return false;
+            }
+
+            bool[,] reachable =
+                new bool[entries.Count + 1, total + 1];
+            reachable[0, 0] = true;
+            for (int index = 0;
+                 index < entries.Count;
+                 index++)
+            {
+                int amount =
+                    Mathf.Max(1, entries[index].Amount);
+                for (int sum = 0;
+                     sum <= total;
+                     sum++)
+                {
+                    if (!reachable[index, sum])
+                    {
+                        continue;
+                    }
+
+                    reachable[index + 1, sum] = true;
+                    if (sum + amount <= total)
+                    {
+                        reachable[
+                            index + 1,
+                            sum + amount] = true;
+                    }
+                }
+            }
+            if (!reachable[entries.Count, desired])
+            {
+                error =
+                    "当前收集品数量组合无法精确得到 " +
+                    desired +
+                    "。";
+                return false;
+            }
+
+            var selected =
+                new HashSet<Entry>();
+            int remaining = desired;
+            for (int index = entries.Count;
+                 index > 0;
+                 index--)
+            {
+                Entry entry = entries[index - 1];
+                int amount =
+                    Mathf.Max(1, entry.Amount);
+                if (remaining >= amount &&
+                    reachable[
+                        index - 1,
+                        remaining - amount])
+                {
+                    selected.Add(entry);
+                    remaining -= amount;
+                }
+            }
+            if (remaining != 0)
+            {
+                error =
+                    "收集品数量组合重建失败。";
+                return false;
+            }
+
+            var visualChanges =
+                new List<(CollectiblePickup source,
+                    bool collected)>();
+            notificationSuppression++;
+            try
+            {
+                foreach (Catalog catalog in
+                         Catalogs.Values)
+                {
+                    catalog.CollectedIds.Clear();
+                    foreach (Entry entry in
+                             catalog.Entries.Values)
+                    {
+                        bool collected =
+                            selected.Contains(entry);
+                        if (entry.Collected != collected)
+                        {
+                            entry.Collected = collected;
+                            if (entry.Source != null)
+                            {
+                                visualChanges.Add(
+                                    (entry.Source,
+                                        collected));
+                            }
+                        }
+                        if (collected &&
+                            !string.IsNullOrEmpty(
+                                entry.StableId))
+                        {
+                            catalog.CollectedIds.Add(
+                                entry.StableId);
+                        }
+                    }
+                }
+
+                for (int index = 0;
+                     index < visualChanges.Count;
+                     index++)
+                {
+                    CollectiblePickup source =
+                        visualChanges[index].source;
+                    if (visualChanges[index].collected)
+                    {
+                        source.RestoreCollectedState();
+                    }
+                    else
+                    {
+                        source
+                            .ResetPersistentCollectionForNewRun();
+                    }
+                }
+            }
+            finally
+            {
+                notificationSuppression--;
+            }
+
+            applied = desired;
+            NotifyChanged();
+            return true;
+        }
+
+        private static void NotifyChanged()
+        {
+            if (notificationSuppression == 0)
+            {
+                Changed?.Invoke();
+            }
         }
         private static CollectibleProgressSnapshot GetProgress(Scene scene, string regionId, bool filterRegion)
         {
@@ -226,7 +439,7 @@ namespace Project.Items
                     if (entry.Source != null) entry.Source.RestoreCollectedState();
                 }
             }
-            if (changed) Changed?.Invoke();
+            if (changed) NotifyChanged();
         }
 
         public static void ResetSessionProgress(Scene scene)
@@ -247,7 +460,7 @@ namespace Project.Items
                 }
             }
             RefreshSceneCatalog(scene);
-            Changed?.Invoke();
+            NotifyChanged();
         }
 
         public static void ResetAllSessionProgress()
@@ -283,7 +496,7 @@ namespace Project.Items
                 RefreshSceneCatalog(
                     SceneManager.GetSceneAt(sceneIndex));
             }
-            Changed?.Invoke();
+            NotifyChanged();
         }
     }
 }

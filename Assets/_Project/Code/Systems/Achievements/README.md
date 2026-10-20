@@ -6,6 +6,8 @@
 Assets/_Project/Code/Systems/Achievements/
   Runtime/
     AchievementManager.cs
+    PlayerDeathAchievementRouter.cs
+    GameplayAchievementRouter.cs
     AchievementSO.cs
     AchievementCatalogSO.cs
     AchievementDetector.cs
@@ -147,6 +149,12 @@ PlayerFallDeath
 PlayerLavaDeath
 PlayerSpikeDeath
 PlayerBossDeath
+ColorAbilityUsed
+CollectibleProgress30
+CollectibleProgress60
+LowCollectibleReturnHome
+FakeEndingReached
+TrueEndingReached
 LadderClimbStarted
 LadderClimbEnded
 
@@ -188,6 +196,24 @@ PlayerSpikeDeath -> 1002、1004
 PlayerLavaDeath  -> 1011、1014
 PlayerDied       -> 1012、1013
 ```
+
+非死亡玩法由 `GameplayAchievementRouter` 固定映射：
+
+```text
+LowCollectibleReturnHome -> 1005
+FakeEndingReached        -> 1006
+TrueEndingReached        -> 1007
+ColorAbilityUsed         -> 1008
+CollectibleProgress30    -> 1009
+CollectibleProgress60    -> 1010
+```
+
+完整逐条触发点见 [成就逐条接线](../../../../../Docs/Agent/Integration/ACHIEVEMENT_HOOKS.md)。
+
+成就解锁提示不继承 `WordNote_UI` 的 `1200` 排序。`AchievementUnlockToastPresenter`
+会建立独立 `ScreenSpaceOverlay` Canvas，使用最高 Sorting Layer 和
+`sortingOrder=32767`，再在其下创建固定尺寸的左下角 Toast，因此不会被喷泉结局黑幕
+或加载遮罩挡住。
 
 `AchievementSignalBridge` 也提供 `Emit`、`EmitWithName`、`EmitWithCount`、
 `EmitWithProgress` 和 `EmitWithValues`，可供 UnityEvent 或以后新增的玩法脚本调用。

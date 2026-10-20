@@ -374,6 +374,9 @@ namespace Project.Player
             {
                 ColorApplicationSucceeded?.Invoke();
                 AudioCuePlayer.Play(AudioCueIds.PaintComplete, .9f);
+                GameplaySignalHub.Emit(
+                    AchievementSignalIds.ColorAbilityUsed,
+                    gameObject);
             }
             else
             {
@@ -391,6 +394,9 @@ namespace Project.Player
                 case GreenHookLaunchResult.Success:
                     ColorApplicationSucceeded?.Invoke();
                     AudioCuePlayer.Play(AudioCueIds.PaintComplete, .9f);
+                    GameplaySignalHub.Emit(
+                        AchievementSignalIds.ColorAbilityUsed,
+                        gameObject);
                     break;
                 case GreenHookLaunchResult.OutOfRange:
                     ColorApplicationOutOfRange?.Invoke();

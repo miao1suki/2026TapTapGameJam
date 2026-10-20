@@ -1,5 +1,68 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 编辑模式渲染距离工具（编译通过，待静止卡顿复测）
+
+- 分支 `boss最后补充2`。新增纯 Editor 的 SceneView 房间级可见性裁剪窗口，菜单 `Tools/2026TapTap/编辑器性能/编辑渲染距离`。
+- 行为：以 SceneView 中心为圆心，按格数半径隐藏远处 `__PlanningMapGenerated` 房间容器；当前房间和选中物体所在房间始终显示。
+- 边界：只使用 `SceneVisibilityManager` 的会话可见性，不改 GameObject/Renderer/碰撞/组件/Scene/Planning JSON；进入 Play、保存场景、关闭窗口、域重载或退出编辑器时恢复编辑器隐藏状态。
+- 窗口仅持久化开关与半径到 `EditorPrefs`，默认 `80` 格；房间缓存优先来自 `LevelEditorPlacedBlock` 的格尺寸/缩放，Renderer 仅在无规划块时兜底，缓存只在窗口刷新、场景切换或层级结构变化时重建。
+- 追加“同时降低规划窗口刷新频率”：通过 `EditorAuthoringPerformanceState` 将 `LevelEditorWindow` 和 `PlanningEditorWindow` 的基础刷新从 `.1` 秒降到 `.35` 秒，调色板维护和预览刷新降到 `1` 秒；关窗、进 Play 或关闭该开关自动恢复标准刷新。
+- 进一步优化：失焦的编辑窗口降到 `.75` 秒、区域标签降到 `1` 秒；2D 预览先做视锥剔除再检查 Stage/SceneVisibility。新增 `EditorApplication.update` 更新间隔、规划 Tick、关卡 Tick、预览绘制/拾取、房间缓存和可见性应用耗时。
+- 静止截图显示更新间隔 `271.5ms`、可见房间 `35/35`，说明工具未实际裁剪，原有整房 AABB 会把横跨多片不连续区域的大房间误判为全部可见。现改为逐规划方块样本判断半径，并要求启用后隐藏数量应大于 `0`；`EditorApplication.update` 间隔仅作诊断，不再显示为“帧间隔”。
+- 补齐尚未计量的 `PlanningCanvas.Draw` 总耗时、World/Assembly/Detail 分项、规划预览刷新、区域标签和玩家标记耗时；机关连线/门绑定绘制中的嵌套全表搜索改为一次 ID 索引。
+- Unity 6000.3.12f1 Editor 程序集 Roslyn 静态编译 0 error（仅既有 warning），`git diff --check` 通过。尚未在用户当前 Unity 窗口中完成实际静止帧与房间裁剪复测。
+
+## 2026-10-20 成就提示最高层与真结局提示核查（编译通过，待 Play 验收）
+
+- 分支 `boss最后补充2`。核查本机 `形之彩/Achievements/achievements.json`：`1007` 已持久化 `isUnlocked=true`，Editor 日志也存在 `[AchievementManager] 达成成就：结束了（1007）`；成就逻辑确实执行。
+- 根因：`AchievementUnlockToastPresenter` 原先生成在 `WordNote_UI` 的 `1200` Canvas 下，Toast 自身仅 `1220`；喷泉黑幕 Canvas 为 `32000`，提示被覆盖或在其后方播放完毕。
+- 修改范围：只改成就 Toast 的 Canvas 层级与诊断日志，保持左下角位置、尺寸、Cubic 字体、动画和全局成就存档不变。
+- 现结构为独立 ScreenSpaceOverlay Canvas，使用最高 Sorting Layer 与 `sortingOrder=32767`；全屏 Canvas 下再放固定尺寸的左下角 Toast 子块。Runtime/Editor 静态编译 0 error。`1007` 已解锁，后续需重置该成就或使用新成就才能再次看到弹出。
+- 后续调整：真假结局成就不再等黑屏或传送完成后发送。`1007` 在喷泉结局分支初始化成功时立即发送；`1006` 在 Player Thinking 判定进入不足分支时立即发送。`1005` 仍在成功返回 Start 后发送。
+
+## 2026-10-20 成就逐条对接审计（编译通过，待 Play 验收）
+
+- 分支 `boss最后补充2`。范围：`Project.Achievements.Runtime`、玩家染色成功入口、收集品进度服务、Boss 低收集返回、Player Thinking 假结局与喷泉真结局；不改成就美术、设置页面或单轮存档结构。
+- 已核：`1001–1004、1011–1014` 由 `PlayerDeathAchievementRouter` 接收实际死亡原因信号并累加。
+- 已补：`1005` 低收集返回第一关、`1006` 假结局、`1007` 真结局、`1008` 首次使用颜色能力、`1009` 收集达到 30%、`1010` 收集达到 60%。
+- 新增 `GameplayAchievementRouter` 和六个玩法信号；假结局/回第一关仅在 Start 传送成功后触发，真结局在喷泉黑屏清档前触发，成就存档独立保留。
+- 逐条映射见 `Docs/Agent/Integration/ACHIEVEMENT_HOOKS.md`；目录与资产均核对为 14 条。Runtime 相关程序集静态编译 0 error，待 Play 验收。
+
+## 2026-10-20 enter_boss 低收集门槛 Timeline（编译通过，待挂触发与 Play 验收）
+
+- 分支 `boss最后补充2`。新增 `Assets/Boss_Logic/EnterBossTimelinePlayable.cs` 与 `Assets/_Project/Content/Boss/Timelines/enter_boss.playable`；不修改场景、关卡 JSON、Boss 控制器或其他 Timeline。
+- 逻辑：Playable 内读取本轮世界收集品进度，默认门槛 `30%`；未达到时锁玩家操作，播放两段 Cubic 打字机字幕，每段完整显示后停留 `1` 秒，再从屏幕中心收黑并传送到同场景 `Start` 传送锚点，黑屏倒放后结束。
+- 边界：达到 30% 时直接结束 Timeline，不申请玩家控制锁、不显示字幕、不传送；低进度返回保留本轮收集品、钥匙、能力和 Boss 进度，不触发清档。
+- 验证：新增 30% 边界断言；Unity 6000.3.12f1 Runtime（含新源文件）与 Editor 程序集静态编译 0 error，仅既有警告。尚未把 `enter_boss` 挂到场景触发器和运行 Play Mode。
+
+## 2026-10-20 Boss 死亡与喷泉结局演出贴图／相机修正（编译通过，待 Play 验收）
+
+- 分支 `boss最后补充2`。范围：`BossKeyAbsorptionPlayable`、`BossDeathCinematicPlayable`、`PlayerThinkingTimelinePlayable`、`FountainEndingTimelinePlayable`、喷泉结局 Timeline 资产与对应接入文档；不修改场景、关卡 JSON、玩家预制体或颜色玩法规则。
+- 根因：演出副本在未激活父节点下生成后，旧逻辑禁用 `MechanismArtworkPresentation`，导致最新钥匙／收集品 Sprite 未初始化，最终显示预制体遗留占位图。
+- 方案：新增公共演出美术准备入口，主动建立并刷新 `MechanismArtworkPresentation`，隐藏旧 Renderer，固定最新 Sprite 与演出排序；四种演出统一复用。喷泉结局取消双锚点构图和 `1.3×` 视野，镜头全程跟随玩家。
+- 新增回归用例覆盖红/蓝/绿钥匙和收集品的演出副本最新帧、旧 Renderer 隐藏及演出排序。Unity 6000.3.12f1 Runtime 与 Editor 程序集静态编译 0 error，仅既有警告；项目 Unity 正打开，未并行启动测试实例，待 Play 验收实际演出。
+
+## 2026-10-20 喷泉结局 Timeline（编译通过，待挂触发与 Play 验收）
+
+- 分支 `boss最后补充2`。新增 `Content/GameFlow/fountain_ending.playable` 和 `Project.Ending.FountainEndingTimelinePlayable`，以触发器局部坐标驱动，运行时按距离查找同 Scene 的 `FountainArtwork`。
+- 演出包含玩家操作锁、走向喷泉、相机全程跟随玩家、四个调色盘依次出现并投入喷泉、两段直接消失字幕、瞬时黑屏清档回主菜单。
+- 回到开始界面后先瞬间移除黑屏，再立即播放 RGB 故障特效并淡出；黑屏节点保留成就结算注释，本 Timeline 未直接调用成就系统。
+- 调色盘使用 `Collectible.prefab` 演出副本，关闭碰撞、刚体和玩法 MonoBehaviour，排除收集品进度，并通过 `MechanismArtworkPresentation.PrepareCinematicClone` 显示当前最新收集品美术。Unity 6000.3.12f1 Runtime 静态编译 0 error；尚未把资产挂到喷泉旁触发器和运行 Play Mode。
+
+## 2026-10-20 颜色与收藏品运行时调试窗口
+
+- 分支 `boss最后补充2`。`Tools/2026TapTap/调试/颜色与收藏品调试` 使用 UI Toolkit，仅 Play Mode 允许修改；一键解锁三色场景颜色和三种玩家能力。
+- 窗口显示当前已获得收藏品、最大可获得数量和完成比例；可输入目标数量并精确应用，也提供设为 0、设为最大和刷新按钮。
+- `CollectibleProgressService.TrySetWorldCollectedCountForDebug` 通过作者数量组合精确求解，无法精确表示时保持原状并返回原因；成功后同步收集品实例显隐、单轮存档事件和统计显示。
+- 调试地图同时读取当前 Scene 的 `RespawnAnchorFeature` 与 `TeleportAnchorFeature.RegisteredAnchors`，按两类目标的世界 XY 相对包围范围布点；重生点按钮走真实激活与复活流程，传送方块按钮调用现有静态传送 API。地图支持 `1×～4×` 缩放和双向滚动，非 Play Mode 只显示提示。
+- Unity 6000.3.12f1 主程序集与 Editor 程序集静态编译 0 error；未运行 Play Mode。
+
+## 2026-10-20 六把钥匙运行时调试入口
+
+- 分支 `boss最后补充2`。新增 `Tools/2026TapTap/调试/解锁玩家六把钥匙能力`，仅 Play Mode 可用。
+- 点击后只在当前活动 Scene 查找 `PlayerController`；找到后同时解锁三种场景颜色和三种玩家能力，沿用 `ColorRuntimeService` 的事件、轮盘刷新与单轮自动保存。
+- 本轮完成 Editor 编译检查，未运行 Play Mode。
+
 ## 2026-10-20 正式关卡白块连通合并（场景已应用，待 Play 体感验收）
 
 - 分支 `boss最后补充`。正式 `Gaming.unity`、`Gaming.planning.json` 与 `正式关卡.json` 已同步更新；采用每个房间内按四向连通块合并白方块，不跨房间、不填孔洞、不改变房间归属。

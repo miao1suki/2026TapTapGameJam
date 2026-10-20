@@ -11,6 +11,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace PlanningEditorPrototype
 {
@@ -158,6 +159,7 @@ namespace PlanningEditorPrototype
         private bool refreshingLevelContext;
         private double nextLevelEditorRefreshTime;
         private double nextPreviewRefreshTime;
+        private double nextMaintenanceRefreshTime;
         private float leftRailWidth = 200f;
         private float rightPanelWidth = 340f;
         private float topAreaHeight = 110f;
@@ -415,6 +417,7 @@ namespace PlanningEditorPrototype
             rootVisualElement.SetEnabled(true);
             nextLevelEditorRefreshTime = 0d;
             nextPreviewRefreshTime = 0d;
+            nextMaintenanceRefreshTime = 0d;
             if (canvas == null) return;
             // Runtime teardown is not an authoring deletion.
             CaptureSceneBindings();
@@ -479,7 +482,18 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            nextLevelEditorRefreshTime = now + .1d;
+            bool reducedRefresh =
+                EditorAuthoringPerformanceState
+                    .ReducedRefreshEnabled;
+            long tickStart =
+                Stopwatch.GetTimestamp();
+            nextLevelEditorRefreshTime =
+                now +
+                (!reducedRefresh
+                    ? .1d
+                    : hasFocus
+                        ? .35d
+                        : .75d);
             if (documentSavePending && now >= documentSaveAt && !EditorApplication.isPlayingOrWillChangePlaymode && !syncPending)
             {
                 try { SaveDocument(); }
@@ -510,12 +524,19 @@ namespace PlanningEditorPrototype
             }
             embeddedLevelEditor.Refresh();
             embeddedLevelEditor.RefreshPendingPreviews();
-            SyncPlanningCanvasPalette();
-            PruneMissingPaletteBlocks();
+            if (!reducedRefresh ||
+                now >= nextMaintenanceRefreshTime)
+            {
+                nextMaintenanceRefreshTime =
+                    now + (reducedRefresh ? 1d : .3d);
+                SyncPlanningCanvasPalette();
+                PruneMissingPaletteBlocks();
+            }
             canvas?.RefreshPlayerOverlay();
             if (now >= nextPreviewRefreshTime)
             {
-                nextPreviewRefreshTime = now + .3d;
+                nextPreviewRefreshTime =
+                    now + (reducedRefresh ? 1d : .3d);
                 canvas?.RefreshPreviewImages();
             }
             RefreshLevelContextStatus();
@@ -523,6 +544,11 @@ namespace PlanningEditorPrototype
             {
                 SceneView.RepaintAll();
             }
+            EditorAuthoringPerformanceState
+                .RecordPlanningTick(
+                    EditorAuthoringPerformanceState
+                        .ElapsedMilliseconds(
+                            tickStart));
         }
 
         private VisualElement BuildWorkspaceTabs()

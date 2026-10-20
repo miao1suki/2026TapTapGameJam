@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Project.LevelEditor.Editor
 {
@@ -90,13 +91,27 @@ namespace Project.LevelEditor.Editor
                 return;
             }
 
-            nextRefreshTime = now + .1d;
+            long tickStart =
+                Stopwatch.GetTimestamp();
+            nextRefreshTime =
+                now +
+                (EditorAuthoringPerformanceState
+                    .ReducedRefreshEnabled
+                    ? hasFocus
+                        ? .35d
+                        : .75d
+                    : .1d);
             panel.Refresh();
             panel.RefreshPendingPreviews();
             if (LevelEditorPlayerService.EnforceEditPlane())
             {
                 SceneView.RepaintAll();
             }
+            EditorAuthoringPerformanceState
+                .RecordLevelEditorTick(
+                    EditorAuthoringPerformanceState
+                        .ElapsedMilliseconds(
+                            tickStart));
         }
 
         private void OnPlayModeChanged(PlayModeStateChange state)

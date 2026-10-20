@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Project.ColorBlocks;
 using Project.ContactCubes;
 using Project.LevelEditor;
+using Project.LevelEditor.Editor;
 using Project.Mechanisms;
 using Project.ObjectArtwork;
 using Project.Subtitles;
@@ -13,6 +14,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Project.BlockFeatures.Editor
 {
@@ -537,6 +539,7 @@ namespace Project.BlockFeatures.Editor
         private static void DrawScene(SceneView view)
         {
             if (!IsEditing || view.camera == null) return;
+            long drawStart = Stopwatch.GetTimestamp();
             GeometryUtility.CalculateFrustumPlanes(view.camera, planes);
             Event current = Event.current;
             int control = GUIUtility.GetControlID(0x41525450, FocusType.Passive);
@@ -564,16 +567,23 @@ namespace Project.BlockFeatures.Editor
                 }
             }
             if (current.type == EventType.Repaint) { Draw(true, view.camera, true); Draw(false, view.camera, true); }
+            EditorAuthoringPerformanceState
+                .RecordScenePreviewDraw(
+                    EditorAuthoringPerformanceState
+                        .ElapsedMilliseconds(
+                            drawStart));
         }
         private static GameObject PickOwner(SceneView view, Vector2 point)
         {
+            long pickStart = Stopwatch.GetTimestamp();
             GameObject result = null; float closest = float.PositiveInfinity;
             var stage = StageUtility.GetCurrentStageHandle();
             foreach (var entry in entries.Values)
             {
                 if (entry.owner == null || !entry.owner.activeInHierarchy || entry.pickQuads.Count == 0 ||
-                    SceneVisibilityManager.instance.IsHidden(entry.owner) || !stage.Contains(entry.owner) ||
                     !GeometryUtility.TestPlanesAABB(planes, entry.bounds)) continue;
+                if (SceneVisibilityManager.instance.IsHidden(entry.owner) ||
+                    !stage.Contains(entry.owner)) continue;
                 Matrix4x4 matrix = entry.owner.transform.localToWorldMatrix;
                 foreach (var quad in entry.pickQuads)
                 {
@@ -591,6 +601,11 @@ namespace Project.BlockFeatures.Editor
                     { closest = depth; result = entry.owner; }
                 }
             }
+            EditorAuthoringPerformanceState
+                .RecordScenePreviewPick(
+                    EditorAuthoringPerformanceState
+                        .ElapsedMilliseconds(
+                            pickStart));
             return result;
         }
         private static float Cross(Vector2 a, Vector2 b) => a.x * b.y - a.y * b.x;
@@ -603,11 +618,13 @@ namespace Project.BlockFeatures.Editor
         }
         private static void Draw(bool water, Camera camera, bool immediate)
         {
+            var stage = StageUtility.GetCurrentStageHandle();
             foreach (var entry in entries.Values)
             {
                 if (entry.water != water || entry.owner == null || !entry.owner.activeInHierarchy ||
-                    SceneVisibilityManager.instance.IsHidden(entry.owner) || !StageUtility.GetCurrentStageHandle().Contains(entry.owner) ||
                     !GeometryUtility.TestPlanesAABB(planes, entry.bounds)) continue;
+                if (SceneVisibilityManager.instance.IsHidden(entry.owner) ||
+                    !stage.Contains(entry.owner)) continue;
                 foreach (var part in entry.parts)
                 {
                     if (part.mesh == null || part.material == null) continue;

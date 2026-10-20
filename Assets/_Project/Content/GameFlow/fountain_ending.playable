@@ -1,0 +1,166 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfda56da833e2384a9677cd3c976a436, type: 3}
+  m_Name: fountain_ending
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.TimelineAsset
+  m_Version: 0
+  m_Tracks:
+  - {fileID: 752000000}
+  m_FixedDuration: 120
+  m_EditorSettings:
+    m_Framerate: 60
+    m_ScenePreview: 1
+  m_DurationMode: 0
+  m_MarkerTrack: {fileID: 0}
+--- !u!114 &752000000
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82cd92ffc29383742932b27ca414c80f, type: 3}
+  m_Name: Fountain Ending Cinematic
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.PlayableTrack
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips:
+  - m_Version: 1
+    m_Start: 0
+    m_ClipIn: 0
+    m_Asset: {fileID: 752000001}
+    m_Duration: 120
+    m_TimeScale: 1
+    m_ParentTrack: {fileID: 752000000}
+    m_EaseInDuration: 0
+    m_EaseOutDuration: 0
+    m_BlendInDuration: -1
+    m_BlendOutDuration: -1
+    m_MixInCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_MixOutCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    m_BlendInCurveMode: 0
+    m_BlendOutCurveMode: 0
+    m_ExposedParameterNames: []
+    m_AnimationCurves: {fileID: 0}
+    m_Recordable: 0
+    m_PostExtrapolationMode: 0
+    m_PreExtrapolationMode: 0
+    m_PostExtrapolationTime: 0
+    m_PreExtrapolationTime: 0
+    m_DisplayName: Fountain Ending
+  m_Markers:
+    m_Objects: []
+--- !u!114 &752000001
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f8d2c1b9a7e43d6b5c0a1e2f3d4c5b6, type: 3}
+  m_Name: FountainEndingTimelinePlayable
+  m_EditorClassIdentifier: Assembly-CSharp::Project.Ending.FountainEndingTimelinePlayable
+  settings:
+    playerTag: Player
+    approachSpeedBlocksPerSecond: 2.5
+    stopDistanceBlocks: 2
+    cameraReleaseSeconds: 0.25
+    palettePrefab: {fileID: 1869276672004954081, guid: 2eba6d8ce3c1b004cbaef2b615d7bf71, type: 3}
+    paletteCount: 4
+    paletteBodyLocalOffset: {x: 0, y: 0, z: 0}
+    paletteBaseHeightBlocks: 1.15
+    paletteSlotSpacingBlocks: 0.35
+    paletteSlotArcHeightBlocks: 0.3
+    paletteRiseSeconds: 0.32
+    paletteRevealStaggerSeconds: 0.16
+    paletteFormationHoldSeconds: 0.3
+    paletteThrowSeconds: 0.7
+    paletteEnterSeconds: 0.45
+    paletteFountainTopInsetBlocks: 0.15
+    paletteInsideDepthBlocks: 0.8
+    paletteInsideScale: 0.2
+    font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+    fontSize: 48
+    paletteHoldBeforeDialogueSeconds: 1.5
+    messageDisplaySeconds: 2
+    messageGapSeconds: 0.5
+    typewriterCharactersPerSecond: 15
+    glitchTransitionSeconds: 0.35
+    glitchMinAlpha: 0.35
+    glitchMaxAlpha: 1
+    glitchHorizontalJitter: 14
+    glitchVerticalJitter: 3
+    glitchColorSeparation: 0.85
+    endingQuestion: "真的结束了?"
+    endingAnswer: "是的，结束了，"
+    blackScreenColor: {r: 0, g: 0, b: 0, a: 1}
+    blackScreenSortingOrder: 32000
+    blackScreenHoldSeconds: 0
+    menuGlitchHoldSeconds: 0.35
+    menuGlitchFadeSeconds: 0.35
+    menuReturnTimeoutSeconds: 5

@@ -16,6 +16,8 @@ namespace Project.BlockFeatures
         [SerializeField] private bool hideRenderersOnEnable = true;
 
         public string TeleportId => teleportId;
+        public static IEnumerable<TeleportAnchorFeature>
+            RegisteredAnchors => Registered.Values;
         public bool IsRegistered =>
             !string.IsNullOrWhiteSpace(registeredId) &&
             Registered.TryGetValue(

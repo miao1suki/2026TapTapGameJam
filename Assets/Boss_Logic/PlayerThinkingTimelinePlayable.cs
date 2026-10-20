@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using Project.BlockFeatures;
 using Project.GameFlow;
+using Project.InputAbstraction;
 using Project.Items;
 using Project.Pickups;
 using Project.Player;
@@ -369,6 +370,7 @@ namespace Project.BossLogic
             }
             else
             {
+                EmitFakeEndingAchievement();
                 yield return PlayInsufficientEnding();
             }
             if (!running)
@@ -506,14 +508,41 @@ namespace Project.BossLogic
                     "[PlayerThinking] 同场景传送失败，目标 ID=" + destinationId +
                     "。正式关卡与Boss将统一位于Gaming；独立Boss测试请配置本场景锚点，不会自动加载其他场景。");
             }
+            bool reachedFakeEnding =
+                teleported &&
+                string.Equals(
+                    destinationId,
+                    startDestinationId,
+                    System.StringComparison.Ordinal);
             yield return null;
             yield return overlay.RevealFromAsync(
                 player,
                 blackScreenCenter,
                 blackCoverSpeed,
                 blackSoftness);
+            if (reachedFakeEnding &&
+                controller != null)
+            {
+                GameplaySignalHub.Emit(
+                    AchievementSignalIds
+                        .LowCollectibleReturnHome,
+                    controller.gameObject);
+            }
             overlay.ResetPresentation();
             yield return null;
+        }
+
+        private static void EmitFakeEndingAchievement()
+        {
+            Transform player = FindPlayer();
+            if (player == null)
+            {
+                return;
+            }
+
+            GameplaySignalHub.Emit(
+                AchievementSignalIds.FakeEndingReached,
+                player.gameObject);
         }
 
         private IEnumerator SpawnCollectibles()
@@ -553,6 +582,11 @@ namespace Project.BossLogic
                         collectiblePrefab,
                         collectibleRoot.transform);
                 DisableCollectibleGameplay(instance);
+                MechanismArtworkPresentation
+                    .PrepareCinematicClone(
+                        instance,
+                        "BossTop",
+                        32760);
                 Vector3 baseScale =
                     instance.transform.localScale;
                 instance.transform.position =

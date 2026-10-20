@@ -55,6 +55,7 @@ namespace Project.GameFlow
         private readonly Queue<string> pendingNames =
             new Queue<string>();
         private AchievementManager achievementManager;
+        private GameObject toastCanvasObject;
         private RectTransform toastRect;
         private CanvasGroup toastGroup;
         private TextMeshProUGUI titleText;
@@ -85,6 +86,10 @@ namespace Project.GameFlow
                 return;
             }
 
+            Debug.Log(
+                "[AchievementToast] 收到成就提示：" +
+                displayName.Trim(),
+                this);
             pendingNames.Enqueue(displayName.Trim());
             if (!isShowing)
             {
@@ -192,13 +197,66 @@ namespace Project.GameFlow
                     GameUiArtwork.Load()?.achievementUnlockCheck;
             }
 
+            toastCanvasObject = new GameObject(
+                "Achievement Unlock Toast Canvas",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler));
+            toastCanvasObject.transform.SetParent(null, false);
+            toastCanvasObject.layer = gameObject.layer;
+
+            Canvas canvas =
+                toastCanvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.overrideSorting = true;
+            canvas.sortingLayerID =
+                ResolveHighestSortingLayerId();
+            canvas.sortingOrder = short.MaxValue;
+            Canvas parentCanvas = GetComponent<Canvas>();
+            if (parentCanvas != null)
+            {
+                canvas.additionalShaderChannels =
+                    parentCanvas.additionalShaderChannels;
+            }
+
+            CanvasScaler scaler =
+                toastCanvasObject.GetComponent<CanvasScaler>();
+            CanvasScaler parentScaler =
+                GetComponent<CanvasScaler>();
+            if (parentScaler != null)
+            {
+                scaler.uiScaleMode =
+                    parentScaler.uiScaleMode;
+                scaler.referenceResolution =
+                    parentScaler.referenceResolution;
+                scaler.screenMatchMode =
+                    parentScaler.screenMatchMode;
+                scaler.matchWidthOrHeight =
+                    parentScaler.matchWidthOrHeight;
+            }
+            else
+            {
+                scaler.uiScaleMode =
+                    CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution =
+                    new Vector2(1920f, 1080f);
+                scaler.screenMatchMode =
+                    CanvasScaler.ScreenMatchMode.Expand;
+            }
+
             GameObject toastObject = new GameObject(
                 "Achievement Unlock Toast",
                 typeof(RectTransform),
-                typeof(Canvas),
                 typeof(CanvasGroup),
                 typeof(Image));
-            toastObject.transform.SetParent(transform, false);
+            // The root ScreenSpaceOverlay canvas stays above ending black
+            // covers; the child RectTransform keeps the toast itself at the
+            // configured bottom-left size instead of inheriting full-screen
+            // canvas dimensions.
+            toastObject.transform.SetParent(
+                toastCanvasObject.transform,
+                false);
+            toastObject.layer = gameObject.layer;
 
             toastRect = toastObject.GetComponent<RectTransform>();
             toastRect.anchorMin = Vector2.zero;
@@ -206,13 +264,6 @@ namespace Project.GameFlow
             toastRect.pivot = Vector2.zero;
             toastRect.anchoredPosition = bottomLeftOffset;
             toastRect.sizeDelta = blockSize;
-
-            Canvas canvas = toastObject.GetComponent<Canvas>();
-            canvas.overrideSorting = true;
-            Canvas parentCanvas = GetComponent<Canvas>();
-            canvas.sortingOrder = parentCanvas != null
-                ? parentCanvas.sortingOrder + 20
-                : 1220;
 
             toastGroup = toastObject.GetComponent<CanvasGroup>();
             toastGroup.interactable = false;
@@ -308,6 +359,24 @@ namespace Project.GameFlow
             toastObject.SetActive(false);
         }
 
+        private static int ResolveHighestSortingLayerId()
+        {
+            SortingLayer[] layers = SortingLayer.layers;
+            int highestId = 0;
+            int highestValue = int.MinValue;
+            foreach (SortingLayer layer in layers)
+            {
+                if (layer.value <= highestValue)
+                {
+                    continue;
+                }
+
+                highestValue = layer.value;
+                highestId = layer.id;
+            }
+            return highestId;
+        }
+
         private static TextMeshProUGUI CreateText(
             string objectName,
             Transform parent,
@@ -344,6 +413,16 @@ namespace Project.GameFlow
             {
                 toastRect.gameObject.SetActive(false);
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (toastCanvasObject != null)
+            {
+                Destroy(toastCanvasObject);
+            }
+            toastCanvasObject = null;
+            toastRect = null;
         }
     }
 }

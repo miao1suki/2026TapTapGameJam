@@ -299,10 +299,24 @@ namespace Project.BlockFeatures
                 director = GetComponent<PlayableDirector>();
             }
 
+            if (director != null &&
+                director.playableAsset == null &&
+                timeline != null)
+            {
+                // Asset import order and Director refreshes can clear the
+                // runtime graph after OnEnable. Rebind the serialized asset at
+                // the actual trigger point before deciding playback is invalid.
+                director.playableAsset = timeline;
+            }
+
             if (director == null || director.playableAsset == null)
             {
                 Debug.LogWarning(
-                    "[ContactTimelineTrigger] 没有可播放的 Timeline。",
+                    director == null
+                        ? "[ContactTimelineTrigger] 物体缺少 PlayableDirector。"
+                        : timeline == null
+                            ? "[ContactTimelineTrigger] 没有配置 Timeline 资源。"
+                            : "[ContactTimelineTrigger] 无法把 Timeline 绑定到 PlayableDirector。",
                     this);
                 return;
             }

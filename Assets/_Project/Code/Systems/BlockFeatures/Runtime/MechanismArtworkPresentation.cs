@@ -62,6 +62,66 @@ namespace Project.BlockFeatures
             component.Refresh(0f);
             return component;
         }
+
+        /// <summary>
+        /// Converts a gameplay prefab clone into a static presentation copy
+        /// that uses the current shared ObjectArtwork sprite instead of any
+        /// legacy placeholder renderer serialized in the prefab.
+        /// </summary>
+        public static SpriteRenderer PrepareCinematicClone(
+            GameObject instance,
+            string sortingLayerName,
+            int sortingOrder)
+        {
+            if (instance == null) return null;
+            var presentation = Ensure(instance);
+            var current = presentation != null ? presentation.Visual : null;
+            if (current == null)
+            {
+                foreach (var sprite in instance.GetComponentsInChildren<SpriteRenderer>(true))
+                {
+                    if (sprite != null)
+                    {
+                        current = sprite;
+                        break;
+                    }
+                }
+            }
+            if (current == null) return null;
+
+            foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer != null) renderer.enabled = renderer == current;
+            }
+
+            // Cinematic copies do not participate in colour reveal, pickup
+            // animation or gameplay visibility gates. Keep the latest frame
+            // visible until the owning Playable destroys the copy.
+            if (presentation != null) presentation.enabled = false;
+            var artworkLibrary = presentation != null && presentation.artwork != null
+                ? presentation.artwork
+                : ObjectArtworkLibrary.Load();
+            if (artworkLibrary != null && artworkLibrary.neutralSpriteMaterial != null)
+                current.sharedMaterial = artworkLibrary.neutralSpriteMaterial;
+            current.SetPropertyBlock(null);
+            current.color = Color.white;
+            current.enabled = true;
+            current.gameObject.SetActive(true);
+
+            int sortingLayerId = ResolveSortingLayer(sortingLayerName);
+            if (sortingLayerId != 0) current.sortingLayerID = sortingLayerId;
+            current.sortingOrder = sortingOrder;
+            return current;
+        }
+
+        private static int ResolveSortingLayer(string layerName)
+        {
+            if (string.IsNullOrWhiteSpace(layerName)) return 0;
+            foreach (var layer in SortingLayer.layers)
+                if (layer.name == layerName) return layer.id;
+            return 0;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {

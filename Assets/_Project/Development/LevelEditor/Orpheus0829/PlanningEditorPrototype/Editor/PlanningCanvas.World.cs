@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Project.LevelEditor.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace PlanningEditorPrototype
 {
@@ -358,6 +360,24 @@ namespace PlanningEditorPrototype
         }
 
         private void RefreshRegionLabels()
+        {
+            long refreshStart =
+                Stopwatch.GetTimestamp();
+            try
+            {
+                RefreshRegionLabelsCore();
+            }
+            finally
+            {
+                EditorAuthoringPerformanceState
+                    .RecordPlanningCanvasLabels(
+                        EditorAuthoringPerformanceState
+                            .ElapsedMilliseconds(
+                                refreshStart));
+            }
+        }
+
+        private void RefreshRegionLabelsCore()
         {
             if (document == null) return;
             var live = new HashSet<string>();

@@ -776,7 +776,11 @@ namespace Project.BossLogic
                 instance.name =
                     prefab.name + "_DeathCinematic";
                 DisableKeyGameplay(instance);
-                ApplyKeySorting(instance);
+                MechanismArtworkPresentation
+                    .PrepareCinematicClone(
+                        instance,
+                        "BossTop",
+                        32760);
                 Vector3 baseScale =
                     instance.transform.localScale;
                 Vector3 body =
@@ -1521,44 +1525,6 @@ namespace Project.BossLogic
             {
                 resets[index].enabled = false;
             }
-        }
-
-        private static void ApplyKeySorting(
-            GameObject instance)
-        {
-            int sortingLayerId =
-                ResolveSortingLayer("BossTop");
-            SpriteRenderer[] sprites =
-                instance.GetComponentsInChildren<
-                    SpriteRenderer>(true);
-            for (int index = 0;
-                 index < sprites.Length;
-                 index++)
-            {
-                if (sortingLayerId != 0)
-                {
-                    sprites[index].sortingLayerID =
-                        sortingLayerId;
-                }
-                sprites[index].sortingOrder = 32760;
-            }
-        }
-
-        private static int ResolveSortingLayer(
-            string layerName)
-        {
-            SortingLayer[] layers =
-                SortingLayer.layers;
-            for (int index = 0;
-                 index < layers.Length;
-                 index++)
-            {
-                if (layers[index].name == layerName)
-                {
-                    return layers[index].id;
-                }
-            }
-            return 0;
         }
 
         private void DestroyKeys()

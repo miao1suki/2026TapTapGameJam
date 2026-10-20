@@ -168,7 +168,7 @@ handle.Release(CameraTransition.Ease(1f));
 - Boss 播放故障字幕 `哈哈哈哈……我不好过你也别想好过！` 后调用 `BossAnimationDriver.PlayDeathAnimationNow()`；驱动通过 Animator 死亡状态长度或 `deathAnimationFallbackSeconds`（默认 `2` 秒）提供播放进度。
 - 死亡动画完成时先隐藏 Boss 全部 Renderer/Collider，再回镜头到玩家；随后启动独立场景级 Player Thinking Director，再删除 Boss 物体并进入 `player_thinking.playable`。
 - 独立 Player Thinking Director 避免结局 Timeline 随 Boss 删除而中断；`Boss Post Death Director` 在沉思 Timeline 停止后自动清理。
-- 演出钥匙关闭 Collider、`ColorKeyPickup`、`DropItemBase`、`PickupFlightAnimator`、`MechanismArtworkPresentation`、子 `PlayableDirector` 与 `RoomResetObject`，仅作为视觉对象存在。
+- 演出钥匙先关闭 Collider、`ColorKeyPickup`、`DropItemBase`、`PickupFlightAnimator`、子 `PlayableDirector` 与 `RoomResetObject`，再调用 `MechanismArtworkPresentation.PrepareCinematicClone` 刷新当前最新钥匙 Sprite、隐藏预制体遗留 Renderer，并固定演出排序；不得直接禁用最新美术准备链。
 
 ## Boss 处决 Timeline
 
