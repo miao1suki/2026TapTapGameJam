@@ -1,5 +1,13 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 远端关卡定向接收（静态验证）
+
+- 独立 `codex/remote-level-sync-20261020` 基于远端 main `1722c59`；不覆盖主目录未提交资源，不保存主 Unity 场景，不合并其他分支代码。
+- 接收策划 `5e88e7c` 的 21 房间/2604 原始物体，逐项字段相同；补新出生位置的 Start 后 2605。仅改作者 Scene 的内嵌规划、房12子引用与 SceneRoots，其他 16454 份作者文档原文不动；保留 main 原有 119 份 GridArt 层级文档，避免接收纯玩法 Scene 时删掉既有美术，不合 TA 新 Gaming。
+- Start Scene 精确位于新版出生 World(-72.4614487,39.3963547)，规划占房12局部(15,13)。旧整数规划 schema 无 Transform 字段，重建会回格中心，此处不是精确手调回采成果，待回采系统处理。
+- R2 按 `d3fac6a` 原样接收 Scene；作者删入口红块、增拾取半径/手调墙，旧 planning 未同步，继续禁止旧图重建。R1/R3 不变。TA 完整树本地备份引用 `codex/backup/irotin-gaming-art-20261020` → `f7cbb62`，由整合者推送。
+- 三份规划解析/布局一致、2604原始物体逐项不变、所有 Scene fileID 唯一及新增外部 GUID 无缺失通过；URP默认材质/光源引用在锁定包解析。配对提交检查通过；未执行本轮 Unity 编译/Play/双端构建，不能代替最终美术匹配与通关测试。详见 REMOTE_LEVEL_RECEIPT_2026-10-20.md。
+
 ## 2026-10-19 Boss 出场相机完全固定（编译通过，待 Play 回归）
 
 - 分支 `boss_last`。删除 `BossAppearCinematicBehaviour` 中遗留的 `MoveToOpenArea` / `ReturnToPlayer` 状态和全部镜头横移代码；`Boss_appear.playable` 同步移除 `cameraLeftDistanceBlocks`、`cameraMoveSeconds`、`cameraReturnSeconds` 旧序列化字段。

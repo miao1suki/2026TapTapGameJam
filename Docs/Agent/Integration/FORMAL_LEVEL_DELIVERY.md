@@ -2,6 +2,8 @@
 
 ## 当前交付基线
 
+2026-10-20 远端优先更新：接收 xianyu66web `5e88e7c` 的 21 房间、2604 原始物体，所有作者参数/位姿保留，另补隐形 Start 后 2605 条。Scene、同名规划、正式命名存档三份规划一致；保留 main 原有 Gaming_Art 层级和美术资源，没有合入 TA `f7cbb62` 新 Gaming。R2 接收作者 `d3fac6a`，R1/R3 仍为最终版本，三关手调规划回采限制不变，不能用陈旧 JSON 重建。详见 `Docs/Developer/REMOTE_LEVEL_RECEIPT_2026-10-20.md`。以下 20 房间数量为历史基线。
+
 2026-10-19 用户明确采用策划MVMap17（b2d0e18）：20房间、1406原物体，增量补新玩家出生位置的隐形Start后1407条。保留main的代码、美术、菜单、字体、物理和Boss门槛修复；R1/R3及TA预览继续独立，不加入正式构建。全部成员先同步最新main并从磁盘重开Gaming，禁止旧内存覆盖。详见MVMAP17_ROOM_SPLIT.md及Docs/Developer/BRANCH_INTEGRATION_2026-10-19.md；以下条目为历史基线，不再表示当前地图数量。
 
 2026-10-18 收集/Boss接线增量：保留20房间地图全部837条原物体及精确位姿，只新增正式玩家出生处的隐形`Start`锚点（现838条）。Gaming同名planning与正式命名存档同步；Boss独立工作场景的原入场触发器仅补30%门槛模板，位置/Timeline不变。所有工作场景最终导入同一Gaming，Start/End不做跨场景加载。详见`Docs/Developer/BOSS_START_AUTHORING_PATCH.md`。同步后关闭旧编辑窗口，从磁盘重新打开新版；不得把旧内存Scene/planning保存覆盖。
