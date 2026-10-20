@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using Project.Audio;
 using UnityEngine;
 
@@ -7,9 +9,23 @@ namespace Project.GameFlow
     [DisallowMultipleComponent]
     public sealed class GameAudioService : MonoBehaviour, IGameSystemService
     {
+        private static readonly IReadOnlyList<string> RandomGameplayMusicCues =
+            Array.AsReadOnly(
+                new[]
+                {
+                    AudioCueIds.MusicAmbientLoop,
+                    AudioCueIds.MusicAtmosphereAMinor,
+                    AudioCueIds.MusicAtmosphereDSharpMinor,
+                    AudioCueIds.MusicAtmosphereEMinor,
+                    AudioCueIds.MusicAtmosphereFMinor,
+                    AudioCueIds.MusicBanjo,
+                    AudioCueIds.MusicKeyboard
+                });
+
         [SerializeField] private AudioSource musicSource;
         [SerializeField] private AudioSource soundEffectSource;
         [SerializeField] private AudioCatalog audioCatalog;
+        [SerializeField, Min(0f)] private float randomMusicGapSeconds = 8f;
 
         private static GameAudioService instance;
         private AudioClip uiClickClip;
@@ -17,8 +33,12 @@ namespace Project.GameFlow
         private AudioClip levelCompleteClip;
         private AudioManager audioManager;
         private GameFlowController flowController;
+        private AudioMusicRotation randomMusicRotation;
+        private Coroutine randomMusicRoutine;
 
         public static GameAudioService Instance => instance;
+        public static IReadOnlyList<string> RandomGameplayMusicCueIds =>
+            RandomGameplayMusicCues;
         public int InitializationOrder => 0;
         public bool IsInitialized { get; private set; }
         public AudioCatalog Catalog
@@ -195,11 +215,19 @@ namespace Project.GameFlow
             }
 
             instance = this;
+            randomMusicRotation =
+                new AudioMusicRotation(RandomGameplayMusicCues);
             EnsureAudioManager();
+        }
+
+        private void OnDisable()
+        {
+            StopRandomGameplayMusic(true);
         }
 
         private void OnDestroy()
         {
+            StopRandomGameplayMusic(false);
             if (flowController != null)
             {
                 flowController.ActiveSceneChanged -=
@@ -236,13 +264,120 @@ namespace Project.GameFlow
             {
                 // MainMenu stays loaded over the live level; OnEnable is no longer a
                 // reliable menu-entry signal. Route music from the logical flow state.
+                StopRandomGameplayMusic(false);
                 AudioCuePlayer.Play(ResolveCatalog(), AudioCueIds.MusicMenuOpening);
                 return;
             }
 
-            AudioCuePlayer.Play(
-                ResolveCatalog(),
-                AudioCueIds.MusicAtmosphereEMinor);
+            StartRandomGameplayMusic();
+        }
+
+        private void StartRandomGameplayMusic()
+        {
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
+            StopRandomGameplayMusic(false);
+            randomMusicRotation ??=
+                new AudioMusicRotation(RandomGameplayMusicCues);
+            randomMusicRoutine =
+                StartCoroutine(RunRandomGameplayMusic());
+        }
+
+        private void StopRandomGameplayMusic(bool stopBaseMusic)
+        {
+            if (randomMusicRoutine != null)
+            {
+                StopCoroutine(randomMusicRoutine);
+                randomMusicRoutine = null;
+            }
+
+            if (stopBaseMusic)
+            {
+                EnsureAudioManager()?.StopMusic();
+            }
+        }
+
+        private IEnumerator RunRandomGameplayMusic()
+        {
+            while (true)
+            {
+                AudioManager manager =
+                    EnsureAudioManager();
+                if (manager == null)
+                {
+                    yield return null;
+                    continue;
+                }
+
+                if (manager.HasActiveMusicOverride)
+                {
+                    yield return null;
+                    continue;
+                }
+
+                string cueId =
+                    randomMusicRotation?.Next();
+                AudioClip clip =
+                    AudioCuePlayer.PlayMusicOnce(
+                        ResolveCatalog(),
+                        cueId);
+                if (clip == null)
+                {
+                    yield return WaitForRandomMusicGap();
+                    continue;
+                }
+
+                while (true)
+                {
+                    manager = EnsureAudioManager();
+                    if (manager == null)
+                    {
+                        break;
+                    }
+
+                    if (manager.HasActiveMusicOverride)
+                    {
+                        yield return null;
+                        continue;
+                    }
+
+                    AudioSource source = manager.MusicSource;
+                    if (source == null ||
+                        source.clip != clip ||
+                        !source.isPlaying)
+                    {
+                        break;
+                    }
+
+                    yield return null;
+                }
+
+                EnsureAudioManager()?.StopMusic();
+                yield return WaitForRandomMusicGap();
+            }
+        }
+
+        private IEnumerator WaitForRandomMusicGap()
+        {
+            float remaining =
+                Mathf.Max(0f, randomMusicGapSeconds);
+            while (remaining > 0f)
+            {
+                AudioManager manager =
+                    EnsureAudioManager();
+                if (manager != null &&
+                    manager.HasActiveMusicOverride)
+                {
+                    yield return null;
+                    continue;
+                }
+
+                remaining -= Time.deltaTime;
+                yield return null;
+            }
         }
 
         private static AudioClip CreateTone(

@@ -68,6 +68,46 @@ namespace Project.Audio
             return definition.HasClips;
         }
 
+        public static AudioClip PlayMusicOnce(
+            string cueId,
+            float volumeScale = 1f)
+        {
+            return PlayMusicOnce(
+                AudioCatalog.LoadDefault(),
+                cueId,
+                volumeScale);
+        }
+
+        public static AudioClip PlayMusicOnce(
+            AudioCatalog catalog,
+            string cueId,
+            float volumeScale = 1f)
+        {
+            if (!TryGetDefinition(
+                    catalog,
+                    cueId,
+                    out AudioCueDefinition definition) ||
+                definition.Channel != AudioChannel.Music)
+            {
+                return null;
+            }
+
+            AudioClip clip = PickClip(definition);
+            if (clip == null)
+            {
+                return null;
+            }
+
+            float volume = Mathf.Clamp01(
+                definition.VolumeScale *
+                Mathf.Clamp01(volumeScale));
+            AudioManager.Instance.PlayMusic(
+                clip,
+                false,
+                volume);
+            return clip;
+        }
+
         public static bool PlayLoop(
             string cueId,
             object owner,

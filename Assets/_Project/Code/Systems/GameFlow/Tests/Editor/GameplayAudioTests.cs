@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using Project.Audio;
@@ -10,6 +11,84 @@ namespace Project.GameFlow.Tests
     public sealed class GameplayAudioTests
     {
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
+
+        [Test]
+        public void RandomMusicRotationCyclesWithoutImmediateRepeat()
+        {
+            string[] source =
+            {
+                "music.a",
+                "music.b",
+                "music.c",
+                "music.d",
+                "music.e"
+            };
+            var rotation = new AudioMusicRotation(
+                source,
+                new System.Random(20261021));
+            string previous = null;
+            for (int cycle = 0; cycle < 4; cycle++)
+            {
+                var seen = new HashSet<string>();
+                for (int index = 0;
+                     index < source.Length;
+                     index++)
+                {
+                    string next = rotation.Next();
+                    Assert.IsNotNull(next);
+                    Assert.AreNotEqual(previous, next);
+                    Assert.IsTrue(
+                        seen.Add(next),
+                        "Each cue must appear once before the bag refills.");
+                    previous = next;
+                }
+            }
+        }
+
+        [Test]
+        public void RandomGameplayMusicPoolExcludesMenuAndBoss()
+        {
+            string[] expected =
+            {
+                AudioCueIds.MusicAmbientLoop,
+                AudioCueIds.MusicAtmosphereAMinor,
+                AudioCueIds.MusicAtmosphereDSharpMinor,
+                AudioCueIds.MusicAtmosphereEMinor,
+                AudioCueIds.MusicAtmosphereFMinor,
+                AudioCueIds.MusicBanjo,
+                AudioCueIds.MusicKeyboard
+            };
+            CollectionAssert.AreEquivalent(
+                expected,
+                GameAudioService.RandomGameplayMusicCueIds);
+            CollectionAssert.DoesNotContain(
+                GameAudioService.RandomGameplayMusicCueIds,
+                AudioCueIds.MusicMenuOpening);
+            CollectionAssert.DoesNotContain(
+                GameAudioService.RandomGameplayMusicCueIds,
+                AudioCueIds.MusicBoss);
+
+            var catalog = AssetDatabase.LoadAssetAtPath<AudioCatalog>(
+                "Assets/_Project/Content/Audio/Resources/AudioCatalog.asset");
+            Assert.NotNull(catalog);
+            foreach (string cueId in expected)
+            {
+                Assert.IsTrue(
+                    catalog.TryGetCue(
+                        cueId,
+                        out AudioCueDefinition definition),
+                    cueId);
+                Assert.AreEqual(
+                    AudioChannel.Music,
+                    definition.Channel,
+                    cueId);
+                Assert.IsTrue(definition.HasClips, cueId);
+                Assert.AreEqual(
+                    1,
+                    definition.Clips.Length,
+                    cueId);
+            }
+        }
 
         [TestCase("sfx.block.pickup", false)]
         [TestCase("sfx.block.drop", false)]
@@ -114,12 +193,14 @@ namespace Project.GameFlow.Tests
 
                 manager.PlayMusic(firstBase, true, .4f);
                 Assert.AreSame(firstBase, source.clip);
+                Assert.IsFalse(manager.HasActiveMusicOverride);
                 handle = manager.RequestMusicOverride(
                     owner,
                     boss,
                     true,
                     .7f);
                 Assert.IsTrue(handle.IsValid);
+                Assert.IsTrue(manager.HasActiveMusicOverride);
                 Assert.AreSame(boss, source.clip);
 
                 manager.PlayMusic(secondBase, false, .6f);
@@ -130,6 +211,7 @@ namespace Project.GameFlow.Tests
 
                 handle.Release();
                 Assert.IsFalse(handle.IsValid);
+                Assert.IsFalse(manager.HasActiveMusicOverride);
                 Assert.AreSame(secondBase, source.clip);
                 Assert.IsFalse(source.loop);
             }

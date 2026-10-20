@@ -21,9 +21,9 @@
 
 循环属性已登记到 `AudioCatalog`，Unity 内仍需实际试听循环点。
 
-主菜单的`music.menu.opening`现使用新`bmg_op.mp3`，按菜单场景循环播放。正式进入Gaming后，`GameAudioService.HandleActiveSceneChanged`播放`music.atmosphere.e_minor`（`bgm_atmosphere_emin_02_loop.mp3`），复用现有Music音量总线及循环配置；暂停返回菜单再进入时也按此切换。
+主菜单的`music.menu.opening`现使用新`bmg_op.mp3`，按菜单场景循环播放。正式进入Gaming后，`GameAudioService.HandleActiveSceneChanged`启动背景音乐随机轮播：从`music.ambient.loop`、四个`music.atmosphere.*`、`music.banjo`、`music.keyboard`中洗牌选曲，每首单次播放，结束后静默`randomMusicGapSeconds`（默认8秒）再选下一首。一轮内不重复，且相邻两首不重复；主菜单OP、Boss曲及开场/抉择/解谜反馈/叙事事件/过渡曲目不进入该池。
 
-`bgm_boss.mp3`登记为`music.boss`（`AudioCueIds.MusicBoss`），按循环音乐启用。`BossMusicRequest`订阅Boss血条的`HealthSystemActivated`委托，确认玩家与Boss处于同一场景后，通过可释放的音乐覆盖申请播放Boss曲；Boss `Died`、禁用或销毁时释放申请，恢复申请期间最后一次设置的底层BGM。两首新增MP3使用Streaming/Vorbis、质量0.8、不预解码，meta已由Unity生成并交付，文件名保留音频成员原命名。
+`bgm_boss.mp3`登记为`music.boss`（`AudioCueIds.MusicBoss`），按循环音乐启用。`BossMusicRequest`订阅Boss血条的`HealthSystemActivated`委托，确认玩家与Boss处于同一场景后，通过可释放的音乐覆盖申请播放Boss曲；覆盖期间随机轮播暂停，Boss `Died`、禁用或销毁时释放申请，恢复申请期间最后一次设置的底层BGM。两首新增MP3使用Streaming/Vorbis、质量0.8、不预解码，meta已由Unity生成并交付，文件名保留音频成员原命名。
 
 该服务由`GameFlowController.Start`安装到现有持久流程根并初始化，注册实际`ActiveSceneChanged`事件。仅修改Cue或直接调用私有播放方法不能验证真实入口；验收须从MainMenu按钮进入Gaming，再从暂停返回并重新进入，检查实际MusicSource与时间缩放。
 
@@ -159,7 +159,7 @@ AudioCuePlayer.StopLoop(this);
 | 触发时机 | Cue | 入口 |
 |---|---|---|
 | 开始菜单出现 | `music.menu.opening` | `StartMenuController.OnEnable` |
-| 进入 Gaming | `music.atmosphere.e_minor` | `GameAudioService.HandleActiveSceneChanged` |
+| 进入 Gaming | 7首区域/氛围BGM随机轮播 | `GameAudioService.HandleActiveSceneChanged`；单曲结束后等待配置间隔 |
 | 玩家跳跃 | `sfx.player.jump` | `PlayerController` 实际跳跃分支 |
 | 玩家落地脚步 | `sfx.footsteps.land` | `PlayerController` 固定帧移动检测 |
 | 玩家游泳 | `sfx.player.swim` | `PlayerController` 固定帧移动检测 |
@@ -186,7 +186,7 @@ AudioCuePlayer.StopLoop(this);
 | 岩浆冷却 / 玩家碰岩浆 | `sfx.lava.cool` | `LavaHazardFeature` 成功蓝色替换、存活玩家进入；无敌期间进入也有声音，Stay仅在保护结束真正死亡时补播，死亡后不重复 |
 | 主菜单 / 暂停菜单确认 | `sfx.notice.confirm` | `AudioCuePlayer.PlayUiConfirm` 同帧去重；`GameAudioService`、`StartMenuController`、`EscMenuController` 共用，按键/手柄/触摸走同一入口 |
 
-环境区域音及其余 BGM 暂不自动播放。解谜完成与发现秘密等待实际触发器；水中步行4个变体已登记但尚无独立浅水步行事件，游泳使用游泳Cue。本轮不改变玩家默认复活/R后的2秒无敌。
+环境区域音、特殊事件 BGM 与菜单/解谜反馈曲目暂不自动播放。解谜完成与发现秘密等待实际触发器；水中步行4个变体已登记但尚无独立浅水步行事件，游泳使用游泳Cue。本轮不改变玩家默认复活/R后的2秒无敌。
 
 ### 资源使用建议（未全部接线）
 

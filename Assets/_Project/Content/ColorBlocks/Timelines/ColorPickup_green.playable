@@ -191,10 +191,10 @@ MonoBehaviour:
   cameraTargetLocalPos: {x: 0, y: 4, z: -10}
   cameraTargetEuler: {x: 0, y: 0, z: 0}
   lockLookAtPlayer: 0
-  modeRequest: 1
-  overrideSide2DYaw: 1
+  modeRequest: 0
+  overrideSide2DYaw: 0
   side2DYawDegrees: 0
-  projectionTransitionDuration: 0.4
+  projectionTransitionDuration: 0
   turnTiming: 0
   turnAngleDegrees: 90
   turnDuration: 0.6

@@ -1,5 +1,9 @@
 # 系统索引
 
+2026-10-21颜色钥匙镜头：拾取演出正交尺寸固定为`15`，三色Timeline不申请2D/3D切换且保留当前Yaw；Gaming主相机预挂`TimelineCamRig`，避免首次拾取运行时挂组件。
+
+2026-10-21背景音乐：MainMenu固定`music.menu.opening`；Gaming从7首区域/氛围BGM洗牌单次播放，曲间默认静默8秒。Boss覆盖曲存活期间循环并暂停随机轮播，死亡后恢复底层流程。实现入口为`GameAudioService`与`AudioManager`，说明见`GAMEPLAY_AUDIO.md`。
+
 2026-10-20最新整合：Gaming关卡与编辑存档采用xianyu66web ac01381；美术采用TA317f9bb。新增连通空间可见模式、细粒度地图滚轮、暂停切片纠正及双端退役测试HUD；用户确认摔死高度10格。双端0.2.1包成功生成，真机SDK初始化1001此前已修复，最新账号服务状态仍待后续真机确认。详见FORMAL_LEVEL_DELIVERY与ACTIVE_WORK顶部。
 
 2026-10-21输入HUD：电脑端在`WordNote_UI`同一Canvas左上角显示17号当前按键提示，宽度不超过安全区`1/6`，按状态和运行时绑定每`0.1`秒刷新；手机端不创建。手机地图键属于`MobileGameplayControls`，默认安全区正上方中央，电脑不显示地图按钮。

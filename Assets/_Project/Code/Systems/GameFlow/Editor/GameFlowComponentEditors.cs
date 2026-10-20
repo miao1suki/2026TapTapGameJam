@@ -388,10 +388,15 @@ namespace Project.GameFlow.Editor
                 serializedObject,
                 "audioCatalog",
                 "声音目录"));
+            sources.Add(GameFlowInspectorUi.Property(
+                serializedObject,
+                "randomMusicGapSeconds",
+                "随机音乐间隔（秒）"));
             root.Add(sources);
             root.Add(GameFlowInspectorUi.Help(
                 "留空时自动读取 Resources/AudioCatalog。所有声音统一走音频管理器，" +
-                "开始界面和暂停界面的滑杆分别控制总音量、背景音乐和音效。"));
+                "开始界面和暂停界面的滑杆分别控制总音量、背景音乐和音效。" +
+                "游玩态背景音乐逐首单次播放，间隔后随机下一首；Boss音乐覆盖期间暂停轮播。"));
 
             GameAudioService service =
                 (GameAudioService)target;

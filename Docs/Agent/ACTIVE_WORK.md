@@ -1,5 +1,21 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-21 颜色钥匙拾取镜头收敛（静态验证完成，待 Play 验收）
+
+- 当前分支 `codex/roy/playmode-material-sync-20261020`。范围：`ColorKeyPickup`、颜色钥匙 Timeline、颜色块编辑器和 `Gaming` 主相机组件；不改颜色钥匙解锁流程、地图布局或存档数据。
+- 目标：颜色钥匙拾取演出的正交尺寸固定为 `15`；三色 `ColorPickup_*.playable` 不再申请 Side2D/Perspective 模式切换，也不再强制 Side2D Yaw 为 0，保留玩家当前视角朝向。
+- 为消除首次拾取时运行时挂组件，`Gaming` Main Camera 已预挂一个 `TimelineCamRig`，绑定同一 `CameraControlManager`、`CameraModeController` 和玩家目标。
+- 验证：静态编译 `Assembly-CSharp`、`Assembly-CSharp-Editor` 均 0 error，仅既有 warning；三份 Timeline 字段断言、Scene 中 `TimelineCamRig` GUID/实例数量检查通过。项目 Unity 正在运行，未另开 Play Mode，实际拾取镜头、15 尺寸和朝向保持需在主编辑器验收。
+
+## 2026-10-21 玩法背景音乐随机轮播（静态验证完成，待 Play 验收）
+
+- 当前分支 `codex/roy/playmode-material-sync-20261020`。范围：`GameAudioService`、`AudioManager`、`AudioCuePlayer`、音乐轮播测试、音频服务 Inspector 与音频说明；不改 Scene、prefab、音频文件或 AudioCatalog 资源。
+- 目标：MainMenu 固定播放 `music.menu.opening`；Gaming 从 7 首区域/氛围 BGM 洗牌轮播，每首单次播放后等待 `randomMusicGapSeconds`（默认 8 秒）再随机下一首，一轮内及相邻两首不重复。
+- Boss 继续使用 `BossMusicRequest` 的循环音乐覆盖，Boss 存活期间随机轮播暂停；Boss 死亡/禁用后释放覆盖并恢复底层轮播。主菜单 OP、Boss、开场/抉择/解谜反馈/叙事事件/过渡曲目不进入随机池。
+- 保留用户当前未提交的字体、Gaming Scene、planning、正式关卡 JSON 与 ACTIVE_WORK 其他记录，不覆盖或暂存这些改动。
+- 完成：新增 `AudioMusicRotation` 洗牌袋、`AudioCuePlayer.PlayMusicOnce` 和 `AudioManager.HasActiveMusicOverride`；`GameAudioService` 在曲间停顿和 Boss 覆盖期间暂停轮播，`randomMusicGapSeconds` 可在 Inspector 调整。
+- 验证：Unity 6000.3.12f1 静态编译 `Project.Audio.Runtime`、`Project.GameFlow.Runtime`、`Project.GameFlow.EditorTests`、`Project.GameFlow.PlayModeTests`、`Assembly-CSharp`、`Assembly-CSharp-Editor` 均 0 error，仅既有 warning；`git diff --check` 通过。项目 Unity 正在运行，未启动第二个 batchmode PlayMode；实际随机顺序、曲间停顿和 Boss 恢复需在主编辑器 Play 验收。
+
 ## 2026-10-21 存档页删除当前存档与按键提示排版（已完成）
 
 - 当前分支 `codex/roy/playmode-material-sync-20261020`。用户明确授权在暂停轮盘存档页提供“删除当前存档”单一按钮；不恢复多槽位、选档或读档 UI。按钮位于提示文字下方居中，复用现有按钮切片资源并采用 Inspector 可配置红色主色，无确认弹窗和额外特效。
@@ -7,6 +23,7 @@
 - 同时优化电脑端按键提示：键名加粗白色、动作名使用次级冷白、增加行距，仍限制安全区宽度 `1/6` 并自动换行。保留现有 Gaming、字体和 GridArt 未提交改动。
 - 完成：存档提示改为标题与较小号“已自动存档”两行；删除按钮使用现有 `settingButton` 切片、红色主色、Cubic 字体，按存档页实际宽高居中排布。按钮请求通过静态桥进入 `RunSessionCoordinator.DeleteCurrentRunAndReturnToMenu()`，主菜单复用同一存档控制器时不显示。
 - 验证：Unity 6000.3.12f1 静态编译 `Project.StartMenu.Runtime`、`Project.GameFlow.Runtime`、`Assembly-CSharp`、`Assembly-CSharp-Editor` 与 `Project.GameFlow.EditorTests` 均 0 error，仅既有 warning；新增按钮结构/资源/字体/请求断言并已编译。`git diff --check` 通过。未运行 PlayMode/EditMode，实际删除后玩家位置、暂停退出和开始界面返回需在 Unity 内复验。
+- 用户确认正式关卡以 `teleportId = "End"` 的版本为准；`Gaming.planning.json`、`Content/LevelMaps/正式关卡.json` 的 `Boss_box_1ba29225` 均为 `End`。同步修正 `Gaming.unity` 中同一锚点的实际组件、对象 `planningSignature` 与场景内嵌规划共 3 处旧值，避免应用规划时回写为 `teleport_target`；`.meta` 不变。
 
 ## 2026-10-21 电脑端当前按键提示（已完成）
 

@@ -8,7 +8,9 @@ using PlanningEditorPrototype;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
+using UnityEngine.Timeline;
 using Object = UnityEngine.Object;
 
 namespace Project.Player.Editor
@@ -52,11 +54,45 @@ namespace Project.Player.Editor
                     player.GetComponents<TaSource.LinkEffect.InteractionLinkEffect>().Length == 1, path + " no duplicate runtime components");
                 foreach (var root in scene.GetRootGameObjects())
                 {
+                    if (path == "Assets/_Project/Scenes/Playing/Gaming.unity")
+                    {
+                        Check(root.GetComponentsInChildren<TimelineCamRig>(true).Length == 1,
+                            "formal camera has one preattached TimelineCamRig");
+                    }
                     foreach (var follow in root.GetComponentsInChildren<CameraFollowController>(true))
                         Check(follow.Target == player.transform, path + " camera binding preserved");
                     foreach (var context in root.GetComponentsInChildren<LevelSceneContext>(true))
                         Check(context.PlayerPrefab == prefab, path + " spawn uses standard prefab");
                 }
+            }
+            foreach (string id in new[] { "red", "green", "blue" })
+            {
+                var keyPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/_Project/Content/ColorBlocks/Prefabs/ColorKey_" + id + ".prefab");
+                var pickup = keyPrefab != null
+                    ? keyPrefab.GetComponent<ColorKeyPickup>()
+                    : null;
+                Check(pickup != null, id + " color key pickup exists");
+                var pickupData = new SerializedObject(pickup);
+                var orthographicSize = pickupData.FindProperty(
+                    "cameraOrthographicSize");
+                Check(orthographicSize != null &&
+                      Mathf.Approximately(orthographicSize.floatValue, 15f),
+                    id + " pickup orthographic size is 15");
+                var director = keyPrefab.GetComponent<PlayableDirector>();
+                CameraTimelineClip cameraClip = director != null &&
+                    director.playableAsset is TimelineAsset timeline
+                        ? timeline.GetOutputTracks()
+                            .OfType<CameraTimelineTrack>()
+                            .SelectMany(track => track.GetClips())
+                            .Select(clip => clip.asset)
+                            .OfType<CameraTimelineClip>()
+                            .FirstOrDefault()
+                        : null;
+                Check(cameraClip != null &&
+                      cameraClip.modeRequest == TimelineCameraModeRequest.None &&
+                      !cameraClip.overrideSide2DYaw,
+                    id + " pickup timeline does not switch projection or yaw");
             }
             var empty = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
             var first = LevelEditorPlayerService.CreateAndBindAtOrigin();

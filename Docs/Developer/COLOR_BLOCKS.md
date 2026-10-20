@@ -79,7 +79,7 @@ TA Grow 场景的 Particle System 与 Particle System (1) 引用同一预制体�
 - `BlockAbilityHost`：只启停预制体上已有的 `BlockFeature`。
 - `BlockRuntime`：单物体内部信号、命令和调试。
 - `ColorRuntimeService`：颜色解锁、房间重置和颜色物体注册。
-- `ColorKeyPickup`：进入玩家感知范围后先播放磁吸；真正碰到玩家后才解锁颜色、隐藏钥匙、锁定玩家操作并进入镜头演出。
+- `ColorKeyPickup`：进入玩家感知范围后先播放磁吸；真正碰到玩家后才解锁颜色、隐藏钥匙、锁定玩家操作并进入镜头演出。演出使用固定正交尺寸 `15`，三色 Timeline 不再申请 2D/3D 模式切换或改写当前 Side2D Yaw。
 - `HSVColorFadeManager`：颜色层渐变。
 
 固定功能组件已经按预制体形态接入：

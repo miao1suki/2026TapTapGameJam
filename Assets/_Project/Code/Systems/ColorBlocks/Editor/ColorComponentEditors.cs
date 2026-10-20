@@ -114,9 +114,9 @@ namespace Project.ColorBlocks.Editor
                 "颜色从褪色状态恢复的时长。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
-                "orthographicZoomOut",
-                "视野扩大倍率",
-                "正交相机可视范围倍率；3 表示视野范围扩大到 3 倍，镜头拉远。"));
+                "cameraOrthographicSize",
+                "拾取正交尺寸",
+                "颜色钥匙演出时的正交相机尺寸；15 表示镜头拉远到正交尺寸 15。"));
             timing.Add(ProjectInspectorUtility.CreateProperty(
                 serializedObject,
                 "cameraTrackDuration",

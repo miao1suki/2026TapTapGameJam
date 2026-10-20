@@ -93,6 +93,14 @@ namespace Project.Audio
         public float EffectiveEffectsVolume => masterVolume * effectsVolume;
         public AudioSource MusicSource => musicSource;
         public AudioSource SoundEffectSource => soundEffectSource;
+        public bool HasActiveMusicOverride
+        {
+            get
+            {
+                return TryGetActiveMusicOverride(
+                    out MusicOverridePlayback _);
+            }
+        }
 
         public event Action VolumesChanged;
 

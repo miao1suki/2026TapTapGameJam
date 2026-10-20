@@ -119,9 +119,10 @@ namespace Project.ColorBlocks.Editor
                         cameraClip.cameraTargetEuler = Vector3.zero;
                         cameraClip.lockLookAtPlayer = false;
                         cameraClip.modeRequest =
-                            TimelineCameraModeRequest.Side2D;
-                        cameraClip.overrideSide2DYaw = true;
+                            TimelineCameraModeRequest.None;
+                        cameraClip.overrideSide2DYaw = false;
                         cameraClip.side2DYawDegrees = 0f;
+                        cameraClip.projectionTransitionDuration = 0f;
                         cameraClip.constrainOrthographicAxes = true;
                         cameraClip.allowPositionX = true;
                         cameraClip.allowPositionY = true;

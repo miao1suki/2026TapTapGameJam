@@ -31,9 +31,7 @@ namespace Project.GameFlow.Tests
                 Assert.That(SceneManager.GetSceneByPath(GameFlowController.GameplayScenePath).handle, Is.EqualTo(firstWorld));
                 Assert.That(SceneManager.GetSceneByPath(GameFlowController.CompatibilityMenuScenePath).isLoaded, Is.False);
                 Assert.That(GameAudioService.Instance, Is.SameAs(audio));
-                Assert.That(audio.MusicSource.clip, Is.Not.Null);
-                StringAssert.Contains("atmosphere_emin", audio.MusicSource.clip.name);
-                Assert.That(audio.MusicSource.loop, Is.True);
+                AssertGameplayMusic(audio);
                 Assert.That(Time.timeScale, Is.EqualTo(1f));
                 Assert.That(AudioListener.pause, Is.False);
 
@@ -57,6 +55,23 @@ namespace Project.GameFlow.Tests
             Assert.That(audio.MusicSource.clip, Is.Not.Null);
             Assert.That(audio.MusicSource.clip.name, Is.EqualTo("bmg_op"));
             Assert.That(audio.MusicSource.loop, Is.True);
+            Assert.That(audio.MusicSource.spatialBlend, Is.Zero);
+        }
+
+        private static void AssertGameplayMusic(GameAudioService audio)
+        {
+            Assert.That(audio.MusicSource.clip, Is.Not.Null);
+            string clipName = audio.MusicSource.clip.name;
+            bool isRandomBackground =
+                clipName.StartsWith("bgm_ambient_loop") ||
+                clipName.StartsWith("bgm_atmosphere_") ||
+                clipName.StartsWith("bgm_banjo_") ||
+                clipName.StartsWith("bgm_kb280_");
+            Assert.That(
+                isRandomBackground,
+                Is.True,
+                "Gameplay must start one of the configured random background cues.");
+            Assert.That(audio.MusicSource.loop, Is.False);
             Assert.That(audio.MusicSource.spatialBlend, Is.Zero);
         }
 

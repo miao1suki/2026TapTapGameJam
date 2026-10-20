@@ -20,6 +20,8 @@ namespace Project.ColorBlocks
     [RequireComponent(typeof(Collider))]
     public sealed class ColorKeyPickup : DropItemBase
     {
+        private const float DefaultCameraOrthographicSize = 15f;
+
         public static event Action<ColorKeyPickup> Collected;
         public bool IsCollectionVisualComplete { get; private set; }
         public bool IsPersistentlyConsumed { get; private set; }
@@ -27,7 +29,9 @@ namespace Project.ColorBlocks
         [SerializeField] private PlayableDirector cameraDirector;
         [SerializeField] private bool hideOnCollect = true;
         [SerializeField, Min(.01f)] private float revealDuration = 1.5f;
-        [SerializeField, Min(.01f)] private float orthographicZoomOut = 1.5f;
+        [SerializeField, Min(.01f)] private float cameraOrthographicSize =
+            DefaultCameraOrthographicSize;
+        [SerializeField, HideInInspector] private float orthographicZoomOut = 1.5f;
         [SerializeField, Min(0f)] private float cameraTrackDuration = .5f;
         [SerializeField, Min(.01f)] private float cameraMoveDuration = 3f;
         [SerializeField, Min(0f)] private float cameraHoldDuration = 2f;
@@ -373,9 +377,17 @@ namespace Project.ColorBlocks
         {
             if (activeRig == null) return;
             float eased = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(progress));
+            if (cameraOrthographicSize <= .01f)
+            {
+                cameraOrthographicSize = orthographicZoomOut > .01f
+                    ? Mathf.Max(
+                        DefaultCameraOrthographicSize,
+                        originalOrthographicSize * orthographicZoomOut)
+                    : DefaultCameraOrthographicSize;
+            }
             activeRig.SetShotLens(
                 Mathf.Lerp(originalOrthographicSize,
-                    originalOrthographicSize * orthographicZoomOut, eased),
+                    cameraOrthographicSize, eased),
                 originalFieldOfView);
         }
 

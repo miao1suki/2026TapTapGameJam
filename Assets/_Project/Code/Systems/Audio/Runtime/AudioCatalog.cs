@@ -197,4 +197,88 @@ namespace Project.Audio
         public const string PlantBurn = "sfx.plant.burn";
         public const string LavaCool = "sfx.lava.cool";
     }
+
+    public sealed class AudioMusicRotation
+    {
+        private readonly List<string> cueIds =
+            new List<string>();
+        private readonly List<string> bag =
+            new List<string>();
+        private readonly System.Random random;
+        private string previousCueId;
+
+        public IReadOnlyList<string> CueIds => cueIds;
+
+        public AudioMusicRotation(
+            IEnumerable<string> values,
+            System.Random random = null)
+        {
+            this.random = random ?? new System.Random();
+            if (values == null)
+            {
+                return;
+            }
+
+            var seen = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+            foreach (string value in values)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                string cueId = value.Trim();
+                if (seen.Add(cueId))
+                {
+                    cueIds.Add(cueId);
+                }
+            }
+        }
+
+        public string Next()
+        {
+            if (cueIds.Count == 0)
+            {
+                return null;
+            }
+
+            if (bag.Count == 0)
+            {
+                Refill();
+            }
+
+            int index = bag.Count - 1;
+            string next = bag[index];
+            bag.RemoveAt(index);
+            previousCueId = next;
+            return next;
+        }
+
+        private void Refill()
+        {
+            bag.AddRange(cueIds);
+            for (int index = bag.Count - 1;
+                 index > 0;
+                 index--)
+            {
+                int swapIndex = random.Next(index + 1);
+                string value = bag[index];
+                bag[index] = bag[swapIndex];
+                bag[swapIndex] = value;
+            }
+
+            if (bag.Count > 1 &&
+                string.Equals(
+                    bag[bag.Count - 1],
+                    previousCueId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                int swapIndex = random.Next(bag.Count - 1);
+                string value = bag[bag.Count - 1];
+                bag[bag.Count - 1] = bag[swapIndex];
+                bag[swapIndex] = value;
+            }
+        }
+    }
 }
