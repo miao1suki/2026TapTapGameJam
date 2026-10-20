@@ -576978,17 +576978,6 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.style.anchor",
-                            "valueType": "Enum",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
                             "propertyPath": "cue.style.offset",
                             "valueType": "Vector2",
                             "value": "{\"x\":0.0,\"y\":0.0}",
@@ -577000,31 +576989,9 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.style.inAnimation",
-                            "valueType": "Enum",
-                            "value": "12",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
                             "propertyPath": "cue.style.inCurve",
                             "valueType": "AnimationCurve",
                             "value": "{\"preWrapMode\":8,\"postWrapMode\":8}",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
-                            "propertyPath": "cue.style.outAnimation",
-                            "valueType": "Enum",
-                            "value": "12",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -577902,17 +577869,6 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.text",
-                            "valueType": "String",
-                            "value": "完了，上当了！",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
                             "propertyPath": "cue.style.fontSize",
                             "valueType": "Float",
                             "value": "56",
@@ -578059,6 +578015,50 @@
                             "propertyPath": "cue.style.charactersPerSecond",
                             "valueType": "Float",
                             "value": "24",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.text",
+                            "valueType": "String",
+                            "value": "完了，上当了！",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.anchor",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.inAnimation",
+                            "valueType": "Enum",
+                            "value": "12",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.outAnimation",
+                            "valueType": "Enum",
+                            "value": "12",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -591061,7 +591061,7 @@
     "assemblyPatches": [],
     "playerStartRoomId": "mvmap17_region_fb7d702fa6",
     "playerStartLocal": {
-        "x": 15.538551330566407,
+        "x": 15.538551330566406,
         "y": 15.569999694824219
     },
     "hasUnassignedPlayerStart": false,

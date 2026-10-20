@@ -2905,3 +2905,10 @@
 
 - 用户授权检查并测试全局地图/重生点传送及二维墙体遮挡；按当前正式 Gaming 接入缺失光照，不改布局、美术、玩家存档或 SDK。
 - 地图自动安装并从 RoomLifecycleManager 实时绘制；PC/Mobile 光照 RendererFeature 已存在，核对正式相机接线。仅在隔离 FlowRetirementProbe 做静音 GPU/Play 验证，不保存主编辑器内存场景。
+
+## 2026-10-21 正式关卡与美术交付
+
+- 用户确认当前Gaming作为正式关卡持续基线；分支codex/level/formal-20261020，基于main a10e1e45。本窗口只推协作分支，不合并或推main。
+- 交付Gaming场景、两份规划存档、Gaming_Art及本关生成网格/材质和meta，保留GUID、布局与美术。25房间；场景与同名规划原差异仅componentOverrides排列顺序，语义归一化比较一致，备份后以场景内嵌数据统一两份JSON，三份数据一致，未重建场景。
+- 资源检查发现4个既有未解析GUID，均已存在于HEAD关卡/美术文件，并非本次新增；整合者需在Unity检查这4处历史引用：9dfc825aed78fcd4ba02077103263b40、474bcb49853aa07438625e644c072ee6、31321ba15b8f8eb4c954353edc038b1d、a79441f348de89743a2939f4d699eac1。不得将静态检查表述为无缺失资源。
+- 字体缓存及GvhProjectSettings保留本地，不交付。Unity6000.3.12f1；提交前执行规划守卫与diff检查，本轮未执行Unity编译、Play Mode、完整通关或打包。
