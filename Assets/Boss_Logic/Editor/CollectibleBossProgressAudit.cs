@@ -83,17 +83,20 @@ namespace Project.BossLogic.Editor
             RoomLifecycleManager manager = Root("Progress audit rooms").AddComponent<RoomLifecycleManager>();
             var a = new RoomRegion { id = "progress_a" };
             var b = new RoomRegion { id = "progress_b" };
-            for (int x = 100; x < 105; x++) a.cells.Add(new Vector2Int(x, -21));
-            for (int x = 105; x < 111; x++) b.cells.Add(new Vector2Int(x, -21));
+            for (int x = 100; x < 110; x++) a.cells.Add(new Vector2Int(x, -21));
+            for (int x = 110; x < 120; x++) b.cells.Add(new Vector2Int(x, -21));
             manager.Configure(new List<RoomRegion> { a, b }, 1f, string.Empty);
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/WorldItems/Collectible.prefab");
             Check(prefab != null, "ordinary collectible prefab exists");
             GameObject parent = Root("Authored items"); parent.SetActive(false);
             var items = new List<CollectiblePickup>();
-            for (int index = 0; index < 10; index++)
+            for (int index = 0; index < 20; index++)
             {
                 GameObject instance = Object.Instantiate(prefab, parent.transform);
-                instance.transform.position = new Vector3(100.5f + index, 20.5f, 0f);
+                instance.transform.position = new Vector3(
+                    index < 10 ? 100.5f + index : 110.5f + index - 10,
+                    20.5f,
+                    0f);
                 var placed = instance.GetComponent<LevelEditorPlacedBlock>() ?? instance.AddComponent<LevelEditorPlacedBlock>();
                 placed.SetPlanningSource("progress_reward", "audit", new Vector2Int(index, 0));
                 var item = instance.GetComponent<CollectiblePickup>(); items.Add(item);
@@ -104,9 +107,9 @@ namespace Project.BossLogic.Editor
             parent.SetActive(true);
             CollectibleProgressService.RefreshSceneCatalog(scene);
             var progress = CollectibleProgressService.GetSceneProgress(scene);
-            Check(progress.Total == 10 && progress.Collected == 0 && progress.Remaining == 10, "inactive authored item remains in denominator");
-            Check(CollectibleProgressService.GetRegionProgress(scene, a.id).Total == 5 &&
-                CollectibleProgressService.GetRegionProgress(scene, b.id).Total == 5, "room totals use author identity");
+            Check(progress.Total == 20 && progress.Collected == 0 && progress.Remaining == 20, "inactive authored item remains in denominator");
+            Check(CollectibleProgressService.GetRegionProgress(scene, a.id).Total == 10 &&
+                CollectibleProgressService.GetRegionProgress(scene, b.id).Total == 10, "room totals use author identity");
             GameObject playerObject = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab"));
             Objects.Add(playerObject);
             PlayerController player = playerObject.GetComponent<PlayerController>();
@@ -140,8 +143,6 @@ namespace Project.BossLogic.Editor
             finally { Application.logMessageReceived -= warning; }
             Check(warned && SceneManager.sceneCount == loadedScenes,
                 "independent Boss without same-scene Start warns instead of loading another scene");
-            items[0].RestoreCollectedState(); items[1].RestoreCollectedState();
-            Check(!gate.CanPlayTimeline(playerObject), "20 percent still rejected");
             GameObject startObject = Root("Authored Start anchor");
             startObject.transform.position = new Vector3(101.5f, 20.5f, 0f);
             TeleportAnchorFeature startAnchor = startObject.AddComponent<TeleportAnchorFeature>();
@@ -179,44 +180,39 @@ namespace Project.BossLogic.Editor
             returnContact.OnTriggerEnter(player.GetComponent<Collider>());
             Check(!returnContact.HasTriggered && returnContact.ContactCount == 0,
                 "a rejected Start return still leaves Once unconsumed");
-            items[2].RestoreCollectedState();
-            Check(gate.CanPlayTimeline(playerObject), "exactly 30 percent enters");
-            Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(3, 10), "30 percent uses failure ending");
-            Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(5, 10), "below 60 percent uses failure ending");
-            for (int index = 3; index < 6; index++) items[index].RestoreCollectedState();
-            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(6, 10), "exactly 60 percent uses successful ending");
-            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(3, 5), "three of five is exactly 60 percent");
-            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(60, 100) &&
-                !PlayerThinkingTimelinePlayable.HasSufficientCollectibles(59, 100), "60 of 100 succeeds while 59 percent still fails");
-            int[] minimumAtSixtyPercent = { 0, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6 };
-            for (int total = 1; total < minimumAtSixtyPercent.Length; total++)
-            {
-                int required = minimumAtSixtyPercent[total];
-                Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(required, total) &&
-                    !PlayerThinkingTimelinePlayable.HasSufficientCollectibles(required - 1, total),
-                    "60 percent integer ceiling boundary for total " + total);
-            }
-            Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(6, 10, .6000001f),
-                "an explicitly higher seven-digit threshold is not rounded down to 60 percent");
-            Check(new CollectibleProgressSnapshot(3, 10).MeetsRatio(.3f) &&
-                !new CollectibleProgressSnapshot(2, 10).MeetsRatio(.3f), "30 percent uses the same exact integer rule");
-            Check(EnterBossTimelinePlayable.HasSufficientCollectibles(3, 10) &&
-                !EnterBossTimelinePlayable.HasSufficientCollectibles(2, 10),
-                "enter_boss accepts exactly 30 percent and rejects below it");
+            items[0].RestoreCollectedState();
+            Check(gate.CanPlayTimeline(playerObject), "exactly 5 percent enters");
+            Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(1, 20), "5 percent uses failure ending");
+            Check(new CollectibleProgressSnapshot(1, 20).MeetsRatio(.05f) &&
+                !new CollectibleProgressSnapshot(0, 20).MeetsRatio(.05f), "5 percent uses the same exact integer rule");
+            Check(new CollectibleProgressSnapshot(2, 35).MeetsRatio(.05f) &&
+                !new CollectibleProgressSnapshot(1, 35).MeetsRatio(.05f), "5 percent of 35 requires two collectibles");
+            Check(EnterBossTimelinePlayable.HasSufficientCollectibles(1, 20) &&
+                !EnterBossTimelinePlayable.HasSufficientCollectibles(0, 20),
+                "enter_boss accepts exactly 5 percent and rejects below it");
+            items[1].RestoreCollectedState();
+            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(2, 20), "exactly 10 percent uses successful ending");
+            Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(1, 20), "below 10 percent uses failure ending");
+            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(4, 35) &&
+                !PlayerThinkingTimelinePlayable.HasSufficientCollectibles(3, 35), "10 percent of 35 requires four collectibles");
+            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(10, 100) &&
+                !PlayerThinkingTimelinePlayable.HasSufficientCollectibles(9, 100), "10 of 100 succeeds while 9 percent still fails");
+            Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(2, 20, .1000001f),
+                "an explicitly higher seven-digit threshold is not rounded down to 10 percent");
             Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(0, 0), "missing denominator no longer defaults success");
             manager.ResetRegion(a.id); manager.ResetRegion(b.id);
             progress = CollectibleProgressService.GetSceneProgress(scene);
-            Check(progress.Collected == 6 && progress.Remaining == 4, "R-style region restoration does not undo collected progress");
-            Check(CollectibleProgressService.GetRegionProgress(scene, a.id).Remaining == 0 &&
-                CollectibleProgressService.GetRegionProgress(scene, b.id).Remaining == 4, "room completion and remainder are accurate");
+            Check(progress.Collected == 2 && progress.Remaining == 18, "R-style region restoration does not undo collected progress");
+            Check(CollectibleProgressService.GetRegionProgress(scene, a.id).Remaining == 8 &&
+                CollectibleProgressService.GetRegionProgress(scene, b.id).Remaining == 10, "room completion and remainder are accurate");
             var saved = new List<string>(); CollectibleProgressService.CopyCollectedStableIds(scene, saved);
-            Check(saved.Count == 6 && new HashSet<string>(saved).Count == 6, "future save export includes unique stable IDs only");
+            Check(saved.Count == 2 && new HashSet<string>(saved).Count == 2, "future save export includes unique stable IDs only");
             int callbacks = 0;
             Action<CollectiblePickup, GameObject> collected = (item, actor) => callbacks++;
             CollectiblePickup.Collected += collected;
             try { CollectibleProgressService.RestoreCollectedStableIds(scene, saved); CollectibleProgressService.RestoreCollectedStableIds(scene, saved); }
             finally { CollectiblePickup.Collected -= collected; }
-            Check(callbacks == 0 && CollectibleProgressService.GetSceneProgress(scene).Collected == 6, "save restore is silent and idempotent");
+            Check(callbacks == 0 && CollectibleProgressService.GetSceneProgress(scene).Collected == 2, "save restore is silent and idempotent");
             GameObject cosmetics = Root("Ending cosmetic clones"); cosmetics.SetActive(false);
             for (int index = 0; index < 6; index++)
             {
@@ -226,10 +222,10 @@ namespace Project.BossLogic.Editor
             }
             cosmetics.SetActive(true);
             CollectibleProgressService.RefreshSceneCatalog(scene);
-            Check(CollectibleProgressService.GetSceneProgress(scene).Total == 10, "six temporary ending props do not affect denominator");
+            Check(CollectibleProgressService.GetSceneProgress(scene).Total == 20, "six temporary ending props do not affect denominator");
             Scene emptyBossScene = SceneManager.CreateScene("Progress audit empty Boss scene");
             Check(CollectibleProgressService.GetSceneProgress(emptyBossScene).Total == 0 &&
-                CollectibleProgressService.GetWorldProgress().Total == 10 && CollectibleProgressService.GetWorldProgress().Collected == 6,
+                CollectibleProgressService.GetWorldProgress().Total == 20 && CollectibleProgressService.GetWorldProgress().Collected == 2,
                 "a separate empty Boss scene inherits world progress rather than replacing it with zero");
             GameObject bossObject = Root("Boss progress fixture"); bossObject.transform.position = new Vector3(106.5f, 20.5f, 0f);
             bossObject.tag = "Boss";

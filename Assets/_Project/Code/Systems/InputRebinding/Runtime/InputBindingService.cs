@@ -8,6 +8,8 @@ namespace Project.InputRebinding
 {
     public sealed class InputBindingService : IDisposable
     {
+        private static InputBindingService sharedRuntime;
+
         private sealed class HistorySnapshot
         {
             public string AssetJson;
@@ -27,6 +29,28 @@ namespace Project.InputRebinding
             new List<HistorySnapshot>();
 
         public event Action Changed;
+
+        public static InputBindingService SharedRuntime
+        {
+            get
+            {
+                if (sharedRuntime == null)
+                {
+                    sharedRuntime =
+                        CreateFromInputService();
+                }
+
+                return sharedRuntime;
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(
+            RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSharedRuntime()
+        {
+            sharedRuntime?.Dispose();
+            sharedRuntime = null;
+        }
 
         public InputBindingService(
             InputActionAsset actionAsset,

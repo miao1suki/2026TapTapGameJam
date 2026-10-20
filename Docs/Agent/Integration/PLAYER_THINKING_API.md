@@ -26,11 +26,11 @@ PlayerThinkingTimelinePlayable.SetCollectibleProgress(
 - 最大值小于等于0不再默认成功，播放演出1；`ClearCollectibleProgress()`清除测试覆盖，下次直接播放时读取场景进度。
 - 静态值在子系统注册时重置。
 - 临时生成的六份演出收集品在启用前显式标记`SetExcludedFromProgress(true)`，不增加全局/房间统计的分母或奖励。
-- `HasSufficientCollectibles(current, maximum, threshold=.6f)`提供相同的纯判断；恰好60%进入成功分支。
+- `HasSufficientCollectibles(current, maximum, threshold=.1f)`提供相同的纯判断；恰好10%进入成功分支。
 
 ## Boss入口与传送地图状态
 
-见[收集进度与Boss流程](COLLECTIBLE_BOSS_PROGRESS_API.md)。Boss入口的30%门槛与结局的60%门槛是两个判断，不可混用；`BossCollectibleEntryGate`只挂在明确的Boss入场Timeline触发器，不影响其他触发器。
+见[收集进度与Boss流程](COLLECTIBLE_BOSS_PROGRESS_API.md)。Boss入口的5%门槛与结局的10%门槛是两个判断，不可混用；`BossCollectibleEntryGate`只挂在明确的Boss入场Timeline触发器，不影响其他触发器。
 
 ## 共同内容
 

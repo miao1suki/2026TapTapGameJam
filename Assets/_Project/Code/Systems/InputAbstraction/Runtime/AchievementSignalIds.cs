@@ -12,10 +12,10 @@ namespace Project.InputAbstraction
         public const string PlayerSpikeDeath = "PlayerSpikeDeath";
         public const string PlayerBossDeath = "PlayerBossDeath";
         public const string ColorAbilityUsed = "ColorAbilityUsed";
-        public const string CollectibleProgress30 =
-            "CollectibleProgress30";
-        public const string CollectibleProgress60 =
-            "CollectibleProgress60";
+        public const string CollectibleProgress5 =
+            "CollectibleProgress5";
+        public const string CollectibleProgress10 =
+            "CollectibleProgress10";
         public const string LowCollectibleReturnHome =
             "LowCollectibleReturnHome";
         public const string FakeEndingReached =

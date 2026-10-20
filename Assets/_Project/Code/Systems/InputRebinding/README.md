@@ -360,7 +360,7 @@ GameInput.GetActionTrigger(actionId)
 默认绑定存储：
 
 ```text
-2026TapTap.InputBindings.Asset.v3
+2026TapTap.InputBindings.Asset.v4
 ```
 
 默认触发策略存储：
@@ -397,6 +397,13 @@ public interface IInputBindingStorage
 ```csharp
 PlayerPrefsInputBindingStorage
 ```
+
+开始菜单和暂停菜单中的“按键映射”页面共用持久化的
+`InputBindingService.SharedRuntime`，两端共享同一服务、撤销历史和绑定根。
+改键、触发方式、撤销/重做和重置都会立即作用于当前运行时的
+`InputActionAsset`，并通过上述 PlayerPrefs 存储跨启动保留。运行时设置页不再受
+`RuntimeSettingsPolicy.ApplyChangesToRuntime` 的预览开关控制；该策略继续用于旧的
+存档与预览业务。
 
 注意：触发策略当前由 `InputActionInteractionPolicy` 使用独立 PlayerPrefs
 存储。如果后续将绑定存储替换为云存档、配置文件或平台账号存储，还需要

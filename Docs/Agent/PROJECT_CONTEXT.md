@@ -27,7 +27,7 @@ Boss死亡表现新增可调RGB溶解，临时碎片保持死亡世界位姿，�
 `BossAnimationDriver.PlayDeathAnimationNow()` 在死亡演出最后阶段启动三阶段 RGB 网格溶解：完整原画面、红绿蓝方块横向分解、方块逐渐消失；速度和横向分散可在 Inspector 调整。独立预览场景 `Assets/ta_source/Boss_Die/BossDeathPreview.unity` 在 Play Mode 自动循环。
 重生点组件可直接标记为 Boss 关卡重生点，并保存复活后的 Boss 血量与相对 X。复活链在房间重置前建立 Boss 待应用请求，房间重建完成后再让 Boss 归位；归位前先销毁 Boss 左边缘到 Boss 当前 X 范围内相交的普通/重力岩浆。Boss 由 Timeline 后生成，不建立启动时引用：控制器启用时自注册，重生点先保存待应用状态，Boss 出现后自动应用并回读血量/坐标。Boss 存活期间通过玩家疾跑租约禁用疾跑，Boss 死亡或禁用后恢复。关卡参数窗口生成通过稳定 ID 连接的规划标记格，标记格只允许 X 拖动。实际 Scene 附属标记无实体，删除后自动补建。
 Boss 战复活另有兜底：存在活动 Boss 且当前没有已解锁的 Boss 出生点时，只在玩家死亡所属房间内选择 X 最小的启用 Boss 出生点；不能因最终 Gaming 含有 Boss 就把其他房间的复活劫持过去。无房间管理器的独立旧工作场景保留同场景兜底。剧情 Start/End 返回绑定专用普通重生兜底，不再被旧 Boss 点覆盖。
-低收集 Boss 入口使用 `Content/Boss/Timelines/enter_boss.playable`：正式 Gaming 的 `Boss_box_aa7a24dc` 已注入该 Timeline，同物体 `BossCollectibleEntryGate.gateEnabled=false`；低于 30% 时锁玩家并播放两段打字机字幕，收黑传送到同场景 Start 后揭幕，达到 30% 时 Timeline 无副作用直接结束。该触发器不能同时启用 `BossCollectibleEntryGate`，否则会在 Timeline 播放前拒绝。
+低收集 Boss 入口使用 `Content/Boss/Timelines/enter_boss.playable`：正式 Gaming 的 `Boss_box_aa7a24dc` 已注入该 Timeline，同物体 `BossCollectibleEntryGate.gateEnabled=false`；低于 5% 时锁玩家并播放两段打字机字幕，收黑传送到同场景 Start 后揭幕，达到 5% 时 Timeline 无副作用直接结束。该触发器不能同时启用 `BossCollectibleEntryGate`，否则会在 Timeline 播放前拒绝。
 Boss HUD 使用 `BossDisplayName` 在分段血条左侧显示 Cubic_11 SDF 名字；同 Canvas 的 `BossMonitorUI` 通过独立正交相机和 RenderTexture 在屏幕左上角显示约 `23.3%×35%` 屏幕的实时 Boss 窗口，从中心展开、倒放退场，并在死亡延迟 5 秒后与血条同步隐藏。监控相机渲染除 UI 外全部图层，窗口比例、纹理尺寸和渲染分辨率均按 Canvas 实际尺寸自适应。
 Boss 从中心向玩家连接火线、水线、藤蔓线三套现有样式；三份独立运行时材质分别设置 `_Style=1/2/3`。距离越近越粗越明显，最近达到普通线条 1.5 倍。连线随血条激活生成，藤蔓沿线生长，Boss 死亡时按交互线同样的噪波溶解退场。Boss 接触玩家会直接触发玩家死亡。
 

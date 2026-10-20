@@ -30,7 +30,7 @@ CollectibleProgressService.Changed += RefreshMap;
 
 锚点返回统一调用`PlayerController.TryTeleportToStoryAnchor`，由控制器清理绳/攀爬/积水等运动状态、通知房间生命周期、保持外部控制锁、定位相机并将下一次死亡的会话回退点绑定到目标。默认Start不会只移动Transform后还保留旧Boss重生点；明确配置的旧Transform覆写路径保持兼容。
 
-结局在`BossDefeatTimelinePresenter`切换`player_thinking`前读取真实普通收集进度：`>=60%`成功→End，其余→Start。未配置/总数为0不会默认成功。成功演出的六份临时画板明确不计数。Boss吸收六钥匙仍由既有Boss死亡演出负责，不把它们当普通成就收集品。
+结局在`BossDefeatTimelinePresenter`切换`player_thinking`前读取真实普通收集进度：`>=10%`成功→End，其余→Start。未配置/总数为0不会默认成功。成功演出的六份临时画板明确不计数。Boss吸收六钥匙仍由既有Boss死亡演出负责，不把它们当普通成就收集品。
 
 ## 地图解锁状态
 
@@ -45,7 +45,7 @@ BossTravelProgress.SetBossRegion(scene, regionId);
 BossTravelProgress.SetDedicatedBossScene(scene, true);
 ```
 
-BossController启用时记录第一次位置，血条/受伤系统激活进入战斗，真实EnterDeath记录击败；禁用不是击败。GetState的进入/战斗/击败标志是全会话共享，回Gaming仍可见；BossRegionId仅为查询Scene的本地排除区，不将另一个Scene同名房间误排除。Boss房间从第一次位置解析，追逐或R复活不会把沿途房间变成Boss房。传送地图使用收集>=30%、已进入且已击败，且不在战斗/Boss Scene/该Boss房内；目的地仍须由地图排除Boss房。
+BossController启用时记录第一次位置，血条/受伤系统激活进入战斗，真实EnterDeath记录击败；禁用不是击败。GetState的进入/战斗/击败标志是全会话共享，回Gaming仍可见；BossRegionId仅为查询Scene的本地排除区，不将另一个Scene同名房间误排除。Boss房间从第一次位置解析，追逐或R复活不会把沿途房间变成Boss房。传送地图使用收集>=5%、已进入且已击败，且不在战斗/Boss Scene/该Boss房内；目的地仍须由地图排除Boss房。
 
 `IsBossScene`仅在场景名为`Boss`、被明确`SetDedicatedBossScene`标记，或区域管理器全部有效房间都是该Boss房间时为true。多房间Gaming放Boss只排除所在房间，不能禁止其他普通房间。
 
@@ -55,6 +55,6 @@ BossController启用时记录第一次位置，血条/受伤系统激活进入�
 
 ## 验证与场景交付
 
-`Project.BossLogic.Editor.CollectibleBossProgressAudit.Run`仅在`Library/FlowRetirementProbe -noaudio`执行，覆盖inactive统计、房间剩余、30%/60%边界、R保留、稳定ID导出恢复、六份演出排除及真实Boss激活/死亡状态。真实收集Trigger与飞行沿用`CollectibleContactAudit`、`CollectiblePersistenceAudit`，不能把纯条件断言描述成完整剧情通关。
+`Project.BossLogic.Editor.CollectibleBossProgressAudit.Run`仅在`Library/FlowRetirementProbe -noaudio`执行，覆盖inactive统计、房间剩余、5%/10%边界、R保留、稳定ID导出恢复、六份演出排除及真实Boss激活/死亡状态。真实收集Trigger与飞行沿用`CollectibleContactAudit`、`CollectiblePersistenceAudit`，不能把纯条件断言描述成完整剧情通关。
 
 关卡作者还需明确配置门外返回位置、Start与End目标；提交Scene及同名planning.json、meta和新增依赖。共享入口只负责功能，不擅自猜测Boss房布局或全量重建正式地图。

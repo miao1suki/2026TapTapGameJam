@@ -22,7 +22,7 @@
 使用 `GameInput.ReadVector2(InputActionId.Move)`、`IsPressed`、`WasTriggeredThisFrame`，不在业务脚本读 Keyboard/Gamepad。
 `InputService` 可替换 `IInputSource`，便于测试。`VirtualJoystick` / `VirtualInputButton` 提供触摸输入。
 `PlatformUILayoutController` 按 Desktop/Mobile 保存与切换布局；两平台均允许手柄。
-`InputBindingService` 与 `InputBindingBootstrap` 管理重绑定，编辑窗口为旧功能保留。
+`InputBindingService` 与 `InputBindingBootstrap` 管理重绑定，编辑窗口为旧功能保留。开始菜单/暂停菜单的按键映射页共用持久化的 `InputBindingService.SharedRuntime`，修改立即写入当前运行时动作资产和 PlayerPrefs 并跨启动保留，不再受通用预览开关控制。
 `CameraModeSwitch` 不再由 `PlayerInputDriver` 消费为相机切换；它现在承担“调色”入口，用于开关染色轮盘。相机模式请由场景或 Timeline 演出自行申请，Timeline 的 Cutscene 要求仍保持最高优先级。
 
 搬运由 `F` 交互动作触发，默认 `Q/E` 为左侧/右侧放下且锁定点击；`Respawn` 显示为“复活/重置搬运”，携带中按下会让目标回到拿起前的位置。PlayerInputDriver 只把输入命令交给 PlayerController；`PlayerController` 只实现 `IPlayerCarryHost` 命令口，具体物体的搬起、头顶跟随、放下和复位由 `CarryableFeature` 实现。

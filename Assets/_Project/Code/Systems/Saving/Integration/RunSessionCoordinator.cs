@@ -405,6 +405,10 @@ namespace Project.Saving
             ColorKeyPickup.RestoreConsumedStableIds(
                 scene,
                 runData.consumedColorKeyIds);
+            // Reconcile both sides of the save: authored inactive/suspended
+            // snapshots must not keep UNSAVED pickups unavailable. This resets
+            // only ordinary collectibles, not keys, achievements or the run.
+            CollectibleProgressService.ResetSessionProgress(scene);
             CollectibleProgressService.RestoreCollectedStableIds(
                 scene,
                 runData.collectedCollectibleIds);

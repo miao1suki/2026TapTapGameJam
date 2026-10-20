@@ -115,7 +115,7 @@ namespace Project.FastTravel
         {
             get
             {
-                float required = settings != null ? settings.RequiredRatio : .3f;
+                float required = settings != null ? settings.RequiredRatio : .05f;
                 if (!unlockDirty && cachedRequiredRatio == required) return cachedUnlocked;
                 BossTravelState boss = BossTravelProgress.GetState(gameObject.scene);
                 var progress = CollectibleProgressService.GetWorldProgress();

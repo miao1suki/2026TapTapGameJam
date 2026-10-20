@@ -126,7 +126,7 @@ MonoBehaviour:
   m_Name: EnterBossTimelinePlayable
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.EnterBossTimelinePlayable
   settings:
-    minimumCollectibleRatio: 0.3
+    minimumCollectibleRatio: 0.05
     font: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
     fontSize: 72
     typewriterCharactersPerSecond: 18

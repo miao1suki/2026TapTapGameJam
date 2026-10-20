@@ -10,7 +10,7 @@
 
 2026-10-19 用户明确采用策划MVMap17（b2d0e18）：20房间、1406原物体，增量补新玩家出生位置的隐形Start后1407条。保留main的代码、美术、菜单、字体、物理和Boss门槛修复；R1/R3及TA预览继续独立，不加入正式构建。全部成员先同步最新main并从磁盘重开Gaming，禁止旧内存覆盖。详见MVMAP17_ROOM_SPLIT.md及Docs/Developer/BRANCH_INTEGRATION_2026-10-19.md；以下条目为历史基线，不再表示当前地图数量。
 
-2026-10-18 收集/Boss接线增量：保留20房间地图全部837条原物体及精确位姿，只新增正式玩家出生处的隐形`Start`锚点（现838条）。Gaming同名planning与正式命名存档同步；Boss独立工作场景的原入场触发器仅补30%门槛模板，位置/Timeline不变。所有工作场景最终导入同一Gaming，Start/End不做跨场景加载。详见`Docs/Developer/BOSS_START_AUTHORING_PATCH.md`。同步后关闭旧编辑窗口，从磁盘重新打开新版；不得把旧内存Scene/planning保存覆盖。
+2026-10-18 收集/Boss接线增量：保留20房间地图全部837条原物体及精确位姿，只新增正式玩家出生处的隐形`Start`锚点（现838条）。Gaming同名planning与正式命名存档同步；Boss独立工作场景的原入场触发器仅补5%门槛模板，位置/Timeline不变。所有工作场景最终导入同一Gaming，Start/End不做跨场景加载。详见`Docs/Developer/BOSS_START_AUTHORING_PATCH.md`。同步后关闭旧编辑窗口，从磁盘重新打开新版；不得把旧内存Scene/planning保存覆盖。
 
 2026-10-18 紧急双端包更新：当前地图采用 `origin/codex/codex/gaming-camera-size-8` 的 `56126c3`（20房间，837物体，5743作者占格），仅接入其Gaming Scene、同名planning与命名正式存档及Map14说明。新版菜单、同场景开始/返回及相机动画采用本地整合实现，不从地图分支覆盖代码/UI。相机普通视野size=8沿用地图交付。三份JSON一致，相关meta GUID保持；7个未绑定按钮与部分信号保持策划原样、见MVMAP14_LAYOUT.md。所有作者之后同步此新版Gaming与存档；正式合并仍仅由当前用户整合窗口执行。交付Scene务必同时提交同名planning和命名正式存档，不能只传Scene。
 

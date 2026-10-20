@@ -17,8 +17,8 @@ namespace Project.Items
         /// <summary>
         /// Compare integer rewards against a configured decimal ratio, not a
         /// rounded float division. The float-to-decimal conversion intentionally
-        /// retains float's seven useful decimal digits: .6f means 60%, rather
-        /// than its binary expansion .6000000238418579 requiring a seventh item.
+        /// retains float's seven useful decimal digits: .1f means 10%, rather
+        /// than relying on a rounded binary approximation.
         /// </summary>
         public bool MeetsRatio(float threshold)
         {
@@ -171,20 +171,20 @@ namespace Project.Items
 
             CollectibleProgressSnapshot progress =
                 GetWorldProgress();
-            if (progress.MeetsRatio(.3f))
+            if (progress.MeetsRatio(.05f))
             {
                 GameplaySignalHub.Emit(
                     AchievementSignalIds
-                        .CollectibleProgress30,
+                        .CollectibleProgress5,
                     item.gameObject,
                     progress.Collected,
                     progress.Ratio * 100f);
             }
-            if (progress.MeetsRatio(.6f))
+            if (progress.MeetsRatio(.1f))
             {
                 GameplaySignalHub.Emit(
                     AchievementSignalIds
-                        .CollectibleProgress60,
+                        .CollectibleProgress10,
                     item.gameObject,
                     progress.Collected,
                     progress.Ratio * 100f);

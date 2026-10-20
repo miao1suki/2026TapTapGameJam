@@ -267,6 +267,10 @@ namespace Project.WorldItems.Editor
             var coldRoot = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(ItemPath), parent.transform);
             coldRoot.transform.position = new Vector3(506f, 20f, 0f);
             var cold = coldRoot.GetComponent<CollectiblePickup>();
+            // Simulate a scene accidentally saved with collected runtime flags.
+            coldRoot.SetActive(false);
+            coldRoot.GetComponent<Rigidbody>().isKinematic = true;
+            foreach (var shape in coldRoot.GetComponentsInChildren<Collider>(true)) shape.enabled = false;
             cold.gameObject.AddComponent<LevelEditorPlacedBlock>().SetPlanningSource("reset_cold", "audit", Vector2Int.zero);
             var items = new[] { first, second, cold };
             var scene = first.gameObject.scene;

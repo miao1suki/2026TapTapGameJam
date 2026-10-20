@@ -146,8 +146,8 @@ namespace Project.FastTravel.Editor
         private static void UnlockFixture()
         {
             TravelMapSettings settings = Resources.Load<TravelMapSettings>("UI/TravelMapSettings");
-            Check(settings != null && settings.Font != null && Mathf.Approximately(settings.RequiredRatio, .3f),
-                "shipping travel settings retain their project font and 30% gate");
+            Check(settings != null && settings.Font != null && Mathf.Approximately(settings.RequiredRatio, .05f),
+                "shipping travel settings retain their project font and 5% gate");
             Set(map, "cachedRequiredRatio", settings.RequiredRatio);
             Set(map, "cachedUnlocked", true);
             Set(map, "unlockDirty", false);

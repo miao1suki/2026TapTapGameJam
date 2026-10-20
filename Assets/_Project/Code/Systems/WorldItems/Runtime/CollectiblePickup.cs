@@ -31,6 +31,7 @@ namespace Project.Items
         private Collider[] shapes;
         private bool[] shapeEnabled;
         private bool originalKinematic;
+        private bool recoveredSuspendedSnapshot;
         private readonly List<PlayerCollisionPair> playerCollisionPairs = new List<PlayerCollisionPair>();
 
         private struct PlayerCollisionPair
@@ -88,6 +89,19 @@ namespace Project.Items
             shapes = GetComponentsInChildren<Collider>(true);
             shapeEnabled = new bool[shapes.Length];
             for (int i = 0; i < shapes.Length; i++) shapeEnabled[i] = shapes[i].enabled;
+            // Some authored instances accidentally contain the suspended state
+            // written during collection: inactive root, kinematic body and ALL
+            // shapes disabled. That is not an authored pickup baseline. Saved
+            // stable IDs decide collection, not these transient physics flags.
+            bool suspendedSnapshot = !excludedFromProgress && !gameObject.activeSelf &&
+                originalKinematic && shapes.Length > 0;
+            for (int i = 0; i < shapes.Length; i++) suspendedSnapshot &= !shapeEnabled[i];
+            if (suspendedSnapshot)
+            {
+                recoveredSuspendedSnapshot = true;
+                originalKinematic = false;
+                for (int i = 0; i < shapeEnabled.Length; i++) shapeEnabled[i] = true;
+            }
         }
         private void OnTriggerEnter(Collider other) => TryCollect(other);
         private void OnTriggerStay(Collider other) => TryCollect(other);
@@ -193,6 +207,9 @@ namespace Project.Items
             if (IsCollected || CollectionRequested) return;
             StopItemAnimations();
             ResetForReuse();
+            // RoomResetObject may have captured the stale serialized inactive
+            // flag before save reconciliation; do not resurrect that snapshot.
+            if (recoveredSuspendedSnapshot && !gameObject.activeSelf) gameObject.SetActive(true);
         }
 
         /// <summary>

@@ -86,7 +86,12 @@ namespace Project.WorldItems.Editor
                 var seed = JsonUtility.FromJson<RunSaveData>(SessionState.GetString(Seed, string.Empty));
                 var restored = all.Single(item => item.TryGetStableInstanceId(out string id) && id == seed.collectedCollectibleIds[0]);
                 Check(restored.IsCollected && !restored.gameObject.activeSelf, "loaded collected item must be hidden");
-                var item = all.First(candidate => candidate != restored && candidate.CanCollect);
+                var item = all.FirstOrDefault(candidate => candidate != restored && candidate.CanCollect);
+                if (item == null)
+                    throw new InvalidOperationException("No eligible uncollected item: " + string.Join("; ", all.Select(candidate =>
+                        candidate.name + " collected=" + candidate.IsCollected + " requested=" + candidate.CollectionRequested +
+                        " active=" + candidate.gameObject.activeInHierarchy + " enabled=" + candidate.enabled +
+                        " self=" + candidate.gameObject.activeSelf + " parents=" + Parents(candidate.transform.parent))));
                 Check(item.TryGetStableInstanceId(out string collectedId), "uncollected item needs stable identity");
                 var player = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<PlayerController>(true)).First();
                 player.GetComponent<PlayerInputDriver>().enabled = false;
@@ -106,10 +111,22 @@ namespace Project.WorldItems.Editor
                 CollectibleProgressService.RefreshSceneCatalog(scene);
                 Check(item.IsCollected && !item.gameObject.activeSelf && CollectibleProgressService.GetWorldProgress().Collected >= 2,
                     "room reset must preserve both loaded and freshly collected progress");
+                var remaining = all.First(candidate => candidate != item && candidate != restored);
+                var remainingMember = remaining.GetComponent<RoomResetObject>();
+                remainingMember.Manager?.ResetRegion(remainingMember.RegionId);
+                Check(remaining.CanCollect && remaining.GetComponentsInChildren<Collider>(true).All(shape => shape.enabled),
+                    "room reset must not restore stale inactive/disabled flags on an uncollected item");
                 Finish(true, "loaded Gaming hides collected item; real Trigger/flight/autosave/room persistence passed");
             }
             catch (Exception error) { Finish(false, error.ToString()); }
             finally { Physics.simulationMode = previous; }
+        }
+
+        private static string Parents(Transform target)
+        {
+            string value = string.Empty;
+            while (target != null) { value += target.name + ":" + target.gameObject.activeSelf + "/"; target = target.parent; }
+            return value;
         }
 
         private static void Check(bool value, string message)

@@ -7,7 +7,7 @@ namespace Project.FastTravel
     public sealed class TravelMapSettings : ScriptableObject
     {
         [SerializeField] private TMP_FontAsset font;
-        [SerializeField, Range(0f, 1f)] private float requiredCollectibleRatio = .3f;
+        [SerializeField, Range(0f, 1f)] private float requiredCollectibleRatio = .05f;
         [SerializeField, Min(.1f)] private float zoomOutSeconds = .3f;
         [SerializeField, Min(.1f)] private float travelSeconds = .65f;
         [SerializeField, Min(.1f)] private float zoomInSeconds = .4f;
