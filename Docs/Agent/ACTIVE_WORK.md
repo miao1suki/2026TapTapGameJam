@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 Boss RGB 死亡溶解与预览场景
+
+- 分支 `codex/codex/boss-rgb-death-20261020`。
+- 在 `Assets/ta_source/Boss_Die` 新增独立 `BossDeathPreview.unity`、RGB 溶解 Shader、默认材质与操作说明；预览场景复用正式 Boss 预制体，不改原图、Boss 预制体或 Gaming。
+- `Assets/Boss_Logic/BossAnimationDriver` 在死亡 Timeline 调用 `PlayDeathAnimationNow()` 时生成临时网格并触发 RGB 溶解；速度、横向分散可调，Inspector 提供 Play Mode 预览按钮。自然死亡与处决仍走共享死亡 Playable。
+- 更新 PROJECT_CONTEXT、SYSTEM_INDEX、BOSS_CONTROLLER 与 BOSS_CONTROLLER_API。Unity 6000.3.12f1 Runtime/Editor Roslyn 编译通过，只有原有无关文件的 obsolete/hide 警告；`git diff --check` 通过，场景 prefab、相机脚本、材质/Shader GUID 与 Resources 路径已静态核对。未在 Play Mode 验收实际画面。
+
 ## 2026-10-20 TA 美术补合与遗漏分支核对（验证完成）
 
 - 用户要求保留 TA 绘制美术／效果，以 main 现有关卡与双方程序修复为准。核对远端仅 TA f7cbb62、旧策划／R 最终场景分支尚未在祖先图闭合；旧关卡均已通过正式 Scene 回采整合，不用旧 Scene 覆盖 main。

@@ -4,9 +4,9 @@
 
 标准 `Boss(暂定).prefab` 已用 `Boss Artwork` 子物体替换根占位模型：`Resources/26TAPTAP/Boss_Idle&Move_` 的12帧80×80原画，固定中心、16有效像素/格、12fps循环。子物体抵消原根缩放，自然尺寸5×5格；不改变 Boss 碰撞或根缩放。素材 Point、无Mip、无压缩，不裁每帧不透明范围。
 
-Animator 与现有 `BossAnimationDriver` 连接。存活各动作复用当前交付的待机／移动序列；死亡 Timeline 调用 `PlayDeathAnimationNow()` 后触发 `Death`，停留在无 Motion 的 `Death VFX Handoff`，不新增死亡精灵动画。TA 继续通过原 `deathStarted` 事件／死亡 Timeline 接入粒子，原默认等待时长仍有效；恢复追击后回到循环状态。
+Animator 与现有 `BossAnimationDriver` 连接。存活各动作复用当前交付的待机／移动序列；死亡 Timeline 调用 `PlayDeathAnimationNow()` 后触发 `Death`，停留在无 Motion 的 `Death VFX Handoff`，并启动 RGB 网格溶解，不新增或替换 Boss 原精灵图。默认材质和 Shader 位于 `Assets/ta_source/Boss_Die`，消散速度、横向分散可在 `BossAnimationDriver` Inspector 调整；`deathStarted` 事件仍保留为外部表现接口。独立预览场景 `BossDeathPreview.unity` 支持 Play Mode 下反复预览。恢复追击后回到循环状态。
 
-显式重建入口：`Tools/2026TapTap/Boss/接入待机与移动美术`（不在打开场景时自动执行）。隔离验证入口 `Project.BossLogic.Editor.BossArtworkVerification.Run`，仅允许 `Library/FlowRetirementProbe`；报告 `Library/BossArtworkVerification.txt`。本次未交付或替换死亡粒子。
+显式重建入口：`Tools/2026TapTap/Boss/接入待机与移动美术`（不在打开场景时自动执行）。隔离验证入口 `Project.BossLogic.Editor.BossArtworkVerification.Run`，仅允许 `Library/FlowRetirementProbe`；报告 `Library/BossArtworkVerification.txt`。死亡表现和预览操作见 `Assets/ta_source/Boss_Die/使用说明.md`。
 
 ## 源码
 
@@ -173,7 +173,7 @@ handle.Release(CameraTransition.Ease(1f));
 - 镜头到位并等待 `1` 秒后，依次播放 Boss 故障字幕 `咳咳……`、`嘁，你以为我没留后手吗！`；两句都显示 `2` 秒，走底部 WordNote 队列。
 - 字幕结束后镜头回玩家，玩家强制面向 Boss，并完整闪烁两次。随后六把钥匙按红/蓝/绿两轮从玩家身体逐把抽出，在玩家上方排成竖直列并呼吸悬停。
 - 全部钥匙悬停 `1` 秒后播放玩家打字机字幕 `身体好难受……使不上劲`；再等 `0.5` 秒，钥匙逐把曲线进入 Boss，镜头同步移到 Boss。
-- Boss 播放故障字幕 `哈哈哈哈……我不好过你也别想好过！` 后调用 `BossAnimationDriver.PlayDeathAnimationNow()`；驱动通过 Animator 死亡状态长度或 `deathAnimationFallbackSeconds`（默认 `2` 秒）提供播放进度。
+- Boss 播放故障字幕 `哈哈哈哈……我不好过你也别想好过！` 后调用 `BossAnimationDriver.PlayDeathAnimationNow()`；启用 RGB 溶解且可用时，驱动按 `rgbDeathDissolveSpeed` 提供播放进度并启动红绿蓝碎片溶解，否则回退到 Animator 死亡状态长度或 `deathAnimationFallbackSeconds`（默认 `2` 秒）。
 - 死亡动画完成时先隐藏 Boss 全部 Renderer/Collider，再回镜头到玩家；随后启动独立场景级 Player Thinking Director，再删除 Boss 物体并进入 `player_thinking.playable`。
 - 独立 Player Thinking Director 避免结局 Timeline 随 Boss 删除而中断；`Boss Post Death Director` 在沉思 Timeline 停止后自动清理。
 - 演出钥匙关闭 Collider、`ColorKeyPickup`、`DropItemBase`、`PickupFlightAnimator`、`MechanismArtworkPresentation`、子 `PlayableDirector` 与 `RoomResetObject`，仅作为视觉对象存在。
@@ -200,7 +200,9 @@ handle.Release(CameraTransition.Ease(1f));
 死亡演出接口：
 
 - `BossAnimationDriver.PlayDeathAnimationNow()`：在演出指定阶段触发死亡动画。
-- `BossAnimationDriver.DeathAnimationProgress` / `IsDeathAnimationComplete`：优先读取 Animator 当前 `Death` 状态长度，没有状态时使用 `deathAnimationFallbackSeconds`。
+- `BossAnimationDriver.DeathAnimationProgress` / `IsDeathAnimationComplete`：RGB 溶解可用时按配置速度计时；效果关闭或材质/精灵不可用时，优先读取 Animator 当前 `Death` 状态长度，没有状态时使用 `deathAnimationFallbackSeconds`。
+
+Boss RGB 死亡溶解的 Shader、默认材质、预览场景和参数说明位于 `Assets/ta_source/Boss_Die`。`BossAnimationDriver` Inspector 提供 Play Mode 预览按钮，以及速度、横向分散两个可调参数。
 - `BossController.SetPlayerContactKillEnabled(bool)`：Timeline 期间关闭或恢复 Boss 接触击杀。
 - `PlayerController.TryTeleportToNearestRespawnForPresentation()`：锁操作期间把玩家移到最近已激活重生点的安全落点，并给予复活保护时间。
 - `PlayerController.FaceWorldPosition(Vector3)`：演出中强制角色朝向世界位置。
