@@ -29,11 +29,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _DissolveProgress: 0
-    - _EdgeIntensity: 1.1
+    - _DissolveProgress: 0.945
+    - _EdgeIntensity: 0.76
     - _EdgeWidth: 0.1
-    - _HorizontalScatter: 0.75
-    - _RGBStrength: 0.9
+    - _HorizontalScatter: 1.99
+    - _RGBStrength: 0.772
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -1,5 +1,17 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 Gaming 场景与 TA 资源分支交付
+
+- 分支 `codex/codex/gaming-tasource-20261020` 保存当前正式 `Gaming.unity`、`Gaming_Art.asset`、共享美术库及对应 GridArt 网格/材质资源，并附带 `Assets/ta_source/star` 星空天空盒和 Boss RGB 死亡材质参数。
+- `Gaming.planning.json` 与 `Content/LevelMaps/正式关卡.json` 保持原文件及 GUID，SHA-256 相同；场景差异里的规划字段只发生序列化顺序变化，值集合相同。未改正式关卡布局存档。
+- `Ops/LevelMaps/Test-PlanningMapCommit.ps1` 与暂存差异空白检查通过；新增 Unity 资源均配有 `.meta`。星空效果此前已完成 Editor 导入与 C# 编译检查，动态天空和完整关卡仍待 Play Mode 验收。
+
+## 2026-10-20 TA 星空全景 URP 天空盒接入（已接时间流动，待 Play 视觉验收）
+
+- 将用户提供的 Godot 全景星空 shader 移植到 `Assets/ta_source/star`，以 URP shader 和 `StarPanorama.mat` 提供 Inspector 可调参数；`StarPanoramaTimeDriver` 使用 Unity `Time.time` 驱动星点旋转/闪烁和星云噪声平滑漂移，时间倍率默认提高到 1，并增加独立 `StarPanoramaPreview.unity`。
+- `Gaming.unity` 只接入该天空盒材质引用；保留工作开始时已有的场景/美术变更，未改规划布局数据。
+- 当前 Unity 6000.3.12f1 Editor 已导入最终 shader 和材质；最终导入记录无 ShaderLab 解析错误，`Assembly-CSharp` 重编译无 C# 错误。未启动 Play Mode 或改写当前 Editor 内存场景，动态画面仍需实际观察验收。
+
 ## 2026-10-20 SDK / 最新策划图 / TA 效果 / 双端发布整合
 
 - 最终增量：并发main 1caaf67保留最新Boss作者区域和喷泉触发器，正式仍采用已确认策划23房布局，25区4199条规划；TA追加到93fd945。不重复放喷泉触发器。
