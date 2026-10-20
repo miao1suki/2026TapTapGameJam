@@ -74,7 +74,9 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
         TEXTURE2D_X(_VisibilitySight);
+        TEXTURE2D_X(_VisibilityPreviousSight);
         float _VisibilityStrength;
+        float _VisibilityConnectedBlend;
         float4 _VisibilityBlurDirection;
         half4 BlurSample(float2 uv, bool pack)
         {
@@ -98,7 +100,9 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
         half4 ConnectedComposite(Varyings input):SV_Target
         {
             half4 source = SAMPLE_TEXTURE2D_X(_BlitTexture,sampler_PointClamp,input.texcoord);
-            half sight = SAMPLE_TEXTURE2D_X(_VisibilitySight,sampler_LinearClamp,input.texcoord).r;
+            half current = SAMPLE_TEXTURE2D_X(_VisibilitySight,sampler_LinearClamp,input.texcoord).r;
+            half previous = SAMPLE_TEXTURE2D_X(_VisibilityPreviousSight,sampler_LinearClamp,input.texcoord).r;
+            half sight = saturate(lerp(previous,current,saturate(_VisibilityConnectedBlend)));
             source.rgb *= lerp(1,sight,saturate(_VisibilityStrength));
             return source;
         }

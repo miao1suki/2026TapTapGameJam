@@ -25,9 +25,11 @@ namespace Project.WorldVisibility
         [SerializeField, Range(.25f,1)] public float maskResolution = .5f;
         [SerializeField, Range(1,8)] public int maxExtraLights = 4;
         [SerializeField, Min(0f)] public float defaultOcclusionFadeDuration = .35f;
+        [SerializeField, Min(0f)] public float connectedTransitionDuration = .25f;
         [SerializeField] public bool respectPlayerSight = true;
         readonly VisibilityGeometry.Polygon sight = new VisibilityGeometry.Polygon();
-        readonly ConnectedSpaceGeometry connected = new ConnectedSpaceGeometry();
+        ConnectedSpaceGeometry connected = new ConnectedSpaceGeometry();
+        ConnectedSpaceGeometry connectedPrevious = new ConnectedSpaceGeometry();
         readonly VisibilityGeometry.Polygon playerLight = new VisibilityGeometry.Polygon();
         readonly List<VisibilityGeometry.Segment> walls = new List<VisibilityGeometry.Segment>(4096);
         readonly List<VisibilityGeometry.Segment> dynamicEdges = new List<VisibilityGeometry.Segment>(128);
@@ -45,12 +47,16 @@ namespace Project.WorldVisibility
         Vector2 lastViewer = new Vector2(float.PositiveInfinity,0);
         float nextPlayerSearch;
         float nextConnectedBuild;
+        int connectedBuildCount;
         Mesh wallMesh;
         float occlusionStrength = 1;
         float fadeFrom = 1;
         float fadeTarget = 1;
         float fadeElapsed;
         float fadeDuration;
+        float connectedBlend = 1;
+        float connectedBlendStartTime;
+        float connectedBlendDuration;
         int connectedRevision = -1;
         Vector2Int connectedCell = new Vector2Int(int.MinValue, int.MinValue);
         float connectedRadius, connectedStep;
@@ -60,7 +66,9 @@ namespace Project.WorldVisibility
         public Mesh WallMesh => wallMesh;
         public float OcclusionStrength => occlusionStrength;
         public Mesh SightMesh => connectedSpaceVisibility ? connected.Mesh : sight.Mesh;
-        public int ConnectedBuildCount => connected.BuildCount;
+        public Mesh PreviousSightMesh => connectedSpaceVisibility ? connectedPrevious.Mesh : null;
+        public float ConnectedBlend => connectedBlend;
+        public int ConnectedBuildCount => connectedBuildCount;
         public int ConnectedCellCount => connected.ReachableCells;
         internal Mesh PlayerMesh => playerLight.Mesh;
         internal IReadOnlyList<VisibilityLight2D> Lights => visibleLights;
@@ -94,10 +102,11 @@ namespace Project.WorldVisibility
         void OnDisable()
         {
             active.Remove(this); SceneManager.sceneLoaded -= SceneLoaded;
-            sight.Dispose(); connected.Dispose(); playerLight.Dispose(); walls.Clear(); buckets.Clear(); visibleLights.Clear();
+            sight.Dispose(); connected.Dispose(); connectedPrevious.Dispose(); playerLight.Dispose(); walls.Clear(); buckets.Clear(); visibleLights.Clear();
             if (wallMesh) { if (Application.isPlaying) Destroy(wallMesh); else DestroyImmediate(wallMesh); wallMesh = null; }
             suppressionRequests.Clear(); occlusionStrength = 1; fadeElapsed = fadeDuration = 0; fadeFrom = fadeTarget = 1;
             connectedRevision = -1;
+            connectedBuildCount = 0; connectedBlend = 1; connectedBlendDuration = 0;
         }
         void OnValidate() { solidRevision = -1; cellWorldSize = Mathf.Max(.01f,cellWorldSize); }
         void SceneLoaded(Scene scene, LoadSceneMode mode) => solidRevision = -1;
@@ -109,6 +118,7 @@ namespace Project.WorldVisibility
         }
         void Update()
         {
+            AdvanceConnectedTransition();
             if (fadeDuration <= 0) { occlusionStrength = fadeTarget; return; }
             if (fadeElapsed >= fadeDuration) { occlusionStrength = fadeTarget; return; }
             fadeElapsed = Mathf.Min(fadeDuration,fadeElapsed+Time.unscaledDeltaTime);
@@ -124,6 +134,7 @@ namespace Project.WorldVisibility
             RebuildDynamicEdges();
             if (connectedSpaceVisibility)
             {
+                AdvanceConnectedTransition();
                 float step = Mathf.Max(.01f, cellWorldSize) * .5f;
                 float radius = Mathf.Clamp(sightRadiusCells, 2, 48) * cellWorldSize;
                 Vector2 p = viewer.position;
@@ -133,7 +144,14 @@ namespace Project.WorldVisibility
                 if (changed || cell != connectedCell && (teleported || Time.realtimeSinceStartup >= nextConnectedBuild))
                 {
                     Query(p, radius + step * 2);
+                    ConnectedSpaceGeometry previous = connected;
+                    connected = connectedPrevious;
+                    connectedPrevious = previous;
                     connected.Build(p, radius, step, nearby);
+                    connectedBuildCount++;
+                    connectedBlend = connectedPrevious.Mesh ? 0f : 1f;
+                    connectedBlendStartTime = Time.unscaledTime;
+                    connectedBlendDuration = Mathf.Max(0f,connectedTransitionDuration);
                     connectedCell = cell; connectedRadius = radius; connectedStep = step; connectedRevision = revision;
                     nextConnectedBuild = Time.realtimeSinceStartup + .1f;
                 }
@@ -256,6 +274,11 @@ namespace Project.WorldVisibility
             fadeFrom = occlusionStrength; fadeTarget = value;
             fadeElapsed = 0; fadeDuration = Mathf.Max(0,duration);
             if (fadeDuration <= 0) occlusionStrength = fadeTarget;
+        }
+        void AdvanceConnectedTransition()
+        {
+            if (connectedBlendDuration <= 0 || connectedBlend >= 1) { connectedBlend = 1; return; }
+            connectedBlend = Mathf.SmoothStep(0,1,Mathf.Clamp01((Time.unscaledTime-connectedBlendStartTime)/connectedBlendDuration));
         }
         void ReleaseSuppression(object owner,float fadeInDuration)
         {

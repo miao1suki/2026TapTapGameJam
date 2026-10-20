@@ -4,6 +4,7 @@
 
 - 分支 `光照`。范围：`WorldVisibility2D`、连通空间 RenderGraph 合成、光照 Inspector、`ColorKeyPickup` 与颜色钥匙 Inspector；不改 Gaming 场景、规划、美术、碰撞、房间或存档。
 - 连通空间改为墙体常亮：非道具规划物的实际 BoxCollider 足迹生成独立 `WallMesh`，并与可见空间遮罩合并，只压暗非墙体房间内容。墙体足迹不读取或改写作者 Renderer。
+- 修复连通区域网格按 10Hz 直接替换导致的突变：保留上一张连通网格，新旧两张 R8 遮罩按 `connectedTransitionDuration` 交叉淡化；开门、移动、传送与几何变化均平滑过渡。
 - 遮蔽新增平滑强度与可释放接口 `SuppressOcclusion(owner, fadeOutDuration, fadeInDuration)`；按 owner 引用计数，`Dispose()` 后恢复。三色钥匙在有 Timeline 相机演出时自动取得句柄，Timeline 停止后释放；淡出/淡入时长在钥匙 Inspector 可调。
 - Unity 6000.3.12f1 主程序集与 Editor 程序集编译 0 error，仅既有 warning；一次性校验 `PASS shader + occlusion lease`，入口已删除。未运行 GPU/Play 验收，实际墙体保留、渐变观感和三色钥匙演出需在 Game View 复验。
 

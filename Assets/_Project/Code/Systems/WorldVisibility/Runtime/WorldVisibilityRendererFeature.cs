@@ -42,15 +42,16 @@ namespace Project.WorldVisibility
         }
         sealed class CompositeData
         {
-            public TextureHandle source, sight, light, soft;
+            public TextureHandle source, sight, previousSight, light, soft;
             public Material material;
-            public float ambient, gate, strength;
+            public float ambient, gate, strength, blend;
             public Vector4 softness;
         }
         sealed class VisibilityPass : ScriptableRenderPass
         {
             readonly Material material;
             static readonly int SightId = Shader.PropertyToID("_VisibilitySight");
+            static readonly int PreviousSightId = Shader.PropertyToID("_VisibilityPreviousSight");
             static readonly int LightId = Shader.PropertyToID("_VisibilityLight");
             static readonly int AmbientId = Shader.PropertyToID("_VisibilityAmbient");
             static readonly int CoreId = Shader.PropertyToID("_VisibilityCore");
@@ -59,6 +60,7 @@ namespace Project.WorldVisibility
             static readonly int BlurDirectionId = Shader.PropertyToID("_VisibilityBlurDirection");
             static readonly int SoftnessId = Shader.PropertyToID("_VisibilitySoftness");
             static readonly int StrengthId = Shader.PropertyToID("_VisibilityStrength");
+            static readonly int ConnectedBlendId = Shader.PropertyToID("_VisibilityConnectedBlend");
             public VisibilityPass(Material value)
             {
                 material = value;
@@ -86,37 +88,45 @@ namespace Project.WorldVisibility
                     desc.format = GraphicsFormat.R8_UNorm; desc.filterMode = FilterMode.Bilinear;
                     desc.clearBuffer = true; desc.clearColor = Color.black; desc.name = "局部连通空间";
                     var connected = graph.CreateTexture(desc);
-                    using (var builder = graph.AddRasterRenderPass<MaskData>("连通空间遮罩", out var data))
-                    {
-                        data.material = material; data.system = system;
-                        builder.SetRenderAttachment(connected, 0);
-                        builder.SetRenderFunc((MaskData value, RasterGraphContext context) =>
-                        {
-                            if (value.system && value.system.SightMesh)
-                                context.cmd.DrawMesh(value.system.SightMesh, Matrix4x4.identity, value.material, 0, 5);
-                            if (value.system && value.system.WallMesh)
-                                context.cmd.DrawMesh(value.system.WallMesh, Matrix4x4.identity, value.material, 0, 7);
-                        });
-                    }
+                    desc.name = "上一连通空间";
+                    var previousSight = graph.CreateTexture(desc);
+                    DrawConnected(connected,false);
+                    DrawConnected(previousSight,true);
                     var connectedOutput = graph.GetTextureDesc(source);
                     connectedOutput.name = "连通空间合成"; connectedOutput.clearBuffer = false;
                     var result = graph.CreateTexture(connectedOutput);
                     using (var builder = graph.AddRasterRenderPass<CompositeData>("连通空间原画合成", out var data))
                     {
-                        data.source = source; data.sight = connected; data.material = material;
+                        data.source = source; data.sight = connected; data.previousSight = previousSight; data.material = material;
                         data.strength = system.OcclusionStrength;
-                        builder.UseTexture(source); builder.UseTexture(connected);
+                        data.blend = system.ConnectedBlend;
+                        builder.UseTexture(source); builder.UseTexture(connected); builder.UseTexture(previousSight);
                         builder.SetRenderAttachment(result, 0); builder.AllowGlobalStateModification(true);
                         builder.SetRenderFunc((CompositeData value, RasterGraphContext context) =>
                         {
                             context.cmd.SetGlobalTexture(SightId, value.sight);
+                            context.cmd.SetGlobalTexture(PreviousSightId,value.previousSight);
                             context.cmd.SetGlobalFloat(StrengthId,value.strength);
+                            context.cmd.SetGlobalFloat(ConnectedBlendId,value.blend);
                             Blitter.BlitTexture(context.cmd, value.source, new Vector4(1, 1, 0, 0), value.material, 6);
                             LastExecutedFrame = Time.frameCount;
                         });
                     }
                     resources.cameraColor = result;
                     return;
+                    void DrawConnected(TextureHandle target,bool previous)
+                    {
+                        using var builder = graph.AddRasterRenderPass<MaskData>(previous ? "上一连通空间遮罩" : "连通空间遮罩",out var data);
+                        data.material = material; data.system = system;
+                        builder.SetRenderAttachment(target,0);
+                        builder.SetRenderFunc((MaskData value,RasterGraphContext context) =>
+                        {
+                            Mesh mesh = previous ? value.system.PreviousSightMesh : value.system.SightMesh;
+                            if (mesh) context.cmd.DrawMesh(mesh,Matrix4x4.identity,value.material,0,5);
+                            if (value.system.WallMesh)
+                                context.cmd.DrawMesh(value.system.WallMesh,Matrix4x4.identity,value.material,0,7);
+                        });
+                    }
                 }
                 desc.clearBuffer = true; desc.clearColor = Color.black; desc.filterMode = FilterMode.Point;
                 desc.name = "二维光照 玩家视线"; var sight = graph.CreateTexture(desc);
