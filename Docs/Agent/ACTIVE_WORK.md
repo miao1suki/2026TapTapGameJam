@@ -104,9 +104,11 @@
 ## 2026-10-20 Boss RGB 死亡溶解与预览场景
 
 - 分支 `codex/codex/boss-rgb-death-20261020`。
-- 在 `Assets/ta_source/Boss_Die` 新增独立 `BossDeathPreview.unity`、RGB 溶解 Shader、默认材质与操作说明；预览场景复用正式 Boss 预制体，不改原图、Boss 预制体或 Gaming。预览实例关闭重力并设为运动学状态，避免进入 Play Mode 后下坠。
+- 在 `Assets/ta_source/Boss_Die` 新增独立 `BossDeathPreview.unity`、RGB 溶解 Shader、默认材质与操作说明；预览场景复用正式 Boss 预制体，不改原图、Boss 预制体或 Gaming。预览实例关闭重力并设为运动学状态，进入 Play Mode 后自动循环死亡溶解，效果结束后恢复原图再重播。
 - `Assets/Boss_Logic/BossAnimationDriver` 在死亡 Timeline 调用 `PlayDeathAnimationNow()` 时生成临时网格并触发 RGB 溶解；速度、横向分散可调，Inspector 提供 Play Mode 预览按钮。Inspector 预览期间临时冻结 Boss，播放后恢复刚体状态；溶解网格脱离动画层级并保持触发时的世界姿态，避免死亡动画将其带落。自然死亡与处决仍走共享死亡 Playable。
-- 更新 PROJECT_CONTEXT、SYSTEM_INDEX、BOSS_CONTROLLER 与 BOSS_CONTROLLER_API。Unity 6000.3.12f1 Runtime/Editor Roslyn 编译通过，只有原有无关文件的 obsolete/hide 警告；`git diff --check` 通过，场景 prefab、相机脚本、材质/Shader GUID 与 Resources 路径已静态核对。未在 Play Mode 验收实际画面。
+- 效果时序调整为“完整原画面 → 红绿蓝方块横向分解 → 方块完全消失”；分解前保持原图不动，分解阶段逐块产生缝隙、变色和位移，最后淡出方块。预览场景继续循环，完整显示后重新播放。
+- 修复三阶段 Shader 遗留旧可见度代码导致的 `edgeWidth` 未声明和 `visibility` 重复定义；预览冻结和恢复仅对非运动学刚体写入速度，避免 Unity 警告。修复后的 `BossAnimationDriver` 已用 Unity 6000.3.12f1 随附 Roslyn 编译通过，只有其他现有脚本的 obsolete 警告。Shader 源码已检查，当前 Editor 尚未重新导入/视觉验收。
+- 更新 PROJECT_CONTEXT、SYSTEM_INDEX、BOSS_CONTROLLER 与 BOSS_CONTROLLER_API。`git diff --check` 通过，场景 prefab、相机脚本、材质/Shader GUID 与 Resources 路径已静态核对。
 
 ## 2026-10-20 TA 美术补合与遗漏分支核对（验证完成）
 

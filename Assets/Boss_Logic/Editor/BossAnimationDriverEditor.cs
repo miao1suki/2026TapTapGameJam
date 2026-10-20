@@ -80,6 +80,17 @@ public sealed class BossAnimationDriverEditor : Editor
                 "rgbDeathHorizontalScatter",
                 "横向分散程度",
                 "每块碎片在 Boss 局部坐标中的最大横向位移。"));
+        dissolveSettings.Add(
+            ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "loopRgbDeathDissolvePreview",
+                "循环预览"));
+        dissolveSettings.Add(
+            ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "rgbDeathDissolvePreviewLoopInterval",
+                "循环间隔",
+                "每次恢复 Boss 原图后等待的秒数。"));
         bool dissolveIsEnabled = serializedObject
             .FindProperty("enableRgbDeathDissolve")
             .boolValue;
@@ -116,7 +127,7 @@ public sealed class BossAnimationDriverEditor : Editor
         }).Every(200);
         dissolveSettings.Add(preview);
         dissolveSettings.Add(ProjectInspectorUtility.CreateHelp(
-            "在 Play Mode 中点击预览；结束后会自动恢复 Boss 原图。调整速度或分散程度后可再次播放。"));
+            "循环预览仅影响 Play Mode；溶解完成后恢复 Boss 原图，停顿后自动重播。"));
         dissolve.Add(dissolveSettings);
         root.Add(dissolve);
 

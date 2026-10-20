@@ -45,6 +45,10 @@ namespace Project.BossLogic
         private float rgbDeathDissolveSpeed = .65f;
         [SerializeField, Min(0f)]
         private float rgbDeathHorizontalScatter = .75f;
+        [SerializeField]
+        private bool loopRgbDeathDissolvePreview;
+        [SerializeField, Min(0f)]
+        private float rgbDeathDissolvePreviewLoopInterval = .5f;
 
         private const int DissolveMeshColumns = 20;
         private const int DissolveMeshRows = 20;
@@ -87,6 +91,7 @@ namespace Project.BossLogic
         private bool previewBodyUsedGravity;
         private Vector3 previewBodyLinearVelocity;
         private Vector3 previewBodyAngularVelocity;
+        private float nextRgbDeathDissolvePreviewAt = -1f;
 
         public event Action<BossStateId, BossStateId> StateForwarded;
         public float DeathAnimationDurationSeconds
@@ -189,7 +194,28 @@ namespace Project.BossLogic
                 Time.time >= previewRestoreAt)
             {
                 RestoreDeathDissolve();
+                nextRgbDeathDissolvePreviewAt =
+                    loopRgbDeathDissolvePreview
+                        ? Time.time + Mathf.Max(
+                            0f,
+                            rgbDeathDissolvePreviewLoopInterval)
+                        : -1f;
+                return;
             }
+
+            if (!Application.isPlaying ||
+                !loopRgbDeathDissolvePreview ||
+                deathDissolvePreview ||
+                (controller != null && controller.IsDead) ||
+                (nextRgbDeathDissolvePreviewAt >= 0f &&
+                 Time.time < nextRgbDeathDissolvePreviewAt))
+            {
+                return;
+            }
+
+            nextRgbDeathDissolvePreviewAt = Time.time +
+                Mathf.Max(.1f, rgbDeathDissolvePreviewLoopInterval);
+            PreviewRgbDeathDissolve();
         }
 
         public void SetAnimator(Animator value)
@@ -484,8 +510,13 @@ namespace Project.BossLogic
             var colors = new List<Color>(vertexCount);
             var cellData = new List<Vector2>(vertexCount);
             var scatterData = new List<Vector2>(vertexCount);
+            var cellShape = new List<Vector4>(vertexCount);
             var triangles = new List<int>(
                 DissolveMeshColumns * DissolveMeshRows * 6);
+            float cellWidth =
+                spriteBounds.size.x / DissolveMeshColumns;
+            float cellHeight =
+                spriteBounds.size.y / DissolveMeshRows;
 
             for (int row = 0;
                  row < DissolveMeshRows;
@@ -583,6 +614,15 @@ namespace Project.BossLogic
                         scatterData.Add(new Vector2(
                             horizontalOffset,
                             0f));
+                        float cornerX =
+                            vertex == 2 || vertex == 3 ? 1f : 0f;
+                        float cornerY =
+                            vertex == 1 || vertex == 2 ? 1f : 0f;
+                        cellShape.Add(new Vector4(
+                            cornerX,
+                            cornerY,
+                            cellWidth,
+                            cellHeight));
                     }
 
                     triangles.Add(first);
@@ -604,6 +644,7 @@ namespace Project.BossLogic
             mesh.SetColors(colors);
             mesh.SetUVs(1, cellData);
             mesh.SetUVs(2, scatterData);
+            mesh.SetUVs(3, cellShape);
             mesh.SetTriangles(triangles, 0, false);
             mesh.RecalculateBounds();
             return mesh;
@@ -773,8 +814,12 @@ namespace Project.BossLogic
             previewBodyAngularVelocity = previewFrozenBody.angularVelocity;
             previewBodyStateCaptured = true;
 
-            previewFrozenBody.linearVelocity = Vector3.zero;
-            previewFrozenBody.angularVelocity = Vector3.zero;
+            if (!previewBodyWasKinematic)
+            {
+                previewFrozenBody.linearVelocity = Vector3.zero;
+                previewFrozenBody.angularVelocity = Vector3.zero;
+            }
+
             previewFrozenBody.useGravity = false;
             previewFrozenBody.isKinematic = true;
         }
@@ -790,8 +835,12 @@ namespace Project.BossLogic
 
             previewFrozenBody.isKinematic = previewBodyWasKinematic;
             previewFrozenBody.useGravity = previewBodyUsedGravity;
-            previewFrozenBody.linearVelocity = previewBodyLinearVelocity;
-            previewFrozenBody.angularVelocity = previewBodyAngularVelocity;
+            if (!previewBodyWasKinematic)
+            {
+                previewFrozenBody.linearVelocity = previewBodyLinearVelocity;
+                previewFrozenBody.angularVelocity = previewBodyAngularVelocity;
+            }
+
             previewBodyStateCaptured = false;
             previewFrozenBody = null;
         }
