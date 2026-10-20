@@ -418,7 +418,30 @@ namespace Project.Saving
                     runData.currentRespawnAnchorId,
                     out RespawnAnchorFeature restored))
             {
-                checkpoint = restored;
+                if (restored.IsBossArenaRespawnPoint)
+                {
+                    if (RespawnAnchorChainRuntime
+                        .TryFindBossEntryFallback(
+                            restored,
+                            out RespawnAnchorFeature bossEntry))
+                    {
+                        checkpoint = bossEntry;
+                        Debug.Log(
+                            "[RunSession] 当前存档为 Boss 重生点，" +
+                            "读档改为恢复 Boss 前置出生点。");
+                    }
+                    else
+                    {
+                        checkpoint = restored;
+                        Debug.LogWarning(
+                            "[RunSession] 当前存档为 Boss 重生点，" +
+                            "但同场景链表中没有已激活的 Boss 前置出生点。");
+                    }
+                }
+                else
+                {
+                    checkpoint = restored;
+                }
             }
             player.TryRestoreLoadedRunPosition(
                 checkpoint,

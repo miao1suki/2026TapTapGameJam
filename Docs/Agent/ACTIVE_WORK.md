@@ -1,5 +1,23 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 Boss 前置出生点读档回退
+
+- 分支 `冲刺2`。为 `RespawnAnchorFeature` 增加“是否为 Boss 前置出生点”标记；该标记只用于读档，不改变正常激活、绑定、材质、动画或复活行为。
+- `RunSessionCoordinator` 在存档当前点属于 Boss 关重生点时，从同场景已保存链表中寻找编号更小且已激活的最高编号前置点并改为恢复该点；没有有效前置点时继续使用原 Boss 点，正常死亡、R 与传送地图不经过该分支。
+- 同步 Inspector、关卡组件参数、`ROOM_LIFECYCLE_API.md` 与 `ROOM_RESPAWN_AND_RESET.md`。Unity 6000.3.12f1 `Assembly-CSharp`、`Assembly-CSharp-Editor` 与 `Project.GameFlow.EditorTests` 静态编译均 `0` error；测试覆盖最高编号前置点选择和未激活点排除。未运行 Play Mode。
+
+## 2026-10-20 喷泉真结局黑屏收尾修正
+
+- 分支 `冲刺2`。修复 `FountainEndingTimelinePlayable` 在清档前先平滑释放镜头、随后 `blackScreenHoldSeconds=0` 导致喷泉镜头发回出生点可见的问题。
+- 结束分支现在先设置 `completingEnding`，以立即释放 Timeline 相机；回主菜单状态完成后额外保持黑屏 `1` 秒，再解除黑屏并播放菜单 RGB 故障。
+- 范围仅 `FountainEndingTimelinePlayable.cs`、`fountain_ending.playable` 与喷泉结局接入文档；不改 Scene、planning、玩家或其他 Timeline。Unity 6000.3.12f1 现有 `Assembly-CSharp.rsp` Roslyn 静态编译 `0` error，仅有既有 `TMP_Text.enableWordWrapping` 过时警告；未启动 Play Mode。
+
+## 2026-10-20 Player Thinking 镜头抬高 4 格
+
+- 分支 `冲刺2`。仅调整 `Content/Boss/Timelines/player_thinking.playable` 的 `BossCameraPlayable.playerFocusOffset`，将镜头相对玩家的本地 Y 从 `0` 改为 `4`；不改 Scene、planning、玩家、传送锚点或其他 Timeline。
+- 该 Timeline 使用一条全程 `PlayerFocus` 镜头，因此真结局前六份收集品与“终于/要结束了吗”字幕段整体抬高 4 格，失败返回段也使用同一高度。
+- 已同步 `PLAYER_THINKING_API.md`。提交前检查偏移唯一性、YAML 结构和 `git diff --check`；本轮不启动 Unity Play Mode。
+
 ## 2026-10-20 TapTap SDK 合并的 Gaming 语义重做（静态验证完成，Unity 交由主编辑器）
 
 - 用户裁决：以 `origin/main` 的 `a7fa6ea` 为 Gaming 底稿，只保留分支 `507bfb7` 的 Timeline 注入、`PlayableDirector`、触发器/Collider 放置参数和地图组件覆盖；既有 Transform、位置、美术与地图修补全部采用 main，其余代码/文档冲突融合双方。
