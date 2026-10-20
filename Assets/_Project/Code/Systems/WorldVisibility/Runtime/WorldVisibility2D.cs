@@ -14,15 +14,18 @@ namespace Project.WorldVisibility
         [SerializeField] public Transform viewer;
         [SerializeField] public bool findPlayer = true;
         [SerializeField] public bool previewInEditor;
+        [SerializeField] public bool connectedSpaceVisibility = true;
         [SerializeField, Min(.01f)] public float cellWorldSize = 1;
         [SerializeField, Min(.5f)] public float sightRadiusCells = 24;
         [SerializeField, Min(.5f)] public float playerLightRadiusCells = 12;
         [SerializeField, Range(0,1)] public float ambient = .04f;
         [SerializeField, Range(0,1)] public float lightCore = .45f;
+        [SerializeField, Range(0,4)] public float shadowSoftnessCells = 1.5f;
         [SerializeField, Range(.25f,1)] public float maskResolution = .5f;
         [SerializeField, Range(1,8)] public int maxExtraLights = 4;
         [SerializeField] public bool respectPlayerSight = true;
         readonly VisibilityGeometry.Polygon sight = new VisibilityGeometry.Polygon();
+        readonly ConnectedSpaceGeometry connected = new ConnectedSpaceGeometry();
         readonly VisibilityGeometry.Polygon playerLight = new VisibilityGeometry.Polygon();
         readonly List<VisibilityGeometry.Segment> walls = new List<VisibilityGeometry.Segment>(4096);
         readonly List<VisibilityGeometry.Segment> dynamicEdges = new List<VisibilityGeometry.Segment>(128);
@@ -36,10 +39,16 @@ namespace Project.WorldVisibility
         int solidRevision = -1, revision, dynamicHash, configurationHash;
         Vector2 lastViewer = new Vector2(float.PositiveInfinity,0);
         float nextPlayerSearch;
+        float nextConnectedBuild;
+        int connectedRevision = -1;
+        Vector2Int connectedCell = new Vector2Int(int.MinValue, int.MinValue);
+        float connectedRadius, connectedStep;
         const float BucketSize = 8;
         public int CachedSegments => walls.Count;
         public int GeometryRevision => revision;
-        public Mesh SightMesh => sight.Mesh;
+        public Mesh SightMesh => connectedSpaceVisibility ? connected.Mesh : sight.Mesh;
+        public int ConnectedBuildCount => connected.BuildCount;
+        public int ConnectedCellCount => connected.ReachableCells;
         internal Mesh PlayerMesh => playerLight.Mesh;
         internal IReadOnlyList<VisibilityLight2D> Lights => visibleLights;
         public static void InvalidateAll() { foreach (var item in active) if (item) item.solidRevision = -1; }
@@ -52,7 +61,8 @@ namespace Project.WorldVisibility
         void OnDisable()
         {
             active.Remove(this); SceneManager.sceneLoaded -= SceneLoaded;
-            sight.Dispose(); playerLight.Dispose(); walls.Clear(); buckets.Clear(); visibleLights.Clear();
+            sight.Dispose(); connected.Dispose(); playerLight.Dispose(); walls.Clear(); buckets.Clear(); visibleLights.Clear();
+            connectedRevision = -1;
         }
         void OnValidate() { solidRevision = -1; cellWorldSize = Mathf.Max(.01f,cellWorldSize); }
         void SceneLoaded(Scene scene, LoadSceneMode mode) => solidRevision = -1;
@@ -70,6 +80,25 @@ namespace Project.WorldVisibility
             if (!viewer) return false; // Missing references must never black out an unrelated camera.
             if (solidRevision != LevelEditorPlacedBlock.SolidRevision) RebuildWalls();
             RebuildDynamicEdges();
+            if (connectedSpaceVisibility)
+            {
+                float step = Mathf.Max(.01f, cellWorldSize) * .5f;
+                float radius = Mathf.Clamp(sightRadiusCells, 2, 48) * cellWorldSize;
+                Vector2 p = viewer.position;
+                var cell = new Vector2Int(Mathf.FloorToInt(p.x / step), Mathf.FloorToInt(p.y / step));
+                bool changed = connectedRevision != revision || radius != connectedRadius || step != connectedStep;
+                bool teleported = ((Vector2)cell - connectedCell).sqrMagnitude > 16f;
+                if (changed || cell != connectedCell && (teleported || Time.realtimeSinceStartup >= nextConnectedBuild))
+                {
+                    Query(p, radius + step * 2);
+                    connected.Build(p, radius, step, nearby);
+                    connectedCell = cell; connectedRadius = radius; connectedStep = step; connectedRevision = revision;
+                    nextConnectedBuild = Time.realtimeSinceStartup + .1f;
+                }
+                // No ray-cast light polygons or per-lamp work in connected-space mode.
+                visibleLights.Clear();
+                return true;
+            }
             int config;
             unchecked { config = (sightRadiusCells.GetHashCode() * 397 ^ playerLightRadiusCells.GetHashCode()) * 397 ^ cellWorldSize.GetHashCode(); }
             Vector2 position = viewer.position;

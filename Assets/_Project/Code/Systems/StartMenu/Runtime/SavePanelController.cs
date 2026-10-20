@@ -94,7 +94,7 @@ namespace Project.StartMenu
             placeholder =
                 textObject.GetComponent<TextMeshProUGUI>();
             placeholder.font = uiSdfFont;
-            placeholder.text = placeholderText;
+            placeholder.text = placeholderText + "\n已自动存档";
             placeholder.fontSize = Mathf.Max(
                 1f,
                 placeholderFontSize);

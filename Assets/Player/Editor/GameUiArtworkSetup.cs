@@ -81,7 +81,7 @@ namespace Project.Player.Editor
             try
             {
                 asset.pauseIcons = new Sprite[6];
-                int[] positions = {176, 112, 80, 16, 48, 144};
+                int[] positions = {176, 112, 144, 16, 48, 80};
                 for (int i = 0; i < positions.Length; i++)
                 {
                     var sprite = Crop(icons, "Pause Icon " + i, positions[i], 22, 32, 38);

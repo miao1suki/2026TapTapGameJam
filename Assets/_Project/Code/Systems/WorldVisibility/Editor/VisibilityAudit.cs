@@ -44,6 +44,7 @@ namespace Project.WorldVisibility.Editor
                 camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
                 var viewer = new GameObject("光照审计观察者").transform;
                 var system = camera.gameObject.AddComponent<WorldVisibility2D>(); system.targetCamera = camera; system.viewer = viewer;
+                system.connectedSpaceVisibility = false; // Explicit coverage of the retained legacy lighting mode.
                 system.findPlayer = false; system.previewInEditor = true; system.playerLightRadiusCells = 9; system.sightRadiusCells = 12;
                 system.ambient = 0; system.maskResolution = 1;
                 var wall = new GameObject("审计墙体").AddComponent<BoxCollider>(); wall.transform.position = new Vector3(1,0,0); wall.size = new Vector3(.5f,4,1);
