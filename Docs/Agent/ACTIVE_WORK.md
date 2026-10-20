@@ -1,11 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
-## 2026-10-20 正式全关连通整合（进行中）
+## 2026-10-20 正式全关连通整合（验收与双端构建完成）
 
 - 用户确认MRoom2入口接Gaming左上、左开放区接R1；R1右下接R2左上，R2右中接R3左，R3接Gaming左侧中下大空间；MRoom3双入口接Gaming右下两端；Boss接长竖井。需保留作者Scene、同步规划、接Boss/地图/收集/泉水，验证后推送与双端构建。
 - 编辑范围：PlanningEditorData、PlanningSceneBuilder及新增最终Scene快照回采工具；所有生成/接线先在Library/FlowRetirementProbe隔离工程执行，主目录作者未提交场景与美术不覆盖。R2/R3接口的R已由用户确认指R2。
 - 已完成隔离合图：4343物体/28区域，三个新增MRoom3方块齐全；原房间21按保存规划保留。全量回采重建零位姿/机关引用差异、不变增量保留4343实例，最终275通道格静态无墙阻挡，实际渲染复核。35收集品、Start/End净空、门槛/泉水Play专项通过；未完整Boss通关或安卓真机测试。
 - 发布版本0.2.1、Android `com.xingzhicai.game`/code201；首轮Windows构建成功，正在整合最新main存档提交后重构建。正式成套数据已回写前核对用户保存后无新改动，仅同步合图及其快照/规划依赖；未覆盖Pick、美术库、字体及个人清理。完整说明见Docs/Developer/COMBINED_WORLD_0_2_1.md。
+- 最终合入远端main `4b8a1ad` 单轮存档/开场，文档冲突保留双方；本地字体先备份到Library/WorldMergeBackup-Saved-20261020并保留git stash，再采用远端字体。更新后Play专项重跑全部PASS。Windows与Android正式构建均Succeeded/0 errors（既有6/9 warnings），Windows D3D11启动无异常；APK实查applicationId=com.xingzhicai.game、0.2.1/code201、arm64-v8a、debuggable=false、无请求权限。未完整通关或真机验收。包在Builds/形之彩-0.2.1-20261020-全关卡，近期路线见Docs/Developer/GIT_ROADMAP_0_2_1.md。
 
 ## 2026-10-20 导入后蓝色房间块（完成）
 

@@ -1,5 +1,7 @@
 # 系统索引
 
+正式全关已连到Gaming：4343物体、28区域、35收集品，R1/R2/R3/MRoom2/MRoom3/Boss均采用最终Scene无损回采；三份正式规划及AuthoredSections依赖成套。已有拖动导入适用于六份回采片段，旧R planning不能直接重建覆盖。版本0.2.1、Android com.xingzhicai.game/code201，见[交接](../Developer/COMBINED_WORLD_0_2_1.md)。下文未合入R场景等为历史状态。
+
 关卡存档拼接采用置顶暂存预览：自动放到地图右侧空位、整格拖动与边缘平移；可保留原房间划分或归并新房间，确认前不改当前地图。物体层与房间占格共同验重，源内部共用占格不再误报。操作见[协作地图](../Developer/LEVEL_EDITOR_COLLABORATION.md)、[接口](Integration/PLANNING_COLLABORATION_API.md)。
 `存档改革` 分支的存档、开局、结局清档、收集品、颜色钥匙/能力、重生点和成就边界统一服从 `.agents/skills/taptap-save-reform/SKILL.md`：玩家不再管理多槽位，单轮自动续玩；低于30%不进Boss，30%到60%以下打完回第一关并保留本轮，达到60%完成真结局Playable后才清档、重置并回主界面；成就与本机全局设置跨轮永久保留。
 

@@ -3,6 +3,8 @@
 项目：2026TapTap；远程：`https://github.com/miao1suki/2026TapTapGameJam.git`。
 Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未导入旧项目设置。
 
+2026-10-20正式合图更新：Gaming已纳入最终R1/R2/R3、用户最新MRoom2/MRoom3及Boss，4343物体、28区域、35普通收集品；实际Scene回采快照与可独立导入片段位于Content/LevelMaps/AuthoredSections，旧R planning仍不可直接覆盖最终图。Start/End及结局均同场景。版本0.2.1、Android com.xingzhicai.game；原房间21用户移走部分保留。以下未合图房间数量与“不进入正式构建”为历史状态，详见FORMAL_LEVEL_DELIVERY与COMBINED_WORLD_0_2_1.md。
+
 当前正式图以FORMAL_LEVEL_DELIVERY顶部2026-10-20远端基线为准：xianyu66web 5e88e7c、21房间、2604原物体，补新出生位置的隐形Start后2605条。保留main玩法、美术和单Gaming菜单修复；下文20/17房间等是历史记录，不可据此回退地图。R2最新Scene为d3fac6a，R1/R2/R3最终手调planning仍待精确回采，不进入正式构建。TA新美术f7cbb62仅备份不合，现有main美术保留。各策划工作场景最终导入同一Gaming；Boss门槛/结局/地图不引入跨场景加载。
 
 场景美术统一16个有效美术像素对应1格。编码尺寸需扣除已验证的导出倍率（tail为4倍），不拉伸以迁就碰撞；24像素玩家外观为1.5格而物理仍1格。修改物体、关卡预览、贴花或背景前读 [美术换算约定](../Developer/ART_GRID_CONVENTIONS.md) 和 [工作台换算](../Developer/SCENE_ART_PIXEL_CONVERSION.md)。基座默认有重力，可实例关闭；MRoom2第二版三基座保持无重力。新增颜色装饰仅归属颜色层，不是可交互颜色物体，不能授予能力或参与房间玩法重置。

@@ -30,3 +30,7 @@ MRoom3 新增 `box_9fb493b9`、`box_e0df9bf4`、`box_65075c98` 均保留（正�
 35份普通收集品按真实 Amount 总计；30%需11份，60%需21份。Boss入口使用已有门槛与 Start 返回，同场景 End 与八帧喷泉在末尾空房间，泉水仅表现、不代写结局判定。Start/End 各唯一，胶囊净空。Boss重生点排除地图传送；不把 Gaming 标成专用 Boss 场景。
 
 隔离 Unity 验证：4343对象全量重建位姿与机关引用零差异；不变增量保留4343个实例；修改一组后原子替换并恢复零差异；最终275个通道格静态碰撞无墙阻挡；MRoom3三块齐全；实际渲染截图复核。Play检查唯一玩家/相机/UI/房间服务、35收集品、Boss零收集拒绝与Start返回、九个Boss重生点、End/泉水。最后连接标记调整仅完成静态复核，未人工走通全部关卡，未完整打Boss或演完两条结局；不等同完整通关或安卓真机测试。
+
+最终又合入远端main `4b8a1ad` 单轮存档与开场提交，并重新通过上述Play专项；此前运行报告早于最终标记调整的限制已由这次重跑补齐，但仍不是完整通关。双端均以Gaming唯一场景、非Development正式构建成功，Windows 0 errors/6 warnings，Android 0 errors/9 warnings。D3D11发布包启动无异常。APK实际包名com.xingzhicai.game、versionName0.2.1/code201、ARM64、debuggable=false，无uses-permission；旧Java内部类命名空间仅为内部实现，不是安装应用ID。
+
+构建目录：`Builds/形之彩-0.2.1-20261020-全关卡`。Windows整目录压缩包约97MiB，APK约77MiB；不要只分发Windows单个exe。构建未提交Git，源与成套依赖已提交。远端字体采用前，本地字体已备份到Library且保留在git stash，其他用户未提交内容未纳入本次范围。
