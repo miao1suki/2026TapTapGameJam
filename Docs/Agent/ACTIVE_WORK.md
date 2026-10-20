@@ -94,6 +94,12 @@
 - 优先排查高频全表扫描、UI 重建、重复 AssetDatabase 查询和 Scene Gizmo/预览提交；保存、Undo、显示内容及选取功能必须保留。
 - 实际Editor Profiler复现Scene刷新约247ms/轮与空重绘循环；修复正负组件分类缓存、原生增删检测及空刷新不重绘。关卡原生图片改父变换保留，机关/平台参数和装配原点缓存；不依赖白块合并，不隐藏美术参考。正常Scene远景约12ms，装配102→12ms、细节19→4ms、美术远景约2ms；P95与局限记录在窗口性能文档，不宣称所有窗口恒定帧率。
 - 隔离回归：12000块8项、原生美术17项、世界图16项、Scene22项及真实GPU4视图缓存/重建逐像素一致通过；100次空层级通知不重建或重绘，原生Add/Remove组件仍正确更新。主用户Unity不保存、不关闭；Pick、字体、共享库、项目设置和其他未提交变更不暂存。
+## 2026-10-20 Boss RGB 死亡溶解与预览场景
+
+- 分支 `codex/codex/boss-rgb-death-20261020`。
+- 在 `Assets/ta_source/Boss_Die` 新增独立 `BossDeathPreview.unity`、RGB 溶解 Shader、默认材质与操作说明；预览场景复用正式 Boss 预制体，不改原图、Boss 预制体或 Gaming。预览实例关闭重力并设为运动学状态，避免进入 Play Mode 后下坠。
+- `Assets/Boss_Logic/BossAnimationDriver` 在死亡 Timeline 调用 `PlayDeathAnimationNow()` 时生成临时网格并触发 RGB 溶解；速度、横向分散可调，Inspector 提供 Play Mode 预览按钮。Inspector 预览期间临时冻结 Boss，播放后恢复刚体状态；溶解网格脱离动画层级并保持触发时的世界姿态，避免死亡动画将其带落。自然死亡与处决仍走共享死亡 Playable。
+- 更新 PROJECT_CONTEXT、SYSTEM_INDEX、BOSS_CONTROLLER 与 BOSS_CONTROLLER_API。Unity 6000.3.12f1 Runtime/Editor Roslyn 编译通过，只有原有无关文件的 obsolete/hide 警告；`git diff --check` 通过，场景 prefab、相机脚本、材质/Shader GUID 与 Resources 路径已静态核对。未在 Play Mode 验收实际画面。
 
 ## 2026-10-20 TA 美术补合与遗漏分支核对（验证完成）
 
