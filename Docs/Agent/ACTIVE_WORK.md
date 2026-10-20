@@ -1,5 +1,21 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-21 ILorR 正式关卡瓦片美术（静态核对完成，获准推送分支）
+
+- 用户完成刷瓦片并授权按协作规范提交推送。沿用原项目及 `codex/ilorr/gaming-tile-art-20261020`，基线 `58c6df7`。本轮 fetch 后 `origin/main` 已到 `5d0c870`，包含基线之后的 21 个提交；本轮不合并/rebase、不推 main，由整合者接收本分支增量。
+- 交付已保存的 `Assets/_Project/Scenes/Playing/Gaming.unity`、`Gaming_Art.asset`、共享 `Content/Art/SceneArtLibrary.asset`、278 份最终场景引用的新生成资源及 meta。配套 Scene/meta、同名 planning/meta 和命名正式存档/meta 保持现有版本，后两份布局存档没有改动；不从旧存档重建场景。
+- 美术图由 3972 格增至 7139 格，四个原图层 ID 保留；新增 3167 格，无删除、无覆盖原有格。共享库自动追加 54 份浅草条目后为 257 项，并包含 Unity 的三个 Sprite 渲染键保存变化。合并时必须保留最新 main 的其他作者美术，按稳定图层 ID/世界格增量接收，并核对素材 sourceKey/编号，不整份覆盖新 main 的 Scene、Map 或素材库。
+- 静态比较 Scene 的 30941/31485 个序列化块，本次变化全部位于既有 GridArt 根及其子树，玩法物体和布局块未改。全部笔刷编号有效；新资源均有 meta，新增引用已解析到项目依赖。48 份未被最终场景引用的本地生成中间文件不提交、不删除；原有三份 TileLibrary 配置和新增字体动态缓存改动均保留在本地，不纳入本轮。
+- Unity 6000.3.12f1。未改 Runtime/SDK/Packages，不另启 Unity、Play Mode 或构建；采用资源与场景静态核对，提交时由既有 pre-commit 执行规划配对守卫。最终视觉、遮挡与游玩效果由用户/整合者在 Unity 验收。仅普通推送当前任务分支，不建 PR 或合并 main。
+
+## 2026-10-20 ILorR 正式关卡刷瓦片准备（本地配置完成，未提交推送）
+
+- 用户要求按协作规范同步 main 并准备开始刷瓦片，继续使用原项目 `C:/Unity Programs/2026TapTapGameJam`，不新增独立项目。重新 fetch 后从 `origin/main` 的 `58c6df7a3eda30bc363992e513f278f70b74bab2` 创建并切换到 `codex/ilorr/gaming-tile-art-20261020`，未配置为跟踪 main，未合并其他任务分支、未提交或推送。
+- 计划制作范围：正式 `Assets/_Project/Scenes/Playing/Gaming.unity` 的现有美术图 `Gaming_Art.asset`，使用 N 键网格美术工作台；只刷美术，不改关卡布局、碰撞、玩法或 SDK。不从旧 R 场景、旧 planning 或 Library 恢复地图。多人共用 Scene/美术图时需约定各自区域与交付顺序，不能以整个旧美术图覆盖别人进度。
+- 更新前主项目有三项既存未提交改动：`Development/LevelEditor/Orpheus0829/TileLibrary` 下的 `26TAPTAP_Palette.asset`、`26TAPTAP_Preview.mat`、`26TAPTAP_SurfaceTileImport.asset`（均位于 `Assets/_Project`）。三项及各自 meta 已完整备份到忽略目录 `Library/BeforeTileArt-20261020-58c6df7`，备份及更新前后 SHA256 一致；它们与本轮 main 更新不重叠，全部原样保留，未暂存、丢弃或 stash。
+- 本地 Git 开启 `core.longpaths=true`，补齐首次切换时因 Windows 长路径限制未写入的九份 main 美术 meta，保留原 GUID；原 `.githooks` 配置未改。不修改系统设置、Unity 版本或 Packages。独立 R1/R2/R3 目录未触碰。
+- 静态核对当前分支 HEAD 与上述 main 基线一致，正式 Scene、同名 planning、命名正式存档、现有美术 Map 和共享素材库齐全。未启动 Unity、Play Mode 或构建；待用户用 Unity 6000.3.12f1 打开原项目及 Gaming，确认 N 工作台识别现有美术并试刷、点击“保存场景”。后续交付保留 Scene/美术图/meta/生成依赖，玩法布局若有变化须同时维护两份正式存档；只在用户再次要求时提交推送自己的分支。
+
 ## 2026-10-20 Boss 前置出生点读档回退
 
 - 分支 `冲刺2`。为 `RespawnAnchorFeature` 增加“是否为 Boss 前置出生点”标记；该标记只用于读档，不改变正常激活、绑定、材质、动画或复活行为。
