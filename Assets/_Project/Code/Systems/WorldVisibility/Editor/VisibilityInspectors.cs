@@ -29,7 +29,8 @@ namespace Project.WorldVisibility.Editor
             var lighting = VisibilityInspectorUI.Group(root,"光照表现");
             Field(lighting,"connectedSpaceVisibility","连通空间可见（推荐）");
             Field(lighting,"cellWorldSize","单格世界尺寸"); Field(lighting,"sightRadiusCells","视线范围（格）");
-            lighting.Add(new HelpBox("连通模式：半径内通路可绕转角，封闭墙体和关闭的门阻断；保持原画亮度，仅范围外沿渐隐。半径限制为2～48格，半格采样；不计算任何附加灯光或阴影。",HelpBoxMessageType.Info));
+            Field(lighting,"defaultOcclusionFadeDuration","默认淡入淡出时长");
+            lighting.Add(new HelpBox("连通模式：半径内通路可绕转角，封闭墙体和关闭的门阻断。墙体常亮，只遮蔽非墙体房间内容；范围外沿渐隐，外部可通过可释放接口平滑关闭与恢复。",HelpBoxMessageType.Info));
             var legacy = VisibilityInspectorUI.Group(lighting,"直线视线与灯光参数",false);
             Field(legacy,"playerLightRadiusCells","玩家光范围（格）"); Field(legacy,"ambient","可见区域环境亮度");
             Field(legacy,"lightCore","明亮核心比例"); Field(legacy,"respectPlayerSight","墙后不可见（含远处灯光）");

@@ -9,6 +9,7 @@ using Project.BlockFeatures;
 using Project.LevelEditor;
 using Project.ObjectArtwork;
 using Project.Rooms;
+using Project.WorldVisibility;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
@@ -36,12 +37,15 @@ namespace Project.ColorBlocks
         [SerializeField, Min(.01f)] private float cameraMoveDuration = 3f;
         [SerializeField, Min(0f)] private float cameraHoldDuration = 2f;
         [SerializeField, Min(0f)] private float cameraReturnDuration = .85f;
+        [SerializeField, Min(0f)] private float visibilityFadeOutDuration = .2f;
+        [SerializeField, Min(0f)] private float visibilityFadeInDuration = .35f;
         private PlayerController collectingPlayer;
         private TimelineCamRig activeRig;
         private float originalOrthographicSize;
         private float originalFieldOfView;
         private float nextPlayerSearchTime;
         private IDisposable controlLockHandle;
+        private IDisposable visibilitySuppression;
         private IGridCellSizeProvider hoverGrid;
         private MonoBehaviour hoverGridOwner;
         public ColorKeyUnlockResult UnlockResult { get; private set; }
@@ -70,6 +74,7 @@ namespace Project.ColorBlocks
         protected override void OnDisable()
         {
             ReleasePlayerControlLock();
+            ReleaseVisibilitySuppression();
             base.OnDisable();
         }
 
@@ -155,6 +160,7 @@ namespace Project.ColorBlocks
             IsCollectionVisualComplete = false;
             UnlockResult = ColorKeyUnlockResult.None;
             ReleasePlayerControlLock();
+            ReleaseVisibilitySuppression();
             collectingPlayer = null;
             nextPlayerSearchTime = 0f;
             var collider = GetComponent<Collider>();
@@ -302,6 +308,7 @@ namespace Project.ColorBlocks
                     }
                 }
             }
+            ReleaseVisibilitySuppression();
 
             // The color reveal may finish during the camera return; it must not
             // keep player input locked.
@@ -369,6 +376,16 @@ namespace Project.ColorBlocks
             originalFieldOfView = state.fieldOfView;
             rig.SetShotLens(originalOrthographicSize, originalFieldOfView);
             rig.SetReturnDurationForCurrentShot(cameraReturnDuration);
+            WorldVisibility2D visibility =
+                WorldVisibility2D.FindForScene(gameObject.scene);
+            if (visibility != null)
+            {
+                ReleaseVisibilitySuppression();
+                visibilitySuppression = visibility.SuppressOcclusion(
+                    this,
+                    visibilityFadeOutDuration,
+                    visibilityFadeInDuration);
+            }
             cameraDirector.Play();
             return true;
         }
@@ -449,6 +466,12 @@ namespace Project.ColorBlocks
         {
             controlLockHandle?.Dispose();
             controlLockHandle = null;
+        }
+
+        private void ReleaseVisibilitySuppression()
+        {
+            visibilitySuppression?.Dispose();
+            visibilitySuppression = null;
         }
 
         public bool TryGetStableInstanceId(

@@ -44,7 +44,7 @@ namespace Project.WorldVisibility
         {
             public TextureHandle source, sight, light, soft;
             public Material material;
-            public float ambient, gate;
+            public float ambient, gate, strength;
             public Vector4 softness;
         }
         sealed class VisibilityPass : ScriptableRenderPass
@@ -58,6 +58,7 @@ namespace Project.WorldVisibility
             static readonly int SoftMaskId = Shader.PropertyToID("_VisibilitySoftMask");
             static readonly int BlurDirectionId = Shader.PropertyToID("_VisibilityBlurDirection");
             static readonly int SoftnessId = Shader.PropertyToID("_VisibilitySoftness");
+            static readonly int StrengthId = Shader.PropertyToID("_VisibilityStrength");
             public VisibilityPass(Material value)
             {
                 material = value;
@@ -70,6 +71,7 @@ namespace Project.WorldVisibility
                 var camera = frameData.Get<UniversalCameraData>().camera;
                 var system = WorldVisibility2D.ForCamera(camera);
                 if (!system || !system.Prepare(camera)) return;
+                if (system.OcclusionStrength <= .0001f) return;
                 var resources = frameData.Get<UniversalResourceData>();
                 if (resources.isActiveTargetBackBuffer) return;
                 var source = resources.activeColorTexture;
@@ -92,6 +94,8 @@ namespace Project.WorldVisibility
                         {
                             if (value.system && value.system.SightMesh)
                                 context.cmd.DrawMesh(value.system.SightMesh, Matrix4x4.identity, value.material, 0, 5);
+                            if (value.system && value.system.WallMesh)
+                                context.cmd.DrawMesh(value.system.WallMesh, Matrix4x4.identity, value.material, 0, 7);
                         });
                     }
                     var connectedOutput = graph.GetTextureDesc(source);
@@ -100,11 +104,13 @@ namespace Project.WorldVisibility
                     using (var builder = graph.AddRasterRenderPass<CompositeData>("连通空间原画合成", out var data))
                     {
                         data.source = source; data.sight = connected; data.material = material;
+                        data.strength = system.OcclusionStrength;
                         builder.UseTexture(source); builder.UseTexture(connected);
                         builder.SetRenderAttachment(result, 0); builder.AllowGlobalStateModification(true);
                         builder.SetRenderFunc((CompositeData value, RasterGraphContext context) =>
                         {
                             context.cmd.SetGlobalTexture(SightId, value.sight);
+                            context.cmd.SetGlobalFloat(StrengthId,value.strength);
                             Blitter.BlitTexture(context.cmd, value.source, new Vector4(1, 1, 0, 0), value.material, 6);
                             LastExecutedFrame = Time.frameCount;
                         });
@@ -135,6 +141,7 @@ namespace Project.WorldVisibility
                 {
                     data.source = source; data.sight = sight; data.light = light; data.soft = soft; data.material = material;
                     data.ambient = Mathf.Clamp01(system.ambient); data.gate = system.respectPlayerSight ? 1 : 0;
+                    data.strength = system.OcclusionStrength;
                     data.softness = softUV;
                     builder.UseTexture(source); builder.UseTexture(sight); builder.UseTexture(light); builder.UseTexture(soft);
                     builder.SetRenderAttachment(output,0); builder.AllowGlobalStateModification(true);
@@ -143,6 +150,7 @@ namespace Project.WorldVisibility
                         context.cmd.SetGlobalTexture(SightId,value.sight); context.cmd.SetGlobalTexture(LightId,value.light);
                         context.cmd.SetGlobalTexture(SoftMaskId,value.soft);
                         context.cmd.SetGlobalFloat(AmbientId,value.ambient); context.cmd.SetGlobalFloat(GateId,value.gate);
+                        context.cmd.SetGlobalFloat(StrengthId,value.strength);
                         context.cmd.SetGlobalVector(SoftnessId,value.softness);
                         Blitter.BlitTexture(context.cmd,value.source,new Vector4(1,1,0,0),value.material,2);
                         LastExecutedFrame = Time.frameCount;

@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-21 光照墙体保留与钥匙演出淡出（编译通过，待 Play/GPU 验收）
+
+- 分支 `光照`。范围：`WorldVisibility2D`、连通空间 RenderGraph 合成、光照 Inspector、`ColorKeyPickup` 与颜色钥匙 Inspector；不改 Gaming 场景、规划、美术、碰撞、房间或存档。
+- 连通空间改为墙体常亮：非道具规划物的实际 BoxCollider 足迹生成独立 `WallMesh`，并与可见空间遮罩合并，只压暗非墙体房间内容。墙体足迹不读取或改写作者 Renderer。
+- 遮蔽新增平滑强度与可释放接口 `SuppressOcclusion(owner, fadeOutDuration, fadeInDuration)`；按 owner 引用计数，`Dispose()` 后恢复。三色钥匙在有 Timeline 相机演出时自动取得句柄，Timeline 停止后释放；淡出/淡入时长在钥匙 Inspector 可调。
+- Unity 6000.3.12f1 主程序集与 Editor 程序集编译 0 error，仅既有 warning；一次性校验 `PASS shader + occlusion lease`，入口已删除。未运行 GPU/Play 验收，实际墙体保留、渐变观感和三色钥匙演出需在 Game View 复验。
+
 ## 2026-10-21 MRoom3 七件道具增量整合（已完成）
 
 - 当前整合分支 `codex/roy/merge-spotlight-mroom3-20261021`，基线 `main`/`origin/main` 的 `0a2c8ea4`。只接收队友 `b6a28915b8d63c83326ca06331ac158b0e23fab7` 在 MRoom3 `room_791e28e6` 新增的 5 个弹性植物与 2 个藤蔓，规划物体数由 4261 增至 4268。

@@ -1,5 +1,7 @@
 # 系统索引
 
+2026-10-21光照：连通空间遮蔽只压暗非墙体内容，规划墙 Collider 足迹生成常亮 `WallMesh`。`WorldVisibility2D.SuppressOcclusion` 提供按 owner 引用计数的淡出/淡入租约；三色钥匙 Timeline 自动临时关闭并在停止后恢复。
+
 2026-10-21颜色钥匙镜头：拾取演出正交尺寸固定为`15`，三色Timeline不申请2D/3D切换且保留当前Yaw；Gaming主相机预挂`TimelineCamRig`，避免首次拾取运行时挂组件。
 
 2026-10-21背景音乐：MainMenu固定`music.menu.opening`；Gaming从7首区域/氛围BGM洗牌单次播放，曲间默认静默8秒。Boss覆盖曲存活期间循环并暂停随机轮播，死亡后恢复底层流程。实现入口为`GameAudioService`与`AudioManager`，说明见`GAMEPLAY_AUDIO.md`。

@@ -64,7 +64,8 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
                     light = min(light,filtered.rgb);
                 }
                 half3 illumination = max(_VisibilityAmbient,light);
-                source.rgb *= saturate(illumination * lerp(1,sight,_VisibilityGate));
+                half factor = saturate(illumination * lerp(1,sight,_VisibilityGate));
+                source.rgb *= lerp(1,factor,saturate(_VisibilityStrength));
                 return source;
             }
             ENDHLSL
@@ -73,6 +74,7 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
         TEXTURE2D_X(_VisibilitySight);
+        float _VisibilityStrength;
         float4 _VisibilityBlurDirection;
         half4 BlurSample(float2 uv, bool pack)
         {
@@ -96,7 +98,8 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
         half4 ConnectedComposite(Varyings input):SV_Target
         {
             half4 source = SAMPLE_TEXTURE2D_X(_BlitTexture,sampler_PointClamp,input.texcoord);
-            source.rgb *= SAMPLE_TEXTURE2D_X(_VisibilitySight,sampler_LinearClamp,input.texcoord).r;
+            half sight = SAMPLE_TEXTURE2D_X(_VisibilitySight,sampler_LinearClamp,input.texcoord).r;
+            source.rgb *= lerp(1,sight,saturate(_VisibilityStrength));
             return source;
         }
         ENDHLSL
@@ -134,6 +137,15 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment ConnectedComposite
+            ENDHLSL
+        }
+        Pass
+        {
+            Name "墙体保留"
+            ZWrite Off ZTest Always Cull Off
+            HLSLPROGRAM
+            #pragma vertex MaskVert
+            #pragma fragment SightFrag
             ENDHLSL
         }
     }

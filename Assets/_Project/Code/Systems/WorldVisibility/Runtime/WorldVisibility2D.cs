@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Project.LevelEditor;
 using Project.Mechanisms;
@@ -23,6 +24,7 @@ namespace Project.WorldVisibility
         [SerializeField, Range(0,4)] public float shadowSoftnessCells = 1.5f;
         [SerializeField, Range(.25f,1)] public float maskResolution = .5f;
         [SerializeField, Range(1,8)] public int maxExtraLights = 4;
+        [SerializeField, Min(0f)] public float defaultOcclusionFadeDuration = .35f;
         [SerializeField] public bool respectPlayerSight = true;
         readonly VisibilityGeometry.Polygon sight = new VisibilityGeometry.Polygon();
         readonly ConnectedSpaceGeometry connected = new ConnectedSpaceGeometry();
@@ -30,6 +32,9 @@ namespace Project.WorldVisibility
         readonly List<VisibilityGeometry.Segment> walls = new List<VisibilityGeometry.Segment>(4096);
         readonly List<VisibilityGeometry.Segment> dynamicEdges = new List<VisibilityGeometry.Segment>(128);
         readonly List<VisibilityGeometry.Segment> nearby = new List<VisibilityGeometry.Segment>(512);
+        readonly List<Vector3> wallVertices = new List<Vector3>(4096);
+        readonly List<int> wallIndices = new List<int>(8192);
+        readonly Dictionary<object,int> suppressionRequests = new Dictionary<object,int>();
         readonly Dictionary<Vector2Int,List<int>> buckets = new Dictionary<Vector2Int,List<int>>();
         readonly HashSet<int> queried = new HashSet<int>();
         readonly HashSet<BoxCollider> seenBoxes = new HashSet<BoxCollider>();
@@ -40,18 +45,46 @@ namespace Project.WorldVisibility
         Vector2 lastViewer = new Vector2(float.PositiveInfinity,0);
         float nextPlayerSearch;
         float nextConnectedBuild;
+        Mesh wallMesh;
+        float occlusionStrength = 1;
+        float fadeFrom = 1;
+        float fadeTarget = 1;
+        float fadeElapsed;
+        float fadeDuration;
         int connectedRevision = -1;
         Vector2Int connectedCell = new Vector2Int(int.MinValue, int.MinValue);
         float connectedRadius, connectedStep;
         const float BucketSize = 8;
         public int CachedSegments => walls.Count;
         public int GeometryRevision => revision;
+        public Mesh WallMesh => wallMesh;
+        public float OcclusionStrength => occlusionStrength;
         public Mesh SightMesh => connectedSpaceVisibility ? connected.Mesh : sight.Mesh;
         public int ConnectedBuildCount => connected.BuildCount;
         public int ConnectedCellCount => connected.ReachableCells;
         internal Mesh PlayerMesh => playerLight.Mesh;
         internal IReadOnlyList<VisibilityLight2D> Lights => visibleLights;
         public static void InvalidateAll() { foreach (var item in active) if (item) item.solidRevision = -1; }
+        public static WorldVisibility2D FindForScene(Scene scene)
+        {
+            foreach (var item in active)
+                if (item && item.isActiveAndEnabled && item.gameObject.scene == scene) return item;
+            return null;
+        }
+        public IDisposable SuppressOcclusion(object owner = null,float fadeOutDuration = -1,float fadeInDuration = -1)
+        {
+            owner ??= this;
+            suppressionRequests.TryGetValue(owner,out int count);
+            suppressionRequests[owner] = count + 1;
+            float duration = fadeOutDuration >= 0 ? fadeOutDuration : defaultOcclusionFadeDuration;
+            SetOcclusionTarget(0,duration);
+            return new SuppressionLease(this,owner,fadeInDuration);
+        }
+        public void SetOcclusionEnabled(bool enabled,float fadeDurationOverride = -1)
+        {
+            float duration = fadeDurationOverride >= 0 ? fadeDurationOverride : defaultOcclusionFadeDuration;
+            SetOcclusionTarget(enabled ? 1 : 0,duration);
+        }
         void OnEnable()
         {
             if (!active.Contains(this)) active.Add(this);
@@ -62,6 +95,8 @@ namespace Project.WorldVisibility
         {
             active.Remove(this); SceneManager.sceneLoaded -= SceneLoaded;
             sight.Dispose(); connected.Dispose(); playerLight.Dispose(); walls.Clear(); buckets.Clear(); visibleLights.Clear();
+            if (wallMesh) { if (Application.isPlaying) Destroy(wallMesh); else DestroyImmediate(wallMesh); wallMesh = null; }
+            suppressionRequests.Clear(); occlusionStrength = 1; fadeElapsed = fadeDuration = 0; fadeFrom = fadeTarget = 1;
             connectedRevision = -1;
         }
         void OnValidate() { solidRevision = -1; cellWorldSize = Mathf.Max(.01f,cellWorldSize); }
@@ -71,6 +106,13 @@ namespace Project.WorldVisibility
             foreach (var item in active)
                 if (item && item.isActiveAndEnabled && item.targetCamera == camera && (Application.isPlaying || item.previewInEditor)) return item;
             return null;
+        }
+        void Update()
+        {
+            if (fadeDuration <= 0) { occlusionStrength = fadeTarget; return; }
+            if (fadeElapsed >= fadeDuration) { occlusionStrength = fadeTarget; return; }
+            fadeElapsed = Mathf.Min(fadeDuration,fadeElapsed+Time.unscaledDeltaTime);
+            occlusionStrength = Mathf.SmoothStep(fadeFrom,fadeTarget,fadeElapsed/fadeDuration);
         }
         public bool Prepare(Camera camera)
         {
@@ -131,13 +173,18 @@ namespace Project.WorldVisibility
         void RebuildWalls()
         {
             walls.Clear(); buckets.Clear(); seenBoxes.Clear();
+            wallVertices.Clear(); wallIndices.Clear();
             IReadOnlyList<LevelEditorPlacedBlock> blocks = Application.isPlaying ? LevelEditorPlacedBlock.ActiveInstances
                 : FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsInactive.Exclude,FindObjectsSortMode.None);
             foreach (var block in blocks)
             {
                 if (!block || block.IsProp || block.gameObject.scene != gameObject.scene) continue;
                 boxBuffer.Clear(); block.GetComponentsInChildren(false,boxBuffer);
-                foreach (var box in boxBuffer) if (seenBoxes.Add(box)) VisibilityGeometry.AddBox(box,walls);
+                foreach (var box in boxBuffer) if (seenBoxes.Add(box))
+                {
+                    VisibilityGeometry.AddBox(box,walls);
+                    AddWallFill(box);
+                }
             }
             // Each actual collider is retained: nonrectangular unions and holes are not filled.
             VisibilityGeometry.Compact(walls);
@@ -153,7 +200,23 @@ namespace Project.WorldVisibility
                     }
             }
             doors = FindObjectsByType<DoorController>(FindObjectsInactive.Exclude,FindObjectsSortMode.None);
+            wallMesh ??= new Mesh { name = "墙体保留遮罩", hideFlags = HideFlags.HideAndDontSave };
+            wallMesh.Clear(); wallMesh.SetVertices(wallVertices); wallMesh.SetTriangles(wallIndices,0);
+            wallMesh.RecalculateBounds();
             solidRevision = LevelEditorPlacedBlock.SolidRevision; revision++; lastViewer.x = float.PositiveInfinity;
+        }
+        void AddWallFill(BoxCollider box)
+        {
+            if (!box || !box.enabled || box.isTrigger || !box.gameObject.activeInHierarchy) return;
+            Vector3 half = box.size * .5f, center = box.center;
+            Vector3 p = box.transform.TransformPoint(center + new Vector3(-half.x,-half.y,0));
+            Vector3 q = box.transform.TransformPoint(center + new Vector3(half.x,-half.y,0));
+            Vector3 r = box.transform.TransformPoint(center + new Vector3(half.x,half.y,0));
+            Vector3 s = box.transform.TransformPoint(center + new Vector3(-half.x,half.y,0));
+            int start = wallVertices.Count;
+            wallVertices.Add(p); wallVertices.Add(q); wallVertices.Add(r); wallVertices.Add(s);
+            wallIndices.Add(start); wallIndices.Add(start+1); wallIndices.Add(start+2);
+            wallIndices.Add(start); wallIndices.Add(start+2); wallIndices.Add(start+3);
         }
         void RebuildDynamicEdges()
         {
@@ -185,6 +248,33 @@ namespace Project.WorldVisibility
             Vector2 delta = edge.b-edge.a;
             float t = delta.sqrMagnitude < .000001f ? 0 : Mathf.Clamp01(Vector2.Dot(point-edge.a,delta)/delta.sqrMagnitude);
             return (point-edge.a-t*delta).sqrMagnitude <= radius*radius;
+        }
+        void SetOcclusionTarget(float value,float duration)
+        {
+            value = Mathf.Clamp01(value);
+            if (Mathf.Abs(value-fadeTarget) < .0001f && fadeDuration > 0) return;
+            fadeFrom = occlusionStrength; fadeTarget = value;
+            fadeElapsed = 0; fadeDuration = Mathf.Max(0,duration);
+            if (fadeDuration <= 0) occlusionStrength = fadeTarget;
+        }
+        void ReleaseSuppression(object owner,float fadeInDuration)
+        {
+            if (!suppressionRequests.TryGetValue(owner,out int count)) return;
+            if (count > 1) { suppressionRequests[owner] = count - 1; return; }
+            suppressionRequests.Remove(owner);
+            if (suppressionRequests.Count == 0)
+                SetOcclusionTarget(1,fadeInDuration >= 0 ? fadeInDuration : defaultOcclusionFadeDuration);
+        }
+        sealed class SuppressionLease : IDisposable
+        {
+            WorldVisibility2D system; object owner; float fadeInDuration;
+            public SuppressionLease(WorldVisibility2D system,object owner,float fadeInDuration)
+            { this.system = system; this.owner = owner; this.fadeInDuration = fadeInDuration; }
+            public void Dispose()
+            {
+                if (!system) return;
+                system.ReleaseSuppression(owner,fadeInDuration); system = null; owner = null;
+            }
         }
     }
 }

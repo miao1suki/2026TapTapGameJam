@@ -136,6 +136,16 @@ namespace Project.ColorBlocks.Editor
                 serializedObject,
                 "cameraReturnDuration",
                 "镜头返回时间"));
+            timing.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "visibilityFadeOutDuration",
+                "遮蔽淡出时间",
+                "Timeline 开始播放时关闭光照遮蔽的过渡时长。"));
+            timing.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "visibilityFadeInDuration",
+                "遮蔽淡入时间",
+                "Timeline 停止后恢复光照遮蔽的过渡时长。"));
             root.Add(timing);
 
             ProjectInspectorUtility.Bind(root, serializedObject);
