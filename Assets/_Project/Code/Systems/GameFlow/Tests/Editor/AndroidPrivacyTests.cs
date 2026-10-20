@@ -56,6 +56,23 @@ namespace Project.GameFlow.Tests
             Assert.Throws<BuildFailedException>(() => AndroidPrivacyBuildGuard.ProtectManifest(
                 XDocument.Parse("<manifest><application/></manifest>")));
         }
+        [Test] public void FinalManifestAlsoAuditsTransitiveTapTapProvider()
+        {
+            string xml = "<manifest xmlns:android='http://schemas.android.com/apk/res/android'><application android:name='" + AndroidPrivacyBuildGuard.App + "'>" +
+                "<activity android:name='" + AndroidPrivacyBuildGuard.UnityActivity + "' android:exported='false'/>" +
+                "<activity android:name='" + AndroidPrivacyBuildGuard.Gate + "' android:process=':privacy'/>" +
+                "<provider android:name='" + AndroidPrivacyBuildGuard.TapTapThemisProvider + "' android:authorities='com.miao1suki.shapeofcolor.themisLite' android:exported='false'/></application></manifest>";
+            var manifest = XDocument.Parse(xml);
+            Assert.DoesNotThrow(() => AndroidPrivacyBuildGuard.ValidatePackagedManifest(manifest, "com.miao1suki.shapeofcolor"));
+            manifest.Descendants("provider").Single().SetAttributeValue(Android + "process", ":privacy");
+            Assert.Throws<BuildFailedException>(() => AndroidPrivacyBuildGuard.ValidatePackagedManifest(manifest, "com.miao1suki.shapeofcolor"));
+        }
+
+        [Test] public void FinalManifestRejectsProvidersIntroducedByTransitiveAars()
+        {
+            var manifest = XDocument.Parse("<manifest xmlns:android='http://schemas.android.com/apk/res/android'><application android:name='" + AndroidPrivacyBuildGuard.App + "'><provider android:name='unreviewed.Provider' android:authorities='unreviewed' android:exported='false'/></application></manifest>");
+            Assert.Throws<BuildFailedException>(() => AndroidPrivacyBuildGuard.ValidatePackagedManifest(manifest, "com.miao1suki.shapeofcolor"));
+        }
         [Test] public void GateHasItsOwnProcessAndIsOnlySourceLauncher()
         {
             var manifest = XDocument.Load("Assets/Plugins/Android/PrivacyGate.androidlib/AndroidManifest.xml");

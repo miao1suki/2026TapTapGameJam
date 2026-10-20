@@ -10,7 +10,7 @@
 - 初次原生授权保留内置全文，提供一个明确点击的固定政策网页入口；安卓设置点击隐私政策时打开系统浏览器，返回后仍可在原生页离线阅读和撤回同意。网页没有自动请求、WebView 或任意 URL 参数。PC 保持游戏内离线阅读。此例外不改变非开发构建和网络权限移除守卫。
 - 现有内置政策是既有正文，没有按本次技术变更擅自重写法律条款；发布前负责人仍须核对其内容是否符合实际数据处理行为。
 
-TapTap 成就 SDK 固定为 `4.10.9`，依赖官方 Core、Login、Newtonsoft.Json 与 EDM4U；EDM4U 编辑期分析明确关闭。当前只初始化 Android；客户端 ID 与后台 ID 确认已写入配置资产，Client Token 只保存在被 `.gitignore` 排除的本地 Resources 文件，缺失时保持安全待机、不产生网络请求。Server Secret 不得进入客户端。原生隐私入口未同意时 Unity 和 TapSDK 均不会启动；TapSDK 唯一 `TapTapKitInitProvider` 必须保持固定 authority 且 `exported=false`。不得为 SDK 之外的请求开放通路。
+TapTap 成就 SDK 固定为 `4.10.9`，依赖官方 Core、Login、Newtonsoft.Json 与 EDM4U；EDM4U 编辑期分析明确关闭。当前只初始化 Android；客户端 ID 与后台 ID 确认已写入配置资产，Client Token 只保存在被 `.gitignore` 排除的本地 Resources 文件，缺失时保持安全待机、不产生网络请求。Server Secret 不得进入客户端。原生隐私入口未同意时 Unity 和 TapSDK 均不会启动。最终 AAR 合并有 TapTapKitInitProvider 和其间接依赖 ThemisProvider：仅允许固定 authority、exported=false、同意门保护的默认主进程；不得在 :privacy 初始化。最终合并 Manifest 会再经构建守卫检查，避免间接 AAR 绕过源文件扫描。不得为 SDK 之外的请求开放通路。
 
 ## 验证
 

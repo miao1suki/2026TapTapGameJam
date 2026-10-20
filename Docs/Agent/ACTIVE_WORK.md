@@ -2,6 +2,10 @@
 
 ## 2026-10-20 SDK / 最新策划图 / TA 效果 / 双端发布整合
 
+- 最终增量：并发main 1caaf67保留最新Boss作者区域和喷泉触发器，正式仍采用已确认策划23房布局，25区4199条规划；TA追加到93fd945。不重复放喷泉触发器。
+- 实际APK发现SDK间接ThemisProvider，完成AAR字节码及原生同意门检查，并新增最终merged manifest守卫（旧扫描只覆盖源Manifest）。只允许两个固定TapTap Provider且非导出/默认主进程，禁止进入:privacy；22项SDK/隐私/构建约束测试通过。
+- 最终双端非开发构建成功；PC原生启动冒烟无异常，7z测试通过且根目录无套层/无DontShip；Android apksigner验证、ARM64/0.2.1/code201/包名及仅INTERNET+ACCESS_NETWORK_STATE核验通过，最终Manifest守卫实际执行通过。沿用Android Debug证书，MD5 2D9E5B4A9D63EB90D63EA84789C0C333。未做安卓真机登录/成就上报、网络抓包或全关通关。
+
 - 当前整合窗口按用户裁决采用策划 ab757fc 的23房间布局，只补main独有Boss/竖井/Start/结局接线；25区域4194条规划。策划原生物体位姿/占格/ID不变，TA GridArt与天气、双方代码修复保留，不把旧R摆放带回。
 - main SDK 0a89c2b已接入；TA Boss死亡RGB溶解 b374c99 合并。用户本地Token已复制到忽略目录，未输出内容且无Server Secret；不得提交Secrets/meta。包名保持com.miao1suki.shapeofcolor。
 - 隔离工程编译、地图保护与接线检查及20项SDK/隐私/构建约束EditMode通过。Windows非开发包和根目录7z已成功生成，Android构建与最终包审计进行中；不声称真机SDK验收。
@@ -2839,3 +2843,8 @@
 
 - 用户授权按桌面清单配置14条后台成就（11公开/3隐藏），使用游戏收集品图标，整理程序所需平台ID对照；项目SDK/成就代码由另一程序负责，本对话不改。只恢复ProjectSettings与MobileBuildSetup中的Android包名为com.miao1suki.shapeofcolor，避免后续打包覆盖；不改Scene/玩法/素材，不提交推送。桌面控制native pipe不可用，正在备用网页登录方式。
 - 完成：已在用户原Edge登录会话内创建并发布14条普通成就，ID沿用Fall1/Spike1/Fall2/Spike2/Home/FakeEnd/RealEnd/Power/Collect1/Collect2/Lava1/Die2/Die1/Lava2，11显示/3隐藏、非分步、每条1步、不纳入白金范围；14条后台均复核已发布。统一上传游戏Achievement_Collectible裁切并最近邻放大的512图标。桌面TapTap成就接入交接_2026-10-20含TXT/MD/JSON、图标、发布前后行快照、已发布截图；项目Docs/Agent/Integration备份MD与JSON。ProjectSettings与MobileBuildSetup恢复com.miao1suki.shapeofcolor，PROJECT_CONTEXT记最终约定。无SDK/成就运行时代码变更、无密钥操作、无打包/上报测试、无提交推送；应用配置Android签名0/20待SDK程序核对。
+
+## 2026-10-20 当前地图／传送与光照核查（进行中）
+
+- 用户授权检查并测试全局地图/重生点传送及二维墙体遮挡；按当前正式 Gaming 接入缺失光照，不改布局、美术、玩家存档或 SDK。
+- 地图自动安装并从 RoomLifecycleManager 实时绘制；PC/Mobile 光照 RendererFeature 已存在，核对正式相机接线。仅在隔离 FlowRetirementProbe 做静音 GPU/Play 验证，不保存主编辑器内存场景。

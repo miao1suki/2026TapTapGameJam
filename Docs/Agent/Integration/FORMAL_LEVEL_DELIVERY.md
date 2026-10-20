@@ -2,7 +2,7 @@
 
 ## 当前交付基线
 
-2026-10-20 SDK 发布整合：用户确认采用策划 `ab757fc` 的 23 房间新版布局，补回 main Boss、竖井和 Start/结局接线后为 **25 区域、4194 条规划记录**。TA 美术及新 Boss RGB 死亡效果、main 与另一程序的修复保留；新增喷泉结局触发器。Scene、同名 planning、正式命名存档同步。版本0.2.1，包名 `com.miao1suki.shapeofcolor`。以下28区域合图为历史基线，不能据此恢复旧 R 摆放。详见 `Docs/Developer/RELEASE_SDK_INTEGRATION_2026-10-20.md`。
+2026-10-20 SDK 发布整合：用户确认采用策划 `ab757fc` 的 23 房间新版布局，补回 main 最新 `1caaf67` Boss、竖井和 Start/结局接线后为 **25 区域、4199 条规划记录**。TA 美术及新 Boss RGB 死亡效果 `93fd945`、main 与另一程序的修复保留；使用最新作者喷泉结局触发器，不重复添加。Scene、同名 planning、正式命名存档同步。版本0.2.1，包名 `com.miao1suki.shapeofcolor`。以下28区域合图为历史基线，不能据此恢复旧 R 摆放。详见 `Docs/Developer/RELEASE_SDK_INTEGRATION_2026-10-20.md`。
 
 2026-10-20 全关卡合图：4343 个实际作者物体、28 个区域；采用最新 Gaming、R1/R2/R3 的最终 Scene、用户保存的 MRoom2/MRoom3 及 Boss。只平移各关，按已确认接口补通道，不从陈旧规划重建作者场景。MRoom3 新增三格保留。原 Gaming 房间21已按用户保存规划移到暂存位置，未删除。正式 Scene、同名规划、正式关卡 JSON 同步；最终场景回采资源及六份可导入片段位于 `Assets/_Project/Content/LevelMaps/AuthoredSections`，必须整套提交，禁止用旧 R 规划覆盖。详见 `Docs/Developer/COMBINED_WORLD_0_2_1.md`。
 

@@ -1,5 +1,9 @@
 # 项目上下文（持续更新）
 
+当前正式发布地图：策划ab757fc的23房布局，补main最新1caaf67 Boss/竖井/结局后25区域4199条规划；TA美术与93fd945死亡溶解保留，旧28区摆放不恢复。TapTap SDK已接入，版本0.2.1、包名com.miao1suki.shapeofcolor。以下地图数量是历史记录，当前以FORMAL_LEVEL_DELIVERY顶部为准。
+
+2026-10-20包名最终确认：用户明确恢复并长期使用 **com.miao1suki.shapeofcolor**。ProjectSettings与MobileBuildSetup已恢复原包名；下文com.xingzhicai.game仅为历史构建状态，不得再据此改回。TapTap应用976206的14条成就已全部发布，交接见 `Docs/Agent/Integration/TAPTAP_ACHIEVEMENT_BACKEND_HANDOVER_2026-10-20.md`；SDK代码由另一程序负责。
+
 项目：2026TapTap；远程：`https://github.com/miao1suki/2026TapTapGameJam.git`。
 Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未导入旧项目设置。
 

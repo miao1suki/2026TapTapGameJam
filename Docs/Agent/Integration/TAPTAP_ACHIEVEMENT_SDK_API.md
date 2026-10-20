@@ -60,7 +60,7 @@ Client Token 不写入可提交的配置资产，而是读取本地、被 `.giti
 ## 生命周期与网络
 
 - Android 原生 `PrivacyActivity` 明确同意后才启动 Unity；Unity 启动后桥接器才初始化 TapSDK。
-- TapSDK AAR 的唯一自动初始化项 `TapTapKitInitProvider` 必须保持固定 authority 与 `exported=false`，其他 Provider 会被隐私构建守卫阻断。
+- 最终 APK 包含官方 `TapTapKitInitProvider` 及间接依赖 `tap-themislite:1.0.7.8` 的 `ThemisProvider`。两者分别只允许 `${applicationId}.TapTapKitInitProvider` / `${applicationId}.themisLite` authority，必须 `exported=false` 且留在同意门保护的主进程；不得放到 `:privacy`。守卫在最终 Gradle 合并 Manifest 再核对，阻断 AAR 偷带的其他 Provider，不只扫描源工程。
 - 桌面 Editor/Windows 不自动建立 TapSDK 桥，避免扩大当前 PC 网络面。
 - Android 只允许 `INTERNET` 与 `ACCESS_NETWORK_STATE`；Wi-Fi、蓝牙、网络状态修改等权限继续被构建守卫移除。
 - EDM4U 的编辑期分析关闭，不保留分析 cookie。

@@ -10,7 +10,7 @@ using UnityEditor.Build.Reporting;
 namespace Project.GameFlow.Editor
 {
     /// <summary>Installs the native launcher into generated Gradle output, never into user scenes.</summary>
-    public sealed class AndroidPrivacyBuildGuard : IPreprocessBuildWithReport, IPostGenerateGradleAndroidProject
+    public sealed class AndroidPrivacyBuildGuard : IPreprocessBuildWithReport, IPostGenerateGradleAndroidProject, IPostprocessBuildWithReport
     {
         public const string Gate = "com.miao1suki.shapeofcolor.privacy.PrivacyActivity";
         public const string App = "com.miao1suki.shapeofcolor.privacy.PrivacyApplication";
@@ -19,6 +19,8 @@ namespace Project.GameFlow.Editor
             "com.taptap.sdk.kit.internal.TapTapKitInitProvider";
         public const string TapTapInitAuthority =
             "${applicationId}.TapTapKitInitProvider";
+        public const string TapTapThemisProvider = "com.taptap.sdk.themis.lite.ThemisProvider";
+        public const string TapTapThemisAuthority = "${applicationId}.themisLite";
         public const string PolicyAsset = "Assets/_Project/Resources/Privacy/privacy-policy.txt";
         static readonly XNamespace Android = "http://schemas.android.com/apk/res/android";
         public int callbackOrder => 10000;
@@ -73,16 +75,21 @@ namespace Project.GameFlow.Editor
 
         private static void ValidateProviders(
             System.Collections.Generic.IEnumerable<XElement> providers,
-            string source = "")
+            string source = "", string applicationId = null)
         {
             foreach (var provider in providers)
             {
                 string name = (string)provider.Attribute(Android + "name");
                 string authority = (string)provider.Attribute(Android + "authorities");
                 string exported = (string)provider.Attribute(Android + "exported");
-                if (name == TapTapInitProvider &&
-                    authority == TapTapInitAuthority &&
-                    exported == "false")
+                string expectedAuthority = name == TapTapInitProvider ? TapTapInitAuthority :
+                    name == TapTapThemisProvider ? TapTapThemisAuthority : null;
+                if (applicationId != null && expectedAuthority != null)
+                    expectedAuthority = expectedAuthority.Replace("${applicationId}", applicationId);
+                // TapTap's transitive ThemisLite AAR also registers a Provider. Both
+                // stay in the consent-gated main process; never permit :privacy here.
+                if (expectedAuthority != null && authority == expectedAuthority &&
+                    exported == "false" && string.IsNullOrEmpty((string)provider.Attribute(Android + "process")))
                 {
                     continue;
                 }
@@ -92,6 +99,31 @@ namespace Project.GameFlow.Editor
                     name +
                     (string.IsNullOrEmpty(source) ? "" : " @ " + source));
             }
+        }
+
+        public static void ValidatePackagedManifest(XDocument document, string applicationId)
+        {
+            var application = document.Root?.Element("application") ?? throw new BuildFailedException("Missing merged application.");
+            if ((string)application.Attribute(Android + "name") != App)
+                throw new BuildFailedException("Merged manifest bypasses the consent-gated Application.");
+            ValidateProviders(application.Elements("provider"), "merged APK manifest", applicationId);
+            var gate = application.Elements("activity").SingleOrDefault(a => (string)a.Attribute(Android + "name") == Gate);
+            var unity = application.Elements("activity").SingleOrDefault(a => (string)a.Attribute(Android + "name") == UnityActivity);
+            if (gate == null || (string)gate.Attribute(Android + "process") != ":privacy" || unity == null ||
+                (string)unity.Attribute(Android + "exported") != "false")
+                throw new BuildFailedException("Merged manifest does not preserve the isolated privacy entry.");
+        }
+
+        public void OnPostprocessBuild(BuildReport report)
+        {
+            if (report.summary.platform != BuildTarget.Android || EditorUserBuildSettings.exportAsGoogleAndroidProject) return;
+            string root = Path.Combine(Directory.GetParent(UnityEngine.Application.dataPath)!.FullName, "Library/Bee/Android/Prj");
+            string manifest = Directory.Exists(root) ? Directory.GetFiles(root, "AndroidManifest.xml", SearchOption.AllDirectories)
+                .Where(p => p.Replace('\\', '/').Contains("/launcher/build/intermediates/merged_manifests/release/"))
+                .OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault() : null;
+            if (manifest == null) throw new BuildFailedException("Missing final merged manifest; cannot audit transitive SDK Providers.");
+            ValidatePackagedManifest(XDocument.Load(manifest), PlayerSettings.GetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.Android));
+            UnityEngine.Debug.Log("[PrivacyGate] Final merged manifest verified, including transitive TapTap Providers.");
         }
     }
 }
