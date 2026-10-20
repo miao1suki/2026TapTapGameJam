@@ -1,5 +1,10 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 Cubic 字体重置动态图集数据
+
+- 分支 `roy画画`。`Cubic_11 SDF.asset` 保持 TMP Dynamic 模式与源 `Cubic_11.ttf` 引用，清理原预烘 4096×4096 图集与字形缓存，序列化为 1×1 初始图集；`m_ClearDynamicDataOnBuild=1`，运行时按需重建字形。
+- 仅更新字体资产与交接记录，不改代码、Scene、planning、Player 或构建配置。资产头部与源字体引用已核对，`git diff --check` 通过；未启动 Unity 重导入或 Play Mode。
+
 ## 2026-10-20 美术工作台房间装配图
 
 - 当前整合窗口：给GridArt加入只读房间分布、房间名称、选择及返回房间绘制；复用Planning只读快照与轮廓缓存。仅编辑器代码，不改Gaming、规划、美术Map或场景对象。
