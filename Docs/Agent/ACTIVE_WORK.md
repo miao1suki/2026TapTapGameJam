@@ -1,5 +1,11 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 策划参数窗口增量接收（验证完成）
+
+- 从494d10f仅接两编辑器文件的关闭保存、右键短点参数/拖动平移增量，基于49d7047，不接旧Boss Timeline或旧PlanningCanvas主体，main平台Mount等修复保留。
+- 没改值关闭不回调，放弃不保存；保存克隆列表防切对象串改；非法宽度阻止保存。OnDisable在编译/进Play期间不应用回调，避免生命周期重载意外写规划场景；旧R手调Scene仍不可由旧JSON重建。
+- 隔离FlowRetirementProbe编译通过，ParameterAutoSaveAudit真实EditorWindow25断言通过，覆盖未改关闭、已改关闭、克隆、放弃、切换/重复保存、宽度校验和Scene不标脏；main平台Mount传播/导入源码保留。未模拟操作系统右键或实际域重载交互，未Play/保存Scene/打包。报告Library/ParameterAutoSaveAudit.txt。
+
 ## 2026-10-20 远端关卡定向接收（静态验证）
 
 - 独立 `codex/remote-level-sync-20261020` 基于远端 main `1722c59`；不覆盖主目录未提交资源，不保存主 Unity 场景，不合并其他分支代码。

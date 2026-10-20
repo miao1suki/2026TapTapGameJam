@@ -20,6 +20,15 @@ namespace Project.LevelEditor.Editor
         private GameObject preview;
         private VisualElement componentList;
         private Label statusLabel;
+        private bool hasEditSession;
+        private bool sessionFinished;
+        private string initialDraftJson;
+        private int initialPlatformWidth;
+        [Serializable]
+        private sealed class DraftState
+        {
+            public List<LevelEditorComponentValueOverride> values;
+        }
         private int draftPlatformWidth;
         private Func<int, string> savePlatformWidth;
         private Action contextAction;
@@ -63,6 +72,11 @@ namespace Project.LevelEditor.Editor
 
             LevelEditorPropComponentEditorWindow window =
                 GetWindow<LevelEditorPropComponentEditorWindow>();
+            if (!window.TrySaveDraft(true))
+            {
+                window.Focus();
+                return;
+            }
             window.prefab = sourcePrefab;
             window.draftPlatformWidth = platformWidth;
             window.savePlatformWidth = applyPlatformWidth;
@@ -91,6 +105,10 @@ namespace Project.LevelEditor.Editor
             }
 
             window.titleContent = new GUIContent(contextTitle);
+            window.hasEditSession = true;
+            window.sessionFinished = false;
+            window.initialPlatformWidth = platformWidth;
+            window.initialDraftJson = window.DraftJson();
             window.minSize = new Vector2(430f, 560f);
             window.Show();
             window.Focus();
@@ -113,7 +131,7 @@ namespace Project.LevelEditor.Editor
 
             Label workflow = new Label(
                 "只编辑已有组件数值，不新增、不删除、不搜索。" +
-                "保存后覆盖值优先于预制体默认值。");
+                "关闭窗口自动保存；放弃修改则不保存。覆盖值优先于预制体默认值。");
             workflow.style.whiteSpace = WhiteSpace.Normal;
             workflow.style.fontSize = 11f;
             workflow.style.opacity = .74f;
@@ -155,11 +173,11 @@ namespace Project.LevelEditor.Editor
                 new Color(.16f, .43f, .82f, 1f);
             save.style.color = Color.white;
             actions.Add(save);
-            Button cancel = new Button(Close)
+            Button cancel = new Button(DiscardAndClose)
             {
-                text = "取消"
+                text = "放弃修改"
             };
-            cancel.style.width = 70f;
+            cancel.style.width = 90f;
             cancel.style.height = 32f;
             actions.Add(cancel);
             root.Add(actions);
@@ -169,7 +187,22 @@ namespace Project.LevelEditor.Editor
 
         private void OnDisable()
         {
-            DisposePreview();
+            try
+            {
+                // Disable also runs during compilation/domain reload and entering Play.
+                // Those lifecycle events must not apply a planning callback to a Scene.
+                if (!EditorApplication.isCompiling &&
+                    !EditorApplication.isPlayingOrWillChangePlaymode &&
+                    !TrySaveDraft(true)) ReopenInvalidDraft();
+            }
+            finally { DisposePreview(); }
+        }
+
+        internal static bool SaveOpenSession()
+        {
+            foreach (var window in Resources.FindObjectsOfTypeAll<LevelEditorPropComponentEditorWindow>())
+                if (!window.TrySaveDraft(true)) { window.Focus(); return false; }
+            return true;
         }
 
         private void RebuildPreview()
@@ -871,14 +904,56 @@ namespace Project.LevelEditor.Editor
 
         private void SaveAndClose()
         {
+            if (TrySaveDraft(false)) Close();
+        }
+
+        private string DraftJson() => JsonUtility.ToJson(new DraftState { values = draftOverrides });
+
+        private bool TrySaveDraft(bool onlyIfChanged)
+        {
+            if (!hasEditSession || sessionFinished) return true;
+            // Delayed number/text fields commit on losing focus, before preview disposal.
+            rootVisualElement.focusController?.focusedElement?.Blur();
+            if (onlyIfChanged && initialPlatformWidth == draftPlatformWidth && initialDraftJson == DraftJson())
+            {
+                sessionFinished = true;
+                return true;
+            }
             string error = savePlatformWidth?.Invoke(draftPlatformWidth);
             if (!string.IsNullOrEmpty(error))
             {
                 statusLabel.text = error;
-                return;
+                return false;
             }
-            onSaved?.Invoke(draftOverrides);
+            // Reusing this window must not clear the list already stored by its owner.
+            onSaved?.Invoke(draftOverrides.ConvertAll(value => value.Clone()));
+            sessionFinished = true;
+            return true;
+        }
+
+        private void DiscardAndClose()
+        {
+            sessionFinished = true;
             Close();
+        }
+
+        private void ReopenInvalidDraft()
+        {
+            var source = prefab;
+            var values = draftOverrides.ConvertAll(value => value.Clone());
+            string error = statusLabel?.text;
+            string title = titleContent.text;
+            EditorApplication.delayCall += () =>
+            {
+                if (source == null || EditorApplication.isPlayingOrWillChangePlaymode) return;
+                Open(source, values, onSaved, title, contextAction, contextActionLabel,
+                    secondaryAction, secondaryActionLabel, thirdAction, thirdActionLabel,
+                    fourthAction, fourthActionLabel, bossRespawnToggleCallback,
+                    draftPlatformWidth, savePlatformWidth);
+                var window = GetWindow<LevelEditorPropComponentEditorWindow>();
+                window.statusLabel.text = error;
+                window.initialDraftJson = null;
+            };
         }
 
         private void DisposePreview()
