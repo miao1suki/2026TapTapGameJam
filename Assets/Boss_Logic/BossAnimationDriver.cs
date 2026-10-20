@@ -407,12 +407,12 @@ namespace Project.BossLogic
 
             var fragmentObject = new GameObject(
                 "Boss RGB Death Fragments");
-            fragmentObject.transform.SetParent(
-                source.transform,
-                false);
-            fragmentObject.transform.localPosition = Vector3.zero;
-            fragmentObject.transform.localRotation = Quaternion.identity;
-            fragmentObject.transform.localScale = Vector3.one;
+            fragmentObject.transform.SetParent(null, false);
+            fragmentObject.transform.SetPositionAndRotation(
+                source.transform.position,
+                source.transform.rotation);
+            fragmentObject.transform.localScale =
+                source.transform.lossyScale;
             fragmentObject.layer = source.gameObject.layer;
 
             MeshFilter filter =
