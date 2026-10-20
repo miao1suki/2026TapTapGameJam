@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 真机 TapSDK 1001 凭据修正
+
+- 已取得用户手机TapPlay内实际日志：初始化1001，原生TapInitializer明确Client Token错误或与Client ID不匹配；发布APK内的Token与用户旧文件一致，不是漏打入，也没有证据归因APK证书或TapPlay兼容。
+- 用户重新提供Token后，已备份旧文件并同步主工程/隔离构建，凭据与meta继续忽略。SDK修正APK构建/签名/新旧Token载荷/非开发权限检查通过；获授权独立安装，22:07:58真机回调TapSDK initialized，初始化1001已解决。不清数据、不动TapPlay存档、不改SDK版本或关卡。
+- 用户随后见“未开通TapTap账号服务”，明确决定下一版安卓再看；本轮停止后台/登录处理及重打包。最新本地JSON同步，登录/成就上报和TapPlay重传新版后的验收未完成。日志导出工具补上成功Info回调与可选AppProcessId，避免混入沙箱旧版本日志。
+- 上次TA整合a10e1e4确实已推送并包含于后续main。GitHub该次Webhook delivery 3849371410879266816超时500，服务端未入队；Bot在线且后续delivery成功。未伪造测试提交、未发测试群消息、未重启Bot。
+
 ## 2026-10-20 Cubic 字体重置动态图集数据
 
 - 分支 `roy画画`。`Cubic_11 SDF.asset` 保持 TMP Dynamic 模式与源 `Cubic_11.ttf` 引用，清理原预烘 4096×4096 图集与字形缓存，序列化为 1×1 初始图集；`m_ClearDynamicDataOnBuild=1`，运行时按需重建字形。
