@@ -381,8 +381,8 @@ namespace Project.Player.Editor
                         "mobile hides desktop HUD " + name);
                 field.SetValue(input, InputPlatformMode.Desktop);
                 typeof(GameUiRouter).GetMethod("RefreshPlatformHud", Private).Invoke(router, null);
-                foreach (string name in new[] { "Help", "PauseHint", "PauseButton", "LevelLabel" })
-                    Check(hud.transform.Find(name).gameObject.activeSelf, "desktop retains HUD " + name);
+                foreach (string name in new[] { "Help", "PauseHint", "LevelLabel", "PauseButton" })
+                    Check(!hud.transform.Find(name).gameObject.activeSelf, "desktop hides retired HUD " + name);
             }
             finally
             {

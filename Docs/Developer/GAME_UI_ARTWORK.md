@@ -1,5 +1,7 @@
 # 游戏 UI 美术接入
 
+2026-10-20 双端移除早期非美术 HUD：GameplayHud 的 LevelLabel、Help、PauseHint、旧 PauseButton 默认关闭并清空旧场景名/硬编码操作提示；运行时切换平台和生成入口均不会恢复。正式手机美术按键、地图/常驻重生、暂停轮盘和业务提示保留。PC继续使用实际暂停绑定。
+
 ## 场景与组件
 
 - 正式开始界面：`Assets/_Project/Scenes/Start/MainMenu.unity`。开始按钮仍通过 `StartMenuFlowBridge` 进入 Gaming，不恢复旧 Bootstrap 流程。

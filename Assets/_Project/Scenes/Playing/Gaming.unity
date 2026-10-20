@@ -457121,7 +457121,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9103196063016445328, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: lethalFallHeightBlocks
-      value: 0
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
