@@ -97,7 +97,7 @@ public static class MobileBuildSetup
         if (target == BuildTarget.Android)
         {
             EditorUserBuildSettings.buildAppBundle = false;
-            PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.Android, "com.miao1suki.shapeofcolor");
+            PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.Android, "com.xingzhicai.game");
             PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.Android.useCustomKeystore = false;

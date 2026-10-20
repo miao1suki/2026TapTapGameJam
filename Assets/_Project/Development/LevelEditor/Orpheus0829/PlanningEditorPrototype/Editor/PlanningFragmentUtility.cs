@@ -201,8 +201,16 @@ namespace PlanningEditorPrototype
             foreach (var key in incoming.keys) Add(key.id, "key");
             foreach (var item in incoming.locks) Add(item.id, "lock");
             string Map(string id) => !string.IsNullOrEmpty(id) && ids.TryGetValue(id, out var value) ? value : null;
+            var snapshotInstances = new Dictionary<string, string>();
             void RemapBox(PlanningBox box)
             {
+                if (!string.IsNullOrEmpty(box.authoredSnapshotGuid))
+                {
+                    string key = box.authoredSnapshotGuid + ":" + (box.authoredInstanceId ?? string.Empty);
+                    if (!snapshotInstances.TryGetValue(key, out string instance))
+                        snapshotInstances[key] = instance = PlanningDocument.NewId("authored");
+                    box.authoredInstanceId = instance;
+                }
                 box.NormalizeMechanismButtonLinks();
                 box.id = Map(box.id); box.doorOwnerId = Map(box.doorOwnerId);
                 box.bossRespawnOwnerId =
@@ -284,6 +292,9 @@ namespace PlanningEditorPrototype
 
             void ResolveBox(PlanningBox box)
             {
+                if (!string.IsNullOrEmpty(box.authoredSnapshotGuid) &&
+                    AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(box.authoredSnapshotGuid)) == null)
+                    throw new InvalidDataException("缺少最终场景快照资源：" + box.authoredSnapshotGuid);
                 string label = box.propEntryName ?? box.paletteEntryName ?? box.label ?? box.id;
                 if (box.type == PlanningDetailType.Prop)
                 {

@@ -387,6 +387,7 @@ namespace PlanningEditorPrototype
                      boxIndex++)
                 {
                     PlanningBox box = layout.Room.boxes[boxIndex];
+                    if (!string.IsNullOrEmpty(box.authoredSnapshotGuid)) continue;
                     if (box.propEntryId ==
                         PlanningBox.BossRespawnMarkerEntryId)
                     {
@@ -530,6 +531,8 @@ namespace PlanningEditorPrototype
                     {
                         PlanningBox box =
                             connector.boxes[boxIndex];
+                        if (!string.IsNullOrEmpty(box.authoredSnapshotGuid))
+                            continue;
                         string connectorWaterKind = PlanningWaterLayerUtility.WaterKind(box, palette);
                         var connectorLayer = connectorWaterKind != null ? PlanningWaterLayerUtility.Layer(occupiedWater, connectorWaterKind) : occupied;
                         var connectorExternal = connectorWaterKind != null ? PlanningWaterLayerUtility.Layer(existingWaterLayers, connectorWaterKind) : existingCells;
@@ -562,6 +565,8 @@ namespace PlanningEditorPrototype
                 }
             }
 
+            placedCount += PlanningAuthoredSceneUtility.BuildSnapshots(root.transform, rooms,
+                worldBlockCellWidth, worldBlockCellHeight, CellSize);
             if (placedCount == 0 && !incremental)
             {
                 Object.DestroyImmediate(root);
@@ -680,7 +685,12 @@ namespace PlanningEditorPrototype
                 return;
             }
 
+            // A receipt is one reference graph, even when spread over many rooms.
+            // Never combine retained objects with fresh objects from that graph.
             var desiredContainers = new HashSet<string>();
+            for (int i = 0; i < stagedRoot.transform.childCount; i++)
+                desiredContainers.Add(stagedRoot.transform.GetChild(i).name);
+            ReconcileAuthoredGroups(existingRoot.transform, stagedRoot.transform, ref added, ref removed, ref preserved);
             var stagedContainers = new List<Transform>();
             for (int index = 0; index < stagedRoot.transform.childCount; index++)
             {
@@ -689,13 +699,13 @@ namespace PlanningEditorPrototype
 
             foreach (Transform staged in stagedContainers)
             {
+                desiredContainers.Add(staged.name);
                 if (staged.GetComponentsInChildren<
                         LevelEditorPlacedBlock>(true).Length == 0)
                 {
                     continue;
                 }
 
-                desiredContainers.Add(staged.name);
                 Transform existing = FindDirectChild(
                     existingRoot.transform,
                     staged.name);
@@ -779,6 +789,90 @@ namespace PlanningEditorPrototype
             Object.DestroyImmediate(stagedRoot);
         }
 
+        private static Dictionary<string, List<LevelEditorPlacedBlock>> AuthoredGroups(Transform root)
+        {
+            var result = new Dictionary<string, List<LevelEditorPlacedBlock>>();
+            foreach (var block in root.GetComponentsInChildren<LevelEditorPlacedBlock>(true))
+                if (PlanningAuthoredSceneUtility.TryGetGroup(block, out string key))
+                {
+                    if (!result.TryGetValue(key, out var list)) result[key] = list = new List<LevelEditorPlacedBlock>();
+                    list.Add(block);
+                }
+            return result;
+        }
+
+        private static List<LevelEditorPlacedBlock> AuthoredRoots(List<LevelEditorPlacedBlock> blocks)
+        {
+            var members = new HashSet<Transform>();
+            foreach (var block in blocks) if (block != null) members.Add(block.transform);
+            var result = new List<LevelEditorPlacedBlock>();
+            foreach (var block in blocks)
+            {
+                if (block == null) continue;
+                bool nested = false;
+                for (var parent = block.transform.parent; parent != null; parent = parent.parent)
+                    if (members.Contains(parent)) { nested = true; break; }
+                if (!nested) result.Add(block);
+            }
+            return result;
+        }
+
+        private static void ReconcileAuthoredGroups(Transform existing, Transform staged,
+            ref int added, ref int removed, ref int preserved)
+        {
+            var oldGroups = AuthoredGroups(existing);
+            var newGroups = AuthoredGroups(staged);
+            var keys = new HashSet<string>(oldGroups.Keys);
+            keys.UnionWith(newGroups.Keys);
+            foreach (string key in keys)
+            {
+                oldGroups.TryGetValue(key, out var oldBlocks);
+                newGroups.TryGetValue(key, out var newBlocks);
+                oldBlocks = oldBlocks ?? new List<LevelEditorPlacedBlock>();
+                newBlocks = newBlocks ?? new List<LevelEditorPlacedBlock>();
+                var oldById = new Dictionary<string, LevelEditorPlacedBlock>();
+                bool same = oldBlocks.Count == newBlocks.Count;
+                foreach (var block in oldBlocks)
+                    if (string.IsNullOrEmpty(block.PlanningBoxId) || oldById.ContainsKey(block.PlanningBoxId)) same = false;
+                    else oldById.Add(block.PlanningBoxId, block);
+                foreach (var desired in newBlocks)
+                    if (!oldById.TryGetValue(desired.PlanningBoxId, out var prior) || prior.Cell != desired.Cell ||
+                        prior.transform.parent.name != desired.transform.parent.name || !SameGeneratedBlock(prior, desired)) same = false;
+
+                string helperName = PlanningAuthoredSceneUtility.ReceiptRootName(key);
+                var oldHelper = FindDirectChild(existing, helperName);
+                var newHelper = FindDirectChild(staged, helperName);
+                if (same)
+                {
+                    preserved += oldBlocks.Count;
+                    foreach (var block in AuthoredRoots(newBlocks)) Object.DestroyImmediate(block.gameObject);
+                    if (newHelper != null) Object.DestroyImmediate(newHelper.gameObject);
+                    continue;
+                }
+                removed += oldBlocks.Count;
+                foreach (var block in AuthoredRoots(oldBlocks)) DestroySceneObject(block.gameObject);
+                if (oldHelper != null) DestroySceneObject(oldHelper.gameObject);
+                added += newBlocks.Count;
+                foreach (var block in AuthoredRoots(newBlocks))
+                {
+                    string containerName = block.transform.parent.name;
+                    var container = FindDirectChild(existing, containerName);
+                    if (container == null)
+                    {
+                        container = new GameObject(containerName).transform;
+                        container.SetParent(existing, false);
+                    }
+                    block.transform.SetParent(container, true);
+                    RegisterSceneCreation(block.gameObject, "应用最终场景快照");
+                }
+                if (newHelper != null)
+                {
+                    newHelper.SetParent(existing, true);
+                    RegisterSceneCreation(newHelper.gameObject, "应用最终场景辅助对象");
+                }
+            }
+        }
+
         private static void ReconcileContainer(
             Transform existing,
             Transform staged,
@@ -791,7 +885,7 @@ namespace PlanningEditorPrototype
                 existing.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
             foreach (LevelEditorPlacedBlock block in oldBlocks)
             {
-                if (block.transform.parent == existing)
+                if (block.transform.parent == existing && !PlanningAuthoredSceneUtility.TryGetGroup(block, out _))
                 {
                     var key = (block.PlanningBoxId ?? string.Empty, block.Cell);
                     if (!oldByCell.TryGetValue(key, out var bucket)) oldByCell[key] = bucket = new Queue<LevelEditorPlacedBlock>();
@@ -803,7 +897,7 @@ namespace PlanningEditorPrototype
                 staged.GetComponentsInChildren<LevelEditorPlacedBlock>(true);
             foreach (LevelEditorPlacedBlock desired in desiredBlocks)
             {
-                if (desired == null || desired.transform.parent != staged)
+                if (desired == null || desired.transform.parent != staged || PlanningAuthoredSceneUtility.TryGetGroup(desired, out _))
                 {
                     continue;
                 }
@@ -897,6 +991,7 @@ namespace PlanningEditorPrototype
 
         private static string StripEmptyOptionalLinks(string value)
         {
+            value = PlanningAuthoredSceneUtility.StripEmptySnapshotFields(value);
             foreach (string field in new[] { "platformMountId", "bossRespawnOwnerId" })
             {
                 value = value.Replace(",\"" + field + "\":\"\"", "")

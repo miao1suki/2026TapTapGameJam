@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.miao1suki.shapeofcolor.privacy">
   <application android:name="com.miao1suki.shapeofcolor.privacy.PrivacyApplication">
     <activity android:name="com.miao1suki.shapeofcolor.privacy.PrivacyActivity"
-        android:exported="true" android:process=":privacy" android:taskAffinity="com.miao1suki.shapeofcolor.privacy"
+        android:exported="true" android:process=":privacy" android:taskAffinity="${applicationId}.privacy"
         android:excludeFromRecents="true" android:screenOrientation="userLandscape"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
       <intent-filter>

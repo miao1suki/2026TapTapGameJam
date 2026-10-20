@@ -90,6 +90,13 @@ namespace PlanningEditorPrototype
         public int height = 1;
         public bool isMerged;
         public bool singleInstance;
+        // Optional final-scene snapshot. Keeps author components/references and sub-cell
+        // transforms without forcing hand-adjusted levels through integer prefabs.
+        public string authoredSnapshotGuid;
+        public string authoredInstanceId;
+        public string authoredObjectId;
+        public Vector3 authoredPositionOffset;
+        public Vector2Int authoredSizeCells;
         public string doorOwnerId;
         public int doorButtonOrder;
         public string mechanismBaseId;
