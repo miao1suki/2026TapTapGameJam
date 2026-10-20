@@ -1,5 +1,7 @@
 # 系统索引
 
+2026-10-21 三方美术接收：Gaming 玩法/三份规划仍为 main `1346261`，美术合并 TA、ILorR 与 shurui 的有效增量至 13655 格，保持 257 笔刷编号及原像素比例；新增 TA 红雨区域。只生成独立美术子树，不回退玩法或接入待完成的光照遮蔽分支，详见 ACTIVE_WORK 顶部。
+
 2026-10-21颜色钥匙镜头：拾取演出正交尺寸固定为`15`，三色Timeline不申请2D/3D切换且保留当前Yaw；Gaming主相机预挂`TimelineCamRig`，避免首次拾取运行时挂组件。
 
 2026-10-21背景音乐：MainMenu固定`music.menu.opening`；Gaming从7首区域/氛围BGM洗牌单次播放，曲间默认静默8秒。Boss覆盖曲存活期间循环并暂停随机轮播，死亡后恢复底层流程。实现入口为`GameAudioService`与`AudioManager`，说明见`GAMEPLAY_AUDIO.md`。
