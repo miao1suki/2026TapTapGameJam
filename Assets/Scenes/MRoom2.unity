@@ -15347,6 +15347,79 @@ MonoBehaviour:
   planningBoxId: mroom2_room_d777v35wuy_1
   planningSignature: "{\"id\":\"mroom2_room_d777v35wuy_1\",\"type\":9,\"label\":\"\u79FB\u52A8\u5E73\u53F0\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"212cd7a2ff304a6288b4d850132de143\",\"propEntryName\":\"\u5E73\u53F0\",\"x\":15,\"y\":15,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"mroom2_room_fo4awc8u0s_1\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"route\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"travelBlocks\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"reverseRoute\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"travelDuration\",\"valueType\":\"Float\",\"value\":\"0.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"signalMotion\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}}]}{\"values\":[{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"route\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"travelBlocks\",\"valueType\":\"Integer\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"reverseRoute\",\"valueType\":\"Boolean\",\"value\":\"0\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"travelDuration\",\"valueType\":\"Float\",\"value\":\"0.5\",\"objectReferenceValue\":{\"instanceID\":0}},{\"componentPath\":\"\",\"componentTypeName\":\"Project.BlockFeatures.MovingPlatformFeature\",\"componentIndex\":0,\"propertyPath\":\"signalMotion\",\"valueType\":\"Enum\",\"value\":\"1\",\"objectReferenceValue\":{\"instanceID\":0}}]}"
   planningLocalCell: {x: 15, y: 15}
+--- !u!1001 &1227389786
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1001, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_Name
+      value: "TA \u8424\u706B\u866B\u533A\u57DF \xB7 MRoom2"
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 3.1549
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -84.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 29.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1002, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1003, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: areaSize.x
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1005, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
+      propertyPath: areaSize.y
+      value: 3
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 78a8655f75be47be9fb910e496c10eb5, type: 3}
 --- !u!1001 &1239344485
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38483,3 +38556,4 @@ SceneRoots:
   - {fileID: 1698849290}
   - {fileID: 1580459007}
   - {fileID: 1825251065}
+  - {fileID: 1227389786}

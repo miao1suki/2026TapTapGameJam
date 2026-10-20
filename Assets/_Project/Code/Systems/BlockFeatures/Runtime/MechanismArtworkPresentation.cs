@@ -30,6 +30,7 @@ namespace Project.BlockFeatures
         private DoorHint hint;
         private ColorObject colorObject;
         private ColorKeyPickup colorKey;
+        private ContactCubeMotion contactCubeMotion;
         private BoxCollider footprint;
         private MeshRenderer[] placeholders;
         private SpriteRenderer[] indicators;
@@ -168,6 +169,7 @@ namespace Project.BlockFeatures
             lava = GetComponent<LavaHazardFeature>();
             oneWay = GetComponent<OneWayPlatform>();
             var cube = GetComponent<ContactCube>(); var key = GetComponent<ColorKeyPickup>();
+            contactCubeMotion = cube != null ? GetComponent<ContactCubeMotion>() : null;
             colorKey = key;
             kind = door != null ? MechanismArtworkKind.Door : button != null ? MechanismArtworkKind.DoorButton
                 : crank != null ? MechanismArtworkKind.Crank
@@ -325,9 +327,17 @@ namespace Project.BlockFeatures
             {
                 var toRoot = transform.worldToLocalMatrix * footprint.transform.localToWorldMatrix;
                 center = toRoot.MultiplyPoint3x4(footprint.center);
-                Vector3 x = toRoot.MultiplyVector(Vector3.right * footprint.size.x);
-                Vector3 y = toRoot.MultiplyVector(Vector3.up * footprint.size.y);
-                Vector3 z = toRoot.MultiplyVector(Vector3.forward * footprint.size.z);
+                // Red/blue physical boxes have a horizontal clearance skin so
+                // they can fall through a one-cell opening. Tiling from that
+                // .96-cell collision width crops the last artwork column and
+                // makes the right outline thinner. Artwork uses the original
+                // logical face, exactly as color contacts already do; do not
+                // expand the real collider or stretch the source pixels.
+                Vector3 artworkSize = contactCubeMotion != null
+                    ? contactCubeMotion.LogicalContactShapeSize : footprint.size;
+                Vector3 x = toRoot.MultiplyVector(Vector3.right * artworkSize.x);
+                Vector3 y = toRoot.MultiplyVector(Vector3.up * artworkSize.y);
+                Vector3 z = toRoot.MultiplyVector(Vector3.forward * artworkSize.z);
                 size = new Vector3(Mathf.Abs(x.x)+Mathf.Abs(y.x)+Mathf.Abs(z.x), Mathf.Abs(x.y)+Mathf.Abs(y.y)+Mathf.Abs(z.y), Mathf.Abs(x.z)+Mathf.Abs(y.z)+Mathf.Abs(z.z));
             }
             if (shape == null) shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();

@@ -50,6 +50,7 @@ namespace Project.SurfaceTiles.Editor
 
             IReadOnlyList<SurfaceTileBlock> blocks =
                 ProjectDiscovery.FindAll<SurfaceTileBlock>(true);
+            bool changed = false;
             for (int index = 0; index < blocks.Count; index++)
             {
                 SurfaceTileBlock block = blocks[index];
@@ -67,10 +68,11 @@ namespace Project.SurfaceTiles.Editor
                 if (missing || showingStaleBake)
                 {
                     SurfaceTileMeshBuilder.RefreshPreview(block);
+                    changed = true;
                 }
             }
 
-            SceneView.RepaintAll();
+            if (changed) SceneView.RepaintAll();
         }
     }
 }

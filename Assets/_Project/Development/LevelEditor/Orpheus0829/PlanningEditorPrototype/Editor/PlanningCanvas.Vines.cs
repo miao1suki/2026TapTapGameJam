@@ -38,7 +38,7 @@ namespace PlanningEditorPrototype
             Color tint = mergeSelection.Contains(box.id) && LevelEditorState.Tool == LevelEditorTool.Merge
                 ? new Color(.55f, .85f, 1f) : Color.white;
             var visible = rect;
-            if (contentRect.width > 0f && contentRect.height > 0f)
+            if (!buildingRetainedImages && contentRect.width > 0f && contentRect.height > 0f)
             {
                 Rect target = CellRect(rect.x, rect.y, rect.width, rect.height);
                 int left = Mathf.Max(0, Mathf.FloorToInt((contentRect.xMin - target.xMin) / GridSize));

@@ -76,7 +76,8 @@ namespace Project.Editor
         public static VisualElement CreateReadOnlyRow(
             string label,
             Func<string> value,
-            int refreshMilliseconds = 100)
+            int refreshMilliseconds = 100,
+            UnityEngine.Object owner = null)
         {
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
@@ -92,10 +93,22 @@ namespace Project.Editor
             content.style.whiteSpace = WhiteSpace.Normal;
             row.Add(content);
 
-            Action refresh = () => content.text =
-                value != null ? value() ?? "无" : "无";
+            // Keep Unity's destroyed-object check separate from an omitted owner.
+            bool hasOwner = !ReferenceEquals(owner, null);
+            IVisualElementScheduledItem scheduled = null;
+            Action refresh = () =>
+            {
+                if (hasOwner && owner == null)
+                {
+                    content.text = "对象已移除";
+                    scheduled?.Pause();
+                    return;
+                }
+
+                content.text = value != null ? value() ?? "无" : "无";
+            };
             refresh();
-            row.schedule.Execute(refresh)
+            scheduled = row.schedule.Execute(refresh)
                 .Every(Mathf.Max(50, refreshMilliseconds));
             return row;
         }

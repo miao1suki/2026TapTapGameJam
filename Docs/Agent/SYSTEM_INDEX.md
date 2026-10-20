@@ -2,6 +2,10 @@
 
 正式全关已连到Gaming：4343物体、28区域、35收集品，R1/R2/R3/MRoom2/MRoom3/Boss均采用最终Scene无损回采；三份正式规划及AuthoredSections依赖成套。已有拖动导入适用于六份回采片段，旧R planning不能直接重建覆盖。版本0.2.1、Android com.miao1suki.shapeofcolor/code201，见[交接](../Developer/COMBINED_WORLD_0_2_1.md)。下文未合入R场景等为历史状态。
 
+2026-10-20再次抓取真实编辑窗口：修复Scene空刷新循环/全量缺失组件探测，关卡原生美术保留几何、连线/参数索引缓存及装配原点扫描。正式图装配更新间隔中位数102→12ms，细节19→4ms；Scene异常约270ms持续阻塞路径不再复现，美术平移约2–3ms。未改关卡/美术或运行时。统计边界与验证见[窗口性能](../Developer/EDITOR_WINDOW_PROFILING_2026-10-20.md)。
+
+2026-10-20补合TA f7cbb62：Gaming美术3972格、示例239格及MRoom2萤火虫（正式合图平移-68,+69），不以TA旧Scene覆盖main玩法。主关卡布局和三份规划不变，现有程序修复保持；装配临时Alt擦除／Shift白块和Inspector销毁保护补合。来源取舍与验证见[整合记录](../Developer/TA_PROGRESS_INTEGRATION_2026-10-20.md)。
+
 关卡存档拼接采用置顶暂存预览：自动放到地图右侧空位、整格拖动与边缘平移；可保留原房间划分或归并新房间，确认前不改当前地图。物体层与房间占格共同验重，源内部共用占格不再误报。操作见[协作地图](../Developer/LEVEL_EDITOR_COLLABORATION.md)、[接口](Integration/PLANNING_COLLABORATION_API.md)。
 `Tools/2026TapTap/编辑器性能/编辑渲染距离` 是纯 Editor 的房间级 SceneView 可见性裁剪工具：以 SceneView 中心为圆心隐藏远处 `__PlanningMapGenerated` 房间，当前/选中房间始终显示，非当前房间按内部规划方块样本而非不连续大 AABB 判断距离；可把两套关卡/规划编辑窗口的基础刷新从 `.1` 秒降到 `.35` 秒、维护和预览降到 `1` 秒，并诊断 UI Toolkit 画布、区域标签、玩家标记和 2D 预览耗时。只使用 `SceneVisibilityManager` 和 `EditorPrefs`，不改 Scene、Prefab、Collider、玩法或 Planning JSON，进 Play/保存/关闭窗口自动恢复。见[使用说明](../Developer/EDIT_RENDER_DISTANCE.md)与[接口](Integration/EDIT_RENDER_DISTANCE_API.md)。
 `存档改革` 分支的存档、开局、结局清档、收集品、颜色钥匙/能力、重生点和成就边界统一服从 `.agents/skills/taptap-save-reform/SKILL.md`：玩家不再管理多槽位，单轮自动续玩；低于30%不进Boss，30%到60%以下打完回第一关并保留本轮，达到60%完成真结局Playable后才清档、重置并回主界面；成就与本机全局设置跨轮永久保留。

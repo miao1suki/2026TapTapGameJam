@@ -13,6 +13,22 @@ namespace PlanningEditorPrototype
     public sealed partial class PlanningEditorWindow
     {
         private VisualElement regionList;
+        private Toggle worldRoomContentsToggle;
+
+        private VisualElement BuildWorldRoomContentsToggle()
+        {
+            worldRoomContentsToggle = new Toggle("世界图显示房间物体")
+            {
+                name = "PlanningWorldRoomContents",
+                value = canvas.ShowWorldRoomContents,
+                tooltip = "临时显示所有房间、通道及装配补丁中的墙体和道具，便于调整房间；仍只选择和移动房间，不编辑内部物体。不会写入关卡存档。"
+            };
+            worldRoomContentsToggle.style.marginLeft = 8;
+            worldRoomContentsToggle.style.marginBottom = 6;
+            worldRoomContentsToggle.SetEnabled(mode == PlanningCanvasMode.World);
+            worldRoomContentsToggle.RegisterValueChangedCallback(evt => canvas.SetWorldRoomContentsVisible(evt.newValue));
+            return worldRoomContentsToggle;
+        }
 
         private VisualElement BuildLeftRail()
         {

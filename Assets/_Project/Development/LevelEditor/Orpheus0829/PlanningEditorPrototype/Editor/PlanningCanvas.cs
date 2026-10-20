@@ -7,7 +7,6 @@ using Project.LevelEditor.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace PlanningEditorPrototype
 {
@@ -51,7 +50,7 @@ namespace PlanningEditorPrototype
 
         private RectInt DisplayRect(PlanningRoom room, PlanningBox box)
         {
-            if (mode != PlanningCanvasMode.Assembly || room == null)
+            if (!UsesAssemblyPreviewCoordinates || room == null)
                 return new RectInt(box.x, box.y, box.width, box.height);
             GetAssemblyStride(out int sx, out int sy);
             if (room.isConnector) return GetAssemblyBoxRect(room, box, sx, sy);
@@ -471,6 +470,8 @@ namespace PlanningEditorPrototype
             if (pendingBoxPreviews.Count == 0) return;
             foreach (string id in pendingBoxPreviews) boxPreviewCache.Remove(id);
             pendingBoxPreviews.Clear();
+            retainedImagesValid = false;
+            blockBatchesValid = false;
             UpdateDetailPreviewImages();
         }
 
@@ -969,35 +970,16 @@ namespace PlanningEditorPrototype
             RegisterCallback<PointerCaptureOutEvent>(OnCanvasCaptureOut);
             RegisterCallback<PointerLeaveEvent>(OnPointerLeave);
             RegisterCallback<KeyDownEvent>(OnKeyDown);
+            RegisterCallback<KeyUpEvent>(OnTemporaryToolKeyUp);
+            RegisterCallback<FocusOutEvent>(_ => ResetTemporaryAssemblyTools());
             RegisterCallback<GeometryChangedEvent>(
                 _ => UpdateDetailPreviewImages());
             RegisterCallback<AttachToPanelEvent>(_ => { EditorApplication.projectChanged -= RefreshArtworkPreviews; EditorApplication.projectChanged += RefreshArtworkPreviews; });
-            RegisterCallback<DetachFromPanelEvent>(_ => { EditorApplication.projectChanged -= RefreshArtworkPreviews; CancelPointerInteraction(); });
+            RegisterCallback<DetachFromPanelEvent>(_ => { EditorApplication.projectChanged -= RefreshArtworkPreviews; ResetTemporaryAssemblyTools(); CancelPointerInteraction(); });
             BuildPreviewLayers();
             BuildPlayerOverlay();
-            schedule.Execute(TickRegionLabels).Every(100);
+            schedule.Execute(RefreshRegionLabels).Every(100);
             InitializeEdgePan();
-        }
-
-        private double nextRegionLabelRefreshTime;
-
-        private void TickRegionLabels()
-        {
-            double now =
-                EditorApplication.timeSinceStartup;
-            if (EditorAuthoringPerformanceState
-                    .ReducedRefreshEnabled &&
-                now < nextRegionLabelRefreshTime)
-            {
-                return;
-            }
-            nextRegionLabelRefreshTime =
-                now +
-                (EditorAuthoringPerformanceState
-                    .ReducedRefreshEnabled
-                    ? 1d
-                    : .1d);
-            RefreshRegionLabels();
         }
 
         private void BuildPlayerOverlay()
@@ -1068,30 +1050,12 @@ namespace PlanningEditorPrototype
 
         private void UpdatePlayerOverlay()
         {
-            long refreshStart =
-                Stopwatch.GetTimestamp();
-            try
-            {
-                UpdatePlayerOverlayCore();
-            }
-            finally
-            {
-                EditorAuthoringPerformanceState
-                    .RecordPlanningCanvasOverlay(
-                        EditorAuthoringPerformanceState
-                            .ElapsedMilliseconds(
-                                refreshStart));
-            }
-        }
-
-        private void UpdatePlayerOverlayCore()
-        {
             if (playerOverlay == null)
             {
                 return;
             }
 
-            playerOverlay.pickingMode = !editWaterLayer && LevelEditorState.Tool == LevelEditorTool.Player &&
+            playerOverlay.pickingMode = !HasTemporaryAssemblyTool && !editWaterLayer && LevelEditorState.Tool == LevelEditorTool.Player &&
                 !EditorApplication.isPlayingOrWillChangePlaymode
                 ? PickingMode.Position : PickingMode.Ignore;
 
@@ -1255,6 +1219,7 @@ namespace PlanningEditorPrototype
 
         private void OnPlayerPointerDown(PointerDownEvent evt)
         {
+            if (mode == PlanningCanvasMode.Assembly && (evt.altKey || evt.shiftKey)) return;
             if (editWaterLayer || evt.button != 0 || LevelEditorState.Tool != LevelEditorTool.Player ||
                 EditorApplication.isPlayingOrWillChangePlaymode ||
                 !playerOverlay.worldBound.Contains(evt.position))
@@ -1500,6 +1465,7 @@ namespace PlanningEditorPrototype
         public void SetMode(PlanningCanvasMode value)
         {
             EndPointerAction();
+            ResetTemporaryAssemblyTools();
             isPlacingRoom = false;
             mode = value;
             waterPreviewCells.Clear();
@@ -1531,8 +1497,13 @@ namespace PlanningEditorPrototype
             MarkDirtyRepaint();
         }
 
-        private static PlanningDetailTool GetActiveDetailTool()
+        private PlanningDetailTool GetActiveDetailTool()
         {
+            if (mode == PlanningCanvasMode.Assembly)
+            {
+                if (assemblyAltHeld) return PlanningDetailTool.Erase;
+                if (assemblyShiftHeld) return PlanningDetailTool.Box;
+            }
             switch (LevelEditorState.Tool)
             {
                 case LevelEditorTool.Select:
@@ -1899,68 +1870,35 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            long drawStart =
-                Stopwatch.GetTimestamp();
-            try
+            if (mode == PlanningCanvasMode.World)
             {
-                if (mode == PlanningCanvasMode.World)
-                {
-                    long modeStart =
-                        Stopwatch.GetTimestamp();
-                    DrawWorld(context);
-                    EditorAuthoringPerformanceState
-                        .RecordPlanningCanvasWorld(
-                            EditorAuthoringPerformanceState
-                                .ElapsedMilliseconds(
-                                    modeStart));
-                }
-                else if (mode == PlanningCanvasMode.Assembly)
-                {
-                    long modeStart =
-                        Stopwatch.GetTimestamp();
-                    DrawAssembly(context);
-                    EditorAuthoringPerformanceState
-                        .RecordPlanningCanvasAssembly(
-                            EditorAuthoringPerformanceState
-                                .ElapsedMilliseconds(
-                                    modeStart));
-                }
-                else
-                {
-                    long modeStart =
-                        Stopwatch.GetTimestamp();
-                    DrawDetail(context);
-                    EditorAuthoringPerformanceState
-                        .RecordPlanningCanvasDetail(
-                            EditorAuthoringPerformanceState
-                                .ElapsedMilliseconds(
-                                    modeStart));
-                }
-                if (mode != PlanningCanvasMode.World && GetActiveDetailTool() == PlanningDetailTool.Merge)
-                {
-                    foreach(var item in AllBoxes())
-                    {
-                        if (!mergeSelection.Contains(item.box.id) || (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId)) continue;
-                        var r=DisplayRect(item.room,item.box);
-                        Vector2Int offset = r.position - new Vector2Int(item.box.x, item.box.y);
-                        foreach (RectInt part in PlanningShapeUtility.Rectangles(item.box))
-                            StrokeRect(context.painter2D, CellRect(part.x + offset.x,part.y + offset.y,part.width,part.height),new Color(.3f,.85f,1f),3f);
-                    }
-                    DrawRectanglePreview(context.painter2D);
-                }
+                DrawWorld(context);
             }
-            finally
+            else if (mode == PlanningCanvasMode.Assembly)
             {
-                EditorAuthoringPerformanceState
-                    .RecordPlanningCanvasDraw(
-                        EditorAuthoringPerformanceState
-                            .ElapsedMilliseconds(
-                                drawStart));
+                DrawAssembly(context);
+            }
+            else
+            {
+                DrawDetail(context);
+            }
+            if (mode != PlanningCanvasMode.World && GetActiveDetailTool() == PlanningDetailTool.Merge)
+            {
+                foreach(var item in AllBoxes())
+                {
+                    if (!mergeSelection.Contains(item.box.id) || (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId)) continue;
+                    var r=DisplayRect(item.room,item.box);
+                    Vector2Int offset = r.position - new Vector2Int(item.box.x, item.box.y);
+                    foreach (RectInt part in PlanningShapeUtility.Rectangles(item.box))
+                        StrokeRect(context.painter2D, CellRect(part.x + offset.x,part.y + offset.y,part.width,part.height),new Color(.3f,.85f,1f),3f);
+                }
+                DrawRectanglePreview(context.painter2D);
             }
         }
 
         private void DrawAssembly(MeshGenerationContext context)
         {
+            using var profile = DrawAssemblyMarker.Auto();
             Painter2D painter = context.painter2D;
             DrawAssemblyOwnership(painter);
             DrawGrid(context);
@@ -1974,13 +1912,8 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
-                GetAssemblyRoomOffset(
-                    owner,
-                    strideX,
-                    strideY,
-                    out int offsetX,
-                    out int offsetY,
-                    out int maxPlanY);
+                Vector2Int origin = OwnerPreview(owner).Bounds.position;
+                int offsetX = origin.x * strideX, offsetY = origin.y * strideY;
                 for (int boxIndex = 0;
                      boxIndex < owner.boxes.Count;
                      boxIndex++)
@@ -2092,22 +2025,13 @@ namespace PlanningEditorPrototype
                 out strideY);
         }
 
-        private static void GetAssemblyRoomOffset(
-            PlanningRoom room,
-            int strideX,
-            int strideY,
-            out int offsetX,
-            out int offsetY,
-            out int maxPlanY)
+        private void GetAssemblyRoomOffset(PlanningRoom room, int strideX, int strideY,
+            out int offsetX, out int offsetY, out int maxPlanY)
         {
-            PlanningLayoutUtility.RoomLayoutInfo layout =
-                PlanningLayoutUtility.GetRoomLayout(
-                    room,
-                    strideX,
-                    strideY);
-            offsetX = layout.OffsetX;
-            offsetY = layout.OffsetY;
-            maxPlanY = layout.MaxPlanY;
+            Vector2Int origin = OwnerPreview(room).Bounds.position;
+            offsetX = origin.x * strideX; offsetY = origin.y * strideY;
+            maxPlanY = 1;
+            foreach (var box in room.boxes) maxPlanY = Mathf.Max(maxPlanY, box.y + box.height);
         }
 
         private void GetAssemblyConnectorOrigin(
@@ -2172,11 +2096,12 @@ namespace PlanningEditorPrototype
                 if (!string.IsNullOrEmpty(room.sourceColorHex) && ColorUtility.TryParseHtmlString(room.sourceColorHex, out Color importedColor))
                     color = importedColor;
                 bool selected = worldSelection.Contains(room.id) || room.id == selectedRoomId;
-                color.a = selected ? .78f : .5f;
+                color.a = showWorldRoomContents ? (selected ? .2f : .08f) : (selected ? .78f : .5f);
                 DrawWorldOwner(painter, room, color, selected);
             }
 
             DrawConnectors(painter);
+            if (showWorldRoomContents) DrawWorldRoomContents(painter);
             DrawGrid(context);
             DrawDoors(painter);
             DrawKeys(painter);
@@ -2235,6 +2160,7 @@ namespace PlanningEditorPrototype
 
         private void DrawDetail(MeshGenerationContext context)
         {
+            using var profile = DrawDetailMarker.Auto();
             PlanningRoom room = document?.FindRoom(selectedRoomId);
             if (room == null)
             {
@@ -2246,11 +2172,11 @@ namespace PlanningEditorPrototype
             DrawGrid(context);
             DrawDetailOwnership(painter, room);
 
-            foreach (var box in room.boxes.OrderBy(b => PlanningWaterLayerUtility.IsWater(b, palette) ? 0 : 1))
+            foreach (var box in room.boxes.OrderBy(b => IsPreviewWater(b) ? 0 : 1))
             {
                 Rect rect = CellRect(box.x, box.y, box.width, box.height);
                 if (!rect.Overlaps(contentRect)) continue;
-                Texture2D preview = GetBoxPreview(box);
+                Texture2D preview = IsBatchedBlock(box) ? Texture2D.whiteTexture : GetBoxPreview(box);
                 if (preview == null)
                 {
                     DrawShapeFallback(painter, box, Vector2Int.zero);
@@ -2274,6 +2200,7 @@ namespace PlanningEditorPrototype
 
         private void DrawShapeFallback(Painter2D painter, PlanningBox box, Vector2Int offset)
         {
+            if (IsBatchedBlock(box)) return;
             if (GetBoxPreview(box) != null) return;
             Color color = ColorForBox(box);
             color.a *= editWaterLayer && !PlanningWaterLayerUtility.IsWater(box, palette) ? .2f : 1f;
@@ -2286,25 +2213,24 @@ namespace PlanningEditorPrototype
 
         private void UpdateDetailPreviewImages()
         {
-            long refreshStart =
-                Stopwatch.GetTimestamp();
-            try
+            UpdateBlockBatches();
+            UpdateTriggerPlacementPreview();
+            if (UpdateRetainedImageView())
             {
-                UpdateDetailPreviewImagesCore();
+                UpdatePlayerOverlay();
+                return;
             }
-            finally
-            {
-                EditorAuthoringPerformanceState
-                    .RecordPlanningCanvasPreview(
-                        EditorAuthoringPerformanceState
-                            .ElapsedMilliseconds(
-                                refreshStart));
-            }
+            buildingRetainedImages = true;
+            Vector2 currentPan = pan; float currentZoom = zoom;
+            pan = Vector2.zero; zoom = 1;
+            try { RebuildDetailPreviewImages(); retainedImagesValid = true; PreviewGeometryRevision++; }
+            finally { pan = currentPan; zoom = currentZoom; buildingRetainedImages = false; }
+            UpdateRetainedImageView();
+            UpdatePlayerOverlay();
         }
 
-        private void UpdateDetailPreviewImagesCore()
+        private void RebuildDetailPreviewImages()
         {
-            UpdateTriggerPlacementPreview();
             if (objectPreviewLayer != null) objectPreviewLayer.style.opacity = editWaterLayer ? .2f : 1f;
             if (document == null)
             {
@@ -2313,7 +2239,7 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            if (mode == PlanningCanvasMode.Assembly)
+            if (UsesAssemblyPreviewCoordinates)
             {
                 UpdateAssemblyPreviewImages();
                 UpdatePlayerOverlay();
@@ -2423,6 +2349,7 @@ namespace PlanningEditorPrototype
             RectInt rect,
             HashSet<string> active)
         {
+            if (IsBatchedBlock(box)) return;
             if (!PreviewVisible(rect)) return;
             Vector2Int offset = rect.position - new Vector2Int(box.x, box.y);
             foreach (RectInt part in PlanningShapeUtility.Rectangles(box))
@@ -2443,7 +2370,7 @@ namespace PlanningEditorPrototype
             bool water = PlanningWaterLayerUtility.IsWater(box, palette);
             VisualElement layer = water ? waterPreviewLayer : objectPreviewLayer;
             int startX = rect.x, startY = rect.y, endX = rect.xMax, endY = rect.yMax;
-            if (!box.isMerged && contentRect.width > 0f && contentRect.height > 0f)
+            if (!buildingRetainedImages && !box.isMerged && contentRect.width > 0f && contentRect.height > 0f)
             {
                 Vector2 topLeft = ScreenToWorld(contentRect.min), bottomRight = ScreenToWorld(contentRect.max);
                 startX = Mathf.Max(startX, Mathf.FloorToInt(topLeft.x)); startY = Mathf.Max(startY, Mathf.FloorToInt(topLeft.y));
@@ -2619,7 +2546,7 @@ namespace PlanningEditorPrototype
                 2f);
         }
 
-        private bool IsPlacingDoor => mode != PlanningCanvasMode.World &&
+        private bool IsPlacingDoor => !IsTemporaryWhiteBrush && mode != PlanningCanvasMode.World &&
             GetActiveDetailTool() == PlanningDetailTool.Box && PlanningDoorUtility.HasFixedFootprint(detailPropEntryId);
 
         private void DrawDoorPlacementPreview(Painter2D painter, Vector2Int cell)
@@ -2850,6 +2777,17 @@ namespace PlanningEditorPrototype
             string entryId,
             string entryName)
         {
+            var key = (entryId, entryName);
+            if (!previewPropEntries.TryGetValue(key, out var entry))
+                previewPropEntries[key] = entry = ResolvePropEntry(entryId, entryName);
+            return entry;
+        }
+
+        private LevelEditorPropEntry ResolvePropEntry(string entryId, string entryName)
+        {
+            // Solid blocks have no prop entry. Avoid scanning the whole prop palette
+            // for every wall in each overlay pass.
+            if (string.IsNullOrEmpty(entryId) && string.IsNullOrEmpty(entryName)) return null;
             if (entryId == PlanningDoorUtility.ButtonEntryId) return PlanningDoorUtility.GetButtonEntry();
             if (palette == null)
             {
@@ -2944,6 +2882,7 @@ namespace PlanningEditorPrototype
             if (isDragging || isPanning) CancelPointerInteraction();
             if (isDraggingPlayer) EndPlayerPointerDrag(playerPointerId, true);
             Focus();
+            UpdateTemporaryAssemblyTools(evt.altKey, evt.shiftKey);
             Vector2 position = evt.localPosition;
             UpdateHover(position);
             if (!string.IsNullOrEmpty(bindingConsumerId))
@@ -2999,7 +2938,7 @@ namespace PlanningEditorPrototype
             {
                 MarkDirtyRepaint(); evt.StopPropagation(); return;
             }
-            if (TryBeginBossMarkerDrag(position))
+            if (!HasTemporaryAssemblyTool && TryBeginBossMarkerDrag(position))
             {
                 MarkDirtyRepaint();
                 evt.StopPropagation();
@@ -3024,6 +2963,7 @@ namespace PlanningEditorPrototype
 
         private void OnPointerMove(PointerMoveEvent evt)
         {
+            UpdateTemporaryAssemblyTools(evt.altKey, evt.shiftKey);
             Vector2 position = evt.localPosition;
             UpdateHover(position);
             if (isPanning && evt.pointerId == panPointerId)
@@ -3085,6 +3025,7 @@ namespace PlanningEditorPrototype
 
         private void OnPointerUp(PointerUpEvent evt)
         {
+            UpdateTemporaryAssemblyTools(evt.altKey, evt.shiftKey);
             if (evt.pointerId != panPointerId &&
                 evt.pointerId != dragPointerId)
             {
@@ -3137,6 +3078,11 @@ namespace PlanningEditorPrototype
 
         private void OnKeyDown(KeyDownEvent evt)
         {
+            if (HandleTemporaryToolKey(evt.keyCode, true, evt.altKey, evt.shiftKey))
+            {
+                evt.StopPropagation();
+                return;
+            }
             if (importPreview != null && mode == PlanningCanvasMode.World)
             {
                 if (evt.keyCode == KeyCode.Escape) ImportPreviewCancelled?.Invoke();
@@ -3527,6 +3473,18 @@ namespace PlanningEditorPrototype
 
         private void ApplyDetailSelection(PlanningBox box)
         {
+            if (IsTemporaryWhiteBrush)
+            {
+                var white = palette?.Entries.FirstOrDefault(entry =>
+                    entry.EntryId == "b425a019bb3c476da08cd4065bd77862") ??
+                    palette?.Entries.FirstOrDefault(entry => entry.DisplayName == "白方块");
+                box.type = PlanningDetailType.Platform;
+                box.propEntryId = box.propEntryName = string.Empty;
+                box.paletteEntryId = white?.EntryId ?? string.Empty;
+                box.paletteEntryName = white?.DisplayName ?? "白方块";
+                CapturePlacementDefaults(box);
+                return;
+            }
             if (!string.IsNullOrEmpty(detailPropEntryId))
             {
                 box.type = PlanningDetailType.Prop;
@@ -4046,29 +4004,23 @@ namespace PlanningEditorPrototype
 
         private void DrawDoorLinks(Painter2D painter)
         {
+            using var profile = DrawLinksMarker.Auto();
             if (editWaterLayer) return;
-            var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
-            var byId = IndexBoxes(items);
-            DrawMechanismLinks(painter, items, byId);
+            EnsurePreviewLinks();
+            var byId = previewLinksById;
+            DrawMechanismLinks(painter, previewMechanisms, byId);
             DrawContactTimelineRanges(painter);
-            foreach (var item in items)
+            foreach (var item in previewDoorButtons)
             {
                 if (string.IsNullOrEmpty(item.box.doorOwnerId) ||
                     (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId)) continue;
-                if (!byId.TryGetValue(
-                        item.box.doorOwnerId,
-                        out var door))
+                if (byId.TryGetValue(item.box.doorOwnerId, out var door))
                 {
-                    continue;
+                    RectInt a = DisplayRect(item.room, item.box), b = DisplayRect(door.room, door.box);
+                    Vector2 start = CellRect(a.x, a.y, a.width, a.height).center;
+                    Vector2 end = CellRect(b.x, b.y, b.width, b.height).center;
+                    Dashed(painter, start, end, new Color(1f,.78f,.3f,.9f));
                 }
-                RectInt a = DisplayRect(item.room, item.box), b = DisplayRect(door.room, door.box);
-                Vector2 start = CellRect(a.x, a.y, a.width, a.height).center;
-                Vector2 end = CellRect(b.x, b.y, b.width, b.height).center;
-                float length = Vector2.Distance(start, end);
-                if (length <= .001f) continue;
-                for (float d = 0; d < length; d += 12f)
-                    DrawLine(painter, Vector2.Lerp(start,end,d/length), Vector2.Lerp(start,end,Mathf.Min(d+6f,length)/length),
-                        new Color(1f,.78f,.3f,.9f), 2f);
             }
         }
 
@@ -4168,34 +4120,24 @@ namespace PlanningEditorPrototype
             bindingConsumerId = null; pickingSignalSource = false;
             NotifyDocumentChanged(); MarkDirtyRepaint(); StatusChanged?.Invoke("已完成绑定。");
         }
-        private void DrawMechanismLinks(
-            Painter2D painter,
-            List<(PlanningRoom room,
-                List<PlanningBox> boxes,
-                PlanningBox box)> items,
-            Dictionary<
-                string,
-                (PlanningRoom room,
-                    List<PlanningBox> boxes,
-                    PlanningBox box)> byId)
+        private void DrawMechanismLinks(Painter2D painter,
+            List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)> items,
+            Dictionary<string, (PlanningRoom room, PlanningBox box)> byId)
         {
+            using var profile = DrawMechanismLinksMarker.Auto();
             foreach (var item in items)
             {
                 if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
-                LevelEditorPropEntry entry = FindPropEntry(
-                    item.box.propEntryId,
-                    item.box.propEntryName);
-                var prefab = entry?.Prefab;
-                if (!PlanningMechanismUtility.IsConsumer(prefab)) continue;
+                var prefab = FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.Prefab;
+                var feature = PreviewComponent<Project.BlockFeatures.MovingPlatformFeature>(prefab);
+                if (feature == null && PreviewComponent<Project.BlockFeatures.CrankPlatformFeature>(prefab) == null) continue;
                 RectInt rect = DisplayRect(item.room, item.box);
                 Vector2 start = CellRect(rect.x, rect.y, rect.width, rect.height).center;
-                var feature = prefab.GetComponent<Project.BlockFeatures.MovingPlatformFeature>();
-                var values = item.box.hasComponentOverrides
-                    ? item.box.componentOverrides
-                    : entry.ComponentValueOverrides;
+                var values = item.box.hasComponentOverrides ? item.box.componentOverrides : FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.ComponentValueOverrides;
                 if (feature != null)
                 {
-                    var path = PlanningPlatformPathUtility.Resolve(feature, values);
+                    if (!previewPlatformPaths.TryGetValue(item.box, out var path))
+                        previewPlatformPaths[item.box] = path = PlanningPlatformPathUtility.Resolve(feature, values);
                     Vector2 ScreenOffset(Vector2 cells) => new Vector2(cells.x, -cells.y) * GridSize;
                     Color pathColor = new Color(.3f,.9f,1f,.85f);
                     Dashed(painter, start + ScreenOffset(path.PreviewFrom), start + ScreenOffset(path.PreviewTo), pathColor);
@@ -4214,20 +4156,12 @@ namespace PlanningEditorPrototype
                         DrawLine(painter, center - Vector2.up * 4f, center + Vector2.up * 4f, pathColor, 2f);
                     }
                 }
-                if (!string.IsNullOrEmpty(
-                        item.box.crankOwnerId) &&
-                    byId.TryGetValue(
-                        item.box.crankOwnerId,
-                        out var controller))
+                if (!string.IsNullOrEmpty(item.box.crankOwnerId) && byId.TryGetValue(item.box.crankOwnerId, out var controller))
                 {
                     RectInt target = DisplayRect(controller.room,controller.box);
                     Dashed(painter,start,CellRect(target.x,target.y,target.width,target.height).center,new Color(1f,.78f,.3f,.9f));
                 }
-                if (!string.IsNullOrEmpty(
-                        item.box.mechanismBaseId) &&
-                    byId.TryGetValue(
-                        item.box.mechanismBaseId,
-                        out var source))
+                if (!string.IsNullOrEmpty(item.box.mechanismBaseId) && byId.TryGetValue(item.box.mechanismBaseId, out var source))
                 {
                     RectInt b = DisplayRect(source.room, source.box);
                     Dashed(painter, start, CellRect(b.x+item.box.mechanismBaseCellOffset.x,b.y+item.box.mechanismBaseCellOffset.y,1,1).center, new Color(1f,.45f,.8f,.9f));
@@ -4235,47 +4169,23 @@ namespace PlanningEditorPrototype
                 item.box.NormalizeMechanismButtonLinks();
                 foreach (string buttonId in item.box.mechanismButtonIds)
                 {
-                    if (byId.TryGetValue(
-                            buttonId,
-                            out var buttonSource))
+                    if (!string.IsNullOrEmpty(buttonId) && byId.TryGetValue(buttonId, out var button))
                     {
-                        RectInt b = DisplayRect(buttonSource.room, buttonSource.box);
+                        RectInt b = DisplayRect(button.room, button.box);
                         Dashed(painter, start, CellRect(b.x,b.y,b.width,b.height).center, new Color(1f,.35f,.25f,.9f));
                     }
                 }
             }
         }
 
-        private static Dictionary<
-            string,
-            (PlanningRoom room,
-                List<PlanningBox> boxes,
-                PlanningBox box)> IndexBoxes(
-            List<(PlanningRoom room,
-                List<PlanningBox> boxes,
-                PlanningBox box)> items)
-        {
-            var byId = new Dictionary<
-                string,
-                (PlanningRoom room,
-                    List<PlanningBox> boxes,
-                    PlanningBox box)>(items.Count);
-            foreach (var item in items)
-            {
-                if (!string.IsNullOrEmpty(item.box.id))
-                {
-                    byId[item.box.id] = item;
-                }
-            }
-            return byId;
-        }
-
         private void DrawContactTimelineRanges(
             Painter2D painter)
         {
+            using var profile = DrawTimelineRangesMarker.Auto();
             Color color =
                 new Color(1f, .78f, .3f, .9f);
-            foreach (var item in AllBoxes())
+            EnsurePreviewLinks();
+            foreach (var item in previewTimelines)
             {
                 if (mode == PlanningCanvasMode.Detail &&
                     item.room?.id != selectedRoomId)
@@ -4288,16 +4198,16 @@ namespace PlanningEditorPrototype
                     item.box.propEntryName);
                 GameObject prefab = entry?.Prefab;
                 if (prefab == null ||
-                    prefab.GetComponent<
+                    PreviewComponent<
                         Project.BlockFeatures
-                            .ContactTimelineTrigger>() ==
+                            .ContactTimelineTrigger>(prefab) ==
                     null)
                 {
                     continue;
                 }
 
                 BoxCollider collider =
-                    prefab.GetComponent<BoxCollider>();
+                    PreviewComponent<BoxCollider>(prefab);
                 Vector3 size = collider != null
                     ? collider.size
                     : Vector3.one;

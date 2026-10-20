@@ -236,17 +236,31 @@ namespace Project.BlockFeatures
             var part = new GameObject(name); part.transform.SetParent(transform, false); parts.Add(part);
             var mesh = new Mesh { name = name, indexFormat = IndexFormat.UInt32 };
             mesh.SetVertices(vertices); mesh.SetUVs(0, uv); mesh.SetTriangles(triangles, 0);
+            bool clampTileSlice = alphaTexture != Texture2D.whiteTexture;
+            if (clampTileSlice)
+            {
+                // Keep UV0 exactly 16 source pixels per world cell. UV1 only
+                // bounds the final sample, excluding the source's transparent 17th row.
+                var slices = new List<Vector4>(uv.Count);
+                for (int first = 0; first < uv.Count; first += 4)
+                {
+                    Vector2 min = uv[first], max = min;
+                    for (int j = 1; j < 4; j++) { min = Vector2.Min(min, uv[first+j]); max = Vector2.Max(max, uv[first+j]); }
+                    for (int j = 0; j < 4; j++) slices.Add(new Vector4(min.x, min.y, max.x, max.y));
+                }
+                mesh.SetUVs(1, slices);
+            }
             var colors = new Color[vertices.Count]; for (int i = 0; i < colors.Length; i++) colors[i] = Color.white;
             mesh.colors = colors; mesh.RecalculateBounds(); meshes.Add(mesh);
             part.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = part.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = ColorAppearanceManager.Instance.GetSharedMaterial(source, "blue", true);
             renderer.sortingOrder = order; renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = false;
-            ConfigureRenderer(renderer, alphaTexture);
+            ConfigureRenderer(renderer, alphaTexture, clampTileSlice);
             return part;
         }
 
-        private static void ConfigureRenderer(Renderer renderer, Texture alphaTexture)
+        private static void ConfigureRenderer(Renderer renderer, Texture alphaTexture, bool clampTileSlice = false)
         {
             var definition = ColorRuntimeService.Instance.Catalog?.Find("blue");
             if (definition != null && definition.unityLayer >= 0 && definition.unityLayer < 32)
@@ -255,6 +269,7 @@ namespace Project.BlockFeatures
             properties.SetFloat("_ColorMaskGroup", ColorAppearanceManager.GetGroupIndex("blue"));
             properties.SetFloat("_ColorMaskReal", 1f); properties.SetFloat("_ColorMaskUseVertexAlpha", 1f);
             properties.SetTexture("_ColorMaskAlphaTexture", alphaTexture);
+            properties.SetFloat("_GridArtSliceClamp", clampTileSlice ? 1f : 0f);
             renderer.SetPropertyBlock(properties);
         }
 

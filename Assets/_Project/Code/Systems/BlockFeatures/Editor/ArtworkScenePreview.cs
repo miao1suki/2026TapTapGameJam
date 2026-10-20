@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Project.ColorBlocks;
 using Project.ContactCubes;
 using Project.LevelEditor;
-using Project.LevelEditor.Editor;
 using Project.Mechanisms;
 using Project.ObjectArtwork;
 using Project.Subtitles;
@@ -14,7 +13,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
-using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Project.BlockFeatures.Editor
 {
@@ -41,6 +39,7 @@ namespace Project.BlockFeatures.Editor
             internal readonly List<Vector3[]> pickQuads = new();
             internal bool water;
             internal int parentArtwork;
+            internal int componentCount;
         }
         private readonly struct WaterCell : IEquatable<WaterCell>
         {
@@ -52,16 +51,30 @@ namespace Project.BlockFeatures.Editor
         }
 
         private static readonly Dictionary<int, Entry> entries = new();
+        private static readonly Dictionary<int, (GameObject owner, int count)> nonOwners = new();
         private static readonly Dictionary<Texture, Material> materials = new();
         private static readonly HashSet<int> pending = new();
         private static readonly HashSet<WaterCell> waterCells = new();
         private static readonly Dictionary<WaterCell, int> waterCellOwners = new();
         private static readonly List<int> expired = new();
         private static readonly Plane[] planes = new Plane[6];
+        private readonly struct DrawPart
+        {
+            internal readonly Mesh mesh;
+            internal readonly Material material;
+            internal readonly Matrix4x4 matrix;
+            internal DrawPart(Mesh mesh, Material material, Matrix4x4 matrix) { this.mesh = mesh; this.material = material; this.matrix = matrix; }
+        }
+        // Retain the buffers, but rebuild visibility for each camera/repaint. This
+        // preserves Scene visibility/prefab-stage changes without allocating per pan.
+        private static readonly List<DrawPart> waterDraws = new();
+        private static readonly List<DrawPart> objectDraws = new();
         private static bool queued, processing, discoverHierarchy;
         public static int CachedOwnerCount => entries.Count;
         public static int RebuildCount { get; private set; }
         public static int HierarchyDiscoveryCount { get; private set; }
+        public static int FlushCount { get; private set; }
+        public static int RepaintRequestCount { get; private set; }
 
         static ArtworkScenePreview()
         {
@@ -102,6 +115,7 @@ namespace Project.BlockFeatures.Editor
         private static void QueueAll()
         {
             if (!IsEditing) return;
+            nonOwners.Clear();
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 Scene scene = SceneManager.GetSceneAt(i);
@@ -132,8 +146,20 @@ namespace Project.BlockFeatures.Editor
                     foreach (var transform in root.GetComponentsInChildren<Transform>(true))
                     {
                         GameObject owner = transform.gameObject;
-                        if (!IsAuthorObject(owner) || !IsArtworkOwner(owner) || entries.ContainsKey(owner.GetInstanceID())) continue;
-                        pending.Add(owner.GetInstanceID());
+                        // A hierarchy notification is global (including hidden
+                        // editor helpers). Known owners need no component probe.
+                        int id = owner.GetInstanceID();
+                        if (!IsAuthorObject(owner)) continue;
+                        int componentCount = owner.GetComponentCount();
+                        if (entries.TryGetValue(id, out var existing))
+                        {
+                            if (existing.componentCount != componentCount) pending.Add(id);
+                            continue;
+                        }
+                        if (nonOwners.TryGetValue(id, out var known) && known.owner != null &&
+                            known.owner == owner && known.count == componentCount) continue;
+                        if (!IsArtworkOwner(owner)) { nonOwners[id] = (owner, componentCount); continue; }
+                        pending.Add(id);
                         if (owner.TryGetComponent<LadderSonFeature>(out var segment) && segment.ArtworkRoot != segment)
                             pending.Add(segment.ArtworkRoot.gameObject.GetInstanceID());
                     }
@@ -176,6 +202,7 @@ namespace Project.BlockFeatures.Editor
                 GameObject go = value as GameObject;
                 if (go == null && value is Component component) go = component.gameObject;
                 if (!IsAuthorObject(go)) continue;
+                nonOwners.Remove(go.GetInstanceID());
                 // forceRenderingOff is this service's transient visibility lease.
                 // Renderer notifications from that lease must not recursively
                 // tear down/recreate the same preview on the next Editor tick.
@@ -184,7 +211,10 @@ namespace Project.BlockFeatures.Editor
                 // to its nearest artwork owner; don't rescan the entire map.
                 Transform nearest = go.transform;
                 while (nearest != null && !IsArtworkOwner(nearest.gameObject)) nearest = nearest.parent;
-                pending.Add(nearest != null ? nearest.gameObject.GetInstanceID() : go.GetInstanceID());
+                if (nearest != null) pending.Add(nearest.gameObject.GetInstanceID());
+                else if (stream.GetEventType(i) != ObjectChangeKind.ChangeGameObjectOrComponentProperties ||
+                    value is Transform && go.transform.childCount > 0)
+                    pending.Add(go.GetInstanceID());
             }
             if (pending.Count > 0 || deleted) Schedule();
         }
@@ -204,17 +234,20 @@ namespace Project.BlockFeatures.Editor
         {
             EditorApplication.delayCall -= Flush; queued = false;
             if (!IsEditing || processing) return;
+            FlushCount++;
             processing = true;
+            bool visualChanged = false;
             try
             {
                 DiscoverNewOwners();
                 expired.Clear();
                 foreach (var pair in entries)
-                    if (!IsAuthorObject(pair.Value.owner) || !IsArtworkOwner(pair.Value.owner)) expired.Add(pair.Key);
+                    if (!IsAuthorObject(pair.Value.owner) || pending.Contains(pair.Key) && !IsArtworkOwner(pair.Value.owner)) expired.Add(pair.Key);
                 foreach (int id in expired)
                 {
                     if (entries.TryGetValue(id, out var previous) && previous.parentArtwork != 0) pending.Add(previous.parentArtwork);
                     Remove(id);
+                    visualChanged = true;
                 }
                 var ids = new List<int>(pending); pending.Clear();
                 var owners = new HashSet<GameObject>();
@@ -223,7 +256,12 @@ namespace Project.BlockFeatures.Editor
                     var go = EditorUtility.InstanceIDToObject(id) as GameObject;
                     if (!IsAuthorObject(go)) continue;
                     foreach (var transform in go.GetComponentsInChildren<Transform>(true))
-                        if (IsAuthorObject(transform.gameObject) && IsArtworkOwner(transform.gameObject)) owners.Add(transform.gameObject);
+                    {
+                        GameObject child = transform.gameObject;
+                        if (!IsAuthorObject(child)) continue;
+                        if (IsArtworkOwner(child)) owners.Add(child);
+                        else if (entries.ContainsKey(child.GetInstanceID())) { Remove(child.GetInstanceID()); visualChanged = true; }
+                    }
                 }
                 // Changing any water cell can change its neighbours' surface/bottom
                 // choice. Only cached water owners are revisited, never all Scene
@@ -235,14 +273,19 @@ namespace Project.BlockFeatures.Editor
                 foreach (var owner in owners)
                 {
                     int id = owner.GetInstanceID(); Remove(id);
-                    var entry = new Entry { owner = owner, water = owner.GetComponent<WaterVisualFeature>() != null };
+                    var entry = new Entry { owner = owner, componentCount = owner.GetComponentCount(), water = owner.GetComponent<WaterVisualFeature>() != null };
                     entries[id] = entry;
                 }
-                RebuildWaterCells();
+                // Unrelated author changes (including camera transforms) can be
+                // published here too. They must not retessellate water occupancy.
+                if (waterChanged) RebuildWaterCells();
                 foreach (var owner in owners) if (owner != null && entries.TryGetValue(owner.GetInstanceID(), out var entry)) Build(entry);
+                visualChanged |= owners.Count > 0;
             }
             finally { processing = false; }
-            SceneView.RepaintAll();
+            // Repainting an unchanged Scene creates further editor-helper
+            // hierarchy notifications on some layouts. Never feed that cycle.
+            if (visualChanged) { RepaintRequestCount++; SceneView.RepaintAll(); }
         }
 
         private static float Cell(GameObject owner) => Mathf.Max(.01f, GridCellSizeUtility.Resolve(owner.transform));
@@ -259,7 +302,7 @@ namespace Project.BlockFeatures.Editor
             if (owner.TryGetComponent<ContactCube>(out _))
                 foreach (var candidate in owner.GetComponentsInChildren<BoxCollider>(true))
                     if (!candidate.isTrigger) { box = candidate; break; }
-            Bounds bounds = box != null ? box.bounds : new Bounds(owner.transform.position,
+            Bounds bounds = box != null ? BoxWorldBounds(box) : new Bounds(owner.transform.position,
                 owner.TryGetComponent<LevelEditorPlacedBlock>(out var placed) ? new Vector3(placed.SizeCells.x * cell, placed.SizeCells.y * cell, cell) : Vector3.one * cell);
             if (owner.TryGetComponent<NeutralLadder>(out _) && owner.TryGetComponent<LevelEditorPlacedBlock>(out var ladderPlaced))
             {
@@ -269,6 +312,20 @@ namespace Project.BlockFeatures.Editor
                     bounds.center = new Vector3(bounds.center.x, owner.transform.position.y + (ladderPlaced.SizeCells.y - 1) * .5f * cell, bounds.center.z);
             }
             return bounds;
+        }
+        private static Bounds BoxWorldBounds(BoxCollider box)
+        {
+            // Editor transform changes are not necessarily synchronized with
+            // Physics yet. Pure artwork queries must not force a global sync or
+            // cache stale/empty native Collider.bounds after a drag or import.
+            Matrix4x4 matrix = box.transform.localToWorldMatrix;
+            Vector3 x = matrix.MultiplyVector(Vector3.right * box.size.x);
+            Vector3 y = matrix.MultiplyVector(Vector3.up * box.size.y);
+            Vector3 z = matrix.MultiplyVector(Vector3.forward * box.size.z);
+            return new Bounds(matrix.MultiplyPoint3x4(box.center), new Vector3(
+                Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x),
+                Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y),
+                Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z)));
         }
         private static IEnumerable<Bounds> Coverage(GameObject owner, Bounds fallback)
         {
@@ -513,12 +570,14 @@ namespace Project.BlockFeatures.Editor
         }
         private static void RemoveScene(Scene scene)
         {
+            nonOwners.Clear();
             expired.Clear();
             foreach (var pair in entries) if (pair.Value.owner == null || pair.Value.owner.scene == scene) expired.Add(pair.Key);
             foreach (int id in expired) Remove(id);
         }
         public static void Clear()
         {
+            nonOwners.Clear();
             EditorApplication.delayCall -= Flush; queued = false; discoverHierarchy = false; pending.Clear();
             foreach (var entry in entries.Values)
             {
@@ -526,6 +585,7 @@ namespace Project.BlockFeatures.Editor
                 foreach (var part in entry.parts) if (part.mesh != null) Object.DestroyImmediate(part.mesh);
             }
             entries.Clear(); waterCells.Clear(); waterCellOwners.Clear();
+            waterDraws.Clear(); objectDraws.Clear();
             foreach (var material in materials.Values) if (material != null) Object.DestroyImmediate(material);
             materials.Clear();
         }
@@ -539,9 +599,9 @@ namespace Project.BlockFeatures.Editor
         private static void DrawScene(SceneView view)
         {
             if (!IsEditing || view.camera == null) return;
-            long drawStart = Stopwatch.GetTimestamp();
-            GeometryUtility.CalculateFrustumPlanes(view.camera, planes);
             Event current = Event.current;
+            if (current.type != EventType.Layout && current.type != EventType.MouseDown && current.type != EventType.Repaint) return;
+            GeometryUtility.CalculateFrustumPlanes(view.camera, planes);
             int control = GUIUtility.GetControlID(0x41525450, FocusType.Passive);
             if (!current.alt && !Tools.viewToolActive && GUIUtility.hotControl == 0 &&
                 (current.type == EventType.Layout || current.type == EventType.MouseDown))
@@ -566,71 +626,88 @@ namespace Project.BlockFeatures.Editor
                     }
                 }
             }
-            if (current.type == EventType.Repaint) { Draw(true, view.camera, true); Draw(false, view.camera, true); }
-            EditorAuthoringPerformanceState
-                .RecordScenePreviewDraw(
-                    EditorAuthoringPerformanceState
-                        .ElapsedMilliseconds(
-                            drawStart));
+            if (current.type == EventType.Repaint) DrawVisible(view.camera, true);
         }
         private static GameObject PickOwner(SceneView view, Vector2 point)
+            => PickOwner(view.camera, HandleUtility.GUIPointToWorldRay(point));
+
+        private static GameObject PickOwner(Camera camera, Ray ray)
         {
-            long pickStart = Stopwatch.GetTimestamp();
             GameObject result = null; float closest = float.PositiveInfinity;
             var stage = StageUtility.GetCurrentStageHandle();
             foreach (var entry in entries.Values)
             {
-                if (entry.owner == null || !entry.owner.activeInHierarchy || entry.pickQuads.Count == 0 ||
-                    !GeometryUtility.TestPlanesAABB(planes, entry.bounds)) continue;
-                if (SceneVisibilityManager.instance.IsHidden(entry.owner) ||
-                    !stage.Contains(entry.owner)) continue;
+                if (entry.pickQuads.Count == 0 || !entry.bounds.IntersectRay(ray) ||
+                    !GeometryUtility.TestPlanesAABB(planes, entry.bounds) || entry.owner == null || !entry.owner.activeInHierarchy ||
+                    SceneVisibilityManager.instance.IsHidden(entry.owner) || !stage.Contains(entry.owner)) continue;
                 Matrix4x4 matrix = entry.owner.transform.localToWorldMatrix;
+                Matrix4x4 inverse = entry.owner.transform.worldToLocalMatrix;
+                Ray localRay = new Ray(inverse.MultiplyPoint3x4(ray.origin), inverse.MultiplyVector(ray.direction));
                 foreach (var quad in entry.pickQuads)
                 {
                     Vector3 center = matrix.MultiplyPoint3x4((quad[0] + quad[2]) * .5f);
-                    float depth = view.camera.WorldToViewportPoint(center).z;
+                    float depth = camera.WorldToViewportPoint(center).z;
                     if (depth < 0 || depth >= closest) continue;
-                    Vector2 a = HandleUtility.WorldToGUIPoint(matrix.MultiplyPoint3x4(quad[0]));
-                    Vector2 b = HandleUtility.WorldToGUIPoint(matrix.MultiplyPoint3x4(quad[1]));
-                    Vector2 c = HandleUtility.WorldToGUIPoint(matrix.MultiplyPoint3x4(quad[2]));
-                    Vector2 d = HandleUtility.WorldToGUIPoint(matrix.MultiplyPoint3x4(quad[3]));
-                    if (Mathf.Abs(Cross(b - a, d - a)) < .001f) continue;
-                    float ab = Cross(b - a, point - a), bc = Cross(c - b, point - b);
-                    float cd = Cross(d - c, point - c), da = Cross(a - d, point - d);
-                    if ((ab >= 0 && bc >= 0 && cd >= 0 && da >= 0) || (ab <= 0 && bc <= 0 && cd <= 0 && da <= 0))
+                    if (RayTriangle(localRay, quad[0], quad[1], quad[2]) || RayTriangle(localRay, quad[0], quad[2], quad[3]))
                     { closest = depth; result = entry.owner; }
                 }
             }
-            EditorAuthoringPerformanceState
-                .RecordScenePreviewPick(
-                    EditorAuthoringPerformanceState
-                        .ElapsedMilliseconds(
-                            pickStart));
             return result;
         }
-        private static float Cross(Vector2 a, Vector2 b) => a.x * b.y - a.y * b.x;
+        private static bool RayTriangle(Ray ray, Vector3 a, Vector3 b, Vector3 c)
+        {
+            Vector3 edge = b - a, other = c - a;
+            Vector3 p = Vector3.Cross(ray.direction, other);
+            float determinant = Vector3.Dot(edge, p);
+            if (Mathf.Abs(determinant) < 1e-10f) return false;
+            float inverse = 1f / determinant;
+            Vector3 offset = ray.origin - a;
+            float u = Vector3.Dot(offset, p) * inverse;
+            if (u < 0 || u > 1) return false;
+            Vector3 q = Vector3.Cross(offset, edge);
+            float v = Vector3.Dot(ray.direction, q) * inverse;
+            return v >= 0 && u + v <= 1 && Vector3.Dot(other, q) * inverse >= 0;
+        }
         /// <summary>Editor camera audit/render entry; does not add GameObjects.</summary>
         public static void DrawForCamera(Camera camera)
         {
             if (!IsEditing || camera == null) return;
             GeometryUtility.CalculateFrustumPlanes(camera, planes);
-            Draw(true, camera, false); Draw(false, camera, false);
+            DrawVisible(camera, false);
         }
-        private static void Draw(bool water, Camera camera, bool immediate)
+        private static void DrawVisible(Camera camera, bool immediate)
         {
+            waterDraws.Clear(); objectDraws.Clear();
             var stage = StageUtility.GetCurrentStageHandle();
             foreach (var entry in entries.Values)
             {
-                if (entry.water != water || entry.owner == null || !entry.owner.activeInHierarchy ||
-                    !GeometryUtility.TestPlanesAABB(planes, entry.bounds)) continue;
-                if (SceneVisibilityManager.instance.IsHidden(entry.owner) ||
-                    !stage.Contains(entry.owner)) continue;
+                if (!GeometryUtility.TestPlanesAABB(planes, entry.bounds) || entry.owner == null || !entry.owner.activeInHierarchy ||
+                    SceneVisibilityManager.instance.IsHidden(entry.owner) || !stage.Contains(entry.owner)) continue;
+                Matrix4x4 matrix = entry.owner.transform.localToWorldMatrix;
+                var groups = entry.water ? waterDraws : objectDraws;
                 foreach (var part in entry.parts)
                 {
                     if (part.mesh == null || part.material == null) continue;
-                    if (immediate) { if (part.material.SetPass(0)) Graphics.DrawMeshNow(part.mesh, entry.owner.transform.localToWorldMatrix); }
-                    else Graphics.DrawMesh(part.mesh, entry.owner.transform.localToWorldMatrix, part.material, 0, camera, 0, null, ShadowCastingMode.Off, false);
+                    groups.Add(new DrawPart(part.mesh, part.material, matrix));
                 }
+            }
+            DrawGroups(waterDraws, camera, immediate);
+            DrawGroups(objectDraws, camera, immediate);
+        }
+        private static void DrawGroups(List<DrawPart> parts, Camera camera, bool immediate)
+        {
+            Material active = null;
+            bool passReady = false;
+            foreach (var part in parts)
+            {
+                // Preserve original alpha ordering, including overlapping artwork.
+                // Only consecutive equal-material draws share the bound pass.
+                if (immediate)
+                {
+                    if (active != part.material) { active = part.material; passReady = active.SetPass(0); }
+                    if (passReady) Graphics.DrawMeshNow(part.mesh, part.matrix);
+                }
+                else Graphics.DrawMesh(part.mesh, part.matrix, part.material, 0, camera, 0, null, ShadowCastingMode.Off, false);
             }
         }
     }

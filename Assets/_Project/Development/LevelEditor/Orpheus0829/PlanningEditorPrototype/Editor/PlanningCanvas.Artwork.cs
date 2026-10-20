@@ -35,6 +35,12 @@ namespace PlanningEditorPrototype
 
         private void RefreshArtworkPreviews()
         {
+            previewComponents.Clear(); previewWaterKinds.Clear();
+            previewPropEntries.Clear();
+            previewPlatformPaths.Clear();
+            previewLinksValid = false;
+            retainedImagesValid = false;
+            blockBatchesValid = false;
             ClearVinePreviewGroups();
             artworkPreviewCache.Clear(); waterPreviewCells.Clear(); waterPreviewOwners.Clear(); boxPreviewCache.Clear(); previewArtwork=null; waterTileArtwork=null;
             UpdateDetailPreviewImages(); MarkDirtyRepaint();
@@ -64,7 +70,7 @@ namespace PlanningEditorPrototype
 
         private IEnumerable<(PlanningBox box, Vector2Int origin)> WaterPreviewSources(PlanningBox box)
         {
-            if (mode == PlanningCanvasMode.Assembly)
+            if (UsesAssemblyPreviewCoordinates)
             {
                 // Build one world-cell union on the first visible water box. Every
                 // member caches this same set until a document edit/mode change;
@@ -105,7 +111,7 @@ namespace PlanningEditorPrototype
             Vector2 step = rotated ? new Vector2(native.y,native.x) : native;
             // Enumerate only visible native-sized tiles. Neither a merged footprint nor
             // a large zoomed-out map may stretch the original authored pixels.
-            bool hasViewport = contentRect.width > 0 && contentRect.height > 0;
+            bool hasViewport = !buildingRetainedImages && contentRect.width > 0 && contentRect.height > 0;
             float visibleLeft = hasViewport ? Mathf.Max(0,(contentRect.xMin-target.x)/GridSize) : 0;
             float visibleBottom = hasViewport ? Mathf.Max(0,(target.yMax-contentRect.yMax)/GridSize) : 0;
             int firstX = Mathf.Max(0,Mathf.FloorToInt(visibleLeft/step.x));
@@ -131,7 +137,7 @@ namespace PlanningEditorPrototype
                         rect.yMax - 1 - Mathf.RoundToInt(y*step.y));
                     // Assembly rectangles already include the room/connector
                     // world origin; Detail's owner-local cache does not.
-                    if (mode != PlanningCanvasMode.Assembly) cell -= offset;
+                    if (!UsesAssemblyPreviewCoordinates) cell -= offset;
                     // Different water forces may overlap, but their common blue
                     // underlay is drawn once, not as several darker alpha layers.
                     if (waterPreviewOwners.TryGetValue(box.id, out var owners) &&

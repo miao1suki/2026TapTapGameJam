@@ -1,5 +1,13 @@
 # Boss 控制器接入 API
 
+## Boss 精灵表现（2026-10-20）
+
+标准 `Boss(暂定).prefab` 已用 `Boss Artwork` 子物体替换根占位模型：`Resources/26TAPTAP/Boss_Idle&Move_` 的12帧80×80原画，固定中心、16有效像素/格、12fps循环。子物体抵消原根缩放，自然尺寸5×5格；不改变 Boss 碰撞或根缩放。素材 Point、无Mip、无压缩，不裁每帧不透明范围。
+
+Animator 与现有 `BossAnimationDriver` 连接。存活各动作复用当前交付的待机／移动序列；死亡 Timeline 调用 `PlayDeathAnimationNow()` 后触发 `Death`，停留在无 Motion 的 `Death VFX Handoff`，不新增死亡精灵动画。TA 继续通过原 `deathStarted` 事件／死亡 Timeline 接入粒子，原默认等待时长仍有效；恢复追击后回到循环状态。
+
+显式重建入口：`Tools/2026TapTap/Boss/接入待机与移动美术`（不在打开场景时自动执行）。隔离验证入口 `Project.BossLogic.Editor.BossArtworkVerification.Run`，仅允许 `Library/FlowRetirementProbe`；报告 `Library/BossArtworkVerification.txt`。本次未交付或替换死亡粒子。
+
 ## 源码
 
 - `Assets/Boss_Logic/BossController.cs`

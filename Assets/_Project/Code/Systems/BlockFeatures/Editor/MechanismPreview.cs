@@ -45,23 +45,27 @@ namespace Project.BlockFeatures.Editor
         [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
         private static void Draw(MovingPlatformFeature platform, GizmoType type)
         {
+            if (Event.current != null && Event.current.type != EventType.Repaint) return;
             Handles.color = new Color(.3f,.9f,1f,.9f);
-            Handles.DrawDottedLine(platform.PreviewStart, platform.PreviewEnd, 5f);
+            ScenePreviewCulling.DrawDottedLine(platform.PreviewStart, platform.PreviewEnd, 5f);
             float cell = GridCellSizeUtility.Resolve(platform);
-            Handles.DrawWireCube(platform.PreviewEnd, Vector3.one * cell);
+            if (ScenePreviewCulling.Visible(new Bounds(platform.PreviewEnd, Vector3.one * cell)))
+                Handles.DrawWireCube(platform.PreviewEnd, Vector3.one * cell);
             if (platform.Path.IsRange)
             {
-                Handles.DrawWireCube(platform.PreviewStart, Vector3.one * cell);
-                Handles.DrawWireDisc(platform.PreviewCenter, Vector3.forward, cell * .12f);
+                if (ScenePreviewCulling.Visible(new Bounds(platform.PreviewStart, Vector3.one * cell)))
+                    Handles.DrawWireCube(platform.PreviewStart, Vector3.one * cell);
+                if (ScenePreviewCulling.Visible(new Bounds(platform.PreviewCenter, Vector3.one * cell)))
+                    Handles.DrawWireDisc(platform.PreviewCenter, Vector3.forward, cell * .12f);
             }
             Vector3 direction = platform.PreviewFirstTarget - platform.PreviewOrigin;
-            if (direction.sqrMagnitude > .0001f)
+            if (direction.sqrMagnitude > .0001f && ScenePreviewCulling.Visible(new Bounds(platform.PreviewOrigin, Vector3.one * cell * 2)))
                 Handles.ArrowHandleCap(0, platform.PreviewOrigin,
                     Quaternion.LookRotation(direction), Mathf.Min(cell * .6f, direction.magnitude), EventType.Repaint);
             if (platform.CrankController != null)
             {
                 Handles.color = new Color(1f,.78f,.3f,.9f);
-                Handles.DrawDottedLine(platform.transform.position,platform.CrankController.transform.position,5f);
+                ScenePreviewCulling.DrawDottedLine(platform.transform.position,platform.CrankController.transform.position,5f);
             }
             if (platform.LinkedControls == null) return;
             foreach (var control in platform.LinkedControls) if (control != null)
@@ -72,14 +76,14 @@ namespace Project.BlockFeatures.Editor
                 Handles.color = isButton
                     ? new Color(1f,.35f,.25f,.9f)
                     : new Color(1f,.45f,.8f,.9f);
-                Handles.DrawDottedLine(platform.transform.position, control.transform.position, 5f);
+                ScenePreviewCulling.DrawDottedLine(platform.transform.position, control.transform.position, 5f);
             }
         }
         [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
         private static void Draw(CrankPlatformFeature crank, GizmoType type)
         {
             if (crank.BrakeBase == null) return;
-            Handles.color = new Color(1f,.45f,.8f,.9f); Handles.DrawDottedLine(crank.transform.position,crank.BrakeBase.transform.position,5f);
+            Handles.color = new Color(1f,.45f,.8f,.9f); ScenePreviewCulling.DrawDottedLine(crank.transform.position,crank.BrakeBase.transform.position,5f);
         }
     }
 }

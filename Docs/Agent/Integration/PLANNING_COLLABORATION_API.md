@@ -1,5 +1,7 @@
 # 规划地图协作接口
 
+2026-10-20窗口性能：原生美术Image按固定26点/格构建，水/物体/触发器层用父变换平移缩放，放置悬浮提示独立。文档/参数/Undo必须调用既有NotifyDocumentChanged→InvalidatePreviewData；资源变更调用RefreshArtworkPreviews，一并失效道具、组件正负查询、平台路径和连线索引。禁止把缓存写入JSON或修改作者Transform。ArtworkScenePreview只在实际几何变更后申请重绘；全局层级通知不等于所有者失效。探测组件数量以支持非Undo原生增删。完整实测与复现入口见[窗口性能](../../Developer/EDITOR_WINDOW_PROFILING_2026-10-20.md)。
+
 仅 Editor，源码在 `PlanningEditorPrototype/Editor`，沿用现有 `PlanningDocument` JSON、1:1 单元格和稳定 ID，不引入新运行时房间系统。使用说明见 [LEVEL_EDITOR_COLLABORATION.md](../../Developer/LEVEL_EDITOR_COLLABORATION.md)。
 
 ## 方块与道具栏目显示
