@@ -1,5 +1,13 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 导入后蓝色房间块（完成）
+
+- 根因：确认后保留World模式，只绘房间色块；SetDocument还会把选择和视图恢复到首个原房间。修改确认后的UI流程为Assembly并选中、定位新增房间，排在下一帧视图恢复之后。不修改作者场景或存档。隔离Unity实际打开PlanningEditorWindow调用LoadFragment→ApplyFragment，两房间模式12项检查通过，包含还原视口之后的模式、选中房间、实际美术Image、内容数量和清除置顶层；未跑真实鼠标拖放。
+
+## 2026-10-20 合并排布稿（进行中）
+
+- 用户示意：R1可能横跨左上／左下，MRoom2在左上，MRoom3右下、Boss下方，R2／R3左侧。先摆放，不接通道；保留用户将Gaming房间21移至(20,136)的变更。先核对实际Scene形状，在独立草稿中保留R最终手调，不能用陈旧planning重建；正式Gaming与旧规划不覆盖。
+
 ## 2026-10-20 导入暂存预览（完成）
 
 - 当前整合窗口修改 PlanningFragmentUtility、PlanningCanvas Collaboration/Interaction、PlanningEditorWindow.Collaboration：导入置顶暂存、拖放和房间划分选择。仅工具代码，不改本地 Gaming/MRoom2/MRoom3/Pick 布局。

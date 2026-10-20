@@ -22,6 +22,66 @@ namespace PlanningEditorPrototype
         private static void Check(bool value, string name)
         { checks++; if (!value) throw new Exception(name); }
 
+        public static void RunImportConfirmation()
+        {
+            if (!Application.dataPath.Contains("FlowRetirementProbe")) throw new InvalidOperationException("仅在隔离项目运行验证。");
+            checks = 0;
+            var window = ScriptableObject.CreateInstance<PlanningEditorWindow>();
+            window.position = new Rect(40, 40, 1500, 900); window.Show();
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var type = typeof(PlanningEditorWindow);
+            void Set(string name, object value) => type.GetField(name, flags).SetValue(window, value);
+            T Get<T>(string name) => (T)type.GetField(name, flags).GetValue(window);
+            object Invoke(string name, params object[] args) => type.GetMethod(name, flags).Invoke(window, args);
+            void Fail(Exception error)
+            {
+                File.WriteAllText("Library/ImportConfirmationVerification.txt", "FAIL " + error);
+                Debug.LogException(error); window.Close(); EditorApplication.Exit(1);
+            }
+            void TestMode(bool combine)
+            {
+                try
+                {
+                    var target = PlanningSaveStore.Read("D:/.unity/2026TapTap/Assets/_Project/Scenes/Playing/Gaming.planning.json");
+                    var source = PlanningSaveStore.Read("D:/.unity/2026TapTap/Assets/Scenes/MRoom3.planning.json");
+                    var oldIds = new HashSet<string>(target.rooms.Select(room => room.id));
+                    int oldBoxes = PlanningFragmentUtility.Boxes(target).Count();
+                    Set("autoSync", false); Set("syncPending", false);
+                    Set("currentSavePath", Path.GetFullPath("Assets/ImportConfirmationTest.planning.json"));
+                    Set("document", target);
+                    var canvas = Get<PlanningCanvas>("canvas"); canvas.SetDocument(target);
+                    Set("fragmentCombineRooms", combine);
+                    Invoke("LoadFragment", "D:/.unity/2026TapTap/Assets/Scenes/MRoom3.planning.json");
+                    Check(canvas.Mode == PlanningCanvasMode.World, "staging starts in World " + combine);
+                    Invoke("ApplyFragment");
+                    window.rootVisualElement.schedule.Execute(() =>
+                    {
+                        try
+                        {
+                            var result = Get<PlanningDocument>("document");
+                            Check(canvas.Mode == PlanningCanvasMode.Assembly && Get<PlanningCanvasMode>("mode") == PlanningCanvasMode.Assembly, "confirmation reveals artwork rather than room colour " + combine);
+                            Check(!oldIds.Contains(canvas.SelectedRoomId), "select imported room instead of first destination room " + combine);
+                            Check(PlanningFragmentUtility.Boxes(result).Count() >= oldBoxes + PlanningFragmentUtility.Boxes(source).Count(), "confirmed import retains contents " + combine);
+                            var images = canvas.Query<Image>().ToList().Where(image => image.resolvedStyle.display != DisplayStyle.None && image.image != null).ToArray();
+                            Check(images.Length > 5 && images.Any(image => image.image != Texture2D.whiteTexture), "actual artwork preview images visible after viewport restore " + combine);
+                            var layer = canvas.Q("PlanningImportPreviewLayer");
+                            Check(layer == null || layer.resolvedStyle.display == DisplayStyle.None, "staging overlay cleared " + combine);
+                            if (!combine) TestMode(true);
+                            else
+                            {
+                                window.Close();
+                                File.WriteAllText("Library/ImportConfirmationVerification.txt", "PASS " + checks);
+                                Debug.Log("导入确认实际窗口验证通过：" + checks); EditorApplication.Exit(0);
+                            }
+                        }
+                        catch (Exception error) { Fail(error); }
+                    }).StartingIn(700);
+                }
+                catch (Exception error) { Fail(error); }
+            }
+            window.rootVisualElement.schedule.Execute(() => TestMode(false)).StartingIn(1000);
+        }
+
         public static void RunImportStaging()
         {
             if (!Application.dataPath.Contains("FlowRetirementProbe")) throw new InvalidOperationException("仅在隔离项目运行验证。");

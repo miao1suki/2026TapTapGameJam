@@ -196,6 +196,27 @@ namespace PlanningEditorPrototype
             if (next != importAnchor) ImportPreviewMoved?.Invoke(next);
         }
 
+        internal void FocusImportedContent(string[] roomIds)
+        {
+            var ids = new HashSet<string>(roomIds);
+            var rooms = document.rooms.Where(room => ids.Contains(room.id)).ToArray();
+            if (rooms.Length == 0) return;
+            SelectRoom(rooms[0].id);
+            RectInt bounds = default;
+            bool hasBounds = false;
+            foreach (var room in rooms)
+            {
+                var area = PlanningWorldUtility.Bounds(room);
+                var rect = new RectInt(area.x * WorldBlockCellWidth, area.y * WorldBlockCellHeight,
+                    area.width * WorldBlockCellWidth, area.height * WorldBlockCellHeight);
+                Encapsulate(rect, ref bounds, ref hasBounds);
+                foreach (var box in room.boxes)
+                    Encapsulate(GetAssemblyBoxRect(room, box, WorldBlockCellWidth, WorldBlockCellHeight), ref bounds, ref hasBounds);
+            }
+            if (hasBounds) ApplyDetailView(bounds, bounds.center);
+            UpdateDetailPreviewImages(); UpdatePlayerOverlay(); MarkDirtyRepaint();
+        }
+
         public void BeginAreaExport()
         {
             SetMapTool(PlanningMapTool.ExportArea);

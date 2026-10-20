@@ -217,6 +217,7 @@ namespace PlanningEditorPrototype
             if (fragmentSource == null || EditorApplication.isPlayingOrWillChangePlaymode) return;
             try
             {
+                var previousRooms = new System.Collections.Generic.HashSet<string>(document.rooms.Select(room => room.id));
                 var result = PlanningFragmentUtility.Import(document, fragmentSource, fragmentAnchor, fragmentIncludePlayer, out int detached);
                 ValidateFragmentPalette(fragmentSource);
                 if (detached > 0 && !EditorUtility.DisplayDialog("片段外绑定", $"将解除 {detached} 项指向片段外的绑定。继续导入？", "导入", "取消")) return;
@@ -229,6 +230,16 @@ namespace PlanningEditorPrototype
                 OnCanvasSelectionChanged();
                 RefreshImportPreview();
                 collaborationOverlay.style.display = DisplayStyle.None;
+                // World mode deliberately shows owners as solid coloured areas, not their contents.
+                // Reveal actual artwork at the imported coordinates instead of leaving a blue room silhouette.
+                var importedRooms = document.rooms.Where(room => !previousRooms.Contains(room.id)).Select(room => room.id).ToArray();
+                SetMode(PlanningCanvasMode.Assembly);
+                canvas.FocusImportedContent(importedRooms);
+                // SetMode restores a saved viewport on the next UI tick; our new selection must win afterwards.
+                canvas.schedule.Execute(() =>
+                {
+                    if (mode == PlanningCanvasMode.Assembly) canvas.FocusImportedContent(importedRooms);
+                }).StartingIn(0);
             }
             catch (Exception exception) { ShowSavePanelError("无法导入片段", exception); }
         }
