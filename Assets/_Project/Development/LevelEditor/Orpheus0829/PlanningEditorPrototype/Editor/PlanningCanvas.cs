@@ -470,6 +470,7 @@ namespace PlanningEditorPrototype
             if (pendingBoxPreviews.Count == 0) return;
             foreach (string id in pendingBoxPreviews) boxPreviewCache.Remove(id);
             pendingBoxPreviews.Clear();
+            retainedImagesValid = false;
             blockBatchesValid = false;
             UpdateDetailPreviewImages();
         }
@@ -1897,6 +1898,7 @@ namespace PlanningEditorPrototype
 
         private void DrawAssembly(MeshGenerationContext context)
         {
+            using var profile = DrawAssemblyMarker.Auto();
             Painter2D painter = context.painter2D;
             DrawAssemblyOwnership(painter);
             DrawGrid(context);
@@ -1910,13 +1912,8 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
-                GetAssemblyRoomOffset(
-                    owner,
-                    strideX,
-                    strideY,
-                    out int offsetX,
-                    out int offsetY,
-                    out int maxPlanY);
+                Vector2Int origin = OwnerPreview(owner).Bounds.position;
+                int offsetX = origin.x * strideX, offsetY = origin.y * strideY;
                 for (int boxIndex = 0;
                      boxIndex < owner.boxes.Count;
                      boxIndex++)
@@ -2028,22 +2025,13 @@ namespace PlanningEditorPrototype
                 out strideY);
         }
 
-        private static void GetAssemblyRoomOffset(
-            PlanningRoom room,
-            int strideX,
-            int strideY,
-            out int offsetX,
-            out int offsetY,
-            out int maxPlanY)
+        private void GetAssemblyRoomOffset(PlanningRoom room, int strideX, int strideY,
+            out int offsetX, out int offsetY, out int maxPlanY)
         {
-            PlanningLayoutUtility.RoomLayoutInfo layout =
-                PlanningLayoutUtility.GetRoomLayout(
-                    room,
-                    strideX,
-                    strideY);
-            offsetX = layout.OffsetX;
-            offsetY = layout.OffsetY;
-            maxPlanY = layout.MaxPlanY;
+            Vector2Int origin = OwnerPreview(room).Bounds.position;
+            offsetX = origin.x * strideX; offsetY = origin.y * strideY;
+            maxPlanY = 1;
+            foreach (var box in room.boxes) maxPlanY = Mathf.Max(maxPlanY, box.y + box.height);
         }
 
         private void GetAssemblyConnectorOrigin(
@@ -2172,6 +2160,7 @@ namespace PlanningEditorPrototype
 
         private void DrawDetail(MeshGenerationContext context)
         {
+            using var profile = DrawDetailMarker.Auto();
             PlanningRoom room = document?.FindRoom(selectedRoomId);
             if (room == null)
             {
@@ -2183,7 +2172,7 @@ namespace PlanningEditorPrototype
             DrawGrid(context);
             DrawDetailOwnership(painter, room);
 
-            foreach (var box in room.boxes.OrderBy(b => PlanningWaterLayerUtility.IsWater(b, palette) ? 0 : 1))
+            foreach (var box in room.boxes.OrderBy(b => IsPreviewWater(b) ? 0 : 1))
             {
                 Rect rect = CellRect(box.x, box.y, box.width, box.height);
                 if (!rect.Overlaps(contentRect)) continue;
@@ -2226,6 +2215,22 @@ namespace PlanningEditorPrototype
         {
             UpdateBlockBatches();
             UpdateTriggerPlacementPreview();
+            if (UpdateRetainedImageView())
+            {
+                UpdatePlayerOverlay();
+                return;
+            }
+            buildingRetainedImages = true;
+            Vector2 currentPan = pan; float currentZoom = zoom;
+            pan = Vector2.zero; zoom = 1;
+            try { RebuildDetailPreviewImages(); retainedImagesValid = true; PreviewGeometryRevision++; }
+            finally { pan = currentPan; zoom = currentZoom; buildingRetainedImages = false; }
+            UpdateRetainedImageView();
+            UpdatePlayerOverlay();
+        }
+
+        private void RebuildDetailPreviewImages()
+        {
             if (objectPreviewLayer != null) objectPreviewLayer.style.opacity = editWaterLayer ? .2f : 1f;
             if (document == null)
             {
@@ -2365,7 +2370,7 @@ namespace PlanningEditorPrototype
             bool water = PlanningWaterLayerUtility.IsWater(box, palette);
             VisualElement layer = water ? waterPreviewLayer : objectPreviewLayer;
             int startX = rect.x, startY = rect.y, endX = rect.xMax, endY = rect.yMax;
-            if (!box.isMerged && contentRect.width > 0f && contentRect.height > 0f)
+            if (!buildingRetainedImages && !box.isMerged && contentRect.width > 0f && contentRect.height > 0f)
             {
                 Vector2 topLeft = ScreenToWorld(contentRect.min), bottomRight = ScreenToWorld(contentRect.max);
                 startX = Mathf.Max(startX, Mathf.FloorToInt(topLeft.x)); startY = Mathf.Max(startY, Mathf.FloorToInt(topLeft.y));
@@ -2771,6 +2776,14 @@ namespace PlanningEditorPrototype
         private LevelEditorPropEntry FindPropEntry(
             string entryId,
             string entryName)
+        {
+            var key = (entryId, entryName);
+            if (!previewPropEntries.TryGetValue(key, out var entry))
+                previewPropEntries[key] = entry = ResolvePropEntry(entryId, entryName);
+            return entry;
+        }
+
+        private LevelEditorPropEntry ResolvePropEntry(string entryId, string entryName)
         {
             // Solid blocks have no prop entry. Avoid scanning the whole prop palette
             // for every wall in each overlay pass.
@@ -3991,14 +4004,13 @@ namespace PlanningEditorPrototype
 
         private void DrawDoorLinks(Painter2D painter)
         {
+            using var profile = DrawLinksMarker.Auto();
             if (editWaterLayer) return;
-            var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
-            var byId = new Dictionary<string, (PlanningRoom room, PlanningBox box)>();
-            foreach (var item in items)
-                if (!string.IsNullOrEmpty(item.box.id)) byId[item.box.id] = (item.room, item.box);
-            DrawMechanismLinks(painter, items, byId);
+            EnsurePreviewLinks();
+            var byId = previewLinksById;
+            DrawMechanismLinks(painter, previewMechanisms, byId);
             DrawContactTimelineRanges(painter);
-            foreach (var item in items)
+            foreach (var item in previewDoorButtons)
             {
                 if (string.IsNullOrEmpty(item.box.doorOwnerId) ||
                     (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId)) continue;
@@ -4007,10 +4019,7 @@ namespace PlanningEditorPrototype
                     RectInt a = DisplayRect(item.room, item.box), b = DisplayRect(door.room, door.box);
                     Vector2 start = CellRect(a.x, a.y, a.width, a.height).center;
                     Vector2 end = CellRect(b.x, b.y, b.width, b.height).center;
-                    float length = Vector2.Distance(start, end);
-                    for (float d = 0; d < length; d += 12f)
-                        DrawLine(painter, Vector2.Lerp(start,end,d/length), Vector2.Lerp(start,end,Mathf.Min(d+6f,length)/length),
-                            new Color(1f,.78f,.3f,.9f), 2f);
+                    Dashed(painter, start, end, new Color(1f,.78f,.3f,.9f));
                 }
             }
         }
@@ -4115,18 +4124,20 @@ namespace PlanningEditorPrototype
             List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)> items,
             Dictionary<string, (PlanningRoom room, PlanningBox box)> byId)
         {
+            using var profile = DrawMechanismLinksMarker.Auto();
             foreach (var item in items)
             {
                 if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
                 var prefab = FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.Prefab;
-                if (!PlanningMechanismUtility.IsConsumer(prefab)) continue;
+                var feature = PreviewComponent<Project.BlockFeatures.MovingPlatformFeature>(prefab);
+                if (feature == null && PreviewComponent<Project.BlockFeatures.CrankPlatformFeature>(prefab) == null) continue;
                 RectInt rect = DisplayRect(item.room, item.box);
                 Vector2 start = CellRect(rect.x, rect.y, rect.width, rect.height).center;
-                var feature = prefab.GetComponent<Project.BlockFeatures.MovingPlatformFeature>();
                 var values = item.box.hasComponentOverrides ? item.box.componentOverrides : FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.ComponentValueOverrides;
                 if (feature != null)
                 {
-                    var path = PlanningPlatformPathUtility.Resolve(feature, values);
+                    if (!previewPlatformPaths.TryGetValue(item.box, out var path))
+                        previewPlatformPaths[item.box] = path = PlanningPlatformPathUtility.Resolve(feature, values);
                     Vector2 ScreenOffset(Vector2 cells) => new Vector2(cells.x, -cells.y) * GridSize;
                     Color pathColor = new Color(.3f,.9f,1f,.85f);
                     Dashed(painter, start + ScreenOffset(path.PreviewFrom), start + ScreenOffset(path.PreviewTo), pathColor);
@@ -4170,9 +4181,11 @@ namespace PlanningEditorPrototype
         private void DrawContactTimelineRanges(
             Painter2D painter)
         {
+            using var profile = DrawTimelineRangesMarker.Auto();
             Color color =
                 new Color(1f, .78f, .3f, .9f);
-            foreach (var item in AllBoxes())
+            EnsurePreviewLinks();
+            foreach (var item in previewTimelines)
             {
                 if (mode == PlanningCanvasMode.Detail &&
                     item.room?.id != selectedRoomId)
@@ -4185,16 +4198,16 @@ namespace PlanningEditorPrototype
                     item.box.propEntryName);
                 GameObject prefab = entry?.Prefab;
                 if (prefab == null ||
-                    prefab.GetComponent<
+                    PreviewComponent<
                         Project.BlockFeatures
-                            .ContactTimelineTrigger>() ==
+                            .ContactTimelineTrigger>(prefab) ==
                     null)
                 {
                     continue;
                 }
 
                 BoxCollider collider =
-                    prefab.GetComponent<BoxCollider>();
+                    PreviewComponent<BoxCollider>(prefab);
                 Vector3 size = collider != null
                     ? collider.size
                     : Vector3.one;

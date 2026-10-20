@@ -41,6 +41,24 @@ public static class ScenePreviewPerformanceAudit
             // current Transform, not force a full physics-scene synchronization.
             ArtworkScenePreview.RefreshOpenScenes();
             Check(ArtworkScenePreview.CachedOwnerCount >= owners.Length, "1024 independent artwork owners cached without merging");
+            var discover = typeof(ArtworkScenePreview).GetMethod("QueueDiscovery", BindingFlags.NonPublic | BindingFlags.Static);
+            var flush = typeof(ArtworkScenePreview).GetMethod("Flush", BindingFlags.NonPublic | BindingFlags.Static);
+            var unrelated = new GameObject("Unrelated author helpers"); unrelated.transform.position = Vector3.right * 500;
+            for (int i = 0; i < 1024; i++) new GameObject("Helper " + i).transform.SetParent(unrelated.transform);
+            discover.Invoke(null, null); flush.Invoke(null, null);
+            int rebuilds = ArtworkScenePreview.RebuildCount, repaints = ArtworkScenePreview.RepaintRequestCount;
+            var idleTimer = Stopwatch.StartNew();
+            for (int i = 0; i < 100; i++) { discover.Invoke(null, null); flush.Invoke(null, null); }
+            idleTimer.Stop();
+            Check(ArtworkScenePreview.RebuildCount == rebuilds, "100 unrelated hierarchy notifications do not rebuild artwork");
+            Check(ArtworkScenePreview.RepaintRequestCount == repaints, "empty hierarchy discoveries never request another repaint");
+            report.AppendLine("100 populated hierarchy discoveries ms=" + idleTimer.Elapsed.TotalMilliseconds.ToString("F3"));
+            var nativeAdded = unrelated.AddComponent<Project.BlockFeatures.RespawnAnchorFeature>();
+            discover.Invoke(null, null); flush.Invoke(null, null);
+            Check(ArtworkScenePreview.PartCount(unrelated) > 0, "native AddComponent without Undo invalidates negative owner cache");
+            Object.DestroyImmediate(nativeAdded);
+            discover.Invoke(null, null); flush.Invoke(null, null);
+            Check(ArtworkScenePreview.PartCount(unrelated) == 0, "native RemoveComponent removes obsolete artwork");
             Check(ArtworkScenePreview.TryGetFirstMesh(owners[0], out var firstMesh, out _), "first owner has actual preview geometry");
             report.AppendLine($"First owner position={owners[0].transform.position}, local preview bounds={firstMesh.bounds}, collider={owners[0].GetComponentInChildren<Collider>().bounds}, active={owners[0].activeInHierarchy}, hidden={SceneVisibilityManager.instance.IsHidden(owners[0])}, stage={UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().Contains(owners[0])}");
             var method = typeof(ArtworkScenePreview).GetMethod("PickOwner", BindingFlags.NonPublic | BindingFlags.Static,

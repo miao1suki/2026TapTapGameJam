@@ -39,6 +39,7 @@ namespace Project.BlockFeatures.Editor
             internal readonly List<Vector3[]> pickQuads = new();
             internal bool water;
             internal int parentArtwork;
+            internal int componentCount;
         }
         private readonly struct WaterCell : IEquatable<WaterCell>
         {
@@ -50,6 +51,7 @@ namespace Project.BlockFeatures.Editor
         }
 
         private static readonly Dictionary<int, Entry> entries = new();
+        private static readonly Dictionary<int, (GameObject owner, int count)> nonOwners = new();
         private static readonly Dictionary<Texture, Material> materials = new();
         private static readonly HashSet<int> pending = new();
         private static readonly HashSet<WaterCell> waterCells = new();
@@ -71,6 +73,8 @@ namespace Project.BlockFeatures.Editor
         public static int CachedOwnerCount => entries.Count;
         public static int RebuildCount { get; private set; }
         public static int HierarchyDiscoveryCount { get; private set; }
+        public static int FlushCount { get; private set; }
+        public static int RepaintRequestCount { get; private set; }
 
         static ArtworkScenePreview()
         {
@@ -111,6 +115,7 @@ namespace Project.BlockFeatures.Editor
         private static void QueueAll()
         {
             if (!IsEditing) return;
+            nonOwners.Clear();
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 Scene scene = SceneManager.GetSceneAt(i);
@@ -141,8 +146,20 @@ namespace Project.BlockFeatures.Editor
                     foreach (var transform in root.GetComponentsInChildren<Transform>(true))
                     {
                         GameObject owner = transform.gameObject;
-                        if (!IsAuthorObject(owner) || !IsArtworkOwner(owner) || entries.ContainsKey(owner.GetInstanceID())) continue;
-                        pending.Add(owner.GetInstanceID());
+                        // A hierarchy notification is global (including hidden
+                        // editor helpers). Known owners need no component probe.
+                        int id = owner.GetInstanceID();
+                        if (!IsAuthorObject(owner)) continue;
+                        int componentCount = owner.GetComponentCount();
+                        if (entries.TryGetValue(id, out var existing))
+                        {
+                            if (existing.componentCount != componentCount) pending.Add(id);
+                            continue;
+                        }
+                        if (nonOwners.TryGetValue(id, out var known) && known.owner != null &&
+                            known.owner == owner && known.count == componentCount) continue;
+                        if (!IsArtworkOwner(owner)) { nonOwners[id] = (owner, componentCount); continue; }
+                        pending.Add(id);
                         if (owner.TryGetComponent<LadderSonFeature>(out var segment) && segment.ArtworkRoot != segment)
                             pending.Add(segment.ArtworkRoot.gameObject.GetInstanceID());
                     }
@@ -185,6 +202,7 @@ namespace Project.BlockFeatures.Editor
                 GameObject go = value as GameObject;
                 if (go == null && value is Component component) go = component.gameObject;
                 if (!IsAuthorObject(go)) continue;
+                nonOwners.Remove(go.GetInstanceID());
                 // forceRenderingOff is this service's transient visibility lease.
                 // Renderer notifications from that lease must not recursively
                 // tear down/recreate the same preview on the next Editor tick.
@@ -193,7 +211,10 @@ namespace Project.BlockFeatures.Editor
                 // to its nearest artwork owner; don't rescan the entire map.
                 Transform nearest = go.transform;
                 while (nearest != null && !IsArtworkOwner(nearest.gameObject)) nearest = nearest.parent;
-                pending.Add(nearest != null ? nearest.gameObject.GetInstanceID() : go.GetInstanceID());
+                if (nearest != null) pending.Add(nearest.gameObject.GetInstanceID());
+                else if (stream.GetEventType(i) != ObjectChangeKind.ChangeGameObjectOrComponentProperties ||
+                    value is Transform && go.transform.childCount > 0)
+                    pending.Add(go.GetInstanceID());
             }
             if (pending.Count > 0 || deleted) Schedule();
         }
@@ -213,17 +234,20 @@ namespace Project.BlockFeatures.Editor
         {
             EditorApplication.delayCall -= Flush; queued = false;
             if (!IsEditing || processing) return;
+            FlushCount++;
             processing = true;
+            bool visualChanged = false;
             try
             {
                 DiscoverNewOwners();
                 expired.Clear();
                 foreach (var pair in entries)
-                    if (!IsAuthorObject(pair.Value.owner) || !IsArtworkOwner(pair.Value.owner)) expired.Add(pair.Key);
+                    if (!IsAuthorObject(pair.Value.owner) || pending.Contains(pair.Key) && !IsArtworkOwner(pair.Value.owner)) expired.Add(pair.Key);
                 foreach (int id in expired)
                 {
                     if (entries.TryGetValue(id, out var previous) && previous.parentArtwork != 0) pending.Add(previous.parentArtwork);
                     Remove(id);
+                    visualChanged = true;
                 }
                 var ids = new List<int>(pending); pending.Clear();
                 var owners = new HashSet<GameObject>();
@@ -232,7 +256,12 @@ namespace Project.BlockFeatures.Editor
                     var go = EditorUtility.InstanceIDToObject(id) as GameObject;
                     if (!IsAuthorObject(go)) continue;
                     foreach (var transform in go.GetComponentsInChildren<Transform>(true))
-                        if (IsAuthorObject(transform.gameObject) && IsArtworkOwner(transform.gameObject)) owners.Add(transform.gameObject);
+                    {
+                        GameObject child = transform.gameObject;
+                        if (!IsAuthorObject(child)) continue;
+                        if (IsArtworkOwner(child)) owners.Add(child);
+                        else if (entries.ContainsKey(child.GetInstanceID())) { Remove(child.GetInstanceID()); visualChanged = true; }
+                    }
                 }
                 // Changing any water cell can change its neighbours' surface/bottom
                 // choice. Only cached water owners are revisited, never all Scene
@@ -244,16 +273,19 @@ namespace Project.BlockFeatures.Editor
                 foreach (var owner in owners)
                 {
                     int id = owner.GetInstanceID(); Remove(id);
-                    var entry = new Entry { owner = owner, water = owner.GetComponent<WaterVisualFeature>() != null };
+                    var entry = new Entry { owner = owner, componentCount = owner.GetComponentCount(), water = owner.GetComponent<WaterVisualFeature>() != null };
                     entries[id] = entry;
                 }
                 // Unrelated author changes (including camera transforms) can be
                 // published here too. They must not retessellate water occupancy.
                 if (waterChanged) RebuildWaterCells();
                 foreach (var owner in owners) if (owner != null && entries.TryGetValue(owner.GetInstanceID(), out var entry)) Build(entry);
+                visualChanged |= owners.Count > 0;
             }
             finally { processing = false; }
-            SceneView.RepaintAll();
+            // Repainting an unchanged Scene creates further editor-helper
+            // hierarchy notifications on some layouts. Never feed that cycle.
+            if (visualChanged) { RepaintRequestCount++; SceneView.RepaintAll(); }
         }
 
         private static float Cell(GameObject owner) => Mathf.Max(.01f, GridCellSizeUtility.Resolve(owner.transform));
@@ -538,12 +570,14 @@ namespace Project.BlockFeatures.Editor
         }
         private static void RemoveScene(Scene scene)
         {
+            nonOwners.Clear();
             expired.Clear();
             foreach (var pair in entries) if (pair.Value.owner == null || pair.Value.owner.scene == scene) expired.Add(pair.Key);
             foreach (int id in expired) Remove(id);
         }
         public static void Clear()
         {
+            nonOwners.Clear();
             EditorApplication.delayCall -= Flush; queued = false; discoverHierarchy = false; pending.Clear();
             foreach (var entry in entries.Values)
             {

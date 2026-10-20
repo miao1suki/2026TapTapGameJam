@@ -7,6 +7,13 @@ namespace PlanningEditorPrototype
 {
     public sealed partial class PlanningCanvas
     {
+        private static readonly Unity.Profiling.ProfilerMarker DrawAssemblyMarker = new("PlanningCanvas.DrawAssembly");
+        private static readonly Unity.Profiling.ProfilerMarker DrawDetailMarker = new("PlanningCanvas.DrawDetail");
+        private static readonly Unity.Profiling.ProfilerMarker DrawLinksMarker = new("PlanningCanvas.DrawLinks");
+        private static readonly Unity.Profiling.ProfilerMarker DrawMechanismLinksMarker = new("PlanningCanvas.DrawMechanismLinks");
+        private static readonly Unity.Profiling.ProfilerMarker DrawTimelineRangesMarker = new("PlanningCanvas.DrawTimelineRanges");
+        private static readonly Unity.Profiling.ProfilerMarker DrawOwnerMarker = new("PlanningCanvas.DrawOwner");
+        private readonly Dictionary<(string, string), Project.LevelEditor.LevelEditorPropEntry> previewPropEntries = new();
         private int previewPaletteRevision = -1;
         private readonly Dictionary<string, Texture2D> boxPreviewCache = new Dictionary<string, Texture2D>();
         private readonly HashSet<string> pendingBoxPreviews = new HashSet<string>();
@@ -21,6 +28,93 @@ namespace PlanningEditorPrototype
         private string blockBatchRoom;
         private int blockBatchSelection;
         private readonly List<BlockPreviewBatch> blockBatches = new();
+        private bool retainedImagesValid, buildingRetainedImages;
+        private PlanningCanvasMode retainedMode;
+        private string retainedRoom;
+        private bool retainedWater;
+        private bool retainedAssembly;
+        private int retainedSelection;
+        private Vector2 retainedPan;
+        private float retainedZoom;
+        public int PreviewGeometryRevision { get; private set; }
+        private readonly Dictionary<(GameObject, System.Type), Component> previewComponents = new();
+        private readonly Dictionary<PlanningBox, bool> previewWaterKinds = new();
+        private readonly Dictionary<PlanningBox, Project.BlockFeatures.MovingPlatformPath> previewPlatformPaths = new();
+        private bool previewLinksValid;
+        private readonly List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)> previewMechanisms = new(), previewTimelines = new(), previewDoorButtons = new();
+        private readonly Dictionary<string, (PlanningRoom room, PlanningBox box)> previewLinksById = new();
+
+        private void EnsurePreviewLinks()
+        {
+            if (previewLinksValid) return;
+            previewMechanisms.Clear(); previewTimelines.Clear(); previewDoorButtons.Clear(); previewLinksById.Clear();
+            foreach (var item in AllBoxes())
+            {
+                if (!string.IsNullOrEmpty(item.box.id)) previewLinksById[item.box.id] = (item.room, item.box);
+                if (!string.IsNullOrEmpty(item.box.doorOwnerId)) previewDoorButtons.Add(item);
+                var prefab = FindPropEntry(item.box.propEntryId, item.box.propEntryName)?.Prefab;
+                if (PreviewComponent<Project.BlockFeatures.MovingPlatformFeature>(prefab) != null ||
+                    PreviewComponent<Project.BlockFeatures.CrankPlatformFeature>(prefab) != null) previewMechanisms.Add(item);
+                if (PreviewComponent<Project.BlockFeatures.ContactTimelineTrigger>(prefab) != null) previewTimelines.Add(item);
+            }
+            previewLinksValid = true;
+        }
+
+        private T PreviewComponent<T>(GameObject prefab) where T : Component
+        {
+            if (prefab == null) return null;
+            var key = (prefab, typeof(T));
+            if (!previewComponents.TryGetValue(key, out var value))
+            {
+                prefab.TryGetComponent<T>(out var component);
+                previewComponents[key] = value = component;
+            }
+            return value as T;
+        }
+
+        private bool IsPreviewWater(PlanningBox box)
+        {
+            if (!previewWaterKinds.TryGetValue(box, out bool result))
+                previewWaterKinds[box] = result = PlanningWaterLayerUtility.IsWater(box, palette);
+            return result;
+        }
+
+        // Water, mechanisms and native-size artwork are retained too. Rewriting
+        // thousands of Image layout properties on every mouse move makes Yoga /
+        // UI Toolkit rebuild the entire visual tree, even when wall meshes cache.
+        private bool UpdateRetainedImageView()
+        {
+            int selection = 0;
+            if (LevelEditorState.Tool == LevelEditorTool.Merge)
+                foreach (string id in mergeSelection) selection ^= id.GetHashCode();
+            bool valid = retainedImagesValid && retainedMode == mode && retainedRoom == selectedRoomId &&
+                retainedWater == editWaterLayer && retainedSelection == selection && retainedAssembly == UsesAssemblyPreviewCoordinates && movingBox == null;
+            if (valid)
+            {
+                float ratio = zoom / retainedZoom;
+                Vector2 offset = pan - retainedPan * ratio;
+                SetImageLayerView(waterPreviewLayer, offset, ratio);
+                SetImageLayerView(objectPreviewLayer, offset, ratio);
+                SetImageLayerView(triggerPreviewLayer, offset, ratio);
+                return true;
+            }
+            SetImageLayerView(waterPreviewLayer, Vector2.zero, 1);
+            SetImageLayerView(objectPreviewLayer, Vector2.zero, 1);
+            SetImageLayerView(triggerPreviewLayer, Vector2.zero, 1);
+            // Canonical geometry is always built at 26 UI points per world cell.
+            // It must not bake a tiny zoom's rounded layout into later close-ups.
+            retainedPan = Vector2.zero; retainedZoom = 1; retainedMode = mode;
+            retainedRoom = selectedRoomId; retainedWater = editWaterLayer; retainedSelection = selection;
+            retainedAssembly = UsesAssemblyPreviewCoordinates;
+            return false;
+        }
+
+        private static void SetImageLayerView(VisualElement layer, Vector2 offset, float scale)
+        {
+            if (layer == null) return;
+            layer.style.translate = new Translate(offset.x, offset.y);
+            layer.style.scale = new Scale(new Vector3(scale, scale, 1));
+        }
 
         // Ordinary wall/floor blocks share a preview texture. Keep their quads,
         // rather than creating one Image/layout node per cell on every viewport move.
@@ -159,6 +253,43 @@ namespace PlanningEditorPrototype
             System.IO.File.WriteAllText("Library/RetainedBlockPreviewsVerification.txt", report); Debug.Log(report);
         }
 
+        public static void VerifyRetainedNativePreviews()
+        {
+            int checks = 0;
+            void Check(bool value, string message)
+            {
+                if (!value) throw new System.InvalidOperationException(message);
+                checks++; Debug.Log("NATIVE PREVIEW PASS: " + message);
+            }
+            var doc = new PlanningDocument();
+            var room = new PlanningRoom("原生美术缓存"); room.cells.Add(new PlanningCell(0, 0)); doc.rooms.Add(room);
+            room.boxes.Add(new PlanningBox(PlanningDetailType.Water, new RectInt(-12, -8, 3, 3)));
+            var canvas = new PlanningCanvas(); canvas.SetDocument(doc); canvas.SetMode(PlanningCanvasMode.Assembly);
+            string before = JsonUtility.ToJson(doc);
+            int revision = canvas.PreviewGeometryRevision;
+            Check(canvas.detailPreviewImages.Count > 0, "native water artwork exists before navigation");
+            var first = new List<Image>(canvas.detailPreviewImages.Values)[0];
+            float left = first.style.left.value.value;
+            for (int i = 0; i < 120; i++) canvas.RestoreView(new Vector2(200 + i, -100 - i), .2f + i * .01f);
+            Check(canvas.PreviewGeometryRevision == revision, "120 pans/zooms never reconstruct native artwork");
+            Check(new List<Image>(canvas.detailPreviewImages.Values).Contains(first), "native image instances are retained");
+            Check(first.style.left.value.value == left, "navigation does not rewrite child layout coordinates");
+            Check(JsonUtility.ToJson(doc) == before, "navigation preserves authored document byte-for-byte");
+            canvas.SetMode(PlanningCanvasMode.World); canvas.SetWorldRoomContentsVisible(true);
+            Check(canvas.waterPreviewLayer.style.scale.value.value.x > 0, "world contents can show retained water");
+            canvas.SetWorldRoomContentsVisible(false);
+            foreach (var image in canvas.detailPreviewImages.Values) Check(image.style.display.value == DisplayStyle.None, "world contents off hides each native image");
+            canvas.SetWorldRoomContentsVisible(true); canvas.SetMode(PlanningCanvasMode.Detail); canvas.SelectRoom(room.id);
+            revision = canvas.PreviewGeometryRevision;
+            room.boxes[0].x += 4; canvas.NotifyDocumentChanged();
+            Check(canvas.PreviewGeometryRevision > revision, "author edits invalidate native geometry");
+            revision = canvas.PreviewGeometryRevision;
+            canvas.RefreshArtworkPreviews();
+            Check(canvas.PreviewGeometryRevision > revision, "asset refresh invalidates native geometry and component metadata");
+            string result = "PASS " + checks + " native preview retention checks";
+            System.IO.File.WriteAllText("Library/RetainedNativePreviewsVerification.txt", result); Debug.Log(result);
+        }
+
         private PlanningOwnerPreview OwnerPreview(PlanningRoom room)
         {
             if (!ownerPreviewCache.TryGetValue(room, out var preview) || preview.Source != room.cells || preview.Count != room.cells.Count)
@@ -169,6 +300,7 @@ namespace PlanningEditorPrototype
         private void DrawOwnerPreview(UnityEngine.UIElements.Painter2D painter, PlanningRoom room,
             Vector2 offset, Vector2 scale, Color fill, Color outline)
         {
+            using var profile = DrawOwnerMarker.Auto();
             var preview = OwnerPreview(room);
             var bounds = preview.Bounds;
             var screen = new Rect(WorldToScreen(Vector2.Scale((Vector2)bounds.position + offset, scale)),
@@ -199,22 +331,25 @@ namespace PlanningEditorPrototype
 
         private void BuildPreviewLayers()
         {
-            waterPreviewLayer = new VisualElement { pickingMode = PickingMode.Ignore };
-            objectPreviewLayer = new VisualElement { pickingMode = PickingMode.Ignore };
+            waterPreviewLayer = new VisualElement { pickingMode = PickingMode.Ignore, usageHints = UsageHints.GroupTransform };
+            objectPreviewLayer = new VisualElement { pickingMode = PickingMode.Ignore, usageHints = UsageHints.GroupTransform };
+            waterPreviewLayer.style.transformOrigin = objectPreviewLayer.style.transformOrigin = new TransformOrigin(0, 0);
             waterPreviewLayer.StretchToParentSize(); objectPreviewLayer.StretchToParentSize();
             Add(waterPreviewLayer); Add(objectPreviewLayer);
             blockPreviewLayer = new VisualElement { name = "RetainedBlockPreviews", pickingMode = PickingMode.Ignore };
             blockPreviewLayer.style.position = Position.Absolute;
             blockPreviewLayer.style.transformOrigin = new TransformOrigin(0, 0, 0);
             Insert(IndexOf(objectPreviewLayer), blockPreviewLayer);
-            triggerPreviewLayer = new VisualElement { name = "TimelineTriggerPreviewLayer", pickingMode = PickingMode.Ignore };
+            triggerPreviewLayer = new VisualElement { name = "TimelineTriggerPreviewLayer", pickingMode = PickingMode.Ignore, usageHints = UsageHints.GroupTransform };
+            triggerPreviewLayer.style.transformOrigin = new TransformOrigin(0, 0);
             triggerPreviewLayer.StretchToParentSize();
             Add(triggerPreviewLayer);
             triggerPlacementPreview = new Image { name = "TimelineTriggerPlacementPreview", pickingMode = PickingMode.Ignore, scaleMode = ScaleMode.ScaleToFit };
             triggerPlacementPreview.style.position = Position.Absolute;
             triggerPlacementPreview.style.opacity = .5f;
             triggerPlacementPreview.style.display = DisplayStyle.None;
-            triggerPreviewLayer.Add(triggerPlacementPreview);
+            // The hover preview is screen-space, not retained author geometry.
+            Add(triggerPlacementPreview);
         }
 
         private void UpdateTriggerPlacementPreview()
@@ -236,6 +371,11 @@ namespace PlanningEditorPrototype
 
         private void InvalidatePreviewData()
         {
+            previewComponents.Clear(); previewWaterKinds.Clear();
+            previewPropEntries.Clear();
+            previewPlatformPaths.Clear();
+            previewLinksValid = false;
+            retainedImagesValid = false;
             blockBatchesValid = false;
             PlanningShapeUtility.Invalidate();
             boxPreviewCache.Clear(); pendingBoxPreviews.Clear();
@@ -257,6 +397,7 @@ namespace PlanningEditorPrototype
 
         private bool PreviewVisible(RectInt rect)
         {
+            if (buildingRetainedImages) return true;
             // Unattached verification canvases have no viewport yet.
             if (!(contentRect.width > 0f && contentRect.height > 0f)) return true;
             return CellRect(rect.x, rect.y, rect.width, rect.height).Overlaps(contentRect);

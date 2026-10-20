@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 编辑器持续卡顿再排查（修复与窗口实测完成）
+
+- 本轮抓取正式地图的 Scene / PlanningCanvas / ArtCanvas 平移缩放与重绘热点，区别函数微基准与实际窗口帧耗时。仅优化编辑器代码，不修改作者场景、关卡布局、美术图或用户未提交资产；隔离 FlowRetirementProbe 验证。
+- 优先排查高频全表扫描、UI 重建、重复 AssetDatabase 查询和 Scene Gizmo/预览提交；保存、Undo、显示内容及选取功能必须保留。
+- 实际Editor Profiler复现Scene刷新约247ms/轮与空重绘循环；修复正负组件分类缓存、原生增删检测及空刷新不重绘。关卡原生图片改父变换保留，机关/平台参数和装配原点缓存；不依赖白块合并，不隐藏美术参考。正常Scene远景约12ms，装配102→12ms、细节19→4ms、美术远景约2ms；P95与局限记录在窗口性能文档，不宣称所有窗口恒定帧率。
+- 隔离回归：12000块8项、原生美术17项、世界图16项、Scene22项及真实GPU4视图缓存/重建逐像素一致通过；100次空层级通知不重建或重绘，原生Add/Remove组件仍正确更新。主用户Unity不保存、不关闭；Pick、字体、共享库、项目设置和其他未提交变更不暂存。
+
 ## 2026-10-20 TA 美术补合与遗漏分支核对（验证完成）
 
 - 用户要求保留 TA 绘制美术／效果，以 main 现有关卡与双方程序修复为准。核对远端仅 TA f7cbb62、旧策划／R 最终场景分支尚未在祖先图闭合；旧关卡均已通过正式 Scene 回采整合，不用旧 Scene 覆盖 main。
@@ -2725,3 +2732,8 @@
 # 2026-10-20 浅草各向连接（grass_connections）
 
 独立分支 `codex/art/shallow-grass-connections-20261020`。仅接入89×113原图、三色原绘9片和四边全部非空组合45片；逐原像素复制，16像素/格，HSV归属保留。生成图集/Sprite独立保存于 `ShallowGrassConnections.asset`，共享库通过幂等追加汇入，不提交覆盖主工作树本地SceneArtLibrary。未修改Scene、planning、玩法或其他背景。Unity6000.3.12f1隔离审计13938断言通过：原绘RGBA/所有组合/尺寸/颜色/原槽位与字段/幂等同步；无C#错误、未保存Scene。共享库仅探针验证有未提交追加，交付不覆盖主库。
+
+## 2026-10-20 TapTap成就后台与包名恢复（当前对话）
+
+- 用户授权按桌面清单配置14条后台成就（11公开/3隐藏），使用游戏收集品图标，整理程序所需平台ID对照；项目SDK/成就代码由另一程序负责，本对话不改。只恢复ProjectSettings与MobileBuildSetup中的Android包名为com.miao1suki.shapeofcolor，避免后续打包覆盖；不改Scene/玩法/素材，不提交推送。桌面控制native pipe不可用，正在备用网页登录方式。
+- 完成：已在用户原Edge登录会话内创建并发布14条普通成就，ID沿用Fall1/Spike1/Fall2/Spike2/Home/FakeEnd/RealEnd/Power/Collect1/Collect2/Lava1/Die2/Die1/Lava2，11显示/3隐藏、非分步、每条1步、不纳入白金范围；14条后台均复核已发布。统一上传游戏Achievement_Collectible裁切并最近邻放大的512图标。桌面TapTap成就接入交接_2026-10-20含TXT/MD/JSON、图标、发布前后行快照、已发布截图；项目Docs/Agent/Integration备份MD与JSON。ProjectSettings与MobileBuildSetup恢复com.miao1suki.shapeofcolor，PROJECT_CONTEXT记最终约定。无SDK/成就运行时代码变更、无密钥操作、无打包/上报测试、无提交推送；应用配置Android签名0/20待SDK程序核对。

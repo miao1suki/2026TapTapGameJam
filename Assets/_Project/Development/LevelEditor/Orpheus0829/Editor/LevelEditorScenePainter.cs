@@ -338,6 +338,9 @@ namespace Project.LevelEditor.Editor
 
         private static void DrawGrid(SceneView sceneView)
         {
+            // Handles geometry is only consumed by Repaint. Layout / mouse input
+            // must not allocate and submit the same hundreds of lines again.
+            if (Event.current != null && Event.current.type != EventType.Repaint) return;
             if (sceneView == null || sceneView.camera == null)
             {
                 return;

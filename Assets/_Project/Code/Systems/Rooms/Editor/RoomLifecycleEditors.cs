@@ -82,6 +82,19 @@ namespace Project.Rooms.Editor
 
     public static class RespawnAnchorGizmos
     {
+        private static readonly Vector3[] DashedRing = BuildRing();
+        private static Vector3[] BuildRing()
+        {
+            var points = new Vector3[64];
+            for (int i = 0; i < 32; i++)
+            {
+                float a = (i * 2 + 1) * Mathf.PI * 2 / 64;
+                float b = (i * 2 + 2) * Mathf.PI * 2 / 64;
+                points[i * 2] = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0);
+                points[i * 2 + 1] = new Vector3(Mathf.Cos(b), Mathf.Sin(b), 0);
+            }
+            return points;
+        }
         [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
         private static void Draw(RespawnAnchorFeature anchor, GizmoType unused)
         {
@@ -89,14 +102,10 @@ namespace Project.Rooms.Editor
             float radius = anchor.ActivationRadiusBlocks * GridCellSizeUtility.Resolve(anchor);
             if (!ScenePreviewCulling.Visible(new Bounds(anchor.transform.position, Vector3.one * radius * 2))) return;
             Handles.color = new Color(.2f, 1f, .75f, .85f);
-            Vector3 previous = anchor.transform.position + Vector3.right * radius;
-            for (int i = 1; i <= 64; i++)
-            {
-                float angle = i * Mathf.PI * 2 / 64;
-                Vector3 next = anchor.transform.position + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * radius;
-                if ((i & 1) == 0) Handles.DrawLine(previous, next);
-                previous = next;
-            }
+            Matrix4x4 previousMatrix = Handles.matrix;
+            Handles.matrix = Matrix4x4.TRS(anchor.transform.position, Quaternion.identity, Vector3.one * radius);
+            Handles.DrawLines(DashedRing);
+            Handles.matrix = previousMatrix;
             Handles.Label(anchor.transform.position + Vector3.up * radius, "重生点");
         }
     }

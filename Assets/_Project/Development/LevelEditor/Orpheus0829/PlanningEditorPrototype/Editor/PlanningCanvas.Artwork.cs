@@ -35,6 +35,11 @@ namespace PlanningEditorPrototype
 
         private void RefreshArtworkPreviews()
         {
+            previewComponents.Clear(); previewWaterKinds.Clear();
+            previewPropEntries.Clear();
+            previewPlatformPaths.Clear();
+            previewLinksValid = false;
+            retainedImagesValid = false;
             blockBatchesValid = false;
             ClearVinePreviewGroups();
             artworkPreviewCache.Clear(); waterPreviewCells.Clear(); waterPreviewOwners.Clear(); boxPreviewCache.Clear(); previewArtwork=null; waterTileArtwork=null;
@@ -106,7 +111,7 @@ namespace PlanningEditorPrototype
             Vector2 step = rotated ? new Vector2(native.y,native.x) : native;
             // Enumerate only visible native-sized tiles. Neither a merged footprint nor
             // a large zoomed-out map may stretch the original authored pixels.
-            bool hasViewport = contentRect.width > 0 && contentRect.height > 0;
+            bool hasViewport = !buildingRetainedImages && contentRect.width > 0 && contentRect.height > 0;
             float visibleLeft = hasViewport ? Mathf.Max(0,(contentRect.xMin-target.x)/GridSize) : 0;
             float visibleBottom = hasViewport ? Mathf.Max(0,(target.yMax-contentRect.yMax)/GridSize) : 0;
             int firstX = Mathf.Max(0,Mathf.FloorToInt(visibleLeft/step.x));

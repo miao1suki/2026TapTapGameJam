@@ -1,5 +1,7 @@
 # 系统索引
 
+2026-10-20再次抓取真实编辑窗口：修复Scene空刷新循环/全量缺失组件探测，关卡原生美术保留几何、连线/参数索引缓存及装配原点扫描。正式图装配更新间隔中位数102→12ms，细节19→4ms；Scene异常约270ms持续阻塞路径不再复现，美术平移约2–3ms。未改关卡/美术或运行时。统计边界与验证见[窗口性能](../Developer/EDITOR_WINDOW_PROFILING_2026-10-20.md)。
+
 2026-10-20补合TA f7cbb62：Gaming美术3972格、示例239格及MRoom2萤火虫（正式合图平移-68,+69），不以TA旧Scene覆盖main玩法。主关卡布局和三份规划不变，现有程序修复保持；装配临时Alt擦除／Shift白块和Inspector销毁保护补合。来源取舍与验证见[整合记录](../Developer/TA_PROGRESS_INTEGRATION_2026-10-20.md)。
 
 正式全关已连到Gaming：4343物体、28区域、35收集品，R1/R2/R3/MRoom2/MRoom3/Boss均采用最终Scene无损回采；三份正式规划及AuthoredSections依赖成套。已有拖动导入适用于六份回采片段，旧R planning不能直接重建覆盖。版本0.2.1、Android com.xingzhicai.game/code201，见[交接](../Developer/COMBINED_WORLD_0_2_1.md)。下文未合入R场景等为历史状态。
