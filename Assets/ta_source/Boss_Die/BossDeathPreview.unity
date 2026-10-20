@@ -195,6 +195,14 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 900000001, guid: 01bc5f4083bb9ab45ab94a6b023e8464, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000001, guid: 01bc5f4083bb9ab45ab94a6b023e8464, type: 3}
+      propertyPath: m_IsKinematic
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_AddedGameObjects: []
     m_AddedComponents: []

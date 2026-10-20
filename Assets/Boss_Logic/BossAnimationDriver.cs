@@ -81,6 +81,12 @@ namespace Project.BossLogic
         private bool deathDissolvePreview;
         private float deathDissolveStartedAt;
         private float previewRestoreAt = -1f;
+        private Rigidbody previewFrozenBody;
+        private bool previewBodyStateCaptured;
+        private bool previewBodyWasKinematic;
+        private bool previewBodyUsedGravity;
+        private Vector3 previewBodyLinearVelocity;
+        private Vector3 previewBodyAngularVelocity;
 
         public event Action<BossStateId, BossStateId> StateForwarded;
         public float DeathAnimationDurationSeconds
@@ -360,6 +366,11 @@ namespace Project.BossLogic
             if (deathDissolveRenderers.Count == 0)
             {
                 return false;
+            }
+
+            if (preview)
+            {
+                FreezeBodyForDissolvePreview();
             }
 
             deathDissolvePreview = preview;
@@ -710,6 +721,7 @@ namespace Project.BossLogic
         private void RestoreDeathDissolve()
         {
             deathDissolveActive = false;
+            bool restorePreviewBody = deathDissolvePreview;
             deathDissolvePreview = false;
             previewRestoreAt = -1f;
             for (int index = deathDissolveRenderers.Count - 1;
@@ -734,6 +746,54 @@ namespace Project.BossLogic
             }
 
             deathDissolveRenderers.Clear();
+            if (restorePreviewBody)
+            {
+                RestorePreviewBody();
+            }
+        }
+
+        private void FreezeBodyForDissolvePreview()
+        {
+            if (previewBodyStateCaptured)
+            {
+                return;
+            }
+
+            previewFrozenBody = controller != null
+                ? controller.Body
+                : GetComponent<Rigidbody>();
+            if (previewFrozenBody == null)
+            {
+                return;
+            }
+
+            previewBodyWasKinematic = previewFrozenBody.isKinematic;
+            previewBodyUsedGravity = previewFrozenBody.useGravity;
+            previewBodyLinearVelocity = previewFrozenBody.linearVelocity;
+            previewBodyAngularVelocity = previewFrozenBody.angularVelocity;
+            previewBodyStateCaptured = true;
+
+            previewFrozenBody.linearVelocity = Vector3.zero;
+            previewFrozenBody.angularVelocity = Vector3.zero;
+            previewFrozenBody.useGravity = false;
+            previewFrozenBody.isKinematic = true;
+        }
+
+        private void RestorePreviewBody()
+        {
+            if (!previewBodyStateCaptured || previewFrozenBody == null)
+            {
+                previewBodyStateCaptured = false;
+                previewFrozenBody = null;
+                return;
+            }
+
+            previewFrozenBody.isKinematic = previewBodyWasKinematic;
+            previewFrozenBody.useGravity = previewBodyUsedGravity;
+            previewFrozenBody.linearVelocity = previewBodyLinearVelocity;
+            previewFrozenBody.angularVelocity = previewBodyAngularVelocity;
+            previewBodyStateCaptured = false;
+            previewFrozenBody = null;
         }
 
         private static void DestroyRuntimeObject(
