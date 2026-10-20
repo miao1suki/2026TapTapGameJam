@@ -2597,3 +2597,6 @@
 - 分支：`codex/codex/gaming-art-layer-20261019`。接收当前工作区已保存的 Gaming 美术网格改动；不纳入其他本地场景、字体、试验图、IDE 设置及未跟踪的 TileArtTrial 资源。
 - 成套提交 `Gaming.unity`、独立 `Gaming_Art.asset` 及 `.meta`，并包含该场景生成网格及目录 `.meta`。同名 `Gaming.planning.json` 与 `Content/LevelMaps/正式关卡.json` 未改动；本次是美术网格层，不修改关卡布局存档。
 - Unity 6000.3.12f1。只完成静态引用与 Git 暂存范围检查；未打开 Unity、运行 Play Mode 或构建。
+# 2026-10-20 浅草各向连接（grass_connections）
+
+独立分支 `codex/art/shallow-grass-connections-20261020`。仅接入89×113原图、三色原绘9片和四边全部非空组合45片；逐原像素复制，16像素/格，HSV归属保留。生成图集/Sprite独立保存于 `ShallowGrassConnections.asset`，共享库通过幂等追加汇入，不提交覆盖主工作树本地SceneArtLibrary。未修改Scene、planning、玩法或其他背景。Unity6000.3.12f1隔离审计13938断言通过：原绘RGBA/所有组合/尺寸/颜色/原槽位与字段/幂等同步；无C#错误、未保存Scene。共享库仅探针验证有未提交追加，交付不覆盖主库。
