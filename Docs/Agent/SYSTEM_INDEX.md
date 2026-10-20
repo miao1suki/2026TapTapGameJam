@@ -38,7 +38,7 @@ Boss 出场使用 `BossAppearCinematicPlayable`：1 秒玩家锁、故障警告/
 
 自然死亡与处决死亡共用 `BossDeathCinematicPlayable`：自然入口传送玩家到最近已激活重生点并关闭 Boss 接触击杀；处决入口从开局即接管 Boss，镜头过半时以 10 格/秒右移，任一正伤害进入共享 Boss 故障节点。后续包含 Boss/玩家字幕、玩家两闪、六钥匙竖列、死亡动画进度检测、删除 Boss 和独立场景级玩家沉思 Director。
 
-Boss 死亡表现：`BossAnimationDriver.PlayDeathAnimationNow()` 在共享死亡演出末段触发红绿蓝网格溶解，`rgbDeathDissolveSpeed` 控制消散速度，`rgbDeathHorizontalScatter` 控制碎片横向位移。独立预览场景、Shader、默认材质与操作说明位于 `Assets/ta_source/Boss_Die`；Boss 专属运行时代码和 Inspector 保持在 `Assets/Boss_Logic`。
+Boss 死亡表现：`BossAnimationDriver.PlayDeathAnimationNow()` 在共享死亡演出末段触发红绿蓝网格溶解，`rgbDeathDissolveSpeed` 控制消散速度，`rgbDeathHorizontalScatter` 控制碎片横向位移。独立预览场景在 Play Mode 自动循环，循环只在预览实例启用；Shader、默认材质与操作说明位于 `Assets/ta_source/Boss_Die`，Boss 专属运行时代码和 Inspector 保持在 `Assets/Boss_Logic`。
 
 新档点击“开始游戏”时，`StartMenuFlowBridge.BeforeStartTransition` 先由 `GameplayEntryCircleCover` 在菜单上闭圆形遮罩；完全遮黑后才启动场景运镜，并从全黑起等待 `2` 秒，再通过 `StoryStartEntryHandoff` 接入独立开场资产 `Content/GameFlow/Resources/story_start.playable`。之后检查并锁玩家、镜头 `1.4×`、居中打字机分段字幕且到时直接消失、玩家相对左移 16 格；随后黑幕从中心散开，玩家以 Run 动画同步走回画面中心，默认速度 `2.6666667` 格/秒，最后恢复镜头和操作。已有存档直接走 RGB 故障读档效果。见 [story_start API](Integration/STORY_START_TIMELINE_API.md)。
 

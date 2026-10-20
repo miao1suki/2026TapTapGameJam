@@ -45,6 +45,10 @@ namespace Project.BossLogic
         private float rgbDeathDissolveSpeed = .65f;
         [SerializeField, Min(0f)]
         private float rgbDeathHorizontalScatter = .75f;
+        [SerializeField]
+        private bool loopRgbDeathDissolvePreview;
+        [SerializeField, Min(0f)]
+        private float rgbDeathDissolvePreviewLoopInterval = .5f;
 
         private const int DissolveMeshColumns = 20;
         private const int DissolveMeshRows = 20;
@@ -87,6 +91,7 @@ namespace Project.BossLogic
         private bool previewBodyUsedGravity;
         private Vector3 previewBodyLinearVelocity;
         private Vector3 previewBodyAngularVelocity;
+        private float nextRgbDeathDissolvePreviewAt = -1f;
 
         public event Action<BossStateId, BossStateId> StateForwarded;
         public float DeathAnimationDurationSeconds
@@ -189,7 +194,28 @@ namespace Project.BossLogic
                 Time.time >= previewRestoreAt)
             {
                 RestoreDeathDissolve();
+                nextRgbDeathDissolvePreviewAt =
+                    loopRgbDeathDissolvePreview
+                        ? Time.time + Mathf.Max(
+                            0f,
+                            rgbDeathDissolvePreviewLoopInterval)
+                        : -1f;
+                return;
             }
+
+            if (!Application.isPlaying ||
+                !loopRgbDeathDissolvePreview ||
+                deathDissolvePreview ||
+                (controller != null && controller.IsDead) ||
+                (nextRgbDeathDissolvePreviewAt >= 0f &&
+                 Time.time < nextRgbDeathDissolvePreviewAt))
+            {
+                return;
+            }
+
+            nextRgbDeathDissolvePreviewAt = Time.time +
+                Mathf.Max(.1f, rgbDeathDissolvePreviewLoopInterval);
+            PreviewRgbDeathDissolve();
         }
 
         public void SetAnimator(Animator value)

@@ -203,6 +203,14 @@ PrefabInstance:
       propertyPath: m_IsKinematic
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 900000003, guid: 01bc5f4083bb9ab45ab94a6b023e8464, type: 3}
+      propertyPath: loopRgbDeathDissolvePreview
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000003, guid: 01bc5f4083bb9ab45ab94a6b023e8464, type: 3}
+      propertyPath: rgbDeathDissolvePreviewLoopInterval
+      value: 0.5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_AddedGameObjects: []
     m_AddedComponents: []

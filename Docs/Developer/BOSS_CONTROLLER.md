@@ -82,7 +82,7 @@ Timeline 不保存玩家或 Boss 的世界坐标。去程和回程以播放前�
 
 `BossAnimationDriver.waitForPresentationDeathTrigger` 在 Boss 预制体上默认开启：进入 Death 时只切换状态和停止马夫，不立即触发 Animator 死亡 Trigger；真正动画由死亡 Timeline 的第 1 秒 Playable 触发。没有 Animator 时调用安全跳过，Timeline 仍固定观察 2 秒。
 
-`PlayDeathAnimationNow()` 同时启动 RGB 网格溶解：Boss 原 SpriteRenderer 只在特效期间隐藏，运行时临时网格按红、绿、蓝通道分解并横向散开，结束后由死亡演出收束 Boss。速度默认 `0.65`（约 `1.54` 秒完成），横向分散默认 `0.75` 个 Boss 局部单位；均在 `BossAnimationDriver` Inspector 的“RGB 死亡溶解”分组调整。进入 Play Mode 后打开 `Assets/ta_source/Boss_Die/BossDeathPreview.unity`，选中 `Boss(暂定)` 并点击“预览 RGB 分解消散”可反复对比参数。完整操作见该目录的 `使用说明.md`。
+`PlayDeathAnimationNow()` 同时启动 RGB 网格溶解：Boss 原 SpriteRenderer 只在特效期间隐藏，运行时临时网格按红、绿、蓝通道分解并横向散开，结束后由死亡演出收束 Boss。速度默认 `0.65`（约 `1.54` 秒完成），横向分散默认 `0.75` 个 Boss 局部单位；均在 `BossAnimationDriver` Inspector 的“RGB 死亡溶解”分组调整。进入 Play Mode 后打开 `Assets/ta_source/Boss_Die/BossDeathPreview.unity`，效果会自动循环，Boss 原图在每次消散后恢复；循环间隔可在 Inspector 调整。该场景实例开启循环，不影响正式 Boss 的一次性死亡流程。完整操作见该目录的 `使用说明.md`。
 
 ## Boss 入场 Timeline
 
