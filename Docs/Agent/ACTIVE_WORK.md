@@ -75,6 +75,12 @@
 - Boss 复活链改为房间重建后才应用 Boss 归位：新增复活后置监听，Boss 归位前销毁 Boss 左边缘至 Boss 中心 X 范围内相交的全部普通/重力岩浆。Boss 存活期间通过玩家疾跑租约禁用疾跑，死亡或禁用时自动释放。
 - Inspector 文案、BOSS_CONTROLLER API/开发者文档同步；`BossRoomResetVisualAudit` 改为直接使用通用 `TemporaryObjectHideState` 验证房间恢复视觉，不再依赖 Boss 隐藏队列。
 - Unity 6000.3.12f1 使用当前完整 `Assembly-CSharp.rsp` 与 `Assembly-CSharp-Editor.rsp` 编译通过，0 error，仅既有 obsolete/hide warning。未运行 Play Mode；主 Unity 仍有未保存 Boss Scene，未保存或重建场景。
+## 2026-10-20 最终关卡只读差异审计／单向平台动态复验
+
+- 分支 codex/r-level-exact-recapture-20261019；本轮按整合者确认仅做只读审计，不实施大范围存档schema迁移、不修改作者Scene或JSON，不声称精确回采完成。R2审计以最新d3fac6a为准；接收该Scene由远端整合工作者完成。
+- 实际Unity6000.3.12f1隔离NeutralMechanismProbe打开R1/R2/R3，记录实际Transform、标记、重复来源、删除记录与出生位置；Scene哈希前后不变。75/55/52实际实例对应77/55/59旧规划，分别4/2/9个规划ID无实例，各2组重复来源ID+局部格。详细证据和限制见R_LEVEL_SCENE_AUDIT_2026-10-20.md；不是可导入存档。
+- 单向平台ObjectArtworkTests 32/32通过；Neutral/红/绿/蓝各1/3格的真实Prefab编辑态98项、实际Play98项通过。验证16×16帧/PPU16、平铺原占格、像素方正、支撑顶边与Collider对齐；父Y=.2由子Y=5补偿，localPositionY=-4.5是正确完整帧底枢轴，不是视觉下移。未执行GPU截图、整关通关或打包。
+- 新增两个显式隔离验证入口Assets/Editor/OneWayDeliveryAudit.cs、FinalScenePlanningAudit.cs；仅允许NeutralMechanismProbe，结果留Library，不触碰主Unity窗口或自动保存Scene。
 
 ## 2026-10-19 R1／R2／R3 最终场景急件接收
 
