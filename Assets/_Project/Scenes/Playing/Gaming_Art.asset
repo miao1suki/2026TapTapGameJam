@@ -694,6 +694,957 @@ MonoBehaviour:
     - position: {x: 12, y: 12}
       brush: 46
       quarterTurns: 0
+    - position: {x: -192, y: 9}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: 10}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: 11}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: 8}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: 7}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: 4}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: 5}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: 6}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: 3}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -192, y: -1}
+      brush: 36
+      quarterTurns: 0
+    - position: {x: -192, y: 0}
+      brush: 36
+      quarterTurns: 0
+    - position: {x: -192, y: 1}
+      brush: 36
+      quarterTurns: 0
+    - position: {x: -192, y: 2}
+      brush: 36
+      quarterTurns: 0
+    - position: {x: -192, y: -2}
+      brush: 36
+      quarterTurns: 0
+    - position: {x: -192, y: -18}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -17}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -16}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -15}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -14}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -13}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -12}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -11}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -10}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -9}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -8}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -7}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -6}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -5}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -4}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -192, y: -3}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -166, y: -6}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: -5}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: -4}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: -3}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: -2}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: -1}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 0}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 1}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 2}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 3}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 4}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 5}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 6}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 7}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 8}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 9}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 10}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -166, y: 11}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -146, y: -6}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: -5}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: -4}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: -3}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: -2}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: -1}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 0}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 1}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 2}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 3}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 4}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 5}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 6}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 7}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 8}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 9}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 10}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -146, y: 11}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -133, y: -6}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: -5}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: -4}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: -3}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: -2}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: -1}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 0}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 1}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 2}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 3}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 4}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 5}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 6}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 7}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 8}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -133, y: 9}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -127, y: 1}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -127, y: 2}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -127, y: 3}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -127, y: 4}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -127, y: 5}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -127, y: 6}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -127, y: 7}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -127, y: 8}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -127, y: 9}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -111, y: 7}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -111, y: 8}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -111, y: 9}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -96, y: -6}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: -6}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: -5}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: -5}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: -4}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: -4}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: -3}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: -3}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: -2}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: -2}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: -1}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: -1}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 0}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 0}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 1}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 1}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 2}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 2}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 3}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 3}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 4}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 4}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 5}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 5}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 6}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 6}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 7}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 7}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 8}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 8}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 9}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 9}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 10}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 10}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 11}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 11}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 12}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 12}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 13}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 13}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -96, y: 14}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -95, y: 14}
+      brush: 54
+      quarterTurns: 0
+    - position: {x: -83, y: -6}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: -5}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: -4}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: -3}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: -2}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: -1}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: 0}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: 1}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: 2}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: 3}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: 4}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: 5}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: 6}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -83, y: 7}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: -6}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: -5}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: -4}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: -3}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: -2}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: -1}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: 0}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: 1}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: 2}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: 3}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: 4}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: 5}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: 6}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -80, y: 7}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -174, y: 16}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -174, y: 17}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -174, y: 18}
+      brush: 72
+      quarterTurns: 0
+    - position: {x: -163, y: 13}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -163, y: 14}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -163, y: 15}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -163, y: 16}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -163, y: 17}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -163, y: 18}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -163, y: 19}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -155, y: 13}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -155, y: 14}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -155, y: 15}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -155, y: 16}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -155, y: 17}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -155, y: 18}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -155, y: 19}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -147, y: 13}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -147, y: 14}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -147, y: 15}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -147, y: 16}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -147, y: 17}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -147, y: 18}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -147, y: 19}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -165, y: 38}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -165, y: 39}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -165, y: 40}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -165, y: 41}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -150, y: 23}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 24}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 25}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 26}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 27}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 28}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 29}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 30}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 31}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 32}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 33}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 34}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 35}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 36}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 37}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 38}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 39}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 40}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -150, y: 41}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -134, y: 24}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -134, y: 25}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -134, y: 26}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -134, y: 27}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -134, y: 28}
+      brush: 38
+      quarterTurns: 0
+    - position: {x: -115, y: 34}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -115, y: 35}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -115, y: 36}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -115, y: 37}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -115, y: 38}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -115, y: 39}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -115, y: 40}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -115, y: 27}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -115, y: 28}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -115, y: 29}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -115, y: 30}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -115, y: 31}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -115, y: 32}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -115, y: 33}
+      brush: 37
+      quarterTurns: 0
+    - position: {x: -87, y: 16}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 17}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 18}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 19}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 20}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 21}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 22}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 23}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 24}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 25}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 26}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 27}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 28}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 29}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 30}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 31}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 32}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 33}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -87, y: 34}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -73, y: 25}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -73, y: 26}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -73, y: 27}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -73, y: 28}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -73, y: 29}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -73, y: 30}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -73, y: 31}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -73, y: 32}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -73, y: 33}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -73, y: 34}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -78, y: 25}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -78, y: 26}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -78, y: 27}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -78, y: 28}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -78, y: 29}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -78, y: 30}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -78, y: 31}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -78, y: 32}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -78, y: 33}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -78, y: 34}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 22}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 23}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 24}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 25}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 26}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 27}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 28}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 29}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 30}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 31}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 32}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 33}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -65, y: 34}
+      brush: 56
+      quarterTurns: 0
+    - position: {x: -59, y: 8}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -59, y: 9}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -59, y: 10}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -59, y: 11}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -59, y: 12}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -59, y: 13}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -59, y: 14}
+      brush: 73
+      quarterTurns: 0
+    - position: {x: -59, y: 0}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -59, y: 1}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -59, y: 2}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -59, y: 3}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -59, y: 4}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -59, y: 5}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -59, y: 6}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: -2}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: -1}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 0}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 1}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 2}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 3}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 4}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 5}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 6}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 7}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 8}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 9}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 10}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 11}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 12}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 13}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -92, y: 14}
+      brush: 74
+      quarterTurns: 0
+    - position: {x: -79, y: 11}
+      brush: 71
+      quarterTurns: 0
+    - position: {x: -79, y: 12}
+      brush: 71
+      quarterTurns: 0
+    - position: {x: -79, y: 13}
+      brush: 71
+      quarterTurns: 0
+    - position: {x: -79, y: 14}
+      brush: 71
+      quarterTurns: 0
   - id: 55cb5a9324604325ad9c972952b55659
     label: "\u5899\u5730\u8868\u9762"
     visible: 1
@@ -23203,6 +24154,528 @@ MonoBehaviour:
     - position: {x: -16, y: 10}
       brush: 155
       quarterTurns: 0
-  revision: 2145
-  bakedRevision: 2145
+    - position: {x: -188, y: -17}
+      brush: 208
+      quarterTurns: 0
+    - position: {x: -178, y: -4}
+      brush: 208
+      quarterTurns: 0
+    - position: {x: -189, y: -17}
+      brush: 206
+      quarterTurns: 0
+    - position: {x: -170, y: -17}
+      brush: 214
+      quarterTurns: 0
+    - position: {x: -169, y: -17}
+      brush: 206
+      quarterTurns: 0
+    - position: {x: -168, y: -17}
+      brush: 206
+      quarterTurns: 0
+    - position: {x: -180, y: -4}
+      brush: 214
+      quarterTurns: 0
+    - position: {x: -175, y: -12}
+      brush: 30
+      quarterTurns: 0
+    - position: {x: -173, y: -12}
+      brush: 30
+      quarterTurns: 0
+    - position: {x: -188, y: 11}
+      brush: 32
+      quarterTurns: 0
+    - position: {x: -198, y: 11}
+      brush: 32
+      quarterTurns: 0
+    - position: {x: -187, y: 11}
+      brush: 39
+      quarterTurns: 0
+    - position: {x: -189, y: 11}
+      brush: 41
+      quarterTurns: 0
+    - position: {x: -145, y: -6}
+      brush: 91
+      quarterTurns: 0
+    - position: {x: -147, y: -6}
+      brush: 91
+      quarterTurns: 0
+    - position: {x: -164, y: -3}
+      brush: 89
+      quarterTurns: 0
+    - position: {x: -163, y: -3}
+      brush: 89
+      quarterTurns: 0
+    - position: {x: -162, y: -3}
+      brush: 88
+      quarterTurns: 0
+    - position: {x: -167, y: -8}
+      brush: 101
+      quarterTurns: 0
+    - position: {x: -146, y: -8}
+      brush: 109
+      quarterTurns: 0
+    - position: {x: -148, y: 11}
+      brush: 57
+      quarterTurns: 0
+    - position: {x: -148, y: 10}
+      brush: 57
+      quarterTurns: 0
+    - position: {x: -198, y: -18}
+      brush: 206
+      quarterTurns: 0
+    - position: {x: -197, y: -18}
+      brush: 206
+      quarterTurns: 0
+    - position: {x: -196, y: -18}
+      brush: 206
+      quarterTurns: 0
+    - position: {x: -195, y: -18}
+      brush: 206
+      quarterTurns: 0
+    - position: {x: -194, y: -18}
+      brush: 206
+      quarterTurns: 0
+    - position: {x: -193, y: -18}
+      brush: 206
+      quarterTurns: 0
+    - position: {x: -201, y: -8}
+      brush: 207
+      quarterTurns: 0
+    - position: {x: -201, y: -7}
+      brush: 207
+      quarterTurns: 0
+    - position: {x: -201, y: -6}
+      brush: 207
+      quarterTurns: 0
+    - position: {x: -201, y: -5}
+      brush: 207
+      quarterTurns: 0
+    - position: {x: -201, y: -4}
+      brush: 207
+      quarterTurns: 0
+    - position: {x: -201, y: -3}
+      brush: 207
+      quarterTurns: 0
+    - position: {x: -201, y: -2}
+      brush: 207
+      quarterTurns: 0
+    - position: {x: -169, y: -6}
+      brush: 241
+      quarterTurns: 0
+    - position: {x: -167, y: -14}
+      brush: 249
+      quarterTurns: 0
+    - position: {x: -167, y: -13}
+      brush: 249
+      quarterTurns: 0
+    - position: {x: -167, y: -12}
+      brush: 101
+      quarterTurns: 0
+    - position: {x: -147, y: -11}
+      brush: 108
+      quarterTurns: 0
+    - position: {x: -146, y: -14}
+      brush: 108
+      quarterTurns: 0
+    - position: {x: -147, y: -16}
+      brush: 108
+      quarterTurns: 0
+    - position: {x: -182, y: 1}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -185, y: 3}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -185, y: 0}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -182, y: -1}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -183, y: -3}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -186, y: -6}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -183, y: -8}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -185, y: -10}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -182, y: -13}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -187, y: -14}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -183, y: -17}
+      brush: 43
+      quarterTurns: 0
+    - position: {x: -145, y: 4}
+      brush: 68
+      quarterTurns: 0
+    - position: {x: -151, y: 7}
+      brush: 68
+      quarterTurns: 0
+    - position: {x: -150, y: 7}
+      brush: 66
+      quarterTurns: 0
+    - position: {x: -137, y: -6}
+      brush: 96
+      quarterTurns: 0
+    - position: {x: -134, y: -6}
+      brush: 96
+      quarterTurns: 0
+    - position: {x: -141, y: 4}
+      brush: 96
+      quarterTurns: 0
+    - position: {x: -138, y: 4}
+      brush: 96
+      quarterTurns: 0
+    - position: {x: -137, y: 4}
+      brush: 96
+      quarterTurns: 0
+    - position: {x: -123, y: 3}
+      brush: 57
+      quarterTurns: 0
+    - position: {x: -124, y: 3}
+      brush: 67
+      quarterTurns: 0
+    - position: {x: -109, y: 7}
+      brush: 81
+      quarterTurns: 0
+    - position: {x: -107, y: 3}
+      brush: 81
+      quarterTurns: 0
+    - position: {x: -119, y: 0}
+      brush: 82
+      quarterTurns: 0
+    - position: {x: -117, y: 0}
+      brush: 82
+      quarterTurns: 0
+    - position: {x: -115, y: -1}
+      brush: 102
+      quarterTurns: 0
+    - position: {x: -103, y: -1}
+      brush: 89
+      quarterTurns: 0
+    - position: {x: -102, y: -1}
+      brush: 89
+      quarterTurns: 0
+    - position: {x: -99, y: 1}
+      brush: 84
+      quarterTurns: 0
+    - position: {x: -104, y: -6}
+      brush: 90
+      quarterTurns: 0
+    - position: {x: -103, y: -6}
+      brush: 90
+      quarterTurns: 0
+    - position: {x: -102, y: -6}
+      brush: 90
+      quarterTurns: 0
+    - position: {x: -97, y: -6}
+      brush: 83
+      quarterTurns: 0
+    - position: {x: -89, y: 0}
+      brush: 90
+      quarterTurns: 0
+    - position: {x: -88, y: 0}
+      brush: 90
+      quarterTurns: 0
+    - position: {x: -92, y: -4}
+      brush: 106
+      quarterTurns: 0
+    - position: {x: -93, y: -4}
+      brush: 106
+      quarterTurns: 0
+    - position: {x: -99, y: 12}
+      brush: 51
+      quarterTurns: 0
+    - position: {x: -102, y: 10}
+      brush: 51
+      quarterTurns: 0
+    - position: {x: -103, y: 5}
+      brush: 51
+      quarterTurns: 0
+    - position: {x: -99, y: 6}
+      brush: 51
+      quarterTurns: 0
+    - position: {x: -104, y: 2}
+      brush: 51
+      quarterTurns: 0
+    - position: {x: -100, y: -2}
+      brush: 51
+      quarterTurns: 0
+    - position: {x: -108, y: -5}
+      brush: 51
+      quarterTurns: 0
+    - position: {x: -81, y: 7}
+      brush: 57
+      quarterTurns: 0
+    - position: {x: -81, y: -13}
+      brush: 97
+      quarterTurns: 0
+    - position: {x: -180, y: 13}
+      brush: 78
+      quarterTurns: 0
+    - position: {x: -177, y: 13}
+      brush: 78
+      quarterTurns: 0
+    - position: {x: -180, y: 18}
+      brush: 48
+      quarterTurns: 0
+    - position: {x: -179, y: 18}
+      brush: 48
+      quarterTurns: 0
+    - position: {x: -181, y: 18}
+      brush: 48
+      quarterTurns: 0
+    - position: {x: -179, y: 17}
+      brush: 48
+      quarterTurns: 0
+    - position: {x: -177, y: 18}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -163, y: 22}
+      brush: 102
+      quarterTurns: 0
+    - position: {x: -159, y: 22}
+      brush: 102
+      quarterTurns: 0
+    - position: {x: -168, y: 20}
+      brush: 99
+      quarterTurns: 0
+    - position: {x: -168, y: 36}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -168, y: 32}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -170, y: 38}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -167, y: 39}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -171, y: 30}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -168, y: 28}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -170, y: 25}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -165, y: 28}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -161, y: 25}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -162, y: 33}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -160, y: 38}
+      brush: 69
+      quarterTurns: 0
+    - position: {x: -158, y: 23}
+      brush: 101
+      quarterTurns: 0
+    - position: {x: -139, y: 34}
+      brush: 32
+      quarterTurns: 0
+    - position: {x: -142, y: 39}
+      brush: 32
+      quarterTurns: 0
+    - position: {x: -138, y: 34}
+      brush: 32
+      quarterTurns: 0
+    - position: {x: -140, y: 31}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -145, y: 35}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -143, y: 26}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -141, y: 23}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -141, y: 34}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -131, y: 26}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -129, y: 24}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -127, y: 23}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -127, y: 24}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -127, y: 27}
+      brush: 25
+      quarterTurns: 0
+    - position: {x: -129, y: 32}
+      brush: 21
+      quarterTurns: 0
+    - position: {x: -131, y: 28}
+      brush: 21
+      quarterTurns: 0
+    - position: {x: -124, y: 37}
+      brush: 21
+      quarterTurns: 0
+    - position: {x: -130, y: 28}
+      brush: 22
+      quarterTurns: 0
+    - position: {x: -125, y: 23}
+      brush: 79
+      quarterTurns: 0
+    - position: {x: -123, y: 23}
+      brush: 79
+      quarterTurns: 0
+    - position: {x: -122, y: 23}
+      brush: 79
+      quarterTurns: 0
+    - position: {x: -120, y: 25}
+      brush: 82
+      quarterTurns: 0
+    - position: {x: -100, y: 34}
+      brush: 52
+      quarterTurns: 0
+    - position: {x: -101, y: 40}
+      brush: 52
+      quarterTurns: 0
+    - position: {x: -103, y: 33}
+      brush: 52
+      quarterTurns: 0
+    - position: {x: -100, y: 31}
+      brush: 52
+      quarterTurns: 0
+    - position: {x: -98, y: 27}
+      brush: 52
+      quarterTurns: 0
+    - position: {x: -101, y: 26}
+      brush: 52
+      quarterTurns: 0
+    - position: {x: -99, y: 23}
+      brush: 52
+      quarterTurns: 0
+    - position: {x: -119, y: 37}
+      brush: 39
+      quarterTurns: 0
+    - position: {x: -105, y: 41}
+      brush: 39
+      quarterTurns: 0
+    - position: {x: -101, y: 41}
+      brush: 39
+      quarterTurns: 0
+    - position: {x: -110, y: 41}
+      brush: 39
+      quarterTurns: 0
+    - position: {x: -81, y: 34}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -83, y: 34}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -91, y: 31}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -74, y: 34}
+      brush: 57
+      quarterTurns: 0
+    - position: {x: -69, y: 34}
+      brush: 57
+      quarterTurns: 0
+    - position: {x: -74, y: 23}
+      brush: 57
+      quarterTurns: 0
+    - position: {x: -63, y: 20}
+      brush: 57
+      quarterTurns: 0
+    - position: {x: -86, y: 25}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -83, y: 25}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -71, y: 34}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -76, y: 23}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -82, y: 16}
+      brush: 85
+      quarterTurns: 0
+    - position: {x: -70, y: 16}
+      brush: 85
+      quarterTurns: 0
+    - position: {x: -75, y: 16}
+      brush: 87
+      quarterTurns: 0
+    - position: {x: -62, y: 16}
+      brush: 87
+      quarterTurns: 0
+    - position: {x: -66, y: 8}
+      brush: 87
+      quarterTurns: 0
+    - position: {x: -60, y: 8}
+      brush: 87
+      quarterTurns: 0
+    - position: {x: -67, y: 14}
+      brush: 58
+      quarterTurns: 0
+    - position: {x: -63, y: 14}
+      brush: 58
+      quarterTurns: 0
+    - position: {x: -74, y: 14}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -67, y: 6}
+      brush: 68
+      quarterTurns: 0
+    - position: {x: -62, y: 6}
+      brush: 68
+      quarterTurns: 0
+    - position: {x: -87, y: -2}
+      brush: 108
+      quarterTurns: 0
+    - position: {x: -84, y: -2}
+      brush: 108
+      quarterTurns: 0
+    - position: {x: -90, y: -1}
+      brush: 100
+      quarterTurns: 0
+    - position: {x: -160, y: 11}
+      brush: 67
+      quarterTurns: 0
+    - position: {x: -165, y: -13}
+      brush: 101
+      quarterTurns: 0
+    - position: {x: -169, y: -18}
+      brush: 101
+      quarterTurns: 0
+    - position: {x: -167, y: -11}
+      brush: 101
+      quarterTurns: 0
+    - position: {x: -164, y: -13}
+      brush: 101
+      quarterTurns: 0
+    - position: {x: -159, y: -18}
+      brush: 101
+      quarterTurns: 0
+    - position: {x: -147, y: -13}
+      brush: 101
+      quarterTurns: 0
+  revision: 2364
+  bakedRevision: 2364
   bakedPaletteHash: db989a14d25486722969a264928c75d3
