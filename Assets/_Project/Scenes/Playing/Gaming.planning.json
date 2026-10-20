@@ -564108,11 +564108,11 @@
                 {
                     "id": "Boss_box_aa7a24dc",
                     "type": 9,
-                    "label": "Boss入场（收集30%）",
+                    "label": "Boss入场（收集5%）",
                     "paletteEntryId": "",
                     "paletteEntryName": "",
                     "propEntryId": "28e981bfb733401eb334ec945bf9eb75",
-                    "propEntryName": "Boss入场（收集30%）",
+                    "propEntryName": "Boss入场（收集5%）",
                     "x": 4,
                     "y": 23,
                     "width": 1,
@@ -564736,7 +564736,7 @@
                             "componentIndex": 0,
                             "propertyPath": "minimumRatio",
                             "valueType": "Float",
-                            "value": "0.30000001192092896",
+                            "value": "0.05000000074505806",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -575100,7 +575100,7 @@
                             "componentIndex": 0,
                             "propertyPath": "teleportId",
                             "valueType": "String",
-                            "value": "teleport_target",
+                            "value": "End",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -576855,6 +576855,83 @@
                     "componentOverrides": [
                         {
                             "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size.x",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size.y",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size.z",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center.x",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center.y",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center.z",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Materials.Array.data[0]",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-3-31321ba15b8f8eb4c954353edc038b1d-2100000-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
                             "propertyPath": "cue.layer",
@@ -576903,7 +576980,7 @@
                             "componentIndex": 0,
                             "propertyPath": "cue.style.anchor",
                             "valueType": "Enum",
-                            "value": "0",
+                            "value": "1",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -576925,7 +577002,7 @@
                             "componentIndex": 0,
                             "propertyPath": "cue.style.inAnimation",
                             "valueType": "Enum",
-                            "value": "1",
+                            "value": "12",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -576947,7 +577024,7 @@
                             "componentIndex": 0,
                             "propertyPath": "cue.style.outAnimation",
                             "valueType": "Enum",
-                            "value": "1",
+                            "value": "12",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -576987,11 +577064,33 @@
                         },
                         {
                             "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "showSign",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "signSprite",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
                             "componentTypeName": "UnityEngine.BoxCollider",
                             "componentIndex": 0,
                             "propertyPath": "m_Material",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -577044,75 +577143,9 @@
                             "componentPath": "",
                             "componentTypeName": "UnityEngine.BoxCollider",
                             "componentIndex": 0,
-                            "propertyPath": "m_Size.x",
-                            "valueType": "Float",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Size.y",
-                            "valueType": "Float",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Size.z",
-                            "valueType": "Float",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
                             "propertyPath": "m_Center",
                             "valueType": "Vector3",
                             "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Center.x",
-                            "valueType": "Float",
-                            "value": "0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Center.y",
-                            "valueType": "Float",
-                            "value": "0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Center.z",
-                            "valueType": "Float",
-                            "value": "0",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -577308,20 +577341,9 @@
                             "componentPath": "",
                             "componentTypeName": "UnityEngine.MeshRenderer",
                             "componentIndex": 0,
-                            "propertyPath": "m_Materials.Array.data[0]",
-                            "valueType": "ObjectReference",
-                            "value": "GlobalObjectId_V1-3-31321ba15b8f8eb4c954353edc038b1d-2100000-0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.MeshRenderer",
-                            "componentIndex": 0,
                             "propertyPath": "m_ProbeAnchor",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -577332,7 +577354,7 @@
                             "componentIndex": 0,
                             "propertyPath": "m_LightProbeVolumeOverride",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -577442,7 +577464,7 @@
                             "componentIndex": 0,
                             "propertyPath": "m_LightmapParameters",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -577459,12 +577481,430 @@
                             }
                         },
                         {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_CastShadows",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveShadows",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DynamicOccludee",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StaticShadowCaster",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MotionVectors",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReflectionProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingMode",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTraceProcedural",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlagsOverride",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlags",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SmallMeshCulling",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ForceMeshLod",
+                            "valueType": "Integer",
+                            "value": "-1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MeshLodSelectionBias",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RenderingLayerMask",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RendererPriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProbeAnchor",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeVolumeOverride",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ScaleInLightmap",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveGI",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PreserveUVs",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IgnoreNormalsForChartDetection",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ImportantGI",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StitchLightmapSeams",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MinimumChartSize",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxDistance",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxAngle",
+                            "valueType": "Float",
+                            "value": "89",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightmapParameters",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MaskInteraction",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Sprite",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-1-24b74bdf22adc174aa895b9a93459a45-10179739225890511202-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Color",
+                            "valueType": "Color",
+                            "value": "{\"r\":1.0,\"g\":1.0,\"b\":1.0,\"a\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_FlipX",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_FlipY",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DrawMode",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size",
+                            "valueType": "Vector2",
+                            "value": "{\"x\":1.0,\"y\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AdaptiveModeThreshold",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SpriteTileMode",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SpriteSortPoint",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
                             "propertyPath": "cue.text",
                             "valueType": "String",
-                            "value": "ScreenNoteTool",
+                            "value": "完了，上当了！",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -577669,6 +578109,83 @@
                     "componentOverrides": [
                         {
                             "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size.x",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size.y",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size.z",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center.x",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center.y",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center.z",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Materials.Array.data[0]",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-3-31321ba15b8f8eb4c954353edc038b1d-2100000-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
                             "propertyPath": "cue.layer",
@@ -577715,17 +578232,6 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.style.anchor",
-                            "valueType": "Enum",
-                            "value": "0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
                             "propertyPath": "cue.style.offset",
                             "valueType": "Vector2",
                             "value": "{\"x\":0.0,\"y\":0.0}",
@@ -577737,31 +578243,9 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.style.inAnimation",
-                            "valueType": "Enum",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
                             "propertyPath": "cue.style.inCurve",
                             "valueType": "AnimationCurve",
                             "value": "{\"preWrapMode\":8,\"postWrapMode\":8}",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
-                            "propertyPath": "cue.style.outAnimation",
-                            "valueType": "Enum",
-                            "value": "1",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -577801,11 +578285,33 @@
                         },
                         {
                             "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "showSign",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "signSprite",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
                             "componentTypeName": "UnityEngine.BoxCollider",
                             "componentIndex": 0,
                             "propertyPath": "m_Material",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -577858,75 +578364,9 @@
                             "componentPath": "",
                             "componentTypeName": "UnityEngine.BoxCollider",
                             "componentIndex": 0,
-                            "propertyPath": "m_Size.x",
-                            "valueType": "Float",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Size.y",
-                            "valueType": "Float",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Size.z",
-                            "valueType": "Float",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
                             "propertyPath": "m_Center",
                             "valueType": "Vector3",
                             "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Center.x",
-                            "valueType": "Float",
-                            "value": "0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Center.y",
-                            "valueType": "Float",
-                            "value": "0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Center.z",
-                            "valueType": "Float",
-                            "value": "0",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -578122,20 +578562,9 @@
                             "componentPath": "",
                             "componentTypeName": "UnityEngine.MeshRenderer",
                             "componentIndex": 0,
-                            "propertyPath": "m_Materials.Array.data[0]",
-                            "valueType": "ObjectReference",
-                            "value": "GlobalObjectId_V1-3-31321ba15b8f8eb4c954353edc038b1d-2100000-0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.MeshRenderer",
-                            "componentIndex": 0,
                             "propertyPath": "m_ProbeAnchor",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -578146,7 +578575,7 @@
                             "componentIndex": 0,
                             "propertyPath": "m_LightProbeVolumeOverride",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -578256,7 +578685,7 @@
                             "componentIndex": 0,
                             "propertyPath": "m_LightmapParameters",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -578273,12 +578702,419 @@
                             }
                         },
                         {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
                             "componentIndex": 0,
-                            "propertyPath": "cue.text",
-                            "valueType": "String",
-                            "value": "ScreenNoteTool",
+                            "propertyPath": "m_CastShadows",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveShadows",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DynamicOccludee",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StaticShadowCaster",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MotionVectors",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReflectionProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingMode",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTraceProcedural",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlagsOverride",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlags",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SmallMeshCulling",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ForceMeshLod",
+                            "valueType": "Integer",
+                            "value": "-1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MeshLodSelectionBias",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RenderingLayerMask",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RendererPriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProbeAnchor",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeVolumeOverride",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ScaleInLightmap",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveGI",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PreserveUVs",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IgnoreNormalsForChartDetection",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ImportantGI",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StitchLightmapSeams",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MinimumChartSize",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxDistance",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxAngle",
+                            "valueType": "Float",
+                            "value": "89",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightmapParameters",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MaskInteraction",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Sprite",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-1-24b74bdf22adc174aa895b9a93459a45-10179739225890511202-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Color",
+                            "valueType": "Color",
+                            "value": "{\"r\":1.0,\"g\":1.0,\"b\":1.0,\"a\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_FlipX",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_FlipY",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DrawMode",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size",
+                            "valueType": "Vector2",
+                            "value": "{\"x\":1.0,\"y\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AdaptiveModeThreshold",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SpriteTileMode",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SpriteSortPoint",
+                            "valueType": "Enum",
+                            "value": "0",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -578433,6 +579269,50 @@
                             "propertyPath": "cue.style.charactersPerSecond",
                             "valueType": "Float",
                             "value": "24",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.text",
+                            "valueType": "String",
+                            "value": "不会吧...又是选择题吗...",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.anchor",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.inAnimation",
+                            "valueType": "Enum",
+                            "value": "12",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.outAnimation",
+                            "valueType": "Enum",
+                            "value": "12",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -578698,6 +579578,83 @@
                     "componentOverrides": [
                         {
                             "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size.x",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size.y",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size.z",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center.x",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center.y",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center.z",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Materials.Array.data[0]",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-3-31321ba15b8f8eb4c954353edc038b1d-2100000-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
                             "propertyPath": "cue.layer",
@@ -578744,17 +579701,6 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.style.anchor",
-                            "valueType": "Enum",
-                            "value": "0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
                             "propertyPath": "cue.style.offset",
                             "valueType": "Vector2",
                             "value": "{\"x\":0.0,\"y\":0.0}",
@@ -578766,31 +579712,9 @@
                             "componentPath": "",
                             "componentTypeName": "Project.Subtitles.SubtitleTrigger",
                             "componentIndex": 0,
-                            "propertyPath": "cue.style.inAnimation",
-                            "valueType": "Enum",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
                             "propertyPath": "cue.style.inCurve",
                             "valueType": "AnimationCurve",
                             "value": "{\"preWrapMode\":8,\"postWrapMode\":8}",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
-                            "componentIndex": 0,
-                            "propertyPath": "cue.style.outAnimation",
-                            "valueType": "Enum",
-                            "value": "1",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -578830,11 +579754,33 @@
                         },
                         {
                             "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "showSign",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "signSprite",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
                             "componentTypeName": "UnityEngine.BoxCollider",
                             "componentIndex": 0,
                             "propertyPath": "m_Material",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -578887,75 +579833,9 @@
                             "componentPath": "",
                             "componentTypeName": "UnityEngine.BoxCollider",
                             "componentIndex": 0,
-                            "propertyPath": "m_Size.x",
-                            "valueType": "Float",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Size.y",
-                            "valueType": "Float",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Size.z",
-                            "valueType": "Float",
-                            "value": "1",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
                             "propertyPath": "m_Center",
                             "valueType": "Vector3",
                             "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Center.x",
-                            "valueType": "Float",
-                            "value": "0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Center.y",
-                            "valueType": "Float",
-                            "value": "0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.BoxCollider",
-                            "componentIndex": 0,
-                            "propertyPath": "m_Center.z",
-                            "valueType": "Float",
-                            "value": "0",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -579151,20 +580031,9 @@
                             "componentPath": "",
                             "componentTypeName": "UnityEngine.MeshRenderer",
                             "componentIndex": 0,
-                            "propertyPath": "m_Materials.Array.data[0]",
-                            "valueType": "ObjectReference",
-                            "value": "GlobalObjectId_V1-3-31321ba15b8f8eb4c954353edc038b1d-2100000-0",
-                            "objectReferenceValue": {
-                                "instanceID": 0
-                            }
-                        },
-                        {
-                            "componentPath": "",
-                            "componentTypeName": "UnityEngine.MeshRenderer",
-                            "componentIndex": 0,
                             "propertyPath": "m_ProbeAnchor",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -579175,7 +580044,7 @@
                             "componentIndex": 0,
                             "propertyPath": "m_LightProbeVolumeOverride",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -579285,7 +580154,7 @@
                             "componentIndex": 0,
                             "propertyPath": "m_LightmapParameters",
                             "valueType": "ObjectReference",
-                            "value": "",
+                            "value": "reference:null",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -579302,12 +580171,419 @@
                             }
                         },
                         {
-                            "componentPath": "",
-                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
                             "componentIndex": 0,
-                            "propertyPath": "cue.text",
-                            "valueType": "String",
-                            "value": "ScreenNoteTool",
+                            "propertyPath": "m_CastShadows",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveShadows",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DynamicOccludee",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StaticShadowCaster",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MotionVectors",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReflectionProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingMode",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTraceProcedural",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlagsOverride",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlags",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SmallMeshCulling",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ForceMeshLod",
+                            "valueType": "Integer",
+                            "value": "-1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MeshLodSelectionBias",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RenderingLayerMask",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RendererPriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProbeAnchor",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeVolumeOverride",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ScaleInLightmap",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveGI",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PreserveUVs",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IgnoreNormalsForChartDetection",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ImportantGI",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StitchLightmapSeams",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MinimumChartSize",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxDistance",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxAngle",
+                            "valueType": "Float",
+                            "value": "89",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightmapParameters",
+                            "valueType": "ObjectReference",
+                            "value": "reference:null",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MaskInteraction",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Sprite",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-1-24b74bdf22adc174aa895b9a93459a45-10179739225890511202-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Color",
+                            "valueType": "Color",
+                            "value": "{\"r\":1.0,\"g\":1.0,\"b\":1.0,\"a\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_FlipX",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_FlipY",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DrawMode",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size",
+                            "valueType": "Vector2",
+                            "value": "{\"x\":1.0,\"y\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AdaptiveModeThreshold",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SpriteTileMode",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "Subtitle Sign Visual",
+                            "componentTypeName": "UnityEngine.SpriteRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SpriteSortPoint",
+                            "valueType": "Enum",
+                            "value": "0",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -579462,6 +580738,50 @@
                             "propertyPath": "cue.style.charactersPerSecond",
                             "valueType": "Float",
                             "value": "24",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.text",
+                            "valueType": "String",
+                            "value": "告示牌上写着：你来这里干什么？",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.anchor",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.inAnimation",
+                            "valueType": "Enum",
+                            "value": "12",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.Subtitles.SubtitleTrigger",
+                            "componentIndex": 0,
+                            "propertyPath": "cue.style.outAnimation",
+                            "valueType": "Enum",
+                            "value": "12",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -589742,12 +591062,12 @@
     "playerStartRoomId": "mvmap17_region_fb7d702fa6",
     "playerStartLocal": {
         "x": 15.538551330566407,
-        "y": 13.603645324707032
+        "y": 15.569999694824219
     },
     "hasUnassignedPlayerStart": false,
     "playerStartWorld": {
         "x": -72.4614486694336,
-        "y": 39.39635467529297,
+        "y": 37.43000030517578,
         "z": 0.0
     }
 }

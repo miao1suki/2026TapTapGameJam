@@ -175254,7 +175254,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossCollectibleEntryGate
   gateEnabled: 1
-  minimumRatio: 0.3
+  minimumRatio: 0.05
   returnDestinationId: Start
   returnPoint: {fileID: 0}
   showHint: 1
@@ -175273,13 +175273,13 @@ MonoBehaviour:
   cell: {x: -70, y: -101}
   sizeCells: {x: 1, y: 1}
   cellWorldSize: 1
-  entryName: "Boss\u5165\u573A\uFF08\u6536\u96C630%\uFF09"
+  entryName: "Boss\u5165\u573A\uFF08\u6536\u96C65%\uFF09"
   entryColor: {r: 1, g: 1, b: 1, a: 1}
   useEntryColor: 0
   hasColorData: 1
   isProp: 1
   planningBoxId: Boss_box_aa7a24dc
-  planningSignature: "{\"id\":\"Boss_box_aa7a24dc\",\"type\":9,\"label\":\"Boss\u5165\u573A\uFF08\u6536\u96C630%\uFF09\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"28e981bfb733401eb334ec945bf9eb75\",\"propEntryName\":\"Boss\u5165\u573A\uFF08\u6536\u96C630%\uFF09\",\"x\":4,\"y\":23,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":true,\"authoredSnapshotGuid\":\"\",\"authoredInstanceId\":\"authored_Boss\",\"authoredObjectId\":\"Boss_box_aa7a24dc\",\"authoredPositionOffset\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"authoredSizeCells\":{\"x\":1,\"y\":1},\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}"
+  planningSignature: "{\"id\":\"Boss_box_aa7a24dc\",\"type\":9,\"label\":\"Boss\u5165\u573A\uFF08\u6536\u96C65%\uFF09\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"28e981bfb733401eb334ec945bf9eb75\",\"propEntryName\":\"Boss\u5165\u573A\uFF08\u6536\u96C65%\uFF09\",\"x\":4,\"y\":23,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":true,\"authoredSnapshotGuid\":\"\",\"authoredInstanceId\":\"authored_Boss\",\"authoredObjectId\":\"Boss_box_aa7a24dc\",\"authoredPositionOffset\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"authoredSizeCells\":{\"x\":1,\"y\":1},\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":false,\"componentOverrides\":[]}"
   planningLocalCell: {x: 4, y: 23}
 --- !u!114 &4716058407850844404
 MonoBehaviour:

@@ -16,7 +16,7 @@ namespace Project.BossLogic
     public sealed class EnterBossTimelineSettings
     {
         [Header("收集门槛")]
-        [Range(0f, 1f)] public float minimumCollectibleRatio = .3f;
+        [Range(0f, 1f)] public float minimumCollectibleRatio = .05f;
 
         [Header("字幕")]
         public TMP_FontAsset font;
@@ -49,7 +49,7 @@ namespace Project.BossLogic
         public static bool HasSufficientCollectibles(
             int current,
             int maximum,
-            float threshold = .3f)
+            float threshold = .05f)
         {
             return new CollectibleProgressSnapshot(
                     current,

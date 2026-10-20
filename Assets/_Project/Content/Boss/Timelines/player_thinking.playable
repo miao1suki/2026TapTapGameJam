@@ -410,7 +410,7 @@ MonoBehaviour:
   blackCoverSpeed: 0.72
   blackSoftness: 0
   fullyBlackHoldSeconds: 1
-  sufficientThreshold: 0.6
+  sufficientThreshold: 0.1
   blackScreenCenter: {x: 0.5, y: 0.5}
   startDestinationId: Start
   endDestinationId: End

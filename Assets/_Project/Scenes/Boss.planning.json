@@ -194532,7 +194532,7 @@
                     "paletteEntryId": "",
                     "paletteEntryName": "",
                     "propEntryId": "28e981bfb733401eb334ec945bf9eb75",
-                    "propEntryName": "Boss入场（收集30%）",
+                    "propEntryName": "Boss入场（收集5%）",
                     "x": 4,
                     "y": 34,
                     "width": 1,
@@ -195133,7 +195133,7 @@
                             "componentIndex": 0,
                             "propertyPath": "minimumRatio",
                             "valueType": "Float",
-                            "value": "0.30000001192092896",
+                            "value": "0.05000000074505806",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }

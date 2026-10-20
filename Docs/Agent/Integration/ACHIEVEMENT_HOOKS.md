@@ -20,8 +20,8 @@
 | `1006` | 结束了......吗？ | 达成假结局 | Player Thinking 判定进入不足分支时立即发出 `FakeEndingReached` |
 | `1007` | 结束了 | 达成真结局 | 喷泉真结局 Timeline 初始化成功时立即发出 `TrueEndingReached` |
 | `1008` | Power! | 使用颜色能力 1 次 | `PlayerColorWheel` 成功应用颜色，或绿色钩子成功发射后发出 `ColorAbilityUsed` |
-| `1009` | 后备能源I | 单轮收集进度达到 30% | `CollectibleProgressService.RecordCollected` 按 `MeetsRatio(.3f)` 发出 `CollectibleProgress30` |
-| `1010` | 后备能源II | 单轮收集进度达到 60% | `CollectibleProgressService.RecordCollected` 按 `MeetsRatio(.6f)` 发出 `CollectibleProgress60` |
+| `1009` | 后备能源I | 单轮收集进度达到 5% | `CollectibleProgressService.RecordCollected` 按 `MeetsRatio(.05f)` 发出 `CollectibleProgress5` |
+| `1010` | 后备能源II | 单轮收集进度达到 10% | `CollectibleProgressService.RecordCollected` 按 `MeetsRatio(.1f)` 发出 `CollectibleProgress10` |
 | `1011` | 炙热的我 | 岩浆死亡 1 次 | `PlayerDeathAchievementRouter` ← `PlayerLavaDeath` |
 | `1012` | 额...又是魂游 | 总死亡 50 次 | `PlayerDeathAchievementRouter` ← `PlayerDied` |
 | `1013` | Oh please dont let me die | 总死亡 5 次 | `PlayerDeathAchievementRouter` ← `PlayerDied` |

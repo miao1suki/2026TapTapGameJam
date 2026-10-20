@@ -27,7 +27,7 @@ namespace Project.BossLogic.Editor
                 ? "启用" : "已关闭"));
             state.Add(ProjectInspectorUtility.CreateReadOnlyRow("可以入场", () => target is BossCollectibleEntryGate gate && gate.CanEnter ? "是" : "否"));
             root.Add(state);
-            root.Add(ProjectInspectorUtility.CreateHelp("挂到Boss入场Timeline触发器。低于30%时拒绝播放且不消耗一次触发机会，默认返回同场景Start。正式Boss与关卡最终合入Gaming；独立Boss测试缺少Start时只拒绝并警告，不加载其他场景。Scene与planning必须同步提交。"));
+            root.Add(ProjectInspectorUtility.CreateHelp("挂到Boss入场Timeline触发器。低于5%时拒绝播放且不消耗一次触发机会，默认返回同场景Start。正式Boss与关卡最终合入Gaming；独立Boss测试缺少Start时只拒绝并警告，不加载其他场景。Scene与planning必须同步提交。"));
             ProjectInspectorUtility.Bind(root, serializedObject);
             return root;
         }

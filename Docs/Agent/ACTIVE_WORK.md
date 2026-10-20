@@ -1,5 +1,18 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 收集品真假结局门槛改为 5% / 10%
+
+- 分支 `结尾3`。全局检索普通收集品数量条件，把 Boss 入场、传送地图、收集成就、真假结局、场景/planning、Timeline、测试和接入文档统一为 `5% / 10%`。
+- 仅修改收集品进度的两个门槛；颜色动画、Boss 连线和 UI 尺寸等无关百分比保持不变。保留工作树中已有的 Gaming、ProjectSettings、TapSDK、字体及按键映射改动。
+- 已同步 Boss 入场 Gate/Timeline、Player Thinking、传送地图、成就信号与文案、Boss 模板/正式 Scene/planning、测试夹具和接入文档；实测 35 份收集品时 5% 取整为 2 份、10% 取整为 4 份。
+- Unity 6000.3.12f1 静态编译 `Project.InputAbstraction.Runtime`、`Project.Achievements.Runtime`、`Assembly-CSharp`、`Assembly-CSharp-Editor`、`Project.GameFlow.EditorTests` 均 0 error；planning JSON 全部可解析，Gaming 两份 planning 哈希一致，旧收集阈值检索为 0，`git diff --check` 通过。未运行 Play Mode/EditMode。
+
+## 2026-10-20 按键映射运行时接通
+
+- 分支 `结尾3`。修复开始菜单/暂停菜单的“按键映射”仍被 `RuntimeSettingsPolicy.ApplyChangesToRuntime=false` 锁在内存预览的问题。
+- `KeyBindingPanelController` 现在使用持久化 `InputBindingService.SharedRuntime`，主菜单和暂停设置共用同一服务、撤销历史和绑定根，直接修改当前运行时 `InputActionAsset` 并写入 `InputBindingOverrideStore` 的 PlayerPrefs。
+- 不改变 `RuntimeSettingsPolicy` 对旧存档与预览业务的约束。同步输入重绑定 README、基础输入 API 与移动操作说明。`Project.InputRebinding.Runtime`、`Project.StartMenu.Runtime` 与 `Project.GameFlow.EditorTests` 静态编译均 `0` error；未运行 Play Mode。
+
 ## 2026-10-20 Boss 前置出生点读档回退
 
 - 分支 `冲刺2`。为 `RespawnAnchorFeature` 增加“是否为 Boss 前置出生点”标记；该标记只用于读档，不改变正常激活、绑定、材质、动画或复活行为。
@@ -73,16 +86,16 @@
 
 - 分支 `boss最后补充2`。范围：`Project.Achievements.Runtime`、玩家染色成功入口、收集品进度服务、Boss 低收集返回、Player Thinking 假结局与喷泉真结局；不改成就美术、设置页面或单轮存档结构。
 - 已核：`1001–1004、1011–1014` 由 `PlayerDeathAchievementRouter` 接收实际死亡原因信号并累加。
-- 已补：`1005` 低收集返回第一关、`1006` 假结局、`1007` 真结局、`1008` 首次使用颜色能力、`1009` 收集达到 30%、`1010` 收集达到 60%。
+- 已补：`1005` 低收集返回第一关、`1006` 假结局、`1007` 真结局、`1008` 首次使用颜色能力、`1009` 收集达到 5%、`1010` 收集达到 10%。
 - 新增 `GameplayAchievementRouter` 和六个玩法信号；假结局/回第一关仅在 Start 传送成功后触发，真结局在喷泉黑屏清档前触发，成就存档独立保留。
 - 逐条映射见 `Docs/Agent/Integration/ACHIEVEMENT_HOOKS.md`；目录与资产均核对为 14 条。Runtime 相关程序集静态编译 0 error，待 Play 验收。
 
 ## 2026-10-20 enter_boss 低收集门槛 Timeline（已接入 Gaming，待 Play 验收）
 
 - 分支 `boss最后补充2`。新增 `Assets/Boss_Logic/EnterBossTimelinePlayable.cs` 与 `Assets/_Project/Content/Boss/Timelines/enter_boss.playable`；不修改场景、关卡 JSON、Boss 控制器或其他 Timeline。
-- 逻辑：Playable 内读取本轮世界收集品进度，默认门槛 `30%`；未达到时锁玩家操作，播放两段 Cubic 打字机字幕，每段完整显示后停留 `1` 秒，再从屏幕中心收黑并传送到同场景 `Start` 传送锚点，黑屏倒放后结束。
-- 边界：达到 30% 时直接结束 Timeline，不申请玩家控制锁、不显示字幕、不传送；低进度返回保留本轮收集品、钥匙、能力和 Boss 进度，不触发清档。
-- 验证：新增 30% 边界断言；Unity 6000.3.12f1 Runtime（含新源文件）与 Editor 程序集静态编译 0 error，仅既有警告。后续语义合并已把 `enter_boss` 接到正式 Gaming 的 `Boss_box_aa7a24dc`，并关闭同物体的旧 `BossCollectibleEntryGate`；尚未运行 Play Mode。
+- 逻辑：Playable 内读取本轮世界收集品进度，默认门槛 `5%`；未达到时锁玩家操作，播放两段 Cubic 打字机字幕，每段完整显示后停留 `1` 秒，再从屏幕中心收黑并传送到同场景 `Start` 传送锚点，黑屏倒放后结束。
+- 边界：达到 5% 时直接结束 Timeline，不申请玩家控制锁、不显示字幕、不传送；低进度返回保留本轮收集品、钥匙、能力和 Boss 进度，不触发清档。
+- 验证：新增 5% 边界断言；Unity 6000.3.12f1 Runtime（含新源文件）与 Editor 程序集静态编译 0 error，仅既有警告。后续语义合并已把 `enter_boss` 接到正式 Gaming 的 `Boss_box_aa7a24dc`，并关闭同物体的旧 `BossCollectibleEntryGate`；尚未运行 Play Mode。
 
 ## 2026-10-20 Boss 死亡与喷泉结局演出贴图／相机修正（编译通过，待 Play 验收）
 
@@ -228,7 +241,7 @@
 
 - 分支 `存档改革`。新增 `.agents/skills/taptap-save-reform/SKILL.md`，并在根 `AGENTS.md` 声明该分支所有工作必须先读取并服从此 Skill。
 - 产品规则：取消玩家可见的多存档槽；无有效存档时自动创建初始轮，有存档时直接续玩；单轮 JSON 自动保存重生点、收集品、颜色钥匙/能力、Boss 与结局状态。
-- 结局门槛：低于 30% 不进入 Boss 并回第一关；30% 到 60% 以下可打 Boss，击败后回第一关；达到 60% 才继续真结局。只有真结局 Timeline Playable 的最终完成节点可以清档、重置本轮并回主界面，Boss 击败本身不清档。成就、音量、按键映射和移动布局属于全局数据，清档不得影响。
+- 结局门槛：低于 5% 不进入 Boss 并回第一关；5% 到 10% 以下可打 Boss，击败后回第一关；达到 10% 才继续真结局。只有真结局 Timeline Playable 的最终完成节点可以清档、重置本轮并回主界面，Boss 击败本身不清档。成就、音量、按键映射和移动布局属于全局数据，清档不得影响。
 - 本轮只新增规则与入口，不改运行时代码、场景或存档格式；后续实现必须按 Skill 验证清单交付。
 
 ## 2026-10-20 远端进度／浅草／喷泉光照整合验收
@@ -395,7 +408,7 @@
 - 在Library/BranchIntegration-20261019隔离Git工作树整合，主项目MRoom/Pick/Timeline/插件等未提交改动及主Unity内存场景不触碰；旧TA/R1支线逐项核对已移植内容，不恢复退役交互图、旧场景流程或旧配置。
 - 遵循颜色玩法、场景流程及编辑器UI规范；验证在静音FlowRetirementProbe串行运行，完成后补充结果，不打包。
 - 合并策划b2d0e18的MVMap17与平台/栏目参数UI、R3 e04e422和附着依赖、R1镜像交付及刷新后新收到4372c46的K31/N39固定根。TA firefly及祖先、rain、旧Grow与交互图退役交接支线已审查并补齐合并祖先关系；采用main已有正式集成，不回退HSV/像素标准、网格区域效果、旧项目设置或退役图实现，缺失独立预览作为非构建场景保留。详细取舍见BRANCH_INTEGRATION_2026-10-19.md。
-- MVMap17全部1406原记录/位置/参数/绑定/元数据不变，仅新增精确新出生位置的隐形Start，最终1407条。Start工具适配新出生小数偏移，保持无碰撞/无Renderer；Boss已有30%门槛模板与同场景Start去向仍保留，无需重写独立BossScene。三份正式规划结构一致，不全量重建地图，不加入R3到构建。
+- MVMap17全部1406原记录/位置/参数/绑定/元数据不变，仅新增精确新出生位置的隐形Start，最终1407条。Start工具适配新出生小数偏移，保持无碰撞/无Renderer；Boss已有5%门槛模板与同场景Start去向仍保留，无需重写独立BossScene。三份正式规划结构一致，不全量重建地图，不加入R3到构建。
 - 回归发现新增platformMountId空字段会让旧签名失配、重建手调物体；SamePlanningSignature仅兼容空的新可选附着/Boss标记字段（含合并嵌套记录），非空绑定/尺寸/其他参数仍严格比较。实际Gaming无改动应用1407物体全保留实例及精确Transform，R1全部76根同样保留；未保存测试姿态。
 - Unity6000.3.12f1静音D3D11隔离：最终整合审计5227断言、R3来源116/场景与存档1552、真实Play33472断言通过；R1镜像无改动应用158、最新固定根真实Play181049断言通过。Play计数含逐帧重复采样，不代表同数量独立用例。覆盖R3载人曲柄往返、红蓝/曲柄跟随、搬走脱离/重置重新附着、固定绿根生长，R1两固定根真实蓝接触长9/红接触缩1/重置、禁搬运及原门/共享曲柄/攀附。
 - 编译无C#错误、diff检查及成套关卡提交检查通过。BossStart首轮因旧模板偏移保护正确拒绝，修工具后重跑通过；R1首轮因旧签名空字段重建失败，补兼容后真实回归通过。报告仅留主项目及隔离项目Library中的branch-merge-*.log、OutstandingBranchIntegrationAudit.txt、R1/R3GameplayVerification.txt。未进行MVMap17全流程通关、双端构建/真机、整个存档/成就/Boss结局流程验收。
@@ -478,7 +491,7 @@
 
 - 当前整合窗口按用户授权并行：collectible_spike_art负责新收集品图/大小尖刺与击杀染血；collection_boss_contract负责统一收集进度与Boss结局/入口契约；rotation_gravity负责工作台90度旋转、三色方块标准重力开关及固定绿衍生物攀爬；整合者负责全局传送地图、输入/相机/玩家安全传送、Start锚点及串行隔离验证。
 - 保留用户未提交MRoom2/MRoom3/Pick、美术、字体、Timeline、插件及删除，不保存主Unity内存场景。后续用户已授权与工作台一起合并推送；本轮不构建新包。
-- 传送按收集达到30%且Boss已击败开放，Boss战及Boss房禁止；只去已激活非Boss重生点，复用房间与玩家/相机控制链。收集进度仅会话数据并留后续存档接口，尖刺运行染血不进存档。
+- 传送按收集达到5%且Boss已击败开放，Boss战及Boss房禁止；只去已激活非Boss重生点，复用房间与玩家/相机控制链。收集进度仅会话数据并留后续存档接口，尖刺运行染血不进存档。
 - 关卡协作仍必须交Scene、同名planning、meta及新增依赖，正式Gaming另含命名正式存档；不得仅交生成Scene。
 - 静音隔离D3D11验证：地图95项、真实Gaming菜单往返98项、收集/Boss56项、美术/尖刺56项、三色重力/90度旋转/固定衍生物攀附167项、生成美术资源18项通过。地图房间层补CanvasRenderer后实际截图已复看。传送落位严格同房间，额外控制租约按启用代际失效，菜单同步关闭地图，Start/End不会被Boss复活点劫持。
 - 正式Gaming新增隐形Start，全部837原记录/精确Transform保留，现838条；Boss仅原入口局部切Gate模板。三份正式JSON一致，Start/Gate真实重建和导入依赖通过，不全量重建或提前合入所有独立地图。收集进度保留未来存档API，当前没有退出后磁盘保存；独立Boss未合进Gaming前找不到Start只拒绝/提示，不加载场景。
@@ -615,7 +628,7 @@
 - Timeline 反序列化修复：Unity Editor 日志出现 `No script asset for BossExecutionClip`。原因是 `BossExecutionClip : PlayableAsset` 与 Track 放在 `BossExecutionTimelineTrack.cs` 中，Unity 要求可序列化脚本资产使用同名文件。现将 Clip 与 Behaviour 拆到 `BossExecutionClip.cs`，新 GUID 接回 `Boss_execution.playable`；Track GUID 保持不变。
 - Boss 死亡六钥匙前缀：`Boss_defeat.playable` 扩展到 `10` 秒。致命伤后先保持原镜头发呆 `1` 秒，再用 `1` 秒平滑移动到玩家与 Boss 完整 Collider/Renderer 包围盒的中点；构图到位后由 `BossKeyAbsorptionPlayable` 用 `3.5` 秒从玩家身体依次生成两红两蓝两绿六把钥匙并吸入 Boss，最后进入 `4.5` 秒死亡演出；普通死亡和处决死亡共用。视觉钥匙实例在未激活根下先关闭 Collider、拾取/掉落/飞行脚本、美术状态组件和子 Director，再激活，确保不会被玩家吸收、按解锁状态隐藏或结算颜色。共享 `CameraTimelineClip/Behaviour` 未修改，玩家锁轨只锁输入，不写玩家位置。钥匙缩放为 `0.55`、槽距 `0.52`，吸引单把 `0.9` 秒。Boss 死亡前缀期间临时 Kinematic 冻结刚体，复活时恢复，消除抽搐。验证：Runtime 静态编译通过；Timeline 时间点与对象 ID 静态检查通过；未运行 Unity Play Mode。
 - 玩家动画与操作锁解耦：`PlayerSpritePresentation` 不再因 `PlayerStateId.Locked` 一律暂停动画；只有玩家身上存在启用中的 `Animator` 且同时处于 `Locked` 时，才视为 Timeline 接管视觉动画并暂停。标准无 Animator 玩家在 Timeline 锁操作期间继续播放原动画。
-- Player Thinking 演出：Boss 死亡 Timeline 自然结束后，同一 PlayableDirector 切换 `player_thinking.playable`。演出聚焦玩家、锁操作，使用 WordNote Timeline 队列逐句打字机播放并直接消失；默认未接入收藏品数据时走演出2。`PlayerThinkingTimelinePlayable.SetCollectibleProgress(current,max)` 按 60% 分流；演出1黑屏传送 `Start`，演出2生成六份收集品，并在黑幕完全覆盖时先销毁六份演出收集品，再传送 `End`。两分支均在完全黑屏 1 秒内传送并倒放黑屏，结束后停止导演以释放玩家锁和相机轨。
+- Player Thinking 演出：Boss 死亡 Timeline 自然结束后，同一 PlayableDirector 切换 `player_thinking.playable`。演出聚焦玩家、锁操作，使用 WordNote Timeline 队列逐句打字机播放并直接消失；默认未接入收藏品数据时走演出2。`PlayerThinkingTimelinePlayable.SetCollectibleProgress(current,max)` 按 10% 分流；演出1黑屏传送 `Start`，演出2生成六份收集品，并在黑幕完全覆盖时先销毁六份演出收集品，再传送 `End`。两分支均在完全黑屏 1 秒内传送并倒放黑屏，结束后停止导演以释放玩家锁和相机轨。
 - 处决启动参数：Timeline 开始时先将 Boss 保持当前 X/Z、把 Y 瞬移到玩家当前 Y，再冻结马夫并进入镜头；之后 execution 固定保持启动时记录的 Y，不再持续跟踪玩家高度。右移默认速度改为 `10` 格/秒，Timeline 序列化值和 Inspector 默认值同步。`destroyOnlyWhileExternalMoving` 的伤害接触检查在 execution 中放行。
 - 相机：Side2D 镜头强制只保留平面 Yaw；Boss 死亡 Timeline 的镜头控制释放移到 `9.99` 秒最后一帧，并显式调用 `ReleaseTimelineControl(true)`。
 - 表现/接触：新增 `BossPlayerLinkEffect`，从 Boss 中心连接玩家；用三份独立运行时材质分别设置火线/水线/藤蔓线 `_Style=1/2/3` 叠加，距离越近透明度和线粗越高，最近为正统线的 1.5 倍。连线随血条激活生成，藤蔓按 `_RevealProgress` 生长，Boss 死亡时按 `_DissolveProgress` 消散；`BossController.killPlayerOnContact` 默认为真，Boss 接触玩家直接请求玩家死亡。

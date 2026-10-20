@@ -10,13 +10,13 @@ SDK 发布整合以策划 `ab757fc` 新 Gaming 为关卡标准：23房间补 mai
 
 关卡存档拼接采用置顶暂存预览：自动放到地图右侧空位、整格拖动与边缘平移；可保留原房间划分或归并新房间，确认前不改当前地图。物体层与房间占格共同验重，源内部共用占格不再误报。操作见[协作地图](../Developer/LEVEL_EDITOR_COLLABORATION.md)、[接口](Integration/PLANNING_COLLABORATION_API.md)。
 `Tools/2026TapTap/编辑器性能/编辑渲染距离` 是纯 Editor 的房间级 SceneView 可见性裁剪工具：以 SceneView 中心为圆心隐藏远处 `__PlanningMapGenerated` 房间，当前/选中房间始终显示，非当前房间按内部规划方块样本而非不连续大 AABB 判断距离；可把两套关卡/规划编辑窗口的基础刷新从 `.1` 秒降到 `.35` 秒、维护和预览降到 `1` 秒，并诊断 UI Toolkit 画布、区域标签、玩家标记和 2D 预览耗时。只使用 `SceneVisibilityManager` 和 `EditorPrefs`，不改 Scene、Prefab、Collider、玩法或 Planning JSON，进 Play/保存/关闭窗口自动恢复。见[使用说明](../Developer/EDIT_RENDER_DISTANCE.md)与[接口](Integration/EDIT_RENDER_DISTANCE_API.md)。
-`存档改革` 分支的存档、开局、结局清档、收集品、颜色钥匙/能力、重生点和成就边界统一服从 `.agents/skills/taptap-save-reform/SKILL.md`：玩家不再管理多槽位，单轮自动续玩；低于30%不进Boss，30%到60%以下打完回第一关并保留本轮，达到60%完成真结局Playable后才清档、重置并回主界面；成就与本机全局设置跨轮永久保留。
+`存档改革` 分支的存档、开局、结局清档、收集品、颜色钥匙/能力、重生点和成就边界统一服从 `.agents/skills/taptap-save-reform/SKILL.md`：玩家不再管理多槽位，单轮自动续玩；低于5%不进Boss，5%到10%以下打完回第一关并保留本轮，达到10%完成真结局Playable后才清档、重置并回主界面；成就与本机全局设置跨轮永久保留。
 
 `Tools/2026TapTap/调试/颜色与收藏品调试` 是仅 Play Mode 可修改的 UI Toolkit 窗口：可解锁六把钥匙，显示并精确设置当前收藏品数量/最大数量，并按相对位置绘制当前 Scene 的重生点与传送方块地图；地图支持 `1×～4×` 缩放和双向滚动，重生点走真实复活流程，传送方块走目标传送 API。
 
 喷泉结局 Timeline `Content/GameFlow/fountain_ending.playable` 使用触发器局部坐标，驱动玩家走到喷泉两格前，相机全程跟随玩家，不变焦也不改双锚点；四个调色盘通过公共最新美术准备入口依次出现并投入喷泉。Timeline 初始化成功、确认真结局分支时立即结算 `1007` 成就，随后再播放演出；两段字幕结束后瞬时黑屏并清档回主界面。见 `Integration/FOUNTAIN_ENDING_TIMELINE_API.md`。
 
-`Content/Boss/Timelines/enter_boss.playable` 是低收集 Boss 入口演出：读取本轮世界普通收集品进度，低于 `30%` 时锁玩家、播放两段 Cubic 打字机字幕、收黑并传送到同场景 `Start`，揭幕后结束；达到门槛则立即结束且不锁操作、不传送。正式 Gaming 的 `Boss_box_aa7a24dc` 已改用它并关闭同物体 `BossCollectibleEntryGate`；两者不能同时启用。见 `Integration/ENTER_BOSS_TIMELINE_API.md`。
+`Content/Boss/Timelines/enter_boss.playable` 是低收集 Boss 入口演出：读取本轮世界普通收集品进度，低于 `5%` 时锁玩家、播放两段 Cubic 打字机字幕、收黑并传送到同场景 `Start`，揭幕后结束；达到门槛则立即结束且不锁操作、不传送。正式 Gaming 的 `Boss_box_aa7a24dc` 已改用它并关闭同物体 `BossCollectibleEntryGate`；两者不能同时启用。见 `Integration/ENTER_BOSS_TIMELINE_API.md`。
 
 暂停轮盘的存档页已封存：`SavePanelController` 不再读写存档或显示槽位，旧实现备份于 `Docs/SavePanelController.Legacy.cs.txt`；页面运行时只保留右上角 Close 和居中的 Cubic `待开发内容，请关注后续消息`。
 
@@ -59,8 +59,8 @@ Boss 死亡表现：`BossAnimationDriver.PlayDeathAnimationNow()` 在共享死�
 
 美术工作台N键开关、自动定位真实房间，墙和正式2D道具作为默认35%透明的只读参考，可隐藏/调透明度；远景平移缩放仅变换和裁剪保留批次。雨/萤火按完整区域框绘并在工作台调参，独立Scene美术根、非planning物体。新萤火可见面默认-0.25格，光点/光晕同层，普通透明道具前显示、不透明墙仍遮挡。见[定位操作](../Developer/GRID_ART_NAVIGATION.md)、[关卡参照](../Developer/GRID_ART_LEVEL_REFERENCE.md)、[区域效果](../Developer/GRID_ART_REGION_EFFECTS.md)；效果须显式保存Scene，协作仍交Scene、同名planning、美术Map、素材及meta。
 
-收集品与 Boss 共用稳定作者 ID 的会话进度：30%入场，60%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。击败Boss且达到30%开放T/触控地图，显示房间/重生点/收集剩余，Boss房禁用；安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与工作台90°原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。协作仍须Scene、同名planning、meta与新增依赖成套交付。
-成就目录当前为 `14` 条，`1001–1014` 已逐条接到真实玩法事件：死亡原因路由负责 `1001–1004、1011–1014`，`GameplayAchievementRouter` 负责颜色成功、30%/60% 收集、低收集回第一关、假结局和真结局。`1009/1010` 使用整数数量阈值；真假结局成就在分支确定时立即结算，不等待黑屏或菜单切换。完整映射见[成就逐条接线](Integration/ACHIEVEMENT_HOOKS.md)。TapTap Unity 成就 SDK 固定 `4.10.9`，由配置资产控制初始化与平台 ID 待确认状态，接入见 [TapTap 成就 SDK](Integration/TAPTAP_ACHIEVEMENT_SDK_API.md)。
+收集品与 Boss 共用稳定作者 ID 的会话进度：5%入场，10%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。击败Boss且达到5%开放T/触控地图，显示房间/重生点/收集剩余，Boss房禁用；安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与工作台90°原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。协作仍须Scene、同名planning、meta与新增依赖成套交付。
+成就目录当前为 `14` 条，`1001–1014` 已逐条接到真实玩法事件：死亡原因路由负责 `1001–1004、1011–1014`，`GameplayAchievementRouter` 负责颜色成功、5%/10% 收集、低收集回第一关、假结局和真结局。`1009/1010` 使用整数数量阈值；真假结局成就在分支确定时立即结算，不等待黑屏或菜单切换。完整映射见[成就逐条接线](Integration/ACHIEVEMENT_HOOKS.md)。TapTap Unity 成就 SDK 固定 `4.10.9`，由配置资产控制初始化与平台 ID 待确认状态，接入见 [TapTap 成就 SDK](Integration/TAPTAP_ACHIEVEMENT_SDK_API.md)。
 成就 Toast 使用最高 Sorting Layer 与 `sortingOrder=32767` 的独立 ScreenSpaceOverlay Canvas，位于所有黑幕和常规 UI 之上；Toast 本体保持左下角固定尺寸，Cubic 字体和原入退场动画不变。
 独立 R3：`Assets/Scenes/R3/R3.unity` 及同名 planning／设计来源，551墙格、59水格、135岩浆格，四固定绿根、两完整藤蔓、两个保持按钮同门。场景三色启用、玩家仅蓝能力，Z96 试玩出生；四格平台从第97行升至88行，红蓝块／曲柄跟随，成功搬起红蓝后脱离、房间重置恢复挂载。可选 `PlatformMount` 与 `platformMountId` 持久化支持；不改 R1/R2、Gaming 或构建列表。见 [R3说明](../Developer/R3_LEVEL.md) 与 [机关API](Integration/MECHANISM_SIGNAL_API.md#可选平台附着物)。
 
@@ -88,7 +88,7 @@ TA 新效果已接入现有生命周期：流动岩浆精确保留孔洞、冷�
 
 通用传送目标：`TeleportAnchorFeature` 用任意字符串 ID 注册目标，`TeleportObject(GameObject, string)` 将对象移动到对应方块位置；默认 `Teleport_Block` 道具无碰撞、不可见，已加入关卡编辑器道具栏目。接入见 [传送目标 API](Integration/TELEPORT_ANCHOR_API.md)。
 
-Player Thinking 演出：Boss 死亡后同一导演切换到 `player_thinking.playable`，聚焦玩家并锁操作，WordNote 打字机逐句播放；`PlayerThinkingTimelinePlayable.SetCollectibleProgress` 按收集品 60% 分流。演出1黑屏传送 `Start`，演出2生成六份收集品并通过 `MechanismArtworkPresentation.PrepareCinematicClone` 使用当前最新收集品 Sprite，并在黑幕完全覆盖时先销毁收集品再传送 `End`，均倒放黑屏后释放操作与相机。见 [Player Thinking API](Integration/PLAYER_THINKING_API.md)。
+Player Thinking 演出：Boss 死亡后同一导演切换到 `player_thinking.playable`，聚焦玩家并锁操作，WordNote 打字机逐句播放；`PlayerThinkingTimelinePlayable.SetCollectibleProgress` 按收集品 10% 分流。演出1黑屏传送 `Start`，演出2生成六份收集品并通过 `MechanismArtworkPresentation.PrepareCinematicClone` 使用当前最新收集品 Sprite，并在黑幕完全覆盖时先销毁收集品再传送 `End`，均倒放黑屏后释放操作与相机。见 [Player Thinking API](Integration/PLAYER_THINKING_API.md)。
 
 Scene编辑态正式2D由只读ArtworkScenePreview按变更缓存，旧尖刺不再等Play才换图；平台旧1格/批量独立占格裁原像素、单向平台独立素材、支撑面与旋转共用规则。藤蔓同列连续组链只采一根后分片，显示抵消作者缩放。见[美术约定](../Developer/ART_GRID_CONVENTIONS.md)与[物体美术API](Integration/OBJECT_ARTWORK_API.md)。绿色拉物保留自然重力，显式无重力基座优先；拉力仍四向，详见[绿绳API](Integration/GREEN_HOOK_API.md)。
 

@@ -10,8 +10,8 @@ namespace Project.Achievements
         private const int FakeEnding = 1006;
         private const int TrueEnding = 1007;
         private const int ColorAbilityUsed = 1008;
-        private const int CollectibleThirtyPercent = 1009;
-        private const int CollectibleSixtyPercent = 1010;
+        private const int CollectibleFivePercent = 1009;
+        private const int CollectibleTenPercent = 1010;
 
         private static bool subscribed;
 
@@ -49,12 +49,12 @@ namespace Project.Achievements
                     Trigger(ColorAbilityUsed);
                     break;
                 case AchievementSignalIds
-                    .CollectibleProgress30:
-                    Trigger(CollectibleThirtyPercent);
+                    .CollectibleProgress5:
+                    Trigger(CollectibleFivePercent);
                     break;
                 case AchievementSignalIds
-                    .CollectibleProgress60:
-                    Trigger(CollectibleSixtyPercent);
+                    .CollectibleProgress10:
+                    Trigger(CollectibleTenPercent);
                     break;
             }
         }

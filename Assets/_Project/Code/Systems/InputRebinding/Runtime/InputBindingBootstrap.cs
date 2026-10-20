@@ -13,7 +13,7 @@ namespace Project.InputRebinding
 
         private void Awake()
         {
-            Service = InputBindingService.CreateFromInputService();
+            Service = InputBindingService.SharedRuntime;
             if (!loadOnAwake)
             {
                 Service.ResetAll();

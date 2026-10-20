@@ -54,7 +54,7 @@ namespace Project.FastTravel.Editor
                 if (phase == 0) { Setup(); phase = 1; phaseAt = EditorApplication.timeSinceStartup; return; }
                 if (phase == 1 && EditorApplication.timeSinceStartup - phaseAt > .5)
                 {
-                    Check(map.IsUnlocked && map.CanUseHere, "30% plus defeated Boss unlocks map outside its region");
+                    Check(map.IsUnlocked && map.CanUseHere, "5% plus defeated Boss unlocks map outside its region");
                     Check(map.TryOpen() && map.IsOpen && player.IsControlLocked && GameplayPresentationGate.IsSuppressed, "map opens through player/input lease");
                     var graphic = Object.FindFirstObjectByType<TravelMapGraphic>();
                     Check(graphic != null && graphic.CachedSpanCount == 18, "three 8x6 rooms are cached as 18 row runs, no object art");
@@ -223,13 +223,13 @@ namespace Project.FastTravel.Editor
             if (UnityEngine.EventSystems.EventSystem.current == null)
                 new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
             var settings = Resources.Load<TravelMapSettings>("UI/TravelMapSettings");
-            Check(settings != null && settings.Font != null && Mathf.Approximately(settings.RequiredRatio, .3f), "shipped settings use project font and 30% gate");
+            Check(settings != null && settings.Font != null && Mathf.Approximately(settings.RequiredRatio, .05f), "shipped settings use project font and 5% gate");
             map = player.GetComponent<WorldTravelMap>(); Check(map != null, "standard player auto-installs map without another prefab");
             Check(!map.TryOpen(), "T map cannot open before unlock");
             for (int i = 0; i < 10; i++)
             {
                 var obj = new GameObject("Map collectible " + i, typeof(Rigidbody), typeof(CollectiblePickup)); obj.transform.position = new Vector3(3 + i * .05f, 3, 0);
-                if (i < 3) obj.GetComponent<CollectiblePickup>().RestoreCollectedState();
+                if (i < 1) obj.GetComponent<CollectiblePickup>().RestoreCollectedState();
             }
             CollectibleProgressService.RefreshSceneCatalog(scene);
             destination = Point("destination", new Vector3(10.5f, 0, 0), true);

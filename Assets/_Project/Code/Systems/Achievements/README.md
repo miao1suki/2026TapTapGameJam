@@ -150,8 +150,8 @@ PlayerLavaDeath
 PlayerSpikeDeath
 PlayerBossDeath
 ColorAbilityUsed
-CollectibleProgress30
-CollectibleProgress60
+CollectibleProgress5
+CollectibleProgress10
 LowCollectibleReturnHome
 FakeEndingReached
 TrueEndingReached
@@ -204,8 +204,8 @@ LowCollectibleReturnHome -> 1005
 FakeEndingReached        -> 1006
 TrueEndingReached        -> 1007
 ColorAbilityUsed         -> 1008
-CollectibleProgress30    -> 1009
-CollectibleProgress60    -> 1010
+CollectibleProgress5     -> 1009
+CollectibleProgress10    -> 1010
 ```
 
 完整逐条触发点见 [成就逐条接线](../../../../../Docs/Agent/Integration/ACHIEVEMENT_HOOKS.md)。

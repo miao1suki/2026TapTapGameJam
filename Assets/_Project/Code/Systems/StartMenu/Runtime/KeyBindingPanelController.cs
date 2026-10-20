@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Project.InputAbstraction;
 using Project.InputRebinding;
-using Project.Settings;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -175,7 +174,6 @@ namespace Project.StartMenu
             if (service != null)
             {
                 service.Changed -= QueueRefresh;
-                service.Dispose();
                 service = null;
             }
         }
@@ -187,8 +185,7 @@ namespace Project.StartMenu
                 return;
             }
 
-            service = InputBindingService.CreateFromInputService(
-                RuntimeSettingsPolicy.ApplyChangesToRuntime);
+            service = InputBindingService.SharedRuntime;
             service.Changed -= QueueRefresh;
             service.Changed += QueueRefresh;
         }
@@ -249,10 +246,8 @@ namespace Project.StartMenu
             bool mobile = GameInput.PlatformMode == InputPlatformMode.Mobile;
             statusText.text = mobile
                 ? Gamepad.current == null ? "请连接手柄后修改映射；屏幕按键请在「触控布局」调整。"
-                    : "这里修改手柄按键；屏幕按键的位置和大小请在「触控布局」调整。"
-                : service.IsPreviewOnly
-                ? "预览模式：可以测试改键，不会修改正式映射；移动固定只读，交互固定同时支持点击和长按。"
-                : "移动固定为默认键位；交互固定同时支持点击和长按；其他操作点击按键框后开始接听。";
+                    : "这里修改手柄按键并立即保存；屏幕按键的位置和大小请在「触控布局」调整。"
+                : "移动固定为默认键位；交互固定同时支持点击和长按；其他操作点击按键框后开始接听，完成后立即生效并保存。";
         }
 
         private bool TryFindBinding(
