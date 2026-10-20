@@ -1,5 +1,7 @@
 # GridArt 接入与维护
 
+房间装配总览：GridArtLevelRoom.areasWorld/edgesWorld由PlanningArtAdapter使用PlanningOwnerPreview几何投影为世界XY，保留异形、空洞和分离块；Contains做精确选房，旧适配器无轮廓时回退boundsWorld。GridArtWindow.RoomOverview仅管理只读视图、保留式房间标签及返回绘图导航，不修改Scene/Map/Planning；平移缩放不重读场景或重建逐格几何。
+
 补充美术内外角：`GridArtAuthorBorderLibrary`按明确选区导入256×190原生图，原白线自动槽改13个真实切片，追加20个手动边角/纹饰、3色草地（colorId=red/blue/green）与第二版2个中心纹样。共享库203项；旧笔刷索引和Sprite对象保留，不能把新图套tail4倍倍率。导入可幂等同步，参见[白线来源与规则](../../Developer/GRID_ART_WHITE_BORDER.md)。
 
 独立关卡美术，不替代PlanningDocument、SurfaceTiles或玩法碰撞。操作见[开发者说明](../../Developer/GRID_ART.md)。遵守taptap-editor-ui、EDITOR_UI_STANDARD。

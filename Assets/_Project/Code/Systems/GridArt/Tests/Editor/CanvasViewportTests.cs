@@ -13,6 +13,44 @@ namespace Project.GridArt.Tests
     {
         private const BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
 
+        [Test] public void ArtRoomOverviewHitTestPreservesHolesAndDisconnectedParts()
+        {
+            var room = new GridArtLevelRoom { boundsWorld = new Rect(-10, -10, 30, 30) };
+            room.areasWorld.Add(new Rect(-10, -10, 2, 4));
+            room.areasWorld.Add(new Rect(10, 10, 2, 4));
+            Assert.That(room.Contains(new Vector2(-9, -8)), Is.True);
+            Assert.That(room.Contains(new Vector2(11, 12)), Is.True);
+            Assert.That(room.Contains(Vector2.zero), Is.False, "AABB gap is not part of a room");
+            room.areasWorld.Clear();
+            Assert.That(room.Contains(Vector2.zero), Is.True, "legacy adapters can supply bounds only");
+        }
+
+        [Test] public void ArtRoomOverviewRestoresDrawingViewAndDoesNotChangeMap()
+        {
+            var window = UnityEngine.ScriptableObject.CreateInstance<GridArtWindow>();
+            try
+            {
+                window.CreateGUI();
+                var snapshot = new GridArtLevelSnapshot();
+                snapshot.rooms.Add(new GridArtLevelRoom { id = "audit-room", label = "测试房间", boundsWorld = new Rect(0, 0, 8, 8) });
+                snapshot.RecalculateBounds();
+                typeof(GridArtWindow).GetField("levelSource", Hidden).SetValue(window, snapshot);
+                object canvas = typeof(GridArtWindow).GetField("canvas", Hidden).GetValue(window);
+                var panField = canvas.GetType().GetField("pan", Hidden);
+                var zoomField = canvas.GetType().GetField("zoom", Hidden);
+                panField.SetValue(canvas, new Vector2(123, -456)); zoomField.SetValue(canvas, 17f);
+                var map = window.Map; int revision = map != null ? map.revision : 0;
+                Invoke(window, "SetRoomOverview", true);
+                Assert.That((bool)typeof(GridArtWindow).GetField("roomOverview", Hidden).GetValue(window), Is.True);
+                Invoke(window, "SetRoomOverview", false);
+                Assert.That((Vector2)panField.GetValue(canvas), Is.EqualTo(new Vector2(123, -456)));
+                Assert.That((float)zoomField.GetValue(canvas), Is.EqualTo(17f));
+                Assert.That(window.Map, Is.SameAs(map));
+                Assert.That(map != null ? map.revision : 0, Is.EqualTo(revision));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(window); }
+        }
+
         [TestCase(.13f)] [TestCase(.75f)] [TestCase(2.01f)] [TestCase(5f)]
         [TestCase(16f)] [TestCase(26f)] [TestCase(192f)]
         public void GridDensityHasBoundedCostAndKeepsWholeLogicalCells(float size)
@@ -52,6 +90,26 @@ namespace Project.GridArt.Tests
             Hidden | BindingFlags.Public, null, new[] { room }, null);
         private static IList Rectangles(object geometry) => (IList)geometry.GetType().GetField("Rectangles", Hidden).GetValue(geometry);
         private static object Invoke(object o, string method, params object[] args) => o.GetType().GetMethod(method, Hidden).Invoke(o, args);
+
+        [Test] public void PlanningArtSnapshotExportsExactRoomFootprintInWorldCoordinates()
+        {
+            var room = NewRoom(); AddCell(room, -2, -3); AddCell(room, 0, 0);
+            object document = Activator.CreateInstance(PlanningType("PlanningDocument"));
+            ((IList)document.GetType().GetField("rooms").GetValue(document)).Add(room);
+            float width = Convert.ToSingle(document.GetType().GetField("worldBlockCellWidth").GetValue(document));
+            float height = Convert.ToSingle(document.GetType().GetField("worldBlockCellHeight").GetValue(document));
+            var snapshot = new GridArtLevelSnapshot();
+            PlanningType("PlanningArtAdapter").GetMethod("ReadDocument", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, new object[] { document, null, snapshot });
+            Assert.That(snapshot.rooms.Count, Is.EqualTo(1));
+            var projected = snapshot.rooms[0];
+            Assert.That(projected.areasWorld.Count, Is.EqualTo(2));
+            Assert.That(projected.Contains(new Vector2(-1.5f * width, 2.5f * height)), Is.True);
+            Assert.That(projected.Contains(new Vector2(.5f * width, -.5f * height)), Is.True);
+            Assert.That(projected.Contains(new Vector2(-.5f * width, .5f * height)), Is.False);
+            Assert.That(projected.edgesWorld.Count, Is.EqualTo(8));
+            Assert.That(Cells(room).Count, Is.EqualTo(2), "projection cannot normalize or rewrite the source document");
+        }
 
         [Test] public void SolidRoomUsesOneRectangleInsteadOfThousandsOfCellPaths()
         {

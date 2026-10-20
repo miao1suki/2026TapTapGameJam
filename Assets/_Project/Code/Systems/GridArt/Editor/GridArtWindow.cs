@@ -98,6 +98,7 @@ namespace Project.GridArt.Editor
         {
             var scene = SceneManager.GetActiveScene();
             if (!scene.IsValid() || boundSceneKey == SceneKey && boundSceneHandle == scene.handle) return;
+            SetRoomOverview(false);
             // OpenScene and the active-scene notification are not a single UI update.
             // Make rebinding idempotent, and also call it before reading a new source.
             StopScenePainting(); canvas?.CancelStroke(); FlushDataForPreviousScene();
@@ -153,6 +154,7 @@ namespace Project.GridArt.Editor
         }
         public void SetMap(GridArtMap value)
         {
+            SetRoomOverview(false);
             StopScenePainting(); canvas?.CancelStroke(); FlushPending(true); EndPreview();
             canvas?.RememberView(); RememberSelection(); map = value; RestoreSelection();
             EditorPrefs.SetString(SceneKey, value != null ? AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value)) : "");
@@ -209,7 +211,7 @@ namespace Project.GridArt.Editor
             });
         }
 
-        private sealed class ArtCanvas : VisualElement
+        private sealed partial class ArtCanvas : VisualElement
         {
             private readonly GridArtWindow owner;
             private Vector2 pan = new Vector2(240, 320), panStart, pointerStart;
@@ -300,6 +302,7 @@ namespace Project.GridArt.Editor
             }
             private void PersistView()
             {
+                if (owner.roomOverview) return;
                 // SceneChanged arrives after Unity changed its active scene. Save under
                 // the key captured when this view was restored, never the new scene's key.
                 if (needsInitialFrame || string.IsNullOrEmpty(restoredViewKey)) return;
@@ -362,6 +365,12 @@ namespace Project.GridArt.Editor
             private void Down(PointerDownEvent e)
             {
                 if (gesture >= 0 || effectGesture) return;
+                if (owner.roomOverview && e.button != 2)
+                {
+                    Focus();
+                    if (e.button == 0) SelectOverviewRoom(e.localPosition, e.clickCount > 1);
+                    e.StopPropagation(); return;
+                }
                 if (e.button != 2 && owner.previewTravel.sqrMagnitude > .0001f) { owner.status.text = "视差预览中 · 点击复位后继续绘制"; e.StopPropagation(); return; }
                 Focus(); pointer = e.localPosition; start = last = Cell(pointer); pointerStart = pointer; panStart = pan;
                 if (e.button == 2) needsInitialFrame = false;
@@ -427,6 +436,10 @@ namespace Project.GridArt.Editor
             }
             public void RepaintView()
             {
+                backgroundArtwork.style.display = artwork.style.display = reference.style.display =
+                    owner.roomOverview ? DisplayStyle.None : DisplayStyle.Flex;
+                RefreshRoomLabels();
+                if (owner.roomOverview) { overlay.MarkDirtyRepaint(); return; }
                 if (quads == null)
                 {
                     quads = new List<(GridArtQuad, Color)>();
@@ -468,6 +481,7 @@ namespace Project.GridArt.Editor
             private void Draw(MeshGenerationContext context)
             {
                 var painter = context.painter2D;
+                if (owner.roomOverview) { DrawRoomOverview(painter); return; }
                 GridViewportDrawing.Draw(context, contentRect, pan, zoom, new Color(.36f, .42f, .5f, .5f));
                 if (owner.showGuides)
                 {

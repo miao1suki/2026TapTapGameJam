@@ -88,6 +88,23 @@ namespace Project.GridArt.Editor
                     Check((bool)Call(canvas,"FrameRoom","room-b") && CenterIs(snapshotA.rooms[1].boundsWorld.center/2f),
                         "room locator frames selected room using world/art-cell conversion");
                     Check((bool)Call(canvas,"FrameLevel") && CenterIs(snapshotA.worldBounds.center/2f), "whole-level locator fits complete bounds");
+                    Vector2 drawingPan = Read<Vector2>(canvas,"pan"); float drawingZoom = Read<float>(canvas,"zoom");
+                    Call(window,"SetRoomOverview",true);
+                    Check(Read<bool>(window,"roomOverview") && canvas.Q("artwork-cache").style.display.value == DisplayStyle.None,
+                        "assembly overview hides covering artwork and is available without an art map");
+                    Check(Read<System.Collections.IDictionary>(canvas,"roomLabels").Count == 2,
+                        "overview retains one named label per room, not per grid cell");
+                    Vector2 centerB = snapshotA.rooms[1].boundsWorld.center / 2f;
+                    Vector2 click = new Vector2(Read<Vector2>(canvas,"pan").x + centerB.x * Read<float>(canvas,"zoom"),
+                        Read<Vector2>(canvas,"pan").y - centerB.y * Read<float>(canvas,"zoom"));
+                    Call(canvas,"SelectOverviewRoom",click,false);
+                    Check(Read<string>(window,"selectedReferenceRoom") == "room-b", "overview click selects the correct world-XY room");
+                    Call(window,"SetRoomOverview",false);
+                    Check(Read<Vector2>(canvas,"pan") == drawingPan && Read<float>(canvas,"zoom") == drawingZoom,
+                        "returning from overview restores exact drawing view");
+                    Call(window,"SetRoomOverview",true);
+                    Call(window,"OpenReferenceRoom");
+                    Check(!Read<bool>(window,"roomOverview") && CenterIs(centerB), "enter-room action returns to drawing and frames chosen room");
                     int geometry = reference.GeometryRevision;
                     for(int i=0;i<100;i++) { Set(canvas,"pan",new Vector2(20+i,70-i)); Set(canvas,"zoom",1f+i*.05f); Call(canvas,"RepaintView"); }
                     Check(reference.GeometryRevision == geometry, "100 navigation changes retain reference geometry instead of regenerating it");

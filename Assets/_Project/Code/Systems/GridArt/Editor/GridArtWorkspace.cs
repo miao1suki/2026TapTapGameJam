@@ -40,8 +40,8 @@ namespace Project.GridArt.Editor
             var apply = ActionButton("刷新场景", Apply); apply.name = "art-apply"; header.Add(apply);
             var save = ActionButton("保存场景", SaveAll); save.name = "art-save"; save.AddToClassList("art-primary"); header.Add(save); root.Add(header);
             var tools = Row(); tools.AddToClassList("art-toolbar");
-            var draw = ActionButton("绘制", () => { EndPreview(); EffectCancelGesture(); effectMode = 0; erase = false; Refresh(); }); draw.name = "art-draw"; tools.Add(draw);
-            var remove = ActionButton("擦除", () => { EndPreview(); EffectCancelGesture(); effectMode = 0; erase = true; Refresh(); }); remove.name = "art-erase"; tools.Add(remove);
+            var draw = ActionButton("绘制", () => { SetRoomOverview(false); EndPreview(); EffectCancelGesture(); effectMode = 0; erase = false; Refresh(); }); draw.name = "art-draw"; tools.Add(draw);
+            var remove = ActionButton("擦除", () => { SetRoomOverview(false); EndPreview(); EffectCancelGesture(); effectMode = 0; erase = true; Refresh(); }); remove.name = "art-erase"; tools.Add(remove);
             var rect = new Toggle("框选") { value = rectangle }; rect.RegisterValueChangedCallback(e => rectangle = e.newValue); tools.Add(rect);
             var scene = new Toggle("场景绘制") { value = scenePainting, name = "scene-paint" };
             scene.tooltip = "在Scene视图当前美术层平面绘制；松开鼠标后应用该笔画。Esc退出。";
@@ -49,11 +49,15 @@ namespace Project.GridArt.Editor
             {
                 if (e.newValue && (!CanEditMap || Brush == null || Layer == null))
                 { scene.SetValueWithoutNotify(false); status.text = "请先选择本关美术图、图层和素材。"; return; }
-                if (e.newValue) { EndPreview(); EffectCancelGesture(); effectMode = 0; RefreshEffectsPanel(); }
+                if (e.newValue) { SetRoomOverview(false); EndPreview(); EffectCancelGesture(); effectMode = 0; RefreshEffectsPanel(); }
                 scenePainting = e.newValue; GridArtScenePainter.SetTarget(e.newValue ? this : null);
             }); tools.Add(scene);
             tools.Add(ActionButton("定位关卡", () => canvas?.FrameLevel()));
-            tools.Add(ActionButton("已绘美术", () => canvas?.FrameAll()));
+            var overview = ActionButton("装配图", () => SetRoomOverview(!roomOverview));
+            overview.name = "art-room-overview"; overview.tooltip = "只读查看全部房间与通道；单击选择，双击进入房间绘制。"; tools.Add(overview);
+            var enterRoom = ActionButton("进入房间绘制", () => OpenReferenceRoom());
+            enterRoom.name = "art-enter-room"; tools.Add(enterRoom);
+            tools.Add(ActionButton("已绘美术", () => { SetRoomOverview(false); canvas?.FrameAll(); }));
             tools.Add(ActionButton("切片导入", () => EditorApplication.ExecuteMenuItem("Tools/2026TapTap/方块贴画/导入不规则瓦片图")));
             var spacer = new VisualElement(); spacer.style.flexGrow = 1; tools.Add(spacer);
             tools.Add(ActionButton("素材栏", () => TogglePanel(libraryPanel)));
@@ -87,6 +91,7 @@ namespace Project.GridArt.Editor
 
         private void RefreshNavigation()
         {
+            RefreshOverviewControls();
             if(navigationPanel == null) return;
             navigationPanel.Clear();
             var rooms = levelSource?.rooms;
@@ -105,6 +110,7 @@ namespace Project.GridArt.Editor
                 picker.RegisterValueChangedCallback(evt =>
                 {
                     selectedReferenceRoom = rooms[labels.IndexOf(evt.newValue)].id;
+                    if (roomOverview) { canvas?.RepaintView(); return; }
                     EditorPrefs.SetString(SceneKey + ".ReferenceRoom",selectedReferenceRoom);
                     if (!IsStroking) canvas?.FrameRoom(selectedReferenceRoom);
                 });

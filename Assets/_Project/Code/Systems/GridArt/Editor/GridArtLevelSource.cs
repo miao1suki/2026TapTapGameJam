@@ -22,6 +22,14 @@ namespace Project.GridArt.Editor
     {
         public string id = "", label = "房间";
         public Rect boundsWorld;
+        public readonly List<Rect> areasWorld = new List<Rect>();
+        public readonly List<(Vector2 from, Vector2 to)> edgesWorld = new List<(Vector2, Vector2)>();
+        public bool Contains(Vector2 point)
+        {
+            if (areasWorld.Count == 0) return boundsWorld.Contains(point);
+            foreach (var area in areasWorld) if (area.Contains(point)) return true;
+            return false;
+        }
     }
 
     // The planning editor registers the adapter; GridArt never depends on Assembly-CSharp-Editor.

@@ -1,5 +1,10 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 美术工作台房间装配图
+
+- 当前整合窗口：给GridArt加入只读房间分布、房间名称、选择及返回房间绘制；复用Planning只读快照与轮廓缓存。仅编辑器代码，不改Gaming、规划、美术Map或场景对象。
+- 隔离Unity17项CanvasViewportTests通过，覆盖真实Planning投影、空洞/分离块、视角恢复与Map不变；最终GridArt.Editor编译零错误。附着窗口GridArtNavigationAudit在batchmode/nographics未建立可布局面板，phase0超时，未执行其交互断言；不将其写为通过，停靠/实际双击需人工确认。
+
 ## 2026-10-20 收集品初始化及此前手机修复整合
 
 - 整合保留 origin/main 5998455 的最新 Gaming、规划、5%/10%门槛与按键映射修复；不合入用户 Pick、字体、插件或本地光照测试改动。

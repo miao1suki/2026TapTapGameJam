@@ -1,5 +1,7 @@
 # 系统索引
 
+美术工作台新增“装配图”：只读查看全部房间/通道精确轮廓与名称，单击选择，双击或“进入房间绘制”定位；返回保留绘图视角，不受背景遮挡、不编辑房间。见[导航说明](../Developer/GRID_ART_NAVIGATION.md)。
+
 2026-10-20收集品初始化修复：新轮两阶段重置防旧记录回填，冷物品保留初始缩放，静默读档保留暂缺作者ID，收集品受隐藏块遮挡。57项隔离物理专项及最新main正式Gaming拾取/自动存档/离房验证通过；同批包含此前手机曲柄、安全区、地图、常驻重生与默认跑修复。见[交付说明](../Developer/COLLECTIBLE_INITIALIZATION_FIX_2026-10-20.md)。SDK网络签名错误仍待真机日志。
 
 SDK 发布整合以策划 `ab757fc` 新 Gaming 为关卡标准：23房间补 main 最新 `1caaf67` Boss/竖井后25区域、4199条规划，保留 TA 美术与 `93fd945` 死亡效果、main/另一程序修复，并接喷泉结局。双端交付见[发布整合](../Developer/RELEASE_SDK_INTEGRATION_2026-10-20.md)。快速推送使用 `.agents/skills/taptap-fast-push/SKILL.md`，不把打包当作普通 push 必做步骤。下文28区域等为历史基线。

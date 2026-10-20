@@ -110,7 +110,16 @@ namespace PlanningEditorPrototype
                 RectInt area = PlanningWorldUtility.Bounds(room);
                 var bounds = new Rect(area.x * document.worldBlockCellWidth, -area.yMax * document.worldBlockCellHeight,
                     area.width * document.worldBlockCellWidth, area.height * document.worldBlockCellHeight);
-                snapshot.rooms.Add(new GridArtLevelRoom { id = room.id, label = group.label, boundsWorld = bounds });
+                var referenceRoom = new GridArtLevelRoom { id = room.id, label = group.label, boundsWorld = bounds };
+                var preview = new PlanningOwnerPreview(room);
+                foreach (var part in preview.Rectangles)
+                    referenceRoom.areasWorld.Add(new Rect(part.x * document.worldBlockCellWidth,
+                        -part.yMax * document.worldBlockCellHeight, part.width * document.worldBlockCellWidth,
+                        part.height * document.worldBlockCellHeight));
+                foreach (var edge in preview.Edges)
+                    referenceRoom.edgesWorld.Add((World(edge.from), World(edge.to)));
+                snapshot.rooms.Add(referenceRoom);
+                Vector2 World(Vector2 p) => new Vector2(p.x * document.worldBlockCellWidth, -p.y * document.worldBlockCellHeight);
                 foreach (var box in room.boxes)
                 {
                     AddSource(box, PlanningWaterLayerUtility.Origin(document, room), room.boxes, group);
