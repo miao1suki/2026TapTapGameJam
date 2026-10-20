@@ -1,5 +1,7 @@
 # 系统索引
 
+可选二维遮挡光照已接入PC/Mobile URP合成，按实际墙体与门的XY轮廓阻光，非房间整块可见；需相机显式挂WorldVisibility2D，Gaming不自动启用。八帧喷泉Fountain.prefab只负责表现、82×66原生帧按16有效像素/格。Pick隔离GPU65断言及Play7断言通过；未做安卓真机性能验收。见[操作](../Developer/WORLD_VISIBILITY_AND_FOUNTAIN.md)、[接口](Integration/WORLD_VISIBILITY_API.md)。
+
 当前关卡标准：ILorR1012最终R1 ff785ab／R2 308c65f／R3 48cb1e4已接收；以实际Scene为准，旧planning尚未精确回采，不能直接应用覆盖或宣称最终布局可从旧片段导入。Gaming设计沿用xianyu66web已推送MVMap17（原1406项全字段一致，main额外保留Start）；美术标准Irotin-dyx ad1a4dd已备份到远端codex/backup/irotin-gaming-art-20261019，此轮不再合其Gaming。后续美术替换与设计增量须保留已处理区域，详见[本轮整合](../Developer/AUTHOR_SCENE_BASELINES_2026-10-19.md)。旧默认单向平台补正式图去色版，原三色与逻辑占格不变。
 
 美术工作台N使用与规划M相同的全局菜单快捷键，从Project/Inspector等窗口可开关，文字输入和未完成笔画不抢键；图层最大偏移拆成左右/上下独立行，窄侧栏可见且支持Undo。见[导航](../Developer/GRID_ART_NAVIGATION.md)、[视差参数](../Developer/GRID_ART_PARALLAX.md)。
