@@ -1,5 +1,13 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 TapTap SDK 合并的 Gaming 语义重做（静态验证完成，Unity 交由主编辑器）
+
+- 用户裁决：以 `origin/main` 的 `a7fa6ea` 为 Gaming 底稿，只保留分支 `507bfb7` 的 Timeline 注入、`PlayableDirector`、触发器/Collider 放置参数和地图组件覆盖；既有 Transform、位置、美术与地图修补全部采用 main，其余代码/文档冲突融合双方。
+- 场景三方审计：共同基线 `18c91868`。main 后续改动 107 个 Unity 块，分支场景重序列化后的语义改动均落在不同作者对象集合；main 保留 17 个 Director（含新增六钥匙），分支只改 Boss 触发配置，不覆盖 main 新增对象。
+- 允许进入最终 Scene 的差异已收敛为：`Prop [-12,32]` 的 Gate 关闭、`enter_boss.playable` 注入及 Collider `3×6×3`；`Prop [134,27]` Collider `27×20×3` 与 Once；`Prop [278,38]` Collider `3×9×3`；`Prop [78,30]` Once。其余目标对象的 Transform、美术和其他组件保持 main。
+- 同步白名单 planning 覆盖到 5 个 Boss 触发盒；不整份采用分支 JSON，不提交本地 `TapTapAchievementSecrets.json`、Client Token 或 Server Secret。
+- 用户明确要求不自行启动 Unity 进程，因此本轮不为验证另开 batchmode；Unity 编译与 EditMode 测试交由当前主编辑器执行。代理侧已完成 `Test-PlanningMapCommit.ps1`、staged `git diff --check`、Scene/规划目标值、两份 JSON 字节一致及凭据范围审计。用户随后明确要求合并到 main；本次静态验证结果提交并合并，不把未运行的 Unity 测试写成已通过。
+
 ## 2026-10-20 TapTap Unity 成就 SDK 接入（编译与测试通过，待后台配置/真机）
 
 - 分支 `boss最后补充2`。范围：TapSDK Core/Login/Achievement 固定版本依赖、TapTap 成就配置与运行时上报桥、Android 包名、离线权限守卫及对应文档/测试；不改本地成就逻辑、AchievementSO、场景、Boss 或单轮存档。
@@ -40,12 +48,12 @@
 - 新增 `GameplayAchievementRouter` 和六个玩法信号；假结局/回第一关仅在 Start 传送成功后触发，真结局在喷泉黑屏清档前触发，成就存档独立保留。
 - 逐条映射见 `Docs/Agent/Integration/ACHIEVEMENT_HOOKS.md`；目录与资产均核对为 14 条。Runtime 相关程序集静态编译 0 error，待 Play 验收。
 
-## 2026-10-20 enter_boss 低收集门槛 Timeline（编译通过，待挂触发与 Play 验收）
+## 2026-10-20 enter_boss 低收集门槛 Timeline（已接入 Gaming，待 Play 验收）
 
 - 分支 `boss最后补充2`。新增 `Assets/Boss_Logic/EnterBossTimelinePlayable.cs` 与 `Assets/_Project/Content/Boss/Timelines/enter_boss.playable`；不修改场景、关卡 JSON、Boss 控制器或其他 Timeline。
 - 逻辑：Playable 内读取本轮世界收集品进度，默认门槛 `30%`；未达到时锁玩家操作，播放两段 Cubic 打字机字幕，每段完整显示后停留 `1` 秒，再从屏幕中心收黑并传送到同场景 `Start` 传送锚点，黑屏倒放后结束。
 - 边界：达到 30% 时直接结束 Timeline，不申请玩家控制锁、不显示字幕、不传送；低进度返回保留本轮收集品、钥匙、能力和 Boss 进度，不触发清档。
-- 验证：新增 30% 边界断言；Unity 6000.3.12f1 Runtime（含新源文件）与 Editor 程序集静态编译 0 error，仅既有警告。尚未把 `enter_boss` 挂到场景触发器和运行 Play Mode。
+- 验证：新增 30% 边界断言；Unity 6000.3.12f1 Runtime（含新源文件）与 Editor 程序集静态编译 0 error，仅既有警告。后续语义合并已把 `enter_boss` 接到正式 Gaming 的 `Boss_box_aa7a24dc`，并关闭同物体的旧 `BossCollectibleEntryGate`；尚未运行 Play Mode。
 
 ## 2026-10-20 Boss 死亡与喷泉结局演出贴图／相机修正（编译通过，待 Play 验收）
 

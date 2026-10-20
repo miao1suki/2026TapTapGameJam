@@ -160,7 +160,7 @@ handle.Release(CameraTransition.Ease(1f));
 - `SetRequested(bool)`：统一开关接口。
 - `requestOnEnable` 默认关闭，因此 Boss 出生时不会自动扩大视野。
 
-区域型缩小视野使用独立 Timeline `Assets/_Project/Content/Boss/Timelines/camera_close.playable`。它由 `ContactTimelineTrigger` 的“进入播放，离开停止”模式驱动，进入申请 `0.5×` 平滑缩放，离开停止 Director 后释放请求并恢复；不修改任何 Timeline 原生轨道脚本。接入见 [Camera Close](CAMERA_CLOSE_TIMELINE_API.md)。
+区域型缩小视野使用独立 Timeline `Assets/_Project/Content/Boss/Timelines/camera_close.playable`。正式 Gaming 的 `Boss_box_c8670190` 使用“只触发一次”；Timeline 申请 `0.5×` 平滑缩放，并在播放停止或 GraphStop 时释放请求、恢复镜头；不修改任何 Timeline 原生轨道脚本。接入见 [Camera Close](CAMERA_CLOSE_TIMELINE_API.md)。
 - 组件不再订阅 `BossController.Died`。击败 Timeline 在返回镜头开始时通过 `BossDeathCameraRestorePlayable` 调用 `RequestDisable()`；普通玩家死亡/复活和外部对象销毁路径互不影响。
 
 ## Boss 死亡 Timeline

@@ -14,7 +14,7 @@
 
 喷泉结局 Timeline `Content/GameFlow/fountain_ending.playable` 使用触发器局部坐标，驱动玩家走到喷泉两格前，相机全程跟随玩家，不变焦也不改双锚点；四个调色盘通过公共最新美术准备入口依次出现并投入喷泉。Timeline 初始化成功、确认真结局分支时立即结算 `1007` 成就，随后再播放演出；两段字幕结束后瞬时黑屏并清档回主界面。见 `Integration/FOUNTAIN_ENDING_TIMELINE_API.md`。
 
-`Content/Boss/Timelines/enter_boss.playable` 是低收集 Boss 入口演出：读取本轮世界普通收集品进度，低于 `30%` 时锁玩家、播放两段 Cubic 打字机字幕、收黑并传送到同场景 `Start`，揭幕后结束；达到门槛则立即结束且不锁操作、不传送。它不能与启用的 `BossCollectibleEntryGate` 叠在同一触发器。见 `Integration/ENTER_BOSS_TIMELINE_API.md`。
+`Content/Boss/Timelines/enter_boss.playable` 是低收集 Boss 入口演出：读取本轮世界普通收集品进度，低于 `30%` 时锁玩家、播放两段 Cubic 打字机字幕、收黑并传送到同场景 `Start`，揭幕后结束；达到门槛则立即结束且不锁操作、不传送。正式 Gaming 的 `Boss_box_aa7a24dc` 已改用它并关闭同物体 `BossCollectibleEntryGate`；两者不能同时启用。见 `Integration/ENTER_BOSS_TIMELINE_API.md`。
 
 暂停轮盘的存档页已封存：`SavePanelController` 不再读写存档或显示槽位，旧实现备份于 `Docs/SavePanelController.Legacy.cs.txt`；页面运行时只保留右上角 Close 和居中的 Cubic `待开发内容，请关注后续消息`。
 

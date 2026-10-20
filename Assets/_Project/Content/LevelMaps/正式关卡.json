@@ -424186,8 +424186,284 @@
                     "bossRespawnOwnerId": "",
                     "initialCrankPlatformCreated": false,
                     "mergeParts": [],
-                    "hasComponentOverrides": false,
-                    "componentOverrides": []
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BossLogic.BossCollectibleEntryGate",
+                        "componentIndex": 0,
+                        "propertyPath": "gateEnabled",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BossLogic.BossCollectibleEntryGate",
+                        "componentIndex": 0,
+                        "propertyPath": "returnDestinationId",
+                        "valueType": "String",
+                        "value": "Start",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BossLogic.BossCollectibleEntryGate",
+                        "componentIndex": 0,
+                        "propertyPath": "returnPoint",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BossLogic.BossCollectibleEntryGate",
+                        "componentIndex": 0,
+                        "propertyPath": "showHint",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "timeline",
+                        "valueType": "ObjectReference",
+                        "value": "GlobalObjectId_V1-3-8f3c1a6d2b7e4590a1c5e9f3b4d7c602-11400000-0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "targetCollider",
+                        "valueType": "ObjectReference",
+                        "value": "reference:local",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "contactFilter",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "triggerMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "restartIfPlaying",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "requestPlayerControlLockDuringTimeline",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "hideRenderersOnEnable",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "destroyAfterTrigger",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_PlayableAsset",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialState",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_WrapMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_DirectorUpdateMode",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialTime",
+                        "valueType": "Float",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Material",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_LayerOverridePriority",
+                        "valueType": "Integer",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_IsTrigger",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_ProvidesContacts",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Size",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":3.0,\"y\":6.0,\"z\":3.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Center",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BossLogic.BossCollectibleEntryGate",
+                        "componentIndex": 0,
+                        "propertyPath": "minimumRatio",
+                        "valueType": "Float",
+                        "value": "0.30000001192092896",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "repeatCooldownSeconds",
+                        "valueType": "Float",
+                        "value": "0.5",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      }
+                    ]
                 },
                 {
                     "id": "Boss_box_1cf0514f",
@@ -429222,8 +429498,229 @@
                     "bossRespawnOwnerId": "",
                     "initialCrankPlatformCreated": false,
                     "mergeParts": [],
-                    "hasComponentOverrides": false,
-                    "componentOverrides": []
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "targetCollider",
+                        "valueType": "ObjectReference",
+                        "value": "reference:local",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "contactFilter",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "triggerMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "restartIfPlaying",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "requestPlayerControlLockDuringTimeline",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "hideRenderersOnEnable",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "destroyAfterTrigger",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_PlayableAsset",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialState",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_WrapMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_DirectorUpdateMode",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialTime",
+                        "valueType": "Float",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Material",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_LayerOverridePriority",
+                        "valueType": "Integer",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_IsTrigger",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_ProvidesContacts",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Size",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":27.0,\"y\":20.0,\"z\":3.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Center",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "repeatCooldownSeconds",
+                        "valueType": "Float",
+                        "value": "0.5",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "timeline",
+                        "valueType": "ObjectReference",
+                        "value": "GlobalObjectId_V1-3-360ce8407b1b4ee5a3c703d6f3f7497c-11400000-0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      }
+                    ]
                 },
                 {
                     "id": "Boss_box_f581d7ef",
@@ -429999,8 +430496,229 @@
                     "bossRespawnOwnerId": "",
                     "initialCrankPlatformCreated": false,
                     "mergeParts": [],
-                    "hasComponentOverrides": false,
-                    "componentOverrides": []
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "targetCollider",
+                        "valueType": "ObjectReference",
+                        "value": "reference:local",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "contactFilter",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "triggerMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "restartIfPlaying",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "requestPlayerControlLockDuringTimeline",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "hideRenderersOnEnable",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "destroyAfterTrigger",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_PlayableAsset",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialState",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_WrapMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_DirectorUpdateMode",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialTime",
+                        "valueType": "Float",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Material",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_LayerOverridePriority",
+                        "valueType": "Integer",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_IsTrigger",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_ProvidesContacts",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Size",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":3.0,\"y\":9.0,\"z\":3.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Center",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "repeatCooldownSeconds",
+                        "valueType": "Float",
+                        "value": "0.5",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "timeline",
+                        "valueType": "ObjectReference",
+                        "value": "GlobalObjectId_V1-3-e327eb4d93c46e148b6ce059ff1fb156-11400000-0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      }
+                    ]
                 },
                 {
                     "id": "Boss_box_1ba29225",
@@ -431765,8 +432483,229 @@
                     "bossRespawnOwnerId": "",
                     "initialCrankPlatformCreated": false,
                     "mergeParts": [],
-                    "hasComponentOverrides": false,
-                    "componentOverrides": []
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "targetCollider",
+                        "valueType": "ObjectReference",
+                        "value": "reference:local",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "contactFilter",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "triggerMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "restartIfPlaying",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "requestPlayerControlLockDuringTimeline",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "hideRenderersOnEnable",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "destroyAfterTrigger",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_PlayableAsset",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialState",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_WrapMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_DirectorUpdateMode",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialTime",
+                        "valueType": "Float",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Material",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_LayerOverridePriority",
+                        "valueType": "Integer",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_IsTrigger",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_ProvidesContacts",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Size",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":3.0,\"y\":8.0,\"z\":3.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Center",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "repeatCooldownSeconds",
+                        "valueType": "Float",
+                        "value": "0.5",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "timeline",
+                        "valueType": "ObjectReference",
+                        "value": "GlobalObjectId_V1-3-9f8e7d6c5b4a43928170605040302010-11400000-0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      }
+                    ]
                 },
                 {
                     "id": "Boss_box_c8670190",
@@ -431808,8 +432747,229 @@
                     "bossRespawnOwnerId": "",
                     "initialCrankPlatformCreated": false,
                     "mergeParts": [],
-                    "hasComponentOverrides": false,
-                    "componentOverrides": []
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "targetCollider",
+                        "valueType": "ObjectReference",
+                        "value": "reference:local",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "contactFilter",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "triggerMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "restartIfPlaying",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "requestPlayerControlLockDuringTimeline",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "hideRenderersOnEnable",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "destroyAfterTrigger",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_PlayableAsset",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialState",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_WrapMode",
+                        "valueType": "Enum",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_DirectorUpdateMode",
+                        "valueType": "Enum",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.Playables.PlayableDirector",
+                        "componentIndex": 0,
+                        "propertyPath": "m_InitialTime",
+                        "valueType": "Float",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Material",
+                        "valueType": "ObjectReference",
+                        "value": "reference:null",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_LayerOverridePriority",
+                        "valueType": "Integer",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_IsTrigger",
+                        "valueType": "Boolean",
+                        "value": "1",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_ProvidesContacts",
+                        "valueType": "Boolean",
+                        "value": "0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Size",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":27.0,\"y\":20.0,\"z\":3.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "UnityEngine.BoxCollider",
+                        "componentIndex": 0,
+                        "propertyPath": "m_Center",
+                        "valueType": "Vector3",
+                        "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "repeatCooldownSeconds",
+                        "valueType": "Float",
+                        "value": "0.5",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      },
+                      {
+                        "componentPath": "",
+                        "componentTypeName": "Project.BlockFeatures.ContactTimelineTrigger",
+                        "componentIndex": 0,
+                        "propertyPath": "timeline",
+                        "valueType": "ObjectReference",
+                        "value": "GlobalObjectId_V1-3-de825b2b87c64330b10d3942f1fde9b1-11400000-0",
+                        "objectReferenceValue": {
+                          "instanceID": 0
+                        }
+                      }
+                    ]
                 },
                 {
                     "id": "Boss_box_43b2340d",

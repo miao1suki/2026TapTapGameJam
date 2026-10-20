@@ -34,6 +34,7 @@
 
 ## 触发配置
 
+- 正式 Gaming 已接入：`Boss_box_aa7a24dc` 的 `ContactTimelineTrigger.timeline` 指向本资产，`BossCollectibleEntryGate.gateEnabled=0`，BoxCollider 为 `3×6×3`。
 - 在 Timeline 触发器上直接选择 `enter_boss.playable`。
 - 推荐 `ContactTimelineTrigger` 使用“只触发一次”和只匹配玩家。
 - 关闭 `requestPlayerControlLockDuringTimeline`；Timeline 只在低进度分支自行申请控制锁。
