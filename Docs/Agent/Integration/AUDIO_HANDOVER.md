@@ -23,7 +23,7 @@
 
 主菜单的`music.menu.opening`现使用新`bmg_op.mp3`，按菜单场景循环播放。正式进入Gaming后，`GameAudioService.HandleActiveSceneChanged`播放`music.atmosphere.e_minor`（`bgm_atmosphere_emin_02_loop.mp3`），复用现有Music音量总线及循环配置；暂停返回菜单再进入时也按此切换。
 
-`bgm_boss.mp3`登记为`music.boss`（`AudioCueIds.MusicBoss`），可通过`AudioCuePlayer.Play(AudioCueIds.MusicBoss)`调用；当前默认非循环，未擅自添加Boss触发点。两首新增MP3使用Streaming/Vorbis、质量0.8、不预解码，meta已由Unity生成并交付，文件名保留音频成员原命名。
+`bgm_boss.mp3`登记为`music.boss`（`AudioCueIds.MusicBoss`），按循环音乐启用。`BossMusicRequest`订阅Boss血条的`HealthSystemActivated`委托，确认玩家与Boss处于同一场景后，通过可释放的音乐覆盖申请播放Boss曲；Boss `Died`、禁用或销毁时释放申请，恢复申请期间最后一次设置的底层BGM。两首新增MP3使用Streaming/Vorbis、质量0.8、不预解码，meta已由Unity生成并交付，文件名保留音频成员原命名。
 
 该服务由`GameFlowController.Start`安装到现有持久流程根并初始化，注册实际`ActiveSceneChanged`事件。仅修改Cue或直接调用私有播放方法不能验证真实入口；验收须从MainMenu按钮进入Gaming，再从暂停返回并重新进入，检查实际MusicSource与时间缩放。
 
@@ -45,7 +45,7 @@
 | `bgm_vocal_chop_01.mp3` | 人声切片，节奏层 / 过渡 | 是 |
 | `bgm_wake_up_01_loop.mp3` | 醒来 / 开场序列 | 是 |
 | `bgm_alien_sacrifice_01.mp3` | 外星祭祀主题，重要事件场景 | 否 |
-| `bgm_boss.mp3` | Boss 战 / Boss 出场主题曲，Cue已登记，等待玩法调用 | 当前否，Boss循环需求待确认 |
+| `bgm_boss.mp3` | Boss 血条出现至死亡期间的覆盖主题曲，自动申请和释放 | 是 |
 | `bmg_op.mp3` | 主菜单OP，保留现有文件名 | 是 |
 
 路径均为 `Assets/_Project/Content/Audio/Music/`。
@@ -194,7 +194,7 @@ AudioCuePlayer.StopLoop(this);
 |---|---|---|
 | 开场场景加载 / 标题画面 | `bgm_wn_01_opening` | `PlayMusic(clip, loop: true)` |
 | OP / 开场演出 | `bmg_op` | 按演出时机播放，循环待确认 |
-| Boss 战 / Boss 出场 | `bgm_boss` | 按 Boss 演出时机播放，循环待确认 |
+| Boss 血条出现至死亡 | `bgm_boss` | 已由 `BossMusicRequest` 自动申请，Boss死亡后恢复原BGM |
 | 常驻氛围层 | `bgm_ambient_loop_01` | `PlayMusic(clip, loop: true)` |
 | 区域环境音 | `amb_env_machine_hum_01` / `amb_env_plant_rustle_01` / `amb_env_water_drip_01` / `amb_env_wind_gust_01` / `amb_env_room_loop` / `amb_env_water_flow_loop` | 按区域进入 / 离开淡入淡出 |
 | 玩家跳跃 / 落地 | `sfx_gp_plr_jump` / `sfx_footstep_land_walk_*` | `PlaySound` |
@@ -232,7 +232,7 @@ AudioCuePlayer.StopLoop(this);
 - [ ] 循环点确认：四个未标注的环境声，以及 `sfx_gp_steam_loop`、`sfx_gp_crank_turn_loop`、`sfx_gp_platform_move_loop`、`sfx_gp_bubble_loop`
 - [ ] 打包检查：确认音频压缩设置与项目打包配置一致
 - [x] 播放接口扩展：随机变体、按 owner 循环、停止/查询循环音接口已加入 `AudioManager` 和 `GameAudioService`
-- [x] Cue 目录：63 个音频登记为 55 个 Cue，Music / SoundEffect 通道已分流；玩法/确认、两种重生点激活和新主菜单OP已接线，Boss曲等待调用
+- [x] Cue 目录：当前音频登记为 55 个 Cue，Music / SoundEffect 通道已分流；玩法/确认、两种重生点激活和新主菜单OP已接线，Boss曲已按血条激活/死亡生命周期接入
 - [x] 运行时接线：玩家动作、门、曲柄、蒸汽、藤蔓、颜色钥匙与选色反馈已接入
 
 ## 未解决问题

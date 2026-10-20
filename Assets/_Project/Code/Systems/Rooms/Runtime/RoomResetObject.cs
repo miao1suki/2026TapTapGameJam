@@ -56,7 +56,9 @@ namespace Project.Rooms
             {
                 RefreshResetComponents();
                 return door != null || button != null && button.Persistent || doorHint != null || colorButton != null && colorButton.Persistent ||
-                    key != null && key.CollectionRequested ||
+                    key != null &&
+                    (key.CollectionRequested ||
+                     key.IsPersistentlyConsumed) ||
                     collectible != null && (collectible.IsCollected || collectible.CollectionRequested) || anchor != null;
             }
         }

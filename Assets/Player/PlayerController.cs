@@ -3650,6 +3650,61 @@ namespace Project.Player
             return true;
         }
 
+        public bool TryRestoreLoadedRunPosition(
+            RespawnAnchorFeature checkpoint,
+            bool hasFallbackPosition,
+            Vector3 fallbackPosition)
+        {
+            if (dead || respawnInProgress)
+            {
+                return false;
+            }
+
+            if (checkpoint != null &&
+                checkpoint.gameObject.scene == gameObject.scene)
+            {
+                PlayerRespawnPointRegistry.Bind(
+                    this,
+                    checkpoint);
+                PerformRespawn();
+                return true;
+            }
+            if (!hasFallbackPosition)
+            {
+                return false;
+            }
+
+            PrepareForRoomReset();
+            runner?.Stop();
+            Project.Rooms.RoomLifecycleManager.BeforeRespawn(
+                this,
+                fallbackPosition);
+            ClearDeathControlState();
+            if (motor != null)
+            {
+                motor.position = fallbackPosition;
+                if (!motor.isKinematic)
+                {
+                    motor.linearVelocity =
+                        motor.angularVelocity =
+                            Vector3.zero;
+                }
+            }
+            transform.position = fallbackPosition;
+            Physics.SyncTransforms();
+            PlayerRespawnPointRegistry.Bind(
+                this,
+                new StoryRespawnPoint(
+                    fallbackPosition));
+            invulnerableUntil =
+                Time.time +
+                Mathf.Max(
+                    0f,
+                    respawnInvulnerabilitySeconds);
+            CameraFollowRelocated?.Invoke();
+            return true;
+        }
+
         private sealed class StoryRespawnPoint : IPlayerRespawnPoint
         {
             public StoryRespawnPoint(Vector3 position) { RespawnPosition = position; }

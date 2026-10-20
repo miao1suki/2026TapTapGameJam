@@ -148,11 +148,6 @@ namespace Project.StartMenu
                 settingsController.BackRequested -= ShowMain;
             }
 
-            if (saveController != null)
-            {
-                saveController.BackRequested -= ShowStartChoice;
-            }
-
             panelBackdropTween?.Kill(false);
         }
 
@@ -966,11 +961,6 @@ namespace Project.StartMenu
                 settingsController.BackRequested += ShowMain;
             }
 
-            if (saveController != null)
-            {
-                saveController.BackRequested -= ShowStartChoice;
-                saveController.BackRequested += ShowStartChoice;
-            }
         }
 
         private void SetOnly(GameObject target)

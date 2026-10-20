@@ -40,6 +40,30 @@ namespace Project.BossLogic
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void Initialize() { Scenes.Clear(); Origins.Clear(); Changed = null; }
+
+        public static void ResetRuntimeProgress()
+        {
+            Scenes.Clear();
+            Origins.Clear();
+            Changed?.Invoke();
+        }
+
+        public static void RestoreRuntimeProgress(
+            Scene scene,
+            bool entered,
+            bool defeated)
+        {
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            Progress progress = For(scene);
+            progress.Entered = entered;
+            progress.Defeated = defeated;
+            progress.Fighting.Clear();
+            Changed?.Invoke();
+        }
         private static string Key(Scene scene) => string.IsNullOrEmpty(scene.path) ? "session:" + scene.handle : scene.path;
         private static Progress For(Scene scene)
         {

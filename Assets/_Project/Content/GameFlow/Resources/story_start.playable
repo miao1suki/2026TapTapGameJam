@@ -138,7 +138,9 @@ MonoBehaviour:
     messageDisplaySeconds: 2
     messageGapSeconds: 0.5
     typewriterCharactersPerSecond: 14
+    curtainShader: {fileID: 4800000, guid: f3c8d9a71b4e42d5a6c7e8f901234bcd, type: 3}
     curtainColor: {r: 0, g: 0, b: 0, a: 1}
+    curtainCenter: {x: 0.5, y: 0.5}
     curtainSortingOrder: 1100
     curtainCoverDuration: 1.2
     curtainRevealDuration: 1
@@ -146,6 +148,6 @@ MonoBehaviour:
     lensMultiplier: 1.4
     lensExpandDuration: 0.6
     playerLeftDistanceBlocks: 16
-    playerReturnSpeedBlocksPerSecond: 8
+    playerReturnSpeedBlocksPerSecond: 2.6666665
     cameraReleaseSeconds: 0.25
     playerTag: Player

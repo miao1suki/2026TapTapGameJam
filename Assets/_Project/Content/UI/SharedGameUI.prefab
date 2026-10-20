@@ -4280,6 +4280,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1000000000000000000000000000006, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Project.StartMenu.Runtime::Project.StartMenu.SavePanelController
+  uiSdfFont: {fileID: 11400000, guid: 97e10da648522f547bbec66357199a2a, type: 2}
+  placeholderText: "\u5F85\u5F00\u53D1\u5185\u5BB9\uFF0C\u8BF7\u5173\u6CE8\u540E\u7EED\u6D88\u606F"
+  placeholderFontSize: 72
+  placeholderColor: {r: 1, g: 1, b: 1, a: 1}
+  outlineColor: {r: 0, g: 0, b: 0, a: 1}
+  outlineWidth: 0.2
   titleText: {fileID: 7684454595888558660}
   statusText: {fileID: 8937522274177316145}
   slotList: {fileID: 7777428368070085689}
@@ -13653,7 +13659,7 @@ MonoBehaviour:
   horizontalPadding: 36
   leftSafeInset: 64
   bottomPadding: 32
-  topPadding: 88
+  topPadding: 202
   rowMaterial: {fileID: 0}
   completedSprite: {fileID: 0}
   completedIconSize: 60

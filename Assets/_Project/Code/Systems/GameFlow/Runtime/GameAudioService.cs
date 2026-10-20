@@ -105,6 +105,18 @@ namespace Project.GameFlow
                 volumeScale);
         }
 
+        public MusicRequestHandle RequestMusic(
+            string cueId,
+            object owner,
+            float volumeScale = 1f)
+        {
+            return AudioCuePlayer.RequestMusic(
+                ResolveCatalog(),
+                cueId,
+                owner,
+                volumeScale);
+        }
+
         public AudioSource PlayLoop(
             object owner,
             AudioClip clip,

@@ -17,6 +17,7 @@ MonoBehaviour:
   achievementBlock: {fileID: 21300000, guid: e167b8dc839ccd8418f7406c6a19330a, type: 3}
   achievementUnlockBlock: {fileID: 21300000, guid: a8389aa9b12e45bfb46a599b41be6d74, type: 3}
   achievementUnlockCheck: {fileID: 21300000, guid: 68d4d46d5741438085374279cd6affc0, type: 3}
+  collectibleIcon: {fileID: 425478242701086130, guid: c15bcc4ddebc0b14e8c29787c17e934b, type: 3}
   settingButton: {fileID: 21300000, guid: f7bd347347574a3c95e9f2d09c9807b3, type: 3}
   settingSliderBackground: {fileID: 21300000, guid: 07eb82b0b13f4f0fb4e03ff6381cc529, type: 3}
   settingSliderFill: {fileID: 21300000, guid: 82c68773482b4390af34acf00c0f6d45, type: 3}

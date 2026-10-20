@@ -103,6 +103,36 @@ namespace Project.BlockFeatures
                    (cachedOrder = BuildOrder(Registered));
         }
 
+        public static bool TryFindAnchor(
+            string anchorId,
+            out RespawnAnchorFeature anchor)
+        {
+            anchor = null;
+            if (string.IsNullOrWhiteSpace(anchorId))
+            {
+                return false;
+            }
+
+            for (int index = 0;
+                 index < Registered.Count;
+                 index++)
+            {
+                RespawnAnchorFeature candidate =
+                    Registered[index];
+                if (candidate != null &&
+                    string.Equals(
+                        candidate.AnchorId,
+                        anchorId,
+                        StringComparison.Ordinal))
+                {
+                    anchor = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static List<RespawnAnchorFeature> BuildOrder(
             IReadOnlyList<RespawnAnchorFeature> anchors)
         {

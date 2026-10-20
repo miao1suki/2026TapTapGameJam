@@ -22,6 +22,7 @@ namespace Project.Player
         private bool hasPresented;
         private Camera viewingCamera;
         private float cellWorldSize = 1f;
+        private PlayerSpriteState? presentationStateOverride;
         private readonly PlayerSpriteAnimationClock clock = new PlayerSpriteAnimationClock();
         public PlayerSpriteState CurrentVisualState => clock.State;
         public SpriteRenderer Visual => visual;
@@ -35,6 +36,26 @@ namespace Project.Player
         }
         public bool IsDeathAnimationComplete => clock.State == PlayerSpriteState.Death &&
             clock.Elapsed >= DeathAnimationDuration;
+
+        public void SetPresentationAnimationState(
+            PlayerSpriteState state)
+        {
+            presentationStateOverride = state;
+            hasPresented = false;
+            clock.Reset(state);
+        }
+
+        public void ClearPresentationAnimationState()
+        {
+            if (!presentationStateOverride.HasValue)
+            {
+                return;
+            }
+
+            presentationStateOverride = null;
+            hasPresented = false;
+            clock.Reset(PlayerSpriteState.Idle);
+        }
 
         public static void Ensure(PlayerController controller)
         {
@@ -91,10 +112,17 @@ namespace Project.Player
                 animator != null &&
                 animator.isActiveAndEnabled;
             bool suspended =
-                state == PlayerStateId.Action ||
-                timelineAnimatorTakeover;
-            PlayerSpriteState requested = PlayerSpriteAnimationClock.Resolve(state, player.IsGrounded,
-                player.HorizontalVelocity, player.VerticalVelocity, player.MoveInput);
+                !presentationStateOverride.HasValue &&
+                (state == PlayerStateId.Action ||
+                 timelineAnimatorTakeover);
+            PlayerSpriteState requested =
+                presentationStateOverride ??
+                PlayerSpriteAnimationClock.Resolve(
+                    state,
+                    player.IsGrounded,
+                    player.HorizontalVelocity,
+                    player.VerticalVelocity,
+                    player.MoveInput);
             // Static climbing holds its current pose instead of climbing in place.
             bool stationaryClimb = requested == PlayerSpriteState.Climb &&
                 Mathf.Abs(player.HorizontalVelocity) < .05f && Mathf.Abs(player.VerticalVelocity) < .05f;
@@ -133,6 +161,7 @@ namespace Project.Player
         }
         private void OnDisable()
         {
+            presentationStateOverride = null;
             if (visual != null) visual.enabled = false;
             if (placeholder != null && hidePlaceholder) placeholder.enabled = placeholderWasEnabled;
         }

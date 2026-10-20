@@ -46,6 +46,7 @@ namespace Project.ColorBlocks
 
         public static ColorRuntimeService Existing => instance;
         public ColorCatalog Catalog => catalog;
+        public static event Action ProgressChanged;
         public event Action<ColorTypeDefinition> ColorUnlocked;
         public event Action<ColorTypeDefinition> AbilityUnlocked;
 
@@ -68,6 +69,7 @@ namespace Project.ColorBlocks
             if (definition == null || !unlockedAbilities.Add(typeId)) return false;
             AbilityUnlocked?.Invoke(definition);
             EventMgr.RaiseColorAbilityUnlocked(definition);
+            ProgressChanged?.Invoke();
             return true;
         }
 
@@ -83,6 +85,7 @@ namespace Project.ColorBlocks
         private static void ResetStatics()
         {
             instance = null;
+            ProgressChanged = null;
         }
 
         private void Awake()
@@ -169,8 +172,102 @@ namespace Project.ColorBlocks
                     definition.unlockEventId,
                     typeId);
             }
+            ProgressChanged?.Invoke();
 
             return true;
+        }
+
+        public void CopyUnlockedColorsTo(
+            ICollection<string> destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            foreach (string typeId in unlocked)
+            {
+                destination.Add(typeId);
+            }
+        }
+
+        public void CopyUnlockedAbilitiesTo(
+            ICollection<string> destination)
+        {
+            if (destination == null)
+            {
+                return;
+            }
+
+            foreach (string typeId in unlockedAbilities)
+            {
+                destination.Add(typeId);
+            }
+        }
+
+        public void RestoreRunProgress(
+            IEnumerable<string> colorIds,
+            IEnumerable<string> abilityIds)
+        {
+            unlocked.Clear();
+            unlockedAbilities.Clear();
+            if (colorIds != null)
+            {
+                foreach (string typeId in colorIds)
+                {
+                    if (catalog != null &&
+                        catalog.Find(typeId) != null)
+                    {
+                        unlocked.Add(typeId);
+                    }
+                }
+            }
+            if (abilityIds != null)
+            {
+                foreach (string typeId in abilityIds)
+                {
+                    if (catalog != null &&
+                        catalog.Find(typeId) != null)
+                    {
+                        unlockedAbilities.Add(typeId);
+                    }
+                }
+            }
+
+            foreach (IColorObject colorObject in
+                     new List<IColorObject>(colorObjects))
+            {
+                if (colorObject == null)
+                {
+                    continue;
+                }
+
+                if (IsUnlocked(colorObject.BaseColorTypeId))
+                {
+                    colorObject.Activate();
+                }
+                else
+                {
+                    colorObject.Deactivate();
+                }
+            }
+
+            if (catalog == null)
+            {
+                return;
+            }
+            foreach (ColorTypeDefinition definition in
+                     catalog.Colors)
+            {
+                if (definition != null &&
+                    !string.IsNullOrWhiteSpace(definition.id))
+                {
+                    ColorAppearanceManager.Instance.Play(
+                        definition.id,
+                        IsUnlocked(definition.id),
+                        0f);
+                }
+            }
         }
 
         public bool SetUnlockedForCurrentSession(

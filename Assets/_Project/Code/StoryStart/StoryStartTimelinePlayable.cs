@@ -26,7 +26,9 @@ namespace Project.StoryStart
         [Min(0f)] public float messageDisplaySeconds = 2f;
         [Min(0f)] public float messageGapSeconds = .5f;
         [Min(1f)] public float typewriterCharactersPerSecond = 14f;
+        public Shader curtainShader;
         public Color curtainColor = Color.black;
+        public Vector2 curtainCenter = new Vector2(.5f, .5f);
         [Min(0)] public int curtainSortingOrder = 1100;
         [Min(0f)] public float curtainCoverDuration = 1.2f;
         [Min(0f)] public float curtainRevealDuration = 1f;
@@ -35,7 +37,7 @@ namespace Project.StoryStart
         [Min(0f)] public float lensExpandDuration = .6f;
         [Min(0f)] public float playerLeftDistanceBlocks = 16f;
         [Min(0f)]
-        public float playerReturnSpeedBlocksPerSecond = 8f;
+        public float playerReturnSpeedBlocksPerSecond = 8f / 3f;
         [Min(0f)] public float cameraReleaseSeconds = .25f;
         public string playerTag = "Player";
     }
@@ -61,12 +63,31 @@ namespace Project.StoryStart
                     owner.GetComponentInParent<
                         PlayableDirector>();
             }
+            StoryStartEntryHandoff handoff =
+                owner != null
+                    ? owner.GetComponent<
+                        StoryStartEntryHandoff>()
+                    : null;
+            if (handoff == null &&
+                resolvedDirector != null)
+            {
+                handoff =
+                    resolvedDirector.GetComponent<
+                        StoryStartEntryHandoff>();
+            }
 
             StoryStartTimelineBehaviour behaviour =
                 new StoryStartTimelineBehaviour
                 {
                     settings = settings,
-                    director = resolvedDirector
+                    director = resolvedDirector,
+                    startsCovered =
+                        handoff != null &&
+                        handoff.startsCovered,
+                    coveredHoldSeconds =
+                        handoff != null
+                            ? handoff.coveredHoldSeconds
+                            : 0f
                 };
             return ScriptPlayable<StoryStartTimelineBehaviour>
                 .Create(graph, behaviour);
@@ -78,6 +99,8 @@ namespace Project.StoryStart
     {
         public StoryStartTimelineSettings settings;
         public PlayableDirector director;
+        public bool startsCovered;
+        public float coveredHoldSeconds;
 
         private StoryStartCutsceneRunner runner;
 
@@ -95,7 +118,11 @@ namespace Project.StoryStart
                 "Story Start Cutscene Runner");
             runner = runnerObject.AddComponent<
                 StoryStartCutsceneRunner>();
-            runner.Begin(settings, director);
+            runner.Begin(
+                settings,
+                director,
+                startsCovered,
+                coveredHoldSeconds);
         }
 
         public override void OnBehaviourPause(
@@ -132,5 +159,13 @@ namespace Project.StoryStart
             }
             runner = null;
         }
+    }
+
+    [DisallowMultipleComponent]
+    public sealed class StoryStartEntryHandoff :
+        MonoBehaviour
+    {
+        public bool startsCovered;
+        public float coveredHoldSeconds;
     }
 }

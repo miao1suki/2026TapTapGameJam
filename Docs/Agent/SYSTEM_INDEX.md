@@ -1,5 +1,13 @@
 # 系统索引
 
+`存档改革` 分支的存档、开局、结局清档、收集品、颜色钥匙/能力、重生点和成就边界统一服从 `.agents/skills/taptap-save-reform/SKILL.md`：玩家不再管理多槽位，单轮自动续玩；低于30%不进Boss，30%到60%以下打完回第一关并保留本轮，达到60%完成真结局Playable后才清档、重置并回主界面；成就与本机全局设置跨轮永久保留。
+
+暂停轮盘的存档页已封存：`SavePanelController` 不再读写存档或显示槽位，旧实现备份于 `Docs/SavePanelController.Legacy.cs.txt`；页面运行时只保留右上角 Close 和居中的 Cubic `待开发内容，请关注后续消息`。
+
+单轮运行存档已接入 `RunSaveService` / `RunSessionCoordinator`：`Saves/run.json` 保存当前重生点、收集品稳定 ID、颜色钥匙消耗 ID、颜色/能力解锁和 Boss 状态；开始游戏读取时先将标准玩家的 RGB 故障死亡层拉满，在故障遮屏期间恢复进度和位置，再按玩家预制体配置的复活淡出时长揭示，不使用通用加载蒙屏；真结局通过幂等 API 清档并返回主界面。
+
+Boss 血条启用委托同时驱动 `BossMusicRequest`：确认玩家与 Boss 同场景后申请可释放的 `music.boss` 音乐覆盖，Boss死亡/禁用/销毁时释放并恢复最新底层BGM；请求期间随机或区域BGM更新不会抢掉Boss曲。
+
 可选二维遮挡光照已接入PC/Mobile URP合成，按实际墙体与门的XY轮廓阻光，非房间整块可见；需相机显式挂WorldVisibility2D，Gaming不自动启用。八帧喷泉Fountain.prefab只负责表现、82×66原生帧按16有效像素/格。Pick隔离GPU65断言及Play7断言通过；未做安卓真机性能验收。见[操作](../Developer/WORLD_VISIBILITY_AND_FOUNTAIN.md)、[接口](Integration/WORLD_VISIBILITY_API.md)。
 2026-10-20最新关卡接收：策划Gaming以5e88e7c为设计标准（21房、2604原物体，补Start后2605）；R2更新为作者d3fac6a原Scene，手调规划回采未完成的限制不变。TA f7cbb62仅备份到codex/backup/irotin-gaming-art-20261020，不合其新Gaming；保留main现有GridArt层级。后文数量和版本为历史记录，详见[远端接收](../Developer/REMOTE_LEVEL_RECEIPT_2026-10-20.md)。
 
@@ -25,7 +33,7 @@ Boss 出场使用 `BossAppearCinematicPlayable`：1 秒玩家锁、故障警告/
 
 自然死亡与处决死亡共用 `BossDeathCinematicPlayable`：自然入口传送玩家到最近已激活重生点并关闭 Boss 接触击杀；处决入口从开局即接管 Boss，镜头过半时以 10 格/秒右移，任一正伤害进入共享 Boss 故障节点。后续包含 Boss/玩家字幕、玩家两闪、六钥匙竖列、死亡动画进度检测、删除 Boss 和独立场景级玩家沉思 Director。
 
-独立开场资产 `Content/GameFlow/story_start.playable` 使用 `StoryStartTimelinePlayable`：检查并锁玩家、四边黑幕聚拢、镜头 `1.4×`、居中打字机分段字幕、玩家相对左移 16 格、反向揭开黑幕并走回原位，最后恢复镜头和操作。见 [story_start API](Integration/STORY_START_TIMELINE_API.md)。
+新档点击“开始游戏”时，`StartMenuFlowBridge.BeforeStartTransition` 先由 `GameplayEntryCircleCover` 在菜单上闭圆形遮罩；完全遮黑后才启动场景运镜，并从全黑起等待 `2` 秒，再通过 `StoryStartEntryHandoff` 接入独立开场资产 `Content/GameFlow/Resources/story_start.playable`。之后检查并锁玩家、镜头 `1.4×`、居中打字机分段字幕且到时直接消失、玩家相对左移 16 格；随后黑幕从中心散开，玩家以 Run 动画同步走回画面中心，默认速度 `2.6666667` 格/秒，最后恢复镜头和操作。已有存档直接走 RGB 故障读档效果。见 [story_start API](Integration/STORY_START_TIMELINE_API.md)。
 
 共享场景素材库已按16有效像素/格清点为178项，新增边框、混合图集装饰和正式道具静态外观；保留旧笔刷编号/引用，自定义命名不覆盖。素材栏按视口自适应两列并兼容高DPI，入口“同步项目与切片素材”；范围/选区/排除项见[素材盘点](../Developer/SCENE_ART_LIBRARY.md)。黑白与旧Platform墙地块均可作为工作台参考，不改地图布局。
 

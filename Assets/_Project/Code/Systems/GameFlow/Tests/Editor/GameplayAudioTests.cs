@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using NUnit.Framework;
+using Project.Audio;
 using UnityEditor;
 using UnityEngine;
 
@@ -44,6 +45,115 @@ namespace Project.GameFlow.Tests
             Assert.AreEqual(1, matches, id);
         }
 
+        [Test]
+        public void BossThemeUsesLoopingMusicChannel()
+        {
+            var asset = AssetDatabase.LoadMainAssetAtPath(
+                "Assets/_Project/Content/Audio/Resources/AudioCatalog.asset");
+            Assert.NotNull(asset);
+            var cues = new SerializedObject(asset).FindProperty("cues");
+            int matches = 0;
+            for (int index = 0; index < cues.arraySize; index++)
+            {
+                var cue = cues.GetArrayElementAtIndex(index);
+                if (cue.FindPropertyRelative("cueId").stringValue !=
+                    AudioCueIds.MusicBoss)
+                {
+                    continue;
+                }
+
+                matches++;
+                Assert.AreEqual(
+                    0,
+                    cue.FindPropertyRelative("channel")
+                        .enumValueIndex);
+                Assert.IsTrue(
+                    cue.FindPropertyRelative("loop").boolValue);
+                var clips = cue.FindPropertyRelative("clips");
+                Assert.Greater(clips.arraySize, 0);
+                Assert.NotNull(
+                    clips.GetArrayElementAtIndex(0)
+                        .objectReferenceValue);
+            }
+
+            Assert.AreEqual(1, matches);
+        }
+
+        [Test]
+        public void MusicOverrideRestoresLatestBaseMusic()
+        {
+            AudioManager manager = AudioManager.EnsureInstance();
+            AudioSource source = manager.MusicSource;
+            AudioClip originalClip = source.clip;
+            bool originalLoop = source.loop;
+            AudioClip firstBase = null;
+            AudioClip secondBase = null;
+            AudioClip boss = null;
+            object owner = new object();
+            MusicRequestHandle handle = default;
+            try
+            {
+                firstBase = AudioClip.Create(
+                    "First Base",
+                    64,
+                    1,
+                    22050,
+                    false);
+                secondBase = AudioClip.Create(
+                    "Second Base",
+                    64,
+                    1,
+                    22050,
+                    false);
+                boss = AudioClip.Create(
+                    "Boss",
+                    64,
+                    1,
+                    22050,
+                    false);
+
+                manager.PlayMusic(firstBase, true, .4f);
+                Assert.AreSame(firstBase, source.clip);
+                handle = manager.RequestMusicOverride(
+                    owner,
+                    boss,
+                    true,
+                    .7f);
+                Assert.IsTrue(handle.IsValid);
+                Assert.AreSame(boss, source.clip);
+
+                manager.PlayMusic(secondBase, false, .6f);
+                Assert.AreSame(
+                    boss,
+                    source.clip,
+                    "A base music change must not replace an active override.");
+
+                handle.Release();
+                Assert.IsFalse(handle.IsValid);
+                Assert.AreSame(secondBase, source.clip);
+                Assert.IsFalse(source.loop);
+            }
+            finally
+            {
+                handle.Release();
+                if (originalClip != null)
+                {
+                    manager.PlayMusic(
+                        originalClip,
+                        originalLoop,
+                        1f);
+                }
+                else
+                {
+                    manager.StopMusic();
+                }
+
+                DestroyClip(boss);
+                DestroyClip(secondBase);
+                DestroyClip(firstBase);
+            }
+        }
+
         [TestCase(5.9f, 1f, 5f, false, false, false)]
         [TestCase(6f, 1f, 5f, false, false, true)]
         [TestCase(12f, 2f, 5f, false, false, true)]
@@ -67,6 +177,14 @@ namespace Project.GameFlow.Tests
                 Assert.AreEqual(expected, type.GetMethod("ShouldPlayLandingImpact", Private).Invoke(player, null));
             }
             finally { UnityEngine.Object.DestroyImmediate(actor); }
+        }
+
+        private static void DestroyClip(AudioClip clip)
+        {
+            if (clip != null)
+            {
+                UnityEngine.Object.DestroyImmediate(clip);
+            }
         }
     }
 }

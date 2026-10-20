@@ -232,6 +232,16 @@ namespace Project.Items
             RecycleItem();
         }
 
+        public void ResetPersistentCollectionForNewRun()
+        {
+            IsCollected = false;
+            if (!gameObject.activeSelf)
+            {
+                gameObject.SetActive(true);
+            }
+            ResetForReuse();
+        }
+
         private void SuspendCollectedBody()
         {
             if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
