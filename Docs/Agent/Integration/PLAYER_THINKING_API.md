@@ -35,7 +35,7 @@ PlayerThinkingTimelinePlayable.SetCollectibleProgress(
 ## 共同内容
 
 - `PlayerTimelineTrack` 锁操作；Timeline 结束时停止导演并释放玩家锁和相机轨。
-- `BossCameraPlayable` 使用 `PlayerFocus` 模式，聚焦玩家并保持正常视野大小。
+- `BossCameraPlayable` 使用 `PlayerFocus` 模式，聚焦玩家并保持正常视野大小；本地偏移为 `(0, 4, -10)`，镜头相对原版整体上移 4 格。
 - 全部文字通过 `WordNoteUI.RequestTimeline` 进入同一消息队列。
 - 字体为 `Cubic_11 SDF`，字号默认 `72`，白字黑描边，居中下方。
 - 每句打字机完成后停留 `1.2` 秒，直接消失，间隔 `1` 秒后进入下一句。

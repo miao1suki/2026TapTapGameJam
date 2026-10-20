@@ -12,8 +12,9 @@
 4. 四个调色盘从玩家身体中出现，依次升到头顶排列，再逐个飞到喷泉顶部并进入喷泉内部；每份演出副本都通过 `MechanismArtworkPresentation.PrepareCinematicClone` 使用当前最新物体美术，隐藏预制体遗留占位 Renderer。
 5. 等待 `1.5` 秒，以打字机形式显示 `真的结束了?`，到时直接消失。
 6. 以故障风格显示 `是的，结束了，`，到时直接消失。
-7. 瞬间全屏黑屏，随后调用 `RunSessionCoordinator.CompleteCurrentRunAndReturnToMenu()` 清档并回开始界面。
-8. 开始界面回来后，先瞬间移除黑屏，再立即播放 RGB 故障特效；故障短暂停留后淡出，Timeline 结束。
+7. 瞬间全屏黑屏；结束分支先停止镜头平滑回程，再调用 `RunSessionCoordinator.CompleteCurrentRunAndReturnToMenu()` 清档并回开始界面。
+8. 开始界面状态完成后继续保持 `1` 秒全黑，避免露出从喷泉返回出生点的镜头。
+9. 黑屏解除后立即播放 RGB 故障特效；故障短暂停留后淡出，Timeline 结束。
 
 ## 成就边界
 

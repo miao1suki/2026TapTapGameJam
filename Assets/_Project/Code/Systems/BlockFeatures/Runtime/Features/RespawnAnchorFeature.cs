@@ -33,6 +33,13 @@ namespace Project.BlockFeatures
         [SerializeField]
         private bool isBossArenaRespawnPoint;
         [BlockParameter(
+            Label = "是否为 Boss 前置出生点",
+            Group = "关卡类型",
+            Order = 1,
+            Tooltip = "仅用于读档：如果存档当前重生点是 Boss 关重生点，读档改为回到此点；正常复活规则不变。")]
+        [SerializeField]
+        private bool isBossEntryRespawnPoint;
+        [BlockParameter(
             Label = "复活后 Boss 血量",
             Group = "Boss 关卡重生",
             Order = 0,
@@ -127,6 +134,8 @@ namespace Project.BlockFeatures
         public bool IsActivated => activated;
         public bool IsBossArenaRespawnPoint =>
             isBossArenaRespawnPoint;
+        public bool IsBossEntryRespawnPoint =>
+            isBossEntryRespawnPoint;
         public int BossRespawnHealth =>
             Mathf.Max(0, bossRespawnHealth);
         public float BossRespawnLocalX => bossRespawnLocalX;
@@ -241,6 +250,11 @@ namespace Project.BlockFeatures
             }
 
             ApplyBossRespawnMarkerState();
+        }
+
+        public void SetBossEntryRespawnPoint(bool value)
+        {
+            isBossEntryRespawnPoint = value;
         }
 
         public void SetBossRespawnLocalX(float value)

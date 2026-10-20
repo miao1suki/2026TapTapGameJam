@@ -10,6 +10,8 @@ namespace Project.GameFlow.Tests
     {
         private static Type PlayerType => Type.GetType("Project.Player.PlayerController, Assembly-CSharp");
         private static Type ModeType => Type.GetType("Project.Player.PlayerRespawnMode, Assembly-CSharp");
+        private static Type AnchorType => Type.GetType("Project.BlockFeatures.RespawnAnchorFeature, Assembly-CSharp");
+        private static Type ChainType => Type.GetType("Project.BlockFeatures.RespawnAnchorChainRuntime, Assembly-CSharp");
 
         [Test]
         public void StandardPlayer_DefaultsToOrdinaryRespawn()
@@ -66,6 +68,73 @@ namespace Project.GameFlow.Tests
             Assert.That(font, Is.Not.Null, EditorJsonUtility.ToJson(settings));
             StringAssert.Contains("Cubic_11 SDF.asset", AssetDatabase.GetAssetPath(font));
             Assert.That(settings.RevealShader, Is.Not.Null);
+        }
+
+        [Test]
+        public void BossEntryFallback_UsesActivatedMarkedAnchorBeforeBoss()
+        {
+            var root = new GameObject("Boss entry fallback test");
+            try
+            {
+                var earlyEntry = CreateAnchor(root.transform, "Earlier Boss entry", 1, true, true);
+                var entry = CreateAnchor(root.transform, "Boss entry", 2, true, true);
+                var boss = CreateAnchor(root.transform, "Boss checkpoint", 3, false, true);
+                AnchorType.GetMethod("SetBossArenaRespawnPoint").Invoke(boss, new object[] { true });
+
+                object[] arguments = { boss, null };
+                Assert.That(
+                    ChainType.GetMethod("TryFindBossEntryFallback")
+                        .Invoke(null, arguments),
+                    Is.True);
+                Assert.That(arguments[1], Is.SameAs(entry));
+                Assert.That(earlyEntry, Is.Not.SameAs(arguments[1]));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void BossEntryFallback_RequiresActivatedMarkerAndBossCurrentPoint()
+        {
+            var root = new GameObject("Boss entry fallback invalid test");
+            try
+            {
+                var entry = CreateAnchor(root.transform, "Inactive Boss entry", 1, true, false);
+                var boss = CreateAnchor(root.transform, "Boss checkpoint", 2, false, true);
+                AnchorType.GetMethod("SetBossArenaRespawnPoint").Invoke(boss, new object[] { true });
+
+                Assert.That(TryFindFallback(boss), Is.False);
+                AnchorType.GetMethod("Activate").Invoke(entry, null);
+                Assert.That(TryFindFallback(entry), Is.False);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+
+        private static Component CreateAnchor(
+            Transform parent,
+            string name,
+            int chainIndex,
+            bool isBossEntry,
+            bool activate)
+        {
+            var gameObject = new GameObject(name);
+            gameObject.transform.SetParent(parent);
+            Component anchor = gameObject.AddComponent(AnchorType);
+            AnchorType.GetMethod("SetChainData")
+                .Invoke(anchor, new object[] { string.Empty, chainIndex, false, null });
+            AnchorType.GetMethod("SetBossEntryRespawnPoint")
+                .Invoke(anchor, new object[] { isBossEntry });
+            if (activate)
+            {
+                AnchorType.GetMethod("Activate").Invoke(anchor, null);
+            }
+            return anchor;
+        }
+
+        private static bool TryFindFallback(Component boss)
+        {
+            object[] arguments = { boss, null };
+            return (bool)ChainType.GetMethod("TryFindBossEntryFallback")
+                .Invoke(null, arguments);
         }
 
         [Test]

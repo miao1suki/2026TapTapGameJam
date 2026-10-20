@@ -44,6 +44,11 @@ namespace Project.BlockFeatures.Editor
                     EditorUtility.SetDirty(feature);
                 });
             levelType.Add(bossToggle);
+            levelType.Add(ProjectInspectorUtility.CreateProperty(
+                serializedObject,
+                "isBossEntryRespawnPoint",
+                "是否为 Boss 前置出生点",
+                "仅用于读档：如果存档当前重生点是 Boss 关重生点，读档改为回到此点；正常复活规则不变。"));
             root.Add(levelType);
 
             Foldout bossRespawn =

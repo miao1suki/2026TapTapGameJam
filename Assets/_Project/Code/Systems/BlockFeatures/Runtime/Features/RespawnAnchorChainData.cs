@@ -133,6 +133,58 @@ namespace Project.BlockFeatures
             return false;
         }
 
+        public static bool TryFindBossEntryFallback(
+            RespawnAnchorFeature bossAnchor,
+            out RespawnAnchorFeature fallback)
+        {
+            fallback = null;
+            if (bossAnchor == null ||
+                !bossAnchor.IsBossArenaRespawnPoint ||
+                bossAnchor.ChainIndex < 0)
+            {
+                return false;
+            }
+
+            int fallbackIndex = -1;
+            IReadOnlyList<RespawnAnchorFeature> ordered =
+                GetOrderedAnchors();
+            for (int index = 0; index < ordered.Count; index++)
+            {
+                RespawnAnchorFeature candidate = ordered[index];
+                if (candidate == null ||
+                    candidate == bossAnchor ||
+                    candidate.gameObject.scene != bossAnchor.gameObject.scene ||
+                    !candidate.IsBossEntryRespawnPoint ||
+                    candidate.IsBossArenaRespawnPoint ||
+                    !candidate.IsRespawnPointAvailable)
+                {
+                    continue;
+                }
+
+                int candidateIndex = candidate.ChainIndex;
+                if (candidateIndex < 0 ||
+                    candidateIndex >= bossAnchor.ChainIndex ||
+                    candidateIndex < fallbackIndex)
+                {
+                    continue;
+                }
+
+                if (candidateIndex == fallbackIndex &&
+                    fallback != null &&
+                    string.CompareOrdinal(
+                        candidate.AnchorId,
+                        fallback.AnchorId) >= 0)
+                {
+                    continue;
+                }
+
+                fallback = candidate;
+                fallbackIndex = candidateIndex;
+            }
+
+            return fallback != null;
+        }
+
         public static List<RespawnAnchorFeature> BuildOrder(
             IReadOnlyList<RespawnAnchorFeature> anchors)
         {

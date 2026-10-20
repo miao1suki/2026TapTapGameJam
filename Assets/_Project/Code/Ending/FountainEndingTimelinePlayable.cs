@@ -699,6 +699,7 @@ namespace Project.Ending
             ShowBlackScreen();
             yield return null;
 
+            completingEnding = true;
             ReleaseGameplayForMenu();
             bool completed =
                 RunSessionCoordinator
@@ -711,7 +712,6 @@ namespace Project.Ending
                     .ReturnToMainMenu();
             }
 
-            completingEnding = true;
             GameFlowController flow =
                 GameFlowController.Instance;
             float deadline =

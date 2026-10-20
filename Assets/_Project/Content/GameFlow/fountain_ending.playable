@@ -160,7 +160,7 @@ MonoBehaviour:
     endingAnswer: "是的，结束了，"
     blackScreenColor: {r: 0, g: 0, b: 0, a: 1}
     blackScreenSortingOrder: 32000
-    blackScreenHoldSeconds: 0
+    blackScreenHoldSeconds: 1
     menuGlitchHoldSeconds: 0.35
     menuGlitchFadeSeconds: 0.35
     menuReturnTimeoutSeconds: 5
