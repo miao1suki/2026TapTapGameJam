@@ -460447,6 +460447,18 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9103196063016445328, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
+      propertyPath: swimSpeed
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 9103196063016445328, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
+      propertyPath: swimRiseSpeed
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9103196063016445328, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
+      propertyPath: swimSinkSpeed
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9103196063016445328, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
       propertyPath: lethalFallHeightBlocks
       value: 10
       objectReference: {fileID: 0}
@@ -934502,31 +934514,6 @@ MonoBehaviour:
   approachHeightCells: 6
   approachVerticalOffsetCells: 0.5
   framingMarginCells: 1
---- !u!114 &1900000099
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 590038374}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b75abd3c8442965488430e6d044bbd56, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TimelineCamRig
-  cameraManager: {fileID: 1900000030}
-  cameraModeController: {fileID: 1900000031}
-  controlPriority: 1000
-  returnTransitionDuration: 0.25
-  target: {fileID: 1900000040}
-  rotX: 30
-  rotY: 0
-  distance: 5
-  height: 1.5
-  lookHeight: 1.2
-  isPlayingAnim: 0
-  userManualAllowed: 0
-  userDriving: 0
 --- !u!4 &1900000040 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 9021559481742931667, guid: 850f455fc20459b48987783f0ab1ab59, type: 3}
@@ -934558,6 +934545,31 @@ MonoBehaviour:
   maskResolution: 0.5
   maxExtraLights: 4
   respectPlayerSight: 1
+--- !u!114 &1900000099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590038374}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b75abd3c8442965488430e6d044bbd56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TimelineCamRig
+  cameraManager: {fileID: 1900000030}
+  cameraModeController: {fileID: 1900000031}
+  controlPriority: 1000
+  returnTransitionDuration: 0.25
+  target: {fileID: 1900000040}
+  rotX: 30
+  rotY: 0
+  distance: 5
+  height: 1.5
+  lookHeight: 1.2
+  isPlayingAnim: 0
+  userManualAllowed: 0
+  userDriving: 0
 --- !u!1 &1900138561 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1869276672004954081, guid: 2eba6d8ce3c1b004cbaef2b615d7bf71, type: 3}
