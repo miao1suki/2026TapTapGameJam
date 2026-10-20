@@ -105,33 +105,36 @@ namespace Project.GameFlow.Editor
             Text gameplayLabel = CreateText(
                 gameplay.transform,
                 "LevelLabel",
-                "关卡",
+                string.Empty,
                 new Vector2(-790f, 475f),
                 new Vector2(280f, 64f),
                 30,
                 font,
                 Color.white);
             gameplayLabel.alignment = TextAnchor.MiddleLeft;
+            gameplayLabel.gameObject.SetActive(false);
             Text help = CreateText(
                 gameplay.transform,
                 "Help",
-                "A/D 移动  ·  Space 跳跃  ·  ESC 暂停",
+                string.Empty,
                 new Vector2(-670f, -495f),
                 new Vector2(760f, 50f),
                 22,
                 font,
                 new Color(1f, 1f, 1f, 0.72f));
             help.alignment = TextAnchor.MiddleLeft;
+            help.gameObject.SetActive(false);
             Text pauseHint = CreateText(
                 gameplay.transform,
                 "PauseHint",
-                "ESC  暂停",
+                string.Empty,
                 new Vector2(805f, 475f),
                 new Vector2(240f, 56f),
                 24,
                 font,
                 new Color(1f, 1f, 1f, 0.82f));
             pauseHint.alignment = TextAnchor.MiddleRight;
+            pauseHint.gameObject.SetActive(false);
 
             GameObject pause = CreatePanel(
                 canvasObject.transform,

@@ -4,9 +4,13 @@
 
 ## 当前核验结果
 
+- 2026-10-20 21:50 真机重现（MEIZU 20 Pro、TapTap 内运行）：`TapTapAchievementBridge` 收到初始化失败 `1001`，原生 `TapInitializer` 明确说明“Client Token 不正确或与 Client ID 不匹配”。实际 Client ID 与项目一致。发布 APK 中的 Token 与此前提供的本地文件一致，排除了漏打入或打包时换用另一 Token；这不是凭截图猜测 APK 证书错误。
+- 2026-10-20 用户重新提供 Client Token，安全检查确认已变化且字段合法；本地备份旧配置后同步主工程及隔离构建工程。Secrets 及meta仍被Git忽略，不提交凭据。新版APK已验证包含新Token而不含被拒绝的旧Token；旧TapTap版本不会随本地文件更新自动修好。
+- 2026-10-20 22:07:58 获用户授权独立安装后，真机进程1955输出 `[TapTapAchievementBridge] TapSDK initialized.`，确认旧Token造成的初始化1001已消除。随后用户看到“未开通TapTap账号服务”，明确决定下一版安卓再检查；本轮不更改后台服务、不再打包、不继续登录/成就验收。成功初始化不等于账号登录或成就上报通过。
+- 修正APK：`Builds/形之彩-0.2.1-20261020-SDK修正/Android/形之彩.apk`。Unity构建成功，最终包ARM64、0.2.1/code201、包名不变，签名MD5不变；仅INTERNET/ACCESS_NETWORK_STATE，debuggable=false、明文流量关闭。TapPlay原有数据未清理，独立版为另一个Android应用UID。
 - 发布 APK `形之彩-0.2.1-20261020-SDK整合/Android/形之彩.apk` 的签名通过 `apksigner verify --print-certs`，证书 MD5 为 `2D9E5B4A9D63EB90D63EA84789C0C333`。
 - 项目包名 `com.miao1suki.shapeofcolor`、SDK Client ID 与当前应用交接一致；SDK 仍只在 Android 隐私授权后由主线程初始化，Release 日志保持关闭。
-- 本次没有连接可授权的 ADB 设备，尚未取得截图所对应的原生错误码，不能声称已修复服务端鉴权。
+- 初次排查时无可授权ADB设备；现已取得上述真机错误码及修正后的SDK初始化成功回调。TapPlay重传新版后的运行、账号服务开通、登录/成就上报仍待后续验收。
 - 用户已确认该错误发生于 TapTap 内直接运行，即 TapPlay 沙箱路径，不是独立安装 APK。截图文件名的 `com.taptap` 不是游戏 APK 包名的证据。
 - 旧后台交接记录曾记载证书列表为空，这只是需要负责人重新核对的历史状态，不代表当前后台仍为空。不要未经授权修改凭据、替换证书或关闭 SDK 来掩盖错误。
 
@@ -29,6 +33,8 @@
 
 3. 脚本会给出 `Library/AndroidDiagnostics/TapTap-时间.txt` 路径。它只读取日志，不清空 logcat、不启动/停止/重装游戏；日志在被 Git 忽略的 Library 中。脚本不打印原始日志，并对 URL、令牌、账号和长字符串做尽力脱敏。发送前仍须人工检查，不能把凭据发到聊天或提交 Git。
 4. 同时记录：发生时间、手机型号/安卓版本、是 TapTap 内测试还是独立 APK、所用游戏版本。USB 授权失败/未连接时脚本直接报错，不会伪造空日志为成功。
+
+修正后的验收可以用 `-AppProcessId <实际进程号>` 排除TapPlay中仍存活的旧版本日志；同名包在沙箱和独立安装中可能同时存在，需核对实际进程/UID。脚本保留桥接器Info级成功回调，继续排除无关Unity日志并脱敏，不清日志缓冲。
 
 如果出现初始化 `1001`，按官方说明核对**同一后台应用**的 Client ID、Client Token、包名及证书。Token 仅由负责人在本地安全比对，不提供到聊天。若日志是登录 `signature not match`，再针对最终安装包证书配置排查；不要把两种签名问题混为一谈。截图本身不足以区分这些路径。
 

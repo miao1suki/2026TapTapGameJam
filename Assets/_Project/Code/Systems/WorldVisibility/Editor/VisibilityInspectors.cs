@@ -27,13 +27,20 @@ namespace Project.WorldVisibility.Editor
             Field(reference,"targetCamera","目标相机"); Field(reference,"findPlayer","自动寻找玩家"); Field(reference,"viewer","观察者");
             Field(reference,"previewInEditor","编辑态预览");
             var lighting = VisibilityInspectorUI.Group(root,"光照表现");
+            Field(lighting,"connectedSpaceVisibility","连通空间可见（推荐）");
             Field(lighting,"cellWorldSize","单格世界尺寸"); Field(lighting,"sightRadiusCells","视线范围（格）");
-            Field(lighting,"playerLightRadiusCells","玩家光范围（格）"); Field(lighting,"ambient","可见区域环境亮度");
-            Field(lighting,"lightCore","明亮核心比例"); Field(lighting,"respectPlayerSight","墙后不可见（含远处灯光）");
+            lighting.Add(new HelpBox("连通模式：半径内通路可绕转角，封闭墙体和关闭的门阻断；保持原画亮度，仅范围外沿渐隐。半径限制为2～48格，半格采样；不计算任何附加灯光或阴影。",HelpBoxMessageType.Info));
+            var legacy = VisibilityInspectorUI.Group(lighting,"直线视线与灯光参数",false);
+            Field(legacy,"playerLightRadiusCells","玩家光范围（格）"); Field(legacy,"ambient","可见区域环境亮度");
+            Field(legacy,"lightCore","明亮核心比例"); Field(legacy,"respectPlayerSight","墙后不可见（含远处灯光）");
+            Field(legacy,"shadowSoftnessCells","遮挡柔和范围（格）");
+            Field(legacy,"maxExtraLights","最多附加灯光");
+            void UpdateMode() { legacy.style.display = serializedObject.FindProperty("connectedSpaceVisibility").boolValue ? DisplayStyle.None : DisplayStyle.Flex; }
+            root.TrackPropertyValue(serializedObject.FindProperty("connectedSpaceVisibility"), _ => UpdateMode()); UpdateMode();
             var advanced = VisibilityInspectorUI.Group(root,"性能与诊断",false);
-            Field(advanced,"maskResolution","遮罩分辨率比例"); Field(advanced,"maxExtraLights","最多附加灯光");
+            Field(advanced,"maskResolution","遮罩分辨率比例");
             var status = new Label(); advanced.Add(status);
-            status.schedule.Execute(() => { if (target is WorldVisibility2D value) status.text = $"已缓存静态边：{value.CachedSegments}；几何版本：{value.GeometryRevision}"; }).Every(500);
+            status.schedule.Execute(() => { if (target is WorldVisibility2D value) status.text = $"已缓存静态边：{value.CachedSegments}；几何版本：{value.GeometryRevision}；连通采样：{value.ConnectedCellCount}；重建次数：{value.ConnectedBuildCount}"; }).Every(500);
             var rebuild = new Button(WorldVisibility2D.InvalidateAll) { text = "刷新墙体遮挡缓存" }; advanced.Add(rebuild);
             return root;
         }

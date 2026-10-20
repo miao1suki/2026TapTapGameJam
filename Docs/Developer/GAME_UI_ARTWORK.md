@@ -1,5 +1,7 @@
 # 游戏 UI 美术接入
 
+2026-10-20 双端移除早期非美术 HUD：GameplayHud 的 LevelLabel、Help、PauseHint、旧 PauseButton 默认关闭并清空旧场景名/硬编码操作提示；运行时切换平台和生成入口均不会恢复。正式手机美术按键、地图/常驻重生、暂停轮盘和业务提示保留。PC继续使用实际暂停绑定。
+
 ## 场景与组件
 
 - 正式开始界面：`Assets/_Project/Scenes/Start/MainMenu.unity`。开始按钮仍通过 `StartMenuFlowBridge` 进入 Gaming，不恢复旧 Bootstrap 流程。
@@ -9,6 +11,8 @@
 ## 共享素材
 
 `Assets/_Project/Resources/UI/GameUiArtwork.asset` 集中引用背景、按钮、暂停图标和三色扇区。裁切产物位于 `Assets/_Project/Art/Generated/GameUI`；原图位于 `Assets/_Project/Resources/26TAPTAP/UI`，没有覆盖原图。
+
+2026-10-20：暂停“存档”与“制作名单”的错误扇形素材已互换纠正，保留原 GUID；`GameUiArtworkSetup` 的对应源图 X 坐标同步改为存档 144、制作名单 80，重新生成不会复现旧错误。存档页由 `SavePanelController` 动态生成 Cubic_11 TMP 文本，保留原提示并在下一行显示固定文字“已自动存档”；该文字不新增存档调用或改变现有自动存档逻辑。
 
 Boss 血条不使用图片材质：外框以外保持透明，拖尾血皮为纯白，当前血量为项目肉红色 `#B23E3E`，血量分段使用无 Sprite 的纯黑竖直 `Image`。外框同样由纯色硬边 `Image` 拼成，使用 1px 黑外缘、`#523B42` 暗红框体和左上/右下 `#F65332` 短角部强调。所有边缘保持硬直，不创建底板、图片描边、Mipmap 或压缩资源；长度、高度、外框、颜色和分隔线宽度仍可在 `BossHealthBarUI` Inspector 调整。
 

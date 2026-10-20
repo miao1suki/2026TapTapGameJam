@@ -1,5 +1,23 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 最新策划图与本地连通空间功能整合
+
+- 最终TA更新317f9bb合入：额外50个纯美术渲染物及4个效果Prefab实例，未采用TA旧关卡。用户确认标准玩家摔死高度为唯一配置例外，由策划Scene覆盖0恢复10格；其余全部策划非美术文档和三份规划保持相同。新场景179项新GUID引用可解析、无新增悬空本地引用。
+- 新场景PC/Mobile渲染58项实测通过（1813墙边、3008可达采样，编辑器缓存约0.070ms，移动重建约1.279ms；非安卓真机帧耗时）。实际SharedGameUI双端旧HUD隐藏8项通过，正式手机美术按钮、地图和重生不改。
+- Windows和Android最终非开发构建成功、均0 error（分别2/4 warning）。输出Builds/形之彩-0.2.1-20261020-最新整合；Windows根目录7z无套层/无DontShip且完整性通过；APK已核对0.2.1/code201/ARM64/com.miao1suki.shapeofcolor、仅两项TapTap网络权限及非调试/非导出Unity入口，最终载荷含最新本地凭据。MD5证书签名2D9E5B4A9D63EB90D63EA84789C0C333。未重装手机、未测新Token账号服务/登录上报或完整通关。
+
+- 当前用户整合授权：正式Gaming玩法、房间、参数、绑定、内嵌规划及两份外部JSON严格采用xianyu66web ac01381；没有恢复旧main布局。TA GridArt/天气/星空采用已交付a10e1e4；双方程序代码修复保留。
+- 接入另一对话已完成的连通空间遮蔽（24格，旁路多灯/高斯滤波）、地图滚轮每次最多6%、暂停存档/名单切片纠正及“已自动存档”，同版本EDM内嵌禁用iOS解析器。正式主相机只新增遮蔽技术组件，不迁入本地旧关卡或修改策划实例配置。
+- 静态审计：除明确美术块及相机技术接线外，所有策划Unity文档完全相同；内嵌planning完全相同，两份外部JSON分别逐字节相同，无新增悬空本地引用，125项新GUID引用可解析。另一对话相同遮蔽源码已有58项PC/Mobile GPU检查通过；本次整体编译与新美术整合继续执行。
+- 不携带本地SDK凭据、缓存、字体动态缓存、个人设置或DOTweenPro到Git。用户要求继续接入TA最新317f9bb后生成双端新包。
+
+## 2026-10-20 真机 TapSDK 1001 凭据修正
+
+- 已取得用户手机TapPlay内实际日志：初始化1001，原生TapInitializer明确Client Token错误或与Client ID不匹配；发布APK内的Token与用户旧文件一致，不是漏打入，也没有证据归因APK证书或TapPlay兼容。
+- 用户重新提供Token后，已备份旧文件并同步主工程/隔离构建，凭据与meta继续忽略。SDK修正APK构建/签名/新旧Token载荷/非开发权限检查通过；获授权独立安装，22:07:58真机回调TapSDK initialized，初始化1001已解决。不清数据、不动TapPlay存档、不改SDK版本或关卡。
+- 用户随后见“未开通TapTap账号服务”，明确决定下一版安卓再看；本轮停止后台/登录处理及重打包。最新本地JSON同步，登录/成就上报和TapPlay重传新版后的验收未完成。日志导出工具补上成功Info回调与可选AppProcessId，避免混入沙箱旧版本日志。
+- 上次TA整合a10e1e4确实已推送并包含于后续main。GitHub该次Webhook delivery 3849371410879266816超时500，服务端未入队；Bot在线且后续delivery成功。未伪造测试提交、未发测试群消息、未重启Bot。
+
 ## 2026-10-20 Cubic 字体重置动态图集数据
 
 - 分支 `roy画画`。`Cubic_11 SDF.asset` 保持 TMP Dynamic 模式与源 `Cubic_11.ttf` 引用，清理原预烘 4096×4096 图集与字形缓存，序列化为 1×1 初始图集；`m_ClearDynamicDataOnBuild=1`，运行时按需重建字形。
@@ -43,6 +61,17 @@
 - 分支 `结尾3`。修复开始菜单/暂停菜单的“按键映射”仍被 `RuntimeSettingsPolicy.ApplyChangesToRuntime=false` 锁在内存预览的问题。
 - `KeyBindingPanelController` 现在使用持久化 `InputBindingService.SharedRuntime`，主菜单和暂停设置共用同一服务、撤销历史和绑定根，直接修改当前运行时 `InputActionAsset` 并写入 `InputBindingOverrideStore` 的 PlayerPrefs。
 - 不改变 `RuntimeSettingsPolicy` 对旧存档与预览业务的约束。同步输入重绑定 README、基础输入 API 与移动操作说明。`Project.InputRebinding.Runtime`、`Project.StartMenu.Runtime` 与 `Project.GameFlow.EditorTests` 静态编译均 `0` error；未运行 Play Mode。
+## 2026-10-20 当前 Gaming 场景第二次快速交付
+
+- 分支 `codex/spotlight/current-version-20261020`，续接 `ef5268b`；交付当前保存后的 `Gaming.unity`、同名规划、同步后的正式关卡存档，以及本轮实际使用的浅草方向连接 `SceneArtLibrary.asset` 登记。
+- 当前规划为 25 个房间、24 个区域、4261 条物体记录、49017 个房间占格；两份外部 JSON 已逐字节同步，既有 `.meta` 未改。
+- `Cubic_11 SDF.asset` 仍是 Unity 动态字体图集的本地自动扩充，不纳入本次提交。运行规划配对守卫与暂存差异检查；未运行 Play Mode、完整通关或重新打包。
+
+## 2026-10-20 当前 Gaming 场景快速交付
+
+- 分支 `codex/spotlight/current-version-20261020`。从最新 `origin/main` 的 `58c6df7` 创建，只交付本次 Unity 保存后的正式 `Gaming.unity`、同名 `Gaming.planning.json` 与同步后的 `Content/LevelMaps/正式关卡.json`。
+- 当前规划为 25 个房间、24 个区域、4240 条物体记录、49017 个占格；两份外部 JSON 已逐字节一致。三份既有 `.meta` 未改且继续保留原 GUID。
+- `Cubic_11 SDF.asset` 是本次打开场景时 Unity 自动扩充的动态字体图集，未纳入关卡提交。已运行规划配对守卫和暂存差异检查；未运行 Play Mode、完整通关或重新打包。
 
 ## 2026-10-20 Boss 前置出生点读档回退
 

@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [string]$AdbPath = 'C:/Program Files/Unity/Hub/Editor/6000.3.12f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb.exe',
-    [string]$Serial
+    [string]$Serial,
+    [ValidateRange(0, 2147483647)]
+    [int]$AppProcessId = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,7 +20,11 @@ if ($LASTEXITCODE -ne 0 -or (($deviceState -join '').Trim() -ne 'device')) {
 
 # Do not clear logcat: the rare error may already be in its ring buffer.
 # ErrLog is an Android log tag, not a file/menu named Errorlog.
-$lines = & $AdbPath @deviceArgs logcat -d -v threadtime 'ErrLog:V' 'TapSDK:W' 'TapTap:W' 'TapTapSdk:W' 'TapTapSDK:W' 'TapInitializer:W' 'TapTapCore:W' 'TapTapLogin:W' 'Unity:W' '*:S' 2>&1
+$processArgs = @()
+if ($AppProcessId -gt 0) { $processArgs = @('--pid=' + $AppProcessId) }
+# Success callbacks use Unity's Info level. Keep them so a corrected credential
+# can be verified, while the sanitization below excludes unrelated Unity logs.
+$lines = & $AdbPath @deviceArgs logcat -d -v threadtime @processArgs 'ErrLog:V' 'TapSDK:W' 'TapTap:W' 'TapTapSdk:W' 'TapTapSDK:W' 'TapInitializer:W' 'TapTapCore:W' 'TapTapLogin:W' 'Unity:I' '*:S' 2>&1
 if ($LASTEXITCODE -ne 0) { throw 'ADB logcat failed. Check USB debugging authorization.' }
 
 $safeLines = foreach ($line in $lines) {
@@ -39,6 +45,7 @@ $outputPath = Join-Path $outputDirectory ('TapTap-' + (Get-Date -Format 'yyyyMMd
 $header = @(
     'TapTap diagnostic capture (filtered and best-effort redacted; review before sharing)',
     ('Captured UTC: ' + [DateTime]::UtcNow.ToString('O')),
+    ('Application PID filter: ' + $(if ($AppProcessId -gt 0) { [string]$AppProcessId } else { 'none' })),
     'Expected standalone Android package: com.miao1suki.shapeofcolor',
     'Known release certificate MD5: 2D9E5B4A9D63EB90D63EA84789C0C333',
     'Record separately whether the issue happened in TapTap instant-play/container or the installed APK.',

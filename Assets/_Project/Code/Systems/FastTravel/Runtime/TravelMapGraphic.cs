@@ -119,7 +119,9 @@ namespace Project.FastTravel
         public void OnScroll(PointerEventData data)
         {
             RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, data.position, data.enterEventCamera, out Vector2 local);
-            Zoom(Mathf.Pow(1.15f, data.scrollDelta.y), local);
+            // UI modules can deliver either normalized ticks or raw wheel units.
+            // Bound one event so a raw 120-unit notch cannot jump to the zoom limit.
+            Zoom(Mathf.Pow(1.06f, Mathf.Clamp(data.scrollDelta.y, -1f, 1f)), local);
         }
         private void NotifyView() { SetVerticesDirty(); ViewChanged?.Invoke(); }
         protected override void OnPopulateMesh(VertexHelper vh)

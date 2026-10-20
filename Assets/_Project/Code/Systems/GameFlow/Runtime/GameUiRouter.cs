@@ -54,11 +54,11 @@ namespace Project.GameFlow
         private void RefreshPlatformHud()
         {
             if (gameplayHud == null) return;
-            bool desktop = GameInput.PlatformMode != InputPlatformMode.Mobile;
-            foreach (string name in new[] { "Help", "PauseHint", "PauseButton", "LevelLabel" })
+            // Prototype labels are retired on every platform, not just touch devices.
+            foreach (string name in new[] { "Help", "PauseHint", "LevelLabel", "PauseButton" })
             {
                 var item = gameplayHud.transform.Find(name);
-                if (item != null) item.gameObject.SetActive(desktop);
+                if (item != null) item.gameObject.SetActive(false);
             }
             hudPlatform = GameInput.PlatformMode;
         }
@@ -393,7 +393,7 @@ namespace Project.GameFlow
                 default:
                     if (gameplaySceneLabel != null)
                     {
-                        gameplaySceneLabel.text = SceneTitle(sceneId);
+                        gameplaySceneLabel.text = string.Empty;
                     }
                     SetOnly(gameplayHud);
                     break;

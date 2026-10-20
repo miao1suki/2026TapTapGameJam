@@ -14,6 +14,8 @@ TapTap 成就 SDK 固定为 `4.10.9`，依赖官方 Core、Login、Newtonsoft.Js
 
 ## 验证
 
+2026-10-20：EDM4U 1.2.179 改为项目内嵌包，持久化禁用不使用的 `Google.IOSResolver.dll` 编辑器导入，避免未安装 iOS Build Support 时报告缺少 `UnityEditor.iOS.Extensions.Xcode`。Android 的 `Google.JarResolver.dll` 及导入配置保留原样；未升级 SDK，也未关闭全局程序集引用检查。具体覆盖见 `Packages/com.google.external-dependency-manager/PROJECT_OVERRIDES.md`。
+
 运行 `ContestOfflineTests`、`AndroidPrivacyTests` 和 `MobileLayoutPointerTests`。最终 Android 包必须再用 aapt 检查权限与 Manifest，确认只有 `INTERNET`、`ACCESS_NETWORK_STATE` 两项网络权限，无网络状态修改、Wi-Fi、局域网或蓝牙权限，无导出的 Unity 入口且 `debuggable=false`；真机还需验证授权前无网络、同意后才初始化 SDK、最近任务恢复、菜单往返和断网游玩。PC 需检查非开发构建、服务开关及运行时网络行为。编辑器测试和 Manifest 验证不是完整网络抓包或比赛合规认证。
 
 旧 APK 不会因修改源码而更新。2026-10-16 贴墙放置修复旧包实际包含 INTERNET、`debuggable=true`，未发现 Wi-Fi/附近设备/蓝牙权限。此前构建脚本使用 Development；未找到项目自写扫描代码。手机提示的具体触发源未经真机日志确认，开发调试连接是可疑来源而非已证实结论。Unity 官方说明：[Android Manifest](https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/android/introducing/manifest)。
