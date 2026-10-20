@@ -1,5 +1,10 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 导入暂存预览（完成）
+
+- 当前整合窗口修改 PlanningFragmentUtility、PlanningCanvas Collaboration/Interaction、PlanningEditorWindow.Collaboration：导入置顶暂存、拖放和房间划分选择。仅工具代码，不改本地 Gaming/MRoom2/MRoom3/Pick 布局。
+- 隔离 Unity 6000.3.12f1 编译及导入暂存25项验证通过（实际读取当前本地 MRoom3/Gaming，检查两模式的全部物体位置／尺寸、数量、绑定、出生点、只读输入、置顶层、拖动／边缘补偿／取消）；原协作地图36项回归通过。未进行真实 OS 鼠标整段拖放录屏或新构建。操作与API文档已同步。
+
 ## 2026-10-20 远端进度／浅草／喷泉光照整合验收
 
 - 主目录字体与Boss_appear冲突先完整备份，再按用户远端优先采用1722c59；其余用户MRoom2/3、Pick、共享库、插件与设置WIP保留。TA f7cbb62仅完整备份、不接新版Gaming。

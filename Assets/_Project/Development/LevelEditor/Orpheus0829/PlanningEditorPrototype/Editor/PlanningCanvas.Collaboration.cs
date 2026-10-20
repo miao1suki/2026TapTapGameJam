@@ -16,7 +16,25 @@ namespace PlanningEditorPrototype
         private bool importValid;
         private RectInt importBounds;
         private readonly List<RectInt> importSpans = new List<RectInt>();
+        private VisualElement importPreviewLayer;
+        private bool draggingImport;
+        private Vector2Int importDragAnchor;
+        public event Action<Vector2Int> ImportPreviewMoved;
+        public event Action ImportPreviewCancelled;
         public event Action<RectInt> ExportAreaSelected;
+
+        public new void MarkDirtyRepaint()
+        {
+            // Invalidate both surfaces outside generateVisualContent. UI Toolkit forbids
+            // changing another element's render data while the tree is being rendered.
+            if (importPreviewLayer != null)
+            {
+                importPreviewLayer.style.display = mode == PlanningCanvasMode.World && importPreview != null
+                    ? DisplayStyle.Flex : DisplayStyle.None;
+                importPreviewLayer.MarkDirtyRepaint();
+            }
+            base.MarkDirtyRepaint();
+        }
 
         internal void CapturePlayerStart()
         {
@@ -76,9 +94,20 @@ namespace PlanningEditorPrototype
         }
         public void SetImportPreview(PlanningDocument source, Vector2Int anchor, bool valid)
         {
+            bool changedSource = importPreview != source;
             importPreview = source;
             importAnchor = anchor;
             importValid = valid;
+            if (importPreviewLayer == null)
+            {
+                importPreviewLayer = new VisualElement { name = "PlanningImportPreviewLayer", pickingMode = PickingMode.Ignore };
+                importPreviewLayer.StretchToParentSize();
+                importPreviewLayer.generateVisualContent += context => DrawTransferPreview(context.painter2D);
+                Add(importPreviewLayer);
+            }
+            importPreviewLayer.BringToFront();
+            importPreviewLayer.MarkDirtyRepaint();
+            if (!changedSource) { MarkDirtyRepaint(); return; }
             importSpans.Clear();
 
             if (source == null ||
@@ -128,7 +157,7 @@ namespace PlanningEditorPrototype
             MarkDirtyRepaint();
         }
 
-        public void FocusImportPreview()
+        public void FocusImportPreview(bool includeDestination = false)
         {
             if (importPreview == null ||
                 importBounds.width <= 0 ||
@@ -137,7 +166,34 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            CenterOn(importAnchor.x + importBounds.width * .5f, importAnchor.y + importBounds.height * .5f);
+            var focus = new RectInt(importAnchor, importBounds.size);
+            if (includeDestination && PlanningFragmentUtility.TryBounds(document, out var destination))
+            {
+                int x = Mathf.Min(focus.x, destination.x), y = Mathf.Min(focus.y, destination.y);
+                focus = new RectInt(x, y, Mathf.Max(focus.xMax, destination.xMax) - x, Mathf.Max(focus.yMax, destination.yMax) - y);
+            }
+            // Fit the whole staged fragment, leaving room for the import controls on the right.
+            zoom = Mathf.Clamp(Mathf.Min(Mathf.Max(100f, contentRect.width - 420f) / (focus.width + 6),
+                Mathf.Max(100f, contentRect.height - 80f) / (focus.height + 6)) / BaseGridSize, MinimumZoom, MaximumZoom);
+            CenterOn(focus.center.x, focus.center.y);
+            pan.x -= Mathf.Min(210f, contentRect.width * .2f);
+            MarkDirtyRepaint();
+        }
+
+        private bool TryBeginImportDrag(Vector2 position)
+        {
+            if (importPreview == null || mode != PlanningCanvasMode.World) return false;
+            // Own all left clicks during staging, so the destination map cannot be accidentally edited.
+            draggingImport = CellRect(importAnchor.x, importAnchor.y, importBounds.width, importBounds.height).Contains(position);
+            importDragAnchor = importAnchor;
+            return true;
+        }
+
+        private void ContinueImportDrag(Vector2 position)
+        {
+            if (!draggingImport) return;
+            var next = importDragAnchor + CellAt(position) - CellAt(dragStart);
+            if (next != importAnchor) ImportPreviewMoved?.Invoke(next);
         }
 
         public void BeginAreaExport()
@@ -168,6 +224,18 @@ namespace PlanningEditorPrototype
                 if (!rect.Overlaps(contentRect)) continue;
                 FillRect(painter, rect, new Color(color.r, color.g, color.b, .12f), 0);
                 StrokeRect(painter, rect, color, 1f);
+            }
+            // Show contents in addition to room silhouettes. Source data stays read-only.
+            foreach (var item in PlanningWaterLayerUtility.WorldBoxes(importPreview))
+            {
+                var offset = item.origin + shift;
+                foreach (var part in PlanningShapeUtility.Rectangles(item.box))
+                {
+                    var rect = CellRect(part.x + offset.x, part.y + offset.y, part.width, part.height);
+                    if (!rect.Overlaps(contentRect)) continue;
+                    var tint = ColorForBox(item.box); tint.a = .65f;
+                    FillRect(painter, rect, tint, 0);
+                }
             }
             StrokeRect(painter, CellRect(importAnchor.x, importAnchor.y, importBounds.width, importBounds.height), color, 3f);
         }

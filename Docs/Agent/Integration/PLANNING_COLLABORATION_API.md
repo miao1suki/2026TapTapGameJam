@@ -20,7 +20,10 @@ PlatformParameterUI 是Editor共用核心字段构建器；普通Inspector与规
 
 - `PlanningFragmentUtility.Extract(source, owners, area, out detached)` 返回深拷贝；owners 为 null 表示不限所有者，area 为 null 表示不限矩形。裁剪后重锚局部坐标和 mergeParts，切过完整物体拒绝，不改源数据。
 - `Import(target, source, anchor, includePlayer, out detached)` 返回合并后的新文档，失败不写目标。anchor 是导入源房间占格包围盒左上格。内部房间/物体/合并原始片/门钥匙锁/区域 ID 全量重映射，门按钮、基座、曲柄绑定按新 ID 重连。跨片段绑定解除，孤立按钮移除；不能把绑定随意指向目标地图同名或旧 ID。
-- `ValidatePlacement` 为轻量占格预检，UI 不在每次鼠标绘制时重复序列化完整地图。
+- `PrepareImport(source, combineRooms)` 深拷贝源数据；合并模式将各房间局部物体及 mergeParts 重锚到源总体左上格，门／钥匙／出生点的 roomId 归并，装配物体保持世界坐标。保留不规则占格、空洞和绑定ID，最终仍由 Import 全量重映射。
+- `SuggestImportAnchor` 将源暂存在目标右侧，包含两侧房间外装配物体的范围，避免一选文件即因原坐标冲突而无法预览。
+- `ValidatePlacement` 检查目标占格及物体层冲突，不把源内部共用房间占格当作目标重叠；UI 仅在整格位置变化时预检，不在每次鼠标绘制时重复序列化完整地图。
+- Canvas 的 ImportPreviewMoved／Cancelled 由窗口接收；独立置顶且 pickingMode.Ignore 的预览层只绘制，鼠标事务通过现有 Pointer Capture／边缘平移路径管理。预览中左键和编辑快捷键不操作目标；松开／失去Capture结束拖动，Esc清除暂存；只有确认才走既有文档撤回／同步队列。不得在 generateVisualContent 中使另一元素重绘。
 - `ValidateDependencies` 在选择文件/确认时调用，递归检查合并快照、栏目和资源 GlobalObjectId；拒绝缺失资源与场景对象引用。`Import` 深拷贝并规范化后再验位置，旧比例不能在迁移前通过碰撞预检；按 ID 优先、同名回退规范化复制对象的栏目 ID，避免名称预检通过但 SceneBuilder 因旧 ID 丢物体。同层全局装配物体另做精确占格检查，水/前景允许叠放。
 - UI 替换 document 后调用 `OnCanvasDocumentChanged`，使用现有快照撤回/重做与同步队列。不得添加 Unity Undo 物体快照路径。
 - 保留 prefab/栏目 ID、持久化参数和资产 GlobalObjectId；临时 instanceID 不作为引用。JSON 不打包缺失资源，协作者必须提交同一栏目和 prefab 依赖。

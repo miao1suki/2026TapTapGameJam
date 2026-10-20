@@ -11,6 +11,43 @@ namespace PlanningEditorPrototype
 {
     internal static class PlanningFragmentUtility
     {
+        // Always transform a private copy: changing the import mode must not edit the source save.
+        internal static PlanningDocument PrepareImport(PlanningDocument source, bool combineRooms)
+        {
+            var copy = PlanningDocument.FromPersistentJson(source.ToPersistentJson());
+            if (!combineRooms) return copy;
+            var origin = Bounds(copy).position;
+            var combined = new PlanningRoom(copy.name + "（导入）") { allowDisconnectedCells = true, independentCells = true };
+            var cells = new HashSet<Vector2Int>();
+            foreach (var room in copy.rooms)
+            {
+                var oldOrigin = PlanningWorldUtility.Bounds(room).position;
+                foreach (var box in room.boxes) { ShiftBox(box, oldOrigin - origin); combined.boxes.Add(box); }
+                foreach (var cell in room.cells)
+                    if (cells.Add(new Vector2Int(cell.x, cell.y))) combined.cells.Add(cell);
+                if (copy.playerStartRoomId == room.id) copy.playerStartLocal += (Vector2)(oldOrigin - origin);
+            }
+            if (!string.IsNullOrEmpty(copy.playerStartRoomId)) copy.playerStartRoomId = combined.id;
+            foreach (var door in copy.doors) door.roomId = combined.id;
+            foreach (var key in copy.keys) key.roomId = combined.id;
+            copy.rooms.Clear(); copy.rooms.Add(combined);
+            return copy;
+        }
+
+        internal static Vector2Int SuggestImportAnchor(PlanningDocument target, PlanningDocument source)
+        {
+            // Include assembly objects outside their owner room when finding an empty staging area.
+            int Right(PlanningDocument doc) => doc.rooms.SelectMany(r => r.cells).Select(c => c.x + 1)
+                .Concat(PlanningWaterLayerUtility.WorldBoxes(doc).Select(b => b.origin.x + b.box.x + b.box.width))
+                .DefaultIfEmpty(0).Max();
+            var bounds = Bounds(source);
+            int left = bounds.x;
+            foreach (var item in PlanningWaterLayerUtility.WorldBoxes(source))
+                left = Mathf.Min(left, item.origin.x + item.box.x);
+            return new Vector2Int(Right(target) + 3 + bounds.x - left,
+                TryBounds(target, out var targetBounds) ? targetBounds.y : 0);
+        }
+
         internal static IEnumerable<PlanningBox> Boxes(PlanningDocument doc) => doc.rooms.SelectMany(r => r.boxes).Concat(doc.assemblyPatches);
         private static IEnumerable<Vector2Int> Cells(RectInt rect)
         { for (int y = rect.y; y < rect.yMax; y++) for (int x = rect.x; x < rect.xMax; x++) yield return new Vector2Int(x, y); }
@@ -145,7 +182,6 @@ namespace PlanningEditorPrototype
             ResolveDependencies(incoming, true);
             var origin = Bounds(incoming).position;
             var delta = anchor - origin;
-            ValidateObjectPlacement(result, incoming, delta);
             detached = DetachExternalLinks(incoming);
             var ids = new Dictionary<string, string>();
             void Add(string id, string prefix)
@@ -231,8 +267,9 @@ namespace PlanningEditorPrototype
             Vector2Int shift = new Vector2Int(checked(anchor.x - origin.x), checked(anchor.y - origin.y));
             var occupied = new HashSet<Vector2Int>(target.rooms.SelectMany(r => r.cells).Select(c => new Vector2Int(c.x, c.y)));
             foreach (var cell in source.rooms.SelectMany(r => r.cells))
-                if (!occupied.Add(new Vector2Int(checked(cell.x + shift.x), checked(cell.y + shift.y))))
+                if (occupied.Contains(new Vector2Int(checked(cell.x + shift.x), checked(cell.y + shift.y))))
                     throw new InvalidDataException("导入位置与现有房间或通道重叠，请调整导入坐标。");
+            ValidateObjectPlacement(target, source, shift);
         }
 
         // Run once on file selection/apply, never during pan or drawing previews.

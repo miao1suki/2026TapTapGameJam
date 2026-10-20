@@ -1,5 +1,7 @@
 # 系统索引
 
+关卡存档拼接采用置顶暂存预览：自动放到地图右侧空位、整格拖动与边缘平移；可保留原房间划分或归并新房间，确认前不改当前地图。物体层与房间占格共同验重，源内部共用占格不再误报。操作见[协作地图](../Developer/LEVEL_EDITOR_COLLABORATION.md)、[接口](Integration/PLANNING_COLLABORATION_API.md)。
+
 可选二维遮挡光照已接入PC/Mobile URP合成，按实际墙体与门的XY轮廓阻光，非房间整块可见；需相机显式挂WorldVisibility2D，Gaming不自动启用。八帧喷泉Fountain.prefab只负责表现、82×66原生帧按16有效像素/格。Pick隔离GPU65断言及Play7断言通过；未做安卓真机性能验收。见[操作](../Developer/WORLD_VISIBILITY_AND_FOUNTAIN.md)、[接口](Integration/WORLD_VISIBILITY_API.md)。
 2026-10-20最新关卡接收：策划Gaming以5e88e7c为设计标准（21房、2604原物体，补Start后2605）；R2更新为作者d3fac6a原Scene，手调规划回采未完成的限制不变。TA f7cbb62仅备份到codex/backup/irotin-gaming-art-20261020，不合其新Gaming；保留main现有GridArt层级。后文数量和版本为历史记录，详见[远端接收](../Developer/REMOTE_LEVEL_RECEIPT_2026-10-20.md)。
 

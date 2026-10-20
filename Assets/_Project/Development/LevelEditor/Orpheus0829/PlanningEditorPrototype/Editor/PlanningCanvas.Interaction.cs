@@ -66,6 +66,7 @@ namespace PlanningEditorPrototype
 
         private bool SupportsEdgePan()
         {
+            if (draggingImport) return true;
             if (bossMarkerDragBox != null)
                 return true;
             if (mode == PlanningCanvasMode.World)
@@ -99,6 +100,7 @@ namespace PlanningEditorPrototype
 
         private void ContinuePointerDrag(Vector2 position)
         {
+            if (importPreview != null && mode == PlanningCanvasMode.World) { ContinueImportDrag(position); return; }
             if (bossMarkerDragBox != null)
             {
                 ContinueBossMarkerDrag(position);
@@ -118,6 +120,7 @@ namespace PlanningEditorPrototype
             {
                 dragCurrent = position;
                 ContinuePointerDrag(position);
+                if (importPreview != null && mode == PlanningCanvasMode.World) return;
                 if (bossMarkerDragBox != null) CompleteBossMarkerDrag();
                 else if (mode == PlanningCanvasMode.World) CompleteWorldDrag();
                 else if (mode == PlanningCanvasMode.Assembly) CompleteAssemblyDrag();

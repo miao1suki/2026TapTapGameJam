@@ -9,15 +9,139 @@ using Project.LevelEditor.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 namespace PlanningEditorPrototype
 {
+    internal sealed class ImportStagingVerificationWindow : EditorWindow { }
+
     internal static class PlanningCollaborationVerification
     {
         private static int checks;
         private static void Check(bool value, string name)
         { checks++; if (!value) throw new Exception(name); }
+
+        public static void RunImportStaging()
+        {
+            if (!Application.dataPath.Contains("FlowRetirementProbe")) throw new InvalidOperationException("仅在隔离项目运行验证。");
+            try
+            {
+                checks = 0;
+                var source = new PlanningDocument { name = "Incoming" };
+                var first = new PlanningRoom("First"); first.cells.Add(new PlanningCell(-8, -6));
+                var second = new PlanningRoom("Second"); second.cells.Add(new PlanningCell(-4, -2));
+                first.boxes.Add(new PlanningBox { id = "base", x = 0, y = 0 });
+                second.boxes.Add(new PlanningBox { id = "platform", x = 0, y = 0, mechanismBaseId = "base" });
+                source.rooms.Add(first); source.rooms.Add(second);
+                source.playerStartRoomId = second.id; source.playerStartLocal = new Vector2(.5f, .5f);
+                source.assemblyPatches.Add(new PlanningBox { id = "outside", x = -11, y = -6 });
+                var target = new PlanningDocument(); var room = new PlanningRoom("Destination");
+                room.cells.Add(new PlanningCell(10, 10)); target.rooms.Add(room);
+                target.assemblyPatches.Add(new PlanningBox { id = "far", x = 100, y = 10 });
+                string sourceBefore = source.ToPersistentJson(), targetBefore = target.ToPersistentJson();
+                var anchor = PlanningFragmentUtility.SuggestImportAnchor(target, source);
+                Check(anchor.x > 103, "staging clears assembly objects outside both room bounds");
+                PlanningFragmentUtility.ValidatePlacement(target, source, anchor);
+                var preserved = PlanningFragmentUtility.Import(target, source, anchor, false, out _);
+                Check(preserved.rooms.Count == 3, "preserve source rooms");
+                var combined = PlanningFragmentUtility.PrepareImport(source, true);
+                Check(combined.rooms.Count == 1 && combined.rooms[0].cells.Count == 2, "combine into sparse new room without filling gaps");
+                var merged = PlanningFragmentUtility.Import(target, combined, anchor, true, out _);
+                var importedRoom = merged.rooms.Last();
+                Check(importedRoom.boxes[1].x == 4 && importedRoom.boxes[1].y == 4, "reanchor object local positions");
+                Check(importedRoom.boxes[1].mechanismBaseId == importedRoom.boxes[0].id, "cross-room binding preserved");
+                Check(merged.playerStartRoomId == importedRoom.id && merged.playerStartLocal == new Vector2(4.5f, 4.5f), "combined spawn reanchors");
+                Check(merged.assemblyPatches.Last().x == anchor.x - 3, "assembly retains world offset");
+                Check(source.ToPersistentJson() == sourceBefore && target.ToPersistentJson() == targetBefore, "preview and import preserve input documents");
+                bool rejected = false;
+                try { PlanningFragmentUtility.ValidatePlacement(target, source, new Vector2Int(10, 10)); }
+                catch (InvalidDataException) { rejected = true; }
+                Check(rejected, "collision remains rejected at confirmation");
+                // Overlapping source room cells are not collisions with the target map.
+                second.cells.Add(new PlanningCell(-8, -6));
+                PlanningFragmentUtility.ValidatePlacement(target, source, anchor);
+                Check(true, "shared source ownership cells do not falsely reject staging");
+
+                foreach (bool combine in new[] { false, true })
+                {
+                    var realSource = PlanningSaveStore.Read("D:/.unity/2026TapTap/Assets/Scenes/MRoom3.planning.json");
+                    var realTarget = PlanningSaveStore.Read("D:/.unity/2026TapTap/Assets/_Project/Scenes/Playing/Gaming.planning.json");
+                    string original = realSource.ToPersistentJson(), destination = realTarget.ToPersistentJson();
+                    var prepared = PlanningFragmentUtility.PrepareImport(realSource, combine);
+                    var placement = PlanningFragmentUtility.SuggestImportAnchor(realTarget, prepared);
+                    var result = PlanningFragmentUtility.Import(realTarget, prepared, placement, false, out _);
+                    Check(PlanningFragmentUtility.Boxes(result).Count() == PlanningFragmentUtility.Boxes(realTarget).Count() + PlanningFragmentUtility.Boxes(prepared).Count(), "MRoom3 object count " + combine);
+                    Check(result.rooms.Count == realTarget.rooms.Count + prepared.rooms.Count, "MRoom3 room mode " + combine);
+                    var oldIds = new HashSet<string>(PlanningFragmentUtility.Boxes(realTarget).Select(b => b.id));
+                    var placed = PlanningWaterLayerUtility.WorldBoxes(result).Where(b => !oldIds.Contains(b.box.id)).ToArray();
+                    var originals = PlanningWaterLayerUtility.WorldBoxes(prepared).ToArray();
+                    var delta = placement - PlanningFragmentUtility.Bounds(prepared).position;
+                    Check(originals.Length == placed.Length && originals.Zip(placed, (a, b) =>
+                        a.origin + new Vector2Int(a.box.x, a.box.y) + delta == b.origin + new Vector2Int(b.box.x, b.box.y) &&
+                        a.box.width == b.box.width && a.box.height == b.box.height).All(value => value), "MRoom3 all object world positions and sizes " + combine);
+                    Check(realSource.ToPersistentJson() == original && realTarget.ToPersistentJson() == destination, "MRoom3/Gaming are read-only " + combine);
+                }
+                VerifyStagingCanvas(target, source, anchor);
+            }
+            catch (Exception error)
+            {
+                File.WriteAllText("Library/ImportStagingVerification.txt", "FAIL " + error);
+                Debug.LogException(error); EditorApplication.Exit(1);
+            }
+        }
+
+        private static void VerifyStagingCanvas(PlanningDocument target, PlanningDocument source, Vector2Int anchor)
+        {
+            var window = ScriptableObject.CreateInstance<ImportStagingVerificationWindow>();
+            window.position = new Rect(50, 50, 1100, 700);
+            var canvas = new PlanningCanvas(); canvas.style.flexGrow = 1;
+            window.rootVisualElement.Add(canvas); canvas.SetDocument(target);
+            canvas.SetMode(PlanningCanvasMode.World); canvas.SetImportPreview(source, anchor, true);
+            window.Show();
+            window.rootVisualElement.schedule.Execute(() =>
+            {
+                try
+                {
+                    string before = target.ToPersistentJson();
+                    const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                    var type = typeof(PlanningCanvas);
+                    object Invoke(string name, params object[] args) => type.GetMethod(name, flags).Invoke(canvas, args);
+                    void Set(string name, object value) => type.GetField(name, flags).SetValue(canvas, value);
+                    canvas.FocusImportPreview();
+                    var rect = (Rect)Invoke("CellRect", anchor.x, anchor.y, 5, 5);
+                    Vector2 start = rect.center;
+                    Check((bool)Invoke("TryBeginImportDrag", start), "preview owns left clicks");
+                    Set("dragStart", start);
+                    Vector2Int moved = anchor;
+                    canvas.ImportPreviewMoved += position => { moved = position; canvas.SetImportPreview(source, position, true); };
+                    float cellSize = rect.width / 5;
+                    Invoke("ContinueImportDrag", start + new Vector2(cellSize * 3, cellSize * 2));
+                    Check(moved == anchor + new Vector2Int(3, 2), "canvas drag snaps to whole cells");
+                    // Edge-pan adjusts dragStart by the same view delta, retaining the grab offset.
+                    var pan = (Vector2)type.GetField("pan", flags).GetValue(canvas);
+                    Set("pan", pan + new Vector2(20, 30)); Set("dragStart", start + new Vector2(20, 30));
+                    Invoke("ContinueImportDrag", start + new Vector2(20 + cellSize * 4, 30 + cellSize * 2));
+                    Check(moved == anchor + new Vector2Int(4, 2), "edge-pan compensation preserves grab point");
+                    Invoke("EndPointerAction");
+                    Check(!(bool)type.GetField("draggingImport", flags).GetValue(canvas), "release/interruption stops import dragging");
+                    Check(target.ToPersistentJson() == before, "preview drag never edits destination");
+                    var layer = canvas.Q("PlanningImportPreviewLayer");
+                    Check(layer != null && canvas.ElementAt(canvas.childCount - 1) == layer && layer.pickingMode == PickingMode.Ignore, "ghost uses top non-blocking visual layer");
+                    canvas.SetImportPreview(null, default, false);
+                    Check(type.GetField("importPreview", flags).GetValue(canvas) == null, "cancel clears staged data");
+                    window.Close();
+                    File.WriteAllText("Library/ImportStagingVerification.txt", "PASS " + checks);
+                    Debug.Log("导入暂存验证通过：" + checks);
+                    EditorApplication.Exit(0);
+                }
+                catch (Exception error)
+                {
+                    File.WriteAllText("Library/ImportStagingVerification.txt", "FAIL " + error);
+                    Debug.LogException(error); window.Close(); EditorApplication.Exit(1);
+                }
+            }).StartingIn(1200);
+        }
 
         public static void Run()
         {

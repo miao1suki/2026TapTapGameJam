@@ -1862,7 +1862,6 @@ namespace PlanningEditorPrototype
             if (mode == PlanningCanvasMode.World)
             {
                 DrawWorld(context);
-                DrawTransferPreview(context.painter2D);
             }
             else if (mode == PlanningCanvasMode.Assembly)
             {
@@ -2872,7 +2871,7 @@ namespace PlanningEditorPrototype
 
             if (evt.button == 1 ||
                 evt.button == 2 ||
-                (mode == PlanningCanvasMode.World && mapTool == PlanningMapTool.Pan) ||
+                (importPreview == null && mode == PlanningCanvasMode.World && mapTool == PlanningMapTool.Pan) ||
                 (mode == PlanningCanvasMode.Detail &&
                  GetActiveDetailTool() == PlanningDetailTool.Pan) ||
                 (mode == PlanningCanvasMode.Assembly &&
@@ -2904,6 +2903,10 @@ namespace PlanningEditorPrototype
                 this,
                 evt.pointerId);
             BeginEdgePan(position);
+            if (TryBeginImportDrag(position))
+            {
+                MarkDirtyRepaint(); evt.StopPropagation(); return;
+            }
             if (TryBeginBossMarkerDrag(position))
             {
                 MarkDirtyRepaint();
@@ -3019,6 +3022,7 @@ namespace PlanningEditorPrototype
             bool bossMarkerMoved = bossMarkerDragMoved;
             isPanning = false;
             isDragging = false;
+            draggingImport = false;
             panPointerId = -1;
             dragPointerId = -1;
             panButton = -1;
@@ -3041,6 +3045,11 @@ namespace PlanningEditorPrototype
 
         private void OnKeyDown(KeyDownEvent evt)
         {
+            if (importPreview != null && mode == PlanningCanvasMode.World)
+            {
+                if (evt.keyCode == KeyCode.Escape) ImportPreviewCancelled?.Invoke();
+                evt.StopPropagation(); return;
+            }
             if (mode == PlanningCanvasMode.World && evt.keyCode == KeyCode.Delete)
             {
                 DeleteWorldSelection(); evt.StopPropagation(); return;

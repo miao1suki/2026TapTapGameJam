@@ -11,6 +11,8 @@ namespace PlanningEditorPrototype
     public sealed partial class PlanningEditorWindow
     {
         private PlanningDocument fragmentSource;
+        private PlanningDocument fragmentOriginal;
+        private bool fragmentCombineRooms;
         private Vector2Int fragmentAnchor;
         private bool fragmentIncludePlayer;
         private int fragmentDetached;
@@ -36,7 +38,7 @@ namespace PlanningEditorPrototype
             var title = Row();
             var label = new Label("关卡协作 · 导入与片段") { style = { flexGrow = 1f, fontSize = 15f, marginLeft = 10f, unityTextAlign = TextAnchor.MiddleLeft } };
             title.Add(label);
-            title.Add(TopButton("关闭", () => collaborationOverlay.style.display = DisplayStyle.None));
+            title.Add(TopButton("关闭", CancelFragmentPreview));
             collaborationOverlay.Add(title);
             var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "PlanningCollaborationScroll" };
             scroll.style.flexGrow = 1f;
@@ -51,6 +53,11 @@ namespace PlanningEditorPrototype
         {
             if (collaborationOverlay == null) return;
             canvas?.CancelPointerInteraction();
+            if (!importing)
+            {
+                fragmentOriginal = fragmentSource = null;
+                RefreshImportPreview();
+            }
             collaborationOverlay.style.display = DisplayStyle.Flex;
             collaborationOverlay.BringToFront();
             fragmentImportSection.style.display = importing ? DisplayStyle.Flex : DisplayStyle.None;
@@ -75,11 +82,11 @@ namespace PlanningEditorPrototype
             var importing = fragmentImportSection;
             var exporting = fragmentExportSection;
             importing.Add(new Label("导入到当前地图") { style = { marginTop = 8, fontSize = 14f } });
-            importing.Add(new Label("选择存档 → 调整左上格 → 查看绿色预览 → 确认导入") { style = { whiteSpace = WhiteSpace.Normal, marginBottom = 8f } });
+            importing.Add(new Label("选择存档 → 拖动置顶预览到目标位置 → 确认导入。左键拖预览，右键平移，滚轮缩放；Esc 取消。预览不会修改当前地图。") { style = { whiteSpace = WhiteSpace.Normal, marginBottom = 8f } });
             var input = new ObjectField("存档文件") { objectType = typeof(TextAsset), allowSceneObjects = false };
             input.RegisterValueChangedCallback(evt =>
             {
-                if (evt.newValue == null) { fragmentSource = null; RefreshImportPreview(); return; }
+                if (evt.newValue == null) { fragmentOriginal = fragmentSource = null; RefreshImportPreview(); return; }
                 LoadFragment(AssetDatabase.GetAssetPath(evt.newValue));
             });
             importing.Add(input);
@@ -91,10 +98,30 @@ namespace PlanningEditorPrototype
             var anchor = new Vector2IntField("导入左上格") { tooltip = "世界图坐标；Y 向下。导入前显示位置预览，不覆盖已有房间。" };
             anchor.RegisterValueChangedCallback(evt => { fragmentAnchor = evt.newValue; RefreshImportPreview(); });
             importing.Add(anchor);
+            canvas.ImportPreviewMoved += position =>
+            {
+                fragmentAnchor = position;
+                anchor.SetValueWithoutNotify(position);
+                RefreshImportPreview();
+            };
+            canvas.ImportPreviewCancelled += CancelFragmentPreview;
+            var roomMode = new PopupField<string>("房间处理", new System.Collections.Generic.List<string>
+                { "保留原房间划分", "合并为一个新房间" }, fragmentCombineRooms ? 1 : 0);
+            roomMode.RegisterValueChangedCallback(evt =>
+            {
+                fragmentCombineRooms = roomMode.index == 1;
+                if (fragmentOriginal != null)
+                {
+                    fragmentSource = PlanningFragmentUtility.PrepareImport(fragmentOriginal, fragmentCombineRooms);
+                    RefreshImportPreview();
+                }
+            });
+            importing.Add(roomMode);
             importing.Add(SmallRowButton("放到地图右侧并预览", () =>
             {
                 fragmentAnchor = SuggestedFragmentAnchor(); anchor.SetValueWithoutNotify(fragmentAnchor); RefreshImportPreview(); canvas.FocusImportPreview();
             }));
+            importing.Add(SmallRowButton("同时查看当前地图与预览", () => canvas.FocusImportPreview(true)));
             var player = new Toggle("使用导入的出生点");
             player.RegisterValueChangedCallback(evt => { fragmentIncludePlayer = evt.newValue; RefreshImportPreview(); });
             importing.Add(player);
@@ -102,10 +129,10 @@ namespace PlanningEditorPrototype
             fragmentStatus.style.whiteSpace = WhiteSpace.Normal;
             fragmentStatus.style.marginTop = fragmentStatus.style.marginBottom = 8;
             importing.Add(fragmentStatus);
-            fragmentApply = new Button(ApplyFragment) { text = "导入当前地图" };
+            fragmentApply = new Button(ApplyFragment) { text = "确认位置并导入" };
             fragmentApply.SetEnabled(false);
             importing.Add(fragmentApply);
-            importing.Add(SmallRowButton("取消预览", () => { fragmentSource = null; input.SetValueWithoutNotify(null); RefreshImportPreview(); }));
+            importing.Add(SmallRowButton("取消预览", CancelFragmentPreview));
             exporting.Add(new Label("导出地图片段") { style = { marginTop = 8, fontSize = 14f } });
             exporting.Add(new Label("可以导出整个房间 / 通道，也可以在世界图框选区域。原地图保持不变。") { style = { whiteSpace = WhiteSpace.Normal, marginBottom = 8f } });
             exporting.Add(SmallRowButton("导出当前选中的房间 / 通道…", () => ExportFragment(canvas.SelectedWorldIds.ToArray(), null)));
@@ -127,16 +154,24 @@ namespace PlanningEditorPrototype
 
         private Vector2Int SuggestedFragmentAnchor()
         {
-            if (document.rooms.Count == 0) return Vector2Int.zero;
-            var bounds = PlanningFragmentUtility.Bounds(document);
-            return new Vector2Int(bounds.xMax + 2, bounds.y);
+            return fragmentSource == null ? Vector2Int.zero : PlanningFragmentUtility.SuggestImportAnchor(document, fragmentSource);
+        }
+
+        private void CancelFragmentPreview()
+        {
+            canvas?.CancelPointerInteraction();
+            fragmentOriginal = fragmentSource = null;
+            rootVisualElement.Query<ObjectField>().ForEach(field => { if (field.label == "存档文件") field.SetValueWithoutNotify(null); });
+            RefreshImportPreview();
+            collaborationOverlay.style.display = DisplayStyle.None;
         }
 
         private void LoadFragment(string path)
         {
             try
             {
-                fragmentSource = PlanningSaveStore.Read(path);
+                fragmentOriginal = PlanningSaveStore.Read(path);
+                fragmentSource = PlanningFragmentUtility.PrepareImport(fragmentOriginal, fragmentCombineRooms);
                 ValidateFragmentPalette(fragmentSource);
                 string assetPath = PlanningSharedSaveUtility.AssetPath(path);
                 rootVisualElement.Query<ObjectField>().ForEach(field =>
@@ -153,7 +188,7 @@ namespace PlanningEditorPrototype
                 // Run after the view-mode restoration queued by SetMode.
                 canvas.schedule.Execute(() => { if (fragmentSource != null) canvas.FocusImportPreview(); }).StartingIn(0);
             }
-            catch (Exception exception) { fragmentSource = null; RefreshImportPreview(); ShowSavePanelError("无法读取片段", exception); }
+            catch (Exception exception) { fragmentOriginal = fragmentSource = null; RefreshImportPreview(); ShowSavePanelError("无法读取片段", exception); }
         }
 
         private void RefreshImportPreview()
@@ -186,7 +221,7 @@ namespace PlanningEditorPrototype
                 ValidateFragmentPalette(fragmentSource);
                 if (detached > 0 && !EditorUtility.DisplayDialog("片段外绑定", $"将解除 {detached} 项指向片段外的绑定。继续导入？", "导入", "取消")) return;
                 document = result;
-                fragmentSource = null;
+                fragmentOriginal = fragmentSource = null;
                 canvas.SetDocument(document);
                 if (fragmentIncludePlayer && document.TryGetPlayerStartWorldPosition(out Vector3 spawn))
                     Project.LevelEditor.Editor.LevelEditorPlayerService.SetPlayerPosition(spawn * Project.LevelEditor.Editor.LevelEditorState.CellSize, false);
