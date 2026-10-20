@@ -37,6 +37,7 @@ namespace Project.BlockFeatures.Editor
             bossToggle.RegisterCallback<SerializedPropertyChangeEvent>(
                 _ =>
                 {
+                    if (feature == null) return;
                     serializedObject.ApplyModifiedProperties();
                     feature.EnsureBossRespawnMarker(true);
                     feature.ApplyBossRespawnMarkerState();
@@ -63,6 +64,7 @@ namespace Project.BlockFeatures.Editor
             bossX.RegisterCallback<SerializedPropertyChangeEvent>(
                 _ =>
                 {
+                    if (feature == null) return;
                     serializedObject.ApplyModifiedProperties();
                     feature.ApplyBossRespawnMarkerState();
                     EditorUtility.SetDirty(feature);
@@ -70,6 +72,7 @@ namespace Project.BlockFeatures.Editor
             bossRespawn.Add(bossX);
             var locateMarker = new Button(() =>
             {
+                if (feature == null) return;
                 BossRespawnMarker marker =
                     feature.EnsureBossRespawnMarker(true);
                 if (marker == null)
@@ -95,6 +98,7 @@ namespace Project.BlockFeatures.Editor
                     "isBossArenaRespawnPoint");
             void RefreshBossVisibility()
             {
+                if (feature == null) return;
                 bool visible = bossEnabled != null &&
                                bossEnabled.boolValue;
                 bossRespawn.style.display = visible
@@ -127,7 +131,7 @@ namespace Project.BlockFeatures.Editor
             };
             playerTagField.RegisterValueChangedCallback(evt =>
             {
-                if (playerTag == null)
+                if (feature == null || playerTag == null)
                 {
                     return;
                 }
@@ -199,10 +203,10 @@ namespace Project.BlockFeatures.Editor
             chain.Add(openChainButton);
             chain.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "出生点编号",
-                () => feature.DisplayLabel));
+                () => feature.DisplayLabel, owner: feature));
             chain.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "激活状态",
-                () => feature.IsActivated ? "已激活" : "未激活"));
+                () => feature.IsActivated ? "已激活" : "未激活", owner: feature));
             root.Add(chain);
 
             Foldout debug =
@@ -211,42 +215,41 @@ namespace Project.BlockFeatures.Editor
                     false);
             debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "当前绑定",
-                () => feature.IsCurrent ? "是" : "否"));
+                () => feature.IsCurrent ? "是" : "否", owner: feature));
             debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "当前可用",
                 () => feature.IsRespawnPointAvailable
                     ? "是"
-                    : "否"));
+                    : "否", owner: feature));
             debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "Boss 同步状态",
-                () => feature.BossRespawnDebugStatus));
+                () => feature.BossRespawnDebugStatus, owner: feature));
             debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "待应用 Boss 状态",
                 () => feature.HasPendingBossRespawnState
                     ? "是"
-                    : "否"));
+                    : "否", owner: feature));
             debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "最近应用 Boss 血量",
                 () => feature.LastAppliedBossRespawnHealth >= 0
                     ? feature.LastAppliedBossRespawnHealth
                         .ToString()
-                    : "未应用"));
+                    : "未应用", owner: feature));
             debug.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "最近应用 Boss 位置",
                 () => feature.LastAppliedBossRespawnHealth >= 0
                     ? feature.LastAppliedBossRespawnPosition
                         .ToString("F2")
-                    : "未应用"));
+                    : "未应用", owner: feature));
             var activateButton = new Button(
-                () => feature.ActivateForDebug())
+                () => { if (feature != null) feature.ActivateForDebug(); })
             {
                 text = "模拟激活"
             };
             activateButton.style.marginTop = 4f;
             debug.Add(activateButton);
             var bossDebugButton = new Button(
-                () => feature
-                    .RequestBossRespawnStateForDebug())
+                () => { if (feature != null) feature.RequestBossRespawnStateForDebug(); })
             {
                 text = "模拟应用 Boss 血量与位置"
             };
@@ -255,10 +258,10 @@ namespace Project.BlockFeatures.Editor
             debug.schedule.Execute(() =>
             {
                 activateButton.SetEnabled(
-                    Application.isPlaying &&
+                    feature != null && Application.isPlaying &&
                     !feature.IsCurrent);
                 bossDebugButton.SetEnabled(
-                    Application.isPlaying &&
+                    feature != null && Application.isPlaying &&
                     feature.IsBossArenaRespawnPoint);
             }).Every(100);
             root.Add(debug);

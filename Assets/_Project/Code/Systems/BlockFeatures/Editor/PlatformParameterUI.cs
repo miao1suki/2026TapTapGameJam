@@ -27,8 +27,9 @@ namespace Project.BlockFeatures.Editor
             }
             else
             {
-                Field("pathMode", "移动方向 / 路线");
-                Field("route", "原路线方向", () => Mode() == 0);
+                Field("driveMode", "驱动方式");
+                Field("pathMode", "路线模式");
+                Field("route", "移动方向", () => Mode() == 0);
                 Field("reverseRoute", "反向（向左 / 向下）", () => Mode() == 0);
                 Field("travelBlocks", "移动距离（格）", () => Mode() == 0);
                 Field("leftDistance", "向左距离（格）", () => Mode() == 2 || Mode() == 5);
@@ -37,25 +38,25 @@ namespace Project.BlockFeatures.Editor
                 Field("upDistance", "向上距离（格）", () => Mode() == 3 || Mode() == 6);
                 Field("centerOffset", "中心偏移（格）", () => Mode() == 5 || Mode() == 6);
                 Field("startNegative", "首次向左 / 向下", () => Mode() == 5 || Mode() == 6);
-                Field("driveMode", "驱动方式");
                 Field("signalMotion", "充能移动方式", () => Drive() == 1);
                 var speed = new FloatField("平均速度（格/秒）") { name = "platform-speed", isDelayed = true };
                 speed.tooltip = "按路线全程距离 ÷ 单程时间换算；修改速度会换算单程时间。缓动会影响瞬时速度，端点停留不计入。";
                 core.Add(speed);
-                Field("travelDuration", "单程时间（秒）", () => Drive() != 2);
-                var note = new HelpBox("曲柄联动时，速度由所绑定曲柄的转动/回弹进度控制；本平台的单程时间不参与移动。", HelpBoxMessageType.Info);
+                Field("travelDuration", "单程时间（秒）");
+                var note = new HelpBox("曲柄联动时，速度由所绑定曲柄的转动/回弹进度控制。平均速度与单程时间仅在自动/信号驱动时生效，切换驱动方式后可编辑。", HelpBoxMessageType.Info);
                 core.Add(note);
                 void RefreshSpeed()
                 {
                     bool linked = Drive() == 2;
-                    speed.style.display = linked ? DisplayStyle.None : DisplayStyle.Flex;
+                    core.Q("platform-travelDuration").SetEnabled(!linked);
                     note.style.display = linked ? DisplayStyle.Flex : DisplayStyle.None;
                     float span = ((MovingPlatformFeature)so.targetObject).Path.Span;
                     speed.SetValueWithoutNotify(span / Mathf.Max(.05f, so.FindProperty("travelDuration").floatValue));
-                    speed.SetEnabled(span > .00001f);
+                    speed.SetEnabled(!linked && span > .00001f);
                 }
                 speed.RegisterValueChangedCallback(evt =>
                 {
+                    if (Drive() == 2) { RefreshSpeed(); return; }
                     if (float.IsNaN(evt.newValue) || float.IsInfinity(evt.newValue) || evt.newValue <= 0f) { RefreshSpeed(); return; }
                     var duration = so.FindProperty("travelDuration");
                     duration.floatValue = Mathf.Max(.05f, ((MovingPlatformFeature)so.targetObject).Path.Span / evt.newValue);

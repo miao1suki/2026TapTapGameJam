@@ -460,6 +460,7 @@ namespace PlanningEditorPrototype
 
         private void OnLostFocus()
         {
+            canvas?.ResetTemporaryAssemblyTools();
             canvas?.CancelPointerInteraction();
         }
 
