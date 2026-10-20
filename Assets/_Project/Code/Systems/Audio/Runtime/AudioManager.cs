@@ -4,6 +4,42 @@ using UnityEngine;
 
 namespace Project.Audio
 {
+    public readonly struct MusicRequestHandle : IDisposable
+    {
+        private readonly AudioManager manager;
+        private readonly object owner;
+        private readonly long requestId;
+
+        internal MusicRequestHandle(
+            AudioManager manager,
+            object owner,
+            long requestId)
+        {
+            this.manager = manager;
+            this.owner = owner;
+            this.requestId = requestId;
+        }
+
+        public bool IsValid =>
+            manager != null &&
+            manager.IsMusicOverrideActive(owner, requestId);
+
+        public void Release()
+        {
+            if (manager != null)
+            {
+                manager.ReleaseMusicOverride(
+                    owner,
+                    requestId);
+            }
+        }
+
+        public void Dispose()
+        {
+            Release();
+        }
+    }
+
     [DisallowMultipleComponent]
     public sealed class AudioManager : MonoBehaviour
     {
@@ -17,9 +53,18 @@ namespace Project.Audio
         [SerializeField, Range(0f, 1f)] private float musicVolume = 1f;
         [SerializeField, Range(0f, 1f)] private float effectsVolume = 1f;
         private float musicVolumeScale = 1f;
+        private AudioClip baseMusicClip;
+        private bool baseMusicLoop = true;
+        private float baseMusicVolumeScale = 1f;
+        private long nextMusicOverrideId;
         private readonly Dictionary<object, LoopPlayback> loopPlaybacks =
             new Dictionary<object, LoopPlayback>();
+        private readonly Dictionary<object, MusicOverridePlayback>
+            musicOverrides =
+                new Dictionary<object, MusicOverridePlayback>();
         private readonly List<object> staleLoopOwners =
+            new List<object>();
+        private readonly List<object> staleMusicOverrideOwners =
             new List<object>();
 
         private sealed class LoopPlayback
@@ -27,6 +72,14 @@ namespace Project.Audio
             public AudioSource Source;
             public AudioChannel Channel;
             public float VolumeScale;
+        }
+
+        private sealed class MusicOverridePlayback
+        {
+            public AudioClip Clip;
+            public bool Loop;
+            public float VolumeScale;
+            public long RequestId;
         }
 
         private static AudioManager instance;
@@ -116,7 +169,132 @@ namespace Project.Audio
         public void PlayMusic(AudioClip clip, bool loop = true, float volume = 1f)
         {
             EnsureSources();
-            musicVolumeScale = Mathf.Clamp01(volume);
+            baseMusicClip = clip;
+            baseMusicLoop = loop;
+            baseMusicVolumeScale = Mathf.Clamp01(volume);
+            if (!TryGetActiveMusicOverride(
+                    out MusicOverridePlayback _))
+            {
+                ApplyMusicState(
+                    baseMusicClip,
+                    baseMusicLoop,
+                    baseMusicVolumeScale);
+            }
+        }
+
+        public void StopMusic()
+        {
+            baseMusicClip = null;
+            if (!TryGetActiveMusicOverride(
+                    out MusicOverridePlayback _))
+            {
+                ApplyMusicState(null, true, 1f);
+            }
+        }
+
+        public MusicRequestHandle RequestMusicOverride(
+            object owner,
+            AudioClip clip,
+            bool loop = true,
+            float volume = 1f)
+        {
+            if (owner == null || clip == null)
+            {
+                return default;
+            }
+
+            EnsureSources();
+            long requestId = ++nextMusicOverrideId;
+            musicOverrides[owner] =
+                new MusicOverridePlayback
+                {
+                    Clip = clip,
+                    Loop = loop,
+                    VolumeScale = Mathf.Clamp01(volume),
+                    RequestId = requestId
+                };
+            ApplyActiveMusic();
+            return new MusicRequestHandle(
+                this,
+                owner,
+                requestId);
+        }
+
+        public void ReleaseMusicOverride(
+            object owner,
+            long requestId)
+        {
+            if (owner == null ||
+                !musicOverrides.TryGetValue(
+                    owner,
+                    out MusicOverridePlayback playback) ||
+                playback.RequestId != requestId)
+            {
+                return;
+            }
+
+            musicOverrides.Remove(owner);
+            ApplyActiveMusic();
+        }
+
+        internal bool IsMusicOverrideActive(
+            object owner,
+            long requestId)
+        {
+            return owner != null &&
+                   musicOverrides.TryGetValue(
+                       owner,
+                       out MusicOverridePlayback playback) &&
+                   playback.RequestId == requestId;
+        }
+
+        private void ApplyActiveMusic()
+        {
+            if (TryGetActiveMusicOverride(
+                    out MusicOverridePlayback playback))
+            {
+                ApplyMusicState(
+                    playback.Clip,
+                    playback.Loop,
+                    playback.VolumeScale);
+                return;
+            }
+
+            ApplyMusicState(
+                baseMusicClip,
+                baseMusicLoop,
+                baseMusicVolumeScale);
+        }
+
+        private bool TryGetActiveMusicOverride(
+            out MusicOverridePlayback active)
+        {
+            active = null;
+            foreach (MusicOverridePlayback playback in
+                     musicOverrides.Values)
+            {
+                if (playback == null)
+                {
+                    continue;
+                }
+
+                if (active == null ||
+                    playback.RequestId > active.RequestId)
+                {
+                    active = playback;
+                }
+            }
+
+            return active != null;
+        }
+
+        private void ApplyMusicState(
+            AudioClip clip,
+            bool loop,
+            float volumeScale)
+        {
+            EnsureSources();
+            musicVolumeScale = Mathf.Clamp01(volumeScale);
             if (clip != null &&
                 musicSource.clip == clip &&
                 musicSource.isPlaying)
@@ -137,11 +315,6 @@ namespace Project.Audio
             {
                 musicSource.Stop();
             }
-        }
-
-        public void StopMusic()
-        {
-            musicSource?.Stop();
         }
 
         public void PlaySound(AudioClip clip, float volume = 1f)
@@ -239,12 +412,14 @@ namespace Project.Audio
 
         private void Update()
         {
-            if (loopPlaybacks.Count == 0)
+            if (loopPlaybacks.Count == 0 &&
+                musicOverrides.Count == 0)
             {
                 return;
             }
 
             staleLoopOwners.Clear();
+            staleMusicOverrideOwners.Clear();
             foreach (KeyValuePair<object, LoopPlayback> pair in
                      loopPlaybacks)
             {
@@ -265,6 +440,34 @@ namespace Project.Audio
                  index++)
             {
                 StopLoop(staleLoopOwners[index]);
+            }
+
+            foreach (KeyValuePair<object, MusicOverridePlayback> pair in
+                     musicOverrides)
+            {
+                bool ownerAlive = pair.Key is UnityEngine.Object unityOwner
+                    ? unityOwner != null
+                    : pair.Key != null;
+                if (!ownerAlive || pair.Value == null)
+                {
+                    staleMusicOverrideOwners.Add(pair.Key);
+                }
+            }
+
+            for (int index = 0;
+                 index < staleMusicOverrideOwners.Count;
+                 index++)
+            {
+                object owner = staleMusicOverrideOwners[index];
+                if (owner != null &&
+                    musicOverrides.TryGetValue(
+                        owner,
+                        out MusicOverridePlayback playback))
+                {
+                    ReleaseMusicOverride(
+                        owner,
+                        playback.RequestId);
+                }
             }
         }
 

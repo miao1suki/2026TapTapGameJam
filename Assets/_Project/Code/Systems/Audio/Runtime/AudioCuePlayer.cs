@@ -115,6 +115,50 @@ namespace Project.Audio
                        AudioChannel.SoundEffect) != null;
         }
 
+        public static MusicRequestHandle RequestMusic(
+            string cueId,
+            object owner,
+            float volumeScale = 1f)
+        {
+            return RequestMusic(
+                AudioCatalog.LoadDefault(),
+                cueId,
+                owner,
+                volumeScale);
+        }
+
+        public static MusicRequestHandle RequestMusic(
+            AudioCatalog catalog,
+            string cueId,
+            object owner,
+            float volumeScale = 1f)
+        {
+            if (owner == null ||
+                !TryGetDefinition(
+                    catalog,
+                    cueId,
+                    out AudioCueDefinition definition) ||
+                definition.Channel != AudioChannel.Music)
+            {
+                return default;
+            }
+
+            AudioClip clip = PickClip(definition);
+            if (clip == null)
+            {
+                return default;
+            }
+
+            float volume = Mathf.Clamp01(
+                definition.VolumeScale *
+                Mathf.Clamp01(volumeScale));
+            return AudioManager.Instance.RequestMusicOverride(
+                owner,
+                clip,
+                definition.Loop,
+                volume);
+        }
+
         public static void StopLoop(object owner)
         {
             if (owner != null)

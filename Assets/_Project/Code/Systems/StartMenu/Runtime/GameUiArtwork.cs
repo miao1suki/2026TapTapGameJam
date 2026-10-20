@@ -9,6 +9,7 @@ namespace Project.StartMenu
         [InspectorName("成就块背景")] public Sprite achievementBlock;
         [InspectorName("成就解锁提示块")] public Sprite achievementUnlockBlock;
         [InspectorName("成就解锁勾")] public Sprite achievementUnlockCheck;
+        [InspectorName("收集品图标")] public Sprite collectibleIcon;
         [Header("设置界面")]
         [InspectorName("设置按钮")] public Sprite settingButton;
         [InspectorName("滑块背景")] public Sprite settingSliderBackground;

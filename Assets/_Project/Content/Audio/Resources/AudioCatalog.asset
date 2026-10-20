@@ -405,4 +405,4 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: b5d1b60f55db9d44b8d51198a2b672ff, type: 3}
     volumeScale: 0.7
-    loop: 0
+    loop: 1

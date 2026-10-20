@@ -4,6 +4,8 @@
   "references": [
     "Project.GameFlow.Runtime",
     "Project.GameFlow.Editor",
+    "Project.Audio.Runtime",
+    "Project.Saving.Runtime",
     "Project.Shared.Runtime",
     "Project.StartMenu.Runtime",
     "Unity.UGUI"

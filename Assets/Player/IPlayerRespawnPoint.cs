@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,9 +18,18 @@ namespace Project.Player
             new List<IPlayerRespawnPoint>();
         private static readonly Dictionary<PlayerController, IPlayerRespawnPoint> Bound =
             new Dictionary<PlayerController, IPlayerRespawnPoint>();
+        public static event Action<
+            PlayerController,
+            IPlayerRespawnPoint,
+            bool> BindingChanged;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetRegistry() { Points.Clear(); Bound.Clear(); }
+        private static void ResetRegistry()
+        {
+            Points.Clear();
+            Bound.Clear();
+            BindingChanged = null;
+        }
 
         public static void Bind(PlayerController player, IPlayerRespawnPoint point)
         {
@@ -29,18 +39,58 @@ namespace Project.Player
             Bound[player] = point;
             NotifyBinding(previous, player, false);
             NotifyBinding(point, player, true);
+            BindingChanged?.Invoke(
+                player,
+                previous,
+                false);
+            BindingChanged?.Invoke(
+                player,
+                point,
+                true);
+        }
+
+        public static bool TryGetBound(
+            PlayerController player,
+            out IPlayerRespawnPoint point)
+        {
+            point = null;
+            return player != null &&
+                   Bound.TryGetValue(player, out point) &&
+                   point != null &&
+                   (!(point is UnityEngine.Object unityObject) ||
+                    unityObject != null) &&
+                   point.IsRespawnPointAvailable;
+        }
+
+        public static void ClearBinding(
+            PlayerController player)
+        {
+            if (player == null ||
+                !Bound.TryGetValue(
+                    player,
+                    out IPlayerRespawnPoint point))
+            {
+                return;
+            }
+
+            Bound.Remove(player);
+            NotifyBinding(point, player, false);
+            BindingChanged?.Invoke(
+                player,
+                point,
+                false);
         }
 
         private static void NotifyBinding(IPlayerRespawnPoint point, PlayerController player, bool current)
         {
-            if (point is Object obj && obj == null) return;
+            if (point is UnityEngine.Object obj && obj == null) return;
             if (point is IPlayerRespawnBindingListener listener) listener.OnRespawnBindingChanged(player, current);
         }
 
         public static bool TryFindPreferred(PlayerController player, Vector3 origin, out IPlayerRespawnPoint point)
         {
             if (player != null && Bound.TryGetValue(player, out point) &&
-                (!(point is Object obj) || obj != null) && point.IsRespawnPointAvailable) return true;
+                (!(point is UnityEngine.Object obj) || obj != null) && point.IsRespawnPointAvailable) return true;
             return TryFindPreferred(origin, out point);
         }
 
@@ -64,6 +114,10 @@ namespace Project.Player
                 {
                     Bound.Remove(player);
                     NotifyBinding(point, player, false);
+                    BindingChanged?.Invoke(
+                        player,
+                        point,
+                        false);
                 }
             }
         }
@@ -134,7 +188,7 @@ namespace Project.Player
                     continue;
                 }
 
-                int instanceId = candidate is Object unityObject
+                int instanceId = candidate is UnityEngine.Object unityObject
                     ? unityObject.GetInstanceID()
                     : 0;
                 if (priority < highestPriority ||

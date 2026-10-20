@@ -195,6 +195,10 @@ namespace Project.BossLogic
                 startingHealth <= 0f ? maxHealth : startingHealth,
                 0f,
                 maxHealth);
+            if (!TryGetComponent(out BossMusicRequest _))
+            {
+                gameObject.AddComponent<BossMusicRequest>();
+            }
             ResolveTarget(true);
             SetState(BossStateId.Chase);
         }

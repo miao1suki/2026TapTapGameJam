@@ -77,6 +77,14 @@ IBossRespawnStateReceiver.ApplyBossRespawnState(
 - 连线起点固定为 Boss 中心；`HealthSystemActivated` 时用 `_RevealProgress` 生成，Boss `Died` 时用 `_DissolveProgress` 按玩家交互线的噪波方式消散。
 - 距离越远，`_Opacity` 和 `_LineThickness` 越低；最远实体不透明度为 `0.4`，最近为 `0.78`，距离曲线使用 `1.35` 次幂让中段变化更平缓。当前整条粗细曲线为上一版的 3 倍，最远 `0.024`、最近 `0.9`，最近有效线粗为普通线的 `1.5` 倍。三条线的中心距按当前线粗的 `0.4` 倍计算，使其保持约 `60%` 重叠。曲线分段、弧高、波动、样式间距、排序图层与距离区间均可调。
 
+Boss 音乐：
+
+- `BossController.Awake` 会自动补齐 `BossMusicRequest`，不需要每个 Boss 预制体手工接线。
+- 它订阅现有 `HealthSystemActivated` 委托，在血条开始显示时申请 `AudioCueIds.MusicBoss`；同时全局查找 `PlayerController`，只有玩家与 Boss 位于同一有效场景且该场景存在启用中的 Boss 时才申请。
+- `AudioManager` 将 Boss 曲作为可释放的音乐覆盖层。覆盖期间底层随机/区域 BGM 仍可继续更新状态，但不会抢掉 Boss 曲；Boss `Died`、禁用或销毁后释放覆盖，恢复申请期间最后一次设置的底层 BGM。
+- Boss 复活并应用正血量后会重新申请；重复激活、Timeline 重播和对象禁用不会叠加多个音乐请求。
+- Boss Cue 在 `AudioCatalog` 中固定走 Music 通道并循环，继续受总音量和音乐滑杆控制。
+
 Boss 存活规则：
 
 - Boss 启用且未死亡时通过 `PlayerController.AcquireSprintLock` 持有疾跑锁；玩家即使继续输入疾跑也不会加速。
@@ -244,3 +252,4 @@ BossController.ActivateHealthSystem();
 - `BossCameraSize`
 - `PlayableDirector`
 - `BossDefeatTimelinePresenter`
+- `BossMusicRequest`（运行时由 `BossController.Awake` 自动补齐）

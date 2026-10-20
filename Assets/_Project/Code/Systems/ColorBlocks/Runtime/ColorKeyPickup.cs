@@ -1,12 +1,17 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using Project.Audio;
 using Project.Player;
 using Project.Items;
 using Project.BlockFeatures;
+using Project.LevelEditor;
 using Project.ObjectArtwork;
+using Project.Rooms;
 using UnityEngine;
 using UnityEngine.Playables;
+using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
 
 namespace Project.ColorBlocks
@@ -15,7 +20,9 @@ namespace Project.ColorBlocks
     [RequireComponent(typeof(Collider))]
     public sealed class ColorKeyPickup : DropItemBase
     {
+        public static event Action<ColorKeyPickup> Collected;
         public bool IsCollectionVisualComplete { get; private set; }
+        public bool IsPersistentlyConsumed { get; private set; }
         [SerializeField] private string colorTypeId = "red";
         [SerializeField] private PlayableDirector cameraDirector;
         [SerializeField] private bool hideOnCollect = true;
@@ -60,6 +67,15 @@ namespace Project.ColorBlocks
         {
             ReleasePlayerControlLock();
             base.OnDisable();
+        }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            if (IsPersistentlyConsumed)
+            {
+                ApplyConsumedVisual();
+            }
         }
 
         private void OnTriggerEnter(Collider other)
@@ -208,6 +224,10 @@ namespace Project.ColorBlocks
             if (collider != null) collider.enabled = false;
 
             UnlockResult = ColorRuntimeService.Instance.CollectColorKey(colorTypeId);
+            if (TryGetStableInstanceId(out _))
+            {
+                IsPersistentlyConsumed = true;
+            }
             if (UnlockResult != ColorKeyUnlockResult.None)
             {
                 AudioCuePlayer.Play(AudioCueIds.PaintAcquire, .9f);
@@ -219,6 +239,7 @@ namespace Project.ColorBlocks
                     true,
                     revealDuration);
             }
+            Collected?.Invoke(this);
         }
 
         protected override void OnCollectionFinished()
@@ -416,6 +437,146 @@ namespace Project.ColorBlocks
         {
             controlLockHandle?.Dispose();
             controlLockHandle = null;
+        }
+
+        public bool TryGetStableInstanceId(
+            out string instanceId)
+        {
+            instanceId = null;
+            LevelEditorPlacedBlock placed =
+                GetComponent<LevelEditorPlacedBlock>();
+            string scenePath = gameObject.scene.path;
+            if (placed == null ||
+                string.IsNullOrWhiteSpace(
+                    placed.PlanningBoxId) ||
+                string.IsNullOrWhiteSpace(scenePath))
+            {
+                return false;
+            }
+
+            Vector2Int cell = placed.PlanningLocalCell;
+            scenePath = scenePath.Replace('\\', '/');
+            string box = placed.PlanningBoxId;
+            instanceId = string.Format(
+                CultureInfo.InvariantCulture,
+                "colorkey:{0}:{1}:{2}:{3}:{4}:{5}",
+                scenePath.Length,
+                scenePath,
+                box.Length,
+                box,
+                cell.x,
+                cell.y);
+            return true;
+        }
+
+        public static void CopyConsumedStableIds(
+            Scene scene,
+            ICollection<string> destination)
+        {
+            if (destination == null ||
+                !scene.IsValid() ||
+                !scene.isLoaded)
+            {
+                return;
+            }
+
+            foreach (GameObject root in
+                     scene.GetRootGameObjects())
+            {
+                foreach (ColorKeyPickup key in
+                         root.GetComponentsInChildren<
+                             ColorKeyPickup>(true))
+                {
+                    if (key.IsPersistentlyConsumed &&
+                        key.TryGetStableInstanceId(
+                            out string id))
+                    {
+                        destination.Add(id);
+                    }
+                }
+            }
+        }
+
+        public static void RestoreConsumedStableIds(
+            Scene scene,
+            IEnumerable<string> consumedIds)
+        {
+            if (consumedIds == null ||
+                !scene.IsValid() ||
+                !scene.isLoaded)
+            {
+                return;
+            }
+
+            var ids = new HashSet<string>(
+                consumedIds,
+                StringComparer.Ordinal);
+            foreach (GameObject root in
+                     scene.GetRootGameObjects())
+            {
+                foreach (ColorKeyPickup key in
+                         root.GetComponentsInChildren<
+                             ColorKeyPickup>(true))
+                {
+                    if (key.TryGetStableInstanceId(
+                            out string id) &&
+                        ids.Contains(id))
+                    {
+                        key.IsPersistentlyConsumed = true;
+                        key.ApplyConsumedVisual();
+                    }
+                }
+            }
+        }
+
+        public static void ResetPersistentConsumption(
+            Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return;
+            }
+
+            foreach (GameObject root in
+                     scene.GetRootGameObjects())
+            {
+                foreach (ColorKeyPickup key in
+                         root.GetComponentsInChildren<
+                             ColorKeyPickup>(true))
+                {
+                    key.IsPersistentlyConsumed = false;
+                    if (!key.gameObject.activeSelf)
+                    {
+                        key.gameObject.SetActive(true);
+                    }
+                    key.ResetForReuse();
+                }
+            }
+        }
+
+        private void ApplyConsumedVisual()
+        {
+            StopItemAnimations();
+            ReleasePlayerControlLock();
+            Collider collider = GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+            foreach (Renderer renderer in
+                     GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.enabled = false;
+            }
+            if (!RoomResetObject.HideForReaction(gameObject))
+            {
+                gameObject.SetActive(false);
+            }
+        }
+
+        protected override void RecycleItem()
+        {
+            ApplyConsumedVisual();
         }
 
 #if UNITY_EDITOR

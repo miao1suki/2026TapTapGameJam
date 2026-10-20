@@ -21,6 +21,38 @@
 
 - 当前整合窗口修改 PlanningFragmentUtility、PlanningCanvas Collaboration/Interaction、PlanningEditorWindow.Collaboration：导入置顶暂存、拖放和房间划分选择。仅工具代码，不改本地 Gaming/MRoom2/MRoom3/Pick 布局。
 - 隔离 Unity 6000.3.12f1 编译及导入暂存25项验证通过（实际读取当前本地 MRoom3/Gaming，检查两模式的全部物体位置／尺寸、数量、绑定、出生点、只读输入、置顶层、拖动／边缘补偿／取消）；原协作地图36项回归通过。未进行真实 OS 鼠标整段拖放录屏或新构建。操作与API文档已同步。
+## 2026-10-20 单轮运行存档会话（编译通过，待 Play 回归）
+
+- 分支 `存档改革`。新增 `Project.Saving.RunSaveData` / `RunSaveService`，固定使用 `persistentDataPath/Saves/run.json`，支持 `.tmp` 原子写入、`.bak` 备份、版本校验和损坏文件隔离。
+- 新增 `RunSessionCoordinator`，开始游戏时自动新建或读取当前轮；读取已有存档时先将标准玩家的 RGB 故障死亡层拉满，在故障遮屏期间恢复重生点、收集品、颜色钥匙/能力、Boss 状态并把玩家送到当前重生点，再按 `RgbGlitchSceneDriver.respawnFadeSeconds` 倒放揭示。读档不再调用通用加载蒙屏。
+- 新轮重置收集品统计为 0，恢复收集品实例；收集品按稳定作者 ID 精确记录，已收集实例静默隐藏，未收集实例保留。颜色钥匙按实际消耗的稳定实例 ID 保存，不按颜色或数量批量隐藏。
+- 无有效运行存档时，点击开始先通过 `GameplayEntryCircleCover` 在菜单上闭合圆形遮罩，完全遮黑后才启动场景运镜；从全黑起等待 `2` 秒，再通过 `StoryStartEntryHandoff` 由 `Resources/story_start` 以已遮黑模式无缝接手。开场台词到时直接消失；黑幕从中心散开时玩家以 Run 精灵动画从左侧走回画面中心，返程速度 `2.6666667` 格/秒。已有存档不播放开场。
+- 编辑器新增 `Tools/2026TapTap/存档/重置当前运行存档`，非 Play Mode 确认后删除 `run.json`、`.tmp` 与 `.bak`。
+- 暂停收藏品页标题下保留一整行顶部空白，新增 `CollectibleCounterPresenter`，通过 `GameUiArtwork.collectibleIcon` 引用项目 `Collectible:idle` 调色盘 Sprite，图标显示尺寸为 `96×96`，并显示 `: 已收集/总数`；统计来自 `CollectibleProgressService.GetWorldProgress()`，第一条成就从统计行下方开始。
+- 自动保存事件已接：新重生点绑定/切换、收集品结算完成、颜色钥匙收集、颜色进度变化、Boss 进度变化、暂停和退出。真结局完成 API 已提供幂等清档、运行时重置和回主界面入口。
+- Unity 6000.3.12f1 静态编译 Project.Saving.Runtime、Project.StartMenu.Runtime、Assembly-CSharp、Assembly-CSharp-Editor 和新增 RunSaveService 测试程序集均 0 error，仅既有警告；未运行 Play Mode。
+
+## 2026-10-20 暂停存档页封存（编译通过，待视觉验收）
+
+- 分支 `存档改革`。旧多槽位页面脚本原样备份到 `Docs/SavePanelController.Legacy.cs.txt`，不参与编译。
+- `SavePanelController` 已移除槽位列表、保存、读取、删除、返回事件和 `SaveGameService` 调用；运行时隐藏 `SavePage` 除右上角 `Close` 外的全部旧子物体，只创建居中的 `待开发内容，请关注后续消息`。
+- 占位文字使用 `Cubic_11 SDF`、白色文字、黑色描边、72 基准字号和自动缩放；`SharedGameUI.prefab` 与 `MainMenuUI.prefab` 均补齐字体引用。
+- `EscMenuController` 删除存档页 Load/Save 委托及关卡映射逻辑；暂停 UI 仍通过右上角 Close 正常返回。
+- Unity 6000.3.12f1 静态编译 Project.StartMenu.Runtime、Project.GameFlow.Runtime、Assembly-CSharp、Assembly-CSharp-Editor 与 GameFlow EditorTests 均 0 error，仅既有警告；未运行 Play Mode。
+
+## 2026-10-20 Boss 音乐覆盖申请（编译通过，待 Play 回归）
+
+- 分支 `存档改革`。`AudioManager` 新增可释放的音乐覆盖请求与句柄；底层 BGM 状态持续保留，覆盖期间更新底曲不会抢掉 Boss 音乐，释放后恢复最新底曲。
+- 新增 `BossMusicRequest`，由 `BossController.Awake` 自动补齐；订阅现有 `HealthSystemActivated`、`Died` 与 `RespawnStateApplied`。血条显示时全局查找玩家，只有玩家与启用中的 Boss 同场景才申请 `music.boss`，Boss死亡、禁用或销毁时释放。
+- `AudioCatalog` 的 `music.boss` 改为循环 Music 通道。增加 Boss Cue 与音乐覆盖恢复测试。
+- Unity 6000.3.12f1 静态编译：Project.Audio.Runtime、Project.GameFlow.Runtime、Assembly-CSharp、Assembly-CSharp-Editor、Project.GameFlow.EditorTests 均 0 error，仅既有警告；未运行 Play Mode。
+
+## 2026-10-20 存档改革规则固化（待实现）
+
+- 分支 `存档改革`。新增 `.agents/skills/taptap-save-reform/SKILL.md`，并在根 `AGENTS.md` 声明该分支所有工作必须先读取并服从此 Skill。
+- 产品规则：取消玩家可见的多存档槽；无有效存档时自动创建初始轮，有存档时直接续玩；单轮 JSON 自动保存重生点、收集品、颜色钥匙/能力、Boss 与结局状态。
+- 结局门槛：低于 30% 不进入 Boss 并回第一关；30% 到 60% 以下可打 Boss，击败后回第一关；达到 60% 才继续真结局。只有真结局 Timeline Playable 的最终完成节点可以清档、重置本轮并回主界面，Boss 击败本身不清档。成就、音量、按键映射和移动布局属于全局数据，清档不得影响。
+- 本轮只新增规则与入口，不改运行时代码、场景或存档格式；后续实现必须按 Skill 验证清单交付。
 
 ## 2026-10-20 远端进度／浅草／喷泉光照整合验收
 

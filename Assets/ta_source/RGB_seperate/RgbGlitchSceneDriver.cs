@@ -39,6 +39,10 @@ namespace TapTap.TA.RgbGlitch
         public static RgbGlitchSceneDriver Active => active;
         public bool OwnsEffect => active == this;
         public bool BossFearActive => bossFearActive;
+        public float RespawnFadeSeconds =>
+            float.IsFinite(respawnFadeSeconds)
+                ? Mathf.Max(0f, respawnFadeSeconds)
+                : 1.2f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetOwnership() => active = null;

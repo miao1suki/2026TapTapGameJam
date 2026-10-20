@@ -172,13 +172,6 @@ namespace Project.GameFlow
                 settingsPanel.BackRequested -= ReturnToMain;
             }
 
-            if (savePanel != null)
-            {
-                savePanel.BackRequested -= ReturnToMain;
-                savePanel.LoadRequested -= LoadSlot;
-                savePanel.SaveRequested -= SaveToSlot;
-            }
-
             UnhookButtonEffects();
             rootTween?.Kill();
             pageTween?.Kill();
@@ -735,16 +728,6 @@ namespace Project.GameFlow
                 settingsPanel.SetBackButtonVisible(false);
             }
 
-            if (savePanel != null)
-            {
-                savePanel.BackRequested -= ReturnToMain;
-                savePanel.BackRequested += ReturnToMain;
-                savePanel.LoadRequested -= LoadSlot;
-                savePanel.LoadRequested += LoadSlot;
-                savePanel.SaveRequested -= SaveToSlot;
-                savePanel.SaveRequested += SaveToSlot;
-                savePanel.SetBackButtonVisible(false);
-            }
         }
 
         private void MoveSelection(int delta)
@@ -1162,81 +1145,6 @@ namespace Project.GameFlow
                 AudioCuePlayer.PlayUiConfirm();
                 action?.Invoke();
             });
-        }
-
-        private void LoadSlot(string slotId)
-        {
-            if (savePanel == null)
-            {
-                return;
-            }
-
-            string levelLabel = savePanel.LoadSlot(slotId);
-            if (string.IsNullOrWhiteSpace(levelLabel) ||
-                !TryMapLevel(levelLabel, out GameFlowSceneId sceneId))
-            {
-                return;
-            }
-
-            router?.SetPaused(false, false);
-            GameFlowController.Instance?.RequestTransition(sceneId);
-        }
-
-        private void SaveToSlot(string slotId)
-        {
-            if (savePanel == null)
-            {
-                return;
-            }
-
-            GameFlowSceneId sceneId =
-                GameFlowController.Instance?.ActiveSceneId ??
-                GameFlowSceneId.Gaming;
-            savePanel.SaveCurrentToSlot(
-                slotId,
-                LevelLabel(sceneId),
-                "{}");
-        }
-
-        private static bool TryMapLevel(
-            string label,
-            out GameFlowSceneId sceneId)
-        {
-            if (label == "Gaming")
-            {
-                sceneId = GameFlowSceneId.Gaming;
-                return true;
-            }
-
-            if (label == "关卡 2")
-            {
-                sceneId = GameFlowSceneId.Level02;
-                return true;
-            }
-
-            if (label == "关卡 3")
-            {
-                sceneId = GameFlowSceneId.Level03;
-                return true;
-            }
-
-            sceneId = default;
-            return false;
-        }
-
-        private static string LevelLabel(GameFlowSceneId id)
-        {
-            switch (id)
-            {
-                case GameFlowSceneId.Gaming:
-                    return "Gaming";
-                case GameFlowSceneId.Level02:
-                    return "关卡 2";
-                case GameFlowSceneId.Level03:
-                    return "关卡 3";
-                default:
-                    return "未开始";
-            }
         }
 
         private void KeepWheelLabelsUpright()

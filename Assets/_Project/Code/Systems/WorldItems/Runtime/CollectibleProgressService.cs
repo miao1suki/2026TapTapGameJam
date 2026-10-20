@@ -228,5 +228,62 @@ namespace Project.Items
             }
             if (changed) Changed?.Invoke();
         }
+
+        public static void ResetSessionProgress(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return;
+            }
+
+            Catalogs.Remove(SceneKey(scene));
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (CollectiblePickup item in
+                         root.GetComponentsInChildren<
+                             CollectiblePickup>(true))
+                {
+                    item.ResetPersistentCollectionForNewRun();
+                }
+            }
+            RefreshSceneCatalog(scene);
+            Changed?.Invoke();
+        }
+
+        public static void ResetAllSessionProgress()
+        {
+            Catalogs.Clear();
+            for (int sceneIndex = 0;
+                 sceneIndex < SceneManager.sceneCount;
+                 sceneIndex++)
+            {
+                Scene scene =
+                    SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded)
+                {
+                    continue;
+                }
+
+                foreach (GameObject root in
+                         scene.GetRootGameObjects())
+                {
+                    foreach (CollectiblePickup item in
+                             root.GetComponentsInChildren<
+                                 CollectiblePickup>(true))
+                    {
+                        item.ResetPersistentCollectionForNewRun();
+                    }
+                }
+            }
+
+            for (int sceneIndex = 0;
+                 sceneIndex < SceneManager.sceneCount;
+                 sceneIndex++)
+            {
+                RefreshSceneCatalog(
+                    SceneManager.GetSceneAt(sceneIndex));
+            }
+            Changed?.Invoke();
+        }
     }
 }

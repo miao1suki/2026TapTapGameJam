@@ -19,33 +19,47 @@ namespace Project.StoryStart
         private StoryStartTimelineSettings settings;
         private PlayableDirector director;
         private PlayerController player;
+        private PlayerSpritePresentation playerVisual;
         private CameraControlManager cameraManager;
         private TimelineCamRig cameraRig;
         private CameraViewModeRequestHandle viewModeHandle;
         private IDisposable playerControlLock;
         private WordNoteHandle message;
         private GameObject curtainRoot;
-        private RectTransform topCurtain;
-        private RectTransform bottomCurtain;
-        private RectTransform leftCurtain;
-        private RectTransform rightCurtain;
-        private Vector2 topBottomTarget;
-        private Vector2 leftRightTarget;
+        private Material curtainMaterial;
+        private float curtainMaxRadius;
+        private float curtainAspect;
         private Vector3 originCameraPosition;
         private Quaternion originCameraRotation;
         private float baseOrthographicSize;
         private float baseFieldOfView;
         private float lensMultiplier = 1f;
+        private bool startsCovered;
+        private float coveredHoldSeconds;
         private bool running;
         private bool cleaned;
+        private static readonly int CurtainColorId =
+            Shader.PropertyToID("_Color");
+        private static readonly int CurtainCenterId =
+            Shader.PropertyToID("_Center");
+        private static readonly int CurtainRadiusId =
+            Shader.PropertyToID("_Radius");
+        private static readonly int CurtainAspectId =
+            Shader.PropertyToID("_Aspect");
 
         public void Begin(
             StoryStartTimelineSettings valueSettings,
-            PlayableDirector valueDirector)
+            PlayableDirector valueDirector,
+            bool valueStartsCovered,
+            float valueCoveredHoldSeconds)
         {
             settings = valueSettings ??
                        new StoryStartTimelineSettings();
             director = valueDirector;
+            startsCovered = valueStartsCovered;
+            coveredHoldSeconds = Mathf.Max(
+                0f,
+                valueCoveredHoldSeconds);
             running = true;
             StartCoroutine(Run());
         }
@@ -65,11 +79,23 @@ namespace Project.StoryStart
                 yield break;
             }
 
-            BuildCurtains();
-            yield return AnimateCurtains(0f, 1f);
-            yield return ChangeLens(
-                settings.lensMultiplier,
-                settings.lensExpandDuration);
+            if (!BuildCurtains())
+            {
+                Finish();
+                yield break;
+            }
+            if (startsCovered)
+            {
+                SetCurtainProgress(1f);
+                yield return PrepareCoveredOpening();
+            }
+            else
+            {
+                yield return AnimateCurtains(0f, 1f);
+                yield return ChangeLens(
+                    settings.lensMultiplier,
+                    settings.lensExpandDuration);
+            }
             yield return PlayLines(settings.openingLines);
             if (!running)
             {
@@ -88,7 +114,9 @@ namespace Project.StoryStart
                     settings.playerLeftDistanceBlocks) *
                 cellSize;
             player.SetPresentationPosition(leftPosition);
-            yield return AnimateCurtains(1f, 0f);
+            player.FaceWorldPosition(destination);
+            playerVisual?.SetPresentationAnimationState(
+                PlayerSpriteState.Run);
 
             float distance = Vector3.Distance(
                 leftPosition,
@@ -99,10 +127,16 @@ namespace Project.StoryStart
                     .01f,
                     settings.playerReturnSpeedBlocksPerSecond *
                     cellSize);
-            yield return MovePlayerAndRestoreLens(
+            float revealDuration = Mathf.Max(
+                settings.curtainRevealDuration,
+                moveDuration);
+            yield return RevealCurtainsAndReturnPlayer(
                 leftPosition,
                 destination,
-                moveDuration);
+                moveDuration,
+                revealDuration);
+            playerVisual?.SetPresentationAnimationState(
+                PlayerSpriteState.Idle);
 
             yield return PlayLines(settings.closingLines);
             Finish();
@@ -121,6 +155,9 @@ namespace Project.StoryStart
                     "[StoryStart] 场景中没有找到玩家。");
                 return false;
             }
+            playerVisual =
+                player.GetComponent<
+                    PlayerSpritePresentation>();
             if (WordNoteUI.Instance == null)
             {
                 Debug.LogError(
@@ -292,12 +329,11 @@ namespace Project.StoryStart
                 useEnterAnimation = true,
                 enterAnimation =
                     WordNoteAnimation.Typewriter,
-                useExitAnimation = true,
+                useExitAnimation = false,
                 exitAnimation =
-                    WordNoteAnimation.Typewriter
+                    WordNoteAnimation.None
             };
             style.enterMotion = BuildTypewriterMotion();
-            style.exitMotion = BuildTypewriterMotion();
             return style;
         }
 
@@ -342,33 +378,69 @@ namespace Project.StoryStart
             ApplyCamera();
         }
 
-        private IEnumerator MovePlayerAndRestoreLens(
+        private IEnumerator PrepareCoveredOpening()
+        {
+            Coroutine lensRoutine =
+                StartCoroutine(
+                    ChangeLens(
+                        settings.lensMultiplier,
+                        settings.lensExpandDuration));
+            if (coveredHoldSeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(
+                    coveredHoldSeconds);
+            }
+            yield return lensRoutine;
+        }
+
+        private IEnumerator RevealCurtainsAndReturnPlayer(
             Vector3 start,
             Vector3 end,
-            float duration)
+            float moveDuration,
+            float revealDuration)
         {
             float startLens = lensMultiplier;
+            float totalDuration = Mathf.Max(
+                .01f,
+                Mathf.Max(
+                    moveDuration,
+                    revealDuration));
             Tween tween = DOTween.To(
                     () => 0f,
-                    progress =>
+                    elapsed =>
                     {
+                        float moveProgress =
+                            Mathf.Clamp01(
+                                elapsed /
+                                Mathf.Max(
+                                    .01f,
+                                    moveDuration));
                         player.SetPresentationPosition(
                             Vector3.Lerp(
                                 start,
                                 end,
-                                progress));
+                                moveProgress));
                         lensMultiplier = Mathf.Lerp(
                             startLens,
                             1f,
-                            progress);
+                            moveProgress);
                         ApplyCamera();
+                        float revealProgress =
+                            Mathf.Clamp01(
+                                elapsed /
+                                Mathf.Max(
+                                    .01f,
+                                    revealDuration));
+                        SetCurtainProgress(
+                            1f - revealProgress);
                     },
-                    1f,
-                    Mathf.Max(.01f, duration))
+                    totalDuration,
+                    totalDuration)
                 .SetEase(Ease.InOutSine)
                 .SetUpdate(true).SetTarget(this);
             yield return tween.WaitForCompletion();
             player.SetPresentationPosition(end);
+            SetCurtainProgress(0f);
             lensMultiplier = 1f;
             ApplyCamera();
         }
@@ -388,10 +460,10 @@ namespace Project.StoryStart
                 originCameraRotation);
         }
 
-        private void BuildCurtains()
+        private bool BuildCurtains()
         {
             curtainRoot = new GameObject(
-                "Story Start Curtains",
+                "Story Start Circle Curtain",
                 typeof(RectTransform),
                 typeof(Canvas),
                 typeof(CanvasScaler),
@@ -415,26 +487,48 @@ namespace Project.StoryStart
             group.blocksRaycasts = false;
             group.interactable = false;
 
-            topCurtain = CreateCurtain(
-                "Top",
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(.5f, 1f));
-            bottomCurtain = CreateCurtain(
-                "Bottom",
-                new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(.5f, 0f));
-            leftCurtain = CreateCurtain(
-                "Left",
-                new Vector2(0f, 0f),
-                new Vector2(0f, 1f),
-                new Vector2(0f, .5f));
-            rightCurtain = CreateCurtain(
-                "Right",
-                new Vector2(1f, 0f),
-                new Vector2(1f, 1f),
-                new Vector2(1f, .5f));
+            GameObject panel = new GameObject(
+                "Circle",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            panel.transform.SetParent(
+                curtainRoot.transform,
+                false);
+            RectTransform panelRect =
+                panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = Vector2.zero;
+            panelRect.anchorMax = Vector2.one;
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = Vector2.zero;
+
+            Shader shader = settings.curtainShader != null
+                ? settings.curtainShader
+                : Shader.Find(
+                    "Hidden/2026TapTap/StoryStartCircleCurtain");
+            if (shader == null)
+            {
+                Debug.LogError(
+                    "[StoryStart] 未配置圆形黑幕 Shader。");
+                Destroy(curtainRoot);
+                curtainRoot = null;
+                return false;
+            }
+
+            curtainMaterial = new Material(shader)
+            {
+                name = "Story Start Circle Curtain (Runtime)"
+            };
+            curtainMaterial.SetColor(
+                CurtainColorId,
+                settings.curtainColor);
+            curtainMaterial.SetVector(
+                CurtainCenterId,
+                settings.curtainCenter);
+            Image image = panel.GetComponent<Image>();
+            image.color = Color.white;
+            image.raycastTarget = false;
+            image.material = curtainMaterial;
 
             Canvas.ForceUpdateCanvases();
             RectTransform rootRect =
@@ -448,40 +542,18 @@ namespace Project.StoryStart
             float overscan = Mathf.Max(
                 0f,
                 settings.curtainOverscan);
-            topBottomTarget = new Vector2(
-                0f,
-                height * (.5f + overscan));
-            leftRightTarget = new Vector2(
-                width * (.5f + overscan),
-                0f);
+            curtainAspect = width / height;
+            curtainMaterial.SetFloat(
+                CurtainAspectId,
+                curtainAspect);
+            curtainMaxRadius =
+                .5f *
+                Mathf.Sqrt(
+                    curtainAspect * curtainAspect +
+                    1f) *
+                (1f + overscan);
             SetCurtainProgress(0f);
-        }
-
-        private RectTransform CreateCurtain(
-            string name,
-            Vector2 anchorMin,
-            Vector2 anchorMax,
-            Vector2 pivot)
-        {
-            GameObject panel = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image));
-            panel.transform.SetParent(
-                curtainRoot.transform,
-                false);
-            RectTransform rect =
-                panel.GetComponent<RectTransform>();
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.pivot = pivot;
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = Vector2.zero;
-            Image image = panel.GetComponent<Image>();
-            image.color = settings.curtainColor;
-            image.raycastTarget = false;
-            return rect;
+            return true;
         }
 
         private IEnumerator AnimateCurtains(
@@ -508,26 +580,17 @@ namespace Project.StoryStart
         {
             float clamped =
                 Mathf.Clamp01(progress);
-            if (topCurtain != null)
+            if (curtainMaterial == null)
             {
-                topCurtain.sizeDelta =
-                    topBottomTarget * clamped;
+                return;
             }
-            if (bottomCurtain != null)
-            {
-                bottomCurtain.sizeDelta =
-                    topBottomTarget * clamped;
-            }
-            if (leftCurtain != null)
-            {
-                leftCurtain.sizeDelta =
-                    leftRightTarget * clamped;
-            }
-            if (rightCurtain != null)
-            {
-                rightCurtain.sizeDelta =
-                    leftRightTarget * clamped;
-            }
+
+            curtainMaterial.SetFloat(
+                CurtainRadiusId,
+                Mathf.Lerp(
+                    curtainMaxRadius,
+                    0f,
+                    clamped));
         }
 
         private void Finish()
@@ -562,6 +625,8 @@ namespace Project.StoryStart
             {
                 player.EndPresentationMotion();
             }
+            playerVisual?.ClearPresentationAnimationState();
+            playerVisual = null;
             playerControlLock?.Dispose();
             playerControlLock = null;
 
@@ -570,6 +635,11 @@ namespace Project.StoryStart
                 DOTween.Kill(curtainRoot);
                 Destroy(curtainRoot);
                 curtainRoot = null;
+            }
+            if (curtainMaterial != null)
+            {
+                Destroy(curtainMaterial);
+                curtainMaterial = null;
             }
             DOTween.Kill(this);
         }
