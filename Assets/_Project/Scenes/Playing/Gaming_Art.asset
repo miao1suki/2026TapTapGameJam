@@ -499,6 +499,201 @@ MonoBehaviour:
     - position: {x: 31, y: 27}
       brush: 154
       quarterTurns: 0
+    - position: {x: -11, y: 1}
+      brush: 45
+      quarterTurns: 0
+    - position: {x: -11, y: 2}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -11, y: 3}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -11, y: 4}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -11, y: 5}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -11, y: 6}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: -15, y: 2}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: -15, y: 3}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -15, y: 4}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -15, y: 5}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -15, y: 6}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -15, y: 7}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: -15, y: 8}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -15, y: 9}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: -9, y: 1}
+      brush: 45
+      quarterTurns: 0
+    - position: {x: -9, y: 2}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -9, y: 3}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -9, y: 4}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -9, y: 5}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -9, y: 6}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: -9, y: 7}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -9, y: 8}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: -9, y: 9}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -9, y: 10}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: -9, y: 11}
+      brush: 45
+      quarterTurns: 0
+    - position: {x: -19, y: 5}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: -19, y: 6}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: -19, y: 7}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: -19, y: 8}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: -19, y: 9}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 3, y: 0}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 3, y: 1}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 3, y: 2}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 3, y: 3}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: 3, y: 4}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 3, y: 5}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: 3, y: 6}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: 3, y: 7}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: 3, y: 8}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 3, y: 9}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: 3, y: 10}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 3, y: 11}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: 3, y: 12}
+      brush: 55
+      quarterTurns: 0
+    - position: {x: 3, y: 13}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 16, y: 5}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 16, y: 6}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 16, y: 7}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 16, y: 8}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: 16, y: 9}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: 16, y: 10}
+      brush: 45
+      quarterTurns: 0
+    - position: {x: 16, y: 11}
+      brush: 44
+      quarterTurns: 0
+    - position: {x: 16, y: 12}
+      brush: 47
+      quarterTurns: 0
+    - position: {x: 12, y: 0}
+      brush: 46
+      quarterTurns: 0
+    - position: {x: 12, y: 1}
+      brush: 46
+      quarterTurns: 0
+    - position: {x: 12, y: 2}
+      brush: 46
+      quarterTurns: 0
+    - position: {x: 12, y: 3}
+      brush: 46
+      quarterTurns: 0
+    - position: {x: 12, y: 4}
+      brush: 46
+      quarterTurns: 0
+    - position: {x: 12, y: 5}
+      brush: 45
+      quarterTurns: 0
+    - position: {x: 12, y: 6}
+      brush: 46
+      quarterTurns: 0
+    - position: {x: 12, y: 7}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: 12, y: 8}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: 12, y: 9}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: 12, y: 10}
+      brush: 53
+      quarterTurns: 0
+    - position: {x: 12, y: 11}
+      brush: 45
+      quarterTurns: 0
+    - position: {x: 12, y: 12}
+      brush: 46
+      quarterTurns: 0
   - id: 55cb5a9324604325ad9c972952b55659
     label: "\u5899\u5730\u8868\u9762"
     visible: 1
@@ -2597,7 +2792,7 @@ MonoBehaviour:
       brush: 196
       quarterTurns: 0
     - position: {x: 20, y: 23}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: 20, y: 24}
       brush: 202
@@ -2618,7 +2813,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: 23, y: 19}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: 23, y: 20}
       brush: 202
@@ -5954,7 +6149,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -15, y: 10}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -20, y: -2}
       brush: 202
@@ -6017,7 +6212,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -18, y: 4}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -22, y: -2}
       brush: 202
@@ -6116,7 +6311,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -16, y: 2}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -15, y: 0}
       brush: 202
@@ -6140,7 +6335,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -12, y: 1}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -6, y: -2}
       brush: 202
@@ -6194,7 +6389,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -2, y: 0}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -1, y: -2}
       brush: 202
@@ -6449,7 +6644,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: 13, y: 4}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: 14, y: 4}
       brush: 202
@@ -6470,7 +6665,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: 20, y: 4}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: 21, y: 0}
       brush: 202
@@ -8213,7 +8408,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -13, y: 7}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -12, y: 7}
       brush: 202
@@ -8222,10 +8417,10 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -10, y: 7}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -10, y: 12}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -9, y: 12}
       brush: 202
@@ -8240,7 +8435,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -7, y: 14}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -6, y: 14}
       brush: 202
@@ -8300,7 +8495,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -5, y: 16}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -4, y: 16}
       brush: 202
@@ -8345,7 +8540,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: -2, y: 18}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: -1, y: 18}
       brush: 202
@@ -8360,7 +8555,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: 3, y: 18}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: 11, y: 13}
       brush: 202
@@ -8384,7 +8579,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: 11, y: 14}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: 12, y: 14}
       brush: 202
@@ -8402,7 +8597,7 @@ MonoBehaviour:
       brush: 202
       quarterTurns: 0
     - position: {x: 17, y: 14}
-      brush: 202
+      brush: 10
       quarterTurns: 0
     - position: {x: 23, y: 3}
       brush: 202
@@ -22864,6 +23059,150 @@ MonoBehaviour:
     - position: {x: 20, y: 37}
       brush: 67
       quarterTurns: 0
-  revision: 2046
-  bakedRevision: 2046
+    - position: {x: 3, y: 12}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: 3, y: 8}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: 3, y: 5}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: 12, y: 10}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: 12, y: 7}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: 13, y: 4}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: 16, y: 10}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: 16, y: 6}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: 16, y: 12}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -2, y: 14}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -2, y: 13}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: 0, y: 13}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -6, y: 13}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -8, y: 11}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -9, y: 11}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -11, y: 5}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -11, y: 6}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -17, y: 9}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -20, y: 10}
+      brush: 49
+      quarterTurns: 0
+    - position: {x: -19, y: 7}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -19, y: 5}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -15, y: 6}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -15, y: 8}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -15, y: 4}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -11, y: 2}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -9, y: 5}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -9, y: 9}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: 3, y: 9}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: 12, y: 9}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: 16, y: 8}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: 16, y: 5}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: 12, y: 3}
+      brush: 50
+      quarterTurns: 0
+    - position: {x: -20, y: 4}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -19, y: 4}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -16, y: 2}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -13, y: 1}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -7, y: 0}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -4, y: 0}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: 15, y: 4}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: 19, y: 4}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: 20, y: 4}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -2, y: 18}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: 3, y: 18}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -4, y: 16}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -9, y: 12}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -6, y: 14}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -18, y: 10}
+      brush: 155
+      quarterTurns: 0
+    - position: {x: -16, y: 10}
+      brush: 155
+      quarterTurns: 0
+  revision: 2145
+  bakedRevision: 2145
   bakedPaletteHash: db989a14d25486722969a264928c75d3
