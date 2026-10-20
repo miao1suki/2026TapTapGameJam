@@ -1,5 +1,11 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 当前 Gaming 场景快速交付
+
+- 分支 `codex/spotlight/current-version-20261020`。从最新 `origin/main` 的 `58c6df7` 创建，只交付本次 Unity 保存后的正式 `Gaming.unity`、同名 `Gaming.planning.json` 与同步后的 `Content/LevelMaps/正式关卡.json`。
+- 当前规划为 25 个房间、24 个区域、4240 条物体记录、49017 个占格；两份外部 JSON 已逐字节一致。三份既有 `.meta` 未改且继续保留原 GUID。
+- `Cubic_11 SDF.asset` 是本次打开场景时 Unity 自动扩充的动态字体图集，未纳入关卡提交。已运行规划配对守卫和暂存差异检查；未运行 Play Mode、完整通关或重新打包。
+
 ## 2026-10-20 Boss 前置出生点读档回退
 
 - 分支 `冲刺2`。为 `RespawnAnchorFeature` 增加“是否为 Boss 前置出生点”标记；该标记只用于读档，不改变正常激活、绑定、材质、动画或复活行为。
