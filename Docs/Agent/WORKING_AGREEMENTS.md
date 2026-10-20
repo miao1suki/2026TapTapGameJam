@@ -15,7 +15,7 @@ Editor UI 必须 UI Toolkit；场景 HUD 可拖动、折叠、关闭和重新打
 功能介绍描述当前产品行为，不写对话历史、临时争论或“你之前说”。
 
 完成时验证编译；修改 Runtime 时运行相关测试，并在风险匹配时验证打包。
-比赛期间游戏禁止非 TapTap SDK 联网。当前未接入 TapTap SDK，构建仍无网络权限、非 Development；不得开启调试发现、Unity 遥测或广告。用户明确授权的唯一网页例外为主动点击隐私政策时调用系统浏览器打开固定 HTTPS 页面，不在游戏内发请求、嵌 WebView 或自动联网。新增 SDK 需专项审计，规则见 `Docs/Developer/OFFLINE_BUILD.md`。
+比赛期间游戏禁止非 TapTap SDK 联网。当前 TapTap 成就接入只允许 Android 的 `INTERNET` 与 `ACCESS_NETWORK_STATE`，且必须在原生隐私同意、Unity 启动后初始化；其余网络权限继续移除。构建保持非 Development；不得开启调试发现、Unity 遥测或广告。用户明确授权的唯一网页例外为主动点击隐私政策时调用系统浏览器打开固定 HTTPS 页面，不在游戏内发请求、嵌 WebView 或自动联网。新增 SDK 需专项审计，规则见 `Docs/Developer/OFFLINE_BUILD.md`。
 提交说明列出变更、验证、未验证项目与阻塞。文档随代码一起提交。
 Git 忽略目录中放本地日志/验证产物；凭据不得进入项目，包括未跟踪文件。
 

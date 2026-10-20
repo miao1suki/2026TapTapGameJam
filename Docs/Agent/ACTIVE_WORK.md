@@ -1,5 +1,17 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 TapTap Unity 成就 SDK 接入（编译与测试通过，待后台配置/真机）
+
+- 分支 `boss最后补充2`。范围：TapSDK Core/Login/Achievement 固定版本依赖、TapTap 成就配置与运行时上报桥、Android 包名、离线权限守卫及对应文档/测试；不改本地成就逻辑、AchievementSO、场景、Boss 或单轮存档。
+- 官方 v4 文档要求成就依赖 TapTap 登录；Android 必需 `INTERNET` 与 `ACCESS_NETWORK_STATE`。项目预启动原生隐私门保证 Unity/TapSDK 只在玩家明确同意后初始化。
+- 官方 NPM 当前最新可解析版本为 `4.10.9`，文档中的 `4.11.0` 尚未在官方 NPM 发布；本接入固定 `4.10.9`，不大范围升级 Unity/URP。
+- 后台 14 条成就已核对并发布，`Fall1`～`Lava2` 与现有 `platformAchievementId` 一致；Client ID `hsfsh06prdz6broh95` 与后台 ID 确认开关写入配置资产。Client Token 只保存在被 `.gitignore` 排除的 `TapTapAchievementSecrets.json`，不进入仓库；Server Secret 不进入客户端。
+- 包名由 `com.xingzhicai.game` 切换为 `com.miao1suki.shapeofcolor`；这是用户明确批准的独立应用身份变更。
+- 实际 AAR Manifest 审计：TapSDK 只新增已审核的 `TapTapKitInitProvider`，固定 authority `${applicationId}.TapTapKitInitProvider`、`exported=false`；Android 隐私守卫只放行这一项并继续阻断其他 Provider。
+- 离线守卫仅保留 TapTap 必需的 `INTERNET`、`ACCESS_NETWORK_STATE`，继续移除网络状态修改、Wi-Fi、LAN 与蓝牙权限；EDM4U 编辑期分析关闭且随机 cookie 已移除。
+- Unity 6000.3.12f1 包解析成功，`Project.Achievements.Runtime`、`Project.GameFlow.Editor`、`Project.GameFlow.EditorTests`、`Assembly-CSharp-Editor` 编译 0 error；19 项 EditMode 测试全部通过。一次性测试入口已删除。
+- 尚未进行 Play Mode TapTap 登录、真实成就上报或 Android 构建/真机验证；后台签名证书列表仍为空，本地 Token 已完成配置。
+
 ## 2026-10-20 编辑模式渲染距离工具（编译通过，待静止卡顿复测）
 
 - 分支 `boss最后补充2`。新增纯 Editor 的 SceneView 房间级可见性裁剪窗口，菜单 `Tools/2026TapTap/编辑器性能/编辑渲染距离`。

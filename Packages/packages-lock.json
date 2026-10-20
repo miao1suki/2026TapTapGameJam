@@ -1,10 +1,43 @@
 {
   "dependencies": {
+    "com.google.external-dependency-manager": {
+      "version": "1.2.179",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "com.merry-yellow.code-assist": {
       "version": "file:com.merry-yellow.code-assist",
       "depth": 0,
       "source": "embedded",
       "dependencies": {}
+    },
+    "com.taptap.sdk.achievement": {
+      "version": "4.10.9",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.taptap.sdk.core": "4.10.9",
+        "com.taptap.sdk.login": "4.10.9"
+      },
+      "url": "https://registry.npmjs.org"
+    },
+    "com.taptap.sdk.core": {
+      "version": "4.10.9",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://registry.npmjs.org"
+    },
+    "com.taptap.sdk.login": {
+      "version": "4.10.9",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.taptap.sdk.core": "4.10.9"
+      },
+      "url": "https://registry.npmjs.org"
     },
     "com.unity.ai.navigation": {
       "version": "2.0.11",
@@ -96,6 +129,13 @@
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
       "depth": 3,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.1",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"

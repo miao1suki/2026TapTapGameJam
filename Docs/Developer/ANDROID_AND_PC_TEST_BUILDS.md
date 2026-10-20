@@ -26,7 +26,7 @@
 
 ## 构建与验证
 
-2026-10-16 离线规则更新：以下开发包仅保留为历史产物，不是比赛离线包，不应继续分发。当前构建脚本改为 `BuildOptions.None`、关闭调试发现/遥测，由 `ContestOfflineBuildGuard` 阻止开发构建并移除 Android 网络权限。本次未重新构建；详见 [比赛离线版本](OFFLINE_BUILD.md)。
+2026-10-16 离线规则更新：以下开发包仅保留为历史产物，不应继续分发。当前构建脚本使用 `BuildOptions.None`、关闭调试发现/遥测，由 `ContestOfflineBuildGuard` 阻止开发构建；TapTap 成就接入后只保留 `INTERNET`、`ACCESS_NETWORK_STATE`，其余 Android 网络/LAN/Wi-Fi/蓝牙权限继续移除。本次未重新构建；详见 [比赛离线版本](OFFLINE_BUILD.md)。
 
 2026-10-16 贴墙放置修复版（最新）：`Builds/形之彩-20261016-贴墙放置修复/Android/形之彩.apk`（102.65MiB），以及`形之彩-Windows.zip`（107.45MiB，解压后运行形之彩.exe，保留全部依赖）。两端均仅MainMenu/Gaming，源码基于cdde143，不含本地未交付关卡和插件。修复贴另一侧墙时放下误拒绝；玩家由控制器平滑让位，不再瞬移，保留真实阻挡和区域重置。
 

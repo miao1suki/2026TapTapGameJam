@@ -29,12 +29,18 @@ namespace Project.GameFlow.Tests
             Assert.IsFalse(PlayerSettings.Android.forceInternetPermission);
         }
 
-        [Test] public void ManifestRemovesAllNetworkPermissionsButPreservesUnrelatedEntries()
+        [Test] public void ManifestAllowsOnlyTapTapNetworkPermissionsAndPreservesUnrelatedEntries()
         {
-            var manifest = XDocument.Parse("<manifest xmlns:android='http://schemas.android.com/apk/res/android' xmlns:tools='http://schemas.android.com/tools'><uses-permission android:name='android.permission.INTERNET'/><uses-permission-sdk-23 android:name='android.permission.NEARBY_WIFI_DEVICES'/><uses-permission android:name='android.permission.VIBRATE'/><application tools:replace='android:theme' android:theme='@style/Theme'><meta-data android:name='example' android:value='1'/></application></manifest>");
+            var manifest = XDocument.Parse("<manifest xmlns:android='http://schemas.android.com/apk/res/android' xmlns:tools='http://schemas.android.com/tools'><uses-permission android:name='android.permission.INTERNET'/><uses-permission android:name='android.permission.ACCESS_NETWORK_STATE'/><uses-permission android:name='android.permission.CHANGE_NETWORK_STATE'/><uses-permission-sdk-23 android:name='android.permission.NEARBY_WIFI_DEVICES'/><uses-permission android:name='android.permission.VIBRATE'/><application tools:replace='android:theme' android:theme='@style/Theme'><meta-data android:name='example' android:value='1'/></application></manifest>");
             ContestOfflineBuildGuard.ProtectManifest(manifest);
             ContestOfflineBuildGuard.ProtectManifest(manifest);
-            foreach (string permission in ContestOfflineBuildGuard.NetworkPermissions)
+            foreach (string permission in ContestOfflineBuildGuard.TapTapNetworkPermissions)
+            {
+                var entries = manifest.Root.Elements().Where(e => (string)e.Attribute(Android + "name") == "android.permission." + permission).ToArray();
+                Assert.That(entries.Length, Is.EqualTo(1), permission);
+                Assert.That(entries[0].Attribute(Tools + "node"), Is.Null, permission);
+            }
+            foreach (string permission in ContestOfflineBuildGuard.ForbiddenNetworkPermissions)
             {
                 var entries = manifest.Root.Elements().Where(e => (string)e.Attribute(Android + "name") == "android.permission." + permission).ToArray();
                 Assert.That(entries.Length, Is.EqualTo(1), permission);

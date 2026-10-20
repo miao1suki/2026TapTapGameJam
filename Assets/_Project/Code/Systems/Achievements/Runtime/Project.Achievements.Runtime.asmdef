@@ -2,6 +2,9 @@
   "name": "Project.Achievements.Runtime",
   "rootNamespace": "Project.Achievements",
   "references": [
+    "TapSDK.Achievement.Runtime",
+    "TapSDK.Core.Runtime",
+    "TapSDK.Login.Runtime",
     "Unity.UGUI",
     "Project.InputAbstraction.Runtime"
   ],

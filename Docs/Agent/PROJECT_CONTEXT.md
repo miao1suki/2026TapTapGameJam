@@ -3,7 +3,7 @@
 项目：2026TapTap；远程：`https://github.com/miao1suki/2026TapTapGameJam.git`。
 Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未导入旧项目设置。
 
-2026-10-20正式合图更新：Gaming已纳入最终R1/R2/R3、用户最新MRoom2/MRoom3及Boss，4343物体、28区域、35普通收集品；实际Scene回采快照与可独立导入片段位于Content/LevelMaps/AuthoredSections，旧R planning仍不可直接覆盖最终图。Start/End及结局均同场景。版本0.2.1、Android com.xingzhicai.game；原房间21用户移走部分保留。以下未合图房间数量与“不进入正式构建”为历史状态，详见FORMAL_LEVEL_DELIVERY与COMBINED_WORLD_0_2_1.md。
+2026-10-20正式合图更新：Gaming已纳入最终R1/R2/R3、用户最新MRoom2/MRoom3及Boss，4343物体、28区域、35普通收集品；实际Scene回采快照与可独立导入片段位于Content/LevelMaps/AuthoredSections，旧R planning仍不可直接覆盖最终图。Start/End及结局均同场景。版本0.2.1、Android com.miao1suki.shapeofcolor；原房间21用户移走部分保留。以下未合图房间数量与“不进入正式构建”为历史状态，详见FORMAL_LEVEL_DELIVERY与COMBINED_WORLD_0_2_1.md。
 
 当前正式图以FORMAL_LEVEL_DELIVERY顶部2026-10-20远端基线为准：xianyu66web 5e88e7c、21房间、2604原物体，补新出生位置的隐形Start后2605条。保留main玩法、美术和单Gaming菜单修复；下文20/17房间等是历史记录，不可据此回退地图。R2最新Scene为d3fac6a，R1/R2/R3最终手调planning仍待精确回采，不进入正式构建。TA新美术f7cbb62仅备份不合，现有main美术保留。各策划工作场景最终导入同一Gaming；Boss门槛/结局/地图不引入跨场景加载。
 
@@ -29,6 +29,7 @@ Boss 从中心向玩家连接火线、水线、藤蔓线三套现有样式；三
 
 基础迁移时排除：绳/线、梯子、移动平台玩法、视差平台投影碰撞/深度吸附、2D小拼/总拼/3D合并、旧地图代理同步、旧关卡、旧测试脏数据、美术/音效素材、瓦片库与烘焙贴画、QQ bot 运维源码和私密配置。之后由音频成员在新项目单独交付的 `Assets/_Project/Content/Audio` 不属于“旧素材迁移”，已纳入当前仓库。
 成就中的旧玩法信号名字保留仅为兼容枚举/协议，不代表玩法可用。不要重新引入对应实现。
+TapTap Unity 成就 SDK 固定使用官方 NPM 当前可用的 Core/Login/Achievement `4.10.9`，配置与运行桥位于成就系统 Runtime；后台 Client ID、Client Token 和成就 ID 未确认时配置关闭并保持安全待机。Android 只允许 TapTap 必需的 `INTERNET`、`ACCESS_NETWORK_STATE`，且原生隐私同意前不得启动 Unity/TapSDK。
 暂停界面的存档子页已封存为只读展示：不再提供手动保存、读取、删除或槽位列表，只显示 Cubic 字体“待开发内容，请关注后续消息”；旧页面脚本备份在 `Docs/SavePanelController.Legacy.cs.txt`。
 单轮运行存档已由 `RunSaveService` 落到 `Saves/run.json`，由 `RunSessionCoordinator` 在开始游戏时自动新建或恢复当前轮；读取已有存档会先将标准玩家的 RGB 故障死亡层拉满，再在故障遮屏期间恢复当前重生点、收集品、颜色钥匙/能力和 Boss 进度，并按玩家预制体的复活淡出时长揭示。读档不经过通用加载蒙屏或“加载中”流程。
 例外：关卡编辑器开发目录中的 `TileLibrary/26TAPTAP.png` 是用户明确要求恢复的源图，只允许用于该开发工具，不扩散到正式美术目录。

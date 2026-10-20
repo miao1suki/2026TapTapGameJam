@@ -9,16 +9,20 @@ using UnityEditor.Build.Reporting;
 
 namespace Project.GameFlow.Editor
 {
-    /// <summary>Competition builds are offline. TapTap SDK integration requires an explicit policy review.</summary>
+    /// <summary>Competition builds allow only the reviewed TapTap achievement network permissions.</summary>
     public sealed class ContestOfflineBuildGuard : IPreprocessBuildWithReport, IPostGenerateGradleAndroidProject
     {
         public const BuildOptions ForbiddenOptions = BuildOptions.Development | BuildOptions.ConnectWithProfiler |
             BuildOptions.AllowDebugging | BuildOptions.EnableDeepProfilingSupport;
         private static readonly XNamespace Android = "http://schemas.android.com/apk/res/android";
         private static readonly XNamespace Tools = "http://schemas.android.com/tools";
-        public static readonly string[] NetworkPermissions =
+        public static readonly string[] TapTapNetworkPermissions =
         {
-            "INTERNET", "ACCESS_NETWORK_STATE", "CHANGE_NETWORK_STATE", "ACCESS_WIFI_STATE",
+            "INTERNET", "ACCESS_NETWORK_STATE"
+        };
+        public static readonly string[] ForbiddenNetworkPermissions =
+        {
+            "CHANGE_NETWORK_STATE", "ACCESS_WIFI_STATE",
             "CHANGE_WIFI_STATE", "CHANGE_WIFI_MULTICAST_STATE", "NEARBY_WIFI_DEVICES", "ACCESS_LOCAL_NETWORK",
             "BLUETOOTH", "BLUETOOTH_ADMIN", "BLUETOOTH_SCAN", "BLUETOOTH_CONNECT", "BLUETOOTH_ADVERTISE"
         };
@@ -62,11 +66,20 @@ namespace Project.GameFlow.Editor
         {
             var root = document.Root ?? throw new BuildFailedException("Android Manifest 缺少根节点。");
             root.SetAttributeValue(XNamespace.Xmlns + "tools", Tools.NamespaceName);
-            foreach (string permission in NetworkPermissions)
+            foreach (string permission in TapTapNetworkPermissions.Concat(ForbiddenNetworkPermissions))
             {
                 string name = "android.permission." + permission;
                 foreach (var entry in root.Elements().Where(e => e.Name.LocalName.StartsWith("uses-permission", StringComparison.Ordinal) &&
                              (string)e.Attribute(Android + "name") == name).ToArray()) entry.Remove();
+            }
+            foreach (string permission in TapTapNetworkPermissions)
+            {
+                string name = "android.permission." + permission;
+                root.AddFirst(new XElement("uses-permission", new XAttribute(Android + "name", name)));
+            }
+            foreach (string permission in ForbiddenNetworkPermissions)
+            {
+                string name = "android.permission." + permission;
                 root.AddFirst(new XElement("uses-permission", new XAttribute(Android + "name", name), new XAttribute(Tools + "node", "remove")));
             }
             var application = root.Element("application");
@@ -84,7 +97,7 @@ namespace Project.GameFlow.Editor
             string launcher = Path.Combine(Directory.GetParent(path)!.FullName, "launcher/src/main/AndroidManifest.xml");
             if (!File.Exists(launcher)) throw new BuildFailedException("缺少 launcher Manifest，无法保证离线权限合并。");
             var manifest = XDocument.Load(launcher); ProtectManifest(manifest); manifest.Save(launcher);
-            UnityEngine.Debug.Log("[OfflineBuild] Release player; launcher removes Internet, LAN, Wi-Fi and Bluetooth permissions. No TapTap SDK is currently installed.");
+            UnityEngine.Debug.Log("[OfflineBuild] Release player; only TapTap INTERNET and ACCESS_NETWORK_STATE remain. LAN, Wi-Fi and Bluetooth permissions are removed.");
         }
     }
 }

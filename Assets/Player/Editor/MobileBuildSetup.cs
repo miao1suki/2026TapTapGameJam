@@ -12,6 +12,8 @@ using UnityEngine.UI;
 
 public static class MobileBuildSetup
 {
+    public const string AndroidApplicationId =
+        "com.miao1suki.shapeofcolor";
     public const string MenuScene = "Assets/_Project/Scenes/Start/MainMenu.unity";
     public const string GameScene = "Assets/_Project/Scenes/Playing/Gaming.unity";
     public const string UiPrefab = "Assets/_Project/Content/UI/SharedGameUI.prefab";
@@ -97,7 +99,9 @@ public static class MobileBuildSetup
         if (target == BuildTarget.Android)
         {
             EditorUserBuildSettings.buildAppBundle = false;
-            PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.Android, "com.xingzhicai.game");
+            PlayerSettings.SetApplicationIdentifier(
+                UnityEditor.Build.NamedBuildTarget.Android,
+                AndroidApplicationId);
             PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.Android.useCustomKeystore = false;

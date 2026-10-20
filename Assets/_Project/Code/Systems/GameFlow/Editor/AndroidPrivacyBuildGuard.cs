@@ -15,6 +15,10 @@ namespace Project.GameFlow.Editor
         public const string Gate = "com.miao1suki.shapeofcolor.privacy.PrivacyActivity";
         public const string App = "com.miao1suki.shapeofcolor.privacy.PrivacyApplication";
         public const string UnityActivity = "com.unity3d.player.UnityPlayerActivity";
+        public const string TapTapInitProvider =
+            "com.taptap.sdk.kit.internal.TapTapKitInitProvider";
+        public const string TapTapInitAuthority =
+            "${applicationId}.TapTapKitInitProvider";
         public const string PolicyAsset = "Assets/_Project/Resources/Privacy/privacy-policy.txt";
         static readonly XNamespace Android = "http://schemas.android.com/apk/res/android";
         public int callbackOrder => 10000;
@@ -32,8 +36,7 @@ namespace Project.GameFlow.Editor
         public static void ProtectManifest(XDocument document)
         {
             var application = document.Root?.Element("application") ?? throw new BuildFailedException("缺少 Android application。");
-            foreach (var provider in application.Elements("provider"))
-                throw new BuildFailedException("发现未经审计的自动初始化 Provider：" + (string)provider.Attribute(Android + "name"));
+            ValidateProviders(application.Elements("provider"));
             if (!application.Elements("activity").Any(e => (string)e.Attribute(Android + "name") == UnityActivity))
                 throw new BuildFailedException("缺少 UnityPlayerActivity，停止构建以避免绕过隐私入口。");
             foreach (var activity in application.Elements("activity"))
@@ -55,7 +58,7 @@ namespace Project.GameFlow.Editor
             {
                 if (file.Contains(Path.DirectorySeparatorChar + "build" + Path.DirectorySeparatorChar)) continue;
                 var source = XDocument.Load(file);
-                if (source.Descendants("provider").Any()) throw new BuildFailedException("隐私授权前初始化需专项审计：" + file);
+                ValidateProviders(source.Descendants("provider"), file);
             }
             var module = Directory.GetDirectories(root, "PrivacyGate.androidlib", SearchOption.AllDirectories).FirstOrDefault();
             if (module == null) throw new BuildFailedException("PrivacyGate.androidlib 未纳入 Gradle 工程。");
@@ -66,6 +69,29 @@ namespace Project.GameFlow.Editor
             File.Copy(PolicyAsset, Path.Combine(module, "assets/privacy-policy.html"), true);
             File.Copy(font, Path.Combine(module, "assets/privacy-font.ttf"), true);
             UnityEngine.Debug.Log("[PrivacyGate] Native consent launcher installed; Unity is not exported. Policy/font are offline assets.");
+        }
+
+        private static void ValidateProviders(
+            System.Collections.Generic.IEnumerable<XElement> providers,
+            string source = "")
+        {
+            foreach (var provider in providers)
+            {
+                string name = (string)provider.Attribute(Android + "name");
+                string authority = (string)provider.Attribute(Android + "authorities");
+                string exported = (string)provider.Attribute(Android + "exported");
+                if (name == TapTapInitProvider &&
+                    authority == TapTapInitAuthority &&
+                    exported == "false")
+                {
+                    continue;
+                }
+
+                throw new BuildFailedException(
+                    "发现未经审计的自动初始化 Provider：" +
+                    name +
+                    (string.IsNullOrEmpty(source) ? "" : " @ " + source));
+            }
         }
     }
 }

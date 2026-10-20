@@ -15,7 +15,7 @@
 
 网站由 `Ops/PrivacyPolicy/build-site.mjs` 从唯一正文源生成，只增加响应式样式与备案页脚；`node --test Ops/PrivacyPolicy/build-site.test.mjs` 检查正文逐字一致。模板不含脚本、统计、外部字体/图片、登录、导航或其他内容；部署到现有 Nginx 静态目录，不改主页和其他服务。生成/更新及正文一致性维护见 `Ops/PrivacyPolicy/README.md`。没有新建 GitHub Pages。
 
-政策现有注册、实名认证、TapSDK 等条款来自原文；发布前需要负责人按实际 SDK/数据处理行为核对，不能把技术入口完成视为合规认证。本次未改写这些法律事实，也未接入 TapSDK。
+政策现有注册、实名认证、TapSDK 等条款来自原文；发布前需要负责人按实际 TapTap 成就 SDK 的数据处理行为再次核对，不能把技术入口完成视为合规认证。原生隐私入口仍严格位于 Unity 和 TapSDK 初始化之前。
 
 ## 实现边界
 
@@ -24,12 +24,12 @@
 - `PrivacyActivity` 是独立 `:privacy` 进程中的唯一桌面入口，不引用 Unity、WebView 或网络 SDK；正文仍离线显示并移除原文 URLSpan，只通过受控点击调用 `PrivacyConsent.openPolicyWebsite` 打开固定 HTTPS 系统浏览器页面。设置查看以显式 Intent 标志发起，恢复状态不重开。浏览不会保存授权或启动 Unity。
 - `PrivacyApplication.attachBaseContext` 在主进程组件初始化前验证同意记录，拦截系统直接恢复 Unity 活动的路径；无有效同意则打开原生入口并停止该主进程。不是只依赖桌面启动按钮。
 - 构建钩子关闭 Unity 活动的导出和 Launcher，阻止未审计的自动初始化 Provider，复制现有 Cubic_11 原始字体到生成的 Android 工程，不在仓库额外复制字体。
-- 新增 SDK、Application、其他进程、Activity/Provider 或入口变更，都必须重新审计。不要在隐私进程初始化 SDK，不要使用 Unity 内弹窗替代前置授权。
+- 新增 SDK、Application、其他进程、Activity/Provider 或入口变更，都必须重新审计。TapTap `4.10.9` 的 `TapTapKitInitProvider` 是当前唯一白名单 Provider，必须保持 authority `${applicationId}.TapTapKitInitProvider` 且 `exported=false`；不要扩大白名单。不要在隐私进程初始化 SDK，不要使用 Unity 内弹窗替代前置授权。
 
 ## 验收
 
 安卓真机仍需验证：首次离线阅读、不同意/返回、同意、重启、设置阅读、撤回、最近任务恢复、清除数据、正文版本更新及 Android 7.1 恢复路径，并用网络/隐私检测工具检查同意前行为。原生 Java 编译及编辑器测试不能替代真机隐私检测。
 
-历史隐私入口验证包位于 `Library/PrivacyGateChecks/Android/形之彩.apk`，最低 API25，含 INTERNET 和开发资源；它不是比赛离线版本。当前构建规则已改为非开发、无网络权限，详见 [比赛离线版本](OFFLINE_BUILD.md)。本次没有重打 APK，不能以源码检查代替新包或真机验收。
+历史隐私入口验证包位于 `Library/PrivacyGateChecks/Android/形之彩.apk`，最低 API25，含 INTERNET 和开发资源；它不是当前版本。当前构建规则保持非 Development，只允许 TapTap 必需的 `INTERNET`、`ACCESS_NETWORK_STATE`，其余网络/LAN/Wi-Fi/蓝牙权限继续移除，详见 [比赛离线版本](OFFLINE_BUILD.md)。本次没有重打 APK，不能以源码检查代替新包或真机验收。
 
 只在隔离工程进行构建验证，不修改策划当前场景或升级编辑器。

@@ -108,3 +108,7 @@ InitTestScene*.unity*
 # Atomic planning-map save intermediates
 *.json.writing
 *.json.writing.meta
+
+# Local TapTap SDK credentials
+/Assets/_Project/Code/Systems/Achievements/Runtime/Resources/TapTap/TapTapAchievementSecrets.json
+/Assets/_Project/Code/Systems/Achievements/Runtime/Resources/TapTap/TapTapAchievementSecrets.json.meta

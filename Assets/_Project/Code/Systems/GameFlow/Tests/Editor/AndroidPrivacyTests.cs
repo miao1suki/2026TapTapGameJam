@@ -25,6 +25,32 @@ namespace Project.GameFlow.Tests
             var manifest = XDocument.Parse("<manifest><application><provider/></application></manifest>");
             Assert.Throws<BuildFailedException>(() => AndroidPrivacyBuildGuard.ProtectManifest(manifest));
         }
+
+        [Test] public void TapTapAutoInitializingProviderRequiresExactReviewedIdentity()
+        {
+            const string activity =
+                "<activity android:name='com.unity3d.player.UnityPlayerActivity'/>";
+            const string reviewed =
+                "<provider android:name='com.taptap.sdk.kit.internal.TapTapKitInitProvider' " +
+                "android:authorities='${applicationId}.TapTapKitInitProvider' " +
+                "android:exported='false'/>";
+            var manifest = XDocument.Parse(
+                "<manifest xmlns:android='http://schemas.android.com/apk/res/android'><application>" +
+                activity + reviewed + "</application></manifest>");
+            Assert.DoesNotThrow(
+                () => AndroidPrivacyBuildGuard.ProtectManifest(manifest));
+
+            var exported = XDocument.Parse(
+                "<manifest xmlns:android='http://schemas.android.com/apk/res/android'><application>" +
+                activity +
+                "<provider android:name='com.taptap.sdk.kit.internal.TapTapKitInitProvider' " +
+                "android:authorities='${applicationId}.TapTapKitInitProvider' " +
+                "android:exported='true'/>" +
+                "</application></manifest>");
+            Assert.Throws<BuildFailedException>(
+                () => AndroidPrivacyBuildGuard.ProtectManifest(exported));
+        }
+
         [Test] public void MissingUnityActivityBlocksBuild()
         {
             Assert.Throws<BuildFailedException>(() => AndroidPrivacyBuildGuard.ProtectManifest(

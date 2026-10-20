@@ -1,6 +1,6 @@
 # 0.2.1 全关卡合图
 
-正式启动仍只有 Gaming，菜单、玩家、相机和 UI 不复制。Android applicationId 为 `com.xingzhicai.game`，versionName `0.2.1`，versionCode `201`。更改包名不会自动迁移旧包数据。
+正式启动仍只有 Gaming，菜单、玩家、相机和 UI 不复制。当前 Android applicationId 为 `com.miao1suki.shapeofcolor`，versionName `0.2.1`，versionCode `201`。2026-10-20 之前的 `com.xingzhicai.game` 包为历史包；更改包名不会自动迁移旧包数据。
 
 ## 来源与位置
 
@@ -31,6 +31,6 @@ MRoom3 新增 `box_9fb493b9`、`box_e0df9bf4`、`box_65075c98` 均保留（正�
 
 隔离 Unity 验证：4343对象全量重建位姿与机关引用零差异；不变增量保留4343个实例；修改一组后原子替换并恢复零差异；最终275个通道格静态碰撞无墙阻挡；MRoom3三块齐全；实际渲染截图复核。Play检查唯一玩家/相机/UI/房间服务、35收集品、Boss零收集拒绝与Start返回、九个Boss重生点、End/泉水。最后连接标记调整仅完成静态复核，未人工走通全部关卡，未完整打Boss或演完两条结局；不等同完整通关或安卓真机测试。
 
-最终又合入远端main `4b8a1ad` 单轮存档与开场提交，并重新通过上述Play专项；此前运行报告早于最终标记调整的限制已由这次重跑补齐，但仍不是完整通关。双端均以Gaming唯一场景、非Development正式构建成功，Windows 0 errors/6 warnings，Android 0 errors/9 warnings。D3D11发布包启动无异常。APK实际包名com.xingzhicai.game、versionName0.2.1/code201、ARM64、debuggable=false，无uses-permission；旧Java内部类命名空间仅为内部实现，不是安装应用ID。
+最终又合入远端main `4b8a1ad` 单轮存档与开场提交，并重新通过上述Play专项；此前运行报告早于最终标记调整的限制已由这次重跑补齐，但仍不是完整通关。双端均以Gaming唯一场景、非Development正式构建成功，Windows 0 errors/6 warnings，Android 0 errors/9 warnings。D3D11发布包启动无异常。当时 APK 实际包名仍为历史值 `com.xingzhicai.game`、versionName0.2.1/code201、ARM64、debuggable=false、无uses-permission；当前工程已按 TapTap 后台改为 `com.miao1suki.shapeofcolor`，需重新构建验证。
 
 构建目录：`Builds/形之彩-0.2.1-20261020-全关卡`。Windows整目录压缩包约97MiB，APK约77MiB；不要只分发Windows单个exe。构建未提交Git，源与成套依赖已提交。远端字体采用前，本地字体已备份到Library且保留在git stash，其他用户未提交内容未纳入本次范围。

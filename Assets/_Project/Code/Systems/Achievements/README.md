@@ -311,3 +311,31 @@ Application.persistentDataPath/Achievements/achievements.json
 
 存档目录输入框留空时使用上面的默认路径；界面下方会显示实际目录。
 开发阶段如果游戏逻辑目录版本变化，现有成就存档会被视为不兼容并重建。
+
+## TapTap Unity SDK
+
+官方 SDK 依赖固定为 Core/Login/Achievement `4.10.9`，并依赖
+Newtonsoft.Json 与 EDM4U。配置资源：
+
+```text
+Assets/_Project/Code/Systems/Achievements/Runtime/Resources/TapTap/
+  TapTapAchievementSettings.asset
+```
+
+`enabled`、Client ID 和“后台成就 ID 已确认”位于配置资产；Client Token
+只放在被 `.gitignore` 排除的 `TapTapAchievementSecrets.json`。Server Secret
+不得进入客户端。
+本地 Token 缺失或后台 ID 未确认时，本地成就照常解锁和保存，但不会向平台发送可能错误的 ID。
+配置完成并登录后，`TapTapAchievementBridge` 会补报当前存档中已经解锁的成就。
+
+平台 ID 使用每个 `AchievementSO` 的 `platformAchievementId`，不使用本地
+`1001–1014` 编号代替。重复上报按 TapTap 账号记录在独立的
+`TapTapReports.json` 中。
+
+接入边界：
+
+- Android 原生隐私入口同意后才启动 Unity，因此 TapSDK 初始化天然位于授权之后。
+- 仅 Android 自动初始化；其他平台不建立 TapTap 网络桥。
+- 登录优先复用已有账号，否则使用 `basic_info` 无感登录；失败或取消不会影响本地成就。
+- 关闭 SDK 自带 Toast，继续使用项目左下角成就提示。
+- 不调用 `ShowAchievements`，项目内成就页仍读取本地目录。

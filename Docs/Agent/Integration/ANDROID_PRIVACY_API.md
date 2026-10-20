@@ -14,7 +14,8 @@ Unity 不负责首次授权，不得将同意按钮、政策加载或 SDK 初始
 - `PrivacyActivity`：独立进程原生阅读与同意，按钮文案严格为“同意”和“不同意”；明确同意并落盘后才启动 UnityPlayerActivity。初次授权不自动打开浏览器；review 的显式用户请求仅首次创建时打开，恢复原生页不重复跳转。外链点击与阅读均不写授权。
 - `PrivacyApplication`：attachBaseContext 早期校验；含 Android 7.1 的自身进程识别路径，不查询其他应用列表。
 - `AndroidPrivacyBuildGuard`：Activity 入口检查、生成 Manifest 的 Unity Launcher 移除/非导出设置、自动初始化 Provider 审计、原始字体及唯一政策正文复制。只改生成目录。
-- 正文源为 `Assets/_Project/Resources/Privacy/privacy-policy.txt`。用户本轮明确允许的外部网页仅为主动点击时的固定隐私页，不恢复任意外链。`ContestOfflineBuildGuard` 仍禁止开发构建/遥测并在最高优先级 launcher 移除网络权限；比赛规则见 [离线构建](../../Developer/OFFLINE_BUILD.md)。
+- TapSDK `4.10.9` 的唯一已审计自动初始化项为 `com.taptap.sdk.kit.internal.TapTapKitInitProvider`，authority 固定 `${applicationId}.TapTapKitInitProvider` 且 `exported=false`；名称或属性不符、其他 Provider 仍阻断构建。Unity 只在原生同意后启动，因此该 Provider 不会在同意前运行。
+- 正文源为 `Assets/_Project/Resources/Privacy/privacy-policy.txt`。用户本轮明确允许的外部网页仅为主动点击时的固定隐私页，不恢复任意外链。`ContestOfflineBuildGuard` 仍禁止开发构建/遥测，并在最高优先级 launcher 只保留 TapTap 必需的 `INTERNET`、`ACCESS_NETWORK_STATE`，其余网络/Wi-Fi/LAN/蓝牙权限移除；比赛规则见 [离线构建](../../Developer/OFFLINE_BUILD.md)。
 - JNI 调用由 consumer-rules 保留。不使用 AppComponentFactory，不提高最低系统版本。
 
 在线政策和内置正文必须保持一致。任何 SDK、自动初始化组件或进程结构变更均需重新检查最终 APK 的合并 Manifest 及授权前行为。真机验收项见开发说明。

@@ -4,6 +4,7 @@
   "references": [
     "Project.GameFlow.Runtime",
     "Project.GameFlow.Editor",
+    "Project.Achievements.Runtime",
     "Project.Audio.Runtime",
     "Project.Saving.Runtime",
     "Project.Shared.Runtime",

@@ -1,6 +1,6 @@
 # 系统索引
 
-正式全关已连到Gaming：4343物体、28区域、35收集品，R1/R2/R3/MRoom2/MRoom3/Boss均采用最终Scene无损回采；三份正式规划及AuthoredSections依赖成套。已有拖动导入适用于六份回采片段，旧R planning不能直接重建覆盖。版本0.2.1、Android com.xingzhicai.game/code201，见[交接](../Developer/COMBINED_WORLD_0_2_1.md)。下文未合入R场景等为历史状态。
+正式全关已连到Gaming：4343物体、28区域、35收集品，R1/R2/R3/MRoom2/MRoom3/Boss均采用最终Scene无损回采；三份正式规划及AuthoredSections依赖成套。已有拖动导入适用于六份回采片段，旧R planning不能直接重建覆盖。版本0.2.1、Android com.miao1suki.shapeofcolor/code201，见[交接](../Developer/COMBINED_WORLD_0_2_1.md)。下文未合入R场景等为历史状态。
 
 关卡存档拼接采用置顶暂存预览：自动放到地图右侧空位、整格拖动与边缘平移；可保留原房间划分或归并新房间，确认前不改当前地图。物体层与房间占格共同验重，源内部共用占格不再误报。操作见[协作地图](../Developer/LEVEL_EDITOR_COLLABORATION.md)、[接口](Integration/PLANNING_COLLABORATION_API.md)。
 `Tools/2026TapTap/编辑器性能/编辑渲染距离` 是纯 Editor 的房间级 SceneView 可见性裁剪工具：以 SceneView 中心为圆心隐藏远处 `__PlanningMapGenerated` 房间，当前/选中房间始终显示，非当前房间按内部规划方块样本而非不连续大 AABB 判断距离；可把两套关卡/规划编辑窗口的基础刷新从 `.1` 秒降到 `.35` 秒、维护和预览降到 `1` 秒，并诊断 UI Toolkit 画布、区域标签、玩家标记和 2D 预览耗时。只使用 `SceneVisibilityManager` 和 `EditorPrefs`，不改 Scene、Prefab、Collider、玩法或 Planning JSON，进 Play/保存/关闭窗口自动恢复。见[使用说明](../Developer/EDIT_RENDER_DISTANCE.md)与[接口](Integration/EDIT_RENDER_DISTANCE_API.md)。
@@ -52,7 +52,7 @@ Boss 出场使用 `BossAppearCinematicPlayable`：1 秒玩家锁、故障警告/
 美术工作台N键开关、自动定位真实房间，墙和正式2D道具作为默认35%透明的只读参考，可隐藏/调透明度；远景平移缩放仅变换和裁剪保留批次。雨/萤火按完整区域框绘并在工作台调参，独立Scene美术根、非planning物体。新萤火可见面默认-0.25格，光点/光晕同层，普通透明道具前显示、不透明墙仍遮挡。见[定位操作](../Developer/GRID_ART_NAVIGATION.md)、[关卡参照](../Developer/GRID_ART_LEVEL_REFERENCE.md)、[区域效果](../Developer/GRID_ART_REGION_EFFECTS.md)；效果须显式保存Scene，协作仍交Scene、同名planning、美术Map、素材及meta。
 
 收集品与 Boss 共用稳定作者 ID 的会话进度：30%入场，60%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。击败Boss且达到30%开放T/触控地图，显示房间/重生点/收集剩余，Boss房禁用；安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与工作台90°原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。协作仍须Scene、同名planning、meta与新增依赖成套交付。
-成就目录当前为 `14` 条，`1001–1014` 已逐条接到真实玩法事件：死亡原因路由负责 `1001–1004、1011–1014`，`GameplayAchievementRouter` 负责颜色成功、30%/60% 收集、低收集回第一关、假结局和真结局。`1009/1010` 使用整数数量阈值；真假结局成就在分支确定时立即结算，不等待黑屏或菜单切换。完整映射见[成就逐条接线](Integration/ACHIEVEMENT_HOOKS.md)。
+成就目录当前为 `14` 条，`1001–1014` 已逐条接到真实玩法事件：死亡原因路由负责 `1001–1004、1011–1014`，`GameplayAchievementRouter` 负责颜色成功、30%/60% 收集、低收集回第一关、假结局和真结局。`1009/1010` 使用整数数量阈值；真假结局成就在分支确定时立即结算，不等待黑屏或菜单切换。完整映射见[成就逐条接线](Integration/ACHIEVEMENT_HOOKS.md)。TapTap Unity 成就 SDK 固定 `4.10.9`，由配置资产控制初始化与平台 ID 待确认状态，接入见 [TapTap 成就 SDK](Integration/TAPTAP_ACHIEVEMENT_SDK_API.md)。
 成就 Toast 使用最高 Sorting Layer 与 `sortingOrder=32767` 的独立 ScreenSpaceOverlay Canvas，位于所有黑幕和常规 UI 之上；Toast 本体保持左下角固定尺寸，Cubic 字体和原入退场动画不变。
 独立 R3：`Assets/Scenes/R3/R3.unity` 及同名 planning／设计来源，551墙格、59水格、135岩浆格，四固定绿根、两完整藤蔓、两个保持按钮同门。场景三色启用、玩家仅蓝能力，Z96 试玩出生；四格平台从第97行升至88行，红蓝块／曲柄跟随，成功搬起红蓝后脱离、房间重置恢复挂载。可选 `PlatformMount` 与 `platformMountId` 持久化支持；不改 R1/R2、Gaming 或构建列表。见 [R3说明](../Developer/R3_LEVEL.md) 与 [机关API](Integration/MECHANISM_SIGNAL_API.md#可选平台附着物)。
 
@@ -138,7 +138,7 @@ Boss 连线：`BossPlayerLinkEffect` 从 Boss 中心用三个 LineRenderer 和�
 
 正式水族已替换为TA像素水面/水中/水下自动分区与透明折射板；定向水流四向气泡、浮力柱向上连通水域气泡，继续共享蓝色HSV/透明交接与原玩法/区域重置。无需重建场景。见 [玩法水体API](Integration/GAMEPLAY_PIXEL_WATER_API.md)、[使用说明](../Developer/GAMEPLAY_PIXEL_WATER.md)。旧独立波纹水保留作资源和后备路径，不再默认生成。
 
-Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全文、设置查看与撤回；同意/不同意严格短文案。仅主动点击时系统浏览器打开 https://meowgame.cloud/shape-of-color/privacy/ ，网页版从唯一正文源生成，只有政策与主页相同的ICP备案；最低 Android 7.1 不变，不启用 Bootstrap。见 [开发说明](../Developer/ANDROID_PRIVACY.md) 与 [接入 API](Integration/ANDROID_PRIVACY_API.md)。用户只允许这一网页例外，游戏仍禁止非 TapTap SDK 联网，不增加 INTERNET，不使用 WebView；必须阅读 [离线规则](../Developer/OFFLINE_BUILD.md)，不得使用开发构建或恢复网络权限。
+Android 原生隐私：UnityPlayerActivity 前置独立进程授权、离线全文、设置查看与撤回；同意/不同意严格短文案。仅主动点击时系统浏览器打开 https://meowgame.cloud/shape-of-color/privacy/ ，网页版从唯一正文源生成，只有政策与主页相同的ICP备案；最低 Android 7.1 不变，不启用 Bootstrap。见 [开发说明](../Developer/ANDROID_PRIVACY.md) 与 [接入 API](Integration/ANDROID_PRIVACY_API.md)。TapTap 成就 SDK 仅在授权后启动的 Unity 内初始化，Android 只保留 `INTERNET`、`ACCESS_NETWORK_STATE`；其他网络、Wi-Fi、局域网和蓝牙权限移除，不使用 WebView。必须阅读 [离线规则](../Developer/OFFLINE_BUILD.md)，不得使用开发构建。
 
 物体美术新增 `MechanismArtworkPresentation`：门及按钮三色提示、曲柄进度正反帧、移动平台、三色接触方块/钥匙、梯子及静态岩浆；沿用原碰撞、格尺寸与集中颜色表现。安卓暂停只反转触摸上下滑动，不改变键鼠手柄。见 [物体美术](../Developer/OBJECT_ARTWORK.md) 与 [接入API](Integration/OBJECT_ARTWORK_API.md)。
 
