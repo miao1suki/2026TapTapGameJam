@@ -18,7 +18,7 @@
 - `GridArtLevelSource.Read(Scene)`：由Assembly-CSharp-Editor的PlanningArtAdapter注册委托，返回世界XY的GridArtLevelSnapshot/Group，避免GridArt.Editor反向引用关卡程序集。优先DocumentForScene，次选同名planning.json，再选场景内嵌规划，最后只读PlacedBlock；规划Y向下坐标只在适配器转换。`groups.bounds`仅含房间/通道/装配补丁中的非道具墙地块（黑、白、自定义块及旧Platform标记），按实际合并覆盖保留孔洞，不混入道具、水和区域。`referenceItems`另含正式2D道具/水/定位轮廓，`referenceOnlyNames`说明缺正式素材的轮廓；它们不能当作自动墙地来源，也不能写入游戏渲染器。
 - `GridArtLevelSource.NotifyChanged()`：关卡加载、笔画结束、规划撤回发出失效通知；工作台延后0.35秒合并读取。Hierarchy事件只失效，不在回调中全场扫描。Synchronize只替换联动层，内容相同不改版本/列表，不覆盖手工层。没有工作台订阅时不采集快照。
 - `Shared()`：创建／加载共享库；首次从当前tail图裁20纹样与白线边框，不改源图、不引用旧开发图集。
-- `Synchronize(library)`：追加SurfaceTilePalette切片、GridArtSupplementLibrary的混合图集静态装饰、GridArtProjectLibrary的墙地／边框／正式道具静态外观。排除Plugins／Development／测试及整张动画板。新槽位按有效源像素计算，旧槽位不静默改变显示尺寸。只更正已知生成默认名称／分类，不覆盖自命名；正式外观按稳定kind/state键更新引用，不将重新生成的Sprite视为新物体。窗口聚焦同步共享库，也可手动，不每帧扫描项目。详见[盘点与裁区](../../Developer/SCENE_ART_LIBRARY.md)。
+- `Synchronize(library)`：追加SurfaceTilePalette切片、GridArtSupplementLibrary的混合图集静态装饰、GridArtProjectLibrary的墙地／边框／正式道具静态外观，以及GridArtShallowGrassLibrary的三色浅草连接。排除Plugins／Development／测试及整张动画板。新槽位按有效源像素计算，旧槽位不静默改变显示尺寸。只更正已知生成默认名称／分类，不覆盖自命名；正式外观按稳定kind/state键更新引用，不将重新生成的Sprite视为新物体。窗口聚焦同步共享库，也可手动，不每帧扫描项目。浅草独立资产持有生成纹理及Sprite，目标库仅追加引用，不覆盖本地库编辑。详见[盘点与裁区](../../Developer/SCENE_ART_LIBRARY.md)、[浅草连接](../../Developer/SHALLOW_GRASS_CONNECTIONS.md)。
 - `Import(library,source,pixelsPerCell)`：单Sprite或已切片图片全部Sprite；旧参数为源码兼容保留，新导入统一16有效源像素/格，不改变源图设置。切图器新方案无缩放，容量不足明确失败。旧切图方案仍保留兼容，显式转换后重新生成。
 - `Connect(map,destination)`：先校验失效编号，复制原库定义、重映射所有图层并录Undo；来源库GUID＋原槽位去重，保留自定义尺寸／规则／法线，不修改原库。不要直接换已有绘图的palette引用。
 - `GridArtGeometry.Cells(bounds,size,limit)`：轴对齐包围盒格中心覆盖、去重、十万格上限；合并前后相同轮廓等价，不是非矩形精确投影。

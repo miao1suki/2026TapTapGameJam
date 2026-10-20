@@ -88,6 +88,7 @@ namespace Project.GridArt.Editor
             int beforeBorder = library.brushes.Count;
             GridArtBorderLibrary.Ensure(library);
             added += library.brushes.Count - beforeBorder;
+            added += GridArtShallowGrassLibrary.Import(library);
             return added;
         }
         private static string ColorOf(MechanismArtworkKind kind)

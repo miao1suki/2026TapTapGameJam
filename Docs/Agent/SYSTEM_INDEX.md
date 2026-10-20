@@ -195,3 +195,6 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 各模块随源码的 README 是旧实现参考；与这里冲突时以本项目最新说明为准，不复原被排除的场景与玩法。
 
 每次关卡协作交付必须带Scene、同名planning.json、meta及新增资源依赖；不能只推送Scene。运行时修复不授权全量重建、覆盖或丢弃策划已有布局，正式Gaming遵循FORMAL_LEVEL_DELIVERY的增量整合约定。
+# 2026-10-20 浅草各向连接
+
+`GridArtShallowGrassLibrary` 从三色89×113原图保留9片原绘并补齐45片方向组合；共享库聚焦同步或菜单显式追加54项，不重排原编号。独立资产持有原像素图集与Sprite，详见[浅草连接](../Developer/SHALLOW_GRASS_CONNECTIONS.md)。
