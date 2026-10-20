@@ -5,6 +5,11 @@
 - 主目录字体与Boss_appear冲突先完整备份，再按用户远端优先采用1722c59；其余用户MRoom2/3、Pick、共享库、插件与设置WIP保留。TA f7cbb62仅完整备份、不接新版Gaming。
 - 整合Unity实际加载Gaming与R1/R2/R3，零缺脚本；Gaming保留原GridArt根/Map。共享库203→257追加浅草并验证再次导入不重复，未保存覆盖作者库/Scene。GPU光照65断言及Pick实际Play7断言通过；编译覆盖远端新Boss代码。浅草/单向平台验证详见各专项交接，未新构建/安卓真机/全图通关。
 - R系列精确回采仍未完成，不把只读审计或旧规划当作可精确导入成果。路线与基线见Docs/Developer/GIT_INTEGRATION_MAP_2026-10-20.md。
+## 2026-10-20 策划参数窗口增量接收（验证完成）
+
+- 从494d10f仅接两编辑器文件的关闭保存、右键短点参数/拖动平移增量，基于49d7047，不接旧Boss Timeline或旧PlanningCanvas主体，main平台Mount等修复保留。
+- 没改值关闭不回调，放弃不保存；保存克隆列表防切对象串改；非法宽度阻止保存。OnDisable在编译/进Play期间不应用回调，避免生命周期重载意外写规划场景；旧R手调Scene仍不可由旧JSON重建。
+- 隔离FlowRetirementProbe编译通过，ParameterAutoSaveAudit真实EditorWindow25断言通过，覆盖未改关闭、已改关闭、克隆、放弃、切换/重复保存、宽度校验和Scene不标脏；main平台Mount传播/导入源码保留。未模拟操作系统右键或实际域重载交互，未Play/保存Scene/打包。报告Library/ParameterAutoSaveAudit.txt。
 
 ## 2026-10-20 远端关卡定向接收（静态验证）
 

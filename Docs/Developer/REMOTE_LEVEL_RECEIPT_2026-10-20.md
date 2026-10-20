@@ -12,7 +12,7 @@
 | ILorR1012 R3 `48cb1e4` | 已在 main，保持不动 |
 | Irotin-dyx `f7cbb62` | 仅完整树备份 `codex/backup/irotin-gaming-art-20261020`，本次不合新 Gaming/新美术 Map |
 
-策划 `494d10f` 中组件窗口自动保存工具不在本次地图接收内；main 现有公共代码、菜单、单场景启动和美术/物理修复不回退。此前 main 的 Gaming_Art 根及其 119 个 YAML 文档完整保留，源美术 Map/生成资源不改；策划分支没有此美术根，直接覆盖整个 Scene 会意外删掉已接入美术。四个旧的无规划独立 Platform 根不额外移植到新布局。
+策划 `494d10f` 中组件窗口自动保存工具先与地图分开审计，随后以 `5a30690` 接收两文件增量并增加编译/进入Play保护，真实窗口25断言通过；不接其旧Boss出场资产。main现有公共代码、菜单、单场景启动和美术/物理修复不回退。此前main的Gaming_Art根及其119个YAML文档完整保留，源美术Map/生成资源不改；策划分支没有此美术根，直接覆盖整个Scene会意外删掉已接入美术。四个旧的无规划独立Platform根不额外移植到新布局。
 
 ## Start 与精度
 
@@ -30,6 +30,6 @@
 - 作者 2604 条物体逐项 JSON 字段相同；原 16457 份 YAML 文档只改变房12 children、内嵌规划文档与 SceneRoots，其余原文不变。
 - 既有 GridArt 层级 119 份文档原样保留，无 fileID 冲突。R2 Scene 原文与 `d3fac6a` 相同。
 - Scene fileID 唯一；GUID 在项目或锁定 URP 包可解析；新增缺失引用为 0。
-- `Ops/LevelMaps/Test-PlanningMapCommit.ps1` 通过；尚未进行本轮 Unity 加载、Play 通关或 PC/安卓构建。
+- `Ops/LevelMaps/Test-PlanningMapCommit.ps1`通过；后续整合在隔离Unity实际加载Gaming及R1/R2/R3，零缺脚本，Gaming美术根/Map仍存在。未进行Play通关或PC/安卓构建。
 
 `Ops/LevelMaps/Receive-20261020.ps1` 是定向接收脚本：输入工作树须先为作者 `5e88e7c` 的三份文件，默认基线 `1722c59`。它不是自动合并工具，也不会从规划生成 Scene；重复执行会因已存在 Start 而拒绝。后续新交付应先审计再更新脚本，不盲跑在新布局上。
