@@ -50,7 +50,7 @@ namespace PlanningEditorPrototype
 
         private RectInt DisplayRect(PlanningRoom room, PlanningBox box)
         {
-            if (mode != PlanningCanvasMode.Assembly || room == null)
+            if (!UsesAssemblyPreviewCoordinates || room == null)
                 return new RectInt(box.x, box.y, box.width, box.height);
             GetAssemblyStride(out int sx, out int sy);
             if (room.isConnector) return GetAssemblyBoxRect(room, box, sx, sy);
@@ -2098,11 +2098,12 @@ namespace PlanningEditorPrototype
                 if (!string.IsNullOrEmpty(room.sourceColorHex) && ColorUtility.TryParseHtmlString(room.sourceColorHex, out Color importedColor))
                     color = importedColor;
                 bool selected = worldSelection.Contains(room.id) || room.id == selectedRoomId;
-                color.a = selected ? .78f : .5f;
+                color.a = showWorldRoomContents ? (selected ? .2f : .08f) : (selected ? .78f : .5f);
                 DrawWorldOwner(painter, room, color, selected);
             }
 
             DrawConnectors(painter);
+            if (showWorldRoomContents) DrawWorldRoomContents(painter);
             DrawGrid(context);
             DrawDoors(painter);
             DrawKeys(painter);
@@ -2221,7 +2222,7 @@ namespace PlanningEditorPrototype
                 return;
             }
 
-            if (mode == PlanningCanvasMode.Assembly)
+            if (UsesAssemblyPreviewCoordinates)
             {
                 UpdateAssemblyPreviewImages();
                 UpdatePlayerOverlay();

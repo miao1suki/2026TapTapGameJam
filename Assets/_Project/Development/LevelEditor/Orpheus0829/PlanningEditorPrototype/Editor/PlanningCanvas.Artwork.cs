@@ -64,7 +64,7 @@ namespace PlanningEditorPrototype
 
         private IEnumerable<(PlanningBox box, Vector2Int origin)> WaterPreviewSources(PlanningBox box)
         {
-            if (mode == PlanningCanvasMode.Assembly)
+            if (UsesAssemblyPreviewCoordinates)
             {
                 // Build one world-cell union on the first visible water box. Every
                 // member caches this same set until a document edit/mode change;
@@ -131,7 +131,7 @@ namespace PlanningEditorPrototype
                         rect.yMax - 1 - Mathf.RoundToInt(y*step.y));
                     // Assembly rectangles already include the room/connector
                     // world origin; Detail's owner-local cache does not.
-                    if (mode != PlanningCanvasMode.Assembly) cell -= offset;
+                    if (!UsesAssemblyPreviewCoordinates) cell -= offset;
                     // Different water forces may overlap, but their common blue
                     // underlay is drawn once, not as several darker alpha layers.
                     if (waterPreviewOwners.TryGetValue(box.id, out var owners) &&

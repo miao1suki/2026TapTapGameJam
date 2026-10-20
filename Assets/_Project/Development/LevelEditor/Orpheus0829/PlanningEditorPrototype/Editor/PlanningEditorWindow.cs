@@ -1311,6 +1311,7 @@ namespace PlanningEditorPrototype
             modeRow.Add(detail);
             modeRow.Add(assembly);
             panel.Add(modeRow);
+            panel.Add(BuildWorldRoomContentsToggle());
             VisualElement transferRow = Row();
             transferRow.name = "PlanningTransferActions";
             transferRow.style.paddingLeft = transferRow.style.paddingRight = 6f;
@@ -2126,6 +2127,7 @@ namespace PlanningEditorPrototype
 
             mode = value;
             EditorPrefs.SetInt(ViewPreferenceKey + "Mode", (int)value);
+            worldRoomContentsToggle?.SetEnabled(value == PlanningCanvasMode.World);
             canvas?.SetMode(value);
             canvas?.schedule.Execute(() =>
             {

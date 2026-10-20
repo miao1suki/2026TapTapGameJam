@@ -14,6 +14,94 @@ namespace PlanningEditorPrototype
         private string selectedRegionId;
         private bool worldMoving, worldAdditive;
         private Vector2Int worldMoveDelta;
+        private bool showWorldRoomContents;
+        public bool ShowWorldRoomContents => showWorldRoomContents;
+        private bool UsesAssemblyPreviewCoordinates => mode == PlanningCanvasMode.Assembly ||
+            mode == PlanningCanvasMode.World && showWorldRoomContents;
+
+        // A view-only switch: never modify the map, selection, Scene or history.
+        public void SetWorldRoomContentsVisible(bool visible)
+        {
+            if (showWorldRoomContents == visible) return;
+            showWorldRoomContents = visible;
+            waterPreviewCells.Clear(); waterPreviewOwners.Clear();
+            UpdateDetailPreviewImages();
+            MarkDirtyRepaint();
+        }
+
+        private void DrawWorldRoomContents(Painter2D painter)
+        {
+            foreach (var item in AllBoxes())
+            {
+                RectInt rect = DisplayRect(item.room, item.box);
+                if (!PreviewVisible(rect)) continue;
+                DrawShapeFallback(painter, item.box, rect.position - new Vector2Int(item.box.x, item.box.y));
+            }
+        }
+
+        // In-memory regression: no scene generation, preferences or authored asset writes.
+        public static void VerifyWorldRoomContents()
+        {
+            int checks = 0;
+            void Check(bool condition, string message)
+            {
+                if (!condition) throw new InvalidOperationException("World contents: " + message);
+                checks++; Debug.Log("WORLD CONTENTS PASS: " + message);
+            }
+            var palette = ScriptableObject.CreateInstance<Project.LevelEditor.LevelEditorPalette>();
+            try
+            {
+                var prop = new Project.LevelEditor.LevelEditorPropEntry();
+                prop.Configure("测试蓝块", AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ContactCubes/Blue_ContactCube.prefab"));
+                Check(prop.Prefab != null, "uses real cube art");
+                palette.AddProp(prop);
+                PlanningBox Box(string id) => new PlanningBox { id = id, type = PlanningDetailType.Prop,
+                    propEntryId = prop.EntryId, propEntryName = prop.DisplayName, width = 1, height = 1 };
+                var doc = new PlanningDocument();
+                var first = new PlanningRoom("A"); first.cells.Add(new PlanningCell(10, 20)); first.boxes.Add(Box("first"));
+                var second = new PlanningRoom("B"); second.cells.Add(new PlanningCell(-10, -20)); second.boxes.Add(Box("second"));
+                var corridor = new PlanningRoom("通道") { isConnector = true, independentCells = true };
+                corridor.cells.Add(new PlanningCell(11, 20)); corridor.boxes.Add(Box("corridor"));
+                doc.rooms.Add(first); doc.rooms.Add(second); doc.rooms.Add(corridor);
+                var patch = Box("patch"); patch.x = 30; patch.y = 40; doc.assemblyPatches.Add(patch);
+                var canvas = new PlanningCanvas(); canvas.SetPalette(palette); canvas.SetDocument(doc); canvas.SetMode(PlanningCanvasMode.World);
+                string before = JsonUtility.ToJson(doc), selected = canvas.selectedRoomId;
+                Vector2 panBefore = canvas.pan; float zoomBefore = canvas.zoom;
+                int changes = 0; canvas.DocumentChanged += () => changes++;
+                Check(!canvas.ShowWorldRoomContents && canvas.detailPreviewImages.Count == 0, "world overview defaults to room silhouettes");
+                canvas.SetWorldRoomContentsVisible(true);
+                Check(canvas.Mode == PlanningCanvasMode.World && canvas.UsesAssemblyPreviewCoordinates, "world interactions remain world interactions");
+                foreach (string id in new[] { "first", "second", "corridor", "patch" })
+                {
+                    Image image = null;
+                    foreach (var item in canvas.detailPreviewImages) if (item.Key.StartsWith(id + ":", StringComparison.Ordinal)) { image = item.Value; break; }
+                    Check(image != null && image.style.display.value == DisplayStyle.Flex && image.pickingMode == PickingMode.Ignore,
+                        "visible read-only artwork: " + id);
+                }
+                RectInt firstRect = canvas.DisplayRect(first, first.boxes[0]);
+                Check(firstRect.position == new Vector2Int(10, 20), "positive room coordinates");
+                Check(canvas.DisplayRect(second, second.boxes[0]).position == new Vector2Int(-10, -20), "negative room coordinates");
+                Check(JsonUtility.ToJson(doc) == before && changes == 0 && canvas.selectedRoomId == selected && canvas.pan == panBefore && canvas.zoom == zoomBefore,
+                    "toggle preserves map, selection, history event count and viewport");
+                canvas.SetWorldRoomContentsVisible(false);
+                bool hidden = true; foreach (var image in canvas.detailPreviewImages.Values) hidden &= image.style.display.value == DisplayStyle.None;
+                Check(hidden, "switch off hides all preview images");
+                canvas.SetMode(PlanningCanvasMode.Assembly);
+                Check(canvas.detailPreviewImages.Count == 4, "assembly preview unaffected while world switch is off");
+                canvas.SetMode(PlanningCanvasMode.World); canvas.SetWorldRoomContentsVisible(true);
+                canvas.SelectRoom(first.id);
+                Check(canvas.MoveWorldSelection(new Vector2Int(2, 0)), "room movement still permitted with content visible");
+                canvas.InvalidatePreviewData(); canvas.UpdateDetailPreviewImages();
+                Check(canvas.DisplayRect(first, first.boxes[0]).position == new Vector2Int(12, 20) && first.boxes[0].x == 0,
+                    "room artwork follows room without editing local object placement");
+                canvas.SetMode(PlanningCanvasMode.Detail);
+                Check(canvas.detailPreviewImages.Count == 1, "detail still only shows selected room");
+                canvas.SetMode(PlanningCanvasMode.World);
+                Check(canvas.detailPreviewImages.Count == 4 && canvas.ShowWorldRoomContents, "world switch survives mode changes");
+                System.IO.File.WriteAllText("Library/WorldRoomContentsVerification.txt", "PASS " + checks);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(palette); }
+        }
         public event Action<IReadOnlyList<string>> WorldItemsRemoved;
         public event Action<IReadOnlyList<PlanningRoom>> WorldOwnersRemoving;
         public IReadOnlyCollection<string> SelectedWorldIds => worldSelection;
