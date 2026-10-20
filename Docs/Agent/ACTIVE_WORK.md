@@ -1,5 +1,11 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 喷泉与独立二维可见性光照（隔离验证完成）
+
+- 当前整合窗口：codex/visibility-fountain-20261019；新增独立光照模块、URP合成与中文工具，不更换Renderer、不改颜色玩法/碰撞。喷泉按用户补充先交付可复用动画，不绑定Boss结局。
+- Pick仅在隔离副本布灯验证，保留主Editor未保存布局。八帧82×66/PPU16喷泉只负责表现；光照需显式按场景启用，Gaming不自动变黑。实际GPU遮挡/开闭/移动/孔洞/相机采样通过，Play七断言验证运行时缓存、相机合成、动画及屏幕UI。未做安卓真机/新包或全图通关。说明见 WORLD_VISIBILITY_AND_FOUNTAIN.md、WORLD_VISIBILITY_API.md。
+- R1/R2/R3已按用户后续授权接收作者最终Scene，但旧planning尚未精确回采，不应以旧JSON重建覆盖Scene；此事项由关卡整合记录单独说明。
+
 ## 2026-10-19 美术工作台N键与偏移输入可读性（验证完成）
 
 - 独立分支codex/fix-art-hotkey-limit-fields-20261019，使用taptap-editor-ui规范；只改编辑器入口与图层参数布局，不改Scene、存档、美术尺寸或Runtime视差规则。
