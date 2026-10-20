@@ -10,6 +10,7 @@
 - `GameplayWaterPresentation` 只在初始化、体积/相邻水体变化、方向/密度/速度变化时重建；注册表限当前 Scene。按 Collider 世界边界和 `GridCellSizeUtility` 定义大小，缓存每格尺寸；大块最多3种后片Mesh和1个前片Mesh，不为每格创建GameObject。
 - 相邻判断使用全部已激活水族体积：最上沿Surface，下一行Body，更深Interior。面片在XY平面，当前横版相机从-Z观察；不承诺旧四视角视差玩法。
 - 源图16×17，UV去掉底部一行透明像素，实际16×16覆盖一格。原始TA图片和独立预制体不改。
+- 后片每个四边形额外以UV1记录实际16×16取样矩形，MPB开启`_GridArtSliceClamp`，颜色和HSV遮罩仅夹住最终取样点到有效texel中心；UV0及原16像素/格映射完全保留，不通过缩小UV0、扩大几何或关闭折射隐藏接缝。前片的流动UV和气泡不启用本标记。透明第17行边界采样泄漏会先露出背景，再被屏幕折射扭成近似水面泡沫的细线，不能把内部整排波纹误诊为水面分类。
 - 气泡复用 TA `DirectionalWaterBubbleStream`，新增Down=3而不修改Up=0/Left=1/Right=2。按10格长度、最多3格宽度分段，长度与世界尺寸匹配；普通水域无气泡，定向水流四向，浮力柱向上延伸至连通水域顶面。
 - `WaterVisualFeature.ShowFlowBubbles/FlowBubbleDensity/FlowBubbleSpeed` 为只读配置访问，字段使用现有BlockParameter中文Inspector及规划参数保存。
 
@@ -40,3 +41,7 @@
 ## 验证入口
 
 持久测试 `GameFlow/Tests/Editor/PixelWaterPresentationTests.cs` 验证资源三分组、透明参数、四向枚举稳定性及双端Renderer依赖。实际GPU/Play检查在本机忽略的Library/FlowRetirementProbe隔离项目中进行，不覆盖用户场景；结果与未验收项记录于ACTIVE_WORK。
+
+`Project.BlockFeatures.Editor.GameplayWaterMovingSeamAudit.Run`只允许隔离工程真实GPU执行：使用真实Body／Interior原图、负世界坐标2000格、移动相机、三档缩放、请求1／4倍MSAA，分别对颜色与HSV遮罩执行关闭／开启夹取样的负对照。结果写`Library/GameplayWaterMovingSeamAudit.txt`及PNG；必须旧路径实际出现漏色且新路径为零才判通过，负对照未复现不冒充验收成功。不保存或生成作者场景资产。
+
+2026-10-20隔离Unity6000.3.12f1真实GPU对照通过：1152帧，旧未夹取样路径累计25640个漏色像素，修复路径为0。`GameplayWaterFormalBindingAudit.RunFormal`另在正式Gaming实际PlayMode解锁蓝色，检查生成后片UV1数量、逐quad边界与MPB开关，确认前片不启用，再执行与R/重生相同的所有水区域恢复并复查；914处水、16区域、11532项断言通过。结果写`Library/GameplayWaterFormalBindingAudit.txt`，不替代实际走图手感或完整包验收。

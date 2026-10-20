@@ -253,6 +253,7 @@ namespace Project.BlockFeatures
         private readonly RaycastHit[] platformHitBuffer =
             new RaycastHit[16];
         private Vector3 origin;
+        private bool originCaptured;
         private bool active;
         private float progress;
         private int travelDirection = 1;
@@ -323,7 +324,7 @@ namespace Project.BlockFeatures
             ResetTimeline();
             platformSurfaces = GetComponents<Collider>();
             loadTransport ??= new PlatformLoadTransport(this);
-            origin = transform.localPosition;
+            CaptureOrigin();
             ResetMotion();
             holdRemaining = 0f;
             active = driveMode == MovingPlatformDriveMode.Automatic &&
@@ -886,7 +887,18 @@ namespace Project.BlockFeatures
 
         private void RestoreOrigin()
         {
+            // A locked platform has never attached, but room reset still reaches
+            // it. Never restore the default Vector3.zero or recapture a moved
+            // route position on subsequent unlock/reattach cycles.
+            CaptureOrigin();
             transform.localPosition = origin;
+        }
+
+        private void CaptureOrigin()
+        {
+            if (originCaptured) return;
+            origin = transform.localPosition;
+            originCaptured = true;
         }
     }
 }

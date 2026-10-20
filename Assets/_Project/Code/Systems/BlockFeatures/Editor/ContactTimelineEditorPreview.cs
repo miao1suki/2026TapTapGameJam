@@ -21,9 +21,10 @@ namespace Project.BlockFeatures.Editor
         private static void DrawMarker(ContactTimelineTrigger trigger, GizmoType gizmoType)
         {
             if (Application.isPlaying || SceneView.currentDrawingSceneView == null || trigger == null) return;
+            if (Event.current != null && Event.current.type != EventType.Repaint) return;
             Texture2D texture = Texture;
             Collider shape = trigger.GetComponent<Collider>();
-            if (texture == null || shape == null) return;
+            if (texture == null || shape == null || !ScenePreviewCulling.Visible(shape.bounds)) return;
             DrawColliderRange(
                 shape,
                 (gizmoType & GizmoType.Selected) != 0);

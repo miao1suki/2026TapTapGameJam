@@ -1,4 +1,5 @@
 using Project.BlockFeatures;
+using Project.BlockFeatures.Editor;
 using Project.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -37,7 +38,7 @@ namespace Project.Rooms.Editor
         [DrawGizmo(GizmoType.NonSelected | GizmoType.Selected)]
         private static void DrawRegions(RoomLifecycleManager manager, GizmoType unused)
         {
-            if (Application.isPlaying) return;
+            if (Application.isPlaying || Event.current != null && Event.current.type != EventType.Repaint) return;
             if (!Boundaries.TryGetValue(manager, out var boundary) || boundary.revision != manager.Revision)
             {
                 boundary = new Boundary { revision = manager.Revision };
@@ -84,8 +85,9 @@ namespace Project.Rooms.Editor
         [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
         private static void Draw(RespawnAnchorFeature anchor, GizmoType unused)
         {
-            if (Application.isPlaying) return;
+            if (Application.isPlaying || Event.current != null && Event.current.type != EventType.Repaint) return;
             float radius = anchor.ActivationRadiusBlocks * GridCellSizeUtility.Resolve(anchor);
+            if (!ScenePreviewCulling.Visible(new Bounds(anchor.transform.position, Vector3.one * radius * 2))) return;
             Handles.color = new Color(.2f, 1f, .75f, .85f);
             Vector3 previous = anchor.transform.position + Vector3.right * radius;
             for (int i = 1; i <= 64; i++)

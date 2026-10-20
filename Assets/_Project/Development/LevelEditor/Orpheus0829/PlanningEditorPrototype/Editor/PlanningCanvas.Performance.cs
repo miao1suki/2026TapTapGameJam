@@ -15,6 +15,149 @@ namespace PlanningEditorPrototype
         private Image triggerPlacementPreview;
         private readonly Dictionary<PlanningRoom, PlanningOwnerPreview> ownerPreviewCache = new Dictionary<PlanningRoom, PlanningOwnerPreview>();
         private readonly HashSet<string> activePreviewKeys = new HashSet<string>();
+        private VisualElement blockPreviewLayer;
+        private bool blockBatchesValid;
+        private PlanningCanvasMode blockBatchMode;
+        private string blockBatchRoom;
+        private int blockBatchSelection;
+        private readonly List<BlockPreviewBatch> blockBatches = new();
+
+        // Ordinary wall/floor blocks share a preview texture. Keep their quads,
+        // rather than creating one Image/layout node per cell on every viewport move.
+        private static bool IsBatchedBlock(PlanningBox box) =>
+            (box.type == PlanningDetailType.Solid || box.type == PlanningDetailType.Platform) &&
+            string.IsNullOrEmpty(box.propEntryId) && string.IsNullOrEmpty(box.propEntryName);
+
+        private void UpdateBlockBatches()
+        {
+            if (blockPreviewLayer == null) return;
+            bool visible = document != null && (mode == PlanningCanvasMode.Detail || UsesAssemblyPreviewCoordinates);
+            blockPreviewLayer.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!visible) return;
+            int selection = 0;
+            if (LevelEditorState.Tool == LevelEditorTool.Merge)
+                foreach (string id in mergeSelection) selection ^= id.GetHashCode();
+            if (!blockBatchesValid || blockBatchMode != mode || blockBatchRoom != selectedRoomId || blockBatchSelection != selection)
+            {
+                blockPreviewLayer.Clear(); blockBatches.Clear();
+                var groups = new Dictionary<Texture2D, List<(Rect rect, Color color)>>();
+                foreach (var item in AllBoxes())
+                {
+                    if (!IsBatchedBlock(item.box) || (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId)) continue;
+                    Texture2D preview = GetBoxPreview(item.box);
+                    Color tint = preview != null ? Color.white : ColorForBox(item.box);
+                    if (mergeSelection.Contains(item.box.id) && LevelEditorState.Tool == LevelEditorTool.Merge) tint = new Color(.55f,.85f,1f);
+                    preview ??= Texture2D.whiteTexture;
+                    if (!groups.TryGetValue(preview, out var quads)) groups[preview] = quads = new();
+                    RectInt display = DisplayRect(item.room, item.box);
+                    Vector2Int offset = display.position - new Vector2Int(item.box.x, item.box.y);
+                    foreach (RectInt part in PlanningShapeUtility.Rectangles(item.box))
+                    {
+                        // A merged part uses one stretched preview, just like the old Image path.
+                        // Unmerged blocks repeat the same native front preview per world cell.
+                        if (item.box.isMerged) quads.Add((new Rect(part.x + offset.x, part.y + offset.y, part.width, part.height), tint));
+                        else for (int y = part.y; y < part.yMax; y++) for (int x = part.x; x < part.xMax; x++)
+                            quads.Add((new Rect(x + offset.x, y + offset.y, 1, 1), tint));
+                    }
+                }
+                foreach (var group in groups)
+                    for (int start = 0; start < group.Value.Count; start += 512)
+                    {
+                        var batch = new BlockPreviewBatch(group.Key, group.Value, start, Mathf.Min(512, group.Value.Count - start));
+                        blockBatches.Add(batch); blockPreviewLayer.Add(batch);
+                    }
+                blockBatchesValid = true; blockBatchMode = mode; blockBatchRoom = selectedRoomId; blockBatchSelection = selection;
+            }
+            blockPreviewLayer.style.opacity = editWaterLayer ? .2f : 1f;
+            blockPreviewLayer.transform.position = pan;
+            blockPreviewLayer.transform.scale = new Vector3(zoom, zoom, 1);
+            Rect viewport = new Rect(ScreenToWorld(contentRect.min), contentRect.size / GridSize);
+            foreach (var batch in blockBatches) batch.SetVisible(batch.Bounds.Overlaps(viewport));
+        }
+
+        private sealed class BlockPreviewBatch : VisualElement
+        {
+            internal readonly Rect Bounds;
+            private readonly Texture2D texture;
+            private readonly List<(Rect rect, Color color)> quads;
+            private readonly int start, count;
+            private bool batchVisible = true;
+            internal BlockPreviewBatch(Texture2D texture, List<(Rect rect, Color color)> quads, int start, int count)
+            {
+                this.texture = texture; this.quads = quads; this.start = start; this.count = count;
+                Rect bounds = quads[start].rect;
+                for (int i = start + 1; i < start + count; i++)
+                {
+                    Rect r = quads[i].rect;
+                    bounds = Rect.MinMaxRect(Mathf.Min(bounds.xMin, r.xMin), Mathf.Min(bounds.yMin, r.yMin), Mathf.Max(bounds.xMax, r.xMax), Mathf.Max(bounds.yMax, r.yMax));
+                }
+                Bounds = bounds;
+                pickingMode = PickingMode.Ignore; style.position = Position.Absolute;
+                style.left = bounds.x * BaseGridSize; style.top = bounds.y * BaseGridSize;
+                style.width = bounds.width * BaseGridSize; style.height = bounds.height * BaseGridSize;
+                generateVisualContent += Draw;
+            }
+            internal void SetVisible(bool value)
+            {
+                if (batchVisible == value) return;
+                batchVisible = value; style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+            private void Draw(MeshGenerationContext context)
+            {
+                var mesh = context.Allocate(count * 4, count * 6, texture);
+                // Unity 6 remaps these coordinates into the atlas automatically.
+                Rect uv = new Rect(0, 0, 1, 1);
+                for (int j = 0; j < count; j++)
+                {
+                    var item = quads[start + j]; Rect r = item.rect;
+                    float x0 = (r.xMin - Bounds.xMin) * BaseGridSize, x1 = (r.xMax - Bounds.xMin) * BaseGridSize;
+                    float y0 = (r.yMin - Bounds.yMin) * BaseGridSize, y1 = (r.yMax - Bounds.yMin) * BaseGridSize;
+                    mesh.SetNextVertex(V(x0, y0, new Vector2(uv.xMin, uv.yMax), item.color));
+                    mesh.SetNextVertex(V(x1, y0, new Vector2(uv.xMax, uv.yMax), item.color));
+                    mesh.SetNextVertex(V(x1, y1, new Vector2(uv.xMax, uv.yMin), item.color));
+                    mesh.SetNextVertex(V(x0, y1, new Vector2(uv.xMin, uv.yMin), item.color));
+                    ushort index = (ushort)(j * 4);
+                    mesh.SetNextIndex(index); mesh.SetNextIndex((ushort)(index + 1)); mesh.SetNextIndex((ushort)(index + 2));
+                    mesh.SetNextIndex((ushort)(index + 2)); mesh.SetNextIndex((ushort)(index + 3)); mesh.SetNextIndex(index);
+                }
+            }
+            private static Vertex V(float x, float y, Vector2 uv, Color color) => new Vertex
+                { position = new Vector3(x, y, Vertex.nearZ), uv = uv, tint = color };
+        }
+
+        public static void VerifyRetainedBlockPreviews()
+        {
+            int checks = 0;
+            void Check(bool value, string message)
+            {
+                if (!value) throw new System.InvalidOperationException(message);
+                checks++; Debug.Log("BLOCK BATCH PASS: " + message);
+            }
+            var doc = new PlanningDocument();
+            var room = new PlanningRoom("Unmerged 12000"); room.cells.Add(new PlanningCell(0, 0)); doc.rooms.Add(room);
+            for (int y = 0; y < 120; y++) for (int x = 0; x < 100; x++)
+                room.boxes.Add(new PlanningBox(PlanningDetailType.Solid, new RectInt(x, y, 1, 1)));
+            var canvas = new PlanningCanvas(); canvas.SetDocument(doc); canvas.SelectRoom(room.id); canvas.SetMode(PlanningCanvasMode.Detail);
+            string before = JsonUtility.ToJson(doc);
+            Check(canvas.detailPreviewImages.Count == 0, "12000 unmerged walls allocate no per-cell Image nodes");
+            Check(canvas.blockBatches.Count == 24, "12000 quads use 24 bounded mesh batches");
+            var retained = canvas.blockBatches[0];
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            for (int i = 0; i < 120; i++) canvas.RestoreView(new Vector2(i, -i), .2f + i * .001f);
+            timer.Stop();
+            Check(ReferenceEquals(retained, canvas.blockBatches[0]), "120 pans and zooms retain geometry");
+            Check(JsonUtility.ToJson(doc) == before, "render optimization preserves all unmerged author records");
+            canvas.SetMode(PlanningCanvasMode.World);
+            Check(canvas.blockPreviewLayer.style.display.value == DisplayStyle.None, "world overview hides blocks by default");
+            canvas.SetWorldRoomContentsVisible(true);
+            Check(canvas.blockPreviewLayer.style.display.value == DisplayStyle.Flex, "world contents switch includes walls");
+            canvas.SetMode(PlanningCanvasMode.Detail);
+            room.boxes.RemoveAt(0); canvas.InvalidatePreviewData(); canvas.UpdateDetailPreviewImages();
+            Check(!ReferenceEquals(retained, canvas.blockBatches[0]), "author edit invalidates retained geometry");
+            Check(!IsBatchedBlock(new PlanningBox { type = PlanningDetailType.Water }), "water union and surface artwork retain their original path");
+            string report = "PASS " + checks + "; 12000 unmerged blocks; 120 viewport updates ms=" + timer.Elapsed.TotalMilliseconds.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
+            System.IO.File.WriteAllText("Library/RetainedBlockPreviewsVerification.txt", report); Debug.Log(report);
+        }
 
         private PlanningOwnerPreview OwnerPreview(PlanningRoom room)
         {
@@ -60,6 +203,10 @@ namespace PlanningEditorPrototype
             objectPreviewLayer = new VisualElement { pickingMode = PickingMode.Ignore };
             waterPreviewLayer.StretchToParentSize(); objectPreviewLayer.StretchToParentSize();
             Add(waterPreviewLayer); Add(objectPreviewLayer);
+            blockPreviewLayer = new VisualElement { name = "RetainedBlockPreviews", pickingMode = PickingMode.Ignore };
+            blockPreviewLayer.style.position = Position.Absolute;
+            blockPreviewLayer.style.transformOrigin = new TransformOrigin(0, 0, 0);
+            Insert(IndexOf(objectPreviewLayer), blockPreviewLayer);
             triggerPreviewLayer = new VisualElement { name = "TimelineTriggerPreviewLayer", pickingMode = PickingMode.Ignore };
             triggerPreviewLayer.StretchToParentSize();
             Add(triggerPreviewLayer);
@@ -89,6 +236,7 @@ namespace PlanningEditorPrototype
 
         private void InvalidatePreviewData()
         {
+            blockBatchesValid = false;
             PlanningShapeUtility.Invalidate();
             boxPreviewCache.Clear(); pendingBoxPreviews.Clear();
             artworkPreviewCache.Clear(); waterPreviewCells.Clear(); waterPreviewOwners.Clear();

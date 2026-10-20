@@ -63,10 +63,11 @@ namespace Project.Mechanisms.Editor
         [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
         private static void DrawLinks(DoorController door, GizmoType type)
         {
+            if (Event.current != null && Event.current.type != EventType.Repaint) return;
             var old = Handles.color;
             Handles.color = new Color(1f,.78f,.3f,.9f);
             foreach (var button in door.Buttons)
-                if (button != null) Handles.DrawDottedLine(door.transform.TransformPoint(new Vector3(0,.5f,0)),button.transform.position,5f);
+                if (button != null) Project.BlockFeatures.Editor.ScenePreviewCulling.DrawDottedLine(door.transform.TransformPoint(new Vector3(0,.5f,0)),button.transform.position,5f);
             Handles.color = old;
         }
     }

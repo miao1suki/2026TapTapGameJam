@@ -35,6 +35,7 @@ namespace PlanningEditorPrototype
 
         private void RefreshArtworkPreviews()
         {
+            blockBatchesValid = false;
             ClearVinePreviewGroups();
             artworkPreviewCache.Clear(); waterPreviewCells.Clear(); waterPreviewOwners.Clear(); boxPreviewCache.Clear(); previewArtwork=null; waterTileArtwork=null;
             UpdateDetailPreviewImages(); MarkDirtyRepaint();

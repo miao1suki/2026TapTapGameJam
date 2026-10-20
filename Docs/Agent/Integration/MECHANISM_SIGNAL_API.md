@@ -4,6 +4,8 @@
 
 ## 可选基座与平台 Timeline
 
+平台移动原点独立于颜色解锁：未解锁时房间重置也必须保留作者放置位置，重复解绑／绑定不重新捕获运动中的原点。此行为不改变基座信号、路线长度、运输或 Timeline 设置。
+
 `MechanismBaseFeature.timelineTrigger` 使用 `MechanismBaseTimelineTrigger`：`Disabled=0` 默认关闭，`Powered=1` 收到充能，`Unpowered=2` 解除充能，`SignalChanged=3` 两种边沿均播放。只响应实际相邻能源导致的信号变化；持续扫描不重播，R/离区恢复过程及恢复后的首次能源基线扫描不播放镜头。基座仍只检测能源、广播信号，不持久保存或搜索平台。`TimelineTrigger / PlatformTimelineMode / IsTimelinePlaying` 是只读调试入口。
 
 平台的 `timelineOrder` 为演出顺序整数，越小越先播放。同一信号边沿中，基座镜头先入队，然后按序播放真正发生所选充能/断电边沿的平台。`MechanismBaseFeature.platformTimelineMode`：`AllOrdered=0` 默认播放全部符合条件的平台；`FirstOnly=1` 仅播放顺序最小的符合条件平台，其他平台的该次边沿会被消费而非在下一物理步补播。同序号按层级顺序；需要稳定的精确顺序时请设置不同整数。基座自身演出关闭时，平台仍可单独启用；选择仅首个平台不会自动启用任何演出。

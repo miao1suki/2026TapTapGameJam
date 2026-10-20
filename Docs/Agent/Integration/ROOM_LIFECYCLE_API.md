@@ -4,6 +4,8 @@
 
 ## 区域与对象
 
+移动平台即使颜色尚未解锁、从未 Attach，也会收到房间恢复。平台须在首次恢复／Attach 时捕获作者局部原点，此后不得用默认零向量恢复，也不得在重复 Attach 时将路途中位置当成新原点。`PlatformColdResetVerification.Run` 覆盖冷启动、重复重置及解锁；`RunFormal` 覆盖正式 Gaming 的全部平台。
+
 `RoomLifecycleManager.Configure(regions, cellSize, planningJson)` 保存世界图。RoomRegion.id 为稳定规划 ID；cells 为世界图坐标（Y 向下）。世界位置映射为 `floor(localX / size), -floor(localY / size)-1`。初始化所有权字典；每帧只查玩家一个格，不逐帧扫描物体或全场景物理查询。
 
 规划增量/全量应用都写入管理器及 `RoomResetObject.regionId`。规划文档嵌入 Scene，首次打开可回读，不把 EditorPrefs 作为团队共享数据源。

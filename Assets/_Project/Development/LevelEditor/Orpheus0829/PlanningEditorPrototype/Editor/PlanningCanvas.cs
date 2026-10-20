@@ -470,6 +470,7 @@ namespace PlanningEditorPrototype
             if (pendingBoxPreviews.Count == 0) return;
             foreach (string id in pendingBoxPreviews) boxPreviewCache.Remove(id);
             pendingBoxPreviews.Clear();
+            blockBatchesValid = false;
             UpdateDetailPreviewImages();
         }
 
@@ -2177,7 +2178,7 @@ namespace PlanningEditorPrototype
             {
                 Rect rect = CellRect(box.x, box.y, box.width, box.height);
                 if (!rect.Overlaps(contentRect)) continue;
-                Texture2D preview = GetBoxPreview(box);
+                Texture2D preview = IsBatchedBlock(box) ? Texture2D.whiteTexture : GetBoxPreview(box);
                 if (preview == null)
                 {
                     DrawShapeFallback(painter, box, Vector2Int.zero);
@@ -2201,6 +2202,7 @@ namespace PlanningEditorPrototype
 
         private void DrawShapeFallback(Painter2D painter, PlanningBox box, Vector2Int offset)
         {
+            if (IsBatchedBlock(box)) return;
             if (GetBoxPreview(box) != null) return;
             Color color = ColorForBox(box);
             color.a *= editWaterLayer && !PlanningWaterLayerUtility.IsWater(box, palette) ? .2f : 1f;
@@ -2213,6 +2215,7 @@ namespace PlanningEditorPrototype
 
         private void UpdateDetailPreviewImages()
         {
+            UpdateBlockBatches();
             UpdateTriggerPlacementPreview();
             if (objectPreviewLayer != null) objectPreviewLayer.style.opacity = editWaterLayer ? .2f : 1f;
             if (document == null)
@@ -2332,6 +2335,7 @@ namespace PlanningEditorPrototype
             RectInt rect,
             HashSet<string> active)
         {
+            if (IsBatchedBlock(box)) return;
             if (!PreviewVisible(rect)) return;
             Vector2Int offset = rect.position - new Vector2Int(box.x, box.y);
             foreach (RectInt part in PlanningShapeUtility.Rectangles(box))
@@ -2759,6 +2763,9 @@ namespace PlanningEditorPrototype
             string entryId,
             string entryName)
         {
+            // Solid blocks have no prop entry. Avoid scanning the whole prop palette
+            // for every wall in each overlay pass.
+            if (string.IsNullOrEmpty(entryId) && string.IsNullOrEmpty(entryName)) return null;
             if (entryId == PlanningDoorUtility.ButtonEntryId) return PlanningDoorUtility.GetButtonEntry();
             if (palette == null)
             {
@@ -3956,16 +3963,18 @@ namespace PlanningEditorPrototype
         private void DrawDoorLinks(Painter2D painter)
         {
             if (editWaterLayer) return;
-            DrawMechanismLinks(painter);
-            DrawContactTimelineRanges(painter);
             var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
+            var byId = new Dictionary<string, (PlanningRoom room, PlanningBox box)>();
+            foreach (var item in items)
+                if (!string.IsNullOrEmpty(item.box.id)) byId[item.box.id] = (item.room, item.box);
+            DrawMechanismLinks(painter, items, byId);
+            DrawContactTimelineRanges(painter);
             foreach (var item in items)
             {
                 if (string.IsNullOrEmpty(item.box.doorOwnerId) ||
                     (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId)) continue;
-                foreach (var door in items)
+                if (byId.TryGetValue(item.box.doorOwnerId, out var door))
                 {
-                    if (door.box.id != item.box.doorOwnerId) continue;
                     RectInt a = DisplayRect(item.room, item.box), b = DisplayRect(door.room, door.box);
                     Vector2 start = CellRect(a.x, a.y, a.width, a.height).center;
                     Vector2 end = CellRect(b.x, b.y, b.width, b.height).center;
@@ -3973,7 +3982,6 @@ namespace PlanningEditorPrototype
                     for (float d = 0; d < length; d += 12f)
                         DrawLine(painter, Vector2.Lerp(start,end,d/length), Vector2.Lerp(start,end,Mathf.Min(d+6f,length)/length),
                             new Color(1f,.78f,.3f,.9f), 2f);
-                    break;
                 }
             }
         }
@@ -4074,9 +4082,10 @@ namespace PlanningEditorPrototype
             bindingConsumerId = null; pickingSignalSource = false;
             NotifyDocumentChanged(); MarkDirtyRepaint(); StatusChanged?.Invoke("已完成绑定。");
         }
-        private void DrawMechanismLinks(Painter2D painter)
+        private void DrawMechanismLinks(Painter2D painter,
+            List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)> items,
+            Dictionary<string, (PlanningRoom room, PlanningBox box)> byId)
         {
-            var items = new List<(PlanningRoom room, List<PlanningBox> boxes, PlanningBox box)>(AllBoxes());
             foreach (var item in items)
             {
                 if (mode == PlanningCanvasMode.Detail && item.room?.id != selectedRoomId) continue;
@@ -4107,26 +4116,23 @@ namespace PlanningEditorPrototype
                         DrawLine(painter, center - Vector2.up * 4f, center + Vector2.up * 4f, pathColor, 2f);
                     }
                 }
-                foreach (var controller in items) if (controller.box.id == item.box.crankOwnerId)
+                if (!string.IsNullOrEmpty(item.box.crankOwnerId) && byId.TryGetValue(item.box.crankOwnerId, out var controller))
                 {
                     RectInt target = DisplayRect(controller.room,controller.box);
                     Dashed(painter,start,CellRect(target.x,target.y,target.width,target.height).center,new Color(1f,.78f,.3f,.9f));
-                    break;
                 }
-                foreach (var source in items) if (source.box.id == item.box.mechanismBaseId)
+                if (!string.IsNullOrEmpty(item.box.mechanismBaseId) && byId.TryGetValue(item.box.mechanismBaseId, out var source))
                 {
                     RectInt b = DisplayRect(source.room, source.box);
                     Dashed(painter, start, CellRect(b.x+item.box.mechanismBaseCellOffset.x,b.y+item.box.mechanismBaseCellOffset.y,1,1).center, new Color(1f,.45f,.8f,.9f));
-                    break;
                 }
                 item.box.NormalizeMechanismButtonLinks();
                 foreach (string buttonId in item.box.mechanismButtonIds)
                 {
-                    foreach (var source in items) if (source.box.id == buttonId)
+                    if (!string.IsNullOrEmpty(buttonId) && byId.TryGetValue(buttonId, out var button))
                     {
-                        RectInt b = DisplayRect(source.room, source.box);
+                        RectInt b = DisplayRect(button.room, button.box);
                         Dashed(painter, start, CellRect(b.x,b.y,b.width,b.height).center, new Color(1f,.35f,.25f,.9f));
-                        break;
                     }
                 }
             }
