@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 最终关卡只读差异审计／单向平台动态复验
+
+- 分支 codex/r-level-exact-recapture-20261019；本轮按整合者确认仅做只读审计，不实施大范围存档schema迁移、不修改作者Scene或JSON，不声称精确回采完成。R2审计以最新d3fac6a为准；接收该Scene由远端整合工作者完成。
+- 实际Unity6000.3.12f1隔离NeutralMechanismProbe打开R1/R2/R3，记录实际Transform、标记、重复来源、删除记录与出生位置；Scene哈希前后不变。75/55/52实际实例对应77/55/59旧规划，分别4/2/9个规划ID无实例，各2组重复来源ID+局部格。详细证据和限制见R_LEVEL_SCENE_AUDIT_2026-10-20.md；不是可导入存档。
+- 单向平台ObjectArtworkTests 32/32通过；Neutral/红/绿/蓝各1/3格的真实Prefab编辑态98项、实际Play98项通过。验证16×16帧/PPU16、平铺原占格、像素方正、支撑顶边与Collider对齐；父Y=.2由子Y=5补偿，localPositionY=-4.5是正确完整帧底枢轴，不是视觉下移。未执行GPU截图、整关通关或打包。
+- 新增两个显式隔离验证入口Assets/Editor/OneWayDeliveryAudit.cs、FinalScenePlanningAudit.cs；仅允许NeutralMechanismProbe，结果留Library，不触碰主Unity窗口或自动保存Scene。
+
 ## 2026-10-19 R1／R2／R3 最终场景急件接收
 
 - 分支 codex/urgent-r-level-delivery-20261019；按用户最新授权接收 ILorR1012 R1 ff785ab、R2 308c65f、R3 48cb1e4 最终 Scene，保留原字节及 planning/meta、R1 镜头依赖，不重建、不改 Gaming。
