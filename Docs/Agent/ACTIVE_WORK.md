@@ -82,6 +82,12 @@
 - 分支 `boss最后补充2`。新增 `Tools/2026TapTap/调试/解锁玩家六把钥匙能力`，仅 Play Mode 可用。
 - 点击后只在当前活动 Scene 查找 `PlayerController`；找到后同时解锁三种场景颜色和三种玩家能力，沿用 `ColorRuntimeService` 的事件、轮盘刷新与单轮自动保存。
 - 本轮完成 Editor 编译检查，未运行 Play Mode。
+## 2026-10-20 SDK／策划新图／TA整合与双端发布（进行中）
+
+- 用户要求采用策划ab757fc的23房间新布局，补回main独有Boss/结局区域与SDK触发；美术与效果以TA交付为准，保留已修复代码。正式Gaming/配套存档先在隔离工程整合，不保存主Unity未确认内存场景。
+- 构建Windows与Android Release，保留包名com.miao1suki.shapeofcolor；PC附独立形之彩.7z，根直接含EXE/Data等，不套文件夹、不含DoNotShip。从最终APK提取证书MD5。Secrets不提交。
+- 追加团队快速推送skill，按已完成改动的风险选最小必要验证，提交推送目标两分钟；整合/编译/打包与提交推送计时分开，不以限时取消必要验证。
+
 ## 2026-10-20 编辑器持续卡顿再排查（修复与窗口实测完成）
 
 - 本轮抓取正式地图的 Scene / PlanningCanvas / ArtCanvas 平移缩放与重绘热点，区别函数微基准与实际窗口帧耗时。仅优化编辑器代码，不修改作者场景、关卡布局、美术图或用户未提交资产；隔离 FlowRetirementProbe 验证。
