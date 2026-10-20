@@ -7,7 +7,14 @@
 - 修复连通区域网格按 10Hz 直接替换导致的突变：保留上一张连通网格，新旧两张 R8 遮罩按 `connectedTransitionDuration` 交叉淡化；开门、移动、传送与几何变化均平滑过渡。
 - 遮蔽新增平滑强度与可释放接口 `SuppressOcclusion(owner, fadeOutDuration, fadeInDuration)`；按 owner 引用计数，`Dispose()` 后恢复。三色钥匙在有 Timeline 相机演出时自动取得句柄，Timeline 停止后释放；淡出/淡入时长在钥匙 Inspector 可调。
 - Unity 6000.3.12f1 主程序集与 Editor 程序集编译 0 error，仅既有 warning；一次性校验 `PASS shader + occlusion lease`，入口已删除。未运行 GPU/Play 验收，实际墙体保留、渐变观感和三色钥匙演出需在 Game View 复验。
+## 2026-10-21 三方关卡美术整合
 
+- 用户确认接收 TA `1b4f51a`、ILorR `aaf7896` 和 shuruiduan71-hub `ebf1348` 三份美术。以 main `1346261` 为基线；第三份仅补不冲突增量，不采用其中的旧关卡布局。光照遮蔽进行中的支线本轮不接入。
+- 三方共享库 257 个笔刷序列完全一致，按稳定图层 ID、世界格坐标及原有旋转合并，不重新编号，不缩放素材。只在静音隔离工程生成合并后的美术网格；正式工程未保存的内容不动。
+- xianyu66web 的新关卡尚待推送及确认最终提交；在取得前保留 main 全部玩法、三份规划、出生点、Boss/End 接线与 10 格摔落修复。
+- 隔离 Unity 6000.3.12f1 编译及美术生成成功：8977 格 → 13655 格。TA 增 800/改 44；ILorR 增 3162（5 处冲突保留 main/TA 已绘地表）；shurui 增 716（1 处冲突让位）。257 个笔刷编号、源图与图层参数保持不变，补入 TA 在 (-164.54,84.5,1) 的红雨区域及原参数。
+- 仅替换 GridArt 独立子树、Map 与所引用的生成网格/材质/meta；31093 份原非美术 YAML 文档保持原文（SceneRoots 仅追加红雨入口），两份外部规划完全不变。运行时代码、SDK、字体、Packages、ProjectSettings 均不动；新美术 GUID 依赖已解析。未运行完整通关、双端打包或真机/GPU视觉验收。
+- 最终隔离加载验证通过：13655 格无重复坐标、257 笔刷可解析，503 个渲染块的 Mesh、材质/源图与 UV1 防接缝通道有效，红雨根存在。修复重新加载暴露的 4 处空 Mesh 引用（含 main 原有空引用），按准确的生成资源名重新绑定并标脏保存，再重开场景验证引用持久化；未修改 Builder 或运行时代码。
 ## 2026-10-21 MRoom3 七件道具增量整合（已完成）
 
 - 当前整合分支 `codex/roy/merge-spotlight-mroom3-20261021`，基线 `main`/`origin/main` 的 `0a2c8ea4`。只接收队友 `b6a28915b8d63c83326ca06331ac158b0e23fab7` 在 MRoom3 `room_791e28e6` 新增的 5 个弹性植物与 2 个藤蔓，规划物体数由 4261 增至 4268。
