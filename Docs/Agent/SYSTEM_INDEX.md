@@ -1,5 +1,7 @@
 # 系统索引
 
+SDK 发布整合以策划 `ab757fc` 新 Gaming 为关卡标准：23房间补 main Boss/竖井后25区域、4194条规划，保留 TA 美术与死亡效果、main/另一程序修复，并接喷泉结局。TapTap SDK 专项20项通过，双端交付见[发布整合](../Developer/RELEASE_SDK_INTEGRATION_2026-10-20.md)。快速推送使用 `.agents/skills/taptap-fast-push/SKILL.md`，不把打包当作普通 push 必做步骤。下文28区域等为历史基线。
+
 正式全关已连到Gaming：4343物体、28区域、35收集品，R1/R2/R3/MRoom2/MRoom3/Boss均采用最终Scene无损回采；三份正式规划及AuthoredSections依赖成套。已有拖动导入适用于六份回采片段，旧R planning不能直接重建覆盖。版本0.2.1、Android com.miao1suki.shapeofcolor/code201，见[交接](../Developer/COMBINED_WORLD_0_2_1.md)。下文未合入R场景等为历史状态。
 
 2026-10-20再次抓取真实编辑窗口：修复Scene空刷新循环/全量缺失组件探测，关卡原生美术保留几何、连线/参数索引缓存及装配原点扫描。正式图装配更新间隔中位数102→12ms，细节19→4ms；Scene异常约270ms持续阻塞路径不再复现，美术平移约2–3ms。未改关卡/美术或运行时。统计边界与验证见[窗口性能](../Developer/EDITOR_WINDOW_PROFILING_2026-10-20.md)。

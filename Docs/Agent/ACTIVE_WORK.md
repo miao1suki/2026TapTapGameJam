@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-20 SDK / 最新策划图 / TA 效果 / 双端发布整合
+
+- 当前整合窗口按用户裁决采用策划 ab757fc 的23房间布局，只补main独有Boss/竖井/Start/结局接线；25区域4194条规划。策划原生物体位姿/占格/ID不变，TA GridArt与天气、双方代码修复保留，不把旧R摆放带回。
+- main SDK 0a89c2b已接入；TA Boss死亡RGB溶解 b374c99 合并。用户本地Token已复制到忽略目录，未输出内容且无Server Secret；不得提交Secrets/meta。包名保持com.miao1suki.shapeofcolor。
+- 隔离工程编译、地图保护与接线检查及20项SDK/隐私/构建约束EditMode通过。Windows非开发包和根目录7z已成功生成，Android构建与最终包审计进行中；不声称真机SDK验收。
+- 新增团队taptap-fast-push技能，校验通过；Windows构建自动产出直接可上传的形之彩.7z（不套目录/不含DontShip）。用户Pick、字体、共享库、个人设置和插件改动不纳入本次提交。
+
 ## 2026-10-20 TapTap SDK 合并的 Gaming 语义重做（静态验证完成，Unity 交由主编辑器）
 
 - 用户裁决：以 `origin/main` 的 `a7fa6ea` 为 Gaming 底稿，只保留分支 `507bfb7` 的 Timeline 注入、`PlayableDirector`、触发器/Collider 放置参数和地图组件覆盖；既有 Transform、位置、美术与地图修补全部采用 main，其余代码/文档冲突融合双方。

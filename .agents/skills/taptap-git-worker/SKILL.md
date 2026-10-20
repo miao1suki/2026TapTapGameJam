@@ -22,6 +22,8 @@ description: 在 2026TapTapGameJam 中克隆、更新、创建任务分支、提
 
 ## 开发与推送
 
+已完成改动的提交推送可配合 `../taptap-fast-push/SKILL.md`，复用同版本验证，避免每次普通推送重复启动 Unity 或打包；不改变本技能的分支权限。
+
 Unity固定6000.3.12f1，遵循模块及场景目录；保持.meta，场景独立制作。
 提交只显式暂存任务文件；`git diff --cached` 检查没有Library/Temp/Logs/Builds、凭据、旧玩法和他人的更改。
 运行相关验证；更新功能文档与自己的ACTIVE_WORK条目。`git commit -m "feat(scope): description"`。

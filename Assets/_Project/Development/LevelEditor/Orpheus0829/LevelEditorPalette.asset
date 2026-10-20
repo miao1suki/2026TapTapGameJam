@@ -3652,3 +3652,7 @@ MonoBehaviour:
     displayName: "\u55B7\u6CC9"
     prefab: {fileID: 683335498310773896, guid: 2586e8b209f95f844b8a9a741daedb29, type: 3}
     componentValueOverrides: []
+  - entryId: b831482f932b465786aaa3ae8570b422
+    displayName: "\u55B7\u6CC9\u7ED3\u5C40\u89E6\u53D1\u5668"
+    prefab: {fileID: 1201000861624961565, guid: 2adb4d14ff1ff0e4b8c1188599fa29d5, type: 3}
+    componentValueOverrides: []

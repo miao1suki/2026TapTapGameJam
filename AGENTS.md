@@ -1,7 +1,7 @@
 # 2026TapTap 协作入口
 
 Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
-比赛版本禁止非 TapTap SDK 的游戏运行时联网、局域网发现及遥测；当前未接入 TapTap SDK，游戏仍无网络权限，不得使用 Development/Profiler/Script Debugging 构建。唯一网页例外为用户明确要求的隐私政策：仅玩家主动点击时用系统浏览器打开固定 HTTPS 政策页，不使用 WebView 或自动请求。见 `Docs/Developer/OFFLINE_BUILD.md`；不能借此例外引入其他联网组件。
+比赛版本禁止非 TapTap SDK 的游戏运行时联网、局域网发现及遥测；当前已接入 TapTap SDK，仅 Android 在原生隐私同意后初始化，并只保留 INTERNET 与 ACCESS_NETWORK_STATE。不得使用 Development/Profiler/Script Debugging 构建。唯一网页例外为用户明确要求的隐私政策：仅玩家主动点击时用系统浏览器打开固定 HTTPS 政策页，不使用 WebView 或自动请求。见 `Docs/Developer/OFFLINE_BUILD.md`；不能借此例外引入其他联网组件。
 颜色钥匙与玩家资源最新约定：必须读取 `Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md`。同色首把只解锁场景颜色，第二把才解锁玩家能力；唯一玩家来源为 `Assets/_Project/Content/Player/Player.prefab`，禁止重建旧的两份玩家。
 唯一工作仓库：**https://github.com/miao1suki/2026TapTapGameJam.git**。
 本机主项目：`D:\.unity\2026TapTap`；其他成员可使用自己的克隆目录。
@@ -24,6 +24,7 @@ Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
 先验证当前目录是 Unity 项目且 `git remote get-url origin` 为上述仓库；不匹配立即停止写入和推送。
 不在旧项目实现功能，不向旧仓库推送，不复制整个旧 Assets/ProjectSettings。
 分支工作者读取 `.agents/skills/taptap-git-worker/SKILL.md`，只提交并推送自己的分支，由整合者合并。
+已完成任务的快速交付读取 `.agents/skills/taptap-fast-push/SKILL.md`；普通推送不默认重复全量构建，权限与必要验收不变。
 交付或更新音乐、音效资源的成员还须读取 `.agents/skills/taptap-audio-worker/SKILL.md`。
 任务结束更新相关功能文档和 `ACTIVE_WORK.md` 中自己的交接记录；不得覆盖其他人的记录。
 

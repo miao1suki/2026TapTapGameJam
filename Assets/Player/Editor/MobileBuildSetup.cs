@@ -116,5 +116,36 @@ public static class MobileBuildSetup
         File.WriteAllText(Path.Combine(outputRoot, target + "-report.txt"),
             $"{report.summary.result}\n{output}\nbytes={report.summary.totalSize}\nerrors={report.summary.totalErrors}\nwarnings={report.summary.totalWarnings}\nscenes={GameScene}\n");
         if (report.summary.result != BuildResult.Succeeded) throw new Exception("Build failed: " + target);
+        if (target == BuildTarget.StandaloneWindows64)
+            ArchiveWindows(Path.GetDirectoryName(output), outputRoot);
+    }
+
+    static void ArchiveWindows(string playerDirectory, string outputRoot)
+    {
+        string sevenZip = Environment.GetEnvironmentVariable("TAPTAP_7ZIP");
+        if (string.IsNullOrEmpty(sevenZip))
+            sevenZip = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "7-Zip", "7z.exe");
+        if (!File.Exists(sevenZip))
+            throw new FileNotFoundException("Windows player succeeded; install 7-Zip or set TAPTAP_7ZIP to create the upload archive.", sevenZip);
+        string archive = Path.GetFullPath(Path.Combine(outputRoot, "形之彩.7z"));
+        string pending = Path.GetFullPath(Path.Combine(outputRoot, "形之彩.pending.7z"));
+        if (File.Exists(pending))
+            throw new IOException("A pending archive already exists; inspect it before retrying: " + pending);
+        var start = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = sevenZip,
+            WorkingDirectory = Path.GetFullPath(playerDirectory),
+            Arguments = "a -t7z -mx=5 \"" + pending + "\" .\\* -xr!*DoNotShip* -xr!*DontShip*",
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        using (var process = System.Diagnostics.Process.Start(start))
+        {
+            process.WaitForExit();
+            if (process.ExitCode != 0) throw new Exception("7-Zip failed: " + process.ExitCode);
+        }
+        if (File.Exists(archive)) File.Replace(pending, archive, archive + ".previous");
+        else File.Move(pending, archive);
+        Debug.Log("Windows upload archive (player files directly at root): " + archive);
     }
 }
