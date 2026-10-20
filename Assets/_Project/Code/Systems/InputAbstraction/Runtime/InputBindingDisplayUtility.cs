@@ -37,6 +37,29 @@ namespace Project.InputAbstraction
                 deviceMode == InputDeviceMode.Gamepad
                     ? string.Empty
                     : "<Mouse>";
+            if (deviceMode != InputDeviceMode.Gamepad)
+            {
+                for (int index = 0;
+                     index < action.bindings.Count;
+                     index++)
+                {
+                    InputBinding binding = action.bindings[index];
+                    if (!binding.isComposite)
+                    {
+                        continue;
+                    }
+
+                    string composite = action.GetBindingDisplayString(
+                        index,
+                        InputBinding.DisplayStringOptions
+                            .DontUseShortDisplayNames);
+                    if (!string.IsNullOrWhiteSpace(composite))
+                    {
+                        return composite;
+                    }
+                }
+            }
+
             for (int pass = 0; pass < 2; pass++)
             {
                 string prefix = pass == 0

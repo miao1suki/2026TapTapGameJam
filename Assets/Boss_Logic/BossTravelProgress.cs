@@ -35,11 +35,18 @@ namespace Project.BossLogic
             public BossOrigin(Scene scene, Vector3 position) { Scene = scene; Position = position; }
         }
         private static readonly Dictionary<string, Progress> Scenes = new Dictionary<string, Progress>(StringComparer.Ordinal);
+        private static readonly Dictionary<int, HashSet<int>> LivingBosses = new Dictionary<int, HashSet<int>>();
         private static readonly Dictionary<int, BossOrigin> Origins = new Dictionary<int, BossOrigin>();
         public static event Action Changed;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void Initialize() { Scenes.Clear(); Origins.Clear(); Changed = null; }
+        private static void Initialize()
+        {
+            Scenes.Clear();
+            LivingBosses.Clear();
+            Origins.Clear();
+            Changed = null;
+        }
 
         public static void ResetRuntimeProgress()
         {
@@ -71,6 +78,14 @@ namespace Project.BossLogic
             if (!Scenes.TryGetValue(key, out Progress progress)) Scenes[key] = progress = new Progress();
             return progress;
         }
+
+        public static bool HasLivingBoss(Scene scene)
+        {
+            return scene.IsValid() &&
+                   LivingBosses.TryGetValue(scene.handle, out HashSet<int> living) &&
+                   living.Count > 0;
+        }
+
         public static BossTravelState GetState(Scene scene)
         {
             if (!scene.IsValid()) return default;
@@ -129,6 +144,7 @@ namespace Project.BossLogic
         internal static void Register(BossController boss)
         {
             if (boss == null || !boss.gameObject.scene.IsValid()) return;
+            if (!boss.IsDead && TrackLivingBoss(boss)) Changed?.Invoke();
             int id = boss.GetInstanceID();
             if (!Origins.TryGetValue(id, out BossOrigin origin))
                 Origins[id] = origin = new BossOrigin(boss.gameObject.scene, boss.transform.position);
@@ -146,6 +162,7 @@ namespace Project.BossLogic
             Progress value = For(boss.gameObject.scene);
             bool changed = !value.Entered;
             value.Entered = true;
+            changed |= TrackLivingBoss(boss);
             changed |= value.Fighting.Add(boss.GetInstanceID());
             if (changed) Changed?.Invoke();
         }
@@ -157,6 +174,7 @@ namespace Project.BossLogic
             Progress value = For(boss.gameObject.scene);
             bool changed = !value.Defeated || !value.Entered;
             value.Defeated = value.Entered = true;
+            changed |= UntrackLivingBoss(boss);
             changed |= value.Fighting.Remove(boss.GetInstanceID());
             if (changed) Changed?.Invoke();
         }
@@ -164,9 +182,30 @@ namespace Project.BossLogic
         internal static void Unregister(BossController boss)
         {
             if (boss == null) return;
-            if (For(boss.gameObject.scene).Fighting.Remove(boss.GetInstanceID())) Changed?.Invoke();
+            bool changed = UntrackLivingBoss(boss);
+            changed |= For(boss.gameObject.scene).Fighting.Remove(boss.GetInstanceID());
+            if (changed) Changed?.Invoke();
             // Keep the original room/position for a disabled and re-enabled
             // instance, rather than accidentally recording its chase location.
+        }
+
+        private static bool TrackLivingBoss(BossController boss)
+        {
+            if (boss == null || boss.IsDead || !boss.gameObject.scene.IsValid()) return false;
+            int handle = boss.gameObject.scene.handle;
+            if (!LivingBosses.TryGetValue(handle, out HashSet<int> living))
+                LivingBosses[handle] = living = new HashSet<int>();
+            return living.Add(boss.GetInstanceID());
+        }
+
+        private static bool UntrackLivingBoss(BossController boss)
+        {
+            if (boss == null || !boss.gameObject.scene.IsValid()) return false;
+            int handle = boss.gameObject.scene.handle;
+            if (!LivingBosses.TryGetValue(handle, out HashSet<int> living) ||
+                !living.Remove(boss.GetInstanceID())) return false;
+            if (living.Count == 0) LivingBosses.Remove(handle);
+            return true;
         }
     }
 }

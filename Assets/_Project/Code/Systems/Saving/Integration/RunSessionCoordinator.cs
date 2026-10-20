@@ -9,6 +9,7 @@ using Project.Items;
 using Project.Player;
 using Project.Rooms;
 using Project.Saving;
+using Project.StartMenu;
 using Project.StoryStart;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -99,6 +100,10 @@ namespace Project.Saving
                 HandleBeforeStartTransition;
             StartMenuFlowBridge.BeforeStartTransition +=
                 HandleBeforeStartTransition;
+            SavePanelController.DeleteCurrentSaveRequested -=
+                HandleDeleteCurrentSaveRequested;
+            SavePanelController.DeleteCurrentSaveRequested +=
+                HandleDeleteCurrentSaveRequested;
             StartCoroutine(ConnectToFlow());
         }
 
@@ -116,6 +121,8 @@ namespace Project.Saving
                 HandleRespawnBindingChanged;
             StartMenuFlowBridge.BeforeStartTransition -=
                 HandleBeforeStartTransition;
+            SavePanelController.DeleteCurrentSaveRequested -=
+                HandleDeleteCurrentSaveRequested;
             ReleaseNewRunEntryCover();
             if (flow != null)
             {
@@ -634,7 +641,23 @@ namespace Project.Saving
                    instance.CompleteCurrentRun();
         }
 
+        public static bool DeleteCurrentRunAndReturnToMenu()
+        {
+            return instance != null &&
+                   instance.DeleteCurrentRun();
+        }
+
         private bool CompleteCurrentRun()
+        {
+            return EndCurrentRun(true);
+        }
+
+        private bool DeleteCurrentRun()
+        {
+            return EndCurrentRun(false);
+        }
+
+        private bool EndCurrentRun(bool completedTrueEnding)
         {
             if (!runActive || completing)
             {
@@ -642,8 +665,11 @@ namespace Project.Saving
             }
 
             completing = true;
-            runData.trueEndingCompleted = true;
-            SaveNow();
+            if (completedTrueEnding &&
+                runData != null)
+            {
+                runData.trueEndingCompleted = true;
+            }
             RunSaveService.Delete();
             PlayerController player = FindPlayer();
             if (player != null)
@@ -663,6 +689,11 @@ namespace Project.Saving
             ReleaseNewRunEntryCover();
             GameFlowController.Instance?.ReturnToMainMenu();
             return true;
+        }
+
+        private bool HandleDeleteCurrentSaveRequested()
+        {
+            return DeleteCurrentRun();
         }
 
         private void ReleaseNewRunEntryCover()

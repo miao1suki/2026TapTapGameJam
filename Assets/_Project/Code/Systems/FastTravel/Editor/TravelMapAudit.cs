@@ -5,10 +5,11 @@ using System.Reflection;
 using Project.BlockFeatures;
 using Project.BossLogic;
 using Project.CameraModes;
+using Project.GameFlow;
 using Project.InputAbstraction;
-using Project.Items;
 using Project.Player;
 using Project.Rooms;
+using Project.WordNote;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -21,11 +22,13 @@ namespace Project.FastTravel.Editor
     public static class TravelMapAudit
     {
         private const string Flag = "TravelMapAudit.Running";
+        private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
         private static int checks, phase;
         private static BossController boss;
         private static double started, phaseAt;
         private static WorldTravelMap map;
         private static PlayerController player;
+        private static WordNoteUI notes;
         private static RespawnAnchorFeature destination, locked, bossPoint;
         private static RoomLifecycleManager rooms;
         private static Vector3 start;
@@ -54,8 +57,10 @@ namespace Project.FastTravel.Editor
                 if (phase == 0) { Setup(); phase = 1; phaseAt = EditorApplication.timeSinceStartup; return; }
                 if (phase == 1 && EditorApplication.timeSinceStartup - phaseAt > .5)
                 {
-                    Check(map.IsUnlocked && map.CanUseHere, "5% plus defeated Boss unlocks map outside its region");
-                    Check(map.TryOpen() && map.IsOpen && player.IsControlLocked && GameplayPresentationGate.IsSuppressed, "map opens through player/input lease");
+                    Check(map.IsUnlocked && map.CanUseHere, "map remains available outside Boss encounters");
+                    MobileGameplayControls.RequestMap();
+                    Check(map.IsOpen && player.IsControlLocked && GameplayPresentationGate.IsSuppressed,
+                        "mobile HUD request opens the map through the player/input lease");
                     var graphic = Object.FindFirstObjectByType<TravelMapGraphic>();
                     Check(graphic != null && graphic.CachedSpanCount == 18, "three 8x6 rooms are cached as 18 row runs, no object art");
                     Vector2 pivot = new Vector2(70f, -30f), before = graphic.Center + pivot / graphic.Scale;
@@ -133,7 +138,13 @@ namespace Project.FastTravel.Editor
                 {
                     Check(!map.IsOpen && !map.IsTravelling && !player.IsControlLocked && !GameplayPresentationGate.IsSuppressed,
                         "new Boss fight immediately cancels open map and returns all leases");
-                    boss.Kill(); Check(map.TryOpen() && map.TryTravel(destination), "travel can start again after fight ends");
+                    int before = notes.AliveCount;
+                    Check(!map.TryOpen(), "living Boss blocks the map after fight interruption");
+                    VerifyBossBlockedNote(before);
+                    boss.Kill();
+                    Check(!BossTravelProgress.HasLivingBoss(player.gameObject.scene) && map.CanUseHere,
+                        "map is available immediately after the living Boss dies");
+                    Check(map.TryOpen() && map.TryTravel(destination), "travel can start again after fight ends");
                     Time.timeScale = 0; phase = 5; phaseAt = EditorApplication.timeSinceStartup; return;
                 }
                 if (phase == 5 && EditorApplication.timeSinceStartup - phaseAt > .12)
@@ -223,23 +234,59 @@ namespace Project.FastTravel.Editor
             if (UnityEngine.EventSystems.EventSystem.current == null)
                 new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
             var settings = Resources.Load<TravelMapSettings>("UI/TravelMapSettings");
-            Check(settings != null && settings.Font != null && Mathf.Approximately(settings.RequiredRatio, .05f), "shipped settings use project font and 5% gate");
+            Check(settings != null && settings.Font != null, "shipped settings use the project font");
+            var notePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/UI/WordNote_UI.prefab");
+            notes = notePrefab != null ? Object.Instantiate(notePrefab).GetComponent<WordNoteUI>() : null;
+            Check(notes != null && notes.DefaultFont == settings.Font, "map prompt uses the existing WordNote_UI and Cubic font");
             map = player.GetComponent<WorldTravelMap>(); Check(map != null, "standard player auto-installs map without another prefab");
-            Check(!map.TryOpen(), "T map cannot open before unlock");
-            for (int i = 0; i < 10; i++)
-            {
-                var obj = new GameObject("Map collectible " + i, typeof(Rigidbody), typeof(CollectiblePickup)); obj.transform.position = new Vector3(3 + i * .05f, 3, 0);
-                if (i < 1) obj.GetComponent<CollectiblePickup>().RestoreCollectedState();
-            }
-            CollectibleProgressService.RefreshSceneCatalog(scene);
+            Check(map.IsUnlocked && map.CanUseHere, "map opens without collectible or Boss progression");
+            Check(map.TryOpen() && map.IsOpen, "map opens before any collectible or Boss state exists");
+            map.Close();
             destination = Point("destination", new Vector3(10.5f, 0, 0), true);
             locked = Point("locked", new Vector3(12.5f, 0, 0), false);
             bossPoint = Point("boss", new Vector3(18.5f, 0, 0), true); bossPoint.SetBossArenaRespawnPoint(true);
             BossTravelProgress.SetBossRegion(scene, "c");
             var bossObject = new GameObject("Boss flag fixture", typeof(BoxCollider)); bossObject.transform.position = new Vector3(18.5f, 2, 0);
             boss = bossObject.AddComponent<BossController>(); boss.ActivateHealthSystem();
-            Check(!map.TryOpen(), "active fight prohibits map"); boss.Kill();
+            Check(BossTravelProgress.HasLivingBoss(scene) && !map.CanUseHere,
+                "only the scene with a living Boss reports the restriction");
+            int before = notes.AliveCount;
+            Check(!map.TryOpen(), "living Boss prohibits map");
+            VerifyBossBlockedNote(before);
+            boss.Kill();
+            Check(!BossTravelProgress.HasLivingBoss(scene) && map.CanUseHere,
+                "Boss death restores map availability");
             Physics.SyncTransforms(); rooms.UpdatePlayerRegion(player);
+        }
+
+        private static void VerifyBossBlockedNote(int before)
+        {
+            Check(notes != null && notes.AliveCount == before + 1, "Boss restriction enqueues exactly one WordNote");
+            WordNoteHandle handle = notes.TotalQueue[notes.TotalQueue.Count - 1];
+            FieldInfo messageField = typeof(WordNoteHandle).GetField("message", PrivateInstance);
+            object message = messageField != null ? messageField.GetValue(handle) : null;
+            FieldInfo styleField = message?.GetType().GetField("Style", BindingFlags.Instance | BindingFlags.Public);
+            var style = styleField?.GetValue(message) as WordNoteStyle;
+            Check(handle.Content == "情况紧急，先逃命吧" && style != null &&
+                style.font != null && style.font.name == "Cubic_11 SDF" &&
+                style.position == WordNotePosition.BottomLeft &&
+                style.textAlignment == WordNoteTextAlignment.Left &&
+                style.fontColor == WordNoteColor.White &&
+                style.useOutline && style.outlineColor == WordNoteColor.Black &&
+                style.participateInStackLayout &&
+                style.displayMode == WordNoteDisplayMode.Timed &&
+                Mathf.Approximately(style.displayDuration, 1f) &&
+                style.enterAnimation == WordNoteAnimation.FadeMoveLeft &&
+                style.exitAnimation == WordNoteAnimation.FadeMoveRight &&
+                style.enterMotion.useFade && style.enterMotion.useHorizontalMove &&
+                style.enterMotion.horizontalDirection == WordNoteHorizontalDirection.Left &&
+                Mathf.Approximately(style.enterMotion.horizontalDistance, 140f) &&
+                Mathf.Approximately(style.enterMotion.duration, .5f) &&
+                style.exitMotion.useFade && style.exitMotion.useHorizontalMove &&
+                style.exitMotion.horizontalDirection == WordNoteHorizontalDirection.Right &&
+                Mathf.Approximately(style.exitMotion.horizontalDistance, 140f) &&
+                Mathf.Approximately(style.exitMotion.duration, .5f),
+                "Boss restriction uses the requested queued bottom-left WordNote motion");
         }
         private static RespawnAnchorFeature Point(string name, Vector3 position, bool active)
         {

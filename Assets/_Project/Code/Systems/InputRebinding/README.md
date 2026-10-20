@@ -405,6 +405,11 @@ PlayerPrefsInputBindingStorage
 `RuntimeSettingsPolicy.ApplyChangesToRuntime` 的预览开关控制；该策略继续用于旧的
 存档与预览业务。
 
+电脑端左上角常驻按键提示每 `0.1` 秒通过
+`InputBindingDisplayUtility` 读取当前运行时 `InputActionAsset`，同时检测
+`GameInput.ActiveDeviceMode`。因此保存改键、撤销/重做、恢复默认或切换键盘/手柄后，
+提示无需重进场景即可更新；手机端不显示该提示。
+
 注意：触发策略当前由 `InputActionInteractionPolicy` 使用独立 PlayerPrefs
 存储。如果后续将绑定存储替换为云存档、配置文件或平台账号存储，还需要
 同步迁移触发策略存储。

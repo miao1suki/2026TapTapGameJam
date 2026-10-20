@@ -366,6 +366,7 @@ namespace Project.GameFlow
             EnsureCollectionPresenter();
             EnsureSettingsLayout();
             EnsureSaveLayout();
+            savePanel?.ConfigureCurrentRunDeletion(true);
             BindCloseButtons();
             BindBusinessPanels();
             EnsureSectorGraphics();

@@ -1,3 +1,4 @@
+using System;
 using Project.InputAbstraction;
 using TMPro;
 using UnityEngine;
@@ -19,8 +20,15 @@ namespace Project.GameFlow
         private TextMeshProUGUI sprintLabel;
         private MobileButtonArtwork sprintArtwork;
         private Vector2 lastLayoutSize = new Vector2(-1, -1);
+        public static event Action MapRequested;
         public bool LayoutEditing { get; set; }
         public RectTransform Controls => controls;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetMapRequested() => MapRequested = null;
+
+        public static void RequestMap() => MapRequested?.Invoke();
+
         public void Configure(TMP_FontAsset value, GameUiRouter owner)
         {
             font = value;
@@ -52,6 +60,8 @@ namespace Project.GameFlow
             Action("重生", InputActionId.Respawn);
             var pause = CreateButton("暂停");
             pause.GetComponent<Button>().onClick.AddListener(TogglePause);
+            var map = CreateButton("地图");
+            map.GetComponent<Button>().onClick.AddListener(RequestMap);
             ApplySavedLayout();
         }
         private void Awake()
@@ -99,6 +109,7 @@ namespace Project.GameFlow
             Show("放左", carrying); Show("放右", carrying);
             Show("重生", player != null);
             Show("选色", alive && !carrying && !player.IsGreenHookActive);
+            Show("地图", player != null && !player.IsDead);
         }
         private void Show(string label, bool show)
         {
@@ -193,10 +204,12 @@ namespace Project.GameFlow
                 "放左" => new Vector2(-470, 200), "放右" => new Vector2(-470, 360),
                 "选色" => new Vector2(-160, 360), "重生" => new Vector2(245, -90),
                 "右手左" => new Vector2(-480, 520), "右手右" => new Vector2(-325, 520),
-                "暂停" => new Vector2(90, -90), _ => Vector2.zero
+                "暂停" => new Vector2(90, -90), "地图" => new Vector2(0, -90),
+                _ => Vector2.zero
             };
             if (label is "上" or "下" or "左" or "右" or "左跳跃") anchor = Vector2.zero;
             if (label is "暂停" or "重生") anchor = Vector2.up;
+            if (label == "地图") anchor = new Vector2(.5f, 1f);
         }
     }
 }

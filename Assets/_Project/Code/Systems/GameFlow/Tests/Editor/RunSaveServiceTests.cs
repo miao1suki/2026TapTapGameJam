@@ -1,7 +1,11 @@
 using System.IO;
 using NUnit.Framework;
+using Project.StartMenu;
 using Project.Saving;
+using TMPro;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Project.GameFlow.Tests
 {
@@ -96,6 +100,80 @@ namespace Project.GameFlow.Tests
                 Directory.GetFiles(
                     RunSaveService.SaveDirectory,
                     "run.json.invalid-*.json"));
+        }
+
+        [Test]
+        public void DeleteCurrentSaveButtonUsesExistingArtworkAndRaisesRequest()
+        {
+            Assert.IsTrue(
+                RunSaveService.Save(
+                    RunSaveService.CreateNew(
+                        "Assets/Test/Gaming.unity")));
+            GameObject root = new GameObject(
+                "Save Panel",
+                typeof(RectTransform));
+            root.SetActive(false);
+            var rootRect =
+                (RectTransform)root.transform;
+            rootRect.sizeDelta = new Vector2(830f, 360f);
+            SavePanelController panel =
+                root.AddComponent<SavePanelController>();
+            TMP_FontAsset font =
+                AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
+                    "Assets/Test字体/[可商用]Cubic‑11 俐方体 11 号/Cubic_11 SDF.asset");
+            Assert.IsNotNull(font);
+            var serialized = new SerializedObject(panel);
+            serialized.FindProperty("uiSdfFont")
+                .objectReferenceValue = font;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            panel.BuildStructure();
+            panel.ConfigureCurrentRunDeletion(true);
+            root.SetActive(true);
+            try
+            {
+                var buttonRect =
+                    (RectTransform)root.transform.Find(
+                        "Delete Current Save");
+                Assert.IsNotNull(buttonRect);
+                Assert.IsTrue(buttonRect.gameObject.activeSelf);
+                Button button =
+                    buttonRect.GetComponent<Button>();
+                Image background =
+                    button.targetGraphic as Image;
+                Assert.AreSame(
+                    GameUiArtwork.Load()?.settingButton,
+                    background?.sprite);
+                TextMeshProUGUI label =
+                    buttonRect.GetComponentInChildren<
+                        TextMeshProUGUI>(true);
+                Assert.AreEqual("删除当前存档", label.text);
+                Assert.AreSame(font, label.font);
+
+                int requests = 0;
+                System.Func<bool> request = () =>
+                {
+                    requests++;
+                    return true;
+                };
+                SavePanelController.DeleteCurrentSaveRequested +=
+                    request;
+                try
+                {
+                    button.onClick.Invoke();
+                }
+                finally
+                {
+                    SavePanelController.DeleteCurrentSaveRequested -=
+                        request;
+                }
+
+                Assert.AreEqual(1, requests);
+                Assert.IsFalse(button.interactable);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
     }
 }

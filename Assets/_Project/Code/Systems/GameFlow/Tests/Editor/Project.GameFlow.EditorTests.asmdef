@@ -9,6 +9,7 @@
     "Project.Saving.Runtime",
     "Project.Shared.Runtime",
     "Project.StartMenu.Runtime",
+    "Unity.TextMeshPro",
     "Unity.UGUI"
   ],
   "includePlatforms": [

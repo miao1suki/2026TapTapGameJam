@@ -1,5 +1,33 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-21 存档页删除当前存档与按键提示排版（已完成）
+
+- 当前分支 `codex/roy/playmode-material-sync-20261020`。用户明确授权在暂停轮盘存档页提供“删除当前存档”单一按钮；不恢复多槽位、选档或读档 UI。按钮位于提示文字下方居中，复用现有按钮切片资源并采用 Inspector 可配置红色主色，无确认弹窗和额外特效。
+- 点击通过 `SavePanelController` 的静态请求桥交给 `RunSessionCoordinator`：删除 `run.json`/临时/备份、重置本轮收集品、颜色钥匙与能力、Boss、重生点和临时状态，恢复玩家到本轮初始位置，再复用场景流程返回开始界面。成就、设置、按键映射和手机布局不删除。
+- 同时优化电脑端按键提示：键名加粗白色、动作名使用次级冷白、增加行距，仍限制安全区宽度 `1/6` 并自动换行。保留现有 Gaming、字体和 GridArt 未提交改动。
+- 完成：存档提示改为标题与较小号“已自动存档”两行；删除按钮使用现有 `settingButton` 切片、红色主色、Cubic 字体，按存档页实际宽高居中排布。按钮请求通过静态桥进入 `RunSessionCoordinator.DeleteCurrentRunAndReturnToMenu()`，主菜单复用同一存档控制器时不显示。
+- 验证：Unity 6000.3.12f1 静态编译 `Project.StartMenu.Runtime`、`Project.GameFlow.Runtime`、`Assembly-CSharp`、`Assembly-CSharp-Editor` 与 `Project.GameFlow.EditorTests` 均 0 error，仅既有 warning；新增按钮结构/资源/字体/请求断言并已编译。`git diff --check` 通过。未运行 PlayMode/EditMode，实际删除后玩家位置、暂停退出和开始界面返回需在 Unity 内复验。
+
+## 2026-10-21 电脑端当前按键提示（已完成）
+
+- 当前分支 `codex/roy/playmode-material-sync-20261020`。仅电脑端在 `WordNote_UI` 同一 Canvas 左上角显示当前可操作按键，字号 17；最大宽度不超过安全区宽度的六分之一，超长自动换行并限制高度。
+- 提示按玩家状态隐藏不可用操作，包含移动、跳跃、冲刺、交互、放下、选色/染色、重生、地图和暂停，跳过 UI 导航动作。每 `0.1` 秒重新读取当前运行时绑定并监听当前输入设备变化，改键后无需重进场景即可更新。手机端不创建提示。
+- 完成：`PlayerInputDriver` 自动挂载 `DesktopControlHintOverlay`；提示直接作为 `WordNote_UI` 子节点，使用 Cubic_11 SDF、17 号白字黑描边、条目单空格分隔和不可断开的组合键名。宽度按安全区 `1/6` 计算，高度限制在安全区内。
+- 验证：新增 WASD 组合绑定显示断言；Unity 6000.3.12f1 静态编译 `Project.InputAbstraction.Runtime`、`Assembly-CSharp` 与 `Assembly-CSharp-Editor` 均 0 error，仅既有 warning；`git diff --check` 通过。未运行 PlayMode/EditMode，实际 Game 视图换行、改键即时刷新和设备切换需在 Unity 内复验。
+
+## 2026-10-21 手机地图键并入触控 HUD（已完成）
+
+- 当前分支 `codex/roy/playmode-material-sync-20261020`。移除 `WorldTravelMap` 自己创建的电脑/手机通用顶部入口；电脑仅保留 T 键。手机“地图”键改由 `MobileGameplayControls` 创建，放到屏幕正上方中央，与暂停/重生等触控键共用 Cubic 字体、`ScreenSafeArea`、SDK 角落避让、触摸反馈、自定义布局保存和手机平台显隐。
+- 地图键只通过静态 UI 请求事件调用 `WorldTravelMap.TryOpen()`，不让 GameFlow 程序集反向引用传送模块；Boss 存活提示、已解锁目的地过滤和现有地图面板不变。保留工作树中 Gaming、字体和 GridArt 未提交改动。
+- 验证：Unity 6000.3.12f1 静态编译 `Project.GameFlow.Runtime`、替换新 GameFlow 引用的 `Assembly-CSharp`、`Assembly-CSharp-Editor` 与 `Project.GameFlow.EditorTests` 均 0 error，仅既有 warning；`git diff --check` 通过。未运行 Play Mode/EditMode，手机实际按钮触摸与布局拖拽需在 Unity 内复验。
+
+## 2026-10-21 传送地图改为仅受存活 Boss 限制（已完成）
+
+- 当前分支 `codex/roy/playmode-material-sync-20261020`。修改 `WorldTravelMap`、`BossTravelProgress`、传送设置 Inspector 与 FastTravel 审计；保留现有未提交 Gaming/字体/GridArt 美术改动。
+- 目标行为：传送地图不再检查收集比例、Boss 入场/击败或 Boss 房；当前 Scene 只要有存活 Boss 就拒绝打开，并用现有 `WordNote_UI` 在左下以白字黑描边、左侧淡入向右侧淡出、停留 1 秒且参与堆叠队列提示“情况紧急，先逃命吧”。无存活 Boss 时随时可打开；目的地仍只允许已激活的普通重生点。
+- 完成：`BossTravelProgress.HasLivingBoss(scene)` 按 Scene handle 跟踪启用且未死亡的 Boss；Boss 死亡、禁用或销毁立即解除。触控入口在 Boss 存活时仍可见以触发提示，已打开地图遇到 Boss 重生/激活会自动关闭并归还租约。
+- 验证：Unity 6000.3.12f1 使用项目 `Assembly-CSharp.rsp` 与替换新 Runtime 引用的 `Assembly-CSharp-Editor.rsp` 静态编译均 0 error（仅既有 obsolete/warning）；旧 5% 门槛字段与 FastTravel 引用检索为 0，`git diff --check` 通过。未运行 Play Mode/EditMode，实际 WordNote 动画和最终 Gaming 需在 Unity 内复验。
+
 ## 2026-10-20 最新策划图与本地连通空间功能整合
 
 - 最终TA更新317f9bb合入：额外50个纯美术渲染物及4个效果Prefab实例，未采用TA旧关卡。用户确认标准玩家摔死高度为唯一配置例外，由策划Scene覆盖0恢复10格；其余全部策划非美术文档和三份规划保持相同。新场景179项新GUID引用可解析、无新增悬空本地引用。

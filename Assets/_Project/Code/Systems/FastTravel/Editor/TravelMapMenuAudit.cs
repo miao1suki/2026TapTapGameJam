@@ -132,7 +132,7 @@ namespace Project.FastTravel.Editor
                     Check(sceneLoads == 0 && SceneManager.sceneCount == loadedScenes,
                         "both round trips use the same world without any scene loading");
                     // Reopening catches stale safety-handle epochs as well as a visually hidden stale panel.
-                    UnlockFixture();
+                    VerifyMapAvailable();
                     Check(map.TryOpen(), "map still opens after two menu handoffs");
                     map.Close();
                     CheckMapReleased("final explicit map close");
@@ -143,20 +143,15 @@ namespace Project.FastTravel.Editor
             catch (Exception exception) { Finish(false, exception.ToString()); }
         }
 
-        private static void UnlockFixture()
+        private static void VerifyMapAvailable()
         {
-            TravelMapSettings settings = Resources.Load<TravelMapSettings>("UI/TravelMapSettings");
-            Check(settings != null && settings.Font != null && Mathf.Approximately(settings.RequiredRatio, .05f),
-                "shipping travel settings retain their project font and 5% gate");
-            Set(map, "cachedRequiredRatio", settings.RequiredRatio);
-            Set(map, "cachedUnlocked", true);
-            Set(map, "unlockDirty", false);
-            Check(map.IsUnlocked && map.CanUseHere, "runtime-only unlock fixture can use map at actual Gaming spawn");
+            Check(map.IsUnlocked && map.CanUseHere,
+                "map is available at the actual Gaming spawn without a living Boss");
         }
 
         private static void OpenMapAndReturn()
         {
-            UnlockFixture();
+            VerifyMapAvailable();
             Check(map.TryOpen() && map.IsOpen, "actual travel map opens in formal Gaming");
             Check(player.Motor.isKinematic && player.IsControlLocked && player.IsInvulnerable &&
                 player.ControlLockDepth == 1 && Read<int>(player, "travelSafetyDepth") == 1,
@@ -231,7 +226,6 @@ namespace Project.FastTravel.Editor
         }
 
         private static T Read<T>(object target, string name) => (T)Field(target, name).GetValue(target);
-        private static void Set(object target, string name, object value) => Field(target, name).SetValue(target, value);
         private static FieldInfo Field(object target, string name) => target.GetType().GetField(name, PrivateInstance) ??
             throw new MissingFieldException(target.GetType().FullName, name);
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => sceneLoads++;

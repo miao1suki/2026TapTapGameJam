@@ -39,7 +39,7 @@ namespace Project.GameFlow.Tests
         public void BuiltHud_UsesTheSameDefaultsAsLayoutReset()
         {
             var hud = Build();
-            Assert.That(hud.Controls.childCount, Is.EqualTo(15));
+            Assert.That(hud.Controls.childCount, Is.EqualTo(16));
             foreach (RectTransform button in hud.Controls)
             {
                 MobileGameplayControls.GetDefaultLayout(button.name, out var anchor, out var position);
@@ -48,6 +48,24 @@ namespace Project.GameFlow.Tests
                 Assert.That(button.anchoredPosition, Is.EqualTo(position), button.name);
                 Assert.That(button.sizeDelta, Is.EqualTo(new Vector2(124, 124)), button.name);
             }
+        }
+
+        [Test]
+        public void MapButton_IsCenteredAtTheTopAndRequestsTheMap()
+        {
+            var hud = Build();
+            var map = (RectTransform)hud.Controls.Find("地图");
+            Assert.That(map, Is.Not.Null);
+            Assert.That(map.anchorMin, Is.EqualTo(new Vector2(.5f, 1f)));
+            Assert.That(map.anchorMax, Is.EqualTo(new Vector2(.5f, 1f)));
+            Assert.That(map.anchoredPosition, Is.EqualTo(new Vector2(0, -90)));
+
+            int requests = 0;
+            System.Action onMap = () => requests++;
+            MobileGameplayControls.MapRequested += onMap;
+            try { map.GetComponent<Button>().onClick.Invoke(); }
+            finally { MobileGameplayControls.MapRequested -= onMap; }
+            Assert.That(requests, Is.EqualTo(1));
         }
 
         [TestCase(1280, 720)]

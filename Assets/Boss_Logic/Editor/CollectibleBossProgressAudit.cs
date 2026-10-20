@@ -232,6 +232,8 @@ namespace Project.BossLogic.Editor
             bossObject.AddComponent<BoxCollider>();
             BossController boss = bossObject.AddComponent<BossController>();
             boss.Body.useGravity = false;
+            Check(BossTravelProgress.HasLivingBoss(scene) && !BossTravelProgress.HasLivingBoss(emptyBossScene),
+                "living Boss state is scoped to the owning scene");
             Check(BossTravelProgress.GetState(scene).BossRegionId == b.id, "Boss room captured from initial position");
             player.SetSprintInput(true);
             Check(boss != null && player.IsSprintLocked && !player.SprintRequested,
@@ -266,6 +268,7 @@ namespace Project.BossLogic.Editor
                 "entering Boss fight gates map and chase does not change excluded room");
             boss.Kill(); state = BossTravelProgress.GetState(scene);
             Check(state.HasEnteredBoss && state.HasDefeatedBoss && !state.IsBossFightActive, "real Boss death unlock state is retained");
+            Check(!BossTravelProgress.HasLivingBoss(scene), "real Boss death clears the scene living state");
             player.SetSprintInput(true);
             Check(!player.IsSprintLocked && player.SprintRequested,
                 "Boss death releases the player sprint lock");
@@ -279,6 +282,7 @@ namespace Project.BossLogic.Editor
             BossTravelProgress.SetDedicatedBossScene(emptyBossScene, false);
             bossObject.SetActive(false); bossObject.SetActive(true);
             Check(BossTravelProgress.GetState(scene).BossRegionId == b.id, "re-enabled chasing Boss does not redefine room");
+            Check(!BossTravelProgress.HasLivingBoss(scene), "re-enabled defeated Boss is not treated as alive");
         }
         private static void VerifyRoomScopedRespawn(PlayerController player, BossController boss,
             RespawnAnchorFeature oldBossPoint, TeleportAnchorFeature startAnchor)

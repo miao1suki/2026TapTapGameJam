@@ -20,7 +20,7 @@ Unity 6000.3.12f1，URP、新 Input System。模板项目的设置保留，未�
 正式关卡已增量整合策划分支 `codex/level/main-20261017-03` 的 `eb76949` 交付（17房间，房间12已有内容，新增13～17）：`Scenes/Playing/Gaming.unity`、同名 `Gaming.planning.json` 与 `Content/LevelMaps/正式关卡.json` 成套维护（均在 `Assets/_Project` 下）。保留main原有修复、房间9的平台去重及独立单格16格路线，不全量重建。Gaming 是正式打包游玩场景，不是临时测试关卡；后续变动在整合main继续。旧 Gaming 使用者须同步新版场景和两份存档，不可用策划原始旧文件覆盖本地修复；仅当前整合窗口合并 main，其他成员只拉取和推送任务分支。完整约定见 [正式关卡交接](Integration/FORMAL_LEVEL_DELIVERY.md)。
 当前唯一标准玩家为 `Assets/_Project/Content/Player/Player.prefab`（1×1、中心归零），各场景共用；旧RuntimePlayer/Player(暂定)已退役。同色第一把钥匙只解锁场景物体，第二把授予玩家颜色能力，两种状态独立、房间重置保留。接入必读 `Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md`。
 保留：启动与多场景生命周期、场景导航、基础玩家控制、输入与重绑定、双端 UI 预设、相机 Manager/跟随/模式转换、成就、Timeline 演出/战斗、表面瓦片工具、方块功能组件契约、不规则精灵切片。
-相机转换不再由 PlayerInputDriver 申请；Tab 的调色动作只控制染色轮盘，F 负责交互目标与搬运，Q/E 负责左右放下，左键负责已选颜色的染色，R / 手柄右摇杆对应“重生”，存活或死亡均可返回最近触碰的锚点并恢复相关房间/通道。门、按钮、已拾取钥匙及解锁进度保留。能源方块和万能方块共用 CarryableFeature；输入仍只通过 PlayerInputDriver 调用 PlayerController，Timeline 优先级不变。
+相机转换不再由 PlayerInputDriver 申请；Tab 的调色动作只控制染色轮盘，F 负责交互目标与搬运，Q/E 负责左右放下，左键负责已选颜色的染色，R / 手柄右摇杆对应“重生”，存活或死亡均可返回最近触碰的锚点并恢复相关房间/通道。电脑端由 `DesktopControlHintOverlay` 在 `WordNote_UI` 同一 Canvas 左上角显示当前可操作按键，宽度不超过安全区 `1/6`，按状态和运行时映射刷新；手机不显示。门、按钮、已拾取钥匙及解锁进度保留。能源方块和万能方块共用 CarryableFeature；输入仍只通过 PlayerInputDriver 调用 PlayerController，Timeline 优先级不变。
 
 门按钮默认一次按下保持，持续压住模式则在松开、R 或离区时重置，取消持续信号会关门但保留其他保持按钮进度。三色接触方块/可搬运方块禁止跨布置区域迁移，跨区放下被拒绝、越界回到作者位置；玩家离区取消携带并复原来源区。
 Timeline 现提供独立对话轨道：轨道不绑定对象，直接向常驻 `WordNote_UI` 申请使用权，与原 API 消息共用同一画布、位置队列、堆叠和动画系统。Timeline 只负责申请和释放本次消息，不接管玩家、颜色系统或房间状态。
@@ -40,6 +40,7 @@ Boss 从中心向玩家连接火线、水线、藤蔓线三套现有样式；三
 TapTap Unity 成就 SDK 固定使用官方 NPM 当前可用的 Core/Login/Achievement `4.10.9`，配置与运行桥位于成就系统 Runtime；后台 Client ID、Client Token 和成就 ID 未确认时配置关闭并保持安全待机。Android 只允许 TapTap 必需的 `INTERNET`、`ACCESS_NETWORK_STATE`，且原生隐私同意前不得启动 Unity/TapSDK。
 暂停界面的存档子页已封存为只读展示：不再提供手动保存、读取、删除或槽位列表，只显示 Cubic 字体“待开发内容，请关注后续消息”；旧页面脚本备份在 `Docs/SavePanelController.Legacy.cs.txt`。
 单轮运行存档已由 `RunSaveService` 落到 `Saves/run.json`，由 `RunSessionCoordinator` 在开始游戏时自动新建或恢复当前轮；读取已有存档会先将标准玩家的 RGB 故障死亡层拉满，再在故障遮屏期间恢复当前重生点、收集品、颜色钥匙/能力和 Boss 进度，并按玩家预制体的复活淡出时长揭示。读档不经过通用加载蒙屏或“加载中”流程。
+暂停轮盘存档页提供单一“删除当前存档”按钮：无确认和额外特效，直接调用 `RunSessionCoordinator` 删除本轮运行文件、重置本轮收集/颜色/Boss/重生点并将玩家恢复到本轮初始位置，然后返回开始界面；成就、设置、按键映射和触控布局不删除。
 例外：关卡编辑器开发目录中的 `TileLibrary/26TAPTAP.png` 是用户明确要求恢复的源图，只允许用于该开发工具，不扩散到正式美术目录。
 
 ## 目录约定

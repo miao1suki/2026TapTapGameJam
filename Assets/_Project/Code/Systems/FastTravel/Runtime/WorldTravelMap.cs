@@ -9,6 +9,7 @@ using Project.InputAbstraction;
 using Project.Items;
 using Project.Player;
 using Project.Rooms;
+using Project.WordNote;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -34,7 +35,7 @@ namespace Project.FastTravel
         private PlayerController player;
         private RoomLifecycleManager rooms;
         private TravelMapSettings settings;
-        private GameObject canvasRoot, panel, entry;
+        private GameObject canvasRoot, panel;
         private RectTransform safeArea, viewport, playerMarker;
         private TravelMapGraphic map;
         private TMP_Text summary, status;
@@ -46,8 +47,6 @@ namespace Project.FastTravel
         private Coroutine travel;
         private RespawnAnchorFeature travellingTo;
         private bool opened, dirty;
-        private bool unlockDirty = true, cachedUnlocked;
-        private float cachedRequiredRatio = -1f;
         private bool ownsCursor, previousCursorVisible;
         private string selectedRegion;
         private Rect lastSafeArea;
@@ -80,6 +79,7 @@ namespace Project.FastTravel
         {
             CollectibleProgressService.Changed += MarkDirty;
             BossTravelProgress.Changed += MarkDirty;
+            MobileGameplayControls.MapRequested += OpenFromMobile;
             BindFlow();
             MarkDirty();
         }
@@ -87,13 +87,14 @@ namespace Project.FastTravel
         {
             CollectibleProgressService.Changed -= MarkDirty;
             BossTravelProgress.Changed -= MarkDirty;
+            MobileGameplayControls.MapRequested -= OpenFromMobile;
             if (boundFlow != null) boundFlow.TransitionStarted -= OnTransitionStarted;
             boundFlow = null;
             Close();
             if (canvasRoot != null) Destroy(canvasRoot);
             canvasRoot = null;
         }
-        private void MarkDirty() { dirty = true; unlockDirty = true; }
+        private void MarkDirty() { dirty = true; }
         private void BindFlow()
         {
             var flow = GameFlowController.Instance;
@@ -111,29 +112,20 @@ namespace Project.FastTravel
             var flow = GameFlowController.Instance;
             return flow == null || (!flow.IsTransitioning && flow.ActiveSceneId == GameFlowSceneId.Gaming);
         }
-        public bool IsUnlocked
-        {
-            get
-            {
-                float required = settings != null ? settings.RequiredRatio : .05f;
-                if (!unlockDirty && cachedRequiredRatio == required) return cachedUnlocked;
-                BossTravelState boss = BossTravelProgress.GetState(gameObject.scene);
-                var progress = CollectibleProgressService.GetWorldProgress();
-                cachedUnlocked = boss.HasEnteredBoss && boss.HasDefeatedBoss && progress.MeetsRatio(required);
-                cachedRequiredRatio = required; unlockDirty = false;
-                return cachedUnlocked;
-            }
-        }
-        public bool CanUseHere
+        public bool IsUnlocked => true;
+
+        private bool CanOpenFromHere
         {
             get
             {
                 rooms = rooms != null ? rooms : RoomLifecycleManager.ForScene(gameObject.scene);
-                BossTravelState boss = BossTravelProgress.GetState(gameObject.scene);
-                if (player == null || !player.isActiveAndEnabled || !IsUnlocked || boss.IsBossFightActive || rooms == null || BossTravelProgress.IsBossScene(gameObject.scene)) return false;
-                string current = rooms.FindRegion(player.transform.position);
-                return !string.IsNullOrEmpty(current) && current != boss.BossRegionId;
+                return player != null && player.isActiveAndEnabled && rooms != null;
             }
+        }
+
+        public bool CanUseHere
+        {
+            get => CanOpenFromHere && !BossTravelProgress.HasLivingBoss(gameObject.scene);
         }
         private void Update()
         {
@@ -151,11 +143,6 @@ namespace Project.FastTravel
                 GameInput.ConsumeActionThisFrame(InputActionId.Pause);
                 Close();
             }
-            // A map entry also makes the feature reachable on touch devices.
-            bool entryVisible = normal && !opened && travel == null && !player.IsControlLocked &&
-                !GameplayPresentationGate.IsSuppressed && CanUseHere;
-            if (entryVisible && canvasRoot == null) BuildUi();
-            if (entry != null && entry.activeSelf != entryVisible) entry.SetActive(entryVisible);
             if (canvasRoot != null && lastSafeArea != Screen.safeArea) ApplySafeArea();
             if (opened)
             {
@@ -168,18 +155,73 @@ namespace Project.FastTravel
         {
             BindFlow();
             if (opened || travel != null || player == null || !player.isActiveAndEnabled || player.IsDead || player.IsControlLocked ||
-                !IsGameplay() || Time.timeScale <= 0f || GameplayPresentationGate.IsSuppressed || !CanUseHere ||
+                !IsGameplay() || Time.timeScale <= 0f || GameplayPresentationGate.IsSuppressed || !CanOpenFromHere ||
                 settings == null || settings.Font == null) return false;
+            if (BossTravelProgress.HasLivingBoss(gameObject.scene))
+            {
+                ShowBossBlockedNote();
+                return false;
+            }
             BuildUi();
             opened = true;
             playerLock = player.AcquireTravelSafetyLock(this);
             // Only interaction is suppressed; visuals/world continue and no global timescale is changed.
             presentationLock = GameplayPresentationGate.Suppress();
-            panel.SetActive(true); entry.SetActive(false);
+            panel.SetActive(true);
             ApplySafeArea(); Canvas.ForceUpdateCanvases();
             BuildMapContent();
             previousCursorVisible = Cursor.visible; ownsCursor = true; DesktopCursorPolicy.Apply(true);
             return true;
+        }
+
+        private void OpenFromMobile()
+        {
+            if (!opened) TryOpen();
+        }
+
+        private void ShowBossBlockedNote()
+        {
+            WordNoteUI notes = WordNoteUI.Instance;
+            if (notes == null)
+            {
+                Debug.LogWarning("[WorldTravelMap] Boss 存活时无法打开地图，但 WordNote_UI 未就绪。");
+                return;
+            }
+
+            var style = new WordNoteStyle
+            {
+                font = settings.Font,
+                fontSize = 32f,
+                richText = true,
+                fontColor = WordNoteColor.White,
+                useOutline = true,
+                outlineColor = WordNoteColor.Black,
+                textAlignment = WordNoteTextAlignment.Left,
+                position = WordNotePosition.BottomLeft,
+                participateInStackLayout = true,
+                displayMode = WordNoteDisplayMode.Timed,
+                displayDuration = 1f,
+                useEnterAnimation = true,
+                enterAnimation = WordNoteAnimation.FadeMoveLeft,
+                enterMotion = HorizontalFadeMotion(WordNoteHorizontalDirection.Left),
+                useExitAnimation = true,
+                exitAnimation = WordNoteAnimation.FadeMoveRight,
+                exitMotion = HorizontalFadeMotion(WordNoteHorizontalDirection.Right)
+            };
+            notes.Show("情况紧急，先逃命吧", style);
+        }
+
+        private static WordNoteMotionSettings HorizontalFadeMotion(WordNoteHorizontalDirection direction)
+        {
+            return new WordNoteMotionSettings
+            {
+                useCombinedChannels = true,
+                useFade = true,
+                useHorizontalMove = true,
+                horizontalDirection = direction,
+                horizontalDistance = 140f,
+                duration = .5f
+            };
         }
         public void Close()
         {
@@ -399,15 +441,6 @@ namespace Project.FastTravel
             var scaler = canvasRoot.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1600, 900); scaler.matchWidthOrHeight = .5f;
             safeArea = Rect("安全区域", canvasRoot.transform); Stretch(safeArea);
-            entry = Button("地图入口", safeArea, "地图 T", () => TryOpen()).gameObject;
-            if (GameInput.PlatformMode == InputPlatformMode.Mobile) entry.GetComponentInChildren<TMP_Text>().text = "地图";
-            var entryRect = (RectTransform)entry.transform; entryRect.anchorMin = entryRect.anchorMax = new Vector2(.5f, 1f); entryRect.anchoredPosition = new Vector2(0f, -40f); entryRect.sizeDelta = new Vector2(120, 44);
-            if (GameInput.PlatformMode == InputPlatformMode.Mobile)
-            {
-                entryRect.anchoredPosition = new Vector2(0f, -84f);
-                entryRect.sizeDelta = new Vector2(148, 100);
-                entry.GetComponentInChildren<TMP_Text>().fontSize = 30;
-            }
             panel = Rect("地图面板", safeArea).gameObject; Stretch((RectTransform)panel.transform);
             panel.AddComponent<Image>().color = new Color(.035f, .055f, .075f, .97f);
             summary = Text("标题", panel.transform, "世界地图", 26, TextAlignmentOptions.Left);

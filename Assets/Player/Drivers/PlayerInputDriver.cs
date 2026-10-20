@@ -21,6 +21,7 @@ namespace Project.Player
 
         private PlayerController player;
         private PlayerColorWheel colorWheel;
+        private DesktopControlHintOverlay controlHints;
         private WordNoteStyle carryHintStyle;
         private WordNoteStyle bottomFeedbackStyle;
         private WordNoteStyle respawnHintStyle;
@@ -38,12 +39,14 @@ namespace Project.Player
         {
             player = GetComponent<PlayerController>();
             colorWheel = GetComponent<PlayerColorWheel>();
+            EnsureControlHints();
         }
 
         private void OnEnable()
         {
             player = GetComponent<PlayerController>();
             colorWheel = GetComponent<PlayerColorWheel>();
+            EnsureControlHints();
             BindCarryEvents();
             BindColorWheelEvents();
         }
@@ -59,6 +62,16 @@ namespace Project.Player
                 HideCarryHint();
                 HideRespawnHint();
             }
+        }
+
+        private void EnsureControlHints()
+        {
+            if (player == null) return;
+            if (controlHints == null)
+                controlHints = GetComponent<DesktopControlHintOverlay>();
+            if (controlHints == null)
+                controlHints = gameObject.AddComponent<DesktopControlHintOverlay>();
+            controlHints.Configure(player, this, colorWheel);
         }
 
         private void Update()

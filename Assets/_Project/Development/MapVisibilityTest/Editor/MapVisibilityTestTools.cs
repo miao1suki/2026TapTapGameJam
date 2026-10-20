@@ -75,10 +75,6 @@ public static class MapVisibilityTestTools
             if (!player || player.gameObject.scene.path != ScenePath) continue;
             var map = player.GetComponent<WorldTravelMap>();
             if (!map) continue;
-            var settings = Resources.Load<TravelMapSettings>("UI/TravelMapSettings");
-            Field(typeof(WorldTravelMap), "cachedRequiredRatio").SetValue(map, settings.RequiredRatio);
-            Field(typeof(WorldTravelMap), "cachedUnlocked").SetValue(map, true);
-            Field(typeof(WorldTravelMap), "unlockDirty").SetValue(map, false);
             if (!opened && map.TryOpen()) opened = true;
             break;
         }

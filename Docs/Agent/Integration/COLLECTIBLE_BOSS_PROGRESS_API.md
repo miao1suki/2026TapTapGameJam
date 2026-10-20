@@ -32,22 +32,22 @@ CollectibleProgressService.Changed += RefreshMap;
 
 结局在`BossDefeatTimelinePresenter`切换`player_thinking`前读取真实普通收集进度：`>=10%`成功→End，其余→Start。未配置/总数为0不会默认成功。成功演出的六份临时画板明确不计数。Boss吸收六钥匙仍由既有Boss死亡演出负责，不把它们当普通成就收集品。
 
-## 地图解锁状态
+## 地图可用限制
 
 ```csharp
 BossTravelState boss = BossTravelProgress.GetState(scene);
 // HasEnteredBoss / IsBossFightActive / HasDefeatedBoss / BossRegionId
-bool prohibited = BossTravelProgress.IsBossScene(scene);
+bool prohibited = BossTravelProgress.HasLivingBoss(scene);
 BossTravelProgress.Changed += RefreshMap;
 // 明确作者配置时可覆写排除房间；Boss追逐不能调用此接口：
 BossTravelProgress.SetBossRegion(scene, regionId);
-// 专用Boss场景可明确标记；普通多房间世界不能因为放了Boss而整体禁用地图：
+// 其他系统需要识别专用Boss场景时可明确标记；传送地图不再使用该分类：
 BossTravelProgress.SetDedicatedBossScene(scene, true);
 ```
 
-BossController启用时记录第一次位置，血条/受伤系统激活进入战斗，真实EnterDeath记录击败；禁用不是击败。GetState的进入/战斗/击败标志是全会话共享，回Gaming仍可见；BossRegionId仅为查询Scene的本地排除区，不将另一个Scene同名房间误排除。Boss房间从第一次位置解析，追逐或R复活不会把沿途房间变成Boss房。传送地图使用收集>=5%、已进入且已击败，且不在战斗/Boss Scene/该Boss房内；目的地仍须由地图排除Boss房。
+BossController启用时记录第一次位置和当前 Scene 的存活状态，血条/受伤系统激活进入战斗，真实EnterDeath记录击败；禁用不是击败。`HasLivingBoss(scene)`只在指定 Scene 仍有启用且未死亡的Boss时返回true；死亡或禁用会立即移除，不能把另一个已加载 Scene 的 Boss 状态串过来。GetState的进入/战斗/击败标志仍是全会话共享，供Boss入口、结局和存档使用；BossRegionId仅为查询Scene的本地排除区。传送地图不再检查收集比例、进入/击败进度或Boss房，只在当前Scene有存活Boss时拦截；目的地仍只允许已激活的普通重生点，Boss重生点不列入。
 
-`IsBossScene`仅在场景名为`Boss`、被明确`SetDedicatedBossScene`标记，或区域管理器全部有效房间都是该Boss房间时为true。多房间Gaming放Boss只排除所在房间，不能禁止其他普通房间。
+`IsBossScene`仅在场景名为`Boss`、被明确`SetDedicatedBossScene`标记，或区域管理器全部有效房间都是该Boss房间时为true，供仍需要该分类的系统查询。传送地图不再据此禁开，也不按`BossRegionId`禁用打开入口；它只检查当前Scene的`HasLivingBoss`。
 
 当前开发资产`Assets/_Project/Scenes/Boss.unity`配套`Boss.planning.json`，单房间`room_0f1f793f`，入场触发`box_aa7a24dc`（局部17,39，Boss_appear），End目标`box_1ba29225`（局部309,39）。最终Boss与所有迁移关卡统一合入正式Gaming，不引入新的跨场景加载架构。`player_thinking`的Start/End仅允许当前玩家同场景锚点；独立Boss开发测试无Start时明确警告并正常揭幕，不切换场景。统计服务的世界/房间查询保留，但不意味着自动迁移场景。
 

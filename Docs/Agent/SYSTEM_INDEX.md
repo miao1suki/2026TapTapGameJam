@@ -2,6 +2,10 @@
 
 2026-10-20最新整合：Gaming关卡与编辑存档采用xianyu66web ac01381；美术采用TA317f9bb。新增连通空间可见模式、细粒度地图滚轮、暂停切片纠正及双端退役测试HUD；用户确认摔死高度10格。双端0.2.1包成功生成，真机SDK初始化1001此前已修复，最新账号服务状态仍待后续真机确认。详见FORMAL_LEVEL_DELIVERY与ACTIVE_WORK顶部。
 
+2026-10-21输入HUD：电脑端在`WordNote_UI`同一Canvas左上角显示17号当前按键提示，宽度不超过安全区`1/6`，按状态和运行时绑定每`0.1`秒刷新；手机端不创建。手机地图键属于`MobileGameplayControls`，默认安全区正上方中央，电脑不显示地图按钮。
+
+2026-10-21暂停存档页：提示文字下方居中提供红色“删除当前存档”。点击通过`SavePanelController`静态请求桥进入`RunSessionCoordinator`统一清档，删除单轮文件、重置本轮进度并将玩家恢复起点后返回开始界面；成就、设置、按键映射和触控布局不受影响。详见[当前存档删除](../Developer/PAUSE_SAVE_DELETE_2026-10-21.md)。
+
 美术工作台新增“装配图”：只读查看全部房间/通道精确轮廓与名称，单击选择，双击或“进入房间绘制”定位；返回保留绘图视角，不受背景遮挡、不编辑房间。见[导航说明](../Developer/GRID_ART_NAVIGATION.md)。
 
 2026-10-20收集品初始化修复：新轮两阶段重置防旧记录回填，冷物品保留初始缩放，静默读档保留暂缺作者ID，收集品受隐藏块遮挡。57项隔离物理专项及最新main正式Gaming拾取/自动存档/离房验证通过；同批包含此前手机曲柄、安全区、地图、常驻重生与默认跑修复。见[交付说明](../Developer/COLLECTIBLE_INITIALIZATION_FIX_2026-10-20.md)。SDK网络签名错误仍待真机日志。
@@ -65,7 +69,7 @@ Boss 死亡表现：`BossAnimationDriver.PlayDeathAnimationNow()` 在共享死�
 
 美术工作台N键开关、自动定位真实房间，墙和正式2D道具作为默认35%透明的只读参考，可隐藏/调透明度；远景平移缩放仅变换和裁剪保留批次。雨/萤火按完整区域框绘并在工作台调参，独立Scene美术根、非planning物体。新萤火可见面默认-0.25格，光点/光晕同层，普通透明道具前显示、不透明墙仍遮挡。见[定位操作](../Developer/GRID_ART_NAVIGATION.md)、[关卡参照](../Developer/GRID_ART_LEVEL_REFERENCE.md)、[区域效果](../Developer/GRID_ART_REGION_EFFECTS.md)；效果须显式保存Scene，协作仍交Scene、同名planning、美术Map、素材及meta。
 
-收集品与 Boss 共用稳定作者 ID 的会话进度：5%入场，10%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。击败Boss且达到5%开放T/触控地图，显示房间/重生点/收集剩余，Boss房禁用；安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与工作台90°原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。协作仍须Scene、同名planning、meta与新增依赖成套交付。
+收集品与 Boss 共用稳定作者 ID 的会话进度：5%入场，10%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。T/触控地图随时可开，只有当前Scene存在存活Boss时用WordNote提示并拒绝；目的地只允许已激活普通重生点。安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与工作台90°原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。协作仍须Scene、同名planning、meta与新增依赖成套交付。
 成就目录当前为 `14` 条，`1001–1014` 已逐条接到真实玩法事件：死亡原因路由负责 `1001–1004、1011–1014`，`GameplayAchievementRouter` 负责颜色成功、5%/10% 收集、低收集回第一关、假结局和真结局。`1009/1010` 使用整数数量阈值；真假结局成就在分支确定时立即结算，不等待黑屏或菜单切换。完整映射见[成就逐条接线](Integration/ACHIEVEMENT_HOOKS.md)。TapTap Unity 成就 SDK 固定 `4.10.9`，由配置资产控制初始化与平台 ID 待确认状态，接入见 [TapTap 成就 SDK](Integration/TAPTAP_ACHIEVEMENT_SDK_API.md)。
 成就 Toast 使用最高 Sorting Layer 与 `sortingOrder=32767` 的独立 ScreenSpaceOverlay Canvas，位于所有黑幕和常规 UI 之上；Toast 本体保持左下角固定尺寸，Cubic 字体和原入退场动画不变。
 独立 R3：`Assets/Scenes/R3/R3.unity` 及同名 planning／设计来源，551墙格、59水格、135岩浆格，四固定绿根、两完整藤蔓、两个保持按钮同门。场景三色启用、玩家仅蓝能力，Z96 试玩出生；四格平台从第97行升至88行，红蓝块／曲柄跟随，成功搬起红蓝后脱离、房间重置恢复挂载。可选 `PlatformMount` 与 `platformMountId` 持久化支持；不改 R1/R2、Gaming 或构建列表。见 [R3说明](../Developer/R3_LEVEL.md) 与 [机关API](Integration/MECHANISM_SIGNAL_API.md#可选平台附着物)。

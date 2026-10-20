@@ -44,6 +44,28 @@ namespace Project.InputAbstraction.Tests
             Assert.That(InputActionId.PointerPrimary.ToString(), Is.EqualTo("PointerPrimary"));
         }
 
+        [Test]
+        public void MovementBindingDisplay_UsesTheKeyboardComposite()
+        {
+            InputService.EnsureInstance();
+            var keyboard = new FakeInputSource
+            {
+                DeviceMode = InputDeviceMode.KeyboardMouse,
+            };
+            GameInput.UseExternalSource(keyboard);
+            try
+            {
+                Assert.That(
+                    InputBindingDisplayUtility.GetPrimaryDisplayString(
+                        InputActionId.Move),
+                    Is.EqualTo("WASD"));
+            }
+            finally
+            {
+                GameInput.ClearExternalSource(keyboard);
+            }
+        }
+
         [TestCase(RuntimePlatform.WindowsPlayer, InputPlatformMode.Desktop)]
         [TestCase(RuntimePlatform.OSXPlayer, InputPlatformMode.Desktop)]
         [TestCase(RuntimePlatform.Android, InputPlatformMode.Mobile)]
