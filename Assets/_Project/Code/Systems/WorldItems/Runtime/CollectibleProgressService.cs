@@ -417,8 +417,9 @@ namespace Project.Items
         {
             if (destination == null || !scene.IsValid()) return;
             EnsureScene(scene);
-            foreach (Entry entry in CatalogFor(scene).Entries.Values)
-                if (entry.Collected && !string.IsNullOrEmpty(entry.StableId)) destination.Add(entry.StableId);
+            // Keep restored identities even if this scene revision does not
+            // currently instantiate them. Saving must not silently erase them.
+            foreach (string id in CatalogFor(scene).CollectedIds) destination.Add(id);
         }
 
         /// <summary>Silent, idempotent restore hook; caller owns file I/O and schema.</summary>
@@ -449,23 +450,12 @@ namespace Project.Items
                 return;
             }
 
-            Catalogs.Remove(SceneKey(scene));
-            foreach (GameObject root in scene.GetRootGameObjects())
-            {
-                foreach (CollectiblePickup item in
-                         root.GetComponentsInChildren<
-                             CollectiblePickup>(true))
-                {
-                    item.ResetPersistentCollectionForNewRun();
-                }
-            }
-            RefreshSceneCatalog(scene);
-            NotifyChanged();
+            ResetProgress(new List<Scene> { scene }, false);
         }
 
         public static void ResetAllSessionProgress()
         {
-            Catalogs.Clear();
+            var scenes = new List<Scene>();
             for (int sceneIndex = 0;
                  sceneIndex < SceneManager.sceneCount;
                  sceneIndex++)
@@ -477,25 +467,33 @@ namespace Project.Items
                     continue;
                 }
 
-                foreach (GameObject root in
-                         scene.GetRootGameObjects())
-                {
-                    foreach (CollectiblePickup item in
-                             root.GetComponentsInChildren<
-                                 CollectiblePickup>(true))
-                    {
-                        item.ResetPersistentCollectionForNewRun();
-                    }
-                }
+                scenes.Add(scene);
             }
+            ResetProgress(scenes, true);
+        }
 
-            for (int sceneIndex = 0;
-                 sceneIndex < SceneManager.sceneCount;
-                 sceneIndex++)
+        private static void ResetProgress(List<Scene> scenes, bool allScenes)
+        {
+            var items = new List<CollectiblePickup>();
+            notificationSuppression++;
+            try
             {
-                RefreshSceneCatalog(
-                    SceneManager.GetSceneAt(sceneIndex));
+                foreach (Scene scene in scenes)
+                    foreach (GameObject root in scene.GetRootGameObjects())
+                        foreach (var item in root.GetComponentsInChildren<CollectiblePickup>(true))
+                            if (!item.ExcludedFromProgress) items.Add(item);
+
+                // Clear object state before clearing catalogs or activating any
+                // root. Otherwise the first OnEnable/UI query scans other items
+                // still marked collected and resurrects the previous run's IDs.
+                foreach (var item in items) item.PreparePersistentCollectionForNewRun();
+                if (allScenes) Catalogs.Clear();
+                else foreach (Scene scene in scenes) Catalogs.Remove(SceneKey(scene));
+                foreach (var item in items)
+                    if (!item.gameObject.activeSelf) item.gameObject.SetActive(true);
+                foreach (Scene scene in scenes) RefreshSceneCatalog(scene);
             }
+            finally { notificationSuppression--; }
             NotifyChanged();
         }
     }

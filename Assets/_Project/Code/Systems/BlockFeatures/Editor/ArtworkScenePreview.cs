@@ -409,7 +409,8 @@ namespace Project.BlockFeatures.Editor
                     else
                     {
                         float width = art.Cells.x * cell, height = art.Cells.y * cell;
-                        float bottom = owner.GetComponent<ColorKeyPickup>() != null || owner.GetComponent<Project.Items.CollectiblePickup>() != null
+                        bool collectible = owner.GetComponent<Project.Items.CollectiblePickup>() != null;
+                        float bottom = owner.GetComponent<ColorKeyPickup>() != null || collectible
                             ? bounds.center.y - height * .5f : bounds.min.y;
                         var door = owner.GetComponent<DoorController>();
                         if (door != null && door.IsHorizontal)
@@ -418,7 +419,7 @@ namespace Project.BlockFeatures.Editor
                             AddQuad(entry, art, pivot.x - width * .5f, pivot.y, width, height,
                                 area.min.z - .015f * cell, art.UV, pivot, 90);
                         }
-                        else AddQuad(entry, art, area.center.x - width * .5f, bottom, width, height, area.min.z - .015f * cell, art.UV,
+                        else AddQuad(entry, art, area.center.x - width * .5f, bottom, width, height, collectible ? area.center.z : area.min.z - .015f * cell, art.UV,
                                 new Vector2(area.center.x, area.center.y));
                     }
                 }

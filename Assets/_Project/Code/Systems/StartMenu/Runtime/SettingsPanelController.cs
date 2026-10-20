@@ -384,6 +384,7 @@ namespace Project.StartMenu
             rect.anchoredPosition = new Vector2(-26f, -26f);
             rect.sizeDelta = new Vector2(48f, 48f);
             rect.localScale = Vector3.one;
+            Project.InputAbstraction.MobileOverlaySafeArea.ProtectCloseButton(backButton);
 
             Image image = backButton.GetComponent<Image>();
             Sprite closeSprite =

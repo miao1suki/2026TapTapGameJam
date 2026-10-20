@@ -18,6 +18,7 @@ namespace Project.GameFlow
         private VirtualInputButton leftJump, sprint;
         private TextMeshProUGUI sprintLabel;
         private MobileButtonArtwork sprintArtwork;
+        private Vector2 lastLayoutSize = new Vector2(-1, -1);
         public bool LayoutEditing { get; set; }
         public RectTransform Controls => controls;
         public void Configure(TMP_FontAsset value, GameUiRouter owner)
@@ -39,7 +40,7 @@ namespace Project.GameFlow
             leftJump = controls.Find("左跳跃").GetComponent<VirtualInputButton>(); leftJump.ConfigureRepeatJump();
             Action("跳跃", InputActionId.Jump);
             Action("跑", InputActionId.Sprint);
-            sprint = controls.Find("跑").GetComponent<VirtualInputButton>(); sprint.ConfigureToggle();
+            sprint = controls.Find("跑").GetComponent<VirtualInputButton>(); sprint.ConfigureToggle(true);
             sprintLabel = sprint.GetComponentInChildren<TextMeshProUGUI>();
             sprintArtwork = sprint.GetComponent<MobileButtonArtwork>();
             Action("交互", InputActionId.Interact);
@@ -76,6 +77,7 @@ namespace Project.GameFlow
         }
         private void Update()
         {
+            RefreshLayoutBounds();
             RefreshVisibility();
             if (controls == null || !controls.gameObject.activeInHierarchy || LayoutEditing) return;
             var player = MobileGameplayContext.Current;
@@ -86,15 +88,16 @@ namespace Project.GameFlow
             Show("右手左", rightDirections); Show("右手右", rightDirections);
             if (sprintLabel != null)
             {
-                string caption = sprint.ToggleOn ? "奔跑" : "行走";
+                string caption = sprint.ToggleOn ? "行走" : "行走中";
                 if (sprintLabel.text != caption) sprintLabel.text = caption;
             }
-            if (sprintArtwork != null) sprintArtwork.SetRunning(sprint.ToggleOn);
+            // The artwork is the WALK action, not the current movement mode.
+            if (sprintArtwork != null) sprintArtwork.SetRunning(false);
             Show("上", alive && (player.IsSwimming || player.IsClimbing || player.IsHorizontalClimbing || player.IsGreenHookActive));
             Show("下", alive && (player.IsSwimming || player.IsClimbing || player.IsHorizontalClimbing || player.IsGreenHookActive || player.ShowAirborneDownControl));
             Show("交互", alive && !carrying && (player.CarryQueueCount > 0 || player.HasContextInteraction || player.IsGreenHookActive));
             Show("放左", carrying); Show("放右", carrying);
-            Show("重生", player != null && player.IsDead);
+            Show("重生", player != null);
             Show("选色", alive && !carrying && !player.IsGreenHookActive);
         }
         private void Show(string label, bool show)
@@ -166,6 +169,18 @@ namespace Project.GameFlow
                 MobileControlLayout.Apply(rect, controls);
         }
 
+        private void OnRectTransformDimensionsChange()
+            => RefreshLayoutBounds();
+
+        private void RefreshLayoutBounds()
+        {
+            if (controls == null) return;
+            Vector2 size = controls.rect.size;
+            if (lastLayoutSize == size) return;
+            lastLayoutSize = size;
+            foreach (RectTransform button in controls) MobileControlLayout.Clamp(button, controls);
+        }
+
         public static void GetDefaultLayout(string label, out Vector2 anchor, out Vector2 position)
         {
             anchor = new Vector2(1, 0);
@@ -176,13 +191,12 @@ namespace Project.GameFlow
                 "左跳跃" => new Vector2(400, 300), "跳跃" => new Vector2(-160, 200),
                 "跑" => new Vector2(-315, 200), "交互" => new Vector2(-315, 360),
                 "放左" => new Vector2(-470, 200), "放右" => new Vector2(-470, 360),
-                "选色" => new Vector2(-160, 360), "重生" => new Vector2(-85, -70),
-                "右手左" => new Vector2(-315, 520), "右手右" => new Vector2(-160, 520),
+                "选色" => new Vector2(-160, 360), "重生" => new Vector2(245, -90),
+                "右手左" => new Vector2(-480, 520), "右手右" => new Vector2(-325, 520),
                 "暂停" => new Vector2(90, -90), _ => Vector2.zero
             };
             if (label is "上" or "下" or "左" or "右" or "左跳跃") anchor = Vector2.zero;
-            if (label == "重生") anchor = Vector2.one;
-            if (label == "暂停") anchor = Vector2.up;
+            if (label is "暂停" or "重生") anchor = Vector2.up;
         }
     }
 }

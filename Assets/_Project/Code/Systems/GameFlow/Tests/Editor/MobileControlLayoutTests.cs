@@ -80,6 +80,56 @@ namespace Project.GameFlow.Tests
         }
 
         [Test]
+        public void Respawn_IsBesidePauseAndNotInSdkCorner()
+        {
+            var hud = Build();
+            var respawn = (RectTransform)hud.Controls.Find("重生");
+            Assert.That(respawn.anchorMin, Is.EqualTo(Vector2.up));
+            Rect pause = TouchRect(hud.Controls, "暂停");
+            Rect revive = TouchRect(hud.Controls, "重生");
+            Assert.That(revive.Overlaps(pause), Is.False);
+            Assert.That(revive.xMin, Is.GreaterThan(pause.xMax));
+            Assert.That(revive.center.y, Is.EqualTo(pause.center.y).Within(.01f));
+        }
+
+        [TestCase(1280, 720)]
+        [TestCase(1600, 720)]
+        [TestCase(1280, 960)]
+        public void AllDefaultTouchRects_LeaveSdkCapsuleCornerEmpty(float width, float height)
+        {
+            ((RectTransform)root.transform).sizeDelta = new Vector2(width, height);
+            var hud = Build();
+            Rect area = hud.Controls.rect;
+            Rect sdk = new Rect(area.xMax - 248, area.yMax - 156, 248, 156);
+            foreach (RectTransform button in hud.Controls)
+                Assert.That(TouchRect(hud.Controls, button.name).Overlaps(sdk), Is.False, button.name);
+        }
+
+        [Test]
+        public void LegacyRespawnCoordinate_MigratesWithoutDiscardingOtherCustomizations()
+        {
+            PlayerPrefs.SetString(LayoutKey, "{\"buttons\":[{\"name\":\"重生\",\"position\":{\"x\":0.93,\"y\":0.9},\"size\":124},{\"name\":\"右\",\"position\":{\"x\":0.4,\"y\":0.3},\"size\":150}]}");
+            CachedData.SetValue(null, null);
+            var hud = Build();
+            Assert.That(((RectTransform)hud.Controls.Find("重生")).anchorMin, Is.EqualTo(Vector2.up));
+            var right = (RectTransform)hud.Controls.Find("右");
+            Assert.That(right.anchorMin, Is.EqualTo(new Vector2(.4f, .3f)));
+            Assert.That(right.sizeDelta.x, Is.EqualTo(150));
+        }
+
+        [Test]
+        public void SavedCustomSdkCollision_IsMovedOutsideCapsule()
+        {
+            var hud = Build();
+            var button = (RectTransform)hud.Controls.Find("交互");
+            button.anchorMin = button.anchorMax = Vector2.one;
+            button.anchoredPosition = new Vector2(-85, -80);
+            MobileControlLayout.Clamp(button, hud.Controls);
+            Rect area = hud.Controls.rect;
+            Assert.That(TouchRect(hud.Controls, button.name).Overlaps(new Rect(area.xMax - 248, area.yMax - 156, 248, 156)), Is.False);
+        }
+
+        [Test]
         public void LayoutEditorReset_RestoresTheUpdatedDefaultPositions()
         {
             var hud = Build();

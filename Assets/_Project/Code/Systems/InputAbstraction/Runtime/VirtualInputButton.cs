@@ -18,7 +18,12 @@ namespace Project.InputAbstraction
         public bool IsPressed { get; private set; }
         public bool ToggleOn { get; private set; }
         private bool toggleMode, repeatJump;
-        public void ConfigureToggle() { toggleMode = true; }
+        public void ConfigureToggle(bool defaultOn = false)
+        {
+            toggleMode = true;
+            ToggleOn = defaultOn;
+            if (isActiveAndEnabled) VirtualInputState.SetButton(GetInstanceID(), action, ToggleOn);
+        }
         public void ConfigureRepeatJump() { repeatJump = true; }
 
         public void Configure(InputActionId inputAction)
@@ -67,12 +72,14 @@ namespace Project.InputAbstraction
 
         private void OnApplicationFocus(bool focused)
         {
-            if (!focused) { ToggleOn = false; Release(); VirtualInputState.ReleaseOwner(GetInstanceID()); }
+            if (!focused) { Release(); VirtualInputState.ReleaseOwner(GetInstanceID()); }
+            else if (isActiveAndEnabled && toggleMode && ToggleOn) VirtualInputState.SetButton(GetInstanceID(), action, true);
         }
 
         private void OnApplicationPause(bool paused)
         {
-            if (paused) { ToggleOn = false; Release(); VirtualInputState.ReleaseOwner(GetInstanceID()); }
+            if (paused) { Release(); VirtualInputState.ReleaseOwner(GetInstanceID()); }
+            else if (isActiveAndEnabled && toggleMode && ToggleOn) VirtualInputState.SetButton(GetInstanceID(), action, true);
         }
 
         private void Release()

@@ -378,6 +378,9 @@ namespace Project.GameFlow
             BindButton(settingsCloseButton, ReturnToMain);
             BindButton(saveCloseButton, ReturnToMain);
             BindButton(collectionCloseButton, ReturnToMain);
+            MobileOverlaySafeArea.ProtectCloseButton(settingsCloseButton);
+            MobileOverlaySafeArea.ProtectCloseButton(saveCloseButton);
+            MobileOverlaySafeArea.ProtectCloseButton(collectionCloseButton);
         }
 
         private void RegisterWheelButtons()

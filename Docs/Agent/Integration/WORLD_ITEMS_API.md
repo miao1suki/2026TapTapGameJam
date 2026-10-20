@@ -4,6 +4,8 @@ Runtime：`Assets/_Project/Code/Systems/WorldItems/Runtime`。资源：`Assets/_
 
 ## 收集品
 
+新轮重置使用两阶段流程：先对全部普通物品清理状态，再激活并重建目录，最终只发布一次 Changed；监听者可以同步查询进度，不会读回上一轮残留。冷物品首次 Awake 前复位仍须保留作者缩放。读档恢复仅注册已收集状态，不重放奖励；保存保留已恢复但当前未实例化的稳定 ID。收集品 Sprite 深度位于格内，受隐藏方块不透明面遮挡；不靠移动物理根节点实现遮挡。验证见 `Docs/Developer/COLLECTIBLE_INITIALIZATION_FIX_2026-10-20.md`。
+
 `Project.Items.CollectiblePickup : DropItemBase, IRoomColorResettable`。普通球形实体碰撞只负责方块/基座推挤，子 Trigger 用于玩家接触；收集品与玩家实体碰撞体建立局部`Physics.IgnoreCollision`，不修改全局Layer矩阵，不忽略拾取Trigger，玩家穿过并拾取而不是被球体挡住。普通收集过程不申请玩家控制锁，不中断走跑/跳跃。Rigidbody无重力、锁 Z/旋转，仍为动态刚体以保留方块/基座推动。Prefab与新建工具默认关闭重力，启用、房间重置和对象池复用也强制关闭，兼容旧场景保存的useGravity=true，无需重建关卡。接触其他道具不结算。三色接触方块与运动中的基座通过物理接触推动，无场景全量扫描。
 
 玩家碰撞过滤在启用/重置时读取`PlayerController.ActivePlayers`，并订阅`PlayerController.PlayerActivated`覆盖稍后生成或重新启用的玩家；不在每件收集品的Update/FixedUpdate轮询。仅记录本组件新建的忽略对，禁用时恢复并退订，不恢复其他系统原先建立的忽略对。拾取后关闭碰撞，复位重新启用碰撞时重建过滤。玩家的地面/搬运查询也必须尊重`Physics.GetIgnoreCollision`，不能把此推挤实体当作支撑或墙。

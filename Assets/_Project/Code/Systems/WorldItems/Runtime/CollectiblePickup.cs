@@ -224,7 +224,8 @@ namespace Project.Items
         public void RestoreCollectedState()
         {
             IsCollected = true;
-            CollectibleProgressService.RecordCollected(this);
+            // Loading progress is not a fresh achievement/pickup notification.
+            CollectibleProgressService.Register(this);
             StopItemAnimations();
             GetComponent<IDropItemCollectionReset>()?.ResetCollectionAnimation();
             EnsureState();
@@ -234,11 +235,19 @@ namespace Project.Items
 
         public void ResetPersistentCollectionForNewRun()
         {
-            IsCollected = false;
+            PreparePersistentCollectionForNewRun();
             if (!gameObject.activeSelf)
             {
                 gameObject.SetActive(true);
             }
+        }
+
+        // The service prepares EVERY item before enabling any of them. OnEnable
+        // can notify UI/save listeners which query the entire scene immediately.
+        internal void PreparePersistentCollectionForNewRun()
+        {
+            EnsureState();
+            IsCollected = false;
             ResetForReuse();
         }
 

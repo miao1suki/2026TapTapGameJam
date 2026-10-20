@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using DG.Tweening;
 using Project.Items;
+using Project.BlockFeatures;
 using Project.LevelEditor;
 using Project.Pickups;
 using Project.Player;
@@ -67,6 +68,8 @@ namespace Project.WorldItems.Editor
                 VerifyCollectionThroughRoomResets(); Cleanup();
                 VerifyUncollectedReset(); Cleanup();
                 VerifyStableIdentityAndRestore(); Cleanup();
+                VerifyNewRunResetAndReload(); Cleanup();
+                VerifyHiddenBlockDepth(); Cleanup();
                 passed = true;
                 report = "PASS " + checks + " collectible persistence/identity checks";
             }
@@ -251,6 +254,85 @@ namespace Project.WorldItems.Editor
                     Check(!shape.enabled, "restored collected record has no remaining physical/pickup collision");
             }
             finally { CollectiblePickup.Collected -= listener; }
+        }
+
+        private static void VerifyNewRunResetAndReload()
+        {
+            var player = Player(new Vector3(500f, 20f, 0f));
+            var first = Item(new Vector3(502f, 20f, 0f), "reset_first");
+            var second = Item(new Vector3(504f, 20f, 0f), "reset_second");
+            var parent = new GameObject("cold inactive pickup parent");
+            objects.Add(parent);
+            parent.SetActive(false);
+            var coldRoot = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(ItemPath), parent.transform);
+            coldRoot.transform.position = new Vector3(506f, 20f, 0f);
+            var cold = coldRoot.GetComponent<CollectiblePickup>();
+            cold.gameObject.AddComponent<LevelEditorPlacedBlock>().SetPlanningSource("reset_cold", "audit", Vector2Int.zero);
+            var items = new[] { first, second, cold };
+            var scene = first.gameObject.scene;
+            int notifications = 0;
+            Action listener = () =>
+            {
+                notifications++;
+                // Real counter/map listeners query synchronously from Changed.
+                CollectibleProgressService.GetWorldProgress();
+            };
+            CollectibleProgressService.Changed += listener;
+            try
+            {
+                for (int pass = 0; pass < 2; pass++)
+                {
+                    foreach (var item in items) item.RestoreCollectedState();
+                    notifications = 0;
+                    if (pass == 0) CollectibleProgressService.ResetSessionProgress(scene);
+                    else CollectibleProgressService.ResetAllSessionProgress();
+                    var ids = new List<string>();
+                    CollectibleProgressService.CopyCollectedStableIds(scene, ids);
+                    Check(ids.Count == 0, "new run cannot re-register old collected IDs, pass " + pass);
+                    Check(notifications == 1, "new run publishes only the complete reset, pass " + pass);
+                    foreach (var item in items)
+                    {
+                        Check(!item.IsCollected && !item.CollectionRequested && item.transform.localScale.sqrMagnitude > .1f,
+                            "reset clears progress and preserves cold-item authored scale, pass " + pass);
+                        foreach (var shape in item.GetComponentsInChildren<Collider>(true))
+                            Check(shape.enabled, "reset restores pickup colliders, pass " + pass);
+                    }
+                }
+                parent.SetActive(true);
+                Check(cold.CanCollect, "cold restored pickup becomes collectible on first activation");
+                Move(player, cold.transform.position); Step(3);
+                Check(cold.CollectionRequested, "cold restored pickup accepts actual player Trigger");
+                DOTween.CompleteAll(true);
+                Check(cold.IsCollected && !cold.gameObject.activeSelf, "cold pickup settles and hides after actual flight");
+                cold.TryGetStableInstanceId(out string collectedId);
+                const string temporarilyAbsentId = "collectible:temporarily-absent-author";
+                CollectibleProgressService.RestoreCollectedStableIds(scene, new[] { collectedId, temporarilyAbsentId });
+                var savedIds = new List<string>();
+                CollectibleProgressService.CopyCollectedStableIds(scene, savedIds);
+                Check(savedIds.Contains(collectedId) && savedIds.Contains(temporarilyAbsentId),
+                    "save keeps both instantiated and temporarily absent restored IDs");
+                cold.GetComponent<RoomResetObject>().RestorePose();
+                cold.ResetForRoom();
+                CollectibleProgressService.RefreshSceneCatalog(scene);
+                Check(cold.IsCollected && !cold.gameObject.activeSelf && first.CanCollect && second.CanCollect,
+                    "room refresh keeps collected hidden and leaves other pickups eligible");
+            }
+            finally { CollectibleProgressService.Changed -= listener; }
+        }
+
+        private static void VerifyHiddenBlockDepth()
+        {
+            var item = Item(new Vector3(600f, 20f, 0f));
+            var hidden = Spawn("Assets/_Project/Content/Mechanisms/HiddenBlock.prefab", item.transform.position);
+            Vector3 position = item.transform.position;
+            var presentation = MechanismArtworkPresentation.Ensure(item.gameObject);
+            var hiddenRenderer = hidden.GetComponent<Renderer>();
+            Check(presentation != null && presentation.Visual != null && hiddenRenderer != null,
+                "formal collectible artwork and hidden opaque mesh exist");
+            Check(presentation.Visual.bounds.center.z > hiddenRenderer.bounds.min.z + .01f,
+                "collectible sprite lies behind hidden block's camera-facing surface");
+            Check(item.transform.position == position && item.CanCollect,
+                "depth adjustment does not move the pickup body or change collection eligibility");
         }
 
         private static void Cleanup()

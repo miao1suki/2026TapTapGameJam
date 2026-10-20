@@ -32,6 +32,7 @@ namespace Project.Player
         private int respawnHintId = -1;
         private int colorSelectionHintId = -1;
         private int colorDyeFeedbackId = -1;
+        private float nextMobileContextScan;
 
         private void Awake()
         {
@@ -221,6 +222,16 @@ namespace Project.Player
 
         private void UpdateInteraction(PlayerController target)
         {
+            // Touch has no physical F key: discover nearby handles before the
+            // contextual button is visible, otherwise neither can activate the other.
+            // Keep idle proximity scans bounded; a real press still refreshes
+            // immediately through PlayerController.UpdateInteraction.
+            if (GameInput.PlatformMode == InputPlatformMode.Mobile &&
+                Time.unscaledTime >= nextMobileContextScan)
+            {
+                nextMobileContextScan = Time.unscaledTime + .1f;
+                target.RefreshInteractionTarget();
+            }
             bool interactHeld =
                 GameInput.IsPressed(InputActionId.Interact);
             target.UpdateInteraction(

@@ -237,6 +237,33 @@ namespace Project.InputAbstraction.Tests
         }
 
         [Test]
+        public void DefaultRun_FirstWalkTapDisablesSprint_SecondTapRestoresIt()
+        {
+            var obj = new GameObject("DefaultRun", typeof(VirtualInputButton));
+            try
+            {
+                var button = obj.GetComponent<VirtualInputButton>();
+                button.Configure(InputActionId.Sprint); button.ConfigureToggle(true);
+                Assert.IsTrue(button.ToggleOn);
+                Assert.IsTrue(VirtualInputState.IsPressed(InputActionId.Sprint));
+                var finger = new PointerEventData(null) { pointerId = 1 };
+                button.OnPointerDown(finger); button.OnPointerUp(finger);
+                Assert.IsFalse(button.ToggleOn);
+                Assert.IsFalse(VirtualInputState.IsPressed(InputActionId.Sprint));
+                button.OnPointerDown(finger); button.OnPointerUp(finger);
+                Assert.IsTrue(button.ToggleOn);
+                Assert.IsTrue(VirtualInputState.IsPressed(InputActionId.Sprint));
+                var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                var focus = typeof(VirtualInputButton).GetMethod("OnApplicationFocus", flags);
+                focus.Invoke(button, new object[] { false });
+                Assert.IsFalse(VirtualInputState.IsPressed(InputActionId.Sprint));
+                focus.Invoke(button, new object[] { true });
+                Assert.IsTrue(VirtualInputState.IsPressed(InputActionId.Sprint));
+            }
+            finally { Object.DestroyImmediate(obj); }
+        }
+
+        [Test]
         public void HeldLeftJump_RepeatsUntilItsOwnFingerReleases()
         {
             var left = new GameObject("LeftJump", typeof(VirtualInputButton));

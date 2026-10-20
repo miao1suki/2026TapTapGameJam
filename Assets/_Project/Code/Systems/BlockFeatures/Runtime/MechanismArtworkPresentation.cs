@@ -432,6 +432,12 @@ namespace Project.BlockFeatures
                     : button != null ? -.5f : center.y - size.y * .5f;
                 visual.transform.localPosition = horizontal ? new Vector3(center.x + size.x * .5f, center.y, center.z - size.z * .5f - .015f)
                     : new Vector3(center.x, bottom, center.z - size.z * .5f - .015f);
+                // HiddenBlock is an opaque mesh, not a SpriteRenderer. A sorting
+                // order alone cannot place a sprite behind its depth buffer.
+                // Keep only the collectible picture inside the authored cell;
+                // its body/trigger and all other mechanism fronts stay unchanged.
+                if (kind == MechanismArtworkKind.Collectible)
+                    visual.transform.localPosition = new Vector3(center.x, bottom, center.z);
             }
             if (shape != null && (tile || sliced)) shape.ApplySprite(visual, sliced,
                 sliced ? PlatformArtworkLayout.VisibleThicknessCells(kind, sprite, artwork) : 0f);

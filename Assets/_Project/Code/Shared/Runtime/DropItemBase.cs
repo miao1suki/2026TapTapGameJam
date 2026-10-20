@@ -29,6 +29,7 @@ namespace Project.Items
         private Tween appearTween;
         private Tween attractTween;
         private Vector3 initialScale;
+        private bool initialScaleCaptured;
         [SerializeField, Min(0f)] private float idleHoverPixels = 2f;
         [SerializeField, Min(.2f)] private float idleHoverPeriod = 2f;
         [SerializeField, Min(.01f)] private float idleHoverBlendSeconds = .2f;
@@ -80,6 +81,13 @@ namespace Project.Items
 
         private void Awake()
         {
+            CaptureInitialScale();
+        }
+
+        private void CaptureInitialScale()
+        {
+            if (initialScaleCaptured) return;
+            initialScaleCaptured = true;
             initialScale = transform.localScale;
         }
 
@@ -91,6 +99,9 @@ namespace Project.Items
 
         public void ResetForReuse()
         {
+            // Save restoration/new-run preparation may reach an inactive item
+            // before Unity has called Awake. Never reset it to Vector3.zero.
+            CaptureInitialScale();
             StopItemAnimations();
             GetComponent<IDropItemCollectionReset>()?.ResetCollectionAnimation();
             collectionRequested = false;

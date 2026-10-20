@@ -402,6 +402,12 @@ namespace Project.FastTravel
             entry = Button("地图入口", safeArea, "地图 T", () => TryOpen()).gameObject;
             if (GameInput.PlatformMode == InputPlatformMode.Mobile) entry.GetComponentInChildren<TMP_Text>().text = "地图";
             var entryRect = (RectTransform)entry.transform; entryRect.anchorMin = entryRect.anchorMax = new Vector2(.5f, 1f); entryRect.anchoredPosition = new Vector2(0f, -40f); entryRect.sizeDelta = new Vector2(120, 44);
+            if (GameInput.PlatformMode == InputPlatformMode.Mobile)
+            {
+                entryRect.anchoredPosition = new Vector2(0f, -84f);
+                entryRect.sizeDelta = new Vector2(148, 100);
+                entry.GetComponentInChildren<TMP_Text>().fontSize = 30;
+            }
             panel = Rect("地图面板", safeArea).gameObject; Stretch((RectTransform)panel.transform);
             panel.AddComponent<Image>().color = new Color(.035f, .055f, .075f, .97f);
             summary = Text("标题", panel.transform, "世界地图", 26, TextAlignmentOptions.Left);
@@ -410,6 +416,7 @@ namespace Project.FastTravel
             summary.overflowMode = TextOverflowModes.Ellipsis;
             var close = Button("关闭", panel.transform, "关闭", Close);
             Place((RectTransform)close.transform, new Vector2(1, 1), new Vector2(-65, -40), new Vector2(100, 44));
+            MobileOverlaySafeArea.ProtectCloseButton(close);
             viewport = Rect("地图视口", panel.transform); Stretch(viewport); viewport.offsetMin = new Vector2(24, 92); viewport.offsetMax = new Vector2(-24, -78);
             viewport.gameObject.AddComponent<RectMask2D>();
             map = viewport.gameObject.AddComponent<TravelMapGraphic>(); map.color = Color.white; map.ViewChanged += PositionLabels; map.PointClicked += SelectRoom;

@@ -46,19 +46,41 @@ namespace Project.GameFlow
         public static void Apply(RectTransform button, RectTransform area)
         {
             Entry entry = Current.buttons.Find(e => e != null && e.name == button.name);
-            if (entry == null || !float.IsFinite(entry.position.x) || !float.IsFinite(entry.position.y)) return;
-            button.anchorMin = button.anchorMax = new Vector2(Mathf.Clamp01(entry.position.x), Mathf.Clamp01(entry.position.y));
-            button.anchoredPosition = Vector2.zero;
+            if (entry == null || !float.IsFinite(entry.position.x) || !float.IsFinite(entry.position.y))
+            { Clamp(button, area); return; }
             float size = float.IsFinite(entry.size) ? Mathf.Clamp(entry.size, 80, 200) : 124;
             button.sizeDelta = Vector2.one * size;
+            // Migrate the former death-only upper-right respawn placement, without
+            // throwing away unrelated player-customized button positions/sizes.
+            if (button.name == "重生" && entry.position.x > .5f && entry.position.y > .65f)
+            {
+                MobileGameplayControls.GetDefaultLayout(button.name, out var anchor, out var position);
+                button.anchorMin = button.anchorMax = anchor;
+                button.anchoredPosition = position;
+                Clamp(button, area);
+                return;
+            }
+            button.anchorMin = button.anchorMax = new Vector2(Mathf.Clamp01(entry.position.x), Mathf.Clamp01(entry.position.y));
+            button.anchoredPosition = Vector2.zero;
             Clamp(button, area);
         }
         public static void Clamp(RectTransform button, RectTransform area)
         {
             Vector3 local = button.localPosition;
-            Vector2 half = button.rect.size * .5f;
+            Vector2 half = button.rect.size * .5f + Vector2.one * 14f;
             local.x = Mathf.Clamp(local.x, area.rect.xMin + half.x, area.rect.xMax - half.x);
             local.y = Mathf.Clamp(local.y, area.rect.yMin + half.y, area.rect.yMax - half.y);
+            // The SDK capsule is not part of Screen.safeArea. Reserve its own
+            // upper-right rectangle including our enlarged touch hit rectangles.
+            Rect reserved = MobileOverlaySafeArea.ReservedRect(area.rect);
+            Rect hit = new Rect((Vector2)local - half, half * 2);
+            if (hit.Overlaps(reserved))
+            {
+                float x = Mathf.Max(area.rect.xMin + half.x, reserved.xMin - half.x);
+                float y = Mathf.Max(area.rect.yMin + half.y, reserved.yMin - half.y);
+                if (local.x - x <= local.y - y) local.x = x;
+                else local.y = y;
+            }
             button.localPosition = local;
         }
         public static void Save(RectTransform area)
