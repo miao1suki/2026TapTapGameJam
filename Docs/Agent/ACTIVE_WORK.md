@@ -1,5 +1,12 @@
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-21 MRoom3 七件道具增量整合（已完成）
+
+- 当前整合分支 `codex/roy/merge-spotlight-mroom3-20261021`，基线 `main`/`origin/main` 的 `0a2c8ea4`。只接收队友 `b6a28915b8d63c83326ca06331ac158b0e23fab7` 在 MRoom3 `room_791e28e6` 新增的 5 个弹性植物与 2 个藤蔓，规划物体数由 4261 增至 4268。
+- 用户明确保留当前 main 玩家出生点 `mvmap17_region_fb7d702fa6` / `(-71.08000183105469, 37.56999969482422)`，并保留 `lethalFallHeightBlocks = 10`；不采用队友分支的 Start、`room_791e28e6` 出生点或摔落高度 0。
+- 正式 Scene 采用最小增量：只新增 7 个 Prefab 实例对应的 35 个 YAML 文档，并更新父级子列表与场景内嵌规划；没有删除或替换既有对象。两份外部规划各只新增同一组 7 个物件，Start、Boss/End、运行时、资源与 meta 均未改。
+- 验证：隔离 Unity 6000.3.12f1 加载后 `SPOTLIGHT_VALIDATE_OK placed=4262 planning=4268 fallHeight=10`；7 个新增 ID 各一份且启用，玩家位置仍为 `(-71.08, 37.57, 0)`，内嵌/同名/正式规划一致，两份 JSON SHA-256 相同。`Test-PlanningMapCommit.ps1` 与 `git diff --check` 通过。未运行 Play Mode 实际弹跳/攀爬与完整通关验收。
+
 ## 2026-10-21 颜色钥匙拾取镜头收敛（静态验证完成，待 Play 验收）
 
 - 当前分支 `codex/roy/playmode-material-sync-20261020`。范围：`ColorKeyPickup`、颜色钥匙 Timeline、颜色块编辑器和 `Gaming` 主相机组件；不改颜色钥匙解锁流程、地图布局或存档数据。

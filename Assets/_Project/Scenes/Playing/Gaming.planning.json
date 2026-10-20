@@ -430248,6 +430248,1629 @@
                     "mergeParts": [],
                     "hasComponentOverrides": true,
                     "componentOverrides": []
+                },
+                {
+                    "id": "box_07c959b3",
+                    "type": 9,
+                    "label": "",
+                    "paletteEntryId": "",
+                    "paletteEntryName": "",
+                    "propEntryId": "eb7a961c3edb4b2db919a5c209562fed",
+                    "propEntryName": "弹性植物",
+                    "x": 33,
+                    "y": 47,
+                    "width": 1,
+                    "height": 1,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "authoredSnapshotGuid": "",
+                    "authoredInstanceId": "",
+                    "authoredObjectId": "",
+                    "authoredPositionOffset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "authoredSizeCells": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "platformMountId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": []
+                },
+                {
+                    "id": "box_d9cfd340",
+                    "type": 9,
+                    "label": "",
+                    "paletteEntryId": "",
+                    "paletteEntryName": "",
+                    "propEntryId": "eb7a961c3edb4b2db919a5c209562fed",
+                    "propEntryName": "弹性植物",
+                    "x": 21,
+                    "y": 47,
+                    "width": 1,
+                    "height": 1,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "authoredSnapshotGuid": "",
+                    "authoredInstanceId": "",
+                    "authoredObjectId": "",
+                    "authoredPositionOffset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "authoredSizeCells": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "platformMountId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": []
+                },
+                {
+                    "id": "box_138bc354",
+                    "type": 9,
+                    "label": "",
+                    "paletteEntryId": "",
+                    "paletteEntryName": "",
+                    "propEntryId": "eb7a961c3edb4b2db919a5c209562fed",
+                    "propEntryName": "弹性植物",
+                    "x": 8,
+                    "y": 47,
+                    "width": 1,
+                    "height": 1,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "authoredSnapshotGuid": "",
+                    "authoredInstanceId": "",
+                    "authoredObjectId": "",
+                    "authoredPositionOffset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "authoredSizeCells": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "platformMountId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": []
+                },
+                {
+                    "id": "box_ec845565",
+                    "type": 9,
+                    "label": "",
+                    "paletteEntryId": "",
+                    "paletteEntryName": "",
+                    "propEntryId": "eb7a961c3edb4b2db919a5c209562fed",
+                    "propEntryName": "弹性植物",
+                    "x": 41,
+                    "y": 47,
+                    "width": 1,
+                    "height": 1,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "authoredSnapshotGuid": "",
+                    "authoredInstanceId": "",
+                    "authoredObjectId": "",
+                    "authoredPositionOffset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "authoredSizeCells": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "platformMountId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": []
+                },
+                {
+                    "id": "box_d62507ba",
+                    "type": 9,
+                    "label": "",
+                    "paletteEntryId": "",
+                    "paletteEntryName": "",
+                    "propEntryId": "b1789be1339f4f5b897ef3177788da37",
+                    "propEntryName": "藤蔓",
+                    "x": 23,
+                    "y": 14,
+                    "width": 1,
+                    "height": 1,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "authoredSnapshotGuid": "",
+                    "authoredInstanceId": "",
+                    "authoredObjectId": "",
+                    "authoredPositionOffset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "authoredSizeCells": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "platformMountId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.BlockAbilityHost",
+                            "componentIndex": 0,
+                            "propertyPath": "debugLog",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "useFeatureMaterial",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "featureMaterial",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "allowGrowthFromColor",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "growthSegmentPrefab",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-1-6b76282023783344dbda362f140793df-1994381073939666919-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "growInstantly",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "vineParticlePrefab",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.ColorBlocks.ColorObject",
+                            "componentIndex": 0,
+                            "propertyPath": "baseColorTypeId",
+                            "valueType": "String",
+                            "value": "green",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.ColorBlocks.ColorObject",
+                            "componentIndex": 0,
+                            "propertyPath": "targetRenderer",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.ColorBlocks.ColorObject",
+                            "componentIndex": 0,
+                            "propertyPath": "unlockedMaterial",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Material",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LayerOverridePriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IsTrigger",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProvidesContacts",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":1.0,\"y\":1.0,\"z\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshFilter",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Mesh",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_CastShadows",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveShadows",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DynamicOccludee",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StaticShadowCaster",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MotionVectors",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReflectionProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingMode",
+                            "valueType": "Integer",
+                            "value": "2",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTraceProcedural",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlagsOverride",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlags",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SmallMeshCulling",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ForceMeshLod",
+                            "valueType": "Integer",
+                            "value": "-1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MeshLodSelectionBias",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RenderingLayerMask",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RendererPriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProbeAnchor",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeVolumeOverride",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ScaleInLightmap",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveGI",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PreserveUVs",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IgnoreNormalsForChartDetection",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ImportantGI",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StitchLightmapSeams",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MinimumChartSize",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxDistance",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxAngle",
+                            "valueType": "Float",
+                            "value": "89",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightmapParameters",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MaskInteraction",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.BlockRuntime",
+                            "componentIndex": 0,
+                            "propertyPath": "maxDispatchPasses",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.BlockRuntime",
+                            "componentIndex": 0,
+                            "propertyPath": "maxDebugEvents",
+                            "valueType": "Integer",
+                            "value": "128",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "climbSpeedMultiplier",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "climbEnterDistanceGrid",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "naturalSlideSpeed",
+                            "valueType": "Float",
+                            "value": "1.2000000476837158",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "fastSlideSpeed",
+                            "valueType": "Float",
+                            "value": "4.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "maxGrowthBlocks",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "growthInterval",
+                            "valueType": "Float",
+                            "value": "0.18000000715255737",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "grownParticleTime",
+                            "valueType": "Float",
+                            "value": "32.430000305175781",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "visualGrowthDuration",
+                            "valueType": "Float",
+                            "value": "2.2999999523162842",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "vineThickness",
+                            "valueType": "Float",
+                            "value": "3",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "burnSegmentDuration",
+                            "valueType": "Float",
+                            "value": "0.44999998807907104",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "vineWidth",
+                            "valueType": "Float",
+                            "value": "1.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "initialParticleTime",
+                            "valueType": "Float",
+                            "value": "30.899999618530273",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": "box_abbc79f1",
+                    "type": 9,
+                    "label": "",
+                    "paletteEntryId": "",
+                    "paletteEntryName": "",
+                    "propEntryId": "eb7a961c3edb4b2db919a5c209562fed",
+                    "propEntryName": "弹性植物",
+                    "x": 13,
+                    "y": 34,
+                    "width": 1,
+                    "height": 1,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "authoredSnapshotGuid": "",
+                    "authoredInstanceId": "",
+                    "authoredObjectId": "",
+                    "authoredPositionOffset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "authoredSizeCells": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "platformMountId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": []
+                },
+                {
+                    "id": "box_694ec81f",
+                    "type": 9,
+                    "label": "",
+                    "paletteEntryId": "",
+                    "paletteEntryName": "",
+                    "propEntryId": "b1789be1339f4f5b897ef3177788da37",
+                    "propEntryName": "藤蔓",
+                    "x": 18,
+                    "y": 24,
+                    "width": 1,
+                    "height": 1,
+                    "isMerged": false,
+                    "singleInstance": false,
+                    "authoredSnapshotGuid": "",
+                    "authoredInstanceId": "",
+                    "authoredObjectId": "",
+                    "authoredPositionOffset": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    },
+                    "authoredSizeCells": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "doorOwnerId": "",
+                    "doorButtonOrder": 0,
+                    "mechanismBaseId": "",
+                    "mechanismBaseCellOffset": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "mechanismButtonId": "",
+                    "mechanismButtonIds": [],
+                    "crankOwnerId": "",
+                    "platformMountId": "",
+                    "bossRespawnOwnerId": "",
+                    "initialCrankPlatformCreated": false,
+                    "mergeParts": [],
+                    "hasComponentOverrides": true,
+                    "componentOverrides": [
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.BlockAbilityHost",
+                            "componentIndex": 0,
+                            "propertyPath": "debugLog",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "useFeatureMaterial",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "featureMaterial",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "allowGrowthFromColor",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "growthSegmentPrefab",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-1-6b76282023783344dbda362f140793df-1994381073939666919-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "growInstantly",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "vineParticlePrefab",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.ColorBlocks.ColorObject",
+                            "componentIndex": 0,
+                            "propertyPath": "baseColorTypeId",
+                            "valueType": "String",
+                            "value": "green",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.ColorBlocks.ColorObject",
+                            "componentIndex": 0,
+                            "propertyPath": "targetRenderer",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.ColorBlocks.ColorObject",
+                            "componentIndex": 0,
+                            "propertyPath": "unlockedMaterial",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Material",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LayerOverridePriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IsTrigger",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProvidesContacts",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Size",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":1.0,\"y\":1.0,\"z\":1.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.BoxCollider",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Center",
+                            "valueType": "Vector3",
+                            "value": "{\"x\":0.0,\"y\":0.0,\"z\":0.0}",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshFilter",
+                            "componentIndex": 0,
+                            "propertyPath": "m_Mesh",
+                            "valueType": "ObjectReference",
+                            "value": "GlobalObjectId_V1-4-0000000000000000e000000000000000-10202-0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_CastShadows",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveShadows",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_DynamicOccludee",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StaticShadowCaster",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MotionVectors",
+                            "valueType": "Enum",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReflectionProbeUsage",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingMode",
+                            "valueType": "Integer",
+                            "value": "2",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTraceProcedural",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlagsOverride",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RayTracingAccelStructBuildFlags",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_SmallMeshCulling",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ForceMeshLod",
+                            "valueType": "Integer",
+                            "value": "-1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MeshLodSelectionBias",
+                            "valueType": "Float",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RenderingLayerMask",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_RendererPriority",
+                            "valueType": "Integer",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ProbeAnchor",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightProbeVolumeOverride",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ScaleInLightmap",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ReceiveGI",
+                            "valueType": "Integer",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_PreserveUVs",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_IgnoreNormalsForChartDetection",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_ImportantGI",
+                            "valueType": "Boolean",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_StitchLightmapSeams",
+                            "valueType": "Boolean",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MinimumChartSize",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxDistance",
+                            "valueType": "Float",
+                            "value": "0.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_AutoUVMaxAngle",
+                            "valueType": "Float",
+                            "value": "89",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_LightmapParameters",
+                            "valueType": "ObjectReference",
+                            "value": "",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "UnityEngine.MeshRenderer",
+                            "componentIndex": 0,
+                            "propertyPath": "m_MaskInteraction",
+                            "valueType": "Enum",
+                            "value": "0",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.BlockRuntime",
+                            "componentIndex": 0,
+                            "propertyPath": "maxDispatchPasses",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.BlockRuntime",
+                            "componentIndex": 0,
+                            "propertyPath": "maxDebugEvents",
+                            "valueType": "Integer",
+                            "value": "128",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "climbSpeedMultiplier",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "climbEnterDistanceGrid",
+                            "valueType": "Float",
+                            "value": "1",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "naturalSlideSpeed",
+                            "valueType": "Float",
+                            "value": "1.2000000476837158",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "fastSlideSpeed",
+                            "valueType": "Float",
+                            "value": "4.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "maxGrowthBlocks",
+                            "valueType": "Integer",
+                            "value": "4",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "growthInterval",
+                            "valueType": "Float",
+                            "value": "0.18000000715255737",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "grownParticleTime",
+                            "valueType": "Float",
+                            "value": "32.430000305175781",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "visualGrowthDuration",
+                            "valueType": "Float",
+                            "value": "2.2999999523162842",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "vineThickness",
+                            "valueType": "Float",
+                            "value": "3",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "burnSegmentDuration",
+                            "valueType": "Float",
+                            "value": "0.44999998807907104",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "vineWidth",
+                            "valueType": "Float",
+                            "value": "1.5",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        },
+                        {
+                            "componentPath": "",
+                            "componentTypeName": "Project.BlockFeatures.ClimbableVineFeature",
+                            "componentIndex": 0,
+                            "propertyPath": "initialParticleTime",
+                            "valueType": "Float",
+                            "value": "30.899999618530273",
+                            "objectReferenceValue": {
+                                "instanceID": 0
+                            }
+                        }
+                    ]
                 }
             ]
         },
