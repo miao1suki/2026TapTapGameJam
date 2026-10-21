@@ -1,5 +1,7 @@
 # 系统索引
 
+2026-10-21 1.0.2：TA83611de美术/天气接入，关卡和修复保留；AndroidGraphicsCompatibilityBuildGuard固定Android仅GLES3，避免已证实的Adreno Vulkan启动崩溃路径。双端包/图标/存档清理与同型号复测边界见RELEASE_1_0_2.md。
+
 2026-10-21 后续交付：BossEntranceRequirements统一30%+六钥匙入口与提示；WorldVisibility2D.unoccludedRoomIds使MRoom2/MRoom3精确区域始终可见；安全白块合并仅改表示，1542→107组，三份正式规划3010条。正式ICON固定至构建入口，玩家脚底/梯子后置/重生点显示与开场安全落地已修。音频完整播放后静默18秒。专项验收及美术差异截图见ACTIVE_WORK当前记录。
 
 2026-10-21 1.0.1：正式 Gaming 采用压缩包新版 25 房/4445 记录并保留三方美术及最新 main 修复；玩家出生位置与黄色 Start 对齐。WorldTravelMap 开局可用、仅已激活普通点可传送、战斗与 Boss 房禁用；Boss/结局/收集成就为 30%/60%。WorldVisibility2D 用中间明暗快照连续过渡，连通边缘可调向内柔化；RG 遮罩 G 通道保留门/墙足迹，防止柔化再次遮蔽门本体。详见 ACTIVE_WORK 当前条目。

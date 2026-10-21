@@ -99,6 +99,7 @@ public static class MobileBuildSetup
         EditorUserBuildSettings.buildWithDeepProfilingSupport = false;
         if (target == BuildTarget.Android)
         {
+            Project.GameFlow.Editor.AndroidGraphicsCompatibilityBuildGuard.Configure();
             EditorUserBuildSettings.buildAppBundle = false;
             PlayerSettings.SetApplicationIdentifier(
                 UnityEditor.Build.NamedBuildTarget.Android,

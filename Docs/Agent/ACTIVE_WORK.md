@@ -1,3 +1,10 @@
+## 2026-10-21 本地正式关卡美术快照（待整合）
+
+- 分支 `codex/local/gaming-art-snapshot-20261021` 从本地 `main` 的 `b41eb546` 建立，保存当前磁盘上的 `Gaming.unity`、`Gaming.planning.json`、`Gaming_Art.asset` 与其新增/修改的 GridArt 生成资源；不合并或推送 `main`。
+- 场景同名规划的改动仅为玩家出生点四个浮点数的序列化精度；房间、区域与玩法规划未变。已将相同精度同步到场景内嵌规划和命名共享存档 `正式关卡.json`，三份数据一致。
+- `.vscode` 是本机设置；`Cubic_11 SDF.asset` 的变化是动态字形图集缓存（由 1×1 扩成 4096×4096），按协作约定不纳入提交，原工作树文件保留。
+- 静态核对新增 GridArt 资源均有 `.meta`；规划配套检查通过。尚未进行 Unity Play Mode、视觉验收或构建。远端更新连接超时，整合时需核对较新的 `origin/main`。
+
 ## 1.0.1 最新补充
 
 - 已整合推送 main `b41eb54` 并更新原工作区；双端1.0.1非开发构建成功、0错误。PC根目录7z与APK签名/版本/权限校验通过。两类本地进度均已备份重置；完整交付见 `Docs/Developer/RELEASE_1_0_1.md`。专项结果22项GPU/CPU、56项收集Boss、34项音乐重生以及最终地图专项均通过，未做完整真机通关。
@@ -5,6 +12,19 @@
 - 修复 Boss 中途退出读档：前置重生点查找不再要求先踩过，读档选定后激活并回退；优先作者标记，旧图没有标记则取 Boss 点之前最近的普通链表点。不修改普通死亡/R逻辑。
 
 # 工作状态与交接（每次任务重读）
+
+## 2026-10-21 TapPlay vivo S19 启动闪退（Android 1.0.2 兼容修复）
+
+- 用户附件已定位：UnityGfxDeviceW 线程 SIGSEGV，栈顶 vulkan.adreno.so / vkCmdDrawIndexed，驱动0676.76.1，Android16；不是隐私正文缺包证据。详见 `Docs/Developer/ANDROID_TAPPLAY_STARTUP_20261021.md`。
+- Android改为仅OpenGLES3、禁自动选择，由整合者同步ProjectSettings。`MobileBuildSetup.BuildAndroid`明确配置；新增prebuild守卫拒绝Vulkan fallback或自动选择，PC图形API不改。
+- 新增 `AndroidGraphicsCompatibilityTests` 三项Editor配置专项。子代理未启动Unity，整合者集中运行并构建；没有同型号TapPlay复测前不宣称平台测试通过。不改场景/规划/SDK/权限，不升级Unity。
+
+## 2026-10-21 1.0.2发布整合（构建与专项验收完成）
+
+- 用户要求接收本窗口与TA最新进度，修复TapPlay启动崩溃后发布PC/Android1.0.2；正式ICON固定，双本地进度先备份再清理。
+- TA来源83611de，按YAML对象接收美术/天气；保留main非美术玩法、3010条规划和无遮蔽配置，不回退其旧4445记录。字体动态缓存和IDE个人设置不接。
+- TapPlay vivo S19 Android16崩溃日志定位UnityGfxDeviceW SIGSEGV于Adreno Vulkan vkCmdDrawIndexed，不是隐私协议缺包。Android改为仅GLES3规避，等待构建及真机/重新送测验收，不宣称已在相同设备复现通过。
+- 最终结果：图形配置3项与正式场景GPU加载通过；PC/Android均0错误构建成功，PC独立7z完整性和启动检查、APK版本/签名/权限/隐私入口检查通过，实际双端图标均核对正确。存档和成就本地记录均已备份清理。详见 `Docs/Developer/RELEASE_1_0_2.md`；同型号TapPlay复测未完成。
 
 ## 2026-10-21 正式图显示与美术核对（当前整合窗口）
 
