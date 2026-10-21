@@ -658864,13 +658864,13 @@
     "assemblyPatches": [],
     "playerStartRoomId": "mvmap17_region_fb7d702fa6",
     "playerStartLocal": {
-        "x": 15.53855,
-        "y": 13.603645
+        "x": 15.53855037689209,
+        "y": 13.603645324707032
     },
     "hasUnassignedPlayerStart": false,
     "playerStartWorld": {
-        "x": -72.46145,
-        "y": 39.396355,
+        "x": -72.4614486694336,
+        "y": 39.39635467529297,
         "z": 0.0
     }
 }
