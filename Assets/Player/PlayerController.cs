@@ -3365,6 +3365,16 @@ namespace Project.Player
                 : initialRespawnPosition;
         }
 
+        /// <summary>Resolve a safe floor for gravity-suspended entrance presentation without changing physics.</summary>
+        public bool TryGetGroundedPresentationPosition(Vector3 candidate, out Vector3 grounded)
+        {
+            Physics.SyncTransforms();
+            if (TryGetGroundedRespawnPosition(candidate, out grounded) && grounded.y <= candidate.y + .01f)
+                return true;
+            grounded = candidate;
+            return false;
+        }
+
         private bool TryGetGroundedRespawnPosition(
             Vector3 candidate,
             out Vector3 grounded)

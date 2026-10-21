@@ -12,8 +12,8 @@ namespace Project.Player
         [SerializeField, InspectorName("精灵材质")] private Material spriteMaterial;
         [SerializeField, InspectorName("隐藏原占位模型")] private bool hidePlaceholder = true;
         [SerializeField, InspectorName("面向相机")] private bool faceCamera = true;
-        [SerializeField, InspectorName("外观垂直偏移（格）")] private float verticalOffsetCells = -0.08f;
-        [SerializeField, InspectorName("额外脚底偏移（美术像素）")] private int additionalVerticalOffsetPixels = -2;
+        [SerializeField, InspectorName("外观垂直偏移（格）")] private float verticalOffsetCells = -.0625f;
+        [SerializeField, InspectorName("额外脚底偏移（美术像素）")] private int additionalVerticalOffsetPixels = -3;
         private PlayerController player;
         private CapsuleCollider capsule;
         private Animator animator;

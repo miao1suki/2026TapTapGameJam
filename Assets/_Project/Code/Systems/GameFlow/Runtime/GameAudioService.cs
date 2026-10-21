@@ -25,7 +25,7 @@ namespace Project.GameFlow
         [SerializeField] private AudioSource musicSource;
         [SerializeField] private AudioSource soundEffectSource;
         [SerializeField] private AudioCatalog audioCatalog;
-        [SerializeField, Min(0f)] private float randomMusicGapSeconds = 8f;
+        [SerializeField, Min(0f)] private float randomMusicGapSeconds = 18f;
 
         private static GameAudioService instance;
         private AudioClip uiClickClip;
@@ -35,6 +35,7 @@ namespace Project.GameFlow
         private GameFlowController flowController;
         private AudioMusicRotation randomMusicRotation;
         private Coroutine randomMusicRoutine;
+        private bool applicationPaused;
 
         public static GameAudioService Instance => instance;
         public static IReadOnlyList<string> RandomGameplayMusicCueIds =>
@@ -225,6 +226,11 @@ namespace Project.GameFlow
             StopRandomGameplayMusic(true);
         }
 
+        private void OnApplicationPause(bool paused)
+        {
+            applicationPaused = paused;
+        }
+
         private void OnDestroy()
         {
             StopRandomGameplayMusic(false);
@@ -330,6 +336,13 @@ namespace Project.GameFlow
                     continue;
                 }
 
+                int lastSample = 0;
+                double lastPlaybackDspTime = AudioSettings.dspTime;
+                bool observedPlayback = false;
+                float startupWait = 0f;
+                // Play/streaming initialization may not be reflected by isPlaying in the same frame.
+                yield return null;
+
                 while (true)
                 {
                     manager = EnsureAudioManager();
@@ -338,18 +351,52 @@ namespace Project.GameFlow
                         break;
                     }
 
-                    if (manager.HasActiveMusicOverride)
+                    if (manager.HasActiveMusicOverride ||
+                        AudioListener.pause || applicationPaused)
                     {
+                        lastPlaybackDspTime = AudioSettings.dspTime;
                         yield return null;
                         continue;
                     }
 
                     AudioSource source = manager.MusicSource;
                     if (source == null ||
-                        source.clip != clip ||
-                        !source.isPlaying)
+                        source.clip != clip)
                     {
                         break;
+                    }
+
+                    if (clip.loadState == AudioDataLoadState.Loading)
+                    {
+                        yield return null;
+                        continue;
+                    }
+
+                    if (source.isPlaying)
+                    {
+                        observedPlayback = true;
+                        lastSample = source.timeSamples;
+                        lastPlaybackDspTime = AudioSettings.dspTime;
+                    }
+                    else if (observedPlayback)
+                    {
+                        if (HasReachedMusicEnd(clip, lastSample,
+                                AudioSettings.dspTime - lastPlaybackDspTime, source.pitch))
+                            break;
+                        // Audio device / application suspension can stop a source without finishing it.
+                        // Resume the interrupted track rather than silently consuming it as a completed song.
+                        source.Play();
+                        source.timeSamples = Mathf.Clamp(lastSample, 0, Mathf.Max(0, clip.samples - 1));
+                        lastPlaybackDspTime = AudioSettings.dspTime;
+                    }
+                    else
+                    {
+                        startupWait += Time.unscaledDeltaTime;
+                        if (clip.loadState == AudioDataLoadState.Failed || startupWait >= 5f)
+                        {
+                            Debug.LogWarning("Background music could not start: " + cueId, this);
+                            break;
+                        }
                     }
 
                     yield return null;
@@ -360,6 +407,15 @@ namespace Project.GameFlow
             }
         }
 
+        private static bool HasReachedMusicEnd(AudioClip clip, int lastSample, double elapsedDspSeconds, float pitch)
+        {
+            if (clip == null) return true;
+            double estimatedSample = lastSample + Math.Max(0d, elapsedDspSeconds) *
+                clip.frequency * Math.Abs(pitch);
+            // The final audio buffer can finish between Update calls; tolerate only one small output buffer.
+            return estimatedSample >= clip.samples - Math.Max(2048, clip.frequency * .05f);
+        }
+
         private IEnumerator WaitForRandomMusicGap()
         {
             float remaining =
@@ -368,14 +424,14 @@ namespace Project.GameFlow
             {
                 AudioManager manager =
                     EnsureAudioManager();
-                if (manager != null &&
-                    manager.HasActiveMusicOverride)
+                if (AudioListener.pause || applicationPaused || Time.timeScale <= 0f ||
+                    manager != null && manager.HasActiveMusicOverride)
                 {
                     yield return null;
                     continue;
                 }
 
-                remaining -= Time.deltaTime;
+                remaining -= Time.unscaledDeltaTime;
                 yield return null;
             }
         }

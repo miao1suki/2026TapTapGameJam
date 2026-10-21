@@ -23,7 +23,8 @@ namespace Project.BossLogic
         [Min(1f)] public float fontSize = 72f;
         [Min(1f)] public float typewriterCharactersPerSecond = 18f;
         [Min(0f)] public float lineHoldSeconds = 1f;
-        [TextArea]
+        // Keep old serialized story assets readable; the actual requirement line is generated from both conditions.
+        [HideInInspector, TextArea]
         public string insufficientLine =
             "我身上的调色板好像还不足以激活喷泉....";
         [TextArea]
@@ -165,6 +166,8 @@ namespace Project.BossLogic
         private WordNoteHandle message;
         private bool running;
         private bool cleaned;
+        private bool rejectedEntry;
+        private bool insufficientCollectibles;
 
         public void Begin(
             EnterBossTimelineSettings valueSettings,
@@ -207,19 +210,17 @@ namespace Project.BossLogic
                 .ToString("0") +
                 "%。",
                 director);
-            if (EnterBossTimelinePlayable
-                    .HasSufficientCollectibles(
-                        progress.Collected,
-                        progress.Total,
-                        settings
-                            .minimumCollectibleRatio))
+            int colorKeys = BossEntranceRequirements.CollectedColorKeyCount;
+            insufficientCollectibles = !progress.MeetsRatio(settings.minimumCollectibleRatio);
+            if (BossEntranceRequirements.CanEnter(progress, colorKeys, settings.minimumCollectibleRatio))
             {
                 Debug.Log(
-                    "[EnterBoss] 收集进度达标，直接放行。",
+                    "[EnterBoss] 收集进度与六把颜色钥匙均达标，直接放行。",
                     director);
                 Finish();
                 yield break;
             }
+            rejectedEntry = true;
 
             if (WordNoteUI.Instance == null)
             {
@@ -241,8 +242,7 @@ namespace Project.BossLogic
 
             controlLock =
                 player.AcquireControlLock(this);
-            yield return PlayLine(
-                settings.insufficientLine);
+            yield return PlayLine(BossEntranceRequirements.RequirementHint(progress, colorKeys, settings.minimumCollectibleRatio));
             if (!running)
             {
                 yield break;
@@ -353,7 +353,7 @@ namespace Project.BossLogic
                 settings.blackScreenCenter,
                 settings.blackCoverSpeed,
                 settings.blackSoftness);
-            if (returnedHome && player != null)
+            if (returnedHome && player != null && insufficientCollectibles)
             {
                 GameplaySignalHub.Emit(
                     AchievementSignalIds
@@ -417,7 +417,12 @@ namespace Project.BossLogic
             }
             running = false;
             ReleaseState();
-            director?.Stop();
+            // A rejected Once entry must be checked again on the next attempt, not silently bypassed.
+            var trigger = director != null ? director.GetComponent<ContactTimelineTrigger>() : null;
+            if (rejectedEntry && trigger != null)
+                trigger.ResetTrigger();
+            else
+                director?.Stop();
         }
 
         private void ReleaseState()

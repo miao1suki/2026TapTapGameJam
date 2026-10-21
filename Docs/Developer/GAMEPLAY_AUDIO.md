@@ -6,7 +6,9 @@
 
 - 主菜单继续固定播放 `music.menu.opening`，循环。
 - 进入 Gaming 逻辑态后从 7 首区域/氛围 BGM 中随机选曲：`music.ambient.loop`、四个 `music.atmosphere.*`、`music.banjo`、`music.keyboard`。
-- 每首强制单次播放，播放结束后静默 `randomMusicGapSeconds`（默认 8 秒），再随机下一首。
+- 每首强制单次完整播放，播放结束后静默 `randomMusicGapSeconds`（默认 18 秒），再随机下一首。
+- 暂停/手机后台不代表曲目结束；音频加载首帧不切歌。音源在真正尾端之前意外停止时，从最后播放采样位置续播，不能直接清空并换曲。曲间静默在暂停、后台和 Boss 覆盖期间不计时，不受慢动作倍速影响。
+- 独立音乐音源使用最高 voice 优先级 `0`，避免大量平台/曲柄循环争抢项目的 32 个真实 voice 时挤掉 BGM；不改机关音效的音量和相对优先级。
 - 使用洗牌袋：一轮内每首只出现一次，并避免相邻两首重复。
 - `music.boss` 仍由 `BossMusicRequest` 作为最高优先级音乐覆盖，Boss 存活期间循环并且随机轮播暂停；Boss 死亡或禁用后释放覆盖，恢复底层随机 BGM 流程。
 - 主菜单 OP、Boss 曲，以及清单中定位为开场、抉择、解谜反馈、叙事事件或过渡的曲目不进入随机池。
@@ -39,7 +41,7 @@ Agent接入入口与完整Cue表见 [音频接入](../Agent/Integration/AUDIO_HA
 
 ## 验证
 
-2026-10-21：随机音乐轮播、单次播放与 Boss 覆盖状态已完成 Unity 6000.3.12f1 静态编译，覆盖 `Project.Audio.Runtime`、`Project.GameFlow.Runtime`、GameFlow Editor/PlayMode 测试程序集及主程序集。未启动第二个 batchmode PlayMode，实际随机、8 秒间隔、Boss 覆盖和恢复仍需在主编辑器试听验收。
+2026-10-21：补充 `RandomMusicContinuityTests` 真实音频暂停/恢复、音源中途停止续播、自然结束与间隔再播放专项；`GameplayAudioTests` 覆盖自然末尾判定、暂停不清空曲目、洗牌池及 Boss 覆盖。运行结果见 `ACTIVE_WORK` 最新音乐条目，未将专项测试视为全部曲目人工试听。
 
 2026-10-15：隔离Unity6000.3.12f1项目125项EditMode测试通过；32项实际Play检查通过，覆盖高处落地、平台/气泡循环启停与重置/禁用、搬运成功与重复请求、燃烧、岩浆保护/致死/冷却和UI同帧去重。测试日志位于本机 `Library/GameplayAudioFinalTests.xml`、`Library/GameplayAudioFinalPlay2.log`。
 

@@ -24,13 +24,13 @@ CollectibleProgressService.Changed += RefreshMap;
 
 ## Boss入口与结局
 
-`BossCollectibleEntryGate`挂在Boss入场的`ContactTimelineTrigger`同物体，顶部`gateEnabled`总开关默认开启。关闭时直接放行Timeline，不检查收集比例，也不执行返回传送；触发器自身模式和其他条件组件保持原行为。启用时默认最低比例0.3、返回ID为`Start`。低于比例拒绝本次Timeline，不消费Once机会；返回当前玩家同场景的Start，也允许明确覆写同场景Transform/锚点。没有同场景目标时只拒绝并输出明确警告，不猜位置、不加载其他场景。挂接通过可复用的`IContactTimelineCondition`，无条件组件的既有触发器行为不变。
+`BossCollectibleEntryGate`挂在Boss入场的`ContactTimelineTrigger`同物体，顶部`gateEnabled`总开关默认开启。关闭时直接放行Timeline，不执行此组件的条件/返回逻辑（正式 Gaming 的条件仍由 `enter_boss` 自行检查）。启用时默认最低收集比例0.3、返回ID为`Start`，并强制要求红绿蓝每色两把、共六把颜色钥匙。两项均满足才放行；缺任一项拒绝本次Timeline，不消费Once机会。返回当前玩家同场景的Start，也允许明确覆写同场景Transform/锚点。没有同场景目标时只拒绝并输出明确警告，不猜位置、不加载其他场景。挂接通过可复用的`IContactTimelineCondition`，无条件组件的既有触发器行为不变。
 
 `Content/Boss/Timelines/enter_boss.playable` 是带字幕演出的替代入口：低进度时 Timeline 会自行播放提示、收黑并传回 `Start`。不能在同一个触发器上同时启用 `BossCollectibleEntryGate`，否则条件组件会在 Timeline 播放前直接拒绝。接入见 [enter_boss API](ENTER_BOSS_TIMELINE_API.md)。
 
 锚点返回统一调用`PlayerController.TryTeleportToStoryAnchor`，由控制器清理绳/攀爬/积水等运动状态、通知房间生命周期、保持外部控制锁、定位相机并将下一次死亡的会话回退点绑定到目标。默认Start不会只移动Transform后还保留旧Boss重生点；明确配置的旧Transform覆写路径保持兼容。
 
-结局在`BossDefeatTimelinePresenter`切换`player_thinking`前读取真实普通收集进度：`>=60%`成功→End，其余→Start。入口门槛为30%。未配置/总数为0不会默认成功。成功演出的六份临时画板明确不计数。Boss吸收六钥匙仍由既有Boss死亡演出负责，不把它们当普通成就收集品。成就1009/1010及旧5/10信号标识保留兼容，触发比例与显示文字已统一为30%/60%。
+结局在`BossDefeatTimelinePresenter`切换`player_thinking`前读取真实普通收集进度：`>=60%`成功→End，其余→Start。入口门槛为30%且六钥匙齐全；结局60%规则不变。`BossEntranceRequirements` 统一两种入口判定；六钥匙按已保存的三色场景解锁与三色能力解锁共六个阶段读取，不只检查三种场景颜色、不引入新存档协议。未配置/总数为0不会默认成功。成功演出的六份临时画板明确不计数。Boss吸收六钥匙仍由既有Boss死亡演出负责，不把它们当普通成就收集品。成就1009/1010及旧5/10信号标识保留兼容，触发比例与显示文字已统一为30%/60%。
 
 ## 地图可用限制
 

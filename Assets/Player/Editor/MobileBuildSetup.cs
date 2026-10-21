@@ -87,6 +87,7 @@ public static class MobileBuildSetup
         if (!EditorUserBuildSettings.SwitchActiveBuildTarget(BuildPipeline.GetBuildTargetGroup(target), target))
             throw new Exception("Failed to switch build target: " + target);
         PlayerSettings.productName = "形之彩";
+        Project.Player.Editor.MobileArtworkSetup.ApplyOfficialIcons();
         PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
         PlayerSettings.allowedAutorotateToLandscapeLeft = true;
         PlayerSettings.allowedAutorotateToLandscapeRight = true;

@@ -543,8 +543,8 @@ MonoBehaviour:
   spriteMaterial: {fileID: 2100000, guid: e9234d909cbb61246844ebb22398973a, type: 2}
   hidePlaceholder: 1
   faceCamera: 1
-  verticalOffsetCells: -0.08
-  additionalVerticalOffsetPixels: -2
+  verticalOffsetCells: -0.0625
+  additionalVerticalOffsetPixels: -3
 --- !u!114 &8610000000000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0

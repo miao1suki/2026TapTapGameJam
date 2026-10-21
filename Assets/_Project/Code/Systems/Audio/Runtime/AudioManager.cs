@@ -532,6 +532,9 @@ namespace Project.Audio
                 soundEffectSource.playOnAwake = false;
             }
 
+            // Keep the one music voice audible when many platform/crank loops compete for real voices.
+            // Lower numbers have higher Unity voice priority; do not alter effects' relative priorities.
+            musicSource.priority = 0;
             soundEffectSource.ignoreListenerPause = true;
         }
 

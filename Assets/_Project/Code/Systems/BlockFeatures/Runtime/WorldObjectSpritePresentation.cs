@@ -23,6 +23,9 @@ namespace Project.BlockFeatures
         private MonoBehaviour gridProviderOwner;
         private bool searchedGrid;
         private float gridRefreshAt;
+        private bool anchorFloorCached;
+        private Vector3 anchorFloorPosition, anchorFloorScale;
+        private float anchorFloorCell, anchorFloorOffset;
         public SpriteRenderer Visual => visual;
         public RespawnArtworkState CurrentRespawnState => state;
         public bool IsBouncePlaying => bouncing;
@@ -38,6 +41,7 @@ namespace Project.BlockFeatures
         }
         private void OnEnable()
         {
+            anchorFloorCached = false;
             if (!Application.isPlaying) return;
             Initialize();
             mask = null;
@@ -118,7 +122,7 @@ namespace Project.BlockFeatures
                     : state == RespawnArtworkState.Locked ? artwork.respawnLocked : artwork.respawnUsed;
                 visual.drawMode = SpriteDrawMode.Simple;
                 SetLayout(GridArtworkMetrics.NaturalSpriteScale(frame, authorScale, cell),
-                    center + new Vector3(0f, -.5f * cell / Mathf.Max(.001f, Mathf.Abs(authorScale.y)), -.51f));
+                    center + new Vector3(0f, (-.5f * cell + AnchorFloorOffset(center, authorScale, cell)) / Mathf.Max(.001f, Mathf.Abs(authorScale.y)), -.51f));
                 visual.enabled = isActiveAndEnabled && frame != null;
             }
             else
@@ -153,6 +157,26 @@ namespace Project.BlockFeatures
                 }
             }
         }
+        // Only close small presentation gaps. Never move the anchor, trigger, or saved respawn position.
+        private float AnchorFloorOffset(Vector3 center, Vector3 authorScale, float cell)
+        {
+            if (anchorFloorCached && anchorFloorPosition == transform.position &&
+                anchorFloorScale == authorScale && Mathf.Approximately(anchorFloorCell, cell))
+                return anchorFloorOffset;
+            anchorFloorCached = true;
+            anchorFloorPosition = transform.position;
+            anchorFloorScale = authorScale;
+            anchorFloorCell = cell;
+            anchorFloorOffset = 0f;
+            Vector3 bottom = transform.TransformPoint(center) - Vector3.up * (.5f * cell);
+            Physics.SyncTransforms();
+            if (Physics.Raycast(bottom + Vector3.up * (.01f * cell), Vector3.down,
+                    out RaycastHit hit, .52f * cell, ~0, QueryTriggerInteraction.Ignore) &&
+                !hit.transform.IsChildOf(transform))
+                anchorFloorOffset = Mathf.Clamp(hit.point.y - bottom.y, -.5f * cell, 0f);
+            return anchorFloorOffset;
+        }
+
         private void SetLayout(Vector3 scale, Vector3 position)
         {
             if (visual.transform.localScale != scale) visual.transform.localScale = scale;

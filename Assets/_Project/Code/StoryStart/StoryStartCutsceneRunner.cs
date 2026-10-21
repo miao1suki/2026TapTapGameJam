@@ -103,6 +103,9 @@ namespace Project.StoryStart
             }
 
             Vector3 destination = player.transform.position;
+            // Gravity is suspended during the Timeline. Settle the authored destination before walking in.
+            if (player.TryGetGroundedPresentationPosition(destination, out Vector3 groundedDestination))
+                destination = groundedDestination;
             float cellSize = Mathf.Max(
                 .01f,
                 player.GridCellWorldSize);

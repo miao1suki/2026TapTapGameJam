@@ -21,7 +21,7 @@
 
 循环属性已登记到 `AudioCatalog`，Unity 内仍需实际试听循环点。
 
-主菜单的`music.menu.opening`现使用新`bmg_op.mp3`，按菜单场景循环播放。正式进入Gaming后，`GameAudioService.HandleActiveSceneChanged`启动背景音乐随机轮播：从`music.ambient.loop`、四个`music.atmosphere.*`、`music.banjo`、`music.keyboard`中洗牌选曲，每首单次播放，结束后静默`randomMusicGapSeconds`（默认8秒）再选下一首。一轮内不重复，且相邻两首不重复；主菜单OP、Boss曲及开场/抉择/解谜反馈/叙事事件/过渡曲目不进入该池。
+主菜单的`music.menu.opening`现使用新`bmg_op.mp3`，按菜单场景循环播放。正式进入Gaming后，`GameAudioService.HandleActiveSceneChanged`启动背景音乐随机轮播：从`music.ambient.loop`、四个`music.atmosphere.*`、`music.banjo`、`music.keyboard`中洗牌选曲，每首单次完整播放，结束后静默`randomMusicGapSeconds`（默认18秒）再选下一首。一轮内不重复，且相邻两首不重复；主菜单OP、Boss曲及开场/抉择/解谜反馈/叙事事件/过渡曲目不进入该池。暂停与后台不结算曲目，音源过早停止按最后采样续播，曲间静默在暂停/后台/Boss覆盖时冻结。
 
 `bgm_boss.mp3`登记为`music.boss`（`AudioCueIds.MusicBoss`），按循环音乐启用。`BossMusicRequest`订阅Boss血条的`HealthSystemActivated`委托，确认玩家与Boss处于同一场景后，通过可释放的音乐覆盖申请播放Boss曲；覆盖期间随机轮播暂停，Boss `Died`、禁用或销毁时释放申请，恢复申请期间最后一次设置的底层BGM。两首新增MP3使用Streaming/Vorbis、质量0.8、不预解码，meta已由Unity生成并交付，文件名保留音频成员原命名。
 

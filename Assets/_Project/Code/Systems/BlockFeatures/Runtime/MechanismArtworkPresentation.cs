@@ -399,6 +399,12 @@ namespace Project.BlockFeatures
                 visual.tileMode = SpriteTileMode.Continuous;
                 visual.transform.localScale = ObjectArtworkLibrary.PlatformTileScale(scale, cell, verticalPlatform);
                 float depth = center.z - size.z * .5f - .015f * cell / Mathf.Max(.001f, Mathf.Abs(scale.z));
+                // Cutout sprites write depth: sortingOrder alone cannot put a ladder behind the player.
+                if (ladder != null)
+                {
+                    depth = center.z + .015f * cell / Mathf.Max(.001f, Mathf.Abs(scale.z));
+                    visual.sortingOrder = -5;
+                }
                 if (verticalPlatform)
                 {
                     visual.transform.localRotation = Quaternion.Euler(0, 0, 90);

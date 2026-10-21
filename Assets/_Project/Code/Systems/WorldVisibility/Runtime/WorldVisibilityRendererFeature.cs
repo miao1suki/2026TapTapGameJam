@@ -129,6 +129,8 @@ namespace Project.WorldVisibility
                         {
                             Mesh mesh = previous ? value.system.PreviousSightMesh : value.system.SightMesh;
                             if (mesh) context.cmd.DrawMesh(mesh,Matrix4x4.identity,value.material,0,5);
+                            if (value.system.UnoccludedRoomMesh)
+                                context.cmd.DrawMesh(value.system.UnoccludedRoomMesh,Matrix4x4.identity,value.material,0,7);
                             if (value.system.WallMesh)
                                 context.cmd.DrawMesh(value.system.WallMesh,Matrix4x4.identity,value.material,0,7);
                         });
@@ -201,6 +203,8 @@ namespace Project.WorldVisibility
                             Matrix4x4.identity,value.material,0,value.sight ? 1 : 0);
                         if (!value.sight) foreach (var lamp in value.system.Lights)
                             if (lamp && lamp.polygon.Mesh) context.cmd.DrawMesh(lamp.polygon.Mesh,Matrix4x4.identity,value.material,0,0);
+                        if (value.system.UnoccludedRoomMesh)
+                            context.cmd.DrawMesh(value.system.UnoccludedRoomMesh,Matrix4x4.identity,value.material,0,1);
                     });
                 }
             }

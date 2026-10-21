@@ -1,5 +1,7 @@
 # 二维可见性接入
 
+- 房间例外：`WorldVisibility2D.unoccludedRoomIds` 按 `RoomLifecycleManager.Regions` 的区域 ID 配置始终无遮蔽的房间。正式 MRoom2=`room_cc07f6ef`、MRoom3=`room_791e28e6`；精确 cells 按行合并成独立保留网格，玩家在外部或切换房间时也保持该两房可见，不关闭其他房间或全屏遮蔽。房间版本/变换/配置变化才重建，连通及旧灯光模式均接入，不改美术、碰撞或规划。专项过滤器 `Project.GameFlow.Tests.RoomVisibilityExceptionTests`，需由整合者运行。
+
 1.0.1：连通更新会先捕获当前混合亮度，再渐变到新目标，连续更新/反向变化不跳到上一目标。默认 0.75 格向内柔光，Inspector `connectedEdgeSoftnessCells` 可调；不向拒绝区域扩散。当前遮罩为 RG8（R=可见性、G=门/实体框架保留），上一快照为 R8；保留足迹在柔化之后恢复，门本体不消失。沿用两张遮罩与单次合成，不新增多光源或全屏高斯通道。
 
 - 模块：`Assets/_Project/Code/Systems/WorldVisibility`；喷泉表现归 `ObjectArtwork/Runtime/FountainArtwork.cs`。无联网，无玩家控制或房间生命周期写入。

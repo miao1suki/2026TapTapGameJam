@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Project.LevelEditor;
 using Project.Mechanisms;
+using Project.Rooms;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -28,6 +29,15 @@ namespace Project.WorldVisibility
         [SerializeField, Min(0f)] public float connectedTransitionDuration = .25f;
         [SerializeField, Range(0, 2)] public float connectedEdgeSoftnessCells = .75f;
         [SerializeField] public bool respectPlayerSight = true;
+        [SerializeField] public string[] unoccludedRoomIds = Array.Empty<string>();
+        Mesh unoccludedRoomMesh;
+        RoomLifecycleManager roomMaskManager;
+        int roomMaskRevision = -1, roomMaskConfiguration;
+        Matrix4x4 roomMaskMatrix;
+        readonly List<Vector3> roomVertices = new List<Vector3>();
+        readonly List<int> roomIndices = new List<int>();
+        readonly List<Vector2Int> roomCells = new List<Vector2Int>();
+        public Mesh UnoccludedRoomMesh => unoccludedRoomMesh;
         readonly VisibilityGeometry.Polygon sight = new VisibilityGeometry.Polygon();
         ConnectedSpaceGeometry connected = new ConnectedSpaceGeometry();
         ConnectedSpaceGeometry connectedPrevious = new ConnectedSpaceGeometry();
@@ -106,6 +116,8 @@ namespace Project.WorldVisibility
             active.Remove(this); SceneManager.sceneLoaded -= SceneLoaded;
             sight.Dispose(); connected.Dispose(); connectedPrevious.Dispose(); connectedSnapshot.Dispose(); playerLight.Dispose(); walls.Clear(); buckets.Clear(); visibleLights.Clear();
             if (wallMesh) { if (Application.isPlaying) Destroy(wallMesh); else DestroyImmediate(wallMesh); wallMesh = null; }
+            if (unoccludedRoomMesh) { if (Application.isPlaying) Destroy(unoccludedRoomMesh); else DestroyImmediate(unoccludedRoomMesh); unoccludedRoomMesh = null; }
+            roomMaskManager = null; roomMaskRevision = -1;
             suppressionRequests.Clear(); occlusionStrength = 1; fadeElapsed = fadeDuration = 0; fadeFrom = fadeTarget = 1;
             connectedRevision = -1;
             connectedBuildCount = 0; connectedBlend = 1; connectedBlendDuration = 0;
@@ -132,6 +144,7 @@ namespace Project.WorldVisibility
             if (!viewer && findPlayer && Time.realtimeSinceStartup >= nextPlayerSearch)
             { var player = GameObject.FindGameObjectWithTag("Player"); if (player) viewer = player.transform; nextPlayerSearch = Time.realtimeSinceStartup + 1; }
             if (!viewer) return false; // Missing references must never black out an unrelated camera.
+            PrepareUnoccludedRooms();
             if (solidRevision != LevelEditorPlacedBlock.SolidRevision) RebuildWalls();
             RebuildDynamicEdges();
             if (connectedSpaceVisibility)
@@ -191,6 +204,41 @@ namespace Project.WorldVisibility
                 visibleLights.Add(light);
             }
             return true;
+        }
+        void PrepareUnoccludedRooms()
+        {
+            var manager = RoomLifecycleManager.ForScene(gameObject.scene);
+            int hash = 17;
+            unchecked { if (unoccludedRoomIds != null) foreach (string id in unoccludedRoomIds) hash = hash * 31 + (id?.GetHashCode() ?? 0); }
+            Matrix4x4 matrix = manager ? manager.transform.localToWorldMatrix : Matrix4x4.identity;
+            int version = manager ? manager.Revision : -1;
+            if (roomMaskManager == manager && roomMaskRevision == version && roomMaskConfiguration == hash && roomMaskMatrix == matrix) return;
+            roomMaskManager = manager; roomMaskRevision = version; roomMaskConfiguration = hash; roomMaskMatrix = matrix;
+            roomVertices.Clear(); roomIndices.Clear();
+            if (manager && unoccludedRoomIds != null) foreach (var region in manager.Regions)
+            {
+                if (region == null || Array.IndexOf(unoccludedRoomIds, region.id) < 0 || region.cells == null) continue;
+                roomCells.Clear(); roomCells.AddRange(region.cells);
+                roomCells.Sort((a,b) => a.y == b.y ? a.x.CompareTo(b.x) : a.y.CompareTo(b.y));
+                // Merge only contiguous cells in one row: never reveal holes or a room's bounding rectangle.
+                for (int i = 0; i < roomCells.Count; i++)
+                {
+                    var first = roomCells[i]; int end = first.x;
+                    while (i + 1 < roomCells.Count && roomCells[i+1].y == first.y && roomCells[i+1].x <= end + 1)
+                        end = Mathf.Max(end, roomCells[++i].x);
+                    float size = manager.CellWorldSize;
+                    int start = roomVertices.Count;
+                    roomVertices.Add(matrix.MultiplyPoint3x4(new Vector3(first.x*size, -(first.y+1)*size, 0)));
+                    roomVertices.Add(matrix.MultiplyPoint3x4(new Vector3((end+1)*size, -(first.y+1)*size, 0)));
+                    roomVertices.Add(matrix.MultiplyPoint3x4(new Vector3((end+1)*size, -first.y*size, 0)));
+                    roomVertices.Add(matrix.MultiplyPoint3x4(new Vector3(first.x*size, -first.y*size, 0)));
+                    roomIndices.Add(start); roomIndices.Add(start+1); roomIndices.Add(start+2);
+                    roomIndices.Add(start); roomIndices.Add(start+2); roomIndices.Add(start+3);
+                }
+            }
+            unoccludedRoomMesh ??= new Mesh { name = "房间无遮蔽例外", hideFlags = HideFlags.HideAndDontSave };
+            unoccludedRoomMesh.Clear(); unoccludedRoomMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+            unoccludedRoomMesh.SetVertices(roomVertices); unoccludedRoomMesh.SetTriangles(roomIndices, 0); unoccludedRoomMesh.RecalculateBounds();
         }
         void RebuildWalls()
         {

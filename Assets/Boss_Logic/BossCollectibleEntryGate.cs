@@ -23,7 +23,8 @@ namespace Project.BossLogic
         public bool GateEnabled => gateEnabled;
         public float MinimumRatio => minimumRatio;
         public CollectibleProgressSnapshot Progress => CollectibleProgressService.GetWorldProgress();
-        public bool CanEnter => !gateEnabled || Progress.MeetsRatio(minimumRatio);
+        public int CollectedColorKeyCount => BossEntranceRequirements.CollectedColorKeyCount;
+        public bool CanEnter => !gateEnabled || BossEntranceRequirements.CanEnter(Progress, CollectedColorKeyCount, minimumRatio);
 
         public bool CanPlayTimeline(GameObject actor)
         {
@@ -35,7 +36,7 @@ namespace Project.BossLogic
             if (Time.unscaledTime < nextRejection) return false;
             nextRejection = Time.unscaledTime + .5f;
             if (showHint)
-                WordNoteUI.Instance?.ShowTimed($"收集进度不足{minimumRatio:P0}，暂时无法进入", 2f, WordNotePosition.Bottom);
+                WordNoteUI.Instance?.ShowTimed(BossEntranceRequirements.RequirementHint(Progress, CollectedColorKeyCount, minimumRatio), 2f, WordNotePosition.Bottom);
             Transform destination = returnPoint;
             TeleportAnchorFeature destinationAnchor = null;
             if (destination == null && TeleportAnchorFeature.TryGetAnchor(returnDestinationId, out var anchor))
@@ -74,7 +75,7 @@ namespace Project.BossLogic
             }
             else
             {
-                Debug.LogWarning("[BossEntry] 收集进度不足，已拒绝入场但缺少当前玩家同场景的返回目标 " +
+                Debug.LogWarning("[BossEntry] 收集品或六把颜色钥匙未达标，已拒绝入场但缺少当前玩家同场景的返回目标 " +
                     returnDestinationId + "。正式Boss与关卡统一合入Gaming并使用Start；独立Boss测试请显式配置本场景锚点，不会自动切换场景。", this);
             }
             return false;
@@ -88,9 +89,11 @@ namespace Project.BossLogic
                 StringComparison.Ordinal);
         }
 
-        private static void EmitReturnedHome(
+        private void EmitReturnedHome(
             PlayerController player)
         {
+            // Missing keys alone must not award the existing low-collectible return achievement.
+            if (Progress.MeetsRatio(minimumRatio)) return;
             GameplaySignalHub.Emit(
                 AchievementSignalIds
                     .LowCollectibleReturnHome,

@@ -1,5 +1,7 @@
 # 系统索引
 
+2026-10-21 后续交付：BossEntranceRequirements统一30%+六钥匙入口与提示；WorldVisibility2D.unoccludedRoomIds使MRoom2/MRoom3精确区域始终可见；安全白块合并仅改表示，1542→107组，三份正式规划3010条。正式ICON固定至构建入口，玩家脚底/梯子后置/重生点显示与开场安全落地已修。音频完整播放后静默18秒。专项验收及美术差异截图见ACTIVE_WORK当前记录。
+
 2026-10-21 1.0.1：正式 Gaming 采用压缩包新版 25 房/4445 记录并保留三方美术及最新 main 修复；玩家出生位置与黄色 Start 对齐。WorldTravelMap 开局可用、仅已激活普通点可传送、战斗与 Boss 房禁用；Boss/结局/收集成就为 30%/60%。WorldVisibility2D 用中间明暗快照连续过渡，连通边缘可调向内柔化；RG 遮罩 G 通道保留门/墙足迹，防止柔化再次遮蔽门本体。详见 ACTIVE_WORK 当前条目。
 
 2026-10-21光照：连通空间遮蔽只压暗非墙体内容，规划墙 Collider 足迹生成常亮 `WallMesh`。`WorldVisibility2D.SuppressOcclusion` 提供按 owner 引用计数的淡出/淡入租约；三色钥匙 Timeline 自动临时关闭并在停止后恢复。
@@ -7,7 +9,7 @@
 2026-10-21 三方美术接收：Gaming 玩法/三份规划仍为 main `1346261`，美术合并 TA、ILorR 与 shurui 的有效增量至 13655 格，保持 257 笔刷编号及原像素比例；新增 TA 红雨区域。只生成独立美术子树，不回退玩法或接入待完成的光照遮蔽分支，详见 ACTIVE_WORK 顶部。
 2026-10-21颜色钥匙镜头：拾取演出正交尺寸固定为`15`，三色Timeline不申请2D/3D切换且保留当前Yaw；Gaming主相机预挂`TimelineCamRig`，避免首次拾取运行时挂组件。
 
-2026-10-21背景音乐：MainMenu固定`music.menu.opening`；Gaming从7首区域/氛围BGM洗牌单次播放，曲间默认静默8秒。Boss覆盖曲存活期间循环并暂停随机轮播，死亡后恢复底层流程。实现入口为`GameAudioService`与`AudioManager`，说明见`GAMEPLAY_AUDIO.md`。
+2026-10-21背景音乐：MainMenu固定`music.menu.opening`；Gaming从7首区域/氛围BGM洗牌完整单次播放，曲间默认静默18秒。暂停/后台不结算，音源过早停止按最后采样续播，音乐voice优先级0。Boss覆盖曲存活期间循环并暂停随机轮播，死亡后恢复底层流程。实现入口为`GameAudioService`与`AudioManager`，说明见`GAMEPLAY_AUDIO.md`。
 
 2026-10-20最新整合：Gaming关卡与编辑存档采用xianyu66web ac01381；美术采用TA317f9bb。新增连通空间可见模式、细粒度地图滚轮、暂停切片纠正及双端退役测试HUD；用户确认摔死高度10格。双端0.2.1包成功生成，真机SDK初始化1001此前已修复，最新账号服务状态仍待后续真机确认。详见FORMAL_LEVEL_DELIVERY与ACTIVE_WORK顶部。
 

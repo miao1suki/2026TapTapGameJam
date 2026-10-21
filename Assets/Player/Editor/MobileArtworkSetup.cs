@@ -10,7 +10,7 @@ namespace Project.Player.Editor
     public static class MobileArtworkSetup
     {
         private const string Source = "Assets/_Project/Resources/26TAPTAP/UI/B31A4497C97A51CF13A50549B8241494.png";
-        private const string IconPath = "Assets/_Project/Resources/临时ICON.png";
+        private const string IconPath = "Assets/_Project/Resources/正式ICON.png";
         private const string Output = "Assets/_Project/Resources/MobileControls";
         private static readonly string[] Names =
         { "Pause", "Respawn", "Left", "Right", "Up", "Jump", "DropRight", "Interact", "Color", "Down", "DropLeft", "Walk" };
@@ -48,6 +48,15 @@ namespace Project.Player.Editor
             finally { UnityEngine.Object.DestroyImmediate(source); }
             AssetDatabase.Refresh();
             foreach (string path in Directory.GetFiles(Output, "*.png")) Import(path.Replace('\\', '/'), true);
+            ApplyOfficialIcons();
+            AssetDatabase.SaveAssets();
+            Validate();
+            Debug.Log("MOBILE ARTWORK PASS: 26 pixel sprites, square movement/jump variant, supplied Windows/Android icon. No scene, prefab, layout or network settings changed.");
+        }
+
+        [MenuItem("Tools/2026TapTap/UI/应用正式双端图标")]
+        public static void ApplyOfficialIcons()
+        {
             Import(IconPath, false);
             var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(IconPath);
             if (icon == null) throw new InvalidOperationException("Missing supplied application icon.");
@@ -61,8 +70,6 @@ namespace Project.Player.Editor
                 PlayerSettings.SetPlatformIcons(NamedBuildTarget.Android, kind, slots);
             }
             AssetDatabase.SaveAssets();
-            Validate();
-            Debug.Log("MOBILE ARTWORK PASS: 26 pixel sprites, square movement/jump variant, supplied Windows/Android icon. No scene, prefab, layout or network settings changed.");
         }
 
         public static void Validate()

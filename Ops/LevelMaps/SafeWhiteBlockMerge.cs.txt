@@ -1,0 +1,237 @@
+// Copy into Assets/Editor ONLY in the isolated probe; never auto-runs on import.
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using PlanningEditorPrototype;
+using Project.LevelEditor;
+using Project.LevelEditor.Editor;
+using Project.Rooms;
+using Project.SurfaceTiles;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
+
+public static class SafeWhiteBlockMerge
+{
+    const string ScenePath = "Assets/_Project/Scenes/Playing/Gaming.unity";
+    const string PlanningPath = "Assets/_Project/Scenes/Playing/Gaming.planning.json";
+    const string NamedPath = "Assets/_Project/Content/LevelMaps/正式关卡.json";
+    const string PalettePath = "Assets/_Project/Development/LevelEditor/Orpheus0829/LevelEditorPalette.asset";
+    const string WhiteId = "b425a019bb3c476da08cd4065bd77862";
+    static readonly BindingFlags HiddenStatic = BindingFlags.Static | BindingFlags.NonPublic;
+    sealed class Item { public PlanningRoom room; public PlanningBox box; public LevelEditorPlacedBlock placed; public string key; }
+    sealed class Group { public List<Item> items; public PlanningBox merged; public LevelEditorPlacedBlock created; }
+    public static void DryRun() => Execute(false);
+    public static void Apply() => Execute(true);
+
+    static void Execute(bool apply)
+    {
+        try
+        {
+            Require(Application.dataPath.Replace('\\','/').Contains("/Library/FlowRetirementProbe/"), "Only the isolated FlowRetirementProbe may execute this migration.");
+            var scene = EditorSceneManager.OpenScene(ScenePath);
+            var manager = All<RoomLifecycleManager>(scene).Single();
+            string original = File.ReadAllText(PlanningPath);
+            var doc = JsonUtility.FromJson<PlanningDocument>(original);
+            Require(JsonUtility.ToJson(doc) == JsonUtility.ToJson(JsonUtility.FromJson<PlanningDocument>(manager.PlanningJson)), "Scene/sidecar planning differs; abort instead of rebuilding.");
+            Require(original == File.ReadAllText(NamedPath), "Named planning differs.");
+            string backup = "Library/SafeWhiteMergeBackup-" + DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            Directory.CreateDirectory(backup);
+            foreach (string p in new[]{ScenePath,PlanningPath,NamedPath}) File.Copy(p, backup + "/" + Path.GetFileName(p));
+            var report = new StringBuilder(); report.AppendLine("mode=" + (apply ? "APPLY" : "DRY_RUN")); report.AppendLine("backup="+backup);
+            var placed = All<LevelEditorPlacedBlock>(scene).ToList();
+            var byId = placed.Where(p=>!string.IsNullOrEmpty(p.PlanningBoxId)).GroupBy(p=>p.PlanningBoxId).ToDictionary(g=>g.Key,g=>g.ToList());
+            var eligible = new List<Item>(); var rejected = new Dictionary<string,int>();
+            void Reject(string reason) { rejected.TryGetValue(reason,out int n); rejected[reason]=n+1; }
+            foreach (var room in doc.rooms)
+            foreach (var box in room.boxes)
+            {
+                if (box.paletteEntryId != WhiteId || box.isMerged || box.width != 1 || box.height != 1 || box.singleInstance) continue;
+                if (box.type != PlanningDetailType.Solid && box.type != PlanningDetailType.Platform) { Reject("not-static-geometry"); continue; }
+                if (!string.IsNullOrEmpty(box.propEntryId) || !string.IsNullOrEmpty(box.propEntryName) ||
+                    !string.IsNullOrEmpty(box.authoredSnapshotGuid) || !string.IsNullOrEmpty(box.authoredObjectId) ||
+                    !string.IsNullOrEmpty(box.authoredInstanceId) || box.authoredPositionOffset != Vector3.zero ||
+                    box.componentOverrides != null && box.componentOverrides.Count != 0 ||
+                    !string.IsNullOrEmpty(box.doorOwnerId) || !string.IsNullOrEmpty(box.mechanismBaseId) ||
+                    !string.IsNullOrEmpty(box.crankOwnerId) || !string.IsNullOrEmpty(box.platformMountId) ||
+                    !string.IsNullOrEmpty(box.bossRespawnOwnerId) || box.mechanismButtonIds != null && box.mechanismButtonIds.Count != 0)
+                { Reject("authored-data-or-binding"); continue; }
+                if (!byId.TryGetValue(box.id,out var matches) || matches.Count!=1) { Reject("scene-identity-not-unique");continue; }
+                var p=matches[0]; var t=p.transform; var collider=p.GetComponent<BoxCollider>();
+                var authoredRect=PlanningLayoutUtility.GetAssemblyBoxRect(room,box,doc.worldBlockCellWidth,doc.worldBlockCellHeight);
+                if(p.Cell!=new Vector2Int(authoredRect.x,-authoredRect.y-1))
+                {Reject("scene-cell-differs-from-planning");continue;}
+                if (p.IsProp || !p.gameObject.activeInHierarchy || t.childCount!=0 || p.SizeCells!=Vector2Int.one ||
+                    Quaternion.Angle(t.rotation,Quaternion.identity)>.001f || collider==null || !collider.enabled || collider.isTrigger ||
+                    p.GetComponents<Collider>().Length!=1 || p.GetComponent<Rigidbody>()!=null)
+                { Reject("non-ordinary-scene-object");continue; }
+                var surface=p.GetComponent<SurfaceTileBlock>();
+                if (surface!=null && (surface.Placements.Count!=0 || surface.Palette!=null || surface.TransparentBase || surface.BakedMesh!=null))
+                { Reject("surface-artwork");continue; }
+                var extra=p.GetComponents<Component>().Where(c=>!(c is Transform || c is MeshFilter || c is MeshRenderer || c is BoxCollider || c is LevelEditorPlacedBlock || c is SurfaceTileBlock || c is RoomResetObject)).ToList();
+                if(extra.Count!=0) { foreach(var c in extra)Reject("extra-feature-component:"+(c==null?"MISSING":c.GetType().FullName));continue; }
+                // Ordinary static walls only: retain their room-reset registration,
+                // and never combine across independently reset room memberships.
+                var reset=p.GetComponent<RoomResetObject>();
+                if(reset!=null && (string.IsNullOrEmpty(reset.RegionId) || !manager.Regions.Any(r=>r.id==reset.RegionId)))
+                {Reject("unresolved-room-reset-owner");continue;}
+                float cell=p.CellWorldSize; var b=collider.bounds;
+                var expected=new Vector3((p.Cell.x+.5f)*cell,(p.Cell.y+.5f)*cell,0);
+                if ((b.center-expected).sqrMagnitude>.000001f || (b.size-new Vector3(cell,cell,cell)).sqrMagnitude>.000001f ||
+                    (t.position-expected).sqrMagnitude>.000001f || p.PlanningLocalCell!=new Vector2Int(box.x,box.y))
+                { Reject("hand-adjusted-or-non-unit-collider");continue; }
+                var renderer=p.GetComponent<MeshRenderer>();
+                if(renderer==null || renderer.sharedMaterials.Length!=1) {Reject("unusual-renderer");continue;}
+                string key=room.id+"|"+(int)box.type+"|"+t.parent.GetInstanceID()+"|"+JsonUtility.ToJson(p.EntryColor)+"|"+renderer.enabled+"|"+
+                    (renderer.sharedMaterial!=null?renderer.sharedMaterial.GetInstanceID():0)+"|"+(collider.sharedMaterial!=null?collider.sharedMaterial.GetInstanceID():0)+"|"+
+                    collider.contactOffset+"|"+p.gameObject.layer+"|"+p.gameObject.tag+"|"+cell+"|"+
+                    GameObjectUtility.GetStaticEditorFlags(p.gameObject)+"|"+NativeSettings(renderer)+"|"+NativeSettings(collider)+"|reset="+
+                    (reset==null?"none":reset.RegionId+":"+reset.enabled);
+                eligible.Add(new Item{room=room,box=box,placed=p,key=key});
+            }
+            // Reject external references before removing any GameObject or component.
+            var targets=new Dictionary<Object,Item>();
+            foreach(var item in eligible) {targets[item.placed.gameObject]=item;foreach(var c in item.placed.GetComponents<Component>())targets[c]=item;}
+            var referenced=new HashSet<Item>();
+            foreach(var component in All<Component>(scene))
+            {
+                if(component==null || component is Transform)continue;
+                var serialized=new SerializedObject(component); var property=serialized.GetIterator();
+                while(property.Next(true))
+                    if(property.propertyType==SerializedPropertyType.ObjectReference && property.objectReferenceValue!=null &&
+                        targets.TryGetValue(property.objectReferenceValue,out var item) && component.gameObject!=item.placed.gameObject)
+                        referenced.Add(item);
+            }
+            foreach(var item in referenced) {eligible.Remove(item);Reject("external-serialized-reference");}
+            // All string bindings (including document-level custom fields) are also protected.
+            foreach(var item in eligible.ToList())
+            {
+                int first=original.IndexOf(item.box.id,StringComparison.Ordinal);
+                if(first<0 || original.IndexOf(item.box.id,first+item.box.id.Length,StringComparison.Ordinal)>=0)
+                {eligible.Remove(item);Reject("external-planning-id-reference");}
+            }
+            var groups=new List<Group>();
+            foreach(var same in eligible.GroupBy(i=>i.key))
+            {
+                var cells=same.GroupBy(i=>new Vector2Int(i.box.x,i.box.y)).Where(g=>g.Count()==1).ToDictionary(g=>g.Key,g=>g.Single());
+                while(cells.Count>0)
+                {
+                    var first=cells.First(); var todo=new Stack<Vector2Int>();todo.Push(first.Key);var part=new List<Item>();
+                    while(todo.Count>0){var c=todo.Pop();if(!cells.TryGetValue(c,out var item))continue;cells.Remove(c);part.Add(item);
+                        foreach(var n in new[]{c+Vector2Int.left,c+Vector2Int.right,c+Vector2Int.up,c+Vector2Int.down})if(cells.ContainsKey(n))todo.Push(n);}
+                    if(part.Count<2)continue;
+                    part.Sort((a,b)=>string.CompareOrdinal(a.box.id,b.box.id));
+                    var merged=part[0].box.Clone(); merged.id=PlanningDocument.NewId("box");merged.x=part.Min(i=>i.box.x);merged.y=part.Min(i=>i.box.y);
+                    merged.width=part.Max(i=>i.box.x)+1-merged.x;merged.height=part.Max(i=>i.box.y)+1-merged.y;merged.isMerged=true;
+                    merged.mergeParts=part.Select(i=>JsonUtility.ToJson(i.box)).ToList();
+                    groups.Add(new Group{items=part,merged=merged});
+                }
+            }
+            report.AppendLine("eligible="+eligible.Count+" groups="+groups.Count+" sourceObjects="+groups.Sum(g=>g.items.Count)+" newObjects="+groups.Count);
+            foreach(var pair in rejected)report.AppendLine("REJECT "+pair.Key+"="+pair.Value);
+            foreach(var group in groups)report.AppendLine($"GROUP {group.items[0].room.name} type={group.merged.type} source={group.items.Count} local=[{group.merged.x},{group.merged.y},{group.merged.width},{group.merged.height}]");
+            if(!apply) {File.WriteAllText("Library/SafeWhiteBlockMerge-DryRun.txt",report.ToString());Debug.Log(report);EditorApplication.Exit(0);return;}
+            Require(groups.Count>0,"No safe groups.");
+            var originals=new HashSet<GameObject>(groups.SelectMany(g=>g.items).Select(i=>i.placed.gameObject));
+            var untouched=Snapshot(scene,originals,manager); string regions=JsonUtility.ToJson(new RegionSnapshot{regions=manager.Regions.ToList()});
+            var beforeCells=CollisionCells(placed); var artHashes=AssetHashes();
+            var palette=AssetDatabase.LoadAssetAtPath<LevelEditorPalette>(PalettePath);
+            var place=typeof(PlanningSceneBuilder).GetMethod("PlacePlanningBox",HiddenStatic);
+            Require(place!=null,"Existing exact-shape builder not found.");
+            var newObjects=new HashSet<GameObject>();
+            foreach(var group in groups)
+            {
+                var first=group.items[0]; var source=first.placed;
+                int worldX=source.Cell.x-first.box.x, worldY=-source.Cell.y-1-first.box.y;
+                // The builder accepts the first occupied shape rectangle, not
+                // necessarily the bounding box top-left (which may be a hole).
+                var shapeRects=PlanningShapeUtility.Rectangles(group.merged);
+                Require(shapeRects.Count>0,"Merged wall has no occupied rectangles.");
+                var local=shapeRects[0].position;
+                Debug.Log($"Safe white merge creating room={first.room.id} sources={group.items.Count} bounds=[{group.merged.x},{group.merged.y},{group.merged.width},{group.merged.height}] anchor={local}");
+                var result=(LevelEditorPlacedBlock)place.Invoke(null,new object[]{palette,group.merged,new Vector2Int(worldX+local.x,worldY+local.y),source.transform.parent,local});
+                Require(result!=null,"Failed to create exact merged wall."); group.created=result;newObjects.Add(result.gameObject);
+                var oldReset=source.GetComponent<RoomResetObject>();
+                var newReset=result.GetComponent<RoomResetObject>();
+                if(oldReset!=null)
+                {
+                    if(newReset==null)newReset=result.gameObject.AddComponent<RoomResetObject>();
+                    newReset.SetRegion(oldReset.RegionId);newReset.enabled=oldReset.enabled;
+                    Require(newReset.RegionId==oldReset.RegionId && newReset.enabled==oldReset.enabled,"Room reset registration changed.");
+                }
+                else Require(newReset==null,"Unexpected new room-reset registration.");
+                result.gameObject.layer=source.gameObject.layer;result.gameObject.tag=source.gameObject.tag;
+                GameObjectUtility.SetStaticEditorFlags(result.gameObject,GameObjectUtility.GetStaticEditorFlags(source.gameObject));
+                var oldRenderer=source.GetComponent<MeshRenderer>();var renderer=result.GetComponent<MeshRenderer>();
+                EditorUtility.CopySerialized(oldRenderer,renderer);
+                Require(renderer.gameObject==result.gameObject,"Renderer ownership changed.");
+                var props=new MaterialPropertyBlock();oldRenderer.GetPropertyBlock(props);renderer.SetPropertyBlock(props);
+                foreach(var c in result.GetComponents<BoxCollider>())
+                {
+                    Vector3 center=c.center,size=c.size;
+                    EditorUtility.CopySerialized(source.GetComponent<BoxCollider>(),c);
+                    c.center=center;c.size=size;
+                    Require(c.gameObject==result.gameObject,"Collider ownership changed.");
+                }
+                var expected=CollisionCells(group.items.Select(i=>i.placed));var actual=CollisionCells(new[]{result});
+                Require(expected.SetEquals(actual),"Merged Collider boundaries differ; no save performed.");
+                foreach(var item in group.items){item.room.boxes.Remove(item.box);Object.DestroyImmediate(item.placed.gameObject);}
+                first.room.boxes.Add(group.merged);
+            }
+            Physics.SyncTransforms();
+            Require(beforeCells.SetEquals(CollisionCells(All<LevelEditorPlacedBlock>(scene))),"Global collision geometry changed.");
+            Require(SameSnapshots(untouched,Snapshot(scene,newObjects,manager)),"A non-wall object or artwork component changed.");
+            Require(regions==JsonUtility.ToJson(new RegionSnapshot{regions=manager.Regions.ToList()}),"Room regions changed.");
+            Require(artHashes==AssetHashes(),"Artwork asset bytes changed.");
+            string json=JsonUtility.ToJson(doc,true);
+            manager.Configure(manager.Regions.ToList(),manager.CellSize,json);EditorUtility.SetDirty(manager);
+            File.WriteAllText(PlanningPath,json);File.WriteAllText(NamedPath,json);EditorSceneManager.SaveScene(scene);
+            report.AppendLine("PASS exact 3D unit-cell volumes; non-wall serialized objects; room regions; artwork asset hashes; paired planning.");
+            report.AppendLine("afterPlanningRecords="+doc.rooms.Sum(r=>r.boxes.Count));
+            File.WriteAllText("Library/SafeWhiteBlockMerge-Apply.txt",report.ToString());Debug.Log(report);EditorApplication.Exit(0);
+        }
+        catch(Exception e){Debug.LogException(e);EditorApplication.Exit(1);}
+    }
+    [Serializable]sealed class RegionSnapshot{public List<RoomRegion> regions;}
+    static IEnumerable<T> All<T>(Scene scene) where T:Component => scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<T>(true));
+    static void Require(bool value,string message){if(!value)throw new InvalidOperationException(message);}
+    static HashSet<string> CollisionCells(IEnumerable<LevelEditorPlacedBlock> blocks)
+    {
+        Physics.SyncTransforms();var result=new HashSet<string>();
+        foreach(var p in blocks.Where(p=>!p.IsProp))foreach(var c in p.GetComponentsInChildren<BoxCollider>(true))
+        {
+            if(!c.enabled||c.isTrigger||!c.gameObject.activeInHierarchy)continue;var b=c.bounds;float s=p.CellWorldSize;
+            // Every merged candidate is proven to be a full unit AABB. Existing geometry is left untouched.
+            for(int x=Mathf.FloorToInt((b.min.x+.0001f)/s);x<Mathf.CeilToInt((b.max.x-.0001f)/s);x++)
+            for(int y=Mathf.FloorToInt((b.min.y+.0001f)/s);y<Mathf.CeilToInt((b.max.y-.0001f)/s);y++)
+                result.Add($"{Mathf.RoundToInt(Mathf.Max(x*s,b.min.x)*10000)},{Mathf.RoundToInt(Mathf.Min((x+1)*s,b.max.x)*10000)}|{Mathf.RoundToInt(Mathf.Max(y*s,b.min.y)*10000)},{Mathf.RoundToInt(Mathf.Min((y+1)*s,b.max.y)*10000)}|{Mathf.RoundToInt(b.min.z*10000)},{Mathf.RoundToInt(b.max.z*10000)}");
+        }
+        return result;
+    }
+    static Dictionary<int,string> Snapshot(Scene scene,HashSet<GameObject> excluded,RoomLifecycleManager manager)
+    {
+        var result=new Dictionary<int,string>();
+        foreach(var t in All<Transform>(scene))
+        {
+            if(excluded.Any(r=>t==r.transform||t.IsChildOf(r.transform)))continue;
+            var text=new StringBuilder();text.Append(t.gameObject.name).Append('|').Append(t.gameObject.activeSelf).Append('|').Append(t.gameObject.layer).Append('|').Append(t.gameObject.tag).Append('|').Append(t.localPosition.ToString("R")).Append('|').Append(t.localRotation.ToString("R")).Append('|').Append(t.localScale.ToString("R")).Append('|').Append(t.parent!=null?t.parent.GetInstanceID():0);
+            foreach(var c in t.GetComponents<Component>())if(c!=null && !(c is Transform) && c!=manager)text.Append(c.GetType().FullName).Append(EditorJsonUtility.ToJson(c));
+            result[t.GetInstanceID()]=text.ToString();
+        }
+        return result;
+    }
+    static bool SameSnapshots(Dictionary<int,string>a,Dictionary<int,string>b)=>a.Count==b.Count && a.All(p=>b.TryGetValue(p.Key,out string value)&&value==p.Value);
+    static string NativeSettings(Component component)=>System.Text.RegularExpressions.Regex.Replace(
+        EditorJsonUtility.ToJson(component),"\"m_GameObject\":\\{\"instanceID\":-?\\d+\\}","\"m_GameObject\":0");
+    static string AssetHashes()
+    {
+        var paths=new[]{"Assets/_Project/Scenes/Playing/Gaming_Art.asset","Assets/_Project/Content/Art/SceneArtLibrary.asset"};
+        using(var hash=SHA256.Create())return string.Join("|",paths.Select(p=>p+":"+BitConverter.ToString(hash.ComputeHash(File.ReadAllBytes(p)))));
+    }
+}

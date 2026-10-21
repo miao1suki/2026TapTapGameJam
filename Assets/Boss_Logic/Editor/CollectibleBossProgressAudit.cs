@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Project.BlockFeatures;
+using Project.ColorBlocks;
 using Project.Items;
 using Project.LevelEditor;
 using Project.Player;
@@ -181,7 +182,14 @@ namespace Project.BossLogic.Editor
             Check(!returnContact.HasTriggered && returnContact.ContactCount == 0,
                 "a rejected Start return still leaves Once unconsumed");
             for (int i = 0; i < 6; i++) items[i].RestoreCollectedState();
-            Check(gate.CanPlayTimeline(playerObject), "exactly 30 percent enters");
+            var colors = ColorRuntimeService.Instance;
+            colors.RestoreRunProgress(new[] { "red", "green", "blue" }, Array.Empty<string>());
+            Check(!gate.CanEnter && gate.CollectedColorKeyCount == 3,
+                "30 percent and only the three scene-color keys still reject Boss entry");
+            colors.UnlockAbility("red"); colors.UnlockAbility("green");
+            Check(!gate.CanEnter && gate.CollectedColorKeyCount == 5, "five keys still reject Boss entry");
+            colors.UnlockAbility("blue");
+            Check(gate.CanPlayTimeline(playerObject), "exactly 30 percent and all six keys enter");
             Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(1, 20), "5 percent uses failure ending");
             Check(new CollectibleProgressSnapshot(1, 20).MeetsRatio(.05f) &&
                 !new CollectibleProgressSnapshot(0, 20).MeetsRatio(.05f), "5 percent uses the same exact integer rule");

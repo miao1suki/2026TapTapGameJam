@@ -6,6 +6,17 @@
 
 # 工作状态与交接（每次任务重读）
 
+## 2026-10-21 正式图显示与美术核对（当前整合窗口）
+
+- 范围：正式 ICON 双端接入、玩家透明脚底/梯子深度、story_start 安全落地、重生点小间隙外观修正。只修改共享表现与标准玩家 Prefab，不借核对结果调整地图结构或刷美术。
+- Gaming 逐格核对：10487 格框架碰撞、9722 格前景墙面足迹；46 格有墙面无框架、811 格有框架无墙面，77 个连续差异区域。细边框/内部填充需人工确认，不自动补碰撞。完整清单与截图说明见 `Docs/Developer/GAMING_ART_COLLISION_AUDIT_20261021.md`。
+- 本地截图：`Builds/Gaming美术碰撞核对-20261021`，25房原始/标注两套图、全图和总览。该目录不进入 Git。
+- 验收：外观/音频Editor专项35项、房间无遮蔽例外2项通过；真实音频Play专项1项通过。Boss六钥匙专项20项、收集Boss进度专项58项通过。旧音频源码A/B已复现暂停时误判播放结束，新源码完整续播通过；未做全流程真机通关或重新打包。
+- BGM完整随机播放，曲间18秒；菜单/Boss/剧情/结局曲不入普通池。暂停、后台与Boss覆盖期间不误结算曲尾，意外中断按最后采样恢复；音乐voice优先级0。
+- Boss入口统一30%并集齐6钥匙，动态提示同步；未达标重置一次性入口触发，防止第二次绕过。结局60%与存档格式不变。
+- MRoom2 `room_cc07f6ef`、MRoom3 `room_791e28e6` 精确区域始终可见，覆盖连通和旧视线模式，不放开房间孔洞或其他房间。
+- 白块已安全合并：1542单格对象→107组，减少1435对象；三份正式规划4445→3010顶层记录。完整3D碰撞体积、非墙对象序列化、区域与美术资源哈希校验通过；10个重复身份不处理。可复核工具为 `Ops/LevelMaps/SafeWhiteBlockMerge.cs.txt`，只在隔离工程手动执行，不自动跑在正式场景。
+
 ## 2026-10-21 1.0.1 正式测试整合（已交付，以下为整合记录）
 
 - 用户授权原工程先完整备份再更新；最新备份 `Library/WorkspaceBeforeDesigner-20261021-91f52319`，包含 256 个修改/未跟踪路径、二进制补丁及已校验的 7z。用户已关闭原 Unity；回写前须再检查文件哈希，避免覆盖其后新改动。
@@ -3027,3 +3038,33 @@
 
 - 用户授权检查并测试全局地图/重生点传送及二维墙体遮挡；按当前正式 Gaming 接入缺失光照，不改布局、美术、玩家存档或 SDK。
 - 地图自动安装并从 RoomLifecycleManager 实时绘制；PC/Mobile 光照 RendererFeature 已存在，核对正式相机接线。仅在隔离 FlowRetirementProbe 做静音 GPU/Play 验证，不保存主编辑器内存场景。
+
+## 2026-10-21 常规 BGM 中途停止修复（专项通过，待整合者提交）
+
+- 用户授权并行修复常规背景曲完整播放后短暂间隔再随机轮播；主菜单与 Boss 覆盖曲、剧情/结局专用曲保持各自用途，普通随机池保持已确认的 7 首。
+- 当前定位 `GameAudioService` 把 `AudioSource.isPlaying == false` 直接当成自然播完，但全局音频暂停也会返回 false，导致未完成曲目被 `StopMusic` 清空。范围仅音频播放代码、专项测试与说明，不修改关卡、资源长度、存档或其他代理文件。
+- 同一真实播放测试 A/B：HEAD 旧服务在暂停后 0.57 秒明确失败（MusicSource.clip 被清空），新服务通过暂停/恢复、中途 Stop 续播、自然尾端、间隔暂停冻结与再播放。最终日志 `Library/RandomMusicFinalPlayTests.xml` 1/1；复现对照 `Library/RandomMusicBaselineTests.xml`。未做逐首完整人工试听或真机通关。
+- 用户最终确认间隔 **18 秒**；Assets/ProjectSettings 全局查找无场景/Prefab 旧字段覆盖。默认与说明一致，短合成测试仅局部 override 为 0.2 秒加速验收。保持原 7 首常规池，剧情/结局专用曲不入池；音源过早停止按最后采样续播；独立 MusicSource.priority=0 防大量机关循环抢占，音效音量/优先级不变。
+- 联合 EditMode `MusicAndAppearanceFinalTests.xml` 33/33 通过（含主代理三项显示对齐测试）；随后新增音乐 voice 优先级断言由整合者最终 Gate 一并运行。主代理接手最终审计，probe 已空闲，不改用户真实存档。
+
+## 2026-10-21 Boss 入场增加六钥匙条件（专项通过）
+
+- 用户授权并行接入：入口同时要求普通收集品达到 30%，以及红绿蓝每色两把、共六把颜色钥匙；结局 60% 保持不变。不改 Gaming 布局、规划、美术或新建存档字段。
+- `BossEntranceRequirements` 复用已保存的三色场景解锁与三色能力解锁六阶段。`BossCollectibleEntryGate` 与正式 `enter_boss` 两条入口均检查；动态提示显示两项要求与当前数量，继续使用既有 WordNote/Cubic 字体。
+- 发现正式入口 `gateEnabled=0`、Timeline 自查且触发器为 Once；失败返回完成后专属 runner 重置自身触发器，防止下次经过不再检查而绕过门槛。仅缺钥匙返回不误发低收集回家成就。
+- 隔离验证入口：`Project.BossLogic.Editor.BossEntranceRequirementsAudit.Run`（纯边界、三色/五钥匙/六钥匙读档恢复、提示字形、失败 Once 重置）；原 `CollectibleBossProgressAudit.Run` 已补三/五/六钥匙真实入口断言，由当前整合者统一运行后更新结果。
+- 整合者最终结果：上述两个专项分别20项与58项通过，Cubic提示字形齐全；未改变存档格式与60%结局判定。
+
+## 2026-10-21 正式 Gaming 白块保守合并（隔离执行完成）
+
+- 用户授权仅在不改变地图结构和美术的前提下合并静态白块。保留既有合并体，只考虑同房间、同类型、无覆盖/绑定/手调/子对象/额外玩法组件的 1×1 白块；外部序列化引用和规划 ID 引用会拒绝候选。
+- 一次性隔离入口为 `Ops/LevelMaps/SafeWhiteBlockMerge.cs.txt`，复制到隔离工程 Editor 目录后运行 `SafeWhiteBlockMerge.DryRun`。Apply 另行显式执行，不会在导入时修改正式场景；只允许 `Library/FlowRetirementProbe`。
+- 预备检查逐组与全局 Collider AABB 分割体积（含 Z 与边界）、全部非候选场景对象序列化状态、房间区域及美术 asset 哈希；任一不一致在保存前抛错。Scene/同名规划/正式存档先备份，成功才成套保存。未执行结果不视为已合并。
+- 首轮 dry run 保守拒绝 1611 个附带组件对象。离线逐对象核对后确认全部仅附带 `RoomResetObject`（房间恢复注册），无颜色/机关/运动组件；新增同有效非空 RegionId、同 enabled 分组，并显式在合并体保留该注册，不跨恢复归属。其他额外组件仍逐类型拒绝。等待整合者第二轮 dry run，尚未执行 Apply。
+- 整合者完成Apply及保存后重开：1542对象→107组，规划3010条；完整3D体积、非墙对象序列化、区域与美术哈希通过。GPU美术核对结果合并前后相同（10487/9722/46/811）；对应日志 `Library/SafeWhiteBlockMerge-Apply.txt`（probe）和 `Library/GamingArtworkAudit-PostMerge.log`（整合工程）。
+
+## 2026-10-21 MRoom2 / MRoom3 遮蔽例外（专项通过）
+
+- 仅改 WorldVisibility2D / RendererFeature / 现有 Inspector、独立 RoomVisibilityExceptionTests 及接入说明；不改 Gaming Scene、规划、房间位置或美术。整合者负责配置两区域 ID。
+- `unoccludedRoomIds` 精确区域保留网格始终放开两房，不随玩家进出全屏开关；非例外房间及区域孔洞保持原逻辑，缓存避免每帧重建。连通/旧灯光模式均接入。未启动 Unity，专项待整合者统一运行；`git diff --check` 通过。
+- 整合者已配置正式Gaming两区域ID，保存后重开确认保留；`RoomVisibilityExceptionTests-Final.xml` 2/2通过（两种模式、玩家跨房、孔洞与普通房间不被放开、配置移除）。

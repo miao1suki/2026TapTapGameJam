@@ -13,6 +13,71 @@ namespace Project.GameFlow.Tests
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
         [Test]
+        public void BackgroundMusicKeepsARealVoiceAheadOfMechanismLoops()
+        {
+            var manager = AudioManager.EnsureInstance();
+            typeof(AudioManager).GetMethod("EnsureSources", Private).Invoke(manager, null);
+            Assert.That(manager.MusicSource.priority, Is.Zero);
+            Assert.That(manager.SoundEffectSource.priority, Is.GreaterThan(manager.MusicSource.priority));
+        }
+
+        [Test]
+        public void RandomMusicGapDefaultsToEighteenSeconds()
+        {
+            var root = new GameObject("Music gap configuration test");
+            try
+            {
+                var service = root.AddComponent<GameAudioService>();
+                Assert.That(typeof(GameAudioService).GetField("randomMusicGapSeconds", Private).GetValue(service), Is.EqualTo(18f));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+
+        [TestCase(2205, 0d, false)]
+        [TestCase(2205, .1d, false)]
+        [TestCase(22050, .25d, false)]
+        [TestCase(43000, .02d, true)]
+        [TestCase(40000, .1d, true)]
+        public void RandomMusicOnlyCompletesAtTheActualEnd(int lastSample, double dspElapsed, bool expected)
+        {
+            var clip = AudioClip.Create("Music completion test", 44100, 1, 44100, false);
+            try
+            {
+                var method = typeof(GameAudioService).GetMethod("HasReachedMusicEnd", BindingFlags.NonPublic | BindingFlags.Static);
+                Assert.That(method.Invoke(null, new object[] { clip, lastSample, dspElapsed, 1f }), Is.EqualTo(expected));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(clip); }
+        }
+
+        [Test]
+        public void PausedRandomMusicDoesNotClearItsUnfinishedClip()
+        {
+            var root = new GameObject("Paused random music test");
+            bool previousPause = AudioListener.pause;
+            try
+            {
+                var service = root.AddComponent<GameAudioService>();
+                typeof(GameAudioService).GetMethod("Awake", Private).Invoke(service, null);
+                AudioListener.pause = true;
+                var routine = (System.Collections.IEnumerator)typeof(GameAudioService)
+                    .GetMethod("RunRandomGameplayMusic", Private).Invoke(service, null);
+                Assert.That(routine.MoveNext(), Is.True);
+                AudioClip started = service.MusicSource.clip;
+                Assert.That(started, Is.Not.Null);
+                for (int index = 0; index < 10; index++)
+                {
+                    Assert.That(routine.MoveNext(), Is.True);
+                    Assert.That(service.MusicSource.clip, Is.SameAs(started), "Pausing is not song completion.");
+                }
+            }
+            finally
+            {
+                AudioListener.pause = previousPause;
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void RandomMusicRotationCyclesWithoutImmediateRepeat()
         {
             string[] source =
