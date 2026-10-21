@@ -61,7 +61,7 @@
 - `bossRespawnHealth`：玩家完成复活后设置的 Boss 当前血量，按 Boss 最大值夹取。
 - `bossRespawnLocalX`：相对重生点的世界 X 偏移；Y 固定继承重生点，Z 也继承重生点。
 
-读档时，如果 `currentRespawnAnchorId` 指向 `isBossArenaRespawnPoint`，`RunSessionCoordinator` 会在恢复重生点链表后查找同场景、已激活且链表编号小于 Boss 点的 `isBossEntryRespawnPoint`，优先取编号最大的前置点恢复玩家。正常死亡、R、传送地图和普通读档点不经过该分支。
+读档时，如果 `currentRespawnAnchorId` 指向 `isBossArenaRespawnPoint`，`RunSessionCoordinator` 会在恢复重生点链表后查找同场景、启用且链表编号小于 Boss 点的 `isBossEntryRespawnPoint`，优先取编号最大的前置点恢复玩家；即使此前绕过激活也会在读档时激活该前置点。正常死亡、R、传送地图和普通读档点不经过该分支。
 
 Boss 战复活兜底：`PlayerController.PerformRespawn` 在正常重生点解析后检查同场景活动 Boss。若没有任何 `IsRespawnPointAvailable` 且 `IsBossArenaRespawnPoint` 为真的已解锁出生点，则扫描同场景全部启用的 Boss 关出生点，即使尚未解锁也参与候选；按 `RespawnPosition.x` 取最左侧点作为本次复活目标，X 相同时按实例 ID 稳定选择。该目标继续走原有安全落位和 `IPlayerRespawnPreRoomResetListener` 链，因此 Boss 血量/位置重置不会被绕过；兜底不会改写玩家当前绑定出生点。
 

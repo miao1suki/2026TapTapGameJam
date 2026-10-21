@@ -180,39 +180,38 @@ namespace Project.BossLogic.Editor
             returnContact.OnTriggerEnter(player.GetComponent<Collider>());
             Check(!returnContact.HasTriggered && returnContact.ContactCount == 0,
                 "a rejected Start return still leaves Once unconsumed");
-            items[0].RestoreCollectedState();
-            Check(gate.CanPlayTimeline(playerObject), "exactly 5 percent enters");
+            for (int i = 0; i < 6; i++) items[i].RestoreCollectedState();
+            Check(gate.CanPlayTimeline(playerObject), "exactly 30 percent enters");
             Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(1, 20), "5 percent uses failure ending");
             Check(new CollectibleProgressSnapshot(1, 20).MeetsRatio(.05f) &&
                 !new CollectibleProgressSnapshot(0, 20).MeetsRatio(.05f), "5 percent uses the same exact integer rule");
             Check(new CollectibleProgressSnapshot(2, 35).MeetsRatio(.05f) &&
                 !new CollectibleProgressSnapshot(1, 35).MeetsRatio(.05f), "5 percent of 35 requires two collectibles");
-            Check(EnterBossTimelinePlayable.HasSufficientCollectibles(1, 20) &&
-                !EnterBossTimelinePlayable.HasSufficientCollectibles(0, 20),
-                "enter_boss accepts exactly 5 percent and rejects below it");
-            items[1].RestoreCollectedState();
-            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(2, 20), "exactly 10 percent uses successful ending");
-            Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(1, 20), "below 10 percent uses failure ending");
-            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(4, 35) &&
-                !PlayerThinkingTimelinePlayable.HasSufficientCollectibles(3, 35), "10 percent of 35 requires four collectibles");
-            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(10, 100) &&
-                !PlayerThinkingTimelinePlayable.HasSufficientCollectibles(9, 100), "10 of 100 succeeds while 9 percent still fails");
+            Check(EnterBossTimelinePlayable.HasSufficientCollectibles(6, 20) &&
+                !EnterBossTimelinePlayable.HasSufficientCollectibles(5, 20),
+                "enter_boss accepts exactly 30 percent and rejects below it");
+            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(12, 20), "exactly 60 percent uses successful ending");
+            Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(11, 20), "below 60 percent uses failure ending");
+            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(21, 35) &&
+                !PlayerThinkingTimelinePlayable.HasSufficientCollectibles(20, 35), "60 percent of 35 requires 21 collectibles");
+            Check(PlayerThinkingTimelinePlayable.HasSufficientCollectibles(60, 100) &&
+                !PlayerThinkingTimelinePlayable.HasSufficientCollectibles(59, 100), "60 of 100 succeeds while 59 percent still fails");
             Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(2, 20, .1000001f),
                 "an explicitly higher seven-digit threshold is not rounded down to 10 percent");
             Check(!PlayerThinkingTimelinePlayable.HasSufficientCollectibles(0, 0), "missing denominator no longer defaults success");
             manager.ResetRegion(a.id); manager.ResetRegion(b.id);
             progress = CollectibleProgressService.GetSceneProgress(scene);
-            Check(progress.Collected == 2 && progress.Remaining == 18, "R-style region restoration does not undo collected progress");
-            Check(CollectibleProgressService.GetRegionProgress(scene, a.id).Remaining == 8 &&
+            Check(progress.Collected == 6 && progress.Remaining == 14, "R-style region restoration does not undo collected progress");
+            Check(CollectibleProgressService.GetRegionProgress(scene, a.id).Remaining == 4 &&
                 CollectibleProgressService.GetRegionProgress(scene, b.id).Remaining == 10, "room completion and remainder are accurate");
             var saved = new List<string>(); CollectibleProgressService.CopyCollectedStableIds(scene, saved);
-            Check(saved.Count == 2 && new HashSet<string>(saved).Count == 2, "future save export includes unique stable IDs only");
+            Check(saved.Count == 6 && new HashSet<string>(saved).Count == 6, "future save export includes unique stable IDs only");
             int callbacks = 0;
             Action<CollectiblePickup, GameObject> collected = (item, actor) => callbacks++;
             CollectiblePickup.Collected += collected;
             try { CollectibleProgressService.RestoreCollectedStableIds(scene, saved); CollectibleProgressService.RestoreCollectedStableIds(scene, saved); }
             finally { CollectiblePickup.Collected -= collected; }
-            Check(callbacks == 0 && CollectibleProgressService.GetSceneProgress(scene).Collected == 2, "save restore is silent and idempotent");
+            Check(callbacks == 0 && CollectibleProgressService.GetSceneProgress(scene).Collected == 6, "save restore is silent and idempotent");
             GameObject cosmetics = Root("Ending cosmetic clones"); cosmetics.SetActive(false);
             for (int index = 0; index < 6; index++)
             {
@@ -225,7 +224,7 @@ namespace Project.BossLogic.Editor
             Check(CollectibleProgressService.GetSceneProgress(scene).Total == 20, "six temporary ending props do not affect denominator");
             Scene emptyBossScene = SceneManager.CreateScene("Progress audit empty Boss scene");
             Check(CollectibleProgressService.GetSceneProgress(emptyBossScene).Total == 0 &&
-                CollectibleProgressService.GetWorldProgress().Total == 20 && CollectibleProgressService.GetWorldProgress().Collected == 2,
+                CollectibleProgressService.GetWorldProgress().Total == 20 && CollectibleProgressService.GetWorldProgress().Collected == 6,
                 "a separate empty Boss scene inherits world progress rather than replacing it with zero");
             GameObject bossObject = Root("Boss progress fixture"); bossObject.transform.position = new Vector3(106.5f, 20.5f, 0f);
             bossObject.tag = "Boss";
@@ -234,7 +233,7 @@ namespace Project.BossLogic.Editor
             boss.Body.useGravity = false;
             Check(BossTravelProgress.HasLivingBoss(scene) && !BossTravelProgress.HasLivingBoss(emptyBossScene),
                 "living Boss state is scoped to the owning scene");
-            Check(BossTravelProgress.GetState(scene).BossRegionId == b.id, "Boss room captured from initial position");
+            Check(BossTravelProgress.GetState(scene).BossRegionId == a.id, "Boss room captured from initial position");
             player.SetSprintInput(true);
             Check(boss != null && player.IsSprintLocked && !player.SprintRequested,
                 "living Boss acquires the player sprint lock");
@@ -264,7 +263,7 @@ namespace Project.BossLogic.Editor
             boss.transform.position = new Vector3(100.5f, 20.5f, 0f); boss.Body.position = boss.transform.position;
             boss.ActivateHealthSystem();
             BossTravelState state = BossTravelProgress.GetState(scene);
-            Check(state.HasEnteredBoss && state.IsBossFightActive && !state.HasDefeatedBoss && state.BossRegionId == b.id,
+            Check(state.HasEnteredBoss && state.IsBossFightActive && !state.HasDefeatedBoss && state.BossRegionId == a.id,
                 "entering Boss fight gates map and chase does not change excluded room");
             boss.Kill(); state = BossTravelProgress.GetState(scene);
             Check(state.HasEnteredBoss && state.HasDefeatedBoss && !state.IsBossFightActive, "real Boss death unlock state is retained");
@@ -281,7 +280,7 @@ namespace Project.BossLogic.Editor
                 "explicit dedicated arena does not prohibit unrelated rooms in a mixed map");
             BossTravelProgress.SetDedicatedBossScene(emptyBossScene, false);
             bossObject.SetActive(false); bossObject.SetActive(true);
-            Check(BossTravelProgress.GetState(scene).BossRegionId == b.id, "re-enabled chasing Boss does not redefine room");
+            Check(BossTravelProgress.GetState(scene).BossRegionId == a.id, "re-enabled chasing Boss does not redefine room");
             Check(!BossTravelProgress.HasLivingBoss(scene), "re-enabled defeated Boss is not treated as alive");
         }
         private static void VerifyRoomScopedRespawn(PlayerController player, BossController boss,
@@ -306,7 +305,7 @@ namespace Project.BossLogic.Editor
                 // Disable it so the same-room positive control exercises the actual selection path.
                 oldBossPoint.enabled = false;
                 Check(!dormantBossPoint.IsRespawnPointAvailable, "Boss fallback fixture has not been activated");
-                Vector3 ordinaryPosition = new Vector3(101.5f, 20.5f, 0f);
+                Vector3 ordinaryPosition = new Vector3(111.5f, 20.5f, 0f);
                 deathField.SetValue(player, ordinaryPosition);
                 object[] ordinaryWithoutPoint = { null, ordinaryPosition };
                 fallback.Invoke(player, ordinaryWithoutPoint);

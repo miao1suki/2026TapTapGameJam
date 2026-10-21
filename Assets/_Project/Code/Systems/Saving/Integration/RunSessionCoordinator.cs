@@ -436,6 +436,9 @@ namespace Project.Saving
                             restored,
                             out RespawnAnchorFeature bossEntry))
                     {
+                        // Loading must recover to the authored entry even when
+                        // the player bypassed its activation trigger before the fight.
+                        bossEntry.Activate();
                         checkpoint = bossEntry;
                         Debug.Log(
                             "[RunSession] 当前存档为 Boss 重生点，" +
@@ -446,7 +449,7 @@ namespace Project.Saving
                         checkpoint = restored;
                         Debug.LogWarning(
                             "[RunSession] 当前存档为 Boss 重生点，" +
-                            "但同场景链表中没有已激活的 Boss 前置出生点。");
+                            "但同场景链表中没有可用的 Boss 前置出生点。");
                     }
                 }
                 else

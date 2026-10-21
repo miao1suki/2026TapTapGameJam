@@ -1,10 +1,14 @@
+# 1.0.1 最新传送约定
+
+地图开局即可打开；手机地图键同步可用。仅已激活的普通重生点可传送，Boss 重生点不列为目的地；Boss 战中、Boss 房内与专用 Boss 场景不能打开。以下旧解锁时机如有冲突，以此为准。
+
 # 全局传送地图
 
 最终发布把各策划迁移关卡和 Boss 统一放入 `Gaming`，不靠独立工作场景间的加载拼接。工作场景 Scene、同名 planning、meta 及新增依赖仍须成套交付；正式 Gaming 另交 `Content/LevelMaps/正式关卡.json`。
 
 ## 玩家操作
 
-- 随时可以按 T 打开；手机端“地图”键由 `MobileGameplayControls` 放在安全区正上方中央，和其他触控键共用布局、触摸反馈与平台显隐，电脑不画按钮。打开不再检查收集比例、Boss 入场/击败状态或当前房间；只有当前场景存在存活 Boss 时拒绝，并通过现有 `WordNote_UI` 在左下提示“情况紧急，先逃命吧”：白字黑描边，左侧淡入后向右淡出，停留 1 秒并参与同位置堆叠队列。
+- 开局即可使用 T/手机地图，不检查 `bossEntered`；目的地必须为已激活的普通重生点。战斗中、Boss 房内和独立 Boss 场景不可打开。手机端“地图”键由 `MobileGameplayControls` 放在安全区正上方中央，电脑不画按钮。战斗拒绝仍通过既有 `WordNote_UI` 提示“情况紧急，先逃命吧”，保留字体、动效和队列。
 - T 打开/关闭，Esc 只关闭地图，不顺带打开暂停。触控有「地图」入口；单指拖动、双指缩放，PC 滚轮缩放，也有 ± 和总览按钮。
 - 地图只显示房间/通道轮廓、玩家、重生点与房间收集剩余数，不复制内部物体、美术或物理场景。空心点未解锁，实心点可点击；Boss 重生点完全不列入目的地。
 - 点击已激活的普通点：拉远镜头 → 平移到目标 → 安全落位 → 拉近。被阻挡的落点拒绝，不退到游戏起点；目标房准备后才提交源房切换，不因失败重置源房谜题。
@@ -22,7 +26,7 @@
 
 剧情返回使用 `PlayerController.TryTeleportToStoryAnchor(TeleportAnchorFeature)`：同场景清理旧运动/房间状态，通知相机，绑定目标处会话级普通复活兜底，避免回 Start 后又复活到旧 Boss 点。后续踩真实重生点正常替换绑定。没有目标时明确失败，绝不自动加载另一个工作场景。
 
-`BossTravelProgress.HasLivingBoss(scene)` 只统计指定 Scene 中启用且未死亡的 Boss；Boss 死亡或禁用后立即解除限制。`BossTravelProgress.Changed` 仍用于刷新地图统计，但开门条件不再读取全会话的 Boss 入场/击败状态，也不再按 Boss 所属房间禁用地图。详见 `COLLECTIBLE_BOSS_PROGRESS_API.md`。
+`BossTravelProgress.GetState(scene)` 的 `HasEnteredBoss` 为解锁条件，`IsBossFightActive` 与 `BossRegionId` 为使用限制；`IsBossScene` 排除独立竞技场。保留 `HasLivingBoss` 供其他系统查询，不以场景里等待中的 Boss 是否存在代替“正在战斗”。详见 `COLLECTIBLE_BOSS_PROGRESS_API.md`。
 
 收集统计读 `CollectibleProgressService`，包括未启用作者物体；演出道具显式排除。剩余数随结算更新，R/死亡/离区不会恢复已收集物。当前不负责写磁盘，后续存档通过稳定作者 ID 导出/恢复接口接入。
 

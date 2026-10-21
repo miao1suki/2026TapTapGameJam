@@ -42,15 +42,16 @@ namespace Project.WorldVisibility
         }
         sealed class CompositeData
         {
-            public TextureHandle source, sight, light, soft;
+            public TextureHandle source, sight, previousSight, light, soft;
             public Material material;
-            public float ambient, gate;
+            public float ambient, gate, strength, blend;
             public Vector4 softness;
         }
         sealed class VisibilityPass : ScriptableRenderPass
         {
             readonly Material material;
             static readonly int SightId = Shader.PropertyToID("_VisibilitySight");
+            static readonly int PreviousSightId = Shader.PropertyToID("_VisibilityPreviousSight");
             static readonly int LightId = Shader.PropertyToID("_VisibilityLight");
             static readonly int AmbientId = Shader.PropertyToID("_VisibilityAmbient");
             static readonly int CoreId = Shader.PropertyToID("_VisibilityCore");
@@ -58,6 +59,9 @@ namespace Project.WorldVisibility
             static readonly int SoftMaskId = Shader.PropertyToID("_VisibilitySoftMask");
             static readonly int BlurDirectionId = Shader.PropertyToID("_VisibilityBlurDirection");
             static readonly int SoftnessId = Shader.PropertyToID("_VisibilitySoftness");
+            static readonly int StrengthId = Shader.PropertyToID("_VisibilityStrength");
+            static readonly int ConnectedBlendId = Shader.PropertyToID("_VisibilityConnectedBlend");
+            static readonly int ConnectedSoftnessId = Shader.PropertyToID("_VisibilityConnectedSoftness");
             public VisibilityPass(Material value)
             {
                 material = value;
@@ -70,6 +74,7 @@ namespace Project.WorldVisibility
                 var camera = frameData.Get<UniversalCameraData>().camera;
                 var system = WorldVisibility2D.ForCamera(camera);
                 if (!system || !system.Prepare(camera)) return;
+                if (system.OcclusionStrength <= .0001f) return;
                 var resources = frameData.Get<UniversalResourceData>();
                 if (resources.isActiveTargetBackBuffer) return;
                 var source = resources.activeColorTexture;
@@ -80,37 +85,54 @@ namespace Project.WorldVisibility
                 desc.msaaSamples = MSAASamples.None; desc.depthBufferBits = DepthBits.None;
                 if (system.connectedSpaceVisibility)
                 {
-                    // One single-channel mask, one composite. No light RT, shadow maps or Gaussian passes.
-                    desc.format = GraphicsFormat.R8_UNorm; desc.filterMode = FilterMode.Bilinear;
+                    // Current RG mask plus previous R mask, one composite; no light RT or Gaussian passes.
+                    desc.format = GraphicsFormat.R8G8_UNorm; desc.filterMode = FilterMode.Bilinear;
                     desc.clearBuffer = true; desc.clearColor = Color.black; desc.name = "局部连通空间";
                     var connected = graph.CreateTexture(desc);
-                    using (var builder = graph.AddRasterRenderPass<MaskData>("连通空间遮罩", out var data))
-                    {
-                        data.material = material; data.system = system;
-                        builder.SetRenderAttachment(connected, 0);
-                        builder.SetRenderFunc((MaskData value, RasterGraphContext context) =>
-                        {
-                            if (value.system && value.system.SightMesh)
-                                context.cmd.DrawMesh(value.system.SightMesh, Matrix4x4.identity, value.material, 0, 5);
-                        });
-                    }
+                    desc.format = GraphicsFormat.R8_UNorm;
+                    desc.name = "上一连通空间";
+                    var previousSight = graph.CreateTexture(desc);
+                    DrawConnected(connected,false);
+                    DrawConnected(previousSight,true);
                     var connectedOutput = graph.GetTextureDesc(source);
                     connectedOutput.name = "连通空间合成"; connectedOutput.clearBuffer = false;
                     var result = graph.CreateTexture(connectedOutput);
                     using (var builder = graph.AddRasterRenderPass<CompositeData>("连通空间原画合成", out var data))
                     {
-                        data.source = source; data.sight = connected; data.material = material;
-                        builder.UseTexture(source); builder.UseTexture(connected);
+                        data.source = source; data.sight = connected; data.previousSight = previousSight; data.material = material;
+                        data.strength = system.OcclusionStrength;
+                        data.blend = system.ConnectedBlend;
+                        float edge = Mathf.Clamp(system.connectedEdgeSoftnessCells, 0, 2) * system.cellWorldSize;
+                        float viewHeight = Mathf.Max(.01f, camera.orthographicSize * 2);
+                        data.softness = new Vector4(edge / (viewHeight * Mathf.Max(.01f, camera.aspect)), edge / viewHeight, 0, 0);
+                        builder.UseTexture(source); builder.UseTexture(connected); builder.UseTexture(previousSight);
                         builder.SetRenderAttachment(result, 0); builder.AllowGlobalStateModification(true);
                         builder.SetRenderFunc((CompositeData value, RasterGraphContext context) =>
                         {
                             context.cmd.SetGlobalTexture(SightId, value.sight);
+                            context.cmd.SetGlobalTexture(PreviousSightId,value.previousSight);
+                            context.cmd.SetGlobalFloat(StrengthId,value.strength);
+                            context.cmd.SetGlobalFloat(ConnectedBlendId,value.blend);
+                            context.cmd.SetGlobalVector(ConnectedSoftnessId,value.softness);
                             Blitter.BlitTexture(context.cmd, value.source, new Vector4(1, 1, 0, 0), value.material, 6);
                             LastExecutedFrame = Time.frameCount;
                         });
                     }
                     resources.cameraColor = result;
                     return;
+                    void DrawConnected(TextureHandle target,bool previous)
+                    {
+                        using var builder = graph.AddRasterRenderPass<MaskData>(previous ? "上一连通空间遮罩" : "连通空间遮罩",out var data);
+                        data.material = material; data.system = system;
+                        builder.SetRenderAttachment(target,0);
+                        builder.SetRenderFunc((MaskData value,RasterGraphContext context) =>
+                        {
+                            Mesh mesh = previous ? value.system.PreviousSightMesh : value.system.SightMesh;
+                            if (mesh) context.cmd.DrawMesh(mesh,Matrix4x4.identity,value.material,0,5);
+                            if (value.system.WallMesh)
+                                context.cmd.DrawMesh(value.system.WallMesh,Matrix4x4.identity,value.material,0,7);
+                        });
+                    }
                 }
                 desc.clearBuffer = true; desc.clearColor = Color.black; desc.filterMode = FilterMode.Point;
                 desc.name = "二维光照 玩家视线"; var sight = graph.CreateTexture(desc);
@@ -135,6 +157,7 @@ namespace Project.WorldVisibility
                 {
                     data.source = source; data.sight = sight; data.light = light; data.soft = soft; data.material = material;
                     data.ambient = Mathf.Clamp01(system.ambient); data.gate = system.respectPlayerSight ? 1 : 0;
+                    data.strength = system.OcclusionStrength;
                     data.softness = softUV;
                     builder.UseTexture(source); builder.UseTexture(sight); builder.UseTexture(light); builder.UseTexture(soft);
                     builder.SetRenderAttachment(output,0); builder.AllowGlobalStateModification(true);
@@ -143,6 +166,7 @@ namespace Project.WorldVisibility
                         context.cmd.SetGlobalTexture(SightId,value.sight); context.cmd.SetGlobalTexture(LightId,value.light);
                         context.cmd.SetGlobalTexture(SoftMaskId,value.soft);
                         context.cmd.SetGlobalFloat(AmbientId,value.ambient); context.cmd.SetGlobalFloat(GateId,value.gate);
+                        context.cmd.SetGlobalFloat(StrengthId,value.strength);
                         context.cmd.SetGlobalVector(SoftnessId,value.softness);
                         Blitter.BlitTexture(context.cmd,value.source,new Vector4(1,1,0,0),value.material,2);
                         LastExecutedFrame = Time.frameCount;

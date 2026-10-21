@@ -93,7 +93,7 @@ namespace Project.GameFlow.Tests
         }
 
         [Test]
-        public void BossEntryFallback_RequiresActivatedMarkerAndBossCurrentPoint()
+        public void BossEntryFallback_AllowsUnvisitedEntryButRequiresBossCurrentPoint()
         {
             var root = new GameObject("Boss entry fallback invalid test");
             try
@@ -102,7 +102,11 @@ namespace Project.GameFlow.Tests
                 var boss = CreateAnchor(root.transform, "Boss checkpoint", 2, false, true);
                 AnchorType.GetMethod("SetBossArenaRespawnPoint").Invoke(boss, new object[] { true });
 
-                Assert.That(TryFindFallback(boss), Is.False);
+                object[] arguments = { boss, null };
+                Assert.That(ChainType.GetMethod("TryFindBossEntryFallback").Invoke(null, arguments), Is.True);
+                Assert.That(arguments[1], Is.SameAs(entry));
+                Assert.That(AnchorType.GetProperty("IsActivated").GetValue(entry), Is.False,
+                    "Finding a load fallback must not itself unlock checkpoints");
                 AnchorType.GetMethod("Activate").Invoke(entry, null);
                 Assert.That(TryFindFallback(entry), Is.False);
             }
@@ -119,6 +123,8 @@ namespace Project.GameFlow.Tests
             var gameObject = new GameObject(name);
             gameObject.transform.SetParent(parent);
             Component anchor = gameObject.AddComponent(AnchorType);
+            ChainType.GetMethod("Register", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, new object[] { anchor });
             AnchorType.GetMethod("SetChainData")
                 .Invoke(anchor, new object[] { string.Empty, chainIndex, false, null });
             AnchorType.GetMethod("SetBossEntryRespawnPoint")

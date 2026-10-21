@@ -18,6 +18,11 @@ namespace Project.WorldVisibility
         readonly List<Vector3> vertices = new List<Vector3>();
         readonly List<Vector2> uv = new List<Vector2>();
         readonly List<int> indices = new List<int>();
+        readonly List<Color32> colors = new List<Color32>();
+        float[] brightness = Array.Empty<float>();
+        bool snapshot;
+        Vector2 rangeCentre;
+        float rangeRadius;
         int width;
         float step;
         Vector2 minimum;
@@ -47,7 +52,8 @@ namespace Project.WorldVisibility
                 Visit(x, y - 1, y == 0 || (links[id - width] & 2) != 0);
             }
             ReachableCells = tail; BuildCount++;
-            vertices.Clear(); uv.Clear(); indices.Clear();
+            snapshot = false; rangeCentre = centre; rangeRadius = radius;
+            vertices.Clear(); uv.Clear(); indices.Clear(); colors.Clear();
             for (int y = 0; y < width; y++)
                 for (int x = 0; x < width; x++)
                 {
@@ -55,11 +61,9 @@ namespace Project.WorldVisibility
                     int left = x;
                     while (x + 1 < width && visible[y * width + x + 1]) x++;
                     Quad(minimum + new Vector2(left - .5f, y - .5f) * step,
-                        minimum + new Vector2(x + .5f, y + .5f) * step, centre, radius);
+                        minimum + new Vector2(x + .5f, y + .5f) * step, centre, radius, 1);
                 }
-            Mesh ??= new Mesh { name = "局部连通空间遮罩", hideFlags = HideFlags.HideAndDontSave, indexFormat = IndexFormat.UInt32 };
-            Mesh.MarkDynamic(); Mesh.Clear(); Mesh.SetVertices(vertices); Mesh.SetUVs(0, uv);
-            Mesh.SetTriangles(indices, 0); Mesh.RecalculateBounds();
+            Upload();
 
             void Visit(int x, int y, bool blocked)
             {
@@ -68,6 +72,64 @@ namespace Project.WorldVisibility
                 if (visible[id] || (minimum + new Vector2(x, y) * step - centre).sqrMagnitude > radius * radius) return;
                 visible[id] = true; queue[tail++] = id;
             }
+        }
+
+        // Preserve the displayed blend, not the previous target, when a new
+        // topology arrives before the current fade has finished.
+        public void CaptureBlend(ConnectedSpaceGeometry previous, ConnectedSpaceGeometry current, float blend)
+        {
+            step = current.step;
+            minimum = current.minimum;
+            Vector2 maximum = minimum + Vector2.one * (current.width - 1) * step;
+            if (previous.Mesh && Mathf.Approximately(previous.step, step))
+            {
+                Vector2 lo = Vector2.Min(minimum, previous.minimum);
+                Vector2 hi = Vector2.Max(maximum, previous.minimum + Vector2.one * (previous.width - 1) * step);
+                // Bound storage for distant cross-world teleports.
+                if (Mathf.Max(hi.x - lo.x, hi.y - lo.y) / step < 384)
+                { minimum = lo; maximum = hi; }
+            }
+            width = Mathf.CeilToInt(Mathf.Max(maximum.x - minimum.x, maximum.y - minimum.y) / step) + 1;
+            int count = width * width;
+            if (brightness.Length != count) brightness = new float[count];
+            vertices.Clear(); uv.Clear(); indices.Clear(); colors.Clear();
+            blend = Mathf.Clamp01(blend);
+            for (int y = 0; y < width; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    Vector2 position = minimum + new Vector2(x, y) * step;
+                    brightness[y * width + x] = Mathf.Lerp(previous.SampleBrightness(position), current.SampleBrightness(position), blend);
+                }
+            snapshot = true;
+            for (int y = 0; y < width; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    byte value = (byte)Mathf.RoundToInt(Mathf.Clamp01(brightness[y * width + x]) * 255);
+                    if (value == 0) continue;
+                    int left = x;
+                    while (x + 1 < width && Mathf.RoundToInt(brightness[y * width + x + 1] * 255) == value) x++;
+                    Quad(minimum + new Vector2(left - .5f, y - .5f) * step,
+                        minimum + new Vector2(x + .5f, y + .5f) * step, Vector2.zero, 1, value / 255f);
+                }
+            Upload();
+        }
+
+        public float SampleBrightness(Vector2 position)
+        {
+            if (!Mesh || width == 0) return 0;
+            int x = Mathf.RoundToInt((position.x - minimum.x) / step), y = Mathf.RoundToInt((position.y - minimum.y) / step);
+            if (x < 0 || y < 0 || x >= width || y >= width) return 0;
+            if (snapshot) return brightness[y * width + x];
+            if (!visible[y * width + x]) return 0;
+            float t = Mathf.Clamp01((Vector2.Distance(position, rangeCentre) / rangeRadius - .85f) / .15f);
+            return 1 - t * t * (3 - 2 * t);
+        }
+
+        void Upload()
+        {
+            Mesh ??= new Mesh { name = "局部连通空间遮罩", hideFlags = HideFlags.HideAndDontSave, indexFormat = IndexFormat.UInt32 };
+            Mesh.MarkDynamic(); Mesh.Clear(); Mesh.SetVertices(vertices); Mesh.SetUVs(0, uv); Mesh.SetColors(colors);
+            Mesh.SetTriangles(indices, 0); Mesh.RecalculateBounds();
         }
 
         void Rasterize(VisibilityGeometry.Segment edge)
@@ -92,13 +154,17 @@ namespace Project.WorldVisibility
             // Use a limit larger than the tested link to distinguish a hit at its endpoint from no hit.
             return VisibilityGeometry.RayDistance(p, direction, edge, step * 2) <= step + .00001f;
         }
-        void Quad(Vector2 lo, Vector2 hi, Vector2 centre, float radius)
+        void Quad(Vector2 lo, Vector2 hi, Vector2 centre, float radius, float value)
         {
             int start = vertices.Count;
             Add(lo); Add(new Vector2(hi.x, lo.y)); Add(hi); Add(new Vector2(lo.x, hi.y));
             indices.Add(start); indices.Add(start + 1); indices.Add(start + 2);
             indices.Add(start); indices.Add(start + 2); indices.Add(start + 3);
-            void Add(Vector2 p) { vertices.Add(p); uv.Add((p - centre) / radius); }
+            void Add(Vector2 p)
+            {
+                vertices.Add(p); uv.Add(snapshot ? Vector2.zero : (p - centre) / radius);
+                byte intensity = (byte)Mathf.RoundToInt(value * 255); colors.Add(new Color32(intensity, intensity, intensity, 255));
+            }
         }
         public void Dispose()
         {

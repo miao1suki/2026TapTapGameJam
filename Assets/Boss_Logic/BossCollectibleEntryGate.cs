@@ -15,7 +15,7 @@ namespace Project.BossLogic
     public sealed class BossCollectibleEntryGate : MonoBehaviour, IContactTimelineCondition
     {
         [SerializeField, InspectorName("是否启用该组件")] private bool gateEnabled = true;
-        [SerializeField, Range(0f, 1f), InspectorName("入场所需收集比例")] private float minimumRatio = .05f;
+        [SerializeField, Range(0f, 1f), InspectorName("入场所需收集比例")] private float minimumRatio = .3f;
         [SerializeField, InspectorName("未达标返回传送ID")] private string returnDestinationId = "Start";
         [SerializeField, InspectorName("门外返回位置（优先）")] private Transform returnPoint;
         [SerializeField, InspectorName("显示未达标提示")] private bool showHint = true;

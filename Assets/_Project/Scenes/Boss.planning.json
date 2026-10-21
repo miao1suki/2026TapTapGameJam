@@ -195133,7 +195133,7 @@
                             "componentIndex": 0,
                             "propertyPath": "minimumRatio",
                             "valueType": "Float",
-                            "value": "0.05000000074505806",
+                            "value": "0.3",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }

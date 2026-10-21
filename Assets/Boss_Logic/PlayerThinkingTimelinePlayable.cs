@@ -61,7 +61,7 @@ namespace Project.BossLogic
         [SerializeField, Min(0f)]
         private float fullyBlackHoldSeconds = 1f;
         [SerializeField, Min(0f)]
-        private float sufficientThreshold = .1f;
+        private float sufficientThreshold = .6f;
         [SerializeField]
         private Vector2 blackScreenCenter =
             new Vector2(.5f, .5f);
@@ -104,7 +104,7 @@ namespace Project.BossLogic
             PlayerThinkingBehaviour.ClearCollectibleProgress();
         }
 
-        public static bool HasSufficientCollectibles(int current, int maximum, float threshold = .1f) =>
+        public static bool HasSufficientCollectibles(int current, int maximum, float threshold = .6f) =>
             new CollectibleProgressSnapshot(current, maximum).MeetsRatio(threshold);
 
         internal static PlayableDirector FindDirector(
@@ -257,7 +257,7 @@ namespace Project.BossLogic
         public float blackCoverSpeed = .72f;
         public float blackSoftness;
         public float fullyBlackHoldSeconds = 1f;
-        public float sufficientThreshold = .1f;
+        public float sufficientThreshold = .6f;
         public Vector2 blackScreenCenter =
             new Vector2(.5f, .5f);
         public string startDestinationId = "Start";

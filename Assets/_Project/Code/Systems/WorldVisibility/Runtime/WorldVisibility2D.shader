@@ -18,7 +18,8 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
         { return half4(input.color.rgb * (1-smoothstep(_VisibilityCore,1,length(input.radial))),1); }
         half4 SightFrag(MaskVaryings input):SV_Target { return half4(1,1,1,1); }
         half4 ConnectedFrag(MaskVaryings input):SV_Target
-        { return 1-smoothstep(0.85,1.0,length(input.radial)); }
+        { return half4(input.color.r * (1-smoothstep(0.85,1.0,length(input.radial))),0,0,1); }
+        half4 PreserveFrag(MaskVaryings input):SV_Target { return half4(1,1,0,1); }
         ENDHLSL
         Pass
         {
@@ -64,7 +65,8 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
                     light = min(light,filtered.rgb);
                 }
                 half3 illumination = max(_VisibilityAmbient,light);
-                source.rgb *= saturate(illumination * lerp(1,sight,_VisibilityGate));
+                half factor = saturate(illumination * lerp(1,sight,_VisibilityGate));
+                source.rgb *= lerp(1,factor,saturate(_VisibilityStrength));
                 return source;
             }
             ENDHLSL
@@ -73,6 +75,10 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
         TEXTURE2D_X(_VisibilitySight);
+        TEXTURE2D_X(_VisibilityPreviousSight);
+        float _VisibilityStrength;
+        float _VisibilityConnectedBlend;
+        float4 _VisibilityConnectedSoftness;
         float4 _VisibilityBlurDirection;
         half4 BlurSample(float2 uv, bool pack)
         {
@@ -93,10 +99,31 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
         }
         half4 Horizontal(Varyings input):SV_Target { return Gaussian(input.texcoord,true); }
         half4 Vertical(Varyings input):SV_Target { return Gaussian(input.texcoord,false); }
+        half ConnectedSample(float2 uv)
+        {
+            half current = SAMPLE_TEXTURE2D_X(_VisibilitySight,sampler_LinearClamp,saturate(uv)).r;
+            half previous = SAMPLE_TEXTURE2D_X(_VisibilityPreviousSight,sampler_LinearClamp,saturate(uv)).r;
+            return saturate(lerp(previous,current,saturate(_VisibilityConnectedBlend)));
+        }
         half4 ConnectedComposite(Varyings input):SV_Target
         {
             half4 source = SAMPLE_TEXTURE2D_X(_BlitTexture,sampler_PointClamp,input.texcoord);
-            source.rgb *= SAMPLE_TEXTURE2D_X(_VisibilitySight,sampler_LinearClamp,input.texcoord).r;
+            half sight = ConnectedSample(input.texcoord);
+            if (_VisibilityConnectedSoftness.x > 0 && _VisibilityConnectedSoftness.y > 0)
+            {
+                float2 d = _VisibilityConnectedSoftness.xy;
+                half soft = sight * 4;
+                soft += 2 * (ConnectedSample(input.texcoord + float2(d.x,0)) + ConnectedSample(input.texcoord - float2(d.x,0))
+                    + ConnectedSample(input.texcoord + float2(0,d.y)) + ConnectedSample(input.texcoord - float2(0,d.y)));
+                soft += ConnectedSample(input.texcoord + d) + ConnectedSample(input.texcoord - d)
+                    + ConnectedSample(input.texcoord + float2(d.x,-d.y)) + ConnectedSample(input.texcoord + float2(-d.x,d.y));
+                // Inward feather: never reveal a sealed room rejected by topology.
+                sight *= smoothstep(0.5h,1.0h,saturate(soft / (16 * max(sight,0.0001h))));
+            }
+            // G contains only solid framework/door footprints. Preserve these
+            // after feathering, so a one-cell-wide door cannot become hidden.
+            sight = max(sight,SAMPLE_TEXTURE2D_X(_VisibilitySight,sampler_PointClamp,input.texcoord).g);
+            source.rgb *= lerp(1,sight,saturate(_VisibilityStrength));
             return source;
         }
         ENDHLSL
@@ -134,6 +161,15 @@ Shader "Hidden/2026TapTap/WorldVisibility2D"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment ConnectedComposite
+            ENDHLSL
+        }
+        Pass
+        {
+            Name "墙体保留"
+            ZWrite Off ZTest Always Cull Off
+            HLSLPROGRAM
+            #pragma vertex MaskVert
+            #pragma fragment PreserveFrag
             ENDHLSL
         }
     }

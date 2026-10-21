@@ -31,6 +31,8 @@ namespace Project.WorldVisibility.Editor
                 var system = camera.gameObject.AddComponent<WorldVisibility2D>();
                 system.targetCamera = camera; system.viewer = viewer; system.findPlayer = false; system.previewInEditor = true;
                 system.sightRadiusCells = 12; system.maskResolution = .5f;
+                // This legacy audit checks final topology, not transition timing.
+                system.connectedTransitionDuration = 0; system.connectedEdgeSoftnessCells = 0;
                 var left = Wall("可绕行墙", new Vector2(1, 0), new Vector2(.5f, 4));
                 var target = new RenderTexture(800, 500, 24); camera.targetTexture = target; camera.aspect = 1.6f;
                 var image = new Texture2D(800, 500, TextureFormat.RGBA32, false);

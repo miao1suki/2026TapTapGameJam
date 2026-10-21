@@ -630141,7 +630141,7 @@
                             "componentIndex": 0,
                             "propertyPath": "minimumRatio",
                             "valueType": "Float",
-                            "value": "0.30000001192092896",
+                            "value": "0.3",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -658862,15 +658862,15 @@
     "keys": [],
     "locks": [],
     "assemblyPatches": [],
-    "playerStartRoomId": "mvmap17_region_783448da48",
+    "playerStartRoomId": "mvmap17_region_fb7d702fa6",
     "playerStartLocal": {
-        "x": 44.604820251464847,
-        "y": 3.238107204437256
+        "x": 15.53855,
+        "y": 13.603645
     },
     "hasUnassignedPlayerStart": false,
     "playerStartWorld": {
-        "x": 12.604819297790528,
-        "y": -3.238107204437256,
+        "x": -72.46145,
+        "y": 39.396355,
         "z": 0.0
     }
 }

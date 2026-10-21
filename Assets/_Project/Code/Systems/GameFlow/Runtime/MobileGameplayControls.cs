@@ -109,7 +109,8 @@ namespace Project.GameFlow
             Show("放左", carrying); Show("放右", carrying);
             Show("重生", player != null);
             Show("选色", alive && !carrying && !player.IsGreenHookActive);
-            Show("地图", player != null && !player.IsDead);
+            // Available from a new run; the map itself validates each unlocked destination.
+            Show("地图", alive);
         }
         private void Show(string label, bool show)
         {

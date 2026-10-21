@@ -3545,7 +3545,7 @@ MonoBehaviour:
     prefab: {fileID: 4826492902689664692, guid: 9e800151df918ee45817ae3e51d33ab3, type: 3}
     componentValueOverrides: []
   - entryId: 28e981bfb733401eb334ec945bf9eb75
-    displayName: "Boss\u5165\u573A\uFF08\u6536\u96C65%\uFF09"
+    displayName: "Boss\u5165\u573A\uFF08\u6536\u96C630%\uFF09"
     prefab: {fileID: 1327030446003617908, guid: b4c282373881ff94694a14af72ec0b13, type: 3}
     componentValueOverrides: []
   - entryId: world-spike-small

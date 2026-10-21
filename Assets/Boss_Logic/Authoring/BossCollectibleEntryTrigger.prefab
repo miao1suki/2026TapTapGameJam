@@ -78,7 +78,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project.BossLogic.BossCollectibleEntryGate
   gateEnabled: 1
-  minimumRatio: 0.05
+  minimumRatio: 0.3
   returnDestinationId: Start
   returnPoint: {fileID: 0}
   showHint: 1

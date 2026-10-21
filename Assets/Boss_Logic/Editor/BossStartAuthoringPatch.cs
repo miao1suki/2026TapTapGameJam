@@ -117,7 +117,7 @@ namespace Project.BossLogic.Editor
             // palette/prefab from disk, and persist each addition so a partial run can
             // be retried without duplicate entries or dangling managed wrappers.
             EnsureProp(palettePath,"正式游戏起点（Start）",StartPrefab);
-            EnsureProp(palettePath,"Boss入场（收集5%）",GatePrefab);
+            EnsureProp(palettePath,"Boss入场（收集30%）",GatePrefab);
             palette=LoadPalette(palettePath);
             LevelEditorPropEntry startProp=palette.PropEntries.Single(e=>AssetDatabase.GetAssetPath(e.Prefab)==StartPrefab);
             LevelEditorPropEntry gateProp=palette.PropEntries.Single(e=>AssetDatabase.GetAssetPath(e.Prefab)==GatePrefab);
@@ -223,7 +223,7 @@ namespace Project.BossLogic.Editor
             GameObject root=(GameObject)PrefabUtility.InstantiatePrefab(source);
             try
             {
-                root.name="Boss入场（收集5%）";
+                root.name="Boss入场（收集30%）";
                 ConfigureGate(root.GetComponent<BossCollectibleEntryGate>() ?? root.AddComponent<BossCollectibleEntryGate>());
                 return PrefabUtility.SaveAsPrefabAsset(root,GatePrefab);
             }
@@ -231,7 +231,7 @@ namespace Project.BossLogic.Editor
         }
         private static void ConfigureGate(BossCollectibleEntryGate gate)
         {
-            var so=new SerializedObject(gate); so.FindProperty("minimumRatio").floatValue=.05f;
+            var so=new SerializedObject(gate); so.FindProperty("minimumRatio").floatValue=.3f;
             so.FindProperty("returnDestinationId").stringValue="Start"; so.FindProperty("returnPoint").objectReferenceValue=null;
             so.FindProperty("showHint").boolValue=true; so.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -245,7 +245,7 @@ namespace Project.BossLogic.Editor
             var localCollider=box.componentOverrides.FirstOrDefault(v=>v.ComponentPath=="" &&
                 v.ComponentTypeName==typeof(ContactTimelineTrigger).FullName && v.PropertyPath=="targetCollider" && v.Value=="reference:local");
             localCollider?.Configure("",typeof(ContactTimelineTrigger).FullName,0,"targetCollider","ObjectReference","reference:null",null);
-            foreach(var pair in new[] { ("minimumRatio","Float",.05f.ToString("R",CultureInfo.InvariantCulture)),
+            foreach(var pair in new[] { ("minimumRatio","Float",.3f.ToString("R",CultureInfo.InvariantCulture)),
                 ("returnDestinationId","String","Start"),("returnPoint","ObjectReference","reference:null"),("showHint","Boolean","1") })
             {
                 var value=box.componentOverrides.FirstOrDefault(v=>v.ComponentPath=="" && v.ComponentTypeName==typeof(BossCollectibleEntryGate).FullName && v.PropertyPath==pair.Item1);
@@ -299,8 +299,8 @@ namespace Project.BossLogic.Editor
                     var gate=result.GetComponent<BossCollectibleEntryGate>();
                     Require(gate!=null,"real builder retains the added Gate component");
                     var settings=new SerializedObject(gate);
-                    Require(Mathf.Approximately(gate.MinimumRatio,.05f) && settings.FindProperty("returnDestinationId").stringValue=="Start",
-                        "real builder retains Gate type/5%/Start after planning reconstruction");
+                    Require(Mathf.Approximately(gate.MinimumRatio,.3f) && settings.FindProperty("returnDestinationId").stringValue=="Start",
+                        "real builder retains Gate type/30%/Start after planning reconstruction");
                     ContactTimelineTrigger trigger=result.GetComponent<ContactTimelineTrigger>();
                     Require(trigger.ManagedCollider==result.GetComponent<BoxCollider>(),"null targetCollider safely resolves the trigger's own BoxCollider");
                     var timelineValue=box.componentOverrides.First(v=>v.ComponentTypeName==typeof(ContactTimelineTrigger).FullName && v.PropertyPath=="timeline");

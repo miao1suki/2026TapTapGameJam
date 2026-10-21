@@ -171,7 +171,7 @@ namespace Project.Items
 
             CollectibleProgressSnapshot progress =
                 GetWorldProgress();
-            if (progress.MeetsRatio(.05f))
+            if (progress.MeetsRatio(.3f))
             {
                 GameplaySignalHub.Emit(
                     AchievementSignalIds
@@ -180,7 +180,7 @@ namespace Project.Items
                     progress.Collected,
                     progress.Ratio * 100f);
             }
-            if (progress.MeetsRatio(.1f))
+            if (progress.MeetsRatio(.6f))
             {
                 GameplaySignalHub.Emit(
                     AchievementSignalIds

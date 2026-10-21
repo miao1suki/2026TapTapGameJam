@@ -154,23 +154,29 @@ namespace Project.BlockFeatures
                 if (candidate == null ||
                     candidate == bossAnchor ||
                     candidate.gameObject.scene != bossAnchor.gameObject.scene ||
-                    !candidate.IsBossEntryRespawnPoint ||
                     candidate.IsBossArenaRespawnPoint ||
-                    !candidate.IsRespawnPointAvailable)
+                    !candidate.isActiveAndEnabled)
                 {
                     continue;
                 }
 
                 int candidateIndex = candidate.ChainIndex;
                 if (candidateIndex < 0 ||
-                    candidateIndex >= bossAnchor.ChainIndex ||
-                    candidateIndex < fallbackIndex)
+                    candidateIndex >= bossAnchor.ChainIndex)
                 {
                     continue;
                 }
 
+                // Older authored maps may predate the explicit entry marker.
+                // Prefer a marked entry, otherwise the preceding ordinary chain point.
+                if (fallback != null &&
+                    (fallback.IsBossEntryRespawnPoint && !candidate.IsBossEntryRespawnPoint ||
+                     fallback.IsBossEntryRespawnPoint == candidate.IsBossEntryRespawnPoint && candidateIndex < fallbackIndex))
+                    continue;
+
                 if (candidateIndex == fallbackIndex &&
                     fallback != null &&
+                    fallback.IsBossEntryRespawnPoint == candidate.IsBossEntryRespawnPoint &&
                     string.CompareOrdinal(
                         candidate.AnchorId,
                         fallback.AnchorId) >= 0)

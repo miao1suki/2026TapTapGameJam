@@ -561059,7 +561059,7 @@
                             "componentIndex": 0,
                             "propertyPath": "minimumRatio",
                             "valueType": "Float",
-                            "value": "0.30000001192092896",
+                            "value": "0.3",
                             "objectReferenceValue": {
                                 "instanceID": 0
                             }
@@ -588825,8 +588825,8 @@
     "assemblyPatches": [],
     "playerStartRoomId": "mvmap17_region_fb7d702fa6",
     "playerStartLocal": {
-        "x": 15.538551330566407,
-        "y": 13.603645324707032
+        "x": 15.538551330566406,
+        "y": 13.603645324707031
     },
     "hasUnassignedPlayerStart": false,
     "playerStartWorld": {

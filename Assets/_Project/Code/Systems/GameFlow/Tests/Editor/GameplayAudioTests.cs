@@ -162,6 +162,8 @@ namespace Project.GameFlow.Tests
         public void MusicOverrideRestoresLatestBaseMusic()
         {
             AudioManager manager = AudioManager.EnsureInstance();
+            // EditMode does not invoke MonoBehaviour.Awake for a new manager.
+            typeof(AudioManager).GetMethod("EnsureSources", Private).Invoke(manager, null);
             AudioSource source = manager.MusicSource;
             AudioClip originalClip = source.clip;
             bool originalLoop = source.loop;

@@ -239,8 +239,11 @@ namespace Project.FastTravel.Editor
             notes = notePrefab != null ? Object.Instantiate(notePrefab).GetComponent<WordNoteUI>() : null;
             Check(notes != null && notes.DefaultFont == settings.Font, "map prompt uses the existing WordNote_UI and Cubic font");
             map = player.GetComponent<WorldTravelMap>(); Check(map != null, "standard player auto-installs map without another prefab");
-            Check(map.IsUnlocked && map.CanUseHere, "map opens without collectible or Boss progression");
-            Check(map.TryOpen() && map.IsOpen, "map opens before any collectible or Boss state exists");
+            Check(map.IsUnlocked && map.CanUseHere, "map is available before first Boss entry");
+            Check(map.TryOpen(), "map opens for a new run without Boss progression");
+            map.Close();
+            BossTravelProgress.RestoreRuntimeProgress(scene, true, false);
+            Check(map.IsUnlocked && map.CanUseHere && map.TryOpen(), "restored Boss progression keeps map available outside arena");
             map.Close();
             destination = Point("destination", new Vector3(10.5f, 0, 0), true);
             locked = Point("locked", new Vector3(12.5f, 0, 0), false);

@@ -22,7 +22,7 @@ MonoBehaviour:
     mode: 1
     targetCount: 1
     targetProgress: 100
-    textPrefix: "\u5728\u4E00\u573A\u6E38\u620F\u91CC\u6536\u96C6\u54C1\u6536\u96C6\u8FDB\u5EA6\u8FBE\u523010%"
+    textPrefix: "\u5728\u4E00\u573A\u6E38\u620F\u91CC\u6536\u96C6\u54C1\u6536\u96C6\u8FDB\u5EA6\u8FBE\u523060%"
     textSuffix: "\u6B21"
     editorPosition: {x: 40, y: 40}
   logicNodes: []

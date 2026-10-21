@@ -125,7 +125,13 @@ namespace Project.FastTravel
 
         public bool CanUseHere
         {
-            get => CanOpenFromHere && !BossTravelProgress.HasLivingBoss(gameObject.scene);
+            get
+            {
+                if (!IsUnlocked || !CanOpenFromHere || BossTravelProgress.IsBossScene(gameObject.scene)) return false;
+                var progress = BossTravelProgress.GetState(gameObject.scene);
+                return !progress.IsBossFightActive &&
+                    (string.IsNullOrEmpty(progress.BossRegionId) || rooms.FindRegion(player.transform.position) != progress.BossRegionId);
+            }
         }
         private void Update()
         {
@@ -156,12 +162,13 @@ namespace Project.FastTravel
             BindFlow();
             if (opened || travel != null || player == null || !player.isActiveAndEnabled || player.IsDead || player.IsControlLocked ||
                 !IsGameplay() || Time.timeScale <= 0f || GameplayPresentationGate.IsSuppressed || !CanOpenFromHere ||
-                settings == null || settings.Font == null) return false;
-            if (BossTravelProgress.HasLivingBoss(gameObject.scene))
+                settings == null || settings.Font == null || !IsUnlocked) return false;
+            if (BossTravelProgress.GetState(gameObject.scene).IsBossFightActive)
             {
                 ShowBossBlockedNote();
                 return false;
             }
+            if (!CanUseHere) return false;
             BuildUi();
             opened = true;
             playerLock = player.AcquireTravelSafetyLock(this);
