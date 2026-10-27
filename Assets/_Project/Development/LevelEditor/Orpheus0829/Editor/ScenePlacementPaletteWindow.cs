@@ -82,6 +82,34 @@ namespace Project.LevelEditor.Editor
             AddKindButton(kindRow, 2, "只看道具");
             rootVisualElement.Add(kindRow);
 
+            VisualElement createRow = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    flexShrink = 0f,
+                    marginBottom = 6f,
+                },
+            };
+            Button addBlock = new Button(LevelEditorEntryWindow.OpenForAdd)
+            {
+                text = "+ 新建方块",
+                tooltip = "新建一个方块模板；保存后会自动出现在当前列表中。",
+            };
+            addBlock.style.flexGrow = 1f;
+            addBlock.style.height = 28f;
+            createRow.Add(addBlock);
+            Button addProp = new Button(LevelEditorPropEntryWindow.OpenForAdd)
+            {
+                text = "+ 添加道具 Prefab",
+                tooltip = "把玩法 Prefab 添加为可放置道具；保存后会自动出现在当前列表中。",
+            };
+            addProp.style.flexGrow = 1f;
+            addProp.style.height = 28f;
+            addProp.style.marginLeft = 6f;
+            createRow.Add(addProp);
+            rootVisualElement.Add(createRow);
+
             VisualElement searchRow = new VisualElement
             {
                 style =

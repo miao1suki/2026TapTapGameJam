@@ -14,6 +14,7 @@ namespace Project.LevelEditor.Editor
         private TextField nameField;
         private ObjectField prefabField;
         private Label statusLabel;
+        private Label overrideSummary;
         private Button editComponentsButton;
         private GameObject lastPrefab;
         private readonly List<LevelEditorComponentValueOverride>
@@ -27,7 +28,7 @@ namespace Project.LevelEditor.Editor
             window.editingExisting = false;
             window.editingIndex = -1;
             window.titleContent = new GUIContent("新增道具");
-            window.minSize = new Vector2(380f, 245f);
+            window.minSize = new Vector2(430f, 330f);
             window.Show();
             window.Focus();
             window.LoadValues();
@@ -40,7 +41,7 @@ namespace Project.LevelEditor.Editor
             window.editingExisting = true;
             window.editingIndex = index;
             window.titleContent = new GUIContent("编辑道具");
-            window.minSize = new Vector2(380f, 245f);
+            window.minSize = new Vector2(430f, 330f);
             window.Show();
             window.Focus();
             window.LoadValues();
@@ -55,10 +56,15 @@ namespace Project.LevelEditor.Editor
             root.style.paddingBottom = 10f;
 
             Label title = new Label(
-                editingExisting ? "编辑道具栏目" : "新增道具栏目");
+                editingExisting ? "编辑道具模板" : "新建道具模板");
             title.style.fontSize = 16f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             root.Add(title);
+
+            Label stepOne = new Label("第 1 步 · 选择共用 Prefab");
+            stepOne.style.unityFontStyleAndWeight = FontStyle.Bold;
+            stepOne.style.marginTop = 8f;
+            root.Add(stepOne);
 
             nameField = new TextField("名称");
             prefabField = new ObjectField("道具预制体")
@@ -80,6 +86,11 @@ namespace Project.LevelEditor.Editor
             root.Add(nameField);
             root.Add(prefabField);
 
+            Label stepTwo = new Label("第 2 步 · 设置当前模板的初始数值");
+            stepTwo.style.unityFontStyleAndWeight = FontStyle.Bold;
+            stepTwo.style.marginTop = 10f;
+            root.Add(stepTwo);
+
             Label hint = new Label(
                 "组件数值用于区分同一个预制体的不同配置；" +
                 "只保存到当前道具栏目，不修改预制体资产。");
@@ -90,17 +101,29 @@ namespace Project.LevelEditor.Editor
 
             editComponentsButton = new Button(OpenComponentEditor)
             {
-                text = "编辑组件数值"
+                text = "编辑这个道具的组件初始值…"
             };
-            editComponentsButton.style.height = 30f;
+            editComponentsButton.style.height = 32f;
             editComponentsButton.style.marginTop = 8f;
+            editComponentsButton.style.backgroundColor =
+                new Color(.18f, .34f, .52f);
             root.Add(editComponentsButton);
+
+            overrideSummary = new Label("尚未设置组件数值覆盖");
+            overrideSummary.style.marginTop = 4f;
+            overrideSummary.style.opacity = .75f;
+            root.Add(overrideSummary);
 
             statusLabel = new Label();
             statusLabel.style.whiteSpace = WhiteSpace.Normal;
             statusLabel.style.marginTop = 5f;
             statusLabel.style.opacity = .82f;
             root.Add(statusLabel);
+
+            Label stepThree = new Label("第 3 步 · 保存为独立模板");
+            stepThree.style.unityFontStyleAndWeight = FontStyle.Bold;
+            stepThree.style.marginTop = 8f;
+            root.Add(stepThree);
 
             Button save = new Button(Save)
             {
@@ -181,6 +204,7 @@ namespace Project.LevelEditor.Editor
 
                     statusLabel.text =
                         $"组件数值已编辑，共 {draftOverrides.Count} 项覆盖，尚未保存。";
+                    RefreshOverrideSummary();
                 });
         }
 
@@ -191,6 +215,19 @@ namespace Project.LevelEditor.Editor
                 editComponentsButton.SetEnabled(
                     prefabField?.value != null);
             }
+            RefreshOverrideSummary();
+        }
+
+        private void RefreshOverrideSummary()
+        {
+            if (overrideSummary == null)
+            {
+                return;
+            }
+
+            overrideSummary.text = draftOverrides.Count == 0
+                ? "使用 Prefab 原始数值"
+                : $"当前模板保存 {draftOverrides.Count} 项组件数值覆盖";
         }
 
         private void Save()
@@ -240,8 +277,6 @@ namespace Project.LevelEditor.Editor
             LevelEditorPropEntry saved =
                 palette.PropEntries[selectedIndex];
             saved.ReplaceComponentValueOverrides(draftOverrides);
-            LevelEditorBlockFactory.ApplyPropOverridesToPlacedBlocks(
-                saved);
             EditorUtility.SetDirty(palette);
             AssetDatabase.SaveAssetIfDirty(palette);
             LevelEditorState.MarkPaletteChanged();

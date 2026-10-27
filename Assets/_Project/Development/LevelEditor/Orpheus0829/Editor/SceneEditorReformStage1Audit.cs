@@ -68,6 +68,7 @@ namespace Project.LevelEditor.Editor
                 ValidateSourceGuards();
                 ValidateGridSpaceAndSummary();
                 ValidateObjectLibraryUi();
+                ValidatePropTemplateIsolation();
                 ValidateArtLibraryUi();
                 ValidateViewRoundTrip();
                 Require(Undo.GetCurrentGroup() == undoGroup, "只读验证不应创建 Undo 组。");
@@ -109,6 +110,41 @@ namespace Project.LevelEditor.Editor
             int earlyReturn = builder.IndexOf("output.IsBuiltFor(map.revision, paletteHash)", StringComparison.Ordinal);
             int ensureFolder = builder.IndexOf("EnsureFolder(folder)", StringComparison.Ordinal);
             Require(earlyReturn >= 0 && ensureFolder > earlyReturn, "GridArt 相同签名没有在任何写入前返回。");
+
+            string propWindow = File.ReadAllText("Assets/_Project/Development/LevelEditor/Orpheus0829/Editor/LevelEditorPropEntryWindow.cs");
+            Require(!propWindow.Contains("ApplyPropOverridesToPlacedBlocks"),
+                "编辑道具模板仍会回写已经放入 Scene 的独立实例。");
+        }
+
+        private static void ValidatePropTemplateIsolation()
+        {
+            var sharedPrefab = new GameObject("共用道具 Prefab");
+            try
+            {
+                var firstValue = new LevelEditorComponentValueOverride();
+                firstValue.Configure(string.Empty, "UnityEngine.Rigidbody", 0,
+                    "m_Mass", "Float", "1", null);
+                var secondValue = new LevelEditorComponentValueOverride();
+                secondValue.Configure(string.Empty, "UnityEngine.Rigidbody", 0,
+                    "m_Mass", "Float", "5", null);
+                var first = new LevelEditorPropEntry();
+                first.Configure("轻道具", sharedPrefab);
+                first.ReplaceComponentValueOverrides(new[] { firstValue });
+                var second = new LevelEditorPropEntry();
+                second.Configure("重道具", sharedPrefab);
+                second.ReplaceComponentValueOverrides(new[] { secondValue });
+                Require(first.Prefab == second.Prefab &&
+                        first.ComponentValueOverrides.Count == 1 &&
+                        second.ComponentValueOverrides.Count == 1 &&
+                        !ReferenceEquals(first.ComponentValueOverrides[0],
+                            second.ComponentValueOverrides[0]) &&
+                        JsonUtility.ToJson(first) != JsonUtility.ToJson(second),
+                    "同一 Prefab 的两个道具模板不能保存独立组件初始值。");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(sharedPrefab);
+            }
         }
 
         private static void ValidateGridSpaceAndSummary()
@@ -206,6 +242,7 @@ namespace Project.LevelEditor.Editor
                 foreach (string filter in new[]
                          {
                              "全部内容", "只看方块", "只看道具",
+                            "+ 新建方块", "+ 添加道具 Prefab",
                          })
                     Require(pickerButtons.Contains(filter),
                         "卡片选择器缺少直观分类按钮：" + filter);
@@ -258,12 +295,29 @@ namespace Project.LevelEditor.Editor
                     .ToList().Select(button => button.text).ToList();
                 Require(buttons.Contains("开始在 Scene 中绘制"),
                     "美术素材卡片缺少醒目的 Scene 绘制主操作。");
+                Require(buttons.Contains("+ 添加美术素材"),
+                    "美术素材卡片缺少新增素材入口。");
                 Require(buttons.Count(text => string.IsNullOrEmpty(text)) >= 2,
                     "美术素材卡片没有完整显示素材库内容。");
                 ValidatePaletteLayout(picker.rootVisualElement, "美术素材");
                 SceneArtPaletteSelection.Select(map, 1);
                 Require(SceneArtPaletteSelection.Current(map) == 1,
                     "美术素材选择没有保持当前卡片。");
+
+                SceneArtImportWindow importer =
+                    ScriptableObject.CreateInstance<SceneArtImportWindow>();
+                try
+                {
+                    importer.CreateGUI();
+                    Require(importer.rootVisualElement.Q<ObjectField>() != null &&
+                            importer.rootVisualElement.Query<Button>().ToList()
+                                .Any(button => button.text == "添加到素材库"),
+                        "美术素材新增窗口缺少图片输入或确认操作。");
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(importer);
+                }
             }
             finally
             {

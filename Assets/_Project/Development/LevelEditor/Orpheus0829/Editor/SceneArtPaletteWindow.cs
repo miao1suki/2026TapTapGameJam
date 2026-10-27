@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Project.GridArt;
+using Project.GridArt.Editor;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -64,6 +65,7 @@ namespace Project.LevelEditor.Editor
         private Label selectionTitle;
         private Label selectionDetails;
         private Button paintButton;
+        private Button addArtButton;
         private readonly Dictionary<int, Button> cards = new();
 
         internal static void Open(GridArtMap target)
@@ -154,6 +156,28 @@ namespace Project.LevelEditor.Editor
             });
             categoryField.style.flexShrink = 0f;
             root.Add(categoryField);
+
+            addArtButton = new Button(() =>
+                SceneArtImportWindow.Open(map?.palette, () =>
+                {
+                    selectedIndex = map?.palette != null
+                        ? map.palette.brushes.Count - 1
+                        : -1;
+                    if (selectedIndex >= 0)
+                    {
+                        SceneArtPaletteSelection.Select(map, selectedIndex);
+                    }
+                    RebuildAll();
+                }))
+            {
+                text = "+ 添加美术素材",
+                tooltip = "选择已导入的 Sprite 或已切片图片，并加入当前美术素材库。",
+            };
+            addArtButton.style.height = 28f;
+            addArtButton.style.marginBottom = 5f;
+            addArtButton.style.flexShrink = 0f;
+            addArtButton.SetEnabled(map?.palette != null);
+            root.Add(addArtButton);
 
             resultCount = new Label();
             resultCount.style.fontSize = 10f;
@@ -247,6 +271,8 @@ namespace Project.LevelEditor.Editor
             {
                 return;
             }
+
+            addArtButton?.SetEnabled(map?.palette != null);
 
             List<string> categories = new List<string>
             {
@@ -496,5 +522,106 @@ namespace Project.LevelEditor.Editor
             brush?.autoTerrain == true
                 ? brush.GetPiece(4) ?? brush.sprite
                 : brush?.sprite;
+    }
+
+    internal sealed class SceneArtImportWindow : EditorWindow
+    {
+        private GridArtPalette palette;
+        private UnityEngine.Object source;
+        private Action onImported;
+        private Button importButton;
+        private Label status;
+
+        internal static void Open(GridArtPalette target, Action callback)
+        {
+            if (target == null)
+            {
+                EditorUtility.DisplayDialog(
+                    "无法添加美术素材",
+                    "当前 Scene 没有绑定美术素材库。",
+                    "知道了");
+                return;
+            }
+
+            SceneArtImportWindow window =
+                GetWindow<SceneArtImportWindow>(true, "添加美术素材", true);
+            window.palette = target;
+            window.onImported = callback;
+            window.minSize = new Vector2(420f, 190f);
+            window.maxSize = new Vector2(620f, 260f);
+            window.ShowUtility();
+            window.Focus();
+        }
+
+        public void CreateGUI()
+        {
+            VisualElement root = rootVisualElement;
+            root.style.paddingLeft = 12f;
+            root.style.paddingRight = 12f;
+            root.style.paddingTop = 12f;
+            root.style.paddingBottom = 12f;
+
+            Label title = new Label("把图片加入当前素材库");
+            title.style.fontSize = 16f;
+            title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            root.Add(title);
+            root.Add(new HelpBox(
+                "可选择单个 Sprite，或选择已经设置为 Multiple 并切片的图片。重复素材不会再次添加。",
+                HelpBoxMessageType.Info));
+
+            ObjectField sourceField = new ObjectField("图片或 Sprite")
+            {
+                objectType = typeof(UnityEngine.Object),
+                allowSceneObjects = false,
+            };
+            sourceField.RegisterValueChangedCallback(evt =>
+            {
+                source = evt.newValue;
+                bool valid = source is Sprite || source is Texture2D;
+                importButton.SetEnabled(valid);
+                status.text = valid || source == null
+                    ? string.Empty
+                    : "请选择 Sprite 或 Texture2D 图片。";
+            });
+            root.Add(sourceField);
+
+            status = new Label();
+            status.style.whiteSpace = WhiteSpace.Normal;
+            status.style.color = new Color(1f, .72f, .3f);
+            root.Add(status);
+
+            importButton = new Button(Import)
+            {
+                text = "添加到素材库",
+            };
+            importButton.style.height = 32f;
+            importButton.style.marginTop = 8f;
+            importButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+            importButton.style.backgroundColor = new Color(.12f, .42f, .72f);
+            importButton.SetEnabled(false);
+            root.Add(importButton);
+        }
+
+        private void Import()
+        {
+            if (palette == null || !(source is Sprite || source is Texture2D))
+            {
+                return;
+            }
+
+            int firstAdded = palette.brushes.Count;
+            int added = GridArtLibraryService.Import(palette, source, 16);
+            if (added <= 0)
+            {
+                status.text = "没有新增素材：图片可能尚未切片，或素材已经存在。";
+                return;
+            }
+
+            Selection.activeObject = palette;
+            EditorGUIUtility.PingObject(palette);
+            onImported?.Invoke();
+            Debug.Log($"已向美术素材库添加 {added} 项素材（从编号 {firstAdded} 开始）。", palette);
+            Close();
+        }
     }
 }

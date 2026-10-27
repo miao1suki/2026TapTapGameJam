@@ -13,6 +13,8 @@
 - 已修复保存后星号立即复现：移除 `BossRespawnMarkerMaintenance` 对层级变化的自动扫描、补建和无条件 `SetDirty`，SceneView 浏览标记也不再被动同步 Transform。Boss 标记只在用户修改 Boss 复活点、点击“定位附属标记”或拖动标记时显式写入；隔离 `Gaming` 保存后等待 20 个 Editor update 仍保持 `scene.isDirty=false` 且保存后文件哈希不变。
 - 新版“4 美术”已迁入旧关卡美术工作台的卡片式素材体验：独立 UI Toolkit 窗口读取当前 Scene 的 GridArt Palette，提供缩略图卡片、搜索、分类/自动地形筛选、结果数量、当前素材尺寸预览、单击选择与双击/主按钮直接回 Scene 绘制。Overlay 显示当前素材卡片摘要；开窗与选卡只写 SessionState，不修改 Map、Scene 或 Undo。
 - 方块/道具与美术两种素材选择窗口已统一为三段式响应布局：顶部筛选和底部当前选择禁止收缩，中央卡片库独立滚动；卡片扩为 `116×120`，预览与两行名称分配固定高度，文本容器允许收缩，窄窗口不再让卡片、详情和主操作重叠。对象详情仅显示资源文件名，完整路径保留在 tooltip；Stage 1 增加对应布局断言。
+- 两种选择器补齐就地新增入口：对象窗口直接打开既有“新建方块/添加道具 Prefab”编辑器；美术窗口新增 Sprite/已切片 Texture 导入小窗，显式确认后通过 `GridArtLibraryService.Import` 追加当前 Palette、去重并选中新素材。仅打开新增窗口不写 Scene/Palette，Stage 1 覆盖入口与控件完整性。
+- 道具新增窗口明确为三步流程，并暴露“编辑这个道具的组件初始值”；同一 Prefab 可建多个模板，各自保存克隆后的 component overrides。移除模板保存时 `ApplyPropOverridesToPlacedBlocks` 的旧回写，既有 Scene 实例继续独立；Stage 1 验证同 Prefab 双模板参数隔离并禁止模板窗口调用实例回写。
 
 ## 2026-10-21 本地正式关卡美术快照（待整合）
 
