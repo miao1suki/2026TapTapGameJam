@@ -113865,6 +113865,142 @@ MonoBehaviour:
   planningBoxId: box_62e27f57
   planningSignature: "{\"id\":\"box_62e27f57\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"mechanism-ladder-front\",\"propEntryName\":\"\u6B63\u9762\u68AF\u5B50\",\"x\":30,\"y\":46,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":true,\"authoredSnapshotGuid\":\"\",\"authoredInstanceId\":\"\",\"authoredObjectId\":\"\",\"authoredPositionOffset\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"authoredSizeCells\":{\"x\":0,\"y\":0},\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 30, y: 46}
+--- !u!1 &437250125
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 437250126}
+  - component: {fileID: 437250130}
+  - component: {fileID: 437250129}
+  - component: {fileID: 437250128}
+  - component: {fileID: 437250127}
+  m_Layer: 0
+  m_Name: "\u767D\u65B9\u5757"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &437250126
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437250125}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -126.5, y: 72.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1000835590}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &437250127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437250125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3b4c5d6e7f809123456789012345678, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.LevelEditor.LevelEditorPlacedBlock
+  cell: {x: -127, y: 72}
+  sizeCells: {x: 1, y: 1}
+  cellWorldSize: 1
+  entryName: "\u767D\u65B9\u5757"
+  entryColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+  useEntryColor: 1
+  hasColorData: 1
+  isProp: 0
+  planningBoxId: author_9a180460ae7644e1a3e3416ba0919883
+  planningSignature: scene
+  planningLocalCell: {x: 0, y: 0}
+--- !u!23 &437250128
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437250125}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &437250129
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437250125}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &437250130
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437250125}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1001 &437431882
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -119824,6 +119960,142 @@ MonoBehaviour:
   planningBoxId: box_22c2cbe5
   planningSignature: "{\"id\":\"box_22c2cbe5\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"4ba0994908e1477fb5f7dae6a0e0cb40\",\"propEntryName\":\"\u6C14\u6CE1\u67F1\",\"x\":8,\"y\":23,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"authoredSnapshotGuid\":\"\",\"authoredInstanceId\":\"\",\"authoredObjectId\":\"\",\"authoredPositionOffset\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"authoredSizeCells\":{\"x\":0,\"y\":0},\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 8, y: 23}
+--- !u!1 &466502301
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 466502302}
+  - component: {fileID: 466502306}
+  - component: {fileID: 466502305}
+  - component: {fileID: 466502304}
+  - component: {fileID: 466502303}
+  m_Layer: 0
+  m_Name: "\u767D\u65B9\u5757"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &466502302
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 466502301}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -126.5, y: 79.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1000835590}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &466502303
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 466502301}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3b4c5d6e7f809123456789012345678, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.LevelEditor.LevelEditorPlacedBlock
+  cell: {x: -127, y: 79}
+  sizeCells: {x: 1, y: 1}
+  cellWorldSize: 1
+  entryName: "\u767D\u65B9\u5757"
+  entryColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+  useEntryColor: 1
+  hasColorData: 1
+  isProp: 0
+  planningBoxId: author_bb83ca4959514ff4b161020fc975e64d
+  planningSignature: scene
+  planningLocalCell: {x: 0, y: 0}
+--- !u!23 &466502304
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 466502301}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &466502305
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 466502301}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &466502306
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 466502301}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &467180488
 GameObject:
   m_ObjectHideFlags: 0
@@ -159852,6 +160124,142 @@ MonoBehaviour:
   planningBoxId: box_9c667c8e
   planningSignature: "{\"id\":\"box_9c667c8e\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"6a317712f4c344038e7eff8345de01a0\",\"propEntryName\":\"\u5411\u53F3\u6C34\u6D41\",\"x\":19,\"y\":7,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"authoredSnapshotGuid\":\"\",\"authoredInstanceId\":\"\",\"authoredObjectId\":\"\",\"authoredPositionOffset\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"authoredSizeCells\":{\"x\":0,\"y\":0},\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 19, y: 7}
+--- !u!1 &623144560
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 623144561}
+  - component: {fileID: 623144565}
+  - component: {fileID: 623144564}
+  - component: {fileID: 623144563}
+  - component: {fileID: 623144562}
+  m_Layer: 0
+  m_Name: "\u767D\u65B9\u5757"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &623144561
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623144560}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -124.5, y: 75.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1000835590}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &623144562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623144560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3b4c5d6e7f809123456789012345678, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.LevelEditor.LevelEditorPlacedBlock
+  cell: {x: -125, y: 75}
+  sizeCells: {x: 1, y: 1}
+  cellWorldSize: 1
+  entryName: "\u767D\u65B9\u5757"
+  entryColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+  useEntryColor: 1
+  hasColorData: 1
+  isProp: 0
+  planningBoxId: author_8b1e10414ea842a7bd94e3ce32e7c1a7
+  planningSignature: scene
+  planningLocalCell: {x: 0, y: 0}
+--- !u!23 &623144563
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623144560}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &623144564
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623144560}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &623144565
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 623144560}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &624328959
 GameObject:
   m_ObjectHideFlags: 0
@@ -256866,6 +257274,10 @@ Transform:
   - {fileID: 1911636068}
   - {fileID: 2008411814}
   - {fileID: 529722825}
+  - {fileID: 466502302}
+  - {fileID: 623144561}
+  - {fileID: 1699017487}
+  - {fileID: 437250126}
   m_Father: {fileID: 1789231226}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1001122494
@@ -424783,6 +425195,142 @@ MonoBehaviour:
   planningBoxId: box_de3c8ec7
   planningSignature: "{\"id\":\"box_de3c8ec7\",\"type\":9,\"label\":\"\",\"paletteEntryId\":\"\",\"paletteEntryName\":\"\",\"propEntryId\":\"234025e375b248bfbb8ac4dca60021fa\",\"propEntryName\":\"\u6C34\u6E90\",\"x\":11,\"y\":19,\"width\":1,\"height\":1,\"isMerged\":false,\"singleInstance\":false,\"authoredSnapshotGuid\":\"\",\"authoredInstanceId\":\"\",\"authoredObjectId\":\"\",\"authoredPositionOffset\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"authoredSizeCells\":{\"x\":0,\"y\":0},\"doorOwnerId\":\"\",\"doorButtonOrder\":0,\"mechanismBaseId\":\"\",\"mechanismBaseCellOffset\":{\"x\":0,\"y\":0},\"mechanismButtonId\":\"\",\"mechanismButtonIds\":[],\"crankOwnerId\":\"\",\"platformMountId\":\"\",\"bossRespawnOwnerId\":\"\",\"initialCrankPlatformCreated\":false,\"mergeParts\":[],\"hasComponentOverrides\":true,\"componentOverrides\":[]}{\"values\":[]}"
   planningLocalCell: {x: 11, y: 19}
+--- !u!1 &1699017486
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1699017487}
+  - component: {fileID: 1699017491}
+  - component: {fileID: 1699017490}
+  - component: {fileID: 1699017489}
+  - component: {fileID: 1699017488}
+  m_Layer: 0
+  m_Name: "\u767D\u65B9\u5757"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1699017487
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699017486}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -127.5, y: 72.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1000835590}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1699017488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699017486}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3b4c5d6e7f809123456789012345678, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project.LevelEditor.LevelEditorPlacedBlock
+  cell: {x: -128, y: 72}
+  sizeCells: {x: 1, y: 1}
+  cellWorldSize: 1
+  entryName: "\u767D\u65B9\u5757"
+  entryColor: {r: 0.95, g: 0.95, b: 0.95, a: 1}
+  useEntryColor: 1
+  hasColorData: 1
+  isProp: 0
+  planningBoxId: author_13193ce685124a21ae6981b36de6cb59
+  planningSignature: scene
+  planningLocalCell: {x: 0, y: 0}
+--- !u!23 &1699017489
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699017486}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &1699017490
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699017486}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!33 &1699017491
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699017486}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1700062610 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4491574534968212122, guid: 6dea163cbd3a49e4ca6f35776ac003fc, type: 3}
@@ -792625,6 +793173,104 @@ MonoBehaviour:
   colorBindings:
   - renderer: {fileID: 1951811430}
     alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 2063412171}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 590468357}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1620922468}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 129462587}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1080324812}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1058299400}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1344498197}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1845959811}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1850658041}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 2144471602}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 667616603}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 238572832}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 950515374}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 847177333}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 994202394}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1442039358}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 379197208}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 592229022}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 586014485}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1961290129}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 590531106}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 842248905}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1581464490}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1495437975}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1126316744}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1487877229}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1574758284}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1812906640}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1145826238}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 671465075}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 2084158287}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1607394408}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1417087662}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 633223882}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 391548993}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 419583491}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 647685200}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1636461058}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 23197566}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1156544800}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 939394347}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 163395287}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 2007387555}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1939867731}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 889286533}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1927385233}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 809348717}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 835457364}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1481942342}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1759011372}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1852615741}
@@ -792655,101 +793301,13 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1896659921}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1126316744}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1265993883}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1315654616}
     alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1487877229}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1812906640}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 671465075}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 633223882}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1927385233}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1495437975}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1574758284}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1145826238}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 2084158287}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 391548993}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 163395287}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 238572832}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1080324812}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1607394408}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 2063412171}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1417087662}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 379197208}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1442039358}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 419583491}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 586014485}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1344498197}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1636461058}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1850658041}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1620922468}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 907625651}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 23197566}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 939394347}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 2007387555}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 994202394}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 667616603}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 129462587}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 590468357}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 2144471602}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1058299400}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1845959811}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1581464490}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 592229022}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 842248905}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1156544800}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 647685200}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 950515374}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 847177333}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1507042817}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1992921438}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 590531106}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 802507202}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
@@ -792759,17 +793317,9 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1241671935}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 809348717}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1961290129}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1481942342}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 2056953938}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1961798406}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 835457364}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1271925128}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
@@ -792779,7 +793329,11 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 114764483}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 907625651}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 748810800}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 667106868}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1150995342}
     alphaTexture: {fileID: 2800000, guid: 69da890face2a6c4c822ff753daa68d6, type: 3}
@@ -792787,13 +793341,207 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1815003529}
     alphaTexture: {fileID: 2800000, guid: 058dd5b7242115641b21b2be73e989cc, type: 3}
-  - renderer: {fileID: 700211220}
-    alphaTexture: {fileID: 2800000, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
   - renderer: {fileID: 1423681770}
     alphaTexture: {fileID: 2800000, guid: 69da890face2a6c4c822ff753daa68d6, type: 3}
   - renderer: {fileID: 337031883}
     alphaTexture: {fileID: 2800000, guid: 69da890face2a6c4c822ff753daa68d6, type: 3}
-  - renderer: {fileID: 667106868}
+  - renderer: {fileID: 700211220}
+    alphaTexture: {fileID: 2800000, guid: dd27659c4fcd77741a3fe5c3916f2188, type: 3}
+  - renderer: {fileID: 1996359117}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 665835336}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 863816900}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 246483094}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 600745133}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 694005096}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1516118926}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1452936623}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 799814304}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 626705733}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 644798131}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 1015813110}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 145206399}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 173391668}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 592060207}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 947349516}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1689242365}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 756435428}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 382840558}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1263725257}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 2022059724}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 692780422}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 458907266}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 299216400}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 1357515630}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 1556110901}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 468426739}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 1157912729}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 672104781}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 808185458}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 550754616}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1160293416}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1644660628}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 401666840}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1669387223}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1529754651}
+    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
+  - renderer: {fileID: 1425047206}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 42370556}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1992269204}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1166645123}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 920773530}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1084760350}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1110613486}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1927593204}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1702689947}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1148092700}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1833374687}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 2138547251}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 755074651}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1442815971}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 758539049}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 536669269}
+    alphaTexture: {fileID: 2800000, guid: 0a56036170a876746accf9756174e05a, type: 3}
+  - renderer: {fileID: 28161576}
+    alphaTexture: {fileID: 2800000, guid: 0a56036170a876746accf9756174e05a, type: 3}
+  - renderer: {fileID: 648412518}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 352568169}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 27632217}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1618990603}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1158164830}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1649706609}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 2056758815}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 581091212}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1949988904}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1434035289}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 455633058}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1232332717}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 767661157}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 597536845}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  - renderer: {fileID: 1970597805}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1708138705}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 931605178}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 88768177}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1539927970}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 449386881}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 702772108}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1528872880}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1541624909}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1223651026}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1342457527}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1994310589}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1635671101}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1870590375}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 675403703}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 685243404}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1841063500}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1910948804}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 848707616}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 167046454}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1513219279}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1088909026}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 443301587}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 578707414}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1503625191}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 370005851}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1881209807}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1962848720}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1460129475}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1283232772}
+    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
+  - renderer: {fileID: 1344970241}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1832404893}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
@@ -792997,183 +793745,27 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 0a56036170a876746accf9756174e05a, type: 3}
   - renderer: {fileID: 1088366953}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 767661157}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1649706609}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 167046454}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1158164830}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 455633058}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1434035289}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 597536845}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1541624909}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 88768177}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 702772108}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1460129475}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 931605178}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 848707616}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 384363221}
     alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
   - renderer: {fileID: 1524220151}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 930341096}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1949988904}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1708138705}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 449386881}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 382840558}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1529754651}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1539927970}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 692780422}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1873230034}
     alphaTexture: {fileID: 2800000, guid: 0a56036170a876746accf9756174e05a, type: 3}
-  - renderer: {fileID: 1970597805}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 665835336}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1232332717}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 299216400}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1528872880}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1841063500}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1910948804}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 727508022}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1927593204}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1110613486}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1702689947}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
   - renderer: {fileID: 835424671}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1551925660}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 581091212}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 2056758815}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1084760350}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 401666840}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1148092700}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 42370556}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1223651026}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1962848720}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1644660628}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1994310589}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1263725257}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 863816900}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 634142330}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 808185458}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 920773530}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 672104781}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1342457527}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1870590375}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 458907266}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1996359117}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 2022059724}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 246483094}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 550754616}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1669387223}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 685243404}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1452936623}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1516118926}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 600745133}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1425047206}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 592060207}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 644798131}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 145206399}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 799814304}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1015813110}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 947349516}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
   - renderer: {fileID: 1795034749}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 675403703}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1556110901}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1796710410}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1833374687}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1635671101}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 173391668}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 694005096}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1157912729}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 626705733}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 468426739}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1160293416}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
   - renderer: {fileID: 307232041}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1074214470}
-    alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1689242365}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 756435428}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1357515630}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 662503435}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
@@ -793183,20 +793775,10 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1763821472}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1166645123}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1618990603}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1992269204}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 765907216}
     alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
-  - renderer: {fileID: 1442815971}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 551432706}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 352568169}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
   - renderer: {fileID: 1643946447}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1195401317}
@@ -793211,24 +793793,12 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 881437402}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 27632217}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
   - renderer: {fileID: 2103840201}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1899489042}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 370005851}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1088909026}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 1503625191}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 758539049}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1793065120}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 755074651}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1368589988}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 345180615}
@@ -793237,22 +793807,16 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1869251675}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 2138547251}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1682190400}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 993592530}
     alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
   - renderer: {fileID: 1892616786}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 648412518}
-    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
   - renderer: {fileID: 1539968481}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 758006153}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1344970241}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1271930277}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1086153339}
@@ -793261,16 +793825,12 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1177818524}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 443301587}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 1307103705}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 266984303}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1843747601}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 578707414}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 780450405}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 2026324116}
@@ -793279,14 +793839,8 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1838532339}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 1513219279}
-    alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
-  - renderer: {fileID: 536669269}
-    alphaTexture: {fileID: 2800000, guid: 0a56036170a876746accf9756174e05a, type: 3}
   - renderer: {fileID: 2119501856}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  - renderer: {fileID: 28161576}
-    alphaTexture: {fileID: 2800000, guid: 0a56036170a876746accf9756174e05a, type: 3}
   - renderer: {fileID: 1513847254}
     alphaTexture: {fileID: 2800000, guid: 24b74bdf22adc174aa895b9a93459a45, type: 3}
   - renderer: {fileID: 476121716}
@@ -793309,7 +793863,9 @@ MonoBehaviour:
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
   - renderer: {fileID: 1583269437}
     alphaTexture: {fileID: 2800000, guid: 1cd8272b9358c104f9a40ab4139c0fb1, type: 3}
-  appliedRevision: 2948
+  - renderer: {fileID: 1796710410}
+    alphaTexture: {fileID: 9191917687247762323, guid: e567cb8451f7460428b4567965bdbfa4, type: 2}
+  appliedRevision: 2960
   appliedPaletteHash: db989a14d25486722969a264928c75d3
 --- !u!4 &1882519604
 Transform:

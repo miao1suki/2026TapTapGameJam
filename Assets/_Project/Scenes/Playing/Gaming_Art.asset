@@ -33670,6 +33670,18 @@ MonoBehaviour:
     - position: {x: -70, y: -9}
       brush: 10
       quarterTurns: 0
+    - position: {x: -127, y: 79}
+      brush: 202
+      quarterTurns: 0
+    - position: {x: -125, y: 75}
+      brush: 202
+      quarterTurns: 0
+    - position: {x: -127, y: 72}
+      brush: 202
+      quarterTurns: 0
+    - position: {x: -128, y: 72}
+      brush: 202
+      quarterTurns: 0
   - id: 777f4b155c2a4ee282e9d2a4580675ec
     label: "\u573A\u666F\u88C5\u9970"
     visible: 1
@@ -41539,6 +41551,6 @@ MonoBehaviour:
     - position: {x: -93, y: 43}
       brush: 214
       quarterTurns: 0
-  revision: 2948
-  bakedRevision: 2948
+  revision: 2960
+  bakedRevision: 2960
   bakedPaletteHash: db989a14d25486722969a264928c75d3
