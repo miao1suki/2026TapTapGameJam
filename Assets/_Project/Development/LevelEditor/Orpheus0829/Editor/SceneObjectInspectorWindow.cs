@@ -17,6 +17,9 @@ namespace Project.LevelEditor.Editor
         private Label summaryLabel;
         private HelpBox emptyState;
         private VisualElement inspectorContainer;
+        private Button locateButton;
+        private Foldout technicalDetails;
+        private Label technicalDetailsLabel;
         private readonly List<InspectorElement> inspectors = new();
 
         [MenuItem("Tools/2026TapTap/关卡编辑器/所选对象实例参数")]
@@ -77,9 +80,30 @@ namespace Project.LevelEditor.Editor
             summaryLabel.style.marginBottom = 7f;
             rootVisualElement.Add(summaryLabel);
 
+            locateButton = new Button(FrameTarget)
+            {
+                text = "在 Scene 中定位",
+                tooltip = "让 Scene 视图居中显示这个物体",
+            };
+            locateButton.style.height = 29f;
+            locateButton.style.marginBottom = 6f;
+            rootVisualElement.Add(locateButton);
+
             rootVisualElement.Add(new HelpBox(
-                "这里直接编辑 Scene 中的真实实例。修改会进入 Unity Undo，并保存为该实例的组件字段或 Prefab override；不会写入 JSON，也不会回改生成模板。",
+                "这里改的是当前场景里的这个物体。修改可用 Ctrl+Z 撤销，不会影响以后新放置的模板。",
                 HelpBoxMessageType.Info));
+
+            technicalDetails = new Foldout
+            {
+                text = "详细信息",
+                value = false,
+            };
+            technicalDetails.style.marginTop = 6f;
+            technicalDetailsLabel = new Label();
+            technicalDetailsLabel.style.whiteSpace = WhiteSpace.Normal;
+            technicalDetailsLabel.style.opacity = .72f;
+            technicalDetails.Add(technicalDetailsLabel);
+            rootVisualElement.Add(technicalDetails);
 
             emptyState = new HelpBox(
                 "在锁定正交 2D 的对象模式中点击方块或道具，这里会显示它的完整 Inspector。",
@@ -158,6 +182,13 @@ namespace Project.LevelEditor.Editor
             inspectorContainer.style.display = valid
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
+            locateButton?.SetEnabled(valid);
+            if (technicalDetails != null)
+            {
+                technicalDetails.style.display = valid
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
+            }
             if (!valid)
             {
                 titleLabel.text = "实例参数";
@@ -174,17 +205,20 @@ namespace Project.LevelEditor.Editor
             string region = string.IsNullOrEmpty(record?.regionId)
                 ? "未归属区域"
                 : record.regionId;
-            string author = string.IsNullOrEmpty(targetBlock.AuthoringId)
-                ? "缺失作者 ID"
-                : targetBlock.AuthoringId;
             string channel = record != null
                 ? ChannelLabel(record.channel)
                 : targetBlock.IsProp ? "道具" : "地形";
 
             titleLabel.text = targetBlock.gameObject.name;
             summaryLabel.text =
-                $"{channel} · 起始格 {targetBlock.Cell} · 占格 {targetBlock.SizeCells}\n" +
-                $"{region} · 作者组 {author} · 组内 {groupCount} 个实例";
+                $"{channel} · {region}\n" +
+                $"位置格 {targetBlock.Cell} · 大小 {targetBlock.SizeCells.x} × {targetBlock.SizeCells.y} 格";
+            string author = string.IsNullOrEmpty(targetBlock.AuthoringId)
+                ? "无（这个实例已独立）"
+                : targetBlock.AuthoringId;
+            technicalDetailsLabel.text =
+                $"作者标识：{author}\n同组实例：{groupCount}\n" +
+                $"场景对象：{targetBlock.gameObject.name}";
             foreach (Component component in
                      targetBlock.GetComponents<Component>())
             {
@@ -195,8 +229,8 @@ namespace Project.LevelEditor.Editor
 
                 Foldout componentFoldout = new Foldout
                 {
-                    text = component.GetType().Name,
-                    value = true,
+                    text = ComponentLabel(component),
+                    value = !IsEngineComponent(component),
                 };
                 componentFoldout.style.marginBottom = 5f;
                 InspectorElement componentInspector =
@@ -207,6 +241,38 @@ namespace Project.LevelEditor.Editor
                 componentFoldout.Add(componentInspector);
                 inspectorContainer.Add(componentFoldout);
             }
+        }
+
+        private void FrameTarget()
+        {
+            if (targetBlock == null || targetBlock.gameObject == null)
+            {
+                return;
+            }
+
+            Selection.activeGameObject = targetBlock.gameObject;
+            SceneView.lastActiveSceneView?.FrameSelected();
+        }
+
+        private static bool IsEngineComponent(Component component) =>
+            component is Transform ||
+            component is Renderer ||
+            component is Collider ||
+            component is Collider2D ||
+            component is Rigidbody ||
+            component is Rigidbody2D ||
+            component is Animator;
+
+        private static string ComponentLabel(Component component)
+        {
+            if (component is Transform) return "位置、旋转与缩放";
+            if (component is Renderer) return "显示外观（Renderer）";
+            if (component is Collider || component is Collider2D)
+                return "碰撞范围（Collider）";
+            if (component is Rigidbody || component is Rigidbody2D)
+                return "物理属性（Rigidbody）";
+            if (component is Animator) return "动画（Animator）";
+            return ObjectNames.NicifyVariableName(component.GetType().Name);
         }
 
         private void UnbindInspectors()

@@ -344,7 +344,13 @@ namespace Project.LevelEditor.Editor
         private Button pingSourceButton;
         private Button paintSourceButton;
         private Button editSourceButton;
+        private Image objectPreview;
+        private Label objectToolStatus;
         private Label objectStatus;
+        private readonly Dictionary<LevelEditorTool, Button> objectToolButtons =
+            new Dictionary<LevelEditorTool, Button>();
+        private readonly List<Button> selectedObjectButtons =
+            new List<Button>();
         private readonly VisualElement bindingPanel;
         private InspectorElement selectedInspector;
         private ObjectField bindingConsumer;
@@ -372,20 +378,20 @@ namespace Project.LevelEditor.Editor
         {
             this.sceneView = sceneView;
             sessionOwner = "SceneLevelEditorOverlay:" + (sceneView != null ? sceneView.GetInstanceID().ToString() : "none");
-            style.minWidth = 300f;
-            style.maxWidth = 380f;
+            style.minWidth = 330f;
+            style.maxWidth = 420f;
             style.maxHeight = 760f;
             style.paddingLeft = 9f;
             style.paddingRight = 9f;
             style.paddingTop = 8f;
             style.paddingBottom = 8f;
 
-            var title = new Label("场景关卡编辑器");
-            title.style.fontSize = 14f;
+            var title = new Label("关卡搭建");
+            title.style.fontSize = 16f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             Add(title);
-            var subtitle = new Label("Scene 权威 · 单一 XY 平面 · 旧数据直接接轨");
-            subtitle.style.fontSize = 10f;
+            var subtitle = new Label("直接在 Scene 里画房间、放物体和铺美术");
+            subtitle.style.fontSize = 11f;
             subtitle.style.opacity = .68f;
             subtitle.style.marginBottom = 6f;
             Add(subtitle);
@@ -396,15 +402,15 @@ namespace Project.LevelEditor.Editor
             Add(sessionStatus);
 
             lockButton = new Button(ToggleLock);
-            lockButton.style.height = 30f;
+            lockButton.style.height = 34f;
             lockButton.style.unityFontStyleAndWeight = FontStyle.Bold;
             Add(lockButton);
 
             var modes = new VisualElement { style = { flexDirection = FlexDirection.Row, marginTop = 6f } };
-            AddModeButton(modes, SceneEditMode.Region, "区域");
-            AddModeButton(modes, SceneEditMode.Object, "对象");
-            AddModeButton(modes, SceneEditMode.Binding, "绑定/参数");
-            AddModeButton(modes, SceneEditMode.Art, "美术");
+            AddModeButton(modes, SceneEditMode.Region, "1 房间");
+            AddModeButton(modes, SceneEditMode.Object, "2 物体");
+            AddModeButton(modes, SceneEditMode.Binding, "3 参数");
+            AddModeButton(modes, SceneEditMode.Art, "4 美术");
             Add(modes);
 
             modeStatus = new Label();
@@ -488,7 +494,7 @@ namespace Project.LevelEditor.Editor
             RegisterCallback<AttachToPanelEvent>(_ => Subscribe());
             RegisterCallback<DetachFromPanelEvent>(_ => Unsubscribe());
             schedule.Execute(Refresh).Every(200);
-            SelectMode(SceneEditMode.Region);
+            SelectMode(SceneEditMode.Object);
             Refresh();
         }
 
@@ -496,7 +502,8 @@ namespace Project.LevelEditor.Editor
         {
             var button = new Button(() => SelectMode(value)) { text = text };
             button.style.flexGrow = 1f;
-            button.style.fontSize = 10f;
+            button.style.height = 30f;
+            button.style.fontSize = 11f;
             button.style.marginLeft = 1f;
             button.style.marginRight = 1f;
             modeButtons.Add(value, button);
@@ -507,13 +514,21 @@ namespace Project.LevelEditor.Editor
         {
             mode = value;
             foreach (var pair in modeButtons)
-                pair.Value.style.unityFontStyleAndWeight = pair.Key == mode ? FontStyle.Bold : FontStyle.Normal;
+            {
+                bool active = pair.Key == mode;
+                pair.Value.style.unityFontStyleAndWeight = active
+                    ? FontStyle.Bold
+                    : FontStyle.Normal;
+                pair.Value.style.backgroundColor = active
+                    ? new Color(.12f, .42f, .72f)
+                    : new Color(.20f, .21f, .23f);
+            }
             modeStatus.text = mode switch
             {
-                SceneEditMode.Region => "房间与通道读取 RoomLifecycleManager；不读取规划 JSON。",
-                SceneEditMode.Object => "直接识别场景中的真实 Prefab 实例与稳定作者 ID。",
-                SceneEditMode.Binding => "参数与机关关系读取真实组件字段和 Unity 引用。",
-                SceneEditMode.Art => "GridArt 保持资产承载；进入此模式不会自动 Apply。",
+                SceneEditMode.Region => "先选房间或通道，再用鼠标直接绘制它的范围。",
+                SceneEditMode.Object => "选择一种方块或道具进行放置；点已有物体可直接改参数。",
+                SceneEditMode.Binding => "编辑当前所选物体的参数，或连接门、按钮和机关。",
+                SceneEditMode.Art => "选择图层和笔刷，直接在 Scene 里铺美术。",
                 _ => string.Empty,
             };
             regionPanel.style.display = mode == SceneEditMode.Region ? DisplayStyle.Flex : DisplayStyle.None;
@@ -630,9 +645,20 @@ namespace Project.LevelEditor.Editor
         private void RefreshSession()
         {
             bool locked = SceneEditSession.IsLocked(sceneView);
-            sessionStatus.text = locked ? "● 正交 2D 已锁定" : "○ 只读浏览";
-            lockButton.text = locked ? "退出编辑视角并完整恢复" : "进入锁定正交 2D";
+            sessionStatus.text = locked
+                ? "● 可以编辑：正交 2D 已锁定"
+                : "○ 当前不会落笔：请先开始搭建";
+            sessionStatus.style.color = locked
+                ? new Color(.45f, .86f, .58f)
+                : new Color(.84f, .74f, .42f);
+            lockButton.text = locked
+                ? "结束搭建并恢复原视角"
+                : "开始搭建（锁定正交 2D）";
+            lockButton.style.backgroundColor = locked
+                ? new Color(.24f, .25f, .27f)
+                : new Color(.12f, .42f, .72f);
             lockButton.SetEnabled(sceneView != null && !EditorApplication.isPlayingOrWillChangePlaymode);
+            RefreshObjectToolState();
             BindAuthoring();
         }
 
@@ -712,66 +738,163 @@ namespace Project.LevelEditor.Editor
         private VisualElement BuildObjectPanel()
         {
             var panel = new VisualElement { style = { marginTop = 6 } };
-            panel.Add(new Label("方块与道具") { style = { unityFontStyleAndWeight = FontStyle.Bold } });
-            panel.Add(new HelpBox("模板只负责生成一次。物体放进 Scene 后就完全独立，之后只编辑这个实例自己的组件与 Prefab override。", HelpBoxMessageType.Info));
+            var chooseTitle = new Label("第 1 步　选择要放的东西");
+            chooseTitle.style.fontSize = 13f;
+            chooseTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            chooseTitle.style.marginBottom = 4f;
+            panel.Add(chooseTitle);
 
             Button openPicker = new Button(ScenePlacementPaletteWindow.Open)
             {
                 name = "open-placement-palette",
-                text = "选择要画的方块 / 道具…",
+                text = "打开方块与道具列表…",
             };
-            openPicker.style.height = 34f;
-            openPicker.style.marginTop = 5f;
+            openPicker.style.height = 38f;
             openPicker.style.marginBottom = 5f;
             openPicker.style.unityFontStyleAndWeight = FontStyle.Bold;
             openPicker.style.backgroundColor = new Color(.12f, .42f, .72f);
             panel.Add(openPicker);
 
-            objectSourceDetails = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10, opacity = .8f } };
-            panel.Add(objectSourceDetails);
-            objectSourceAsset = new ObjectField("模板资产") { objectType = typeof(GameObject), allowSceneObjects = false };
-            objectSourceAsset.SetEnabled(false);
-            panel.Add(objectSourceAsset);
+            var currentBrush = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    alignItems = Align.Center,
+                    paddingLeft = 6f,
+                    paddingRight = 6f,
+                    paddingTop = 5f,
+                    paddingBottom = 5f,
+                    backgroundColor = new Color(.16f, .17f, .19f),
+                },
+            };
+            objectPreview = new Image { scaleMode = ScaleMode.ScaleToFit };
+            objectPreview.style.width = 48f;
+            objectPreview.style.height = 48f;
+            objectPreview.style.marginRight = 8f;
+            currentBrush.Add(objectPreview);
+            objectSourceDetails = new Label
+            {
+                style =
+                {
+                    whiteSpace = WhiteSpace.Normal,
+                    fontSize = 11f,
+                    flexGrow = 1f,
+                },
+            };
+            currentBrush.Add(objectSourceDetails);
+            panel.Add(currentBrush);
+
             var sourceButtons = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            pingSourceButton = RegionButton("在 Project 定位", PingSelectedSource);
-            paintSourceButton = RegionButton("开始绘制", StartPaintingSelectedSource);
-            sourceButtons.Add(pingSourceButton);
+            paintSourceButton = RegionButton("用当前内容开始画", StartPaintingSelectedSource);
+            paintSourceButton.style.height = 32f;
+            paintSourceButton.style.unityFontStyleAndWeight = FontStyle.Bold;
+            paintSourceButton.style.backgroundColor = new Color(.12f, .42f, .72f);
             sourceButtons.Add(paintSourceButton);
             panel.Add(sourceButtons);
 
-            var manageLibrary = new Foldout { text = "管理方块与道具模板", value = false };
-            var manageCurrent = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            editSourceButton = RegionButton("编辑当前模板", EditSelectedSource);
-            manageCurrent.Add(editSourceButton);
-            manageCurrent.Add(RegionButton("刷新资源库", () => { summaryDirty = true; Refresh(); }));
-            manageLibrary.Add(manageCurrent);
-            var addTemplates = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            addTemplates.Add(RegionButton("＋ 方块模板", LevelEditorEntryWindow.OpenForAdd));
-            addTemplates.Add(RegionButton("＋ 道具 Prefab", LevelEditorPropEntryWindow.OpenForAdd));
-            manageLibrary.Add(addTemplates);
-            manageLibrary.Add(new HelpBox("新增或修改模板只影响以后生成的对象，不追踪、不覆盖已经放生到 Scene 的实例。", HelpBoxMessageType.Info));
-            panel.Add(manageLibrary);
+            var actionTitle = new Label("第 2 步　在场景中操作");
+            actionTitle.style.fontSize = 13f;
+            actionTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            actionTitle.style.marginTop = 9f;
+            actionTitle.style.marginBottom = 3f;
+            panel.Add(actionTitle);
+            var tools = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            AddObjectToolButton(tools, LevelEditorTool.Select, "点选并改参数");
+            AddObjectToolButton(tools, LevelEditorTool.Paint, "连续放置");
+            AddObjectToolButton(tools, LevelEditorTool.Erase, "擦除");
+            panel.Add(tools);
+            objectToolStatus = new Label
+            {
+                style =
+                {
+                    whiteSpace = WhiteSpace.Normal,
+                    fontSize = 11f,
+                    marginTop = 4f,
+                    marginBottom = 4f,
+                },
+            };
+            panel.Add(objectToolStatus);
 
-            panel.Add(new Label("场景编辑") { style = { unityFontStyleAndWeight = FontStyle.Bold, marginTop = 6 } });
-            objectChannel = new DropdownField("对象通道", new List<string> { "地形", "水体", "玩法道具", "标记/触发器", "装饰对象" }, 0);
+            var adjust = new Foldout { text = "调整当前选中的物体", value = true };
+            var move = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            move.Add(SelectedObjectButton("左移一格", () => MoveSelected(Vector2Int.left)));
+            move.Add(SelectedObjectButton("右移一格", () => MoveSelected(Vector2Int.right)));
+            move.Add(SelectedObjectButton("下移一格", () => MoveSelected(Vector2Int.down)));
+            move.Add(SelectedObjectButton("上移一格", () => MoveSelected(Vector2Int.up)));
+            adjust.Add(move);
+            var rebind = new Toggle("跨过房间边界时更新归属");
+            rebind.tooltip = "关闭时，跨区域移动会被拒绝；开启后会把对象归到目标房间。";
+            rebind.RegisterValueChangedCallback(evt => SceneObjectAuthoring.RebindAcrossRegions = evt.newValue);
+            adjust.Add(rebind);
+            var deletion = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            Button delete = SelectedObjectButton("删除选中物体", () => DeleteSelected(false));
+            delete.style.color = new Color(1f, .62f, .62f);
+            Button unlinkDelete = SelectedObjectButton("解除连接后删除", () => DeleteSelected(true));
+            unlinkDelete.style.color = new Color(1f, .62f, .62f);
+            deletion.Add(delete);
+            deletion.Add(unlinkDelete);
+            adjust.Add(deletion);
+            panel.Add(adjust);
+
+            objectStatus = new Label
+            {
+                style =
+                {
+                    whiteSpace = WhiteSpace.Normal,
+                    fontSize = 10f,
+                    opacity = .75f,
+                    marginTop = 4f,
+                },
+            };
+            panel.Add(objectStatus);
+
+            var advanced = new Foldout { text = "高级：通道与模板管理", value = false };
+            objectChannel = new DropdownField("擦除目标类型", new List<string> { "地形", "水体", "玩法道具", "标记/触发器", "装饰对象" }, 0);
+            objectChannel.tooltip = "通常会随当前画笔自动选择；只有同一格叠放多种对象时才需要手动改。";
             objectChannel.RegisterValueChangedCallback(_ =>
             {
                 SceneObjectAuthoring.ActiveChannel = (SceneObjectChannel)Mathf.Clamp(objectChannel.index, 0, 4);
                 RefreshObjectStatus();
             });
-            panel.Add(objectChannel);
-            var tools = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            tools.Add(RegionButton("选择", () => LevelEditorState.Tool = LevelEditorTool.Select));
-            tools.Add(RegionButton("绘制", () => LevelEditorState.Tool = LevelEditorTool.Paint));
-            tools.Add(RegionButton("擦除", () => LevelEditorState.Tool = LevelEditorTool.Erase)); panel.Add(tools);
-            var move = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            move.Add(RegionButton("←", () => MoveSelected(Vector2Int.left))); move.Add(RegionButton("→", () => MoveSelected(Vector2Int.right)));
-            move.Add(RegionButton("↓", () => MoveSelected(Vector2Int.down))); move.Add(RegionButton("↑", () => MoveSelected(Vector2Int.up))); panel.Add(move);
-            var rebind = new Toggle("跨区移动时显式重新归属"); rebind.RegisterValueChangedCallback(evt => SceneObjectAuthoring.RebindAcrossRegions = evt.newValue); panel.Add(rebind);
-            var deletion = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            deletion.Add(RegionButton("删除所选组", () => DeleteSelected(false))); deletion.Add(RegionButton("解绑并删除", () => DeleteSelected(true))); panel.Add(deletion);
-            objectStatus = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10, opacity = .75f } }; panel.Add(objectStatus);
+            advanced.Add(objectChannel);
+            objectSourceAsset = new ObjectField("当前模板资产") { objectType = typeof(GameObject), allowSceneObjects = false };
+            objectSourceAsset.SetEnabled(false);
+            advanced.Add(objectSourceAsset);
+            var manageCurrent = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            pingSourceButton = RegionButton("在 Project 中查看", PingSelectedSource);
+            editSourceButton = RegionButton("编辑当前模板", EditSelectedSource);
+            manageCurrent.Add(pingSourceButton);
+            manageCurrent.Add(editSourceButton);
+            advanced.Add(manageCurrent);
+            var addTemplates = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            addTemplates.Add(RegionButton("新建方块模板", LevelEditorEntryWindow.OpenForAdd));
+            addTemplates.Add(RegionButton("添加道具 Prefab", LevelEditorPropEntryWindow.OpenForAdd));
+            advanced.Add(addTemplates);
+            advanced.Add(RegionButton("刷新方块与道具列表", () => { summaryDirty = true; Refresh(); }));
+            advanced.Add(new HelpBox("模板只在生成时提供初始内容。已经放进 Scene 的物体不会被模板回改。", HelpBoxMessageType.Info));
+            panel.Add(advanced);
             return panel;
+        }
+
+        private void AddObjectToolButton(
+            VisualElement parent,
+            LevelEditorTool tool,
+            string text)
+        {
+            Button button = RegionButton(text, () => ActivateObjectTool(tool));
+            button.style.height = 32f;
+            button.style.fontSize = 10f;
+            objectToolButtons[tool] = button;
+            parent.Add(button);
+        }
+
+        private Button SelectedObjectButton(string text, Action clicked)
+        {
+            Button button = RegionButton(text, clicked);
+            selectedObjectButtons.Add(button);
+            button.SetEnabled(false);
+            return button;
         }
 
         private VisualElement BuildBindingPanel(out InspectorElement inspector, out ObjectField consumer, out ObjectField source, out Label status)
@@ -849,6 +972,12 @@ namespace Project.LevelEditor.Editor
                 pingSourceButton?.SetEnabled(false);
                 paintSourceButton?.SetEnabled(false);
                 editSourceButton?.SetEnabled(false);
+                if (objectPreview != null)
+                {
+                    objectPreview.image = null;
+                    objectPreview.style.backgroundColor =
+                        new Color(.12f, .13f, .15f);
+                }
                 return;
             }
             pingSourceButton.SetEnabled(true);
@@ -859,10 +988,18 @@ namespace Project.LevelEditor.Editor
             objectChannel.index = (int)item.channel;
             objectSourceAsset.SetValueWithoutNotify(item.prefab);
 
-            string path = string.IsNullOrEmpty(item.AssetPath) ? "内置基础方块（无独立 Prefab）" : item.AssetPath;
+            Texture preview = item.prefab != null
+                ? AssetPreview.GetAssetPreview(item.prefab) ??
+                  AssetPreview.GetMiniThumbnail(item.prefab)
+                : null;
+            objectPreview.image = preview;
+            objectPreview.style.backgroundColor = preview == null
+                ? item.color
+                : new Color(.1f, .11f, .13f);
+
             objectSourceDetails.text =
-                $"当前画笔：{item.KindLabel} · {item.displayName}\n" +
-                $"{ChannelLabel(item.channel)} · 模板默认参数 {item.overrideCount} 项\n{path}";
+                $"当前选择\n{item.KindLabel} · {item.displayName}\n" +
+                $"{ChannelLabel(item.channel)} · 初始参数 {item.overrideCount} 项";
         }
 
         private static string ChannelLabel(SceneObjectChannel channel) => channel switch
@@ -896,8 +1033,56 @@ namespace Project.LevelEditor.Editor
                 return;
             }
             ApplyPaletteSelection();
-            LevelEditorState.Tool = LevelEditorTool.Paint;
-            objectStatus.text = $"正在绘制：{selectedPaletteItem.KindLabel} · {selectedPaletteItem.displayName}。在 SceneView 左键拖动放置，Esc 返回选择。";
+            SceneLevelEditorOverlay.BeginObjectPainting();
+            objectStatus.text =
+                $"已选择 {selectedPaletteItem.displayName}。在 Scene 中单击或拖动放置，按 Esc 停止。";
+        }
+
+        private void ActivateObjectTool(LevelEditorTool tool)
+        {
+            SelectMode(SceneEditMode.Object);
+            if (sceneView != null &&
+                !SceneEditSession.IsLocked(sceneView))
+            {
+                SceneEditSession.Enter(sceneView, sessionOwner);
+            }
+            LevelEditorState.Tool = tool;
+            RefreshObjectToolState();
+            BindAuthoring();
+            sceneView?.Focus();
+        }
+
+        private void RefreshObjectToolState()
+        {
+            if (objectToolStatus == null)
+            {
+                return;
+            }
+
+            LevelEditorTool current = LevelEditorState.Tool;
+            foreach (KeyValuePair<LevelEditorTool, Button> pair in
+                     objectToolButtons)
+            {
+                bool active = pair.Key == current;
+                pair.Value.style.unityFontStyleAndWeight = active
+                    ? FontStyle.Bold
+                    : FontStyle.Normal;
+                pair.Value.style.backgroundColor = active
+                    ? new Color(.12f, .42f, .72f)
+                    : new Color(.20f, .21f, .23f);
+            }
+
+            objectToolStatus.text = current switch
+            {
+                LevelEditorTool.Select =>
+                    "当前：点选并改参数。单击物体会选择整个作者根并打开实例参数。",
+                LevelEditorTool.Paint => selectedPaletteItem != null
+                    ? $"当前：连续放置“{selectedPaletteItem.displayName}”。单击或拖动，Esc 停止。"
+                    : "当前：连续放置。请先选择一种方块或道具。",
+                LevelEditorTool.Erase =>
+                    $"当前：擦除{(SceneObjectAuthoring.ActiveChannel.HasValue ? ChannelLabel(SceneObjectAuthoring.ActiveChannel.Value) : "当前格物体")}。单击或拖动，Esc 停止。",
+                _ => "请选择上方的一种操作。",
+            };
         }
 
         private void EditSelectedSource()
@@ -914,8 +1099,23 @@ namespace Project.LevelEditor.Editor
         private void RefreshObjectStatus()
         {
             SceneObjectIndex index = SceneObjectAuthoring.Read(SceneManager.GetActiveScene());
-            int[] counts = new int[5]; foreach (SceneObjectRecord record in index.All) counts[(int)record.channel]++;
-            objectStatus.text = $"当前 Scene：地形 {counts[0]} · 水体 {counts[1]} · 道具 {counts[2]} · 标记 {counts[3]} · 装饰 {counts[4]}。同格擦除只处理当前通道；多候选必须先选定。";
+            SceneObjectRecord selected = SelectedRecord();
+            if (selected?.block != null)
+            {
+                int groupCount = index.Group(selected).Count;
+                objectStatus.text =
+                    $"已选：{selected.block.name} · {ChannelLabel(selected.channel)}" +
+                    (groupCount > 1 ? $" · 同组 {groupCount} 个物体" : string.Empty);
+                return;
+            }
+
+            int[] counts = new int[5];
+            foreach (SceneObjectRecord record in index.All)
+            {
+                counts[(int)record.channel]++;
+            }
+            objectStatus.text =
+                $"尚未选中已有物体。当前场景共有 {index.All.Count} 个可编辑对象。";
         }
 
         private SceneObjectRecord SelectedRecord()
@@ -947,6 +1147,11 @@ namespace Project.LevelEditor.Editor
             if (block != null)
                 selectedInspector.Bind(
                     new SerializedObject(block.gameObject));
+            foreach (Button button in selectedObjectButtons)
+            {
+                button.SetEnabled(block != null);
+            }
+            RefreshObjectStatus();
         }
 
         private void BindDoor()

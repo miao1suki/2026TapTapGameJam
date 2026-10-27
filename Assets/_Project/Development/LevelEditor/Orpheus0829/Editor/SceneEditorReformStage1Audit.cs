@@ -186,8 +186,9 @@ namespace Project.LevelEditor.Editor
             List<string> buttons = panel.Query<Button>().ToList().Select(button => button.text).ToList();
             foreach (string required in new[]
                      {
-                         "选择要画的方块 / 道具…", "开始绘制", "编辑当前模板",
-                         "＋ 方块模板", "＋ 道具 Prefab",
+                         "打开方块与道具列表…", "用当前内容开始画",
+                         "点选并改参数", "连续放置", "擦除",
+                         "编辑当前模板", "新建方块模板", "添加道具 Prefab",
                      })
                 Require(buttons.Contains(required), "对象资源库缺少入口：" + required);
 
@@ -200,10 +201,20 @@ namespace Project.LevelEditor.Editor
                     "卡片选择器缺少搜索输入。");
                 List<string> pickerButtons = picker.rootVisualElement.Query<Button>()
                     .ToList().Select(button => button.text).ToList();
-                Require(pickerButtons.Contains("选择并开始绘制"),
+                foreach (string filter in new[]
+                         {
+                             "全部内容", "只看方块", "只看道具",
+                         })
+                    Require(pickerButtons.Contains(filter),
+                        "卡片选择器缺少直观分类按钮：" + filter);
+                Require(pickerButtons.Contains("开始在 Scene 中放置"),
                     "卡片选择器缺少醒目的绘制主操作。");
-                Require(pickerButtons.Contains("编辑模板"),
+                Require(pickerButtons.Contains("编辑初始模板"),
                     "卡片选择器缺少模板编辑入口。");
+                Require(picker.rootVisualElement.Query<Label>().ToList()
+                        .Any(label => label.text != null &&
+                                      label.text.StartsWith("找到 ")),
+                    "卡片选择器缺少结果数量与操作提示。");
             }
             finally
             {
