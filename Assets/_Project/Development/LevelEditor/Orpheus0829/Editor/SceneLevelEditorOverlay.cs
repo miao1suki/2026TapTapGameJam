@@ -275,10 +275,16 @@ namespace Project.LevelEditor.Editor
     public sealed class SceneLevelEditorOverlay : Overlay
     {
         internal static event Action ObjectPaintingRequested;
+        internal static event Action<GridArtMap, int> ArtPaintingRequested;
         private static bool objectPaintingPending;
+        private static GridArtMap pendingArtMap;
+        private static int pendingArtBrush = -1;
 
         internal static bool HasPendingObjectPainting =>
             objectPaintingPending;
+
+        internal static bool HasPendingArtPainting =>
+            pendingArtMap != null && pendingArtBrush >= 0;
 
         public override VisualElement CreatePanelContent() =>
             new SceneLevelEditorPanel(containerWindow as SceneView);
@@ -316,6 +322,26 @@ namespace Project.LevelEditor.Editor
         internal static void MarkObjectPaintingHandled()
         {
             objectPaintingPending = false;
+        }
+
+        internal static void BeginArtPainting(
+            GridArtMap map,
+            int brushIndex)
+        {
+            pendingArtMap = map;
+            pendingArtBrush = brushIndex;
+            Open();
+            EditorApplication.delayCall += () =>
+            {
+                ArtPaintingRequested?.Invoke(map, brushIndex);
+                SceneView.lastActiveSceneView?.Focus();
+            };
+        }
+
+        internal static void MarkArtPaintingHandled()
+        {
+            pendingArtMap = null;
+            pendingArtBrush = -1;
         }
     }
 
@@ -359,6 +385,8 @@ namespace Project.LevelEditor.Editor
         private readonly VisualElement artPanel;
         private DropdownField artLayer;
         private DropdownField artBrush;
+        private Image artBrushPreview;
+        private Label artBrushDetails;
         private IntegerField artTurns;
         private Toggle artErase;
         private Toggle artRectangle;
@@ -487,7 +515,7 @@ namespace Project.LevelEditor.Editor
             overview.Add(new Button(() => { summaryDirty = true; Refresh(); }) { text = "重新扫描（只读）" });
             Add(overview);
 
-            var notice = new HelpBox("打开、浏览、切模式和选择模板均为零写入。只有绘制、擦除、移动、改参、绑定、区域/美术归属与保存等显式作者动作会修改 Scene/资产，并进入 Unity Undo。", HelpBoxMessageType.Info);
+            var notice = new HelpBox("打开、浏览、切模式和选择方块、道具或美术素材均为零写入。只有绘制、擦除、移动、改参、绑定、区域/美术归属与保存等显式作者动作会修改 Scene/资产，并进入 Unity Undo。", HelpBoxMessageType.Info);
             notice.style.marginTop = 6f;
             Add(notice);
 
@@ -528,7 +556,7 @@ namespace Project.LevelEditor.Editor
                 SceneEditMode.Region => "先选房间或通道，再用鼠标直接绘制它的范围。",
                 SceneEditMode.Object => "选择一种方块或道具进行放置；点已有物体可直接改参数。",
                 SceneEditMode.Binding => "编辑当前所选物体的参数，或连接门、按钮和机关。",
-                SceneEditMode.Art => "选择图层和笔刷，直接在 Scene 里铺美术。",
+                SceneEditMode.Art => "从素材卡片选择美术，再直接在 Scene 里铺设。",
                 _ => string.Empty,
             };
             regionPanel.style.display = mode == SceneEditMode.Region ? DisplayStyle.Flex : DisplayStyle.None;
@@ -558,6 +586,10 @@ namespace Project.LevelEditor.Editor
             SceneArtAuthoring.Changed += OnArtChanged;
             SceneLevelEditorOverlay.ObjectPaintingRequested -= BeginObjectPainting;
             SceneLevelEditorOverlay.ObjectPaintingRequested += BeginObjectPainting;
+            SceneLevelEditorOverlay.ArtPaintingRequested -= BeginArtPainting;
+            SceneLevelEditorOverlay.ArtPaintingRequested += BeginArtPainting;
+            SceneArtPaletteSelection.Changed -= OnArtBrushSelectionChanged;
+            SceneArtPaletteSelection.Changed += OnArtBrushSelectionChanged;
             ScenePlacementPaletteCatalog.SelectionChanged -= OnPaletteSelectionChanged;
             ScenePlacementPaletteCatalog.SelectionChanged += OnPaletteSelectionChanged;
             Selection.selectionChanged -= RefreshSelectionInspector;
@@ -570,6 +602,12 @@ namespace Project.LevelEditor.Editor
             {
                 schedule.Execute(BeginObjectPainting);
             }
+            if (SceneLevelEditorOverlay.HasPendingArtPainting)
+            {
+                schedule.Execute(() => BeginArtPainting(
+                    activeArtScene?.map,
+                    SceneArtPaletteSelection.Current(activeArtScene?.map)));
+            }
         }
 
         private void Unsubscribe()
@@ -579,6 +617,8 @@ namespace Project.LevelEditor.Editor
             SceneObjectAuthoring.Changed -= OnObjectChanged;
             SceneArtAuthoring.Changed -= OnArtChanged;
             SceneLevelEditorOverlay.ObjectPaintingRequested -= BeginObjectPainting;
+            SceneLevelEditorOverlay.ArtPaintingRequested -= BeginArtPainting;
+            SceneArtPaletteSelection.Changed -= OnArtBrushSelectionChanged;
             ScenePlacementPaletteCatalog.SelectionChanged -= OnPaletteSelectionChanged;
             Selection.selectionChanged -= RefreshSelectionInspector;
             EditorApplication.hierarchyChanged -= MarkSummaryDirty;
@@ -610,6 +650,34 @@ namespace Project.LevelEditor.Editor
             LevelEditorState.Tool = LevelEditorTool.Paint;
             SceneLevelEditorOverlay.MarkObjectPaintingHandled();
             RefreshSession();
+        }
+
+        private void BeginArtPainting(GridArtMap map, int brushIndex)
+        {
+            if (sceneView != SceneView.lastActiveSceneView)
+            {
+                return;
+            }
+
+            RefreshArtChoices();
+            if (activeArtScene?.map != map ||
+                map?.palette?.Get(brushIndex) == null)
+            {
+                return;
+            }
+
+            SelectMode(SceneEditMode.Art);
+            if (!SceneEditSession.IsLocked(sceneView))
+            {
+                SceneEditSession.Enter(sceneView, sessionOwner);
+            }
+            artBrush.index = brushIndex;
+            artErase.SetValueWithoutNotify(false);
+            SceneLevelEditorOverlay.MarkArtPaintingHandled();
+            RefreshArtBrushPreview();
+            BindAuthoring();
+            RefreshSession();
+            sceneView.Focus();
         }
 
         private void OnPaletteSelectionChanged()
@@ -915,8 +983,60 @@ namespace Project.LevelEditor.Editor
         private VisualElement BuildArtPanel()
         {
             var panel = new VisualElement { style = { marginTop = 6 } };
+            Label chooseTitle = new Label("第 1 步　选择美术素材");
+            chooseTitle.style.fontSize = 13f;
+            chooseTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            chooseTitle.style.marginBottom = 4f;
+            panel.Add(chooseTitle);
+            Button openCards = new Button(() =>
+                SceneArtPaletteWindow.Open(activeArtScene?.map))
+            {
+                text = "打开美术素材卡片…",
+            };
+            openCards.style.height = 38f;
+            openCards.style.unityFontStyleAndWeight = FontStyle.Bold;
+            openCards.style.backgroundColor = new Color(.12f, .42f, .72f);
+            panel.Add(openCards);
+
+            VisualElement current = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    alignItems = Align.Center,
+                    marginTop = 5f,
+                    marginBottom = 8f,
+                    paddingLeft = 6f,
+                    paddingRight = 6f,
+                    paddingTop = 5f,
+                    paddingBottom = 5f,
+                    backgroundColor = new Color(.16f, .17f, .19f),
+                },
+            };
+            artBrushPreview = new Image { scaleMode = ScaleMode.ScaleToFit };
+            artBrushPreview.style.width = 52f;
+            artBrushPreview.style.height = 52f;
+            artBrushPreview.style.marginRight = 8f;
+            current.Add(artBrushPreview);
+            artBrushDetails = new Label
+            {
+                style =
+                {
+                    flexGrow = 1f,
+                    whiteSpace = WhiteSpace.Normal,
+                    fontSize = 11f,
+                },
+            };
+            current.Add(artBrushDetails);
+            panel.Add(current);
+
+            Label actionTitle = new Label("第 2 步　在场景中铺美术");
+            actionTitle.style.fontSize = 13f;
+            actionTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            actionTitle.style.marginBottom = 4f;
+            panel.Add(actionTitle);
             artLayer = new DropdownField("GridArt 图层"); artLayer.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artLayer);
-            artBrush = new DropdownField("笔刷"); artBrush.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artBrush);
+            artBrush = new DropdownField("笔刷"); artBrush.RegisterValueChangedCallback(_ => { RefreshArtBrushPreview(); BindAuthoring(); });
             artTurns = new IntegerField("旋转 90° 次数") { value = 0 }; artTurns.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artTurns);
             artErase = new Toggle("擦除"); artErase.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artErase);
             artRectangle = new Toggle("矩形"); artRectangle.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artRectangle);
@@ -1181,10 +1301,52 @@ namespace Project.LevelEditor.Editor
             artLayer.choices = map != null ? map.layers.Select(item => item?.label ?? "<空图层>").ToList() : new List<string>();
             artLayer.index = artLayer.choices.Count > 0 ? Mathf.Clamp(artLayer.index, 0, artLayer.choices.Count - 1) : -1;
             artBrush.choices = map?.palette != null ? map.palette.brushes.Select((item, i) => $"{i} · {item?.label ?? "<空笔刷>"}").ToList() : new List<string>();
-            artBrush.index = artBrush.choices.Count > 0 ? Mathf.Clamp(artBrush.index, 0, artBrush.choices.Count - 1) : -1;
+            artBrush.index = artBrush.choices.Count > 0
+                ? SceneArtPaletteSelection.Current(map)
+                : -1;
+            RefreshArtBrushPreview();
             artStatus.text = map == null ? "当前 Scene 没有已绑定的 GridArtMap；不会自动创建。" :
                 $"Map {map.name} · 图层 {map.layers.Count} · 美术格 {map.layers.Sum(item => item?.cells?.Count ?? 0)} · {(SceneArtAuthoring.OwnershipFor(activeArtScene) == null ? "旧美术默认未归属" : "已绑定稀疏归属资产")}\n{SceneArtAuthoring.Status}";
             BindAuthoring();
+        }
+
+        private void OnArtBrushSelectionChanged(
+            GridArtMap map,
+            int index)
+        {
+            if (activeArtScene?.map != map || artBrush == null)
+            {
+                return;
+            }
+
+            artBrush.index = index;
+            RefreshArtBrushPreview();
+            BindAuthoring();
+        }
+
+        private void RefreshArtBrushPreview()
+        {
+            if (artBrushPreview == null || artBrushDetails == null)
+            {
+                return;
+            }
+
+            GridArtBrush brush = activeArtScene?.map?.palette?.Get(
+                artBrush?.index ?? -1);
+            if (brush == null)
+            {
+                artBrushPreview.sprite = null;
+                artBrushDetails.text = "尚未选择美术素材";
+                return;
+            }
+
+            artBrushPreview.sprite = brush.autoTerrain
+                ? brush.GetPiece(4) ?? brush.sprite
+                : brush.sprite;
+            artBrushDetails.text =
+                $"当前素材\n{brush.label}\n" +
+                $"{(brush.autoTerrain ? "自动地形" : brush.category)} · " +
+                $"{brush.DisplaySize.x:0.##} × {brush.DisplaySize.y:0.##} 格";
         }
 
         private void CreateArtOwnership()

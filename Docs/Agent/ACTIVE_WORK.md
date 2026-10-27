@@ -11,6 +11,7 @@
 - 最终态全量测试已重跑：全项目 EditMode `309/310`，唯一失败仍是既有输入提示断言期望 `WASD`、Unity 6.3 返回 `W/A/S/D`；PlayMode `5/6`，唯一失败仍是既有菜单往返测试把数值完全相同的两个 Scene handle（`-44148`）判不等。两项均与本次编辑器文件无调用关系，没有新增失败；四阶段专项审计不以这两项既有异常替代。
 - 正式图只读基线：25 个区域（含 1 通道）、3004 个 `LevelEditorPlacedBlock`、2998 个稳定 ID、1 个 7 实例逻辑组、99 个合并形状、13817 个 GridArt 锚点和 49017 个区域格。主 Unity 当前仍有未保存星号，本分支未保存正式 `Gaming`，提交继续排除字体动态缓存与四份保护资源。
 - 已修复保存后星号立即复现：移除 `BossRespawnMarkerMaintenance` 对层级变化的自动扫描、补建和无条件 `SetDirty`，SceneView 浏览标记也不再被动同步 Transform。Boss 标记只在用户修改 Boss 复活点、点击“定位附属标记”或拖动标记时显式写入；隔离 `Gaming` 保存后等待 20 个 Editor update 仍保持 `scene.isDirty=false` 且保存后文件哈希不变。
+- 新版“4 美术”已迁入旧关卡美术工作台的卡片式素材体验：独立 UI Toolkit 窗口读取当前 Scene 的 GridArt Palette，提供缩略图卡片、搜索、分类/自动地形筛选、结果数量、当前素材尺寸预览、单击选择与双击/主按钮直接回 Scene 绘制。Overlay 显示当前素材卡片摘要；开窗与选卡只写 SessionState，不修改 Map、Scene 或 Undo。
 
 ## 2026-10-21 本地正式关卡美术快照（待整合）
 

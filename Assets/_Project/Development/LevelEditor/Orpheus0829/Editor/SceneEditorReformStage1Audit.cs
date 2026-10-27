@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Project.GridArt;
 using Project.Rooms;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -67,6 +68,7 @@ namespace Project.LevelEditor.Editor
                 ValidateSourceGuards();
                 ValidateGridSpaceAndSummary();
                 ValidateObjectLibraryUi();
+                ValidateArtLibraryUi();
                 ValidateViewRoundTrip();
                 Require(Undo.GetCurrentGroup() == undoGroup, "只读验证不应创建 Undo 组。");
                 Require(!activeScene.IsValid() || activeScene.isDirty == activeDirty, "只读验证改变了当前 Scene dirty 状态。");
@@ -74,7 +76,7 @@ namespace Project.LevelEditor.Editor
                 report.AppendLine("PASS  阶段 1 零写入保护");
                 report.AppendLine("PASS  旧 Scene 区域/对象摘要直接读取");
                 report.AppendLine("PASS  SceneCell / RegionCell / World 坐标往返（含非零 Transform）");
-                report.AppendLine("PASS  卡片式方块/道具选择器与实例参数入口完整");
+                report.AppendLine("PASS  方块/道具与美术卡片选择器、实例参数入口完整");
                 report.AppendLine("PASS  SceneView 正交锁定与逐字段恢复");
                 report.AppendLine("PASS  正式 Scene / JSON / GridArt 四项哈希保持基线");
                 File.WriteAllText(ReportPath, report.ToString());
@@ -219,6 +221,53 @@ namespace Project.LevelEditor.Editor
             finally
             {
                 UnityEngine.Object.DestroyImmediate(picker);
+            }
+        }
+
+        private static void ValidateArtLibraryUi()
+        {
+            GridArtPalette palette =
+                ScriptableObject.CreateInstance<GridArtPalette>();
+            GridArtMap map = ScriptableObject.CreateInstance<GridArtMap>();
+            SceneArtPaletteWindow picker =
+                ScriptableObject.CreateInstance<SceneArtPaletteWindow>();
+            try
+            {
+                palette.brushes.Add(new GridArtBrush
+                {
+                    label = "测试装饰",
+                    category = "装饰",
+                });
+                palette.brushes.Add(new GridArtBrush
+                {
+                    label = "测试自动地形",
+                    category = "地表",
+                    autoTerrain = true,
+                });
+                map.palette = palette;
+                picker.SetTargetForAudit(map);
+                picker.CreateGUI();
+
+                Require(picker.rootVisualElement.Q<ToolbarSearchField>() != null,
+                    "美术素材卡片缺少搜索输入。");
+                Require(picker.rootVisualElement.Query<PopupField<string>>()
+                        .ToList().Any(),
+                    "美术素材卡片缺少分类筛选。");
+                List<string> buttons = picker.rootVisualElement.Query<Button>()
+                    .ToList().Select(button => button.text).ToList();
+                Require(buttons.Contains("开始在 Scene 中绘制"),
+                    "美术素材卡片缺少醒目的 Scene 绘制主操作。");
+                Require(buttons.Count(text => string.IsNullOrEmpty(text)) >= 2,
+                    "美术素材卡片没有完整显示素材库内容。");
+                SceneArtPaletteSelection.Select(map, 1);
+                Require(SceneArtPaletteSelection.Current(map) == 1,
+                    "美术素材选择没有保持当前卡片。");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(picker);
+                UnityEngine.Object.DestroyImmediate(map);
+                UnityEngine.Object.DestroyImmediate(palette);
             }
         }
 
