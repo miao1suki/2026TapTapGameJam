@@ -71,7 +71,7 @@ namespace Project.LevelEditor.Editor
             SceneArtPaletteWindow window =
                 GetWindow<SceneArtPaletteWindow>();
             window.titleContent = new GUIContent("美术素材");
-            window.minSize = new Vector2(680f, 520f);
+            window.minSize = new Vector2(600f, 480f);
             window.map = target;
             window.selectedIndex = SceneArtPaletteSelection.Current(target);
             window.Show();
@@ -99,10 +99,14 @@ namespace Project.LevelEditor.Editor
             root.style.paddingRight = 10f;
             root.style.paddingTop = 10f;
             root.style.paddingBottom = 10f;
+            root.style.flexDirection = FlexDirection.Column;
+            root.style.minWidth = 0f;
+            root.style.minHeight = 0f;
 
             Label title = new Label("选择要铺的美术素材");
             title.style.fontSize = 17f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            title.style.flexShrink = 0f;
             root.Add(title);
 
             Label hint = new Label(
@@ -110,11 +114,17 @@ namespace Project.LevelEditor.Editor
             hint.style.whiteSpace = WhiteSpace.Normal;
             hint.style.opacity = .72f;
             hint.style.marginBottom = 8f;
+            hint.style.flexShrink = 0f;
             root.Add(hint);
 
             VisualElement filters = new VisualElement
             {
-                style = { flexDirection = FlexDirection.Row },
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    flexShrink = 0f,
+                    minWidth = 0f,
+                },
             };
             search = new ToolbarSearchField
             {
@@ -142,30 +152,47 @@ namespace Project.LevelEditor.Editor
                 category = evt.newValue;
                 RebuildCards();
             });
+            categoryField.style.flexShrink = 0f;
             root.Add(categoryField);
 
             resultCount = new Label();
             resultCount.style.fontSize = 10f;
             resultCount.style.opacity = .68f;
             resultCount.style.marginBottom = 4f;
+            resultCount.style.flexShrink = 0f;
             root.Add(resultCount);
 
             library = new ScrollView(ScrollViewMode.Vertical);
+            library.name = "palette-library";
             library.style.flexGrow = 1f;
-            library.style.minHeight = 250f;
+            library.style.flexShrink = 1f;
+            library.style.minHeight = 170f;
+            library.style.minWidth = 0f;
             library.style.borderTopWidth = 1f;
             library.style.borderBottomWidth = 1f;
             library.style.borderTopColor = new Color(.2f, .22f, .25f);
             library.style.borderBottomColor = new Color(.2f, .22f, .25f);
+            library.contentContainer.style.width = Length.Percent(100f);
+            library.contentContainer.style.minWidth = 0f;
             root.Add(library);
 
             VisualElement selection = new VisualElement
             {
+                name = "current-selection-panel",
                 style =
                 {
                     flexDirection = FlexDirection.Row,
                     alignItems = Align.Center,
                     marginTop = 8f,
+                    paddingTop = 7f,
+                    paddingBottom = 7f,
+                    paddingLeft = 8f,
+                    paddingRight = 8f,
+                    flexShrink = 0f,
+                    minWidth = 0f,
+                    borderTopWidth = 1f,
+                    borderTopColor = new Color(.24f, .27f, .31f),
+                    backgroundColor = new Color(.14f, .15f, .17f),
                 },
             };
             selectionPreview = new Image { scaleMode = ScaleMode.ScaleToFit };
@@ -173,18 +200,29 @@ namespace Project.LevelEditor.Editor
             selectionPreview.style.height = 68f;
             selectionPreview.style.marginRight = 9f;
             selectionPreview.style.backgroundColor = new Color(.1f, .11f, .13f);
+            selectionPreview.style.flexShrink = 0f;
             selection.Add(selectionPreview);
             VisualElement text = new VisualElement
             {
-                style = { flexGrow = 1f },
+                name = "current-selection-text",
+                style =
+                {
+                    flexGrow = 1f,
+                    flexShrink = 1f,
+                    minWidth = 0f,
+                },
             };
             selectionTitle = new Label("尚未选择素材");
             selectionTitle.style.fontSize = 14f;
             selectionTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            selectionTitle.style.whiteSpace = WhiteSpace.NoWrap;
+            selectionTitle.style.overflow = Overflow.Hidden;
             text.Add(selectionTitle);
             selectionDetails = new Label();
             selectionDetails.style.whiteSpace = WhiteSpace.Normal;
             selectionDetails.style.opacity = .72f;
+            selectionDetails.style.maxHeight = 36f;
+            selectionDetails.style.overflow = Overflow.Hidden;
             text.Add(selectionDetails);
             selection.Add(text);
             root.Add(selection);
@@ -197,6 +235,7 @@ namespace Project.LevelEditor.Editor
             paintButton.style.marginTop = 7f;
             paintButton.style.unityFontStyleAndWeight = FontStyle.Bold;
             paintButton.style.backgroundColor = new Color(.12f, .42f, .72f);
+            paintButton.style.flexShrink = 0f;
             root.Add(paintButton);
 
             RebuildAll();
@@ -298,6 +337,8 @@ namespace Project.LevelEditor.Editor
                     flexWrap = Wrap.Wrap,
                     paddingTop = 6f,
                     paddingBottom = 4f,
+                    width = Length.Percent(100f),
+                    minWidth = 0f,
                 },
             };
             foreach (int index in filtered)
@@ -336,11 +377,12 @@ namespace Project.LevelEditor.Editor
             GridArtBrush brush = map.palette.brushes[index];
             Button card = new Button(() => Select(index))
             {
+                name = "palette-card",
                 text = string.Empty,
                 tooltip = $"{brush.label} · {brush.DisplaySize.x:0.##} × {brush.DisplaySize.y:0.##} 格",
             };
-            card.style.width = 104f;
-            card.style.height = 104f;
+            card.style.width = 116f;
+            card.style.height = 120f;
             card.style.marginRight = 6f;
             card.style.marginBottom = 6f;
             card.style.paddingTop = 5f;
@@ -352,6 +394,7 @@ namespace Project.LevelEditor.Editor
             card.style.borderRightWidth = 2f;
             card.style.borderTopWidth = 2f;
             card.style.borderBottomWidth = 2f;
+            card.style.flexShrink = 0f;
             card.RegisterCallback<PointerDownEvent>(evt =>
             {
                 if (evt.button != 0 || evt.clickCount < 2)
@@ -369,8 +412,8 @@ namespace Project.LevelEditor.Editor
                 scaleMode = ScaleMode.ScaleToFit,
                 pickingMode = PickingMode.Ignore,
             };
-            image.style.width = 70f;
-            image.style.height = 64f;
+            image.style.width = 72f;
+            image.style.height = 72f;
             image.style.backgroundColor = new Color(.1f, .11f, .13f);
             card.Add(image);
             Label label = new Label(brush.label)
@@ -378,7 +421,8 @@ namespace Project.LevelEditor.Editor
                 pickingMode = PickingMode.Ignore,
             };
             label.style.width = Length.Percent(100f);
-            label.style.maxHeight = 29f;
+            label.style.height = 34f;
+            label.style.maxHeight = 34f;
             label.style.whiteSpace = WhiteSpace.Normal;
             label.style.overflow = Overflow.Hidden;
             label.style.unityTextAlign = TextAnchor.MiddleCenter;

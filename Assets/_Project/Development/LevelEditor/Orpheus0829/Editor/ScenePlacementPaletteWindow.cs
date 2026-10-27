@@ -37,7 +37,7 @@ namespace Project.LevelEditor.Editor
             ScenePlacementPaletteWindow window =
                 GetWindow<ScenePlacementPaletteWindow>();
             window.titleContent = new GUIContent("方块与道具");
-            window.minSize = new Vector2(640f, 500f);
+            window.minSize = new Vector2(600f, 480f);
             window.Show();
             window.Focus();
         }
@@ -48,10 +48,14 @@ namespace Project.LevelEditor.Editor
             rootVisualElement.style.paddingRight = 10f;
             rootVisualElement.style.paddingTop = 10f;
             rootVisualElement.style.paddingBottom = 10f;
+            rootVisualElement.style.flexDirection = FlexDirection.Column;
+            rootVisualElement.style.minWidth = 0f;
+            rootVisualElement.style.minHeight = 0f;
 
             Label title = new Label("选择要画的方块或道具");
             title.style.fontSize = 17f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            title.style.flexShrink = 0f;
             rootVisualElement.Add(title);
 
             Label hint = new Label(
@@ -59,6 +63,7 @@ namespace Project.LevelEditor.Editor
             hint.style.whiteSpace = WhiteSpace.Normal;
             hint.style.opacity = .72f;
             hint.style.marginBottom = 8f;
+            hint.style.flexShrink = 0f;
             rootVisualElement.Add(hint);
 
             kindFilterIndex = Mathf.Clamp(
@@ -69,6 +74,7 @@ namespace Project.LevelEditor.Editor
                 {
                     flexDirection = FlexDirection.Row,
                     marginBottom = 5f,
+                    flexShrink = 0f,
                 },
             };
             AddKindButton(kindRow, 0, "全部内容");
@@ -78,7 +84,12 @@ namespace Project.LevelEditor.Editor
 
             VisualElement searchRow = new VisualElement
             {
-                style = { flexDirection = FlexDirection.Row },
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    flexShrink = 0f,
+                    minWidth = 0f,
+                },
             };
 
             search = new ToolbarSearchField
@@ -104,26 +115,40 @@ namespace Project.LevelEditor.Editor
             resultCount.style.opacity = .68f;
             resultCount.style.marginTop = 3f;
             resultCount.style.marginBottom = 4f;
+            resultCount.style.flexShrink = 0f;
             rootVisualElement.Add(resultCount);
 
             library = new ScrollView(ScrollViewMode.Vertical);
+            library.name = "palette-library";
             library.style.flexGrow = 1f;
-            library.style.minHeight = 230f;
+            library.style.flexShrink = 1f;
+            library.style.minHeight = 170f;
+            library.style.minWidth = 0f;
             library.style.borderTopWidth = 1f;
             library.style.borderBottomWidth = 1f;
             library.style.borderTopColor = new Color(.2f, .22f, .25f);
             library.style.borderBottomColor = new Color(.2f, .22f, .25f);
             library.style.paddingTop = 6f;
             library.style.paddingBottom = 6f;
+            library.contentContainer.style.width = Length.Percent(100f);
+            library.contentContainer.style.minWidth = 0f;
             rootVisualElement.Add(library);
 
             VisualElement selection = new VisualElement
             {
+                name = "current-selection-panel",
                 style =
                 {
                     marginTop = 8f,
                     paddingTop = 7f,
-                    paddingBottom = 2f,
+                    paddingBottom = 6f,
+                    paddingLeft = 8f,
+                    paddingRight = 8f,
+                    flexShrink = 0f,
+                    minWidth = 0f,
+                    borderTopWidth = 1f,
+                    borderTopColor = new Color(.24f, .27f, .31f),
+                    backgroundColor = new Color(.14f, .15f, .17f),
                 },
             };
             VisualElement selectionInfo = new VisualElement
@@ -132,32 +157,49 @@ namespace Project.LevelEditor.Editor
                 {
                     flexDirection = FlexDirection.Row,
                     alignItems = Align.Center,
+                    minWidth = 0f,
                 },
             };
             selectionPreview = new Image { scaleMode = ScaleMode.ScaleToFit };
             selectionPreview.style.width = 58f;
             selectionPreview.style.height = 58f;
             selectionPreview.style.marginRight = 9f;
+            selectionPreview.style.flexShrink = 0f;
             selectionInfo.Add(selectionPreview);
             VisualElement selectionText = new VisualElement
             {
-                style = { flexGrow = 1f },
+                name = "current-selection-text",
+                style =
+                {
+                    flexGrow = 1f,
+                    flexShrink = 1f,
+                    minWidth = 0f,
+                },
             };
             selectionTitle = new Label("尚未选择内容");
             selectionTitle.style.fontSize = 14f;
             selectionTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            selectionTitle.style.whiteSpace = WhiteSpace.NoWrap;
+            selectionTitle.style.overflow = Overflow.Hidden;
             selectionText.Add(selectionTitle);
             selectionDetails = new Label();
             selectionDetails.style.whiteSpace = WhiteSpace.Normal;
             selectionDetails.style.opacity = .72f;
             selectionDetails.style.marginBottom = 6f;
+            selectionDetails.style.maxHeight = 36f;
+            selectionDetails.style.overflow = Overflow.Hidden;
             selectionText.Add(selectionDetails);
             selectionInfo.Add(selectionText);
             selection.Add(selectionInfo);
 
             VisualElement actions = new VisualElement
             {
-                style = { flexDirection = FlexDirection.Row },
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    flexShrink = 0f,
+                    minWidth = 0f,
+                },
             };
             editButton = new Button(EditSelected)
             {
@@ -311,6 +353,8 @@ namespace Project.LevelEditor.Editor
                         flexDirection = FlexDirection.Row,
                         flexWrap = Wrap.Wrap,
                         paddingTop = 4f,
+                        width = Length.Percent(100f),
+                        minWidth = 0f,
                     },
                 };
                 foreach (ScenePaletteItem item in grouped)
@@ -328,13 +372,14 @@ namespace Project.LevelEditor.Editor
         {
             Button card = new Button(() => SelectItem(item))
             {
+                name = "palette-card",
                 text = string.Empty,
                 tooltip = string.IsNullOrEmpty(item.AssetPath)
                     ? item.displayName
                     : item.AssetPath,
             };
-            card.style.width = 112f;
-            card.style.height = 104f;
+            card.style.width = 116f;
+            card.style.height = 120f;
             card.style.marginRight = 6f;
             card.style.marginBottom = 6f;
             card.style.flexDirection = FlexDirection.Column;
@@ -347,6 +392,7 @@ namespace Project.LevelEditor.Editor
             card.style.borderRightWidth = 2f;
             card.style.borderTopWidth = 2f;
             card.style.borderBottomWidth = 2f;
+            card.style.flexShrink = 0f;
             card.RegisterCallback<PointerDownEvent>(evt =>
             {
                 if (evt.button != 0 || evt.clickCount < 2)
@@ -362,8 +408,8 @@ namespace Project.LevelEditor.Editor
             {
                 pickingMode = PickingMode.Ignore,
             };
-            previewFrame.style.width = 66f;
-            previewFrame.style.height = 62f;
+            previewFrame.style.width = 72f;
+            previewFrame.style.height = 72f;
             previewFrame.style.marginBottom = 3f;
             previewFrame.style.backgroundColor = item.isProp
                 ? new Color(.1f, .11f, .13f)
@@ -401,7 +447,8 @@ namespace Project.LevelEditor.Editor
                 pickingMode = PickingMode.Ignore,
             };
             name.style.width = Length.Percent(100f);
-            name.style.maxHeight = 31f;
+            name.style.height = 34f;
+            name.style.maxHeight = 34f;
             name.style.whiteSpace = WhiteSpace.Normal;
             name.style.overflow = Overflow.Hidden;
             name.style.unityTextAlign = TextAnchor.MiddleCenter;
@@ -452,10 +499,13 @@ namespace Project.LevelEditor.Editor
                 $"{selected.KindLabel} · {selected.displayName}";
             string path = string.IsNullOrEmpty(selected.AssetPath)
                 ? "内置基础方块"
-                : selected.AssetPath;
+                : selected.AssetPath.Substring(
+                    selected.AssetPath.LastIndexOf('/') + 1);
             selectionDetails.text =
-                $"{ChannelLabel(selected.channel)} · 模板参数 {selected.overrideCount} 项\n{path}\n" +
-                "生成后实例完全独立，只认 Scene 中的真实组件和 Prefab override。";
+                $"{ChannelLabel(selected.channel)} · 模板参数 {selected.overrideCount} 项 · {path}";
+            selectionDetails.tooltip = string.IsNullOrEmpty(selected.AssetPath)
+                ? "内置基础方块"
+                : selected.AssetPath;
         }
 
         private void RefreshCardBorders()

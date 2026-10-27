@@ -217,6 +217,7 @@ namespace Project.LevelEditor.Editor
                         .Any(label => label.text != null &&
                                       label.text.StartsWith("找到 ")),
                     "卡片选择器缺少结果数量与操作提示。");
+                ValidatePaletteLayout(picker.rootVisualElement, "方块与道具");
             }
             finally
             {
@@ -259,6 +260,7 @@ namespace Project.LevelEditor.Editor
                     "美术素材卡片缺少醒目的 Scene 绘制主操作。");
                 Require(buttons.Count(text => string.IsNullOrEmpty(text)) >= 2,
                     "美术素材卡片没有完整显示素材库内容。");
+                ValidatePaletteLayout(picker.rootVisualElement, "美术素材");
                 SceneArtPaletteSelection.Select(map, 1);
                 Require(SceneArtPaletteSelection.Current(map) == 1,
                     "美术素材选择没有保持当前卡片。");
@@ -269,6 +271,28 @@ namespace Project.LevelEditor.Editor
                 UnityEngine.Object.DestroyImmediate(map);
                 UnityEngine.Object.DestroyImmediate(palette);
             }
+        }
+
+        private static void ValidatePaletteLayout(
+            VisualElement root,
+            string label)
+        {
+            ScrollView library = root.Q<ScrollView>("palette-library");
+            VisualElement selection = root.Q("current-selection-panel");
+            VisualElement selectionText = root.Q("current-selection-text");
+            Button card = root.Q<Button>("palette-card");
+            Require(library != null && library.style.flexGrow.value > 0f &&
+                    library.style.flexShrink.value > 0f &&
+                    library.style.minHeight.value.value <= 180f,
+                label + "选择器的素材区不能随窗口稳定伸缩。");
+            Require(selection != null &&
+                    Mathf.Approximately(selection.style.flexShrink.value, 0f),
+                label + "选择器的当前选择区会被素材列表挤压。");
+            Require(selectionText != null &&
+                    Mathf.Approximately(selectionText.style.minWidth.value.value, 0f),
+                label + "选择器的详情文字不能在窄窗口内收缩。");
+            Require(card != null && card.style.height.value.value >= 120f,
+                label + "选择器卡片高度不足，名称可能与预览重叠。");
         }
 
         private static Dictionary<string, string> ReadFormalHashes() =>
