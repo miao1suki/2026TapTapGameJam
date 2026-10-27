@@ -7,7 +7,7 @@
 | 房间、通道与占格 | Scene 中的 `RoomLifecycleManager.regions` | 通道是 `RoomRegion.corridor=true`；连接由四邻接计算 |
 | 玩法物体、位姿、参数 | Scene 中真实 GameObject / Prefab instance | 实例参数是组件字段或 Prefab override |
 | 机关、门、平台关系 | Scene 中真实 Unity 对象引用 | 使用现有绑定 API，稳定 ID 不代替引用 |
-| 作者身份、逻辑组与模板来源 | `LevelEditorPlacedBlock` 的兼容身份字段和来源栏目字段 | `AuthoringId/AuthoringLocalCell` 保留身份；新实例记录 Palette 稳定栏目 ID，旧实例只允许显式认领 |
+| 作者身份与逻辑组 | `LevelEditorPlacedBlock` 的兼容身份字段 | `AuthoringId/AuthoringLocalCell` 保留身份；实例不保存 Palette 来源 |
 | 房间重置归属 | `RoomResetObject.regionId` | 只在显式生成、跨区重绑或整体移动时修改 |
 | 可放置模板 | `LevelEditorPalette.asset` | 只定义模板/默认值，不保存关卡实例 |
 | 美术格和图层 | Scene 引用的 `GridArtMap` | 稠密作者资产，不是 JSON，不转成数万 GameObject |
@@ -34,9 +34,9 @@ SceneLevelEditorOverlay
 
 Scene GUI 只做命中、预览和手势，把完整意图交给服务；服务不依赖 Overlay 的 VisualElement。
 
-对象模式必须提供可搜索的 Palette 资源库，而不是把全部方块/道具塞进一个无上下文下拉框。每个条目至少显示方块/道具分类、对象通道、Prefab/模板资产、稳定栏目 ID、模板默认参数摘要和 Scene 已认领数量。选择现有实例时同时显示作者组、格、通道和来源状态。
+对象模式必须提供独立、醒目的 Palette 卡片选择器，而不是把全部方块/道具塞进一个无上下文下拉框。选择器复用旧工具的颜色分组、缩略图和方块/道具分类，并补充搜索、Prefab/模板资产、对象通道与默认参数摘要；单击选择，双击或主按钮开始绘制。
 
-来源接轨遵循“扫描零写入、认领才写入”：Prefab 资产精确匹配优先，没有 Prefab 时只接受同类型唯一名称；重复栏目或无匹配必须人工选择。认领只记录 Palette 稳定栏目 ID，不替换实例、不恢复模板默认值，并对完整作者组形成一个 Undo。全 Scene 批量认领只处理唯一匹配，不能进入周期刷新或 Hover 路径。
+Palette 是一次性生成模板。选择模板只改 Editor 会话状态，实际绘制时实例化 Prefab 并应用默认参数；实例落入 Scene 后不保留栏目来源、不做旧对象认领、不按名称或 Prefab 反推来源，也不接受模板后续回写。现有对象点击时始终解析到 `LevelEditorPlacedBlock` 作者根，并直接打开绑定真实 Scene 实例的 UI Toolkit Inspector。
 
 ## Scene 编辑会话
 

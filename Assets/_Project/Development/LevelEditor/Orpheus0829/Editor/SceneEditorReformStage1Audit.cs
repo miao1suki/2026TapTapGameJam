@@ -74,7 +74,7 @@ namespace Project.LevelEditor.Editor
                 report.AppendLine("PASS  阶段 1 零写入保护");
                 report.AppendLine("PASS  旧 Scene 区域/对象摘要直接读取");
                 report.AppendLine("PASS  SceneCell / RegionCell / World 坐标往返（含非零 Transform）");
-                report.AppendLine("PASS  对象资源库搜索、模板管理与来源认领入口完整");
+                report.AppendLine("PASS  卡片式方块/道具选择器与实例参数入口完整");
                 report.AppendLine("PASS  SceneView 正交锁定与逐字段恢复");
                 report.AppendLine("PASS  正式 Scene / JSON / GridArt 四项哈希保持基线");
                 File.WriteAllText(ReportPath, report.ToString());
@@ -183,15 +183,32 @@ namespace Project.LevelEditor.Editor
         {
             var panel = new SceneLevelEditorPanel(null);
             Require(panel is ScrollView, "Overlay 正文没有可滚动容器。");
-            Require(panel.Q<ToolbarSearchField>() != null, "对象资源库缺少搜索输入。");
-            Require(panel.Q<ListView>() != null, "对象资源库缺少可视模板列表。");
             List<string> buttons = panel.Query<Button>().ToList().Select(button => button.text).ToList();
             foreach (string required in new[]
                      {
-                         "开始绘制", "编辑当前模板", "＋ 方块模板", "＋ 道具 Prefab",
-                         "自动认领所选组", "认领为当前模板", "只读扫描", "批量认领明确匹配",
+                         "选择要画的方块 / 道具…", "开始绘制", "编辑当前模板",
+                         "＋ 方块模板", "＋ 道具 Prefab",
                      })
                 Require(buttons.Contains(required), "对象资源库缺少入口：" + required);
+
+            ScenePlacementPaletteWindow picker =
+                ScriptableObject.CreateInstance<ScenePlacementPaletteWindow>();
+            try
+            {
+                picker.CreateGUI();
+                Require(picker.rootVisualElement.Q<ToolbarSearchField>() != null,
+                    "卡片选择器缺少搜索输入。");
+                List<string> pickerButtons = picker.rootVisualElement.Query<Button>()
+                    .ToList().Select(button => button.text).ToList();
+                Require(pickerButtons.Contains("选择并开始绘制"),
+                    "卡片选择器缺少醒目的绘制主操作。");
+                Require(pickerButtons.Contains("编辑模板"),
+                    "卡片选择器缺少模板编辑入口。");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(picker);
+            }
         }
 
         private static Dictionary<string, string> ReadFormalHashes() =>

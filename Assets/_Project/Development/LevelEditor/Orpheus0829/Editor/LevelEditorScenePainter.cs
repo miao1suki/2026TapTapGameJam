@@ -133,7 +133,7 @@ namespace Project.LevelEditor.Editor
                 if (selectionStroke)
                 {
                     if (selectionDragged) SelectArea(strokeStart, strokeEnd, selectionAdditive);
-                    else SelectAt(strokeStart, selectionAdditive);
+                    else SelectAt(strokeStart, evt.mousePosition, selectionAdditive);
                     selectionStroke = false;
                 }
                 else if (strokeActive)
@@ -293,21 +293,47 @@ namespace Project.LevelEditor.Editor
             }
         }
 
-        private static void SelectAt(Vector2Int cell, bool additive)
+        private static void SelectAt(
+            Vector2Int cell,
+            Vector2 mousePosition,
+            bool additive)
         {
+            GameObject picked = HandleUtility.PickGameObject(
+                mousePosition,
+                false);
             LevelEditorPlacedBlock block =
+                SceneObjectInspectorWindow.ResolveAuthorRoot(picked) ??
                 LevelEditorBlockFactory.FindAt(cell);
             if (!additive)
             {
                 Selection.activeGameObject = block != null ? block.gameObject : null;
+                if (block != null)
+                {
+                    SceneObjectInspectorWindow.OpenFor(block);
+                }
                 return;
             }
-            var selected = new HashSet<Object>(Selection.objects);
+            var selected = new HashSet<Object>();
+            foreach (GameObject value in Selection.gameObjects)
+            {
+                LevelEditorPlacedBlock selectedBlock =
+                    value != null
+                        ? value.GetComponentInParent<LevelEditorPlacedBlock>()
+                        : null;
+                if (selectedBlock != null)
+                {
+                    selected.Add(selectedBlock.gameObject);
+                }
+            }
             if (block != null)
             {
                 if (!selected.Add(block.gameObject)) selected.Remove(block.gameObject);
             }
             Selection.objects = new List<Object>(selected).ToArray();
+            if (selected.Count == 1 && block != null)
+            {
+                SceneObjectInspectorWindow.OpenFor(block);
+            }
         }
 
         private static void SelectArea(Vector2Int start, Vector2Int end, bool additive)

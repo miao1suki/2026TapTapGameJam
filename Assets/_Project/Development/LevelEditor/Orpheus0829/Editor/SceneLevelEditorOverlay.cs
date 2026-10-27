@@ -274,6 +274,12 @@ namespace Project.LevelEditor.Editor
     [Overlay(typeof(SceneView), "场景关卡编辑器", true)]
     public sealed class SceneLevelEditorOverlay : Overlay
     {
+        internal static event Action ObjectPaintingRequested;
+        private static bool objectPaintingPending;
+
+        internal static bool HasPendingObjectPainting =>
+            objectPaintingPending;
+
         public override VisualElement CreatePanelContent() =>
             new SceneLevelEditorPanel(containerWindow as SceneView);
 
@@ -294,6 +300,22 @@ namespace Project.LevelEditor.Editor
                     if (item is SceneLevelEditorOverlay overlay) { overlay.displayed = true; return; }
             }
             view.ShowNotification(new GUIContent("请在 SceneView 右上角 Overlays 中启用“场景关卡编辑器”"));
+        }
+
+        internal static void BeginObjectPainting()
+        {
+            objectPaintingPending = true;
+            Open();
+            EditorApplication.delayCall += () =>
+            {
+                ObjectPaintingRequested?.Invoke();
+                SceneView.lastActiveSceneView?.Focus();
+            };
+        }
+
+        internal static void MarkObjectPaintingHandled()
+        {
+            objectPaintingPending = false;
         }
     }
 
@@ -317,16 +339,11 @@ namespace Project.LevelEditor.Editor
         private readonly Label assemblyStatus;
         private readonly VisualElement objectPanel;
         private DropdownField objectChannel;
-        private DropdownField objectKindFilter;
-        private ToolbarSearchField objectSearch;
-        private ListView objectCatalog;
         private ObjectField objectSourceAsset;
         private Label objectSourceDetails;
         private Button pingSourceButton;
         private Button paintSourceButton;
         private Button editSourceButton;
-        private Label selectedSourceStatus;
-        private Label sourceAuditStatus;
         private Label objectStatus;
         private readonly VisualElement bindingPanel;
         private InspectorElement selectedInspector;
@@ -342,9 +359,8 @@ namespace Project.LevelEditor.Editor
         private Toggle artFollowRegion;
         private Label artStatus;
         private readonly List<string> regionIds = new List<string>();
-        private readonly List<ScenePaletteSource> paletteItems = new List<ScenePaletteSource>();
-        private readonly List<ScenePaletteSource> filteredPaletteItems = new List<ScenePaletteSource>();
-        private ScenePaletteSource selectedPaletteSource;
+        private readonly List<ScenePaletteItem> paletteItems = new List<ScenePaletteItem>();
+        private ScenePaletteItem selectedPaletteItem;
         private GridArtScene activeArtScene;
         private SceneEditMode mode;
         private string selectedRegionId = string.Empty;
@@ -465,7 +481,7 @@ namespace Project.LevelEditor.Editor
             overview.Add(new Button(() => { summaryDirty = true; Refresh(); }) { text = "重新扫描（只读）" });
             Add(overview);
 
-            var notice = new HelpBox("打开、浏览、切模式均为零写入。只有绘制、擦除、移动、改参、绑定、认领与保存等显式作者动作会修改 Scene/资产，并进入 Unity Undo。", HelpBoxMessageType.Info);
+            var notice = new HelpBox("打开、浏览、切模式和选择模板均为零写入。只有绘制、擦除、移动、改参、绑定、区域/美术归属与保存等显式作者动作会修改 Scene/资产，并进入 Unity Undo。", HelpBoxMessageType.Info);
             notice.style.marginTop = 6f;
             Add(notice);
 
@@ -525,12 +541,20 @@ namespace Project.LevelEditor.Editor
             SceneObjectAuthoring.Changed += OnObjectChanged;
             SceneArtAuthoring.Changed -= OnArtChanged;
             SceneArtAuthoring.Changed += OnArtChanged;
+            SceneLevelEditorOverlay.ObjectPaintingRequested -= BeginObjectPainting;
+            SceneLevelEditorOverlay.ObjectPaintingRequested += BeginObjectPainting;
+            ScenePlacementPaletteCatalog.SelectionChanged -= OnPaletteSelectionChanged;
+            ScenePlacementPaletteCatalog.SelectionChanged += OnPaletteSelectionChanged;
             Selection.selectionChanged -= RefreshSelectionInspector;
             Selection.selectionChanged += RefreshSelectionInspector;
             EditorApplication.hierarchyChanged -= MarkSummaryDirty;
             EditorApplication.hierarchyChanged += MarkSummaryDirty;
             Undo.undoRedoPerformed -= MarkSummaryDirty;
             Undo.undoRedoPerformed += MarkSummaryDirty;
+            if (SceneLevelEditorOverlay.HasPendingObjectPainting)
+            {
+                schedule.Execute(BeginObjectPainting);
+            }
         }
 
         private void Unsubscribe()
@@ -539,6 +563,8 @@ namespace Project.LevelEditor.Editor
             SceneRegionAuthoring.Changed -= OnRegionChanged;
             SceneObjectAuthoring.Changed -= OnObjectChanged;
             SceneArtAuthoring.Changed -= OnArtChanged;
+            SceneLevelEditorOverlay.ObjectPaintingRequested -= BeginObjectPainting;
+            ScenePlacementPaletteCatalog.SelectionChanged -= OnPaletteSelectionChanged;
             Selection.selectionChanged -= RefreshSelectionInspector;
             EditorApplication.hierarchyChanged -= MarkSummaryDirty;
             Undo.undoRedoPerformed -= MarkSummaryDirty;
@@ -549,6 +575,34 @@ namespace Project.LevelEditor.Editor
         }
 
         private void MarkSummaryDirty() => summaryDirty = true;
+
+        private void BeginObjectPainting()
+        {
+            if (sceneView != SceneView.lastActiveSceneView)
+            {
+                return;
+            }
+
+            SelectMode(SceneEditMode.Object);
+            if (!SceneEditSession.IsLocked(sceneView))
+            {
+                SceneEditSession.Enter(sceneView, sessionOwner);
+            }
+            selectedPaletteItem =
+                ScenePlacementPaletteCatalog.Current(paletteItems) ??
+                selectedPaletteItem;
+            ApplyPaletteSelection();
+            LevelEditorState.Tool = LevelEditorTool.Paint;
+            SceneLevelEditorOverlay.MarkObjectPaintingHandled();
+            RefreshSession();
+        }
+
+        private void OnPaletteSelectionChanged()
+        {
+            selectedPaletteItem =
+                ScenePlacementPaletteCatalog.Current(paletteItems);
+            ApplyPaletteSelection();
+        }
 
         private void Refresh()
         {
@@ -658,31 +712,20 @@ namespace Project.LevelEditor.Editor
         private VisualElement BuildObjectPanel()
         {
             var panel = new VisualElement { style = { marginTop = 6 } };
-            panel.Add(new Label("放置资源库") { style = { unityFontStyleAndWeight = FontStyle.Bold } });
-            panel.Add(new HelpBox("这里直接读取原 LevelEditorPalette：方块模板、道具 Prefab 和模板默认参数都还在。选中资源后点“开始绘制”，实例参数最终保存在 Scene。", HelpBoxMessageType.Info));
+            panel.Add(new Label("方块与道具") { style = { unityFontStyleAndWeight = FontStyle.Bold } });
+            panel.Add(new HelpBox("模板只负责生成一次。物体放进 Scene 后就完全独立，之后只编辑这个实例自己的组件与 Prefab override。", HelpBoxMessageType.Info));
 
-            var libraryTools = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            objectKindFilter = new DropdownField(new List<string> { "全部", "方块", "道具" }, 0);
-            objectKindFilter.style.width = 88;
-            objectKindFilter.RegisterValueChangedCallback(_ => RefreshCatalogFilter());
-            libraryTools.Add(objectKindFilter);
-            objectSearch = new ToolbarSearchField { tooltip = "按名称、栏目 ID 或 Prefab 路径搜索" };
-            objectSearch.style.flexGrow = 1;
-            objectSearch.RegisterValueChangedCallback(_ => RefreshCatalogFilter());
-            libraryTools.Add(objectSearch);
-            panel.Add(libraryTools);
-
-            objectCatalog = new ListView
+            Button openPicker = new Button(ScenePlacementPaletteWindow.Open)
             {
-                fixedItemHeight = 46,
-                selectionType = SelectionType.Single,
-                virtualizationMethod = CollectionVirtualizationMethod.FixedHeight,
-                style = { height = 190, marginTop = 3, marginBottom = 3 },
+                name = "open-placement-palette",
+                text = "选择要画的方块 / 道具…",
             };
-            objectCatalog.makeItem = MakeCatalogItem;
-            objectCatalog.bindItem = BindCatalogItem;
-            objectCatalog.onSelectionChange += selection => SelectPaletteSource(selection.OfType<ScenePaletteSource>().FirstOrDefault());
-            panel.Add(objectCatalog);
+            openPicker.style.height = 34f;
+            openPicker.style.marginTop = 5f;
+            openPicker.style.marginBottom = 5f;
+            openPicker.style.unityFontStyleAndWeight = FontStyle.Bold;
+            openPicker.style.backgroundColor = new Color(.12f, .42f, .72f);
+            panel.Add(openPicker);
 
             objectSourceDetails = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10, opacity = .8f } };
             panel.Add(objectSourceDetails);
@@ -706,7 +749,7 @@ namespace Project.LevelEditor.Editor
             addTemplates.Add(RegionButton("＋ 方块模板", LevelEditorEntryWindow.OpenForAdd));
             addTemplates.Add(RegionButton("＋ 道具 Prefab", LevelEditorPropEntryWindow.OpenForAdd));
             manageLibrary.Add(addTemplates);
-            manageLibrary.Add(new HelpBox("模板只提供新实例的来源和默认值；已有实例的实际参数仍以 Scene 为准。", HelpBoxMessageType.Info));
+            manageLibrary.Add(new HelpBox("新增或修改模板只影响以后生成的对象，不追踪、不覆盖已经放生到 Scene 的实例。", HelpBoxMessageType.Info));
             panel.Add(manageLibrary);
 
             panel.Add(new Label("场景编辑") { style = { unityFontStyleAndWeight = FontStyle.Bold, marginTop = 6 } });
@@ -728,57 +771,7 @@ namespace Project.LevelEditor.Editor
             var deletion = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             deletion.Add(RegionButton("删除所选组", () => DeleteSelected(false))); deletion.Add(RegionButton("解绑并删除", () => DeleteSelected(true))); panel.Add(deletion);
             objectStatus = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10, opacity = .75f } }; panel.Add(objectStatus);
-
-            var ownership = new Foldout { text = "所选对象 · 数据来源认领", value = true };
-            selectedSourceStatus = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10 } };
-            ownership.Add(selectedSourceStatus);
-            var claimRow = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            claimRow.Add(RegionButton("自动认领所选组", ClaimSelectedInferred));
-            claimRow.Add(RegionButton("认领为当前模板", ClaimSelectedCurrent));
-            ownership.Add(claimRow);
-            ownership.Add(RegionButton("在资源库中定位该来源", LocateSelectedObjectSource));
-            panel.Add(ownership);
-
-            var batch = new Foldout { text = "全 Scene 来源检查", value = false };
-            sourceAuditStatus = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10, opacity = .8f } };
-            sourceAuditStatus.text = "点击“只读扫描”检查整个 Scene；打开面板不会自动全量扫描或改写对象。";
-            batch.Add(sourceAuditStatus);
-            var batchRow = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            batchRow.Add(RegionButton("只读扫描", RefreshSourceAudit));
-            batchRow.Add(RegionButton("批量认领明确匹配", ClaimAllUnambiguous));
-            batch.Add(batchRow);
-            batch.Add(new HelpBox("批量操作只写入能由唯一 Prefab 或唯一名称证明来源的对象。重复栏目、歧义和无匹配对象保持不变。", HelpBoxMessageType.Warning));
-            panel.Add(batch);
             return panel;
-        }
-
-        private VisualElement MakeCatalogItem()
-        {
-            var row = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, paddingLeft = 4, paddingRight = 4 } };
-            var icon = new Image { name = "icon", scaleMode = ScaleMode.ScaleToFit };
-            icon.style.width = 36; icon.style.height = 36; icon.style.marginRight = 7;
-            row.Add(icon);
-            var text = new VisualElement { style = { flexGrow = 1 } };
-            text.Add(new Label { name = "title", style = { unityFontStyleAndWeight = FontStyle.Bold } });
-            text.Add(new Label { name = "subtitle", style = { fontSize = 9, opacity = .68f } });
-            row.Add(text);
-            return row;
-        }
-
-        private void BindCatalogItem(VisualElement row, int index)
-        {
-            if (index < 0 || index >= filteredPaletteItems.Count) return;
-            ScenePaletteSource source = filteredPaletteItems[index];
-            Image icon = row.Q<Image>("icon");
-            icon.image = source.prefab != null
-                ? AssetPreview.GetMiniThumbnail(source.prefab)
-                : EditorGUIUtility.IconContent("Cube Icon").image;
-            icon.tintColor = source.prefab != null ? Color.white : source.color;
-            row.Q<Label>("title").text = source.displayName;
-            row.Q<Label>("subtitle").text = source.isProp
-                ? $"道具 · {ChannelLabel(source.channel)}"
-                : $"方块 · {(source.prefab != null ? "Prefab/模板" : "基础色块")}";
-            row.tooltip = string.IsNullOrEmpty(source.AssetPath) ? source.id : source.AssetPath;
         }
 
         private VisualElement BuildBindingPanel(out InspectorElement inspector, out ObjectField consumer, out ObjectField source, out Label status)
@@ -830,58 +823,23 @@ namespace Project.LevelEditor.Editor
 
         private void RefreshObjectChoices()
         {
-            const string path = "Assets/_Project/Development/LevelEditor/Orpheus0829/LevelEditorPalette.asset";
-            LevelEditorPalette palette = AssetDatabase.LoadAssetAtPath<LevelEditorPalette>(path);
-            LevelEditorState.Palette = palette;
+            LevelEditorPalette palette =
+                ScenePlacementPaletteCatalog.LoadPalette();
             RoomLifecycleManager manager = ActiveManager();
             if (manager != null) LevelEditorState.CellSize = manager.CellSize;
-            string previousId = selectedPaletteSource?.id;
-            bool previousKind = selectedPaletteSource != null && selectedPaletteSource.isProp;
             paletteItems.Clear();
-            paletteItems.AddRange(SceneObjectSourceCatalog.Build(palette));
-            selectedPaletteSource = paletteItems.FirstOrDefault(item => item.id == previousId && item.isProp == previousKind)
-                ?? paletteItems.FirstOrDefault();
-            RefreshCatalogFilter();
+            paletteItems.AddRange(
+                ScenePlacementPaletteCatalog.Build(palette));
+            selectedPaletteItem =
+                ScenePlacementPaletteCatalog.Current(paletteItems) ??
+                paletteItems.FirstOrDefault();
+            ApplyPaletteSelection();
             RefreshObjectStatus();
-            RefreshSelectedSourceStatus();
-        }
-
-        private void RefreshCatalogFilter()
-        {
-            if (objectCatalog == null) return;
-            string search = objectSearch?.value?.Trim() ?? string.Empty;
-            int kind = objectKindFilter?.index ?? 0;
-            filteredPaletteItems.Clear();
-            filteredPaletteItems.AddRange(paletteItems.Where(item =>
-                (kind == 0 || (kind == 1 && !item.isProp) || (kind == 2 && item.isProp)) &&
-                (search.Length == 0 || item.SearchText.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)));
-            objectCatalog.itemsSource = filteredPaletteItems;
-            objectCatalog.Rebuild();
-            int selected = selectedPaletteSource != null ? filteredPaletteItems.IndexOf(selectedPaletteSource) : -1;
-            if (selected < 0 && filteredPaletteItems.Count > 0)
-            {
-                selectedPaletteSource = filteredPaletteItems[0];
-                selected = 0;
-            }
-            else if (filteredPaletteItems.Count == 0)
-            {
-                selectedPaletteSource = null;
-            }
-            if (selected >= 0) objectCatalog.SetSelectionWithoutNotify(new[] { selected });
-            else objectCatalog.ClearSelection();
-            ApplyPaletteSelection();
-        }
-
-        private void SelectPaletteSource(ScenePaletteSource source)
-        {
-            if (source == null) return;
-            selectedPaletteSource = source;
-            ApplyPaletteSelection();
         }
 
         private void ApplyPaletteSelection()
         {
-            ScenePaletteSource item = selectedPaletteSource;
+            ScenePaletteItem item = selectedPaletteItem;
             if (item == null)
             {
                 LevelEditorState.SelectedEntryIndex = -1;
@@ -896,29 +854,15 @@ namespace Project.LevelEditor.Editor
             pingSourceButton.SetEnabled(true);
             paintSourceButton.SetEnabled(true);
             editSourceButton.SetEnabled(true);
-            if (item.isProp)
-            {
-                LevelEditorState.SelectedPropIndex = item.index;
-                LevelEditorState.SelectedEntryIndex = -1;
-            }
-            else
-            {
-                LevelEditorState.SelectedEntryIndex = item.index;
-                LevelEditorState.SelectedPropIndex = -1;
-            }
-            SceneObjectAuthoring.ActiveChannel = item.channel;
+            ScenePlacementPaletteCatalog.Select(item);
             objectChannel.SetValueWithoutNotify(objectChannel.choices[(int)item.channel]);
             objectChannel.index = (int)item.channel;
             objectSourceAsset.SetValueWithoutNotify(item.prefab);
 
-            int claimed = 0;
-            SceneObjectIndex sceneIndex = SceneObjectAuthoring.Read(SceneManager.GetActiveScene());
-            foreach (SceneObjectRecord record in sceneIndex.All)
-                if (record.block.AuthoringPaletteEntryId == item.id && record.block.AuthoringPaletteEntryIsProp == item.isProp) claimed++;
             string path = string.IsNullOrEmpty(item.AssetPath) ? "内置基础方块（无独立 Prefab）" : item.AssetPath;
             objectSourceDetails.text =
-                $"{item.KindLabel} · {ChannelLabel(item.channel)} · Scene 已认领 {claimed}\n" +
-                $"模板默认参数 {item.overrideCount} 项 · 栏目 ID {item.id}\n{path}";
+                $"当前画笔：{item.KindLabel} · {item.displayName}\n" +
+                $"{ChannelLabel(item.channel)} · 模板默认参数 {item.overrideCount} 项\n{path}";
         }
 
         private static string ChannelLabel(SceneObjectChannel channel) => channel switch
@@ -933,9 +877,9 @@ namespace Project.LevelEditor.Editor
 
         private void PingSelectedSource()
         {
-            UnityEngine.Object target = selectedPaletteSource?.prefab != null
-                ? selectedPaletteSource.prefab
-                : selectedPaletteSource?.palette;
+            UnityEngine.Object target = selectedPaletteItem?.prefab != null
+                ? selectedPaletteItem.prefab
+                : selectedPaletteItem?.palette;
             if (target == null) return;
             Selection.activeObject = target;
             EditorGUIUtility.PingObject(target);
@@ -943,25 +887,28 @@ namespace Project.LevelEditor.Editor
 
         private void StartPaintingSelectedSource()
         {
-            if (selectedPaletteSource == null)
+            selectedPaletteItem =
+                ScenePlacementPaletteCatalog.Current(paletteItems) ??
+                selectedPaletteItem;
+            if (selectedPaletteItem == null)
             {
-                objectStatus.text = "请先从资源库选择方块或道具。";
+                objectStatus.text = "请先点击上方蓝色按钮选择方块或道具。";
                 return;
             }
             ApplyPaletteSelection();
             LevelEditorState.Tool = LevelEditorTool.Paint;
-            objectStatus.text = $"正在绘制：{selectedPaletteSource.KindLabel} · {selectedPaletteSource.displayName}。在 SceneView 左键拖动放置，Esc 返回选择。";
+            objectStatus.text = $"正在绘制：{selectedPaletteItem.KindLabel} · {selectedPaletteItem.displayName}。在 SceneView 左键拖动放置，Esc 返回选择。";
         }
 
         private void EditSelectedSource()
         {
-            if (selectedPaletteSource == null)
+            if (selectedPaletteItem == null)
             {
-                objectStatus.text = "请先从资源库选择一个模板。";
+                objectStatus.text = "请先选择一个方块或道具模板。";
                 return;
             }
-            if (selectedPaletteSource.isProp) LevelEditorPropEntryWindow.OpenForEdit(selectedPaletteSource.index);
-            else LevelEditorEntryWindow.OpenForEdit(selectedPaletteSource.index);
+            if (selectedPaletteItem.isProp) LevelEditorPropEntryWindow.OpenForEdit(selectedPaletteItem.index);
+            else LevelEditorEntryWindow.OpenForEdit(selectedPaletteItem.index);
         }
 
         private void RefreshObjectStatus()
@@ -975,98 +922,6 @@ namespace Project.LevelEditor.Editor
         {
             LevelEditorPlacedBlock block = Selection.activeGameObject != null ? Selection.activeGameObject.GetComponentInParent<LevelEditorPlacedBlock>() : null;
             return block != null ? SceneObjectAuthoring.Read(block.gameObject.scene).All.FirstOrDefault(item => item.block == block) : null;
-        }
-
-        private void RefreshSelectedSourceStatus()
-        {
-            if (selectedSourceStatus == null) return;
-            SceneObjectRecord record = SelectedRecord();
-            if (record?.block == null)
-            {
-                selectedSourceStatus.text = "请在 SceneView 或 Hierarchy 选择一个已有的关卡对象。";
-                return;
-            }
-            SceneSourceResolution resolution = SceneObjectSourceCatalog.Resolve(record.block, paletteItems);
-            string author = string.IsNullOrEmpty(record.block.AuthoringId) ? "缺失作者 ID" : record.block.AuthoringId;
-            selectedSourceStatus.text =
-                $"{record.block.name} · {ChannelLabel(record.channel)} · 格 {record.block.Cell}\n" +
-                $"{resolution.Describe(record.block)}\n作者组：{author}；认领会应用到整个逻辑组，不改 Prefab 和实例参数。";
-        }
-
-        private void ClaimSelectedInferred()
-        {
-            SceneObjectRecord record = SelectedRecord();
-            SceneObjectSourceCatalog.ClaimInferred(record, LevelEditorState.Palette, out string reason);
-            objectStatus.text = reason;
-            summaryDirty = true;
-            RefreshSelectedSourceStatus();
-            RefreshSourceAudit();
-        }
-
-        private void ClaimSelectedCurrent()
-        {
-            SceneObjectRecord record = SelectedRecord();
-            if (record?.block == null) { objectStatus.text = "请先选择一个已有的关卡对象。"; return; }
-            if (selectedPaletteSource == null) { objectStatus.text = "请先在资源库中选择来源模板。"; return; }
-            string question =
-                $"将“{record.block.name}”所在整个作者组认领为\n{selectedPaletteSource.KindLabel} · {selectedPaletteSource.displayName}\n\n" +
-                "此操作只记录数据来源，不替换对象、不覆盖实例参数，可用一次 Undo 撤销。";
-            if (!EditorUtility.DisplayDialog("认领数据来源", question, "认领", "取消")) return;
-            SceneObjectSourceCatalog.ClaimGroup(record, selectedPaletteSource, out string reason);
-            objectStatus.text = reason;
-            summaryDirty = true;
-            RefreshSelectedSourceStatus();
-            RefreshSourceAudit();
-        }
-
-        private void LocateSelectedObjectSource()
-        {
-            SceneObjectRecord record = SelectedRecord();
-            if (record?.block == null) { objectStatus.text = "请先选择一个已有的关卡对象。"; return; }
-            SceneSourceResolution resolution = SceneObjectSourceCatalog.Resolve(record.block, paletteItems);
-            if (resolution.source == null)
-            {
-                objectStatus.text = resolution.Describe(record.block);
-                return;
-            }
-            selectedPaletteSource = resolution.source;
-            int wantedKind = selectedPaletteSource.isProp ? 2 : 1;
-            objectKindFilter.index = wantedKind;
-            objectSearch.SetValueWithoutNotify(string.Empty);
-            RefreshCatalogFilter();
-            int index = filteredPaletteItems.IndexOf(selectedPaletteSource);
-            if (index >= 0)
-            {
-                objectCatalog.SetSelection(index);
-                objectCatalog.ScrollToItem(index);
-            }
-        }
-
-        private void RefreshSourceAudit()
-        {
-            if (sourceAuditStatus == null) return;
-            SceneSourceAudit audit = SceneObjectSourceCatalog.Audit(SceneManager.GetActiveScene(), LevelEditorState.Palette);
-            sourceAuditStatus.text = audit + "\n扫描只读；不会补组件、改名字、替换 Prefab 或写入 Scene。";
-        }
-
-        private void ClaimAllUnambiguous()
-        {
-            SceneSourceAudit before = SceneObjectSourceCatalog.Audit(SceneManager.GetActiveScene(), LevelEditorState.Palette);
-            if (before.inferred <= 0)
-            {
-                sourceAuditStatus.text = before + "\n当前没有可安全批量认领的对象。";
-                return;
-            }
-            if (!EditorUtility.DisplayDialog("批量认领明确来源",
-                $"将认领至多 {before.inferred} 个可由唯一 Prefab 或唯一名称证明来源的对象。\n\n" +
-                "歧义、无匹配和来源冲突对象不会改动。整个操作可一次 Undo。",
-                "批量认领", "取消")) return;
-            int changed = SceneObjectSourceCatalog.ClaimAllUnambiguous(
-                SceneManager.GetActiveScene(), LevelEditorState.Palette, out string reason);
-            objectStatus.text = reason;
-            summaryDirty |= changed > 0;
-            RefreshSelectedSourceStatus();
-            RefreshSourceAudit();
         }
 
         private void MoveSelected(Vector2Int delta)
@@ -1085,9 +940,13 @@ namespace Project.LevelEditor.Editor
 
         private void RefreshSelectionInspector()
         {
+            selectedInspector.Unbind();
             selectedInspector.Clear();
-            if (Selection.activeGameObject != null) selectedInspector.Bind(new SerializedObject(Selection.activeGameObject));
-            RefreshSelectedSourceStatus();
+            LevelEditorPlacedBlock block =
+                LevelEditorBlockFactory.SelectedPlacedBlock();
+            if (block != null)
+                selectedInspector.Bind(
+                    new SerializedObject(block.gameObject));
         }
 
         private void BindDoor()

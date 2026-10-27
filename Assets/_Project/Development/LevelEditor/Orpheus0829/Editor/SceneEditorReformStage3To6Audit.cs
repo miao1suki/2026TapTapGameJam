@@ -93,30 +93,27 @@ namespace Project.LevelEditor.Editor
                 var wallSource = new LevelEditorBlockEntry(); wallSource.Configure("墙", Color.gray, null); sourcePalette.Add(wallSource);
                 var waterSource = new LevelEditorPropEntry(); waterSource.Configure("水体", null); sourcePalette.AddProp(waterSource);
                 var propSource = new LevelEditorPropEntry(); propSource.Configure("机关", null); sourcePalette.AddProp(propSource);
-                SceneSourceAudit sourceAudit = SceneObjectSourceCatalog.Audit(preview, sourcePalette);
-                Check(sourceAudit.total == 4 && sourceAudit.inferred == 4 && sourceAudit.claimed == 0,
-                    "旧 Scene 对象来源只读扫描可恢复方块与道具模板，不自动写入");
-                Check(string.IsNullOrEmpty(terrain0.AuthoringPaletteEntryId) && string.IsNullOrEmpty(terrain1.AuthoringPaletteEntryId),
-                    "来源扫描保持旧对象零写入");
-                SceneObjectRecord sourceRecord = index.All.First(item => item.block == terrain0);
-                Check(SceneObjectSourceCatalog.ClaimInferred(sourceRecord, sourcePalette, out _), "明确来源可显式认领整个逻辑组");
-                Check(terrain0.AuthoringPaletteEntryId == wallSource.EntryId && terrain1.AuthoringPaletteEntryId == wallSource.EntryId,
-                    "同作者组成员记录同一稳定栏目来源");
-                Undo.PerformUndo();
-                Check(string.IsNullOrEmpty(terrain0.AuthoringPaletteEntryId) && string.IsNullOrEmpty(terrain1.AuthoringPaletteEntryId),
-                    "来源认领一次 Undo 完整恢复");
-                Undo.PerformRedo();
-                Check(terrain0.AuthoringPaletteEntryId == wallSource.EntryId && terrain1.AuthoringPaletteEntryId == wallSource.EntryId,
-                    "来源认领 Redo 数据一致");
-                Check(SceneObjectSourceCatalog.ClaimAllUnambiguous(preview, sourcePalette, out _) == 2,
-                    "全 Scene 只批量认领剩余唯一匹配来源");
-                Check(water.AuthoringPaletteEntryId == waterSource.EntryId && prop.AuthoringPaletteEntryId == propSource.EntryId,
-                    "方块与道具数据源都按稳定栏目 ID 接轨");
-                Undo.PerformUndo();
-                Check(string.IsNullOrEmpty(water.AuthoringPaletteEntryId) && string.IsNullOrEmpty(prop.AuthoringPaletteEntryId) &&
-                      terrain0.AuthoringPaletteEntryId == wallSource.EntryId,
-                    "批量来源认领一次 Undo 且不影响先前事务");
-                Undo.PerformRedo();
+                bool previewDirtyBeforePalette = preview.isDirty;
+                List<ScenePaletteItem> paletteItems =
+                    ScenePlacementPaletteCatalog.Build(sourcePalette);
+                Check(paletteItems.Count == 3 &&
+                      paletteItems.Count(item => item.isProp) == 2,
+                    "原 Palette 方块与道具完整进入放置选择器");
+                ScenePlacementPaletteCatalog.Select(
+                    paletteItems.First(item => !item.isProp));
+                Check(LevelEditorState.SelectedEntryIndex == 0 &&
+                      LevelEditorState.SelectedPropIndex == -1 &&
+                      preview.isDirty == previewDirtyBeforePalette,
+                    "选择生成模板只改编辑器状态且不写 Scene");
+                Check(typeof(LevelEditorPlacedBlock).GetProperty(
+                          "AuthoringPaletteEntryId") == null &&
+                      typeof(LevelEditorPlacedBlock).GetMethod(
+                          "SetAuthoringPaletteSource") == null,
+                    "Scene 实例不保留 Palette 来源认领字段或接口");
+                var child = New("RendererChild", preview);
+                child.transform.SetParent(terrain0.transform, false);
+                Check(SceneObjectInspectorWindow.ResolveAuthorRoot(child) == terrain0,
+                    "点击子物体始终解析到 LevelEditorPlacedBlock 作者根对象");
 
                 Vector3 zBefore = terrain0.transform.position; zBefore.z = 7f; terrain0.transform.position = zBefore;
                 SceneObjectRecord terrainRecord = index.All.First(item => item.block == terrain0);
