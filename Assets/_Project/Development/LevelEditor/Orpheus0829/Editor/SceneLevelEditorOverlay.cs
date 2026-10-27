@@ -275,16 +275,18 @@ namespace Project.LevelEditor.Editor
     public sealed class SceneLevelEditorOverlay : Overlay
     {
         internal static event Action ObjectPaintingRequested;
-        internal static event Action<GridArtMap, int> ArtPaintingRequested;
+        internal static event Action<GridArtMap, int, bool> ArtPaintingRequested;
         private static bool objectPaintingPending;
         private static GridArtMap pendingArtMap;
         private static int pendingArtBrush = -1;
+        private static bool pendingArtErase;
 
         internal static bool HasPendingObjectPainting =>
             objectPaintingPending;
 
         internal static bool HasPendingArtPainting =>
             pendingArtMap != null && pendingArtBrush >= 0;
+        internal static bool PendingArtErase => pendingArtErase;
 
         public override VisualElement CreatePanelContent() =>
             new SceneLevelEditorPanel(containerWindow as SceneView);
@@ -328,12 +330,28 @@ namespace Project.LevelEditor.Editor
             GridArtMap map,
             int brushIndex)
         {
+            BeginArtEditing(map, brushIndex, false);
+        }
+
+        internal static void BeginArtErasing(
+            GridArtMap map,
+            int brushIndex)
+        {
+            BeginArtEditing(map, brushIndex, true);
+        }
+
+        private static void BeginArtEditing(
+            GridArtMap map,
+            int brushIndex,
+            bool erase)
+        {
             pendingArtMap = map;
             pendingArtBrush = brushIndex;
+            pendingArtErase = erase;
             Open();
             EditorApplication.delayCall += () =>
             {
-                ArtPaintingRequested?.Invoke(map, brushIndex);
+                ArtPaintingRequested?.Invoke(map, brushIndex, erase);
                 SceneView.lastActiveSceneView?.Focus();
             };
         }
@@ -342,6 +360,7 @@ namespace Project.LevelEditor.Editor
         {
             pendingArtMap = null;
             pendingArtBrush = -1;
+            pendingArtErase = false;
         }
     }
 
@@ -606,7 +625,8 @@ namespace Project.LevelEditor.Editor
             {
                 schedule.Execute(() => BeginArtPainting(
                     activeArtScene?.map,
-                    SceneArtPaletteSelection.Current(activeArtScene?.map)));
+                    SceneArtPaletteSelection.Current(activeArtScene?.map),
+                    SceneLevelEditorOverlay.PendingArtErase));
             }
         }
 
@@ -652,7 +672,10 @@ namespace Project.LevelEditor.Editor
             RefreshSession();
         }
 
-        private void BeginArtPainting(GridArtMap map, int brushIndex)
+        private void BeginArtPainting(
+            GridArtMap map,
+            int brushIndex,
+            bool erase)
         {
             if (sceneView != SceneView.lastActiveSceneView)
             {
@@ -672,7 +695,7 @@ namespace Project.LevelEditor.Editor
                 SceneEditSession.Enter(sceneView, sessionOwner);
             }
             artBrush.index = brushIndex;
-            artErase.SetValueWithoutNotify(false);
+            artErase.SetValueWithoutNotify(erase);
             SceneLevelEditorOverlay.MarkArtPaintingHandled();
             RefreshArtBrushPreview();
             BindAuthoring();

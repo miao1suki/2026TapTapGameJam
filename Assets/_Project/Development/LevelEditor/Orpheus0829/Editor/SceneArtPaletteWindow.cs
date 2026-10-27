@@ -65,6 +65,7 @@ namespace Project.LevelEditor.Editor
         private Label selectionTitle;
         private Label selectionDetails;
         private Button paintButton;
+        private Button eraseButton;
         private Button addArtButton;
         private readonly Dictionary<int, Button> cards = new();
 
@@ -251,16 +252,36 @@ namespace Project.LevelEditor.Editor
             selection.Add(text);
             root.Add(selection);
 
+            VisualElement actions = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    flexShrink = 0f,
+                    minWidth = 0f,
+                    marginTop = 7f,
+                },
+            };
+            eraseButton = new Button(StartErasing)
+            {
+                text = "擦除当前图层",
+                tooltip = "返回 SceneView 后，左键拖动擦除当前 GridArt 图层；一次拖动可一步撤销。",
+            };
+            eraseButton.style.width = 132f;
+            eraseButton.style.height = 32f;
+            actions.Add(eraseButton);
             paintButton = new Button(StartPainting)
             {
                 text = "开始在 Scene 中绘制",
             };
             paintButton.style.height = 32f;
-            paintButton.style.marginTop = 7f;
+            paintButton.style.marginLeft = 7f;
+            paintButton.style.flexGrow = 1f;
             paintButton.style.unityFontStyleAndWeight = FontStyle.Bold;
             paintButton.style.backgroundColor = new Color(.12f, .42f, .72f);
             paintButton.style.flexShrink = 0f;
-            root.Add(paintButton);
+            actions.Add(paintButton);
+            root.Add(actions);
 
             RebuildAll();
         }
@@ -471,6 +492,7 @@ namespace Project.LevelEditor.Editor
             GridArtBrush brush = map?.palette?.Get(selectedIndex);
             bool valid = brush != null;
             paintButton?.SetEnabled(valid);
+            eraseButton?.SetEnabled(valid);
             if (!valid)
             {
                 if (selectionTitle != null)
@@ -515,6 +537,18 @@ namespace Project.LevelEditor.Editor
 
             SceneArtPaletteSelection.Select(map, selectedIndex);
             SceneLevelEditorOverlay.BeginArtPainting(map, selectedIndex);
+            Close();
+        }
+
+        private void StartErasing()
+        {
+            if (map?.palette?.Get(selectedIndex) == null)
+            {
+                return;
+            }
+
+            SceneArtPaletteSelection.Select(map, selectedIndex);
+            SceneLevelEditorOverlay.BeginArtErasing(map, selectedIndex);
             Close();
         }
 

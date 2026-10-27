@@ -295,6 +295,8 @@ namespace Project.LevelEditor.Editor
                     .ToList().Select(button => button.text).ToList();
                 Require(buttons.Contains("开始在 Scene 中绘制"),
                     "美术素材卡片缺少醒目的 Scene 绘制主操作。");
+                Require(buttons.Contains("擦除当前图层"),
+                    "美术素材卡片缺少直观的美术擦除入口。");
                 Require(buttons.Contains("+ 添加美术素材"),
                     "美术素材卡片缺少新增素材入口。");
                 Require(buttons.Count(text => string.IsNullOrEmpty(text)) >= 2,
