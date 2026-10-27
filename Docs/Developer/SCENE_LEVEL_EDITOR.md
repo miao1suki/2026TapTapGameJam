@@ -18,11 +18,21 @@
 
 ## 对象
 
-- 栏目直接实例化真实 Prefab；方块、道具沿用现有 `LevelEditorPalette.asset`，实例组件字段是权威。
+- “放置资源库”直接读取原有 `LevelEditorPalette.asset`。方块模板、道具 Prefab、栏目稳定 ID 和模板默认参数都没有丢失；可按名称、栏目 ID 或资产路径搜索，并用“全部/方块/道具”筛选。
+- 选择资源后可看到对象通道、Prefab 路径、模板默认参数数量和 Scene 已认领实例数；“在 Project 定位”打开数据来源，“开始绘制”切换 SceneView 画笔。资源库的高级区仍可新增、编辑方块模板或道具 Prefab，不需要打开 PlanningCanvas。
+- 栏目直接实例化真实 Prefab。模板参数只在新实例化时应用一次；放到 Scene 后，真实组件字段和 Prefab override 是权威，不会再由 JSON 或 Palette 覆盖已有实例。
 - 命中按地形、水体、玩法道具、标记/触发器、装饰五个通道区分。墙、水、道具同格时只选择/擦除当前通道；同通道多个候选必须先明确选择。
 - 同一稳定作者 ID 的多实例始终作为完整逻辑组移动或删除，合并形状按真实覆盖（含孔洞）索引。
 - 方向按钮或 Unity Move Tool 会吸附同一 XY 网格并同步 `Transform` 与 `LevelEditorPlacedBlock.Cell`，保留 Z、稳定 ID 和作者局部格。跨区域默认回滚；启用“跨区重新归属”才更新 `RoomResetObject` 和兼容父容器。
 - 删除前扫描反向 Unity 引用。有引用默认拒绝；“解绑并删除”使用现有门/按钮、平台/曲柄/基座、PlatformMount API，在同一个 Undo 组解除关系并删除整个逻辑组。
+
+### 现有对象认领数据来源
+
+- 新画出的方块/道具立即把 Palette 栏目稳定 ID 记录到 `LevelEditorPlacedBlock`；Prefab、作者 ID、参数和房间归属同时接轨。
+- 旧 Scene 对象默认不自动写入。选择对象后，“数据来源认领”会先只读解析：优先用真实 Prefab 资产精确匹配；没有 Prefab 时才接受同类型中的唯一栏目名称。
+- “自动认领所选组”只提交唯一匹配；“认领为当前模板”用于作者人工确认歧义项。两者都应用到同一作者 ID 的完整逻辑组，只记录来源，不替换 GameObject、不恢复模板默认参数，可一次 Undo。
+- “全 Scene 来源检查”按需执行，不在 Overlay 的 200ms 刷新中扫描。批量认领只写唯一匹配项；重复栏目、Prefab 歧义、无匹配和已失效来源留给人工处理。
+- 已认领来源后来被删除或 Prefab 与实例来源不一致时，UI 会显示来源失效/不一致，不会静默改名、替换 Prefab 或猜测另一个栏目。
 
 ## 绑定/参数
 
@@ -33,7 +43,8 @@
 
 - 工具入口统一调用 `SceneLevelEditorOverlay.Open()`；正常功能不得再打开 `PlanningEditorWindow` 或 `GridArtWindow`。旧窗口只允许 Legacy 菜单和历史审计使用。
 - 房间/通道作者提交使用 `RoomLifecycleManager.ConfigureAuthoredRegions(...)`，只改 Scene 区域与格尺寸并保留隐藏的旧 planning 字段；运行时与新工具不再从该字段恢复布局。
-- 对象身份使用 `LevelEditorPlacedBlock.AuthoringId`、`AuthoringLocalCell`，格位置通过 `SetAuthoredCell(...)` 同步；旧 `Planning*` 名称只作为序列化兼容别名，不能作为 JSON 工作流接口。
+- 对象身份使用 `LevelEditorPlacedBlock.AuthoringId`、`AuthoringLocalCell`，模板来源使用 `AuthoringPaletteEntryId`、`AuthoringPaletteEntryIsProp` 与 `SetAuthoringPaletteSource(...)`，格位置通过 `SetAuthoredCell(...)` 同步；旧 `Planning*` 名称只作为序列化兼容别名，不能作为 JSON 工作流接口。
+- `SceneObjectSourceCatalog` 负责 Palette 浏览、只读来源解析、来源审计和显式 Undo 认领。打开工具、切换模板和来源扫描不得调用认领接口。
 - 非格对象跟随区域使用 `SceneRegionAttachment`；GridArt 跟随关系使用 `GridArtRegionOwnership` 与 Scene 上的 `GridArtRegionOwnershipLink`。两者都必须显式创建/认领，工具打开时不得自动补写。
 - 区域、对象、引用和美术的写入集中在 `SceneRegionAuthoring`、`SceneObjectAuthoring`、`SceneRegionAssembly`、`SceneArtAuthoring`；外围工具调用这些接口，不直接散落修改 JSON、销毁对象或全量 Apply。
 
@@ -49,6 +60,7 @@
 - Overlay 只有绑定目标真实变化时才刷新；同一 SceneView/管理器/Map 的周期检查不会触发 `RepaintAll`。
 - 区域轮廓按 `RoomLifecycleManager.RegionRevision` 缓存为合并矩形；49017 格正式区域实测合并为 69 个矩形，不再逐格分配和绘制四边。
 - 对象命中使用失效驱动的 Scene 索引。正式 3004 对象首次构建实测 `60.932 ms`；10240 次缓存查询 `0.794 ms`、`0 B` GC。放置、删除、移动、Undo/Redo 和层级变化后才失效重建。
+- 资源库筛选只处理 Palette 条目；全 Scene 来源解析只在作者点击“只读扫描”、认领或选择对象时执行，不加入周期刷新和鼠标 Hover 路径。
 - GridArt 笔画只重建受影响的 32×32 块；大笔刷和自动地形会精确补入跨界块/邻块。单格增量实测 `6.054 ms`，未命中块 `0` 写入；自动预览不再同步保存 Mesh/Material。
 - 以上数字来自 Unity `6000.3.12f1` 隔离副本中的正式规模数据，用于发现性能回退，不是不同电脑的帧耗时保证。
 

@@ -32,6 +32,12 @@ namespace Project.LevelEditor.Editor
                     ? "道具"
                     : "方块"));
             identity.Add(ProjectInspectorUtility.CreateReadOnlyRow(
+                "来源栏目 ID",
+                () => block != null &&
+                      !string.IsNullOrWhiteSpace(block.AuthoringPaletteEntryId)
+                    ? block.AuthoringPaletteEntryId
+                    : "未认领（请在场景关卡编辑器中认领）"));
+            identity.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "栏目颜色",
                 () => block != null && block.HasColorData
                     ? block.EntryColor.ToString()

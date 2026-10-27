@@ -756,6 +756,7 @@ namespace Project.LevelEditor.Editor
                 !entry.UsesPrefabDirectly,
                 false,
                 LevelEditorState.CellSize);
+            placed.SetAuthoringPaletteSource(entry.EntryId, false);
             EnsureAuthoringMetadata(placed);
             BindRoomOwnership(placed);
             if (!entry.UsesPrefabDirectly)
@@ -818,6 +819,7 @@ namespace Project.LevelEditor.Editor
                 false,
                 true,
                 LevelEditorState.CellSize);
+            placed.SetAuthoringPaletteSource(entry.EntryId, true);
             EnsureAuthoringMetadata(placed);
             BindRoomOwnership(placed);
             if (instance.GetComponent<Project.Mechanisms.DoorController>() != null)
@@ -1057,6 +1059,9 @@ namespace Project.LevelEditor.Editor
             placed.Configure(new Vector2Int(minX, minY), first.EntryName,
                 first.EntryColor, prefab == null, false,
                 LevelEditorState.CellSize);
+            placed.SetAuthoringPaletteSource(
+                first.AuthoringPaletteEntryId,
+                first.AuthoringPaletteEntryIsProp);
             placed.SetSizeCells(new Vector2Int(width, height));
             EnsureAuthoringMetadata(placed);
             BindRoomOwnership(placed);

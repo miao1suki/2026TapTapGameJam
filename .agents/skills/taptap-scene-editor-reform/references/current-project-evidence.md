@@ -93,7 +93,8 @@
 
 ## 完成版验证（2026-10-27）
 
-- Unity `6000.3.12f1` 隔离工程批量入口依次运行 Stage 1、Stage 2、Stage 3–6 与 Formal，退出码为 `0`；Stage 3–6 为 44 项，Formal 为 17 项。
+- Unity `6000.3.12f1` 隔离工程批量入口依次运行 Stage 1、Stage 2、Stage 3–6 与 Formal，退出码为 `0`；对象资源库补全后 Stage 3–6 为 53 项，Formal 为 17 项。
+- 原 `LevelEditorPalette.asset` 的方块、道具、Prefab 与模板参数已接入可搜索资源库；旧对象来源只读扫描、完整逻辑组认领、全 Scene 唯一匹配认领和 Undo/Redo 均在隔离 Preview Scene 通过，扫描未写正式 Scene。
 - 直接覆盖现有正式规模：3004 个对象的失效驱动索引构建 `60.932 ms`；10240 次缓存查询 `0.794 ms` 且 `0 B` 分配。49017 个区域格合并为 69 个轮廓矩形，缓存构建 `18.906 ms`。
 - GridArt 单格增量构建 `6.054 ms`，只写命中的 32×32 块；大笔刷跨块、锚点缓存擦除、自动地形邻块刷新、稀疏归属一步 Undo/Redo 和保存重开引用均通过。
 - 只读正式审计前后 Scene dirty/Undo 不变；`Gaming.unity`、两份历史 JSON 与 `Gaming_Art.asset` 的 SHA-256 均保持本页基线。

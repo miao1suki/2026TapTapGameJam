@@ -2,7 +2,7 @@
 
 编辑器改版统一读取 `.agents/skills/taptap-scene-editor-reform/SKILL.md`（显示名“编辑器改版方案”）。正式 Scene 已是玩法关卡唯一编辑权威：房间/通道、真实对象、参数和引用均在锁定正交 2D SceneView 直接编辑；GridArt 继续由稠密 Map 资产承载，在同一 Overlay 的 SceneView 绘制；区域装配是在同 Scene 整体平移区域、逻辑组、房间归属、显式附属物和已认领美术。PlanningCanvas、JSON 存档槽/片段/应用流程已从正常入口退役；历史 JSON 保留只读且不得覆盖 Scene。
 
-完成版实现与用法见 `Docs/Developer/SCENE_LEVEL_EDITOR.md`。入口 `Tools/2026TapTap/关卡编辑器/场景编辑器`，核心源码为 `SceneLevelEditorOverlay.cs`、`SceneRegionAuthoring.cs`、`SceneObjectAuthoring.cs`、`SceneRegionAssembly.cs` 与 `SceneArtAuthoring.cs`；`SceneEditorReformBatchAudit.RunAllFromCommandLine` 汇总 Stage 1、Stage 2、Stage 3–6 与 Formal 审计。正式规模性能基线为 3004 对象索引 `60.932 ms`、10240 次缓存查询 `0.794 ms/0 B`、49017 区域格合并 69 矩形、GridArt 单格增量构建 `6.054 ms`。
+完成版实现与用法见 `Docs/Developer/SCENE_LEVEL_EDITOR.md`。入口 `Tools/2026TapTap/关卡编辑器/场景编辑器`，核心源码为 `SceneLevelEditorOverlay.cs`、`SceneRegionAuthoring.cs`、`SceneObjectAuthoring.cs`、`SceneObjectSourceCatalog.cs`、`SceneRegionAssembly.cs` 与 `SceneArtAuthoring.cs`。原 `LevelEditorPalette.asset` 通过可搜索资源库继续提供方块/道具模板；新实例记录稳定栏目来源，旧实例以显式 Undo 操作认领，扫描本身零写入。`SceneEditorReformBatchAudit.RunAllFromCommandLine` 汇总 Stage 1、Stage 2、Stage 3–6 与 Formal 审计。正式规模性能基线为 3004 对象索引 `60.932 ms`、10240 次缓存查询 `0.794 ms/0 B`、49017 区域格合并 69 矩形、GridArt 单格增量构建 `6.054 ms`。
 
 2026-10-21 1.0.2：TA83611de美术/天气接入，关卡和修复保留；AndroidGraphicsCompatibilityBuildGuard固定Android仅GLES3，避免已证实的Adreno Vulkan启动崩溃路径。双端包/图标/存档清理与同型号复测边界见RELEASE_1_0_2.md。
 

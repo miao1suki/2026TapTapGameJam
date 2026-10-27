@@ -60,6 +60,7 @@ namespace Project.LevelEditor.Editor
             var report = new StringBuilder(); int checks = 0;
             var undoObjects = new List<UnityEngine.Object>();
             GridArtMap map = null; GridArtRegionOwnership ownership = null;
+            LevelEditorPalette sourcePalette = null;
             string regionAssetFolder = null;
             void Check(bool condition, string message)
             {
@@ -87,6 +88,35 @@ namespace Project.LevelEditor.Editor
                 Check(index.At(Vector2Int.zero, SceneObjectChannel.WaterVolume).Single().block == water, "水体通道独立命中");
                 Check(index.Group(index.All.First(item => item.block == terrain0)).Count == 2, "重复稳定 ID 聚合为一个逻辑组");
                 Check(active.isDirty == activeDirty, "对象索引不改变当前用户 Scene dirty 状态");
+
+                sourcePalette = ScriptableObject.CreateInstance<LevelEditorPalette>();
+                var wallSource = new LevelEditorBlockEntry(); wallSource.Configure("墙", Color.gray, null); sourcePalette.Add(wallSource);
+                var waterSource = new LevelEditorPropEntry(); waterSource.Configure("水体", null); sourcePalette.AddProp(waterSource);
+                var propSource = new LevelEditorPropEntry(); propSource.Configure("机关", null); sourcePalette.AddProp(propSource);
+                SceneSourceAudit sourceAudit = SceneObjectSourceCatalog.Audit(preview, sourcePalette);
+                Check(sourceAudit.total == 4 && sourceAudit.inferred == 4 && sourceAudit.claimed == 0,
+                    "旧 Scene 对象来源只读扫描可恢复方块与道具模板，不自动写入");
+                Check(string.IsNullOrEmpty(terrain0.AuthoringPaletteEntryId) && string.IsNullOrEmpty(terrain1.AuthoringPaletteEntryId),
+                    "来源扫描保持旧对象零写入");
+                SceneObjectRecord sourceRecord = index.All.First(item => item.block == terrain0);
+                Check(SceneObjectSourceCatalog.ClaimInferred(sourceRecord, sourcePalette, out _), "明确来源可显式认领整个逻辑组");
+                Check(terrain0.AuthoringPaletteEntryId == wallSource.EntryId && terrain1.AuthoringPaletteEntryId == wallSource.EntryId,
+                    "同作者组成员记录同一稳定栏目来源");
+                Undo.PerformUndo();
+                Check(string.IsNullOrEmpty(terrain0.AuthoringPaletteEntryId) && string.IsNullOrEmpty(terrain1.AuthoringPaletteEntryId),
+                    "来源认领一次 Undo 完整恢复");
+                Undo.PerformRedo();
+                Check(terrain0.AuthoringPaletteEntryId == wallSource.EntryId && terrain1.AuthoringPaletteEntryId == wallSource.EntryId,
+                    "来源认领 Redo 数据一致");
+                Check(SceneObjectSourceCatalog.ClaimAllUnambiguous(preview, sourcePalette, out _) == 2,
+                    "全 Scene 只批量认领剩余唯一匹配来源");
+                Check(water.AuthoringPaletteEntryId == waterSource.EntryId && prop.AuthoringPaletteEntryId == propSource.EntryId,
+                    "方块与道具数据源都按稳定栏目 ID 接轨");
+                Undo.PerformUndo();
+                Check(string.IsNullOrEmpty(water.AuthoringPaletteEntryId) && string.IsNullOrEmpty(prop.AuthoringPaletteEntryId) &&
+                      terrain0.AuthoringPaletteEntryId == wallSource.EntryId,
+                    "批量来源认领一次 Undo 且不影响先前事务");
+                Undo.PerformRedo();
 
                 Vector3 zBefore = terrain0.transform.position; zBefore.z = 7f; terrain0.transform.position = zBefore;
                 SceneObjectRecord terrainRecord = index.All.First(item => item.block == terrain0);
@@ -157,6 +187,7 @@ namespace Project.LevelEditor.Editor
                 EditorSceneManager.ClosePreviewScene(preview);
                 if (map != null && !AssetDatabase.Contains(map)) UnityEngine.Object.DestroyImmediate(map);
                 if (ownership != null && !AssetDatabase.Contains(ownership)) UnityEngine.Object.DestroyImmediate(ownership);
+                if (sourcePalette != null) UnityEngine.Object.DestroyImmediate(sourcePalette);
                 if (!string.IsNullOrEmpty(regionAssetFolder) && AssetDatabase.IsValidFolder(regionAssetFolder))
                     AssetDatabase.DeleteAsset(regionAssetFolder);
                 SceneObjectAuthoring.NotifyChanged();

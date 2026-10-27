@@ -52,16 +52,34 @@ namespace Project.LevelEditor
         [SerializeField] private string planningBoxId;
         [SerializeField] private string planningSignature;
         [SerializeField] private Vector2Int planningLocalCell;
+        [SerializeField] private string authoringPaletteEntryId;
+        [SerializeField] private bool authoringPaletteEntryIsProp;
         public string PlanningBoxId => planningBoxId;
         public string PlanningSignature => planningSignature;
         public Vector2Int PlanningLocalCell => planningLocalCell;
         public string AuthoringId => planningBoxId;
         public Vector2Int AuthoringLocalCell => planningLocalCell;
+        public string AuthoringPaletteEntryId => authoringPaletteEntryId;
+        public bool AuthoringPaletteEntryIsProp => authoringPaletteEntryIsProp;
         public void SetPlanningSource(string id, string signature, Vector2Int localCell)
         {
             planningBoxId = id;
             planningSignature = signature;
             planningLocalCell = localCell;
+        }
+
+        public bool SetAuthoringPaletteSource(string entryId, bool isPropEntry)
+        {
+            string nextId = entryId ?? string.Empty;
+            if (authoringPaletteEntryId == nextId &&
+                authoringPaletteEntryIsProp == isPropEntry)
+            {
+                return false;
+            }
+
+            authoringPaletteEntryId = nextId;
+            authoringPaletteEntryIsProp = isPropEntry;
+            return true;
         }
 
         public Vector2Int Cell => cell;

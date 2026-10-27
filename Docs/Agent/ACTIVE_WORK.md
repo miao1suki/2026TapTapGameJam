@@ -3,9 +3,10 @@
 - 分支 `编辑器整改` 已完成“Scene 唯一权威、锁定同一 XY 平面的正交 2D SceneView 直接搭建”。现有 `Gaming.unity` 无需 JSON 重建或隐式迁移即可继续制作；房间、通道、真实对象、实例参数、Unity 引用、GridArt 美术及区域整体移动均在同一 Scene 工作流完成。
 - 新入口为 `Tools/2026TapTap/关卡编辑器/场景编辑器`（`M`）；UI Toolkit Overlay 可拖动、折叠、关闭并从菜单重开。PlanningCanvas、JSON 存档槽/片段/应用到场景及旧 GridArt 画布已移入 Legacy，不再是正常制作入口；历史 JSON 只读保留。
 - 房间/通道直接编辑 `RoomLifecycleManager.Regions`；对象按地形、水体、玩法道具、标记/触发器、装饰五通道命中。真实 Prefab 放置会建立稳定作者 ID 与房间归属；同 ID 多实例、合并形状、Unity Move Tool 同步、引用安全删除、类型安全机关绑定及真实 Inspector 参数编辑均已接入。
+- 对象 UI 已补齐原数据接轨：可搜索/筛选的“放置资源库”直接展示 `LevelEditorPalette.asset` 中的方块、道具、Prefab 路径、模板参数和 Scene 认领数；新放置实例记录稳定栏目来源。旧 Scene 对象只读按 Prefab/唯一名称推断，可对完整作者组手动认领或批量认领唯一匹配项；歧义、无匹配和失效来源不自动写入，全部认领可 Undo，实例参数继续以 Scene 为权威。
 - 区域装配改为同 Scene 整体平移：一次事务预检并移动区域格、完整逻辑组、Transform/Cell、房间重置归属、显式附属物与已认领 GridArt；稳定拾取身份与对象引用保持不变。旧美术默认不认领，作者可用可撤销的稀疏归属显式接轨。
 - 卡顿整改已完成：3004 对象索引仅在失效时重建（最终实测 `60.932 ms`），10240 次缓存查询 `0.794 ms` 且 `0 B` 分配；49017 区域格缓存为 69 个合并矩形（`18.906 ms`）；GridArt 单格只重建受影响 32×32 块（`6.054 ms`，未命中块 0 写入）。Overlay 相同绑定不再每 200 ms 全局 Repaint，Handles 只在 Repaint 绘制。
-- Unity `6000.3.12f1` 隔离工程批量审计通过：Stage 1、Stage 2、Stage 3–6 共 44 项、Formal 共 17 项；大笔刷跨块、锚点缓存擦除、自动地形邻块刷新、稀疏归属 Undo/Redo、保存重开引用均覆盖。只读审计中正式 Scene dirty/Undo 未变化，`Gaming.unity`、两份历史 JSON、`Gaming_Art.asset` 四份保护哈希保持基线。
+- Unity `6000.3.12f1` 隔离工程批量审计通过：Stage 1 新增对象资源库 UI 完整性检查，Stage 2 通过，Stage 3–6 共 53 项、Formal 共 17 项；新增覆盖旧对象来源零写入扫描、完整作者组认领、批量唯一匹配认领及 Undo/Redo，也保留大笔刷跨块、锚点缓存擦除、自动地形邻块刷新、稀疏归属和保存重开引用覆盖。只读审计中正式 Scene dirty/Undo 未变化，`Gaming.unity`、两份历史 JSON、`Gaming_Art.asset` 四份保护哈希保持基线。
 - 全量测试已执行：`Project.GridArt.EditorTests` 为 `89/89`；全项目 EditMode 为 310 项，其中补齐隔离副本根 `.gitignore` 后实际 `309/310`，唯一失败是既有输入提示断言期望 `WASD`、Unity 6.3 返回 `W/A/S/D`，不在本次编辑器提交中改输入系统；PlayMode 为 `5/6`，唯一失败是既有菜单往返测试在两个相同 Scene handle 上仍被 NUnit 判不等，单项复跑可重复。改版四阶段审计全部通过，未用这两项既有测试异常替代编辑器验收。
 - 正式图只读基线：25 个区域（含 1 通道）、3004 个 `LevelEditorPlacedBlock`、2998 个稳定 ID、1 个 7 实例逻辑组、99 个合并形状、13817 个 GridArt 锚点和 49017 个区域格。主 Unity 当前仍有未保存星号，本分支未保存正式 `Gaming`，提交继续排除字体动态缓存与四份保护资源。
 
