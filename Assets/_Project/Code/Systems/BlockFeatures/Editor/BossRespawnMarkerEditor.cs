@@ -79,7 +79,6 @@ namespace Project.BlockFeatures.Editor
             }
 
             Tools.hidden = true;
-            marker.SyncFromOwner();
             CompareFunction previousZTest = Handles.zTest;
             Color previousColor = Handles.color;
             Handles.zTest = CompareFunction.Always;
@@ -138,7 +137,6 @@ namespace Project.BlockFeatures.Editor
                             owner);
                 }
 
-                marker.SyncFromOwner();
                 SceneView.RepaintAll();
             }
 
@@ -163,56 +161,4 @@ namespace Project.BlockFeatures.Editor
         }
     }
 
-    [InitializeOnLoad]
-    internal static class BossRespawnMarkerMaintenance
-    {
-        static BossRespawnMarkerMaintenance()
-        {
-            EditorApplication.hierarchyChanged += ScheduleRepair;
-            EditorApplication.delayCall += RepairAll;
-        }
-
-        private static void ScheduleRepair()
-        {
-            EditorApplication.delayCall -= RepairAll;
-            EditorApplication.delayCall += RepairAll;
-        }
-
-        private static void RepairAll()
-        {
-            if (Application.isPlaying ||
-                EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                return;
-            }
-
-            RespawnAnchorFeature[] anchors =
-                Object.FindObjectsByType<RespawnAnchorFeature>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-            for (int index = 0;
-                 index < anchors.Length;
-                 index++)
-            {
-                RespawnAnchorFeature anchor = anchors[index];
-                if (anchor == null ||
-                    !anchor.IsBossArenaRespawnPoint)
-                {
-                    continue;
-                }
-
-                BossRespawnMarker marker =
-                    anchor.EnsureBossRespawnMarker(true);
-                if (marker == null)
-                {
-                    continue;
-                }
-
-                marker.gameObject.SetActive(true);
-                marker.Bind(anchor);
-                EditorUtility.SetDirty(anchor);
-                EditorUtility.SetDirty(marker);
-            }
-        }
-    }
 }

@@ -95,7 +95,7 @@ namespace Project.BlockFeatures.Editor
             locateMarker.style.marginTop = 4f;
             bossRespawn.Add(locateMarker);
             bossRespawn.Add(ProjectInspectorUtility.CreateHelp(
-                "附属标记没有 Collider 和 Renderer，只能沿世界 X 拖动。删除后会自动补建并重新链接。"));
+                "附属标记没有 Collider 和 Renderer，只能沿世界 X 拖动。若被删除，点击“定位附属标记”即可重新创建；浏览、选择和保存场景不会自动写回。"));
             root.Add(bossRespawn);
 
             SerializedProperty bossEnabled =
