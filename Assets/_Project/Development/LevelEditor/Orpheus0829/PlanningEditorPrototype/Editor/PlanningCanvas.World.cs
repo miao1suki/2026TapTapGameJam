@@ -491,7 +491,7 @@ namespace PlanningEditorPrototype
             foreach (string id in stale) { regionLabels[id].RemoveFromHierarchy(); regionLabels.Remove(id); }
         }
 
-        [MenuItem("Tools/2026TapTap/关卡编辑器/验证世界图与装配编辑")]
+        [MenuItem("Tools/2026TapTap/Legacy/验证旧世界图与装配编辑")]
         private static void ValidateWorldAndAssemblyEditing()
         {
             // In-memory only: no scene generation, asset writes, preferences or confirmation dialogs.
@@ -544,7 +544,7 @@ namespace PlanningEditorPrototype
             Debug.Log("世界图与装配编辑验证通过：占格、事务、多选、绘制/擦除、存档与删除所有权。");
         }
 
-        [MenuItem("Tools/2026TapTap/关卡编辑器/验证统一网格与旧存档")]
+        [MenuItem("Tools/2026TapTap/Legacy/验证统一网格与旧存档")]
         public static void VerifyUnifiedGrid()
         {
             int checks = 0;

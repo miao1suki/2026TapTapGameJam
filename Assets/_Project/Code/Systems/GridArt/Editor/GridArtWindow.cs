@@ -50,7 +50,6 @@ namespace Project.GridArt.Editor
             .OrderBy(index => map.layers[index].depth > 0f ? 0 : 1)
             .ThenBy(LayerOrder).ThenByDescending(index => map.layers[index].depth);
 
-        [MenuItem("Tools/2026TapTap/关卡美术/网格美术编辑器")]
         public static void Open() => GetWindow<GridArtWindow>("网格美术");
         public static void OpenForGrid(float size, IEnumerable<Rect> reference = null)
         {

@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 
 namespace Project.GridArt.Editor
 {
-    /// <summary>Global menu hotkey, like planning M; preserves text entry and unfinished strokes.</summary>
+    /// <summary>Explicit legacy maintenance entry. Normal authoring uses the SceneView overlay.</summary>
     public static class GridArtWorkspaceShortcut
     {
         internal static bool CanToggle(EditorWindow focused)
@@ -20,7 +20,7 @@ namespace Project.GridArt.Editor
             return true;
         }
 
-        [MenuItem("Tools/2026TapTap/关卡美术/切换窗口 _n")]
+        [MenuItem("Tools/2026TapTap/Legacy/旧 GridArt 画布（已退役）")]
         private static void Toggle()
         {
             if (!CanToggle(EditorWindow.focusedWindow)) return;

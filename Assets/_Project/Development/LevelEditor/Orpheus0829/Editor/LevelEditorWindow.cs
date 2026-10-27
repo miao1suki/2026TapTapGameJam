@@ -37,10 +37,6 @@ namespace Project.LevelEditor.Editor
             root.style.paddingTop = 8f;
             root.style.paddingBottom = 8f;
             panel = new LevelEditorPanel(root);
-            if (!EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                LevelEditorBlockFactory.MigratePlacedBlocks();
-            }
             root.SetEnabled(!EditorApplication.isPlayingOrWillChangePlaymode);
         }
 
@@ -267,11 +263,11 @@ namespace Project.LevelEditor.Editor
 
             body.Add(new Button(() =>
             {
-                Project.GridArt.Editor.GridArtWindow.OpenForGrid(LevelEditorState.CellSize);
+                SceneLevelEditorOverlay.Open();
             })
             {
-                text = "网格美术",
-                tooltip = "打开与当前关卡单元格一致的独立美术图层。"
+                text = "场景美术",
+                tooltip = "打开场景关卡编辑器，并在同一正交 SceneView 中切换到美术模式。"
             });
 
             VisualElement tools = Row();
@@ -600,7 +596,6 @@ namespace Project.LevelEditor.Editor
             LevelEditorState.EditMode = enabled;
             if (enabled)
             {
-                LevelEditorBlockFactory.MigratePlacedBlocks();
                 FrameBeforeEditMode();
                 LevelEditorViewLock.Enter(SceneView.lastActiveSceneView);
                 LevelEditorState.Tool = LevelEditorTool.Select;

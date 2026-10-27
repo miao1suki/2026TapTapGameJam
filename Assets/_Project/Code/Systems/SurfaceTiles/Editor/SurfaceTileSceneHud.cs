@@ -295,7 +295,7 @@ namespace Project.SurfaceTiles.Editor
                 body.Add(Button("关卡美术工作台", () =>
                 {
                     SurfaceTileEditorState.Painting = false;
-                    EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡美术/网格美术编辑器");
+                    EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡编辑器/场景编辑器");
                 }));
 
                 tileSizeStatus = Badge("选择瓦片后显示实际尺寸");

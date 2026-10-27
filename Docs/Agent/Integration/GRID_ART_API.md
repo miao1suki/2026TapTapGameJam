@@ -17,7 +17,7 @@
 ## 编辑器API
 
 - `GridArtWindow.OpenForGrid(size,reference)`：关卡入口，新图继承格尺寸；自动由适配器刷新轮廓，不再依赖Hierarchy选择。新图同Scene存为`<scene>_Art.asset`。关卡ScenePainter在美术绘制时退出事件处理，避免一笔画两种物体。
-- `GridArtLevelSource.Read(Scene)`：由Assembly-CSharp-Editor的PlanningArtAdapter注册委托，返回世界XY的GridArtLevelSnapshot/Group，避免GridArt.Editor反向引用关卡程序集。优先DocumentForScene，次选同名planning.json，再选场景内嵌规划，最后只读PlacedBlock；规划Y向下坐标只在适配器转换。`groups.bounds`仅含房间/通道/装配补丁中的非道具墙地块（黑、白、自定义块及旧Platform标记），按实际合并覆盖保留孔洞，不混入道具、水和区域。`referenceItems`另含正式2D道具/水/定位轮廓，`referenceOnlyNames`说明缺正式素材的轮廓；它们不能当作自动墙地来源，也不能写入游戏渲染器。
+- `GridArtLevelSource.Read(Scene)` 是旧独立画布的 Legacy 参照适配器，保留旧文档/同名 planning 回退只为历史审计，不能作为当前 Scene 的写入或重建来源。正常制作由场景关卡编辑器直接读取 `RoomLifecycleManager`、真实 `LevelEditorPlacedBlock` 与 Scene 引用的 GridArt 数据；`groups.bounds`/`referenceItems` 仅作只读参照，不写游戏渲染器。
 - `GridArtLevelSource.NotifyChanged()`：关卡加载、笔画结束、规划撤回发出失效通知；工作台延后0.35秒合并读取。Hierarchy事件只失效，不在回调中全场扫描。Synchronize只替换联动层，内容相同不改版本/列表，不覆盖手工层。没有工作台订阅时不采集快照。
 - `Shared()`：创建／加载共享库；首次从当前tail图裁20纹样与白线边框，不改源图、不引用旧开发图集。
 - `Synchronize(library)`：追加SurfaceTilePalette切片、GridArtSupplementLibrary的混合图集静态装饰、GridArtProjectLibrary的墙地／边框／正式道具静态外观，以及GridArtShallowGrassLibrary的三色浅草连接。排除Plugins／Development／测试及整张动画板。新槽位按有效源像素计算，旧槽位不静默改变显示尺寸。只更正已知生成默认名称／分类，不覆盖自命名；正式外观按稳定kind/state键更新引用，不将重新生成的Sprite视为新物体。窗口聚焦同步共享库，也可手动，不每帧扫描项目。浅草独立资产持有生成纹理及Sprite，目标库仅追加引用，不覆盖本地库编辑。详见[盘点与裁区](../../Developer/SCENE_ART_LIBRARY.md)、[浅草连接](../../Developer/SHALLOW_GRASS_CONNECTIONS.md)。
@@ -54,6 +54,6 @@ SurfaceTiles六面保留：AuthoringService/ScenePainter/MeshBuilder拒绝持久
 
 ## 交付与验证
 
-Scene及同名planning.json、Map、Library、原图、生成资源和meta一起交付，不只交场景，不提交Library日志。本轮不修改正式玩法场景。
+交付 Scene/`.meta`、Scene 引用的 Map/区域归属资产、Palette/Library、原图、生成依赖及各自 `.meta`；不能只交派生网格，不提交 Library 日志。历史 planning JSON 不再同步或作为第二权威。
 
 GridArt/SurfaceTiles EditorTests覆盖边角、负坐标、裁区、多图集、迁移、合并轮廓、材质隔离、Scene所有权、法线、持久化、Undo/redo、Toolkit。资产夹具为唯一临时目录；主编辑器有未保存场景时跳过资产测试，使用隔离项目验证。GPU与窗口尺寸也在隔离项目验证，实际策划制作体验仍需验收。

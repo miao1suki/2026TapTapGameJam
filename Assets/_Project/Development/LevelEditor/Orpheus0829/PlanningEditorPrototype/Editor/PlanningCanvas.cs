@@ -4615,7 +4615,7 @@ namespace PlanningEditorPrototype
             MarkDirtyRepaint();
         }
 
-        [MenuItem("Tools/2026TapTap/关卡编辑器/验证规划数据逻辑")]
+        [MenuItem("Tools/2026TapTap/Legacy/验证旧规划数据逻辑")]
         private static void ValidatePlanningOperations()
         {
             // Isolated in-memory document: no scene, palette asset or preference is modified.

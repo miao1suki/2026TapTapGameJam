@@ -21,7 +21,7 @@
 
 正常 Play 仍由 `MechanismArtworkPresentation`、`WorldObjectSpritePresentation`、颜色表现管理器及各功能组件负责。资源生成器可显式调用 `Ensure/Refresh` 配置正式预制体；这与打开用户 Scene 时的只读自动预览是两个不同入口。
 
-Scene、同名 `.planning.json`、各自 `.meta` 与新增依赖仍须一起交付；预览缓存不是团队共享存档，也不会代替存档。
+Scene/`.meta`、Scene 引用的作者资产与新增依赖仍须一起交付；历史 `.planning.json` 不再同步。预览缓存不是作者数据，也不会代替 Scene/Map。
 
 ## 隔离验证
 

@@ -4,7 +4,7 @@
 
 # 全局传送地图
 
-最终发布把各策划迁移关卡和 Boss 统一放入 `Gaming`，不靠独立工作场景间的加载拼接。工作场景 Scene、同名 planning、meta 及新增依赖仍须成套交付；正式 Gaming 另交 `Content/LevelMaps/正式关卡.json`。
+最终发布把各策划迁移关卡和 Boss 统一放入 `Gaming`，不靠独立工作场景间的加载拼接。当前交付以 Scene/`.meta` 及其引用的作者资产、新增依赖为准；旧同名 planning 与 `Content/LevelMaps/正式关卡.json` 只作历史只读基线。
 
 ## 玩家操作
 

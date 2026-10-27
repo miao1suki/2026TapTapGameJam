@@ -18,7 +18,7 @@ namespace PlanningEditorPrototype
     {
         private static readonly List<string> report = new();
         private static int checks;
-        [MenuItem("Tools/Project/验证/美术工作台关卡参照")]
+        [MenuItem("Tools/2026TapTap/Legacy/验证旧美术画布关卡参照")]
         public static void Run()
         {
             if (!Application.dataPath.Replace('\\', '/').EndsWith("/Library/FlowRetirementProbe/Assets", StringComparison.OrdinalIgnoreCase) ||

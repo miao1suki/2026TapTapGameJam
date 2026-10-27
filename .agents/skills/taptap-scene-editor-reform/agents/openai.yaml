@@ -1,0 +1,4 @@
+interface:
+  display_name: "编辑器改版方案"
+  short_description: "在正交 SceneView 直接制作完整关卡的项目规范"
+  default_prompt: "使用 $taptap-scene-editor-reform 按阶段研究、实现或审查场景权威的关卡编辑器改版。"

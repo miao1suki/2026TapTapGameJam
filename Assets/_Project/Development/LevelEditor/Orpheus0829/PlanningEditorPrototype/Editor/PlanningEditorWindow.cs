@@ -242,7 +242,7 @@ namespace PlanningEditorPrototype
         private PlanningCanvasMode mode;
         private bool viewReady;
 
-        [MenuItem("Tools/2026TapTap/关卡规划原型/打开融合编辑器")]
+        [MenuItem("Tools/2026TapTap/Legacy/旧规划画布（已退役）")]
         private static void Open()
         {
             PlanningEditorWindow window =
@@ -253,7 +253,6 @@ namespace PlanningEditorPrototype
             window.Focus();
         }
 
-        [MenuItem("Tools/2026TapTap/关卡编辑器/切换窗口 _m")]
         private static void ToggleWindow()
         {
             PlanningEditorWindow[] windows =
@@ -270,6 +269,14 @@ namespace PlanningEditorPrototype
         public void CreateGUI()
         {
             VisualElement root = rootVisualElement;
+            root.Clear();
+            root.style.paddingLeft = 14f; root.style.paddingRight = 14f;
+            root.style.paddingTop = 14f; root.style.paddingBottom = 14f;
+            root.Add(new HelpBox("PlanningCanvas、JSON 存档槽、片段导入导出和“应用到场景”已退出正常工作流。现有 JSON 仅作历史只读基线；请直接在 SceneView 的正交 2D 场景编辑器中继续当前 Scene。", HelpBoxMessageType.Warning));
+            root.Add(new Button(() => EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡编辑器/场景编辑器")) { text = "打开场景关卡编辑器" });
+            titleContent = new GUIContent("旧规划画布（已退役）");
+            return;
+#pragma warning disable CS0162
             LevelEditorTypography.Apply(root);
             root.style.flexGrow = 1f;
             root.style.backgroundColor = new Color(.07f, .08f, .1f);

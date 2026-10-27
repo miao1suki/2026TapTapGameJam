@@ -5,6 +5,6 @@ if command -v pwsh >/dev/null 2>&1; then
 elif command -v powershell.exe >/dev/null 2>&1; then
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root/Ops/LevelMaps/Test-PlanningMapCommit.ps1"
 else
-    echo "Planning map check requires PowerShell. Run Ops/LevelMaps/Test-PlanningMapCommit.ps1 before submitting a map."
+    echo "Scene level delivery check requires PowerShell. Run Ops/LevelMaps/Test-PlanningMapCommit.ps1 before submitting a level."
     exit 1
 fi

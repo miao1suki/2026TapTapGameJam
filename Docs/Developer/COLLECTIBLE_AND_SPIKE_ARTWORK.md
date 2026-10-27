@@ -29,4 +29,4 @@
 
 隔离审计入口：`Project.WorldItems.Editor.WorldItemArtworkAudit.BuildAndVerify`（生成与素材/栏目/稳定SpriteID），以及`.Run`（真实Physics触发、保护、四向/大小、独立染血UV、重置与非序列化）。仅在带`-noaudio`的`Library/FlowRetirementProbe`运行；通过数以整合者实际报告为准，不把自动断言当成完整关卡通关。
 
-关卡协作仍须同时交Scene、同名planning.json、双方meta和新增依赖；正式Gaming另带命名正式存档，不能只传生成场景。
+关卡交付须包含 Scene/`.meta`、Scene 引用的作者资产和新增依赖；历史同名 planning 与命名正式存档只读保留，不能只传生成资源。

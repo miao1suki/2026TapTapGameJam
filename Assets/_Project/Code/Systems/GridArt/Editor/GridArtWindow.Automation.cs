@@ -39,8 +39,8 @@ namespace Project.GridArt.Editor
             canvas?.UpdateReference();
             diskSignature = DiskSignature(map);
             RequestSource();
-            // A saved map is sufficient to restore the preview even if the Scene was not saved.
-            if (CanEditMap && map.palette != null) { buildPending = true; saveAt = EditorApplication.timeSinceStartup + .6; }
+            // Opening or rebinding the workspace is observational. A preview build is
+            // queued only by an authored change or an explicit refresh action.
         }
         private static string DiskSignature(GridArtMap data)
         {
@@ -216,7 +216,7 @@ namespace Project.GridArt.Editor
                 panel.Add(ActionButton("转为手工绘制", () => Change("转为手工美术", () => Layer.followLevel = false)));
             }
             panel.Add(ActionButton("刷新关卡轮廓", () => { RequestSource(); RefreshLevelSource(); }));
-            panel.Add(ActionButton("打开关卡编辑器", () => EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡规划原型/打开融合编辑器")));
+            panel.Add(ActionButton("打开场景关卡编辑器", () => EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡编辑器/场景编辑器")));
         }
     }
 }

@@ -82,12 +82,13 @@ namespace Project.GridArt.Tests
         }
 
         [Test]
-        public void NUsesGlobalMenuHotkeyAndAllowsNonSceneWindowFocus()
+        public void LegacyCanvasHasNoGlobalHotkeyAndRemainsExplicit()
         {
             var type = typeof(GridArtWorkspaceShortcut);
             var toggle = type.GetMethod("Toggle",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
             var menu = (MenuItem)Attribute.GetCustomAttribute(toggle,typeof(MenuItem));
-            Assert.That(menu,Is.Not.Null); Assert.That(menu.menuItem,Does.EndWith(" _n"));
+            Assert.That(menu,Is.Not.Null); Assert.That(menu.menuItem,Does.StartWith("Tools/2026TapTap/Legacy/"));
+            Assert.That(menu.menuItem,Does.Not.Contain(" _n"));
             var host = ScriptableObject.CreateInstance<ShortcutHostWindow>();
             bool editing = EditorGUIUtility.editingTextField;
             try
@@ -656,7 +657,7 @@ namespace Project.GridArt.Tests
             var imported=library.brushes.Skip(1).ToArray();
             Assert.That(imported.All(GridArtPixelLayout.IsNative),Is.True);
             Assert.That(imported.Single(b=>b.sourceKey.EndsWith("#scene:frame_whole")).DisplaySize,Is.EqualTo(Vector2.one*5));
-            Assert.That(imported.Single(b=>b.sourceKey=="project-artwork:OneWayPlatform:idle").DisplaySize,Is.EqualTo(new Vector2(3,.5f)));
+            Assert.That(imported.Single(b=>b.sourceKey=="project-artwork:OneWayPlatform:idle").DisplaySize,Is.EqualTo(Vector2.one));
             Assert.That(imported.Single(b=>b.sourceKey=="project-artwork:MovingPlatform:idle").DisplaySize,Is.EqualTo(new Vector2(3,1)));
             Assert.That(imported.Single(b=>b.sourceKey=="project-artwork:RedCube:idle").colorId,Is.EqualTo("red"));
             string[] keys=library.brushes.Select(b=>b.sourceKey).ToArray();

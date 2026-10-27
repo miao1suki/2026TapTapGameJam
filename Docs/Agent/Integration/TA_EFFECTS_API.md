@@ -33,7 +33,7 @@ PC/Mobile Renderer 均显式引用 `RgbGlitchRendererFeature` 及 Shader；仅 P
 
 HSV 遮罩采样图集 Alpha × 顶点 Alpha × 材质 Alpha，裁切 0.01，与画面同轮廓。源图 447×336，Default/max512/Point/Clamp/无 Mip/无压缩/NPOT None。
 
-交付雨区或其他关卡变动必须提交 **Scene + 同名 planning.json + 各自 meta + 新资源依赖**，不能只交 Scene 或只交 planning；雨区存在 Scene 中。使用存档片段导入不会自动复制独立 Scene 美术根，跨关卡同时移交雨区 Prefab/参数。
+交付雨区或其他关卡变动必须提交 **Scene/`.meta` + Scene 引用的作者资产 + 新资源依赖**；雨区及其参数存在 Scene 中，历史 planning JSON 不再同步。跨 Scene 移交时同时带上雨区 Prefab 与依赖。
 
 ## 萤火虫区域
 

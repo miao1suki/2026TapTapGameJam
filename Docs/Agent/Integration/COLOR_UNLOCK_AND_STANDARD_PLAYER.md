@@ -50,4 +50,4 @@ ColorRuntimeService API：
 
 ## 交付
 
-保持项目关卡协作规则：场景、同名planning.json、各自meta和依赖一起交付。不要把编辑器可修改存档只留在Library。玩法验证入口 ColorProgressPlayerVerification（隔离工程），分别检查两阶段真实钥匙、独立API、重置、唯一预制体、场景接线与空存档出生点。
+保持当前 Scene 权威交付规则：提交 Scene/`.meta`、Scene 引用的 GridArt Map/区域归属资产及其 `.meta`、新增 Prefab/美术依赖；历史 planning JSON 只读保留，不再同步或用于重建。不要把可编辑作者资产只留在 Library。玩法验证入口 ColorProgressPlayerVerification（隔离工程），分别检查两阶段真实钥匙、独立 API、重置、唯一预制体、场景接线与空存档出生点。

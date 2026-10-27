@@ -67,15 +67,7 @@ namespace Project.GridArt
         public bool Erase(Vector2Int p, GridArtPalette palette)
         {
             EnsureLookup();
-            if (largeCells == null || erasePalette != palette)
-            {
-                largeCells = new List<(Vector2Int,Vector2Int)>(); erasePalette = palette;
-                foreach (var c in cells)
-                {
-                    var b = palette != null ? palette.Get(c.brush) : null;
-                    if (b != null && !b.autoTerrain && b.Size != Vector2Int.one) largeCells.Add((c.position,GridArtRotation.Size(b.Size,c.quarterTurns)));
-                }
-            }
+            EnsureLargeCells(palette);
             bool Remove(Vector2Int position)
             {
                 if (!lookup.TryGetValue(position,out int index)) return false;
@@ -87,6 +79,28 @@ namespace Project.GridArt
                 if (new RectInt(largeCells[i].position,largeCells[i].size).Contains(p))
                 { changed |= Remove(largeCells[i].position); largeCells.RemoveAt(i); }
             return changed;
+        }
+
+        public void GetAnchorsCovering(Vector2Int p, GridArtPalette palette, List<Vector2Int> results)
+        {
+            if (results == null) throw new ArgumentNullException(nameof(results));
+            results.Clear(); EnsureLookup(); EnsureLargeCells(palette);
+            if (lookup.ContainsKey(p)) results.Add(p);
+            for (int i = 0; i < largeCells.Count; i++)
+                if (largeCells[i].position != p && new RectInt(largeCells[i].position, largeCells[i].size).Contains(p))
+                    results.Add(largeCells[i].position);
+        }
+
+        private void EnsureLargeCells(GridArtPalette palette)
+        {
+            if (largeCells != null && erasePalette == palette) return;
+            largeCells = new List<(Vector2Int, Vector2Int)>(); erasePalette = palette;
+            foreach (GridArtCell cell in cells)
+            {
+                GridArtBrush brush = palette != null ? palette.Get(cell.brush) : null;
+                if (brush != null && !brush.autoTerrain && brush.Size != Vector2Int.one)
+                    largeCells.Add((cell.position, GridArtRotation.Size(brush.Size, cell.quarterTurns)));
+            }
         }
     }
 

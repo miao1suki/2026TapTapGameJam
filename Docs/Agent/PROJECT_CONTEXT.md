@@ -1,5 +1,7 @@
 # 项目上下文（持续更新）
 
+2026-10-27 关卡编辑器改版：正式 Scene 是房间/通道、真实对象、实例参数和 Unity 引用的唯一权威；GridArt 继续由 Scene 引用的 Map 与稀疏区域归属资产承载，但统一在锁定正交 2D SceneView 中制作。PlanningCanvas、JSON 存档槽/片段/应用到场景与旧 GridArt 画布已退役为 Legacy；下文历史记录中“Scene + planning 成套同步”的旧要求不再适用于当前制作和交付。当前规则以 `FORMAL_LEVEL_DELIVERY.md`、`WORKING_AGREEMENTS.md` 和 `SCENE_LEVEL_EDITOR.md` 为准。
+
 2026-10-21 1.0.2：接收TA83611de美术/天气，保持main3010条关卡规划与既有修复；实际碰撞10487格不变。Android仅GLES3避开TapPlay vivo S19/Android16的Adreno Vulkan绘制崩溃路径，配置专项3项通过，仍待同型号平台复测。双端1.0.2非开发构建均0错误，正式ICON已从产物提取确认，双本地存档已备份清理。交付见RELEASE_1_0_2.md。
 
 2026-10-21 显示/音频后续修复：Boss 入口需30%收集品与6把颜色钥匙，结局仍60%；七首常规曲完整随机播放，曲间18秒，暂停/后台/被Boss覆盖不误结算。MRoom2、MRoom3精确区域不使用光照遮蔽。安全白块合并将1542个单格对象收为107组，正式规划顶层4445→3010条，25房/24区域及完整碰撞、非墙对象、美术不变。正式ICON已固定到双端构建入口，玩家/梯子/重生点显示及开场落地修正。详见ACTIVE_WORK顶部与美术碰撞核对报告；本轮未重打双端包。

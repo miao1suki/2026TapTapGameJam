@@ -59,7 +59,7 @@ namespace Project.LevelEditor.Editor
             root.Add(grid);
 
             root.Add(ProjectInspectorUtility.CreateHelp(
-                "这些值由关卡编辑器维护；请在规划编辑器中修改栏目或重新放置。"));
+                "这些值由关卡编辑器维护；请在 Scene 场景编辑器中修改或重新放置。"));
             ProjectInspectorUtility.Bind(root, serializedObject);
             return root;
         }

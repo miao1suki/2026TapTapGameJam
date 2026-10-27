@@ -150,21 +150,21 @@ namespace Project.GridArt.Editor
                         Mathf.Approximately(window.rootVisualElement.Q<Slider>("art-reference-opacity").value,.4f),
                         "reference preferences are restored per scene");
                     window.Focus();canvas.Focus();
-                    Check(GridArtWorkspaceShortcut.CanToggle(window), "N remains available with canvas focus");
+                    Check(GridArtWorkspaceShortcut.CanToggle(window), "legacy canvas can still close without interrupting a stroke");
                     typeof(GridArtWorkspaceShortcut).GetMethod("Toggle",BindingFlags.Static|BindingFlags.NonPublic)
                         .Invoke(null,null);
-                    Check(window == null, "N shortcut closes existing workbench without creating a second instance");
+                    Check(window == null, "legacy toggle closes existing workbench without creating a second instance");
                     var browser = EditorWindow.GetWindow(typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser"));
                     browser.Focus();
-                    Check(GridArtWorkspaceShortcut.CanToggle(browser), "N can reopen from Project without clicking Scene first");
-                    Check(EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡美术/切换窗口"), "global menu hotkey entry executes like planning M");
+                    Check(GridArtWorkspaceShortcut.CanToggle(browser), "legacy maintenance window can reopen from Project");
+                    Check(EditorApplication.ExecuteMenuItem("Tools/2026TapTap/Legacy/旧 GridArt 画布（已退役）"), "legacy maintenance menu remains explicit and hidden from normal workflow");
                     window=Resources.FindObjectsOfTypeAll<GridArtWindow>().Single();phase=5;return;
                 }
                 if(phase == 5)
                 {
                     Call(window,"RefreshLevelSource");
                     Check(Read<Vector2>(canvas,"pan")==PanA && Mathf.Approximately(Read<float>(canvas,"zoom"),11f),
-                        "N reopen preserves unfinished-view position and does not recenter on refresh");
+                        "legacy reopen preserves unfinished-view position and does not recenter on refresh");
                     Check(!SceneManager.GetActiveScene().isDirty, "reference navigation and shortcuts never dirty author scene data");
                     Finish(null);
                 }

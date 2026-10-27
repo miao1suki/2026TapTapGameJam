@@ -31,6 +31,6 @@ PlanningBox 的 `singleInstance` 使 1×2 门只生成一个实例；`doorOwnerI
 
 仅显式开启演出时，`MechanismCameraShot` 运行时构造 TimelineAsset / CameraTimelineTrack / CameraTimelineClip，保留当前投影和角度，移向门中心后停留，再交还统一相机。共享会话也供移动平台使用，不是额外挂到所有门的组件。门自身仅操作门轴，不直接写 Camera。会话持有并清理 director、Timeline、clip、track、临时锚点和自己的玩家锁；最多等待已有 Timeline 15 秒，超时跳过镜头，不阻塞开门。没有相机时不创建 Director、不锁输入；默认关闭时连会话也不创建。按钮模式逐次排队不重叠，开门模式只在本次等待开始时申请一次。
 
-专项 `OptionalMechanismTimelineAudit.Run` 仅在静音隔离工程验证默认不锁玩家、按钮边沿、两种触发、规划覆盖持久化、平台可选镜头与重置/禁用清理。不代替实际镜头手感与打包测试。关卡交付继续要求 Scene、同名 `.planning.json`、各自 `.meta` 及依赖成套同步，不能只提交生成场景。
+专项 `OptionalMechanismTimelineAudit.Run` 仅在静音隔离工程验证默认不锁玩家、按钮边沿、两种触发、实例参数持久化、平台可选镜头与重置/禁用清理。不代替实际镜头手感与打包测试。关卡交付要求 Scene/`.meta`、Scene 引用的作者资产及依赖完整，历史 `.planning.json` 不再同步。
 
 区域离开和存活/死亡 R 统一经过 RoomLifecycleManager，只恢复相关区域并保留颜色解锁。门本身持久；持续按钮恢复后取消门信号，保持按钮不重置。没有区域管理器/规划房间时不会猜测房间范围，应通过关卡编辑器应用规划。全局显式进度清空事件可按“全局进度重置时关门”配置重置门与全部按钮，不用于普通区域重置。

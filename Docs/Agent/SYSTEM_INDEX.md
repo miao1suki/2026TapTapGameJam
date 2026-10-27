@@ -1,5 +1,9 @@
 # 系统索引
 
+编辑器改版统一读取 `.agents/skills/taptap-scene-editor-reform/SKILL.md`（显示名“编辑器改版方案”）。正式 Scene 已是玩法关卡唯一编辑权威：房间/通道、真实对象、参数和引用均在锁定正交 2D SceneView 直接编辑；GridArt 继续由稠密 Map 资产承载，在同一 Overlay 的 SceneView 绘制；区域装配是在同 Scene 整体平移区域、逻辑组、房间归属、显式附属物和已认领美术。PlanningCanvas、JSON 存档槽/片段/应用流程已从正常入口退役；历史 JSON 保留只读且不得覆盖 Scene。
+
+完成版实现与用法见 `Docs/Developer/SCENE_LEVEL_EDITOR.md`。入口 `Tools/2026TapTap/关卡编辑器/场景编辑器`，核心源码为 `SceneLevelEditorOverlay.cs`、`SceneRegionAuthoring.cs`、`SceneObjectAuthoring.cs`、`SceneRegionAssembly.cs` 与 `SceneArtAuthoring.cs`；`SceneEditorReformBatchAudit.RunAllFromCommandLine` 汇总 Stage 1、Stage 2、Stage 3–6 与 Formal 审计。正式规模性能基线为 3004 对象索引 `60.932 ms`、10240 次缓存查询 `0.794 ms/0 B`、49017 区域格合并 69 矩形、GridArt 单格增量构建 `6.054 ms`。
+
 2026-10-21 1.0.2：TA83611de美术/天气接入，关卡和修复保留；AndroidGraphicsCompatibilityBuildGuard固定Android仅GLES3，避免已证实的Adreno Vulkan启动崩溃路径。双端包/图标/存档清理与同型号复测边界见RELEASE_1_0_2.md。
 
 2026-10-21 后续交付：BossEntranceRequirements统一30%+六钥匙入口与提示；WorldVisibility2D.unoccludedRoomIds使MRoom2/MRoom3精确区域始终可见；安全白块合并仅改表示，1542→107组，三份正式规划3010条。正式ICON固定至构建入口，玩家脚底/梯子后置/重生点显示与开场安全落地已修。音频完整播放后静默18秒。专项验收及美术差异截图见ACTIVE_WORK当前记录。
@@ -80,9 +84,9 @@ Boss 死亡表现：`BossAnimationDriver.PlayDeathAnimationNow()` 在共享死�
 
 主菜单触控布局修正WorldMainMenu的NativeFormat SDF引用，并恢复已有按钮/静态事件接线；布局/隐私模态保护下层设置，布局Cancel消费同帧返回，见[移动操作](../Developer/MOBILE_CONTROLS.md)。PC隐私政策已接远端4096字体修复，本地旧字体经用户确认完整备份后替换，不增加另一套字体；实际正文字符及采样容量通过，见[核对说明](../Developer/PRIVACY_FONT_CAPACITY.md)。署名按确认更正为“臾日不再”。
 
-美术工作台N键开关、自动定位真实房间，墙和正式2D道具作为默认35%透明的只读参考，可隐藏/调透明度；远景平移缩放仅变换和裁剪保留批次。雨/萤火按完整区域框绘并在工作台调参，独立Scene美术根、非planning物体。新萤火可见面默认-0.25格，光点/光晕同层，普通透明道具前显示、不透明墙仍遮挡。见[定位操作](../Developer/GRID_ART_NAVIGATION.md)、[关卡参照](../Developer/GRID_ART_LEVEL_REFERENCE.md)、[区域效果](../Developer/GRID_ART_REGION_EFFECTS.md)；效果须显式保存Scene，协作仍交Scene、同名planning、美术Map、素材及meta。
+GridArt 正常制作已并入场景关卡编辑器的“美术”模式：在正交 SceneView 选择图层/笔刷、旋转、矩形、擦除及稀疏区域归属；旧 N 键独立画布已退役为 Legacy。雨/萤火等独立 Scene 美术根仍按各自工具调参；普通格美术交付 Scene、Map、区域归属、素材和 meta，不再要求 planning JSON。见[场景编辑器](../Developer/SCENE_LEVEL_EDITOR.md)、[区域效果](../Developer/GRID_ART_REGION_EFFECTS.md)。
 
-收集品与 Boss 共用稳定作者 ID 的会话进度：5%入场，10%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。T/触控地图随时可开，只有当前Scene存在存活Boss时用WordNote提示并拒绝；目的地只允许已激活普通重生点。安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与工作台90°原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。协作仍须Scene、同名planning、meta与新增依赖成套交付。
+收集品与 Boss 共用稳定作者 ID 的会话进度：5%入场，10%结局，六份演出道具排除；未来所有迁移关卡/Boss最终合入Gaming，Start/End只同场景传送，不新增跨场景加载。T/触控地图随时可开，只有当前Scene存在存活Boss时用WordNote提示并拒绝；目的地只允许已激活普通重生点。安全租约与相机运镜见[地图API](Integration/FAST_TRAVEL_MAP_API.md)和[收集/Boss契约](Integration/COLLECTIBLE_BOSS_PROGRESS_API.md)。四款大小/带血尖刺击杀仅染命中格、运行血迹不进存档；三色方块独立重力、固定衍生物攀附与 SceneView 90° 原像素旋转见[说明](../Developer/CONTACT_CUBE_GRAVITY_AND_GRID_ART_ROTATION.md)。关卡交付遵循 Scene 权威规则，不再同步 planning JSON。
 成就目录当前为 `14` 条，`1001–1014` 已逐条接到真实玩法事件：死亡原因路由负责 `1001–1004、1011–1014`，`GameplayAchievementRouter` 负责颜色成功、5%/10% 收集、低收集回第一关、假结局和真结局。`1009/1010` 使用整数数量阈值；真假结局成就在分支确定时立即结算，不等待黑屏或菜单切换。完整映射见[成就逐条接线](Integration/ACHIEVEMENT_HOOKS.md)。TapTap Unity 成就 SDK 固定 `4.10.9`，由配置资产控制初始化与平台 ID 待确认状态，接入见 [TapTap 成就 SDK](Integration/TAPTAP_ACHIEVEMENT_SDK_API.md)。
 成就 Toast 使用最高 Sorting Layer 与 `sortingOrder=32767` 的独立 ScreenSpaceOverlay Canvas，位于所有黑幕和常规 UI 之上；Toast 本体保持左下角固定尺寸，Cubic 字体和原入退场动画不变。
 独立 R3：`Assets/Scenes/R3/R3.unity` 及同名 planning／设计来源，551墙格、59水格、135岩浆格，四固定绿根、两完整藤蔓、两个保持按钮同门。场景三色启用、玩家仅蓝能力，Z96 试玩出生；四格平台从第97行升至88行，红蓝块／曲柄跟随，成功搬起红蓝后脱离、房间重置恢复挂载。可选 `PlatformMount` 与 `platformMountId` 持久化支持；不改 R1/R2、Gaming 或构建列表。见 [R3说明](../Developer/R3_LEVEL.md) 与 [机关API](Integration/MECHANISM_SIGNAL_API.md#可选平台附着物)。
@@ -161,7 +165,7 @@ Boss 连线：`BossPlayerLinkEffect` 从 Boss 中心用三个 LineRenderer 和�
 
 无色尖刺接触链（2026-10-17）：NeutralSpike + 子碰撞体 SpikeContactRelay，按合并实际占格生成方向触发区，保留空洞并支持房间重置；统一玩家死亡/复活保护，重生安全查询排除尖刺且不误跳过同地图地面。真实物理回归 HazardContactAudit 仅在静音隔离工程运行，见 WORLD_ITEMS_API。
 
-关卡协作：共享项目存档、Scene 同名规划文件、片段追加导入/区域导出、水与物品同格分层、整房间内容移动。使用 [LEVEL_EDITOR_COLLABORATION.md](../Developer/LEVEL_EDITOR_COLLABORATION.md)，接入 [PLANNING_COLLABORATION_API.md](Integration/PLANNING_COLLABORATION_API.md)。
+关卡制作：Scene 唯一权威，水与物品等按对象通道同格分层，房间/通道与所属对象/已认领美术可在同 Scene 整体移动。Planning JSON 协作与片段流程已退役。使用 [SCENE_LEVEL_EDITOR.md](../Developer/SCENE_LEVEL_EDITOR.md)；旧链接 [LEVEL_EDITOR_COLLABORATION.md](../Developer/LEVEL_EDITOR_COLLABORATION.md) 仅说明退役边界。
 
 玩家搬运体积约束：头顶方块按实际实体扫掠限制玩家物理位移，支持长块、冲刺与反向离开；搬运提示统一字体且不继承合并拉伸。Pick 已补 WordNote_UI，Test/Gaming 沿用各自现有组件。见 [搬运 API](Integration/PLAYER_CARRY_API.md)、[使用说明](../Developer/PLAYER_CARRY.md)。
 
@@ -249,7 +253,7 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 迁移记录：[MIGRATION_REPORT.md](MIGRATION_REPORT.md)。
 各模块随源码的 README 是旧实现参考；与这里冲突时以本项目最新说明为准，不复原被排除的场景与玩法。
 
-每次关卡协作交付必须带Scene、同名planning.json、meta及新增资源依赖；不能只推送Scene。运行时修复不授权全量重建、覆盖或丢弃策划已有布局，正式Gaming遵循FORMAL_LEVEL_DELIVERY的增量整合约定。
+每次关卡交付必须带 Scene/`.meta`、引用的 GridArt Map/区域归属资产及 `.meta`、新增资源依赖；不能只推送派生网格。运行时修复不授权全量重建、覆盖或丢弃策划已有布局，历史 planning JSON 不再作为交付要求或第二权威。
 # 2026-10-20 浅草各向连接
 
 `GridArtShallowGrassLibrary` 从三色89×113原图保留9片原绘并补齐45片方向组合；共享库聚焦同步或菜单显式追加54项，不重排原编号。独立资产持有原像素图集与Sprite，详见[浅草连接](../Developer/SHALLOW_GRASS_CONNECTIONS.md)。

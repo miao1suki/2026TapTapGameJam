@@ -100,4 +100,4 @@ PowerPause专项另覆盖录像中的坑沿/顶部基座入座：双侧、三种
 
 ## 协作交付
 
-修改关卡实例或参数时，必须成套提交Scene、同名planning.json、meta及新增资源依赖；只交场景不能保证其他成员在关卡编辑器继续修改。不要为上述运行时修复全量重建或覆盖策划布局，正式Gaming按[正式关卡交接](FORMAL_LEVEL_DELIVERY.md)增量整合。
+修改关卡实例或参数时，必须提交 Scene/`.meta`、Scene 引用的作者资产及新增资源依赖；历史 planning JSON 不再同步或用于重建。不要为上述运行时修复全量重建或覆盖策划布局，正式 Gaming 按[正式关卡交接](FORMAL_LEVEL_DELIVERY.md)增量整合。

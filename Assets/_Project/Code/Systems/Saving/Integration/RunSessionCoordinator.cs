@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using Project.BlockFeatures;
 using Project.BossLogic;
 using Project.ColorBlocks;
@@ -573,10 +575,29 @@ namespace Project.Saving
             runData.bossDefeated = boss.HasDefeatedBoss;
             RoomLifecycleManager rooms =
                 RoomLifecycleManager.ForScene(scene);
-            runData.planningRevision = rooms != null
-                ? Hash128.Compute(rooms.PlanningJson).ToString()
-                : string.Empty;
+            runData.planningRevision = ComputeSceneAuthoringRevision(scene, rooms);
             RunSaveService.Save(runData);
+        }
+
+        private static string ComputeSceneAuthoringRevision(Scene scene, RoomLifecycleManager rooms)
+        {
+            if (!scene.IsValid() || rooms == null) return string.Empty;
+            var source = new StringBuilder(4096);
+            source.Append(rooms.CellSize.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append('|');
+            foreach (RoomRegion region in rooms.Regions.Where(item => item != null).OrderBy(item => item.id, StringComparer.Ordinal))
+            {
+                source.Append(region.id).Append(':').Append(region.corridor ? '1' : '0').Append(':');
+                foreach (Vector2Int cell in (region.cells ?? new List<Vector2Int>()).OrderBy(cell => cell.x).ThenBy(cell => cell.y))
+                    source.Append(cell.x).Append(',').Append(cell.y).Append(';');
+                source.Append('|');
+            }
+            var blocks = new List<Project.LevelEditor.LevelEditorPlacedBlock>();
+            foreach (GameObject root in scene.GetRootGameObjects()) blocks.AddRange(root.GetComponentsInChildren<Project.LevelEditor.LevelEditorPlacedBlock>(true));
+            foreach (Project.LevelEditor.LevelEditorPlacedBlock block in blocks.OrderBy(item => item.AuthoringId, StringComparer.Ordinal)
+                         .ThenBy(item => item.AuthoringLocalCell.x).ThenBy(item => item.AuthoringLocalCell.y))
+                source.Append(block.AuthoringId).Append('@').Append(block.Cell.x).Append(',').Append(block.Cell.y).Append(':')
+                    .Append(block.SizeCells.x).Append(',').Append(block.SizeCells.y).Append('|');
+            return Hash128.Compute(source.ToString()).ToString();
         }
 
         private string ResolveCurrentAnchorId(

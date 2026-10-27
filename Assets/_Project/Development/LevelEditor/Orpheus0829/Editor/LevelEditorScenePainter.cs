@@ -18,6 +18,30 @@ namespace Project.LevelEditor.Editor
         private static bool selectionStroke;
         private static bool selectionAdditive;
         private static bool selectionDragged;
+        private static SceneView overlayView;
+
+        internal static bool SetOverlayAuthoring(SceneView view, bool value)
+        {
+            if (value)
+            {
+                if (overlayView == view && LevelEditorState.EditMode) return false;
+                overlayView = view;
+                LevelEditorState.EditMode = true;
+            }
+            else if (overlayView != null && overlayView == view)
+            {
+                overlayView = null;
+                LevelEditorState.EditMode = false;
+                strokeActive = false;
+                selectionStroke = false;
+            }
+            else return false;
+            SceneView.RepaintAll();
+            return true;
+        }
+
+        internal static bool StableBindIsNoOpForAudit() =>
+            overlayView == null || !SetOverlayAuthoring(overlayView, LevelEditorState.EditMode);
 
         internal static bool ShowMapGrid
         {
@@ -41,6 +65,7 @@ namespace Project.LevelEditor.Editor
 
         private static void OnSceneGUI(SceneView sceneView)
         {
+            if (overlayView != null && sceneView != overlayView) return;
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 if (ShowMapGrid)

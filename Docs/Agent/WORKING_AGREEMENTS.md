@@ -21,4 +21,4 @@ Git 忽略目录中放本地日志/验证产物；凭据不得进入项目，包
 
 ## 关卡协作存档
 
-关卡场景必须连同同名 `.planning.json` 及双方 `.meta` 提交，不能只上传生成后的 Scene；旧 Library 存档需先存到项目目录。正式 Gaming 还需一起提交 `Assets/_Project/Content/LevelMaps/正式关卡.json` 及 `.meta`，三份布局数据须一致。正式关卡由指定策划在独立分支维护，其他成员制作独立小地图并通过“协作与片段”交给整合者，不多人并行手工混改同一大 JSON。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`；新克隆执行 `git config core.hooksPath .githooks`，已有 hook 则组合调用，不覆盖原 hook。操作和依赖交付见 [关卡协作说明](../Developer/LEVEL_EDITOR_COLLABORATION.md) 与 [接入约定](Integration/PLANNING_COLLABORATION_API.md)。
+关卡 Scene 是布局、对象、实例参数和 Unity 引用的唯一编辑权威。交付必须同时提交 Scene/`.meta`、Scene 引用的 GridArt Map 与稀疏区域归属资产/`.meta`、新增 Palette/Prefab/美术依赖；不得把作者数据只留在 Library。旧 `.planning.json` 与命名正式关卡 JSON 仅作历史只读基线，不再同步、不参与构建或提交门禁，禁止据此重建覆盖当前 Scene。区域协作是在同一 Scene 内整体平移区域及所属对象/已认领美术，不再导入导出 JSON 片段。提交前运行 `Ops/LevelMaps/Test-PlanningMapCommit.ps1`（兼容文件名）；新克隆执行 `git config core.hooksPath .githooks`，已有 hook 则组合调用，不覆盖原 hook。当前操作见 [场景关卡编辑器](../Developer/SCENE_LEVEL_EDITOR.md)。

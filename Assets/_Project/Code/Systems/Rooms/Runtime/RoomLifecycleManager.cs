@@ -51,6 +51,33 @@ namespace Project.Rooms
             RebuildOwnership();
         }
 
+        /// <summary>
+        /// Scene-authoring entry point. It intentionally preserves the legacy planning JSON:
+        /// rooms and corridors in the Scene are authoritative for this operation.
+        /// </summary>
+        public void ConfigureAuthoredRegions(IReadOnlyList<RoomRegion> values, float size)
+        {
+            var next = new List<RoomRegion>();
+            if (values != null)
+            {
+                for (int i = 0; i < values.Count; i++)
+                {
+                    RoomRegion source = values[i];
+                    if (source == null) continue;
+                    next.Add(new RoomRegion
+                    {
+                        id = source.id,
+                        label = source.label,
+                        corridor = source.corridor,
+                        cells = source.cells != null ? new List<Vector2Int>(source.cells) : new List<Vector2Int>(),
+                    });
+                }
+            }
+            regions = next;
+            cellSize = Mathf.Max(.01f, size);
+            RebuildOwnership();
+        }
+
         private void Awake() => RebuildOwnership();
         private void OnEnable() { if (!Live.Contains(this)) Live.Add(this); }
         private void OnDisable() => Live.Remove(this);

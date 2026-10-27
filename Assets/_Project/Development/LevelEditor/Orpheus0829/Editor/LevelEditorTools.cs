@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Project.ColorBlocks;
 using Project.LevelEditor;
+using Project.Rooms;
 using Project.SurfaceTiles;
 using Project.SurfaceTiles.Editor;
 using UnityEditor;
@@ -617,12 +619,9 @@ namespace Project.LevelEditor.Editor
 
     internal static class LevelEditorViewLock
     {
+        private const string SessionOwner = "LegacyLevelEditor";
         private static SceneView sceneView;
         private static bool active;
-        private static bool previousOrthographic;
-        private static Quaternion previousRotation;
-        private static Vector3 previousPivot;
-        private static float previousSize;
 
         internal static void Enter(SceneView view)
         {
@@ -632,15 +631,8 @@ namespace Project.LevelEditor.Editor
             }
 
             sceneView = view;
-            previousOrthographic = view.orthographic;
-            previousRotation = view.rotation;
-            previousPivot = view.pivot;
-            previousSize = view.size;
             active = true;
-            view.orthographic = true;
-            view.rotation = Quaternion.identity;
-            view.pivot = new Vector3(view.pivot.x, view.pivot.y, 0f);
-            view.Repaint();
+            SceneEditSession.Enter(view, SessionOwner);
         }
 
         internal static void Tick(SceneView view)
@@ -650,11 +642,7 @@ namespace Project.LevelEditor.Editor
                 return;
             }
 
-            view.orthographic = true;
-            view.rotation = Quaternion.identity;
-            Vector3 pivot = view.pivot;
-            pivot.z = 0f;
-            view.pivot = pivot;
+            SceneEditSession.Enforce(view);
         }
 
         internal static void Exit()
@@ -664,16 +652,7 @@ namespace Project.LevelEditor.Editor
                 return;
             }
 
-            if (sceneView != null)
-            {
-                sceneView.orthographic = false;
-                sceneView.rotation = previousOrthographic
-                    ? Quaternion.Euler(30f, -45f, 0f)
-                    : previousRotation;
-                sceneView.pivot = previousPivot;
-                sceneView.size = previousSize;
-                sceneView.Repaint();
-            }
+            SceneEditSession.Exit(sceneView, SessionOwner);
 
             sceneView = null;
             active = false;
@@ -686,19 +665,15 @@ namespace Project.LevelEditor.Editor
 
         internal static LevelEditorPlacedBlock FindAt(Vector2Int cell)
         {
-            UnityEngine.SceneManagement.Scene targetScene = TargetScene();
-            IReadOnlyList<LevelEditorPlacedBlock> blocks =
-                ProjectDiscovery.FindAll<LevelEditorPlacedBlock>(true);
-            for (int index = 0; index < blocks.Count; index++)
-            {
-                if (blocks[index].gameObject.scene == targetScene &&
-                    blocks[index].ContainsCell(cell))
-                {
-                    return blocks[index];
-                }
-            }
+            IReadOnlyList<LevelEditorPlacedBlock> candidates = FindAllAt(cell);
+            return candidates.Count > 0 ? candidates[0] : null;
+        }
 
-            return null;
+        internal static IReadOnlyList<LevelEditorPlacedBlock> FindAllAt(Vector2Int cell)
+        {
+            UnityEngine.SceneManagement.Scene targetScene = TargetScene();
+            SceneObjectIndex index = SceneObjectAuthoring.Read(targetScene);
+            return index.At(cell, SceneObjectAuthoring.ActiveChannel).Select(item => item.block).Where(item => item != null).ToArray();
         }
 
         internal static LevelEditorPlacedBlock Place(
@@ -711,7 +686,7 @@ namespace Project.LevelEditor.Editor
                 return null;
             }
 
-            LevelEditorPlacedBlock existing = FindAt(cell);
+            LevelEditorPlacedBlock existing = FindAllAt(cell).FirstOrDefault(block => !block.IsProp);
             if (existing != null)
             {
                 Selection.activeGameObject = existing.gameObject;
@@ -746,6 +721,8 @@ namespace Project.LevelEditor.Editor
                 return null;
             }
 
+            Undo.RegisterCreatedObjectUndo(instance, "放置关卡方块");
+
             if (!entry.UsesPrefabDirectly)
             {
                 instance.name = entry.DisplayName;
@@ -760,10 +737,12 @@ namespace Project.LevelEditor.Editor
 
             GameObject requestedParent =
                 LevelEditorState.GenerationParent;
+            string regionId = SceneRegionAuthoring.FindManager(targetScene)?.FindRegion(CellToWorld(cell));
+            Transform compatibleParent = SceneObjectAuthoring.ResolveParent(targetScene, regionId);
             Transform root = requestedParent != null &&
                              requestedParent.scene == instance.scene
                 ? requestedParent.transform
-                : GetOrCreateRoot().transform;
+                : compatibleParent != null ? compatibleParent : GetOrCreateRoot().transform;
             instance.transform.SetParent(root, true);
             instance.transform.position = CellToWorld(cell);
 
@@ -777,6 +756,8 @@ namespace Project.LevelEditor.Editor
                 !entry.UsesPrefabDirectly,
                 false,
                 LevelEditorState.CellSize);
+            EnsureAuthoringMetadata(placed);
+            BindRoomOwnership(placed);
             if (!entry.UsesPrefabDirectly)
             {
                 LevelEditorDecorationService.ApplyToPlacedBlock(
@@ -784,7 +765,6 @@ namespace Project.LevelEditor.Editor
                     entry);
             }
 
-            Undo.RegisterCreatedObjectUndo(instance, "放置关卡方块");
             MarkDirty(instance.scene);
             Selection.activeGameObject = instance;
             return placed;
@@ -812,15 +792,19 @@ namespace Project.LevelEditor.Editor
                 return null;
             }
 
+            Undo.RegisterCreatedObjectUndo(instance, "放置关卡道具");
+
             LevelEditorComponentOverrideUtility.ApplyOverrides(
                 instance,
                 entry.ComponentValueOverrides);
             GameObject requestedParent =
                 LevelEditorState.GenerationParent;
+            string regionId = SceneRegionAuthoring.FindManager(instance.scene)?.FindRegion(CellToWorld(cell));
+            Transform compatibleParent = SceneObjectAuthoring.ResolveParent(instance.scene, regionId);
             Transform root = requestedParent != null &&
                              requestedParent.scene == instance.scene
                 ? requestedParent.transform
-                : GetOrCreateRoot().transform;
+                : compatibleParent != null ? compatibleParent : GetOrCreateRoot().transform;
             instance.transform.SetParent(root, true);
             instance.transform.position = CellToWorld(cell);
 
@@ -834,12 +818,13 @@ namespace Project.LevelEditor.Editor
                 false,
                 true,
                 LevelEditorState.CellSize);
+            EnsureAuthoringMetadata(placed);
+            BindRoomOwnership(placed);
             if (instance.GetComponent<Project.Mechanisms.DoorController>() != null)
             {
                 instance.transform.localScale *= Mathf.Max(.05f, LevelEditorState.CellSize);
                 placed.SetSizeCells(new Vector2Int(1, 2));
             }
-            Undo.RegisterCreatedObjectUndo(instance, "放置关卡道具");
             MarkDirty(instance.scene);
             Selection.activeGameObject = instance;
             return placed;
@@ -889,15 +874,48 @@ namespace Project.LevelEditor.Editor
 
         internal static bool EraseAt(Vector2Int cell)
         {
-            LevelEditorPlacedBlock block = FindAt(cell);
+            IReadOnlyList<LevelEditorPlacedBlock> candidates = FindAllAt(cell);
+            LevelEditorPlacedBlock selected = SelectedPlacedBlock();
+            LevelEditorPlacedBlock block = selected != null && candidates.Contains(selected)
+                ? selected
+                : candidates.Count == 1 ? candidates[0] : null;
             if (block == null)
             {
+                if (candidates.Count > 1)
+                    Selection.objects = candidates.Select(item => (UnityEngine.Object)item.gameObject).ToArray();
                 return false;
             }
 
-            MarkDirty(block.gameObject.scene);
-            Undo.DestroyObjectImmediate(block.gameObject);
-            return true;
+            SceneObjectIndex index = SceneObjectAuthoring.Read(block.gameObject.scene);
+            SceneObjectRecord record = index.All.FirstOrDefault(item => item.block == block);
+            bool deleted = SceneObjectAuthoring.DeleteGroup(record, false, out string reason);
+            if (!deleted && !string.IsNullOrEmpty(reason))
+                SceneView.lastActiveSceneView?.ShowNotification(new GUIContent(reason));
+            return deleted;
+        }
+
+        private static void EnsureAuthoringMetadata(LevelEditorPlacedBlock placed)
+        {
+            if (placed == null || !string.IsNullOrEmpty(placed.AuthoringId)) return;
+            placed.SetPlanningSource("author_" + System.Guid.NewGuid().ToString("N"), "scene", Vector2Int.zero);
+            EditorUtility.SetDirty(placed);
+        }
+
+        private static void BindRoomOwnership(LevelEditorPlacedBlock placed)
+        {
+            if (placed == null) return;
+            RoomLifecycleManager manager = null;
+            foreach (GameObject root in placed.gameObject.scene.GetRootGameObjects())
+            {
+                manager = root.GetComponentInChildren<RoomLifecycleManager>(true);
+                if (manager != null) break;
+            }
+            if (manager == null) return;
+            string owner = manager.FindRegion(placed.transform.position);
+            if (string.IsNullOrEmpty(owner)) return;
+            RoomResetObject member = placed.GetComponent<RoomResetObject>() ?? Undo.AddComponent<RoomResetObject>(placed.gameObject);
+            member.Bind(manager, owner);
+            EditorUtility.SetDirty(member);
         }
 
         internal static int RemovePlacedBlocksForEntry(
@@ -1040,6 +1058,8 @@ namespace Project.LevelEditor.Editor
                 first.EntryColor, prefab == null, false,
                 LevelEditorState.CellSize);
             placed.SetSizeCells(new Vector2Int(width, height));
+            EnsureAuthoringMetadata(placed);
+            BindRoomOwnership(placed);
             if (prefab == null)
                 merged.GetComponent<MeshRenderer>().sharedMaterial = first.GetComponent<MeshRenderer>().sharedMaterial;
             foreach (LevelEditorPlacedBlock block in blocks)
@@ -1161,11 +1181,7 @@ namespace Project.LevelEditor.Editor
         internal static void RemoveSelected()
         {
             LevelEditorPlacedBlock selected = SelectedPlacedBlock();
-            if (selected != null)
-            {
-                MarkDirty(selected.gameObject.scene);
-                Undo.DestroyObjectImmediate(selected.gameObject);
-            }
+            if (selected != null) EraseAt(selected.Cell);
         }
 
         internal static void ReplaceSelected(

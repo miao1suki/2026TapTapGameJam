@@ -57,4 +57,4 @@ BossController启用时记录第一次位置和当前 Scene 的存活状态，�
 
 `Project.BossLogic.Editor.CollectibleBossProgressAudit.Run`仅在`Library/FlowRetirementProbe -noaudio`执行，覆盖inactive统计、房间剩余、30%/60%边界、R保留、稳定ID导出恢复、六份演出排除及真实Boss激活/死亡状态。真实收集Trigger与飞行沿用`CollectibleContactAudit`、`CollectiblePersistenceAudit`，不能把纯条件断言描述成完整剧情通关。
 
-关卡作者还需明确配置门外返回位置、Start与End目标；提交Scene及同名planning.json、meta和新增依赖。共享入口只负责功能，不擅自猜测Boss房布局或全量重建正式地图。
+关卡作者还需明确配置门外返回位置、Start 与 End 目标；提交 Scene/`.meta`、Scene 引用的作者资产和新增依赖，历史 planning JSON 不再同步。共享入口只负责功能，不擅自猜测 Boss 房布局或全量重建正式地图。

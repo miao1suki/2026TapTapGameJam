@@ -48,4 +48,4 @@
 
 2026-10-18 隔离实跑：`WorldMenuFusionVerification` 完成 165 项检查、843 个逐帧设备样本，两向运镜均检查到多个真实镜头中间值，同世界两次入退及零额外场景加载通过；新菜单和返回菜单截图已目视确认。日志位于 `Library/RoomPhysics-20261018/menu-fusion-1.log`，截图位于隔离工程 `Library/WorldMenuFusionVerification`。异常恢复及触控布局验证结果由整合交付记录补充；旧多场景结果不能替代这次单场景验收。
 
-团队交付关卡仍须 Scene、同名 planning.json、meta 与新增依赖成套；本功能不重建或改变作者关卡布局。
+团队交付关卡仍须 Scene/`.meta`、Scene 引用的作者资产与新增依赖；历史 planning JSON 不再同步。本功能不重建或改变作者关卡布局。

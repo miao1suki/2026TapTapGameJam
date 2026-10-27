@@ -15,7 +15,7 @@ namespace Project.GridArt.Editor
         {
             BuildAssets(); window.SetMap(AssetDatabase.LoadAssetAtPath<GridArtMap>(MapPath));
         }
-        [MenuItem("Tools/2026TapTap/关卡美术/打开美术测试场景")]
+        [MenuItem("Tools/2026TapTap/Legacy/打开旧美术测试场景")]
         public static void OpenScene()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;

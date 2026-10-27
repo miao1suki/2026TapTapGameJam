@@ -55,6 +55,8 @@ namespace Project.LevelEditor
         public string PlanningBoxId => planningBoxId;
         public string PlanningSignature => planningSignature;
         public Vector2Int PlanningLocalCell => planningLocalCell;
+        public string AuthoringId => planningBoxId;
+        public Vector2Int AuthoringLocalCell => planningLocalCell;
         public void SetPlanningSource(string id, string signature, Vector2Int localCell)
         {
             planningBoxId = id;
@@ -75,6 +77,14 @@ namespace Project.LevelEditor
         public Color EntryColor => entryColor;
         public bool HasColorData => hasColorData;
         public bool IsProp => isProp;
+
+        public void SetAuthoredCell(Vector2Int value)
+        {
+            if (cell == value) return;
+            cell = value;
+            ActiveRevision++;
+            NotifySolidGeometryChanged();
+        }
 
         public void Configure(
             Vector2Int valueCell,

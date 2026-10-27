@@ -23,4 +23,4 @@ Boss 清障仍由 `BossController` 的碰撞队列发起，`TemporaryObjectHideS
 
 使用真实门、按钮、红色移动平台和标准玩家 Prefab，以及实际 Boss 隐藏队列。覆盖锁色、中间渐显、完成渐显、平台运动、隐藏期间开门、真实 `RequestRespawn()`、连续 8 轮、离区、死亡、旧排队工作失效、附加 Scene 卸载。断言对象激活、Renderer 门控、`forceRenderingOff`、Sprite、材质、Shader、门碰撞及按钮进度；测试不保存 Scene 或 planning。
 
-执行结果由整合者填写到本次 `ACTIVE_WORK`，不能把源码中断言数量当成已执行结果。关卡交付仍须 Scene、同名 planning、meta 与新增依赖成套提交；此修复不改变布局和作者存档。
+执行结果由整合者填写到本次 `ACTIVE_WORK`，不能把源码中断言数量当成已执行结果。关卡交付遵循 Scene 权威规则，提交 Scene/`.meta`、Scene 引用的作者资产与新增依赖；历史 planning 不再同步。此修复不改变布局和作者数据。

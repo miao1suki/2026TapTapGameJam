@@ -157,7 +157,7 @@ namespace Project.GreenHook.Editor
                 if (stage == 3)
                 {
                     player.GetComponent<PlayerColorWheel>().TrySelectColor("green");
-                    EditorWindow.GetWindow<PlanningEditorPrototype.PlanningEditorWindow>();
+                    Project.LevelEditor.Editor.SceneLevelEditorOverlay.Open();
                 }
                 if (stage == 4) player.GetComponent<PlayerColorWheel>().TrySelectColor("red");
                 if (stage == 5) player.GetComponent<PlayerColorWheel>().TrySelectColor("blue");

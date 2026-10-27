@@ -73,10 +73,9 @@ namespace Project.GridArt.Editor
             var library = new ObjectField("素材库") { objectType = typeof(GridArtPalette), value = ((GridArtMap)target).palette };
             library.SetEnabled(false); root.Add(library);
             root.Add(new Label("图层、网格尺寸与绘图通过美术编辑器配置。"));
-            root.Add(new Button(() => { GridArtWindow.Open(); GetWindow().SetMap((GridArtMap)target); }) { text = "打开美术图" });
+            root.Add(new Button(() => EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡编辑器/场景编辑器")) { text = "打开场景关卡编辑器" });
             return root;
         }
-        private static GridArtWindow GetWindow() => EditorWindow.GetWindow<GridArtWindow>();
     }
 
     [CustomEditor(typeof(GridArtScene))]
@@ -92,8 +91,23 @@ namespace Project.GridArt.Editor
             if (((GridArtScene)target).pixelsPerCell != Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell)
                 root.Add(new Button(() => { Undo.RecordObject(target,"统一背景像素吸附"); ((GridArtScene)target).pixelsPerCell = Project.ObjectArtwork.GridArtworkMetrics.PixelsPerCell; EditorUtility.SetDirty(target); root.Clear(); root.Add(CreateInspectorGUI()); }) { text = "改用16像素网格吸附" });
             root.Add(new HelpBox("只移动背景层，不缩放图片。新背景按16源像素/格吸附；旧背景保留原值，确认后可统一。", HelpBoxMessageType.Info));
-            root.Add(new Button(() => { var output = (GridArtScene)target; if (output.map != null) EditorWindow.GetWindow<GridArtWindow>("网格美术").SetMap(output.map); }) { text = "编辑美术图" });
+            root.Add(new Button(() => EditorApplication.ExecuteMenuItem("Tools/2026TapTap/关卡编辑器/场景编辑器")) { text = "在 Scene 中编辑美术" });
             root.Add(new Button(() => ((GridArtScene)target).RebaseParallax()) { text = "重设视差参考点" });
+            return root;
+        }
+    }
+
+    [CustomEditor(typeof(GridArtRegionOwnershipLink))]
+    public sealed class GridArtRegionOwnershipLinkInspector : UnityEditor.Editor
+    {
+        public override VisualElement CreateInspectorGUI()
+        {
+            var root = new VisualElement(); root.style.paddingLeft = root.style.paddingRight = 12;
+            root.Add(new Label("美术区域归属") { style = { unityFontStyleAndWeight = FontStyle.Bold } });
+            var link = (GridArtRegionOwnershipLink)target;
+            var field = new ObjectField("稀疏归属资产") { objectType = typeof(GridArtRegionOwnership), value = link.Ownership, allowSceneObjects = false };
+            field.SetEnabled(false); root.Add(field);
+            root.Add(new HelpBox("仅记录作者显式认领或选择跟随区域的新笔画；旧美术默认不随房间移动。请通过场景关卡编辑器修改。", HelpBoxMessageType.Info));
             return root;
         }
     }
