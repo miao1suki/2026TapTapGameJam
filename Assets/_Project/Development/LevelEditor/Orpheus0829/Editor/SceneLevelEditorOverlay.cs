@@ -275,18 +275,16 @@ namespace Project.LevelEditor.Editor
     public sealed class SceneLevelEditorOverlay : Overlay
     {
         internal static event Action ObjectPaintingRequested;
-        internal static event Action<GridArtMap, int, bool> ArtPaintingRequested;
+        internal static event Action<GridArtMap, int> ArtPaintingRequested;
         private static bool objectPaintingPending;
         private static GridArtMap pendingArtMap;
         private static int pendingArtBrush = -1;
-        private static bool pendingArtErase;
 
         internal static bool HasPendingObjectPainting =>
             objectPaintingPending;
 
         internal static bool HasPendingArtPainting =>
             pendingArtMap != null && pendingArtBrush >= 0;
-        internal static bool PendingArtErase => pendingArtErase;
 
         public override VisualElement CreatePanelContent() =>
             new SceneLevelEditorPanel(containerWindow as SceneView);
@@ -330,28 +328,12 @@ namespace Project.LevelEditor.Editor
             GridArtMap map,
             int brushIndex)
         {
-            BeginArtEditing(map, brushIndex, false);
-        }
-
-        internal static void BeginArtErasing(
-            GridArtMap map,
-            int brushIndex)
-        {
-            BeginArtEditing(map, brushIndex, true);
-        }
-
-        private static void BeginArtEditing(
-            GridArtMap map,
-            int brushIndex,
-            bool erase)
-        {
             pendingArtMap = map;
             pendingArtBrush = brushIndex;
-            pendingArtErase = erase;
             Open();
             EditorApplication.delayCall += () =>
             {
-                ArtPaintingRequested?.Invoke(map, brushIndex, erase);
+                ArtPaintingRequested?.Invoke(map, brushIndex);
                 SceneView.lastActiveSceneView?.Focus();
             };
         }
@@ -360,7 +342,6 @@ namespace Project.LevelEditor.Editor
         {
             pendingArtMap = null;
             pendingArtBrush = -1;
-            pendingArtErase = false;
         }
     }
 
@@ -408,6 +389,9 @@ namespace Project.LevelEditor.Editor
         private Label artBrushDetails;
         private IntegerField artTurns;
         private Toggle artErase;
+        private Button artPaintToolButton;
+        private Button artEraseToolButton;
+        private Label artToolStatus;
         private Toggle artRectangle;
         private Toggle artFollowRegion;
         private Label artStatus;
@@ -625,8 +609,7 @@ namespace Project.LevelEditor.Editor
             {
                 schedule.Execute(() => BeginArtPainting(
                     activeArtScene?.map,
-                    SceneArtPaletteSelection.Current(activeArtScene?.map),
-                    SceneLevelEditorOverlay.PendingArtErase));
+                    SceneArtPaletteSelection.Current(activeArtScene?.map)));
             }
         }
 
@@ -672,10 +655,7 @@ namespace Project.LevelEditor.Editor
             RefreshSession();
         }
 
-        private void BeginArtPainting(
-            GridArtMap map,
-            int brushIndex,
-            bool erase)
+        private void BeginArtPainting(GridArtMap map, int brushIndex)
         {
             if (sceneView != SceneView.lastActiveSceneView)
             {
@@ -695,7 +675,8 @@ namespace Project.LevelEditor.Editor
                 SceneEditSession.Enter(sceneView, sessionOwner);
             }
             artBrush.index = brushIndex;
-            artErase.SetValueWithoutNotify(erase);
+            artErase.SetValueWithoutNotify(false);
+            RefreshArtToolState();
             SceneLevelEditorOverlay.MarkArtPaintingHandled();
             RefreshArtBrushPreview();
             BindAuthoring();
@@ -1058,16 +1039,82 @@ namespace Project.LevelEditor.Editor
             actionTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
             actionTitle.style.marginBottom = 4f;
             panel.Add(actionTitle);
+            artErase = new Toggle { value = false };
+            VisualElement artTools = new VisualElement
+            {
+                style = { flexDirection = FlexDirection.Row },
+            };
+            artPaintToolButton = RegionButton(
+                "绘制", () => ActivateArtTool(false));
+            artEraseToolButton = RegionButton(
+                "擦除", () => ActivateArtTool(true));
+            artPaintToolButton.name = "art-paint-tool";
+            artEraseToolButton.name = "art-erase-tool";
+            artTools.Add(artPaintToolButton);
+            artTools.Add(artEraseToolButton);
+            panel.Add(artTools);
+            artToolStatus = new Label
+            {
+                style =
+                {
+                    whiteSpace = WhiteSpace.Normal,
+                    fontSize = 11f,
+                    marginTop = 4f,
+                    marginBottom = 5f,
+                },
+            };
+            panel.Add(artToolStatus);
             artLayer = new DropdownField("GridArt 图层"); artLayer.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artLayer);
             artBrush = new DropdownField("笔刷"); artBrush.RegisterValueChangedCallback(_ => { RefreshArtBrushPreview(); BindAuthoring(); });
             artTurns = new IntegerField("旋转 90° 次数") { value = 0 }; artTurns.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artTurns);
-            artErase = new Toggle("擦除"); artErase.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artErase);
             artRectangle = new Toggle("矩形"); artRectangle.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artRectangle);
             artFollowRegion = new Toggle("新笔画跟随当前区域"); artFollowRegion.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artFollowRegion);
             var row = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             row.Add(RegionButton("创建稀疏归属资产", CreateArtOwnership)); row.Add(RegionButton("认领当前层区域内美术", ClaimArt)); panel.Add(row);
             artStatus = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10, opacity = .75f } }; panel.Add(artStatus);
+            RefreshArtToolState();
             return panel;
+        }
+
+        private void ActivateArtTool(bool erase)
+        {
+            SelectMode(SceneEditMode.Art);
+            if (sceneView != null && !SceneEditSession.IsLocked(sceneView))
+            {
+                SceneEditSession.Enter(sceneView, sessionOwner);
+            }
+            artErase.SetValueWithoutNotify(erase);
+            RefreshArtToolState();
+            BindAuthoring();
+            sceneView?.Focus();
+        }
+
+        private void RefreshArtToolState()
+        {
+            if (artPaintToolButton == null || artEraseToolButton == null)
+            {
+                return;
+            }
+
+            bool erase = artErase.value;
+            SetArtToolStyle(artPaintToolButton, !erase);
+            SetArtToolStyle(artEraseToolButton, erase);
+            if (artToolStatus != null)
+            {
+                artToolStatus.text = erase
+                    ? "当前：擦除当前 GridArt 图层。左键单击或拖动，Esc 停止。"
+                    : "当前：绘制当前素材。左键单击或拖动，Esc 停止。";
+            }
+        }
+
+        private static void SetArtToolStyle(Button button, bool active)
+        {
+            button.style.unityFontStyleAndWeight = active
+                ? FontStyle.Bold
+                : FontStyle.Normal;
+            button.style.backgroundColor = active
+                ? new Color(.12f, .42f, .72f)
+                : new Color(.20f, .21f, .23f);
         }
 
         private string[] AssemblyIds() => (assemblyRegionIds.value ?? selectedRegionId ?? string.Empty)
@@ -1328,6 +1375,7 @@ namespace Project.LevelEditor.Editor
                 ? SceneArtPaletteSelection.Current(map)
                 : -1;
             RefreshArtBrushPreview();
+            RefreshArtToolState();
             artStatus.text = map == null ? "当前 Scene 没有已绑定的 GridArtMap；不会自动创建。" :
                 $"Map {map.name} · 图层 {map.layers.Count} · 美术格 {map.layers.Sum(item => item?.cells?.Count ?? 0)} · {(SceneArtAuthoring.OwnershipFor(activeArtScene) == null ? "旧美术默认未归属" : "已绑定稀疏归属资产")}\n{SceneArtAuthoring.Status}";
             BindAuthoring();
