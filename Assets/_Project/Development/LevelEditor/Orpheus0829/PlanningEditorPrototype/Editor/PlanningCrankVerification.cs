@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -87,8 +88,8 @@ namespace PlanningEditorPrototype
                 var built=generated.GetComponentsInChildren<MovingPlatformFeature>(true);
                 var builtCrank=generated.GetComponentInChildren<CrankPlatformFeature>(true);
                 Check(built.Length==1 && built[0].CrankController==builtCrank,"actual merged build creates one controller consumer");
-                Physics.SyncTransforms();
-                Check(Mathf.Abs(built[0].GetComponent<Collider>().bounds.size.x-2)<.001f,"actual merged model/collider spans two cells: "+built[0].GetComponent<Collider>().bounds+" scale="+built[0].transform.lossyScale+" active="+built[0].gameObject.activeInHierarchy);
+                PlanarPhysics.SyncTransforms();
+                Check(Mathf.Abs(built[0].GetComponent<Collider2D>().bounds.size.x-2)<.001f,"actual merged model/collider spans two cells: "+built[0].GetComponent<Collider2D>().bounds+" scale="+built[0].transform.lossyScale+" active="+built[0].gameObject.activeInHierarchy);
                 var unchanged=built[0];
                 Check(PlanningSceneBuilder.TryApplyDocument(document,out buildMessage),"no-change incremental apply");
                 Check(generated.GetComponentInChildren<MovingPlatformFeature>(true)==unchanged,"unchanged platform instance retained");

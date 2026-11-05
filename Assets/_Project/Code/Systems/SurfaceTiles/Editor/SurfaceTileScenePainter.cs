@@ -1,3 +1,4 @@
+using Project.Planar;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -106,11 +107,11 @@ namespace Project.SurfaceTiles.Editor
             face = default;
             cell = default;
             Ray ray = HandleUtility.GUIPointToWorldRay(mouse);
-            RaycastHit[] hits = Physics.RaycastAll(
+            RaycastHit2D[] hits = PlanarPhysics.RaycastAll(
                 ray,
                 float.PositiveInfinity,
-                Physics.DefaultRaycastLayers,
-                QueryTriggerInteraction.Ignore);
+                PlanarPhysics.DefaultRaycastLayers,
+                TriggerQuery.Ignore);
             System.Array.Sort(hits, (left, right) =>
                 left.distance.CompareTo(right.distance));
             for (int index = 0; index < hits.Length; index++)

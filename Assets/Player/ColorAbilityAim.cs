@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project.BlockFeatures;
@@ -11,7 +12,7 @@ namespace Project.Player
     internal sealed class ColorAbilityAim
     {
         internal enum Result { Success, Rejected, OutOfRange }
-        private Collider[] overlaps = new Collider[64];
+        private Collider2D[] overlaps = new Collider2D[64];
         private readonly List<MonoBehaviour> behaviours = new List<MonoBehaviour>();
 
         internal Result Find(PlayerInteractionSensor sensor, Camera camera, Vector2 pointer,
@@ -23,7 +24,7 @@ namespace Project.Player
             if (!TryPointer(camera, pointer, origin, out Vector3 cursor)) return Result.Rejected;
             // Neither the pointer nor the chosen point may extend the original player circle.
             if (!InsideRange(origin, cursor, sensor.ScanRadius)) return Result.OutOfRange;
-            if (sensor.TryGetScreenHit(camera, pointer, out RaycastHit direct))
+            if (sensor.TryGetScreenHit(camera, pointer, out RaycastHit2D direct))
             {
                 point = direct.point;
                 if (!InsideRange(origin, point, sensor.ScanRadius)) return Result.OutOfRange;
@@ -36,9 +37,9 @@ namespace Project.Player
             int count;
             do
             {
-                count = Physics.OverlapBoxNonAlloc(cursor,
+                count = PlanarPhysics.OverlapBoxNonAlloc(cursor,
                     new Vector3(tolerance, tolerance, Mathf.Max(1f, tolerance * 2f)),
-                    overlaps, Quaternion.identity, sensor.InteractionMask, QueryTriggerInteraction.Collide);
+                    overlaps, Quaternion.identity, sensor.InteractionMask, TriggerQuery.Collide);
                 if (count < overlaps.Length) break;
                 if (overlaps.Length >= 4096) return Result.Rejected;
                 Array.Resize(ref overlaps, overlaps.Length * 2);
@@ -48,11 +49,11 @@ namespace Project.Player
             int bestId = int.MaxValue;
             for (int i = 0; i < count; i++)
             {
-                Collider collider = overlaps[i];
+                Collider2D collider = overlaps[i];
                 if (collider == null || collider.transform.IsChildOf(sensor.transform) ||
                     collider.gameObject.scene != sensor.gameObject.scene) continue;
                 IColorApplicationTarget candidate = Resolve(collider);
-                Vector3 hit = collider.ClosestPoint(new Vector3(cursor.x, cursor.y, collider.bounds.center.z));
+                Vector3 hit = collider.ClosestWorldPoint(new Vector3(cursor.x, cursor.y, collider.bounds.center.z));
                 float distance = ((Vector2)(hit - cursor)).sqrMagnitude;
                 int id = collider.GetInstanceID();
                 if (distance > best || (Mathf.Approximately(distance, best) && id >= bestId) ||
@@ -61,7 +62,7 @@ namespace Project.Player
                 // Re-query the candidate point, not the empty cursor: a wall or an item
                 // layered over water still owns that position and must not be bypassed.
                 Vector3 screen = camera.WorldToScreenPoint(hit);
-                if (screen.z <= 0f || !sensor.TryGetScreenHit(camera, screen, out RaycastHit foreground) ||
+                if (screen.z <= 0f || !sensor.TryGetScreenHit(camera, screen, out RaycastHit2D foreground) ||
                     !ReferenceEquals(Resolve(foreground.collider), candidate)) continue;
                 target = candidate;
                 point = hit;
@@ -71,7 +72,7 @@ namespace Project.Player
             return target != null ? Result.Success : Result.Rejected;
         }
 
-        private IColorApplicationTarget Resolve(Collider collider)
+        private IColorApplicationTarget Resolve(Collider2D collider)
         {
             if (collider == null) return null;
             behaviours.Clear();

@@ -13,11 +13,11 @@ namespace Project.Mechanisms
     /// <summary>One authored cell, with a pressure surface on its selected edge.</summary>
     public static class ButtonPressureGeometry
     {
-        public static bool IsPressureVolume(Collider collider)
+        public static bool IsPressureVolume(Collider2D collider)
         {
             // Match the sensor itself, never the entire button hierarchy: a
             // separate child wall remains a real placement/sweep obstruction.
-            if (collider is not BoxCollider box || box != collider.GetComponent<BoxCollider>()) return false;
+            if (collider is not BoxCollider2D box || box != collider.GetComponent<BoxCollider2D>()) return false;
             return collider.GetComponent<DoorButton>() != null || collider.GetComponent<Project.BlockFeatures.ButtonLockFeature>() != null;
         }
 
@@ -32,16 +32,16 @@ namespace Project.Mechanisms
         public static Quaternion Rotation(ButtonFacing facing) => Quaternion.Euler(0f, 0f, RotationDegrees(facing));
         public static Vector3 Normal(ButtonFacing facing) => Rotation(facing) * Vector3.up;
 
-        public static void Configure(BoxCollider trigger, ButtonFacing facing)
+        public static void Configure(BoxCollider2D trigger, ButtonFacing facing)
         {
             if (trigger == null) return;
             trigger.isTrigger = true;
-            trigger.center = Rotation(facing) * new Vector3(0f, -.35f, 0f);
+            trigger.offset = Rotation(facing) * new Vector3(0f, -.35f, 0f);
             trigger.size = facing == ButtonFacing.Left || facing == ButtonFacing.Right
                 ? new Vector3(.3f, .6f, .6f) : new Vector3(.6f, .3f, .6f);
         }
 
-        public static bool TouchesPressureFace(Bounds actor, BoxCollider trigger, ButtonFacing facing, float tolerance)
+        public static bool TouchesPressureFace(Bounds actor, BoxCollider2D trigger, ButtonFacing facing, float tolerance)
         {
             Vector3 normal = trigger.transform.TransformDirection(Normal(facing)).normalized;
             Vector3 absolute = new Vector3(Mathf.Abs(normal.x), Mathf.Abs(normal.y), Mathf.Abs(normal.z));

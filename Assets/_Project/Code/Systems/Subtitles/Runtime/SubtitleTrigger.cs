@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project.Subtitles
 {
     [ExecuteAlways, DisallowMultipleComponent]
-    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(Collider2D))]
     public sealed class SubtitleTrigger : MonoBehaviour
     {
         [SerializeField] private SubtitleCue cue = new SubtitleCue();
@@ -40,12 +40,12 @@ namespace Project.Subtitles
 
         private void Reset()
         {
-            GetComponent<Collider>().isTrigger = true;
+            GetComponent<Collider2D>().isTrigger = true;
         }
 
         private void Awake()
         {
-            Collider trigger = GetComponent<Collider>();
+            Collider2D trigger = GetComponent<Collider2D>();
             trigger.isTrigger = true;
             if (hideVisualOnAwake && Application.isPlaying)
             {
@@ -80,7 +80,7 @@ namespace Project.Subtitles
             refreshSign = false;
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void OnTriggerEnter2D(Collider2D other)
         {
             if (played && playOnce)
             {

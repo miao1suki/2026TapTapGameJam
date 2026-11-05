@@ -262,52 +262,12 @@ namespace Project.SurfaceTiles.Editor
             SurfaceTileBlock block,
             Vector2Int tilePixels)
         {
-            Rect[] bounds = new Rect[6];
-            Vector2Int[] pixelSizes = new Vector2Int[6];
-            for (int index = 0; index < 6; index++)
-            {
-                SurfaceTileFace face = (SurfaceTileFace)index;
-                bounds[index] = GetFaceCellBounds(block, face, tilePixels);
-                pixelSizes[index] = new Vector2Int(
-                    Mathf.Max(1, Mathf.RoundToInt(
-                        bounds[index].width * tilePixels.x)),
-                    Mathf.Max(1, Mathf.RoundToInt(
-                        bounds[index].height * tilePixels.y)));
-            }
-
-            int firstRowWidth = pixelSizes[0].x + pixelSizes[1].x +
-                                pixelSizes[2].x;
-            int secondRowWidth = pixelSizes[3].x + pixelSizes[4].x +
-                                 pixelSizes[5].x;
-            int firstRowHeight = Mathf.Max(
-                pixelSizes[0].y,
-                Mathf.Max(pixelSizes[1].y, pixelSizes[2].y));
-            int secondRowHeight = Mathf.Max(
-                pixelSizes[3].y,
-                Mathf.Max(pixelSizes[4].y, pixelSizes[5].y));
-            BlockLayout layout = new BlockLayout(
-                Mathf.Max(firstRowWidth, secondRowWidth),
-                firstRowHeight + secondRowHeight,
-                tilePixels);
-            int x = 0;
-            for (int index = 0; index < 6; index++)
-            {
-                if (index == 3)
-                {
-                    x = 0;
-                }
-
-                int y = index < 3 ? 0 : firstRowHeight;
-                SurfaceTileFace face = (SurfaceTileFace)index;
-                layout.FaceRects[face] = new RectInt(
-                    x,
-                    y,
-                    pixelSizes[index].x,
-                    pixelSizes[index].y);
-                layout.FaceCellBounds[face] = bounds[index];
-                x += pixelSizes[index].x;
-            }
-
+            Rect bounds = GetFaceCellBounds(block, SurfaceTileFace.Front, tilePixels);
+            int width = Mathf.Max(1, Mathf.RoundToInt(bounds.width * tilePixels.x));
+            int height = Mathf.Max(1, Mathf.RoundToInt(bounds.height * tilePixels.y));
+            var layout = new BlockLayout(width, height, tilePixels);
+            layout.FaceRects[SurfaceTileFace.Front] = new RectInt(0, 0, width, height);
+            layout.FaceCellBounds[SurfaceTileFace.Front] = bounds;
             return layout;
         }
 

@@ -2,11 +2,11 @@
 
 ## 源码
 
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Track/PlayerTimelineTrack.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Clip/PlayerTimelineClip.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Track/BossTimelineTrack.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Clip/BossTimelineClip.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Behavior/ActorTimelineBehaviour.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Track/PlayerTimelineTrack.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Clip/PlayerTimelineClip.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Track/BossTimelineTrack.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Clip/BossTimelineClip.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Behavior/ActorTimelineBehaviour.cs`
 
 ## 解析规则
 
@@ -39,4 +39,4 @@
 - `CameraTimelineTrack.returnTransitionDuration` 控制轨道结束交还玩法相机时的平滑时间；Boss 死亡演出用镜头曲线的最后 1 秒回到原机位，轨道结束只保留极短清理过渡。
 - 角色轨不得直接改写 `TimelineCamRig.target`。相机 Clip 在自然末尾主动释放控制并恢复 `CameraControlManager.FocusTarget`，兼容 PlayableDirector 的 Hold 模式；不要只依赖 Graph 停止回调。
 
-行为在直接驱动 Rigidbody 时会临时切换为 Kinematic，并在结束、暂停或 Playable 销毁时恢复原状态；玩家轨可同时通过 `PlayerController.AcquireControlLock` 锁住输入。
+行为在直接驱动 Rigidbody2D 时会临时切换为 Kinematic，并在结束、暂停或 Playable 销毁时恢复原状态；玩家轨可同时通过 `PlayerController.AcquireControlLock` 锁住输入。所有位移为 XY，旋转只绕 Z。镜头只用正交半高，不再有 FOV、透视或立体环绕参数；工具目录重命名保留原 `.meta` GUID，现有 Timeline 引用不需要重建。

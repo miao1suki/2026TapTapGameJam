@@ -89,7 +89,7 @@ namespace Project.LevelEditor.Editor
                 GameObject blockObject = entry.SourcePrefab != null
                     ? PrefabUtility.InstantiatePrefab(entry.SourcePrefab)
                         as GameObject
-                    : GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    : Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 if (blockObject == null)
                 {
                     return null;
@@ -102,9 +102,9 @@ namespace Project.LevelEditor.Editor
                     blockObject.transform.localScale = Vector3.one;
                 }
 
-                if (blockObject.GetComponent<BoxCollider>() == null)
+                if (blockObject.GetComponent<BoxCollider2D>() == null)
                 {
-                    blockObject.AddComponent<BoxCollider>();
+                    blockObject.AddComponent<BoxCollider2D>();
                 }
 
                 SurfaceTileBlock block =
@@ -346,7 +346,7 @@ namespace Project.LevelEditor.Editor
                 GameObject blockObject = entry.SourcePrefab != null
                     ? PrefabUtility.InstantiatePrefab(entry.SourcePrefab)
                         as GameObject
-                    : GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    : Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 if (blockObject == null)
                 {
                     return null;
@@ -501,7 +501,7 @@ namespace Project.LevelEditor.Editor
             GameObject template = entry.SourcePrefab != null
                 ? PrefabUtility.InstantiatePrefab(entry.SourcePrefab)
                     as GameObject
-                : GameObject.CreatePrimitive(PrimitiveType.Cube);
+                : Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             if (template == null)
             {
                 Object.DestroyImmediate(previewRoot);
@@ -612,12 +612,12 @@ namespace Project.LevelEditor.Editor
             LevelEditorBlockEntry entry,
             bool recordUndo = true)
         {
-            BoxCollider box = target.GetComponent<BoxCollider>();
+            BoxCollider2D box = target.GetComponent<BoxCollider2D>();
             if (box == null)
             {
                 box = recordUndo
-                    ? Undo.AddComponent<BoxCollider>(target)
-                    : target.AddComponent<BoxCollider>();
+                    ? Undo.AddComponent<BoxCollider2D>(target)
+                    : target.AddComponent<BoxCollider2D>();
             }
 
             SurfaceTileBlock block =

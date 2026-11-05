@@ -726,8 +726,8 @@ namespace Project.BossLogic
         private static void DisableCollectibleGameplay(
             GameObject instance)
         {
-            Collider[] colliders =
-                instance.GetComponentsInChildren<Collider>(
+            Collider2D[] colliders =
+                instance.GetComponentsInChildren<Collider2D>(
                     true);
             for (int index = 0;
                  index < colliders.Length;
@@ -736,14 +736,14 @@ namespace Project.BossLogic
                 colliders[index].enabled = false;
             }
 
-            Rigidbody[] bodies =
-                instance.GetComponentsInChildren<Rigidbody>(
+            Rigidbody2D[] bodies =
+                instance.GetComponentsInChildren<Rigidbody2D>(
                     true);
             for (int index = 0;
                  index < bodies.Length;
                  index++)
             {
-                bodies[index].detectCollisions = false;
+                bodies[index].simulated = false;
                 bodies[index].isKinematic = true;
             }
 

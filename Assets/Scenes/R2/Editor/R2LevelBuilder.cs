@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -81,9 +82,9 @@ public static class R2LevelBuilder
         PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/UI/SharedGameUI.prefab"));
         new GameObject("R2 Starting Progress").AddComponent<R2SceneSetup>();
         RenderSettings.ambientMode = AmbientMode.Flat; RenderSettings.ambientLight = Color.white;
-        var light = new GameObject("Directional Light").AddComponent<Light>();
-        light.type = LightType.Directional; light.intensity = .8f;
-        light.transform.rotation = Quaternion.Euler(50, -30, 0);
+        var light = new GameObject("Directional Light").AddComponent<UnityEngine.Rendering.Universal.Light2D>();
+        light.lightType = UnityEngine.Rendering.Universal.Light2D.LightType.Global; light.intensity = .8f;
+        light.transform.rotation = Quaternion.identity;
         Check(EditorSceneManager.SaveScene(scene, ScenePath), "scene saved");
         PlanningSaveStore.Save(SavePath, doc);
         AssetDatabase.Refresh(); AssetDatabase.SaveAssets();
@@ -125,7 +126,7 @@ public static class R2LevelBuilder
             Parameter(cube, typeof(ContactCube), "maximumLength", "Integer", length.ToString(CultureInfo.InvariantCulture));
             if (spec.pinned)
             {
-                Parameter(cube, typeof(Rigidbody), "m_Constraints", "Integer", ((int)RigidbodyConstraints.FreezeAll).ToString());
+                Parameter(cube, typeof(Rigidbody2D), "m_Constraints", "Integer", ((int)RigidbodyConstraints2D.FreezeAll).ToString());
                 Parameter(cube, typeof(CarryableFeature), "m_Enabled", "Boolean", "0");
             }
         }
@@ -271,7 +272,7 @@ public static class R2LevelBuilder
         .Replace(",\\\"bossRespawnOwnerId\\\":\\\"\\\"", "");
     private static void VerifyScene(PlanningDocument doc)
     {
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
         var lifecycle = Object.FindFirstObjectByType<RoomLifecycleManager>();
         Check(lifecycle != null && PlanningDocument.FromPersistentJson(lifecycle.PlanningJson).ToPersistentJson() == doc.ToPersistentJson(), "embedded planning equals paired save");
         var placed = Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None);
@@ -284,7 +285,7 @@ public static class R2LevelBuilder
             Check(p.GetComponent<RoomResetObject>() != null, "room membership " + box.id);
             if (box.type == PlanningDetailType.Solid)
             {
-                var collider = p.GetComponent<BoxCollider>();
+                var collider = p.GetComponent<BoxCollider2D>();
                 Check(collider != null && Vector3.Distance(collider.bounds.center,new Vector3(box.x+box.width*.5f,-box.y-box.height*.5f,0)) < .001f &&
                     Vector3.Distance(collider.bounds.size,new Vector3(box.width,box.height,1)) < .001f,
                     "physical terrain exactly covers source cells " + box.id + "; actual=" +
@@ -302,9 +303,9 @@ public static class R2LevelBuilder
         Check(cubes.Length == 4 && cubes.Count(c => c.Color == CubeColor.Red) == 2 && cubes.All(c => c.Color != CubeColor.Blue), "two red/two green/no blue cubes");
         var upper = placed.Single(p => p.PlanningBoxId == "r2_cube_green_upper");
         Check(upper.GetComponent<ContactCube>().MaximumLength == 11 && upper.transform.lossyScale == Vector3.one, "AK114 maximum eleven without root scaling");
-        Check(upper.GetComponent<Rigidbody>().constraints == RigidbodyConstraints.FreezeAll && !upper.GetComponent<CarryableFeature>().enabled, "AK114 fixed and not carryable");
+        Check(upper.GetComponent<Rigidbody2D>().constraints == RigidbodyConstraints2D.FreezeAll && !upper.GetComponent<CarryableFeature>().enabled, "AK114 fixed and not carryable");
         var entrance = placed.Single(p => p.PlanningBoxId == "r2_cube_green_entrance");
-        Check(entrance.GetComponent<ContactCube>().MaximumLength == 9 && entrance.GetComponent<CarryableFeature>().enabled && entrance.GetComponent<Rigidbody>().constraints != RigidbodyConstraints.FreezeAll, "BG115 maximum nine and ordinary physics");
+        Check(entrance.GetComponent<ContactCube>().MaximumLength == 9 && entrance.GetComponent<CarryableFeature>().enabled && entrance.GetComponent<Rigidbody2D>().constraints != RigidbodyConstraints2D.FreezeAll, "BG115 maximum nine and ordinary physics");
         var plants = placed.Where(p => p.GetComponent<PlantObstacleFeature>() != null).ToArray();
         var expectedPlants = ReadSource().obstacleCells.Select(c => { var r = ExcelRect(c.column,c.row,1,1); return new Vector2Int(r.x,-r.y-1); }).ToHashSet();
         Check(plants.Length == 8 && plants.Select(p => p.Cell).ToHashSet().SetEquals(expectedPlants), "all eight exact plant cells, collectible hole preserved");

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project.Player;
@@ -7,14 +8,14 @@ namespace Project.BlockFeatures
 {
     // A solid masks its actual volume, not its cell or the entire lava object.
     // A small, genuinely supporting top-contact layer also tolerates solver settling.
-    // Grid solids can be subtracted exactly; all remaining volumes use PhysX shape queries.
+    // Grid solids are subtracted in XY; remaining volumes use native Box2D shape queries.
     internal sealed class LavaContactOcclusion
     {
-        private readonly List<Collider> lavaVolumes = new List<Collider>();
-        private readonly List<Collider> playerVolumes = new List<Collider>();
-        private readonly List<Collider> blockers = new List<Collider>();
+        private readonly List<Collider2D> lavaVolumes = new List<Collider2D>();
+        private readonly List<Collider2D> playerVolumes = new List<Collider2D>();
+        private readonly List<Collider2D> blockers = new List<Collider2D>();
         private readonly List<Bounds> exposed = new List<Bounds>(16);
-        private Collider[] queryResults = new Collider[32];
+        private Collider2D[] queryResults = new Collider2D[32];
         private LavaHazardFeature owner;
         private PlayerController cachedPlayer;
 
@@ -38,24 +39,24 @@ namespace Project.BlockFeatures
             }
 
             float tolerance = Mathf.Max(.00001f, cellWorldSize * .0001f);
-            foreach (Collider actor in playerVolumes)
+            foreach (Collider2D actor in playerVolumes)
             {
                 if (actor == null || !actor.enabled || actor.isTrigger ||
                     !actor.gameObject.activeInHierarchy || actor.attachedRigidbody != player.Motor)
                     continue;
 
                 CollectBlockers(actor, cellWorldSize, tolerance);
-                foreach (Collider lava in lavaVolumes)
+                foreach (Collider2D lava in lavaVolumes)
                 {
                     if (lava == null || !lava.enabled || !lava.isTrigger ||
-                        !lava.gameObject.activeInHierarchy || !lava.bounds.Intersects(actor.bounds))
+                        !lava.gameObject.activeInHierarchy || !PlanarPhysics.IntersectsXY(lava.bounds, actor.bounds))
                         continue;
 
-                    if (lava is BoxCollider box)
+                    if (lava is BoxCollider2D box)
                     {
                         if (HasExposedBoxContact(box, actor, cellWorldSize, tolerance)) return true;
                     }
-                    else if (Physics.ComputePenetration(lava, lava.transform.position, lava.transform.rotation,
+                    else if (PlanarPhysics.ComputePenetration(lava, lava.transform.position, lava.transform.rotation,
                                  actor, actor.transform.position, actor.transform.rotation, out _, out _))
                     {
                         // Authored lava uses boxes (including sparse merged boxes). Do not turn
@@ -67,7 +68,7 @@ namespace Project.BlockFeatures
             return false;
         }
 
-        private void CollectBlockers(Collider actor, float cellWorldSize, float tolerance)
+        private void CollectBlockers(Collider2D actor, float cellWorldSize, float tolerance)
         {
             blockers.Clear();
             Bounds area = actor.bounds;
@@ -76,23 +77,24 @@ namespace Project.BlockFeatures
             Vector3 min = area.min;
             min.y -= Mathf.Max(tolerance, cellWorldSize * .03f);
             area.SetMinMax(min, area.max);
-            int count = Query(area.center, area.extents + Vector3.one * tolerance, Quaternion.identity, Physics.AllLayers);
+            int count = Query(area.center, area.extents + Vector3.one * tolerance, Quaternion.identity, PlanarPhysics.AllLayers);
             for (int i = 0; i < count; i++)
             {
-                Collider solid = queryResults[i];
+                Collider2D solid = queryResults[i];
                 if (solid == actor || solid.transform.IsChildOf(cachedPlayer.transform) ||
                     solid.transform.IsChildOf(owner.transform) ||
-                    Physics.GetIgnoreLayerCollision(actor.gameObject.layer, solid.gameObject.layer) ||
-                    Physics.GetIgnoreCollision(actor, solid)) continue;
+                    PlanarPhysics.GetIgnoreLayerCollision(actor.gameObject.layer, solid.gameObject.layer) ||
+                    PlanarPhysics.GetIgnoreCollision(actor, solid)) continue;
                 blockers.Add(solid);
             }
         }
 
-        private bool HasExposedBoxContact(BoxCollider lava, Collider actor, float cellWorldSize, float tolerance)
+        private bool HasExposedBoxContact(BoxCollider2D lava, Collider2D actor, float cellWorldSize, float tolerance)
         {
             Quaternion rotation = lava.transform.rotation;
             Quaternion inverse = Quaternion.Inverse(rotation);
-            Vector3 origin = lava.transform.TransformPoint(lava.center);
+            Vector3 origin = lava.transform.TransformPoint(lava.offset);
+            origin.z = 0f;
             Vector3 half = Vector3.Scale(lava.size * .5f, Abs(lava.transform.lossyScale));
             Bounds actorInLava = TransformBounds(actor.bounds, inverse, origin);
             Vector3 min = Vector3.Max(-half, actorInLava.min);
@@ -101,9 +103,9 @@ namespace Project.BlockFeatures
             AddRegion(min, max, tolerance);
             if (exposed.Count == 0) return false;
 
-            foreach (Collider solid in blockers)
+            foreach (Collider2D solid in blockers)
             {
-                if (!(solid is BoxCollider box) || !TryAlignedBox(box, inverse, origin, out Bounds cut)) continue;
+                if (!(solid is BoxCollider2D box) || !TryAlignedBox(box, inverse, origin, out Bounds cut)) continue;
                 AccommodateSettledTopContact(ref cut, actorInLava, half, inverse, actor, solid,
                     cellWorldSize, tolerance);
                 // Only numerical contact skin is tolerated; exposed neighbouring lava remains lethal.
@@ -111,7 +113,7 @@ namespace Project.BlockFeatures
                 for (int i = exposed.Count - 1; i >= 0; i--)
                 {
                     Bounds region = exposed[i];
-                    if (!region.Intersects(cut)) continue;
+                    if (!PlanarPhysics.IntersectsXY(region, cut)) continue;
                     exposed.RemoveAt(i);
                     Subtract(region, cut, tolerance);
                 }
@@ -130,7 +132,7 @@ namespace Project.BlockFeatures
         }
 
         private static void AccommodateSettledTopContact(ref Bounds solid, Bounds actor, Vector3 lavaHalf,
-            Quaternion inverse, Collider actorCollider, Collider solidCollider, float cellWorldSize,
+            Quaternion inverse, Collider2D actorCollider, Collider2D solidCollider, float cellWorldSize,
             float tolerance)
         {
             // PhysX can leave a resting dynamic box a little below the grid-aligned lava top.
@@ -149,10 +151,10 @@ namespace Project.BlockFeatures
             if (remainingLava <= tolerance || remainingLava > settlingSkin + tolerance) return;
 
             float contactSkin = Mathf.Min(settlingSkin,
-                Mathf.Max(tolerance, cellWorldSize * .01f + actorCollider.contactOffset + solidCollider.contactOffset));
+                Mathf.Max(tolerance, cellWorldSize * .01f + UnityEngine.Physics2D.defaultContactOffset + UnityEngine.Physics2D.defaultContactOffset));
             if (Mathf.Abs(foot - top) > contactSkin + tolerance) return;
             Vector3 supportPoint = actor.center;
-            for (int index = 0; index < 3; index++)
+            for (int index = 0; index < 2; index++)
                 if (index != axis && (supportPoint[index] < solid.min[index] - tolerance ||
                                       supportPoint[index] > solid.max[index] + tolerance)) return;
 
@@ -170,28 +172,26 @@ namespace Project.BlockFeatures
             AddRegion(new Vector3(hi.x, a.y, a.z), b, tolerance);
             AddRegion(new Vector3(lo.x, a.y, a.z), new Vector3(hi.x, lo.y, b.z), tolerance);
             AddRegion(new Vector3(lo.x, hi.y, a.z), new Vector3(hi.x, b.y, b.z), tolerance);
-            AddRegion(new Vector3(lo.x, lo.y, a.z), new Vector3(hi.x, hi.y, lo.z), tolerance);
-            AddRegion(new Vector3(lo.x, lo.y, hi.z), new Vector3(hi.x, hi.y, b.z), tolerance);
         }
 
         private void AddRegion(Vector3 min, Vector3 max, float tolerance)
         {
             Vector3 size = max - min;
-            if (size.x > tolerance && size.y > tolerance && size.z > tolerance)
-                exposed.Add(new Bounds((min + max) * .5f, size));
+            if (size.x > tolerance && size.y > tolerance)
+                exposed.Add(new Bounds(new Vector3((min.x + max.x) * .5f, (min.y + max.y) * .5f, 0f), new Vector3(size.x, size.y, 0f)));
         }
 
         private bool CoveredByConvexSolid(Bounds region, Quaternion rotation, Vector3 origin, float tolerance)
         {
-            foreach (Collider solid in blockers)
+            foreach (Collider2D solid in blockers)
             {
-                if (!(solid is BoxCollider) && !(solid is SphereCollider) && !(solid is CapsuleCollider) &&
-                    !(solid is MeshCollider mesh && mesh.convex)) continue;
+                if (!(solid is BoxCollider2D) && !(solid is CircleCollider2D) && !(solid is CapsuleCollider2D) &&
+                    !(solid is PolygonCollider2D)) continue;
                 bool covers = true;
-                for (int i = 0; i < 8; i++)
+                for (int i = 0; i < 4; i++)
                 {
                     Vector3 point = origin + rotation * Corner(region, i);
-                    if ((solid.ClosestPoint(point) - point).sqrMagnitude <= tolerance * tolerance) continue;
+                    if ((solid.ClosestWorldPoint(point) - point).sqrMagnitude <= tolerance * tolerance) continue;
                     covers = false;
                     break;
                 }
@@ -204,14 +204,14 @@ namespace Project.BlockFeatures
         {
             while (true)
             {
-                int count = Physics.OverlapBoxNonAlloc(center, half, queryResults, rotation,
-                    layerMask, QueryTriggerInteraction.Ignore);
+                int count = PlanarPhysics.OverlapBoxNonAlloc(center, half, queryResults, rotation,
+                    layerMask, TriggerQuery.Ignore);
                 if (count < queryResults.Length) return count;
                 Array.Resize(ref queryResults, queryResults.Length * 2);
             }
         }
 
-        private static bool TryAlignedBox(BoxCollider solid, Quaternion inverse, Vector3 origin, out Bounds bounds)
+        private static bool TryAlignedBox(BoxCollider2D solid, Quaternion inverse, Vector3 origin, out Bounds bounds)
         {
             Quaternion relative = inverse * solid.transform.rotation;
             Vector3 x = Abs(relative * Vector3.right), y = Abs(relative * Vector3.up), z = Abs(relative * Vector3.forward);
@@ -223,7 +223,7 @@ namespace Project.BlockFeatures
                 return false;
             }
             Vector3 half = Vector3.Scale(solid.size * .5f, Abs(solid.transform.lossyScale));
-            bounds = new Bounds(inverse * (solid.transform.TransformPoint(solid.center) - origin),
+            bounds = new Bounds(inverse * (solid.transform.TransformPoint(solid.offset) - origin),
                 (x * half.x + y * half.y + z * half.z) * 2f);
             return true;
         }
@@ -231,14 +231,14 @@ namespace Project.BlockFeatures
         private static Bounds TransformBounds(Bounds bounds, Quaternion inverse, Vector3 origin)
         {
             Bounds result = new Bounds(inverse * (Corner(bounds, 0) - origin), Vector3.zero);
-            for (int i = 1; i < 8; i++) result.Encapsulate(inverse * (Corner(bounds, i) - origin));
+            for (int i = 1; i < 4; i++) result.Encapsulate(inverse * (Corner(bounds, i) - origin));
             return result;
         }
 
         private static Vector3 Corner(Bounds bounds, int index) => new Vector3(
             (index & 1) == 0 ? bounds.min.x : bounds.max.x,
             (index & 2) == 0 ? bounds.min.y : bounds.max.y,
-            (index & 4) == 0 ? bounds.min.z : bounds.max.z);
+            0f);
 
         private static Vector3 Abs(Vector3 value) => new Vector3(Mathf.Abs(value.x), Mathf.Abs(value.y), Mathf.Abs(value.z));
     }

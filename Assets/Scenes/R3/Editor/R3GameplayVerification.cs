@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -30,7 +31,7 @@ public static class R3GameplayVerification
     private static ContactCube[] roots,cubes;
     private static Vector3 liftStart,dropPosition,ordinaryStart;
     private static Vector3[] anchors;
-    private static RigidbodyConstraints constraints;
+    private static RigidbodyConstraints2D constraints;
     private static CarryableFeature carrying;
     private static CameraControlHandle cameraLease;
     private static AuditCamera cameraSource;
@@ -62,13 +63,13 @@ public static class R3GameplayVerification
     private static T Find<T>(string id) where T:Component => Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None)
         .Single(p=>p.PlanningBoxId=="r3_"+id).GetComponent<T>();
     private static void Move(Vector3 p)
-    { player.Motor.linearVelocity=Vector3.zero; player.Motor.position=p; player.transform.position=p; Physics.SyncTransforms(); }
+    { player.Motor.linearVelocity=Vector3.zero; player.Motor.position=p; player.transform.position=p; PlanarPhysics.SyncTransforms(); }
     private static void MountsFollow()
     {
         foreach(var mount in mounts.Where(m=>m.IsMounted))
         {
-            var body=mount.GetComponent<Rigidbody>();
-            Check(Vector3.Distance(mount.transform.position,mount.TargetPosition)<.0625f,"mount follows within one artwork pixel "+mount.name+" delta="+(mount.transform.position-mount.TargetPosition).ToString("F6")+" target="+mount.TargetPosition.ToString("F6")+" body="+(body!=null?body.position.ToString("F6")+" interp="+body.interpolation+" constraints="+body.constraints:"none")+" progress="+crank.Progress);
+            var body=mount.GetComponent<Rigidbody2D>();
+            Check(Vector3.Distance(mount.transform.position,mount.TargetPosition)<.0625f,"mount follows within one artwork pixel "+mount.name+" delta="+(mount.transform.position-mount.TargetPosition).ToString("F6")+" target="+mount.TargetPosition.ToString("F6")+" body="+(body!=null?body.WorldPosition().ToString("F6")+" interp="+body.interpolation+" constraints="+body.constraints:"none")+" progress="+crank.Progress);
         }
     }
     private static void Tick()
@@ -120,8 +121,8 @@ public static class R3GameplayVerification
             {
                 crank.HoldInteract(player.gameObject); MountsFollow();
                 Check(!player.IsDead,"player survives authored lift route");
-                float feet=player.GetComponent<Collider>().bounds.min.y+player.Motor.position.y-player.transform.position.y;
-                Check(Mathf.Abs(feet-lift.GetComponent<Collider>().bounds.max.y)<.16f,"real player carried on actual thin platform surface, without pose forcing; t="+elapsed+" physics="+player.Motor.position+" lift="+lift.transform.position+" feet="+feet+" surface="+lift.GetComponent<Collider>().bounds.max.y+" grounded="+player.IsGrounded+" rider="+lift.HasStandingPlayer);
+                float feet=player.GetComponent<Collider2D>().bounds.min.y+player.Motor.WorldPosition().y-player.transform.position.y;
+                Check(Mathf.Abs(feet-lift.GetComponent<Collider2D>().bounds.max.y)<.16f,"real player carried on actual thin platform surface, without pose forcing; t="+elapsed+" physics="+player.Motor.WorldPosition()+" lift="+lift.transform.position+" feet="+feet+" surface="+lift.GetComponent<Collider2D>().bounds.max.y+" grounded="+player.IsGrounded+" rider="+lift.HasStandingPlayer);
                 Check(Vector3.Distance(player.transform.position,crank.transform.position)<1.26f,"moving crank stays within interaction reach");
                 if(elapsed<3.4f)return;
                 Check(crank.Progress>.999f&&Mathf.Abs(lift.transform.position.y-liftStart.y-9)<.025f,"full9-cell rise reaches row88");
@@ -132,7 +133,7 @@ public static class R3GameplayVerification
             {
                 MountsFollow(); if(elapsed<1.5f)return;
                 Check(!player.IsDead&&crank.Progress<released-.1f&&lift.transform.position.y<liftStart.y+8,"release descends with real rider");
-                Move(Spawn); player.Motor.constraints=RigidbodyConstraints.FreezeAll;
+                Move(Spawn); player.Motor.constraints=RigidbodyConstraints2D.FreezeAll;
                 RoomLifecycleManager.ResetCurrentRooms(); Go(20);
             }
             else if(stage==20)
@@ -213,8 +214,8 @@ public static class R3GameplayVerification
                 Move(root.transform.position+(dir.y==0?-dir:dir)*2);
                 Check(player.GetComponent<PlayerColorWheel>().TrySelectColor("blue"),"blue selected");
                 var target=root.GetComponent<BlueContactCubeGrowthTarget>();
-                var shape=root.GetComponentInChildren<BoxCollider>();
-                Check(target.ApplyColorAt("blue",player.gameObject,shape.ClosestPoint(root.transform.position)),"real blue hit receiver requests "+spec.id);
+                var shape=root.GetComponentInChildren<BoxCollider2D>();
+                Check(target.ApplyColorAt("blue",player.gameObject,shape.ClosestWorldPoint(root.transform.position)),"real blue hit receiver requests "+spec.id);
                 Move(Spawn); Go(41);
             }
             else if(stage==41)
@@ -222,7 +223,7 @@ public static class R3GameplayVerification
                 var root=roots[growthIndex]; if(elapsed<root.MaximumLength+1f)return;
                 var spec=R3LevelBuilder.ReadSource().growingCubes[growthIndex];
                 var target=R3LevelBuilder.ExcelRect(spec.targetColumn,spec.targetRow);
-                var bounds=root.GetComponentInChildren<BoxCollider>().bounds;
+                var bounds=root.GetComponentInChildren<BoxCollider2D>().bounds;
                 Check(root.Length==root.MaximumLength,"growth reaches specified limit "+spec.id+" length="+root.Length+"/"+root.MaximumLength+" state="+root.State+" dir="+root.GrowthDirection);
                 Check(bounds.Contains(new Vector3(target.x+.5f,-target.y-.5f,0)),"grown footprint includes target "+spec.targetColumn+spec.targetRow);
                 Check(root.GetComponent<ContactCubeMotion>().IsAuthoredFixed,"growth retains fixed author constraints");
@@ -241,7 +242,7 @@ public static class R3GameplayVerification
             {
                 if(elapsed<1.2f)return;
                 var motion=ordinaryFixture.GetComponent<ContactCubeMotion>();
-                Check(!motion.IsAuthoredFixed&&!ordinaryFixture.GetComponent<Rigidbody>().isKinematic&&ordinaryFixture.GetComponent<Rigidbody>().interpolation==RigidbodyInterpolation.Interpolate&&ordinaryFixture.transform.position.y<ordinaryStart.y-.5f,"unmounted ordinary cube still falls normally and preserves interpolation; actual="+ordinaryFixture.transform.position);
+                Check(!motion.IsAuthoredFixed&&!ordinaryFixture.GetComponent<Rigidbody2D>().isKinematic&&ordinaryFixture.GetComponent<Rigidbody2D>().interpolation==RigidbodyInterpolation2D.Interpolate&&ordinaryFixture.transform.position.y<ordinaryStart.y-.5f,"unmounted ordinary cube still falls normally and preserves interpolation; actual="+ordinaryFixture.transform.position);
                 Object.DestroyImmediate(ordinaryFixture);ordinaryFixture=null;
                 Check(ColorRuntimeService.Instance.IsAbilityUnlocked("blue")&&!ColorRuntimeService.Instance.IsAbilityUnlocked("red")&&!ColorRuntimeService.Instance.IsAbilityUnlocked("green"),"intended abilities survive resets");
                 for(int i=0;i<mounts.Length;i++)Check(Vector3.Distance(mounts[i].transform.position-lift.transform.position,anchors[i])<.02f,"final author offset restored");
@@ -262,8 +263,8 @@ public static class R3GameplayVerification
         public Vector3 position; public float size;
         public string CameraControlName=>"R3 visual audit";
         public bool TryGetCameraState(in CameraControlContext context,out CameraState state)
-        {state=new CameraState{position=position,rotation=Quaternion.identity,projection=CameraProjectionMode.Orthographic,orthographicSize=size,fieldOfView=60};return true;}
-        public bool TryGetLensOverride(out float orthographicSize,out float fieldOfView){orthographicSize=size;fieldOfView=60;return true;}
+        {state=new CameraState{position=position,rotation=Quaternion.identity,projection=CameraProjectionMode.Orthographic,orthographicSize=size};return true;}
+        public bool TryGetLensOverride(out float orthographicSize){orthographicSize=size;return true;}
     }
     private static void ConfigureGameView()
     {

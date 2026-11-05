@@ -1,3 +1,4 @@
+using Project.Planar;
 using DG.Tweening;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace Project.Player
         private readonly Transform root;
         private readonly System.Action restored;
 
-        private Collider[] colliders;
+        private Collider2D[] colliders;
         private bool[] colliderStates;
         private Renderer[] renderers;
         private int[] sortingLayerIds;
@@ -30,12 +31,12 @@ namespace Project.Player
         private float carryCell = 1f;
         private float carryBottomOffset = -.5f;
         private IPlayerCarrySeparationHost separationHost;
-        private readonly RaycastHit[] carryHits = new RaycastHit[128];
+        private readonly RaycastHit2D[] carryHits = new RaycastHit2D[128];
 
         public bool IsCarrying { get; private set; }
         public bool IsDropAnimating { get; private set; }
         public bool IsResetAnimating { get; private set; }
-        private readonly Collider[] placementHits = new Collider[128];
+        private readonly Collider2D[] placementHits = new Collider2D[128];
 
         public Bounds GetPlacementBounds(Vector3 position)
         {
@@ -44,17 +45,16 @@ namespace Project.Player
             if (colliders == null) return result;
             for (int i = 0; i < colliders.Length; i++)
             {
-                Collider shape = colliders[i];
+                Collider2D shape = colliders[i];
                 if (shape == null || !colliderStates[i] || shape.isTrigger) continue;
                 Bounds local;
-                if (shape is BoxCollider box) local = new Bounds(box.center, box.size);
-                else if (shape is MeshCollider mesh && mesh.sharedMesh != null) local = mesh.sharedMesh.bounds;
-                else if (shape is SphereCollider sphere) local = new Bounds(sphere.center, Vector3.one * sphere.radius * 2f);
-                else if (shape is CapsuleCollider capsule)
+                if (shape is BoxCollider2D box) local = new Bounds(box.offset, box.size);
+                else if (shape is PolygonCollider2D polygon) local = PlanarGeometry.LocalBounds(polygon);
+                else if (shape is CircleCollider2D sphere) local = new Bounds(sphere.offset, Vector3.one * sphere.radius * 2f);
+                else if (shape is CapsuleCollider2D capsule)
                 {
-                    Vector3 size = Vector3.one * capsule.radius * 2f;
-                    size[capsule.direction] = Mathf.Max(capsule.height, size[capsule.direction]);
-                    local = new Bounds(capsule.center, size);
+                    Vector3 size = capsule.size;
+                    local = new Bounds(capsule.offset, size);
                 }
                 else continue;
                 Vector3 offset = position - root.position;
@@ -73,13 +73,13 @@ namespace Project.Player
         {
             Bounds bounds = GetPlacementBounds(position);
             if (bounds.size.sqrMagnitude < .00001f) return false;
-            int count = Physics.OverlapBoxNonAlloc(bounds.center,
+            int count = PlanarPhysics.OverlapBoxNonAlloc(bounds.center,
                 Vector3.Max(bounds.extents - Vector3.one * .01f, Vector3.one * .0001f),
-                placementHits, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+                placementHits, Quaternion.identity, ~0, TriggerQuery.Ignore);
             if (count == placementHits.Length) return false;
             for (int i = 0; i < count; i++)
             {
-                Collider other = placementHits[i];
+                Collider2D other = placementHits[i];
                 if (other == null || other.transform.IsChildOf(root) ||
                     Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(other)) continue;
                 if (carrier != null && other.transform.IsChildOf(carrier) && separationHost != null) continue;
@@ -215,14 +215,14 @@ namespace Project.Player
                 float allowed = distance;
                 for (int index = 0; index < colliders.Length; index++)
                 {
-                    Collider shape = colliders[index];
+                    Collider2D shape = colliders[index];
                     if (!colliderStates[index] || shape == null || shape.isTrigger ||
                         !shape.gameObject.activeInHierarchy) continue;
                     Vector3 center, extents;
                     Quaternion rotation;
-                    if (shape is BoxCollider box)
+                    if (shape is BoxCollider2D box)
                     {
-                        center = box.transform.TransformPoint(box.center);
+                        center = box.transform.TransformPoint(box.offset);
                         Vector3 scale = box.transform.lossyScale;
                         extents = Vector3.Scale(box.size * .5f,
                             new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
@@ -232,16 +232,14 @@ namespace Project.Player
                     {
                         // Non-box authored shapes use a conservative local mesh/primitive envelope.
                         Bounds local;
-                        if (shape is SphereCollider sphere)
-                            local = new Bounds(sphere.center, Vector3.one * sphere.radius * 2f);
-                        else if (shape is CapsuleCollider capsule)
+                        if (shape is CircleCollider2D sphere)
+                            local = new Bounds(sphere.offset, Vector3.one * sphere.radius * 2f);
+                        else if (shape is CapsuleCollider2D capsule)
                         {
-                            Vector3 size = Vector3.one * capsule.radius * 2f;
-                            size[capsule.direction] = Mathf.Max(capsule.height, size[capsule.direction]);
-                            local = new Bounds(capsule.center, size);
+                            Vector3 size = capsule.size;
+                            local = new Bounds(capsule.offset, size);
                         }
-                        else if (shape is MeshCollider mesh && mesh.sharedMesh != null)
-                            local = mesh.sharedMesh.bounds;
+                        else if (shape is PolygonCollider2D polygon) local = PlanarGeometry.LocalBounds(polygon);
                         else continue;
                         center = shape.transform.TransformPoint(local.center);
                         Vector3 scale = shape.transform.lossyScale;
@@ -251,16 +249,16 @@ namespace Project.Player
                     }
                     // Slightly inset tangential faces so a resting floor doesn't block sideways motion.
                     extents = Vector3.Max(extents - Vector3.one * skin * .25f, Vector3.one * .0001f);
-                    int count = Physics.BoxCastNonAlloc(center + offset + result, extents, direction,
-                        carryHits, rotation, distance + skin, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+                    int count = PlanarPhysics.BoxCastNonAlloc(center + offset + result, extents, direction,
+                        carryHits, rotation, distance + skin, PlanarPhysics.AllLayers, TriggerQuery.Ignore);
                     if (count == carryHits.Length) allowed = 0f; // Never tunnel when a dense query overflows.
                     for (int hitIndex = 0; hitIndex < count; hitIndex++)
                     {
-                        RaycastHit hit = carryHits[hitIndex];
-                        Collider other = hit.collider;
+                        RaycastHit2D hit = carryHits[hitIndex];
+                        Collider2D other = hit.collider;
                         if (other == null || other.transform.IsChildOf(root) ||
                             (carrier != null && other.transform.IsChildOf(carrier)) ||
-                            Physics.GetIgnoreLayerCollision(shape.gameObject.layer, other.gameObject.layer) ||
+                            PlanarPhysics.GetIgnoreLayerCollision(shape.gameObject.layer, other.gameObject.layer) ||
                             Vector3.Dot(hit.normal, direction) >= -.001f) continue;
                         allowed = Mathf.Min(allowed, Mathf.Max(0f, hit.distance - skin));
                     }
@@ -401,7 +399,7 @@ namespace Project.Player
         private void CacheTargets()
         {
             // A reset or growth can replace/resize authored shapes between two pickups.
-            colliders = root.GetComponentsInChildren<Collider>(true);
+            colliders = root.GetComponentsInChildren<Collider2D>(true);
             colliderStates = new bool[colliders.Length];
             for (int index = 0; index < colliders.Length; index++)
             {
@@ -418,7 +416,7 @@ namespace Project.Player
                  index < colliders.Length;
                  index++)
             {
-                Collider collider = colliders[index];
+                Collider2D collider = colliders[index];
                 if (collider != null)
                 {
                     collider.enabled =

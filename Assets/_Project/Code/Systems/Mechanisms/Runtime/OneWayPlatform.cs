@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using Project.BlockFeatures;
 using Project.ColorBlocks;
@@ -15,7 +16,7 @@ namespace Project.Mechanisms
         [InspectorName("蓝色")] Blue
     }
 
-    [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider)), DefaultExecutionOrder(-200)]
+    [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider2D)), DefaultExecutionOrder(-200)]
     public sealed class OneWayPlatform : MonoBehaviour, IRoomColorResettable
     {
         [BlockParameter(Label = "顶面容差（格）", Group = "碰撞设置")]
@@ -50,14 +51,14 @@ namespace Project.Mechanisms
             cachedColor = (OneWayPlatformColor)(-1);
             artworkLayer = -1;
         }
-        private BoxCollider surface;
-        private readonly Dictionary<Collider, bool> pairs = new Dictionary<Collider, bool>();
-        private readonly Dictionary<Collider, float> previousFeet = new Dictionary<Collider, float>();
-        private void Awake() => surface = GetComponent<BoxCollider>();
+        private BoxCollider2D surface;
+        private readonly Dictionary<Collider2D, bool> pairs = new Dictionary<Collider2D, bool>();
+        private readonly Dictionary<Collider2D, float> previousFeet = new Dictionary<Collider2D, float>();
+        private void Awake() => surface = GetComponent<BoxCollider2D>();
         public bool CanSupport(PlayerController player)
         {
             if (player == null || surface == null || !surface.enabled) return false;
-            Collider body = player.GetComponent<Collider>();
+            Collider2D body = player.GetComponent<Collider2D>();
             if (body == null || player.VerticalVelocity > .1f) return false;
             float feet = Feet(player, body);
             float threshold = surface.bounds.max.y - topToleranceCells * GridCellSizeUtility.Resolve(this);
@@ -68,10 +69,10 @@ namespace Project.Mechanisms
             foreach (PlayerController player in PlayerController.ActivePlayers)
             {
                 if (player == null || player.gameObject.scene != gameObject.scene) continue;
-                Collider body = player.GetComponent<Collider>();
+                Collider2D body = player.GetComponent<Collider2D>();
                 if (body == null) continue;
-                if (!pairs.ContainsKey(body)) pairs.Add(body, Physics.GetIgnoreCollision(surface, body));
-                Physics.IgnoreCollision(surface, body, pairs[body] || !CanSupport(player));
+                if (!pairs.ContainsKey(body)) pairs.Add(body, PlanarPhysics.GetIgnoreCollision(surface, body));
+                PlanarPhysics.IgnoreCollision(surface, body, pairs[body] || !CanSupport(player));
                 previousFeet[body] = Feet(player, body);
             }
         }
@@ -79,10 +80,10 @@ namespace Project.Mechanisms
         private void OnDisable() => Restore();
         private void Restore()
         {
-            if (surface != null) foreach (var pair in pairs) if (pair.Key != null) Physics.IgnoreCollision(surface, pair.Key, pair.Value);
+            if (surface != null) foreach (var pair in pairs) if (pair.Key != null) PlanarPhysics.IgnoreCollision(surface, pair.Key, pair.Value);
             pairs.Clear();
             previousFeet.Clear();
         }
-        private static float Feet(PlayerController player, Collider body) => body.bounds.min.y + player.Motor.position.y - player.transform.position.y;
+        private static float Feet(PlayerController player, Collider2D body) => body.bounds.min.y + player.Motor.WorldPosition().y - player.transform.position.y;
     }
 }

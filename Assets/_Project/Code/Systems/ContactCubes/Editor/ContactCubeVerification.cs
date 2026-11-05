@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -32,10 +33,10 @@ namespace Project.ContactCubes.Editor
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_Project/Content/ContactCubes/{color}_ContactCube.prefab");
             var obj = UnityEngine.Object.Instantiate(prefab, position, Quaternion.identity);
-            if (freeze) { obj.GetComponent<ContactCubeMotion>().enabled = false; obj.GetComponent<Rigidbody>().isKinematic = true; obj.GetComponent<Rigidbody>().useGravity = false; }
+            if (freeze) { obj.GetComponent<ContactCubeMotion>().enabled = false; obj.GetComponent<Rigidbody2D>().isKinematic = true; obj.GetComponent<Rigidbody2D>().gravityScale = 0f; }
             return obj.GetComponent<ContactCube>();
         }
-        private static void Move(ContactCube cube, Vector3 position) { cube.transform.position = position; cube.GetComponent<Rigidbody>().position = position; Physics.SyncTransforms(); }
+        private static void Move(ContactCube cube, Vector3 position) { cube.transform.position = position; cube.GetComponent<Rigidbody2D>().position = position; PlanarPhysics.SyncTransforms(); }
         private static void Tick()
         {
             try
@@ -58,7 +59,7 @@ namespace Project.ContactCubes.Editor
                 {
                     Check(green.Length == 2 && green.State == CubeReactionState.Growing, "real contact grows one cell");
                     Check(Vector3.Dot(green.GrowthDirection, Vector3.right) > .99f, "away from blue");
-                    Check(Mathf.Approximately(green.GetComponentInChildren<BoxCollider>().size.x, 2), "single collider resized");
+                    Check(Mathf.Approximately(green.GetComponentInChildren<BoxCollider2D>().size.x, 2), "single collider resized");
                     Move(red, Vector3.up); phase = 2; deadline = Time.time + 1.2f; return;
                 }
                 if (phase == 2)
@@ -85,7 +86,7 @@ namespace Project.ContactCubes.Editor
                     var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab");
                     player = UnityEngine.Object.Instantiate(playerPrefab, new Vector3(7,0,0), Quaternion.identity).GetComponent<Project.Player.PlayerController>();
                     player.GetComponent<Project.Player.PlayerInputDriver>().enabled = false;
-                    player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                    player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                     phase = 6; deadline = Time.time + .3f; return;
                 }
                 if (phase == 6)
@@ -102,70 +103,70 @@ namespace Project.ContactCubes.Editor
                 Check(blue.GetComponentsInChildren<CubeWaterJet>().Length == 0, "jet removed on contact exit");
                 Check(!player.IsSwimming, "player water motion adapter cleared");
                 blue.ResetForRoom(); Check(blue.GetComponentsInChildren<CubeWaterJet>().Length == 0, "reset clears jets");
-                var floor = GameObject.CreatePrimitive(PrimitiveType.Cube); floor.transform.position = new Vector3(30,-.5f,0); floor.transform.localScale = new Vector3(16,1,4);
+                var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); floor.transform.position = new Vector3(30,-.5f,0); floor.transform.localScale = new Vector3(16,1,4);
                 physical = Spawn(CubeColor.Green, new Vector3(30,3,0), false);
-                player.Motor.position = new Vector3(30,2,0); player.transform.position = player.Motor.position;
-                Physics.SyncTransforms(); phase = 8; deadline = Time.time + .15f; return;
+                player.Motor.position = new Vector3(30,2,0); player.transform.position = player.Motor.WorldPosition();
+                PlanarPhysics.SyncTransforms(); phase = 8; deadline = Time.time + .15f; return;
                 }
                 if (phase == 8)
                 {
                     Check(!physical.GetComponent<ContactCubeMotion>().IsSettled, "falling cube not settled");
-                    Check(!Physics.GetIgnoreCollision(physical.GetComponentInChildren<BoxCollider>(),player.GetComponent<CapsuleCollider>()), "green stays solid while falling");
-                    player.Motor.position = new Vector3(40,2,0); player.transform.position = player.Motor.position;
+                    Check(!PlanarPhysics.GetIgnoreCollision(physical.GetComponentInChildren<BoxCollider2D>(),player.GetComponent<CapsuleCollider2D>()), "green stays solid while falling");
+                    player.Motor.position = new Vector3(40,2,0); player.transform.position = player.Motor.WorldPosition();
                     phase = 9; deadline = Time.time + 1.3f; return;
                 }
                 if (phase == 9)
                 {
                     var motion = physical.GetComponent<ContactCubeMotion>();
                     Check(motion.IsSettled, "gravity cube lands and settles");
-                    Check(!Physics.GetIgnoreCollision(physical.GetComponentInChildren<BoxCollider>(),player.GetComponent<CapsuleCollider>()), "settled restores player collision");
-                    Check((physical.GetComponent<Rigidbody>().constraints & RigidbodyConstraints.FreezePositionX) != 0, "settled cube resists player push");
+                    Check(!PlanarPhysics.GetIgnoreCollision(physical.GetComponentInChildren<BoxCollider2D>(),player.GetComponent<CapsuleCollider2D>()), "settled restores player collision");
+                    Check((physical.GetComponent<Rigidbody2D>().constraints & RigidbodyConstraints2D.FreezePositionX) != 0, "settled cube resists player push");
                     var config = new SerializedObject(physical); config.FindProperty("initialLength").intValue = 3; config.ApplyModifiedPropertiesWithoutUndo(); physical.ResetForRoom();
                     phase = 10; deadline = Time.time + .2f; return;
                 }
                 if (phase == 10)
                 {
-                    Bounds b = physical.GetComponentInChildren<BoxCollider>().bounds;
-                    var c = player.GetComponent<CapsuleCollider>();
-                    Vector3 pos = new Vector3(31, player.Motor.position.y + b.max.y + .015f - c.bounds.min.y,0);
-                    player.Motor.position = pos; player.transform.position = pos; Physics.SyncTransforms();
-                    player.Motor.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+                    Bounds b = physical.GetComponentInChildren<BoxCollider2D>().bounds;
+                    var c = player.GetComponent<CapsuleCollider2D>();
+                    Vector3 pos = new Vector3(31, player.Motor.WorldPosition().y + b.max.y + .015f - c.bounds.min.y,0);
+                    player.Motor.position = pos; player.transform.position = pos; PlanarPhysics.SyncTransforms();
+                    player.Motor.constraints = RigidbodyConstraints2D.FreezePositionY | RigidbodyConstraints2D.None | RigidbodyConstraints2D.FreezeRotation;
                     player.SetMoveInput(new Vector2(.5f,0));
                     phase = 11; deadline = Time.time + .15f; return;
                 }
                 if (phase == 11)
                 {
                     Check(player.IsHorizontalClimbing, "grown green top activates traversal state");
-                    Check(player.Motor.position.x > 31.08f, "player traverses horizontal green top");
+                    Check(player.Motor.WorldPosition().x > 31.08f, "player traverses horizontal green top");
                     // Horizontal traversal now deliberately releases on jump.
                     // Verify that contract instead of the obsolete sticky-climb behaviour.
-                    player.Motor.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+                    player.Motor.constraints = RigidbodyConstraints2D.None | RigidbodyConstraints2D.FreezeRotation;
                     player.RequestJump(); Check(!player.IsHorizontalClimbing, "jump immediately releases horizontal traversal");
-                    Check(player.Motor.linearVelocity.y < -.1f && !player.CanAttachHorizontalVine,
+                    Check(((Vector3)player.Motor.linearVelocity).y < -.1f && !player.CanAttachHorizontalVine,
                         "horizontal release starts falling and prevents immediate reattachment");
-                    player.SetMoveInput(Vector2.zero); player.Motor.constraints = RigidbodyConstraints.FreezeAll;
-                    Bounds b = physical.GetComponentInChildren<BoxCollider>().bounds; var c = player.GetComponent<CapsuleCollider>();
-                    var pos = new Vector3(31, player.Motor.position.y + b.min.y - .015f - c.bounds.max.y,0);
-                    player.Motor.position = pos; player.transform.position = pos; Physics.SyncTransforms();
+                    player.SetMoveInput(Vector2.zero); player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
+                    Bounds b = physical.GetComponentInChildren<BoxCollider2D>().bounds; var c = player.GetComponent<CapsuleCollider2D>();
+                    var pos = new Vector3(31, player.Motor.WorldPosition().y + b.min.y - .015f - c.bounds.max.y,0);
+                    player.Motor.position = pos; player.transform.position = pos; PlanarPhysics.SyncTransforms();
                     phase = 12; deadline = Time.time + .65f; return;
                 }
                 if (phase == 12)
                 {
                     Check(player.IsHorizontalClimbing, "grown green underside activates traversal state");
-                    player.Motor.position = new Vector3(40,2,0); player.transform.position = player.Motor.position;
+                    player.Motor.position = new Vector3(40,2,0); player.transform.position = player.Motor.WorldPosition();
                     physical.RequestPush(blue,new Vector3(4,0,0),Time.fixedDeltaTime);
                     phase = 13; deadline = Time.time + .1f; return;
                 }
                 if (phase == 13)
                 {
                     Check(!player.IsHorizontalClimbing, "exit clears traversal state");
-                    Check(physical.GetComponent<ContactCubeMotion>().GravityProtected && !physical.GetComponent<Rigidbody>().useGravity, "horizontal jet temporarily disables gravity");
-                    Check(physical.GetComponent<Rigidbody>().linearVelocity.x > 3, "cube consumes jet velocity");
+                    Check(physical.GetComponent<ContactCubeMotion>().GravityProtected && !(physical.GetComponent<Rigidbody2D>().gravityScale != 0f), "horizontal jet temporarily disables gravity");
+                    Check(physical.GetComponent<Rigidbody2D>().linearVelocity.x > 3, "cube consumes jet velocity");
                     phase = 14; deadline = Time.time + .35f; return;
                 }
                 if (phase == 14)
                 {
-                    Check(!physical.GetComponent<ContactCubeMotion>().GravityProtected && physical.GetComponent<Rigidbody>().useGravity, "sustained horizontal jet does not extend grace indefinitely");
+                    Check(!physical.GetComponent<ContactCubeMotion>().GravityProtected && (physical.GetComponent<Rigidbody2D>().gravityScale != 0f), "sustained horizontal jet does not extend grace indefinitely");
                     physical.RequestPush(blue,Vector3.zero,Time.fixedDeltaTime);
                     phase = 15; deadline = Time.time + .08f; return;
                 }
@@ -176,7 +177,7 @@ namespace Project.ContactCubes.Editor
                 }
                 if (phase == 16)
                 {
-                    Check(physical.GetComponent<Rigidbody>().linearVelocity.x < -3f, "real red blue water jet pushes dynamic cube");
+                    Check(physical.GetComponent<Rigidbody2D>().linearVelocity.x < -3f, "real red blue water jet pushes dynamic cube");
                     Check(physical.GetComponent<ContactCubeMotion>().GravityProtected, "real jet starts gravity grace");
                     blue.enabled = false;
                     phase = 17; deadline = Time.time + .35f; return;
@@ -185,41 +186,41 @@ namespace Project.ContactCubes.Editor
                 {
                 Check(physical.GetComponent<ContactCubeMotion>().IsSettled, "disabled jet clears velocity source and cube settles");
                 physical.GetComponent<ContactCubeMotion>().SuspendMotion(true);
-                Check(physical.GetComponent<Rigidbody>().isKinematic, "carry handoff suspends physics");
+                Check(physical.GetComponent<Rigidbody2D>().isKinematic, "carry handoff suspends physics");
                 var room = physical.GetComponent<Project.Rooms.RoomResetObject>(); room.RestorePose(); room.RestoreState();
-                Check(!physical.GetComponent<ContactCubeMotion>().IsSuspended && !physical.GetComponent<Rigidbody>().isKinematic, "room reset releases suspended movement");
+                Check(!physical.GetComponent<ContactCubeMotion>().IsSuspended && !physical.GetComponent<Rigidbody2D>().isKinematic, "room reset releases suspended movement");
                 Check(Vector3.Distance(physical.transform.position,new Vector3(30,3,0)) < .01f, "room reset restores authored root position");
                 Check(physical.Length == 3 && physical.State == CubeReactionState.Idle, "room reset restores configured length and idle reaction");
-                var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 floor.transform.position = new Vector3(60,-.5f,0); floor.transform.localScale = new Vector3(10,1,4);
                 physical = Spawn(CubeColor.Green,new Vector3(60,.5f,0),false);
                 blue = Spawn(CubeColor.Blue,new Vector3(60,-.5f,0));
                 var config = new SerializedObject(physical); config.FindProperty("stepSeconds").floatValue = .05f; config.ApplyModifiedPropertiesWithoutUndo();
-                player.Motor.constraints = RigidbodyConstraints.FreezeAll;
-                player.Motor.position = new Vector3(58,.5f,0); player.transform.position = player.Motor.position;
-                player.SetMoveInput(Vector2.zero); Physics.SyncTransforms();
+                player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
+                player.Motor.position = new Vector3(58,.5f,0); player.transform.position = player.Motor.WorldPosition();
+                player.SetMoveInput(Vector2.zero); PlanarPhysics.SyncTransforms();
                 phase = 18; deadline = Time.time+.65f; return;
                 }
                 if (phase == 18)
                 {
                     Check(physical.Length == 6,"vertical growth reaches six cells");
                     Check(physical.GetComponent<ContactCubeMotion>().IsSettled,"six-cell vertical body retains floor support");
-                    Check(!physical.GetComponentInChildren<BoxCollider>().isTrigger,"grown body remains solid");
-                    player.Motor.position = new Vector3(59.02f,1,0); player.transform.position = player.Motor.position;
-                    player.Motor.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
-                    player.SetMoveInput(Vector2.up); Physics.SyncTransforms();
+                    Check(!physical.GetComponentInChildren<BoxCollider2D>().isTrigger,"grown body remains solid");
+                    player.Motor.position = new Vector3(59.02f,1,0); player.transform.position = player.Motor.WorldPosition();
+                    player.Motor.constraints = RigidbodyConstraints2D.None | RigidbodyConstraints2D.FreezeRotation;
+                    player.SetMoveInput(Vector2.up); PlanarPhysics.SyncTransforms();
                     phase = 19; deadline = Time.time+.35f; return;
                 }
                 if (phase == 19)
                 {
                     Check(player.IsClimbing,"vertical grown surface activates climb");
-                    Check(player.Motor.position.y > 1.05f,"player climbs upward on grown surface");
+                    Check(player.Motor.WorldPosition().y > 1.05f,"player climbs upward on grown surface");
                     Check(Mathf.Abs(physical.transform.position.x-60) < .005f,"climbing does not move green root");
-                    Check(!Physics.GetIgnoreCollision(physical.GetComponentInChildren<BoxCollider>(),player.GetComponent<CapsuleCollider>()),"grown player collision stays enabled");
+                    Check(!PlanarPhysics.GetIgnoreCollision(physical.GetComponentInChildren<BoxCollider2D>(),player.GetComponent<CapsuleCollider2D>()),"grown player collision stays enabled");
                     player.SetMoveInput(Vector2.right);
                     phase = 20; deadline = Time.time+.7f; return;
                 }
-                Check(player.GetComponent<CapsuleCollider>().bounds.max.x <= physical.GetComponentInChildren<BoxCollider>().bounds.min.x+.04f,"holding toward green cannot pass through");
+                Check(player.GetComponent<CapsuleCollider2D>().bounds.max.x <= physical.GetComponentInChildren<BoxCollider2D>().bounds.min.x+.04f,"holding toward green cannot pass through");
                 Check(Vector3.Distance(physical.transform.position,new Vector3(60,.5f,0)) < .015f,"sustained player pressure cannot displace grown green");
                 Finish(0, "PASS " + checks + " assertions");
             }

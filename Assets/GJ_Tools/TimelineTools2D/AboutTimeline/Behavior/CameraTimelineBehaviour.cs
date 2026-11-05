@@ -1,0 +1,694 @@
+using Project;
+using Project.CameraModes;
+using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
+
+public class CameraTimelineBehaviour : PlayableBehaviour
+{
+    public CameraTimelineClip clip;
+
+    private TimelineCamRig _rig;
+    private bool _inited;
+    private bool _warned;
+    private bool _anchorWarned;
+    private Vector3 _originWorldPos;
+    private Quaternion _originWorldRot;
+    private float _surroundStartAngle;
+    private CameraViewModeRequestHandle _modeRequestHandle;
+    private bool _modeRequestAttempted;
+    private Transform _originalAnchor;
+    private Transform _overrideAnchor;
+    private bool _anchorOverridden;
+    private float _baseOrthographicSize;
+
+
+    public override void OnBehaviourPlay(Playable playable, FrameData info)
+    {
+        _inited = false;
+        _warned = false;
+        _anchorWarned = false;
+        _modeRequestAttempted = false;
+        _anchorOverridden = false;
+    }
+
+    public override void ProcessFrame(Playable playable, FrameData info, object playerData)
+    {
+        if (clip == null)
+        {
+            return;
+        }
+
+        TimelineCamRig rig = playerData as TimelineCamRig;
+        if (rig == null)
+        {
+            rig = ProjectDiscovery.FindFirst<TimelineCamRig>();
+            if (rig == null)
+            {
+                if (!_warned)
+                {
+                    Debug.LogWarning("[CameraTimeline] 未绑定 TimelineCamRig，运镜不生效");
+                    _warned = true;
+                }
+                return;
+            }
+        }
+
+        _rig = rig;
+
+        float totalDuration = (float)playable.GetDuration();
+        if (totalDuration <= 0.0001f)
+        {
+            return;
+        }
+
+        float currentTime = (float)playable.GetTime();
+        // Projection must be requested before waiting for a late-spawned
+        // anchor; the first rendered frame must also be orthographic.
+        RequestClipMode(
+            rig,
+            currentTime,
+            totalDuration);
+
+        if (!_inited)
+        {
+            if (!ApplyAnchorOverride(rig))
+            {
+                return;
+            }
+
+            _inited = true;
+            rig.CaptureNormalState();
+            CameraState baseState = rig.Manager != null
+                ? rig.Manager.CurrentState
+                : default;
+            _baseOrthographicSize = baseState.orthographicSize;
+
+            if (clip.overrideOrthographicSize)
+            {
+                rig.SetShotLens(
+                    _baseOrthographicSize *
+                    clip.orthographicSizeMultiplier);
+            }
+            if (!clip.useLastFrameAsOrigin)
+            {
+                _originWorldPos = rig.CurrentPosition;
+                _originWorldRot = rig.CurrentRotation;
+            }
+
+            Transform surroundAnchor = rig.AnchorTransform;
+            Vector3 surroundOrigin = rig.CurrentPosition -
+                                     surroundAnchor.position;
+            surroundOrigin.z = 0f;
+            _surroundStartAngle =
+                Mathf.Atan2(surroundOrigin.x, surroundOrigin.y) *
+                Mathf.Rad2Deg;
+        }
+
+        if (rig.userDriving)
+        {
+            return;
+        }
+
+        float deltaTime = Mathf.Max(0f, (float)info.deltaTime);
+        Vector3 currentPosition = rig.CurrentPosition;
+        Quaternion currentRotation = rig.CurrentRotation;
+        Transform anchor = rig.AnchorTransform;
+        Vector3 lookPoint = anchor.position;
+
+        if (clip.cameraMoveMode == CamMoveMode.ResetOrigin)
+        {
+            if (!rig.HasNormalState)
+            {
+                return;
+            }
+
+            Vector3 normalPosition = rig.NormalPosition;
+            Quaternion normalRotation = rig.NormalRotation;
+            float blend = Mathf.Clamp01(clip.resetLerpFactor * deltaTime);
+            Vector3 resetPosition = clip.resetSubMode == ResetCamSubMode.Teleport
+                ? normalPosition
+                : Vector3.Lerp(currentPosition, normalPosition, blend);
+            Quaternion resetRotation = clip.resetSubMode == ResetCamSubMode.Teleport
+                ? normalRotation
+                : Quaternion.Slerp(currentRotation, normalRotation, blend);
+            if (clip.lockLookAtPlayer)
+            {
+                resetRotation = LookRotation(resetPosition, lookPoint, resetRotation);
+            }
+
+            ApplyShot(
+                rig,
+                resetPosition,
+                resetRotation);
+            return;
+        }
+
+        float planarTurnAngle = IsOrthographicMode(rig)
+            ? rig.PlanarYaw
+            : 0f;
+        Quaternion planarTurn = Quaternion.Euler(0f, 0f, planarTurnAngle);
+        bool usePlanarRotation =
+            IsOrthographicMode(rig) &&
+            clip.constrainOrthographicAxes;
+        float trackDuration = clip.trackAnchorFirst
+            ? Mathf.Clamp(
+                clip.trackDuration,
+                .01f,
+                totalDuration)
+            : 0f;
+        Vector3 trackTargetPosition =
+            anchor.TransformPoint(
+                planarTurn * clip.trackTargetLocalPos);
+        Quaternion trackTargetRotation =
+            usePlanarRotation
+                ? planarTurn
+                : anchor.rotation *
+                  planarTurn *
+                  Quaternion.Euler(0f, 0f, clip.cameraTargetEuler.z);
+        if (trackDuration > 0f &&
+            currentTime < trackDuration)
+        {
+            float trackProgress = Mathf.SmoothStep(
+                0f,
+                1f,
+                currentTime / trackDuration);
+            Vector3 trackedPosition = Vector3.Lerp(
+                _originWorldPos,
+                trackTargetPosition,
+                trackProgress);
+            Quaternion trackedRotation = Quaternion.Slerp(
+                _originWorldRot,
+                trackTargetRotation,
+                trackProgress);
+            ApplyOrthographicConstraints(
+                rig,
+                ref trackedPosition,
+                ref trackedRotation,
+                _originWorldPos);
+            ApplyShot(
+                rig,
+                trackedPosition,
+                trackedRotation);
+            return;
+        }
+
+        float motionElapsed = Mathf.Max(
+            0f,
+            currentTime - trackDuration);
+        float motionDuration = Mathf.Max(
+            .01f,
+            totalDuration - trackDuration);
+        float baseProgress = clip.useVariableSpeed
+            ? GetProgress(
+                motionElapsed,
+                motionDuration,
+                clip.startSpeed,
+                clip.endSpeed)
+            : Mathf.Clamp01(motionElapsed / motionDuration);
+        if (clip.useMotionCurve && clip.motionCurve != null)
+        {
+            baseProgress = Mathf.Clamp01(
+                clip.motionCurve.Evaluate(baseProgress));
+        }
+
+        Vector3 worldTargetPosition =
+            anchor.TransformPoint(planarTurn * clip.cameraTargetLocalPos);
+        Quaternion worldTargetRotation =
+            usePlanarRotation
+                ? planarTurn
+                : anchor.rotation *
+                  planarTurn *
+                  Quaternion.Euler(0f, 0f, clip.cameraTargetEuler.z);
+        Vector3 originPosition = trackDuration > 0f
+            ? trackTargetPosition
+            : clip.useLastFrameAsOrigin
+                ? currentPosition
+                : _originWorldPos;
+        Quaternion originRotation = trackDuration > 0f
+            ? trackTargetRotation
+            : clip.useLastFrameAsOrigin
+                ? currentRotation
+                : _originWorldRot;
+
+        Vector3 finalTargetPosition;
+        if (!clip.useSurroundMode)
+        {
+            finalTargetPosition = worldTargetPosition;
+        }
+        else
+        {
+            Vector3 foot = anchor.position;
+            float radiusScale =
+                clip.useSurroundRadiusCurve && clip.surroundRadiusCurve != null
+                    ? clip.surroundRadiusCurve.Evaluate(baseProgress)
+                    : 1f;
+            float heightScale =
+                clip.useSurroundHeightCurve && clip.surroundHeightCurve != null
+                    ? clip.surroundHeightCurve.Evaluate(baseProgress)
+                    : 1f;
+            Vector3 circleCenter = new Vector3(
+                foot.x,
+                foot.y + clip.surroundFixedHeight * heightScale,
+                foot.z);
+            float currentAngle =
+                _surroundStartAngle +
+                clip.surroundTotalAngle * baseProgress;
+            float radians = currentAngle * Mathf.Deg2Rad;
+            finalTargetPosition = circleCenter + new Vector3(
+                Mathf.Sin(radians) * clip.surroundRadius * radiusScale,
+                Mathf.Cos(radians) * clip.surroundRadius * radiusScale,
+                0f);
+        }
+
+        Vector3 nextPosition;
+        Quaternion nextRotation;
+        if (clip.cameraMoveMode == CamMoveMode.Teleport)
+        {
+            nextPosition = baseProgress > 0f ? finalTargetPosition : currentPosition;
+            nextRotation = baseProgress > 0f ? worldTargetRotation : currentRotation;
+            if (clip.lockLookAtPlayer && baseProgress > 0f)
+            {
+                nextRotation = LookRotation(nextPosition, lookPoint, nextRotation);
+            }
+        }
+        else if (clip.useSurroundMode)
+        {
+            nextPosition = finalTargetPosition;
+            nextRotation = clip.lockLookAtPlayer
+                ? LookRotation(nextPosition, lookPoint, worldTargetRotation)
+                : worldTargetRotation;
+        }
+        else
+        {
+            if (clip.useMotionCurve)
+            {
+                nextPosition = Vector3.Lerp(
+                    originPosition,
+                    finalTargetPosition,
+                    baseProgress);
+                Quaternion curveRotation = Quaternion.Slerp(
+                    originRotation,
+                    worldTargetRotation,
+                    baseProgress);
+                nextRotation = clip.lockLookAtPlayer
+                    ? LookRotation(nextPosition, lookPoint, curveRotation)
+                    : curveRotation;
+            }
+            else
+            {
+                Vector3 lerpPosition = Vector3.Lerp(
+                    originPosition,
+                    finalTargetPosition,
+                    baseProgress);
+                nextPosition = Vector3.Lerp(
+                    currentPosition,
+                    lerpPosition,
+                    Mathf.Clamp01(clip.smoothLerpFactor * deltaTime));
+                Quaternion lerpRotation = Quaternion.Slerp(
+                    originRotation,
+                    worldTargetRotation,
+                    baseProgress);
+                nextRotation = clip.lockLookAtPlayer
+                    ? LookRotation(nextPosition, lookPoint, lerpRotation)
+                    : lerpRotation;
+            }
+        }
+
+        ApplyOrthographicConstraints(
+            rig,
+            ref nextPosition,
+            ref nextRotation,
+            originPosition);
+        ApplyShot(
+            rig,
+            nextPosition,
+            nextRotation);
+    }
+
+    public override void OnBehaviourPause(Playable playable, FrameData info)
+    {
+        FinishClip(playable);
+    }
+
+    public override void OnGraphStop(Playable playable)
+    {
+        FinishClip(playable);
+    }
+
+    public override void OnPlayableDestroy(Playable playable)
+    {
+        FinishClip(playable);
+    }
+
+    private void FinishClip(Playable playable)
+    {
+        TimelineCamRig rig = _rig;
+        bool reachedEnd =
+            playable.IsValid() &&
+            playable.GetDuration() > 0d &&
+            playable.GetTime() >= playable.GetDuration() - 0.0001d;
+        ReleaseClipMode();
+        // A Hold-wrapped director stops evaluating without raising OnGraphStop.
+        if (reachedEnd && rig != null &&
+            rig.IsTimelineControlling)
+        {
+            rig.ReleaseTimelineControl(
+                rig.SmoothReturnOnRelease);
+        }
+        RestoreAnchorOverride(rig);
+        _rig = null;
+        _inited = false;
+        _warned = false;
+        _anchorWarned = false;
+        _anchorOverridden = false;
+    }
+
+    private static float GetProgress(
+        float currentTime,
+        float duration,
+        float startSpeed,
+        float endSpeed)
+    {
+        float totalDisplacement = (startSpeed + endSpeed) * 0.5f * duration;
+        if (totalDisplacement <= 0.0001f)
+        {
+            return Mathf.Clamp01(currentTime / duration);
+        }
+
+        float travel = startSpeed * currentTime +
+                       (endSpeed - startSpeed) * currentTime * currentTime / (2f * duration);
+        return Mathf.Clamp01(travel / totalDisplacement);
+    }
+
+    private static Quaternion LookRotation(Vector3 position, Vector3 lookPoint, Quaternion fallback)
+    {
+        // A side-view camera never tilts towards the actor. Only authored screen roll survives.
+        return Quaternion.Euler(0f, 0f, fallback.eulerAngles.z);
+    }
+
+    private bool ApplyAnchorOverride(TimelineCamRig rig)
+    {
+        if (rig == null || string.IsNullOrWhiteSpace(clip.anchorTag))
+        {
+            return true;
+        }
+
+        GameObject tagged = GameObject.FindGameObjectWithTag(clip.anchorTag);
+        if (tagged == null)
+        {
+            if (!_anchorWarned)
+            {
+                Debug.LogWarning(
+                    $"[CameraTimeline] 暂未找到 Tag={clip.anchorTag} 的运镜锚点，将在后续帧继续查找。",
+                    rig);
+                _anchorWarned = true;
+            }
+            return false;
+        }
+
+        _originalAnchor = rig.target;
+        _overrideAnchor = tagged.transform;
+        rig.target = _overrideAnchor;
+        _anchorOverridden = true;
+        return true;
+    }
+
+    private void RestoreAnchorOverride(TimelineCamRig rig)
+    {
+        if (!_anchorOverridden || rig == null)
+        {
+            return;
+        }
+
+        if (rig.target == _overrideAnchor)
+        {
+            rig.target = _originalAnchor;
+        }
+    }
+
+    private void ApplyShot(
+        TimelineCamRig rig,
+        Vector3 position,
+        Quaternion rotation)
+    {
+        if (rig == null || clip == null)
+        {
+            return;
+        }
+
+        if (clip.modeRequest ==
+                TimelineCameraModeRequest.Side2D ||
+            clip.constrainOrthographicAxes &&
+            IsOrthographicMode(rig))
+        {
+            float yaw = clip.overrideSide2DYaw
+                ? clip.side2DYawDegrees
+                : rig.PlanarYaw;
+            rotation = Quaternion.Euler(0f, 0f, yaw);
+        }
+
+        rig.SetShotTransform(
+            position,
+            rotation);
+    }
+
+    private void ApplyOrthographicConstraints(
+        TimelineCamRig rig,
+        ref Vector3 position,
+        ref Quaternion rotation,
+        Vector3 originPosition)
+    {
+        if (!clip.constrainOrthographicAxes)
+        {
+            return;
+        }
+
+        bool isOrthographic = IsOrthographicMode(rig);
+        if (!isOrthographic)
+        {
+            return;
+        }
+
+        if (!clip.allowPositionX)
+        {
+            position.x = originPosition.x;
+        }
+        if (!clip.allowPositionY)
+        {
+            position.y = originPosition.y;
+        }
+if (clip.clampPositionX)
+        {
+            position.x = ClampRange(position.x, clip.positionXRange);
+        }
+        if (clip.clampPositionY)
+        {
+            position.y = ClampRange(position.y, clip.positionYRange);
+        }
+rotation = Quaternion.Euler(0f, 0f, rotation.eulerAngles.z);
+    }
+
+    private static float ClampRange(float value, Vector2 range)
+    {
+        float minimum = Mathf.Min(range.x, range.y);
+        float maximum = Mathf.Max(range.x, range.y);
+        return Mathf.Clamp(value, minimum, maximum);
+    }
+
+    private void RequestClipMode(
+        TimelineCamRig rig,
+        float currentTime,
+        float totalDuration)
+    {
+        if (_modeRequestAttempted || _modeRequestHandle.IsValid)
+        {
+            return;
+        }
+
+        bool requestSide2D =
+            clip.modeRequest == TimelineCameraModeRequest.Side2D ||
+            (clip.modeRequest == TimelineCameraModeRequest.None &&
+             clip.turnTiming != Camera2DTurnTiming.None &&
+             rig.IsCurrentProjectionOrthographic);
+        if (!requestSide2D)
+        {
+            _modeRequestAttempted = true;
+            return;
+        }
+
+        bool hasTurn =
+            requestSide2D &&
+            clip.turnTiming != Camera2DTurnTiming.None;
+        if (hasTurn &&
+            clip.turnTiming == Camera2DTurnTiming.AtClipEnd)
+        {
+            float turnDuration = Mathf.Clamp(
+                clip.turnDuration,
+                0.01f,
+                totalDuration);
+            if (currentTime < totalDuration - turnDuration)
+            {
+                return;
+            }
+        }
+
+        CameraViewMode mode = CameraViewMode.Side2D;
+        CameraTransition transition = hasTurn
+            ? new CameraTransition
+            {
+                duration = Mathf.Clamp(
+                    clip.turnDuration,
+                    0.01f,
+                    totalDuration),
+                easing = clip.turnCurve ??
+                         AnimationCurve.EaseInOut(0f, 0f, 1f, 1f),
+            }
+            : CameraTransition.Ease(
+                clip.projectionTransitionDuration);
+        bool overrideYaw =
+            requestSide2D &&
+            (clip.overrideSide2DYaw || hasTurn);
+        float targetYaw = clip.overrideSide2DYaw
+            ? clip.side2DYawDegrees
+            : rig.PlanarYaw + clip.turnAngleDegrees;
+
+        _modeRequestHandle = overrideYaw
+            ? rig.RequestViewMode(
+                mode,
+                targetYaw,
+                transition)
+            : rig.RequestViewMode(
+                mode,
+                transition);
+        _modeRequestAttempted = true;
+    }
+
+    private void ReleaseClipMode()
+    {
+        if (_modeRequestHandle.IsValid)
+        {
+            if (_rig != null)
+            {
+                _rig.ReleaseViewMode(_modeRequestHandle);
+            }
+            else
+            {
+                _modeRequestHandle.Release(true);
+            }
+        }
+        _modeRequestHandle = default;
+        _modeRequestAttempted = false;
+    }
+
+    private bool IsOrthographicMode(TimelineCamRig rig) => true;
+}
+
+public class CameraTimelineMixerBehaviour : PlayableBehaviour
+{
+    public CameraTimelineTrack track;
+
+    private TimelineCamRig _rig;
+    private bool _hasControl;
+
+    public override void ProcessFrame(
+        Playable playable,
+        FrameData info,
+        object playerData)
+    {
+        TimelineCamRig rig = playerData as TimelineCamRig;
+        if (rig == null)
+        {
+            rig = ProjectDiscovery.FindFirst<TimelineCamRig>();
+            if (rig == null)
+            {
+                ReleaseControl();
+                return;
+            }
+        }
+
+        if (_rig != rig)
+        {
+            ReleaseControl();
+            _rig = rig;
+        }
+
+        if (_hasControl && !_rig.IsTimelineControlling)
+        {
+            _hasControl = false;
+        }
+
+        bool hasActiveClip = false;
+        int inputCount = playable.GetInputCount();
+        for (int index = 0; index < inputCount; index++)
+        {
+            if (playable.GetInputWeight(index) > 0f)
+            {
+                hasActiveClip = true;
+                break;
+            }
+        }
+
+        if (hasActiveClip && !_hasControl)
+        {
+            _rig.userManualAllowed =
+                track != null && track.allowManualCamera;
+            _rig.SetReturnMode(
+                track == null || track.restoreOriginOnEnd);
+            _rig.SetReturnDurationForCurrentShot(
+                track != null
+                    ? track.returnTransitionDuration
+                    : _rig.ReturnTransitionDuration);
+            _rig.Acquire(
+                track != null
+                    ? track.entryTransitionDuration
+                    : _rig.ReturnTransitionDuration);
+            _hasControl = true;
+        }
+        else if (!hasActiveClip && _hasControl && !HasRemainingClip(playable))
+        {
+            ReleaseControl();
+        }
+    }
+
+    public override void OnGraphStop(Playable playable)
+    {
+        ReleaseControl();
+    }
+
+    public override void OnPlayableDestroy(Playable playable)
+    {
+        ReleaseControl();
+    }
+
+    private void ReleaseControl()
+    {
+        if (_rig != null && _hasControl)
+        {
+            _rig.ReleaseTimelineControl(
+                _rig.SmoothReturnOnRelease);
+        }
+
+        _rig = null;
+        _hasControl = false;
+    }
+
+    private bool HasRemainingClip(Playable playable)
+    {
+        if (track == null)
+        {
+            return false;
+        }
+
+        double currentTime = playable.GetTime();
+        foreach (TimelineClip clip in track.GetClips())
+        {
+            if (clip.end > currentTime + 0.0001d)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

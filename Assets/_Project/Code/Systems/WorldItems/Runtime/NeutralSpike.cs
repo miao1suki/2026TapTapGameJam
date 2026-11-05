@@ -1,3 +1,4 @@
+using Project.Planar;
 using Project.ColorBlocks;
 using Project.LevelEditor;
 using Project.Player;
@@ -17,9 +18,9 @@ namespace Project.WorldItems
         [SerializeField] private SpikeSize size;
         [SerializeField] private bool initiallyBloody;
         [SerializeField] private SpikeFacing facing;
-        private MeshCollider sourceVolume;
-        private Mesh tiledContactMesh;
-        private Mesh sizedContactMesh;
+        private PolygonCollider2D sourceVolume;
+        private bool mergedContactsBuilt;
+        private bool sourceContactSized;
         // Session presentation only. Never serialize these cells into planning/save data.
         private readonly HashSet<Vector2Int> bloodyCells = new HashSet<Vector2Int>();
         private Mesh artworkMesh;
@@ -38,7 +39,7 @@ namespace Project.WorldItems
         public float ArtworkRotationDegrees => facing == SpikeFacing.Up ? 0f : facing == SpikeFacing.Down ? 180f
             : facing == SpikeFacing.Left ? 90f : facing == SpikeFacing.Right ? -90f
             : SourceVolume != null ? SourceVolume.transform.localEulerAngles.z : 0f;
-        private MeshCollider SourceVolume => sourceVolume != null ? sourceVolume : sourceVolume = GetComponentInChildren<MeshCollider>(true);
+        private PolygonCollider2D SourceVolume => sourceVolume != null ? sourceVolume : sourceVolume = GetComponentInChildren<PolygonCollider2D>(true);
 
         public void Configure(SpikeSize valueSize, bool bloody, SpikeFacing valueFacing)
         { size = valueSize; initiallyBloody = bloody; facing = valueFacing; artworkRevision++; }
@@ -58,74 +59,69 @@ namespace Project.WorldItems
         private void ConfigureSourceContact()
         {
             var volume = SourceVolume;
-            if (volume == null || volume.sharedMesh == null || sizedContactMesh != null) return;
-            float angle = ArtworkRotationDegrees;
-            volume.transform.localRotation = Quaternion.Euler(0, 0, angle);
-            var original = volume.sharedMesh;
-            sizedContactMesh = Instantiate(original);
-            sizedContactMesh.name = "Spike Instance Contact"; sizedContactMesh.hideFlags = HideFlags.DontSave;
-            var vertices = original.vertices; Bounds bounds = original.bounds;
+            if (volume == null || volume.pathCount == 0 || sourceContactSized) return;
+            volume.transform.localRotation = Quaternion.Euler(0, 0, ArtworkRotationDegrees);
+            Bounds bounds = PlanarGeometry.LocalBounds(volume);
             float height = size == SpikeSize.Large ? .5f : .25f;
-            for (int i = 0; i < vertices.Length; i++)
-                vertices[i].y = -.5f + (vertices[i].y - bounds.min.y) / Mathf.Max(.0001f, bounds.size.y) * height;
-            sizedContactMesh.vertices = vertices; sizedContactMesh.RecalculateBounds();
-            volume.sharedMesh = sizedContactMesh;
+            for (int p = 0; p < volume.pathCount; p++)
+            {
+                Vector2[] points = volume.GetPath(p);
+                for (int i = 0; i < points.Length; i++)
+                    points[i].y = -.5f + (points[i].y - bounds.min.y) / Mathf.Max(.0001f, bounds.size.y) * height;
+                volume.SetPath(p, points);
+            }
+            sourceContactSized = true;
         }
 
         private void ConfigureMergedContacts()
         {
-            if (tiledContactMesh != null)
+            if (mergedContactsBuilt)
             {
-                // RoomResetObject restores authored collider states before this hook.
                 if (sourceVolume != null) sourceVolume.enabled = false;
                 return;
             }
             var placed = GetComponent<LevelEditorPlacedBlock>();
             var shape = GetComponent<LevelEditorMergedShape>();
-            Vector2Int size = shape != null ? shape.Dimensions : placed != null ? placed.SizeCells : Vector2Int.one;
-            if (size.x < 1 || size.y < 1 || size == Vector2Int.one) return;
+            Vector2Int dimensions = shape != null ? shape.Dimensions : placed != null ? placed.SizeCells : Vector2Int.one;
+            if (dimensions.x < 1 || dimensions.y < 1 || dimensions == Vector2Int.one) return;
             sourceVolume = SourceVolume;
-            if (sourceVolume == null || !sourceVolume.enabled || sourceVolume.sharedMesh == null) return;
-
-            // Scaling a whole row into one giant triangle leaves its outer cells
-            // without a trigger. Repeat the original convex prism per occupied cell.
-            // Bake rotation before compensating nonuniform root scale (left/right).
-            var vertices = sourceVolume.sharedMesh.vertices;
+            if (sourceVolume == null || !sourceVolume.enabled || sourceVolume.pathCount == 0) return;
+            var paths = new List<Vector2[]>();
             Matrix4x4 toRoot = transform.worldToLocalMatrix * sourceVolume.transform.localToWorldMatrix;
-            for (int i = 0; i < vertices.Length; i++)
+            for (int p = 0; p < sourceVolume.pathCount; p++)
             {
-                Vector3 point = toRoot.MultiplyPoint3x4(vertices[i]);
-                vertices[i] = new Vector3(point.x / size.x, point.y / size.y, point.z);
+                Vector2[] points = sourceVolume.GetPath(p);
+                for (int i = 0; i < points.Length; i++)
+                {
+                    Vector3 point = toRoot.MultiplyPoint3x4(points[i] + sourceVolume.offset);
+                    points[i] = new Vector2(point.x / dimensions.x, point.y / dimensions.y);
+                }
+                paths.Add(points);
             }
-            tiledContactMesh = new Mesh { name = "Spike Cell Contact", hideFlags = HideFlags.DontSave };
-            tiledContactMesh.vertices = vertices;
-            tiledContactMesh.triangles = sourceVolume.sharedMesh.triangles;
-            tiledContactMesh.RecalculateBounds();
             if (shape != null)
-            {
                 foreach (var rect in shape.Rectangles)
-                    foreach (var cell in rect.allPositionsWithin) AddCellContact(cell, size);
-            }
+                    foreach (var cell in rect.allPositionsWithin) AddCellContact(cell, dimensions, paths);
             else
-                foreach (var cell in new RectInt(Vector2Int.zero, size).allPositionsWithin) AddCellContact(cell, size);
+                foreach (var cell in new RectInt(Vector2Int.zero, dimensions).allPositionsWithin) AddCellContact(cell, dimensions, paths);
             sourceVolume.enabled = false;
+            mergedContactsBuilt = true;
         }
 
-        private void AddCellContact(Vector2Int cell, Vector2Int size)
+        private void AddCellContact(Vector2Int cell, Vector2Int dimensions, List<Vector2[]> paths)
         {
             var child = new GameObject("__SpikeContact_" + cell.x + "_" + cell.y) { hideFlags = HideFlags.DontSave };
             child.layer = sourceVolume.gameObject.layer;
             child.transform.SetParent(transform, false);
-            child.transform.localPosition = new Vector3((cell.x + .5f) / size.x - .5f, .5f - (cell.y + .5f) / size.y, 0f);
-            var volume = child.AddComponent<MeshCollider>();
-            volume.sharedMesh = tiledContactMesh; volume.convex = true; volume.isTrigger = true;
+            child.transform.localPosition = new Vector3((cell.x + .5f) / dimensions.x - .5f, .5f - (cell.y + .5f) / dimensions.y, 0f);
+            var volume = child.AddComponent<PolygonCollider2D>();
+            volume.pathCount = paths.Count;
+            for (int p = 0; p < paths.Count; p++) volume.SetPath(p, paths[p]);
+            volume.isTrigger = true;
             child.AddComponent<SpikeContactRelay>().Bind(this, cell);
         }
 
         private void OnDestroy()
         {
-            if (tiledContactMesh != null) Destroy(tiledContactMesh);
-            if (sizedContactMesh != null) Destroy(sizedContactMesh);
             if (artworkMesh != null) Destroy(artworkMesh);
         }
 
@@ -133,8 +129,8 @@ namespace Project.WorldItems
         {
             // Static child colliders do not send physics messages to an arbitrary
             // parent MonoBehaviour. Keep their exact shapes and forward locally;
-            // no extra Rigidbody or per-frame overlap scan is needed.
-            foreach (var shape in GetComponentsInChildren<Collider>(true))
+            // no extra Rigidbody2D or per-frame overlap scan is needed.
+            foreach (var shape in GetComponentsInChildren<Collider2D>(true))
             {
                 if (shape.gameObject == gameObject || shape.GetComponentInParent<NeutralSpike>() != this) continue;
                 var relay = shape.GetComponent<SpikeContactRelay>();
@@ -143,13 +139,13 @@ namespace Project.WorldItems
             }
         }
 
-        private void OnTriggerEnter(Collider other) => Hit(other);
-        private void OnTriggerStay(Collider other) => Hit(other);
-        private void OnCollisionEnter(Collision collision) => Hit(collision.collider);
-        private void OnCollisionStay(Collision collision) => Hit(collision.collider);
+        private void OnTriggerEnter2D(Collider2D other) => Hit(other);
+        private void OnTriggerStay2D(Collider2D other) => Hit(other);
+        private void OnCollisionEnter2D(Collision2D collision) => Hit(collision.collider);
+        private void OnCollisionStay2D(Collision2D collision) => Hit(collision.collider);
 
-        internal void Hit(Collider other) => Hit(other, Vector2Int.zero);
-        internal void Hit(Collider other, Vector2Int cell)
+        internal void Hit(Collider2D other) => Hit(other, Vector2Int.zero);
+        internal void Hit(Collider2D other, Vector2Int cell)
         {
             if (!isActiveAndEnabled || other == null) return;
             var player = other.GetComponentInParent<PlayerController>();

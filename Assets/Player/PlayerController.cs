@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project.Audio;
@@ -36,7 +37,7 @@ namespace Project.Player
     }
 
     /// <summary>Basic physical motor. No projected platforms, ladders or rope dependencies.</summary>
-    [RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider), typeof(PlayerActionRunner))]
+    [RequireComponent(typeof(Rigidbody2D), typeof(CapsuleCollider2D), typeof(PlayerActionRunner))]
     [DisallowMultipleComponent]
     public sealed class PlayerController :
         MonoBehaviour,
@@ -166,8 +167,8 @@ namespace Project.Player
             respawnMode = mode;
             respawnLoadingSeconds = float.IsFinite(loadingSeconds) ? Mathf.Max(0f, loadingSeconds) : 2f;
         }
-        private Rigidbody motor;
-        private CapsuleCollider capsule;
+        private Rigidbody2D motor;
+        private CapsuleCollider2D capsule;
         private PlayerActionRunner runner;
         private PlayerInteractionSensor interactionSensor;
         private PlayerColorWheel colorWheel;
@@ -180,12 +181,12 @@ namespace Project.Player
             new List<IPlayerCarryTarget>();
         private readonly List<Vector3Int> carryFootprintBuffer =
             new List<Vector3Int>();
-        private readonly Collider[] carryDropBuffer =
-            new Collider[32];
-        private readonly RaycastHit[] carryRayBuffer =
-            new RaycastHit[32];
-        private readonly List<Collider> carryPlacedColliders =
-            new List<Collider>(8);
+        private readonly Collider2D[] carryDropBuffer =
+            new Collider2D[32];
+        private readonly RaycastHit2D[] carryRayBuffer =
+            new RaycastHit2D[32];
+        private readonly List<Collider2D> carryPlacedColliders =
+            new List<Collider2D>(8);
         private IPlayerCarryTarget selectedCarryTarget;
         private IPlayerCarryTarget highlightedCarryTarget;
         private float carryPrepareUntil = -1f;
@@ -236,13 +237,13 @@ namespace Project.Player
         private bool presentationMotionPreviousKinematic;
         private bool presentationMotionPreviousGravity;
         private bool presentationMotionPreviousDetectCollisions;
-        private RigidbodyInterpolation
+        private RigidbodyInterpolation2D
             presentationMotionPreviousInterpolation;
-        private CollisionDetectionMode
+        private CollisionDetectionMode2D
             presentationMotionPreviousCollisionMode;
         private float gridCellWorldSize = 1f;
-        private readonly Collider[] respawnOverlapBuffer =
-            new Collider[32];
+        private readonly Collider2D[] respawnOverlapBuffer =
+            new Collider2D[32];
         private float requestedBounceSpeed = -1f;
         private bool bounceHasExactHeight;
         private bool protectBounceFromClimbing;
@@ -274,7 +275,7 @@ namespace Project.Player
         private int cornerSide, cornerTravel;
         private Component wrappedEdgeSource;
         private int wrappedEdgeSide;
-        private readonly Collider[] climbCornerOverlaps = new Collider[16];
+        private readonly Collider2D[] climbCornerOverlaps = new Collider2D[16];
         public bool IsClimbCornerProtected => cornerSource != null;
         public bool IsClimbCornerProtectedBy(Component source) => source != null && cornerSource == source;
         public bool CanAttachHorizontalVine => CanAutomaticallyClimb && Time.time >= horizontalReleaseUntil;
@@ -295,7 +296,6 @@ namespace Project.Player
             if (source == null || dead || IsControlLocked || !CanAttachHorizontalVine ||
                 protectBounceFromClimbing || cornerSource != null || Time.time < cornerCooldown) return;
             Bounds body = capsule.bounds;
-            if (body.max.z < bounds.min.z || body.min.z > bounds.max.z) return;
             float margin = gridCellWorldSize * .24f;
             bool top = Mathf.Abs(body.min.y - bounds.max.y) < margin;
             bool bottom = Mathf.Abs(body.max.y - bounds.min.y) < margin;
@@ -330,12 +330,12 @@ namespace Project.Player
             float width = Mathf.Min(cell * .12f, bounds.extents.x * .5f);
             float edge = side > 0 ? bounds.max.x : bounds.min.x;
             Vector3 center = new Vector3(edge - side * width, bounds.max.y + cell * .05f, bounds.center.z);
-            int count = Physics.OverlapBoxNonAlloc(center, new Vector3(width, cell * .025f, bounds.extents.z * .8f),
-                climbCornerOverlaps, Quaternion.identity, groundMask, QueryTriggerInteraction.Ignore);
+            int count = PlanarPhysics.OverlapBoxNonAlloc(center, new Vector3(width, cell * .025f, bounds.extents.z * .8f),
+                climbCornerOverlaps, Quaternion.identity, groundMask, TriggerQuery.Ignore);
             if (count == climbCornerOverlaps.Length) return false;
             for (int i = 0; i < count; i++)
             {
-                Collider hit = climbCornerOverlaps[i];
+                Collider2D hit = climbCornerOverlaps[i];
                 // A root's grown children can cover this top too; do not exclude the entire source hierarchy.
                 if (hit != null && !hit.transform.IsChildOf(transform))
                     return false;
@@ -366,7 +366,7 @@ namespace Project.Player
                 center.x = edge + cornerSide * rx * Mathf.Cos(angle);
                 center.y = cornerBounds.min.y - ry * Mathf.Sin(angle);
             }
-            return center - (body.center - motor.position);
+            return center - (body.center - motor.WorldPosition());
         }
 
         private bool TickClimbCorner()
@@ -375,15 +375,15 @@ namespace Project.Player
             if (!cornerSource.gameObject.activeInHierarchy || IsControlLocked || dead ||
                 (cornerSource is Behaviour b && !b.isActiveAndEnabled) || !CanAttachHorizontalVine)
             { cornerSource = null; return false; }
-            var solid = cornerSource.GetComponentInChildren<BoxCollider>();
+            var solid = cornerSource.GetComponentInChildren<BoxCollider2D>();
             if (solid == null || !solid.enabled || (solid.bounds.center - cornerBounds.center).sqrMagnitude > .01f ||
                 (solid.bounds.size - cornerBounds.size).sqrMagnitude > .01f)
             { cornerSource = null; return false; }
             // Advancing only after reaching each waypoint keeps collision response authoritative.
             Vector3 point = ClimbCornerPoint(cornerProgress);
-            if (Vector3.Distance(motor.position, point) < gridCellWorldSize * .07f)
+            if (Vector3.Distance(motor.WorldPosition(), point) < gridCellWorldSize * .07f)
                 cornerProgress = Mathf.Clamp(cornerProgress + cornerTravel * .05f, 0f, 3f);
-            Vector3 delta = ClimbCornerPoint(cornerProgress) - motor.position;
+            Vector3 delta = ClimbCornerPoint(cornerProgress) - motor.WorldPosition();
             motor.linearVelocity = Vector3.ClampMagnitude(delta / Time.fixedDeltaTime, cornerSpeed);
             IsGrounded = false;
             if ((cornerProgress <= 0f && cornerTravel < 0 || cornerProgress >= 3f && cornerTravel > 0) &&
@@ -401,9 +401,9 @@ namespace Project.Player
         private readonly Dictionary<int, float> climbTopHeights = new Dictionary<int, float>();
         private readonly HashSet<int> bounceSurfaces =
             new HashSet<int>();
-        private readonly RaycastHit[] groundHits = new RaycastHit[16];
-        private static PhysicsMaterial zeroFrictionMaterial;
-        public Rigidbody Motor => motor;
+        private readonly RaycastHit2D[] groundHits = new RaycastHit2D[16];
+        private static PhysicsMaterial2D zeroFrictionMaterial;
+        public Rigidbody2D Motor => motor;
         public bool IsGrounded { get; private set; }
         public bool ShowAirborneDownControl => !dead &&
             (!IsGrounded || Time.time - lastLandingTime <= .3f);
@@ -464,10 +464,10 @@ namespace Project.Player
         private CarryPlacementPreview carryPlacementPreview;
         public bool SprintRequested => sprint;
         public float HorizontalVelocity => motor != null
-            ? motor.linearVelocity.x
+            ? ((Vector3)motor.linearVelocity).x
             : 0f;
         public float VerticalVelocity => motor != null
-            ? motor.linearVelocity.y
+            ? ((Vector3)motor.linearVelocity).y
             : 0f;
         public bool JumpHeld => jumpHeld;
         public float JumpHoldSeconds
@@ -523,7 +523,7 @@ namespace Project.Player
                     return "Grounded";
                 }
 
-                return motor != null && motor.linearVelocity.y > 0f
+                return motor != null && ((Vector3)motor.linearVelocity).y > 0f
                     ? jumpHeld ? "Jump" : "JumpRelease"
                     : "Fall";
             }
@@ -593,18 +593,20 @@ namespace Project.Player
 
         private void Awake()
         {
-            motor = GetComponent<Rigidbody>(); capsule = GetComponent<CapsuleCollider>();
+            motor = GetComponent<Rigidbody2D>(); capsule = GetComponent<CapsuleCollider2D>();
             runner = GetComponent<PlayerActionRunner>();
-            motor.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
-            motor.interpolation = RigidbodyInterpolation.Interpolate;
-            motor.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-            motor.useGravity = false;
+            motor.constraints = RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.None;
+            motor.interpolation = RigidbodyInterpolation2D.Interpolate;
+            motor.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            motor.gravityScale = 0f;
             capsule.sharedMaterial = GetZeroFrictionMaterial();
             highestAirPosition = transform.position.y;
             initialRespawnPosition = transform.position;
             gridCellWorldSize = GridCellSizeUtility.Resolve(this);
-            capsule.radius = gridCellWorldSize * .5f / Mathf.Max(.001f, Mathf.Abs(transform.lossyScale.x));
-            capsule.height = gridCellWorldSize / Mathf.Max(.001f, Mathf.Abs(transform.lossyScale.y));
+            // Keep the logical footprint at one cell while leaving room for Box2D's
+            // contact skin on both sides of a one-cell passage. Artwork remains one cell.
+            capsule.size = new Vector2(gridCellWorldSize * .96f / Mathf.Max(.001f, Mathf.Abs(transform.lossyScale.x)), capsule.size.y);
+            capsule.size = new Vector2(capsule.size.x, gridCellWorldSize / Mathf.Max(.001f, Mathf.Abs(transform.lossyScale.y)));
             carryFootprintCells = Vector2Int.one;
             health = GetComponent<PlayerHealth>();
             if (health == null)
@@ -648,16 +650,16 @@ namespace Project.Player
                 CarryAnchorWorldPosition);
         }
 
-        private static PhysicsMaterial GetZeroFrictionMaterial()
+        private static PhysicsMaterial2D GetZeroFrictionMaterial()
         {
             if (zeroFrictionMaterial == null)
             {
-                zeroFrictionMaterial = new PhysicsMaterial("PlayerZeroFriction")
+                zeroFrictionMaterial = new PhysicsMaterial2D("PlayerZeroFriction")
                 {
-                    dynamicFriction = 0f,
-                    staticFriction = 0f,
-                    frictionCombine = PhysicsMaterialCombine.Minimum,
-                    bounceCombine = PhysicsMaterialCombine.Minimum
+                    friction = 0f,
+
+                    frictionCombine = PhysicsMaterialCombine2D.Minimum,
+                    bounceCombine = PhysicsMaterialCombine2D.Minimum
                 };
             }
 
@@ -820,11 +822,11 @@ namespace Project.Player
             greenHookReleaseMomentumUntil = 0f;
             ClearAutomaticClimbState();
             pendingPlatformDelta = Vector3.zero;
-            greenHookVelocity = preserveVelocity && motor != null ? (Vector2)motor.linearVelocity : Vector2.zero;
+            greenHookVelocity = preserveVelocity && motor != null ? (Vector2)((Vector3)motor.linearVelocity) : Vector2.zero;
             if (motor != null)
             {
                 if (!preserveVelocity) motor.linearVelocity = Vector3.zero;
-                motor.angularVelocity = Vector3.zero;
+                motor.angularVelocity = 0f;
             }
             IsGrounded = false;
             airborneSince = Time.time;
@@ -871,7 +873,7 @@ namespace Project.Player
             // Normal motor deceleration must not erase a just-released swing on
             // the next physics tick. Opposite input can still brake immediately.
             greenHookReleaseMomentumUntil = Time.time + .25f;
-            highestAirPosition = motor.position.y;
+            highestAirPosition = motor.WorldPosition().y;
             airborneSince = Time.time;
         }
 
@@ -1012,7 +1014,7 @@ namespace Project.Player
                 return;
             }
 
-            Vector3 velocity = motor.linearVelocity;
+            Vector3 velocity = ((Vector3)motor.linearVelocity);
             ApplyEnvironmentLaunch(ref velocity, verticalSpeed);
             if (exactSpeed) velocity.y = verticalSpeed;
             motor.linearVelocity = velocity;
@@ -1075,7 +1077,7 @@ namespace Project.Player
                 return;
             }
 
-            Vector3 velocity = motor.linearVelocity;
+            Vector3 velocity = ((Vector3)motor.linearVelocity);
             if (velocity.y <= maxUpwardSpeed)
             {
                 return;
@@ -1092,7 +1094,7 @@ namespace Project.Player
                 return;
             }
 
-            float horizontalSpeed = Mathf.Abs(motor.linearVelocity.x);
+            float horizontalSpeed = Mathf.Abs(((Vector3)motor.linearVelocity).x);
             bool moving = horizontalSpeed > .15f ||
                           Mathf.Abs(movement.x) > .1f;
             if (!moving)
@@ -1146,7 +1148,7 @@ namespace Project.Player
             float gravityMultiplier = jumpGravityMultiplier;
             return Mathf.Max(
                 .01f,
-                Mathf.Abs(Physics.gravity.y) * gravityMultiplier);
+                Mathf.Abs(PlanarPhysics.gravity.y) * gravityMultiplier);
         }
 
         public void QueuePlatformDelta(Vector3 delta)
@@ -1289,7 +1291,7 @@ namespace Project.Player
                 jumpUntil = groundedUntil = -1f;
                 EndJumpHold();
                 CancelVariableJump();
-                Vector3 falling = motor.linearVelocity;
+                Vector3 falling = ((Vector3)motor.linearVelocity);
                 falling.y = Mathf.Min(falling.y, -.5f * gridCellWorldSize);
                 motor.linearVelocity = falling;
                 return;
@@ -1353,7 +1355,7 @@ namespace Project.Player
             variableJumpTargetRiseCells = 0f;
             variableJumpFullRiseCells = 0f;
             variableJumpStartY = motor != null
-                ? motor.position.y
+                ? motor.WorldPosition().y
                 : transform.position.y;
         }
 
@@ -1408,7 +1410,7 @@ namespace Project.Player
 
             float currentRise = Mathf.Max(
                 0f,
-                motor.position.y - variableJumpStartY);
+                motor.WorldPosition().y - variableJumpStartY);
             bool holdRampComplete =
                 JumpHoldSeconds >=
                 ResolveJumpFullHeightHoldSeconds() - .0001f;
@@ -2041,8 +2043,8 @@ namespace Project.Player
             return true;
         }
 
-        private readonly Collider[] carrySeparationHits = new Collider[64];
-        private readonly RaycastHit[] carrySeparationSweep = new RaycastHit[64];
+        private readonly Collider2D[] carrySeparationHits = new Collider2D[64];
+        private readonly RaycastHit2D[] carrySeparationSweep = new RaycastHit2D[64];
         private bool carryDropCellValid;
         private Vector3Int carryDropOrigin;
         private Transform carrySeparationItem;
@@ -2054,7 +2056,7 @@ namespace Project.Player
             get
             {
                 Bounds body = capsule.bounds;
-                body.center += motor.position - transform.position;
+                body.center += motor.WorldPosition() - transform.position;
                 return body;
             }
         }
@@ -2064,8 +2066,7 @@ namespace Project.Player
             Bounds body = CarryPhysicsBounds;
             sign = body.center.x <= itemBounds.center.x ? -1f : 1f;
             float tolerance = gridCellWorldSize * .003f;
-            if (itemBounds.max.y <= body.min.y + tolerance || itemBounds.min.y >= body.max.y - tolerance ||
-                itemBounds.max.z <= body.min.z + tolerance || itemBounds.min.z >= body.max.z - tolerance)
+            if (itemBounds.max.y <= body.min.y + tolerance || itemBounds.min.y >= body.max.y - tolerance)
                 return 0f;
             return Mathf.Max(0f, sign < 0 ? body.max.x - itemBounds.min.x : itemBounds.max.x - body.min.x);
         }
@@ -2081,7 +2082,7 @@ namespace Project.Player
             carrySeparationItem = null;
             if (motor != null)
             {
-                Vector3 velocity = motor.linearVelocity;
+                Vector3 velocity = ((Vector3)motor.linearVelocity);
                 velocity.x = 0f;
                 motor.linearVelocity = velocity;
             }
@@ -2098,12 +2099,12 @@ namespace Project.Player
             // Only resolve a neighboring-cell intrusion horizontally, never teleport through a cube or onto it.
             if (amount > gridCellWorldSize * .65f) return false;
             Vector3 delta = Vector3.right * (sign * amount);
-            float radius = Mathf.Min(body.extents.x, body.extents.z) - skin;
+            float radius = Mathf.Min(body.extents.x, body.extents.y) - skin;
             float segment = Mathf.Max(0f, body.extents.y - radius - skin);
             Vector3 top = body.center + Vector3.up * segment;
             Vector3 bottom = body.center - Vector3.up * segment;
-            int count = Physics.CapsuleCastNonAlloc(top, bottom, radius, delta.normalized,
-                carrySeparationSweep, amount + skin, ~0, QueryTriggerInteraction.Ignore);
+            int count = PlanarPhysics.CapsuleCastNonAlloc(top, bottom, radius, delta.normalized,
+                carrySeparationSweep, amount + skin, ~0, TriggerQuery.Ignore);
             if (count == carrySeparationSweep.Length) return false;
             for (int i = 0; i < count; i++)
             {
@@ -2111,16 +2112,16 @@ namespace Project.Player
                 if (!IsCarrySeparationObstacle(hit.collider, item) || Vector3.Dot(hit.normal, delta.normalized) > -.01f) continue;
                 if (hit.distance + skin < amount) return false;
             }
-            count = Physics.OverlapCapsuleNonAlloc(top + delta, bottom + delta, radius,
-                carrySeparationHits, ~0, QueryTriggerInteraction.Ignore);
+            count = PlanarPhysics.OverlapCapsuleNonAlloc(top + delta, bottom + delta, radius,
+                carrySeparationHits, ~0, TriggerQuery.Ignore);
             if (count == carrySeparationHits.Length) return false;
             for (int i = 0; i < count; i++)
             {
-                Collider other = carrySeparationHits[i];
+                Collider2D other = carrySeparationHits[i];
                 if (!IsCarrySeparationObstacle(other, item)) continue;
                 // Broad-phase tangency with a floor/back wall isn't penetration. A one-cell player
                 // must fit a one-cell gap without reserving extra space outside that gap.
-                if (Physics.ComputePenetration(capsule, motor.position + delta, transform.rotation,
+                if (PlanarPhysics.ComputePenetration(capsule, motor.WorldPosition() + delta, transform.rotation,
                     other, other.transform.position, other.transform.rotation, out _, out float depth) &&
                     depth > gridCellWorldSize * .003f) return false;
             }
@@ -2128,8 +2129,8 @@ namespace Project.Player
             {
                 carrySeparationItem = item;
                 carrySeparationBounds = itemBounds;
-                carrySeparationStartX = motor.position.x;
-                carrySeparationTargetX = motor.position.x + delta.x;
+                carrySeparationStartX = motor.WorldPosition().x;
+                carrySeparationTargetX = motor.WorldPosition().x + delta.x;
                 carrySeparationElapsed = 0f;
             }
             return true;
@@ -2151,14 +2152,14 @@ namespace Project.Player
             float eased = t * t * (3f - 2f * t);
             float desired = Mathf.Lerp(carrySeparationStartX, carrySeparationTargetX, eased);
             // The sole motor owns this velocity; gravity and physical walls remain authoritative.
-            return Mathf.Clamp((desired - motor.position.x) / Time.fixedDeltaTime,
+            return Mathf.Clamp((desired - motor.WorldPosition().x) / Time.fixedDeltaTime,
                 -6f * gridCellWorldSize, 6f * gridCellWorldSize);
         }
 
-        private bool IsCarrySeparationObstacle(Collider other, Transform item) => other != null &&
+        private bool IsCarrySeparationObstacle(Collider2D other, Transform item) => other != null &&
             !other.transform.IsChildOf(transform) && (item == null || !other.transform.IsChildOf(item)) &&
-            !Physics.GetIgnoreLayerCollision(capsule.gameObject.layer, other.gameObject.layer) &&
-            !Physics.GetIgnoreCollision(capsule, other);
+            !PlanarPhysics.GetIgnoreLayerCollision(capsule.gameObject.layer, other.gameObject.layer) &&
+            !PlanarPhysics.GetIgnoreCollision(capsule, other);
 
         private void RefreshCarryPlacementPreview()
         {
@@ -2184,16 +2185,16 @@ namespace Project.Player
             }
 
             rayDirection.Normalize();
-            int count = Physics.RaycastNonAlloc(
+            int count = PlanarPhysics.RaycastNonAlloc(
                 new Ray(CarryCenterWorldPosition, rayDirection),
                 carryRayBuffer,
                 gridCellWorldSize * 1.1f,
                 ~0,
-                QueryTriggerInteraction.Ignore);
+                TriggerQuery.Ignore);
             if (count == carryRayBuffer.Length) return true;
             for (int index = 0; index < count; index++)
             {
-                Collider collider = carryRayBuffer[index].collider;
+                Collider2D collider = carryRayBuffer[index].collider;
                 if (!IsSolidCarryPlacementBlocker(collider))
                 {
                     continue;
@@ -2215,17 +2216,17 @@ namespace Project.Player
             Vector3 center = CellToWorld(
                 cell,
                 transform.position.z);
-            int count = Physics.OverlapBoxNonAlloc(
+            int count = PlanarPhysics.OverlapBoxNonAlloc(
                 center,
                 Vector3.one * (gridCellWorldSize * .49f),
                 carryDropBuffer,
                 Quaternion.identity,
                 ~0,
-                QueryTriggerInteraction.Ignore);
+                TriggerQuery.Ignore);
             if (count == carryDropBuffer.Length) return false;
             for (int index = 0; index < count; index++)
             {
-                Collider collider = carryDropBuffer[index];
+                Collider2D collider = carryDropBuffer[index];
                 if (!IsSolidCarryPlacementBlocker(collider))
                 {
                     continue;
@@ -2290,33 +2291,33 @@ namespace Project.Player
                 block.GetComponentsInChildren(false, carryPlacedColliders);
                 for (int colliderIndex = 0; colliderIndex < carryPlacedColliders.Count; colliderIndex++)
                 {
-                    Collider collider = carryPlacedColliders[colliderIndex];
+                    Collider2D collider = carryPlacedColliders[colliderIndex];
                     if (IsSolidCarryPlacementBlocker(collider) &&
-                        CarryPlacementWorldBounds(collider).Intersects(currentCell)) return true;
+                        PlanarPhysics.IntersectsXY(CarryPlacementWorldBounds(collider), currentCell)) return true;
                 }
             }
 
             return false;
         }
 
-        private bool IsSolidCarryPlacementBlocker(Collider collider) =>
+        private bool IsSolidCarryPlacementBlocker(Collider2D collider) =>
             collider != null && collider.enabled && !collider.isTrigger &&
             !Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(collider) &&
             collider.gameObject.activeInHierarchy &&
             !BelongsToPlayer(collider.transform) &&
             !BelongsToSelectedCarryTarget(collider.transform);
 
-        private static Bounds CarryPlacementWorldBounds(Collider collider)
+        private static Bounds CarryPlacementWorldBounds(Collider2D collider)
         {
-            if (collider is not BoxCollider box) return collider.bounds;
+            if (collider is not BoxCollider2D box) return collider.bounds;
             // Read the current Transform, including moved children and parent scale,
-            // without forcing a global Physics.SyncTransforms for each preview frame.
+            // without forcing a global PlanarPhysics.SyncTransforms for each preview frame.
             Matrix4x4 matrix = box.transform.localToWorldMatrix;
             Vector3 half = box.size * .5f;
             Vector3 x = matrix.MultiplyVector(new Vector3(half.x, 0, 0));
             Vector3 y = matrix.MultiplyVector(new Vector3(0, half.y, 0));
             Vector3 z = matrix.MultiplyVector(new Vector3(0, 0, half.z));
-            return new Bounds(matrix.MultiplyPoint3x4(box.center), 2f * new Vector3(
+            return new Bounds(matrix.MultiplyPoint3x4(box.offset), 2f * new Vector3(
                 Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x),
                 Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y),
                 Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z)));
@@ -2473,7 +2474,7 @@ namespace Project.Player
                  index < groundHitCount;
                  index++)
             {
-                Collider collider = groundHits[index].collider;
+                Collider2D collider = groundHits[index].collider;
                 IPlayerBounceSurface surface = collider != null
                     ? collider.GetComponentInParent<
                         IPlayerBounceSurface>()
@@ -2508,7 +2509,7 @@ namespace Project.Player
                 var surface = pair.Value;
                 if (!IsHorizontalVineSurfaceCurrent(surface))
                     expiredHorizontalVines.Add(pair.Key);
-                else if (!chosen.HasValue || Mathf.Abs(surface.rootY - motor.position.y) < Mathf.Abs(chosen.Value.rootY - motor.position.y)) chosen = surface;
+                else if (!chosen.HasValue || Mathf.Abs(surface.rootY - motor.WorldPosition().y) < Mathf.Abs(chosen.Value.rootY - motor.WorldPosition().y)) chosen = surface;
             }
             foreach (int id in expiredHorizontalVines) horizontalVines.Remove(id);
             if (!chosen.HasValue) { wrappedEdgeSource = null; return false; }
@@ -2520,17 +2521,17 @@ namespace Project.Player
             bool blocked = IsControlLocked || (runner.IsPlaying && runner.CurrentAction != null && runner.CurrentAction.LockMovement);
             if (blocked) return false;
             HorizontalVineSurface selected = chosen.Value;
-            Vector3 velocity = motor.linearVelocity;
+            Vector3 velocity = ((Vector3)motor.linearVelocity);
             velocity.x = Mathf.Clamp(movement.x, -1, 1) * selected.speed;
             if (wrappedEdgeSource == selected.source)
             {
                 if (movement.x * wrappedEdgeSide > 0) velocity.x = 0;
                 else if (movement.x * wrappedEdgeSide < -.1f) wrappedEdgeSource = null;
             }
-            velocity.y = Mathf.Clamp((selected.rootY - motor.position.y) / Time.fixedDeltaTime, -3f, 3f);
+            velocity.y = Mathf.Clamp((selected.rootY - motor.WorldPosition().y) / Time.fixedDeltaTime, -3f, 3f);
             velocity.z = 0;
             motor.linearVelocity = ConstrainCarryVelocity(velocity);
-            IsGrounded = false; enteredClimbDuringFall = true; highestAirPosition = motor.position.y;
+            IsGrounded = false; enteredClimbDuringFall = true; highestAirPosition = motor.WorldPosition().y;
             return true;
         }
 
@@ -2546,7 +2547,7 @@ namespace Project.Player
             {
                 CancelVariableJump();
                 motor.linearVelocity = Vector3.zero;
-                motor.angularVelocity = Vector3.zero;
+                motor.angularVelocity = 0f;
                 return;
             }
 
@@ -2558,34 +2559,34 @@ namespace Project.Player
                     greenHookVelocity.y,
                     0f);
                 motor.linearVelocity = hookVelocity;
-                motor.angularVelocity = Vector3.zero;
+                motor.angularVelocity = 0f;
                 IsGrounded = false;
                 return;
             }
 
             if (pendingPlatformDelta.sqrMagnitude > .000001f)
             {
-                motor.position += ConstrainCarryDisplacement(pendingPlatformDelta);
+                motor.position += (Vector2)ConstrainCarryDisplacement(pendingPlatformDelta);
                 pendingPlatformDelta = Vector3.zero;
             }
 
-            if (protectBounceFromClimbing && motor.linearVelocity.y <= 0f)
+            if (protectBounceFromClimbing && ((Vector3)motor.linearVelocity).y <= 0f)
                 protectBounceFromClimbing = false;
             if (TickClimbCorner() || TickHorizontalVine()) return;
 
             float velocityAtStepStart = motor != null
-                ? motor.linearVelocity.y
+                ? ((Vector3)motor.linearVelocity).y
                 : 0f;
             landedThisStep = false;
             bool wasGrounded = IsGrounded;
             IsGrounded = false;
             Bounds bounds = capsule.bounds;
-            float radius = Mathf.Min(bounds.extents.x, bounds.extents.z) * .85f;
+            float radius = Mathf.Min(bounds.extents.x, bounds.extents.y) * .85f;
             Vector3 origin = new Vector3(bounds.center.x, bounds.min.y + radius + .05f, bounds.center.z);
-            int count = Physics.SphereCastNonAlloc(origin, radius, Vector3.down, groundHits,
-                .13f, groundMask, QueryTriggerInteraction.Ignore);
+            int count = PlanarPhysics.CircleCastNonAlloc(origin, radius, Vector3.down, groundHits,
+                .13f, groundMask, TriggerQuery.Ignore);
             for (int i = 0; i < count; i++)
-                if (groundHits[i].collider.attachedRigidbody != motor && !Physics.GetIgnoreCollision(capsule, groundHits[i].collider) && groundHits[i].normal.y > .5f && motor.linearVelocity.y <= .1f)
+                if (groundHits[i].collider.attachedRigidbody != motor && !PlanarPhysics.GetIgnoreCollision(capsule, groundHits[i].collider) && groundHits[i].normal.y > .5f && ((Vector3)motor.linearVelocity).y <= .1f)
                     IsGrounded = true;
             if (IsGrounded) groundedUntil = Time.time + coyoteTime;
             if (IsGrounded)
@@ -2656,7 +2657,7 @@ namespace Project.Player
                     currentFallDistance,
                     highestAirPosition - transform.position.y);
             }
-            Vector3 velocity = motor.linearVelocity;
+            Vector3 velocity = ((Vector3)motor.linearVelocity);
             if (requestedBounceSpeed >= 0f)
             {
                 if (bounceHasExactHeight)
@@ -2905,7 +2906,7 @@ namespace Project.Player
                 }
 
                 velocity.y = jumpVelocity;
-                variableJumpStartY = motor.position.y;
+                variableJumpStartY = motor.WorldPosition().y;
                 variableJumpTargetRiseCells = heldRiseCells;
                 variableJumpFullRiseCells = fullJumpRiseCells;
                 variableJumpActive =
@@ -2933,7 +2934,7 @@ namespace Project.Player
                     gravityMultiplier = jumpGravityMultiplier;
                 bool protectedClimbFall = Time.time < climbKickFallProtectionUntil && velocity.y <= 0f;
                 if (protectedClimbFall) gravityMultiplier = Mathf.Min(gravityMultiplier, .65f);
-                velocity.y += Physics.gravity.y *
+                velocity.y += PlanarPhysics.gravity.y *
                               gravityMultiplier *
                               Time.fixedDeltaTime;
                 if (maxFallSpeed > 0f &&
@@ -2953,7 +2954,7 @@ namespace Project.Player
         {
             if (!IsCarrying || IsCarryBusy || !(selectedCarryTarget is IPlayerCarryCollisionTarget solid))
                 return displacement;
-            Vector3 physicsAnchor = CarryAnchorWorldPosition + motor.position - transform.position;
+            Vector3 physicsAnchor = CarryAnchorWorldPosition + motor.WorldPosition() - transform.position;
             return solid.ConstrainCarryDisplacement(physicsAnchor, displacement, gridCellWorldSize * .01f);
         }
 
@@ -3002,7 +3003,7 @@ namespace Project.Player
                  index < groundHitCount;
                  index++)
             {
-                Collider collider = groundHits[index].collider;
+                Collider2D collider = groundHits[index].collider;
                 if (collider == null)
                 {
                     continue;
@@ -3213,10 +3214,10 @@ namespace Project.Player
             {
                 motor.position = targetPosition;
                 motor.linearVelocity = Vector3.zero;
-                motor.angularVelocity = Vector3.zero;
+                motor.angularVelocity = 0f;
             }
             transform.position = targetPosition;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             if (wasDead)
             {
                 AudioCuePlayer.Play(AudioCueIds.PlayerRespawn);
@@ -3368,7 +3369,7 @@ namespace Project.Player
         /// <summary>Resolve a safe floor for gravity-suspended entrance presentation without changing physics.</summary>
         public bool TryGetGroundedPresentationPosition(Vector3 candidate, out Vector3 grounded)
         {
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             if (TryGetGroundedRespawnPosition(candidate, out grounded) && grounded.y <= candidate.y + .01f)
                 return true;
             grounded = candidate;
@@ -3383,18 +3384,23 @@ namespace Project.Player
             float maxDrop = Mathf.Max(
                 gridCellWorldSize,
                 gridCellWorldSize * 6f);
-            if (!Physics.Raycast(
+            int floorCount = PlanarPhysics.RaycastNonAlloc(
                     candidate + Vector3.up * .1f,
                     Vector3.down,
-                    out RaycastHit hit,
+                    groundHits,
                     maxDrop,
                     ~0,
-                    QueryTriggerInteraction.Ignore) ||
-                hit.collider == null ||
-                hit.collider.transform.IsChildOf(transform))
+                    TriggerQuery.Ignore);
+            // Native 2D rays report shapes containing their origin. The ray can begin
+            // inside this player's capsule, so select the nearest external floor.
+            RaycastHit2D hit = default;
+            for (int i = 0; i < floorCount; i++)
             {
-                return false;
+                var candidateHit = groundHits[i];
+                if (!candidateHit.collider || candidateHit.collider.transform.IsChildOf(transform)) continue;
+                if (!hit.collider || candidateHit.distance < hit.distance) hit = candidateHit;
             }
+            if (!hit.collider) return false;
 
             float groundOffset = capsule != null
                 ? transform.position.y - capsule.bounds.min.y
@@ -3408,15 +3414,15 @@ namespace Project.Player
 
         private bool IsRespawnPositionSafe(Vector3 position)
         {
-            int count = Physics.OverlapSphereNonAlloc(
+            int count = PlanarPhysics.OverlapCircleNonAlloc(
                 position,
                 Mathf.Max(.05f, respawnSafetyRadius),
                 respawnOverlapBuffer,
                 ~0,
-                QueryTriggerInteraction.Collide);
+                TriggerQuery.Collide);
             for (int index = 0; index < count; index++)
             {
-                Collider hit = respawnOverlapBuffer[index];
+                Collider2D hit = respawnOverlapBuffer[index];
                 if (hit == null ||
                     hit.transform.IsChildOf(transform))
                 {
@@ -3508,7 +3514,7 @@ namespace Project.Player
             if (motor != null && !motor.isKinematic)
             {
                 motor.linearVelocity = Vector3.zero;
-                motor.angularVelocity = Vector3.zero;
+                motor.angularVelocity = 0f;
             }
         }
 
@@ -3530,23 +3536,23 @@ namespace Project.Player
             presentationMotionPreviousKinematic =
                 motor.isKinematic;
             presentationMotionPreviousGravity =
-                motor.useGravity;
+                (motor.gravityScale != 0f);
             presentationMotionPreviousDetectCollisions =
-                motor.detectCollisions;
+                motor.simulated;
             presentationMotionPreviousInterpolation =
                 motor.interpolation;
             presentationMotionPreviousCollisionMode =
                 motor.collisionDetectionMode;
             presentationMotionStateCaptured = true;
             motor.linearVelocity = Vector3.zero;
-            motor.angularVelocity = Vector3.zero;
+            motor.angularVelocity = 0f;
             motor.isKinematic = true;
-            motor.useGravity = false;
-            motor.detectCollisions = false;
+            motor.gravityScale = 0f;
+            motor.simulated = false;
             motor.interpolation =
-                RigidbodyInterpolation.Interpolate;
+                RigidbodyInterpolation2D.Interpolate;
             motor.collisionDetectionMode =
-                CollisionDetectionMode.ContinuousSpeculative;
+                CollisionDetectionMode2D.Continuous;
             return true;
         }
 
@@ -3567,16 +3573,15 @@ namespace Project.Player
             {
                 motor.isKinematic =
                     presentationMotionPreviousKinematic;
-                motor.useGravity =
-                    presentationMotionPreviousGravity;
-                motor.detectCollisions =
+                motor.gravityScale = (presentationMotionPreviousGravity) ? 1f : 0f;
+                motor.simulated =
                     presentationMotionPreviousDetectCollisions;
                 motor.interpolation =
                     presentationMotionPreviousInterpolation;
                 motor.collisionDetectionMode =
                     presentationMotionPreviousCollisionMode;
                 motor.linearVelocity = Vector3.zero;
-                motor.angularVelocity = Vector3.zero;
+                motor.angularVelocity = 0f;
                 motor.WakeUp();
             }
             presentationMotionStateCaptured = false;
@@ -3614,10 +3619,10 @@ namespace Project.Player
             {
                 motor.position = destination;
                 motor.linearVelocity = Vector3.zero;
-                motor.angularVelocity = Vector3.zero;
+                motor.angularVelocity = 0f;
             }
             transform.position = destination;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             invulnerableUntil =
                 Time.time +
                 Mathf.Max(0f, respawnInvulnerabilitySeconds);
@@ -3648,10 +3653,10 @@ namespace Project.Player
             if (motor != null)
             {
                 motor.position = destination;
-                if (!motor.isKinematic) motor.linearVelocity = motor.angularVelocity = Vector3.zero;
+                if (!motor.isKinematic) motor.linearVelocity = Vector2.zero; motor.angularVelocity = 0f;
             }
             transform.position = destination;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             // Story return must not leave the old Boss checkpoint bound. This
             // session-only fallback is replaced normally by the next real point.
             PlayerRespawnPointRegistry.Bind(this, new StoryRespawnPoint(destination));
@@ -3695,13 +3700,11 @@ namespace Project.Player
                 motor.position = fallbackPosition;
                 if (!motor.isKinematic)
                 {
-                    motor.linearVelocity =
-                        motor.angularVelocity =
-                            Vector3.zero;
+                    motor.linearVelocity = Vector2.zero; motor.angularVelocity = 0f;
                 }
             }
             transform.position = fallbackPosition;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             PlayerRespawnPointRegistry.Bind(
                 this,
                 new StoryRespawnPoint(
@@ -3736,7 +3739,7 @@ namespace Project.Player
             // Only the destination may be prepared before validation. A blocked
             // destination must not reset the current puzzle or change ownership.
             roomManager?.PrepareCheckpointDestination(this, point.RespawnPosition);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Vector3 destination = default;
             bool found = false;
             // Deterministic nearby grounded choices; never silently fall back to game start.
@@ -3757,10 +3760,10 @@ namespace Project.Player
             if (motor != null)
             {
                 motor.position = destination;
-                if (!motor.isKinematic) motor.linearVelocity = motor.angularVelocity = Vector3.zero;
+                if (!motor.isKinematic) motor.linearVelocity = Vector2.zero; motor.angularVelocity = 0f;
             }
             transform.position = destination;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             PlayerRespawnPointRegistry.Bind(this, point);
             invulnerableUntil = Time.time + Mathf.Max(0f, respawnInvulnerabilitySeconds);
             CameraFollowRelocated?.Invoke();
@@ -3772,11 +3775,11 @@ namespace Project.Player
             if (capsule == null) return false;
             Vector3 shift = position - transform.position;
             Bounds bounds = capsule.bounds;
-            float radius = Mathf.Min(bounds.extents.x, bounds.extents.z) * .96f;
+            float radius = Mathf.Min(bounds.extents.x, bounds.extents.y) * .96f;
             Vector3 center = bounds.center + shift;
             float halfAxis = Mathf.Max(0f, bounds.extents.y - radius - .015f * gridCellWorldSize);
-            int count = Physics.OverlapCapsuleNonAlloc(center + Vector3.up * halfAxis,
-                center - Vector3.up * halfAxis, radius, respawnOverlapBuffer, ~0, QueryTriggerInteraction.Ignore);
+            int count = PlanarPhysics.OverlapCapsuleNonAlloc(center + Vector3.up * halfAxis,
+                center - Vector3.up * halfAxis, radius, respawnOverlapBuffer, ~0, TriggerQuery.Ignore);
             if (count >= respawnOverlapBuffer.Length) return false;
             for (int i = 0; i < count; i++)
                 if (respawnOverlapBuffer[i] != null && !respawnOverlapBuffer[i].transform.IsChildOf(transform)) return false;
@@ -3885,7 +3888,7 @@ namespace Project.Player
                 travelSafetyWasKinematic = motor.isKinematic;
                 if (!motor.isKinematic)
                 {
-                    motor.linearVelocity = motor.angularVelocity = Vector3.zero;
+                    motor.linearVelocity = Vector2.zero; motor.angularVelocity = 0f;
                     motor.isKinematic = true;
                 }
             }

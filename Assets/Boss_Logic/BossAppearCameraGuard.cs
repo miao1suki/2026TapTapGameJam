@@ -10,36 +10,31 @@ namespace Project.BossLogic
         private Vector3 position;
         private Quaternion rotation;
         private float orthographicSize;
-        private float fieldOfView;
+
         private bool active;
 
         public void Bind(
             Camera camera,
             Vector3 shotPosition,
             Quaternion shotRotation,
-            float shotOrthographicSize,
-            float shotFieldOfView)
+            float shotOrthographicSize)
         {
             targetCamera = camera;
             SetShot(
                 shotPosition,
                 shotRotation,
-                shotOrthographicSize,
-                shotFieldOfView);
+                shotOrthographicSize);
         }
 
         public void SetShot(
             Vector3 shotPosition,
             Quaternion shotRotation,
-            float shotOrthographicSize,
-            float shotFieldOfView)
+            float shotOrthographicSize)
         {
             position = shotPosition;
             rotation = shotRotation;
             orthographicSize =
                 Mathf.Max(.01f, shotOrthographicSize);
-            fieldOfView =
-                Mathf.Clamp(shotFieldOfView, 1f, 179f);
             active = targetCamera != null;
         }
 
@@ -53,15 +48,9 @@ namespace Project.BossLogic
             targetCamera.transform.SetPositionAndRotation(
                 position,
                 rotation);
-            if (targetCamera.orthographic)
-            {
-                targetCamera.orthographicSize =
-                    orthographicSize;
-            }
-            else
-            {
-                targetCamera.fieldOfView = fieldOfView;
-            }
+            targetCamera.orthographic = true;
+            targetCamera.transform.rotation = Quaternion.Euler(0f, 0f, rotation.eulerAngles.z);
+            targetCamera.orthographicSize = orthographicSize;
         }
     }
 }

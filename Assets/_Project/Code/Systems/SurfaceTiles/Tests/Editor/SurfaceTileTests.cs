@@ -18,7 +18,7 @@ namespace Project.SurfaceTiles.Tests
         {
             string folder = "Assets/__SurfaceInstanceTest_" + System.Guid.NewGuid().ToString("N");
             AssetDatabase.CreateFolder("Assets", folder.Substring(7));
-            var original = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var original = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             var texture = new Texture2D(2,2);
             var sprite = Sprite.Create(texture,new Rect(0,0,2,2),Vector2.one*.5f);
             var palette = ScriptableObject.CreateInstance<SurfaceTilePalette>(); palette.ReplaceTiles(new[] {sprite});
@@ -62,10 +62,10 @@ namespace Project.SurfaceTiles.Tests
             finally { Object.DestroyImmediate(window); }
         }
         [Test]
-        public void GridSize_UsesWorldDimensionsForEveryFace()
+        public void GridSize_UsesXYDimensionsAndIgnoresPresentationDepth()
         {
             GameObject target = new GameObject("Block");
-            BoxCollider collider = target.AddComponent<BoxCollider>();
+            BoxCollider2D collider = target.AddComponent<BoxCollider2D>();
             collider.size = new Vector3(2f, 3f, 4f);
             target.transform.localScale = new Vector3(2f, 1f, 0.5f);
 
@@ -76,20 +76,10 @@ namespace Project.SurfaceTiles.Tests
                     SurfaceTileFace.Front,
                     1f),
                 Is.EqualTo(new Vector2Int(4, 3)));
-            Assert.That(
-                SurfaceTileGeometry.GetGridSize(
-                    target.transform,
-                    collider,
-                    SurfaceTileFace.Right,
-                    1f),
-                Is.EqualTo(new Vector2Int(2, 3)));
-            Assert.That(
-                SurfaceTileGeometry.GetGridSize(
-                    target.transform,
-                    collider,
-                    SurfaceTileFace.Top,
-                    1f),
-                Is.EqualTo(new Vector2Int(4, 2)));
+            // Presentation depth cannot create an extra face or change a 2D tile grid.
+            target.transform.position = new Vector3(0, 0, 20);
+            Assert.That(SurfaceTileGeometry.GetGridSize(target.transform, collider, SurfaceTileFace.Front, 1f),
+                Is.EqualTo(new Vector2Int(4, 3)));
 
             Object.DestroyImmediate(target);
         }
@@ -98,7 +88,7 @@ namespace Project.SurfaceTiles.Tests
         public void CellLookup_MapsFaceCornersAndClampsFarEdge()
         {
             GameObject target = new GameObject("Block");
-            BoxCollider collider = target.AddComponent<BoxCollider>();
+            BoxCollider2D collider = target.AddComponent<BoxCollider2D>();
             collider.size = new Vector3(4f, 2f, 1f);
             SurfaceTileFaceBasis basis = SurfaceTileGeometry.GetLocalBasis(
                 collider,
@@ -139,7 +129,7 @@ namespace Project.SurfaceTiles.Tests
                 ScriptableObject.CreateInstance<SurfaceTilePalette>();
             palette.ReplaceTiles(new[] { sprite });
             GameObject target = new GameObject("Block");
-            target.AddComponent<BoxCollider>();
+            target.AddComponent<BoxCollider2D>();
             SurfaceTileBlock block = target.AddComponent<SurfaceTileBlock>();
             block.Configure(palette, 1f);
             string tileId = palette.Tiles[0].Id;
@@ -183,7 +173,7 @@ namespace Project.SurfaceTiles.Tests
         public void TransparentBase_DisablesAndRestoresOriginalRenderer()
         {
             GameObject target = new GameObject("TransparentBaseBlock");
-            target.AddComponent<BoxCollider>();
+            target.AddComponent<BoxCollider2D>();
             MeshRenderer sourceRenderer = target.AddComponent<MeshRenderer>();
             SurfaceTileBlock block = target.AddComponent<SurfaceTileBlock>();
 
@@ -281,7 +271,7 @@ namespace Project.SurfaceTiles.Tests
                 ScriptableObject.CreateInstance<SurfaceTilePalette>();
             palette.ReplaceTiles(new[] { sprite });
             GameObject target = new GameObject("OffsetBlock");
-            target.AddComponent<BoxCollider>();
+            target.AddComponent<BoxCollider2D>();
             SurfaceTileBlock block = target.AddComponent<SurfaceTileBlock>();
             block.Configure(palette, 1f);
 
@@ -334,7 +324,7 @@ namespace Project.SurfaceTiles.Tests
                 ScriptableObject.CreateInstance<SurfaceTilePalette>();
             palette.ReplaceTiles(new[] { background, leaves });
             GameObject target = new GameObject("LayeredBlock");
-            target.AddComponent<BoxCollider>();
+            target.AddComponent<BoxCollider2D>();
             SurfaceTileBlock block = target.AddComponent<SurfaceTileBlock>();
             block.Configure(palette, 1f);
 
@@ -437,7 +427,7 @@ namespace Project.SurfaceTiles.Tests
                     palettePath);
 
                 GameObject target = new GameObject("BakeBlock");
-                target.AddComponent<BoxCollider>();
+                target.AddComponent<BoxCollider2D>();
                 SurfaceTileBlock block = target.AddComponent<SurfaceTileBlock>();
                 block.Configure(palette, 1f);
                 Assert.That(block.AddTile(

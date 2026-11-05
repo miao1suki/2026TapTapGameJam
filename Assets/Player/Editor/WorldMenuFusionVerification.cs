@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -100,7 +101,7 @@ namespace Project.Player.Editor
         {
             Check(GameplayPresentationGate.IsSuppressed, "real world gameplay interaction is gated in the menu");
             Check(player.IsControlLocked && player.Motor.isKinematic, "standard player is leased and physically frozen for presentation");
-            Check(!player.GetComponentsInChildren<Collider>().Any(x => x.enabled), "player cannot hit boss/contact triggers in preview");
+            Check(!player.GetComponentsInChildren<Collider2D>().Any(x => x.enabled), "player cannot hit boss/contact triggers in preview");
             Check(!player.GetComponent<PlayerInputDriver>().enabled, "ability and locomotion input are not driven during preview");
             Check(menu.IsPresented && menu.Background == null, "menu overlays the real world; old blue background is removed from the asset");
             var router = Object.FindFirstObjectByType<GameUiRouter>();
@@ -303,9 +304,9 @@ namespace Project.Player.Editor
             foreach (var item in Object.FindObjectsByType<CollectiblePickup>(FindObjectsSortMode.None))
                 foreach (var shape in item.SolidColliders)
                     if (shape != null && shape.enabled && !shape.isTrigger)
-                        foreach (var playerShape in player.GetComponentsInChildren<Collider>())
+                        foreach (var playerShape in player.GetComponentsInChildren<Collider2D>())
                             if (playerShape.enabled && !playerShape.isTrigger && playerShape.attachedRigidbody == player.Motor)
-                                Check(Physics.GetIgnoreCollision(shape, playerShape),
+                                Check(PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                                     "gameplay handoff retains collectible pass-through: " + item.name);
         }
 

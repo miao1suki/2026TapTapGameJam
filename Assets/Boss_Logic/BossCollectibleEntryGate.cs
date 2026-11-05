@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using Project.BlockFeatures;
 using Project.InputAbstraction;
@@ -64,12 +65,12 @@ namespace Project.BossLogic
                     if (!player.Motor.isKinematic)
                     {
                         player.Motor.linearVelocity = Vector3.zero;
-                        player.Motor.angularVelocity = Vector3.zero;
+                        player.Motor.angularVelocity = 0f;
                     }
                     player.Motor.WakeUp();
                 }
                 player.transform.position = destination.position;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 if (IsStartReturn())
                     EmitReturnedHome(player);
             }

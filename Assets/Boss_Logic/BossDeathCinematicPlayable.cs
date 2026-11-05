@@ -313,7 +313,7 @@ namespace Project.BossLogic
         private Quaternion originRotation;
         private Vector3 cameraMoveStart;
         private float baseOrthographicSize;
-        private float baseFieldOfView;
+
         private float phaseStartTime;
         private float bossFlickerStartTime = -1f;
         private float absorbStartTime;
@@ -587,7 +587,7 @@ namespace Project.BossLogic
             baseOrthographicSize = Mathf.Max(
                 .01f,
                 state.orthographicSize);
-            baseFieldOfView = state.fieldOfView;
+
             viewModeHandle = rig.RequestViewMode(
                 CameraViewMode.Side2D,
                 CameraTransition.Immediate);
@@ -1219,9 +1219,9 @@ namespace Project.BossLogic
                     renderers[index].enabled = false;
                 }
             }
-            Collider[] colliders =
+            Collider2D[] colliders =
                 boss.GetComponentsInChildren<
-                    Collider>(true);
+                    Collider2D>(true);
             for (int index = 0;
                  index < colliders.Length;
                  index++)
@@ -1394,14 +1394,10 @@ namespace Project.BossLogic
                 return;
             }
             rig.SetShotLens(
-                baseOrthographicSize,
-                baseFieldOfView);
+                baseOrthographicSize);
             rig.SetShotTransform(
                 position,
-                Quaternion.Euler(
-                    0f,
-                    rig.PlanarYaw,
-                    0f));
+                Quaternion.Euler(0f, 0f, rig.PlanarYaw));
         }
 
         private static float Smooth(float progress)
@@ -1451,23 +1447,23 @@ namespace Project.BossLogic
         private static void DisableKeyGameplay(
             GameObject instance)
         {
-            Collider[] colliders =
+            Collider2D[] colliders =
                 instance.GetComponentsInChildren<
-                    Collider>(true);
+                    Collider2D>(true);
             for (int index = 0;
                  index < colliders.Length;
                  index++)
             {
                 colliders[index].enabled = false;
             }
-            Rigidbody[] bodies =
+            Rigidbody2D[] bodies =
                 instance.GetComponentsInChildren<
-                    Rigidbody>(true);
+                    Rigidbody2D>(true);
             for (int index = 0;
                  index < bodies.Length;
                  index++)
             {
-                bodies[index].detectCollisions = false;
+                bodies[index].simulated = false;
                 bodies[index].isKinematic = true;
             }
             ColorKeyPickup[] pickups =

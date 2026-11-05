@@ -11,7 +11,7 @@
 ## Timeline演出与战斗
 
 保留Timeline轨道、ActSO动作定义、TimelineActorHost、命中框、效果音频、伤害/闪白及相机机位。
-代码位于 `Assets/GJ_Tools/TimelineTools3D`，这是兼容旧功能路径，不含旧demo关卡。
+代码位于 `Assets/GJ_Tools/TimelineTools2D`，这是兼容旧功能路径，不含旧demo关卡。
 制作TimelineAsset并配置ActSO，在Player动作绑定中接入，或者使用PlayableDirector播放独立演出。
 相机演出通过TimelineCamRig连接CameraControlManager，不直接修改Camera与模式组件。
 美术、动画和音频需要后续自行导入；框架存在不代表已经配置好新的游戏演出。

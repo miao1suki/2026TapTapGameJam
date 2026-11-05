@@ -4,7 +4,8 @@
   "references": [
     "Project.Shared.Runtime",
     "Project.SurfaceTiles.Runtime",
-    "Project.ObjectArtwork.Runtime"
+    "Project.ObjectArtwork.Runtime",
+    "Project.PlanarPhysics.Runtime"
   ],
   "includePlatforms": [
     "Editor"

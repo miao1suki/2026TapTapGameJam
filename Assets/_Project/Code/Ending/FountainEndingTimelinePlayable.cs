@@ -185,7 +185,7 @@ namespace Project.Ending
         private Vector3 currentCameraPosition;
         private Quaternion cameraRotation;
         private float baseOrthographicSize;
-        private float baseFieldOfView;
+
         private bool running;
         private bool cleaned;
         private bool completingEnding;
@@ -313,7 +313,7 @@ namespace Project.Ending
             if (!player.BeginPresentationMotion())
             {
                 Debug.LogError(
-                    "[FountainEnding] 无法接管玩家 Rigidbody。");
+                    "[FountainEnding] 无法接管玩家 Rigidbody2D。");
                 return false;
             }
             playerVisual =
@@ -344,7 +344,7 @@ namespace Project.Ending
             baseOrthographicSize = Mathf.Max(
                 .01f,
                 state.orthographicSize);
-            baseFieldOfView = state.fieldOfView;
+
             playerCameraLocalOffset =
                 frame.ToLocalPoint(
                     currentCameraPosition) -
@@ -843,8 +843,7 @@ namespace Project.Ending
             }
             cameraRig.SetShotLens(
                 baseOrthographicSize *
-                Mathf.Max(0f, lensMultiplier),
-                baseFieldOfView);
+                Mathf.Max(0f, lensMultiplier));
             cameraRig.SetShotTransform(
                 position,
                 cameraRotation);
@@ -891,24 +890,24 @@ namespace Project.Ending
         private void DisablePaletteGameplay(
             GameObject instance)
         {
-            Collider[] colliders =
+            Collider2D[] colliders =
                 instance.GetComponentsInChildren<
-                    Collider>(true);
+                    Collider2D>(true);
             for (int index = 0;
                  index < colliders.Length;
                  index++)
             {
                 colliders[index].enabled = false;
             }
-            Rigidbody[] bodies =
+            Rigidbody2D[] bodies =
                 instance.GetComponentsInChildren<
-                    Rigidbody>(true);
+                    Rigidbody2D>(true);
             for (int index = 0;
                  index < bodies.Length;
                  index++)
             {
-                bodies[index].detectCollisions = false;
-                bodies[index].useGravity = false;
+                bodies[index].simulated = false;
+                bodies[index].gravityScale = 0f;
                 bodies[index].isKinematic = true;
             }
             CollectiblePickup[] pickups =

@@ -11,7 +11,7 @@ namespace Project.LevelEditor
         [SerializeField, HideInInspector] private Vector2Int dimensions = Vector2Int.one;
         [SerializeField, HideInInspector] private List<RectInt> rectangles = new List<RectInt>();
         [SerializeField, HideInInspector] private Bounds sourceBounds = new Bounds(Vector3.zero, Vector3.one);
-        [SerializeField, HideInInspector] private List<BoxCollider> volumes = new List<BoxCollider>();
+        [SerializeField, HideInInspector] private List<BoxCollider2D> volumes = new List<BoxCollider2D>();
         [SerializeField, HideInInspector] private MeshFilter meshFilter;
         private Mesh generatedMesh;
         private readonly List<SpriteRenderer> spriteParts = new List<SpriteRenderer>();
@@ -19,7 +19,7 @@ namespace Project.LevelEditor
         private HashSet<Vector2Int> occupiedCells;
         public IReadOnlyList<RectInt> Rectangles => rectangles;
         public Vector2Int Dimensions => dimensions;
-        public IReadOnlyList<BoxCollider> Volumes => volumes;
+        public IReadOnlyList<BoxCollider2D> Volumes => volumes;
         public Bounds LocalBounds => sourceBounds;
         public Bounds WorldBounds
         {
@@ -39,17 +39,17 @@ namespace Project.LevelEditor
             dimensions = size;
             rectangles = new List<RectInt>(coverage);
             CacheCells();
-            BoxCollider original = GetComponent<BoxCollider>();
+            BoxCollider2D original = GetComponent<BoxCollider2D>();
             if (volumes.Count == 0 && original != null)
             {
-                sourceBounds = new Bounds(original.center, original.size);
+                sourceBounds = new Bounds(original.offset, original.size);
                 volumes.Add(original);
             }
             if (original != null)
             {
                 while (volumes.Count < rectangles.Count)
                 {
-                    var box = gameObject.AddComponent<BoxCollider>();
+                    var box = gameObject.AddComponent<BoxCollider2D>();
                     box.isTrigger = original.isTrigger; box.sharedMaterial = original.sharedMaterial;
                     box.enabled = original.enabled; volumes.Add(box);
                 }
@@ -59,7 +59,7 @@ namespace Project.LevelEditor
                     volumes[i].enabled = i < rectangles.Count && original.enabled;
                     if (i >= rectangles.Count) continue;
                     Bounds local = RectBounds(rectangles[i]);
-                    volumes[i].center = local.center; volumes[i].size = local.size;
+                    volumes[i].offset = local.center; volumes[i].size = local.size;
                 }
             }
             meshFilter = GetComponent<MeshFilter>();
@@ -81,7 +81,6 @@ namespace Project.LevelEditor
         public bool ContainsWorldPoint(Vector3 world)
         {
             Vector3 p = transform.InverseTransformPoint(world);
-            if (p.z < sourceBounds.min.z - .001f || p.z > sourceBounds.max.z + .001f) return false;
             Vector2Int cell = new Vector2Int(Mathf.FloorToInt((p.x - sourceBounds.min.x) / sourceBounds.size.x * dimensions.x),
                 Mathf.FloorToInt((sourceBounds.max.y - p.y) / sourceBounds.size.y * dimensions.y));
             return ContainsCell(cell);
@@ -165,8 +164,6 @@ namespace Project.LevelEditor
                 bounds.max.y - (rect.y + rect.height * .5f) / size.y * bounds.size.y, bounds.center.z),
                 new Vector3(rect.width / (float)size.x * bounds.size.x, rect.height / (float)size.y * bounds.size.y, bounds.size.z));
             var vertices = new List<Vector3>(); var uv = new List<Vector2>(); var triangles = new List<int>();
-            var cells = new HashSet<Vector2Int>();
-            foreach (var rect in coverage) foreach (Vector2Int cell in rect.allPositionsWithin) cells.Add(cell);
             void Face(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
             {
                 int n = vertices.Count; vertices.Add(a); vertices.Add(b); vertices.Add(c); vertices.Add(d);
@@ -176,16 +173,7 @@ namespace Project.LevelEditor
             foreach (var rect in coverage)
             {
                 Bounds b = RectBounds(rect); Vector3 l = b.min, h = b.max;
-                Face(new Vector3(l.x,l.y,l.z),new Vector3(l.x,h.y,l.z),new Vector3(h.x,h.y,l.z),new Vector3(h.x,l.y,l.z));
-                Face(new Vector3(l.x,l.y,h.z),new Vector3(h.x,l.y,h.z),new Vector3(h.x,h.y,h.z),new Vector3(l.x,h.y,h.z));
-            }
-            foreach (Vector2Int cell in cells)
-            {
-                Bounds b = RectBounds(new RectInt(cell, Vector2Int.one)); Vector3 l = b.min, h = b.max;
-                if (!cells.Contains(cell + Vector2Int.left)) Face(new Vector3(l.x,l.y,h.z),new Vector3(l.x,h.y,h.z),new Vector3(l.x,h.y,l.z),new Vector3(l.x,l.y,l.z));
-                if (!cells.Contains(cell + Vector2Int.right)) Face(new Vector3(h.x,l.y,l.z),new Vector3(h.x,h.y,l.z),new Vector3(h.x,h.y,h.z),new Vector3(h.x,l.y,h.z));
-                if (!cells.Contains(cell + Vector2Int.down)) Face(new Vector3(l.x,h.y,l.z),new Vector3(l.x,h.y,h.z),new Vector3(h.x,h.y,h.z),new Vector3(h.x,h.y,l.z));
-                if (!cells.Contains(cell + Vector2Int.up)) Face(new Vector3(l.x,l.y,h.z),new Vector3(l.x,l.y,l.z),new Vector3(h.x,l.y,l.z),new Vector3(h.x,l.y,h.z));
+                Face(new Vector3(l.x,l.y,0f),new Vector3(l.x,h.y,0f),new Vector3(h.x,h.y,0f),new Vector3(h.x,l.y,0f));
             }
             var mesh = new Mesh { name = "Merged Grid Shape", hideFlags = HideFlags.DontSave, indexFormat = IndexFormat.UInt32 };
             mesh.SetVertices(vertices); mesh.SetUVs(0, uv); mesh.SetTriangles(triangles, 0);

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using Project.Player;
 using UnityEngine;
@@ -57,7 +58,7 @@ namespace Project.BlockFeatures
             }
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void OnTriggerEnter2D(Collider2D other)
         {
             var player = ResolvePlayer(other != null ? other.gameObject : null);
             if (player != null)
@@ -67,7 +68,7 @@ namespace Project.BlockFeatures
             OnPlayerEnter(other != null ? other.gameObject : null);
         }
 
-        private void OnTriggerExit(Collider other)
+        private void OnTriggerExit2D(Collider2D other)
         {
             var player = ResolvePlayer(other != null ? other.gameObject : null);
             if (player != null && mergedShape != null)
@@ -77,7 +78,7 @@ namespace Project.BlockFeatures
                 triggerCounts.Remove(player.GetInstanceID());
                 foreach (var volume in mergedShape.Volumes)
                     if (volume != null && volume.enabled && other != null &&
-                        Physics.ComputePenetration(volume, volume.transform.position, volume.transform.rotation,
+                        PlanarPhysics.ComputePenetration(volume, volume.transform.position, volume.transform.rotation,
                             other, other.transform.position, other.transform.rotation, out _, out _)) return;
             }
             else if (player != null && triggerCounts.TryGetValue(player.GetInstanceID(), out int count))
@@ -88,7 +89,7 @@ namespace Project.BlockFeatures
             OnPlayerExit(other != null ? other.gameObject : null);
         }
 
-        private void OnTriggerStay(Collider other)
+        private void OnTriggerStay2D(Collider2D other)
         {
             OnPlayerEnter(other != null ? other.gameObject : null);
             OnPlayerStay(other != null ? other.gameObject : null);

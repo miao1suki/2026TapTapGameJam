@@ -31,7 +31,7 @@ namespace Project.BlockFeatures
         private Material indicatorMaterial;
         private TMP_FontAsset indicatorMaterialFont;
         private float appliedOutlineWidth = -1f;
-        private Collider[] indicatorShapes;
+        private Collider2D[] indicatorShapes;
 
         public Transform CarryTransform => transform;
         public bool IsCarryActive =>
@@ -99,10 +99,10 @@ namespace Project.BlockFeatures
 
         private void RefreshIndicatorPose()
         {
-            indicatorShapes ??= GetComponentsInChildren<Collider>(true);
+            indicatorShapes ??= GetComponentsInChildren<Collider2D>(true);
             Bounds bounds = default;
             bool found = false;
-            foreach (Collider shape in indicatorShapes)
+            foreach (Collider2D shape in indicatorShapes)
             {
                 if (shape == null || !shape.enabled || shape.isTrigger || !shape.gameObject.activeInHierarchy) continue;
                 if (!found) { bounds = shape.bounds; found = true; }
@@ -169,7 +169,7 @@ namespace Project.BlockFeatures
             }
 
             if (IsCarryActive) return false;
-            VineGrowthLift.Cancel(GetComponent<Rigidbody>());
+            VineGrowthLift.Cancel(GetComponent<Rigidbody2D>());
             carryMotion ??= new CarryTargetMotion(transform, OnCarryRestored);
             motionParticipant?.SetCarrySuspended(true);
             if (!carryMotion.BeginCarry(

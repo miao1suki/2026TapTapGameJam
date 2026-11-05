@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using Project.ColorBlocks;
 using Project.Audio;
@@ -30,8 +31,8 @@ namespace Project.BlockFeatures
             Tooltip = "离开浮力区后继续上升的高度，按单元格尺寸和玩家重力计算，不累加原有上浮速度。")]
         [SerializeField, Min(0f)] private float topExitRiseCells = 3f;
 
-        private readonly Collider[] blueOverlapBuffer =
-            new Collider[32];
+        private readonly Collider2D[] blueOverlapBuffer =
+            new Collider2D[32];
         private readonly List<Vector2> submergedIntervals =
             new List<Vector2>();
         private readonly Dictionary<int, PlayerController> liftedPlayers =
@@ -254,8 +255,8 @@ namespace Project.BlockFeatures
         private bool CanLiftPlayer(PlayerController player)
         {
             if (player == null || player.IsDead) return false;
-            Collider playerCollider =
-                player.GetComponent<Collider>();
+            Collider2D playerCollider =
+                player.GetComponent<Collider2D>();
             if (playerCollider == null ||
                 !playerCollider.enabled)
             {
@@ -263,7 +264,7 @@ namespace Project.BlockFeatures
             }
 
             Bounds bounds = playerCollider.bounds;
-            Collider columnCollider = GetComponent<Collider>();
+            Collider2D columnCollider = GetComponent<Collider2D>();
             var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
             float columnBottom = shape != null ? shape.WorldBounds.min.y : columnCollider != null
                 ? columnCollider.bounds.min.y
@@ -278,16 +279,16 @@ namespace Project.BlockFeatures
             halfExtents.x = Mathf.Max(.02f, halfExtents.x);
             halfExtents.y = Mathf.Max(.02f, halfExtents.y);
             halfExtents.z = Mathf.Max(.02f, halfExtents.z);
-            int count = Physics.OverlapBoxNonAlloc(
+            int count = PlanarPhysics.OverlapBoxNonAlloc(
                 bounds.center,
                 halfExtents,
                 blueOverlapBuffer,
                 Quaternion.identity,
                 ~0,
-                QueryTriggerInteraction.Collide);
+                TriggerQuery.Collide);
             for (int index = 0; index < count; index++)
             {
-                Collider collider = blueOverlapBuffer[index];
+                Collider2D collider = blueOverlapBuffer[index];
                 if (collider == null)
                 {
                     continue;
@@ -377,8 +378,8 @@ namespace Project.BlockFeatures
         private bool IsWithinBubbleColumn(
             PlayerController player)
         {
-            Collider playerCollider =
-                player.GetComponent<Collider>();
+            Collider2D playerCollider =
+                player.GetComponent<Collider2D>();
             if (playerCollider == null ||
                 !playerCollider.enabled)
             {
@@ -386,7 +387,7 @@ namespace Project.BlockFeatures
             }
 
             Bounds bounds = playerCollider.bounds;
-            Collider bubbleCollider = GetComponent<Collider>();
+            Collider2D bubbleCollider = GetComponent<Collider2D>();
             var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
             float columnBottom = shape != null ? shape.WorldBounds.min.y : bubbleCollider != null
                 ? bubbleCollider.bounds.min.y
@@ -402,10 +403,7 @@ namespace Project.BlockFeatures
             {
                 float fallbackRadius =
                     Mathf.Max(.05f, GridCellWorldSize);
-                Vector2 fallbackOffset =
-                    new Vector2(offset.x, offset.z);
-                return fallbackOffset.sqrMagnitude <=
-                       fallbackRadius * fallbackRadius;
+                return Mathf.Abs(offset.x) <= fallbackRadius;
             }
 
             Bounds bubbleBounds = shape != null ? shape.WorldBounds : bubbleCollider.bounds;
@@ -415,17 +413,13 @@ namespace Project.BlockFeatures
                 {
                     if (volume == null) continue;
                     Bounds part = volume.bounds;
-                    if (bounds.max.y > part.min.y && Mathf.Abs(bounds.center.x-part.center.x) <= part.extents.x+bounds.extents.x &&
-                        Mathf.Abs(bounds.center.z-part.center.z) <= part.extents.z+bounds.extents.z) return true;
+                    if (bounds.max.y > part.min.y && Mathf.Abs(bounds.center.x-part.center.x) <= part.extents.x+bounds.extents.x) return true;
                 }
                 return false;
             }
             float overlapX =
                 bubbleBounds.extents.x + bounds.extents.x;
-            float overlapZ =
-                bubbleBounds.extents.z + bounds.extents.z;
-            return Mathf.Abs(bounds.center.x - bubbleBounds.center.x) <= overlapX &&
-                   Mathf.Abs(bounds.center.z - bubbleBounds.center.z) <= overlapZ;
+            return Mathf.Abs(bounds.center.x - bubbleBounds.center.x) <= overlapX;
         }
     }
 }

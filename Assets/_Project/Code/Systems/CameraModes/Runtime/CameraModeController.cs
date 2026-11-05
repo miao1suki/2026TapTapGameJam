@@ -53,36 +53,16 @@ namespace Project.CameraModes
             [Tooltip("相对焦点的纵深观察偏移。")]
             public float depthOffset;
 
-            [Tooltip("2D 平面朝向。0=看向世界 +Z，90=向右转过一个面。")]
+            [Tooltip("2D 画面绕 Z 轴旋转角度；不会改变游玩平面。")]
             public float yawDegrees;
         }
 
-        [Serializable]
-        public sealed class Perspective3DSettings
-        {
-            [Tooltip("相机到观察中心的直线距离。")]
-            [Min(0.01f)] public float distance = 12f;
 
-            [Tooltip("透视相机的俯仰角。可由 RotatePerspective 或 SetPerspectiveAngles 动态调整。")]
-            [Range(1f, 80f)] public float pitch = 35f;
-
-            [Tooltip("透视相机垂直视野角。")]
-            [Range(1f, 179f)] public float fieldOfView = 50f;
-
-            [Tooltip("相对焦点的竖直观察偏移。不会造成左右偏移。")]
-            public float verticalOffset = 1f;
-
-            [Tooltip("相对焦点的纵深观察偏移。")]
-            public float depthOffset;
-
-            [Tooltip("3D 环绕视角的水平朝向。")]
-            public float yawDegrees;
-        }
 
         [Serializable]
         public sealed class TransitionSettings
         {
-            [Tooltip("2D/3D 模式切换时间。设为 0 时立即完成。")]
+            [Tooltip("2D 镜头过渡时间。设为 0 时立即完成。")]
             [Min(0f)] public float duration = 0.8f;
 
             [Tooltip("切换缓动曲线。输入和输出均建议保持在 0 到 1。")]
@@ -106,7 +86,6 @@ namespace Project.CameraModes
         [Header("Modes")]
         [SerializeField] private CameraViewMode initialMode = CameraViewMode.Side2D;
         [SerializeField] private Side2DSettings side2D = new Side2DSettings();
-        [SerializeField] private Perspective3DSettings perspective3D = new Perspective3DSettings();
 
         [Header("Transition")]
         [SerializeField] private TransitionSettings transition = new TransitionSettings();
@@ -134,15 +113,14 @@ namespace Project.CameraModes
         public event Action<CameraViewMode> TransitionStarted;
         public event Action<CameraViewMode> ModeChanged;
 
-        public string CameraControlName => "2D / 3D Camera Mode";
+        public string CameraControlName => "Planar Camera";
         public CameraControlManager Manager => cameraManager;
+        public float PresentationDepth => side2D.depthOffset - side2D.distance;
         public Camera ControlledCamera => cameraManager != null ? cameraManager.OutputCamera : null;
         public Transform FollowTarget => cameraManager != null ? cameraManager.FocusTarget : null;
         public CameraViewMode CurrentMode => currentMode;
         public CameraViewMode TargetMode => targetMode;
         public bool HasControl => controlHandle.HasControl;
-        public float Perspective3DYaw => perspective3D.yawDegrees;
-        public float Perspective3DPitch => perspective3D.pitch;
         public float Side2DYaw => side2D.yawDegrees;
         public float TargetSide2DYaw => yawTransitionActive
             ? yawTransitionTo
@@ -218,11 +196,7 @@ namespace Project.CameraModes
 
             side2D.distance = Mathf.Max(0.01f, side2D.distance);
             side2D.orthographicSize = Mathf.Max(0.01f, side2D.orthographicSize);
-            perspective3D.distance = Mathf.Max(0.01f, perspective3D.distance);
-            perspective3D.pitch = Mathf.Clamp(perspective3D.pitch, 1f, 80f);
-            perspective3D.fieldOfView = Mathf.Clamp(perspective3D.fieldOfView, 1f, 179f);
-            perspective3D.yawDegrees =
-                Mathf.Repeat(perspective3D.yawDegrees + 180f, 360f) - 180f;
+            initialMode = CameraViewMode.Side2D;
             side2D.yawDegrees = Mathf.Repeat(side2D.yawDegrees + 180f, 360f) - 180f;
             transition.duration = Mathf.Max(0f, transition.duration);
         }
@@ -236,38 +210,9 @@ namespace Project.CameraModes
             }
         }
 
-        public void RotatePerspective(
-            float yawDelta,
-            float pitchDelta,
-            bool applyImmediate = false)
-        {
-            perspective3D.yawDegrees = Mathf.Repeat(
-                perspective3D.yawDegrees + yawDelta + 180f,
-                360f) - 180f;
-            perspective3D.pitch = Mathf.Clamp(
-                perspective3D.pitch + pitchDelta,
-                1f,
-                80f);
-            if (applyImmediate && HasControl)
-            {
-                cameraManager.Retarget(controlHandle, CameraTransition.Immediate);
-            }
-        }
 
-        public void SetPerspectiveAngles(
-            float yawDegrees,
-            float pitchDegrees,
-            bool applyImmediate = false)
-        {
-            perspective3D.yawDegrees = Mathf.Repeat(
-                yawDegrees + 180f,
-                360f) - 180f;
-            perspective3D.pitch = Mathf.Clamp(pitchDegrees, 1f, 80f);
-            if (applyImmediate && HasControl)
-            {
-                cameraManager.Retarget(controlHandle, CameraTransition.Immediate);
-            }
-        }
+
+
 
         public void Configure(Camera cameraToControl, Transform target, bool snapToInitialMode = true)
         {
@@ -312,23 +257,14 @@ namespace Project.CameraModes
             ApplyMode(mode, cameraTransition);
         }
 
-        internal void ToggleMode(bool immediate = false)
-        {
-            CameraViewMode nextMode = targetMode == CameraViewMode.Side2D
-                ? CameraViewMode.Perspective3D
-                : CameraViewMode.Side2D;
-            SwitchMode(nextMode, immediate);
-        }
+
 
         internal void SwitchTo2D(bool immediate = false)
         {
             SwitchMode(CameraViewMode.Side2D, immediate);
         }
 
-        internal void SwitchTo3D(bool immediate = false)
-        {
-            SwitchMode(CameraViewMode.Perspective3D, immediate);
-        }
+
 
         public CameraViewModeRequestHandle RequestMode(
             ICameraViewModeRequester requester,
@@ -406,7 +342,7 @@ namespace Project.CameraModes
                 id = nextModeRequestId++,
                 order = nextModeRequestOrder++,
                 priority = requester.CameraModeRequestPriority,
-                mode = mode,
+                mode = CameraViewMode.Side2D,
                 requester = requester,
                 overrideSide2DYaw = overrideSide2DYaw,
                 side2DYawDegrees = side2DYawDegrees,
@@ -451,28 +387,13 @@ namespace Project.CameraModes
         public bool TryGetProjectionState(out CameraState state)
         {
             EnsureInitialized();
-            if (targetMode == CameraViewMode.Side2D)
-            {
-                state = new CameraState
-                {
-                    projection = CameraProjectionMode.Orthographic,
-                    orthographicSize = side2D.orthographicSize,
-                    fieldOfView = perspective3D.fieldOfView,
-                };
-                return true;
-            }
-
-            state = new CameraState
-            {
-                projection = CameraProjectionMode.Perspective,
-                orthographicSize = side2D.orthographicSize,
-                fieldOfView = perspective3D.fieldOfView,
-            };
+            state = new CameraState { projection = CameraProjectionMode.Orthographic, orthographicSize = side2D.orthographicSize };
             return true;
         }
 
         internal void SnapToMode(CameraViewMode mode, bool notifyListeners = true)
         {
+            mode = CameraViewMode.Side2D;
             EnsureInitialized();
             EnsureRegistered();
             yawTransitionActive = false;
@@ -507,45 +428,15 @@ namespace Project.CameraModes
             cameraManager.CompleteTransition(controlHandle);
         }
 
-        public bool TryGetCameraState(
-            in CameraControlContext context,
-            out CameraState state)
+        public bool TryGetCameraState(in CameraControlContext context, out CameraState state)
         {
-            if (targetMode == CameraViewMode.Side2D)
-            {
-                Quaternion yaw = Quaternion.Euler(0f, side2D.yawDegrees, 0f);
-                Vector3 center = context.FocusPoint + yaw * new Vector3(
-                    0f,
-                    side2D.verticalOffset,
-                    side2D.depthOffset);
-                state = new CameraState
-                {
-                    position = center + yaw * Vector3.back * side2D.distance,
-                    rotation = Quaternion.LookRotation(
-                        yaw * Vector3.forward,
-                        Vector3.up),
-                    projection = CameraProjectionMode.Orthographic,
-                    orthographicSize = side2D.orthographicSize,
-                    fieldOfView = perspective3D.fieldOfView,
-                };
-                return true;
-            }
-
-            Vector3 perspectiveCenter = context.FocusPoint + new Vector3(
-                0f,
-                perspective3D.verticalOffset,
-                perspective3D.depthOffset);
-            Quaternion rotation = Quaternion.Euler(
-                perspective3D.pitch,
-                perspective3D.yawDegrees,
-                0f);
+            Vector3 center = context.FocusPoint + Vector3.up * side2D.verticalOffset;
             state = new CameraState
             {
-                position = perspectiveCenter - rotation * Vector3.forward * perspective3D.distance,
-                rotation = rotation,
-                projection = CameraProjectionMode.Perspective,
+                position = new Vector3(center.x, center.y, side2D.depthOffset - side2D.distance),
+                rotation = Quaternion.Euler(0f, 0f, side2D.yawDegrees),
+                projection = CameraProjectionMode.Orthographic,
                 orthographicSize = side2D.orthographicSize,
-                fieldOfView = perspective3D.fieldOfView,
             };
             return true;
         }
@@ -608,6 +499,7 @@ namespace Project.CameraModes
             CameraViewMode mode,
             CameraTransition cameraTransition)
         {
+            mode = CameraViewMode.Side2D;
             EnsureInitialized();
             EnsureRegistered();
             if (targetMode == mode)
@@ -668,13 +560,9 @@ namespace Project.CameraModes
             {
                 targetSide2DYaw = NormalizeYaw(
                     best.side2DYawDegrees);
-                float comparisonYaw = yawTransitionActive
-                    ? yawTransitionTo
-                    : side2D.yawDegrees;
-                side2DYawChanged = !Mathf.Approximately(
-                    comparisonYaw,
-                    targetSide2DYaw);
             }
+            float comparisonYaw = yawTransitionActive ? yawTransitionTo : side2D.yawDegrees;
+            side2DYawChanged = !Mathf.Approximately(comparisonYaw, targetSide2DYaw);
 
             CameraViewMode nextMode =
                 best != null ? best.mode : initialMode;
@@ -730,8 +618,8 @@ namespace Project.CameraModes
             cameraManager.SetViewModeAuthority(this);
             if (!initialized)
             {
-                currentMode = initialMode;
-                targetMode = initialMode;
+                currentMode = CameraViewMode.Side2D;
+                targetMode = CameraViewMode.Side2D;
                 initialized = true;
             }
         }

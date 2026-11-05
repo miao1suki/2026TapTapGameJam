@@ -31,7 +31,7 @@ namespace Project.BlockFeatures
         private ColorObject colorObject;
         private ColorKeyPickup colorKey;
         private ContactCubeMotion contactCubeMotion;
-        private BoxCollider footprint;
+        private BoxCollider2D footprint;
         private MeshRenderer[] placeholders;
         private SpriteRenderer[] indicators;
         private Renderer[] hintRenderers;
@@ -163,7 +163,7 @@ namespace Project.BlockFeatures
             obstacle = GetComponent<PlantObstacleFeature>();
             if (spike != null)
             {
-                var volume = GetComponentInChildren<MeshCollider>(true);
+                var volume = GetComponentInChildren<PolygonCollider2D>(true);
                 if (volume != null) spikeDirection = volume.transform;
             }
             lava = GetComponent<LavaHazardFeature>();
@@ -186,9 +186,9 @@ namespace Project.BlockFeatures
                 : oneWay != null ? oneWay.ArtworkKind : kind;
             var entry = artwork.Find(kind);
             if (entry == null || entry.frames == null || entry.frames.Length == 0) return;
-            footprint = GetComponent<BoxCollider>();
+            footprint = GetComponent<BoxCollider2D>();
             shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
-            if (cube != null) foreach (var box in GetComponentsInChildren<BoxCollider>(true)) if (!box.isTrigger) { footprint = box; break; }
+            if (cube != null) foreach (var box in GetComponentsInChildren<BoxCollider2D>(true)) if (!box.isTrigger) { footprint = box; break; }
             if (visual == null)
             {
                 var child = transform.Find("Mechanism Visual");
@@ -326,7 +326,7 @@ namespace Project.BlockFeatures
             if (footprint != null)
             {
                 var toRoot = transform.worldToLocalMatrix * footprint.transform.localToWorldMatrix;
-                center = toRoot.MultiplyPoint3x4(footprint.center);
+                center = toRoot.MultiplyPoint3x4(footprint.offset);
                 // Red/blue physical boxes have a horizontal clearance skin so
                 // they can fall through a one-cell opening. Tiling from that
                 // .96-cell collision width crops the last artwork column and
@@ -443,7 +443,8 @@ namespace Project.BlockFeatures
                 // Keep only the collectible picture inside the authored cell;
                 // its body/trigger and all other mechanism fronts stay unchanged.
                 if (kind == MechanismArtworkKind.Collectible)
-                    visual.transform.localPosition = new Vector3(center.x, bottom, center.z);
+                    visual.transform.localPosition = new Vector3(center.x, bottom,
+                        center.z + .02f * cell / Mathf.Max(.001f, Mathf.Abs(scale.z)));
             }
             if (shape != null && (tile || sliced)) shape.ApplySprite(visual, sliced,
                 sliced ? PlatformArtworkLayout.VisibleThicknessCells(kind, sprite, artwork) : 0f);

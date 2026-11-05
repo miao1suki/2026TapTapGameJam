@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Linq;
 using Project.BlockFeatures;
@@ -53,7 +54,7 @@ namespace Project.ContactCubes.Editor
         }
         private static GameObject Box(Vector3 position, Vector3 scale)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var go = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             go.transform.position = position; go.transform.localScale = scale; return go;
         }
         private static void GeometryChecks()
@@ -69,31 +70,31 @@ namespace Project.ContactCubes.Editor
             label.ForceMeshUpdate();
             Check(label.font == font && label.fontSize == 2.7f, "label uses project font and size");
             Check((label.transform.lossyScale - Vector3.one).sqrMagnitude < .001f, "merged label not stretched");
-            Check((label.transform.position - target.GetComponent<BoxCollider>().bounds.center).sqrMagnitude < .001f, "label at actual shape center");
+            Check((label.transform.position - target.GetComponent<BoxCollider2D>().bounds.center).sqrMagnitude < .001f, "label at actual shape center");
             Check(label.color == Color.black && label.fontMaterial.GetColor(ShaderUtilities.ID_OutlineColor) == Color.white, "black text white outline");
             Check(label.text == (InputPromptUtility.UseActionLabels ? "搬运" : InputPromptUtility.FormatKey(InputActionId.Interact) + "\n搬运") && label.sortingOrder == short.MaxValue, "device-specific centered topmost label");
             feature.SetCarryIndicator(false);
             var host = new Host();
             Check(feature.BeginCarry(host), "start merged carry");
             var wall = Box(new Vector3(23, 5, 0), Vector3.one); wall.transform.SetParent(common.transform);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             var solid = (IPlayerCarryCollisionTarget)feature;
             Vector3 limited = solid.ConstrainCarryDisplacement(host.CarryAnchorWorldPosition, Vector3.right * 10, .01f);
             Check(limited.x > .95f && limited.x < 1.01f, "full three-cell width and high-speed sweep");
             Check(solid.ConstrainCarryDisplacement(host.CarryAnchorWorldPosition, Vector3.left, .01f).x < -.99f, "reverse away from wall allowed");
-            target.transform.rotation = Quaternion.Euler(0, 0, 90); Physics.SyncTransforms();
+            target.transform.rotation = Quaternion.Euler(0, 0, 90); PlanarPhysics.SyncTransforms();
             limited = solid.ConstrainCarryDisplacement(host.CarryAnchorWorldPosition, Vector3.right * 10, .01f);
             Check(limited.x > 1.95f && limited.x < 2.01f, "rotated authored OBB uses correct width");
             target.transform.rotation = Quaternion.identity;
-            wall.GetComponent<Collider>().isTrigger = true; Physics.SyncTransforms();
+            wall.GetComponent<Collider2D>().isTrigger = true; PlanarPhysics.SyncTransforms();
             Check(solid.ConstrainCarryDisplacement(host.CarryAnchorWorldPosition, Vector3.right * 10, .01f).x > 9.99f, "triggers do not block");
-            wall.GetComponent<Collider>().isTrigger = false;
-            wall.transform.position = new Vector3(20, 7, 0); wall.transform.localScale = new Vector3(6, 1, 1); Physics.SyncTransforms();
+            wall.GetComponent<Collider2D>().isTrigger = false;
+            wall.transform.position = new Vector3(20, 7, 0); wall.transform.localScale = new Vector3(6, 1, 1); PlanarPhysics.SyncTransforms();
             limited = solid.ConstrainCarryDisplacement(host.CarryAnchorWorldPosition, Vector3.up * 8, .01f);
             Check(limited.y > .95f && limited.y < 1.01f, "head ceiling limits upward travel");
             Check(solid.ConstrainCarryDisplacement(host.CarryAnchorWorldPosition, Vector3.right * 2, .01f).x > 1.99f, "ceiling does not block parallel slide");
-            Check(!target.GetComponent<BoxCollider>().enabled, "no physical carry push collider");
-            feature.CancelCarry(); Check(target.GetComponent<BoxCollider>().enabled, "cancel restores shape");
+            Check(!target.GetComponent<BoxCollider2D>().enabled, "no physical carry push collider");
+            feature.CancelCarry(); Check(target.GetComponent<BoxCollider2D>().enabled, "cancel restores shape");
             UnityEngine.Object.DestroyImmediate(common);
         }
         private static void Tick()
@@ -111,7 +112,7 @@ namespace Project.ContactCubes.Editor
                     player = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab"), new Vector3(.5f, .5f, 0), Quaternion.identity).GetComponent<PlayerController>();
                     player.GetComponent<PlayerInputDriver>().enabled = false;
                     carried = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ColorBlocks/Prefabs/Universal_Block.prefab"), new Vector3(1.5f, .5f, 0), Quaternion.identity).GetComponent<CarryableFeature>();
-                    Physics.SyncTransforms(); phase = 1; deadline = Time.time + .2f; return;
+                    PlanarPhysics.SyncTransforms(); phase = 1; deadline = Time.time + .2f; return;
                 }
                 if (phase == 1)
                 {
@@ -126,20 +127,20 @@ namespace Project.ContactCubes.Editor
                 }
                 if (phase == 3)
                 {
-                    Check(player.Motor.position.x > 1.8f && player.Motor.position.x <= 2.01f, "real physics sprint stopped by overhead box");
-                    Check(Mathf.Abs(player.Motor.linearVelocity.x) < .05f, "no continued velocity into obstacle");
+                    Check(player.Motor.WorldPosition().x > 1.8f && player.Motor.WorldPosition().x <= 2.01f, "real physics sprint stopped by overhead box");
+                    Check(Mathf.Abs(((Vector3)player.Motor.linearVelocity).x) < .05f, "no continued velocity into obstacle");
                     player.SetMoveInput(Vector2.left); player.SetSprintInput(false);
                     phase = 4; deadline = Time.time + .25f; return;
                 }
                 if (phase == 4)
                 {
-                    Check(player.Motor.position.x < 1.8f, "player can walk away after collision");
+                    Check(player.Motor.WorldPosition().x < 1.8f, "player can walk away after collision");
                     player.SetMoveInput(Vector2.zero); player.RequestRespawn();
                     phase = 5; deadline = Time.time + .6f; return;
                 }
                 if (phase == 5)
                 {
-                    Check(!player.IsCarrying && carried.GetComponent<Collider>().enabled, "reset restores carry and collisions");
+                    Check(!player.IsCarrying && carried.GetComponent<Collider2D>().enabled, "reset restores carry and collisions");
                     Debug.Log("CARRY VERIFICATION PASSED " + checks);
                     SessionState.SetBool("CarryCollisionVerification", false); EditorApplication.Exit(0);
                 }

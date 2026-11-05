@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project.BlockFeatures;
@@ -17,7 +18,7 @@ namespace Project.ContactCubes
         IEnergySource
     {
         [SerializeField, InspectorName("固定类型")] private CubeColor color;
-        [SerializeField, InspectorName("实体碰撞箱")] private BoxCollider shape;
+        [SerializeField, InspectorName("实体碰撞箱")] private BoxCollider2D shape;
         [SerializeField, InspectorName("模型")] private Transform model;
         [SerializeField, Min(1), InspectorName("初始长度（格）")] private int initialLength = 1;
         [SerializeField, Min(1), InspectorName("最大长度（格）")] private int maximumLength = 6;
@@ -30,7 +31,7 @@ namespace Project.ContactCubes
         [SerializeField, Range(.2f,4f), InspectorName("气泡密度（排/格）")] private float jetBubbleDensity = 2.5f;
         [SerializeField, Range(.1f,12f), InspectorName("气泡速度（格/秒）")] private float jetBubbleSpeed = 6f;
         [SerializeField, HideInInspector] private Material jetMaterial; // Legacy serialized reference, formal visuals use WaterPresentation.
-        private Collider[] hits = new Collider[32];
+        private Collider2D[] hits = new Collider2D[32];
         private readonly HashSet<ContactCube> neighbours = new HashSet<ContactCube>();
         // Real contact pairs may have asymmetric/non-default contact offsets.
         // This is only a candidate set: each step rechecks actual geometry, not a timer.
@@ -124,13 +125,13 @@ namespace Project.ContactCubes
             int count;
             do
             {
-                count = Physics.OverlapBoxNonAlloc(t.TransformPoint(shape.center), half, hits, t.rotation, ~0, QueryTriggerInteraction.Collide);
+                count = PlanarPhysics.OverlapBoxNonAlloc(t.TransformPoint(shape.offset), half, hits, t.rotation, ~0, TriggerQuery.Collide);
                 if (count < hits.Length) break;
                 Array.Resize(ref hits, hits.Length * 2);
             } while (hits.Length <= 4096);
             for (int i = 0; i < count; i++)
             {
-                Collider hit = hits[i];
+                Collider2D hit = hits[i];
                 if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<CubeWaterJet>() != null) continue;
                 ContactCube cube = hit.GetComponentInParent<ContactCube>();
                 if (cube != null)
@@ -154,18 +155,18 @@ namespace Project.ContactCubes
             // This extra margin only finds candidates (including the other
             // box's physical inset); the logical OBB test below owns acceptance.
             var logicalBox = new ContactBox(this);
-            float candidateMargin = Mathf.Max(0f, shape.contactOffset) +
-                Mathf.Max(0f, Physics.defaultContactOffset) + cellSize * .05f;
-            Vector3 contactHalf = logicalBox.Half + Vector3.one * (worldTolerance + candidateMargin);
+            float candidateMargin = Mathf.Max(0f, UnityEngine.Physics2D.defaultContactOffset) +
+                Mathf.Max(0f, PlanarPhysics.defaultContactOffset) + cellSize * .05f;
+            Vector3 contactHalf = logicalBox.Half + Vector2.one * (worldTolerance + candidateMargin);
             do
             {
-                count = Physics.OverlapBoxNonAlloc(logicalBox.Center, contactHalf, hits, t.rotation, ~0, QueryTriggerInteraction.Ignore);
+                count = PlanarPhysics.OverlapBoxNonAlloc(logicalBox.Center, contactHalf, hits, t.rotation, ~0, TriggerQuery.Ignore);
                 if (count < hits.Length) break;
                 Array.Resize(ref hits, hits.Length * 2);
             } while (hits.Length <= 4096);
             for (int index = 0; index < count; index++)
             {
-                Collider hit = hits[index];
+                Collider2D hit = hits[index];
                 if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<CubeWaterJet>() != null) continue;
                 ContactCube cube = hit.GetComponentInParent<ContactCube>();
                 if (cube != null && cube != this && cube.HasContactShape && IsWithinContactShell(cube, worldTolerance)) neighbours.Add(cube);
@@ -181,14 +182,14 @@ namespace Project.ContactCubes
             appliedTargets.RemoveWhere(target => target == null || !touchingTargets.Contains(target));
         }
 
-        private void OnCollisionEnter(Collision collision) => RememberContact(collision);
-        private void OnCollisionStay(Collision collision) => RememberContact(collision);
-        private void OnCollisionExit(Collision collision)
+        private void OnCollisionEnter2D(Collision2D collision) => RememberContact(collision);
+        private void OnCollisionStay2D(Collision2D collision) => RememberContact(collision);
+        private void OnCollisionExit2D(Collision2D collision)
         {
             ContactCube cube = collision.collider != null ? collision.collider.GetComponentInParent<ContactCube>() : null;
             if (cube != null) collisionNeighbours.Remove(cube);
         }
-        private void RememberContact(Collision collision)
+        private void RememberContact(Collision2D collision)
         {
             ContactCube cube = collision.collider != null ? collision.collider.GetComponentInParent<ContactCube>() : null;
             if (cube != null && cube != this) collisionNeighbours.Add(cube);
@@ -196,41 +197,38 @@ namespace Project.ContactCubes
 
         private readonly struct ContactBox
         {
-            public readonly Vector3 Center, Half, X, Y, Z;
+            public readonly Vector2 Center, Half, X, Y;
             public ContactBox(ContactCube cube)
             {
-                BoxCollider box = cube.shape;
+                BoxCollider2D box = cube.shape;
                 Transform frame = box.transform;
-                Center = frame.TransformPoint(box.center);
+                Center = frame.TransformPoint(box.offset);
                 Vector3 logicalSize = cube.motion != null ? cube.motion.LogicalContactShapeSize : box.size;
                 // Components assembled by test/tools may not have completed
                 // Motion.Awake yet. Never turn that into a zero-sized contact.
-                if (logicalSize.x <= 0f || logicalSize.y <= 0f || logicalSize.z <= 0f) logicalSize = box.size;
+                if (logicalSize.x <= 0f || logicalSize.y <= 0f) logicalSize = box.size;
                 Half = Vector3.Scale(logicalSize * .5f, Abs(frame.lossyScale));
-                X = frame.right; Y = frame.up; Z = frame.forward;
+                X = frame.right; Y = frame.up;
             }
-            public Vector3 Axis(int index) => index == 0 ? X : index == 1 ? Y : Z;
-            public float Radius(Vector3 axis) => Mathf.Abs(Vector3.Dot(axis, X)) * Half.x +
-                Mathf.Abs(Vector3.Dot(axis, Y)) * Half.y + Mathf.Abs(Vector3.Dot(axis, Z)) * Half.z;
+            public Vector2 Axis(int index) => index == 0 ? X : Y;
+            public float Radius(Vector2 axis) => Mathf.Abs(Vector2.Dot(axis, X)) * Half.x +
+                Mathf.Abs(Vector2.Dot(axis, Y)) * Half.y;
         }
         private bool IsWithinContactShell(ContactCube other, float worldTolerance)
         {
             // A fixed geometric envelope, not hysteresis: a moved/disabled/held
             // neighbour cannot keep a jet alive through stale collision callbacks.
-            float padding = worldTolerance + Mathf.Max(0f, shape.contactOffset) + Mathf.Max(0f, other.shape.contactOffset);
+            float padding = worldTolerance + Mathf.Max(0f, UnityEngine.Physics2D.defaultContactOffset) + Mathf.Max(0f, UnityEngine.Physics2D.defaultContactOffset);
             var a = new ContactBox(this); var b = new ContactBox(other);
-            Vector3 delta = b.Center - a.Center;
-            for (int index = 0; index < 3; index++)
+            Vector2 delta = b.Center - a.Center;
+            for (int index = 0; index < 2; index++)
                 if (Separated(a, b, delta, a.Axis(index), padding) || Separated(a, b, delta, b.Axis(index), padding)) return false;
-            for (int first = 0; first < 3; first++)
-                for (int second = 0; second < 3; second++)
-                    if (Separated(a, b, delta, Vector3.Cross(a.Axis(first), b.Axis(second)), padding)) return false;
             return true;
         }
-        private static bool Separated(ContactBox a, ContactBox b, Vector3 delta, Vector3 axis, float padding)
+        private static bool Separated(ContactBox a, ContactBox b, Vector2 delta, Vector2 axis, float padding)
         {
             float lengthSquared = axis.sqrMagnitude;
-            return lengthSquared > .000001f && Mathf.Abs(Vector3.Dot(delta, axis)) >
+            return lengthSquared > .000001f && Mathf.Abs(Vector2.Dot(delta, axis)) >
                 a.Radius(axis) + b.Radius(axis) + padding * Mathf.Sqrt(lengthSquared) + .00001f;
         }
         private static Vector3 Abs(Vector3 value) => new Vector3(Mathf.Abs(value.x), Mathf.Abs(value.y), Mathf.Abs(value.z));
@@ -316,18 +314,18 @@ namespace Project.ContactCubes
             int count;
             do
             {
-                count = Physics.OverlapBoxNonAlloc(center, half, hits, rotation, ~0, QueryTriggerInteraction.Ignore);
+                count = PlanarPhysics.OverlapBoxNonAlloc(center, half, hits, rotation, ~0, TriggerQuery.Ignore);
                 if (count < hits.Length) break;
                 if (hits.Length >= 4096) return false;
                 Array.Resize(ref hits, hits.Length * 2);
             } while (true);
             for (int index = 0; index < count; index++)
             {
-                Collider hit = hits[index];
+                Collider2D hit = hits[index];
                 if (hit == null || hit.transform.IsChildOf(transform) ||
                     Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(hit) ||
-                    Physics.GetIgnoreLayerCollision(shape.gameObject.layer, hit.gameObject.layer) ||
-                    Physics.GetIgnoreCollision(shape, hit)) continue;
+                    PlanarPhysics.GetIgnoreLayerCollision(shape.gameObject.layer, hit.gameObject.layer) ||
+                    PlanarPhysics.GetIgnoreCollision(shape, hit)) continue;
                 // A player occupying the added cell blocks this whole-cell step
                 // too. Never resize a collider around a player and rely on deep
                 // penetration recovery; the pending request resumes when clear.
@@ -349,7 +347,7 @@ namespace Project.ContactCubes
             body.localRotation = Quaternion.FromToRotation(Vector3.right, localGrowthDirection);
             body.localScale = Vector3.one;
             shape.size = new Vector3(Length, 1, 1) * cellSize;
-            shape.center = Vector3.zero;
+            shape.offset = Vector3.zero;
             if (model != null) model.localScale = shape.size;
         }
         private void UpdateJets()

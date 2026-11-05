@@ -165,7 +165,7 @@ public sealed class BossControllerEditor : Editor
             serializedObject,
             "passThroughColliderHeight",
             "穿行碰撞高度（本地）",
-            "右移马夫接管、Boss 进入穿行状态时，把 BoxCollider 的本地上下的总高度扩到该值；停止穿行时恢复作者尺寸。"));
+            "右移马夫接管、Boss 进入穿行状态时，把 BoxCollider2D 的本地上下的总高度扩到该值；停止穿行时恢复作者尺寸。"));
         survival.Add(ProjectInspectorUtility.CreateProperty(
             serializedObject,
             "killPlayerOnContact",

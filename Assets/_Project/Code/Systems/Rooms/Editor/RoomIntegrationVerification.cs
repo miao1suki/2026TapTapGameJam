@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -187,7 +188,7 @@ namespace Project.Rooms.Editor
         }
         private static GameObject MakeSolid(string name, Vector3 point, Vector3 scale)
         {
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             floor.name = name; floor.transform.position = point; floor.transform.localScale = scale;
             floor.AddComponent<RoomResetObject>(); return floor;
         }
@@ -242,8 +243,8 @@ namespace Project.Rooms.Editor
                 var manager = Object.FindFirstObjectByType<RoomLifecycleManager>();
                 if (player == null || manager == null || Time.time < .5f) return;
                 player.GetComponent<PlayerInputDriver>().enabled = false;
-                player.Motor.constraints = RigidbodyConstraints.FreezeAll;
-                player.Motor.interpolation = RigidbodyInterpolation.None;
+                player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
+                player.Motor.interpolation = RigidbodyInterpolation2D.None;
                 if (phase == 0)
                 {
                     Check(manager.CurrentRegionId == "test_room_a", "initial owner");
@@ -289,14 +290,14 @@ namespace Project.Rooms.Editor
                     Check(Object.FindFirstObjectByType<DoorController>().State == DoorState.Unlocked, "door persistent");
                     player.transform.position = player.Motor.position = new Vector3(30.5f, -6, 0); manager.UpdatePlayerRegion(player);
                     player.RequestRespawn();
-                    Check(Mathf.Abs(player.Motor.position.x - 21.5f) < .01f, "alive R pathway respawns to latest checkpoint: " + player.Motor.position);
+                    Check(Mathf.Abs(player.Motor.WorldPosition().x - 21.5f) < .01f, "alive R pathway respawns to latest checkpoint: " + player.Motor.WorldPosition());
                     Check(manager.CurrentRegionId == "test_corridor", "respawn owner updated");
                     Check(GameObject.Find("未解锁机关测试").transform.position == new Vector3(34.5f, -6.5f, 0), "inactive motion feature does not overwrite authored pose");
                     phase++; nextFrame = Time.frameCount + 3; return;
                 }
                 if (phase == 3)
                 {
-                    Check(Mathf.Abs(player.transform.position.x - 21.5f) < .01f, "respawn pose visible after physics sync: " + player.transform.position + "; body=" + player.Motor.position);
+                    Check(Mathf.Abs(player.transform.position.x - 21.5f) < .01f, "respawn pose visible after physics sync: " + player.transform.position + "; body=" + player.Motor.WorldPosition());
                     Check(GameObject.Find("临时替代物") == null, "temporary replacement cleaned up");
                     var key = GameObject.Find("蓝色钥匙").GetComponent<ColorKeyPickup>();
                     typeof(Project.Items.DropItemBase).GetField("collectionRequested", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(key, true);
@@ -310,7 +311,7 @@ namespace Project.Rooms.Editor
                 }
                 if (player.IsDead) return;
                 Check(Time.time - deathStartedAt >= .7f, "death presentation wait completed");
-                Check(!player.IsDead && Mathf.Abs(player.Motor.position.x - 21.5f) < .01f, "death auto respawn");
+                Check(!player.IsDead && Mathf.Abs(player.Motor.WorldPosition().x - 21.5f) < .01f, "death auto respawn");
                 Check(errors.Count == 0, "runtime errors: " + string.Join("\n", errors));
                 File.WriteAllText("Library/RoomPlayVerification.txt", $"PASS {checks} runtime assertions; no runtime errors.");
                 Stop(0);

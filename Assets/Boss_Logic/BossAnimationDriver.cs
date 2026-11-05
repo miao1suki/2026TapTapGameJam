@@ -85,12 +85,12 @@ namespace Project.BossLogic
         private bool deathDissolvePreview;
         private float deathDissolveStartedAt;
         private float previewRestoreAt = -1f;
-        private Rigidbody previewFrozenBody;
+        private Rigidbody2D previewFrozenBody;
         private bool previewBodyStateCaptured;
         private bool previewBodyWasKinematic;
         private bool previewBodyUsedGravity;
         private Vector3 previewBodyLinearVelocity;
-        private Vector3 previewBodyAngularVelocity;
+        private float previewBodyAngularVelocity;
         private float nextRgbDeathDissolvePreviewAt = -1f;
 
         public event Action<BossStateId, BossStateId> StateForwarded;
@@ -802,14 +802,14 @@ namespace Project.BossLogic
 
             previewFrozenBody = controller != null
                 ? controller.Body
-                : GetComponent<Rigidbody>();
+                : GetComponent<Rigidbody2D>();
             if (previewFrozenBody == null)
             {
                 return;
             }
 
             previewBodyWasKinematic = previewFrozenBody.isKinematic;
-            previewBodyUsedGravity = previewFrozenBody.useGravity;
+            previewBodyUsedGravity = (previewFrozenBody.gravityScale != 0f);
             previewBodyLinearVelocity = previewFrozenBody.linearVelocity;
             previewBodyAngularVelocity = previewFrozenBody.angularVelocity;
             previewBodyStateCaptured = true;
@@ -817,10 +817,10 @@ namespace Project.BossLogic
             if (!previewBodyWasKinematic)
             {
                 previewFrozenBody.linearVelocity = Vector3.zero;
-                previewFrozenBody.angularVelocity = Vector3.zero;
+                previewFrozenBody.angularVelocity = 0f;
             }
 
-            previewFrozenBody.useGravity = false;
+            previewFrozenBody.gravityScale = 0f;
             previewFrozenBody.isKinematic = true;
         }
 
@@ -834,7 +834,7 @@ namespace Project.BossLogic
             }
 
             previewFrozenBody.isKinematic = previewBodyWasKinematic;
-            previewFrozenBody.useGravity = previewBodyUsedGravity;
+            previewFrozenBody.gravityScale = (previewBodyUsedGravity) ? 1f : 0f;
             if (!previewBodyWasKinematic)
             {
                 previewFrozenBody.linearVelocity = previewBodyLinearVelocity;

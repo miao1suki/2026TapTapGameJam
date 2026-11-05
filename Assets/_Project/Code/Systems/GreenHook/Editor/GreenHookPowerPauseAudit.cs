@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -47,7 +48,7 @@ namespace Project.GreenHook.Editor
             if (EditorApplication.timeSinceStartup > deadline) { Finish(false, "Timeout: " + currentCase); return; }
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .6f) return;
             EditorApplication.update -= Tick;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             bool passed = false;
             string report;
             try
@@ -55,7 +56,7 @@ namespace Project.GreenHook.Editor
                 checks = 0;
                 AudioListener.volume = 0f;
                 AudioListener.pause = true;
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 currentCase = "video pit socket approach";
@@ -76,7 +77,7 @@ namespace Project.GreenHook.Editor
                 report = "FAIL " + checks + " [" + currentCase + "]\n" + error;
                 Debug.LogException(error);
             }
-            finally { Physics.simulationMode = previous; }
+            finally { PlanarPhysics.simulationMode = previous; }
             Finish(passed, report);
         }
 
@@ -115,7 +116,7 @@ namespace Project.GreenHook.Editor
                 Origin = new Vector3(x, 20.5f, 0f);
                 Player = Spawn("Player/Player", Origin).GetComponent<PlayerController>();
                 Player.GetComponent<PlayerInputDriver>().enabled = false;
-                Player.Motor.interpolation = RigidbodyInterpolation.None;
+                Player.Motor.interpolation = RigidbodyInterpolation2D.None;
                 Hook = Player.GetComponent<GreenHookAbility>();
                 var cameraObject = new GameObject("Power audit camera", typeof(Camera));
                 objects.Add(cameraObject);
@@ -124,12 +125,12 @@ namespace Project.GreenHook.Editor
                 camera.orthographic = true;
                 camera.orthographicSize = 8f;
                 camera.transform.position = Origin + new Vector3(2.5f, 1f, -10f);
-                GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                GameObject floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 objects.Add(floor);
                 floor.name = "Power audit physical floor";
                 floor.transform.position = Origin + new Vector3(fullFloor ? 2f : 0f, -1f, 0f);
                 floor.transform.localScale = new Vector3(fullFloor ? 20f : 1.2f, 1f, 2f);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
             }
 
             private GameObject Spawn(string relativePath, Vector3 position)
@@ -144,12 +145,12 @@ namespace Project.GreenHook.Editor
 
             public void Solid(string name, Vector3 offset, Vector3 size)
             {
-                GameObject solid = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                GameObject solid = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 objects.Add(solid);
                 solid.name = name;
                 solid.transform.position = Origin + offset;
                 solid.transform.localScale = size;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
             }
 
             public ContactCube Cube(string color, Vector3 offset, bool fixedSource = false)
@@ -157,10 +158,10 @@ namespace Project.GreenHook.Editor
                 var cube = Spawn("ContactCubes/" + color + "_ContactCube", Origin + offset).GetComponent<ContactCube>();
                 var motion = cube.GetComponent<ContactCubeMotion>();
                 motions.Add(motion);
-                var body = cube.GetComponent<Rigidbody>();
-                body.interpolation = RigidbodyInterpolation.None;
-                if (fixedSource) { body.useGravity = false; body.isKinematic = true; }
-                Physics.SyncTransforms();
+                var body = cube.GetComponent<Rigidbody2D>();
+                body.interpolation = RigidbodyInterpolation2D.None;
+                if (fixedSource) { body.gravityScale = 0f; body.isKinematic = true; }
+                PlanarPhysics.SyncTransforms();
                 return cube;
             }
 
@@ -170,8 +171,8 @@ namespace Project.GreenHook.Editor
                 bases.Add(foundation);
                 Set(foundation, "useGravity", gravity);
                 Call(foundation, "FixedUpdate");
-                foundation.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
-                Physics.SyncTransforms();
+                foundation.GetComponent<Rigidbody2D>().interpolation = RigidbodyInterpolation2D.None;
+                PlanarPhysics.SyncTransforms();
                 Scan();
                 return foundation;
             }
@@ -191,7 +192,7 @@ namespace Project.GreenHook.Editor
 
             public void Scan()
             {
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 foreach (var foundation in bases) Call(foundation, "OnTick", Time.fixedDeltaTime);
             }
 
@@ -209,7 +210,7 @@ namespace Project.GreenHook.Editor
                         Call(platform, "OnTick", Time.fixedDeltaTime);
                         Call(platform, "FixedUpdate");
                     }
-                    Physics.Simulate(Time.fixedDeltaTime);
+                    PlanarPhysics.Simulate(Time.fixedDeltaTime);
                     Scan();
                 }
             }
@@ -228,7 +229,7 @@ namespace Project.GreenHook.Editor
                 Player.Motor.position = position;
                 Player.transform.position = position;
                 Player.Motor.linearVelocity = Vector3.zero;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
             }
 
             public void UntilPaused(int limit = 100)
@@ -241,7 +242,7 @@ namespace Project.GreenHook.Editor
             {
                 Hook.CancelHook();
                 for (int i = objects.Count - 1; i >= 0; i--) if (objects[i] != null) Object.DestroyImmediate(objects[i]);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
             }
         }
 
@@ -274,7 +275,7 @@ namespace Project.GreenHook.Editor
                     "red remains the actual supplying contact while attached " + step);
                 AssertOwner(fixture, motion, "one hook owner and normal locomotion while power-paused " + step);
             }
-            Check(Mathf.Abs(red.transform.position.x - resting.x) < .02f && red.GetComponent<Rigidbody>().useGravity,
+            Check(Mathf.Abs(red.transform.position.x - resting.x) < .02f && (red.GetComponent<Rigidbody2D>().gravityScale != 0f),
                 "pause stops lateral pull without disabling target gravity");
             Check(Vector3.Distance(platform.transform.position, platform.PreviewFirstTarget) < .03f && !platform.IsMoving,
                 "bound PoweredEndpoint platform reaches and retains its endpoint, not a brief pulse then return");
@@ -284,7 +285,7 @@ namespace Project.GreenHook.Editor
             fixture.Player.SetMoveInput(Vector2.zero);
             Check(fixture.Player.Motor.position.x < playerX - .1f && foundation.IsSignalActive,
                 "ordinary walking is actually responsive while retaining powered hook");
-            fixture.MovePlayer(fixture.Player.Motor.position + Vector3.up * 2f);
+            fixture.MovePlayer(fixture.Player.Motor.WorldPosition() + Vector3.up * 2f);
             float playerY = fixture.Player.Motor.position.y;
             fixture.Step(8);
             Check(fixture.Player.Motor.position.y < playerY - .04f && fixture.Hook.IsPullPausedForPower,
@@ -362,13 +363,13 @@ namespace Project.GreenHook.Editor
                 AssertOwner(fixture, motion, "base retains single owner while paused " + step);
             }
             Check(Mathf.Abs(foundation.transform.position.y - startY) < .001f && !foundation.UsesGravity &&
-                !foundation.GetComponent<Rigidbody>().useGravity,
+                !(foundation.GetComponent<Rigidbody2D>().gravityScale != 0f),
                 "explicit base no-gravity preference wins over hook and pause physics");
             fixture.Hook.CancelHook();
             fixture.Step(4);
             Check(!fixture.Hook.IsPullPausedForPower && fixture.Player.ControlLockDepth == 0 &&
-                !motion.IsGreenHookPullActive && foundation.GetComponent<Rigidbody>().isKinematic &&
-                !foundation.GetComponent<Rigidbody>().useGravity,
+                !motion.IsGreenHookPullActive && foundation.GetComponent<Rigidbody2D>().isKinematic &&
+                !(foundation.GetComponent<Rigidbody2D>().gravityScale != 0f),
                 "cancel restores no-gravity base author ownership rather than enabling falling");
         }
 

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Reflection;
 using Project.BlockFeatures;
@@ -31,52 +32,52 @@ namespace Project.Player.Editor
         {
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || ++frames < 10) return;
             EditorApplication.update -= Tick;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             try
             {
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab");
                 var actor = Object.Instantiate(prefab, new Vector3(10.5f, -28.5f, 0), Quaternion.identity);
                 var player = actor.GetComponent<PlayerController>();
                 player.GetComponent<PlayerInputDriver>().enabled = false;
-                player.Motor.interpolation = RigidbodyInterpolation.None;
-                var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                player.Motor.interpolation = RigidbodyInterpolation2D.None;
+                var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 floor.transform.position = new Vector3(10, -29.5f, 0); floor.transform.localScale = new Vector3(30, 1, 2);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 for (int i = 0; i < 80; i++)
                 {
                     typeof(PlayerController).GetMethod("FixedUpdate", Private).Invoke(player, null);
-                    Physics.Simulate(.02f); Physics.SyncTransforms();
+                    PlanarPhysics.Simulate(.02f); PlanarPhysics.SyncTransforms();
                 }
-                Check(Mathf.Abs(player.GetComponent<CapsuleCollider>().bounds.min.y + 29f) < .05f, "real prefab settles on negative-coordinate floor");
+                Check(Mathf.Abs(player.GetComponent<CapsuleCollider2D>().bounds.min.y + 29f) < .05f, "real prefab settles on negative-coordinate floor");
                 Check(!ColorRuntimeService.Instance.IsUnlocked("red") && !ColorRuntimeService.Instance.IsUnlocked("green") && !ColorRuntimeService.Instance.IsUnlocked("blue"), "new session starts with all three colors locked");
-                var item = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                var item = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 item.transform.position = new Vector3(11.5f, -28.5f, 0);
-                var carry = item.AddComponent<CarryableFeature>(); Physics.SyncTransforms();
+                var carry = item.AddComponent<CarryableFeature>(); PlanarPhysics.SyncTransforms();
                 player.SetMoveInput(Vector2.right);
                 player.UpdateCarryInput(false, false, false, false);
                 Check(player.CarryQueueCount == 1, "same-height adjacent object selectable while grounded without jumping");
-                Check((player.CarryCenterWorldPosition - player.GetComponent<CapsuleCollider>().bounds.center).sqrMagnitude < .0001f, "carry origin is actual body center, not offset prefab root");
+                Check((player.CarryCenterWorldPosition - player.GetComponent<CapsuleCollider2D>().bounds.center).sqrMagnitude < .0001f, "carry origin is actual body center, not offset prefab root");
                 Check(carry.BeginCarry(player), "grounded carry begins");
                 typeof(PlayerController).GetField("selectedCarryTarget", Private).SetValue(player, carry);
-                carry.UpdateCarryAnchor(player.CarryAnchorWorldPosition); Physics.SyncTransforms();
+                carry.UpdateCarryAnchor(player.CarryAnchorWorldPosition); PlanarPhysics.SyncTransforms();
                 Check(player.TryGetCarryPlacementPreview(out Bounds bounds, out bool valid) && valid, "side drop is valid beside floor rather than inside it");
                 Check(Mathf.Abs(bounds.min.y + 29f) < .03f, "drop preview bottom aligns with floor top");
-                var blocker = GameObject.CreatePrimitive(PrimitiveType.Cube); blocker.transform.position = bounds.center;
-                Physics.SyncTransforms();
+                var blocker = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); blocker.transform.position = bounds.center;
+                PlanarPhysics.SyncTransforms();
                 Check(player.TryGetCarryPlacementPreview(out _, out valid) && !valid, "blocked destination remains rejected");
                 Object.DestroyImmediate(blocker);
-                player.Motor.position += Vector3.up;
-                player.transform.position = player.Motor.position;
-                carry.UpdateCarryAnchor(player.CarryAnchorWorldPosition); Physics.SyncTransforms();
+                player.Motor.position += (Vector2)(Vector3.up);
+                player.transform.position = player.Motor.WorldPosition();
+                carry.UpdateCarryAnchor(player.CarryAnchorWorldPosition); PlanarPhysics.SyncTransforms();
                 Check(player.TryGetCarryPlacementPreview(out Bounds raised, out valid) && valid &&
                     Mathf.Abs(raised.min.y - bounds.min.y - 1f) < .03f, "drop follows raised body cell, not locked to ground");
                 Object.DestroyImmediate(item); Object.DestroyImmediate(actor); Object.DestroyImmediate(floor);
                 Debug.Log("GROUND CARRY VERIFICATION PASSED " + checks);
-                Physics.simulationMode = previous; SessionState.SetBool(Key, false); EditorApplication.Exit(0);
+                PlanarPhysics.simulationMode = previous; SessionState.SetBool(Key, false); EditorApplication.Exit(0);
             }
             catch (Exception e)
-            { Debug.LogException(e); Physics.simulationMode = previous; SessionState.SetBool(Key, false); EditorApplication.Exit(1); }
+            { Debug.LogException(e); PlanarPhysics.simulationMode = previous; SessionState.SetBool(Key, false); EditorApplication.Exit(1); }
         }
     }
 }

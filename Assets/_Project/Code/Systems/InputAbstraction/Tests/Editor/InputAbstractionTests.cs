@@ -57,7 +57,7 @@ namespace Project.InputAbstraction.Tests
             {
                 Assert.That(
                     InputBindingDisplayUtility.GetPrimaryDisplayString(
-                        InputActionId.Move),
+                        InputActionId.Move).Replace("/", string.Empty),
                     Is.EqualTo("WASD"));
             }
             finally

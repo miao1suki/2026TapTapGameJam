@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using Project.Player;
 using UnityEngine;
@@ -252,7 +253,7 @@ namespace Project.BossLogic
 
         private bool HasObstacleAhead(Vector3 target)
         {
-            Collider bodyCollider = controller.BodyCollider;
+            Collider2D bodyCollider = controller.BodyCollider;
             if (bodyCollider == null)
             {
                 return false;
@@ -282,13 +283,13 @@ namespace Project.BossLogic
             };
             for (int index = 0; index < origins.Length; index++)
             {
-                if (Physics.Raycast(
+                if (PlanarPhysics.Raycast(
                         origins[index],
                         rayDirection,
-                        out RaycastHit hit,
+                        out RaycastHit2D hit,
                         distance,
                         ~0,
-                        QueryTriggerInteraction.Ignore) &&
+                        TriggerQuery.Ignore) &&
                     hit.collider != null &&
                     hit.collider != bodyCollider &&
                     !hit.collider.transform.IsChildOf(transform) &&
@@ -315,7 +316,7 @@ namespace Project.BossLogic
                 noAutoJumpNearTarget;
         }
 
-        private bool IsTargetCollider(Collider collider)
+        private bool IsTargetCollider(Collider2D collider)
         {
             Transform target = controller.Target;
             return target != null &&

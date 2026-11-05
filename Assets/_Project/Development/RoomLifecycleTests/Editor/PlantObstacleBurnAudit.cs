@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -43,10 +44,10 @@ public static class PlantObstacleBurnAudit
         if (EditorApplication.timeSinceStartup - started > 90) { Finish(false, "Timed out"); return; }
         if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .15f) return;
         EditorApplication.update -= Tick;
-        SimulationMode original = Physics.simulationMode;
+        SimulationMode2D original = PlanarPhysics.simulationMode;
         try
         {
-            Physics.simulationMode = SimulationMode.Script;
+            PlanarPhysics.simulationMode = SimulationMode2D.Script;
             ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
             CheckConnections(); Clear();
             CheckPreciseGeometry(); Clear();
@@ -55,7 +56,7 @@ public static class PlantObstacleBurnAudit
             Finish(true, "PLANT BURN PASS " + checks + " assertions");
         }
         catch (Exception error) { Finish(false, error.ToString()); }
-        finally { Physics.simulationMode = original; }
+        finally { PlanarPhysics.simulationMode = original; }
     }
 
     private static PlantObstacleFeature Plant(Vector3 position)
@@ -92,9 +93,9 @@ public static class PlantObstacleBurnAudit
         Check(notifications == 3 && !b.BreakObstacle(), "one notification per obstacle; repeat burn is rejected");
         foreach (var plant in new[] { a, b, c })
         {
-            Check(plant.GetComponentsInChildren<Collider>(true).All(volume => !volume.enabled), "burn disables real collision geometry");
+            Check(plant.GetComponentsInChildren<Collider2D>(true).All(volume => !volume.enabled), "burn disables real collision geometry");
             plant.ResetForRoom();
-            Check(plant.IsIntact && plant.ShowsArtwork && plant.GetComponent<BoxCollider>().enabled, "room reset restores collision and artwork");
+            Check(plant.IsIntact && plant.ShowsArtwork && plant.GetComponent<BoxCollider2D>().enabled, "room reset restores collision and artwork");
         }
         Check(a.BreakObstacle() && !c.IsIntact, "reset group can be burned again");
         Clear();
@@ -128,10 +129,10 @@ public static class PlantObstacleBurnAudit
         var edge = Plant(Vector3.right * 3);
         Check(ring.BreakObstacle() && !edge.IsIntact && center.IsIntact,
             "merged ring burns its real edge neighbor without filling the hole");
-        Check(ring.GetComponents<BoxCollider>().All(volume => !volume.enabled),
+        Check(ring.GetComponents<BoxCollider2D>().All(volume => !volume.enabled),
             "colliders added after attachment are all disabled");
         ring.ResetForRoom();
-        Check(ring.GetComponents<BoxCollider>().All(volume => volume.enabled), "reset restores all merged volumes");
+        Check(ring.GetComponents<BoxCollider2D>().All(volume => volume.enabled), "reset restores all merged volumes");
         Clear();
         var a = Plant(Vector3.zero); a.transform.localScale = Vector3.one * .5f;
         var b = Plant(Vector3.right * .5f); b.transform.localScale = Vector3.one * .5f;

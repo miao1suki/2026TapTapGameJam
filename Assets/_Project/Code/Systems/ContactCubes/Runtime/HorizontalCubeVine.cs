@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using Project.ColorBlocks;
 using Project.BlockFeatures;
@@ -13,8 +14,8 @@ namespace Project.ContactCubes
         [SerializeField, Range(.05f,.4f), InspectorName("上下接触容差（格）")] private float contactMargin = .2f;
         private ContactCube cube;
         private ContactCubeMotion motion;
-        private BoxCollider shape;
-        private readonly Collider[] hits = new Collider[64];
+        private BoxCollider2D shape;
+        private readonly Collider2D[] hits = new Collider2D[64];
         private readonly HashSet<PlayerController> previous = new HashSet<PlayerController>();
         private readonly HashSet<PlayerController> current = new HashSet<PlayerController>();
         private readonly HashSet<PlayerController> previousSides = new HashSet<PlayerController>();
@@ -22,7 +23,7 @@ namespace Project.ContactCubes
         private void Awake()
         {
             cube = GetComponent<ContactCube>(); motion = GetComponent<ContactCubeMotion>();
-            shape = GetComponentInChildren<BoxCollider>();
+            shape = GetComponentInChildren<BoxCollider2D>();
         }
         private void FixedUpdate()
         {
@@ -33,18 +34,17 @@ namespace Project.ContactCubes
             {
                 float cell = GridCellSizeUtility.Resolve(this);
                 Bounds bounds = shape.bounds;
-                int count = Physics.OverlapBoxNonAlloc(bounds.center, bounds.extents + Vector3.one * cell * .85f,
-                    hits, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+                int count = PlanarPhysics.OverlapBoxNonAlloc(bounds.center, bounds.extents + Vector3.one * cell * .85f,
+                    hits, Quaternion.identity, ~0, TriggerQuery.Ignore);
                 for (int i = 0; i < count; i++)
                 {
                     PlayerController player = hits[i].GetComponentInParent<PlayerController>();
                     if (player == null || !player.isActiveAndEnabled || player.IsDead ||
                         !player.CanAutomaticallyClimb || current.Contains(player)) continue;
-                    var capsule = player.GetComponent<CapsuleCollider>();
+                    var capsule = player.GetComponent<CapsuleCollider2D>();
                     if (capsule == null) continue;
                     Bounds p = capsule.bounds;
                     bool side = p.max.y > bounds.min.y+.02f && p.min.y < bounds.max.y-.02f &&
-                        p.max.z >= bounds.min.z && p.min.z <= bounds.max.z &&
                         (Mathf.Abs(p.max.x-bounds.min.x) <= cell*contactMargin ||
                          Mathf.Abs(p.min.x-bounds.max.x) <= cell*contactMargin);
                     if (side)
@@ -58,12 +58,12 @@ namespace Project.ContactCubes
                     if (player.IsClimbCornerProtected) current.Add(player);
                     if (cube.Length <= 1 || Mathf.Abs(cube.GrowthDirection.x) <= .98f) continue;
                     bool grown = p.center.x >= bounds.min.x - contactMargin * cell && p.center.x <= bounds.max.x + contactMargin * cell;
-                    if (!grown || p.max.z < bounds.min.z || p.min.z > bounds.max.z) continue;
+                    if (!grown) continue;
                     bool top = Mathf.Abs(p.min.y - bounds.max.y) <= cell * contactMargin &&
-                        (player.Motor.linearVelocity.y <= .1f || player.IsHorizontalClimbing);
+                        (((Vector3)player.Motor.linearVelocity).y <= .1f || player.IsHorizontalClimbing);
                     bool bottom = Mathf.Abs(p.max.y - bounds.min.y) <= cell * contactMargin;
                     if (!top && !bottom) continue;
-                    float target = player.Motor.position.y + (top ? bounds.max.y + .015f - p.min.y : bounds.min.y - .015f - p.max.y);
+                    float target = player.Motor.WorldPosition().y + (top ? bounds.max.y + .015f - p.min.y : bounds.min.y - .015f - p.max.y);
                     player.SetHorizontalVineSurface(this, target, traverseSpeed); current.Add(player);
                 }
             }

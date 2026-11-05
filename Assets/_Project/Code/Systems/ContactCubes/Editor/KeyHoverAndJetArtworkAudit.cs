@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -73,7 +74,7 @@ namespace Project.ContactCubes.Editor
                 {
                     case 0:
                         AudioListener.volume=0; AudioListener.pause=true;
-                        Physics.simulationMode=SimulationMode.Script;
+                        PlanarPhysics.simulationMode=SimulationMode2D.Script;
                         ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                         foreach (float cell in new[]{1f,2f})
                         {
@@ -110,7 +111,7 @@ namespace Project.ContactCubes.Editor
                         }
                         player=Prefab("Player/Player.prefab").GetComponent<PlayerController>();
                         player.GetComponent<PlayerInputDriver>().enabled=false;
-                        player.Motor.constraints=RigidbodyConstraints.FreezeAll;
+                        player.Motor.constraints=RigidbodyConstraints2D.FreezeAll;
                         player.enabled=false;
                         player.transform.position=keys[0].Key.transform.position+Vector3.right*4;
                         collecting=keys[0].Key;
@@ -125,7 +126,7 @@ namespace Project.ContactCubes.Editor
                     case 4:
                         if (Time.time-phaseTime<.18f) break;
                         Check(collecting!=null && collecting.CollectionRequested,"attraction hands off to shared pickup flight");
-                        Check(!collecting.GetComponent<Collider>().enabled,"collection immediately disables the real trigger");
+                        Check(!collecting.GetComponent<Collider2D>().enabled,"collection immediately disables the real trigger");
                         Check(Mathf.Abs(collecting.IdleHoverOffsetWorld)<.00001f,"idle animation never writes during pickup flight");
                         Next(); break;
                     case 5:
@@ -147,8 +148,8 @@ namespace Project.ContactCubes.Editor
             ContactCube cube=Prefab("ContactCubes/"+color+"_ContactCube.prefab",parent).GetComponent<ContactCube>();
             cube.transform.position=position;
             cube.GetComponent<ContactCubeMotion>().enabled=false;
-            var body=cube.GetComponent<Rigidbody>(); body.interpolation=RigidbodyInterpolation.None;
-            body.isKinematic=true; body.useGravity=false; body.position=position;
+            var body=cube.GetComponent<Rigidbody2D>(); body.interpolation=RigidbodyInterpolation2D.None;
+            body.isKinematic=true; body.gravityScale = 0f; body.position=position;
             return cube;
         }
         private static void BeginJet()
@@ -156,8 +157,8 @@ namespace Project.ContactCubes.Editor
             blue=Cube(CubeColor.Blue,new Vector3(-6,0,0)); red=Cube(CubeColor.Red,new Vector3(-7,0,0));
             player.transform.position=new Vector3(-4,0,0); player.Motor.position=player.transform.position;
             var item=new GameObject("Jet force receiver"); item.transform.position=new Vector3(-3,0,0);
-            item.AddComponent<BoxCollider>().size=Vector3.one*.4f; receiver=item.AddComponent<KeyJetAuditReceiver>();
-            Physics.SyncTransforms(); Call(blue,typeof(ContactCube),"FixedUpdate");
+            item.AddComponent<BoxCollider2D>().size=Vector3.one*.4f; receiver=item.AddComponent<KeyJetAuditReceiver>();
+            PlanarPhysics.SyncTransforms(); Call(blue,typeof(ContactCube),"FixedUpdate");
             jet=blue.GetComponentInChildren<CubeWaterJet>();
             Check(jet!=null && jet.isActiveAndEnabled,"real red/blue face contact creates a jet in the first step");
             Check(Velocities.TryGetValue(jet.GetInstanceID(),out Vector2 push) && Mathf.Abs(push.x-8f)<.001f,
@@ -167,7 +168,7 @@ namespace Project.ContactCubes.Editor
             art=jet.GetComponent<CubeWaterJetArtwork>();
             Check(art!=null && art.VisibleBubbleCount>0 && art.VisibleBubbleCount<=96,"first contact pre-fills a bounded bubble stream");
             Check(art.RendererCount==7 && art.GetComponentsInChildren<Renderer>().Length==7,"six real TA bubble frames use six batches, plus one water batch");
-            Check(art.GetComponentsInChildren<Collider>().Length==0,"presentation creates no extra trigger or solid");
+            Check(art.GetComponentsInChildren<Collider2D>().Length==0,"presentation creates no extra trigger or solid");
             Check(art.BubbleSpeedCells==6,"default fast bubble motion is six cells per second");
             VerifyPixels(art,1);
             materialCount=ColorAppearanceManager.Instance.SharedMaterialCount;
@@ -203,14 +204,14 @@ namespace Project.ContactCubes.Editor
         }
         private static void VerifyContactRetirement()
         {
-            red.transform.position=Vector3.left*30; red.GetComponent<Rigidbody>().position=red.transform.position;
-            Physics.SyncTransforms(); Call(jet,typeof(CubeWaterJet),"FixedUpdate");
+            red.transform.position=Vector3.left*30; red.GetComponent<Rigidbody2D>().position=red.transform.position;
+            PlanarPhysics.SyncTransforms(); Call(jet,typeof(CubeWaterJet),"FixedUpdate");
             Check(!jet.gameObject.activeSelf,"real separation retires the water column before its next push");
             Check(!Velocities.ContainsKey(jet.GetInstanceID()) && receiver.Velocity==Vector3.zero,
                 "separation immediately releases all player and object velocity sources");
             red.transform.position=blue.transform.position+Vector3.left;
-            red.GetComponent<Rigidbody>().position=red.transform.position;
-            Physics.SyncTransforms(); Call(blue,typeof(ContactCube),"FixedUpdate");
+            red.GetComponent<Rigidbody2D>().position=red.transform.position;
+            PlanarPhysics.SyncTransforms(); Call(blue,typeof(ContactCube),"FixedUpdate");
             CubeWaterJet restored=blue.GetComponentInChildren<CubeWaterJet>();
             Check(restored!=null && restored.GetComponent<CubeWaterJetArtwork>().VisibleBubbleCount>0,
                 "recontact reuses the same bounded visual lifecycle without startup delay");
@@ -225,8 +226,8 @@ namespace Project.ContactCubes.Editor
             red=Cube(CubeColor.Red,new Vector3(28,0,0),root.transform);
             foreach (Vector3 direction in new[]{Vector3.right,Vector3.left,Vector3.up,Vector3.down})
             {
-                red.transform.position=blue.transform.position-direction*2; red.GetComponent<Rigidbody>().position=red.transform.position;
-                Physics.SyncTransforms(); Call(blue,typeof(ContactCube),"FixedUpdate");
+                red.transform.position=blue.transform.position-direction*2; red.GetComponent<Rigidbody2D>().position=red.transform.position;
+                PlanarPhysics.SyncTransforms(); Call(blue,typeof(ContactCube),"FixedUpdate");
                 CubeWaterJet current=blue.GetComponentInChildren<CubeWaterJet>();
                 Check(current!=null && Vector3.Dot(current.Direction,direction)>.999f,"true two-unit cell contact supports "+direction);
                 Check(Mathf.Abs(current.PlayerPushSpeed-16)<.001f,"player speed scales with the true grid, not prefab scale");
@@ -266,7 +267,7 @@ namespace Project.ContactCubes.Editor
             public bool Drift; private Vector3 root,baseVisual; private Bounds bounds; private SpriteRenderer sprite;
             public void Begin()
             {
-                root=Key.transform.position; bounds=Key.GetComponent<Collider>().bounds;
+                root=Key.transform.position; bounds=Key.GetComponent<Collider2D>().bounds;
                 sprite=Key.GetComponentInChildren<SpriteRenderer>();
                 baseVisual=sprite.transform.position-Vector3.up*Key.IdleHoverOffsetWorld;
                 Check(Mathf.Abs(Key.IdleHoverAmplitudeWorld-Cell/8)<.00001f,"hover uses true grid pixel conversion");
@@ -277,7 +278,7 @@ namespace Project.ContactCubes.Editor
             public void Sample()
             {
                 float offset=Key.IdleHoverOffsetWorld; Minimum=Mathf.Min(Minimum,offset); Maximum=Mathf.Max(Maximum,offset);
-                Bounds now=Key.GetComponent<Collider>().bounds;
+                Bounds now=Key.GetComponent<Collider2D>().bounds;
                 Drift |= Vector3.Distance(Key.transform.position,root)>.00001f || Vector3.Distance(now.center,bounds.center)>.00001f ||
                     Vector3.Distance(now.size,bounds.size)>.00001f ||
                     Vector3.Distance(sprite.transform.position-Vector3.up*offset,baseVisual)>.0001f;

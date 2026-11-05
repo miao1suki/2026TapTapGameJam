@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -48,7 +49,7 @@ namespace Project.ContactCubes.Editor
             { Finish(false, "Timeout"); return; }
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .6f) return;
             EditorApplication.update -= Wait;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             bool passed = false;
             try
             {
@@ -56,7 +57,7 @@ namespace Project.ContactCubes.Editor
                 diagnostics.Clear();
                 AudioListener.volume = 0f;
                 AudioListener.pause = true;
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 VerifyGravityGrowth(); Cleanup();
                 VerifyFallingPair(.01f, .01f, false); Cleanup();
@@ -70,7 +71,7 @@ namespace Project.ContactCubes.Editor
                 passed = true;
             }
             catch (Exception error) { diagnostics.AppendLine(error.ToString()); Debug.LogException(error); }
-            finally { Cleanup(); Physics.simulationMode = previous; }
+            finally { Cleanup(); PlanarPhysics.simulationMode = previous; }
             Finish(passed, (passed ? "PASS " : "FAIL ") + checks + "\n" + diagnostics);
         }
 
@@ -101,30 +102,30 @@ namespace Project.ContactCubes.Editor
             objects.Add(result);
             ContactCube cube = result.GetComponent<ContactCube>();
             cubes.Add(cube);
-            Rigidbody body = result.GetComponent<Rigidbody>();
+            Rigidbody2D body = result.GetComponent<Rigidbody2D>();
             // Script simulation has no render interpolation pass between steps.
-            body.interpolation = RigidbodyInterpolation.None;
+            body.interpolation = RigidbodyInterpolation2D.None;
             if (frozen)
             {
                 result.GetComponent<ContactCubeMotion>().enabled = false;
                 body.isKinematic = true;
-                body.useGravity = false;
+                body.gravityScale = 0f;
             }
             return cube;
         }
 
         private static GameObject Solid(string name, Vector3 center, Vector3 size, bool trigger = false)
         {
-            GameObject result = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject result = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             result.name = name;
             result.transform.position = center;
             result.transform.localScale = size;
-            result.GetComponent<Collider>().isTrigger = trigger;
+            result.GetComponent<Collider2D>().isTrigger = trigger;
             objects.Add(result);
             return result;
         }
 
-        private static BoxCollider Shape(ContactCube cube) => cube.GetComponentInChildren<BoxCollider>();
+        private static BoxCollider2D Shape(ContactCube cube) => cube.GetComponentInChildren<BoxCollider2D>();
 
         private static void VerifyGravityGrowth()
         {
@@ -144,7 +145,7 @@ namespace Project.ContactCubes.Editor
             if (falling) ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(false);
             ContactCube blue = Spawn(CubeColor.Blue, origin + new Vector3(blueSide, .51f + dropHeight, 0f));
             ContactCube green = Spawn(CubeColor.Green, origin + new Vector3(0f, .5f + dropHeight, 0f));
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             if (falling)
             {
                 Step(5);
@@ -156,8 +157,8 @@ namespace Project.ContactCubes.Editor
             if (green.Length < 4)
             {
                 var controller = green.GetComponent<ContactCubeMotion>();
-                diagnostics.AppendLine($"settled={controller.IsSettled}, constraints={green.GetComponent<Rigidbody>().constraints}, foot={Shape(green).bounds.min.y:F6}");
-                foreach (var hit in (RaycastHit[])typeof(ContactCubeMotion).GetField("supportHits", Hidden).GetValue(controller))
+                diagnostics.AppendLine($"settled={controller.IsSettled}, constraints={green.GetComponent<Rigidbody2D>().constraints}, foot={Shape(green).bounds.min.y:F6}");
+                foreach (var hit in (RaycastHit2D[])typeof(ContactCubeMotion).GetField("supportHits", Hidden).GetValue(controller))
                     if (hit.collider != null) diagnostics.AppendLine($"support={hit.collider.name}, distance={hit.distance:F6}, point={hit.point:F6}, normal={hit.normal:F6}");
             }
             Check(green.Length >= 4, "gravity-enabled neighbouring blue/green grow along the floor");
@@ -173,8 +174,8 @@ namespace Project.ContactCubes.Editor
         private static void Move(ContactCube cube, Vector3 position)
         {
             cube.transform.position = position;
-            cube.GetComponent<Rigidbody>().position = position;
-            Physics.SyncTransforms();
+            cube.GetComponent<Rigidbody2D>().position = position;
+            PlanarPhysics.SyncTransforms();
         }
 
         private static CubeWaterJet ActiveJet(ContactCube cube)
@@ -202,7 +203,7 @@ namespace Project.ContactCubes.Editor
                     if (cube != null)
                         foreach (CubeWaterJet jet in cube.GetComponentsInChildren<CubeWaterJet>())
                             if (jet.isActiveAndEnabled) Invoke(jet, "FixedUpdate");
-                Physics.Simulate(Time.fixedDeltaTime);
+                PlanarPhysics.Simulate(Time.fixedDeltaTime);
             }
         }
 
@@ -212,12 +213,12 @@ namespace Project.ContactCubes.Editor
             Solid("Actual floor", origin + Vector3.down * .5f, new Vector3(10f, 1f, 3f));
             ContactCube red = Spawn(CubeColor.Red, origin + Vector3.up * .5f);
             ContactCube blue = Spawn(CubeColor.Blue, origin + Vector3.up * 3.5f);
-            Shape(red).contactOffset = redOffset;
-            Shape(blue).contactOffset = blueOffset;
+            UnityEngine.Physics2D.defaultContactOffset = redOffset;
+            UnityEngine.Physics2D.defaultContactOffset = blueOffset;
             var contact = blue.gameObject.AddComponent<JetAuditCollisionProbe>();
             contact.Expected = red;
             if (redHooked) red.GetComponent<ContactCubeMotion>().BeginGreenHookPull();
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             bool landed = false;
             for (int step = 0; step < 360; step++)
             {
@@ -231,7 +232,7 @@ namespace Project.ContactCubes.Editor
             CubeWaterJet stable = ActiveJet(blue);
             float gap = Shape(blue).bounds.min.y - Shape(red).bounds.max.y;
             diagnostics.AppendLine(label + $" contacts={contact.ContactEvents} restingGap={gap:F6}");
-            Check(gap <= .01f + Shape(red).contactOffset + Shape(blue).contactOffset + .0002f,
+            Check(gap <= .01f + UnityEngine.Physics2D.defaultContactOffset + UnityEngine.Physics2D.defaultContactOffset + .0002f,
                 label + " settles within actual pair contact shell, not an old oversized support air-gap");
             Check(stable != null && stable.Direction.y > .999f, label + " emits upward after landing");
             float minimumGap = gap, maximumGap = gap;
@@ -264,7 +265,7 @@ namespace Project.ContactCubes.Editor
             Check(Mathf.Abs(blue.GetComponent<ContactCubeMotion>().LogicalContactShapeSize.x - 1f) < .0001f &&
                 Mathf.Abs(red.GetComponent<ContactCubeMotion>().LogicalContactShapeSize.x - 1f) < .0001f,
                 "logical contact keeps the authored one-cell shape instead of shrinking with physics");
-            Physics.SyncTransforms(); Step();
+            PlanarPhysics.SyncTransforms(); Step();
             float physicalGap = Shape(blue).bounds.min.x - Shape(red).bounds.max.x;
             diagnostics.AppendLine($"adjacent authored grid faces physicalGap={physicalGap:F6}");
             Check(physicalGap > .039f && ActiveJet(blue) != null,
@@ -289,10 +290,10 @@ namespace Project.ContactCubes.Editor
             Vector3 origin = new Vector3(2100f, 20f, 0f);
             ContactCube blue = Spawn(CubeColor.Blue, origin, true);
             ContactCube red = Spawn(CubeColor.Red, origin + Vector3.down * 1.025f, true);
-            Shape(blue).contactOffset = Shape(red).contactOffset = .01f;
+            UnityEngine.Physics2D.defaultContactOffset = UnityEngine.Physics2D.defaultContactOffset = .01f;
             var world = Solid("Non-cube color target outside old .01 tolerance",
                 origin + Vector3.right * 1.025f, Vector3.one).AddComponent<JetAuditColorTarget>();
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Step();
             Check(ActiveJet(blue) != null, ".025 physical microgap is inside .01 tolerance plus both .01 contact offsets");
             Check(world.Applications == 0, "cube contact-shell expansion does not enlarge world color application");
@@ -300,7 +301,7 @@ namespace Project.ContactCubes.Editor
             Step();
             Check(ActiveJet(blue) == null, "gap outside pair-specific contact shell clears immediately");
             Move(red, origin + Vector3.down);
-            Shape(red).contactOffset = .06f;
+            UnityEngine.Physics2D.defaultContactOffset = .06f;
             Step();
             // Inject only the callback candidate here to isolate its stale-cache
             // contract. The falling cases above separately prove actual PhysX
@@ -323,7 +324,7 @@ namespace Project.ContactCubes.Editor
             ContactCube red = Spawn(CubeColor.Red, origin + Vector3.down, true);
             var receiver = Solid("Jet push lifecycle receiver", origin + Vector3.up * 2f,
                 Vector3.one * .2f, true).AddComponent<JetAuditPushReceiver>();
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Step();
             Check(ActiveJet(blue) != null && receiver.Velocity.y > 0f, "active jet drives receiver");
             red.SetCarrySuspended(true);
@@ -343,11 +344,11 @@ namespace Project.ContactCubes.Editor
             Check(ActiveJet(blue) != null, "placing blue reacquires current physical contact");
             Shape(red).enabled = false; Step();
             Check(ActiveJet(blue) == null, "disabled red entity collider is not a valid neighbor");
-            Shape(red).enabled = true; Physics.SyncTransforms(); Step();
+            Shape(red).enabled = true; PlanarPhysics.SyncTransforms(); Step();
             Check(ActiveJet(blue) != null, "enabled shape can react again");
-            Shape(red).isTrigger = true; Physics.SyncTransforms(); Step();
+            Shape(red).isTrigger = true; PlanarPhysics.SyncTransforms(); Step();
             Check(ActiveJet(blue) == null, "trigger-only red shape cannot count as entity contact");
-            Shape(red).isTrigger = false; Physics.SyncTransforms(); Step();
+            Shape(red).isTrigger = false; PlanarPhysics.SyncTransforms(); Step();
             ColorRuntimeService.Instance.SetUnlockedForCurrentSession("red", false); Step();
             Check(ActiveJet(blue) == null && receiver.Velocity == Vector3.zero, "locked red clears water and receiver velocity");
             ColorRuntimeService.Instance.SetUnlockedForCurrentSession("red", true); Step();
@@ -374,14 +375,14 @@ namespace Project.ContactCubes.Editor
             // Motion deliberately caps its default contact offset to .001 for
             // one-cell openings. This first case explicitly tests a larger
             // authored pair offset; .025 must not pass with the small default.
-            Shape(blue).contactOffset = Shape(red).contactOffset = .01f;
+            UnityEngine.Physics2D.defaultContactOffset = UnityEngine.Physics2D.defaultContactOffset = .01f;
             blue.transform.rotation = red.transform.rotation = rotation;
-            blue.GetComponent<Rigidbody>().rotation = red.GetComponent<Rigidbody>().rotation = rotation;
-            Physics.SyncTransforms(); Step();
+            blue.GetComponent<Rigidbody2D>().rotation = red.GetComponent<Rigidbody2D>().rotation = rotation.eulerAngles.z;
+            PlanarPhysics.SyncTransforms(); Step();
             Check(ActiveJet(blue) != null, "physical shell handles oriented entity boxes, not world AABB overlap alone");
             Move(red, origin + rotation * Vector3.down * 1.04f); Step();
             Check(ActiveJet(blue) == null, "rotated AABBs overlapping does not preserve separated oriented boxes");
-            Shape(blue).contactOffset = Shape(red).contactOffset = .001f;
+            UnityEngine.Physics2D.defaultContactOffset = UnityEngine.Physics2D.defaultContactOffset = .001f;
             Move(red, origin + rotation * Vector3.down * 1.011f); Step();
             Check(ActiveJet(blue) != null, "rotated default small-offset pair accepts only its actual logical shell");
             Move(red, origin + rotation * Vector3.down * 1.014f); Step();
@@ -399,9 +400,9 @@ namespace Project.ContactCubes.Editor
     {
         public ContactCube Expected;
         public int ContactEvents;
-        private void OnCollisionEnter(Collision collision) => Record(collision);
-        private void OnCollisionStay(Collision collision) => Record(collision);
-        private void Record(Collision collision)
+        private void OnCollisionEnter2D(Collision2D collision) => Record(collision);
+        private void OnCollisionStay2D(Collision2D collision) => Record(collision);
+        private void Record(Collision2D collision)
         {
             if (collision.collider.GetComponentInParent<ContactCube>() == Expected) ContactEvents++;
         }

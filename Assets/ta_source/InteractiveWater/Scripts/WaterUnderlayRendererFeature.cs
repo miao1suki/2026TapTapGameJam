@@ -42,6 +42,7 @@ namespace InteractiveWater
                 layers = layerMask;
                 renderPassEvent = RenderPassEvent.BeforeRenderingTransparents;
                 requiresIntermediateTexture = true;
+                ConfigureInput(ScriptableRenderPassInput.Color);
             }
 
             public override void RecordRenderGraph(RenderGraph graph, ContextContainer frameData)
@@ -112,6 +113,7 @@ namespace InteractiveWater
             {
                 renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
                 requiresIntermediateTexture = true;
+                ConfigureInput(ScriptableRenderPassInput.Color);
             }
 
             public override void RecordRenderGraph(RenderGraph graph, ContextContainer frameData)

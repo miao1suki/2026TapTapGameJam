@@ -1,12 +1,12 @@
-# 星空全景天空盒
+# 二维星空背景
 
-`StarPanoramaSkybox.shader` 是用户提供的 Godot `shader_type sky` 星空 shader 的 Unity URP 版本。材质 `StarPanorama.mat` 同时用于独立预览和正式 Gaming 场景。
+`StarPanorama2D.shader` 在 URP Renderer2D 中显示平面星空；材质 `StarPanorama.mat` 沿用 TA 原来的材质、参数和 GUID。星点、银河、星云、十字光芒及闪烁算法保留，不再使用 Skybox 或透视相机。
 
 ## 预览与调节
 
-打开 `StarPanoramaPreview.unity` 并进入 Play Mode，即可查看动态天空。场景相机上的 `StarPanoramaTimeDriver` 使用 Unity `Time.time` 推送全局 shader 时间；Inspector 可启用 `Use Unscaled Time`，让暂停期间也继续流转。星点会缓慢旋转并闪烁，星云噪声会平滑漂移，星云旋转与流动速度可分别调节。选择 `StarPanorama.mat`，Inspector 中中文属性名前缀标明所属类别，可直接调节；保存材质后，预览场景和 Gaming 场景会使用同一组参数。默认时间倍率为 1，流动效果开箱可见。
+打开 `StarPanoramaPreview.unity` 可以预览。`StarPanoramaTimeDriver` 的“星空材质”绑定共用材质，自动生成不保存到 Scene 的背景平面，按正交相机尺寸适配，排序在关卡后面。它不参与碰撞，不创建立体光源，也不写入关卡作者数据；关闭组件会清理临时对象。
 
-相机只有背景天空，没有关卡物体。旋转预览相机的 Transform 可以查看全景不同方向；正式 Gaming 的相机清除模式保持 Skybox。
+全局 `_StarPanoramaTime` 驱动流转；“暂停时继续流转”决定是否使用不受暂停影响的时间。编辑态显示静态预览，Play 后流转。新场景把组件放在场景相机或场景根并绑定材质即可；相机保持正交，只绕 Z 轴旋转，无需指定 Skybox。
 
 ## 参数分组
 
@@ -19,7 +19,7 @@
 - **银河形态**：叶片状银河的宽度、倾斜、噪声不规则度、断裂程度、长度、边缘柔化、中心位置和弯曲。
 - **空间与星云颜色**：空间上下渐变及三种星云色。
 
-属性默认值沿用 Godot 源码。星云通过三层 3D 噪声形成；星体、十字光芒、星尘和星云颜色混合逻辑对应原 shader。
+属性默认值沿用原材质。内部噪声使用三分量坐标，这属于平面着色数学，不代表立体场景或物理；星体、十字光芒、星尘和星云颜色混合逻辑保持不变。
 
 ## 使用位置
 

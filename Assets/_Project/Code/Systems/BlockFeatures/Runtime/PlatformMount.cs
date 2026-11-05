@@ -30,7 +30,7 @@ namespace Project.BlockFeatures
         private void FixedUpdate()
         {
             // Run after platform motion (including existing importer order overrides).
-            // A cube's own motion component remains its only Rigidbody writer.
+            // A cube's own motion component remains its only Rigidbody2D writer.
             if (!IsMounted) return;
             if (cubeMotion != null) cubeMotion.ApplyPlatformMount();
             else transform.position = TargetPosition;

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -90,7 +91,7 @@ namespace Project.GreenHook.Editor
             ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
             Player = Spawn("Player/Player", Vector3.zero).GetComponent<PlayerController>();
             Player.GetComponent<PlayerInputDriver>().enabled = false;
-            Player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+            Player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
             Hook = Player.GetComponent<GreenHookAbility>();
             Camera = new GameObject("VisualCamera").AddComponent<Camera>();
             Camera.tag = "MainCamera"; Camera.orthographic = true; Camera.orthographicSize = 7;
@@ -139,28 +140,28 @@ namespace Project.GreenHook.Editor
         {
             MethodInfo slide = typeof(GreenHookAbility).Assembly.GetType("Project.GreenHook.GreenHookPhysics")
                 .GetMethod("SlideDisplacement", BindingFlags.Static | BindingFlags.NonPublic);
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             floor.transform.position = new Vector3(0, -1, 0); floor.transform.localScale = new Vector3(20, 1, 2);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Vector3 Slide(Vector3 move) => (Vector3)slide.Invoke(null, new object[]
-                { Player.GetComponentsInChildren<Collider>(), Player.transform, move, .01f });
+                { Player.GetComponentsInChildren<Collider2D>(), Player.transform, move, .01f });
             var allowed = Slide(new Vector3(.2f, -.2f, 0));
             GreenHookVisualAudit.Check(allowed.x > .18f && allowed.y > -.025f, "floor preserves horizontal tangent and blocks downward penetration");
             Object.DestroyImmediate(floor);
-            var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             wall.transform.position = Vector3.right; wall.transform.localScale = new Vector3(1, 20, 2);
-            Physics.SyncTransforms(); allowed = Slide(new Vector3(.2f, -.2f, 0));
+            PlanarPhysics.SyncTransforms(); allowed = Slide(new Vector3(.2f, -.2f, 0));
             GreenHookVisualAudit.Check(allowed.y < -.18f && allowed.x < .025f, "wall preserves downward tangent and blocks horizontal penetration");
             Object.DestroyImmediate(wall);
         }
         private void VerifyRelease()
         {
             var anchor = Spawn("ContactCubes/Green_ContactCube", Vector3.up * 3);
-            anchor.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
-            Physics.SyncTransforms();
+            anchor.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
+            PlanarPhysics.SyncTransforms();
             GreenHookVisualAudit.Check(Hook.TryLaunch(Camera.WorldToScreenPoint(anchor.transform.position), true) == GreenHookLaunchResult.Success,
                 "valid actual click attaches swing for release test");
-            Player.Motor.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+            Player.Motor.constraints = RigidbodyConstraints2D.None | RigidbodyConstraints2D.FreezeRotation;
             Player.Motor.linearVelocity = new Vector3(5, 3, 0);
             Hook.DriveInput(Vector2.zero, true);
             Vector2 velocity = Player.Motor.linearVelocity;
@@ -168,7 +169,7 @@ namespace Project.GreenHook.Editor
                 Mathf.Abs(Vector2.Dot(velocity.normalized, new Vector2(5, 3).normalized) - 1) < .0001f,
                 "manual release preserves actual direction and applies bounded slight boost");
             GreenHookVisualAudit.Check(velocity.magnitude < Mathf.Sqrt(34) + 1.001f, "release boost is bounded");
-            Object.DestroyImmediate(anchor); Player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+            Object.DestroyImmediate(anchor); Player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
         }
         private void Update()
         {
@@ -222,7 +223,7 @@ namespace Project.GreenHook.Editor
             GreenHookVisualAudit.Check(movingCameraFrames >= 170,
                 "camera-chain projection test includes continuous actual camera movement");
             var timings = new FrameTiming[1]; uint count = FrameTimingManager.GetLatestTimings(1, timings);
-            string result = $"180 actual render updates (orthographic then angled perspective); real Follow(500)/Manager(1000)/VisualDriver(1100); " +
+            string result = $"180 actual render updates (orthographic then screen roll); real Follow(500)/Manager(1000)/VisualDriver(1100); " +
                 $"moving camera frames={movingCameraFrames}; FixedUpdate={FixedFrames}; frame timing samples={count}";
             if (count > 0) result += $"; last CPU={timings[0].cpuFrameTime:F3}ms GPU={timings[0].gpuFrameTime:F3}ms (editor fixture, not before/after FPS proof)";
             Time.fixedDeltaTime = originalStep; Ready = false;
@@ -248,11 +249,10 @@ namespace Project.GreenHook.Editor
             state = new CameraState
             {
                 position = PositionForFocus(context.FocusPoint),
-                rotation = owner.Frame <= 120 ? Quaternion.identity :
-                    Quaternion.LookRotation((context.FocusPoint - PositionForFocus(context.FocusPoint)).normalized, Vector3.up),
-                projection = owner.Frame <= 120 ? CameraProjectionMode.Orthographic : CameraProjectionMode.Perspective,
+                rotation = Quaternion.Euler(0f, 0f, owner.Frame <= 120 ? 0f : Mathf.Sin(owner.Frame * .09f) * 8f),
+                projection = CameraProjectionMode.Orthographic,
                 orthographicSize = 7f,
-                fieldOfView = 60f
+
             };
             return true;
         }

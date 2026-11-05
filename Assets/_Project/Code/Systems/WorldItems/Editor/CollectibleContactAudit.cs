@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using DG.Tweening;
@@ -48,12 +49,12 @@ namespace Project.WorldItems.Editor
             { Finish(false, "Timeout"); return; }
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .2f) return;
             EditorApplication.update -= Tick;
-            var simulation = Physics.simulationMode;
+            var simulation = PlanarPhysics.simulationMode;
             try
             {
                 AudioListener.volume = 0f;
                 AudioListener.pause = true;
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 checks = 0;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 VerifyTriggerPassThrough();
@@ -67,7 +68,7 @@ namespace Project.WorldItems.Editor
                 Finish(true, "PASS " + checks + " collectible physics/trigger/lifecycle checks");
             }
             catch (Exception error) { Debug.LogException(error); Finish(false, error.ToString()); }
-            finally { Physics.simulationMode = simulation; }
+            finally { PlanarPhysics.simulationMode = simulation; }
         }
 
         private static void Check(bool condition, string message)
@@ -88,26 +89,26 @@ namespace Project.WorldItems.Editor
         {
             var player = Spawn(PlayerPath, position).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.useGravity = false;
-            player.Motor.constraints = RigidbodyConstraints.FreezeRotation |
-                RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezePositionZ;
+            player.Motor.gravityScale = 0f;
+            player.Motor.constraints = RigidbodyConstraints2D.FreezeRotation |
+                RigidbodyConstraints2D.FreezePositionY | RigidbodyConstraints2D.None;
             return player;
         }
 
         private static CollectiblePickup Item(Vector3 position) =>
             Spawn(ItemPath, position).GetComponent<CollectiblePickup>();
 
-        private static Collider Trigger(CollectiblePickup item)
+        private static Collider2D Trigger(CollectiblePickup item)
         {
-            foreach (var shape in item.GetComponentsInChildren<Collider>(true))
+            foreach (var shape in item.GetComponentsInChildren<Collider2D>(true))
                 if (shape.isTrigger) return shape;
             throw new InvalidOperationException("Fixture has no pickup trigger.");
         }
 
         private static void Step(int count = 1)
         {
-            Physics.SyncTransforms();
-            for (int i = 0; i < count; i++) Physics.Simulate(.02f);
+            PlanarPhysics.SyncTransforms();
+            for (int i = 0; i < count; i++) PlanarPhysics.Simulate(.02f);
         }
 
         private static void VerifyTriggerPassThrough()
@@ -116,13 +117,13 @@ namespace Project.WorldItems.Editor
             var item = Item(new Vector3(100, 20, 0));
             try
             {
-                var shape = item.GetComponent<Collider>();
-                var playerShape = player.GetComponent<Collider>();
-                Check(!shape.isTrigger && Physics.GetIgnoreCollision(shape, playerShape),
+                var shape = item.GetComponent<Collider2D>();
+                var playerShape = player.GetComponent<Collider2D>();
+                Check(!shape.isTrigger && PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "existing player ignores collectible push solid without converting it to trigger");
-                Check(!Physics.GetIgnoreCollision(Trigger(item), playerShape),
+                Check(!PlanarPhysics.GetIgnoreCollision(Trigger(item), playerShape),
                     "separate pickup trigger still interacts with player");
-                Check(!item.GetComponent<Rigidbody>().useGravity && item.CanBePushed,
+                Check(!(item.GetComponent<Rigidbody2D>().gravityScale != 0f) && item.CanBePushed,
                     "pickup is dynamic and floats");
                 int lockDepth = player.ControlLockDepth;
                 player.Motor.linearVelocity = Vector3.right * 5;
@@ -131,7 +132,7 @@ namespace Project.WorldItems.Editor
                     "real child trigger starts shared collection lifecycle");
                 Check(item.GetComponent<PickupFlightAnimator>().IsPlaying && item.gameObject.activeSelf,
                     "collection keeps author object and flight visible until completion");
-                Check(player.Motor.position.x > 102.5f && player.Motor.linearVelocity.x > 4.9f,
+                Check(player.Motor.WorldPosition().x > 102.5f && ((Vector3)player.Motor.linearVelocity).x > 4.9f,
                     "player continues through item without wall or collision slowdown");
                 Check(player.ControlLockDepth == lockDepth && !player.IsControlLocked,
                     "ordinary collectible never freezes player controls");
@@ -147,7 +148,7 @@ namespace Project.WorldItems.Editor
                 item.ResetForRoom();
                 Check(item.IsCollected && !item.gameObject.activeSelf && !item.CanCollect && !item.CanBePushed,
                     "finished collection remains hidden and ineligible across subsequent room reset");
-                Check(!item.GetComponent<Rigidbody>().useGravity && player.ControlLockDepth == lockDepth,
+                Check(!(item.GetComponent<Rigidbody2D>().gravityScale != 0f) && player.ControlLockDepth == lockDepth,
                     "reset keeps floating pickup and leaves player locks untouched");
             }
             finally { Object.DestroyImmediate(item.gameObject); Object.DestroyImmediate(player.gameObject); }
@@ -159,28 +160,28 @@ namespace Project.WorldItems.Editor
             var player = Player(new Vector3(195, 20, 0));
             try
             {
-                var shape = item.GetComponent<Collider>();
-                var playerShape = player.GetComponent<Collider>();
-                Check(Physics.GetIgnoreCollision(shape, playerShape),
+                var shape = item.GetComponent<Collider2D>();
+                var playerShape = player.GetComponent<Collider2D>();
+                Check(PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "player instantiated after collectible is filtered immediately by activation event");
                 player.gameObject.SetActive(false);
                 player.gameObject.SetActive(true);
-                Check(Physics.GetIgnoreCollision(shape, playerShape),
+                Check(PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "player GameObject reenable reapplies solid filtering");
                 item.enabled = false;
-                Check(!Physics.GetIgnoreCollision(shape, playerShape),
+                Check(!PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "disabling pickup component restores only owned ignore pairs");
                 item.enabled = true;
-                Check(Physics.GetIgnoreCollision(shape, playerShape),
+                Check(PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "reenabling pickup component immediately restores player pass-through");
                 item.gameObject.SetActive(false);
                 item.gameObject.SetActive(true);
-                item.GetComponent<Rigidbody>().useGravity = true;
+                item.GetComponent<Rigidbody2D>().gravityScale = 1f;
                 item.ResetForReuse();
-                Check(!item.GetComponent<Rigidbody>().useGravity && item.CanBePushed &&
-                    Physics.GetIgnoreCollision(shape, playerShape),
+                Check(!(item.GetComponent<Rigidbody2D>().gravityScale != 0f) && item.CanBePushed &&
+                    PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "pooled reenable and explicit reuse repair old gravity flag and collision state");
-                Check(!Physics.GetIgnoreCollision(Trigger(item), playerShape),
+                Check(!PlanarPhysics.GetIgnoreCollision(Trigger(item), playerShape),
                     "all reuse paths preserve trigger interaction");
             }
             finally { Object.DestroyImmediate(item.gameObject); Object.DestroyImmediate(player.gameObject); }
@@ -195,23 +196,23 @@ namespace Project.WorldItems.Editor
             var player = Player(new Vector3(598, 20, 0));
             try
             {
-                var shape = item.GetComponent<Collider>();
-                var playerShape = player.GetComponent<Collider>();
-                Check(!item.CanCollect && Physics.GetIgnoreCollision(shape, playerShape),
+                var shape = item.GetComponent<Collider2D>();
+                var playerShape = player.GetComponent<Collider2D>();
+                Check(!item.CanCollect && PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "preview blocks collection but not a late player's physical pass-through setup");
                 presentation.StageWorld(player.gameObject.scene);
                 Check(!playerShape.enabled && player.Motor.isKinematic,
                     "real world-menu stage temporarily disables player's physical participant");
                 presentation.EndPreview();
                 Check(playerShape.enabled && !player.Motor.isKinematic &&
-                    Physics.GetIgnoreCollision(shape, playerShape),
+                    PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "real menu handoff reapplies pass-through after restoring player collider");
-                Check(!Physics.GetIgnoreCollision(Trigger(item), playerShape),
+                Check(!PlanarPhysics.GetIgnoreCollision(Trigger(item), playerShape),
                     "menu handoff keeps collection trigger live");
-                player.Motor.useGravity = false;
+                player.Motor.gravityScale = 0f;
                 player.Motor.linearVelocity = Vector3.right * 5;
                 Step(50);
-                Check(player.Motor.position.x > 602.5f && player.Motor.linearVelocity.x > 4.9f,
+                Check(player.Motor.WorldPosition().x > 602.5f && ((Vector3)player.Motor.linearVelocity).x > 4.9f,
                     "after menu handoff real physics crosses pickup without a wall or slowdown");
                 Check(item.CollectionRequested,
                     "after menu handoff real trigger collects while player crosses the pickup");
@@ -231,19 +232,19 @@ namespace Project.WorldItems.Editor
             var item = Item(new Vector3(300, 20, 0));
             try
             {
-                var shape = item.GetComponent<Collider>();
-                var playerShape = player.GetComponent<Collider>();
-                Physics.IgnoreCollision(shape, playerShape, true);
+                var shape = item.GetComponent<Collider2D>();
+                var playerShape = player.GetComponent<Collider2D>();
+                PlanarPhysics.IgnoreCollision(shape, playerShape, true);
                 player.enabled = true;
                 item.enabled = false;
-                Check(Physics.GetIgnoreCollision(shape, playerShape),
+                Check(PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "preexisting ignore pair is not owned or restored by collectible");
                 item.enabled = true;
                 item.ResetForRoom();
                 item.enabled = false;
-                Check(Physics.GetIgnoreCollision(shape, playerShape),
+                Check(PlanarPhysics.GetIgnoreCollision(shape, playerShape),
                     "repeated enable/reset does not steal preexisting ignore ownership");
-                Physics.IgnoreCollision(shape, playerShape, false);
+                PlanarPhysics.IgnoreCollision(shape, playerShape, false);
             }
             finally { Object.DestroyImmediate(item.gameObject); Object.DestroyImmediate(player.gameObject); }
         }
@@ -253,19 +254,19 @@ namespace Project.WorldItems.Editor
             var player = Player(new Vector3(490, 20, 0));
             var cube = Spawn("Assets/_Project/Content/ContactCubes/Red_ContactCube.prefab", new Vector3(500, 20, 0));
             cube.transform.SetParent(player.transform, true);
-            var cubeBody = cube.GetComponent<Rigidbody>();
-            cubeBody.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            var cubeBody = cube.GetComponent<Rigidbody2D>();
+            cubeBody.collisionDetectionMode = CollisionDetectionMode2D.Discrete;
             cubeBody.isKinematic = true;
-            cubeBody.useGravity = false;
+            cubeBody.gravityScale = 0f;
             var item = Item(new Vector3(500, 20, 0));
             try
             {
-                var shape = item.GetComponent<Collider>();
-                var playerShape = player.GetComponent<Collider>();
-                var cubeShape = cube.GetComponentInChildren<Collider>();
+                var shape = item.GetComponent<Collider2D>();
+                var playerShape = player.GetComponent<Collider2D>();
+                var cubeShape = cube.GetComponentInChildren<Collider2D>();
                 Check(cubeShape.attachedRigidbody == cubeBody && cubeBody != player.Motor,
                     "carried fixture is a player descendant with an independent real cube body");
-                Check(Physics.GetIgnoreCollision(shape, playerShape) && !Physics.GetIgnoreCollision(shape, cubeShape),
+                Check(PlanarPhysics.GetIgnoreCollision(shape, playerShape) && !PlanarPhysics.GetIgnoreCollision(shape, cubeShape),
                     "player pass-through does not include independently simulated carried descendants");
                 Step(3);
                 Check(item.CanCollect && !item.CollectionRequested,
@@ -273,14 +274,14 @@ namespace Project.WorldItems.Editor
                 item.ResetForRoom();
                 player.gameObject.SetActive(false);
                 player.gameObject.SetActive(true);
-                Check(Physics.GetIgnoreCollision(shape, playerShape) && !Physics.GetIgnoreCollision(shape, cubeShape),
+                Check(PlanarPhysics.GetIgnoreCollision(shape, playerShape) && !PlanarPhysics.GetIgnoreCollision(shape, cubeShape),
                     "room reset and player reenable preserve carried-body collision separation");
                 item.enabled = false;
                 item.enabled = true;
-                Check(!Physics.GetIgnoreCollision(shape, cubeShape),
+                Check(!PlanarPhysics.GetIgnoreCollision(shape, cubeShape),
                     "pickup component reuse never owns ignore pairs for carried cube");
                 cube.transform.SetParent(null, true);
-                Check(!Physics.GetIgnoreCollision(shape, cubeShape) && item.CanBePushed,
+                Check(!PlanarPhysics.GetIgnoreCollision(shape, cubeShape) && item.CanBePushed,
                     "putting cube down leaves collectible push collision enabled");
             }
             finally
@@ -297,39 +298,39 @@ namespace Project.WorldItems.Editor
             var pusher = Spawn(path, new Vector3(398.5f, 20, 0));
             try
             {
-                var body = pusher.GetComponent<Rigidbody>();
+                var body = pusher.GetComponent<Rigidbody2D>();
                 Check(body != null, label + " has actual push body");
                 var originalConstraints = body.constraints;
                 // This case drives an authored solid as a kinematic physical
                 // pusher, not through its gameplay controller. A resting base
                 // intentionally freezes X; the real hook motion releases that
                 // axis. Release it here too instead of testing a frozen fixture.
-                body.constraints = RigidbodyConstraints.FreezeRotation |
-                    RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezePositionZ;
-                body.collisionDetectionMode = CollisionDetectionMode.Discrete;
+                body.constraints = RigidbodyConstraints2D.FreezeRotation |
+                    RigidbodyConstraints2D.FreezePositionY | RigidbodyConstraints2D.None;
+                body.collisionDetectionMode = CollisionDetectionMode2D.Discrete;
                 body.isKinematic = true;
-                body.useGravity = false;
-                Vector3 start = body.position;
-                var itemBody = item.GetComponent<Rigidbody>();
-                var itemShape = item.GetComponent<Collider>();
-                foreach (var shape in pusher.GetComponentsInChildren<Collider>(true))
+                body.gravityScale = 0f;
+                Vector3 start = body.WorldPosition();
+                var itemBody = item.GetComponent<Rigidbody2D>();
+                var itemShape = item.GetComponent<Collider2D>();
+                foreach (var shape in pusher.GetComponentsInChildren<Collider2D>(true))
                     if (shape.enabled && !shape.isTrigger)
-                        Check(!Physics.GetIgnoreCollision(itemShape, shape),
+                        Check(!PlanarPhysics.GetIgnoreCollision(itemShape, shape),
                             label + " still collides with collectible solid");
                 for (int i = 0; i < 50; i++)
                 {
-                    body.MovePosition(body.position + Vector3.right * .04f);
+                    body.MovePosition(body.WorldPosition() + Vector3.right * .04f);
                     Step();
                 }
-                Debug.Log($"COLLECTIBLE PUSH {label}: pusher={start:F3}->{body.position:F3}, " +
+                Debug.Log($"COLLECTIBLE PUSH {label}: pusher={start:F3}->{body.WorldPosition():F3}, " +
                     $"constraints={originalConstraints}->{body.constraints}, item={itemBody.position:F3}, " +
                     $"velocity={itemBody.linearVelocity:F3}, collected={item.CollectionRequested}, " +
-                    $"dynamic={!itemBody.isKinematic}, gravity={itemBody.useGravity}, solid={itemShape.bounds}");
-                Check(body.position.x > start.x + 1.9f,
+                    $"dynamic={!itemBody.isKinematic}, gravity={(itemBody.gravityScale != 0f)}, solid={itemShape.bounds}");
+                Check(body.WorldPosition().x > start.x + 1.9f,
                     label + " fixture actually moves its solid through pickup position");
                 Check(itemBody.position.x > 400.5f && item.CanCollect && !item.CollectionRequested,
                     label + " physically pushes pickup without collecting it");
-                Check(!itemBody.useGravity && !itemBody.isKinematic,
+                Check(!(itemBody.gravityScale != 0f) && !itemBody.isKinematic,
                     label + " push preserves dynamic no-gravity pickup");
             }
             finally { Object.DestroyImmediate(pusher); Object.DestroyImmediate(item.gameObject); }

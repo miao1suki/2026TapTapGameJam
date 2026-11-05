@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using Project.BlockFeatures;
 using Project.Player;
@@ -15,7 +16,7 @@ namespace Project.Mechanisms
         [InspectorName("持续压住")] Held
     }
 
-    [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider))]
+    [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider2D))]
     public sealed class DoorButton : MonoBehaviour,
         IRoomColorResettable,
         IMechanismSignalSource
@@ -29,8 +30,8 @@ namespace Project.Mechanisms
         [BlockParameter(Label = "脚部容差（格）", Group = "踩踏", Order = 0)]
         [SerializeField, Min(0f)] private float footTolerance = .15f;
         [SerializeField, InspectorName("按钮模型")] private Renderer visual;
-        private BoxCollider pressTrigger;
-        private Collider[] contacts = new Collider[16];
+        private BoxCollider2D pressTrigger;
+        private Collider2D[] contacts = new Collider2D[16];
         private MaterialPropertyBlock properties;
         private bool geometryDirty;
         public DoorController Owner => owner;
@@ -52,7 +53,7 @@ namespace Project.Mechanisms
         }
         private void Awake()
         {
-            pressTrigger = GetComponent<BoxCollider>();
+            pressTrigger = GetComponent<BoxCollider2D>();
             // Applies to existing Scene instances as well as newly placed prefabs.
             ButtonPressureGeometry.Configure(pressTrigger, facing);
             geometryDirty = false;
@@ -83,7 +84,7 @@ namespace Project.Mechanisms
             else if (!Persistent) SetPressed(false,null);
         }
 
-        internal static GameObject FindPressureActor(BoxCollider pressTrigger, float tolerance, ref Collider[] contacts,
+        internal static GameObject FindPressureActor(BoxCollider2D pressTrigger, float tolerance, ref Collider2D[] contacts,
             ButtonFacing facing = ButtonFacing.Up)
         {
             Transform frame = pressTrigger.transform;
@@ -92,7 +93,7 @@ namespace Project.Mechanisms
             int count;
             do
             {
-                count = Physics.OverlapBoxNonAlloc(frame.TransformPoint(pressTrigger.center),half,contacts,frame.rotation,~0,QueryTriggerInteraction.Ignore);
+                count = PlanarPhysics.OverlapBoxNonAlloc(frame.TransformPoint(pressTrigger.offset),half,contacts,frame.rotation,~0,TriggerQuery.Ignore);
                 if (count < contacts.Length) break;
                 System.Array.Resize(ref contacts,contacts.Length * 2);
             } while (contacts.Length <= 4096);
@@ -101,15 +102,15 @@ namespace Project.Mechanisms
             return null;
         }
 
-        private static bool TryGetPressureActor(Collider other, BoxCollider pressTrigger, float tolerance,
+        private static bool TryGetPressureActor(Collider2D other, BoxCollider2D pressTrigger, float tolerance,
             ButtonFacing facing, out GameObject actor)
         {
             actor = null;
             if (other == null || other.isTrigger || !other.enabled) return false;
             var player = other.GetComponentInParent<PlayerController>();
             var cube = other.GetComponentInParent<ContactCube>();
-            Collider feetCollider = null;
-            if (player != null && player.isActiveAndEnabled && !player.IsDead) { feetCollider = player.GetComponent<CapsuleCollider>(); actor = player.gameObject; }
+            Collider2D feetCollider = null;
+            if (player != null && player.isActiveAndEnabled && !player.IsDead) { feetCollider = player.GetComponent<CapsuleCollider2D>(); actor = player.gameObject; }
             else if (cube != null && cube.isActiveAndEnabled) { feetCollider = other; actor = cube.gameObject; }
             if (actor == null || feetCollider == null || !feetCollider.enabled) { actor = null; return false; }
             if (!ButtonPressureGeometry.TouchesPressureFace(feetCollider.bounds, pressTrigger, facing, tolerance))

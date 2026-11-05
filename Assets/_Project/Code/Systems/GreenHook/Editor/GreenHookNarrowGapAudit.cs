@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -46,11 +47,11 @@ namespace Project.GreenHook.Editor
         {
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .6f) return;
             EditorApplication.update -= Wait;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             bool passed = false;
             try
             {
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 for (int kind = 0; kind < 4; kind++)
@@ -71,7 +72,7 @@ namespace Project.GreenHook.Editor
                 passed = true;
             }
             catch (Exception error) { diagnostics.AppendLine(error.ToString()); Debug.LogException(error); }
-            finally { Cleanup(); Physics.simulationMode = previous; }
+            finally { Cleanup(); PlanarPhysics.simulationMode = previous; }
             string report = (passed ? "PASS " : "FAIL ") + checks + "\n" + diagnostics;
             File.WriteAllText("Library/GreenHookNarrowGapAudit.txt", report);
             Debug.Log(report);
@@ -96,7 +97,7 @@ namespace Project.GreenHook.Editor
         }
         private static GameObject Solid(string name, Vector3 position, Vector3 size)
         {
-            var result = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var result = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             result.name = name; result.transform.position = position; result.transform.localScale = size;
             objects.Add(result); return result;
         }
@@ -105,8 +106,8 @@ namespace Project.GreenHook.Editor
             if (target.TryGetComponent<ContactCubeMotion>(out var cubeMotion)) Invoke(cubeMotion, "FixedUpdate");
             else if (target.TryGetComponent<MechanismBaseFeature>(out var mechanism)) Invoke(mechanism, "FixedUpdate");
             Invoke(hook, "FixedUpdate");
-            Vector3 command = target.GetComponent<Rigidbody>().linearVelocity;
-            Invoke(player, "FixedUpdate"); Physics.Simulate(Time.fixedDeltaTime);
+            Vector3 command = target.GetComponent<Rigidbody2D>().linearVelocity;
+            Invoke(player, "FixedUpdate"); PlanarPhysics.Simulate(Time.fixedDeltaTime);
             return command;
         }
         private static void VerifyGap(int kind, int direction, int phase, float gapWidth)
@@ -119,7 +120,7 @@ namespace Project.GreenHook.Editor
             float phaseOffset = phase * .047f;
             PlayerController player = Spawn("Player/Player.prefab", origin + new Vector3(direction * 4.5f, .5f, 0f)).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.interpolation = RigidbodyInterpolation.None;
+            player.Motor.interpolation = RigidbodyInterpolation2D.None;
             string path = kind == 0 ? "ContactCubes/Red_ContactCube.prefab" : kind == 1 ?
                 "ContactCubes/Blue_ContactCube.prefab" : "ColorBlocks/Prefabs/Red_Foundation.prefab";
             GameObject target = Spawn(path, origin + new Vector3(-direction * (2.5f + phaseOffset), .5f, 0f));
@@ -128,10 +129,10 @@ namespace Project.GreenHook.Editor
                 var mechanism = target.GetComponent<MechanismBaseFeature>();
                 Set(mechanism, "useGravity", kind != 3); Invoke(mechanism, "FixedUpdate");
             }
-            Rigidbody body = target.GetComponent<Rigidbody>();
-            body.interpolation = RigidbodyInterpolation.None;
-            BoxCollider shape = target.GetComponentInChildren<BoxCollider>();
-            Physics.SyncTransforms();
+            Rigidbody2D body = target.GetComponent<Rigidbody2D>();
+            body.interpolation = RigidbodyInterpolation2D.None;
+            BoxCollider2D shape = target.GetComponentInChildren<BoxCollider2D>();
+            PlanarPhysics.SyncTransforms();
             Vector3 logicalSize = target.TryGetComponent<ContactCubeMotion>(out var contactMotion)
                 ? contactMotion.LogicalContactShapeSize : shape.size;
             Check(Mathf.Abs(Vector3.Scale(logicalSize, shape.transform.lossyScale).x - 1f) < .002f,
@@ -141,13 +142,13 @@ namespace Project.GreenHook.Editor
             Set(hook, "pullSpeed", phase == 2 ? 12f : 8f);
             Invoke(hook, "BeginHook", hookTarget, hookTarget.GreenHookTransform.position);
             Invoke(hook, "BeginPulling");
-            float minimumY = body.position.y;
+            float minimumY = body.WorldPosition().y;
             float closestToCenter = float.MaxValue;
             bool crossedOnTop = false;
             for (int tick = 0; tick < 70; tick++)
             {
                 Step(hook, player, target);
-                Vector3 local = body.position - origin;
+                Vector3 local = body.WorldPosition() - origin;
                 minimumY = Mathf.Min(minimumY, local.y);
                 closestToCenter = Mathf.Min(closestToCenter, Mathf.Abs(local.x));
                 if (local.x * direction > halfGap + .5f && local.y > .35f) crossedOnTop = true;
@@ -159,11 +160,11 @@ namespace Project.GreenHook.Editor
                     break;
             }
             string label = $"kind={kind} direction={direction} phase={phase} gap={gapWidth:F2}";
-            diagnostics.AppendLine(label + $" minY={minimumY:F5} nearestX={closestToCenter:F5} final={body.position - origin} crossedTop={crossedOnTop}" +
-                $" physicalWidth={shape.bounds.size.x:F5} offset={shape.contactOffset:F5} velocity={body.linearVelocity} locks={body.constraints}");
+            diagnostics.AppendLine(label + $" minY={minimumY:F5} nearestX={closestToCenter:F5} final={body.WorldPosition() - origin} crossedTop={crossedOnTop}" +
+                $" physicalWidth={shape.bounds.size.x:F5} offset={UnityEngine.Physics2D.defaultContactOffset:F5} velocity={((Vector3)body.linearVelocity)} locks={body.constraints}");
             Check(hook.IsHookActive && player.CanDriveGreenHook && player.ControlLockDepth == 1,
                 label + " retains single hook ownership instead of detaching at the pit");
-            Check(body.useGravity == (kind != 3), label + " preserves explicit gravity policy");
+            Check((body.gravityScale != 0f) == (kind != 3), label + " preserves explicit gravity policy");
             if (!SessionState.GetBool(Flag + "Baseline", false))
             {
                 if (kind == 3 || gapWidth < .99f)
@@ -176,23 +177,23 @@ namespace Project.GreenHook.Editor
                 !target.GetComponent<IGreenHookMotion>().IsGreenHookPullActive,
                 label + " release restores both physics owners");
             Vector3 releasedSize = shape.size;
-            float releasedX = body.position.x;
+            float releasedX = body.WorldPosition().x;
             for (int tick = 0; tick < 180; tick++) Step(hook, player, target);
-            diagnostics.AppendLine(label + $" released180={body.position - origin} width={shape.bounds.size.x:F5}");
-            Check(shape.size == releasedSize, label + " release never expands a physical box inside the shaft");
+            diagnostics.AppendLine(label + $" released180={body.WorldPosition() - origin} width={shape.bounds.size.x:F5}");
+            Check(((Vector3)shape.size) == releasedSize, label + " release never expands a physical box inside the shaft");
             if (kind != 3 && gapWidth >= .99f && !SessionState.GetBool(Flag + "Baseline", false))
             {
-                Check(Mathf.Abs(body.position.x - releasedX) < .03f &&
-                    Mathf.Abs(body.position.y - origin.y + 1.5f) < .1f && body.linearVelocity.sqrMagnitude < .02f,
+                Check(Mathf.Abs(body.WorldPosition().x - releasedX) < .03f &&
+                    Mathf.Abs(body.WorldPosition().y - origin.y + 1.5f) < .1f && ((Vector3)body.linearVelocity).sqrMagnitude < .02f,
                     label + " remains stably in the pit for 180 steps after release without re-bridging or launching");
                 if (kind == 2)
                 {
                     var mechanism = target.GetComponent<MechanismBaseFeature>();
                     Set(mechanism, "useGravity", false);
-                    Vector3 beforeNoGravity = body.position;
+                    Vector3 beforeNoGravity = body.WorldPosition();
                     for (int tick = 0; tick < 180; tick++) Step(hook, player, target);
-                    Check((body.position - beforeNoGravity).sqrMagnitude < .0001f &&
-                        !body.useGravity && body.isKinematic && shape.size == releasedSize,
+                    Check((body.WorldPosition() - beforeNoGravity).sqrMagnitude < .0001f &&
+                        !(body.gravityScale != 0f) && body.isKinematic && ((Vector3)shape.size) == releasedSize,
                         label + " changing a fallen base to no gravity keeps its safe stable shape and pose");
                 }
             }
@@ -204,14 +205,14 @@ namespace Project.GreenHook.Editor
             PlayerController player = Spawn("Player/Player.prefab", origin + new Vector3(-4f, .5f, 0f)).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
             GameObject target = Spawn("ContactCubes/Red_ContactCube.prefab", origin + new Vector3(3f, .5f, 0f));
-            var body = target.GetComponent<Rigidbody>(); var hook = player.GetComponent<GreenHookAbility>();
-            Physics.SyncTransforms();
+            var body = target.GetComponent<Rigidbody2D>(); var hook = player.GetComponent<GreenHookAbility>();
+            PlanarPhysics.SyncTransforms();
             Invoke(hook, "BeginHook", target.GetComponent<IGreenHookTarget>(), target.transform.position);
             Invoke(hook, "BeginPulling");
             for (int tick = 0; tick < 10; tick++) Step(hook, player, target);
-            Check(body.position.x < origin.x + 2f && Mathf.Abs(body.position.y - origin.y - .5f) < .03f,
+            Check(body.WorldPosition().x < origin.x + 2f && Mathf.Abs(body.WorldPosition().y - origin.y - .5f) < .03f,
                 "continuous floor keeps normal pull speed without false pit braking");
-            Check((body.constraints & RigidbodyConstraints.FreezePositionY) == 0,
+            Check((body.constraints & RigidbodyConstraints2D.FreezePositionY) == 0,
                 "horizontal hook motion never replaces natural gravity with FreezeY");
         }
         private static void VerifyContinuedPull()
@@ -222,12 +223,12 @@ namespace Project.GreenHook.Editor
             Solid("Continuous-pull pit floor", origin + new Vector3(0f, -2.5f, 0f), new Vector3(16f, 1f, 2f));
             PlayerController player = Spawn("Player/Player.prefab", origin + new Vector3(-4.5f, .5f, 0f)).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.interpolation = RigidbodyInterpolation.None;
+            player.Motor.interpolation = RigidbodyInterpolation2D.None;
             GameObject target = Spawn("ContactCubes/Red_ContactCube.prefab", origin + new Vector3(2.594f, .5f, 0f));
-            var body = target.GetComponent<Rigidbody>(); var hook = player.GetComponent<GreenHookAbility>();
-            body.interpolation = RigidbodyInterpolation.None;
+            var body = target.GetComponent<Rigidbody2D>(); var hook = player.GetComponent<GreenHookAbility>();
+            body.interpolation = RigidbodyInterpolation2D.None;
             Set(hook, "pullSpeed", 12f);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Invoke(hook, "BeginHook", target.GetComponent<IGreenHookTarget>(), target.transform.position);
             Invoke(hook, "BeginPulling");
             float minY = .5f;
@@ -240,16 +241,16 @@ namespace Project.GreenHook.Editor
                 Vector2 axis = Read<Vector2>(hook, "pullAxis");
                 bool pullingPlayer = Read<bool>(hook, "pullingPlayer");
                 if (axis.y < -.5f && !pullingPlayer && command.y > .5f) issuedUpwardPull = true;
-                if (body.linearVelocity.y > 1f && !issuedUpwardPull) unexplainedLaunch = true;
-                minY = Mathf.Min(minY, body.position.y - origin.y);
+                if (((Vector3)body.linearVelocity).y > 1f && !issuedUpwardPull) unexplainedLaunch = true;
+                minY = Mathf.Min(minY, body.WorldPosition().y - origin.y);
                 if (tick % 10 == 0 || axis != previousAxis)
-                    diagnostics.AppendLine($"continuous tick={tick} player={player.Motor.position - origin} target={body.position - origin}" +
-                        $" axis={axis} pullPlayer={pullingPlayer} command={command} solvedVelocity={body.linearVelocity}");
+                    diagnostics.AppendLine($"continuous tick={tick} player={player.Motor.WorldPosition() - origin} target={body.WorldPosition() - origin}" +
+                        $" axis={axis} pullPlayer={pullingPlayer} command={command} solvedVelocity={((Vector3)body.linearVelocity)}");
                 previousAxis = axis;
             }
             Check(minY < -.25f, "continuous high-speed hook physically drops into the one-cell shaft");
             Check(!unexplainedLaunch, "continuous rope cannot launch the box upward without a real upward hook command");
-            Check(hook.IsHookActive && player.CanDriveGreenHook && body.useGravity,
+            Check(hook.IsHookActive && player.CanDriveGreenHook && (body.gravityScale != 0f),
                 "continued pull retains rope ownership and natural gravity even if the player moves and the pull axis changes");
         }
         private static void VerifyStableClearance()
@@ -258,7 +259,7 @@ namespace Project.GreenHook.Editor
             GameObject target = Spawn("ContactCubes/Red_ContactCube.prefab", origin);
             var motion = target.GetComponent<ContactCubeMotion>();
             var cube = target.GetComponent<ContactCube>();
-            var shape = target.GetComponentInChildren<BoxCollider>();
+            var shape = target.GetComponentInChildren<BoxCollider2D>();
             Vector3 physicalSize = shape.size;
             Check(Mathf.Abs(shape.bounds.size.x - .96f) < .002f &&
                 Mathf.Abs(shape.bounds.size.y - 1f) < .002f &&
@@ -271,11 +272,11 @@ namespace Project.GreenHook.Editor
                 cube.ResetForRoom(); motion.ResetForRoom();
                 target.SetActive(false); target.SetActive(true);
             }
-            Check(shape.size == physicalSize && shape.contactOffset <= .0011f,
+            Check(((Vector3)shape.size) == physicalSize && UnityEngine.Physics2D.defaultContactOffset <= .0011f,
                 "repeated hook/carry/room-reset/enable cycles do not accumulate collider shrinkage or restore unsafe width");
             GameObject green = Spawn("ContactCubes/Green_ContactCube.prefab", origin + Vector3.right * 3f);
-            BoxCollider greenShape = green.GetComponentInChildren<BoxCollider>();
-            Check(Mathf.Abs(greenShape.bounds.size.x - 1f) < .002f && greenShape.contactOffset > .0011f,
+            BoxCollider2D greenShape = green.GetComponentInChildren<BoxCollider2D>();
+            Check(Mathf.Abs(greenShape.bounds.size.x - 1f) < .002f && UnityEngine.Physics2D.defaultContactOffset > .0011f,
                 "green climbing/growth anchors retain the full original solid box and contact offset");
         }
         private static void VerifyRetrieval()
@@ -286,44 +287,44 @@ namespace Project.GreenHook.Editor
             Solid("Retrieval pit floor", origin + new Vector3(0f, -2.5f, 0f), new Vector3(16f, 1f, 2f));
             GameObject target = Spawn("ContactCubes/Red_ContactCube.prefab", origin + Vector3.down * .5f);
             var motion = target.GetComponent<ContactCubeMotion>();
-            var body = target.GetComponent<Rigidbody>();
-            var shape = target.GetComponentInChildren<BoxCollider>();
-            body.interpolation = RigidbodyInterpolation.None;
+            var body = target.GetComponent<Rigidbody2D>();
+            var shape = target.GetComponentInChildren<BoxCollider2D>();
+            body.interpolation = RigidbodyInterpolation2D.None;
             Vector3 stableSize = shape.size;
-            Physics.SyncTransforms();
-            for (int tick = 0; tick < 180; tick++) { Invoke(motion, "FixedUpdate"); Physics.Simulate(Time.fixedDeltaTime); }
-            diagnostics.AppendLine($"retrieval initial={body.position - origin} velocity={body.linearVelocity} settled={motion.IsSettled} locks={body.constraints}");
-            Check(Mathf.Abs(body.position.y - origin.y + 1.5f) < .015f,
+            PlanarPhysics.SyncTransforms();
+            for (int tick = 0; tick < 180; tick++) { Invoke(motion, "FixedUpdate"); PlanarPhysics.Simulate(Time.fixedDeltaTime); }
+            diagnostics.AppendLine($"retrieval initial={body.WorldPosition() - origin} velocity={((Vector3)body.linearVelocity)} settled={motion.IsSettled} locks={body.constraints}");
+            Check(Mathf.Abs(body.WorldPosition().y - origin.y + 1.5f) < .015f,
                 "independent retrieval starts with the real box physically resting at the bottom of the one-cell shaft");
             motion.BeginGreenHookPull();
             for (int tick = 0; tick < 24; tick++)
             {
                 motion.SetGreenHookVelocity(Vector3.up * 8f);
-                Physics.Simulate(Time.fixedDeltaTime);
+                PlanarPhysics.Simulate(Time.fixedDeltaTime);
                 if (tick % 5 == 0)
-                    diagnostics.AppendLine($"retrieval up tick={tick} target={body.position - origin} velocity={body.linearVelocity} locks={body.constraints}");
+                    diagnostics.AppendLine($"retrieval up tick={tick} target={body.WorldPosition() - origin} velocity={((Vector3)body.linearVelocity)} locks={body.constraints}");
             }
-            Check(body.position.y > origin.y + 1.5f, "a released fallen box can be physically pulled upward through its one-cell shaft again");
+            Check(body.WorldPosition().y > origin.y + 1.5f, "a released fallen box can be physically pulled upward through its one-cell shaft again");
             for (int tick = 0; tick < 15; tick++)
             {
                 motion.SetGreenHookVelocity(Vector3.right * 8f);
-                Physics.Simulate(Time.fixedDeltaTime);
+                PlanarPhysics.Simulate(Time.fixedDeltaTime);
                 if (tick % 5 == 0)
-                    diagnostics.AppendLine($"retrieval right tick={tick} target={body.position - origin} velocity={body.linearVelocity} locks={body.constraints}");
+                    diagnostics.AppendLine($"retrieval right tick={tick} target={body.WorldPosition() - origin} velocity={((Vector3)body.linearVelocity)} locks={body.constraints}");
             }
             motion.EndGreenHookPull();
             for (int tick = 0; tick < 180; tick++)
             {
-                Invoke(motion, "FixedUpdate"); Physics.Simulate(Time.fixedDeltaTime);
+                Invoke(motion, "FixedUpdate"); PlanarPhysics.Simulate(Time.fixedDeltaTime);
                 if (tick % 30 == 0 || tick == 179)
-                    diagnostics.AppendLine($"retrieval release tick={tick} target={body.position - origin} velocity={body.linearVelocity}" +
+                    diagnostics.AppendLine($"retrieval release tick={tick} target={body.WorldPosition() - origin} velocity={((Vector3)body.linearVelocity)}" +
                         $" settled={motion.IsSettled} supported={Invoke(motion, "HasSupport")} locks={body.constraints} size={shape.size}");
             }
             // A several-cell real fall may retain a small solver penetration
             // when the resting motion lock engages. This is not shaft bridging
             // or an unsupported gap; keep the real support/shape checks strict.
-            Check(body.position.x > origin.x + 1f && Mathf.Abs(body.position.y - origin.y - .5f) < .03f &&
-                motion.IsSettled && shape.size == stableSize,
+            Check(body.WorldPosition().x > origin.x + 1f && Mathf.Abs(body.WorldPosition().y - origin.y - .5f) < .03f &&
+                motion.IsSettled && ((Vector3)shape.size) == stableSize,
                 "after retrieval the stable-clearance box returns to real flat-floor support without changing art/grid size or accumulating skin");
         }
         private static void VerifyThinWall()
@@ -334,14 +335,14 @@ namespace Project.GreenHook.Editor
             PlayerController player = Spawn("Player/Player.prefab", origin + new Vector3(4.5f, .5f, 0f)).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
             GameObject target = Spawn("ContactCubes/Red_ContactCube.prefab", origin + Vector3.up * .5f);
-            var body = target.GetComponent<Rigidbody>(); var hook = player.GetComponent<GreenHookAbility>();
-            var shape = target.GetComponentInChildren<BoxCollider>();
-            Physics.SyncTransforms();
+            var body = target.GetComponent<Rigidbody2D>(); var hook = player.GetComponent<GreenHookAbility>();
+            var shape = target.GetComponentInChildren<BoxCollider2D>();
+            PlanarPhysics.SyncTransforms();
             Invoke(hook, "BeginHook", target.GetComponent<IGreenHookTarget>(), target.transform.position);
             Invoke(hook, "BeginPulling");
             for (int tick = 0; tick < 40; tick++) Step(hook, player, target);
-            Check(shape.bounds.max.x <= wall.GetComponent<Collider>().bounds.min.x + .005f &&
-                body.position.x > origin.x + .4f && Mathf.Abs(body.position.y - origin.y - .5f) < .03f,
+            Check(shape.bounds.max.x <= wall.GetComponent<Collider2D>().bounds.min.x + .005f &&
+                body.WorldPosition().x > origin.x + .4f && Mathf.Abs(body.WorldPosition().y - origin.y - .5f) < .03f,
                 "horizontal clearance still stops at a .05-cell wall and preserves flat-floor support");
             Check(hook.IsHookActive, "a blocked target at a thin wall retains its rope");
         }
@@ -351,29 +352,29 @@ namespace Project.GreenHook.Editor
             GameObject floor = Solid("Real support", origin + Vector3.down * .5f, new Vector3(8f, 1f, 2f));
             GameObject target = Spawn("ContactCubes/Red_ContactCube.prefab", origin + Vector3.up * .55f);
             var motion = target.GetComponent<ContactCubeMotion>();
-            var body = target.GetComponent<Rigidbody>();
-            Physics.SyncTransforms();
+            var body = target.GetComponent<Rigidbody2D>();
+            PlanarPhysics.SyncTransforms();
             Check(!(bool)Invoke(motion, "HasSupport"), ".05-cell air below a cube is not settled support");
-            for (int tick = 0; tick < 80; tick++) { Invoke(motion, "FixedUpdate"); Physics.Simulate(Time.fixedDeltaTime); }
-            Check(motion.IsSettled && Mathf.Abs(body.position.y - origin.y - .5f) < .015f,
+            for (int tick = 0; tick < 80; tick++) { Invoke(motion, "FixedUpdate"); PlanarPhysics.Simulate(Time.fixedDeltaTime); }
+            Check(motion.IsSettled && Mathf.Abs(body.WorldPosition().y - origin.y - .5f) < .015f,
                 "natural gravity closes the real support gap before red/blue settle locks engage");
-            Collider cubeShape = target.GetComponentInChildren<BoxCollider>();
-            Physics.IgnoreCollision(cubeShape, floor.GetComponent<Collider>(), true);
+            Collider2D cubeShape = target.GetComponentInChildren<BoxCollider2D>();
+            PlanarPhysics.IgnoreCollision(cubeShape, floor.GetComponent<Collider2D>(), true);
             Check(!(bool)Invoke(motion, "HasSupport"), "an ignored-collision floor cannot hold a contact cube in midair");
-            Physics.IgnoreCollision(cubeShape, floor.GetComponent<Collider>(), false);
+            PlanarPhysics.IgnoreCollision(cubeShape, floor.GetComponent<Collider2D>(), false);
             origin += Vector3.right * 20f;
             GameObject support = Solid("Base real support", origin + Vector3.down * .5f, new Vector3(8f, 1f, 2f));
             GameObject foundation = Spawn("ColorBlocks/Prefabs/Red_Foundation.prefab", origin + Vector3.up * .55f);
             var mechanism = foundation.GetComponent<MechanismBaseFeature>();
-            var baseBody = foundation.GetComponent<Rigidbody>();
-            Physics.SyncTransforms();
+            var baseBody = foundation.GetComponent<Rigidbody2D>();
+            PlanarPhysics.SyncTransforms();
             Check(!(bool)Invoke(mechanism, "HasSolidSupport"), ".05-cell air below a gravity base is not settled support");
-            for (int tick = 0; tick < 80; tick++) { Invoke(mechanism, "FixedUpdate"); Physics.Simulate(Time.fixedDeltaTime); }
+            for (int tick = 0; tick < 80; tick++) { Invoke(mechanism, "FixedUpdate"); PlanarPhysics.Simulate(Time.fixedDeltaTime); }
             Check(Mathf.Abs(baseBody.position.y - origin.y - .5f) < .015f &&
                 (bool)Invoke(mechanism, "HasSolidSupport"),
                 "gravity base closes the real floor gap before its support freeze engages");
-            Collider baseShape = foundation.GetComponent<Collider>();
-            Physics.IgnoreCollision(baseShape, support.GetComponent<Collider>(), true);
+            Collider2D baseShape = foundation.GetComponent<Collider2D>();
+            PlanarPhysics.IgnoreCollision(baseShape, support.GetComponent<Collider2D>(), true);
             Check(!(bool)Invoke(mechanism, "HasSolidSupport"), "an ignored-collision floor cannot hold a base in midair");
         }
         private static void Cleanup()

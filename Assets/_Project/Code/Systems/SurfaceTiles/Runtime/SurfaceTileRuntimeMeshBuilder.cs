@@ -19,7 +19,7 @@ namespace Project.SurfaceTiles
             SurfaceTilePalette palette = block != null
                 ? block.Palette
                 : null;
-            BoxCollider collider = block != null
+            BoxCollider2D collider = block != null
                 ? block.SurfaceCollider
                 : null;
             if (block == null ||

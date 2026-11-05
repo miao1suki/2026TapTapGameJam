@@ -23,7 +23,7 @@ namespace Project.Player.Editor
         private static RenderTexture target;
         private static FlowMagmaVisual magma;
         private static Color32[] reference;
-        private static bool perspective;
+        private static bool rolled;
         private static string report;
 
         public static void Run()
@@ -86,12 +86,12 @@ namespace Project.Player.Editor
                 }
                 else if (phase == 2)
                 {
-                    reference = Capture("cube-only-" + (perspective ? "3d" : "2d"));
+                    reference = Capture("cube-only-" + (rolled ? "rolled" : "straight"));
                     SetMagmaVisible(true); phase++;
                 }
                 else if (phase == 3)
                 {
-                    var actual = Capture("cube-over-magma-" + (perspective ? "3d" : "2d"));
+                    var actual = Capture("cube-over-magma-" + (rolled ? "rolled" : "straight"));
                     int matched = 0, different = 0;
                     // Interior pixels are fully covered by the real block artwork.
                     // Outside it, magma and sparks are deliberately allowed to remain visible.
@@ -103,10 +103,10 @@ namespace Project.Player.Editor
                             else matched++;
                         }
                     Check(matched > 1900 && different < 10,
-                        $"Real {(perspective ? "perspective" : "orthographic")} camera: magma cannot paint over cube ({different} changed pixels)");
-                    if (!perspective)
+                        $"Real {(rolled ? "rolled" : "orthographic")} camera: magma cannot paint over cube ({different} changed pixels)");
+                    if (!rolled)
                     {
-                        perspective = true; SetCamera(true); SetMagmaVisible(false); phase = 2;
+                        rolled = true; SetCamera(true); SetMagmaVisible(false); phase = 2;
                     }
                     else Finish(null);
                 }
@@ -120,13 +120,13 @@ namespace Project.Player.Editor
                 "Assets/_Project/Content/Player/Player.prefab"), new Vector3(20, 0, 0), Quaternion.identity);
             var player = root.GetComponent<PlayerController>(); player.enabled = false;
             root.GetComponent<PlayerInputDriver>().enabled = false;
-            root.GetComponent<Rigidbody>().isKinematic = true;
+            root.GetComponent<Rigidbody2D>().isKinematic = true;
             var presentation = root.GetComponent<PlayerSpritePresentation>();
             var offset = typeof(PlayerSpritePresentation).GetField("additionalVerticalOffsetPixels", Hidden);
             var size = typeof(PlayerSpritePresentation).GetField("cellWorldSize", Hidden);
             var refresh = typeof(PlayerSpritePresentation).GetMethod("Refresh", Hidden);
-            var capsule = root.GetComponent<CapsuleCollider>();
-            var colliderCenter = capsule.center; float radius = capsule.radius, height = capsule.height;
+            var capsule = root.GetComponent<CapsuleCollider2D>();
+            var colliderCenter = capsule.offset; float radius = (capsule.size.x * .5f), height = capsule.size.y;
             foreach (float cell in new[] { .5f, 1f, 2f })
             {
                 size.SetValue(presentation, cell); offset.SetValue(presentation, 0); refresh.Invoke(presentation, new object[] { 0f });
@@ -134,17 +134,17 @@ namespace Project.Player.Editor
                 offset.SetValue(presentation, -2); refresh.Invoke(presentation, new object[] { 0f });
                 Check(Mathf.Abs(presentation.Visual.transform.position.y - before.y + cell * 2f / 16f) < .00001f,
                     "Exactly two effective art pixels down; grid size=" + cell);
-                Check(presentation.Visual.transform.localScale == scale && capsule.center == colliderCenter &&
-                    capsule.radius == radius && capsule.height == height, "Offset never resizes art or moves physics");
+                Check(presentation.Visual.transform.localScale == scale && capsule.offset == colliderCenter &&
+                    (capsule.size.x * .5f) == radius && capsule.size.y == height, "Offset never resizes art or moves physics");
             }
         }
 
-        private static void SetCamera(bool usePerspective)
+        private static void SetCamera(bool screenRoll)
         {
-            camera.orthographic = !usePerspective; camera.orthographicSize = 1.5f;
-            camera.fieldOfView = 17.06153f;
-            camera.transform.position = usePerspective ? new Vector3(1.5f, 0, -10) : new Vector3(0, 0, -10);
-            camera.transform.LookAt(Vector3.zero);
+            camera.orthographic = true; camera.orthographicSize = 1.5f;
+
+            camera.transform.position = new Vector3(0, 0, -10);
+            camera.transform.rotation = Quaternion.Euler(0f, 0f, screenRoll ? 8f : 0f);
         }
         private static void SetMagmaVisible(bool visible)
         {

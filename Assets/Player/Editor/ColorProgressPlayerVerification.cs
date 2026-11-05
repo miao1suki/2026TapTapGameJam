@@ -31,9 +31,9 @@ namespace Project.Player.Editor
             Check(prefabs.Length == 1 && prefabs[0] == StandardPlayerAsset.Path, "exactly one gameplay player prefab");
             var prefab = StandardPlayerAsset.Load();
             Check(prefab.transform.position == Vector3.zero, "prefab origin is world zero");
-            Check(prefab.GetComponent<CapsuleCollider>().center == Vector3.zero &&
-                prefab.GetComponent<CapsuleCollider>().height == 1 && prefab.GetComponent<CapsuleCollider>().radius == .5f, "authored collider is centered 1x1");
-            Check(prefab.GetComponentsInChildren<Collider>(true).Length == 1, "single physical capsule without oversized trigger");
+            Check(prefab.GetComponent<CapsuleCollider2D>().offset == Vector2.zero &&
+                prefab.GetComponent<CapsuleCollider2D>().size.y == 1 && prefab.GetComponent<CapsuleCollider2D>().size.x == 1f, "authored collider is centered 1x1");
+            Check(prefab.GetComponentsInChildren<Collider2D>(true).Length == 1, "single physical capsule without oversized trigger");
             Check(prefab.GetComponent<UnityEngine.Playables.PlayableDirector>().playableAsset == null &&
                 !prefab.GetComponent<UnityEngine.Playables.PlayableDirector>().playOnAwake, "no default test timeline");
             int players = 0;
@@ -48,7 +48,7 @@ namespace Project.Player.Editor
                     .Any(c => c.enabled && c.gameObject.activeInHierarchy), path + " active scene camera retained");
                 var player = found[0]; players++;
                 Check(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(player) == StandardPlayerAsset.Path, path + " standard source");
-                Check(player.GetComponent<CapsuleCollider>().center == Vector3.zero && player.GetComponent<CapsuleCollider>().height == 1,
+                Check(player.GetComponent<CapsuleCollider2D>().offset == Vector2.zero && player.GetComponent<CapsuleCollider2D>().size.y == 1,
                     path + " no stale collider overrides");
                 Check(player.GetComponents<PlayerColorWheel>().Length == 1 && player.GetComponents<PlayerInputDriver>().Length == 1 &&
                     player.GetComponents<TaSource.LinkEffect.InteractionLinkEffect>().Length == 1, path + " no duplicate runtime components");

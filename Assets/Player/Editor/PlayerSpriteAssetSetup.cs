@@ -73,7 +73,7 @@ namespace Project.Player.Editor
                 if (renderer == null) renderer = child.gameObject.AddComponent<SpriteRenderer>();
                 renderer.sprite = set.GetClip(PlayerSpriteState.Idle).frames[0];
                 renderer.sharedMaterial = material; renderer.sortingOrder = 10;
-                child.localPosition = root.GetComponent<CapsuleCollider>().center;
+                child.localPosition = root.GetComponent<CapsuleCollider2D>().offset;
                 child.localScale = Vector3.one;
                 var so = new SerializedObject(presentation);
                 child.localPosition += Vector3.up * so.FindProperty("verticalOffsetCells").floatValue;

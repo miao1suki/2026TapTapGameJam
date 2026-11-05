@@ -14,7 +14,7 @@ public sealed class BossRightMoveExecutorEditor : Editor
         root.Add(ProjectInspectorUtility.CreateScriptField(
             serializedObject));
         root.Add(ProjectInspectorUtility.CreateHelp(
-            "只向 BossController 下发向右移动指令；接管瞬间记录 Boss 当前 Y，并保持该高度右移，不直接修改 Rigidbody。"));
+            "只向 BossController 下发向右移动指令；接管瞬间记录 Boss 当前 Y，并保持该高度右移，不直接修改 Rigidbody2D。"));
 
         Foldout route = ProjectInspectorUtility.CreateFoldout(
             "右移路线",

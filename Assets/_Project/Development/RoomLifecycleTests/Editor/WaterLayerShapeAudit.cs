@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -123,7 +124,7 @@ public static class WaterLayerShapeAudit
         PlanningSceneBuilder.SuppressSceneUndo = true;
         try { Check(PlanningSceneBuilder.TryApplyDocument(doc,out string message),"builder: " + message); }
         finally { PlanningSceneBuilder.SuppressSceneUndo = false; }
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
         LevelEditorPlacedBlock ById(string id) => Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None).Single(b=>b.PlanningBoxId==id);
         var placedWater = ById(waterId); placedWater.name = "Audit Water Ring";
         var shape = placedWater.GetComponent<LevelEditorMergedShape>();
@@ -149,7 +150,7 @@ public static class WaterLayerShapeAudit
         camera.clearFlags=CameraClearFlags.SolidColor;
         var player = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab"));
         player.transform.position=new Vector3(6,-6,0); player.name="Audit Player";
-        var light = new GameObject("Light").AddComponent<Light>(); light.type=LightType.Directional;
+        var light = new GameObject("Light").AddComponent<UnityEngine.Rendering.Universal.Light2D>(); light.lightType=UnityEngine.Rendering.Universal.Light2D.LightType.Global;
         RenderSettings.ambientLight=Color.white;
         EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(),ScenePath);
         Debug.Log("WATER SHAPE AUTHOR COMPLETE: "+checks);
@@ -173,12 +174,12 @@ public static class WaterLayerShapeAudit
             var player=Object.FindFirstObjectByType<PlayerController>();
             if(phase==0)
             {
-                player.GetComponent<PlayerInputDriver>().enabled=false; player.Motor.constraints=RigidbodyConstraints.FreezeAll;
+                player.GetComponent<PlayerInputDriver>().enabled=false; player.Motor.constraints=RigidbodyConstraints2D.FreezeAll;
                 foreach(string color in new[]{"red","green","blue"}) ColorRuntimeService.Instance.Unlock(color);
                 phase=1; deadline=Time.time+1; return;
             }
             var water=GameObject.Find("Audit Water Ring").GetComponent<WaterSourceFeature>();
-            void Move(Vector3 p) { player.transform.position=p; player.Motor.position=p; Physics.SyncTransforms(); }
+            void Move(Vector3 p) { player.transform.position=p; player.Motor.position=p; PlanarPhysics.SyncTransforms(); }
             if(phase==2)
             {
                 Check(player.IsSwimming,"real physics enters compound water across a seam");
@@ -187,8 +188,8 @@ public static class WaterLayerShapeAudit
             if(phase==3)
             {
                 Check(player.IsSwimming,"exiting one compound collider does not exit remaining water");
-                var capsule=player.GetComponent<CapsuleCollider>();
-                capsule.radius=.4f; capsule.height=.8f;
+                var capsule=player.GetComponent<CapsuleCollider2D>();
+                capsule.size = new Vector2((.4f) * 2f, capsule.size.y); capsule.size = new Vector2(capsule.size.x, .8f);
                 Move(new Vector3(3.5f,-2.5f,0)); phase=4; deadline=Time.time+.2f; return;
             }
             if(phase==4)
@@ -261,7 +262,7 @@ public static class WaterLayerShapeAudit
             Check(WaterCellVisibility.TryVisiblePoint(water,volume,new Vector3(1.5f,-1.5f,0),5,out var visible)&&
                 !WaterCellVisibility.Covered(water,visible,1),"water link endpoint finds visible portion, not wall");
             var coveredWater=Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None).Single(b=>b.PlanningBoxId=="water_shape_covered").GetComponent<WaterSourceFeature>();
-            Check(!WaterCellVisibility.TryVisiblePoint(coveredWater,coveredWater.GetComponent<Collider>(),new Vector3(6.5f,-2.5f,-1),5,out _),"fully wall-covered water has no link endpoint");
+            Check(!WaterCellVisibility.TryVisiblePoint(coveredWater,coveredWater.GetComponent<Collider2D>(),new Vector3(6.5f,-2.5f,-1),5,out _),"fully wall-covered water has no link endpoint");
             Check(sensor.TryGetScreenHit(Camera.main,Camera.main.WorldToScreenPoint(new Vector3(8.5f,-2.5f,0)),out hit)&&
                 hit.collider.GetComponent<LevelEditorPlacedBlock>()?.PlanningBoxId=="water_shape_overlay_0","color click prioritizes plant above water");
             Move(new Vector3(1.5f,-3,0)); phase=2; deadline=Time.time+.2f;

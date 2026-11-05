@@ -171,13 +171,13 @@ namespace Project.BossLogic
         private BossAppearCameraGuard cameraGuard;
         private CameraState shotState;
         private float requestedOrthographicSize;
-        private float requestedFieldOfView;
+
         private WordNoteHandle message;
         private BossController boss;
         private Vector3 originPosition;
         private Quaternion originRotation;
         private float baseOrthographicSize;
-        private float baseFieldOfView;
+
         private float phaseStartTime;
         private float landingTime;
         private float fallStartY;
@@ -395,21 +395,17 @@ namespace Project.BossLogic
             baseOrthographicSize = Mathf.Max(
                 .01f,
                 state.orthographicSize);
-            baseFieldOfView = state.fieldOfView;
+
             originPosition =
                 player.transform.position +
                 frame.ToWorldOffset(playerCameraOffset);
-            originRotation = Quaternion.Euler(
-                0f,
-                rig.PlanarYaw,
-                0f);
+            originRotation = Quaternion.Euler(0f, 0f, rig.PlanarYaw);
             shotState = state;
             shotState.position = originPosition;
             shotState.rotation = originRotation;
             requestedOrthographicSize =
                 baseOrthographicSize;
-            requestedFieldOfView =
-                baseFieldOfView;
+
             controlHandle = cameraManager.RequestControl(
                 this,
                 CameraControlPriorities.Debug,
@@ -430,8 +426,7 @@ namespace Project.BossLogic
                     outputCamera,
                     originPosition,
                     originRotation,
-                    baseOrthographicSize,
-                    baseFieldOfView);
+                    baseOrthographicSize);
             }
             ApplyCamera(originPosition);
 
@@ -705,19 +700,14 @@ namespace Project.BossLogic
             }
             EnsureCameraLease();
             shotState.position = position;
-            shotState.rotation = Quaternion.Euler(
-                0f,
-                rig.PlanarYaw,
-                0f);
+            shotState.rotation = Quaternion.Euler(0f, 0f, rig.PlanarYaw);
             requestedOrthographicSize =
                 baseOrthographicSize;
-            requestedFieldOfView =
-                baseFieldOfView;
+
             cameraGuard?.SetShot(
                 position,
                 shotState.rotation,
-                requestedOrthographicSize,
-                requestedFieldOfView);
+                requestedOrthographicSize);
         }
 
         private void EnsureCameraLease()
@@ -811,12 +801,11 @@ namespace Project.BossLogic
         }
 
         public bool TryGetLensOverride(
-            out float orthographicSize,
-            out float fieldOfView)
+            out float orthographicSize)
         {
             orthographicSize =
                 requestedOrthographicSize;
-            fieldOfView = requestedFieldOfView;
+
             return true;
         }
 

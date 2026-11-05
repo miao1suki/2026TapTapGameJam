@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -117,8 +118,8 @@ namespace Project.BossLogic.Editor
             player.GetComponent<PlayerInputDriver>().enabled = false;
             player.transform.position = new Vector3(100.5f, 20.5f, 0f);
             player.Motor.position = player.transform.position;
-            player.Motor.useGravity = false;
-            GameObject gateObject = Root("Boss entrance gate"); gateObject.AddComponent<BoxCollider>().isTrigger = true;
+            player.Motor.gravityScale = 0f;
+            GameObject gateObject = Root("Boss entrance gate"); gateObject.AddComponent<BoxCollider2D>().isTrigger = true;
             var gate = gateObject.AddComponent<BossCollectibleEntryGate>();
             new SerializedObject(gate).Update();
             SerializedObject gateData = new SerializedObject(gate);
@@ -138,7 +139,7 @@ namespace Project.BossLogic.Editor
             {
                 Check(!gate.CanPlayTimeline(playerObject), "zero collected cannot enter Boss");
                 ContactTimelineTrigger contact = gate.GetComponent<ContactTimelineTrigger>();
-                contact.OnTriggerEnter(player.GetComponent<Collider>());
+                contact.OnTriggerEnter2D(player.GetComponent<Collider2D>());
                 Check(!contact.HasTriggered && contact.ContactCount == 0, "rejected real contact does not consume Once or retain contact");
             }
             finally { Application.logMessageReceived -= warning; }
@@ -155,7 +156,7 @@ namespace Project.BossLogic.Editor
             Check(PlayerRespawnPointRegistry.TryFindPreferred(player, player.transform.position, out var beforeReturn) &&
                 ReferenceEquals(beforeReturn, oldBossPoint), "fixture begins bound to an activated Boss checkpoint");
             GameObject returnGateObject = Root("Boss gate with same-scene Start");
-            returnGateObject.AddComponent<BoxCollider>().isTrigger = true;
+            returnGateObject.AddComponent<BoxCollider2D>().isTrigger = true;
             var returnGate = returnGateObject.AddComponent<BossCollectibleEntryGate>();
             var returnGateData = new SerializedObject(returnGate);
             returnGateData.FindProperty("showHint").boolValue = false; returnGateData.ApplyModifiedPropertiesWithoutUndo();
@@ -178,7 +179,7 @@ namespace Project.BossLogic.Editor
                 !(returnedPoint is RespawnAnchorFeature bossPoint && bossPoint.IsBossArenaRespawnPoint),
                 "Start story return replaces old Boss binding with a non-Boss session respawn fallback");
             ContactTimelineTrigger returnContact = returnGate.GetComponent<ContactTimelineTrigger>();
-            returnContact.OnTriggerEnter(player.GetComponent<Collider>());
+            returnContact.OnTriggerEnter2D(player.GetComponent<Collider2D>());
             Check(!returnContact.HasTriggered && returnContact.ContactCount == 0,
                 "a rejected Start return still leaves Once unconsumed");
             for (int i = 0; i < 6; i++) items[i].RestoreCollectedState();
@@ -236,16 +237,16 @@ namespace Project.BossLogic.Editor
                 "a separate empty Boss scene inherits world progress rather than replacing it with zero");
             GameObject bossObject = Root("Boss progress fixture"); bossObject.transform.position = new Vector3(106.5f, 20.5f, 0f);
             bossObject.tag = "Boss";
-            bossObject.AddComponent<BoxCollider>();
+            bossObject.AddComponent<BoxCollider2D>();
             BossController boss = bossObject.AddComponent<BossController>();
-            boss.Body.useGravity = false;
+            boss.Body.gravityScale = 0f;
             Check(BossTravelProgress.HasLivingBoss(scene) && !BossTravelProgress.HasLivingBoss(emptyBossScene),
                 "living Boss state is scoped to the owning scene");
             Check(BossTravelProgress.GetState(scene).BossRegionId == a.id, "Boss room captured from initial position");
             player.SetSprintInput(true);
             Check(boss != null && player.IsSprintLocked && !player.SprintRequested,
                 "living Boss acquires the player sprint lock");
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             GameObject normalLava = Object.Instantiate(
                 AssetDatabase.LoadAssetAtPath<GameObject>(
                     "Assets/_Project/Content/ColorBlocks/Prefabs/Red_Lava.prefab"),
@@ -261,7 +262,7 @@ namespace Project.BossLogic.Editor
                     "Assets/_Project/Content/ColorBlocks/Prefabs/Red_Lava.prefab"),
                 new Vector3(107.5f, 20.5f, 0f),
                 Quaternion.identity); Objects.Add(outsideLava);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             boss.PrepareForBossRespawn();
             Check(!normalLava.activeSelf && !gravityLava.activeSelf,
                 "Boss respawn sweep clears normal and gravity lava inside left-to-center X range");
@@ -351,13 +352,13 @@ namespace Project.BossLogic.Editor
                 // Exercise the public R path as well as the private selection branch. A real
                 // floor prevents the normal safe-ground search from falling back to prefab origin.
                 Check(player.TryTeleportToStoryAnchor(startAnchor), "Start story return is available before the R regression");
-                Physics.SyncTransforms();
-                GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube); Objects.Add(floor);
+                PlanarPhysics.SyncTransforms();
+                GameObject floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); Objects.Add(floor);
                 floor.name = "Ground below authored Start";
                 floor.transform.localScale = new Vector3(3f, 1f, 2f);
                 floor.transform.position = new Vector3(startAnchor.transform.position.x,
-                    player.GetComponent<Collider>().bounds.min.y - .5f, startAnchor.transform.position.z);
-                Physics.SyncTransforms();
+                    player.GetComponent<Collider2D>().bounds.min.y - .5f, startAnchor.transform.position.z);
+                PlanarPhysics.SyncTransforms();
                 int respawnCount = 0;
                 Action onRespawn = () => respawnCount++;
                 Vector3 bossPosition = boss.transform.position;

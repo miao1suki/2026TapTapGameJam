@@ -26,7 +26,7 @@ namespace Project.BlockFeatures
         [BlockParameter(Label = "触发间隔（秒）", Group = "弹跳", Order = 4)]
         [SerializeField, Min(.05f)] private float minTriggerInterval = .15f;
         private bool burning, burned;
-        private Collider[] burnColliders;
+        private Collider2D[] burnColliders;
         private bool[] colliderStates;
         private Project.BurnEffects.PlantBurnEffectPlayer burnEffect;
         public bool ShowsArtwork => !burned;
@@ -63,15 +63,15 @@ namespace Project.BlockFeatures
             return true;
         }
 
-        private void OnCollisionEnter(Collision collision) => TrackTop(collision);
-        private void OnCollisionStay(Collision collision) => TrackTop(collision);
-        private void TrackTop(Collision collision)
+        private void OnCollisionEnter2D(Collision2D collision) => TrackTop(collision);
+        private void OnCollisionStay2D(Collision2D collision) => TrackTop(collision);
+        private void TrackTop(Collision2D collision)
         {
             if (!IsBounceSurfaceAvailable || collision == null) return;
             var player = collision.collider.GetComponentInParent<PlayerController>();
             if (player == null || !player.CompareTag(playerTag)) return;
-            Collider plant = collision.contactCount > 0 ? collision.GetContact(0).thisCollider : GetComponent<Collider>();
-            Collider body = player.GetComponent<Collider>();
+            Collider2D plant = collision.otherCollider;
+            Collider2D body = player.GetComponent<Collider2D>();
             if (plant == null || body == null) return;
             Bounds p = plant.bounds, b = body.bounds;
             bool top = b.min.y >= p.max.y - GridCellWorldSize * .12f && b.center.x >= p.min.x && b.center.x <= p.max.x && player.VerticalVelocity <= .1f;
@@ -79,7 +79,7 @@ namespace Project.BlockFeatures
             player.EnterBounceSurface(this);
             player.GrantCarryPlantJump(carryRiseCells);
         }
-        private void OnCollisionExit(Collision collision)
+        private void OnCollisionExit2D(Collision2D collision)
         {
             var player = collision?.collider.GetComponentInParent<PlayerController>();
             if (player != null) player.ExitBounceSurface(this);
@@ -95,7 +95,7 @@ namespace Project.BlockFeatures
             if (colorId != "red" || burning || burned) return false;
             burning = true;
             foreach (var player in PlayerController.ActivePlayers) if (player != null) player.ExitBounceSurface(this);
-            burnColliders = GetComponentsInChildren<Collider>(true);
+            burnColliders = GetComponentsInChildren<Collider2D>(true);
             colliderStates = new bool[burnColliders.Length];
             for (int i = 0; i < burnColliders.Length; i++) { colliderStates[i] = burnColliders[i].enabled; burnColliders[i].enabled = false; }
             WorldObjectSpritePresentation.Ensure(gameObject);

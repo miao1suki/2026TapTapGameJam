@@ -86,7 +86,7 @@ namespace Project.GreenHook.Editor
             camera = Camera.main;
             target = new RenderTexture(3840, 2160, 24); target.Create(); camera.targetTexture = target;
             typeof(PlayerController).GetField("invulnerableUntil", Hidden).SetValue(player, float.PositiveInfinity);
-            player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+            player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
             // Keep all authored objects and behaviours; only select the existing ability.
             if (GreenHookSceneProfile.NativeInput)
             {
@@ -97,7 +97,7 @@ namespace Project.GreenHook.Editor
             else GameInput.UseExternalSource(this);
             player.GetComponent<PlayerColorWheel>().TrySelectColor("green");
             report.AppendLine($"Authored MRoom3: {Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None).Length} behaviours, " +
-                $"{Object.FindObjectsByType<Collider>(FindObjectsSortMode.None).Length} colliders; GPU {SystemInfo.graphicsDeviceName}; target={target.width}x{target.height}; native={simulatedMouse != null}");
+                $"{Object.FindObjectsByType<Collider2D>(FindObjectsSortMode.None).Length} colliders; GPU {SystemInfo.graphicsDeviceName}; target={target.width}x{target.height}; native={simulatedMouse != null}");
             BeginStage();
         }
         private void BeginStage()

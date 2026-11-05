@@ -14,7 +14,7 @@ namespace Project.CameraModes
         private CameraControlManager cameraManager;
 
         [SerializeField]
-        [Tooltip("用于读取当前 2D/3D 模式。留空时从当前物体查找。")]
+        [Tooltip("用于读取当前 2D 相机设置。留空时从当前物体查找。")]
         private CameraModeController modeController;
 
         [SerializeField]
@@ -29,7 +29,7 @@ namespace Project.CameraModes
 
         [SerializeField]
         [HideInInspector]
-        private CameraViewMode requestedMode = CameraViewMode.Perspective3D;
+        private CameraViewMode requestedMode = CameraViewMode.Side2D;
 
         [SerializeField]
         [HideInInspector]
@@ -43,10 +43,6 @@ namespace Project.CameraModes
         [Tooltip("2D 模式下相对目标的焦点偏移。")]
         private Vector3 side2DOffset = Vector3.zero;
 
-        [Header("3D 跟随")]
-        [SerializeField]
-        [Tooltip("3D 模式下相对目标的焦点偏移。")]
-        private Vector3 perspective3DOffset = new Vector3(0f, 1f, 0f);
 
         [Header("平滑参数")]
         [SerializeField, Min(0f)]
@@ -470,10 +466,7 @@ namespace Project.CameraModes
                 return currentFocus;
             }
 
-            Vector3 offset = ResolveMode() == CameraViewMode.Side2D
-                ? side2DOffset
-                : perspective3DOffset;
-            return target.position + offset;
+            return target.position + side2DOffset;
         }
 
         private void ResolveReferences()

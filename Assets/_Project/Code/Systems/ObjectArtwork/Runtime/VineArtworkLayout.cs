@@ -5,15 +5,15 @@ namespace Project.ObjectArtwork
     /// <summary>One bottom-anchored image per logical vine root, independent of author scale.</summary>
     public static class VineArtworkLayout
     {
-        public static Bounds RootBounds(Transform owner, BoxCollider shape, float cell)
+        public static Bounds RootBounds(Transform owner, BoxCollider2D shape, float cell)
         {
             if (shape == null) return new Bounds(owner.position, Vector3.one * cell);
-            // Collider.bounds is empty while locked/disabled. Reading the authored shape
+            // Collider2D.bounds is empty while locked/disabled. Reading the authored shape
             // also works in edit mode without enabling a gameplay component or collider.
             Vector3 x = owner.TransformVector(Vector3.right * shape.size.x);
             Vector3 y = owner.TransformVector(Vector3.up * shape.size.y);
-            Vector3 z = owner.TransformVector(Vector3.forward * shape.size.z);
-            return new Bounds(owner.TransformPoint(shape.center), new Vector3(
+            Vector3 z = Vector3.zero;
+            return new Bounds(owner.TransformPoint(shape.offset), new Vector3(
                 Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x),
                 Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y),
                 Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z)));

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -56,7 +57,7 @@ namespace Project.WorldItems.Editor
             if (EditorApplication.timeSinceStartup - started > 120) { Finish(false, "Timeout"); return; }
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .3f) return;
             EditorApplication.update -= Tick;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             bool passed = false;
             string report;
             try
@@ -64,7 +65,7 @@ namespace Project.WorldItems.Editor
                 checks = 0;
                 AudioListener.volume = 0f;
                 AudioListener.pause = true;
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 VerifyCollectionThroughRoomResets(); Cleanup();
                 VerifyUncollectedReset(); Cleanup();
                 VerifyStableIdentityAndRestore(); Cleanup();
@@ -74,7 +75,7 @@ namespace Project.WorldItems.Editor
                 report = "PASS " + checks + " collectible persistence/identity checks";
             }
             catch (Exception error) { report = "FAIL " + checks + "\n" + error; Debug.LogException(error); }
-            finally { Cleanup(); Physics.simulationMode = previous; }
+            finally { Cleanup(); PlanarPhysics.simulationMode = previous; }
             Finish(passed, report);
         }
 
@@ -97,17 +98,17 @@ namespace Project.WorldItems.Editor
         {
             PlayerController player = Spawn(PlayerPath, position).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.interpolation = RigidbodyInterpolation.None;
-            player.Motor.useGravity = false;
-            player.Motor.constraints = RigidbodyConstraints.FreezeRotation |
-                RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezePositionZ;
+            player.Motor.interpolation = RigidbodyInterpolation2D.None;
+            player.Motor.gravityScale = 0f;
+            player.Motor.constraints = RigidbodyConstraints2D.FreezeRotation |
+                RigidbodyConstraints2D.FreezePositionY | RigidbodyConstraints2D.None;
             return player;
         }
 
         private static CollectiblePickup Item(Vector3 position, string planningId = null, int localX = 0)
         {
             CollectiblePickup item = Spawn(ItemPath, position).GetComponent<CollectiblePickup>();
-            item.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
+            item.GetComponent<Rigidbody2D>().interpolation = RigidbodyInterpolation2D.None;
             if (planningId != null)
             {
                 var placed = item.GetComponent<LevelEditorPlacedBlock>() ?? item.gameObject.AddComponent<LevelEditorPlacedBlock>();
@@ -136,13 +137,13 @@ namespace Project.WorldItems.Editor
             player.transform.position = position;
             player.Motor.position = position;
             player.Motor.linearVelocity = Vector3.zero;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
         }
 
         private static void Step(int count = 1)
         {
-            Physics.SyncTransforms();
-            for (int step = 0; step < count; step++) Physics.Simulate(.02f);
+            PlanarPhysics.SyncTransforms();
+            for (int step = 0; step < count; step++) PlanarPhysics.Simulate(.02f);
         }
 
         private static void VerifyCollectionThroughRoomResets()
@@ -211,16 +212,16 @@ namespace Project.WorldItems.Editor
             manager.Register(member);
             Check(!item.IsCollected && !member.Persistent, "uncollected pickup remains resettable");
             item.transform.position = authored + Vector3.right * 2f;
-            item.GetComponent<Rigidbody>().position = item.transform.position;
-            item.GetComponent<Rigidbody>().useGravity = true;
+            item.GetComponent<Rigidbody2D>().position = item.transform.position;
+            item.GetComponent<Rigidbody2D>().gravityScale = 1f;
             manager.ResetRegion("audit_a");
             Check((item.transform.position - authored).sqrMagnitude < .00001f,
                 "uncollected pushed item still returns to its authored position");
-            Check(item.CanCollect && item.CanBePushed && !item.GetComponent<Rigidbody>().useGravity,
+            Check(item.CanCollect && item.CanBePushed && !(item.GetComponent<Rigidbody2D>().gravityScale != 0f),
                 "uncollected reset restores dynamic no-gravity body and collection eligibility");
-            foreach (Collider shape in item.GetComponentsInChildren<Collider>(true))
+            foreach (Collider2D shape in item.GetComponentsInChildren<Collider2D>(true))
                 Check(shape.enabled, "uncollected reset restores authored solid/Trigger colliders");
-            Check(Physics.GetIgnoreCollision(item.GetComponent<Collider>(), player.GetComponent<Collider>()),
+            Check(PlanarPhysics.GetIgnoreCollision(item.GetComponent<Collider2D>(), player.GetComponent<Collider2D>()),
                 "uncollected reset preserves player solid pass-through");
         }
 
@@ -250,7 +251,7 @@ namespace Project.WorldItems.Editor
                 DOTween.CompleteAll(true);
                 Check(reconstructed.IsCollected && !reconstructed.gameObject.activeSelf && rewards == 0,
                     "restoring an already-settled record is silent, idempotent, and stays hidden");
-                foreach (Collider shape in reconstructed.GetComponentsInChildren<Collider>(true))
+                foreach (Collider2D shape in reconstructed.GetComponentsInChildren<Collider2D>(true))
                     Check(!shape.enabled, "restored collected record has no remaining physical/pickup collision");
             }
             finally { CollectiblePickup.Collected -= listener; }
@@ -269,8 +270,8 @@ namespace Project.WorldItems.Editor
             var cold = coldRoot.GetComponent<CollectiblePickup>();
             // Simulate a scene accidentally saved with collected runtime flags.
             coldRoot.SetActive(false);
-            coldRoot.GetComponent<Rigidbody>().isKinematic = true;
-            foreach (var shape in coldRoot.GetComponentsInChildren<Collider>(true)) shape.enabled = false;
+            coldRoot.GetComponent<Rigidbody2D>().isKinematic = true;
+            foreach (var shape in coldRoot.GetComponentsInChildren<Collider2D>(true)) shape.enabled = false;
             cold.gameObject.AddComponent<LevelEditorPlacedBlock>().SetPlanningSource("reset_cold", "audit", Vector2Int.zero);
             var items = new[] { first, second, cold };
             var scene = first.gameObject.scene;
@@ -298,7 +299,7 @@ namespace Project.WorldItems.Editor
                     {
                         Check(!item.IsCollected && !item.CollectionRequested && item.transform.localScale.sqrMagnitude > .1f,
                             "reset clears progress and preserves cold-item authored scale, pass " + pass);
-                        foreach (var shape in item.GetComponentsInChildren<Collider>(true))
+                        foreach (var shape in item.GetComponentsInChildren<Collider2D>(true))
                             Check(shape.enabled, "reset restores pickup colliders, pass " + pass);
                     }
                 }

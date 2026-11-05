@@ -161,7 +161,7 @@ namespace Project.FlowMagma.Editor
                     Check(first.BreakObstacle(), "plant group accepts red burn");
                     Check(!first.IsIntact && !next.IsIntact && diagonal.IsIntact, "four-neighbour burn still excludes diagonal contact");
                     Check(first.ShowsArtwork && first.GetComponent<PlantBurnEffectPlayer>().IsPlaying, "broken plant displays TA burn while collision is off");
-                    Check(first.GetComponentsInChildren<Collider>().All(x => !x.enabled), "burning obstacle has no blocking collision");
+                    Check(first.GetComponentsInChildren<Collider2D>().All(x => !x.enabled), "burning obstacle has no blocking collision");
                     Check(first.GetComponent<MechanismArtworkPresentation>().Visual.sharedMaterial == plantMaterial, "burn preserves shared reveal material identity");
                     Check(spring.NormalRiseCells == 8 && spring.HighRiseCells == 8 && spring.CarryRiseCells == 4, "spring tuning is unchanged");
                     Check(spring.ApplyColor("red",null) && !spring.IsBounceSurfaceAvailable && !spring.CanBeGreenHooked(null), "burning spring cannot bounce or act as a hook anchor");

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Project.Planar;
 using InteractiveWater;
 using Project.ColorBlocks;
 using Project.WaterBubbles;
@@ -21,7 +22,7 @@ namespace Project.BlockFeatures
         private readonly List<GameObject> parts = new List<GameObject>();
         private readonly List<Mesh> meshes = new List<Mesh>();
         private Bounds lastBounds;
-        private Collider volumeCollider;
+        private Collider2D volumeCollider;
         private LevelEditorMergedShape shape;
         private MeshFilter neutralFilter;
         private Mesh originalNeutralMesh;
@@ -41,7 +42,7 @@ namespace Project.BlockFeatures
         {
             owner = feature;
             settings = configuration;
-            volumeCollider = feature.GetComponent<Collider>();
+            volumeCollider = feature.GetComponent<Collider2D>();
             shape = feature.GetComponent<LevelEditorMergedShape>();
             neutralFilter = feature.GetComponent<MeshFilter>();
             if (neutralFilter != null) originalNeutralMesh = neutralFilter.sharedMesh;
@@ -114,7 +115,6 @@ namespace Project.BlockFeatures
                 float epsilon = water.CellSize * .001f;
                 if (world.x >= b.min.x + epsilon && world.x <= b.max.x - epsilon &&
                     world.y >= b.min.y + epsilon && world.y <= b.max.y - epsilon &&
-                    world.z >= b.min.z - epsilon && world.z <= b.max.z + epsilon &&
                     (water.shape == null || water.shape.ContainsWorldPoint(world)))
                 {
                     if (!resolveTop) return true;
@@ -124,9 +124,9 @@ namespace Project.BlockFeatures
                         found = true;
                         topY = Mathf.Max(topY, b.max.y);
                     }
-                    else foreach (BoxCollider volume in water.shape.Volumes)
+                    else foreach (BoxCollider2D volume in water.shape.Volumes)
                     {
-                        if (volume == null || !volume.enabled || !volume.bounds.Contains(world)) continue;
+                        if (volume == null || !volume.enabled || !PlanarPhysics.ContainsXY(volume.bounds, world)) continue;
                         found = true;
                         topY = Mathf.Max(topY, volume.bounds.max.y);
                     }
@@ -148,7 +148,6 @@ namespace Project.BlockFeatures
                 float epsilon = CellSize * .001f;
                 if (world.x >= b.min.x + epsilon && world.x <= b.max.x - epsilon &&
                     world.y >= b.min.y + epsilon && world.y <= b.max.y - epsilon &&
-                    world.z >= b.min.z - epsilon && world.z <= b.max.z + epsilon &&
                     (other.shape == null || other.shape.ContainsWorldPoint(world))) return false;
             }
             return true;

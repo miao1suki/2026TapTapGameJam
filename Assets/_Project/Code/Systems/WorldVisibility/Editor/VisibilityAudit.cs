@@ -27,7 +27,7 @@ namespace Project.WorldVisibility.Editor
                 VisibilitySetup.BuildAssets();
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(VisibilitySetup.FountainPrefab);
                 Check(prefab && prefab.GetComponent<FountainArtwork>().FrameCount == 8,"eight fountain frames in prefab");
-                Check(prefab.GetComponentsInChildren<Collider>().Length == 0,"fountain is presentation only");
+                Check(prefab.GetComponentsInChildren<Collider2D>().Length == 0,"fountain is presentation only");
                 foreach (var frame in AssetDatabase.FindAssets("t:Texture2D",new[] { "Assets/_Project/Resources/26TAPTAP/喷泉动画" }))
                 {
                     var path = AssetDatabase.GUIDToAssetPath(frame); var importer = (TextureImporter)AssetImporter.GetAtPath(path);
@@ -47,7 +47,7 @@ namespace Project.WorldVisibility.Editor
                 system.connectedSpaceVisibility = false; // Explicit coverage of the retained legacy lighting mode.
                 system.findPlayer = false; system.previewInEditor = true; system.playerLightRadiusCells = 9; system.sightRadiusCells = 12;
                 system.ambient = 0; system.maskResolution = 1;
-                var wall = new GameObject("审计墙体").AddComponent<BoxCollider>(); wall.transform.position = new Vector3(1,0,0); wall.size = new Vector3(.5f,4,1);
+                var wall = new GameObject("审计墙体").AddComponent<BoxCollider2D>(); wall.transform.position = new Vector3(1,0,0); wall.size = new Vector3(.5f,4,1);
                 var occluder = wall.gameObject.AddComponent<VisibilityOccluder2D>(); occluder.shapes = new[] { wall };
                 Check(system.Prepare(camera),"prepare camera");
                 var mesh = system.SightMesh;
@@ -88,7 +88,7 @@ namespace Project.WorldVisibility.Editor
                 Check(Sample(new Vector2(2,0)).r>.4f,"previous occluder position leaves no stale shadow");
                 // Two separated actual wall volumes leave a real passage, not their union AABB.
                 wall.transform.position = new Vector3(1,2,0); wall.size = new Vector3(.5f,2,1);
-                var lower = new GameObject("审计下墙").AddComponent<BoxCollider>(); lower.transform.position = new Vector3(1,-2,0); lower.size = new Vector3(.5f,2,1);
+                var lower = new GameObject("审计下墙").AddComponent<BoxCollider2D>(); lower.transform.position = new Vector3(1,-2,0); lower.size = new Vector3(.5f,2,1);
                 occluder.shapes = new[] {wall,lower};
                 Capture("Visibility_Gap.png"); Check(Sample(new Vector2(2,0)).r>.4f,"real gap between irregular wall volumes passes light");
                 Check(Sample(new Vector2(2,3)).r<.03f,"solid beside gap still blocks");

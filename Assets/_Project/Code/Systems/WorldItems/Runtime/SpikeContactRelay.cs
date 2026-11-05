@@ -11,11 +11,11 @@ namespace Project.WorldItems
 
         internal void Bind(NeutralSpike value) => owner = value;
         internal void Bind(NeutralSpike value, Vector2Int valueCell) { owner = value; cell = valueCell; }
-        private void OnTriggerEnter(Collider other) => Forward(other);
-        private void OnTriggerStay(Collider other) => Forward(other);
-        private void OnCollisionEnter(Collision collision) => Forward(collision.collider);
-        private void OnCollisionStay(Collision collision) => Forward(collision.collider);
-        private void Forward(Collider other)
+        private void OnTriggerEnter2D(Collider2D other) => Forward(other);
+        private void OnTriggerStay2D(Collider2D other) => Forward(other);
+        private void OnCollisionEnter2D(Collision2D collision) => Forward(collision.collider);
+        private void OnCollisionStay2D(Collision2D collision) => Forward(collision.collider);
+        private void Forward(Collider2D other)
         {
             if (owner != null) owner.Hit(other, cell);
         }

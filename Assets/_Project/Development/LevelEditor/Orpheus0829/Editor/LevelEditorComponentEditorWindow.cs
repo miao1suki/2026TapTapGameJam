@@ -176,7 +176,7 @@ namespace Project.LevelEditor.Editor
             }
             else
             {
-                preview = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                preview = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 preview.transform.localScale =
                     Vector3.one * Mathf.Max(
                         .05f,
@@ -193,9 +193,9 @@ namespace Project.LevelEditor.Editor
             preview.name = PreviewName;
             preview.transform.position = PreviewPosition;
             SetHideFlags(preview, HideFlags.DontSaveInEditor);
-            if (preview.GetComponent<BoxCollider>() == null)
+            if (preview.GetComponent<BoxCollider2D>() == null)
             {
-                preview.AddComponent<BoxCollider>();
+                preview.AddComponent<BoxCollider2D>();
             }
 
             if (preview.GetComponent<SurfaceTileBlock>() == null)
@@ -819,7 +819,7 @@ namespace Project.LevelEditor.Editor
         {
             return component is Transform ||
                    component is Renderer ||
-                   component is Collider ||
+                   component is Collider2D ||
                    component is MeshFilter ||
                    component is BlockRuntime ||
                    component is SurfaceTileBlock ||
@@ -830,9 +830,9 @@ namespace Project.LevelEditor.Editor
         {
             return typeof(Transform).IsAssignableFrom(type) ||
                    typeof(Renderer).IsAssignableFrom(type) ||
-                   typeof(Collider).IsAssignableFrom(type) ||
+                   typeof(Collider2D).IsAssignableFrom(type) ||
                    typeof(MeshFilter).IsAssignableFrom(type) ||
-                   typeof(Rigidbody).IsAssignableFrom(type) ||
+                   typeof(Rigidbody2D).IsAssignableFrom(type) ||
                    typeof(BlockRuntime).IsAssignableFrom(type) ||
                    typeof(SurfaceTileBlock).IsAssignableFrom(type) ||
                    typeof(LevelEditorPlacedBlock).IsAssignableFrom(type);

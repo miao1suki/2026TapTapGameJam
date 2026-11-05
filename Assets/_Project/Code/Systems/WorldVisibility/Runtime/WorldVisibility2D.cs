@@ -51,8 +51,8 @@ namespace Project.WorldVisibility
         readonly Dictionary<object,int> suppressionRequests = new Dictionary<object,int>();
         readonly Dictionary<Vector2Int,List<int>> buckets = new Dictionary<Vector2Int,List<int>>();
         readonly HashSet<int> queried = new HashSet<int>();
-        readonly HashSet<BoxCollider> seenBoxes = new HashSet<BoxCollider>();
-        readonly List<BoxCollider> boxBuffer = new List<BoxCollider>();
+        readonly HashSet<BoxCollider2D> seenBoxes = new HashSet<BoxCollider2D>();
+        readonly List<BoxCollider2D> boxBuffer = new List<BoxCollider2D>();
         readonly List<VisibilityLight2D> visibleLights = new List<VisibilityLight2D>(8);
         DoorController[] doors;
         int solidRevision = -1, revision, dynamicHash, configurationHash;
@@ -284,10 +284,10 @@ namespace Project.WorldVisibility
             wallMesh.RecalculateBounds();
             solidRevision = LevelEditorPlacedBlock.SolidRevision; revision++; lastViewer.x = float.PositiveInfinity;
         }
-        void AddWallFill(BoxCollider box, bool preserveDisabledDoor = false)
+        void AddWallFill(BoxCollider2D box, bool preserveDisabledDoor = false)
         {
             if (!box || (!box.enabled && !preserveDisabledDoor) || box.isTrigger || !box.gameObject.activeInHierarchy) return;
-            Vector3 half = box.size * .5f, center = box.center;
+            Vector3 half = box.size * .5f, center = box.offset;
             Vector3 p = box.transform.TransformPoint(center + new Vector3(-half.x,-half.y,0));
             Vector3 q = box.transform.TransformPoint(center + new Vector3(half.x,-half.y,0));
             Vector3 r = box.transform.TransformPoint(center + new Vector3(half.x,half.y,0));

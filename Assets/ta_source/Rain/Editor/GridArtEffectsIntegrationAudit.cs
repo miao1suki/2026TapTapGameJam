@@ -68,7 +68,7 @@ namespace Project.Rain.Editor
             Check(rain.AreaCells == new Vector2(8, 6) && Near(rain.CellWorldSize, 2) && rain.DropCount == 512,
                 "painted bounds are 8x6 cells, custom grid survives without parent scaling, 512 drops cap");
             Check(rain.ColorId == "green" && rain.GetComponent<ColorObject>() == null && rain.GetComponent<RoomResetObject>() == null &&
-                rain.GetComponent<LevelEditorPlacedBlock>() == null && rain.GetComponent<Collider>() == null,
+                rain.GetComponent<LevelEditorPlacedBlock>() == null && rain.GetComponent<Collider2D>() == null,
                 "rain has visual color ownership but no planning object, room reset, ability or collision");
             Vector3[] rv = rain.GeneratedMesh.vertices;
             Check(Near(Vector3.Distance(rain.transform.TransformPoint(rv[0]), rain.transform.TransformPoint(rv[1])), 2f),
@@ -79,7 +79,7 @@ namespace Project.Rain.Editor
                 "firefly region stays neutral with 128 cap and no realtime lights");
             Check(field.transform.position == new Vector3(9, 5, 0) && Near(field.RenderDepthCells, -.25f),
                 "firefly area root remains on the level plane; only its render plane moves camera-side");
-            Check(field.GetComponent<ArtEffectRegionGrid>() != null && field.GetComponent<Collider>() == null &&
+            Check(field.GetComponent<ArtEffectRegionGrid>() != null && field.GetComponent<Collider2D>() == null &&
                 field.GetComponent<LevelEditorPlacedBlock>() == null && field.GetComponent<ColorObject>() == null,
                 "standalone grid metadata does not turn decoration into a gameplay object");
             Vector3[] fv = field.GeneratedMesh.vertices;
@@ -136,9 +136,9 @@ namespace Project.Rain.Editor
             var ordinary = new Material(spriteShader); scratch.Add(ordinary);
             ordinary.SetTexture("_MainTex", Texture2D.whiteTexture); ordinary.SetColor("_Color", new Color(.1f, .15f, .2f, 1));
             var wall = new Material(wallShader); scratch.Add(wall); wall.SetColor("_BaseColor", new Color(.2f, .2f, .2f, 1));
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube); scratch.Add(cube);
+            var cube = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); scratch.Add(cube);
             Mesh cubeMesh = cube.GetComponent<MeshFilter>().sharedMesh;
-            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad); scratch.Add(quad);
+            var quad = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Quad); scratch.Add(quad);
             Mesh quadMesh = quad.GetComponent<MeshFilter>().sharedMesh;
             Color[] ordinaryBase = Capture(camera, field, ordinary, wall, quadMesh, cubeMesh, false, false);
             Color[] ordinaryWithFirefly = Capture(camera, field, ordinary, wall, quadMesh, cubeMesh, false, true);

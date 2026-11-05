@@ -42,7 +42,7 @@ namespace Project.BossLogic.Editor
             var runnerRoot = new GameObject("Rejected Once Boss entry runner");
             try
             {
-                triggerRoot.AddComponent<BoxCollider>().isTrigger = true;
+                triggerRoot.AddComponent<BoxCollider2D>().isTrigger = true;
                 var director = triggerRoot.AddComponent<PlayableDirector>();
                 var trigger = triggerRoot.AddComponent<ContactTimelineTrigger>();
                 var runnerType = typeof(EnterBossTimelinePlayable).Assembly.GetType("Project.BossLogic.EnterBossTimelineRunner", true);

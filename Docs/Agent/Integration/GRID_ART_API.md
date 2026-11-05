@@ -50,7 +50,7 @@ SetCamera、RebaseParallax、ParallaxOffset API保持。LateUpdate10000只读跟
 
 仅固定XY。联动底图随黑白及自定义墙地块更新，但手工美术不自动随房间移动；未实现背景循环、缩放补偿、转向重投影、动画、多地形过渡；不可恢复退役总拼框架。
 
-SurfaceTiles六面保留：AuthoringService/ScenePainter/MeshBuilder拒绝持久化Prefab源和PrefabStage，记录实例覆盖，不ApplyPrefabInstance。Bake先保存Scene、以Scene GUID隔离；仍要求单源图集，统一多源走GridArt。
+原生 2D 分支的 SurfaceTiles 仅保留 XY Front，不再提供六面贴画。AuthoringService/ScenePainter/MeshBuilder 拒绝持久化 Prefab 源和 PrefabStage，记录实例覆盖，不 ApplyPrefabInstance。Bake 先保存 Scene、以 Scene GUID 隔离；仍要求单源图集，统一多源走 GridArt。
 
 ## 交付与验证
 

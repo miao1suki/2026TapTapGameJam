@@ -68,6 +68,7 @@ namespace Project.WorldVisibility
                 // Water/HSV/pixelization finish first; ordinary camera post and overlay UI follow.
                 renderPassEvent = (RenderPassEvent)((int)RenderPassEvent.BeforeRenderingPostProcessing + 20);
                 requiresIntermediateTexture = true;
+                ConfigureInput(ScriptableRenderPassInput.Color);
             }
             public override void RecordRenderGraph(RenderGraph graph, ContextContainer frameData)
             {

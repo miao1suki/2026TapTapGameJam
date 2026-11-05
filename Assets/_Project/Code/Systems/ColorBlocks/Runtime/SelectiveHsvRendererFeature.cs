@@ -37,6 +37,7 @@ namespace Project.ColorBlocks
             private static readonly int WhiteAmountId = Shader.PropertyToID("_WhiteAmount");
             private static readonly List<ShaderTagId> Tags = new List<ShaderTagId>
             {
+                new ShaderTagId("Universal2D"),
                 new ShaderTagId("UniversalForward"),
                 new ShaderTagId("UniversalForwardOnly"),
                 new ShaderTagId("SRPDefaultUnlit"),
@@ -54,6 +55,7 @@ namespace Project.ColorBlocks
                 fadeMaterial = fade;
                 renderPassEvent = (RenderPassEvent)((int)RenderPassEvent.BeforeRenderingPostProcessing + 1);
                 requiresIntermediateTexture = true;
+                ConfigureInput(ScriptableRenderPassInput.Color);
             }
 
             public override void RecordRenderGraph(RenderGraph graph, ContextContainer frameData)

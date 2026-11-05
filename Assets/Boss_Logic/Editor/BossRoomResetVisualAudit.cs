@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -117,7 +118,7 @@ namespace Project.BossLogic.Editor
         {
             AudioListener.pause = true;
             AudioListener.volume = 0f;
-            Physics.simulationMode = SimulationMode.Script;
+            PlanarPhysics.simulationMode = SimulationMode2D.Script;
             ColorRuntimeService.Instance.ResetProgress();
             var playerObject = Prefab("Assets/_Project/Content/Player/Player.prefab", new Vector3(1.5f, 100.5f, 0f));
             player = playerObject.GetComponent<PlayerController>();
@@ -195,10 +196,10 @@ namespace Project.BossLogic.Editor
             Hide(door.gameObject); // Snapshot closed collider, then open while hidden.
             Check(button.TryPress(player.gameObject), "real latched button press accepted");
             Invoke(door, "AdvanceTimers", 1f);
-            Check(door.State == DoorState.Unlocked && !door.GetComponent<Collider>().enabled, "hidden door still reaches unlocked state");
+            Check(door.State == DoorState.Unlocked && !door.GetComponent<Collider2D>().enabled, "hidden door still reaches unlocked state");
             player.RequestRespawn(); doorArt.Refresh(0f);
             Visible(doorArt, "opened persistent door after real R");
-            Check(door.State == DoorState.Unlocked && button.IsPressed && !door.GetComponent<Collider>().enabled,
+            Check(door.State == DoorState.Unlocked && button.IsPressed && !door.GetComponent<Collider2D>().enabled,
                 "restoring hide lease keeps button progress and current open collider, not old closed snapshot");
             Check(doorReset.Persistent, "door remains persistent rather than bypassing progress contract");
         }
@@ -222,7 +223,7 @@ namespace Project.BossLogic.Editor
             rooms.UpdatePlayerRegion(player);
             Hide(door.gameObject); Hide(platform.gameObject);
             player.transform.position = new Vector3(32.5f, 100.5f, 0f);
-            player.GetComponent<Rigidbody>().position = player.transform.position;
+            player.GetComponent<Rigidbody2D>().position = player.transform.position;
             rooms.UpdatePlayerRegion(player);
             Check(rooms.CurrentRegionId == "b", "actual region transition enters next room");
             Visible(doorArt, "persistent door on leaving room");

@@ -17,7 +17,7 @@ public sealed class BossPathExecutorEditor : Editor
             "m_Script",
             "脚本"));
         root.Add(ProjectInspectorUtility.CreateHelp(
-            "只读取 BossPathfinder 的带类型路径，并向 BossController 下发跑动、跳跃、爬升和下落指令；不直接操作 Rigidbody。"));
+            "只读取 BossPathfinder 的带类型路径，并向 BossController 下发跑动、跳跃、爬升和下落指令；不直接操作 Rigidbody2D。"));
 
         Foldout move = ProjectInspectorUtility.CreateFoldout(
             "移动设置",

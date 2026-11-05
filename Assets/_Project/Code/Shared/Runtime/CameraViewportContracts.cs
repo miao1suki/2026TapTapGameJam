@@ -7,19 +7,16 @@ namespace Project.Contracts
         public CameraViewportInfo(
             Rect pixelRect,
             bool orthographic,
-            float orthographicSize,
-            float fieldOfView)
+            float orthographicSize)
         {
             PixelRect = pixelRect;
             Orthographic = orthographic;
             OrthographicSize = orthographicSize;
-            FieldOfView = fieldOfView;
         }
 
         public Rect PixelRect { get; }
         public bool Orthographic { get; }
         public float OrthographicSize { get; }
-        public float FieldOfView { get; }
     }
 
     public interface ICameraViewportSource

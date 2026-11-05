@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -253,11 +254,11 @@ public static class MovingPlatformRouteAudit
             s.FindProperty("reverseOnBlock").boolValue = true; s.ApplyModifiedPropertiesWithoutUndo();
         }
         blocked.ResetForRoom(); source.SetSignal(true, null);
-        var wall = GameObject.CreatePrimitive(PrimitiveType.Cube); wall.transform.position = blocked.transform.position + Vector3.right * 1.6f;
-        for (int i = 0; i < 100; i++) { Physics.SyncTransforms(); Step(blocked, 1); }
+        var wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); wall.transform.position = blocked.transform.position + Vector3.right * 1.6f;
+        for (int i = 0; i < 100; i++) { PlanarPhysics.SyncTransforms(); Step(blocked, 1); }
         Check(blocked.transform.position.x > 800 && blocked.transform.position.x < 800.7f, "obstructed endpoint mode waits before solid, never reverses");
         Vector3 paused = blocked.transform.position; Step(blocked, 10); Near(blocked.transform.position, paused, "blocked progress does not accumulate");
-        Object.DestroyImmediate(wall); Physics.SyncTransforms(); Step(blocked, 150);
+        Object.DestroyImmediate(wall); PlanarPhysics.SyncTransforms(); Step(blocked, 150);
         Near(blocked.transform.position, new Vector3(805, 200), "cleared obstacle resumes to endpoint");
         Object.DestroyImmediate(blocked.gameObject); Object.DestroyImmediate(source.gameObject);
         Check(typeof(MovingPlatformFeature).GetField("signalMotion", Hidden).GetCustomAttribute<BlockParameterAttribute>().MatchesVisibility(1),
@@ -278,11 +279,11 @@ public static class MovingPlatformRouteAudit
         Object.DestroyImmediate(platform.gameObject);
         platform = Spawn(origin); Configure(platform, MovingPlatformPathMode.Right, false);
         using (var s = new SerializedObject(platform)) { s.FindProperty("reverseOnBlock").boolValue = true; s.ApplyModifiedPropertiesWithoutUndo(); }
-        var wall = GameObject.CreatePrimitive(PrimitiveType.Cube); wall.transform.position = origin + Vector3.right * 1.6f;
+        var wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); wall.transform.position = origin + Vector3.right * 1.6f;
         float farthest = 0;
         for (int i = 0; i < 100; i++)
         {
-            Physics.SyncTransforms(); Step(platform, 1);
+            PlanarPhysics.SyncTransforms(); Step(platform, 1);
             farthest = Mathf.Max(farthest, platform.transform.position.x - origin.x);
             Check(platform.transform.position.x >= origin.x - .002f && platform.transform.position.x < origin.x + .7f,
                 "obstacle reversal stays inside route and outside wall");

@@ -74,7 +74,7 @@ namespace Project.Mechanisms
                 float distance = Mathf.Max(3f, Vector3.Distance(state.position,
                     previousAnchor != null ? previousAnchor.position : owner.transform.position));
                 Vector3 offset = -(state.rotation * Vector3.forward) * distance;
-                Quaternion planar = Quaternion.Euler(0f, rig.PlanarYaw, 0f);
+                Quaternion planar = Quaternion.Euler(0f, 0f, rig.PlanarYaw);
                 timeline = ScriptableObject.CreateInstance<TimelineAsset>();
                 timeline.name = "Optional Mechanism Camera";
                 var track = timeline.CreateTrack<CameraTimelineTrack>(null, "可选机关镜头");

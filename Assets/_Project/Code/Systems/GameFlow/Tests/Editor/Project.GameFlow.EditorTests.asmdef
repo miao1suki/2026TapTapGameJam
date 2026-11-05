@@ -10,7 +10,8 @@
     "Project.Shared.Runtime",
     "Project.StartMenu.Runtime",
     "Unity.TextMeshPro",
-    "Unity.UGUI"
+    "Unity.UGUI",
+    "Project.PlanarPhysics.Runtime"
   ],
   "includePlatforms": [
     "Editor"
@@ -27,8 +28,5 @@
     "TestAssemblies"
   ],
   "versionDefines": [],
-  "noEngineReferences": false,
-  "optionalUnityReferences": [
-    "TestAssemblies"
-  ]
+  "noEngineReferences": false
 }

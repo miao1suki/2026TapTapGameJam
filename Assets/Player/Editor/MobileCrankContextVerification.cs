@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Reflection;
 using Project.BlockFeatures;
@@ -57,11 +58,11 @@ namespace Project.Player.Editor
             InputService input = null;
             object oldMode = null;
             var source = new TouchSource();
-            SimulationMode oldSimulation = Physics.simulationMode;
+            SimulationMode2D oldSimulation = PlanarPhysics.simulationMode;
             bool passed = false;
             try
             {
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 input = InputService.EnsureInstance();
                 oldMode = typeof(InputService).GetField("platformMode", Private).GetValue(input);
                 Set(input, "platformMode", InputPlatformMode.Mobile);
@@ -78,7 +79,7 @@ namespace Project.Player.Editor
                 var crankPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ColorBlocks/Prefabs/Red_Crank.prefab");
                 var crank = Object.Instantiate(crankPrefab, actor.transform.position + Vector3.right, Quaternion.identity)
                     .GetComponent<CrankPlatformFeature>();
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
 
                 void Scan()
                 {
@@ -116,7 +117,7 @@ namespace Project.Player.Editor
                 Check(player.HasContextInteraction, "turning toward crank restores contextual interaction");
                 Vector3 nearby = crank.transform.position;
                 crank.transform.position = actor.transform.position + Vector3.right * 3f;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Set(driver, "nextMobileContextScan", Time.unscaledTime + 10f);
                 Invoke(driver, "UpdateInteraction", player);
                 Check(ReferenceEquals(sensor.CurrentTarget, crank), "idle calls inside the scan interval do not rescan");
@@ -127,7 +128,7 @@ namespace Project.Player.Editor
                 Scan();
                 Check(!player.HasContextInteraction, "sensor radius does not bypass crank own interaction distance");
                 crank.transform.position = nearby;
-                Physics.SyncTransforms(); Scan();
+                PlanarPhysics.SyncTransforms(); Scan();
                 Check(player.HasContextInteraction, "returning into one-cell reach restores candidate");
 
                 service.SetAllUnlockedForCurrentSession(false);
@@ -164,7 +165,7 @@ namespace Project.Player.Editor
                     input.ClearExternalSource(source);
                     if (oldMode != null) Set(input, "platformMode", oldMode);
                 }
-                Physics.simulationMode = oldSimulation;
+                PlanarPhysics.simulationMode = oldSimulation;
                 SessionState.SetBool(SessionKey, false);
                 EditorApplication.Exit(passed ? 0 : 1);
             }

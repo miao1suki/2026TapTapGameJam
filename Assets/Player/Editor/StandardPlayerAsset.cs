@@ -67,9 +67,9 @@ namespace Project.Player.Editor
                 contents.transform.localPosition = Vector3.zero;
                 contents.transform.localRotation = Quaternion.identity;
                 contents.transform.localScale = Vector3.one;
-                var capsule = contents.GetComponent<CapsuleCollider>();
-                capsule.center = Vector3.zero; capsule.height = 1f; capsule.radius = .5f;
-                foreach (var extra in contents.GetComponents<BoxCollider>()) UnityEngine.Object.DestroyImmediate(extra);
+                var capsule = contents.GetComponent<CapsuleCollider2D>();
+                capsule.offset = Vector3.zero; capsule.size = new Vector2(capsule.size.x, 1f); capsule.size = new Vector2(.96f, capsule.size.y);
+                foreach (var extra in contents.GetComponents<BoxCollider2D>()) UnityEngine.Object.DestroyImmediate(extra);
                 Ensure<PlayerHealth>(contents); Ensure<PlayerFallDamage>(contents);
                 var wheel = Ensure<PlayerColorWheel>(contents);
                 var sensor = Ensure<PlayerInteractionSensor>(contents);
@@ -79,10 +79,10 @@ namespace Project.Player.Editor
                 SetReference(contents.GetComponent<GreenHookAbility>(), "colorWheel", wheel);
                 var visual = contents.transform.Find("Player Visual");
                 if (visual != null) visual.localPosition = Vector3.down * .08f;
-                var body = contents.GetComponent<Rigidbody>();
-                body.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
-                body.interpolation = RigidbodyInterpolation.Interpolate;
-                body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                var body = contents.GetComponent<Rigidbody2D>();
+                body.constraints = RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.None;
+                body.interpolation = RigidbodyInterpolation2D.Interpolate;
+                body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
                 var director = contents.GetComponent<PlayableDirector>();
                 director.playOnAwake = false; director.playableAsset = null;
                 PrefabUtility.SaveAsPrefabAsset(contents, Path);

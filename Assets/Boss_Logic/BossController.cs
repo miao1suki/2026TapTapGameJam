@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project;
@@ -24,8 +25,8 @@ namespace Project.BossLogic
     }
 
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Rigidbody))]
-    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(Rigidbody2D))]
+    [RequireComponent(typeof(Collider2D))]
     public sealed class BossController :
         MonoBehaviour,
         IDamageable,
@@ -79,8 +80,8 @@ namespace Project.BossLogic
             defeatPresentationRequested =
                 new BossDefeatPresentationEvent();
 
-        private Rigidbody body;
-        private Collider bodyCollider;
+        private Rigidbody2D body;
+        private Collider2D bodyCollider;
         private float currentHealth;
         private float nextTargetRefreshTime;
         private float nextJumpTime;
@@ -101,9 +102,9 @@ namespace Project.BossLogic
         private bool presentationFallStateCaptured;
         private bool presentationFallPreviousKinematic;
         private bool presentationFallPreviousGravity;
-        private RigidbodyInterpolation
+        private RigidbodyInterpolation2D
             presentationFallPreviousInterpolation;
-        private CollisionDetectionMode
+        private CollisionDetectionMode2D
             presentationFallPreviousCollisionMode;
         private float invulnerableUntil;
         private float invulnerabilityStartedAt;
@@ -154,7 +155,7 @@ namespace Project.BossLogic
         public int FacingDirection => facingDirection;
         public float MoveSpeed => moveSpeed;
         public float WalkSpeed => walkSpeed;
-        public Rigidbody Body => body;
+        public Rigidbody2D Body => body;
         public bool IsJumping => jumpActive;
         public bool IsExternallyControlled => externalMotionActive;
         public bool IsExecutionControlled =>
@@ -168,7 +169,7 @@ namespace Project.BossLogic
         public Vector3 WorldPosition => transform.position;
         public float InvulnerabilityRemaining =>
             Mathf.Max(0f, invulnerableUntil - Time.time);
-        public Collider BodyCollider => bodyCollider;
+        public Collider2D BodyCollider => bodyCollider;
         public BossDefeatPresentationEvent DefeatPresentation =>
             defeatPresentationRequested;
         public float ConfiguredJumpDuration => jumpDuration;
@@ -181,16 +182,16 @@ namespace Project.BossLogic
 
         private void Awake()
         {
-            body = GetComponent<Rigidbody>();
-            bodyCollider = GetComponent<Collider>();
+            body = GetComponent<Rigidbody2D>();
+            bodyCollider = GetComponent<Collider2D>();
             authoredColliderIsTrigger = bodyCollider.isTrigger;
-            if (bodyCollider is BoxCollider boxCollider)
+            if (bodyCollider is BoxCollider2D boxCollider)
             {
                 authoredColliderSize = boxCollider.size;
                 authoredColliderSizeCaptured = true;
             }
             body.freezeRotation = true;
-            body.constraints |= RigidbodyConstraints.FreezePositionZ;
+            body.constraints |= RigidbodyConstraints2D.None;
             currentHealth = Mathf.Clamp(
                 startingHealth <= 0f ? maxHealth : startingHealth,
                 0f,
@@ -232,7 +233,7 @@ namespace Project.BossLogic
                 return;
             }
 
-            Vector3 velocity = body.linearVelocity;
+            Vector3 velocity = ((Vector3)body.linearVelocity);
             if (jumpActive)
             {
                 if (externalMotionActive)
@@ -350,7 +351,7 @@ namespace Project.BossLogic
             trackingEnabled = value;
             if (!value && body != null && !jumpActive)
             {
-                Vector3 velocity = body.linearVelocity;
+                Vector3 velocity = ((Vector3)body.linearVelocity);
                 velocity.x = 0f;
                 if (chaseVertical)
                 {
@@ -377,7 +378,7 @@ namespace Project.BossLogic
             presentationFallPreviousKinematic =
                 body.isKinematic;
             presentationFallPreviousGravity =
-                body.useGravity;
+                (body.gravityScale != 0f);
             presentationFallPreviousInterpolation =
                 body.interpolation;
             presentationFallPreviousCollisionMode =
@@ -388,13 +389,13 @@ namespace Project.BossLogic
                 bodyCollider.enabled = false;
             }
             body.isKinematic = true;
-            body.useGravity = false;
+            body.gravityScale = 0f;
             body.linearVelocity = Vector3.zero;
-            body.angularVelocity = Vector3.zero;
+            body.angularVelocity = 0f;
             body.interpolation =
-                RigidbodyInterpolation.Interpolate;
+                RigidbodyInterpolation2D.Interpolate;
             body.collisionDetectionMode =
-                CollisionDetectionMode.ContinuousSpeculative;
+                CollisionDetectionMode2D.Continuous;
         }
 
         public void SetPresentationFallPosition(
@@ -419,14 +420,13 @@ namespace Project.BossLogic
             {
                 body.isKinematic =
                     presentationFallPreviousKinematic;
-                body.useGravity =
-                    presentationFallPreviousGravity;
+                body.gravityScale = (presentationFallPreviousGravity) ? 1f : 0f;
                 body.interpolation =
                     presentationFallPreviousInterpolation;
                 body.collisionDetectionMode =
                     presentationFallPreviousCollisionMode;
                 body.linearVelocity = Vector3.zero;
-                body.angularVelocity = Vector3.zero;
+                body.angularVelocity = 0f;
                 body.WakeUp();
             }
             presentationFallStateCaptured = false;
@@ -500,10 +500,10 @@ namespace Project.BossLogic
                 Mathf.Max(0f, moveSpeedBlocksPerSecond) *
                 GridCellSizeUtility.Resolve(this);
             executionHeightY = transform.position.y;
-            executionGravityWasEnabled = body.useGravity;
-            body.useGravity = false;
+            executionGravityWasEnabled = (body.gravityScale != 0f);
+            body.gravityScale = 0f;
             SetPassThroughTerrain(true);
-            Vector3 velocity = body.linearVelocity;
+            Vector3 velocity = ((Vector3)body.linearVelocity);
             velocity.x = 0f;
             velocity.y = 0f;
             velocity.z = 0f;
@@ -530,7 +530,7 @@ namespace Project.BossLogic
             executionMoveSpeed = 0f;
             if (body != null)
             {
-                body.useGravity = executionGravityWasEnabled;
+                body.gravityScale = (executionGravityWasEnabled) ? 1f : 0f;
             }
             SetPassThroughTerrain(false);
         }
@@ -540,7 +540,7 @@ namespace Project.BossLogic
             if (bodyCollider != null)
             {
                 if (authoredColliderSizeCaptured &&
-                    bodyCollider is BoxCollider boxCollider)
+                    bodyCollider is BoxCollider2D boxCollider)
                 {
                     float height = value
                         ? Mathf.Max(
@@ -551,7 +551,7 @@ namespace Project.BossLogic
                         authoredColliderSize.x,
                         height,
                         authoredColliderSize.z);
-                    if (boxCollider.size != size)
+                    if (boxCollider.size != (Vector2)size)
                     {
                         boxCollider.size = size;
                     }
@@ -593,7 +593,7 @@ namespace Project.BossLogic
                 return;
             }
 
-            Vector3 velocity = body.linearVelocity;
+            Vector3 velocity = ((Vector3)body.linearVelocity);
             velocity.x = externalMotionVelocity.x;
             if (externalMotionControlsVertical)
             {
@@ -609,7 +609,7 @@ namespace Project.BossLogic
 
             if (externalHeightLocked)
             {
-                Vector3 position = body.position;
+                Vector3 position = body.WorldPosition();
                 position.y = externalHeightY;
                 body.position = position;
             }
@@ -617,12 +617,12 @@ namespace Project.BossLogic
 
         private void TickExecutionSequence()
         {
-            Vector3 velocity = body.linearVelocity;
+            Vector3 velocity = ((Vector3)body.linearVelocity);
             velocity.x = executionMoving
                 ? executionMoveSpeed
                 : 0f;
             velocity.y = Time.fixedDeltaTime > 0f
-                ? (executionHeightY - body.position.y) /
+                ? (executionHeightY - body.WorldPosition().y) /
                   Time.fixedDeltaTime
                 : 0f;
             velocity.z = 0f;
@@ -642,12 +642,12 @@ namespace Project.BossLogic
                 bounds.center.x,
                 bounds.min.y + .02f,
                 bounds.center.z);
-            IsGrounded = Physics.Raycast(
+            IsGrounded = PlanarPhysics.Raycast(
                 origin,
                 Vector3.down,
                 .22f,
                 ~0,
-                QueryTriggerInteraction.Ignore);
+                TriggerQuery.Ignore);
         }
 
         public bool RequestJump(
@@ -664,7 +664,7 @@ namespace Project.BossLogic
             }
 
             Vector3 start = body != null
-                ? body.position
+                ? body.WorldPosition()
                 : transform.position;
             Vector3 target =
                 start + worldDirection.normalized * distance;
@@ -678,7 +678,7 @@ namespace Project.BossLogic
                 return false;
             }
 
-            return RequestJumpTo(body.position, true);
+            return RequestJumpTo(body.WorldPosition(), true);
         }
 
         public bool RequestJumpTo(
@@ -694,7 +694,7 @@ namespace Project.BossLogic
                 return false;
             }
 
-            jumpStartPosition = body.position;
+            jumpStartPosition = body.WorldPosition();
             Vector3 delta = worldTargetPosition - jumpStartPosition;
             delta.z = 0f;
             float horizontalDistance = preserveExternalHorizontal
@@ -714,7 +714,7 @@ namespace Project.BossLogic
 
             float gravity = Mathf.Max(
                 .01f,
-                -Physics.gravity.y);
+                -PlanarPhysics.gravity.y);
             float verticalSpeed =
                 (delta.y +
                  .5f * gravity * resolvedDuration * resolvedDuration) /
@@ -735,10 +735,10 @@ namespace Project.BossLogic
             }
 
             body.linearVelocity = Vector3.zero;
-            body.angularVelocity = Vector3.zero;
-            body.interpolation = RigidbodyInterpolation.Interpolate;
+            body.angularVelocity = 0f;
+            body.interpolation = RigidbodyInterpolation2D.Interpolate;
             body.collisionDetectionMode =
-                CollisionDetectionMode.ContinuousSpeculative;
+                CollisionDetectionMode2D.Continuous;
             body.position = jumpStartPosition;
             transform.position = jumpStartPosition;
             body.WakeUp();
@@ -787,11 +787,11 @@ namespace Project.BossLogic
             if (body != null)
             {
                 body.position = worldPosition;
-                body.rotation = worldRotation;
+                body.rotation = (worldRotation).eulerAngles.z;
                 if (clearMotion && !body.isKinematic)
                 {
                     body.linearVelocity = Vector3.zero;
-                    body.angularVelocity = Vector3.zero;
+                    body.angularVelocity = 0f;
                 }
 
                 body.WakeUp();
@@ -921,17 +921,17 @@ namespace Project.BossLogic
             EnterDeath(Vector3.zero);
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void OnTriggerEnter2D(Collider2D other)
         {
             HandleTouchedObject(other);
         }
 
-        private void OnCollisionEnter(Collision collision)
+        private void OnCollisionEnter2D(Collision2D collision)
         {
             HandleTouchedObject(collision != null ? collision.collider : null);
         }
 
-        private void HandleTouchedObject(Collider other)
+        private void HandleTouchedObject(Collider2D other)
         {
             if (dead ||
                 other == null ||
@@ -1088,8 +1088,7 @@ namespace Project.BossLogic
                         knockback.sqrMagnitude > 0f
                             ? knockback
                             : Vector3.zero;
-                    body.angularVelocity =
-                        Vector3.zero;
+                    body.angularVelocity = 0f;
                     body.isKinematic = true;
                 }
             }
@@ -1137,11 +1136,11 @@ namespace Project.BossLogic
             nextJumpTime = Time.time + jumpCooldownSeconds;
             if (body != null && clearVelocityOnLanding)
             {
-                Vector3 velocity = body.linearVelocity;
+                Vector3 velocity = ((Vector3)body.linearVelocity);
                 velocity.x = 0f;
                 velocity.y = Mathf.Min(0f, velocity.y);
                 body.linearVelocity = velocity;
-                body.angularVelocity = Vector3.zero;
+                body.angularVelocity = 0f;
             }
 
             if (!dead)
@@ -1274,15 +1273,15 @@ namespace Project.BossLogic
             GameObject owner,
             out Bounds bounds)
         {
-            Collider[] colliders =
-                owner.GetComponentsInChildren<Collider>(true);
+            Collider2D[] colliders =
+                owner.GetComponentsInChildren<Collider2D>(true);
             bool found = false;
             bounds = default;
             for (int index = 0;
                  index < colliders.Length;
                  index++)
             {
-                Collider collider = colliders[index];
+                Collider2D collider = colliders[index];
                 if (collider == null)
                 {
                     continue;

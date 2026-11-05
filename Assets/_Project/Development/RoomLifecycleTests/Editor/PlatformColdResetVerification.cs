@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -69,8 +70,8 @@ namespace Project.Rooms.Editor
                 service.Unlock("red");
                 Check(platform.IsAttached, "unlock attaches previously reset platform");
                 Check(Vector3.Distance(platform.PreviewOrigin, author) < .0001f, "unlock retains route origin");
-                Physics.SyncTransforms();
-                var collider = instance.GetComponent<Collider>();
+                PlanarPhysics.SyncTransforms();
+                var collider = instance.GetComponent<Collider2D>();
                 Check(collider != null && collider.enabled && !collider.isTrigger &&
                     collider.bounds.Contains(author), "solid support remains at author position");
                 instance.transform.position += Vector3.right * 2;
@@ -106,19 +107,19 @@ namespace Project.Rooms.Editor
                 }
             }
             service.Unlock("red");
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             var details = new StringBuilder();
             foreach (var platform in platforms)
             {
                 Check(Vector3.Distance(platform.PreviewOrigin, expected[platform]) < .001f,
                     "formal unlocked route origin " + platform.name);
-                Check(platform.GetComponent<Collider>()?.enabled == true, "formal collision retained " + platform.name);
+                Check(platform.GetComponent<Collider2D>()?.enabled == true, "formal collision retained " + platform.name);
                 details.AppendLine(platform.name + " origin=" + platform.PreviewOrigin);
             }
             foreach (var cube in Object.FindObjectsByType<Project.ContactCubes.ContactCube>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 details.AppendLine("CUBE " + cube.name + " scale=" + cube.transform.lossyScale.ToString("F5"));
-                foreach (var shape in cube.GetComponentsInChildren<BoxCollider>(true))
+                foreach (var shape in cube.GetComponentsInChildren<BoxCollider2D>(true))
                     details.AppendLine("  collider=" + shape.size.ToString("F5") + " scale=" + shape.transform.lossyScale.ToString("F5"));
                 foreach (var visual in cube.GetComponentsInChildren<SpriteRenderer>(true))
                     details.AppendLine("  visual=" + visual.size.ToString("F5") + " scale=" + visual.transform.lossyScale.ToString("F5"));

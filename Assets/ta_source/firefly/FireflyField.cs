@@ -2,6 +2,7 @@ using System;
 using Project.BlockFeatures;
 using Project.ObjectArtwork;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace Project.Fireflies
 {
@@ -72,7 +73,7 @@ namespace Project.Fireflies
         private Vector2[] uvs;
         private Color32[] colors;
         private Mesh mesh;
-        private Light[] lights;
+        private Light2D[] lights;
         private bool dirty = true;
         private float elapsed;
         private float playerSearchTimer;
@@ -400,12 +401,11 @@ namespace Project.Fireflies
             for (int slot = 0; slot < wanted; slot++)
             {
                 Fly fly = flies[slot * flies.Length / wanted];
-                Light light = lights[slot];
+                Light2D light = lights[slot];
                 light.transform.localPosition = SnappedCenter(fly.position, -.25f);
                 light.color = haloColor;
                 light.intensity = lightIntensity * fly.brightness;
-                light.range = lightRange * cell * Mathf.Lerp(minimumPulseSize, maximumPulseSize, fly.brightness);
-                light.cullingMask = illuminatedLayers;
+                light.pointLightOuterRadius = lightRange * cell * Mathf.Lerp(minimumPulseSize, maximumPulseSize, fly.brightness);
             }
         }
 
@@ -413,15 +413,14 @@ namespace Project.Fireflies
         {
             if (lights != null && lights.Length == count) return;
             DestroyLights();
-            lights = new Light[count];
+            lights = new Light2D[count];
             for (int i = 0; i < count; i++)
             {
                 var lightObject = new GameObject("Firefly local light") { hideFlags = HideFlags.DontSave };
                 lightObject.transform.SetParent(transform, false);
-                Light light = lightObject.AddComponent<Light>();
-                light.type = LightType.Point;
-                light.shadows = LightShadows.None;
-                light.renderMode = LightRenderMode.ForcePixel;
+                Light2D light = lightObject.AddComponent<Light2D>();
+                light.lightType = Light2D.LightType.Point;
+                light.shadowIntensity = 0f;
                 lights[i] = light;
             }
         }
@@ -429,7 +428,7 @@ namespace Project.Fireflies
         private void DestroyLights()
         {
             if (lights == null) return;
-            foreach (Light light in lights)
+            foreach (Light2D light in lights)
             {
                 if (light == null) continue;
                 if (Application.IsPlaying(gameObject)) Destroy(light.gameObject);

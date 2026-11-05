@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -55,13 +56,13 @@ namespace Project.ContactCubes.Editor
             if (EditorApplication.timeSinceStartup - started > 120) { Finish(false, "Timeout"); return; }
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .6f) return;
             EditorApplication.update -= Wait;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             bool passed = false;
             try
             {
                 checks = successes = 0; report.Clear();
                 AudioListener.volume = 0f; AudioListener.pause = true;
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 CreatePlayer();
@@ -76,7 +77,7 @@ namespace Project.ContactCubes.Editor
                 passed = true;
             }
             catch (Exception error) { report.AppendLine(error.ToString()); Debug.LogException(error); }
-            finally { Cleanup(); Physics.simulationMode = previous; }
+            finally { Cleanup(); PlanarPhysics.simulationMode = previous; }
             Finish(passed, (passed ? "PASS " : "FAIL ") + checks + "\n" + report);
         }
 
@@ -101,8 +102,8 @@ namespace Project.ContactCubes.Editor
             player = Object.Instantiate(prefab, new Vector3(1000, 10, 0), Quaternion.identity).GetComponent<PlayerController>();
             objects.Add(player.gameObject);
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.constraints = RigidbodyConstraints.FreezeAll;
-            player.Motor.interpolation = RigidbodyInterpolation.None;
+            player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
+            player.Motor.interpolation = RigidbodyInterpolation2D.None;
             wheel = player.GetComponent<PlayerColorWheel>();
             wheel.ColorApplicationSucceeded += () => successes++;
             Check(wheel.TrySelectColor("blue"), "standard player selects unlocked blue");
@@ -120,14 +121,14 @@ namespace Project.ContactCubes.Editor
             GameObject obj = Object.Instantiate(prefab, position, Quaternion.identity, owner.transform);
             ContactCube cube = obj.GetComponent<ContactCube>(); cubes.Add(cube);
             obj.GetComponent<ContactCubeMotion>().enabled = false;
-            obj.GetComponent<Rigidbody>().isKinematic = true;
-            obj.GetComponent<Rigidbody>().useGravity = false;
+            obj.GetComponent<Rigidbody2D>().isKinematic = true;
+            obj.GetComponent<Rigidbody2D>().gravityScale = 0f;
             if (obj.TryGetComponent(out HorizontalCubeVine climb)) climb.enabled = false;
             var settings = new SerializedObject(cube);
             settings.FindProperty("maximumLength").intValue = 4;
             settings.FindProperty("stepSeconds").floatValue = .1f;
             settings.ApplyModifiedPropertiesWithoutUndo();
-            cube.ResetForRoom(); Physics.SyncTransforms();
+            cube.ResetForRoom(); PlanarPhysics.SyncTransforms();
             return cube;
         }
 
@@ -135,20 +136,20 @@ namespace Project.ContactCubes.Editor
         {
             player.transform.position = player.Motor.position = position;
             player.Motor.linearVelocity = Vector3.zero;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
         }
 
         private static void Move(ContactCube cube, Vector3 position)
         {
-            cube.transform.position = cube.GetComponent<Rigidbody>().position = position;
-            Physics.SyncTransforms();
+            cube.transform.position = cube.GetComponent<Rigidbody2D>().position = position;
+            PlanarPhysics.SyncTransforms();
         }
 
         private static void Click(ContactCube cube, Vector3 point, bool accepted = true)
         {
             camera.transform.position = new Vector3(point.x, point.y, -20);
             camera.transform.rotation = Quaternion.identity;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             int before = successes;
             wheel.Tick(camera.WorldToScreenPoint(point));
             player.TryUseSelectedColorAbility();
@@ -160,11 +161,11 @@ namespace Project.ContactCubes.Editor
         {
             for (int index = 0; index < count; index++)
             {
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 foreach (ContactCube cube in cubes)
                     if (cube != null && cube.isActiveAndEnabled)
                         typeof(ContactCube).GetMethod("FixedUpdate", Hidden).Invoke(cube, null);
-                Physics.Simulate(Time.fixedDeltaTime);
+                PlanarPhysics.Simulate(Time.fixedDeltaTime);
             }
         }
 
@@ -186,7 +187,7 @@ namespace Project.ContactCubes.Editor
                 Check(Vector3.Dot(cube.GrowthDirection, expected[direction]) > .999f, "four-way player/root grid direction " + direction);
                 MovePlayer(root + Vector3.forward * 10); Step(30);
                 Check(cube.Length == 4 && !cube.IsPlayerGrowthRequested, "single click continues to existing maximum and clears request");
-                Check(Mathf.Abs(cube.GetComponentInChildren<BoxCollider>().size.x - 4 * size) < .0001f,
+                Check(Mathf.Abs(cube.GetComponentInChildren<BoxCollider2D>().size.x - 4 * size) < .0001f,
                     "one solid body scales length by configured grid size");
                 Check(cube.transform.position == root && cube.ColorId == "green", "growth preserves root anchor and color");
                 cube.enabled = false;
@@ -235,9 +236,9 @@ namespace Project.ContactCubes.Editor
 
         private static GameObject Wall(Vector3 center, Vector3 size, bool trigger = false)
         {
-            GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube); objects.Add(wall);
+            GameObject wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); objects.Add(wall);
             wall.name = "Actual growth obstruction"; wall.transform.position = center; wall.transform.localScale = size;
-            wall.GetComponent<Collider>().isTrigger = trigger;
+            wall.GetComponent<Collider2D>().isTrigger = trigger;
             return wall;
         }
 
@@ -250,7 +251,7 @@ namespace Project.ContactCubes.Editor
             GameObject trigger = Wall(root + Vector3.right, Vector3.one, true);
             MovePlayer(root + Vector3.left * 1.5f); Click(cube, root); Step(25);
             Check(cube.Length == 2 && cube.IsPlayerGrowthRequested, "thin real wall blocks added cell; floor contact and pure trigger do not");
-            Check(cube.GetComponentInChildren<BoxCollider>().bounds.max.x < wall.GetComponent<Collider>().bounds.min.x,
+            Check(cube.GetComponentInChildren<BoxCollider2D>().bounds.max.x < wall.GetComponent<Collider2D>().bounds.min.x,
                 "growth never teleports its solid body across a wall");
             wall.SetActive(false); Step(20);
             Check(cube.Length == 4, "removing wall resumes pending single-click growth to maximum");
@@ -295,31 +296,31 @@ namespace Project.ContactCubes.Editor
                 Vector3 root = new Vector3(3420.5f + index++ * 30, 10.5f, 0);
                 ContactCube cube = Spawn(CubeColor.Green, root);
                 MovePlayer(root + direction * 1.5f);
-                player.Motor.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
-                player.Motor.useGravity = false;
+                player.Motor.constraints = RigidbodyConstraints2D.None | RigidbodyConstraints2D.FreezeRotation;
+                player.Motor.gravityScale = 0f;
                 Click(cube, root); Step(7);
                 Check(cube.Length == 1 && cube.IsPlayerGrowthRequested,
                     "player occupying the added cell safely pauses the pending growth step " + direction);
                 Step(30);
-                BoxCollider grown = cube.GetComponentInChildren<BoxCollider>();
-                CapsuleCollider actor = player.GetComponent<CapsuleCollider>();
-                bool overlap = Physics.ComputePenetration(grown, grown.transform.position, grown.transform.rotation,
+                BoxCollider2D grown = cube.GetComponentInChildren<BoxCollider2D>();
+                CapsuleCollider2D actor = player.GetComponent<CapsuleCollider2D>();
+                bool overlap = PlanarPhysics.ComputePenetration(grown, grown.transform.position, grown.transform.rotation,
                     actor, actor.transform.position, actor.transform.rotation, out _, out float penetration);
                 Check(!overlap || penetration <= .04f,
                     "real physics leaves player outside the green solid while growth waits " + direction +
-                    $" length={cube.Length} depth={penetration:F6} player={player.Motor.position} green={grown.bounds}" +
+                    $" length={cube.Length} depth={penetration:F6} player={player.Motor.WorldPosition()} green={grown.bounds}" +
                     $" sleep={player.Motor.IsSleeping()} kinematic={player.Motor.isKinematic} constraints={player.Motor.constraints}" +
-                    $" velocity={player.Motor.linearVelocity} collider={actor.enabled}/{actor.isTrigger} ignore={Physics.GetIgnoreCollision(grown,actor)}");
-                Check(!Physics.GetIgnoreCollision(cube.GetComponentInChildren<BoxCollider>(), player.GetComponent<CapsuleCollider>()),
+                    $" velocity={((Vector3)player.Motor.linearVelocity)} collider={actor.enabled}/{actor.isTrigger} ignore={PlanarPhysics.GetIgnoreCollision(grown,actor)}");
+                Check(!PlanarPhysics.GetIgnoreCollision(cube.GetComponentInChildren<BoxCollider2D>(), player.GetComponent<CapsuleCollider2D>()),
                     "player keeps real green collision throughout expansion");
                 MovePlayer(root + direction * 5); Step(30);
                 Check(cube.Length == cube.MaximumLength && !cube.IsPlayerGrowthRequested,
                     "player moving clear resumes the same click request to maximum " + direction);
-                overlap = Physics.ComputePenetration(grown, grown.transform.position, grown.transform.rotation,
+                overlap = PlanarPhysics.ComputePenetration(grown, grown.transform.position, grown.transform.rotation,
                     actor, actor.transform.position, actor.transform.rotation, out _, out penetration);
                 Check(!overlap || penetration <= .04f, "resumed growth still leaves real player outside the solid " + direction);
                 cube.enabled = false;
-                cube.GetComponentInChildren<BoxCollider>().enabled = false;
+                cube.GetComponentInChildren<BoxCollider2D>().enabled = false;
                 root.x += 10;
                 ContactCube trapped = Spawn(CubeColor.Green, root);
                 GameObject wall = Wall(root + direction * 2.5f, Vector3.one);
@@ -327,16 +328,16 @@ namespace Project.ContactCubes.Editor
                 Click(trapped, root); Step(20);
                 Check(trapped.Length == 1 && trapped.IsPlayerGrowthRequested,
                     "wall behind player safely pauses growth instead of trapping or pushing player through it " + direction);
-                Check(Vector3.Distance(player.Motor.position, root + direction * 1.5f) < .04f,
+                Check(Vector3.Distance(player.Motor.WorldPosition(), root + direction * 1.5f) < .04f,
                     "blocked growth leaves real player outside both cube and wall " + direction);
                 wall.SetActive(false); Step(20);
                 Check(trapped.Length == 1, "clearing the wall alone cannot grow through an occupying player " + direction);
                 MovePlayer(root + Vector3.forward * 5); Step(20);
                 Check(trapped.Length > 1, "player moving clear resumes pending growth " + direction);
                 trapped.enabled = false;
-                trapped.GetComponentInChildren<BoxCollider>().enabled = false;
-                player.Motor.constraints = RigidbodyConstraints.FreezeAll;
-                player.Motor.useGravity = true;
+                trapped.GetComponentInChildren<BoxCollider2D>().enabled = false;
+                player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
+                player.Motor.gravityScale = 1f;
             }
         }
 
@@ -399,7 +400,7 @@ namespace Project.ContactCubes.Editor
             player.RequestRespawn();
             Check(cube.Length == 1 && !cube.IsPlayerGrowthRequested && cube.State == CubeReactionState.Idle,
                 "real R entry restores author length and clears click growth");
-            cube.GetComponent<ContactCubeMotion>().enabled = false; cube.GetComponent<Rigidbody>().isKinematic = true;
+            cube.GetComponent<ContactCubeMotion>().enabled = false; cube.GetComponent<Rigidbody2D>().isKinematic = true;
             MovePlayer(root + Vector3.left * 1.5f); manager.UpdatePlayerRegion(player); Click(cube, root); Step(7);
             MovePlayer(new Vector3(3725.5f, 10.5f, 0)); manager.UpdatePlayerRegion(player);
             Check(cube.Length == 1 && !cube.IsPlayerGrowthRequested, "leaving region restores green author state");

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using InteractiveWater;
 using Project.Audio;
@@ -94,8 +95,8 @@ namespace Project.BlockFeatures
         private InteractiveWater.InteractiveWater waterVisual;
         private GameObject spawnedWaterVisual;
         private GameplayWaterPresentation pixelWaterVisual;
-        private readonly Collider[] steamOverlapBuffer =
-            new Collider[32];
+        private readonly Collider2D[] steamOverlapBuffer =
+            new Collider2D[32];
         private readonly HashSet<int> steamPlayerIds =
             new HashSet<int>();
         private GameObject steamVfxInstance;
@@ -353,17 +354,17 @@ namespace Project.BlockFeatures
                 steamHalfWidthDepth.x,
                 height * .5f,
                 steamHalfWidthDepth.y);
-            int count = Physics.OverlapBoxNonAlloc(
+            int count = PlanarPhysics.OverlapBoxNonAlloc(
                 center,
                 halfExtents,
                 steamOverlapBuffer,
                 Quaternion.identity,
                 ~0,
-                QueryTriggerInteraction.Collide);
+                TriggerQuery.Collide);
             steamPlayerIds.Clear();
             for (int index = 0; index < count; index++)
             {
-                Collider collider = steamOverlapBuffer[index];
+                Collider2D collider = steamOverlapBuffer[index];
                 PlayerController player = collider != null
                     ? collider.GetComponentInParent<PlayerController>()
                     : null;

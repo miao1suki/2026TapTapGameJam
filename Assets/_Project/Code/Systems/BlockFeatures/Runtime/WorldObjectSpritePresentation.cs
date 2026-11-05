@@ -1,3 +1,4 @@
+using Project.Planar;
 using Project.ColorBlocks;
 using Project.ObjectArtwork;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace Project.BlockFeatures
         [SerializeField] private float depthOffsetCells = .015f;
         private RespawnAnchorFeature anchor;
         private BouncePlantFeature plant;
-        private BoxCollider footprint;
+        private BoxCollider2D footprint;
         private Renderer placeholder;
         private ColorObject colorObject;
         private RespawnArtworkState state;
@@ -26,6 +27,7 @@ namespace Project.BlockFeatures
         private bool anchorFloorCached;
         private Vector3 anchorFloorPosition, anchorFloorScale;
         private float anchorFloorCell, anchorFloorOffset;
+        private readonly RaycastHit2D[] anchorFloorHits = new RaycastHit2D[8];
         public SpriteRenderer Visual => visual;
         public RespawnArtworkState CurrentRespawnState => state;
         public bool IsBouncePlaying => bouncing;
@@ -56,7 +58,7 @@ namespace Project.BlockFeatures
             anchor = GetComponent<RespawnAnchorFeature>();
             plant = GetComponent<BouncePlantFeature>();
             colorObject = GetComponent<ColorObject>();
-            footprint = GetComponent<BoxCollider>();
+            footprint = GetComponent<BoxCollider2D>();
             if (artwork == null) artwork = ObjectArtworkLibrary.Load();
             if (artwork == null || anchor == null && plant == null) return;
             if (visual == null)
@@ -110,7 +112,7 @@ namespace Project.BlockFeatures
             float cell = CellSize();
             Vector3 authorScale = transform.lossyScale;
             Vector3 size = footprint != null ? footprint.size : Vector3.one;
-            Vector3 center = footprint != null ? footprint.center : Vector3.zero;
+            Vector3 center = footprint != null ? footprint.offset : Vector3.zero;
             Sprite frame;
             if (anchor != null)
             {
@@ -169,11 +171,17 @@ namespace Project.BlockFeatures
             anchorFloorCell = cell;
             anchorFloorOffset = 0f;
             Vector3 bottom = transform.TransformPoint(center) - Vector3.up * (.5f * cell);
-            Physics.SyncTransforms();
-            if (Physics.Raycast(bottom + Vector3.up * (.01f * cell), Vector3.down,
-                    out RaycastHit hit, .52f * cell, ~0, QueryTriggerInteraction.Ignore) &&
-                !hit.transform.IsChildOf(transform))
+            PlanarPhysics.SyncTransforms();
+            int count = PlanarPhysics.RaycastNonAlloc(bottom + Vector3.up * (.01f * cell), Vector3.down,
+                anchorFloorHits, .52f * cell, ~0, TriggerQuery.Ignore);
+            float distance = float.PositiveInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                var hit = anchorFloorHits[i];
+                if (!hit.collider || hit.transform.IsChildOf(transform) || hit.distance >= distance) continue;
+                distance = hit.distance;
                 anchorFloorOffset = Mathf.Clamp(hit.point.y - bottom.y, -.5f * cell, 0f);
+            }
             return anchorFloorOffset;
         }
 

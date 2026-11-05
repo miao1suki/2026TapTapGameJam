@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -83,7 +84,7 @@ public static class MRoom3SceneAudit
     }
     private static void MoveRed(Vector3 position)
     {
-        red.transform.position = position; red.GetComponent<Rigidbody>().position = position; Physics.SyncTransforms();
+        red.transform.position = position; red.GetComponent<Rigidbody2D>().position = position; PlanarPhysics.SyncTransforms();
     }
     private static void Wait(int step, float seconds) { phase = step; due = Time.time + seconds; }
     private static void Tick()
@@ -101,7 +102,7 @@ public static class MRoom3SceneAudit
                 Check(Object.FindObjectsByType<RespawnAnchorFeature>(FindObjectsSortMode.None).Count(a => a.IsCurrent) == 1, "one active checkpoint");
                 foreach (string color in new[] { "red", "green", "blue" })
                     Check(!ColorRuntimeService.Instance.IsUnlocked(color) && !ColorRuntimeService.Instance.IsAbilityUnlocked(color), "default locked " + color);
-                player.GetComponent<PlayerInputDriver>().enabled = false; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                player.GetComponent<PlayerInputDriver>().enabled = false; player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                 platforms = Object.FindObjectsByType<MovingPlatformFeature>(FindObjectsSortMode.None);
                 bases = Object.FindObjectsByType<MechanismBaseFeature>(FindObjectsSortMode.None).OrderBy(b => b.transform.position.x).ToArray();
                 Check(platforms.Length == 4 && bases.Length == 3, "four platforms three bases");
@@ -119,9 +120,9 @@ public static class MRoom3SceneAudit
                 foreach (var cube in cubes)
                 {
                     cube.GetComponent<ContactCubeMotion>().enabled = false;
-                    cube.GetComponent<Rigidbody>().isKinematic = true;
+                    cube.GetComponent<Rigidbody2D>().isKinematic = true;
                 }
-                Physics.SyncTransforms(); Wait(1, 2); return;
+                PlanarPhysics.SyncTransforms(); Wait(1, 2); return;
             }
             if (phase == 1)
             {
@@ -135,7 +136,7 @@ public static class MRoom3SceneAudit
                     // Park inside the room, otherwise the real region-boundary
                     // guard correctly restores these test objects to authored poses.
                     cube.transform.position = new Vector3(25.5f + index++ * 2, -30.5f, 0);
-                    cube.GetComponent<Rigidbody>().position = cube.transform.position;
+                    cube.GetComponent<Rigidbody2D>().position = cube.transform.position;
                 }
                 MoveRed(bases[basisIndex].transform.position + (basisIndex == 1 ? Vector3.down : Vector3.up));
                 Wait(2, .5f); return;

@@ -69,7 +69,7 @@ public static class SceneArtworkPreviewAudit
                     "planner-style replacement removes stale owner and refreshes new prefab");
                 ExerciseVariants();
                 ArtworkScenePreview.TryGetFirstMesh(replacement, out beforePropertyEdit, out _);
-                Transform direction = replacement.GetComponentInChildren<MeshCollider>().transform;
+                Transform direction = replacement.GetComponentInChildren<PolygonCollider2D>().transform;
                 Undo.RecordObject(direction, "Artwork audit change spike direction");
                 direction.localRotation = Quaternion.Euler(0, 0, 90);
                 Undo.FlushUndoRecordObjects();
@@ -166,7 +166,7 @@ public static class SceneArtworkPreviewAudit
         ArtworkScenePreview.RefreshObject(water);
         Check(ArtworkScenePreview.PartCount(water) == 3, "irregular water batches surface, interior and bottom independently");
         Check(shape.ContainsCell(new Vector2Int(1, 0)) && !shape.ContainsCell(new Vector2Int(1, 1)), "preview preserves authored water holes");
-        Check(water.GetComponent<BoxCollider>().enabled, "water preview does not toggle author colliders");
+        Check(water.GetComponent<BoxCollider2D>().enabled, "water preview does not toggle author colliders");
     }
     private static void VerifySaveAndCache()
     {

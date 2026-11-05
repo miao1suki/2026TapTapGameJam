@@ -1,3 +1,4 @@
+using Project.Planar;
 using UnityEngine;
 
 namespace Project.Steam
@@ -66,8 +67,8 @@ namespace Project.Steam
 
         private void AlignToVisibleBlockSurface()
         {
-            Collider sourceCollider = transform.parent != null
-                ? transform.parent.GetComponentInChildren<Collider>()
+            Collider2D sourceCollider = transform.parent != null
+                ? transform.parent.GetComponentInChildren<Collider2D>()
                 : null;
             Camera viewCamera = Camera.main;
             if (sourceCollider == null || viewCamera == null)
@@ -84,11 +85,10 @@ namespace Project.Steam
                 return;
             }
 
-            Ray ray = new Ray(viewCamera.transform.position, rayDirection / rayLength);
-            if (sourceCollider.Raycast(ray, out RaycastHit hit, rayLength + bounds.size.magnitude))
-            {
-                transform.position = hit.point + hit.normal * SurfaceOffset;
-            }
+            // Steam is placed on the native XY surface, in front of its presentation.
+            Vector3 surface = sourceCollider.ClosestWorldPoint(target);
+            surface.z = sourceCollider.transform.position.z - SurfaceOffset;
+            transform.position = surface;
         }
 
         private void CreateCloudLayer()

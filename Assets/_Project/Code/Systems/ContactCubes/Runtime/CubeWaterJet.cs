@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using Project.Player;
 using UnityEngine;
@@ -17,7 +18,7 @@ namespace Project.ContactCubes
         private CubeWaterJetArtwork artwork;
         private float playerMultiplier = 1.6f;
         private bool configured;
-        private Collider[] hits = new Collider[64];
+        private Collider2D[] hits = new Collider2D[64];
         private readonly HashSet<Component> previous = new HashSet<Component>();
         private readonly HashSet<Component> current = new HashSet<Component>();
         public Vector3 Direction { get; private set; }
@@ -51,14 +52,14 @@ namespace Project.ContactCubes
                 int count;
                 do
                 {
-                    count = Physics.OverlapBoxNonAlloc(transform.position + Direction * length * .5f,
-                        new Vector3(length, width, width) * .5f, hits, transform.rotation, ~0, QueryTriggerInteraction.Collide);
+                    count = PlanarPhysics.OverlapBoxNonAlloc(transform.position + Direction * length * .5f,
+                        new Vector3(length, width, width) * .5f, hits, transform.rotation, ~0, TriggerQuery.Collide);
                     if (count < hits.Length) break;
                     System.Array.Resize(ref hits, hits.Length * 2);
                 } while (hits.Length <= 4096);
                 for (int i = 0; i < count; i++)
                 {
-                    Collider hit = hits[i];
+                    Collider2D hit = hits[i];
                     if (hit == null || hit.GetComponentInParent<CubeWaterJet>() != null) continue;
                     ContactCube cube = hit.GetComponentInParent<ContactCube>();
                     if (cube == owner || cube == red) continue;

@@ -1,3 +1,14 @@
+## 2026-11-05 原生 2D 长期迁移（已实现，专项分支交付）
+
+- 分支：`codex/2d-long-term-migration`，基线 `9a68c64`。用户明确要求尽可能全部转为原生 2D，不采用 3D 物理作为最终方案。
+- 范围：原生 Rigidbody2D/Collider2D 与物理查询、正交相机与平面坐标、现有 Prefab/Scene 显式转换、编辑器生成器和相关验证；保留地图 XY 结构、GridArt、稳定作者/拾取身份、机关 Unity 引用和 SDK。
+- 禁止修改 main；不带入本地未跟踪 DOTweenPro 与旧卡顿报告。转换工具只显式执行，先隔离夹具验证再转换正式资源。
+- 已实施：全玩法 Physics2D / Rigidbody2D / Collider2D；场景与 Prefab 按原组件 fileID 转换。PC/Mobile 改为 Renderer2D，删除立体墙/六面贴画、透视/FOV/立体环绕、旧水面反射；Timeline 工具重命名为 TimelineTools2D 并保留 GUID。星空改为平面背景，TA 材质与效果保留。
+- 原生接触适配：玩家胶囊物理宽 0.96 格，逻辑占格和美术不缩小；修复 Box2D 接触皮肤、射线自身命中、显式 Trigger 查询及刚体 Vector2 回写丢失表现 Z。假想姿态检测不移动真实作者对象。
+- 数据保护：静态资源检查通过，15512 个 Collider2D、149 个 Rigidbody2D、29 台正交相机；17750 个原场景 Transform 的 XY 不变，GridArt 作者资产字节不变，历史 planning JSON 未重建。移除未使用 TMP 演示、5 份无引用立体 Mesh 和 2264 个已停用梯子占位 Renderer/对应 Filter，不改变真实梯子美术和碰撞。
+- 验收：全量 GPU EditMode 310/310；移动平台 30136、接触重力旋转 167、玩家运动 61、收集接触 51、收集持久化 57、收集/Boss进度 58、Boss重置 57、岩浆遮挡 92、连通空间双 Renderer GPU 58、绿绳 GPU 1274、玩家/岩浆层级 GPU 10 项通过。7 份真实 Scene 无 Missing Script/3D物理/3D Light/透视相机；原生 3D 模拟为 Script，星空预览不标脏。Windows 非 Development 验证构建成功，实际启动日志无异常。
+- 非正式发布：没有重新发布 PC/Android 包，没有 Android 真机或全流程通关验收；保留构建警告。隔离验证不改真实存档、成就、正式包名、版本或 ICON。完整实施、API、证据与边界见 `Docs/Developer/NATIVE_2D_MIGRATION_20261105.md`。只推专项分支，不合入 main。
+
 ## 2026-10-27 编辑器改版方案完成（当前分支）
 
 - 分支 `编辑器整改` 已完成“Scene 唯一权威、锁定同一 XY 平面的正交 2D SceneView 直接搭建”。现有 `Gaming.unity` 无需 JSON 重建或隐式迁移即可继续制作；房间、通道、真实对象、实例参数、Unity 引用、GridArt 美术及区域整体移动均在同一 Scene 工作流完成。
@@ -509,7 +520,7 @@
 
 ## 2026-10-19 Boss Timeline 迁移局部坐标（编译通过，待 Play 回归）
 
-- 分支 `boss_last`。新增 `.agents/skills/taptap-boss-timeline-migration/SKILL.md` 并登记到根 `AGENTS.md`：Timeline 演出禁止世界坐标，统一以 owning `ContactTimelineTrigger` 为表演坐标系；脚本驱动的死亡轨以 owning `PlayableDirector` 自身为基准。现有通用轨道不足时，在 Playable 轨道放自制脚本，不改 `TimelineTools3D`。
+- 分支 `boss_last`。新增 `.agents/skills/taptap-boss-timeline-migration/SKILL.md` 并登记到根 `AGENTS.md`：Timeline 演出禁止世界坐标，统一以 owning `ContactTimelineTrigger` 为表演坐标系；脚本驱动的死亡轨以 owning `PlayableDirector` 自身为基准。现有通用轨道不足时，在 Playable 轨道放自制脚本，不改 `TimelineTools2D`。
 - 新增 `BossTimelinePerformanceFrame`，从 `PlayableGraph` 解析 `PlayableDirector`，再用 `TransformPoint/TransformVector` 处理局部点与方向；缺 Director 或坐标系时明确报错并停止对应演出。
 - `Boss_appear.playable` 的 Boss 生成点由世界坐标 `(-9.07,-33.33)` 改为激发器局部 `(-16.57,4.17)`，并恢复 `useOwnerAsOrigin=1`；删除会按硬编码时间重写场次的 `BossWalkTimelineInstaller`。
 - `BossCameraPlayable`、`CameraDownPlayable`、`BossKeyAbsorptionPlayable`、`PlayerThinkingTimelinePlayable` 的相机偏移、镜头下移、钥匙吸附/悬浮、收集品排列和黑屏中心均改为表演坐标系局部数据；新增悬浮、旋转、收集品数量/间距/高度/缩放等可编辑参数。
@@ -1291,7 +1302,7 @@
 
 ## 2026-10-16 Boss 入场序列与角色 Timeline 轨道
 
-- 分支：`Boss`；范围：`Assets/Boss_Logic`、`Assets/GJ_Tools/TimelineTools3D/AboutTimeline`、`Boss(暂定)` 预制体、`Boss` 场景接线。
+- 分支：`Boss`；范围：`Assets/Boss_Logic`、`Assets/GJ_Tools/TimelineTools2D/AboutTimeline`、`Boss(暂定)` 预制体、`Boss` 场景接线。
 - Boss：`BossController` 新增 Jump 状态，可配置跳跃持续时间、弧高、冷却、转向和落地清速；提供 `RequestJump`、`RequestJumpTo`、`CancelJump`、`TeleportTo`。受击/死亡/禁用会安全取消跳跃。
 - Timeline：新增 `BossIntroTrack` / `BossIntroClip`，资源 `Assets/_Project/Content/Boss/Timelines/BossIntro.playable`，负责生成或复用 Boss、平滑运镜、站立、向右下小跳和结束后开启追击；Boss 使用编辑模式玩家位置 `(-9.4, -32.1, 0)` 作为固定出生点，不跟随运行时玩家。
 - 工具轨道：新增 `PlayerTimelineTrack` 与 `BossTimelineTrack`，可显式绑定或按 `Player` / `Boss` Tag 查找角色；支持瞬移、曲线位移、弧线跳跃、玩家输入锁和 Boss 追击状态。
@@ -1552,7 +1563,7 @@
 ## Timeline 对话轨道
 
 - 日期：2026-10-15；负责人：Codex；分支：`对话气泡`。
-- 范围：在 `Assets/GJ_Tools/TimelineTools3D/AboutTimeline` 新增对话轨道、对话片段和中文 UI Toolkit Inspector；轨道不绑定对象，直接向常驻 `WordNote_UI` 申请使用权。
+- 范围：在 `Assets/GJ_Tools/TimelineTools2D/AboutTimeline` 新增对话轨道、对话片段和中文 UI Toolkit Inspector；轨道不绑定对象，直接向常驻 `WordNote_UI` 申请使用权。
 - 行为：Timeline 片段开始后通过 `WordNoteUI.RequestTimeline` 创建消息，与普通 API 调用共用总队列、位置队列、Canvas、堆叠和动画；片段结束时释放本次 Timeline 句柄。
 - 参数：片段直接使用 `WordNoteStyle`，包括字体、字号、颜色、描边、位置、显示模式、堆叠、入退场动画、组合通道、打字机和完整运动参数。
 - 状态：已完成。世界空间气泡、气泡图和独立 Canvas 已移除；Runtime 与 Editor 程序集静态编译通过。

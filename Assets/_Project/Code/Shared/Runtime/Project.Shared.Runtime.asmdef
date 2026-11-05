@@ -3,7 +3,8 @@
   "rootNamespace": "Project",
   "references": [
     "Unity.TextMeshPro",
-    "Unity.UGUI"
+    "Unity.UGUI",
+    "Project.PlanarPhysics.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

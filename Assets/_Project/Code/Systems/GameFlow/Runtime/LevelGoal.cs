@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Project.GameFlow
 {
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(Collider2D))]
     public sealed class LevelGoal :
         MonoBehaviour,
         IAchievementSignalProvider
@@ -62,7 +62,7 @@ namespace Project.GameFlow
 
         private void Awake()
         {
-            Collider trigger = GetComponent<Collider>();
+            Collider2D trigger = GetComponent<Collider2D>();
             trigger.isTrigger = true;
             if (animatedVisual == null)
             {
@@ -83,7 +83,7 @@ namespace Project.GameFlow
             animatedVisual.localScale = initialScale * pulse;
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void OnTriggerEnter2D(Collider2D other)
         {
             if (other != null && other.CompareTag("Player"))
             {

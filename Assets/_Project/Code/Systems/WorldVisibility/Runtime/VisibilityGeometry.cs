@@ -24,11 +24,11 @@ namespace Project.WorldVisibility
             return distance >= -.00001f && along >= -.00001f && along <= 1.00001f
                 ? Mathf.Min(limit, Mathf.Max(0, distance)) : limit;
         }
-        public static void AddBox(BoxCollider box, List<Segment> result)
+        public static void AddBox(BoxCollider2D box, List<Segment> result)
         {
             if (!box || !box.enabled || box.isTrigger || !box.gameObject.activeInHierarchy) return;
             var half = box.size * .5f;
-            Vector3 c = box.center;
+            Vector3 c = box.offset;
             // Gameplay walls rotate only in XY. Project their real four corners, never merged AABBs.
             Vector2 a = box.transform.TransformPoint(c + new Vector3(-half.x, -half.y, 0));
             Vector2 b = box.transform.TransformPoint(c + new Vector3(half.x, -half.y, 0));

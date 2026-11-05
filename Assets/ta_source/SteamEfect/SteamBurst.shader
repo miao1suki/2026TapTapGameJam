@@ -27,7 +27,7 @@ Shader "TapTap/Steam/井喷蒸汽"
         Pass
         {
             Name "SteamBurstUnlit"
-            Tags { "LightMode" = "UniversalForward" }
+            Tags { "LightMode" = "Universal2D" }
 
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -52,13 +53,13 @@ namespace Project.BossLogic.Editor
             { Finish(false, "Timeout entering Play mode"); return; }
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .6f) return;
             EditorApplication.update -= Wait;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             bool passed = false;
             try
             {
                 AudioListener.pause = true;
                 AudioListener.volume = 0f;
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 checks = 0;
                 report.Clear();
                 VerifyEncounter();
@@ -70,7 +71,7 @@ namespace Project.BossLogic.Editor
                 for (int i = objects.Count - 1; i >= 0; --i)
                     if (objects[i] != null) Object.DestroyImmediate(objects[i]);
                 objects.Clear();
-                Physics.simulationMode = previous;
+                PlanarPhysics.simulationMode = previous;
             }
             Finish(passed, (passed ? "PASS " : "FAIL ") + checks + "\n" + report);
         }
@@ -137,8 +138,8 @@ namespace Project.BossLogic.Editor
             GameObject result = new GameObject(name);
             objects.Add(result);
             result.SetActive(false);
-            result.AddComponent<BoxCollider>();
-            result.AddComponent<Rigidbody>().useGravity = false;
+            result.AddComponent<BoxCollider2D>();
+            result.AddComponent<Rigidbody2D>().gravityScale = 0f;
             BossController controller = result.AddComponent<BossController>();
             controller.SetTrackingEnabled(false);
             BossRightMoveExecutor executor = result.AddComponent<BossRightMoveExecutor>();

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -53,17 +54,17 @@ namespace Project.Player.Editor
                 sawProtection |= player.IsClimbCornerProtected;
                 if (stage == 1)
                 {
-                    if (sawProtection && !player.IsClimbCornerProtected && player.Motor.position.y > bounds.max.y + .35f)
+                    if (sawProtection && !player.IsClimbCornerProtected && player.Motor.WorldPosition().y > bounds.max.y + .35f)
                     {
                         Check(true, "actual loop wraps upward " + variant);
                         player.SetMoveInput(Vector2.zero); stage = 2; next = Time.time + .5f;
                     }
-                    else if (Time.time > next) throw new Exception("Actual upward corner timed out " + variant + " at " + player.Motor.position);
+                    else if (Time.time > next) throw new Exception("Actual upward corner timed out " + variant + " at " + player.Motor.WorldPosition());
                 }
                 else if (stage == 2 && Time.time >= next)
                 {
-                    Check(player.Motor.position.y > bounds.max.y + .35f && player.Motor.position.y < bounds.max.y + .7f,
-                        "settles on real top after surface lease expiry " + variant + " at " + player.Motor.position);
+                    Check(player.Motor.WorldPosition().y > bounds.max.y + .35f && player.Motor.WorldPosition().y < bounds.max.y + .7f,
+                        "settles on real top after surface lease expiry " + variant + " at " + player.Motor.WorldPosition());
                     Check(!player.IsDead, "climb handoff does not fall or kill player " + variant);
                     Cleanup(); variant++;
                     if (variant == 8) Finish(true, "PASS " + checks); else Setup();
@@ -84,15 +85,15 @@ namespace Project.Player.Editor
                 serialized.ApplyModifiedPropertiesWithoutUndo(); cube.ResetForRoom();
                 if (kind == 2) source.transform.rotation = Quaternion.Euler(0, 0, 90);
             }
-            Physics.SyncTransforms(); bounds = source.GetComponentInChildren<BoxCollider>().bounds;
-            floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            PlanarPhysics.SyncTransforms(); bounds = source.GetComponentInChildren<BoxCollider2D>().bounds;
+            floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             floor.name = "Authored support";
             floor.transform.position = new Vector3(bounds.center.x, bounds.min.y - .5f, 0);
             floor.transform.localScale = new Vector3(bounds.size.x, 1, 1);
             float edge = side < 0 ? bounds.min.x : bounds.max.x;
             player = Spawn("Player/Player.prefab", new Vector3(edge + side * .52f, bounds.max.y - .2f, 0)).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.SetMoveInput(Vector2.up); Physics.SyncTransforms();
+            player.SetMoveInput(Vector2.up); PlanarPhysics.SyncTransforms();
             sawProtection = false; stage = 1; next = Time.time + 4f;
         }
         private static void Cleanup()

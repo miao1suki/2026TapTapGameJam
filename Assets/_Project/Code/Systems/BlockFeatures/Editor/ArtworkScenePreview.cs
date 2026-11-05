@@ -298,9 +298,9 @@ namespace Project.BlockFeatures.Editor
             if (owner.GetComponent<Project.Mechanisms.DoorButton>() != null || owner.GetComponent<ButtonLockFeature>() != null)
                 return new Bounds(owner.transform.position, Vector3.one * cell);
             if (owner.TryGetComponent<LevelEditorMergedShape>(out var shape)) return shape.WorldBounds;
-            var box = owner.GetComponent<BoxCollider>();
+            var box = owner.GetComponent<BoxCollider2D>();
             if (owner.TryGetComponent<ContactCube>(out _))
-                foreach (var candidate in owner.GetComponentsInChildren<BoxCollider>(true))
+                foreach (var candidate in owner.GetComponentsInChildren<BoxCollider2D>(true))
                     if (!candidate.isTrigger) { box = candidate; break; }
             Bounds bounds = box != null ? BoxWorldBounds(box) : new Bounds(owner.transform.position,
                 owner.TryGetComponent<LevelEditorPlacedBlock>(out var placed) ? new Vector3(placed.SizeCells.x * cell, placed.SizeCells.y * cell, cell) : Vector3.one * cell);
@@ -313,16 +313,16 @@ namespace Project.BlockFeatures.Editor
             }
             return bounds;
         }
-        private static Bounds BoxWorldBounds(BoxCollider box)
+        private static Bounds BoxWorldBounds(BoxCollider2D box)
         {
             // Editor transform changes are not necessarily synchronized with
             // Physics yet. Pure artwork queries must not force a global sync or
-            // cache stale/empty native Collider.bounds after a drag or import.
+            // cache stale/empty native Collider2D.bounds after a drag or import.
             Matrix4x4 matrix = box.transform.localToWorldMatrix;
             Vector3 x = matrix.MultiplyVector(Vector3.right * box.size.x);
             Vector3 y = matrix.MultiplyVector(Vector3.up * box.size.y);
-            Vector3 z = matrix.MultiplyVector(Vector3.forward * box.size.z);
-            return new Bounds(matrix.MultiplyPoint3x4(box.center), new Vector3(
+            Vector3 z = matrix.MultiplyVector(Vector3.forward * 0f);
+            return new Bounds(matrix.MultiplyPoint3x4(box.offset), new Vector3(
                 Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x),
                 Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y),
                 Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z)));

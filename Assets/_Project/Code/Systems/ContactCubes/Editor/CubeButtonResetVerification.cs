@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,7 +37,7 @@ namespace Project.ContactCubes.Editor
             EditorApplication.update -= Tick; EditorApplication.update += Tick;
         }
         private static GameObject Spawn(string path,Vector3 position) => Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path),position,Quaternion.identity);
-        private static void Move(ContactCube cube,Vector3 position) { cube.transform.position = cube.GetComponent<Rigidbody>().position = position; Physics.SyncTransforms(); }
+        private static void Move(ContactCube cube,Vector3 position) { cube.transform.position = cube.GetComponent<Rigidbody2D>().position = position; PlanarPhysics.SyncTransforms(); }
         private static void Tick()
         {
             try
@@ -46,7 +47,7 @@ namespace Project.ContactCubes.Editor
                 if (phase == 0)
                 {
                     Project.ColorBlocks.ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
-                    var floor = GameObject.CreatePrimitive(PrimitiveType.Cube); floor.transform.position = new Vector3(20,-.5f,0); floor.transform.localScale = new Vector3(44,1,4);
+                    var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); floor.transform.position = new Vector3(20,-.5f,0); floor.transform.localScale = new Vector3(44,1,4);
                     manager = new GameObject("区域管理").AddComponent<RoomLifecycleManager>();
                     var a = new RoomRegion { id = "a" }; var b = new RoomRegion { id = "b" };
                     for (int x = 0; x < 40; x++) for (int y = 0; y < 10; y++) (x < 20 ? a : b).cells.Add(new Vector2Int(x,-y-1));
@@ -57,7 +58,7 @@ namespace Project.ContactCubes.Editor
                     var respawnSettings = new SerializedObject(player);
                     respawnSettings.FindProperty("respawnRandomRadiusBlocks").intValue = 1;
                     respawnSettings.ApplyModifiedPropertiesWithoutUndo();
-                    player.GetComponent<PlayerInputDriver>().enabled = false; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                    player.GetComponent<PlayerInputDriver>().enabled = false; player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                     cubes = new ContactCube[3];
                     for (int i = 0; i < 3; i++) cubes[i] = Spawn($"Assets/_Project/Content/ContactCubes/{(CubeColor)i}_ContactCube.prefab",new Vector3(3+i*2,3,0)).GetComponent<ContactCube>();
                     door = Spawn("Assets/_Project/Content/Mechanisms/Door.prefab",new Vector3(15,.5f,0)).GetComponent<DoorController>();
@@ -74,8 +75,8 @@ namespace Project.ContactCubes.Editor
                     Check(manager.CurrentRegionId == "a","initial player region");
                     for (int i = 0; i < 3; i++)
                     {
-                        Check(cubes[i].GetComponent<Rigidbody>().position.y < 1,"gravity changes authored position");
-                        cubes[i].GetComponent<ContactCubeMotion>().enabled = false; cubes[i].GetComponent<Rigidbody>().isKinematic = true; cubes[i].GetComponent<Rigidbody>().useGravity = false;
+                        Check(cubes[i].GetComponent<Rigidbody2D>().position.y < 1,"gravity changes authored position");
+                        cubes[i].GetComponent<ContactCubeMotion>().enabled = false; cubes[i].GetComponent<Rigidbody2D>().isKinematic = true; cubes[i].GetComponent<Rigidbody2D>().gravityScale = 0f;
                     }
                     Move(cubes[2],new Vector3(4,.5f,0)); phase = 2; deadline = Time.time + 1.2f; return;
                 }
@@ -87,8 +88,8 @@ namespace Project.ContactCubes.Editor
                     {
                         Check(Vector3.Distance(cubes[i].transform.position,new Vector3(3+i*2,3,0)) < .01f,"R restores placed position " + i);
                         Check(cubes[i].Length == 1 && cubes[i].State == CubeReactionState.Idle,"R restores cube state " + i);
-                        Check(cubes[i].GetComponent<Rigidbody>().linearVelocity == Vector3.zero,"R clears cube velocity " + i);
-                        cubes[i].GetComponent<ContactCubeMotion>().enabled = false; cubes[i].GetComponent<Rigidbody>().isKinematic = true; cubes[i].GetComponent<Rigidbody>().useGravity = false;
+                        Check(cubes[i].GetComponent<Rigidbody2D>().linearVelocity == Vector2.zero,"R clears cube velocity " + i);
+                        cubes[i].GetComponent<ContactCubeMotion>().enabled = false; cubes[i].GetComponent<Rigidbody2D>().isKinematic = true; cubes[i].GetComponent<Rigidbody2D>().gravityScale = 0f;
                     }
                     Check(latch.Mode == DoorButtonMode.Latched && latch.Persistent,"legacy mode remains latched");
                     Check(!held.GetComponent<RoomResetObject>().Persistent,"held button registered for room reset");
@@ -130,7 +131,7 @@ namespace Project.ContactCubes.Editor
                     Check(!held.IsPressed && door.State == DoorState.Locked,"R resets held signal and door");
                     Check(latch.IsPressed,"R preserves latched progress");
                     // Room reset restored dynamics; freeze only for deterministic pressure placement.
-                    cubes[0].GetComponent<Rigidbody>().isKinematic = true; cubes[0].GetComponent<Rigidbody>().useGravity = false;
+                    cubes[0].GetComponent<Rigidbody2D>().isKinematic = true; cubes[0].GetComponent<Rigidbody2D>().gravityScale = 0f;
                     Move(cubes[0],new Vector3(12,.5f,0)); phase = 9; deadline = Time.time + .12f; return;
                 }
                 if (phase == 9)
@@ -138,7 +139,7 @@ namespace Project.ContactCubes.Editor
                     // Editor update can observe the deadline before the next
                     // physics pressure query. Wait for that query, with a limit.
                     if (!held.IsPressed && Time.time < deadline+.5f) return;
-                    Check(held.IsPressed,"held repress before region exit; cube="+cubes[0].transform.position+", feet="+cubes[0].GetComponentInChildren<BoxCollider>().bounds.min.y+", player="+player.transform.position+", region="+manager.CurrentRegionId);
+                    Check(held.IsPressed,"held repress before region exit; cube="+cubes[0].transform.position+", feet="+cubes[0].GetComponentInChildren<BoxCollider2D>().bounds.min.y+", player="+player.transform.position+", region="+manager.CurrentRegionId);
                     player.transform.position = player.Motor.position = new Vector3(25,2,0); manager.UpdatePlayerRegion(player);
                     Check(!held.IsPressed && door.State == DoorState.Locked,"region exit resets held button");
                     Check(latch.IsPressed,"region exit preserves latched progress");
@@ -151,22 +152,22 @@ namespace Project.ContactCubes.Editor
                     Check(cubes[0].GetComponent<RoomResetObject>().RegionId == "a","moving cube does not change region ownership");
                     Check(cubes[0].transform.position.x < 10 && !cubes[0].GetComponent<ContactCubeMotion>().IsSuspended,"cross-region item returned and suspended carry released");
                     Check(!manager.CanPlaceInAuthoredRegion(cubes[0].GetComponent<RoomResetObject>(),new Vector3(25,2,0)),"drop destination in another room rejected");
-                    cubes[0].GetComponent<Rigidbody>().isKinematic = true; Move(cubes[0],new Vector3(-5,2,0));
+                    cubes[0].GetComponent<Rigidbody2D>().isKinematic = true; Move(cubes[0],new Vector3(-5,2,0));
                     phase = 11; deadline = Time.time + .12f; return;
                 }
                 if (phase == 11)
                 {
                     Check(cubes[0].transform.position.x > 0,"item outside every region returned");
-                    var capsule = player.GetComponent<CapsuleCollider>();
-                    player.transform.position = player.Motor.position = new Vector3(12,player.Motor.position.y + .05f - capsule.bounds.min.y,0);
-                    Physics.SyncTransforms(); phase = 12; deadline = Time.time + .12f; return;
+                    var capsule = player.GetComponent<CapsuleCollider2D>();
+                    player.transform.position = player.Motor.position = new Vector3(12,player.Motor.WorldPosition().y + .05f - capsule.bounds.min.y,0);
+                    PlanarPhysics.SyncTransforms(); phase = 12; deadline = Time.time + .12f; return;
                 }
                 if (phase == 12)
                 {
                     Check(held.IsPressed && door.State == DoorState.Unlocked,"player feet still activate pressure button");
-                    var capsule = player.GetComponent<CapsuleCollider>();
-                    player.transform.position = player.Motor.position = new Vector3(12,player.Motor.position.y + .25f - capsule.bounds.max.y,0);
-                    Physics.SyncTransforms(); phase = 13; deadline = Time.time + .12f; return;
+                    var capsule = player.GetComponent<CapsuleCollider2D>();
+                    player.transform.position = player.Motor.position = new Vector3(12,player.Motor.WorldPosition().y + .25f - capsule.bounds.max.y,0);
+                    PlanarPhysics.SyncTransforms(); phase = 13; deadline = Time.time + .12f; return;
                 }
                 Check(!held.IsPressed,"player head is not button pressure");
                 Finish(0,"PASS " + checks + " assertions");

@@ -60,7 +60,7 @@ namespace Project.SurfaceTiles.Editor
             List<Vector2> uvs = new List<Vector2>();
             List<int> triangles = new List<int>();
             SurfaceTilePalette palette = block.Palette;
-            BoxCollider collider = block.SurfaceCollider;
+            BoxCollider2D collider = block.SurfaceCollider;
             if (palette == null || collider == null || !palette.UsesSingleTexture())
             {
                 return CreateMesh(vertices, normals, uvs, triangles);
@@ -121,7 +121,7 @@ namespace Project.SurfaceTiles.Editor
             List<Vector3> normals = new List<Vector3>();
             List<Vector2> uvs = new List<Vector2>();
             List<int> triangles = new List<int>();
-            for (int faceIndex = 0; faceIndex < 6; faceIndex++)
+            for (int faceIndex = 0; faceIndex < 1; faceIndex++)
             {
                 SurfaceTileFace face = (SurfaceTileFace)faceIndex;
                 if (!faces.TryGetValue(face, out SurfaceTileBakedFace bakedFace) ||

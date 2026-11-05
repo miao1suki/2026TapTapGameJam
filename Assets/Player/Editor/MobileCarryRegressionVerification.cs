@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Reflection;
 using Project.BlockFeatures;
@@ -29,7 +30,7 @@ namespace Project.Player.Editor
         private static CarryableFeature carried;
         private static Vector3 destination;
         private static GameObject obstacle;
-        private static SimulationMode previousSimulation;
+        private static SimulationMode2D previousSimulation;
 
         public static void Run()
         {
@@ -53,7 +54,7 @@ namespace Project.Player.Editor
         private static void Move(Vector3 position)
         {
             player.Motor.position = position; player.transform.position = position;
-            player.Motor.linearVelocity = Vector3.zero; Physics.SyncTransforms();
+            player.Motor.linearVelocity = Vector3.zero; PlanarPhysics.SyncTransforms();
         }
         private static void Tick()
         {
@@ -62,27 +63,27 @@ namespace Project.Player.Editor
             {
                 if (phase == 0)
                 {
-                    previousSimulation = Physics.simulationMode; Physics.simulationMode = SimulationMode.Script;
+                    previousSimulation = PlanarPhysics.simulationMode; PlanarPhysics.simulationMode = SimulationMode2D.Script;
                     new GameObject("Verification Audio", typeof(AudioListener));
                     var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab");
                     var actor = Object.Instantiate(prefab, new Vector3(10.5f, -28.5f, 0), Quaternion.identity);
                     player = actor.GetComponent<PlayerController>();
                     actor.GetComponent<PlayerInputDriver>().enabled = false;
-                    player.Motor.interpolation = RigidbodyInterpolation.None;
-                    var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    player.Motor.interpolation = RigidbodyInterpolation2D.None;
+                    var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                     floor.transform.position = new Vector3(10, -29.5f, 0); floor.transform.localScale = new Vector3(30, 1, 2);
-                    Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms();
                     for (int i = 0; i < 80; i++)
                     {
                         typeof(PlayerController).GetMethod("FixedUpdate", Private).Invoke(player, null);
-                        Physics.Simulate(.02f); Physics.SyncTransforms();
+                        PlanarPhysics.Simulate(.02f); PlanarPhysics.SyncTransforms();
                     }
-                    var item = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    var item = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                     item.transform.position = new Vector3(11.5f, -28.5f, 0);
                     carried = item.AddComponent<CarryableFeature>();
                     Check(carried.BeginCarry(player), "standard player starts carrying");
                     typeof(PlayerController).GetField("selectedCarryTarget", Private).SetValue(player, carried);
-                    carried.UpdateCarryAnchor(player.CarryAnchorWorldPosition); Physics.SyncTransforms();
+                    carried.UpdateCarryAnchor(player.CarryAnchorWorldPosition); PlanarPhysics.SyncTransforms();
                     WallPlacementChecks();
                     player.SetMoveInput(Vector2.right);
                     Vector3 stable = Vector3.zero;
@@ -95,26 +96,26 @@ namespace Project.Player.Editor
                         Check(bounds.center == stable, "cell-boundary jitter keeps one preview cell");
                     }
                     Bounds proposed = ((IPlayerCarryPlacementTarget)carried).GetCarryPlacementBounds(stable);
-                    Vector3 before = player.Motor.position;
-                    Check(player.ResolveCarryOverlap(proposed, item.transform, false) && player.Motor.position == before,
+                    Vector3 before = player.Motor.WorldPosition();
+                    Check(player.ResolveCarryOverlap(proposed, item.transform, false) && player.Motor.WorldPosition() == before,
                         "preview clearance never moves the player");
                     player.SetMoveInput(Vector2.zero);
                     Check(player.ResolveCarryOverlap(proposed, item.transform, true), "small self-overlap can be separated");
-                    Check(player.Motor.position == before, "separation request never teleports the player");
+                    Check(player.Motor.WorldPosition() == before, "separation request never teleports the player");
                     float largestStep = 0f;
                     for (int i = 0; i < 9; i++)
                     {
-                        float oldX = player.Motor.position.x;
+                        float oldX = player.Motor.WorldPosition().x;
                         typeof(PlayerController).GetMethod("FixedUpdate", Private).Invoke(player, null);
-                        Physics.Simulate(.02f); Physics.SyncTransforms();
-                        largestStep = Mathf.Max(largestStep, Mathf.Abs(player.Motor.position.x - oldX));
+                        PlanarPhysics.Simulate(.02f); PlanarPhysics.SyncTransforms();
+                        largestStep = Mathf.Max(largestStep, Mathf.Abs(player.Motor.WorldPosition().x - oldX));
                     }
                     Check(largestStep > .01f && largestStep < .13f, "separation is spread over physical steps");
-                    Check(player.GetComponent<CapsuleCollider>().bounds.max.x <= proposed.min.x + .004f,
+                    Check(player.GetComponent<CapsuleCollider2D>().bounds.max.x <= proposed.min.x + .004f,
                         "motor separates the player outside placed bounds");
                     Move(before);
-                    obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    obstacle.transform.position = before + Vector3.left * .85f; Physics.SyncTransforms();
+                    obstacle = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
+                    obstacle.transform.position = before + Vector3.left * .85f; PlanarPhysics.SyncTransforms();
                     Check(!player.ResolveCarryOverlap(proposed, item.transform, false), "escape blocked by wall is rejected");
                     Object.DestroyImmediate(obstacle);
                     Bounds huge = new Bounds(before + Vector3.right * .1f, Vector3.one * 3);
@@ -124,14 +125,14 @@ namespace Project.Player.Editor
                     destination = new Vector3(11.5f, -28.5f, 0);
                     player.UpdateCarryInput(false, false, true, false);
                     Check(carried.IsCarryDropAnimating, "drop animation begins through player command");
-                    Physics.simulationMode = SimulationMode.FixedUpdate;
+                    PlanarPhysics.simulationMode = SimulationMode2D.FixedUpdate;
                     began = Time.time; phase = 1;
                 }
                 else if (phase == 1 && Time.time - began > .4f)
                 {
                     Check(!carried.IsCarryActive && !carried.IsCarryDropAnimating, "clear drop completes");
-                    Check(carried.GetComponent<Collider>().enabled, "solid collider restored only after safe separation");
-                    Check(player.GetComponent<CapsuleCollider>().bounds.max.x <= destination.x - .5f + .004f,
+                    Check(carried.GetComponent<Collider2D>().enabled, "solid collider restored only after safe separation");
+                    Check(player.GetComponent<CapsuleCollider2D>().bounds.max.x <= destination.x - .5f + .004f,
                         "actual animation completion leaves player outside cube");
                     Move(new Vector3(10.8f, -28.5f, 0));
                     Check(carried.BeginCarry(player), "second pickup begins");
@@ -139,16 +140,16 @@ namespace Project.Player.Editor
                     carried.UpdateCarryAnchor(player.CarryAnchorWorldPosition);
                     player.UpdateCarryInput(false, false, true, false);
                     Check(carried.IsCarryDropAnimating, "second drop begins through player command");
-                    obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube); obstacle.transform.position = destination;
-                    Physics.SyncTransforms(); began = Time.time; phase = 2;
+                    obstacle = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); obstacle.transform.position = destination;
+                    PlanarPhysics.SyncTransforms(); began = Time.time; phase = 2;
                 }
                 else if (phase == 2 && Time.time - began > .4f)
                 {
                     Check(carried.IsCarryActive && !carried.IsCarryDropAnimating,
                         $"obstacle entering during animation keeps object safely held (active={carried.IsCarryActive}, animating={carried.IsCarryDropAnimating})");
-                    Check(!carried.GetComponent<Collider>().enabled, "failed drop never enables overlapping solid collider");
+                    Check(!carried.GetComponent<Collider2D>().enabled, "failed drop never enables overlapping solid collider");
                     Object.DestroyImmediate(obstacle);
-                    obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    obstacle = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                     obstacle.transform.position = new Vector3(12.5f, -28.5f, 0);
                     Move(new Vector3(11.48f, -28.5f, 0));
                     carried.UpdateCarryAnchor(player.CarryAnchorWorldPosition);
@@ -156,18 +157,18 @@ namespace Project.Player.Editor
                     Check(player.TryGetCarryPlacementPreview(out Bounds preview, out bool valid) && valid &&
                         Mathf.Abs(preview.center.x - 10.5f) < .01f, "tap left beside right wall previews the left cell");
                     player.UpdateCarryInput(false, true, false, false);
-                    Check(carried.IsCarryDropAnimating && Mathf.Abs(player.Motor.position.x - 11.48f) < .001f,
+                    Check(carried.IsCarryDropAnimating && Mathf.Abs(player.Motor.WorldPosition().x - 11.48f) < .001f,
                         "wall-side left drop starts without snapping player");
                     began = Time.time; phase = 3;
                 }
                 else if (phase == 3 && Time.time - began > .5f)
                 {
-                    Check(!carried.IsCarryActive && carried.GetComponent<Collider>().enabled,
+                    Check(!carried.IsCarryActive && carried.GetComponent<Collider2D>().enabled,
                         "wall-side left drop completes with solid restored");
-                    Check(Mathf.Abs(player.Motor.position.x - 11.5f) < .015f,
+                    Check(Mathf.Abs(player.Motor.WorldPosition().x - 11.5f) < .015f,
                         "one-cell gap fits player between placed block and opposite wall");
-                    Check(!Physics.ComputePenetration(player.GetComponent<CapsuleCollider>(), player.Motor.position,
-                        player.transform.rotation, obstacle.GetComponent<Collider>(), obstacle.transform.position,
+                    Check(!PlanarPhysics.ComputePenetration(player.GetComponent<CapsuleCollider2D>(), player.Motor.WorldPosition(),
+                        player.transform.rotation, obstacle.GetComponent<Collider2D>(), obstacle.transform.position,
                         Quaternion.identity, out _, out float depth) || depth < .004f,
                         "smooth separation never penetrates opposite wall");
                     Object.DestroyImmediate(obstacle);
@@ -175,10 +176,10 @@ namespace Project.Player.Editor
                     Check(carried.BeginCarry(player), "mirror case pickup");
                     typeof(PlayerController).GetField("selectedCarryTarget", Private).SetValue(player, carried);
                     carried.UpdateCarryAnchor(player.CarryAnchorWorldPosition);
-                    obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    obstacle = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                     obstacle.transform.position = new Vector3(19.5f, -28.5f, 0);
                     player.SetMoveInput(Vector2.right); player.SetMoveInput(Vector2.zero);
-                    Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms();
                     Check(player.TryGetCarryPlacementPreview(out _, out bool valid) && valid,
                         "mirror case permits right placement beside left wall");
                     player.UpdateCarryInput(false, false, true, false);
@@ -187,9 +188,9 @@ namespace Project.Player.Editor
                 }
                 else if (phase == 4 && Time.time - began > .5f)
                 {
-                    Check(!carried.IsCarryActive && carried.GetComponent<Collider>().enabled,
+                    Check(!carried.IsCarryActive && carried.GetComponent<Collider2D>().enabled,
                         "mirror case right drop completes");
-                    Check(Mathf.Abs(player.Motor.position.x - 20.5f) < .015f,
+                    Check(Mathf.Abs(player.Motor.WorldPosition().x - 20.5f) < .015f,
                         "mirror case motor separation settles in one cell");
                     Object.DestroyImmediate(obstacle);
                     Check(carried.BeginCarry(player), "cancel case pickup");
@@ -200,7 +201,7 @@ namespace Project.Player.Editor
                     Check(carried.IsCarryDropAnimating && player.IsCarrySeparationPending(carried.transform),
                         "cancel case has a pending motor separation");
                     carried.CancelCarry();
-                    Check(!player.IsCarrySeparationPending(carried.transform) && carried.GetComponent<Collider>().enabled,
+                    Check(!player.IsCarrySeparationPending(carried.transform) && carried.GetComponent<Collider2D>().enabled,
                         "cancel restores solid and cancels pending velocity");
                     Finish(true);
                 }
@@ -210,14 +211,14 @@ namespace Project.Player.Editor
         }
         private static void WallPlacementChecks()
         {
-            var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             wall.transform.position = new Vector3(12.5f, -28.5f, 0);
             player.SetMoveInput(Vector2.left);
             foreach (float x in new[] { 11.48f, 11.49f, 11.50f, 11.51f })
             {
                 Move(new Vector3(x, -28.5f, 0));
                 carried.UpdateCarryAnchor(player.CarryAnchorWorldPosition);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 bool shown = player.TryGetCarryPlacementPreview(out Bounds bounds, out bool valid);
                 Debug.Log($"WALL BASELINE x={x} shown={shown} valid={valid} cell={bounds.center}");
                 Check(shown && valid, "opposite wall permits left adjacent cell x=" + x);
@@ -392,7 +393,7 @@ namespace Project.Player.Editor
         }
         private static void Finish(bool ok)
         {
-            Physics.simulationMode = previousSimulation; SessionState.SetBool(Key, false);
+            PlanarPhysics.simulationMode = previousSimulation; SessionState.SetBool(Key, false);
             EditorApplication.update -= Tick;
             if (ok) Debug.Log("MOBILE CARRY VERIFICATION PASSED " + checks);
             EditorApplication.Exit(ok ? 0 : 1);

@@ -6,7 +6,7 @@ namespace Project.SurfaceTiles
 {
     [ExecuteAlways]
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(BoxCollider))]
+    [RequireComponent(typeof(BoxCollider2D))]
     public sealed class SurfaceTileBlock : MonoBehaviour
     {
         public const float MaximumOffsetCells = 2f;
@@ -46,7 +46,7 @@ namespace Project.SurfaceTiles
             bakedMesh != null &&
             bakedMaterial != null &&
             GeometryMatchesBake();
-        public BoxCollider SurfaceCollider => GetComponent<BoxCollider>();
+        public BoxCollider2D SurfaceCollider => GetComponent<BoxCollider2D>();
 
         public Vector2Int GetGridSize(SurfaceTileFace face)
         {
@@ -333,8 +333,8 @@ namespace Project.SurfaceTiles
             bakedMesh = mesh;
             bakedMaterial = material;
             bakeUpToDate = mesh != null && material != null;
-            BoxCollider collider = SurfaceCollider;
-            bakedColliderCenter = collider != null ? collider.center : Vector3.zero;
+            BoxCollider2D collider = SurfaceCollider;
+            bakedColliderCenter = collider != null ? collider.offset : Vector3.zero;
             bakedColliderSize = collider != null ? collider.size : Vector3.one;
             bakedLossyScale = transform.lossyScale;
             bakedCellSize = cellSize;
@@ -398,9 +398,9 @@ namespace Project.SurfaceTiles
 
         private bool GeometryMatchesBake()
         {
-            BoxCollider collider = SurfaceCollider;
+            BoxCollider2D collider = SurfaceCollider;
             return collider != null &&
-                   Approximately(collider.center, bakedColliderCenter) &&
+                   Approximately(collider.offset, bakedColliderCenter) &&
                    Approximately(collider.size, bakedColliderSize) &&
                    Approximately(transform.lossyScale, bakedLossyScale) &&
                    Mathf.Approximately(cellSize, bakedCellSize);

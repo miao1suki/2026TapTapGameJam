@@ -68,7 +68,7 @@ public static class TAEffectsGpuAudit
                 var shader = Shader.Find("Universal Render Pipeline/Unlit");
                 Check(shader != null && shader.isSupported, "URP test surface shader supported");
                 material = new Material(shader); material.SetTexture("_BaseMap", pattern);
-                var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                var quad = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Quad);
                 quad.transform.localScale = new Vector3(8f, 8f, 1f);
                 quad.GetComponent<Renderer>().sharedMaterial = material;
                 camera = new GameObject("TA GPU audit camera").AddComponent<Camera>();

@@ -116,8 +116,7 @@ namespace Project.CameraModes
             info = new CameraViewportInfo(
                 outputCamera.pixelRect,
                 outputCamera.orthographic,
-                outputCamera.orthographicSize,
-                outputCamera.fieldOfView);
+                outputCamera.orthographicSize);
             return true;
         }
 
@@ -1005,7 +1004,7 @@ namespace Project.CameraModes
         private static void SanitizeState(ref CameraState state)
         {
             state.orthographicSize = Mathf.Max(0.01f, state.orthographicSize);
-            state.fieldOfView = Mathf.Clamp(state.fieldOfView, 1f, 179f);
+
             if (state.rotation.x == 0f && state.rotation.y == 0f &&
                 state.rotation.z == 0f && state.rotation.w == 0f)
             {
@@ -1016,19 +1015,22 @@ namespace Project.CameraModes
         private void ApplyViewModeProjection(
             ref CameraState state, ICameraControlSource source = null)
         {
+            state.projection = CameraProjectionMode.Orthographic;
+            state.rotation = Quaternion.Euler(0f, 0f, state.rotation.eulerAngles.z);
             if (viewModeAuthority != null &&
                 viewModeAuthority.TryGetProjectionState(
                     out CameraState projectionState))
             {
                 state.projection = projectionState.projection;
                 state.orthographicSize = projectionState.orthographicSize;
-                state.fieldOfView = projectionState.fieldOfView;
+
+                state.position.z = viewModeAuthority.PresentationDepth;
             }
             if (source is ICameraLensOverrideSource lens &&
-                lens.TryGetLensOverride(out float size, out float fieldOfView))
+                lens.TryGetLensOverride(out float size))
             {
                 state.orthographicSize = size;
-                state.fieldOfView = fieldOfView;
+
             }
         }
 
@@ -1059,72 +1061,32 @@ namespace Project.CameraModes
                     from.orthographicSize,
                     to.orthographicSize,
                     amount),
-                fieldOfView = Mathf.LerpUnclamped(from.fieldOfView, to.fieldOfView, amount),
+
             };
         }
 
         private void ApplyStableState(CameraState state)
         {
-            if (outputCamera == null)
-            {
-                return;
-            }
-
-            outputCamera.transform.SetPositionAndRotation(state.position, state.rotation);
-            outputCamera.ResetProjectionMatrix();
-            outputCamera.orthographic = state.projection == CameraProjectionMode.Orthographic;
-            outputCamera.orthographicSize = state.orthographicSize;
-            outputCamera.fieldOfView = state.fieldOfView;
+            if (outputCamera == null) return;
+            outputCamera.transform.SetPositionAndRotation(state.position, Quaternion.Euler(0f, 0f, state.rotation.eulerAngles.z));
+            outputCamera.orthographic = true;
+            outputCamera.orthographicSize = Mathf.Max(.01f, state.orthographicSize);
             outputCamera.ResetProjectionMatrix();
         }
 
-        private void ApplyTransitionState(
-            CameraState to,
-            CameraState blended,
-            float amount)
+        private void ApplyTransitionState(CameraState to, CameraState blended, float amount)
         {
-            outputCamera.transform.SetPositionAndRotation(blended.position, blended.rotation);
-            Matrix4x4 toProjection = BuildProjection(to);
-            outputCamera.orthographic = false;
-            outputCamera.projectionMatrix = LerpMatrix(
-                transitionStartProjection,
-                toProjection,
-                amount);
-            outputCamera.orthographicSize = blended.orthographicSize;
-            outputCamera.fieldOfView = blended.fieldOfView;
+            ApplyStableState(blended);
         }
 
         private Matrix4x4 BuildProjection(CameraState state)
         {
             float aspect = outputCamera.aspect > 0f ? outputCamera.aspect : 16f / 9f;
-            if (state.projection == CameraProjectionMode.Orthographic)
-            {
-                float halfWidth = state.orthographicSize * aspect;
-                return Matrix4x4.Ortho(
-                    -halfWidth,
-                    halfWidth,
-                    -state.orthographicSize,
-                    state.orthographicSize,
-                    outputCamera.nearClipPlane,
-                    outputCamera.farClipPlane);
-            }
-
-            return Matrix4x4.Perspective(
-                state.fieldOfView,
-                aspect,
-                outputCamera.nearClipPlane,
-                outputCamera.farClipPlane);
+            float halfWidth = state.orthographicSize * aspect;
+            return Matrix4x4.Ortho(-halfWidth, halfWidth, -state.orthographicSize, state.orthographicSize,
+                outputCamera.nearClipPlane, outputCamera.farClipPlane);
         }
 
-        private static Matrix4x4 LerpMatrix(Matrix4x4 from, Matrix4x4 to, float amount)
-        {
-            Matrix4x4 result = default;
-            for (int index = 0; index < 16; index++)
-            {
-                result[index] = Mathf.LerpUnclamped(from[index], to[index], amount);
-            }
 
-            return result;
-        }
     }
 }

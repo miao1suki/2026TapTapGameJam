@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -71,12 +72,12 @@ namespace Project.Player.Editor
         private static void Move(Transform target, Vector3 position)
         {
             target.position = position;
-            if (target.TryGetComponent<Rigidbody>(out var body))
+            if (target.TryGetComponent<Rigidbody2D>(out var body))
             {
                 body.position = position;
                 if (!body.isKinematic) body.linearVelocity = Vector3.zero;
             }
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
         }
         private static object Call(object target, string method, params object[] args) =>
             target.GetType().GetMethod(method, Hidden).Invoke(target, args);
@@ -105,12 +106,12 @@ namespace Project.Player.Editor
                         player.GetComponent<PlayerInputDriver>().enabled = false;
                         ready = Time.time + .8f; phase = 10; return;
                     }
-                    var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                     floor.name = "Audit floor"; floor.transform.position = new Vector3(10, 9.5f, 0);
                     floor.transform.localScale = new Vector3(20, 1, 3);
                     player = Spawn("Player/Player.prefab", new Vector3(10.5f, 10.5f, 0)).GetComponent<PlayerController>();
                     player.GetComponent<PlayerInputDriver>().enabled = false;
-                    player.Motor.interpolation = RigidbodyInterpolation.None;
+                    player.Motor.interpolation = RigidbodyInterpolation2D.None;
                     cube = Spawn("ContactCubes/Red_ContactCube.prefab", new Vector3(9.5f, 10.5f, 0)).GetComponent<ContactCube>();
                     carried = cube.GetComponent<CarryableFeature>();
                     destination = new Vector3(11.5f, 10.5f, 0);
@@ -139,12 +140,12 @@ namespace Project.Player.Editor
                     // Simulate an old collider override being restored before
                     // the sensor's next physics step. Only this exact volume
                     // is non-solid; real descendants are not exempted.
-                    button.GetComponent<BoxCollider>().isTrigger = false;
-                    Physics.SyncTransforms();
+                    button.GetComponent<BoxCollider2D>().isTrigger = false;
+                    PlanarPhysics.SyncTransforms();
                     Check(CellFree(new Vector3Int(11, 10, 0)) && carried.CanPlaceCarryAt(player, destination),
                         "stale sensor collider flags cannot reject an otherwise valid weighted drop");
                     Call(button, "FixedUpdate");
-                    Check(button.GetComponent<BoxCollider>().isTrigger, "button restores its non-solid pressure invariant");
+                    Check(button.GetComponent<BoxCollider2D>().isTrigger, "button restores its non-solid pressure invariant");
                     Check(player.TryGetCarryPlacementPreview(out var bounds, out bool valid) && valid &&
                         Vector3.Distance(bounds.center, destination) < .03f, "preview is valid at the identical real destination");
                     player.UpdateCarryInput(false, false, true, false);
@@ -155,7 +156,7 @@ namespace Project.Player.Editor
                 {
                     player.UpdateCarryInput(false, false, false, false);
                     Check(!player.IsCarrying && !carried.IsCarryActive, "drop completes rather than returning to the head");
-                    Check(Vector3.Distance(cube.transform.position, destination) < .08f && cube.GetComponent<Rigidbody>().useGravity,
+                    Check(Vector3.Distance(cube.transform.position, destination) < .08f && (cube.GetComponent<Rigidbody2D>().gravityScale != 0f),
                         "placed cube remains gravity-enabled in the button cell");
                     Check(button.IsPressed, "the dropped cube actually presses the existing button");
                     VerifyDirections(); VerifyBlockedPlacement(); VerifyColorButtonResetPolicy();
@@ -173,14 +174,14 @@ namespace Project.Player.Editor
         private static void VerifyDirections()
         {
             Move(player.transform, new Vector3(30.5f, 10.5f, 0));
-            cube.GetComponent<Rigidbody>().isKinematic = true;
+            cube.GetComponent<Rigidbody2D>().isKinematic = true;
             foreach (ButtonFacing facing in Enum.GetValues(typeof(ButtonFacing)))
             {
                 using var serialized = new SerializedObject(button);
                 var property = serialized.FindProperty("facing");
                 property.intValue = (int)facing;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
-                ButtonPressureGeometry.Configure(button.GetComponent<BoxCollider>(), facing);
+                ButtonPressureGeometry.Configure(button.GetComponent<BoxCollider2D>(), facing);
                 button.ResetButton(); Move(cube.transform, destination);
                 Call(button, "FixedUpdate");
                 Check(button.IsPressed, facing + " accepts the cube face directed toward its edge");
@@ -220,21 +221,21 @@ namespace Project.Player.Editor
         {
             Move(cube.transform, new Vector3(50.5f, 10.5f, 0));
             Move(player.transform, new Vector3(10.5f, 10.5f, 0));
-            var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             wall.transform.position = destination + Vector3.right * .45f;
             wall.transform.localScale = new Vector3(.02f, 1, 1);
             wall.transform.SetParent(button.transform, true);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(!CellFree(new Vector3Int(11, 10, 0)), "a thin actual wall still rejects the button cell");
             Object.DestroyImmediate(wall);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(CellFree(new Vector3Int(11, 10, 0)), "removing only the wall immediately restores valid button occupancy");
         }
 
         private static void VerifyColorButtonResetPolicy()
         {
             Move(player.transform, new Vector3(30.5f, 10.5f, 0));
-            cube.GetComponent<Rigidbody>().isKinematic = true;
+            cube.GetComponent<Rigidbody2D>().isKinematic = true;
             foreach (ButtonFacing facing in Enum.GetValues(typeof(ButtonFacing)))
             foreach (DoorButtonMode mode in Enum.GetValues(typeof(DoorButtonMode)))
             {
@@ -269,7 +270,7 @@ namespace Project.Player.Editor
                     member.RestorePose(); member.RestoreState();
                     Check(feature.IsSignalActive == (mode == DoorButtonMode.Latched),
                         mode + " " + facing + " room R reset dispatch releases Held and retains Latched");
-                    Check(feature.Facing == facing && instance.GetComponent<BoxCollider>().isTrigger,
+                    Check(feature.Facing == facing && instance.GetComponent<BoxCollider2D>().isTrigger,
                         mode + " " + facing + " room reset retains pressure orientation and non-solid sensor");
                 }
                 finally { Object.DestroyImmediate(instance); }
@@ -278,8 +279,8 @@ namespace Project.Player.Editor
 
         private static void VerifyGamingButtons()
         {
-            Physics.simulationMode = SimulationMode.Script;
-            var hits = new Collider[128];
+            PlanarPhysics.simulationMode = SimulationMode2D.Script;
+            var hits = new Collider2D[128];
             var buttons = Object.FindObjectsByType<DoorButton>(FindObjectsSortMode.None);
             Check(buttons.Length > 0, "formal Gaming contains authored door buttons");
             foreach (var candidate in buttons)
@@ -290,7 +291,7 @@ namespace Project.Player.Editor
                 var member = candidate.GetComponent<Project.Rooms.RoomResetObject>();
                 Debug.Log("GAMING BUTTON: " + candidate.name + " id=" + (placed != null ? placed.PlanningBoxId : "manual") +
                     " position=" + target.ToString("F3") + " cell=" + cell + " region=" + (member != null ? member.RegionId : "none") +
-                    " pressure=" + candidate.GetComponent<BoxCollider>().isTrigger);
+                    " pressure=" + candidate.GetComponent<BoxCollider2D>().isTrigger);
                 foreach (int side in new[] { -1, 1 })
                 {
                     Move(player.transform, new Vector3(cell.x + .5f + side, cell.y + .5f, target.z));
@@ -299,8 +300,8 @@ namespace Project.Player.Editor
                     bool free = CellFree(cell);
                     Debug.Log("GAMING BUTTON QUERY: " + (side < 0 ? "from left" : "from right") + " gridBlocked=" + gridBlocked +
                         " rayBlocked=" + rayBlocked + " cellFree=" + free);
-                    int count = Physics.OverlapBoxNonAlloc(new Vector3(cell.x + .5f, cell.y + .5f, target.z), Vector3.one * .49f,
-                        hits, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+                    int count = PlanarPhysics.OverlapBoxNonAlloc(new Vector3(cell.x + .5f, cell.y + .5f, target.z), Vector3.one * .49f,
+                        hits, Quaternion.identity, ~0, TriggerQuery.Ignore);
                     for (int i = 0; i < count; i++)
                     {
                         var hit = hits[i];

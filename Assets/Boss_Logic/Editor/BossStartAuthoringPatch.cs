@@ -106,7 +106,7 @@ namespace Project.BossLogic.Editor
             Require(!All<TeleportAnchorFeature>(gamingScene).Any(a=>a.TeleportId=="Start" &&
                 a.GetComponentInParent<LevelEditorPlacedBlock>()?.PlanningBoxId!=StartId),"no unrelated Start ID will be overwritten");
             log.AppendLine($"Preflight: Gaming {gamingPlaced} placed objects; Boss {bossPlaced}; exact player start {spawn:R}; offset {offset:R}");
-            if (entryScene.TryGetComponent<BoxCollider>(out var triggerShape))
+            if (entryScene.TryGetComponent<BoxCollider2D>(out var triggerShape))
                 log.AppendLine($"Boss trigger actual bounds {triggerShape.bounds}; return ID=Start (no fake Boss Start or cross-scene load).");
 
             EnsureFolder();
@@ -240,7 +240,7 @@ namespace Project.BossLogic.Editor
             box.propEntryId=prop.EntryId; box.propEntryName=prop.DisplayName; box.hasComponentOverrides=true;
             box.componentOverrides ??= new List<LevelEditorComponentValueOverride>();
             // A scene-local numeric collider reference is not portable. The trigger's
-            // ManagedCollider resolves null to its own existing Collider, so this
+            // ManagedCollider resolves null to its own existing Collider2D, so this
             // replaces only an invalid token, not its geometry or contact behaviour.
             var localCollider=box.componentOverrides.FirstOrDefault(v=>v.ComponentPath=="" &&
                 v.ComponentTypeName==typeof(ContactTimelineTrigger).FullName && v.PropertyPath=="targetCollider" && v.Value=="reference:local");
@@ -302,7 +302,7 @@ namespace Project.BossLogic.Editor
                     Require(Mathf.Approximately(gate.MinimumRatio,.3f) && settings.FindProperty("returnDestinationId").stringValue=="Start",
                         "real builder retains Gate type/30%/Start after planning reconstruction");
                     ContactTimelineTrigger trigger=result.GetComponent<ContactTimelineTrigger>();
-                    Require(trigger.ManagedCollider==result.GetComponent<BoxCollider>(),"null targetCollider safely resolves the trigger's own BoxCollider");
+                    Require(trigger.ManagedCollider==result.GetComponent<BoxCollider2D>(),"null targetCollider safely resolves the trigger's own BoxCollider2D");
                     var timelineValue=box.componentOverrides.First(v=>v.ComponentTypeName==typeof(ContactTimelineTrigger).FullName && v.PropertyPath=="timeline");
                     Require(GlobalObjectId.GetGlobalObjectIdSlow(trigger.Timeline).ToString()==timelineValue.Value,
                         "real builder preserves the original Timeline resource");

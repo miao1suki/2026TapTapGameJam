@@ -103,7 +103,7 @@ namespace Project.FastTravel
             boundFlow = flow;
             if (boundFlow != null) boundFlow.TransitionStarted += OnTransitionStarted;
         }
-        // Release synchronously, before the menu captures Rigidbody state. An
+        // Release synchronously, before the menu captures Rigidbody2D state. An
         // Update-delayed release can make its temporary kinematic flag permanent.
         private void OnTransitionStarted(GameFlowSceneId target) => Close();
         private void OnApplicationPause(bool paused) { if (paused) Close(); }
@@ -328,7 +328,7 @@ namespace Project.FastTravel
             travelState = to;
         }
         public bool TryGetCameraState(in CameraControlContext context, out CameraState state) { state = travelState; return isActiveAndEnabled; }
-        public bool TryGetLensOverride(out float size, out float fov) { size = travelState.orthographicSize; fov = travelState.fieldOfView; return cameraHandle.IsValid; }
+        public bool TryGetLensOverride(out float size) { size = travelState.orthographicSize;  return cameraHandle.IsValid; }
 
         private void BuildMapContent()
         {

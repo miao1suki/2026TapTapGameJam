@@ -161,11 +161,13 @@ namespace Project.GameFlow.Tests
             Assert.That(prefab.CompareTag("Player"), Is.True);
             Assert.That(prefab.transform.localPosition, Is.EqualTo(Vector3.zero));
             Assert.That(prefab.transform.localScale, Is.EqualTo(Vector3.one));
-            var capsule = prefab.GetComponent<CapsuleCollider>();
-            Assert.That(capsule.center, Is.EqualTo(Vector3.zero));
-            Assert.That(capsule.height, Is.EqualTo(1f));
-            Assert.That(capsule.radius, Is.EqualTo(.5f));
-            Assert.That(prefab.GetComponentsInChildren<Collider>(true).Length, Is.EqualTo(1));
+            var capsule = prefab.GetComponent<CapsuleCollider2D>();
+            Assert.That(capsule.offset, Is.EqualTo(Vector2.zero));
+            Assert.That(capsule.size.y, Is.EqualTo(1f));
+            // Box2D requires a small horizontal clearance to traverse a one-cell shaft.
+            // The authored footprint and full visual height remain one grid cell.
+            Assert.That(capsule.size.x, Is.EqualTo(.96f).Within(.0001f));
+            Assert.That(prefab.GetComponentsInChildren<Collider2D>(true).Length, Is.EqualTo(1));
             Assert.That(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/RuntimePlayer.prefab"), Is.Null);
             Assert.That(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player(暂定).prefab"), Is.Null);
         }

@@ -9,7 +9,8 @@
     "Project.Shared.Runtime",
     "Unity.InputSystem",
     "Unity.TextMeshPro",
-    "Unity.UGUI"
+    "Unity.UGUI",
+    "Project.PlanarPhysics.Runtime"
   ],
   "includePlatforms": [
     "Editor"

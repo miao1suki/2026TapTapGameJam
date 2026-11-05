@@ -90,15 +90,15 @@ namespace Project.BossLogic
         private Vector3 originPosition;
         private Quaternion originRotation;
         private float baseOrthographicSize;
-        private float baseFieldOfView;
+
         private bool started;
         private bool failed;
-        private Collider[] playerColliders =
-            System.Array.Empty<Collider>();
+        private Collider2D[] playerColliders =
+            System.Array.Empty<Collider2D>();
         private Renderer[] playerRenderers =
             System.Array.Empty<Renderer>();
-        private Collider[] bossColliders =
-            System.Array.Empty<Collider>();
+        private Collider2D[] bossColliders =
+            System.Array.Empty<Collider2D>();
         private Renderer[] bossRenderers =
             System.Array.Empty<Renderer>();
 
@@ -215,7 +215,7 @@ namespace Project.BossLogic
             baseOrthographicSize = Mathf.Max(
                 .01f,
                 state.orthographicSize);
-            baseFieldOfView = state.fieldOfView;
+
             viewModeHandle = rig.RequestViewMode(
                 CameraViewMode.Side2D,
                 CameraTransition.Immediate);
@@ -277,14 +277,10 @@ namespace Project.BossLogic
             }
 
             rig.SetShotLens(
-                baseOrthographicSize,
-                baseFieldOfView);
+                baseOrthographicSize);
             rig.SetShotTransform(
                 position,
-                Quaternion.Euler(
-                    0f,
-                    rig.PlanarYaw,
-                    0f));
+                Quaternion.Euler(0f, 0f, rig.PlanarYaw));
         }
 
         private void ApplyDualTargetFrame(float time)
@@ -338,37 +334,29 @@ namespace Project.BossLogic
                 targetSize,
                 progress);
             rig.SetShotLens(
-                size,
-                baseFieldOfView);
+                size);
             rig.SetShotTransform(
                 position,
-                Quaternion.Euler(
-                    0f,
-                    rig.PlanarYaw,
-                    0f));
+                Quaternion.Euler(0f, 0f, rig.PlanarYaw));
         }
 
         private void ApplyPlayerFocus()
         {
             rig.SetShotLens(
-                baseOrthographicSize,
-                baseFieldOfView);
+                baseOrthographicSize);
             rig.SetShotTransform(
                 player.position +
                 frame.ToWorldOffset(playerFocusOffset),
-                Quaternion.Euler(
-                    0f,
-                    rig.PlanarYaw,
-                    0f));
+                Quaternion.Euler(0f, 0f, rig.PlanarYaw));
         }
 
         private static void CacheBounds(
             Transform anchor,
-            ref Collider[] colliders,
+            ref Collider2D[] colliders,
             ref Renderer[] renderers)
         {
             colliders =
-                anchor.GetComponentsInChildren<Collider>(
+                anchor.GetComponentsInChildren<Collider2D>(
                     true);
             renderers =
                 anchor.GetComponentsInChildren<Renderer>(
@@ -376,7 +364,7 @@ namespace Project.BossLogic
         }
 
         private static void TryGetBounds(
-            Collider[] colliders,
+            Collider2D[] colliders,
             Renderer[] renderers,
             Transform fallback,
             out Bounds bounds)
@@ -389,7 +377,7 @@ namespace Project.BossLogic
                  index < colliders.Length;
                  index++)
             {
-                Collider collider = colliders[index];
+                Collider2D collider = colliders[index];
                 if (collider == null ||
                     !collider.enabled ||
                     !collider.gameObject.activeInHierarchy)
@@ -490,11 +478,11 @@ namespace Project.BossLogic
             boss = null;
             player = null;
             playerColliders =
-                System.Array.Empty<Collider>();
+                System.Array.Empty<Collider2D>();
             playerRenderers =
                 System.Array.Empty<Renderer>();
             bossColliders =
-                System.Array.Empty<Collider>();
+                System.Array.Empty<Collider2D>();
             bossRenderers =
                 System.Array.Empty<Renderer>();
             started = false;

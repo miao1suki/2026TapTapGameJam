@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -226,17 +227,17 @@ namespace Project.Rooms.Editor
             Check(LevelEditorPlacedBlock.SolidRevision == solidRevision,
                 "Prop/vine lifetime still invalidates all wall-masked water meshes");
 
-            var wallObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var wallObject = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             wallObject.name = "Wall revision regression fixture";
             wallObject.transform.position = new Vector3(950.5f, 950.5f, 0f);
             var wall = wallObject.AddComponent<LevelEditorPlacedBlock>();
             wall.Configure(new Vector2Int(950, 950), "wall", Color.white, false);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(WaterCellVisibility.Covered(wall, wallObject.transform.position, 1f), "New wall was not cached");
             Vector3 previousPosition = wallObject.transform.position;
             wallObject.transform.position += Vector3.right;
             wall.NotifySolidGeometryChanged();
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(!WaterCellVisibility.Covered(wall, previousPosition, 1f) &&
                 WaterCellVisibility.Covered(wall, wallObject.transform.position, 1f),
                 "Notified moving wall left stale author-cell occlusion");
@@ -249,7 +250,7 @@ namespace Project.Rooms.Editor
         private static void VerifyRuntimeComponentChanges()
         {
             if (!SessionState.GetBool(Key + ".Verify", false)) return;
-            var fixture = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var fixture = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             fixture.name = "Runtime reset component regression fixture";
             fixture.transform.position = new Vector3(970f, 970f, 0f);
             var member = fixture.AddComponent<RoomResetObject>();
@@ -270,10 +271,10 @@ namespace Project.Rooms.Editor
 
                 var hide = fixture.AddComponent<Project.TemporaryObjectHideState>();
                 hide.Hide();
-                Check(!fixture.GetComponent<Collider>().enabled && fixture.GetComponent<Renderer>().forceRenderingOff,
+                Check(!fixture.GetComponent<Collider2D>().enabled && fixture.GetComponent<Renderer>().forceRenderingOff,
                     "Runtime-added hide lease fixture did not hide");
                 member.RestorePose();
-                Check(!hide.IsHidden && fixture.GetComponent<Collider>().enabled &&
+                Check(!hide.IsHidden && fixture.GetComponent<Collider2D>().enabled &&
                     !fixture.GetComponent<Renderer>().forceRenderingOff,
                     "Runtime-added hide lease was missed by reset component lookup");
             }
@@ -289,7 +290,7 @@ namespace Project.Rooms.Editor
             if (!SessionState.GetBool(Key + ".Verify", false)) return;
             var fixture = new GameObject("Buoyancy reset re-entry regression fixture");
             fixture.transform.position = new Vector3(980f, 980f, 0f);
-            var volume = fixture.AddComponent<BoxCollider>();
+            var volume = fixture.AddComponent<BoxCollider2D>();
             volume.size = new Vector3(3f, 4f, 3f);
             volume.isTrigger = true;
             var color = fixture.AddComponent<ColorObject>();
@@ -304,9 +305,9 @@ namespace Project.Rooms.Editor
             manager.Register(member);
 
             var body = player.Motor;
-            Vector3 previousPosition = body.position;
+            Vector3 previousPosition = body.WorldPosition();
             bool previousKinematic = body.isKinematic;
-            var playerCollider = player.GetComponent<Collider>();
+            var playerCollider = player.GetComponent<Collider2D>();
             var lifted = (Dictionary<int, PlayerController>)typeof(BuoyancyColumnFeature)
                 .GetField("liftedPlayers", Hidden).GetValue(column);
             var buoyantIds = (HashSet<int>)typeof(BuoyancyColumnFeature)
@@ -319,7 +320,7 @@ namespace Project.Rooms.Editor
             try
             {
                 body.isKinematic = false;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Check(column.IsAttached && playerCollider != null && volume.isTrigger,
                     "Buoyancy reset fixture did not activate");
                 foreach (bool aboveSurface in new[] { false, true })
@@ -331,7 +332,7 @@ namespace Project.Rooms.Editor
                     Vector3 centerOffset = playerCollider.bounds.center - player.transform.position;
                     player.transform.position = center - centerOffset;
                     body.position = player.transform.position;
-                    Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms();
                     body.linearVelocity = Vector3.up * 1.25f;
                     column.OnPlayerEnter(player.gameObject);
                     Check(lifted.Count == 1, "Buoyancy fixture did not track the contact before reset");
@@ -347,7 +348,7 @@ namespace Project.Rooms.Editor
                     Check(!(bool)typeof(BuoyancyColumnFeature).GetField("bubbleAudioPlaying", Hidden).GetValue(column) &&
                         (Project.Audio.AudioManager.Existing == null || Project.Audio.AudioManager.Existing.GetLoop(column) == null),
                         "Buoyancy reset restarted or retained a bubble audio loop");
-                    Check(Mathf.Approximately(body.linearVelocity.y, 1.25f),
+                    Check(Mathf.Approximately(((Vector3)body.linearVelocity).y, 1.25f),
                         "Buoyancy reset incorrectly applied a physical top-exit boost");
                     Check(column.IsAttached, "Buoyancy cleanup retired the unchanged feature");
                 }
@@ -361,7 +362,7 @@ namespace Project.Rooms.Editor
                 player.transform.position = previousPosition;
                 body.position = previousPosition;
                 body.isKinematic = previousKinematic;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
             }
             report.AppendLine("PASS submerged and above-surface buoyancy reset: no stale lift, water, overshoot, audio ownership or exit impulse; attachment retained.");
         }

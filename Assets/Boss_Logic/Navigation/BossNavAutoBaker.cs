@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using Project.LevelEditor;
 using UnityEngine;
@@ -89,8 +90,8 @@ namespace Project.BossLogic
                     continue;
                 }
 
-                Collider blockCollider =
-                    block.GetComponent<Collider>();
+                Collider2D blockCollider =
+                    block.GetComponent<Collider2D>();
                 if (blockCollider == null ||
                     !blockCollider.enabled)
                 {
@@ -232,21 +233,21 @@ namespace Project.BossLogic
 
         private bool HasClearance(
             Vector3 position,
-            Collider blockCollider)
+            Collider2D blockCollider)
         {
             Vector3 halfExtents = new Vector3(
                 Mathf.Max(.1f, agentWidth * .5f - clearanceShrink),
                 Mathf.Max(.1f, agentHeight * .5f - clearanceShrink),
                 .25f);
-            Collider[] hits = Physics.OverlapBox(
+            Collider2D[] hits = PlanarPhysics.OverlapBox(
                 position,
                 halfExtents,
                 Quaternion.identity,
                 ~0,
-                QueryTriggerInteraction.Ignore);
+                TriggerQuery.Ignore);
             for (int index = 0; index < hits.Length; index++)
             {
-                Collider hit = hits[index];
+                Collider2D hit = hits[index];
                 if (hit == null ||
                     hit == blockCollider ||
                     hit.transform.IsChildOf(transform))

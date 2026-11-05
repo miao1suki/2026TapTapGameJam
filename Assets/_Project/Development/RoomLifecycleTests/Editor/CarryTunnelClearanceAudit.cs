@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -44,10 +45,10 @@ public static class CarryTunnelClearanceAudit
         if (EditorApplication.timeSinceStartup - started > 90) { Finish(false, "timeout"); return; }
         if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .2f) return;
         EditorApplication.update -= Tick;
-        var mode = Physics.simulationMode;
+        var mode = PlanarPhysics.simulationMode;
         try
         {
-            Physics.simulationMode = SimulationMode.Script;
+            PlanarPhysics.simulationMode = SimulationMode2D.Script;
             ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
             ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
             foreach (string prefab in new[] { "Red_Foundation", "Universal_Block" })
@@ -61,11 +62,11 @@ public static class CarryTunnelClearanceAudit
             Finish(true, "PASS " + checks + " real Play carry-clearance assertions");
         }
         catch (Exception error) { Finish(false, error.ToString()); }
-        finally { Physics.simulationMode = mode; }
+        finally { PlanarPhysics.simulationMode = mode; }
     }
     static GameObject Solid(string name, Vector3 position, Vector3 size)
     {
-        var item = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var item = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
         item.name = name; item.transform.position = position; item.transform.localScale = size; return item;
     }
     static void Verify(string prefab, float clearance, float itemHeight, bool shouldPass)
@@ -75,41 +76,41 @@ public static class CarryTunnelClearanceAudit
         var playerObject = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab"), new Vector3(0, .55f, 0), Quaternion.identity);
         var player = playerObject.GetComponent<PlayerController>();
         player.GetComponent<PlayerInputDriver>().enabled = false;
-        player.Motor.interpolation = RigidbodyInterpolation.None;
+        player.Motor.interpolation = RigidbodyInterpolation2D.None;
         var owner = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ColorBlocks/Prefabs/" + prefab + ".prefab"), new Vector3(-2, .5f, 0), Quaternion.identity);
         owner.transform.localScale = new Vector3(1, itemHeight, 1);
         var carry = owner.GetComponent<CarryableFeature>();
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
         for (int i = 0; i < 40; i++) Step(player, Vector2.zero);
         Check(carry.BeginCarry(player), prefab + " starts carry");
         Set(player, "selectedCarryTarget", carry);
         var motion = Get(carry, "carryMotion");
         ((Tween)Get(motion, "tween")).Complete();
-        carry.UpdateCarryAnchor(player.CarryAnchorWorldPosition); Physics.SyncTransforms();
-        Check(owner.GetComponentsInChildren<Collider>().All(c => !c.enabled), prefab + " carried shapes disabled");
+        carry.UpdateCarryAnchor(player.CarryAnchorWorldPosition); PlanarPhysics.SyncTransforms();
+        Check(owner.GetComponentsInChildren<Collider2D>().All(c => !c.enabled), prefab + " carried shapes disabled");
         var carried = carry.GetCarryPlacementBounds(owner.transform.position);
         Check(Mathf.Abs(carried.size.y - itemHeight) < .001f, prefab + " actual carried height retained");
-        Check(Mathf.Abs(carried.min.y - (player.GetComponent<CapsuleCollider>().bounds.max.y - 1f / 16)) < .001f,
+        Check(Mathf.Abs(carried.min.y - (player.GetComponent<CapsuleCollider2D>().bounds.max.y - 1f / 16)) < .001f,
             prefab + " support clearance exactly one effective art pixel");
         float maxTop = 0;
         for (int i = 0; i < 150; i++)
         {
             Step(player, Vector2.right);
-            carry.UpdateCarryAnchor(player.CarryAnchorWorldPosition); Physics.SyncTransforms();
-            if (player.Motor.position.x > 2.1f && player.Motor.position.x < 5.9f)
+            carry.UpdateCarryAnchor(player.CarryAnchorWorldPosition); PlanarPhysics.SyncTransforms();
+            if (player.Motor.WorldPosition().x > 2.1f && player.Motor.WorldPosition().x < 5.9f)
                 maxTop = Mathf.Max(maxTop, carry.GetCarryPlacementBounds(owner.transform.position).max.y);
         }
-        string label = prefab + " itemHeight=" + itemHeight + " tunnel=" + clearance + " x=" + player.Motor.position.x;
-        Check(shouldPass ? player.Motor.position.x > 6.3f : player.Motor.position.x < 2f, label);
+        string label = prefab + " itemHeight=" + itemHeight + " tunnel=" + clearance + " x=" + player.Motor.WorldPosition().x;
+        Check(shouldPass ? player.Motor.WorldPosition().x > 6.3f : player.Motor.WorldPosition().x < 2f, label);
         if (shouldPass) Check(maxTop <= clearance + .001f, "carried solid never penetrates ceiling: " + label);
         carry.CancelCarry();
-        Check(owner.GetComponentsInChildren<Collider>().Any(c => c.enabled && !c.isTrigger), prefab + " cancel restores physical body");
+        Check(owner.GetComponentsInChildren<Collider2D>().Any(c => c.enabled && !c.isTrigger), prefab + " cancel restores physical body");
         Object.DestroyImmediate(owner); Object.DestroyImmediate(playerObject); Object.DestroyImmediate(floor); Object.DestroyImmediate(ceiling);
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
     }
     static void Step(PlayerController player, Vector2 input)
     {
-        player.SetMoveInput(input); Call(player, "FixedUpdate"); Physics.Simulate(Time.fixedDeltaTime); Physics.SyncTransforms();
+        player.SetMoveInput(input); Call(player, "FixedUpdate"); PlanarPhysics.Simulate(Time.fixedDeltaTime); PlanarPhysics.SyncTransforms();
     }
     static void Finish(bool success, string message)
     {

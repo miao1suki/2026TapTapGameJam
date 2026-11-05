@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -76,7 +77,7 @@ namespace Project.Player.Editor
         private static GameObject Track(GameObject instance) { objects.Add(instance); return instance; }
         private static GameObject Cube(Vector3 position)
         {
-            var cube = Track(GameObject.CreatePrimitive(PrimitiveType.Cube));
+            var cube = Track(Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box));
             cube.transform.position = position;
             return cube;
         }
@@ -84,7 +85,7 @@ namespace Project.Player.Editor
         {
             foreach (GameObject instance in objects) if (instance != null) Object.DestroyImmediate(instance);
             objects.Clear();
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
         }
 
         private static void VerifyAim()
@@ -105,7 +106,7 @@ namespace Project.Player.Editor
             MethodInfo find = queryType.GetMethod("Find", Private);
             (string, object) Query(Vector3 cursor, string color = "red")
             {
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 object[] args = { sensor, camera, (Vector2)camera.WorldToScreenPoint(cursor), color, .65f, null, Vector3.zero };
                 string result = find.Invoke(query, args).ToString();
                 return (result, args[5]);
@@ -166,7 +167,7 @@ namespace Project.Player.Editor
             var water = waterRoot.GetComponent<WaterVisualFeature>();
             var shape = waterRoot.AddComponent<LevelEditorMergedShape>();
             shape.Configure(new Vector2Int(4, 3), new[] { new RectInt(0, 0, 1, 3), new RectInt(1, 2, 3, 1) });
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Bounds left = shape.Volumes[0].bounds, bottom = shape.Volumes[1].bounds;
             Vector3 click = new Vector3(bottom.max.x - .4f, bottom.center.y, bottom.center.z);
             Check(WaterSteamPlacement.TryFind(water, click, 1f, out Vector3 origin, out Vector2 half), "irregular merged water has an exposed local cell");
@@ -176,12 +177,12 @@ namespace Project.Player.Editor
             var upperEntry = palette.PropEntries.First(e => e?.Prefab?.GetComponent<WaterVisualFeature>() != null && e.Prefab != prefab);
             var upperRoot = Track(Object.Instantiate(upperEntry.Prefab,
                 new Vector3(origin.x, origin.y + .5f, origin.z), Quaternion.identity));
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(WaterSteamPlacement.TryFind(water, click, 1f, out Vector3 connectedTop, out _) &&
                 Mathf.Abs(connectedTop.x - origin.x) < .001f && connectedTop.y > origin.y + .9f,
                 "another water family above raises steam to the connected real surface, not the internal seam");
             Object.DestroyImmediate(upperRoot);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(((IColorApplicationHitTarget)water).ApplyColorAt("red", null, click) &&
                 Vector3.Distance(water.SteamOrigin, origin) < .001f, "explicit click context reaches real water reaction");
             var actor = Track(new GameObject("Contact actor"));
@@ -194,10 +195,10 @@ namespace Project.Player.Editor
             int coveredX = Mathf.FloorToInt(origin.x), coveredY = Mathf.FloorToInt(origin.y + .002f);
             var roof = Cube(new Vector3(coveredX + .5f, coveredY + .5f, 0f));
             roof.AddComponent<LevelEditorPlacedBlock>().Configure(new Vector2Int(coveredX, coveredY), "Steam roof", Color.white, false);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(WaterSteamPlacement.TryFind(water, click, 1f, out Vector3 fallback, out _) &&
                 Mathf.Abs(fallback.x - origin.x) > .5f, "covered clicked column falls back to a nearby exposed water surface");
-            foreach (BoxCollider volume in shape.Volumes)
+            foreach (BoxCollider2D volume in shape.Volumes)
             {
                 if (volume == null || !volume.enabled) continue;
                 Bounds bounds = volume.bounds;
@@ -208,7 +209,7 @@ namespace Project.Player.Editor
                     block.AddComponent<LevelEditorPlacedBlock>().Configure(new Vector2Int(x, y), "Closed roof", Color.white, false);
                 }
             }
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(!WaterSteamPlacement.TryFind(water, click, 1f, out _, out _) &&
                 !((IColorApplicationHitTarget)water).ApplyColorAt("red", actor, click), "fully covered water never spawns steam inside walls");
         }

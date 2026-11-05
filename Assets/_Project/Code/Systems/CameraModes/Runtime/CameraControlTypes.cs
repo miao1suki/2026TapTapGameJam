@@ -5,7 +5,6 @@ namespace Project.CameraModes
 {
     public enum CameraProjectionMode
     {
-        Perspective = 0,
         Orthographic = 1,
     }
 
@@ -54,7 +53,7 @@ namespace Project.CameraModes
         public Quaternion rotation;
         public CameraProjectionMode projection;
         [Min(0.01f)] public float orthographicSize;
-        [Range(1f, 179f)] public float fieldOfView;
+
 
         public static CameraState FromCamera(Camera camera)
         {
@@ -62,11 +61,9 @@ namespace Project.CameraModes
             {
                 position = camera.transform.position,
                 rotation = camera.transform.rotation,
-                projection = camera.orthographic
-                    ? CameraProjectionMode.Orthographic
-                    : CameraProjectionMode.Perspective,
+                projection = CameraProjectionMode.Orthographic,
                 orthographicSize = camera.orthographicSize,
-                fieldOfView = camera.fieldOfView,
+
             };
         }
     }
@@ -93,7 +90,7 @@ namespace Project.CameraModes
     /// <summary>Optional lens-size override for a camera source; projection type remains mode-owned.</summary>
     public interface ICameraLensOverrideSource
     {
-        bool TryGetLensOverride(out float orthographicSize, out float fieldOfView);
+        bool TryGetLensOverride(out float orthographicSize);
     }
 
     /// <summary>

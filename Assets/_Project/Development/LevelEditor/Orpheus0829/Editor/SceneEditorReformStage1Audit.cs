@@ -122,10 +122,10 @@ namespace Project.LevelEditor.Editor
             try
             {
                 var firstValue = new LevelEditorComponentValueOverride();
-                firstValue.Configure(string.Empty, "UnityEngine.Rigidbody", 0,
+                firstValue.Configure(string.Empty, "UnityEngine.Rigidbody2D", 0,
                     "m_Mass", "Float", "1", null);
                 var secondValue = new LevelEditorComponentValueOverride();
-                secondValue.Configure(string.Empty, "UnityEngine.Rigidbody", 0,
+                secondValue.Configure(string.Empty, "UnityEngine.Rigidbody2D", 0,
                     "m_Mass", "Float", "5", null);
                 var first = new LevelEditorPropEntry();
                 first.Configure("轻道具", sharedPrefab);

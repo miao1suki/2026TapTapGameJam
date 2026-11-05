@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -78,7 +79,7 @@ namespace Project.GreenHook.Editor
             var player = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/_Project/Content/Player/Player.prefab")).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+            player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
             var camera = new GameObject("AimCamera", typeof(Camera)).GetComponent<Camera>();
             camera.tag = "MainCamera"; camera.orthographic = true; camera.orthographicSize = 7;
             camera.transform.position = new Vector3(0, 0, -10);
@@ -141,18 +142,18 @@ namespace Project.GreenHook.Editor
         }
         private static void RunCases()
         {
-            var simulation = Physics.simulationMode; Physics.simulationMode = SimulationMode.Script;
+            var simulation = PlanarPhysics.simulationMode; PlanarPhysics.simulationMode = SimulationMode2D.Script;
             var camera = new GameObject("ToleranceCamera").AddComponent<Camera>();
             camera.tag = "MainCamera"; camera.orthographic = true; camera.orthographicSize = 8;
             camera.transform.position = Vector3.back * 10;
             var player = Spawn("Player/Player", Vector3.zero).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+            player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
             var hook = player.GetComponent<GreenHookAbility>();
             var input = new AimInput(); GameInput.UseExternalSource(input);
             GreenHookLaunchResult Click(Vector3 point)
             {
-                Physics.SyncTransforms(); input.Pointer = camera.WorldToScreenPoint(point);
+                PlanarPhysics.SyncTransforms(); input.Pointer = camera.WorldToScreenPoint(point);
                 return hook.TryLaunch(input.Pointer, true);
             }
             try
@@ -171,15 +172,15 @@ namespace Project.GreenHook.Editor
                 hook.CancelHook();
                 Check(Click(new Vector3(3, 1.3f, 0)) == GreenHookLaunchResult.Rejected && !hook.IsHookActive,
                     "outside visible tolerance cannot attach");
-                cube.transform.position = new Vector3(5.8f, 0, 0); cube.GetComponent<Rigidbody>().position = cube.transform.position;
+                cube.transform.position = new Vector3(5.8f, 0, 0); cube.GetComponent<Rigidbody2D>().position = cube.transform.position;
                 Check(Click(new Vector3(5.25f, 0, 0)) == GreenHookLaunchResult.Success,
                     "edge circle reaches a real surface beyond original five-cell range");
-                hook.CancelHook(); cube.transform.position = new Vector3(6.2f, 0, 0); cube.GetComponent<Rigidbody>().position = cube.transform.position;
+                hook.CancelHook(); cube.transform.position = new Vector3(6.2f, 0, 0); cube.GetComponent<Rigidbody2D>().position = cube.transform.position;
                 Check(Click(new Vector3(5.5f, 0, 0)) == GreenHookLaunchResult.OutOfRange && !hook.IsHookActive,
                     "launch slack remains bounded to half a cell");
                 Check(Click(new Vector3(20, 0, 0)) == GreenHookLaunchResult.OutOfRange, "distant empty click is out of range");
-                cube.transform.position = new Vector3(3, 0, 0); cube.GetComponent<Rigidbody>().position = cube.transform.position;
-                var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.transform.position = new Vector3(3, 0, 0); cube.GetComponent<Rigidbody2D>().position = cube.transform.position;
+                var wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 wall.transform.position = new Vector3(3, 0, -1);
                 Check(Click(cube.transform.position) == GreenHookLaunchResult.Success,
                     "green rope may target through walls without making bodies pass through them");
@@ -216,10 +217,10 @@ namespace Project.GreenHook.Editor
                 var cellsA = new List<Vector2Int>(); var cellsB = new List<Vector2Int>();
                 for (int x = -6; x < 9; x++) for (int y = -5; y < 5; y++) (x < 4 ? cellsA : cellsB).Add(new Vector2Int(x, y));
                 manager.Configure(new List<RoomRegion> { new RoomRegion { id = "a", cells = cellsA }, new RoomRegion { id = "b", cells = cellsB } }, 1f, "");
-                cube.transform.position = new Vector3(4.8f, 0, 0); cube.GetComponent<Rigidbody>().position = cube.transform.position;
+                cube.transform.position = new Vector3(4.8f, 0, 0); cube.GetComponent<Rigidbody2D>().position = cube.transform.position;
                 Check(Click(new Vector3(4.5f, 0, 0)) == GreenHookLaunchResult.Rejected && !hook.IsHookActive,
                     "generous tolerance never crosses room boundary");
-                cube.GetComponentInChildren<BoxCollider>().size = new Vector3(3, 1, 1);
+                cube.GetComponentInChildren<BoxCollider2D>().size = new Vector3(3, 1, 1);
                 cube.GetComponent<RoomResetObject>().Bind(manager, "b");
                 Check(Click(new Vector3(3.7f, 0, 0)) == GreenHookLaunchResult.Rejected && !hook.IsHookActive,
                     "neighbor-room oversized collider cannot reach into player room for targeting");
@@ -230,7 +231,7 @@ namespace Project.GreenHook.Editor
             {
                 hook.CancelHook(); GameInput.ClearExternalSource(input);
                 Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(camera.gameObject);
-                Time.timeScale = 1f; Physics.simulationMode = simulation;
+                Time.timeScale = 1f; PlanarPhysics.simulationMode = simulation;
             }
             VerifyEnergyWhileAttached();
             VerifyCollectibleGravity();
@@ -252,60 +253,60 @@ namespace Project.GreenHook.Editor
         }
         private static void VerifyEnergyWhileAttached()
         {
-            var simulation = Physics.simulationMode; Physics.simulationMode = SimulationMode.Script;
+            var simulation = PlanarPhysics.simulationMode; PlanarPhysics.simulationMode = SimulationMode2D.Script;
             var player = Spawn("Player/Player", new Vector3(30, 1, 0)).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
             var red = Spawn("ContactCubes/Red_ContactCube", new Vector3(35, 1, 0));
             var foundation = Spawn("ColorBlocks/Prefabs/Red_Foundation", new Vector3(33, 1, 0));
             var feature = foundation.GetComponent<MechanismBaseFeature>(); Set(feature, "useGravity", false); Call(feature, "FixedUpdate");
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube); floor.transform.position = new Vector3(33, 0, 0); floor.transform.localScale = new Vector3(15, 1, 2);
+            var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); floor.transform.position = new Vector3(33, 0, 0); floor.transform.localScale = new Vector3(15, 1, 2);
             var hook = player.GetComponent<GreenHookAbility>(); var cube = red.GetComponent<ContactCube>();
             try
             {
-                Physics.SyncTransforms(); Call(hook, "BeginHook", red.GetComponent<ContactCubeMotion>(), red.transform.position); Call(hook, "BeginPulling");
+                PlanarPhysics.SyncTransforms(); Call(hook, "BeginHook", red.GetComponent<ContactCubeMotion>(), red.transform.position); Call(hook, "BeginPulling");
                 bool poweredWhileAttached = false;
                 for (int i = 0; i < 80; i++)
                 {
-                    Call(hook, "FixedUpdate"); Call(player, "FixedUpdate"); Physics.Simulate(Time.fixedDeltaTime);
+                    Call(hook, "FixedUpdate"); Call(player, "FixedUpdate"); PlanarPhysics.Simulate(Time.fixedDeltaTime);
                     Call(feature, "OnTick", Time.fixedDeltaTime);
                     poweredWhileAttached |= feature.IsSignalActive && hook.IsPulling;
                 }
                 Check(poweredWhileAttached && hook.IsHookActive && cube.IsHookSuspended && cube.IsEnergyAvailable,
                     "red pulled onto base powers it before manual release");
-                Check(!feature.UsesGravity && !foundation.GetComponent<Rigidbody>().useGravity,
+                Check(!feature.UsesGravity && !(foundation.GetComponent<Rigidbody2D>().gravityScale != 0f),
                     "no-gravity base preference survives energized pull");
                 cube.SetCarrySuspended(true); Call(feature, "OnTick", Time.fixedDeltaTime);
                 Check(!cube.IsEnergyAvailable && !feature.IsSignalActive, "carried red still cannot supply energy");
                 cube.SetCarrySuspended(false); Call(feature, "OnTick", Time.fixedDeltaTime);
                 Check(cube.IsEnergyAvailable && feature.IsSignalActive && hook.IsHookActive, "supply restored without breaking rope");
-                red.GetComponentInChildren<BoxCollider>().enabled = false; Call(feature, "OnTick", Time.fixedDeltaTime);
+                red.GetComponentInChildren<BoxCollider2D>().enabled = false; Call(feature, "OnTick", Time.fixedDeltaTime);
                 Check(!cube.IsEnergyAvailable && !feature.IsSignalActive, "disabled solid cannot supply energy");
-                red.GetComponentInChildren<BoxCollider>().enabled = true;
+                red.GetComponentInChildren<BoxCollider2D>().enabled = true;
             }
             finally
             {
                 hook.CancelHook(); Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(red);
-                Object.DestroyImmediate(foundation); Object.DestroyImmediate(floor); Physics.simulationMode = simulation;
+                Object.DestroyImmediate(foundation); Object.DestroyImmediate(floor); PlanarPhysics.simulationMode = simulation;
             }
         }
         private static void VerifyCollectibleGravity()
         {
-            var simulation = Physics.simulationMode; Physics.simulationMode = SimulationMode.Script;
+            var simulation = PlanarPhysics.simulationMode; PlanarPhysics.simulationMode = SimulationMode2D.Script;
             var item = Spawn("WorldItems/Collectible", new Vector3(60, 20, 0)).GetComponent<CollectiblePickup>();
-            var body = item.GetComponent<Rigidbody>();
+            var body = item.GetComponent<Rigidbody2D>();
             try
             {
-                Check(!body.useGravity && !body.isKinematic && item.CanBePushed, "collectible floats but stays dynamic and pushable");
-                body.useGravity = true; item.ResetForRoom();
-                Check(!body.useGravity, "old serialized gravity flag is upgraded on reset");
-                float y = body.position.y; body.linearVelocity = Vector3.right * 2f;
-                for (int i = 0; i < 50; i++) Physics.Simulate(Time.fixedDeltaTime);
-                Check(Mathf.Abs(body.position.y - y) < .001f && body.position.x > 61,
+                Check(!(body.gravityScale != 0f) && !body.isKinematic && item.CanBePushed, "collectible floats but stays dynamic and pushable");
+                body.gravityScale = 1f; item.ResetForRoom();
+                Check(!(body.gravityScale != 0f), "old serialized gravity flag is upgraded on reset");
+                float y = body.WorldPosition().y; body.linearVelocity = Vector3.right * 2f;
+                for (int i = 0; i < 50; i++) PlanarPhysics.Simulate(Time.fixedDeltaTime);
+                Check(Mathf.Abs(body.WorldPosition().y - y) < .001f && body.WorldPosition().x > 61,
                     "floating collectible can move horizontally without falling");
                 item.gameObject.SetActive(false); item.gameObject.SetActive(true);
-                Check(!body.useGravity && item.CanBePushed, "pooled reenable preserves no-gravity pickup contract");
+                Check(!(body.gravityScale != 0f) && item.CanBePushed, "pooled reenable preserves no-gravity pickup contract");
             }
-            finally { Object.DestroyImmediate(item.gameObject); Physics.simulationMode = simulation; }
+            finally { Object.DestroyImmediate(item.gameObject); PlanarPhysics.simulationMode = simulation; }
         }
         private static void Finish(string result, bool success)
         {

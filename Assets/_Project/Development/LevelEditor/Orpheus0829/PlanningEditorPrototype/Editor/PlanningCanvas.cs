@@ -4206,13 +4206,13 @@ namespace PlanningEditorPrototype
                     continue;
                 }
 
-                BoxCollider collider =
-                    PreviewComponent<BoxCollider>(prefab);
+                BoxCollider2D collider =
+                    PreviewComponent<BoxCollider2D>(prefab);
                 Vector3 size = collider != null
                     ? collider.size
                     : Vector3.one;
                 Vector3 center = collider != null
-                    ? collider.center
+                    ? collider.offset
                     : Vector3.zero;
                 IReadOnlyList<
                     LevelEditorComponentValueOverride>

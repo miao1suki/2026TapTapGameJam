@@ -22,7 +22,7 @@ namespace Project.Rooms
             public Quaternion rotation;
             public bool active;
         }
-        private struct CollisionState { public Collider target; public bool enabled, trigger; }
+        private struct CollisionState { public Collider2D target; public bool enabled, trigger; }
         private readonly List<ChildPose> childPoses = new List<ChildPose>();
         private readonly List<CollisionState> collisionStates = new List<CollisionState>();
         private readonly List<GameObject> replacements = new List<GameObject>();
@@ -104,7 +104,7 @@ namespace Project.Rooms
             foreach (var child in GetComponentsInChildren<Transform>(true))
                 if (child != transform) childPoses.Add(new ChildPose { target = child, position = child.localPosition,
                     rotation = child.localRotation, scale = child.localScale, active = child.gameObject.activeSelf });
-            foreach (var collider in GetComponentsInChildren<Collider>(true))
+            foreach (var collider in GetComponentsInChildren<Collider2D>(true))
                 collisionStates.Add(new CollisionState { target = collider, enabled = collider.enabled, trigger = collider.isTrigger });
             RefreshResetComponents();
         }
@@ -153,10 +153,10 @@ namespace Project.Rooms
                     if (state.target.enabled != state.enabled) state.target.enabled = state.enabled;
                     if (state.target.isTrigger != state.trigger) state.target.isTrigger = state.trigger;
                 }
-            if (TryGetComponent(out Rigidbody body))
+            if (TryGetComponent(out Rigidbody2D body))
             {
-                body.position = transform.position; body.rotation = transform.rotation;
-                if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+                body.position = transform.position; body.rotation = (transform.rotation).eulerAngles.z;
+                if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = 0f; }
             }
             if (gameObject.activeSelf != originalActive) gameObject.SetActive(originalActive);
             if (geometryChanged) placedBlock?.NotifySolidGeometryChanged();

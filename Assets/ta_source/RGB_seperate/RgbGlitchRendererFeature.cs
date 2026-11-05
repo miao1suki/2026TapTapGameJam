@@ -40,6 +40,7 @@ namespace TapTap.TA.RgbGlitch
                 owner = feature;
                 renderPassEvent = (RenderPassEvent)((int)RenderPassEvent.BeforeRenderingPostProcessing + 2);
                 requiresIntermediateTexture = true;
+                ConfigureInput(ScriptableRenderPassInput.Color);
             }
 
             public override void RecordRenderGraph(RenderGraph graph, ContextContainer frameData)

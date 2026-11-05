@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -54,11 +55,11 @@ public static class R1SpringCameraGuideAudit
             manager.RequestControl(mode);
             PlayerController player = new GameObject("镜头专项玩家").AddComponent<PlayerController>();
             manager.SetFocusTarget(player.transform);
-            player.GetComponent<Rigidbody>().useGravity = false;
+            player.GetComponent<Rigidbody2D>().gravityScale = 0f;
             var anchor = new GameObject("起点按钮");
             anchor.transform.position = button;
             var plantObject = new GameObject("落点植物");
-            BoxCollider surface = plantObject.AddComponent<BoxCollider>();
+            BoxCollider2D surface = plantObject.AddComponent<BoxCollider2D>();
             surface.size = new Vector3(3f, 1f, 1f);
             plantObject.transform.position = spring;
             BouncePlantFeature plant = plantObject.AddComponent<BouncePlantFeature>();
@@ -257,14 +258,14 @@ public static class R1SpringCameraGuideAudit
     private static void Move(PlayerController player, Vector3 point)
     {
         player.transform.position = point;
-        player.GetComponent<Rigidbody>().position = point;
-        Physics.SyncTransforms();
+        player.GetComponent<Rigidbody2D>().position = point;
+        PlanarPhysics.SyncTransforms();
     }
 
     private static void Tick(R1SpringCameraGuide guide, CameraControlManager manager, float seconds = 1f)
     {
         manager.SetFocusPoint(manager.FocusTarget.position);
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
         Invoke(guide, "TickGuide");
         TickManager(manager, seconds);
     }

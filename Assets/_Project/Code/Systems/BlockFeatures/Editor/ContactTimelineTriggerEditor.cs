@@ -9,7 +9,7 @@ using UnityEngine.UIElements;
 public sealed class ContactTimelineTriggerEditor : Editor
 {
     private SerializedObject colliderObject;
-    private Collider cachedCollider;
+    private Collider2D cachedCollider;
     private VisualElement colliderFields;
     private VisualElement cooldownRow;
     private Label triggerSummary;
@@ -25,7 +25,7 @@ public sealed class ContactTimelineTriggerEditor : Editor
             serializedObject));
         root.Add(ProjectInspectorUtility.CreateHelp(
             "独立道具组件，不需要 ColorObject、BlockRuntime 或 BlockAbilityHost。" +
-            "激活时会隐藏 Renderer，保留 Collider，并按接触播放 Timeline。"));
+            "激活时会隐藏 Renderer，保留 Collider2D，并按接触播放 Timeline。"));
         triggerSummary = new Label();
         triggerSummary.style.whiteSpace = WhiteSpace.Normal;
         triggerSummary.style.marginTop = 6f;
@@ -62,7 +62,7 @@ public sealed class ContactTimelineTriggerEditor : Editor
             serializedObject,
             "targetCollider",
             "管理的碰撞体",
-            "留空时使用同物体 Collider。"));
+            "留空时使用同物体 Collider2D。"));
         colliderFields = new VisualElement();
         collider.Add(colliderFields);
         root.Add(collider);
@@ -184,12 +184,12 @@ public sealed class ContactTimelineTriggerEditor : Editor
             target as ContactTimelineTrigger;
         SerializedProperty targetProperty =
             serializedObject.FindProperty("targetCollider");
-        Collider current = targetProperty != null
-            ? targetProperty.objectReferenceValue as Collider
+        Collider2D current = targetProperty != null
+            ? targetProperty.objectReferenceValue as Collider2D
             : null;
         if (current == null && trigger != null)
         {
-            current = trigger.GetComponent<Collider>();
+            current = trigger.GetComponent<Collider2D>();
             if (current != null && targetProperty != null)
             {
                 targetProperty.objectReferenceValue = current;
@@ -210,17 +210,17 @@ public sealed class ContactTimelineTriggerEditor : Editor
         if (colliderObject == null)
         {
             colliderFields.Add(ProjectInspectorUtility.CreateHelp(
-                "当前物体没有可编辑的 Collider。",
+                "当前物体没有可编辑的 Collider2D。",
                 HelpBoxMessageType.Warning));
             return;
         }
 
-        AddColliderField("m_Enabled", "启用 Collider");
+        AddColliderField("m_Enabled", "启用 Collider2D");
         AddColliderField("m_IsTrigger", "Trigger");
-        if (current is BoxCollider)
+        if (current is BoxCollider2D)
         {
-            AddColliderField("m_Size", "BoxCollider 尺寸");
-            AddColliderField("m_Center", "BoxCollider 中心");
+            AddColliderField("m_Size", "BoxCollider2D 尺寸");
+            AddColliderField("m_Center", "BoxCollider2D 中心");
         }
     }
 

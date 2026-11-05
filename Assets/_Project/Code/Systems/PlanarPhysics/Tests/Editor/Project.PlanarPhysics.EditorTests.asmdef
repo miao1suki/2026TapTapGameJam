@@ -1,0 +1,7 @@
+{
+  "name": "Project.PlanarPhysics.EditorTests",
+  "references": ["Project.PlanarPhysics.Runtime"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "autoReferenced": false
+}

@@ -51,16 +51,16 @@ namespace Project.WorldItems.Editor
             try
             {
                 root.SetActive(false);
-                var visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                var visual = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Disk);
                 visual.name = "外观"; visual.transform.SetParent(root.transform, false); visual.transform.localScale = Vector3.one * .55f;
-                Object.DestroyImmediate(visual.GetComponent<Collider>());
+                Object.DestroyImmediate(visual.GetComponent<Collider2D>());
                 visual.GetComponent<Renderer>().sharedMaterial = material;
-                var solid = root.AddComponent<SphereCollider>(); solid.radius = .275f;
-                var body = root.AddComponent<Rigidbody>(); body.mass = .25f; body.useGravity = false;
-                body.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
-                body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                var solid = root.AddComponent<CircleCollider2D>(); solid.radius = .275f;
+                var body = root.AddComponent<Rigidbody2D>(); body.mass = .25f; body.gravityScale = 0f;
+                body.constraints = RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.None;
+                body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
                 var trigger = new GameObject("拾取区域"); trigger.transform.SetParent(root.transform, false);
-                var pickupShape = trigger.AddComponent<SphereCollider>(); pickupShape.radius = .34f; pickupShape.isTrigger = true;
+                var pickupShape = trigger.AddComponent<CircleCollider2D>(); pickupShape.radius = .34f; pickupShape.isTrigger = true;
                 root.AddComponent<RoomResetObject>(); root.AddComponent<CollectiblePickup>(); root.AddComponent<PickupFlightAnimator>();
                 root.SetActive(true);
                 Register("收集品", PrefabUtility.SaveAsPrefabAsset(root, path));
@@ -90,7 +90,7 @@ namespace Project.WorldItems.Editor
                 else AssetDatabase.CreateAsset(mesh, meshPath);
                 tooth.AddComponent<MeshFilter>().sharedMesh = mesh;
                 tooth.AddComponent<MeshRenderer>().sharedMaterial = material;
-                var trigger = tooth.AddComponent<MeshCollider>(); trigger.sharedMesh = mesh; trigger.convex = true; trigger.isTrigger = true;
+                var trigger = tooth.AddComponent<PolygonCollider2D>(); trigger.SetPath(0, new[] { new Vector2(-.5f, -.5f), new Vector2(0f, -.25f), new Vector2(.5f, -.5f) }); trigger.isTrigger = true;
                 Register("尖刺·" + name, PrefabUtility.SaveAsPrefabAsset(root, path));
             }
             finally { Object.DestroyImmediate(root); }

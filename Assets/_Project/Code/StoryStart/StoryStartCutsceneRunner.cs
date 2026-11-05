@@ -32,7 +32,7 @@ namespace Project.StoryStart
         private Vector3 originCameraPosition;
         private Quaternion originCameraRotation;
         private float baseOrthographicSize;
-        private float baseFieldOfView;
+
         private float lensMultiplier = 1f;
         private bool startsCovered;
         private float coveredHoldSeconds;
@@ -196,7 +196,7 @@ namespace Project.StoryStart
             if (!player.BeginPresentationMotion())
             {
                 Debug.LogError(
-                    "[StoryStart] 无法接管玩家 Rigidbody。");
+                    "[StoryStart] 无法接管玩家 Rigidbody2D。");
                 return false;
             }
 
@@ -225,7 +225,7 @@ namespace Project.StoryStart
             baseOrthographicSize = Mathf.Max(
                 .01f,
                 state.orthographicSize);
-            baseFieldOfView = state.fieldOfView;
+
             ApplyCamera();
             return true;
         }
@@ -456,8 +456,7 @@ namespace Project.StoryStart
             }
             cameraRig.SetShotLens(
                 baseOrthographicSize *
-                Mathf.Max(0f, lensMultiplier),
-                baseFieldOfView);
+                Mathf.Max(0f, lensMultiplier));
             cameraRig.SetShotTransform(
                 originCameraPosition,
                 originCameraRotation);

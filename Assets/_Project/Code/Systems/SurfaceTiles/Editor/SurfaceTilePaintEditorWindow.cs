@@ -205,14 +205,7 @@ namespace Project.SurfaceTiles.Editor
                 autoFaceButton = Button("自动", () => SetForcedFace(null));
                 faceRowA.Add(autoFaceButton);
                 AddFaceButton(faceRowA, SurfaceTileFace.Front, "正面");
-                AddFaceButton(faceRowA, SurfaceTileFace.Right, "右面");
-                AddFaceButton(faceRowA, SurfaceTileFace.Back, "后面");
                 paintStep.Add(faceRowA);
-                VisualElement faceRowB = Row();
-                AddFaceButton(faceRowB, SurfaceTileFace.Left, "左面");
-                AddFaceButton(faceRowB, SurfaceTileFace.Top, "顶面");
-                AddFaceButton(faceRowB, SurfaceTileFace.Bottom, "底面");
-                paintStep.Add(faceRowB);
                 VisualElement modeRow = Row();
                 modeRow.Add(Button("画", () => SurfaceTileEditorState.Mode =
                     SurfaceTilePaintMode.Paint));
@@ -690,36 +683,8 @@ namespace Project.SurfaceTiles.Editor
                     return;
                 }
 
-                Vector3 up = Vector3.up;
-                Quaternion rotation;
-                switch (face)
-                {
-                    case SurfaceTileFace.Right:
-                        rotation = Quaternion.LookRotation(Vector3.left, up);
-                        break;
-                    case SurfaceTileFace.Back:
-                        rotation = Quaternion.LookRotation(Vector3.back, up);
-                        break;
-                    case SurfaceTileFace.Left:
-                        rotation = Quaternion.LookRotation(Vector3.right, up);
-                        break;
-                    case SurfaceTileFace.Top:
-                        rotation = Quaternion.LookRotation(
-                            Vector3.down,
-                            Vector3.forward);
-                        break;
-                    case SurfaceTileFace.Bottom:
-                        rotation = Quaternion.LookRotation(
-                            Vector3.up,
-                            Vector3.forward);
-                        break;
-                    default:
-                        rotation = Quaternion.LookRotation(
-                            Vector3.forward,
-                            up);
-                        break;
-                }
-
+                Quaternion rotation = Quaternion.identity;
+                SceneView.lastActiveSceneView.in2DMode = true;
                 SceneView.lastActiveSceneView.LookAt(
                     block.transform.position,
                     rotation,

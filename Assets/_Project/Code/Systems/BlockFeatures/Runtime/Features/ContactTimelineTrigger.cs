@@ -28,13 +28,13 @@ namespace Project.BlockFeatures
     }
 
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(Collider2D))]
     [RequireComponent(typeof(PlayableDirector))]
     [AddComponentMenu("2026TapTap/通用/接触触发 Timeline")]
     public sealed class ContactTimelineTrigger : MonoBehaviour
     {
         [SerializeField] private TimelineAsset timeline;
-        [SerializeField] private Collider targetCollider;
+        [SerializeField] private Collider2D targetCollider;
         [SerializeField] private ContactTimelineFilter contactFilter =
             ContactTimelineFilter.Player;
         [SerializeField] private string requiredTag = "Player";
@@ -58,7 +58,7 @@ namespace Project.BlockFeatures
         public bool HasTriggered => played;
         public int ContactCount => contacts.Count;
         public PlayableDirector Director => director;
-        public Collider ManagedCollider => ResolveCollider();
+        public Collider2D ManagedCollider => ResolveCollider();
         public TimelineAsset Timeline => timeline;
         public ContactTimelineTriggerMode TriggerMode => triggerMode;
         public float RepeatCooldownSeconds => repeatCooldownSeconds;
@@ -75,7 +75,7 @@ namespace Project.BlockFeatures
 
         private void Reset()
         {
-            targetCollider = GetComponent<Collider>();
+            targetCollider = GetComponent<Collider2D>();
             if (targetCollider != null)
             {
                 targetCollider.isTrigger = true;
@@ -133,24 +133,24 @@ namespace Project.BlockFeatures
             }
         }
 
-        public void OnTriggerEnter(Collider other)
+        public void OnTriggerEnter2D(Collider2D other)
         {
             TryContact(other != null ? other.gameObject : null);
         }
 
-        public void OnTriggerExit(Collider other)
+        public void OnTriggerExit2D(Collider2D other)
         {
             ReleaseContact(other != null ? other.gameObject : null);
         }
 
-        public void OnCollisionEnter(Collision collision)
+        public void OnCollisionEnter2D(Collision2D collision)
         {
             TryContact(collision != null
                 ? collision.gameObject
                 : null);
         }
 
-        public void OnCollisionExit(Collision collision)
+        public void OnCollisionExit2D(Collision2D collision)
         {
             ReleaseContact(collision != null
                 ? collision.gameObject
@@ -392,11 +392,11 @@ namespace Project.BlockFeatures
             }
         }
 
-        private Collider ResolveCollider()
+        private Collider2D ResolveCollider()
         {
             if (targetCollider == null)
             {
-                targetCollider = GetComponent<Collider>();
+                targetCollider = GetComponent<Collider2D>();
             }
 
             return targetCollider;

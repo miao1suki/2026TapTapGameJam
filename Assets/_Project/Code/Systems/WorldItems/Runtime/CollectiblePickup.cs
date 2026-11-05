@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -12,7 +13,7 @@ using UnityEngine.Events;
 namespace Project.Items
 {
     /// <summary>A neutral, pushable world pickup. Rewards are supplied by the collection listener.</summary>
-    [DisallowMultipleComponent, RequireComponent(typeof(Rigidbody))]
+    [DisallowMultipleComponent, RequireComponent(typeof(Rigidbody2D))]
     public sealed class CollectiblePickup : DropItemBase, IRoomColorResettable
     {
         [SerializeField, InspectorName("收集品编号")] private string itemId = "collectible";
@@ -26,9 +27,9 @@ namespace Project.Items
         /// <summary>Settled gameplay progress; room reset/reuse must not clear it.</summary>
         public bool IsCollected { get; private set; }
         public bool CanBePushed => !IsCollected && CanCollect && body != null && !body.isKinematic;
-        public Collider[] SolidColliders { get { EnsureState(); return shapes; } }
-        private Rigidbody body;
-        private Collider[] shapes;
+        public Collider2D[] SolidColliders { get { EnsureState(); return shapes; } }
+        private Rigidbody2D body;
+        private Collider2D[] shapes;
         private bool[] shapeEnabled;
         private bool originalKinematic;
         private bool recoveredSuspendedSnapshot;
@@ -36,8 +37,8 @@ namespace Project.Items
 
         private struct PlayerCollisionPair
         {
-            public Collider Item;
-            public Collider Player;
+            public Collider2D Item;
+            public Collider2D Player;
         }
 
         protected override void OnEnable()
@@ -84,9 +85,9 @@ namespace Project.Items
         private void EnsureState()
         {
             if (body != null) return;
-            body = GetComponent<Rigidbody>();
+            body = GetComponent<Rigidbody2D>();
             originalKinematic = body.isKinematic;
-            shapes = GetComponentsInChildren<Collider>(true);
+            shapes = GetComponentsInChildren<Collider2D>(true);
             shapeEnabled = new bool[shapes.Length];
             for (int i = 0; i < shapes.Length; i++) shapeEnabled[i] = shapes[i].enabled;
             // Some authored instances accidentally contain the suspended state
@@ -103,8 +104,8 @@ namespace Project.Items
                 for (int i = 0; i < shapeEnabled.Length; i++) shapeEnabled[i] = true;
             }
         }
-        private void OnTriggerEnter(Collider other) => TryCollect(other);
-        private void OnTriggerStay(Collider other) => TryCollect(other);
+        private void OnTriggerEnter2D(Collider2D other) => TryCollect(other);
+        private void OnTriggerStay2D(Collider2D other) => TryCollect(other);
 
         private void IgnorePlayerSolids(PlayerController player)
         {
@@ -113,7 +114,7 @@ namespace Project.Items
             EnsureState();
             // Called only on activation/reset or when a player is enabled, never
             // as a per-pickup Update/FixedUpdate or a whole-scene search.
-            var playerShapes = player.GetComponentsInChildren<Collider>(true);
+            var playerShapes = player.GetComponentsInChildren<Collider2D>(true);
             foreach (var itemShape in shapes)
             {
                 if (itemShape == null || itemShape.isTrigger || !itemShape.enabled ||
@@ -131,10 +132,10 @@ namespace Project.Items
                     // Do not claim or later restore an ignore pair supplied by
                     // another system. Owned pairs must be reapplied after either
                     // collider has been disabled during collection/respawn.
-                    if (!owned && Physics.GetIgnoreCollision(itemShape, playerShape)) continue;
+                    if (!owned && PlanarPhysics.GetIgnoreCollision(itemShape, playerShape)) continue;
                     if (!owned) playerCollisionPairs.Add(new PlayerCollisionPair
                         { Item = itemShape, Player = playerShape });
-                    Physics.IgnoreCollision(itemShape, playerShape, true);
+                    PlanarPhysics.IgnoreCollision(itemShape, playerShape, true);
                 }
             }
         }
@@ -144,7 +145,7 @@ namespace Project.Items
             foreach (var pair in playerCollisionPairs)
                 if (pair.Item != null && pair.Player != null && pair.Item.enabled && pair.Player.enabled &&
                     pair.Item.gameObject.activeInHierarchy && pair.Player.gameObject.activeInHierarchy)
-                    Physics.IgnoreCollision(pair.Item, pair.Player, false);
+                    PlanarPhysics.IgnoreCollision(pair.Item, pair.Player, false);
             playerCollisionPairs.Clear();
         }
 
@@ -153,7 +154,7 @@ namespace Project.Items
             if (isActiveAndEnabled)
                 foreach (var player in PlayerController.ActivePlayers) IgnorePlayerSolids(player);
         }
-        private void TryCollect(Collider other)
+        private void TryCollect(Collider2D other)
         {
             if (IsCollected || other == null) return;
             var player = other.GetComponentInParent<PlayerController>();
@@ -165,7 +166,7 @@ namespace Project.Items
         protected override void OnCollectionStarted()
         {
             EnsureState(); StopItemAnimations();
-            if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+            if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = 0f; }
             body.isKinematic = true;
             foreach (var shape in shapes) if (shape != null) shape.enabled = false;
             // The updated 2D artwork is a sibling of the legacy sphere visual.
@@ -194,7 +195,7 @@ namespace Project.Items
             }
             // Includes already-authored instances with the old serialized flag.
             // Stay dynamic so cubes/bases can push it in either grid direction.
-            body.useGravity = false; body.isKinematic = originalKinematic;
+            body.gravityScale = 0f; body.isKinematic = originalKinematic;
             for (int i = 0; i < shapes.Length; i++) if (shapes[i] != null) shapes[i].enabled = shapeEnabled[i];
             RefreshPlayerSolids();
         }
@@ -270,8 +271,8 @@ namespace Project.Items
 
         private void SuspendCollectedBody()
         {
-            if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
-            body.useGravity = false;
+            if (!body.isKinematic) { body.linearVelocity = Vector3.zero; body.angularVelocity = 0f; }
+            body.gravityScale = 0f;
             body.isKinematic = true;
             foreach (var shape in shapes) if (shape != null) shape.enabled = false;
         }

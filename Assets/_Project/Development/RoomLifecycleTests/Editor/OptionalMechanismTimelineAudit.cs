@@ -88,7 +88,7 @@ public static class OptionalMechanismTimelineAudit
                     ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                     player = Spawn("Player/Player.prefab", new Vector3(-30f, 20f, 0f)).GetComponent<PlayerController>();
                     player.GetComponent<PlayerInputDriver>().enabled = false;
-                    player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                    player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                     savedDepth = player.ControlLockDepth;
                     var cameraRoot = new GameObject("Optional shot test camera");
                     var camera = cameraRoot.AddComponent<Camera>(); camera.orthographic = true;

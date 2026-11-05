@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -76,7 +77,7 @@ public static class OneWayDeliveryAudit
             item.GetComponent<OneWayPlatform>().ConfigureAppearance(color);
             var presentation = MechanismArtworkPresentation.Ensure(item);
             presentation.Refresh(0);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             var visual = presentation.Visual;
             Require(presentation.Kind == ObjectArtworkLibrary.OneWayPlatformKind((int)color), "Appearance enum binding changed");
             Require(visual != null && visual.enabled, "Visual missing/disabled");
@@ -86,7 +87,7 @@ public static class OneWayDeliveryAudit
             Require(Mathf.Abs(visual.transform.lossyScale.x - 1) < .0001f && Mathf.Abs(visual.transform.lossyScale.y - 1) < .0001f, "Non-square art pixels");
             Require(Mathf.Abs(visual.bounds.size.x - length) < .0001f, "Authored footprint changed");
             Require(Mathf.Abs(visual.bounds.size.y - 1) < .0001f, "Native frame height changed");
-            Require(Mathf.Abs(visual.bounds.max.y - item.GetComponent<BoxCollider>().bounds.max.y) < .0001f, $"Art support edge does not match collider: art={visual.bounds.max.y}, collider={item.GetComponent<BoxCollider>().bounds.max.y}");
+            Require(Mathf.Abs(visual.bounds.max.y - item.GetComponent<BoxCollider2D>().bounds.max.y) < .0001f, $"Art support edge does not match collider: art={visual.bounds.max.y}, collider={item.GetComponent<BoxCollider2D>().bounds.max.y}");
             Require(Mathf.Abs(visual.transform.localScale.y - 5) < .0001f, "Parent Y .2 must be cancelled by child scale 5");
             Require(Mathf.Abs(visual.transform.localPosition.y + 4.5f) < .0001f, "Full frame bottom pivot must be at local Y -4.5");
         }

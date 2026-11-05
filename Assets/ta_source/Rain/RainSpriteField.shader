@@ -11,7 +11,7 @@ Shader "TapTap/Rain/Sprite Field"
         Pass
         {
             Name "RainSpriteField"
-            Tags { "LightMode"="UniversalForward" }
+            Tags { "LightMode"="Universal2D" }
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
             Cull Off

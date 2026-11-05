@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using Project.Player;
 using Project.Audio;
@@ -250,8 +251,8 @@ namespace Project.BlockFeatures
 
         private readonly HashSet<PlayerController> carriedPlayers =
             new HashSet<PlayerController>();
-        private readonly RaycastHit[] platformHitBuffer =
-            new RaycastHit[16];
+        private readonly RaycastHit2D[] platformHitBuffer =
+            new RaycastHit2D[16];
         private Vector3 origin;
         private bool originCaptured;
         private bool active;
@@ -260,7 +261,7 @@ namespace Project.BlockFeatures
         private float legStart, legEnd;
         private float holdRemaining;
         private bool movementAudioPlaying;
-        private Collider[] platformSurfaces;
+        private Collider2D[] platformSurfaces;
         private PlatformLoadTransport loadTransport;
         private bool UsesPoweredEndpoint => driveMode == MovingPlatformDriveMode.SignalControlled &&
             signalMotion == MovingPlatformSignalMotion.PoweredEndpoint;
@@ -322,7 +323,7 @@ namespace Project.BlockFeatures
         protected override void OnAttach()
         {
             ResetTimeline();
-            platformSurfaces = GetComponents<Collider>();
+            platformSurfaces = GetComponents<Collider2D>();
             loadTransport ??= new PlatformLoadTransport(this);
             CaptureOrigin();
             ResetMotion();
@@ -584,7 +585,7 @@ namespace Project.BlockFeatures
                 !reverseOnBlock ? "不检测" : UsesPoweredEndpoint ? "等待通路" : "反向移动"));
         }
 
-        private void OnCollisionEnter(Collision collision)
+        private void OnCollisionEnter2D(Collision2D collision)
         {
             if (!CanRunFeature)
             {
@@ -600,7 +601,7 @@ namespace Project.BlockFeatures
             carriedPlayers.Add(player);
         }
 
-        private void OnCollisionStay(Collision collision)
+        private void OnCollisionStay2D(Collision2D collision)
         {
             if (!CanRunFeature || collision == null)
             {
@@ -626,7 +627,7 @@ namespace Project.BlockFeatures
             }
         }
 
-        private void OnCollisionExit(Collision collision)
+        private void OnCollisionExit2D(Collision2D collision)
         {
             if (collision == null)
             {
@@ -663,11 +664,11 @@ namespace Project.BlockFeatures
                 return false;
             }
 
-            foreach (Collider surface in platformSurfaces)
+            foreach (Collider2D surface in platformSurfaces)
             {
                 if (surface == null || !surface.enabled || surface.isTrigger) continue;
                 Bounds bounds = surface.bounds;
-                int count = Physics.BoxCastNonAlloc(
+                int count = PlanarPhysics.BoxCastNonAlloc(
                     bounds.center,
                     bounds.extents * .96f,
                     delta.normalized,
@@ -675,10 +676,10 @@ namespace Project.BlockFeatures
                     transform.rotation,
                     delta.magnitude,
                     ~0,
-                    QueryTriggerInteraction.Ignore);
+                    TriggerQuery.Ignore);
                 for (int index = 0; index < count; index++)
                 {
-                    RaycastHit hit = platformHitBuffer[index];
+                    RaycastHit2D hit = platformHitBuffer[index];
                     if (hit.collider == null ||
                         hit.collider.transform.IsChildOf(transform) ||
                         loadTransport != null && loadTransport.Contains(hit.collider.attachedRigidbody) ||
@@ -690,7 +691,7 @@ namespace Project.BlockFeatures
             return false;
         }
 
-        private bool IsCarriedPlayer(Collider collider)
+        private bool IsCarriedPlayer(Collider2D collider)
         {
             PlayerController player =
                 collider.GetComponentInParent<PlayerController>();
@@ -719,7 +720,7 @@ namespace Project.BlockFeatures
         private void RefreshStandingPlayers()
         {
             carriedPlayers.Clear();
-            foreach (Collider surface in platformSurfaces)
+            foreach (Collider2D surface in platformSurfaces)
             {
                 if (surface == null || !surface.enabled || surface.isTrigger) continue;
                 Bounds top = surface.bounds;
@@ -727,20 +728,19 @@ namespace Project.BlockFeatures
                 foreach (PlayerController player in PlayerController.ActivePlayers)
                 {
                     if (player == null || player.gameObject.scene != gameObject.scene || player.VerticalVelocity > .1f || !player.CompareTag(carryPlayerTag)) continue;
-                    Collider body = player.GetComponent<Collider>();
-                    if (body == null || !body.enabled || Physics.GetIgnoreCollision(surface, body)) continue;
+                    Collider2D body = player.GetComponent<Collider2D>();
+                    if (body == null || !body.enabled || PlanarPhysics.GetIgnoreCollision(surface, body)) continue;
                     Bounds bounds = body.bounds;
-                    Vector3 physicsOffset = player.Motor.position - player.transform.position;
+                    Vector3 physicsOffset = player.Motor.WorldPosition() - player.transform.position;
                     float feet = bounds.min.y + physicsOffset.y;
                     Vector3 center = bounds.center + physicsOffset;
-                    if (Mathf.Abs(feet - top.max.y) <= tolerance && center.x >= top.min.x - tolerance && center.x <= top.max.x + tolerance &&
-                        center.z >= top.min.z - tolerance && center.z <= top.max.z + tolerance) carriedPlayers.Add(player);
+                    if (Mathf.Abs(feet - top.max.y) <= tolerance && center.x >= top.min.x - tolerance && center.x <= top.max.x + tolerance) carriedPlayers.Add(player);
                 }
             }
         }
 
         private PlayerController ResolveTopPlayer(
-            Collision collision)
+            Collision2D collision)
         {
             if (collision == null)
             {
@@ -759,12 +759,12 @@ namespace Project.BlockFeatures
         }
 
         private bool IsTopContact(
-            Collision collision,
+            Collision2D collision,
             PlayerController player)
         {
-            Collider platformCollider = collision.contactCount > 0 ? collision.GetContact(0).thisCollider : GetComponent<Collider>();
-            Collider playerCollider =
-                player.GetComponent<Collider>();
+            Collider2D platformCollider = collision.otherCollider;
+            Collider2D playerCollider =
+                player.GetComponent<Collider2D>();
             if (platformCollider != null &&
                 playerCollider != null)
             {
@@ -783,18 +783,14 @@ namespace Project.BlockFeatures
                     playerBounds.center.x >=
                     platformBounds.min.x - tolerance &&
                     playerBounds.center.x <=
-                    platformBounds.max.x + tolerance &&
-                    playerBounds.center.z >=
-                    platformBounds.min.z - tolerance &&
-                    playerBounds.center.z <=
-                    platformBounds.max.z + tolerance;
+                    platformBounds.max.x + tolerance;
                 if (feetOnTop && horizontallyOverPlatform)
                 {
                     return true;
                 }
             }
 
-            ContactPoint[] contacts = collision.contacts;
+            ContactPoint2D[] contacts = collision.contacts;
             for (int index = 0;
                  index < contacts.Length;
                  index++)

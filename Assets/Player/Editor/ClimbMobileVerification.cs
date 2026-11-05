@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Reflection;
 using Project.ColorBlocks;
@@ -36,12 +37,12 @@ namespace Project.Player.Editor
         {
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || ++frames < 10) return;
             EditorApplication.update -= Tick;
-            var oldSimulation = Physics.simulationMode;
+            var oldSimulation = PlanarPhysics.simulationMode;
             try
             {
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 var actor = new GameObject("Player"); var player = actor.AddComponent<PlayerController>();
-                player.Motor.interpolation = RigidbodyInterpolation.None;
+                player.Motor.interpolation = RigidbodyInterpolation2D.None;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ContactCubes/Prefabs/Green_ContactCube.prefab");
@@ -56,10 +57,10 @@ namespace Project.Player.Editor
                 var cube = cubeObject.GetComponent<ContactCube>(); var motion = cubeObject.GetComponent<ContactCubeMotion>();
                 var serialized = new SerializedObject(cube); serialized.FindProperty("initialLength").intValue = 4;
                 serialized.ApplyModifiedPropertiesWithoutUndo(); cube.ResetForRoom();
-                cubeObject.GetComponent<Rigidbody>().isKinematic = true;
+                cubeObject.GetComponent<Rigidbody2D>().isKinematic = true;
                 typeof(ContactCubeMotion).GetField("<IsSettled>k__BackingField", Private).SetValue(motion, true);
                 var horizontal = cubeObject.GetComponent<HorizontalCubeVine>();
-                var solid = cubeObject.GetComponentInChildren<BoxCollider>(); Physics.SyncTransforms();
+                var solid = cubeObject.GetComponentInChildren<BoxCollider2D>(); PlanarPhysics.SyncTransforms();
                 Bounds bounds = solid.bounds;
                 Move(player, new Vector3(bounds.max.x - .1f, bounds.max.y + .52f, 0));
                 player.SetMoveInput(Vector2.right);
@@ -68,13 +69,13 @@ namespace Project.Player.Editor
                 {
                     Call(horizontal, "FixedUpdate"); Call(player, "FixedUpdate");
                     protectedOnce |= player.IsClimbCornerProtected;
-                    Physics.Simulate(.02f); Physics.SyncTransforms();
+                    PlanarPhysics.Simulate(.02f); PlanarPhysics.SyncTransforms();
                 }
                 Check(protectedOnce, "top edge starts protection through real horizontal feature");
-                Check(player.Motor.position.y < bounds.min.y - .35f && player.Motor.position.y > bounds.min.y - .8f,
-                    "actual physics wraps top to underside without falling: " + player.Motor.position);
+                Check(player.Motor.WorldPosition().y < bounds.min.y - .35f && player.Motor.WorldPosition().y > bounds.min.y - .8f,
+                    "actual physics wraps top to underside without falling: " + player.Motor.WorldPosition());
                 Check(player.IsHorizontalClimbing, "underside remains attached after corner completes");
-                player.RequestJump(); Check(!player.IsHorizontalClimbing && player.Motor.linearVelocity.y < 0, "jump releases and drops, not jumps");
+                player.RequestJump(); Check(!player.IsHorizontalClimbing && ((Vector3)player.Motor.linearVelocity).y < 0, "jump releases and drops, not jumps");
                 Call(horizontal, "FixedUpdate"); Check(!player.IsHorizontalClimbing, "release cooldown prevents immediate recapture");
 
                 player.enabled = false; player.enabled = true;
@@ -85,32 +86,32 @@ namespace Project.Player.Editor
                 {
                     Call(horizontal, "FixedUpdate"); Call(player, "FixedUpdate");
                     protectedOnce |= player.IsClimbCornerProtected;
-                    Physics.Simulate(.02f); Physics.SyncTransforms();
+                    PlanarPhysics.Simulate(.02f); PlanarPhysics.SyncTransforms();
                 }
-                Check(protectedOnce && player.Motor.position.y > bounds.max.y + .35f, "vertical side joins horizontal top without a gap");
+                Check(protectedOnce && player.Motor.WorldPosition().y > bounds.max.y + .35f, "vertical side joins horizontal top without a gap");
                 player.enabled = false; player.enabled = true;
                 Move(player, new Vector3(bounds.min.x + .1f, bounds.min.y - .52f, 0));
-                player.SetHorizontalVineSurface(horizontal, player.Motor.position.y, 2f);
+                player.SetHorizontalVineSurface(horizontal, player.Motor.WorldPosition().y, 2f);
                 player.SetMoveInput(Vector2.left);
                 for (int i = 0; i < 210; i++)
                 {
                     Call(horizontal, "FixedUpdate");
-                    Call(player, "FixedUpdate"); Physics.Simulate(.02f); Physics.SyncTransforms();
+                    Call(player, "FixedUpdate"); PlanarPhysics.Simulate(.02f); PlanarPhysics.SyncTransforms();
                 }
-                Check(player.Motor.position.y > bounds.max.y + .35f && player.Motor.position.y < bounds.max.y + .8f,
-                    "left outer edge wraps underside back to top: " + player.Motor.position + " bounds=" + bounds + " protected=" + player.IsClimbCornerProtected);
+                Check(player.Motor.WorldPosition().y > bounds.max.y + .35f && player.Motor.WorldPosition().y < bounds.max.y + .8f,
+                    "left outer edge wraps underside back to top: " + player.Motor.WorldPosition() + " bounds=" + bounds + " protected=" + player.IsClimbCornerProtected);
                 Object.DestroyImmediate(cubeObject);
                 ColorChecks(player);
                 Object.DestroyImmediate(actor);
                 LayoutChecks();
                 Debug.Log("CLIMB MOBILE VERIFICATION PASSED " + checks);
-                SessionState.SetBool(Key, false); Physics.simulationMode = oldSimulation; EditorApplication.Exit(0);
+                SessionState.SetBool(Key, false); PlanarPhysics.simulationMode = oldSimulation; EditorApplication.Exit(0);
             }
             catch (Exception e)
-            { Debug.LogException(e); Physics.simulationMode = oldSimulation; SessionState.SetBool(Key, false); EditorApplication.Exit(1); }
+            { Debug.LogException(e); PlanarPhysics.simulationMode = oldSimulation; SessionState.SetBool(Key, false); EditorApplication.Exit(1); }
         }
         private static void Move(PlayerController player, Vector3 position)
-        { player.Motor.position = position; player.transform.position = position; player.Motor.linearVelocity = Vector3.zero; Physics.SyncTransforms(); }
+        { player.Motor.position = position; player.transform.position = position; player.Motor.linearVelocity = Vector3.zero; PlanarPhysics.SyncTransforms(); }
         private static void ColorChecks(PlayerController player)
         {
             Move(player, new Vector3(150, 150, 0));
@@ -119,7 +120,7 @@ namespace Project.Player.Editor
             camera.transform.position = player.transform.position + Vector3.back * 10;
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ColorBlocks/Prefabs/Universal_Block.prefab");
             var target = Object.Instantiate(prefab, player.transform.position + Vector3.right * 1.5f, Quaternion.identity);
-            var wheel = player.GetComponent<PlayerColorWheel>(); Physics.SyncTransforms();
+            var wheel = player.GetComponent<PlayerColorWheel>(); PlanarPhysics.SyncTransforms();
             int successes = 0; wheel.ColorApplicationSucceeded += () => successes++;
             foreach (string color in new[] { "red", "blue" })
             {

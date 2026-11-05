@@ -1,5 +1,7 @@
 # 系统索引
 
+2026-11-05 原生 2D 专项：`Code/Systems/PlanarPhysics` 提供原生 Physics2D 查询、假想姿态检测与平面基础几何；标准玩家/机关/关卡资产均已改用 Rigidbody2D/Collider2D。PC/Mobile Renderer2D 保留现有可见区域、HSV、水体与故障效果。Timeline 工具改为 `Assets/GJ_Tools/TimelineTools2D`，镜头仅 XY 正交构图和 Z 旋转，移除 FOV/透视/立体环绕。`StarPanoramaTimeDriver` 生成临时平面背景保留 TA 星空。执行状态及回归证据见 [迁移报告](../Developer/NATIVE_2D_MIGRATION_20261105.md)；旧历史条目中的 3D 物理与六面功能不再适用于该分支。
+
 编辑器改版统一读取 `.agents/skills/taptap-scene-editor-reform/SKILL.md`（显示名“编辑器改版方案”）。正式 Scene 已是玩法关卡唯一编辑权威：房间/通道、真实对象、参数和引用均在锁定正交 2D SceneView 直接编辑；GridArt 继续由稠密 Map 资产承载，在同一 Overlay 的 SceneView 绘制；区域装配是在同 Scene 整体平移区域、逻辑组、房间归属、显式附属物和已认领美术。PlanningCanvas、JSON 存档槽/片段/应用流程已从正常入口退役；历史 JSON 保留只读且不得覆盖 Scene。
 
 完成版实现与用法见 `Docs/Developer/SCENE_LEVEL_EDITOR.md`。入口 `Tools/2026TapTap/关卡编辑器/场景编辑器`，核心源码为 `SceneLevelEditorOverlay.cs`、`SceneRegionAuthoring.cs`、`SceneObjectAuthoring.cs`、`ScenePlacementPaletteCatalog.cs`、`ScenePlacementPaletteWindow.cs`、`SceneArtPaletteWindow.cs`、`SceneObjectInspectorWindow.cs`、`SceneRegionAssembly.cs` 与 `SceneArtAuthoring.cs`。原 `LevelEditorPalette.asset` 通过按颜色分组的可搜索卡片选择器继续提供方块/道具模板；GridArt Palette 通过沿用旧美术工作台缩略图与分类的独立卡片窗口选择，双击直接回到正交 SceneView 绘制。两种 Palette 选择都只改编辑器会话状态。对象模板只负责生成，Scene 实例不保存来源也不接受回写；正交点击统一选择作者根并打开真实实例 Inspector。`SceneEditorReformBatchAudit.RunAllFromCommandLine` 汇总 Stage 1、Stage 2、Stage 3–6 与 Formal 审计。正式规模性能基线为 3004 对象索引 `60.932 ms`、10240 次缓存查询 `0.794 ms/0 B`、49017 区域格合并 69 矩形、GridArt 单格增量构建 `6.054 ms`。
@@ -70,7 +72,7 @@ TA Gaming美术ad1a4dd已整合：保留4层2424格与天气区域，远/近景�
 
 2026-10-19集中整合：正式Gaming采用MVMap17（20房间，1406原物体＋1隐形Start），保留main现行修复；独立R3及可选PlatformMount已接入，R1不再次镜像；TA旧支线保留main网格/HSV/区域效果实现并补独立预览。旧交互图提案与旧Grow配置不恢复，详见[整合说明](../Developer/BRANCH_INTEGRATION_2026-10-19.md)。
 
-Boss 出场、普通/处决死亡与真假结局的 Timeline 空间数据统一使用 owning `PlayableDirector` 上的 `ContactTimelineTrigger` 局部坐标；脚本驱动的死亡轨以 Director 自身为表演坐标系。生成、相机、钥匙/收集品和黑屏演出禁止世界坐标；通用轨道不足时在 Playable 轨道放 Boss 专用脚本，不改 `TimelineTools3D`。见 `.agents/skills/taptap-boss-timeline-migration/SKILL.md`。
+Boss 出场、普通/处决死亡与真假结局的 Timeline 空间数据统一使用 owning `PlayableDirector` 上的 `ContactTimelineTrigger` 局部坐标；脚本驱动的死亡轨以 Director 自身为表演坐标系。生成、相机、钥匙/收集品和黑屏演出禁止世界坐标；通用轨道不足时在 Playable 轨道放 Boss 专用脚本，不改 `TimelineTools2D`。见 `.agents/skills/taptap-boss-timeline-migration/SKILL.md`。
 
 Boss 出场使用 `BossAppearCinematicPlayable`：1 秒玩家锁、故障警告/问号打字机、相机全程固定在玩家初始位置；Boss 在玩家 `X-7 / Y+13` 生成，由 BossController 固定 X/Z 并按加速度下移，直到 Y 与玩家完全一致后锁住演示位置，播放“不好！”并开启追击、血条、监控和镜头尺寸。Timeline 轨道列表只保留玩家锁与自定义 Playable，旧 Boss 走跳、相机和对话轨已移除。
 
@@ -220,19 +222,19 @@ MVMap 标注图：Development/RoomLifecycleTests 的 MVMapImportTest 与共享 M
 | 选择性像素化 | `Assets/_Project/Code/Systems/Pixelization`、`Assets/ta_source/PixelEffect` | 当前 PC 启用 TA Stencil 路径及其像素参数，关闭重复内置像素化；HSV 保持开启且在其后执行。内置路径的 Rendering Layer 128/描边 API 不控制 TA Shader。见 Integration/PIXELIZATION_API.md |
 | 启动/场景/UI/基础音频 | `Assets/_Project/Code/Systems/GameFlow` | 正式构建单Gaming；自动安装GameFlow与纯UI WorldMainMenu，同世界内切逻辑菜单/玩法，开始及返回不重载，旧MainMenu仅兼容；玩家、相机及SharedGameUI仍由Gaming持有。Bootstrap、旧Systems、旧三关和Ending不再使用 |
 | 音频资源 | `Assets/_Project/Content/Audio` | 22个音乐/环境声与46个SFX；63份音频登记为55个Cue。新OP接主菜单，Boss曲仅登记待触发点；两种重生点激活、搬运、基座启停、平台移动、气泡/浮力、6格落地、燃烧、岩浆冷却/触碰及菜单确认已接。解谜/秘密与独立浅水步行待触发点，区域环境声/其余BGM待规划。见 `Integration/AUDIO_HANDOVER.md` |
-| 相机 Manager/跟随/2D3D | `Assets/_Project/Code/Systems/CameraModes` | 旧功能保留；玩家驱动不再申请 2D/3D 切换，Timeline 优先级更高 |
+| 平面相机 Manager/跟随 | `Assets/_Project/Code/Systems/CameraModes` | 正交 XY 平移、缩放与 Z 旋转；Timeline 优先级更高 |
 | 输入、触摸摇杆、平台UI预设 | `Assets/_Project/Code/Systems/InputAbstraction` | 旧功能保留 |
 | 鼠标整帧卡顿采样 | `Assets/_Project/Code/Systems/InputAbstraction/Editor/MouseMotionDiagnostics.cs` | Play时手动选择Tools/诊断/录制鼠标卡顿（10秒）；只保存本地Profiler与帧/事件数据，结束还原Profiler，不改设备、不联网。见[定位说明](../Developer/MOUSE_MOTION_DIAGNOSTICS.md)；虚拟Mouse压力测试不代表真实Windows消息路径已排除 |
 | 重绑定 | `Assets/_Project/Code/Systems/InputRebinding` | 旧功能保留 |
 | 基础玩家 | `Assets/Player` | `PlayerController` 仅保留马能力，`PlayerInputDriver` 负责默认输入；不含旧玩法 |
 | TA 交互像素连线预览 | `Assets/ta_source/LinkEffect` | 红蓝在PlayerInteractionSensor范围内只读预览最近一个有效逻辑目标，单线池复用、整线淡入，换点不叠加旧线淡出。蓝线外围水纹有独立强度参数，Shader按实际线长绘图；绿色实际钩绳由GreenHookAbility/VisualDriver负责，保留四枝效果并在相机之后每渲染帧刷新。场景接入见 [连接效果使用说明.md](../../Assets/ta_source/LinkEffect/连接效果使用说明.md) |
 | TA 染色覆盖效果 | `Assets/ta_source/GivingColor` | 独立 URP 透明覆盖 Shader 读取原材质纹理 Alpha，按红色燃烧、蓝色四次叠染、绿色逐级分叉播放；材质 Inspector 可调速度、噪波和像素化。只在玩家染色成功后短暂显示，完成后渐隐并露出原玩法改色结果；不覆盖水与岩浆生成的深蓝固体块，不覆盖蒸汽和植物反应。开局能力、解锁及目标原颜色由原程序管理；Test 场景文件不作接线修改；见 [使用说明.md](../../Assets/ta_source/GivingColor/使用说明.md) |
-| TA 星空全景天空盒 | `Assets/ta_source/star` | Godot 星空 sky shader 的 Unity URP 端口，Unity `Time.time` 经 `StarPanoramaTimeDriver` 驱动星点旋转/闪烁和星云噪声流动；支持星点颜色/尺寸/密度、十字光芒和叶片银河参数。`StarPanorama.mat` 的 Inspector 属性由测试场景与正式 `Gaming.unity` 共用。预览和接入说明见 `Assets/ta_source/star/README.md` |
+| TA 二维星空背景 | `Assets/ta_source/star` | `StarPanorama2D.shader` 在正交平面背景保留 TA 原材质、星云、星点闪烁及银河参数。`StarPanoramaTimeDriver` 自动适配正交相机，不依赖 Skybox；临时背景不写入 Scene。预览和接入见 `Assets/ta_source/star/README.md` |
 | 掉落物与拾取飞行 | `Assets/_Project/Code/Shared/Runtime/DropItemBase.cs`、`Assets/_Project/Code/Systems/PickupPresentation` | 基类负责感知后的磁吸、收集生命周期；颜色钥匙触碰结算并播放 DOTween 四段飞行与镜头；Pick 场景保留测试物 |
 | 基础工具 | `Assets/GJ_Tools/BasicTools` | 对象池、计时、等待、事件与编辑器帮助已恢复 |
 | 成就 | `Assets/_Project/Code/Systems/Achievements` | 旧功能保留；固定目录自动同步到运行时目录；暂停收藏页通过 `AchievementCollectionPresenter` 以两列布局直接读取 `AchievementManager` 的目录、当前条件、解锁状态、九宫格块美术和达成图片。完成态的灰色整块遮罩与绿色像素勾仅为显示，不挂 Toggle/Selectable、不接收射线；完成后条件栏继续显示最终条件文本而不是“已完成”。隐藏成就在解锁前显示居中大问号与“待发现成就”，解锁后才揭示真实内容。运行时由 `AchievementUnlockToastPresenter` 实现 `IAchievementUnlockReceiver`，在 `WordNote_UI` 画布左下角用独立九宫格块和透明绿色像素勾排队显示“达成成就！”与成就名，左入停留后左出，所有字体、块/勾 Sprite、材质、尺寸和动画参数可配置 |
-| Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools3D` | 旧功能保留；SampleScene 提供相机与玩家接线范本；新增对话轨道，不需要绑定对象，直接向常驻 `WordNote_UI` 申请同一画布中的消息。使用见 [对话轨道](../Developer/TIMELINE_DIALOGUE.md)，接入见 [API](Integration/TIMELINE_DIALOGUE_API.md) |
-| 玩家 / Boss Timeline 轨道 | `Assets/GJ_Tools/TimelineTools3D/AboutTimeline` | `PlayerTimelineTrack` 与 `BossTimelineTrack` 支持显式绑定或按 Tag 查找角色，驱动位移、跳跃、玩家输入锁和 Boss 追击状态。使用见 [玩家与 Boss 轨道](../Developer/TIMELINE_ACTOR_TRACKS.md)，接入见 [API](Integration/TIMELINE_ACTOR_TRACKS_API.md) |
+| Timeline演出/战斗 | `Assets/GJ_Tools/TimelineTools2D` | 旧功能保留；SampleScene 提供相机与玩家接线范本；新增对话轨道，不需要绑定对象，直接向常驻 `WordNote_UI` 申请同一画布中的消息。使用见 [对话轨道](../Developer/TIMELINE_DIALOGUE.md)，接入见 [API](Integration/TIMELINE_DIALOGUE_API.md) |
+| 玩家 / Boss Timeline 轨道 | `Assets/GJ_Tools/TimelineTools2D/AboutTimeline` | `PlayerTimelineTrack` 与 `BossTimelineTrack` 支持显式绑定或按 Tag 查找角色，驱动位移、跳跃、玩家输入锁和 Boss 追击状态。使用见 [玩家与 Boss 轨道](../Developer/TIMELINE_ACTOR_TRACKS.md)，接入见 [API](Integration/TIMELINE_ACTOR_TRACKS_API.md) |
 | 通用接触触发道具 | `Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/ContactTimelineTrigger.cs` | 独立 MonoBehaviour，挂在有 Collider 的道具上后自动隐藏 Renderer，通过 Trigger/Collision 接触播放绑定 Timeline；支持玩家、任意碰撞体或 Tag 筛选，不依赖颜色系统。“进入播放，离开停止”模式用于区域状态，SceneView 与关卡编辑器画布以金色虚线显示真实 Collider 范围。使用见 [接触触发](../Developer/CONTACT_TIMELINE.md)，接入见 [API](Integration/CONTACT_TIMELINE_API.md) |
 | Boss 控制器与右移马夫 | `Assets/Boss_Logic/BossController.cs`、`BossAnimationDriver.cs`、`BossRightMoveExecutor.cs`、`BossCameraSize.cs`、`BossDefeatTimelinePresenter.cs` | Controller 默认关闭自动目标追击，只响应 Timeline 和马夫指令，提供运动、跳跃、受击和死亡能力；Timeline 行走保留常规重力，所有 Boss 动作下游必须是 Controller。`BossRightMoveExecutor` 首次接管时记录 Boss 当前世界 Y，之后以默认 0 死区持续追随玩家 Y 并切穿地形右移。`Boss_appear.playable` 由多条 `BossTimelineTrack`、全程玩家锁轨和 2D 相机轨组成，每个 Boss Clip 只做一个动作；玩家锁先于相机 0.1 秒启动，末尾 Playable 同时激活血条与 Boss 存活期视野。`BossCameraSize` 通过 `CameraControlManager` 平滑申请玩法视野倍率，Timeline 镜头期间不覆盖演出，玩家死亡复活不重置。`camera_close.playable` 使用独立 `CameraClosePlayable` 在 WhileInside 触发器内申请正数缩放租约，默认 `0.5×`、平滑 `1.25` 秒，离开停止并恢复。Boss 存活时持有玩家疾跑锁，死亡/禁用释放。玩家复活链在房间重建后、Boss 归位前销毁 Boss 左边缘至当前中心 X 范围内相交的普通/重力岩浆。Boss 自然死亡和处决在共享死亡 Playable 末段调用 `PlayDeathAnimationNow()`，触发 RGB 网格溶解；参数与独立预览场景见 [Boss死亡效果说明](../../Assets/ta_source/Boss_Die/使用说明.md)。普通外部删除不触发演出。Renderer 使用 `BossTop`、排序值 `32767` 和 Renderer Priority `32767`。 |
 | Boss 追击寻路（保留未挂载） | `Assets/Boss_Logic/Navigation` | 有向节点图 + A*，未来可用于其他 Boss/关卡；当前 Boss 预制体不挂载，不参与默认长廊战斗。使用见 [Boss 追击寻路](../Developer/BOSS_PATHFINDING.md)，接入见 [API](Integration/BOSS_PATHFINDING_API.md) |

@@ -160,7 +160,7 @@ namespace Project.Rooms.Editor
                 var manager = Object.FindFirstObjectByType<RoomLifecycleManager>();
                 if (player == null || manager == null) return;
                 player.GetComponent<PlayerInputDriver>().enabled = false;
-                player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                 if (phase == 0)
                 {
                     Check(manager.CurrentRegionId == "mvmap_objects_test_area", "player starts in test region");

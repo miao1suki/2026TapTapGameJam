@@ -66,7 +66,7 @@ public static class TAArtworkIntegration
         clone.transform.SetPositionAndRotation(expected, source.transform.rotation);
         clone.transform.localScale = source.transform.lossyScale;
         clone.name = "TA 萤火虫区域 · MRoom2";
-        Check(clone.GetComponentsInChildren<Collider>(true).Length == 0, "ambient effect adds no gameplay collider");
+        Check(clone.GetComponentsInChildren<Collider2D>(true).Length == 0, "ambient effect adds no gameplay collider");
         var field = clone.GetComponent<FireflyField>();
         Check(field.AreaCells == source.AreaCells && field.LayoutSeed == source.LayoutSeed && field.MotionSeed == source.MotionSeed,
             "TA effect area and motion settings retained");

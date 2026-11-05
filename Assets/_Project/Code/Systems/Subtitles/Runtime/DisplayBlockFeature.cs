@@ -31,7 +31,7 @@ namespace Project.Subtitles
     }
 
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(Collider2D))]
     public sealed class DisplayBlockFeature : MonoBehaviour
     {
         private const float RuntimeFontSize = 100f;
@@ -54,7 +54,7 @@ namespace Project.Subtitles
         [SerializeField] private bool hideColliderOnAwake = true;
         [SerializeField] private bool hideVisualOnAwake = true;
 
-        private Collider[] colliders;
+        private Collider2D[] colliders;
         private Renderer sourceRenderer;
         private Bounds localBounds;
         private TextMeshPro textObject;
@@ -121,7 +121,7 @@ namespace Project.Subtitles
 
         private void CacheSceneReferences()
         {
-            colliders = GetComponentsInChildren<Collider>(true);
+            colliders = GetComponentsInChildren<Collider2D>(true);
             sourceRenderer = GetComponent<Renderer>();
             if (sourceRenderer == null)
             {

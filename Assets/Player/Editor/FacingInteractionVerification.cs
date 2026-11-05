@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Reflection;
 using Project.BlockFeatures;
@@ -31,7 +32,7 @@ namespace Project.Player.Editor
         }
         private static CarryableFeature Box(Vector3 position, Vector3 size)
         {
-            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject box = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             box.transform.position = position; box.transform.localScale = size;
             return box.AddComponent<CarryableFeature>();
         }
@@ -44,15 +45,15 @@ namespace Project.Player.Editor
                 var player = UnityEngine.Object.FindFirstObjectByType<PlayerController>();
                 player.GetComponent<PlayerInputDriver>().enabled = false;
                 player.Motor.position = new Vector3(-199.5f, 200.5f, 0);
-                player.transform.position = player.Motor.position;
+                player.transform.position = player.Motor.WorldPosition();
                 player.Motor.linearVelocity = Vector3.zero;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 var crankPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ColorBlocks/Prefabs/Red_Crank.prefab");
                 var leftCrank = UnityEngine.Object.Instantiate(crankPrefab, player.transform.position + Vector3.left, Quaternion.identity);
                 var rightCrank = UnityEngine.Object.Instantiate(crankPrefab, player.transform.position + Vector3.right, Quaternion.identity);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 var sensor = player.GetComponent<PlayerInteractionSensor>();
                 player.SetMoveInput(Vector2.left); sensor.RefreshTarget();
                 Check(ReferenceEquals(sensor.CurrentTarget, leftCrank.GetComponent<CrankPlatformFeature>()), "keyboard interaction faces left crank");
@@ -67,7 +68,7 @@ namespace Project.Player.Editor
                 Check(float.IsPositiveInfinity(PlayerInteractionSensor.FacingScore(player, player.transform.position + Vector3.right)), "behind target excluded");
                 var left = Box(player.CarryCenterWorldPosition + Vector3.left, Vector3.one);
                 var right = Box(player.CarryCenterWorldPosition + Vector3.right, Vector3.one);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 player.UpdateCarryInput(false, false, false, false);
                 Check(player.CarryQueueCount == 1, "only facing-side carry candidate");
                 player.SetMoveInput(Vector2.right);
@@ -77,7 +78,7 @@ namespace Project.Player.Editor
                 typeof(PlayerController).GetField("selectedCarryTarget", Private).SetValue(player, right);
                 left.gameObject.SetActive(false);
                 right.UpdateCarryAnchor(player.CarryAnchorWorldPosition);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Check(player.TryGetCarryPlacementPreview(out Bounds destination, out bool valid) && valid, "empty drop preview valid");
                 Check((destination.size - Vector3.one).sqrMagnitude < .001f, "preview uses real solid size despite disabled colliders");
                 var wall = Box(destination.center, Vector3.one);
@@ -85,7 +86,7 @@ namespace Project.Player.Editor
                 var marker = wall.gameObject.AddComponent<Project.LevelEditor.LevelEditorPlacedBlock>();
                 marker.Configure(new Vector2Int(Mathf.FloorToInt(destination.center.x), Mathf.FloorToInt(destination.center.y)), "Verification", Color.white, false);
                 Check(Project.LevelEditor.LevelEditorPlacedBlock.ActiveInstances.Count == activeCount + 1, "runtime grid metadata registered without frame scans");
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 bool shown = player.TryGetCarryPlacementPreview(out Bounds blockedDestination, out valid);
                 Check(shown && !valid, "occupied drop preview invalid");
                 typeof(PlayerController).GetMethod("LateUpdate", Private).Invoke(player, null);

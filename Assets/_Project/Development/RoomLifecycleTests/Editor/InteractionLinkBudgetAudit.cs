@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections;
 using System.IO;
@@ -59,13 +60,13 @@ public static class InteractionLinkBudgetAudit
             Vector3 origin = new Vector3(0, 40, 0);
             var player = Spawn("Player/Player", origin).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+            player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
             var wheel = player.GetComponent<PlayerColorWheel>();
             var effect = player.GetComponent<InteractionLinkEffect>();
             Check(effect.PooledLineCount == 1, "one renderer prewarmed even for legacy prefab pool capacity");
             var waters = Enumerable.Range(1, 4).Select(i => Spawn("ColorBlocks/Prefabs/Blue_WaterSource", origin + Vector3.right * i)).ToArray();
             Check(wheel.TrySelectColor("red"), "select red");
-            Physics.SyncTransforms(); Call(effect, "LateUpdate");
+            PlanarPhysics.SyncTransforms(); Call(effect, "LateUpdate");
             Check(effect.DetectedTargetCount == 4 && effect.VisibleLinkCount == 1, "four waters detected but only nearest one shown");
             var candidates = (IList)Get(effect, "candidates");
             Check(((Component)candidates[0].GetType().GetField("Component").GetValue(candidates[0])).gameObject == waters[0], "nearest water uses actual collider distance");
@@ -73,14 +74,14 @@ public static class InteractionLinkBudgetAudit
             {
                 player.transform.position = origin + Vector3.right * (i % 4 + 1);
                 player.Motor.position = player.transform.position;
-                Physics.SyncTransforms(); Call(effect, "ScanTargets"); Call(effect, "DrawLines");
+                PlanarPhysics.SyncTransforms(); Call(effect, "ScanTargets"); Call(effect, "DrawLines");
                 Check(effect.VisibleLinkCount == 1, "water movement keeps just one nearest preview");
             }
             foreach (var water in waters) Object.DestroyImmediate(water);
             player.transform.position = origin; player.Motor.position = origin;
             var vines = Enumerable.Range(0, 36).Select(i => Spawn("ColorBlocks/Prefabs/Green_Ladder",
                 origin + new Vector3(Mathf.Cos(i * Mathf.PI / 18) * 3, Mathf.Sin(i * Mathf.PI / 18) * 3, 0))).ToArray();
-            Physics.SyncTransforms(); Call(effect, "ScanTargets"); Call(effect, "DrawLines");
+            PlanarPhysics.SyncTransforms(); Call(effect, "ScanTargets"); Call(effect, "DrawLines");
             Check(effect.DetectedTargetCount == 36 && effect.VisibleLinkCount == 1, "dense red draws nearest target only");
             Check(wheel.TrySelectColor("blue"), "select blue");
             Call(effect, "LateUpdate");
@@ -91,7 +92,7 @@ public static class InteractionLinkBudgetAudit
             {
                 player.transform.position = origin + new Vector3(Mathf.Cos(i * .2f), Mathf.Sin(i * .2f), 0);
                 player.Motor.position = player.transform.position;
-                Physics.SyncTransforms(); Call(effect, "ScanTargets"); Call(effect, "DrawLines");
+                PlanarPhysics.SyncTransforms(); Call(effect, "ScanTargets"); Call(effect, "DrawLines");
                 Check(effect.VisibleLinkCount == 1 && effect.PooledLineCount == 1, "switching nearest reuses one line without overlapping fade");
             }
             var lines = (IList)Get(effect, "lines");

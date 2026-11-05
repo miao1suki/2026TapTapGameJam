@@ -37,10 +37,10 @@ public static class TapTapFoundationSetup
                 Cube("Ground", root.transform, new Vector3(0, -.5f, 0), new Vector3(20, 1, 4));
                 Cube("Step", root.transform, new Vector3(0, .35f, 0), new Vector3(2, .7f, 2));
                 var goal = Cube("LevelGoal", root.transform, new Vector3(7, 1, 0), new Vector3(1, 2, 2));
-                goal.GetComponent<BoxCollider>().isTrigger = true;
+                goal.GetComponent<BoxCollider2D>().isTrigger = true;
                 goal.AddComponent<LevelGoal>().Configure(i == 0 ? GameFlowSceneId.Level02 : i == 1 ? GameFlowSceneId.Level03 : GameFlowSceneId.Ending, i == 2);
-                var light = new GameObject("LevelLight").AddComponent<Light>();
-                light.type = LightType.Directional; light.transform.rotation = Quaternion.Euler(45, -30, 0);
+                var light = new GameObject("LevelLight").AddComponent<UnityEngine.Rendering.Universal.Light2D>();
+                light.lightType = UnityEngine.Rendering.Universal.Light2D.LightType.Global; light.transform.rotation = Quaternion.identity;
             }
             EditorSceneManager.SaveScene(scene);
         }
@@ -83,7 +83,7 @@ public static class TapTapFoundationSetup
     }
     private static GameObject Cube(string name, Transform parent, Vector3 position, Vector3 scale)
     {
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube); cube.name = name;
+        var cube = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); cube.name = name;
         cube.transform.SetParent(parent); cube.transform.position = position; cube.transform.localScale = scale;
         return cube;
     }

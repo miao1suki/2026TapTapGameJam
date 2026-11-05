@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -77,7 +78,7 @@ namespace Project.WorldItems.Editor
             if (Time.time < 3f || GameplayPresentationGate.IsSuppressed || RunSessionCoordinator.Instance == null ||
                 !RunSessionCoordinator.Instance.HasActiveRun) return;
             EditorApplication.update -= Tick;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             try
             {
                 var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -95,12 +96,12 @@ namespace Project.WorldItems.Editor
                 Check(item.TryGetStableInstanceId(out string collectedId), "uncollected item needs stable identity");
                 var player = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<PlayerController>(true)).First();
                 player.GetComponent<PlayerInputDriver>().enabled = false;
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 player.transform.position = item.transform.position;
                 player.Motor.position = item.transform.position;
                 player.Motor.linearVelocity = Vector3.zero;
-                Physics.SyncTransforms();
-                for (int step = 0; step < 3; step++) Physics.Simulate(.02f);
+                PlanarPhysics.SyncTransforms();
+                for (int step = 0; step < 3; step++) PlanarPhysics.Simulate(.02f);
                 Check(item.CollectionRequested, "actual player Trigger must accept pickup after loaded-run startup");
                 DOTween.CompleteAll(true);
                 Check(item.IsCollected && !item.gameObject.activeSelf, "actual flight must settle pickup");
@@ -114,12 +115,12 @@ namespace Project.WorldItems.Editor
                 var remaining = all.First(candidate => candidate != item && candidate != restored);
                 var remainingMember = remaining.GetComponent<RoomResetObject>();
                 remainingMember.Manager?.ResetRegion(remainingMember.RegionId);
-                Check(remaining.CanCollect && remaining.GetComponentsInChildren<Collider>(true).All(shape => shape.enabled),
+                Check(remaining.CanCollect && remaining.GetComponentsInChildren<Collider2D>(true).All(shape => shape.enabled),
                     "room reset must not restore stale inactive/disabled flags on an uncollected item");
                 Finish(true, "loaded Gaming hides collected item; real Trigger/flight/autosave/room persistence passed");
             }
             catch (Exception error) { Finish(false, error.ToString()); }
-            finally { Physics.simulationMode = previous; }
+            finally { PlanarPhysics.simulationMode = previous; }
         }
 
         private static string Parents(Transform target)

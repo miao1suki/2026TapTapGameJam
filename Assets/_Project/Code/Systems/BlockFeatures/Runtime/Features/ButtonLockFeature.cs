@@ -58,9 +58,9 @@ namespace Project.BlockFeatures
 
         private bool isOn;
         private bool initialized;
-        private BoxCollider pressTrigger;
+        private BoxCollider2D pressTrigger;
         private ButtonFacing configuredFacing;
-        private Collider[] contacts = new Collider[16];
+        private Collider2D[] contacts = new Collider2D[16];
 
         public bool IsSignalActive => isOn && CanRunFeature;
         public bool Persistent => mode == DoorButtonMode.Latched;
@@ -70,7 +70,7 @@ namespace Project.BlockFeatures
         protected override void OnAttach()
         {
             if (!initialized) { isOn = startsOn; initialized = true; }
-            pressTrigger = GetComponent<BoxCollider>();
+            pressTrigger = GetComponent<BoxCollider2D>();
             if (pressTrigger != null)
             {
                 ButtonPressureGeometry.Configure(pressTrigger, facing);

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -24,7 +25,7 @@ public static class R1GameplayVerification
     private static CrankPlatformFeature right, lower, left;
     private static MovingPlatformFeature platform;
     private static DoorController door;
-    private static RigidbodyConstraints oldConstraints;
+    private static RigidbodyConstraints2D oldConstraints;
     private static IDisposable playerLock;
     private static Vector3 horizontalStart;
     private static readonly string[] PinnedIds = { "r1_cube_green_left", "r1_cube_green_lower" };
@@ -71,7 +72,7 @@ public static class R1GameplayVerification
     }
     private static void MoveTo(Vector3 point)
     {
-        player.Motor.position = point; player.transform.position = point; Physics.SyncTransforms();
+        player.Motor.position = point; player.transform.position = point; PlanarPhysics.SyncTransforms();
     }
     private static void Next() { stage++; stageTime = Time.time; }
     private static CrankPlatformFeature Crank(string id) => Object.FindObjectsByType<CrankPlatformFeature>(FindObjectsSortMode.None)
@@ -109,12 +110,12 @@ public static class R1GameplayVerification
                 Check(!right.BindSharedController(right) && !right.BindSharedController(lower), "self and cyclic sharing rejected");
                 var bar = Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None).Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "r1_green_horizontal");
                 Check(bar.Length == 13 && bar.GetComponent<ContactCubeMotion>().IsAuthoredFixed, "fixed bar starts at 13 cells");
-                var bounds = bar.GetComponentInChildren<BoxCollider>().bounds;
+                var bounds = bar.GetComponentInChildren<BoxCollider2D>().bounds;
                 Check(Mathf.Abs(bounds.min.x - (Mirrored ? 27 : 18)) < .01f && Mathf.Abs(bounds.max.x - (Mirrored ? 40 : 31)) < .01f && Mathf.Abs(bounds.min.y + 25) < .01f, "bar occupies exact reflected footprint without geometry scaling");
                 Check(Vector3.Dot(bar.GrowthDirection, LayoutDirection(Vector3.right)) > .99f, "bar initial growth direction matches layout orientation");
                 if (!IsIntegrationProbe) CaptureOverview();
                 playerLock = player.AcquireControlLock(typeof(R1GameplayVerification));
-                oldConstraints = player.Motor.constraints; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                oldConstraints = player.Motor.constraints; player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                 MoveTo(lower.transform.position + LayoutDirection(Vector3.right));
                 Check(lower.TryInteract(player.gameObject), "secondary handle accepts nearby player");
                 lastProgress = right.Progress; Next();
@@ -207,7 +208,7 @@ public static class R1GameplayVerification
                 var bar = Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None).Single(c => c.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "r1_green_horizontal");
                 Check(Vector3.Distance(bar.transform.position, LayoutPoint(new Vector3(18.5f, -24.5f, 0))) < .001f, "fixed bar never falls or drifts");
                 Check(Vector3.Dot(bar.GrowthDirection, LayoutDirection(Vector3.right)) > .99f, "room reset preserves reflected bar direction");
-                player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                 MoveTo(new Vector3(29, -10, 0));
                 contactFixtures = CreateContactFixtures("Blue_ContactCube");
                 Next();
@@ -252,7 +253,7 @@ public static class R1GameplayVerification
             var cube = pinnedCubes[i];
             var authored = JsonUtility.FromJson<Vector3>(SessionState.GetString(Flag + ".Pose." + PinnedIds[i], "{}"));
             Check(Vector3.Distance(cube.transform.position, authored) < .001f, "fixed root never falls or drifts " + PinnedIds[i]);
-            Check(cube.GetComponent<Rigidbody>().constraints == RigidbodyConstraints.FreezeAll &&
+            Check(cube.GetComponent<Rigidbody2D>().constraints == RigidbodyConstraints2D.FreezeAll &&
                 cube.GetComponent<ContactCubeMotion>().IsAuthoredFixed, "author locks survive lifecycle " + PinnedIds[i]);
             Check(!cube.GetComponent<CarryableFeature>().enabled && !cube.GetComponent<CarryableFeature>().CanCarryNow,
                 "carry remains disabled " + PinnedIds[i]);
@@ -268,10 +269,10 @@ public static class R1GameplayVerification
             fixture.name = "Temporary R1 pin audit " + name;
             fixture.GetComponent<CarryableFeature>().enabled = false;
             fixture.GetComponent<ContactCubeMotion>().enabled = false;
-            var body = fixture.GetComponent<Rigidbody>();
-            body.constraints = RigidbodyConstraints.FreezeAll;
-            body.useGravity = false;
-            Physics.SyncTransforms();
+            var body = fixture.GetComponent<Rigidbody2D>();
+            body.constraints = RigidbodyConstraints2D.FreezeAll;
+            body.gravityScale = 0f;
+            PlanarPhysics.SyncTransforms();
             return fixture;
         }).ToArray();
     }

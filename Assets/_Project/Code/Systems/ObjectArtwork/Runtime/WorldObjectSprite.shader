@@ -15,7 +15,7 @@ Shader "Project/Objects/Pixel Sprite Reveal"
         Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "RenderType"="Transparent" "CanUseSpriteAtlas"="True" }
         Pass
         {
-            Tags { "LightMode"="UniversalForward" }
+            Tags { "LightMode"="Universal2D" }
             Blend SrcAlpha OneMinusSrcAlpha
             Cull Off
             ZWrite Off

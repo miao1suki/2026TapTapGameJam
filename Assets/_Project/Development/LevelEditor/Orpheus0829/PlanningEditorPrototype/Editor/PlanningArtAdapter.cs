@@ -342,12 +342,12 @@ namespace PlanningEditorPrototype
             int stride = separate ? 1 : Mathf.Max(1, Mathf.RoundToInt(sprite.textureRect.width / GridArtworkMetrics.PixelsPerCell));
             float height = sprite.textureRect.height / GridArtworkMetrics.PixelsPerCell;
             float thickness = PlatformArtworkLayout.VisibleThicknessCells(kind, sprite, library);
-            var collider = prefab.GetComponent<BoxCollider>();
-            float topInset = collider != null ? (.5f - (collider.center.y + collider.size.y * .5f) * prefab.transform.localScale.y) * (separate ? 1 : rect.height) : 0;
+            var collider = prefab.GetComponent<BoxCollider2D>();
+            float topInset = collider != null ? (.5f - (collider.offset.y + collider.size.y * .5f) * prefab.transform.localScale.y) * (separate ? 1 : rect.height) : 0;
             bool explicitVertical = platform != null && PlanningPlatformShapeUtility.Orientation(platform, Values(source)) == MovingPlatformBodyOrientation.Vertical;
             float leftInset = collider == null ? 0 : explicitVertical ?
-                (.5f - (collider.center.y + collider.size.y * .5f) * prefab.transform.localScale.y) * rect.width :
-                (.5f + (collider.center.x - collider.size.x * .5f) * prefab.transform.localScale.x) * rect.width;
+                (.5f - (collider.offset.y + collider.size.y * .5f) * prefab.transform.localScale.y) * rect.width :
+                (.5f + (collider.offset.x - collider.size.x * .5f) * prefab.transform.localScale.x) * rect.width;
             for (int track = 0; track < tracks; track++) for (int start = 0; start < length; start += stride)
             {
                 int count = Mathf.Min(stride, length - start);

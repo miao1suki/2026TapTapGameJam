@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +26,7 @@ public static class R1HorizontalMirror
     private sealed class Pose
     {
         public Vector3 position, scale;
-        public Dictionary<Collider, Bounds> collisions;
+        public Dictionary<Collider2D, Bounds> collisions;
     }
     private static void Check(bool value, string text)
     {
@@ -55,7 +56,7 @@ public static class R1HorizontalMirror
             else Check(File.ReadAllBytes(path).SequenceEqual(File.ReadAllBytes(target)), "existing backup matches unchanged input");
         }
         var scene = EditorSceneManager.OpenScene(R1LevelBuilder.ScenePath);
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
         var doc = PlanningSaveStore.Read(R1LevelBuilder.SavePath);
         var originalDoc = PlanningDocument.FromPersistentJson(doc.ToPersistentJson());
         var blocks = Blocks();
@@ -63,7 +64,7 @@ public static class R1HorizontalMirror
         var before = blocks.ToDictionary(p => p.PlanningBoxId, p => new Pose
         {
             position = p.transform.position, scale = p.transform.localScale,
-            collisions = p.GetComponentsInChildren<Collider>(true).ToDictionary(c => c, c => c.bounds)
+            collisions = p.GetComponentsInChildren<Collider2D>(true).ToDictionary(c => c, c => c.bounds)
         });
         var player = Object.FindFirstObjectByType<PlayerController>();
         Vector3 playerBefore = player.transform.position;
@@ -112,7 +113,7 @@ public static class R1HorizontalMirror
         var manager = Object.FindFirstObjectByType<RoomLifecycleManager>();
         manager.Configure(new List<RoomRegion>(manager.Regions), manager.CellSize, doc.ToPersistentJson(true));
         Dirty(manager);
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
         foreach (var placed in blocks)
         {
             var pose = before[placed.PlanningBoxId];
@@ -190,19 +191,19 @@ public static class R1HorizontalMirror
     }
     private static void MirrorChildren(Transform parent, bool reflectY)
     {
-        foreach (var collider in parent.GetComponents<Collider>())
+        foreach (var collider in parent.GetComponents<Collider2D>())
         {
-            if (collider is BoxCollider box)
+            if (collider is BoxCollider2D box)
             {
-                var center = box.center;
+                var center = box.offset;
                 if (reflectY) center.y = -center.y; else center.x = -center.x;
-                box.center = center; Dirty(box);
+                box.offset = center; Dirty(box);
             }
-            else if (collider is CapsuleCollider capsule)
+            else if (collider is CapsuleCollider2D capsule)
             {
-                var center = capsule.center;
+                var center = capsule.offset;
                 if (reflectY) center.y = -center.y; else center.x = -center.x;
-                capsule.center = center; Dirty(capsule);
+                capsule.offset = center; Dirty(capsule);
             }
             else throw new InvalidOperationException("Unreviewed collider type: " + collider.GetType());
         }

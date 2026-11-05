@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project.BlockFeatures;
@@ -15,6 +16,7 @@ namespace Project.GreenHook
     [DisallowMultipleComponent, DefaultExecutionOrder(-50)]
     public sealed class GreenHookAbility : MonoBehaviour
     {
+        private readonly RaycastHit2D[] linecastHits = new RaycastHit2D[64];
         private enum HookPhase
         {
             None = 0,
@@ -83,7 +85,7 @@ namespace Project.GreenHook
         private float lastRingRadius = -1f;
         private bool? lastRingReachable;
         private readonly List<MonoBehaviour> targetBehaviours = new List<MonoBehaviour>(16);
-        private Collider[] aimHits = new Collider[64];
+        private Collider2D[] aimHits = new Collider2D[64];
         private Vector3 idleTipOffset;
         private bool idleTipInitialized;
         private float AimCellWorldSize => player != null ? player.GridCellWorldSize : hookCellWorldSize;
@@ -93,9 +95,9 @@ namespace Project.GreenHook
         private HookPhase phase;
         private IGreenHookTarget target;
         private IGreenHookMotion targetMotion;
-        private Collider[] targetColliders = Array.Empty<Collider>();
-        private Collider[] playerColliders = Array.Empty<Collider>();
-        private Rigidbody playerBody;
+        private Collider2D[] targetColliders = Array.Empty<Collider2D>();
+        private Collider2D[] playerColliders = Array.Empty<Collider2D>();
+        private Rigidbody2D playerBody;
         private Vector2 swingInput;
         private Vector2 swingVelocity;
         private Vector3 localAnchor;
@@ -105,7 +107,7 @@ namespace Project.GreenHook
         private bool pausedForPowerContact;
         private MechanismBaseFeature pulledBase;
         private IEnergySource pulledEnergy;
-        private Collider[] powerContactHits = new Collider[32];
+        private Collider2D[] powerContactHits = new Collider2D[32];
         private HashSet<MechanismBaseFeature> previousPowerContacts = new HashSet<MechanismBaseFeature>();
         private HashSet<MechanismBaseFeature> currentPowerContacts = new HashSet<MechanismBaseFeature>();
         private readonly Dictionary<MechanismBaseFeature, Vector3> pendingPowerSeats = new Dictionary<MechanismBaseFeature, Vector3>();
@@ -133,7 +135,7 @@ namespace Project.GreenHook
             ReleaseHook(true);
         }
         private Transform targetTransform;
-        private Collider playerCollider;
+        private Collider2D playerCollider;
         private Vector2 pointerPosition;
         private Vector2 hookDirection;
         private Vector3 hookStart;
@@ -446,13 +448,13 @@ namespace Project.GreenHook
                 // Local, non-allocating discovery only while pulling an energy
                 // source. No scene scan, registry polling, or idle-mouse query.
                 Bounds area = new Bounds(targetTransform.position, Vector3.zero);
-                foreach (Collider shape in targetColliders)
+                foreach (Collider2D shape in targetColliders)
                     if (shape != null && shape.enabled && !shape.isTrigger) area.Encapsulate(shape.bounds);
                 int count;
                 do
                 {
-                    count = Physics.OverlapBoxNonAlloc(area.center, area.extents + Vector3.one * hookCellWorldSize,
-                        powerContactHits, Quaternion.identity, ~0, QueryTriggerInteraction.Ignore);
+                    count = PlanarPhysics.OverlapBoxNonAlloc(area.center, area.extents + Vector3.one * hookCellWorldSize,
+                        powerContactHits, Quaternion.identity, ~0, TriggerQuery.Ignore);
                     if (count < powerContactHits.Length || powerContactHits.Length >= 4096) break;
                     Array.Resize(ref powerContactHits, powerContactHits.Length * 2);
                 } while (true);
@@ -564,7 +566,7 @@ namespace Project.GreenHook
             // Input pumps along the tangent instead of fighting the radial rope constraint.
             Vector2 tangent = new Vector2(-normal.y, normal.x);
             if (tangent.x < 0f) tangent = -tangent;
-            Vector2 acceleration = tangent * (swingInput.x * swingAcceleration) + Vector2.up * Physics.gravity.y;
+            Vector2 acceleration = tangent * (swingInput.x * swingAcceleration) + Vector2.up * PlanarPhysics.gravity.y;
             // Read resolved physics velocity so collision contacts cannot accumulate invisible momentum.
             swingVelocity = playerBody != null ? (Vector2)playerBody.linearVelocity : swingVelocity;
             swingVelocity *= Mathf.Exp(-swingDamping * dt);
@@ -591,9 +593,9 @@ namespace Project.GreenHook
             targetTransform = foundTarget.GreenHookTransform;
             targetMotion = GetTargetMotion(targetTransform);
             localAnchor = targetTransform.InverseTransformPoint(targetPoint);
-            targetColliders = targetTransform.GetComponentsInChildren<Collider>(true);
-            playerColliders = player.GetComponentsInChildren<Collider>(true);
-            playerBody = player.GetComponent<Rigidbody>();
+            targetColliders = targetTransform.GetComponentsInChildren<Collider2D>(true);
+            playerColliders = player.GetComponentsInChildren<Collider2D>(true);
+            playerBody = player.GetComponent<Rigidbody2D>();
             launchRegion = RoomLifecycleManager.ForScene(gameObject.scene)?.FindRegion(GetPlayerCenter());
             swingInput = Vector2.zero;
             outOfRangeSince = -1f;
@@ -660,12 +662,13 @@ namespace Project.GreenHook
             Vector3 segment = end - start;
             float lengthSquared = segment.sqrMagnitude;
             if (lengthSquared < .000001f) return false;
-            foreach (Collider shape in targetColliders)
+            foreach (Collider2D shape in targetColliders)
             {
                 if (shape == null || !shape.enabled || shape.isTrigger || !shape.gameObject.activeInHierarchy) continue;
-                if (shape.Raycast(new Ray(start, segment.normalized), out _, Mathf.Sqrt(lengthSquared))) return true;
+                int count = UnityEngine.Physics2D.Linecast(start, start + segment, new ContactFilter2D { useTriggers = false }, linecastHits);
+                for (int h = 0; h < count; h++) if (linecastHits[h].collider == shape) return true;
                 Vector3 nearest = start + segment * Mathf.Clamp01(Vector3.Dot(shape.bounds.center-start, segment)/lengthSquared);
-                if ((shape.ClosestPoint(nearest)-nearest).sqrMagnitude <= radius*radius) return true;
+                if ((shape.ClosestWorldPoint(nearest)-nearest).sqrMagnitude <= radius*radius) return true;
             }
             return false;
         }
@@ -728,7 +731,7 @@ namespace Project.GreenHook
             target = next;
             targetTransform = next.GreenHookTransform;
             targetMotion = GetTargetMotion(targetTransform);
-            targetColliders = targetTransform.GetComponentsInChildren<Collider>(true);
+            targetColliders = targetTransform.GetComponentsInChildren<Collider2D>(true);
             localAnchor = targetTransform.InverseTransformPoint(point);
             pullAxis = Vector2.zero;
             outOfRangeSince = -1f;
@@ -739,7 +742,7 @@ namespace Project.GreenHook
         }
 
         private bool TryResolveHookTarget(
-            Collider collider,
+            Collider2D collider,
             out IGreenHookTarget target)
         {
             target = null;
@@ -780,8 +783,8 @@ namespace Project.GreenHook
             int count;
             do
             {
-                count = Physics.OverlapBoxNonAlloc(pointerWorld, half, aimHits, Quaternion.identity,
-                    sensor.InteractionMask, QueryTriggerInteraction.Ignore);
+                count = PlanarPhysics.OverlapBoxNonAlloc(pointerWorld, half, aimHits, Quaternion.identity,
+                    sensor.InteractionMask, TriggerQuery.Ignore);
                 if (count < aimHits.Length || aimHits.Length >= 4096) break;
                 Array.Resize(ref aimHits, aimHits.Length * 2);
             } while (true);
@@ -792,7 +795,7 @@ namespace Project.GreenHook
             string playerRegion = manager != null ? manager.FindRegion(GetPlayerCenter()) : null;
             for (int i = 0; i < count; i++)
             {
-                Collider shape = aimHits[i];
+                Collider2D shape = aimHits[i];
                 if (shape == null || shape.transform.IsChildOf(transform) ||
                     !TryResolveHookTarget(shape, out IGreenHookTarget candidate) ||
                     (!ReferenceEquals(candidate, target) && !candidate.CanBeGreenHooked(gameObject))) continue;
@@ -804,7 +807,7 @@ namespace Project.GreenHook
                 Plane plane = new Plane(Vector3.forward, anchor.position);
                 if (!plane.Raycast(ray, out float enter)) continue;
                 Vector3 pointerOnTargetPlane = ray.GetPoint(enter);
-                Vector3 point = shape.ClosestPoint(pointerOnTargetPlane);
+                Vector3 point = shape.ClosestWorldPoint(pointerOnTargetPlane);
                 point.z = anchor.position.z;
                 float distance = ((Vector2)(point - pointerOnTargetPlane)).sqrMagnitude;
                 if (distance > tolerance * tolerance + .000001f) continue;
@@ -1232,7 +1235,7 @@ namespace Project.GreenHook
         {
             if (playerCollider == null && player != null)
             {
-                playerCollider = player.GetComponent<Collider>();
+                playerCollider = player.GetComponent<Collider2D>();
             }
             return playerCollider != null
                 ? playerCollider.bounds.center
@@ -1243,14 +1246,14 @@ namespace Project.GreenHook
         {
             if (playerCollider == null && player != null)
             {
-                playerCollider = player.GetComponent<Collider>();
+                playerCollider = player.GetComponent<Collider2D>();
             }
             if (playerCollider == null)
             {
                 return Vector3.Distance(transform.position, targetPoint);
             }
 
-            Vector3 playerPoint = playerCollider.ClosestPoint(targetPoint);
+            Vector3 playerPoint = playerCollider.ClosestWorldPoint(targetPoint);
             return Vector3.Distance(playerPoint, targetPoint);
         }
 
@@ -1268,11 +1271,11 @@ namespace Project.GreenHook
                 return false;
             }
 
-            Collider[] colliders =
+            Collider2D[] colliders =
                 targetColliders;
             for (int index = 0; index < colliders.Length; index++)
             {
-                Collider collider = colliders[index];
+                Collider2D collider = colliders[index];
                 if (collider == null ||
                     !collider.enabled || collider.isTrigger ||
                     !collider.gameObject.activeInHierarchy)
@@ -1280,7 +1283,7 @@ namespace Project.GreenHook
                     continue;
                 }
 
-                if (Physics.ComputePenetration(playerCollider, playerCollider.transform.position,
+                if (PlanarPhysics.ComputePenetration(playerCollider, playerCollider.transform.position,
                     playerCollider.transform.rotation, collider, collider.transform.position,
                     collider.transform.rotation, out _, out _))
                 {
@@ -1302,11 +1305,11 @@ namespace Project.GreenHook
 
             Vector3 best = target.position;
             float bestDistance = float.MaxValue;
-            Collider[] colliders =
-                target == targetTransform ? targetColliders : target.GetComponentsInChildren<Collider>(true);
+            Collider2D[] colliders =
+                target == targetTransform ? targetColliders : target.GetComponentsInChildren<Collider2D>(true);
             for (int index = 0; index < colliders.Length; index++)
             {
-                Collider collider = colliders[index];
+                Collider2D collider = colliders[index];
                 if (collider == null ||
                     !collider.enabled || collider.isTrigger ||
                     !collider.gameObject.activeInHierarchy)
@@ -1314,7 +1317,7 @@ namespace Project.GreenHook
                     continue;
                 }
 
-                Vector3 point = collider.ClosestPoint(from);
+                Vector3 point = collider.ClosestWorldPoint(from);
                 float distance = (point - from).sqrMagnitude;
                 if (distance < bestDistance)
                 {
@@ -1335,11 +1338,11 @@ namespace Project.GreenHook
 
             bool found = false;
             Bounds bounds = default;
-            Collider[] colliders =
-                target == targetTransform ? targetColliders : target.GetComponentsInChildren<Collider>(true);
+            Collider2D[] colliders =
+                target == targetTransform ? targetColliders : target.GetComponentsInChildren<Collider2D>(true);
             for (int index = 0; index < colliders.Length; index++)
             {
-                Collider collider = colliders[index];
+                Collider2D collider = colliders[index];
                 if (collider == null ||
                     !collider.enabled || collider.isTrigger ||
                     !collider.gameObject.activeInHierarchy)

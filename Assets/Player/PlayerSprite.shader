@@ -13,7 +13,7 @@ Shader "Project/Player/Pixel Sprite"
         Tags { "RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest" "RenderType"="TransparentCutout" "CanUseSpriteAtlas"="True" }
         Pass
         {
-            Tags { "LightMode"="UniversalForward" }
+            Tags { "LightMode"="Universal2D" }
             Blend Off
             Cull Off
             ZWrite On

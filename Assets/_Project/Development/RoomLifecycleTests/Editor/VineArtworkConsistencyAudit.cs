@@ -182,7 +182,7 @@ public static class VineArtworkConsistencyAudit
         try
         {
             var root = mother.GetComponent<ClimbableVineFeature>();
-            var rootBox = mother.GetComponent<BoxCollider>();
+            var rootBox = mother.GetComponent<BoxCollider2D>();
             for (int i = 1; i <= 3; i++)
             {
                 var segment = Object.Instantiate(root.GrowthSegmentPrefab, mother.transform);
@@ -212,7 +212,7 @@ public static class VineArtworkConsistencyAudit
             {
                 owner.transform.position = new Vector3(3.5f, -9.25f, 2);
                 owner.transform.localScale = authorScale;
-                var box = owner.AddComponent<BoxCollider>(); box.center = new Vector3(.1f, .25f, 0);
+                var box = owner.AddComponent<BoxCollider2D>(); box.offset = new Vector3(.1f, .25f, 0);
                 var visual = new GameObject("Vine image"); visual.transform.SetParent(owner.transform, false);
                 var renderer = visual.AddComponent<SpriteRenderer>(); renderer.sprite = frame;
                 Bounds rootBounds = VineArtworkLayout.RootBounds(owner.transform, box, cell);

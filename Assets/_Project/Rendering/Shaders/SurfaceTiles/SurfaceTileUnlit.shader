@@ -19,7 +19,7 @@ Shader "2026TapTap/Surface Tiles/Unlit Cutout"
         Pass
         {
             Name "SurfaceTiles"
-            Tags { "LightMode" = "UniversalForward" }
+            Tags { "LightMode" = "Universal2D" }
             Cull Off
             ZWrite On
 

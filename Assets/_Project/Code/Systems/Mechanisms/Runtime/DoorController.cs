@@ -19,7 +19,7 @@ namespace Project.Mechanisms
     public sealed class DoorController : MonoBehaviour
     {
         [SerializeField, InspectorName("门轴")] private Transform hinge;
-        [SerializeField, InspectorName("阻挡碰撞箱")] private Collider blockingCollider;
+        [SerializeField, InspectorName("阻挡碰撞箱")] private Collider2D blockingCollider;
         [SerializeField, InspectorName("绑定按钮")] private List<DoorButton> buttons = new List<DoorButton>();
         [SerializeField, InspectorName("提示方块")] private DoorHint hint;
         [SerializeField, InspectorName("横门")] private bool horizontal;
@@ -81,16 +81,16 @@ namespace Project.Mechanisms
         {
             localBounds = default;
             var placed = GetComponent<Project.LevelEditor.LevelEditorPlacedBlock>();
-            var box = blockingCollider as BoxCollider;
-            if (box == null) box = GetComponent<BoxCollider>();
+            var box = blockingCollider as BoxCollider2D;
+            if (box == null) box = GetComponent<BoxCollider2D>();
             if (placed == null || box == null || box.transform != transform) return false;
             var cells = placed.SizeCells;
             // Old non-planning/one-cell markers retain the prefab's geometry.
             if ((!horizontal && cells.y < 2) || (horizontal && cells.x < 2)) return false;
             Vector3 scale = transform.lossyScale;
-            localBounds = new Bounds(box.center, new Vector3(
+            localBounds = new Bounds(box.offset, new Vector3(
                 cells.x * placed.CellWorldSize / Mathf.Max(.001f, Mathf.Abs(scale.x)),
-                cells.y * placed.CellWorldSize / Mathf.Max(.001f, Mathf.Abs(scale.y)), box.size.z));
+                cells.y * placed.CellWorldSize / Mathf.Max(.001f, Mathf.Abs(scale.y)), 0f));
             return true;
         }
 
@@ -111,8 +111,8 @@ namespace Project.Mechanisms
 
         private void Awake()
         {
-            if (blockingCollider == null) blockingCollider = GetComponent<Collider>();
-            if (TryGetPlanningFootprint(out var footprint) && blockingCollider is BoxCollider box)
+            if (blockingCollider == null) blockingCollider = GetComponent<Collider2D>();
+            if (TryGetPlanningFootprint(out var footprint) && blockingCollider is BoxCollider2D box)
                 box.size = footprint.size;
             closedRotation = hinge != null ? hinge.localRotation : Quaternion.identity;
             State = DoorState.Locked;

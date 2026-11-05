@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project.BlockFeatures;
@@ -180,7 +181,7 @@ namespace Project.Rooms
                 var carry = member.GetComponent<CarryableFeature>();
                 var motion = member.GetComponent<Project.ContactCubes.ContactCubeMotion>();
                 if ((carry != null && carry.IsCarryActive) || (motion != null && motion.IsSuspended)) player?.PrepareForRoomReset();
-                member.RestorePose(); member.RestoreState(); Physics.SyncTransforms();
+                member.RestorePose(); member.RestoreState(); PlanarPhysics.SyncTransforms();
             }
         }
 
@@ -211,7 +212,7 @@ namespace Project.Rooms
                 resetSnapshot.AddRange(list);
                 foreach (var member in resetSnapshot) if (member != null) member.RestorePose();
                 foreach (var member in resetSnapshot) if (member != null) member.RestoreState();
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 RegionReset?.Invoke(id);
             }
             finally { resetSnapshot.Clear(); resetting = false; }

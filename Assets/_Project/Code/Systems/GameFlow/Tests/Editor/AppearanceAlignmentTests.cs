@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Reflection;
 using NUnit.Framework;
@@ -45,10 +46,10 @@ namespace Project.GameFlow.Tests
                 presentationType.GetMethod("Initialize", Private).Invoke(presentation, null);
                 presentationType.GetMethod("Refresh", Private).Invoke(presentation, new object[] { 0f });
                 var visual = (SpriteRenderer)presentationType.GetProperty("Visual").GetValue(presentation);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Assert.That(visual.sprite, Is.Not.Null);
                 // Idle/run frames have four empty pixels below the visible foot, at 16 effective pixels/cell.
-                Assert.That(visual.bounds.min.y + .25f, Is.EqualTo(root.GetComponent<CapsuleCollider>().bounds.min.y).Within(.002f));
+                Assert.That(visual.bounds.min.y + .25f, Is.EqualTo(root.GetComponent<CapsuleCollider2D>().bounds.min.y).Within(.002f));
                 ladder.AddComponent(Runtime("Project.Mechanisms.NeutralLadder"));
                 var mechanism = Runtime("Project.BlockFeatures.MechanismArtworkPresentation");
                 var ladderPresentation = mechanism.GetMethod("Ensure").Invoke(null, new object[] { ladder });
@@ -63,7 +64,7 @@ namespace Project.GameFlow.Tests
         public void SuspendedEntrance_FindsFloorWithoutMutatingPlayerAndRestoresPhysics()
         {
             var root = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab"));
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             try
             {
                 root.transform.position = new Vector3(20000, 3, 0);
@@ -71,13 +72,13 @@ namespace Project.GameFlow.Tests
                 floor.transform.localScale = new Vector3(10, 1, 10);
                 var type = Runtime("Project.Player.PlayerController");
                 var player = root.GetComponent(type);
-                var body = root.GetComponent<Rigidbody>();
-                var capsule = root.GetComponent<CapsuleCollider>();
+                var body = root.GetComponent<Rigidbody2D>();
+                var capsule = root.GetComponent<CapsuleCollider2D>();
                 type.GetField("motor", Private).SetValue(player, body);
                 type.GetField("capsule", Private).SetValue(player, capsule);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 float feetOffset = root.transform.position.y - capsule.bounds.min.y;
-                bool gravity = body.useGravity, collisions = body.detectCollisions, kinematic = body.isKinematic;
+                bool gravity = (body.gravityScale != 0f), collisions = body.simulated, kinematic = body.isKinematic;
                 Assert.That(type.GetMethod("BeginPresentationMotion").Invoke(player, null), Is.True);
                 var arguments = new object[] { root.transform.position, Vector3.zero };
                 Assert.That(type.GetMethod("TryGetGroundedPresentationPosition").Invoke(player, arguments), Is.True);
@@ -86,8 +87,8 @@ namespace Project.GameFlow.Tests
                 arguments[0] = new Vector3(30000, 3, 0);
                 Assert.That(type.GetMethod("TryGetGroundedPresentationPosition").Invoke(player, arguments), Is.False);
                 type.GetMethod("EndPresentationMotion").Invoke(player, null);
-                Assert.That(body.useGravity, Is.EqualTo(gravity));
-                Assert.That(body.detectCollisions, Is.EqualTo(collisions));
+                Assert.That((body.gravityScale != 0f), Is.EqualTo(gravity));
+                Assert.That(body.simulated, Is.EqualTo(collisions));
                 Assert.That(body.isKinematic, Is.EqualTo(kinematic));
             }
             finally { UnityEngine.Object.DestroyImmediate(root); UnityEngine.Object.DestroyImmediate(floor); }
@@ -97,13 +98,13 @@ namespace Project.GameFlow.Tests
         public void RespawnArtwork_ClosesSmallFloorGapWithoutMovingGameplayRoot()
         {
             var root = new GameObject("Alignment test anchor");
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             try
             {
                 root.transform.position = new Vector3(20000, .9f, 0);
                 floor.transform.position = new Vector3(20000, -.5f, 0);
                 floor.transform.localScale = new Vector3(3, 1, 3);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 root.AddComponent(Runtime("Project.BlockFeatures.RespawnAnchorFeature"));
                 var type = Runtime("Project.BlockFeatures.WorldObjectSpritePresentation");
                 var presentation = type.GetMethod("Ensure").Invoke(null, new object[] { root });

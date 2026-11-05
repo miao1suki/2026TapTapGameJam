@@ -15,9 +15,9 @@ Animator 与现有 `BossAnimationDriver` 连接。存活各动作复用当前交
 - `Assets/Boss_Logic/BossRightMoveExecutor.cs`
 - `Assets/Boss_Logic/BossCameraSize.cs`
 - `Assets/_Project/Code/Systems/CameraModes/Runtime/CameraControlManager.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Track/BossTimelineTrack.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Clip/BossTimelineClip.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Behavior/ActorTimelineBehaviour.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Track/BossTimelineTrack.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Clip/BossTimelineClip.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Behavior/ActorTimelineBehaviour.cs`
 
 ## 状态
 
@@ -129,7 +129,7 @@ Boss 存活规则：
 - `Boss_appear.playable` 的生成 `targetOffset` 已改为激发器局部坐标，整张地图或触发器平移、旋转时不需要改演出数值。
 - 出场相机完全固定：初始机位由玩家位置 + `playerCameraOffset=(0,0,-10)` 建立；进入 appear 时停止其他正在播放且包含 `CameraTimelineTrack` 的 Director，强制释放残留 `TimelineCamRig` 租约，之后字幕、下落、盯视和警告阶段每帧只写同一个固定机位，不存在左移或回程运镜。
 - Boss 生成使用 `bossSpawnOffsetFromPlayer=(-7,13,0)`。`BeginPresentationFall()` 将 Boss 临时设为 Kinematic、关闭 Collider，`SetPresentationFallPosition()` 每帧只更新由加速度计算出的 Y，因此不会受地面、高台或天花板影响；演示结束后 `EndPresentationFall()` 恢复原刚体和 Collider。
-- 普通死亡、处决、真/假结局的相机、钥匙吸附、收集品和黑屏演出参数均序列化在 Timeline/Playable 中；通用 `TimelineTools3D` 不为 Boss 专属演出改代码。
+- 普通死亡、处决、真/假结局的相机、钥匙吸附、收集品和黑屏演出参数均序列化在 Timeline/Playable 中；通用 `TimelineTools2D` 不为 Boss 专属演出改代码。
 - Boss 下落由 Playable 调用 `BeginPresentationFall()` / `SetPresentationFallPosition()` 完成，不写刚体速度。
 - 入场资源不再包含 `CameraTimelineTrack`；相机由 Playable 的最高优先级控制租约和 `BossAppearCameraGuard` 共同固定。
 - 演出结束时销毁相机守卫、释放控制租约，并把相机交回 `CameraControlManager`。

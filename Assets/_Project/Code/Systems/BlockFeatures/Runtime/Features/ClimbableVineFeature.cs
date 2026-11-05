@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections;
 using System.Collections.Generic;
 using Project.Audio;
@@ -108,9 +109,9 @@ namespace Project.BlockFeatures
 
         private readonly List<GameObject> spawnedSegments =
             new List<GameObject>();
-        private readonly Collider[] proximityBuffer =
-            new Collider[32];
-        private Collider growthBlocker;
+        private readonly Collider2D[] proximityBuffer =
+            new Collider2D[32];
+        private Collider2D growthBlocker;
         private bool growthBlocked;
         private VineGrowthLift growthLift;
         private readonly Dictionary<int, PlayerController> climbingPlayers =
@@ -166,7 +167,7 @@ namespace Project.BlockFeatures
         public float ArtworkWidthCells => vineWidth;
         private float ArtworkCellWorldSize => IsAttached ? GridCellWorldSize : GridCellSizeUtility.Resolve(this);
         public Bounds AuthoredArtworkRootBounds => VineArtworkLayout.RootBounds(transform,
-            GetComponent<BoxCollider>(), ArtworkCellWorldSize);
+            GetComponent<BoxCollider2D>(), ArtworkCellWorldSize);
         public Vector2 AuthoredArtworkCells
         {
             get
@@ -179,7 +180,7 @@ namespace Project.BlockFeatures
                 {
                     var child = root.transform.GetChild(i);
                     if (child.GetComponent<LadderSonFeature>() != null)
-                        top = Mathf.Max(top, VineArtworkLayout.RootBounds(child, child.GetComponent<BoxCollider>(), cell).max.y);
+                        top = Mathf.Max(top, VineArtworkLayout.RootBounds(child, child.GetComponent<BoxCollider2D>(), cell).max.y);
                 }
                 return new Vector2(root.vineWidth, Mathf.Max(.001f, (top - bounds.min.y) / cell));
             }
@@ -304,8 +305,8 @@ namespace Project.BlockFeatures
 
         private void RefreshClimbingPlayers()
         {
-            Collider rootCollider = Root.GetComponent<Collider>();
-            Collider segmentCollider = Root == this ? rootCollider : GetComponent<Collider>();
+            Collider2D rootCollider = Root.GetComponent<Collider2D>();
+            Collider2D segmentCollider = Root == this ? rootCollider : GetComponent<Collider2D>();
             float topHeight = (rootCollider != null ? rootCollider.bounds.max.y : Root.transform.position.y + GridCellWorldSize * .5f)
                 + Root.CurrentGrowthBlocks * GridCellWorldSize;
             foreach (PlayerController climbingPlayer in climbingPlayers.Values)
@@ -317,15 +318,15 @@ namespace Project.BlockFeatures
             bool hasCandidates = PlayerController.HasAutomaticClimbCandidate;
             if (range > 0f && hasCandidates)
             {
-                int count = Physics.OverlapSphereNonAlloc(
+                int count = PlanarPhysics.OverlapCircleNonAlloc(
                     transform.position,
                     range,
                     proximityBuffer,
                     ~0,
-                    QueryTriggerInteraction.Collide);
+                    TriggerQuery.Collide);
                 for (int index = 0; index < count; index++)
                 {
-                    Collider collider = proximityBuffer[index];
+                    Collider2D collider = proximityBuffer[index];
                     PlayerController player = collider != null
                         ? collider.GetComponentInParent<PlayerController>()
                         : null;
@@ -750,12 +751,12 @@ namespace Project.BlockFeatures
             growthBlocker = null;
             growthBlocked = false;
             GameObject source = growthSegmentPrefab != null ? growthSegmentPrefab : gameObject;
-            BoxCollider shape = source.GetComponent<BoxCollider>();
-            if (shape == null) shape = GetComponent<BoxCollider>();
+            BoxCollider2D shape = source.GetComponent<BoxCollider2D>();
+            if (shape == null) shape = GetComponent<BoxCollider2D>();
             Vector3 position = transform.position + Vector3.up * (GridCellWorldSize * (index + 1));
             Vector3 scale = transform.lossyScale;
             scale = new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
-            Vector3 center = position + transform.rotation * Vector3.Scale(shape != null ? shape.center : Vector3.zero, scale);
+            Vector3 center = position + transform.rotation * Vector3.Scale(shape != null ? shape.offset : Vector3.zero, scale);
             Vector3 half = shape != null ? Vector3.Scale(shape.size * .5f, scale) : Vector3.one * (GridCellWorldSize * .5f);
             half = Vector3.Max(half - Vector3.one * (GridCellWorldSize * .02f), Vector3.one * .001f);
             growthLift ??= new VineGrowthLift(this);
@@ -799,9 +800,9 @@ namespace Project.BlockFeatures
         {
             if (Time.time < nextWaterContactCheck || Root.CurrentGrowthBlocks >= Root.maxGrowthBlocks) return;
             nextWaterContactCheck = Time.time + .2f;
-            // Static authored volumes also need contact without requiring a Rigidbody on every map item.
-            int count = Physics.OverlapBoxNonAlloc(transform.position, Vector3.one * GridCellWorldSize * .51f,
-                proximityBuffer, transform.rotation, ~0, QueryTriggerInteraction.Collide);
+            // Static authored volumes also need contact without requiring a Rigidbody2D on every map item.
+            int count = PlanarPhysics.OverlapBoxNonAlloc(transform.position, Vector3.one * GridCellWorldSize * .51f,
+                proximityBuffer, transform.rotation, ~0, TriggerQuery.Collide);
             for (int index = 0; index < count; index++)
                 if (proximityBuffer[index] != null) OnObjectEnter(proximityBuffer[index].gameObject);
         }
@@ -904,7 +905,7 @@ namespace Project.BlockFeatures
                 }
                 segment.burned = true;
                 segment.burning = false;
-                foreach (Collider collider in segment.GetComponents<Collider>()) collider.enabled = false;
+                foreach (Collider2D collider in segment.GetComponents<Collider2D>()) collider.enabled = false;
                 if (segment != this) segment.gameObject.SetActive(false);
             }
             burned = true;
@@ -933,7 +934,7 @@ namespace Project.BlockFeatures
         private void RestoreBurnedSegments()
         {
             burned = false;
-            foreach (Collider collider in GetComponents<Collider>()) collider.enabled = true;
+            foreach (Collider2D collider in GetComponents<Collider2D>()) collider.enabled = true;
             foreach (GameObject item in initialSegments)
             {
                 if (item == null) continue;

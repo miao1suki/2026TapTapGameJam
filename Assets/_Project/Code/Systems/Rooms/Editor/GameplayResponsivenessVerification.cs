@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -98,18 +99,18 @@ namespace Project.Rooms.Editor
             {
                 source.transform.position = new Vector3(-200f, 200f, 0f);
                 player.Motor.position = source.transform.position + Vector3.left;
-                player.transform.position = player.Motor.position;
+                player.transform.position = player.Motor.WorldPosition();
                 player.Motor.linearVelocity = Vector3.zero;
                 ascent.SetValue(player, false); reattach.SetValue(player, 0f);
                 player.EnterClimb(source); player.SetMoveInput(Vector2.right);
                 if (!player.IsClimbing) throw new Exception("Climb entry failed: " + source.GetType().Name);
                 player.RequestJump(); tick.Invoke(player, null);
-                if (player.Motor.linearVelocity.y <= 0f) throw new Exception("Kick failed");
+                if (((Vector3)player.Motor.linearVelocity).y <= 0f) throw new Exception("Kick failed");
                 reattach.SetValue(player, 0f); // The old timer has expired while still ascending.
                 player.Motor.linearVelocity = new Vector3(-2f, 7f, 0f);
                 if (player.IsClimbing) throw new Exception("Mid-ascent climb re-entry: " + source.GetType().Name);
                 tick.Invoke(player, null);
-                if (player.Motor.linearVelocity.y <= 6f) throw new Exception("Ascent was cut short");
+                if (((Vector3)player.Motor.linearVelocity).y <= 6f) throw new Exception("Ascent was cut short");
                 player.Motor.linearVelocity = Vector3.zero;
                 tick.Invoke(player, null);
                 if (!(bool)ascent.GetValue(player) && player.IsClimbing)

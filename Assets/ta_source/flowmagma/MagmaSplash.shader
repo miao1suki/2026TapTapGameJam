@@ -16,7 +16,7 @@ Shader "TapTap/FlowMagma/Square Particles"
         Pass
         {
             Name "MagmaSplash"
-            Tags { "LightMode"="UniversalForward" }
+            Tags { "LightMode"="Universal2D" }
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
             Cull Off

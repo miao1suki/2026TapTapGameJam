@@ -10,7 +10,8 @@
     "Project.StartMenu.Runtime",
     "Unity.UGUI",
     "Unity.TextMeshPro",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Project.PlanarPhysics.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

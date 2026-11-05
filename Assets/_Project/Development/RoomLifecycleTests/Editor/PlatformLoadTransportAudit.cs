@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +18,7 @@ public static class PlatformLoadTransportAudit
     private static int checks;
     private static double started;
     private static MovingPlatformFeature naturalPlatform;
-    private static Rigidbody naturalRed, naturalBase;
+    private static Rigidbody2D naturalRed, naturalBase;
     private static Vector3 naturalOrigin, naturalRedOffset, naturalBaseOffset;
     private static float naturalStarted, naturalFarthest;
     private static bool naturalBound;
@@ -40,11 +41,11 @@ public static class PlatformLoadTransportAudit
         if (EditorApplication.timeSinceStartup - started > 90) { Finish(false, "Timeout"); return; }
         if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .5f) return;
         EditorApplication.update -= Tick;
-        SimulationMode previous = Physics.simulationMode;
+        SimulationMode2D previous = PlanarPhysics.simulationMode;
         bool passed = false;
         try
         {
-            checks = 0; AudioListener.pause = true; Physics.simulationMode = SimulationMode.Script;
+            checks = 0; AudioListener.pause = true; PlanarPhysics.simulationMode = SimulationMode2D.Script;
             ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
             foreach (bool foundation in new[] { false, true })
             foreach (bool gravity in new[] { false, true })
@@ -54,7 +55,7 @@ public static class PlatformLoadTransportAudit
             passed = true;
         }
         catch (Exception error) { Debug.LogException(error); Finish(false, error.ToString()); }
-        finally { Cleanup(); Physics.simulationMode = previous; }
+        finally { Cleanup(); PlanarPhysics.simulationMode = previous; }
         if (passed)
         {
             try { StartNatural(); }
@@ -81,49 +82,49 @@ public static class PlatformLoadTransportAudit
         s.FindProperty("reverseOnBlock").boolValue = true;
         s.ApplyModifiedPropertiesWithoutUndo(); result.ResetForRoom(); return result;
     }
-    private static Rigidbody Load(MovingPlatformFeature platform, bool foundation, bool gravity, float height = 0)
+    private static Rigidbody2D Load(MovingPlatformFeature platform, bool foundation, bool gravity, float height = 0)
     {
         var result = Spawn(foundation ? "Assets/_Project/Content/ColorBlocks/Prefabs/Red_Foundation.prefab" :
             "Assets/_Project/Content/ContactCubes/Red_ContactCube.prefab", platform.transform.position);
-        Rigidbody body = result.GetComponent<Rigidbody>();
+        Rigidbody2D body = result.GetComponent<Rigidbody2D>();
         Check(body != null, "load owns body");
-        body.interpolation = RigidbodyInterpolation.None;
+        body.interpolation = RigidbodyInterpolation2D.None;
         if (foundation)
         {
             using var s = new SerializedObject(result.GetComponent<MechanismBaseFeature>());
             s.FindProperty("useGravity").boolValue = gravity; s.ApplyModifiedPropertiesWithoutUndo();
         }
         else result.GetComponent<ContactCubeMotion>().ConfigureGravity(gravity);
-        Physics.SyncTransforms();
-        Bounds b = result.GetComponentInChildren<Collider>().bounds;
-        float top = platform.GetComponent<Collider>().bounds.max.y;
-        Teleport(body, body.position + Vector3.up * (top - b.min.y + .002f + height));
-        Physics.SyncTransforms(); return body;
+        PlanarPhysics.SyncTransforms();
+        Bounds b = result.GetComponentInChildren<Collider2D>().bounds;
+        float top = platform.GetComponent<Collider2D>().bounds.max.y;
+        Teleport(body, body.WorldPosition() + Vector3.up * (top - b.min.y + .002f + height));
+        PlanarPhysics.SyncTransforms(); return body;
     }
-    private static void Teleport(Rigidbody body, Vector3 position)
+    private static void Teleport(Rigidbody2D body, Vector3 position)
     { body.position = position; body.transform.position = position; }
     private static void Step(MovingPlatformFeature platform)
     {
-        Physics.SyncTransforms(); Call(platform, "FixedUpdate");
+        PlanarPhysics.SyncTransforms(); Call(platform, "FixedUpdate");
         foreach (GameObject item in objects)
         {
             if (item == null) continue;
             var cube = item.GetComponent<ContactCubeMotion>(); if (cube != null && cube.enabled) Call(cube, "FixedUpdate");
             var basis = item.GetComponent<MechanismBaseFeature>(); if (basis != null) { Call(basis, "FixedUpdate"); Call(basis, "ScanForEnergy"); }
         }
-        Physics.Simulate(Time.fixedDeltaTime); Physics.SyncTransforms();
+        PlanarPhysics.Simulate(Time.fixedDeltaTime); PlanarPhysics.SyncTransforms();
     }
     private static void Verify(bool foundation, bool gravity, MovingPlatformPathMode direction)
     {
         var platform = Platform(direction); var body = Load(platform, foundation, gravity);
-        Vector3 origin = platform.transform.position, relative = body.position - origin;
+        Vector3 origin = platform.transform.position, relative = body.WorldPosition() - origin;
         float farthest = 0f;
         for (int i = 0; i < 220; i++)
         {
             Step(platform);
             farthest = Mathf.Max(farthest, Vector3.Distance(platform.transform.position, origin));
-            Check(Vector3.Distance(body.position - platform.transform.position, relative) < .08f,
-                "load follows platform " + foundation + "/" + gravity + "/" + direction + " step=" + i + " rel=" + (body.position - platform.transform.position));
+            Check(Vector3.Distance(body.WorldPosition() - platform.transform.position, relative) < .08f,
+                "load follows platform " + foundation + "/" + gravity + "/" + direction + " step=" + i + " rel=" + (body.WorldPosition() - platform.transform.position));
         }
         Check(farthest > 2.9f, "platform reached route endpoint with load " + foundation + "/" + gravity + "/" + direction + " max=" + farthest + " active=" + platform.IsDriveAvailable);
         Check(body.GetComponent<PlatformMount>() == null, "no implicit authored mount added");
@@ -132,58 +133,58 @@ public static class PlatformLoadTransportAudit
     private static void VerifyBlocked()
     {
         var platform = Platform(MovingPlatformPathMode.Up); var body = Load(platform, false, true);
-        var ceiling = GameObject.CreatePrimitive(PrimitiveType.Cube); objects.Add(ceiling);
-        ceiling.transform.position = body.position + Vector3.up * 1.1f;
+        var ceiling = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); objects.Add(ceiling);
+        ceiling.transform.position = body.WorldPosition() + Vector3.up * 1.1f;
         ceiling.transform.localScale = new Vector3(5, 1, 3);
-        Physics.SyncTransforms();
-        float ceilingBottom = ceiling.GetComponent<Collider>().bounds.min.y;
+        PlanarPhysics.SyncTransforms();
+        float ceilingBottom = ceiling.GetComponent<Collider2D>().bounds.min.y;
         for (int i = 0; i < 50; i++)
         {
             Step(platform);
-            Check(body.GetComponentInChildren<Collider>().bounds.max.y <= ceilingBottom + .025f, "load never crushed into ceiling");
+            Check(body.GetComponentInChildren<Collider2D>().bounds.max.y <= ceilingBottom + .025f, "load never crushed into ceiling");
         }
     }
     private static void VerifyStack()
     {
         var platform = Platform(MovingPlatformPathMode.Right);
         var bottom = Load(platform, false, true);
-        var top = Load(platform, true, true, bottom.GetComponentInChildren<Collider>().bounds.size.y);
-        Vector3 a = bottom.position - platform.transform.position, b = top.position - platform.transform.position;
+        var top = Load(platform, true, true, bottom.GetComponentInChildren<Collider2D>().bounds.size.y);
+        Vector3 a = bottom.WorldPosition() - platform.transform.position, b = top.WorldPosition() - platform.transform.position;
         for (int i = 0; i < 100; i++)
         {
             Step(platform);
-            Check(Vector3.Distance(bottom.position - platform.transform.position, a) < .08f, "stack bottom follows");
-            Check(Vector3.Distance(top.position - platform.transform.position, b) < .08f, "stack top follows");
+            Check(Vector3.Distance(bottom.WorldPosition() - platform.transform.position, a) < .08f, "stack bottom follows");
+            Check(Vector3.Distance(top.WorldPosition() - platform.transform.position, b) < .08f, "stack top follows");
         }
     }
     private static void VerifySelfPoweredLoad()
     {
         var platform = Platform(MovingPlatformPathMode.Right);
-        platform.GetComponent<BoxCollider>().size = new Vector3(3, 1, 1);
+        platform.GetComponent<BoxCollider2D>().size = new Vector3(3, 1, 1);
         var red = Load(platform, false, true);
         var basis = Load(platform, true, true);
-        Teleport(red, red.position + Vector3.left * .5f + Vector3.up * .2f);
-        Teleport(basis, basis.position + Vector3.right * .5f + Vector3.up * .2f);
-        Physics.SyncTransforms();
+        Teleport(red, red.WorldPosition() + Vector3.left * .5f + Vector3.up * .2f);
+        Teleport(basis, basis.WorldPosition() + Vector3.right * .5f + Vector3.up * .2f);
+        PlanarPhysics.SyncTransforms();
         var mechanism = basis.GetComponent<MechanismBaseFeature>();
         // These are ordinary dropped bodies, with no PlatformMount metadata.
         for (int i = 0; i < 65; i++)
         {
             Call(red.GetComponent<ContactCubeMotion>(), "FixedUpdate"); Call(mechanism, "FixedUpdate");
-            Physics.Simulate(Time.fixedDeltaTime); Physics.SyncTransforms();
+            PlanarPhysics.Simulate(Time.fixedDeltaTime); PlanarPhysics.SyncTransforms();
         }
         platform.BindBase(mechanism);
         using (var s = new SerializedObject(platform))
         { s.FindProperty("signalMotion").intValue = (int)MovingPlatformSignalMotion.PoweredEndpoint; s.ApplyModifiedPropertiesWithoutUndo(); }
         platform.ResetForRoom(); Call(mechanism, "ScanForEnergy");
         Check(mechanism.IsSignalActive, "real red cube powers loaded base before motion");
-        Vector3 origin = platform.transform.position, a = red.position - origin, b = basis.position - origin;
+        Vector3 origin = platform.transform.position, a = red.WorldPosition() - origin, b = basis.WorldPosition() - origin;
         for (int i = 0; i < 140; i++)
         {
             Step(platform);
             Check(mechanism.IsSignalActive, "loaded base stays powered through endpoint motion " + i);
-            Check(Vector3.Distance(red.position - platform.transform.position, a) < .08f, "self-powered red load follows");
-            Check(Vector3.Distance(basis.position - platform.transform.position, b) < .08f, "self-powered base follows");
+            Check(Vector3.Distance(red.WorldPosition() - platform.transform.position, a) < .08f, "self-powered red load follows");
+            Check(Vector3.Distance(basis.WorldPosition() - platform.transform.position, b) < .08f, "self-powered base follows");
         }
         Check(platform.transform.position.x > origin.x + 2.9f, "actual base-driven platform reaches endpoint with both loads");
     }
@@ -192,16 +193,16 @@ public static class PlatformLoadTransportAudit
         var importer = AssetDatabase.LoadAssetAtPath<MonoScript>("Assets/_Project/Code/Systems/BlockFeatures/Runtime/Features/MovingPlatformFeature.cs");
         Check(MonoImporter.GetExecutionOrder(importer) == -150, "real platform importer executes before cube physics");
         naturalPlatform = Platform(MovingPlatformPathMode.Right);
-        naturalPlatform.GetComponent<BoxCollider>().size = new Vector3(3, 1, 1);
+        naturalPlatform.GetComponent<BoxCollider2D>().size = new Vector3(3, 1, 1);
         // Empty real signal set keeps the platform still while both thrown loads settle.
         naturalPlatform.BindSignalSources(Array.Empty<MonoBehaviour>());
         naturalRed = Load(naturalPlatform, false, true);
         naturalBase = Load(naturalPlatform, true, true);
-        Teleport(naturalRed, naturalRed.position + Vector3.left * .5f + Vector3.up * .2f);
-        Teleport(naturalBase, naturalBase.position + Vector3.right * .5f + Vector3.up * .2f);
+        Teleport(naturalRed, naturalRed.WorldPosition() + Vector3.left * .5f + Vector3.up * .2f);
+        Teleport(naturalBase, naturalBase.WorldPosition() + Vector3.right * .5f + Vector3.up * .2f);
         using (var s = new SerializedObject(naturalPlatform))
         { s.FindProperty("signalMotion").intValue = (int)MovingPlatformSignalMotion.PoweredEndpoint; s.ApplyModifiedPropertiesWithoutUndo(); }
-        Physics.SyncTransforms(); naturalStarted = Time.time; naturalBound = false; naturalFarthest = 0;
+        PlanarPhysics.SyncTransforms(); naturalStarted = Time.time; naturalBound = false; naturalFarthest = 0;
         EditorApplication.update += ObserveNatural;
     }
     private static void ObserveNatural()
@@ -216,18 +217,18 @@ public static class PlatformLoadTransportAudit
                 Check(source.IsSignalActive, "natural thrown red cube powers thrown base after landing");
                 naturalPlatform.BindBase(source);
                 naturalOrigin = naturalPlatform.transform.position;
-                naturalRedOffset = naturalRed.position - naturalOrigin;
-                naturalBaseOffset = naturalBase.position - naturalOrigin;
+                naturalRedOffset = naturalRed.WorldPosition() - naturalOrigin;
+                naturalBaseOffset = naturalBase.WorldPosition() - naturalOrigin;
                 naturalStarted = Time.time; naturalBound = true; return;
             }
-            // No reflected FixedUpdate or Physics.Simulate here: actual Unity execution.
+            // No reflected FixedUpdate or PlanarPhysics.Simulate here: actual Unity execution.
             Check(source.IsSignalActive, "natural execution continuous load power");
-            Check(Vector3.Distance(naturalRed.position - naturalPlatform.transform.position, naturalRedOffset) < .08f, "natural red transport stable");
-            Check(Vector3.Distance(naturalBase.position - naturalPlatform.transform.position, naturalBaseOffset) < .08f, "natural base transport stable");
+            Check(Vector3.Distance(naturalRed.WorldPosition() - naturalPlatform.transform.position, naturalRedOffset) < .08f, "natural red transport stable");
+            Check(Vector3.Distance(naturalBase.WorldPosition() - naturalPlatform.transform.position, naturalBaseOffset) < .08f, "natural base transport stable");
             naturalFarthest = Mathf.Max(naturalFarthest, Vector3.Distance(naturalPlatform.transform.position, naturalOrigin));
             if (Time.time - naturalStarted < 3.2f) return;
             Check(naturalFarthest > 2.9f, "natural real signal transports both loads to endpoint");
-            Cleanup(); Finish(true, "PASS " + checks + " platform load assertions (real Play and PhysX, including natural FixedUpdate self-powered transport)");
+            Cleanup(); Finish(true, "PASS " + checks + " platform load assertions (real Play and Box2D, including natural FixedUpdate self-powered transport)");
         }
         catch (Exception error) { Cleanup(); Finish(false, error.ToString()); }
     }

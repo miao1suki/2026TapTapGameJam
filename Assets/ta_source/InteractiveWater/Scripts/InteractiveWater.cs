@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -33,26 +34,24 @@ namespace InteractiveWater
         private static readonly int ImpactHeight = Shader.PropertyToID("_ImpactHeight");
         private static readonly int AmbientWaveTexture = Shader.PropertyToID("_AmbientWaveTexture");
         private static readonly int RippleSimulationTexture = Shader.PropertyToID("_RippleSimulationTexture");
-        private static readonly int PlanarReflectionTexture = Shader.PropertyToID("_PlanarReflectionTexture");
         private static readonly int MainColor = Shader.PropertyToID("_MainColor");
         private const string WaterTopMeshName = "WaterTopMesh";
         private const string WaterFrontMeshName = "WaterFrontMesh";
 
         [Header("Mesh Settings")] 
-        [Tooltip("The x and z size of the top water mesh.")]
-        [SerializeField] private Vector2 _topSurfaceSize = new (20, 6.5f);
+        [Tooltip("XY 水面条带的宽度和高度。")]
+        [SerializeField] private Vector2 _topSurfaceSize = new (20, .125f);
         [Tooltip("The y size of the front water mesh, the x size is defined in Top Surface Size.")]
         [SerializeField] private float _frontSurfaceHeight = 10f;
-        [Tooltip("The x and z vertex count of the top water mesh, ideally this should be a multiple of the size.")]
-        [SerializeField] private Vector2Int _topSurfaceVerticesCount = new(200, 130);
+        [Tooltip("XY 水面条带的细分数量。")]
+        [SerializeField] private Vector2Int _topSurfaceVerticesCount = new(200, 2);
 
-        /// <summary>World dimensions of the top surface in its local X/Z plane.</summary>
+        /// <summary>World dimensions of the surface band in its local XY plane.</summary>
         public Vector2 TopSurfaceSize => _topSurfaceSize;
 
         [Header("Textures")]
         [SerializeField] private CustomRenderTexture _ambientWaveTexture;
         [SerializeField] private CustomRenderTexture _rippleSimulationTexture;
-        [SerializeField] private RenderTexture _reflectionTexture;
         
         [Header("Materials")]
         [SerializeField] private Material _topMeshMaterial;
@@ -99,7 +98,7 @@ namespace InteractiveWater
 
         public void ConfigureBlockVolume(Vector2 surfaceSize, float height)
         {
-            _topSurfaceSize = new Vector2(Mathf.Max(.1f, surfaceSize.x), Mathf.Max(.1f, surfaceSize.y));
+            _topSurfaceSize = new Vector2(Mathf.Max(.1f, surfaceSize.x), Mathf.Clamp(surfaceSize.y, .02f, .125f));
             _frontSurfaceHeight = Mathf.Max(.1f, height);
             _topSurfaceVerticesCount = new Vector2Int(
                 Mathf.Clamp(Mathf.CeilToInt(_topSurfaceSize.x * 8f) + 1, 2, 65),
@@ -107,19 +106,12 @@ namespace InteractiveWater
             _useSharedSimulation = true;
             _testRipplesWithMouse = false;
             SynchronizeBlockColliders();
-            SimplePlanarReflection reflection = GetComponent<SimplePlanarReflection>();
-            if (reflection != null) reflection.enabled = false;
         }
 
         private void SynchronizeBlockColliders()
         {
             // This collider only generates surface ripples. The owning gameplay
             // object supplies the full water-volume and interaction collider.
-            if (TryGetComponent(out BoxCollider surface))
-            {
-                surface.size = new Vector3(_topSurfaceSize.x, .2f, _topSurfaceSize.y);
-                surface.center = new Vector3(_topSurfaceSize.x * .5f, 0f, _topSurfaceSize.y * .5f);
-            }
             if (TryGetComponent(out BoxCollider2D surface2D))
             {
                 surface2D.size = new Vector2(_topSurfaceSize.x, .02f);
@@ -127,7 +119,7 @@ namespace InteractiveWater
             }
             // A mesh collider inherited from the TA mouse-preview prefab must
             // not remain active after switching to gameplay block mode.
-            if (_topMesh != null && _topMesh.TryGetComponent(out BoxCollider mousePreview))
+            if (_topMesh != null && _topMesh.TryGetComponent(out BoxCollider2D mousePreview))
                 mousePreview.enabled = false;
         }
 
@@ -292,7 +284,7 @@ namespace InteractiveWater
             if (!_topMesh) _topMesh = transform.Find(WaterTopMeshName);
             if (!_topMesh) return;
             var localSpace = _topMesh.InverseTransformPoint(worldPosition);
-            var uvSpace = new Vector2(localSpace.x / _topSurfaceSize.x, 1 - localSpace.z / _topSurfaceSize.y);
+            var uvSpace = new Vector2(localSpace.x / _topSurfaceSize.x, Mathf.Clamp01(-localSpace.y / _topSurfaceSize.y));
             
             (_useSharedSimulation ? sharedQueuedRipples : _queuedRipples)
                 .Enqueue(new Ripple(uvSpace, initialStrength, initialUp));
@@ -314,7 +306,7 @@ namespace InteractiveWater
             
             var ray = _testRippleCamera.ScreenPointToRay(Input.mousePosition);
 
-            if (!Physics.Raycast(ray, out var hit, Mathf.Infinity, _testWaterLayer)) return;
+            if (!PlanarPhysics.Raycast(ray, out var hit, Mathf.Infinity, _testWaterLayer)) return;
             
             var point = hit.point;
             var strength = Random.Range(0.2f, 0.6f);
@@ -416,9 +408,6 @@ namespace InteractiveWater
             _runtimeFrontMeshMaterial.SetTexture(AmbientWaveTexture, _runtimeAmbientWaveTexture);
             _runtimeFrontMeshMaterial.SetTexture(RippleSimulationTexture, _runtimeRippleSimulationTexture);
 
-            var reflection = GetComponent<SimplePlanarReflection>();
-            if (reflection && reflection.RuntimeTexture)
-                _runtimeTopMeshMaterial.SetTexture(PlanarReflectionTexture, reflection.RuntimeTexture);
         }
         
         private void GenerateWaterMeshes()
@@ -427,7 +416,7 @@ namespace InteractiveWater
             MeshRenderer topMR, frontMR;
             SortingGroup topSG, frontSG;
             
-            if (transform.childCount >= 2) //The 3rd child is the camera for planar reflection 
+            if (transform.childCount >= 2)
             {
                 _topMesh = transform.GetChild(0);
                 _frontMesh = transform.GetChild(1);
@@ -440,9 +429,9 @@ namespace InteractiveWater
                 frontMR = _frontMesh.GetComponent<MeshRenderer>();
                 frontSG = _frontMesh.GetComponent<SortingGroup>();
                 
-                if (_testRipplesWithMouse && !_topMesh.TryGetComponent(out BoxCollider _))
+                if (_testRipplesWithMouse && !_topMesh.TryGetComponent(out BoxCollider2D _))
                 {
-                    _topMesh.gameObject.AddComponent<BoxCollider>();
+                    _topMesh.gameObject.AddComponent<BoxCollider2D>();
                 }
             }
             else
@@ -469,9 +458,9 @@ namespace InteractiveWater
                 frontMR = _frontMesh.gameObject.AddComponent<MeshRenderer>();
                 frontSG = _frontMesh.gameObject.AddComponent<SortingGroup>();
 
-                if (_testRipplesWithMouse && !_topMesh.TryGetComponent(out BoxCollider _))
+                if (_testRipplesWithMouse && !_topMesh.TryGetComponent(out BoxCollider2D _))
                 {
-                    _topMesh.gameObject.AddComponent<BoxCollider>();
+                    _topMesh.gameObject.AddComponent<BoxCollider2D>();
                 }
             }
 
@@ -515,7 +504,7 @@ namespace InteractiveWater
                 for (var x = 0; x < _topSurfaceVerticesCount.x; x++)
                 {
                     var i = x + z * _topSurfaceVerticesCount.x;
-                    vertices[i] = new Vector3(x * dx, 0f, z * dz);
+                    vertices[i] = new Vector3(x * dx, -z * dz, -.001f);
                     uv[i] = new Vector2((float)x / (_topSurfaceVerticesCount.x - 1), (float)z / (_topSurfaceVerticesCount.y - 1));
                 }
             }
@@ -606,34 +595,6 @@ namespace InteractiveWater
                 isInitialRippleUp = rb.linearVelocity.y > 0;
             }
             CreateContactRippleAt(other.transform.position, Random.Range(0.2f, 0.6f), isInitialRippleUp);
-        }
-
-        /// <summary>
-        /// Creates a splash when a 3D collider enters a 3D trigger placed at the water surface.
-        /// The 3D trigger is separate from the 2D trigger and the top mesh collider used by
-        /// the mouse-raycast test.
-        /// </summary>
-        private void OnTriggerEnter(Collider other)
-        {
-            if (other.transform.IsChildOf(transform)) return;
-
-            var isInitialRippleUp = Random.value > 0.5f;
-            if (other.attachedRigidbody != null)
-            {
-                isInitialRippleUp = other.attachedRigidbody.linearVelocity.y > 0f;
-            }
-            else if (other.GetComponentInParent<CharacterController>() is { } characterController)
-            {
-                isInitialRippleUp = characterController.velocity.y > 0f;
-            }
-
-            // Project the 3D collider's center onto the top-water plane. CreateContactRippleAt
-            // uses the local X/Z coordinates to find the matching simulation-texture UV.
-            var localPoint = _topMesh.InverseTransformPoint(other.bounds.center);
-            localPoint.y = 0f;
-            var surfacePoint = _topMesh.TransformPoint(localPoint);
-
-            CreateContactRippleAt(surfacePoint, Random.Range(0.2f, 0.6f), isInitialRippleUp);
         }
 
         #endregion

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -56,14 +57,14 @@ namespace TapTap.TA.RgbGlitch.Editor
             }
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .6f) return;
             EditorApplication.update -= Wait;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             float previousTimeScale = Time.timeScale;
             bool passed = false;
             try
             {
                 AudioListener.pause = true;
                 AudioListener.volume = 0f;
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 checks = 0;
                 report.Clear();
                 VerifyLifecycle();
@@ -82,7 +83,7 @@ namespace TapTap.TA.RgbGlitch.Editor
                 RgbGlitchEffect.ResetEffect();
                 RgbGlitchEffect.UseRendererDefaults();
                 Time.timeScale = previousTimeScale;
-                Physics.simulationMode = previous;
+                PlanarPhysics.simulationMode = previous;
             }
             Finish(passed, (passed ? "PASS " : "FAIL ") + checks + "\n" + report);
         }

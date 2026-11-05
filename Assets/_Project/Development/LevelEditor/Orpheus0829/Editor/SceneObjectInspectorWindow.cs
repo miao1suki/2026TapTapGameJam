@@ -257,9 +257,9 @@ namespace Project.LevelEditor.Editor
         private static bool IsEngineComponent(Component component) =>
             component is Transform ||
             component is Renderer ||
-            component is Collider ||
             component is Collider2D ||
-            component is Rigidbody ||
+            component is Collider2D ||
+            component is Rigidbody2D ||
             component is Rigidbody2D ||
             component is Animator;
 
@@ -267,10 +267,10 @@ namespace Project.LevelEditor.Editor
         {
             if (component is Transform) return "位置、旋转与缩放";
             if (component is Renderer) return "显示外观（Renderer）";
-            if (component is Collider || component is Collider2D)
-                return "碰撞范围（Collider）";
-            if (component is Rigidbody || component is Rigidbody2D)
-                return "物理属性（Rigidbody）";
+            if (component is Collider2D || component is Collider2D)
+                return "碰撞范围（Collider2D）";
+            if (component is Rigidbody2D || component is Rigidbody2D)
+                return "物理属性（Rigidbody2D）";
             if (component is Animator) return "动画（Animator）";
             return ObjectNames.NicifyVariableName(component.GetType().Name);
         }

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using Project.ColorBlocks;
 using Project.Player;
@@ -32,9 +33,9 @@ namespace Project.ContactCubes
         public bool ApplyColorAt(string colorId, GameObject actor, Vector3 hitWorldPoint)
         {
             if (!CanApplyColor(colorId, actor)) return false;
-            BoxCollider shape = cube.GetComponentInChildren<BoxCollider>();
+            BoxCollider2D shape = cube.GetComponentInChildren<BoxCollider2D>();
             float skin = cube.CellWorldSize * .01f;
-            if (shape == null || (shape.ClosestPoint(hitWorldPoint) - hitWorldPoint).sqrMagnitude > skin * skin)
+            if (shape == null || (shape.ClosestWorldPoint(hitWorldPoint) - hitWorldPoint).sqrMagnitude > skin * skin)
                 return false;
             return cube.RequestPlayerGrowth(actor.GetComponent<PlayerController>().CarryCenterWorldPosition);
         }

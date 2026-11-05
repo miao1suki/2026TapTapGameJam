@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using Project.LevelEditor;
 using UnityEngine;
@@ -24,7 +25,7 @@ namespace Project.BlockFeatures
                     {
                         foreach (var volume in shape.Volumes) AddWallVolume(block, volume);
                     }
-                    else AddWallVolume(block, block.GetComponent<Collider>());
+                    else AddWallVolume(block, block.GetComponent<Collider2D>());
                 }
                 revision = LevelEditorPlacedBlock.SolidRevision;
             }
@@ -32,7 +33,7 @@ namespace Project.BlockFeatures
                 Mathf.FloorToInt(point.x / cellSize), Mathf.FloorToInt(point.y / cellSize)));
         }
 
-        private static void AddWallVolume(LevelEditorPlacedBlock block, Collider volume)
+        private static void AddWallVolume(LevelEditorPlacedBlock block, Collider2D volume)
         {
             if (volume == null || !volume.enabled || volume.isTrigger || !volume.gameObject.activeInHierarchy) return;
             float cell = block.CellWorldSize;
@@ -47,12 +48,12 @@ namespace Project.BlockFeatures
                 for (int x = minX; x < maxX; x++)
                 {
                     var center = new Vector3((x + .5f) * cell, (y + .5f) * cell, bounds.center.z);
-                    if ((volume.ClosestPoint(center) - center).sqrMagnitude <= cell * cell * .000004f)
+                    if ((volume.ClosestWorldPoint(center) - center).sqrMagnitude <= cell * cell * .000004f)
                         walls.Add((block.gameObject.scene.handle, cell, x, y));
                 }
         }
 
-        public static bool TryVisiblePoint(WaterVisualFeature owner, Collider volume, Vector3 origin, float radius, out Vector3 point)
+        public static bool TryVisiblePoint(WaterVisualFeature owner, Collider2D volume, Vector3 origin, float radius, out Vector3 point)
         {
             point = default;
             float cell = GridCellSizeUtility.Resolve(owner);
@@ -67,7 +68,7 @@ namespace Project.BlockFeatures
             {
                 var center = new Vector3((x + .5f) * cell, (y + .5f) * cell, bounds.center.z);
                 if (Covered(owner, center, cell)) continue;
-                var candidate = volume.ClosestPoint(new Vector3(
+                Vector3 candidate = volume.ClosestWorldPoint(new Vector3(
                     Mathf.Clamp(origin.x, x * cell + .002f * cell, (x + 1) * cell - .002f * cell),
                     Mathf.Clamp(origin.y, y * cell + .002f * cell, (y + 1) * cell - .002f * cell), origin.z));
                 float distance = (candidate - origin).sqrMagnitude;

@@ -60,18 +60,17 @@ namespace Project.BlockFeatures
 
             Transform destinationTransform =
                 destination.transform;
-            Rigidbody body =
-                objectToTeleport.GetComponent<Rigidbody>();
+            Rigidbody2D body =
+                objectToTeleport.GetComponent<Rigidbody2D>();
             if (body != null)
             {
                 body.position =
                     destinationTransform.position;
-                body.rotation =
-                    destinationTransform.rotation;
+                body.rotation = (destinationTransform.rotation).eulerAngles.z;
                 if (!body.isKinematic)
                 {
                     body.linearVelocity = Vector3.zero;
-                    body.angularVelocity = Vector3.zero;
+                    body.angularVelocity = 0f;
                 }
                 body.WakeUp();
             }
@@ -157,8 +156,8 @@ namespace Project.BlockFeatures
         {
             if (disableCollidersOnEnable)
             {
-                Collider[] colliders =
-                    GetComponentsInChildren<Collider>(true);
+                Collider2D[] colliders =
+                    GetComponentsInChildren<Collider2D>(true);
                 for (int index = 0;
                      index < colliders.Length;
                      index++)

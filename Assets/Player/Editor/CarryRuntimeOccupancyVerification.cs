@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace Project.Player.Editor
         private static CarryableFeature carried;
         private static PlantObstacleFeature plant;
         private static Func<Vector3Int, bool> cellFree, gridBlocked, rayBlocked;
-        private static SimulationMode savedSimulation;
+        private static SimulationMode2D savedSimulation;
         private static int phase, checks;
         private static double started;
         private static float phaseTime;
@@ -67,7 +68,7 @@ namespace Project.Player.Editor
             player.Motor.position = position;
             player.transform.position = position;
             player.Motor.linearVelocity = Vector3.zero;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
         }
 
         private static void Tick()
@@ -78,12 +79,12 @@ namespace Project.Player.Editor
             {
                 if (phase == 0)
                 {
-                    savedSimulation = Physics.simulationMode;
-                    Physics.simulationMode = SimulationMode.Script;
+                    savedSimulation = PlanarPhysics.simulationMode;
+                    PlanarPhysics.simulationMode = SimulationMode2D.Script;
                     ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                     player = Object.FindFirstObjectByType<PlayerController>();
                     player.GetComponent<PlayerInputDriver>().enabled = false;
-                    player.Motor.interpolation = RigidbodyInterpolation.None;
+                    player.Motor.interpolation = RigidbodyInterpolation2D.None;
                     cellFree = Query("IsCarryDropCellFree");
                     gridBlocked = Query("IsCarryCellOccupiedByPlacedBlock");
                     rayBlocked = Query("HasCarryBlockerInDirection");
@@ -94,12 +95,12 @@ namespace Project.Player.Editor
                         .GetComponent<PlantObstacleFeature>();
                     Check(!cellFree(new Vector3Int(-94, 12, 0)), "real intact plant blocks the base's right neighbor");
                     Check(plant.BreakObstacle(player), "burn real authored six-cell plant");
-                    Physics.SyncTransforms();
-                    Check(!plant.IsIntact && plant.GetComponentsInChildren<Collider>().All(c => !c.enabled), "burn clears physical collision immediately");
+                    PlanarPhysics.SyncTransforms();
+                    Check(!plant.IsIntact && plant.GetComponentsInChildren<Collider2D>().All(c => !c.enabled), "burn clears physical collision immediately");
                     Check(!gridBlocked(new Vector3Int(-94, 12, 0)) && cellFree(new Vector3Int(-94, 12, 0)), "burned plant no longer reserves an invisible cell");
                     Check(plant.GetComponent<LevelEditorPlacedBlock>().ContainsCell(new Vector2Int(-94, 12)), "authoring footprint is preserved for reset/editor");
                     carried.transform.position = new Vector3(-93.5f, 12.5f, 0);
-                    carried.GetComponent<Rigidbody>().position = carried.transform.position;
+                    carried.GetComponent<Rigidbody2D>().position = carried.transform.position;
                     MovePlayer(new Vector3(-92.5f, 12.5f, 0));
                     player.SetMoveInput(Vector2.left);
                     player.SetMoveInput(Vector2.zero);
@@ -145,14 +146,14 @@ namespace Project.Player.Editor
 
         private static LevelEditorPlacedBlock Box(Vector2Int cell, string name, bool trigger = false)
         {
-            var item = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var item = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             Fixtures.Add(item);
             item.name = name;
             item.transform.position = new Vector3(cell.x + .5f, cell.y + .5f, 0);
-            item.GetComponent<Collider>().isTrigger = trigger;
+            item.GetComponent<Collider2D>().isTrigger = trigger;
             var block = item.AddComponent<LevelEditorPlacedBlock>();
             block.Configure(cell, name, Color.white, false, true);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             return block;
         }
 
@@ -162,12 +163,12 @@ namespace Project.Player.Editor
             var cell = new Vector3Int(200, 100, 0);
             var solid = Box(new Vector2Int(200, 100), "solid");
             Check(gridBlocked(cell) && !cellFree(cell), "solid author cell stays blocked");
-            solid.GetComponent<Collider>().enabled = false;
+            solid.GetComponent<Collider2D>().enabled = false;
             Check(!gridBlocked(cell) && cellFree(cell), "opened or hidden solid no longer reserves its footprint");
-            solid.GetComponent<Collider>().enabled = true;
+            solid.GetComponent<Collider2D>().enabled = true;
             Check(gridBlocked(cell), "re-enabled solid blocks without rebuilding registry");
             solid.transform.position += Vector3.up * 3;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(cellFree(cell) && !cellFree(cell + Vector3Int.up * 3), "moving solid releases old cell and blocks new cell");
             Check(solid.Cell == new Vector2Int(200, 100), "movement does not rewrite author cell");
             var trigger = Box(new Vector2Int(200, 100), "water or interaction trigger", true);
@@ -175,7 +176,7 @@ namespace Project.Player.Editor
             var thinWall = Box(new Vector2Int(200, 100), "thin solid wall");
             thinWall.transform.position = new Vector3(200.95f, 100.5f, 0);
             thinWall.transform.localScale = new Vector3(.02f, 1, 1);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(!cellFree(cell) && rayBlocked(Vector3Int.left), "thin physical wall still blocks alongside water");
             Object.DestroyImmediate(thinWall.gameObject);
             Object.DestroyImmediate(trigger.gameObject);
@@ -190,22 +191,22 @@ namespace Project.Player.Editor
                 new RectInt(0, 0, 3, 1), new RectInt(0, 2, 3, 1),
                 new RectInt(0, 1, 1, 1), new RectInt(2, 1, 1, 1)
             });
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(cellFree(new Vector3Int(211, 101, 0)), "merged hole stays free");
             Check(!cellFree(new Vector3Int(210, 101, 0)), "merged real edge stays blocked");
-            foreach (var shape in ring.GetComponents<Collider>()) shape.enabled = false;
+            foreach (var shape in ring.GetComponents<Collider2D>()) shape.enabled = false;
             Check(cellFree(new Vector3Int(210, 101, 0)), "all merged collision volumes can release occupancy");
-            var lateChild = new GameObject("late solid child", typeof(BoxCollider));
+            var lateChild = new GameObject("late solid child", typeof(BoxCollider2D));
             lateChild.transform.SetParent(ring.transform, false);
             lateChild.transform.localPosition = new Vector3(-1f / 3f, 0, 0);
             lateChild.transform.localScale = new Vector3(1f / 3f, 1f / 3f, 1);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(!cellFree(new Vector3Int(210, 101, 0)), "late-added child collider is not missed by a stale cache");
             lateChild.SetActive(false);
             Check(cellFree(new Vector3Int(210, 101, 0)), "inactive child does not keep a ghost cell");
             var depth = Box(new Vector2Int(220, 100), "different depth");
             depth.transform.position += Vector3.forward * 3;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Check(cellFree(new Vector3Int(220, 100, 0)), "other depth does not reserve the player plane");
 
             // Measure only the hot query, excluding reflection, logging and setup.
@@ -223,7 +224,7 @@ namespace Project.Player.Editor
         {
             SessionState.SetBool(Flag, false);
             EditorApplication.update -= Tick;
-            Physics.simulationMode = savedSimulation;
+            PlanarPhysics.simulationMode = savedSimulation;
             foreach (var item in Fixtures) if (item != null) Object.DestroyImmediate(item);
             Fixtures.Clear();
             Debug.Log(message);

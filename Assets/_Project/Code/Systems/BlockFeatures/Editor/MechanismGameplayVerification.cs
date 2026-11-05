@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using Project.ColorBlocks;
@@ -30,10 +31,10 @@ namespace Project.BlockFeatures.Editor
         private static ContactCube Cube(CubeColor color,Vector3 position)
         {
             var value = Spawn($"Assets/_Project/Content/ContactCubes/{color}_ContactCube.prefab",position).GetComponent<ContactCube>();
-            value.GetComponent<ContactCubeMotion>().enabled = false; value.GetComponent<Rigidbody>().isKinematic = true;
+            value.GetComponent<ContactCubeMotion>().enabled = false; value.GetComponent<Rigidbody2D>().isKinematic = true;
             return value;
         }
-        private static void Move(ContactCube cube,Vector3 value) { cube.transform.position = cube.GetComponent<Rigidbody>().position = value; Physics.SyncTransforms(); }
+        private static void Move(ContactCube cube,Vector3 value) { cube.transform.position = cube.GetComponent<Rigidbody2D>().position = value; PlanarPhysics.SyncTransforms(); }
         private static PlayerController Player(Vector3 pos)
         {
             var value = Spawn("Assets/_Project/Content/Player/Player.prefab",pos).GetComponent<PlayerController>();
@@ -55,7 +56,7 @@ namespace Project.BlockFeatures.Editor
                 EditorSceneManager.OpenScene("Assets/Scenes/Test.unity");
                 var avatar = GameObject.Find("TestPlayer");
                 Check(avatar != null, "Test avatar exists");
-                Bounds body = avatar.GetComponent<CapsuleCollider>().bounds;
+                Bounds body = avatar.GetComponent<CapsuleCollider2D>().bounds;
                 Check(Mathf.Abs(body.size.x-1)<.001f && Mathf.Abs(body.size.y-1)<.001f, "Test authored collider is one cell");
                 Bounds visual = avatar.GetComponentInChildren<Renderer>().bounds;
                 Check(Mathf.Abs(visual.size.x-1)<.001f && Mathf.Abs(visual.size.y-1)<.001f, "Test authored model is one cell");
@@ -85,7 +86,7 @@ namespace Project.BlockFeatures.Editor
             {
                 if (EditorApplication.timeSinceStartup-started > 120) throw new Exception("timeout phase " + phase);
                 if (!EditorApplication.isPlaying) return;
-                if (player != null && (phase == 701 || phase == 8 || phase == 11 || phase == 14 || phase == 18)) peak = Mathf.Max(peak,player.Motor.position.y);
+                if (player != null && (phase == 701 || phase == 8 || phase == 11 || phase == 14 || phase == 18)) peak = Mathf.Max(peak,player.Motor.WorldPosition().y);
                 if (Time.time < deadline) return;
                 if (phase == 0)
                 {
@@ -109,14 +110,14 @@ namespace Project.BlockFeatures.Editor
                 if (phase == 1)
                 {
                     Check(source.IsSignalActive,"any red powers base"); Check(platform.transform.position.x > 10.01f,"signal drives platform");
-                    Physics.SyncTransforms();
-                    Collider surface = platform.GetComponent<Collider>();
+                    PlanarPhysics.SyncTransforms();
+                    Collider2D surface = platform.GetComponent<Collider2D>();
                     player = Player(new Vector3(surface.bounds.center.x,surface.bounds.max.y+.5f,0));
                     Next(101,.4f); return;
                 }
                 if (phase == 101)
                 {
-                    Check(Mathf.Abs(player.Motor.position.x-platform.transform.position.x)<.15f,"signal platform carries standing player delta=" + (player.Motor.position.x-platform.transform.position.x) + " y=" + player.Motor.position.y);
+                    Check(Mathf.Abs(player.Motor.WorldPosition().x-platform.transform.position.x)<.15f,"signal platform carries standing player delta=" + (player.Motor.WorldPosition().x-platform.transform.position.x) + " y=" + player.Motor.WorldPosition().y);
                     Object.Destroy(player.gameObject);
                     Move(red,Vector3.right*30); Next(2,.12f); return;
                 }
@@ -132,7 +133,7 @@ namespace Project.BlockFeatures.Editor
                     independent.BindCrank(crank);
                     secondCrankPlatform = Spawn("Assets/_Project/Content/ColorBlocks/Prefabs/Red_CrankLift.prefab",new Vector3(43,1.25f,0)).GetComponent<MovingPlatformFeature>();
                     secondCrankPlatform.BindCrank(crank);
-                    player = Player(new Vector3(40.8f,0,0)); player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                    player = Player(new Vector3(40.8f,0,0)); player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                     Check(crank.LiftPlatform != null,"crank has actual lift model");
                     Check(crank.TryInteract(player.gameObject),"existing interaction operates crank");
                     Next(4,.4f); return;
@@ -149,18 +150,18 @@ namespace Project.BlockFeatures.Editor
                 {
                     Check(crank.Progress<recordedProgress,"idle crank descends");
                     crank.SetSignal(true,crank);
-                    Physics.SyncTransforms();
-                    Collider lift = crank.LiftPlatform.GetComponent<Collider>();
+                    PlanarPhysics.SyncTransforms();
+                    Collider2D lift = crank.LiftPlatform.GetComponent<Collider2D>();
                     player.transform.position = player.Motor.position = new Vector3(lift.bounds.center.x,lift.bounds.max.y+.5f,0);
-                    player.Motor.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
+                    player.Motor.constraints = RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.None;
                     player.Motor.linearVelocity = Vector3.zero;
-                    Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms();
                     recordedProgress = crank.Progress; Next(105,.8f); return;
                 }
                 if (phase == 105)
                 {
-                    Check(recordedProgress-crank.Progress>.1f,"standing player accelerates descent " + (recordedProgress-crank.Progress) + " rider="+crank.HasStandingPlayer+" feet="+player.GetComponent<Collider>().bounds.min.y+" top="+crank.LiftPlatform.GetComponent<Collider>().bounds.max.y);
-                    Check(Mathf.Abs(player.GetComponent<Collider>().bounds.min.y-crank.LiftPlatform.GetComponent<Collider>().bounds.max.y)<.15f,"descending crank keeps rider on top");
+                    Check(recordedProgress-crank.Progress>.1f,"standing player accelerates descent " + (recordedProgress-crank.Progress) + " rider="+crank.HasStandingPlayer+" feet="+player.GetComponent<Collider2D>().bounds.min.y+" top="+crank.LiftPlatform.GetComponent<Collider2D>().bounds.max.y);
+                    Check(Mathf.Abs(player.GetComponent<Collider2D>().bounds.min.y-crank.LiftPlatform.GetComponent<Collider2D>().bounds.max.y)<.15f,"descending crank keeps rider on top");
                     crank.BindBase(source); recordedProgress = crank.Progress; Next(6,.3f); return;
                 }
                 if (phase == 6)
@@ -169,28 +170,28 @@ namespace Project.BlockFeatures.Editor
                     crank.ResetForRoom(); Check(crank.Progress==0f && Mathf.Abs(crank.LiftPlatform.localPosition.y-1.25f)<.001f,"crank reset");
                     Check(Mathf.Abs(secondCrankPlatform.transform.position.y-1.25f)<.001f,"reset restores both independent platforms");
                     Object.Destroy(player.gameObject);
-                    var floor = GameObject.CreatePrimitive(PrimitiveType.Cube); floor.transform.position=new Vector3(100,-.5f,0); floor.transform.localScale=new Vector3(20,1,4);
+                    var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); floor.transform.position=new Vector3(100,-.5f,0); floor.transform.localScale=new Vector3(20,1,4);
                     Spawn("Assets/_Project/Content/Mechanisms/OneWayPlatform.prefab",new Vector3(100,2,0));
                     var hidden = Spawn("Assets/_Project/Content/Mechanisms/HiddenBlock.prefab",Vector3.right*90);
-                    Check(hidden.GetComponent<Renderer>()!=null && hidden.GetComponent<Collider>()==null,"hidden block visual only");
+                    Check(hidden.GetComponent<Renderer>()!=null && hidden.GetComponent<Collider2D>()==null,"hidden block visual only");
                     player=Player(new Vector3(100,.6f,0)); Next(7,.4f); return;
                 }
                 if (phase == 7)
                 {
                     Check(player.IsGrounded,"player grounded below one-way");
-                    Check(Mathf.Abs(player.GetComponent<CapsuleCollider>().bounds.size.y-1)<.001f,"player one cell tall");
-                    Check(Mathf.Abs(player.GetComponent<CapsuleCollider>().bounds.size.x-1)<.001f,"player one cell wide");
-                    startY=peak=player.Motor.position.y; player.RequestJump(); player.SetJumpHeld(false); Next(701,1f); return;
+                    Check(Mathf.Abs(player.GetComponent<CapsuleCollider2D>().bounds.size.y-1)<.001f,"player one cell tall");
+                    Check(Mathf.Abs(player.GetComponent<CapsuleCollider2D>().bounds.size.x-1)<.001f,"player one cell wide");
+                    startY=peak=player.Motor.WorldPosition().y; player.RequestJump(); player.SetJumpHeld(false); Next(701,1f); return;
                 }
                 if (phase == 701)
                 {
                     Check(Mathf.Abs(peak-startY-1)<.16f,"tap jump actual apex 1 cell: " + (peak-startY));
-                    startY=peak=player.Motor.position.y; player.SetJumpHeld(true); player.RequestJump(); Next(8,2.5f); return;
+                    startY=peak=player.Motor.WorldPosition().y; player.SetJumpHeld(true); player.RequestJump(); Next(8,2.5f); return;
                 }
                 if (phase == 8)
                 {
                     Check(Mathf.Abs(peak-startY-4)<.14f,"held jump actual apex 4 cells: " + (peak-startY));
-                    Check(player.IsGrounded && Mathf.Abs(player.Motor.position.y-2.6f)<.12f,"jump through and land atop one-way y=" + player.Motor.position.y + " vy=" + player.VerticalVelocity + " grounded=" + player.IsGrounded);
+                    Check(player.IsGrounded && Mathf.Abs(player.Motor.WorldPosition().y-2.6f)<.12f,"jump through and land atop one-way y=" + player.Motor.WorldPosition().y + " vy=" + player.VerticalVelocity + " grounded=" + player.IsGrounded);
                     Object.Destroy(player.gameObject);
                     plant=Spawn("Assets/_Project/Content/ColorBlocks/Prefabs/Green_JumpPlant.prefab",new Vector3(120,0,0)).GetComponent<BouncePlantFeature>();
                     Check(plant.GetRiseCells(5,false)==3 && plant.GetRiseCells(4,true)==3 && plant.GetRiseCells(4.1f,true)==8,"plant 3/8 threshold rules");
@@ -198,7 +199,7 @@ namespace Project.BlockFeatures.Editor
                 }
                 if (phase == 9)
                 {
-                    if (player.VerticalVelocity>3 && player.Motor.position.y<1.5f) { startY=peak=player.Motor.position.y; Next(11,0); }
+                    if (player.VerticalVelocity>3 && player.Motor.WorldPosition().y<1.5f) { startY=peak=player.Motor.WorldPosition().y; Next(11,0); }
                     return;
                 }
                 if (phase == 11)
@@ -209,7 +210,7 @@ namespace Project.BlockFeatures.Editor
                 }
                 if (phase == 12)
                 {
-                    if (player.VerticalVelocity>3 && player.Motor.position.y<1.5f) { startY=peak=player.Motor.position.y; Next(14,0); }
+                    if (player.VerticalVelocity>3 && player.Motor.WorldPosition().y<1.5f) { startY=peak=player.Motor.WorldPosition().y; Next(14,0); }
                     return;
                 }
                 if (phase == 14)
@@ -217,7 +218,7 @@ namespace Project.BlockFeatures.Editor
                     if (player.VerticalVelocity>0) return;
                     Check(Mathf.Abs(peak-startY-8)<.4f,"actual plant held high 8 cells: " + (peak-startY));
                     Object.Destroy(player.gameObject);
-                    var floor=GameObject.CreatePrimitive(PrimitiveType.Cube); floor.transform.position=new Vector3(140,-.5f,0); floor.transform.localScale=new Vector3(10,1,4);
+                    var floor=Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); floor.transform.position=new Vector3(140,-.5f,0); floor.transform.localScale=new Vector3(10,1,4);
                     player=Player(new Vector3(140.5f,.5f,0)); Cube(CubeColor.Red,new Vector3(141.5f,.5f,0)); Next(15,.3f); return;
                 }
                 if (phase == 15)
@@ -234,12 +235,12 @@ namespace Project.BlockFeatures.Editor
                     Spawn("Assets/_Project/Content/ColorBlocks/Prefabs/Green_JumpPlant.prefab",new Vector3(140,.5f,0));
                     player.transform.position = player.Motor.position = new Vector3(140,1.5f,0);
                     player.Motor.linearVelocity = Vector3.zero;
-                    Physics.SyncTransforms(); Next(171,.2f); return;
+                    PlanarPhysics.SyncTransforms(); Next(171,.2f); return;
                 }
                 if (phase == 171)
                 {
                     Check(player.CanCarryPlantJump,"plant grants carrying jump");
-                    startY=peak=player.Motor.position.y; player.RequestJump(); Next(18,.95f); return;
+                    startY=peak=player.Motor.WorldPosition().y; player.RequestJump(); Next(18,.95f); return;
                 }
                 if (phase == 18)
                 {

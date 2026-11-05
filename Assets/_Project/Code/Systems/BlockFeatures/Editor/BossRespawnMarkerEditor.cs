@@ -26,7 +26,7 @@ namespace Project.BlockFeatures.Editor
             root.Add(ProjectInspectorUtility.CreateScriptField(
                 serializedObject));
             root.Add(ProjectInspectorUtility.CreateHelp(
-                "仅作为 Boss 复活位置的 Scene 标记，没有 Collider 或 Renderer。只能在 X 方向拖动，业务数据保存在重生点组件。"));
+                "仅作为 Boss 复活位置的 Scene 标记，没有 Collider2D 或 Renderer。只能在 X 方向拖动，业务数据保存在重生点组件。"));
             root.Add(ProjectInspectorUtility.CreateReadOnlyRow(
                 "所属重生点",
                 () => marker.Owner != null

@@ -10,7 +10,7 @@ Shader "TapTap/Firefly/Soft Pixel Light"
         Pass
         {
             Name "FireflyGlow"
-            Tags { "LightMode"="UniversalForward" }
+            Tags { "LightMode"="Universal2D" }
             Blend SrcAlpha One
             ZWrite Off
             ZTest LEqual

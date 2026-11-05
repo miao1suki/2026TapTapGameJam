@@ -12,7 +12,7 @@ namespace Project.Pickups
         Project.Items.IDropItemCollectionAnimation, Project.Items.IDropItemCollectionReset
     {
         [SerializeField] private Transform visual;
-        [SerializeField] private Collider pickupCollider;
+        [SerializeField] private Collider2D pickupCollider;
         [SerializeField, Min(.01f)] private float recoilDuration = .12f;
         [SerializeField, Min(0f)] private float recoilDistance = .7f;
         [SerializeField, Range(0f, .9f)] private float recoilDistanceVariation = .35f;
@@ -28,7 +28,7 @@ namespace Project.Pickups
 
         private Sequence flight;
         private Transform collector;
-        private Collider collectorCollider;
+        private Collider2D collectorCollider;
         private Vector3 segmentStart;
         private Vector3 segmentControlA;
         private Vector3 segmentControlB;
@@ -56,7 +56,7 @@ namespace Project.Pickups
 
         private void Reset()
         {
-            pickupCollider = GetComponent<Collider>();
+            pickupCollider = GetComponent<Collider2D>();
         }
 
         private void Awake()
@@ -64,7 +64,7 @@ namespace Project.Pickups
             if (visual == null)
                 visual = transform.childCount > 0 ? transform.GetChild(0) : transform;
             if (pickupCollider == null)
-                pickupCollider = GetComponent<Collider>();
+                pickupCollider = GetComponent<Collider2D>();
             CaptureVisual();
         }
 
@@ -104,7 +104,7 @@ namespace Project.Pickups
                 return false;
 
             collector = collectorTransform;
-            collectorCollider = collector.GetComponent<Collider>();
+            collectorCollider = collector.GetComponent<Collider2D>();
             lastCenter = GetCenter();
             recoilPoint = ChooseRecoilPoint(visual.position, lastCenter);
             completion = onComplete;

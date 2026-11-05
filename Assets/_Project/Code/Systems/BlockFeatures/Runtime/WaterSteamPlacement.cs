@@ -1,3 +1,4 @@
+using Project.Planar;
 using UnityEngine;
 
 namespace Project.BlockFeatures
@@ -14,13 +15,13 @@ namespace Project.BlockFeatures
             cell = Mathf.Max(.001f, cell);
             // Merged water has several exact colliders on this owner. Do not include
             // presentation children, nor fill holes by using the owner's WorldBounds.
-            Collider[] volumes = water.GetComponents<Collider>();
+            Collider2D[] volumes = water.GetComponents<Collider2D>();
             float nearest = float.PositiveInfinity;
             Vector3 actualPoint = reference;
-            foreach (Collider volume in volumes)
+            foreach (Collider2D volume in volumes)
             {
                 if (!Usable(volume)) continue;
-                Vector3 point = volume.ClosestPoint(new Vector3(reference.x, reference.y, volume.bounds.center.z));
+                Vector3 point = volume.ClosestWorldPoint(new Vector3(reference.x, reference.y, volume.bounds.center.z));
                 float distance = ((Vector2)(point - reference)).sqrMagnitude;
                 if (distance >= nearest) continue;
                 nearest = distance;
@@ -32,7 +33,7 @@ namespace Project.BlockFeatures
             float bestDistance = float.PositiveInfinity;
             int clickedColumn = Mathf.FloorToInt(actualPoint.x / cell);
             float skin = cell * .002f;
-            foreach (Collider volume in volumes)
+            foreach (Collider2D volume in volumes)
             {
                 if (!Usable(volume)) continue;
                 Bounds bounds = volume.bounds;
@@ -80,12 +81,12 @@ namespace Project.BlockFeatures
             return found;
         }
 
-        private static bool Usable(Collider collider) => collider != null && collider.enabled && collider.gameObject.activeInHierarchy;
-        private static bool Contains(Collider collider, Vector3 point, float skin) =>
-            (collider.ClosestPoint(point) - point).sqrMagnitude <= skin * skin;
-        private static bool ContainsAny(Collider[] volumes, Vector3 point, float skin)
+        private static bool Usable(Collider2D collider) => collider != null && collider.enabled && collider.gameObject.activeInHierarchy;
+        private static bool Contains(Collider2D collider, Vector3 point, float skin) =>
+            (collider.ClosestWorldPoint(point) - point).sqrMagnitude <= skin * skin;
+        private static bool ContainsAny(Collider2D[] volumes, Vector3 point, float skin)
         {
-            foreach (Collider volume in volumes)
+            foreach (Collider2D volume in volumes)
                 if (Usable(volume) && Contains(volume, point, skin)) return true;
             return false;
         }

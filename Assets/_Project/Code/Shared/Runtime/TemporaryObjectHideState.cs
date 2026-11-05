@@ -5,9 +5,9 @@ namespace Project
     [DisallowMultipleComponent]
     public sealed class TemporaryObjectHideState : MonoBehaviour
     {
-        private Collider[] colliders;
+        private Collider2D[] colliders;
         private Renderer[] renderers;
-        private Rigidbody[] bodies;
+        private Rigidbody2D[] bodies;
         private bool[] colliderStates;
         private bool[] rendererStates;
         private bool[] bodyKinematicStates;
@@ -48,10 +48,10 @@ namespace Project
                     if (!bodies[index].isKinematic)
                     {
                         bodies[index].linearVelocity = Vector3.zero;
-                        bodies[index].angularVelocity = Vector3.zero;
+                        bodies[index].angularVelocity = 0f;
                     }
 
-                    bodies[index].useGravity = false;
+                    bodies[index].gravityScale = 0f;
                     bodies[index].isKinematic = true;
                 }
             }
@@ -88,17 +88,16 @@ namespace Project
                 {
                     bodies[index].isKinematic =
                         bodyKinematicStates[index];
-                    bodies[index].useGravity =
-                        bodyGravityStates[index];
+                    bodies[index].gravityScale = (bodyGravityStates[index]) ? 1f : 0f;
                 }
             }
         }
 
         private void Cache()
         {
-            colliders = GetComponentsInChildren<Collider>(true);
+            colliders = GetComponentsInChildren<Collider2D>(true);
             renderers = GetComponentsInChildren<Renderer>(true);
-            bodies = GetComponentsInChildren<Rigidbody>(true);
+            bodies = GetComponentsInChildren<Rigidbody2D>(true);
             colliderStates = new bool[colliders.Length];
             rendererStates = new bool[renderers.Length];
             bodyKinematicStates = new bool[bodies.Length];
@@ -121,7 +120,7 @@ namespace Project
                 bodyKinematicStates[index] =
                     bodies[index] != null && bodies[index].isKinematic;
                 bodyGravityStates[index] =
-                    bodies[index] != null && bodies[index].useGravity;
+                    bodies[index] != null && (bodies[index].gravityScale != 0f);
             }
         }
     }

@@ -18,7 +18,7 @@ using UnityEngine.Timeline;
 namespace Project.ColorBlocks
 {
     [DisallowMultipleComponent, DefaultExecutionOrder(1200)]
-    [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(Collider2D))]
     public sealed class ColorKeyPickup : DropItemBase
     {
         private const float DefaultCameraOrthographicSize = 15f;
@@ -42,7 +42,7 @@ namespace Project.ColorBlocks
         private PlayerController collectingPlayer;
         private TimelineCamRig activeRig;
         private float originalOrthographicSize;
-        private float originalFieldOfView;
+
         private float nextPlayerSearchTime;
         private IDisposable controlLockHandle;
         private IDisposable visibilitySuppression;
@@ -67,7 +67,7 @@ namespace Project.ColorBlocks
 
         private void Reset()
         {
-            GetComponent<Collider>().isTrigger = true;
+            GetComponent<Collider2D>().isTrigger = true;
             cameraDirector = GetComponent<PlayableDirector>();
         }
 
@@ -87,7 +87,7 @@ namespace Project.ColorBlocks
             }
         }
 
-        private void OnTriggerEnter(Collider other)
+        private void OnTriggerEnter2D(Collider2D other)
         {
             var player = other.GetComponentInParent<PlayerController>();
             if (player == null) return;
@@ -163,7 +163,7 @@ namespace Project.ColorBlocks
             ReleaseVisibilitySuppression();
             collectingPlayer = null;
             nextPlayerSearchTime = 0f;
-            var collider = GetComponent<Collider>();
+            var collider = GetComponent<Collider2D>();
             if (collider != null)
             {
                 collider.enabled = true;
@@ -230,7 +230,7 @@ namespace Project.ColorBlocks
         protected override void OnCollectionStarted()
         {
             AcquirePlayerControlLock(collectingPlayer);
-            var collider = GetComponent<Collider>();
+            var collider = GetComponent<Collider2D>();
             if (collider != null) collider.enabled = false;
 
             UnlockResult = ColorRuntimeService.Instance.CollectColorKey(colorTypeId);
@@ -373,8 +373,8 @@ namespace Project.ColorBlocks
             activeRig = rig;
             var state = rig.Manager.CurrentState;
             originalOrthographicSize = state.orthographicSize;
-            originalFieldOfView = state.fieldOfView;
-            rig.SetShotLens(originalOrthographicSize, originalFieldOfView);
+
+            rig.SetShotLens(originalOrthographicSize);
             rig.SetReturnDurationForCurrentShot(cameraReturnDuration);
             WorldVisibility2D visibility =
                 WorldVisibility2D.FindForScene(gameObject.scene);
@@ -404,8 +404,7 @@ namespace Project.ColorBlocks
             }
             activeRig.SetShotLens(
                 Mathf.Lerp(originalOrthographicSize,
-                    cameraOrthographicSize, eased),
-                originalFieldOfView);
+                    cameraOrthographicSize, eased));
         }
 
         private float EvaluateCameraShotProgress(
@@ -593,7 +592,7 @@ namespace Project.ColorBlocks
         {
             StopItemAnimations();
             ReleasePlayerControlLock();
-            Collider collider = GetComponent<Collider>();
+            Collider2D collider = GetComponent<Collider2D>();
             if (collider != null)
             {
                 collider.enabled = false;

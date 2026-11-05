@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -51,7 +52,7 @@ public static class MRoom2SecondImportAudit
     }
     private static void MoveRed(Vector3 position)
     {
-        red.transform.position = position; red.GetComponent<Rigidbody>().position = position; Physics.SyncTransforms();
+        red.transform.position = position; red.GetComponent<Rigidbody2D>().position = position; PlanarPhysics.SyncTransforms();
     }
     private static void Wait(int next, float seconds) { phase = next; due = Time.time + seconds; }
     private static void Tick()
@@ -69,7 +70,7 @@ public static class MRoom2SecondImportAudit
                 Check(Object.FindObjectsByType<RespawnAnchorFeature>(FindObjectsSortMode.None).Count(a => a.IsCurrent) == 1, "one current checkpoint");
                 foreach (string color in new[] { "red", "green", "blue" })
                     Check(!ColorRuntimeService.Instance.IsUnlocked(color) && !ColorRuntimeService.Instance.IsAbilityUnlocked(color), "default locked: " + color);
-                player.GetComponent<PlayerInputDriver>().enabled = false; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                player.GetComponent<PlayerInputDriver>().enabled = false; player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                 platforms = Object.FindObjectsByType<MovingPlatformFeature>(FindObjectsSortMode.None);
                 bases = Object.FindObjectsByType<MechanismBaseFeature>(FindObjectsSortMode.None).OrderBy(b => b.transform.position.x).ToArray();
                 Check(platforms.Length == 6 && bases.Length == 3, "six platforms and three bases");
@@ -80,7 +81,7 @@ public static class MRoom2SecondImportAudit
                 foreach (var cube in cubes)
                 {
                     cube.GetComponent<ContactCubeMotion>().enabled = false;
-                    var body = cube.GetComponent<Rigidbody>(); body.isKinematic = true; body.useGravity = false;
+                    var body = cube.GetComponent<Rigidbody2D>(); body.isKinematic = true; body.gravityScale = 0f;
                 }
                 // Move the authored red above the support, not a second red into its occupied column.
                 red = cubes.Single(c => c.Color == CubeColor.Red && Vector3.Distance(c.transform.position, new Vector3(-107.5f, 20.5f)) < .1f);
@@ -145,7 +146,7 @@ public static class MRoom2SecondImportAudit
                 support = platforms.Single(p => !p.IsCrankControlled && Mathf.Approximately(p.Path.FirstEnd, 1));
                 var supportBase = (MechanismBaseFeature)support.LinkedControls.Single();
                 red.GetComponent<ContactCubeMotion>().enabled = false;
-                red.GetComponent<Rigidbody>().isKinematic = true;
+                red.GetComponent<Rigidbody2D>().isKinematic = true;
                 MoveRed(supportBase.transform.position + Vector3.down);
                 Wait(4, .8f); return;
             }
@@ -163,16 +164,16 @@ public static class MRoom2SecondImportAudit
                 var supportBase = (MechanismBaseFeature)support.LinkedControls.Single();
                 Check(supportBase.IsSignalActive, "released red remains on support and keeps base powered");
                 Check(Mathf.Abs(red.transform.position.y - (supportBase.transform.position.y - 1)) < .08f, "support keeps red touching base without artificial latching");
-                red.GetComponent<ContactCubeMotion>().enabled = false; red.GetComponent<Rigidbody>().isKinematic = true;
+                red.GetComponent<ContactCubeMotion>().enabled = false; red.GetComponent<Rigidbody2D>().isKinematic = true;
                 MoveRed(new Vector3(-121.5f, 33.5f));
                 ridden = platforms.Single(p => !p.IsCrankControlled && p.Path.FirstEnd < -30);
-                var top = ridden.GetComponent<Collider>().bounds;
+                var top = ridden.GetComponent<Collider2D>().bounds;
                 // The left half runs beneath an authored wall; use the unobstructed rightmost cell.
                 var start = new Vector3(top.max.x - .55f, top.max.y + .5f, top.center.z);
                 player.transform.position = start; player.Motor.position = start;
                 riderOffset = start.x - ridden.transform.position.x;
-                player.Motor.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
-                player.Motor.linearVelocity = Vector3.zero; Physics.SyncTransforms();
+                player.Motor.constraints = RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.None;
+                player.Motor.linearVelocity = Vector3.zero; PlanarPhysics.SyncTransforms();
                 Wait(6, .3f); return;
             }
             if (phase == 6)
@@ -185,7 +186,7 @@ public static class MRoom2SecondImportAudit
             {
                 Check(Mathf.Abs(player.transform.position.x - ridden.transform.position.x - riderOffset) < .18f,
                     "player follows platform outbound and returning, phase=" + phase + " player=" + player.transform.position + " platform=" + ridden.transform.position);
-                Check(Mathf.Abs(player.GetComponent<Collider>().bounds.min.y - ridden.GetComponent<Collider>().bounds.max.y) < .18f,
+                Check(Mathf.Abs(player.GetComponent<Collider2D>().bounds.min.y - ridden.GetComponent<Collider2D>().bounds.max.y) < .18f,
                     "rider feet remain on platform support");
                 if (phase == 7) { MoveRed(new Vector3(-121.5f, 33.5f)); Wait(8, 1); return; }
                 Check(Vector3.Distance(ridden.transform.position, origins[ridden]) < .015f, "ridden platform returns home");

@@ -12,7 +12,7 @@ Shader "2026TapTap/ColorVineReveal"
         Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Transparent" "Queue"="Transparent" }
         Pass
         {
-            Tags { "LightMode"="UniversalForward" }
+            Tags { "LightMode"="Universal2D" }
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
             Cull Off

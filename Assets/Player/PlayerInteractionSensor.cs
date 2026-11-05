@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections.Generic;
 using UnityEngine;
 using Project.InputAbstraction;
@@ -15,9 +16,9 @@ namespace Project.Player
         [SerializeField]
         private LayerMask interactionMask = ~0;
 
-        private Collider[] overlapBuffer = new Collider[128];
-        private RaycastHit[] screenRaycastBuffer =
-            new RaycastHit[32];
+        private Collider2D[] overlapBuffer = new Collider2D[128];
+        private RaycastHit2D[] screenRaycastBuffer =
+            new RaycastHit2D[32];
         public IInteractionTarget CurrentTarget { get; private set; }
         public bool HasTarget => CurrentTarget != null;
         public float ScanRadius => scanRadius;
@@ -50,12 +51,12 @@ namespace Project.Player
             }
 
             float rangeSqr = scanRadius * scanRadius;
-            Collider[] colliders = component.GetComponentsInChildren<Collider>(true);
+            Collider2D[] colliders = component.GetComponentsInChildren<Collider2D>(true);
             bool foundCollider = false;
             float nearestSqr = float.MaxValue;
             for (int index = 0; index < colliders.Length; index++)
             {
-                Collider collider = colliders[index];
+                Collider2D collider = colliders[index];
                 if (collider == null || !collider.enabled ||
                     !collider.gameObject.activeInHierarchy)
                 {
@@ -63,7 +64,7 @@ namespace Project.Player
                 }
 
                 foundCollider = true;
-                Vector3 closest = collider.ClosestPoint(transform.position);
+                Vector3 closest = collider.ClosestWorldPoint(transform.position);
                 nearestSqr = Mathf.Min(
                     nearestSqr,
                     (closest - transform.position).sqrMagnitude);
@@ -100,20 +101,20 @@ namespace Project.Player
         public bool TryGetScreenHit(
             Camera camera,
             Vector2 screenPosition,
-            out RaycastHit hit)
+            out RaycastHit2D hit)
         {
             return TryGetScreenHit(
                 camera,
                 screenPosition,
                 out hit,
-                QueryTriggerInteraction.Collide);
+                TriggerQuery.Collide);
         }
 
         public bool TryGetScreenHit(
             Camera camera,
             Vector2 screenPosition,
-            out RaycastHit hit,
-            QueryTriggerInteraction triggerInteraction)
+            out RaycastHit2D hit,
+            TriggerQuery triggerInteraction)
         {
             hit = default;
             if (camera == null)
@@ -122,7 +123,7 @@ namespace Project.Player
             }
 
             Ray ray = camera.ScreenPointToRay(screenPosition);
-            int count = Physics.RaycastNonAlloc(
+            int count = PlanarPhysics.RaycastNonAlloc(
                 ray,
                 screenRaycastBuffer,
                 Mathf.Infinity,
@@ -131,13 +132,13 @@ namespace Project.Player
             while (count == screenRaycastBuffer.Length && screenRaycastBuffer.Length < 4096)
             {
                 System.Array.Resize(ref screenRaycastBuffer, screenRaycastBuffer.Length * 2);
-                count = Physics.RaycastNonAlloc(ray, screenRaycastBuffer, Mathf.Infinity, interactionMask.value, triggerInteraction);
+                count = PlanarPhysics.RaycastNonAlloc(ray, screenRaycastBuffer, Mathf.Infinity, interactionMask.value, triggerInteraction);
             }
             float nearestDistance = float.MaxValue;
             bool found = false;
             for (int index = 0; index < count; index++)
             {
-                RaycastHit candidate = screenRaycastBuffer[index];
+                RaycastHit2D candidate = screenRaycastBuffer[index];
                 if (candidate.collider == null || candidate.collider.transform.IsChildOf(transform) ||
                     candidate.distance >= nearestDistance)
                 {
@@ -160,7 +161,7 @@ namespace Project.Player
                     var candidate = screenRaycastBuffer[i];
                     if (candidate.collider == null || candidate.collider.transform.IsChildOf(transform) ||
                         candidate.collider.GetComponentInParent<WaterVisualFeature>() != null ||
-                        !waterBounds.Intersects(candidate.collider.bounds) || candidate.distance >= foregroundDistance) continue;
+                        !PlanarPhysics.IntersectsXY(waterBounds, candidate.collider.bounds) || candidate.distance >= foregroundDistance) continue;
                     hit = candidate; foregroundDistance = candidate.distance;
                 }
             }
@@ -177,7 +178,7 @@ namespace Project.Player
             if (!TryGetScreenHit(
                     camera,
                     screenPosition,
-                    out RaycastHit hit) ||
+                    out RaycastHit2D hit) ||
                 hit.collider == null)
             {
                 return false;
@@ -211,23 +212,23 @@ namespace Project.Player
         private IInteractionTarget FindNearestTarget()
         {
             if (player == null) player = GetComponent<PlayerController>();
-            int count = Physics.OverlapSphereNonAlloc(
+            int count = PlanarPhysics.OverlapCircleNonAlloc(
                 transform.position,
                 scanRadius,
                 overlapBuffer,
                 interactionMask.value,
-                QueryTriggerInteraction.Collide);
+                TriggerQuery.Collide);
             while (count == overlapBuffer.Length && overlapBuffer.Length < 4096)
             {
                 System.Array.Resize(ref overlapBuffer, overlapBuffer.Length * 2);
-                count = Physics.OverlapSphereNonAlloc(transform.position, scanRadius, overlapBuffer,
-                    interactionMask.value, QueryTriggerInteraction.Collide);
+                count = PlanarPhysics.OverlapCircleNonAlloc(transform.position, scanRadius, overlapBuffer,
+                    interactionMask.value, TriggerQuery.Collide);
             }
             IInteractionTarget nearest = null;
             float nearestDistance = float.MaxValue;
             for (int index = 0; index < count; index++)
             {
-                Collider collider = overlapBuffer[index];
+                Collider2D collider = overlapBuffer[index];
                 if (collider == null)
                 {
                     continue;
@@ -246,7 +247,7 @@ namespace Project.Player
                         continue;
                     }
 
-                    Vector3 closest = collider.ClosestPoint(transform.position);
+                    Vector3 closest = collider.ClosestWorldPoint(transform.position);
                     float distance = FacingScore(player, collider.bounds.center);
                     if (float.IsPositiveInfinity(distance) ||
                         (closest - transform.position).sqrMagnitude > scanRadius * scanRadius)

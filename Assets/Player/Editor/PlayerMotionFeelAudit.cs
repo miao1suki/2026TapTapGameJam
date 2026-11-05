@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -49,12 +50,12 @@ namespace Project.Player.Editor
         {
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .6f) return;
             EditorApplication.update -= Wait;
-            SimulationMode previous = Physics.simulationMode;
+            SimulationMode2D previous = PlanarPhysics.simulationMode;
             bool passed = false;
             string report;
             try
             {
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 VerifyAttachedWalking();
@@ -81,7 +82,7 @@ namespace Project.Player.Editor
             finally
             {
                 ClearObjects();
-                Physics.simulationMode = previous;
+                PlanarPhysics.simulationMode = previous;
             }
             File.WriteAllText(Path.Combine(Application.dataPath, "../Library/PlayerMotionFeelAudit.txt"), report);
             Debug.Log("PLAYER MOTION FEEL " + report);
@@ -110,7 +111,7 @@ namespace Project.Player.Editor
 
         private static GameObject Solid(string name, Vector3 position, Vector3 size)
         {
-            GameObject shape = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject shape = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             shape.name = name;
             shape.transform.position = position;
             shape.transform.localScale = size;
@@ -122,7 +123,7 @@ namespace Project.Player.Editor
         {
             PlayerController player = Prefab("Assets/_Project/Content/Player/Player.prefab", position).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.interpolation = RigidbodyInterpolation.None;
+            player.Motor.interpolation = RigidbodyInterpolation2D.None;
             return player;
         }
 
@@ -131,7 +132,7 @@ namespace Project.Player.Editor
             GreenHookAbility hook = player.GetComponent<GreenHookAbility>();
             Invoke(hook, "BeginHook", target, target.GreenHookTransform.position);
             Invoke(hook, "BeginPulling");
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             return hook;
         }
 
@@ -141,7 +142,7 @@ namespace Project.Player.Editor
             {
                 if (hook != null) Invoke(hook, "FixedUpdate");
                 Invoke(player, "FixedUpdate");
-                Physics.Simulate(Time.fixedDeltaTime);
+                PlanarPhysics.Simulate(Time.fixedDeltaTime);
             }
         }
 
@@ -150,28 +151,28 @@ namespace Project.Player.Editor
             Solid("Walking ground", new Vector3(0f, -.5f, 0f), new Vector3(40f, 1f, 2f));
             PlayerController player = Player(new Vector3(0f, .5f, 0f));
             ContactCubeMotion cube = Prefab("Assets/_Project/Content/ContactCubes/Red_ContactCube.prefab", new Vector3(4f, .5f, 0f)).GetComponent<ContactCubeMotion>();
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             GreenHookAbility hook = Attach(player, cube);
             Step(hook, player, 1);
             Check(player.IsGreenHookLocomotionAllowed, "target-first pull delegates ordinary walking without releasing the hook");
             Check(player.ControlLockDepth == 1 && player.CanDriveGreenHook, "delegated walking retains exactly the hook control handle");
             player.UpdateGreenHookInput(Vector2.left, false);
-            float start = player.Motor.position.x;
+            float start = player.Motor.WorldPosition().x;
             Step(hook, player, 8);
-            Check(player.Motor.position.x < start - .1f, "movement input moves the player while pulling the target");
+            Check(player.Motor.WorldPosition().x < start - .1f, "movement input moves the player while pulling the target");
             Check(hook.IsHookActive && player.IsGreenHookActive, "walking does not automatically detach");
             player.UpdateGreenHookInput(Vector2.zero, false);
             Step(hook, player, 90);
             Check(player.IsGreenHookLocomotionAllowed && hook.IsHookActive, "contact waiting keeps movement available instead of permanent zero velocity");
-            start = player.Motor.position.x;
+            start = player.Motor.WorldPosition().x;
             player.UpdateGreenHookInput(Vector2.left, false);
             Step(hook, player, 8);
-            Check(player.Motor.position.x < start - .1f, "walking resumes immediately after contact without a jump release");
+            Check(player.Motor.WorldPosition().x < start - .1f, "walking resumes immediately after contact without a jump release");
             IDisposable higherPriority = player.AcquireControlLock(new object());
             player.SetGreenHookLocomotion(hook, true);
             player.SetMoveInput(Vector2.right);
             Step(hook, player, 1);
-            Check(!player.IsGreenHookLocomotionAllowed && !player.CanDriveGreenHook && player.Motor.linearVelocity.sqrMagnitude < .001f,
+            Check(!player.IsGreenHookLocomotionAllowed && !player.CanDriveGreenHook && ((Vector3)player.Motor.linearVelocity).sqrMagnitude < .001f,
                 "an additional Timeline-style lock still owns the motor");
             higherPriority.Dispose();
             Step(hook, player, 1);
@@ -184,7 +185,7 @@ namespace Project.Player.Editor
         {
             PlayerController player = Player(new Vector3(30f, 3f, 0f));
             ContactCubeMotion green = Prefab("Assets/_Project/Content/ContactCubes/Green_ContactCube.prefab", new Vector3(33f, 3f, 0f)).GetComponent<ContactCubeMotion>();
-            green.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
+            green.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
             Component surface = green;
             player.EnterClimb(surface);
             player.SetHorizontalVineSurface(surface, 3f, 2f);
@@ -194,8 +195,8 @@ namespace Project.Player.Editor
             for (int index = 0; index < 24; index++)
             {
                 player.EnterClimb(surface);
-                player.SetHorizontalVineSurface(surface, player.Motor.position.y, 2f);
-                player.ProtectClimbCorner(surface, green.GetComponentInChildren<Collider>().bounds, 2f);
+                player.SetHorizontalVineSurface(surface, player.Motor.WorldPosition().y, 2f);
+                player.ProtectClimbCorner(surface, green.GetComponentInChildren<Collider2D>().bounds, 2f);
                 Step(hook, player, 1);
             }
             Check(!player.IsClimbing && !player.IsHorizontalClimbing && !player.IsClimbCornerProtected,
@@ -205,23 +206,23 @@ namespace Project.Player.Editor
             Check(((Vector3)typeof(PlayerController).GetField("pendingPlatformDelta", Private).GetValue(player)).sqrMagnitude < .0001f,
                 "a rope-controlled player does not accumulate a stale platform teleport");
             player.Motor.linearVelocity = new Vector3(6f, 2f, 0f);
-            Vector3 beforeRelease = player.Motor.linearVelocity;
+            Vector3 beforeRelease = ((Vector3)player.Motor.linearVelocity);
             hook.DriveInput(Vector2.zero, true);
-            Vector3 released = player.Motor.linearVelocity;
+            Vector3 released = ((Vector3)player.Motor.linearVelocity);
             Check(released.x >= beforeRelease.x - .001f && released.y >= beforeRelease.y - .001f,
                 "manual swing release retains the resolved direction and inertia");
             player.EnterClimb(surface);
-            player.SetHorizontalVineSurface(surface, player.Motor.position.y, 2f);
+            player.SetHorizontalVineSurface(surface, player.Motor.WorldPosition().y, 2f);
             Check(!player.CanAutomaticallyClimb && !player.IsClimbing && !player.IsHorizontalClimbing && player.GreenHookClimbProtectionRemaining > .9f,
                 "release grants one second of automatic-climb immunity");
             player.SetMoveInput(Vector2.zero);
-            float releasedX = player.Motor.linearVelocity.x;
+            float releasedX = ((Vector3)player.Motor.linearVelocity).x;
             Step(null, player, 1);
-            Check(Mathf.Abs(player.Motor.linearVelocity.x - releasedX) < .001f,
+            Check(Mathf.Abs(((Vector3)player.Motor.linearVelocity).x - releasedX) < .001f,
                 "ordinary deceleration does not erase swing inertia on the first released physics tick");
             player.SetMoveInput(Vector2.left);
             Step(null, player, 1);
-            Check(player.Motor.linearVelocity.x < releasedX, "opposite movement still brakes released inertia deliberately");
+            Check(((Vector3)player.Motor.linearVelocity).x < releasedX, "opposite movement still brakes released inertia deliberately");
             Set(player, "greenHookClimbBlockedUntil", Time.time + .05f);
             player.EnterClimb(surface);
             Check(!player.IsClimbing, "automatic climb remains blocked throughout the grace timestamp");
@@ -235,10 +236,10 @@ namespace Project.Player.Editor
             Solid("Jump ground", new Vector3(70f, -.5f, 0f), new Vector3(10f, 1f, 2f));
             PlayerController player = Player(new Vector3(70f, .5f, 0f));
             GameObject surface = Solid("Expired horizontal source", new Vector3(75f, 4f, 0f), Vector3.one);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Step(null, player, 2);
             Check(player.IsGrounded, "jump fixture stands on a real solid floor");
-            player.SetHorizontalVineSurface(surface.transform, player.Motor.position.y, 2f);
+            player.SetHorizontalVineSurface(surface.transform, player.Motor.WorldPosition().y, 2f);
             IDictionary leases = (IDictionary)typeof(PlayerController).GetField("horizontalVines", Private).GetValue(player);
             object lease = leases[surface.transform.GetInstanceID()];
             lease.GetType().GetField("renewed").SetValue(lease, Time.fixedTime - .2f);
@@ -248,7 +249,7 @@ namespace Project.Player.Editor
             player.SetJumpHeld(true);
             Check(player.JumpBufferRemaining > 0f, "an ordinary jump is buffered rather than consumed as stale horizontal release");
             Step(null, player, 1);
-            Check(player.Motor.linearVelocity.y > 3f && !player.IsGrounded, "jump starts on the next motor tick without waiting for hold classification");
+            Check(((Vector3)player.Motor.linearVelocity).y > 3f && !player.IsGrounded, "jump starts on the next motor tick without waiting for hold classification");
             Check(player.JumpBufferRemaining <= 0f, "jump buffer is consumed once by the motor");
         }
 
@@ -285,7 +286,7 @@ namespace Project.Player.Editor
                 Check(!hook.IsHookActive && !player.IsGreenHookActive && player.JumpBufferRemaining > 0f,
                     "the real input driver detaches and buffers a grounded jump in the same call");
                 Step(null, player, 1);
-                Check(player.Motor.linearVelocity.y > 3f && !player.IsGrounded,
+                Check(((Vector3)player.Motor.linearVelocity).y > 3f && !player.IsGrounded,
                     "the first grounded jump press launches without a second press after release");
 
                 ClearObjects();
@@ -297,7 +298,7 @@ namespace Project.Player.Editor
                 player.GetComponent<PlayerInputDriver>().Drive(player);
                 Check(!hook.IsHookActive && player.JumpBufferRemaining <= 0f && !player.JumpHeld,
                     "airborne jump input only releases, without injecting an extra air jump or jump hold");
-                Check(player.Motor.linearVelocity.x >= 3f && player.Motor.linearVelocity.y >= 2f,
+                Check(((Vector3)player.Motor.linearVelocity).x >= 3f && ((Vector3)player.Motor.linearVelocity).y >= 2f,
                     "airborne driver release retains the resolved directional velocity");
             }
             finally { GameInput.ClearExternalSource(input); }
@@ -326,7 +327,7 @@ namespace Project.Player.Editor
             PlayerController player = Player(new Vector3(130f, 5f, 0f));
             ClimbableVineFeature vine = Prefab("Assets/_Project/Content/ColorBlocks/Prefabs/Green_Ladder.prefab",
                 new Vector3(131f, 5f, 0f)).GetComponent<ClimbableVineFeature>();
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             Invoke(vine, "RefreshClimbingPlayers");
             Check(player.IsClimbing, "real vine proximity initially registers climbing");
             GreenHookAbility hook = Attach(player, vine);
@@ -342,7 +343,7 @@ namespace Project.Player.Editor
 
             NeutralLadder ladder = Prefab("Assets/_Project/Content/Mechanisms/LadderFront.prefab",
                 new Vector3(130f, 5f, 0f)).GetComponent<NeutralLadder>();
-            Collider body = player.GetComponent<CapsuleCollider>();
+            Collider2D body = player.GetComponent<CapsuleCollider2D>();
             Set(player, "greenHookClimbBlockedUntil", Time.time + 1f);
             player.ExitClimb(vine);
             Invoke(ladder, "Track", body);
@@ -368,10 +369,10 @@ namespace Project.Player.Editor
             PlayerController player = Player(new Vector3(230f, 5f, 0f));
             ClimbableVineFeature vine = Prefab("Assets/_Project/Content/ColorBlocks/Prefabs/Green_Ladder.prefab",
                 new Vector3(231f, 5f, 0f)).GetComponent<ClimbableVineFeature>();
-            Collider sentinel = Solid("Vine overlap sentinel outside every query", new Vector3(250f, 50f, 0f), Vector3.one).GetComponent<Collider>();
-            Collider[] vineHits = (Collider[])typeof(ClimbableVineFeature).GetField("proximityBuffer", Private).GetValue(vine);
+            Collider2D sentinel = Solid("Vine overlap sentinel outside every query", new Vector3(250f, 50f, 0f), Vector3.one).GetComponent<Collider2D>();
+            Collider2D[] vineHits = (Collider2D[])typeof(ClimbableVineFeature).GetField("proximityBuffer", Private).GetValue(vine);
             IDictionary vinePlayers = (IDictionary)typeof(ClimbableVineFeature).GetField("climbingPlayers", Private).GetValue(vine);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             vineHits[0] = sentinel;
             Invoke(vine, "RefreshClimbingPlayers");
             Check(PlayerController.HasAutomaticClimbCandidate && vineHits[0] != sentinel && player.IsClimbing,
@@ -429,7 +430,7 @@ namespace Project.Player.Editor
 
             PlayerController secondPlayer = Player(new Vector3(230f, 5.2f, 0f));
             hook = Attach(player, vine);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             vineHits[0] = sentinel;
             Invoke(vine, "RefreshClimbingPlayers");
             Check(PlayerController.HasAutomaticClimbCandidate && vineHits[0] != sentinel &&
@@ -453,10 +454,17 @@ namespace Project.Player.Editor
             ContactCubeMotion green = Prefab("Assets/_Project/Content/ContactCubes/Green_ContactCube.prefab",
                 new Vector3(271f, 5f, 0f)).GetComponent<ContactCubeMotion>();
             HorizontalCubeVine horizontal = green.GetComponent<HorizontalCubeVine>();
-            sentinel = Solid("Horizontal overlap sentinel outside every query", new Vector3(290f, 50f, 0f), Vector3.one).GetComponent<Collider>();
-            Collider[] horizontalHits = (Collider[])typeof(HorizontalCubeVine).GetField("hits", Private).GetValue(horizontal);
+            sentinel = Solid("Horizontal overlap sentinel outside every query", new Vector3(290f, 50f, 0f), Vector3.one).GetComponent<Collider2D>();
+            Collider2D[] horizontalHits = (Collider2D[])typeof(HorizontalCubeVine).GetField("hits", Private).GetValue(horizontal);
             HashSet<PlayerController> sidePlayers = (HashSet<PlayerController>)typeof(HorizontalCubeVine).GetField("previousSides", Private).GetValue(horizontal);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
+            // A native Box2D pair placed at exact authored contact first resolves its
+            // contact skin. Wait for real support instead of assuming PhysX's first-frame pose.
+            for (int step = 0; step < 20; step++)
+            {
+                PlanarPhysics.Simulate(.02f);
+                Invoke(green, "FixedUpdate");
+            }
             Invoke(green, "FixedUpdate");
             Check(green.IsSettled, "horizontal query fixture has a real physically supported green block");
             horizontalHits[0] = sentinel;
@@ -481,7 +489,7 @@ namespace Project.Player.Editor
                 "horizontal overlap and climbing recover in place immediately after protection expires");
             secondPlayer = Player(new Vector3(272f, 5f, 0f));
             hook = Attach(player, green);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             horizontalHits[0] = sentinel;
             Invoke(horizontal, "FixedUpdate");
             Check(PlayerController.HasAutomaticClimbCandidate && horizontalHits[0] != sentinel && sidePlayers.Count == 1 &&

@@ -2,9 +2,9 @@
 
 ## 模块
 
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Track/DialogueTrack.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Clip/DialogueTimelineClip.cs`
-- `Assets/GJ_Tools/TimelineTools3D/AboutTimeline/Behavior/DialogueBehaviour.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Track/DialogueTrack.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Clip/DialogueTimelineClip.cs`
+- `Assets/GJ_Tools/TimelineTools2D/AboutTimeline/Behavior/DialogueBehaviour.cs`
 - `Assets/_Project/Code/Systems/WordNote/Runtime/WordNoteUI.cs`
 
 ## 绑定契约

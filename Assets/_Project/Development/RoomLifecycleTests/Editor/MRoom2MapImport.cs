@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -173,8 +174,8 @@ public static class MRoom2MapImport
         // No formal flow context: this is an independently playable development scene.
         PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/UI/SharedGameUI.prefab"));
         RenderSettings.ambientMode = AmbientMode.Flat; RenderSettings.ambientLight = Color.white;
-        var light = new GameObject("Directional Light").AddComponent<Light>();
-        light.type = LightType.Directional; light.intensity = .8f; light.transform.rotation = Quaternion.Euler(50, -30, 0);
+        var light = new GameObject("Directional Light").AddComponent<UnityEngine.Rendering.Universal.Light2D>();
+        light.lightType = UnityEngine.Rendering.Universal.Light2D.LightType.Global; light.intensity = .8f; light.transform.rotation = Quaternion.identity;
         Check(EditorSceneManager.SaveScene(scene, ScenePath), "scene saved");
         PlanningSaveStore.Save(SavePath, doc);
         AssetDatabase.Refresh(); AssetDatabase.SaveAssets();
@@ -292,7 +293,7 @@ public static class MRoom2MapImport
             Check(p.GetComponent<RoomResetObject>() != null, "room reset membership " + box.id);
             if (box.isMerged && PlanningDoorUtility.IsLadderEntry(box.propEntryId))
             {
-                var trigger = p.GetComponent<BoxCollider>();
+                var trigger = p.GetComponent<BoxCollider2D>();
                 Check(trigger != null && trigger.isTrigger && Mathf.Abs(trigger.bounds.size.y - box.height) < .001f &&
                     Mathf.Abs(trigger.bounds.center.y - (-world.y - box.height * .5f)) < .001f, "ladder fits authored cells " + box.id);
             }
@@ -388,11 +389,11 @@ public static class MRoom2MapImport
         try { Check(PlanningSceneBuilder.TryApplyDocument(doc, out string message), message); }
         finally { PlanningSceneBuilder.SuppressSceneUndo = false; }
         var placed = Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None);
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
         foreach (var unit in room.boxes.Where(b => b.propEntryId == PlanningDoorUtility.SideLadderEntryId && b.width == 1 && b.height == 1))
         {
             var instance = placed.Single(p => p.PlanningBoxId == unit.id);
-            Check(instance.SizeCells == Vector2Int.one && Mathf.Abs(instance.GetComponent<BoxCollider>().bounds.size.y - 1) < .001f, "unmerged imported ladder stays one cell");
+            Check(instance.SizeCells == Vector2Int.one && Mathf.Abs(instance.GetComponent<BoxCollider2D>().bounds.size.y - 1) < .001f, "unmerged imported ladder stays one cell");
         }
         canvas.MergeSelectedItems();
         Check(room.boxes.Any(b => b.propEntryId == PlanningDoorUtility.SideLadderEntryId && b.height == 6 && b.isMerged), "ladder units merge back to original length");
@@ -403,10 +404,10 @@ public static class MRoom2MapImport
         try { Check(PlanningSceneBuilder.TryApplyDocument(doc, out string message), message); }
         finally { PlanningSceneBuilder.SuppressSceneUndo = false; }
         var old = Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None).Single(p => p.PlanningBoxId == legacy.id);
-        Physics.SyncTransforms();
-        Check(old.SizeCells == new Vector2Int(1, 2) && Mathf.Abs(old.GetComponent<BoxCollider>().bounds.size.y - 2) < .001f,
+        PlanarPhysics.SyncTransforms();
+        Check(old.SizeCells == new Vector2Int(1, 2) && Mathf.Abs(old.GetComponent<BoxCollider2D>().bounds.size.y - 2) < .001f,
             "legacy authored ladder retains two-cell trigger; metadata=" + old.SizeCells + " scale=" + old.transform.lossyScale +
-            " collider=" + old.GetComponent<BoxCollider>().size + " bounds=" + old.GetComponent<BoxCollider>().bounds.size);
+            " collider=" + old.GetComponent<BoxCollider2D>().size + " bounds=" + old.GetComponent<BoxCollider2D>().bounds.size);
     }
 
     private static void VerifyLadderDefaults()
@@ -421,17 +422,17 @@ public static class MRoom2MapImport
             var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             try
             {
-                var collider = go.GetComponent<BoxCollider>();
-                Check(collider.size.y == 1f && collider.center.y == 0f && collider.isTrigger, "default prefab centered unit trigger: " + name);
+                var collider = go.GetComponent<BoxCollider2D>();
+                Check(collider.size.y == 1f && collider.offset.y == 0f && collider.isTrigger, "default prefab centered unit trigger: " + name);
                 var placed = go.AddComponent<LevelEditorPlacedBlock>();
                 placed.Configure(Vector2Int.zero, name, Color.white, false, true);
                 placed.SetSizeCells(new Vector2Int(1, 2));
                 go.GetComponent<MechanismArtworkPresentation>().Refresh(0f);
-                Check(Mathf.Approximately(collider.size.y, 2f) && Mathf.Approximately(collider.center.y, .5f), "old scene metadata preserves original two-cell pivot: " + name);
-                collider.size = new Vector3(collider.size.x, 1f, collider.size.z); collider.center = Vector3.zero;
+                Check(Mathf.Approximately(collider.size.y, 2f) && Mathf.Approximately(collider.offset.y, .5f), "old scene metadata preserves original two-cell pivot: " + name);
+                collider.size = new Vector2(collider.size.x, 1f); collider.offset = Vector3.zero;
                 go.transform.localScale = new Vector3(1, 5, 1); placed.SetSizeCells(new Vector2Int(1, 5));
-                go.GetComponent<MechanismArtworkPresentation>().Refresh(0f); Physics.SyncTransforms();
-                Check(Mathf.Abs(collider.bounds.size.y - 5f) < .001f && collider.center.y == 0f, "scaled long ladder is not expanded twice: " + name);
+                go.GetComponent<MechanismArtworkPresentation>().Refresh(0f); PlanarPhysics.SyncTransforms();
+                Check(Mathf.Abs(collider.bounds.size.y - 5f) < .001f && collider.offset.y == 0f, "scaled long ladder is not expanded twice: " + name);
             }
             finally { Object.DestroyImmediate(go); }
         }
@@ -458,8 +459,8 @@ public static class MRoom2MapImport
             {
                 var placed = ladder.GetComponent<LevelEditorPlacedBlock>();
                 if (placed == null) continue;
-                MechanismArtworkPresentation.Ensure(ladder.gameObject); Physics.SyncTransforms();
-                Check(Mathf.Abs(ladder.GetComponent<BoxCollider>().bounds.size.y - placed.SizeCells.y * placed.CellWorldSize) < .001f,
+                MechanismArtworkPresentation.Ensure(ladder.gameObject); PlanarPhysics.SyncTransforms();
+                Check(Mathf.Abs(ladder.GetComponent<BoxCollider2D>().bounds.size.y - placed.SizeCells.y * placed.CellWorldSize) < .001f,
                     "existing ladder authored height preserved without rebuilding scene: " + path + "/" + ladder.name);
             }
         }

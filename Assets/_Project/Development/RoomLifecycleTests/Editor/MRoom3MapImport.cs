@@ -124,8 +124,8 @@ public static class MRoom3MapImport
         follow.SetRequestedMode(CameraViewMode.Side2D, 0, true);
         PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/UI/SharedGameUI.prefab"));
         RenderSettings.ambientMode = AmbientMode.Flat; RenderSettings.ambientLight = Color.white;
-        var light = new GameObject("Directional Light").AddComponent<Light>(); light.type = LightType.Directional;
-        light.intensity = .8f; light.transform.rotation = Quaternion.Euler(50, -30, 0);
+        var light = new GameObject("Directional Light").AddComponent<UnityEngine.Rendering.Universal.Light2D>(); light.lightType = UnityEngine.Rendering.Universal.Light2D.LightType.Global;
+        light.intensity = .8f; light.transform.rotation = Quaternion.identity;
         Check(EditorSceneManager.SaveScene(scene, ScenePath), "saved scene"); PlanningSaveStore.Save(SavePath, doc);
         AssetDatabase.Refresh(); AssetDatabase.SaveAssets(); EditorSceneManager.OpenScene(ScenePath);
         VerifyScene(doc);

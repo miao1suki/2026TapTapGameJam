@@ -58,9 +58,9 @@ public static class R1LevelBuilder
         PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/UI/SharedGameUI.prefab"));
         new GameObject("R1 Starting Progress").AddComponent<R1SceneSetup>();
         RenderSettings.ambientMode = AmbientMode.Flat; RenderSettings.ambientLight = Color.white;
-        var light = new GameObject("Directional Light").AddComponent<Light>();
-        light.type = LightType.Directional; light.intensity = .8f;
-        light.transform.rotation = Quaternion.Euler(50, -30, 0);
+        var light = new GameObject("Directional Light").AddComponent<UnityEngine.Rendering.Universal.Light2D>();
+        light.lightType = UnityEngine.Rendering.Universal.Light2D.LightType.Global; light.intensity = .8f;
+        light.transform.rotation = Quaternion.identity;
         Check(EditorSceneManager.SaveScene(scene, ScenePath), "scene saved");
         PlanningSaveStore.Save(SavePath, doc);
         AssetDatabase.Refresh(); AssetDatabase.SaveAssets();
@@ -106,7 +106,7 @@ public static class R1LevelBuilder
         Parameter(green3, typeof(ContactCube), "maximumLength", "Integer", "9");
         foreach (var pinned in new[] { green2, green3 })
         {
-            Parameter(pinned, typeof(Rigidbody), "m_Constraints", "Integer", ((int)RigidbodyConstraints.FreezeAll).ToString());
+            Parameter(pinned, typeof(Rigidbody2D), "m_Constraints", "Integer", ((int)RigidbodyConstraints2D.FreezeAll).ToString());
             Parameter(pinned, typeof(CarryableFeature), "m_Enabled", "Boolean", "0");
         }
         for (int row = 11; row <= 22; row++) Box("ladder_" + row, "中性梯子 K" + row, "LadderFront", "K", row);
@@ -115,7 +115,7 @@ public static class R1LevelBuilder
         var fixedGreen = Box("green_horizontal", "固定横向绿方块 X30:AJ30（原横藤蔓）", "Green_ContactCube", "X", 30, 13, 1);
         Parameter(fixedGreen, typeof(ContactCube), "maximumLength", "Integer", "13");
         Parameter(fixedGreen, typeof(ContactCube), "initialLength", "Integer", "13");
-        Parameter(fixedGreen, typeof(Rigidbody), "m_Constraints", "Integer", ((int)RigidbodyConstraints.FreezeAll).ToString());
+        Parameter(fixedGreen, typeof(Rigidbody2D), "m_Constraints", "Integer", ((int)RigidbodyConstraints2D.FreezeAll).ToString());
         Parameter(fixedGreen, typeof(CarryableFeature), "m_Enabled", "Boolean", "0");
         foreach (var vine in room.boxes.Where(b => b.id.StartsWith("r1_vine_", StringComparison.Ordinal)))
             Parameter(vine, typeof(ClimbableVineFeature), "maxGrowthBlocks", "Integer", "0");
@@ -228,15 +228,15 @@ public static class R1LevelBuilder
         {
             var placed = blocks.Single(p => p.PlanningBoxId == id);
             var box = doc.rooms[0].boxes.Single(b => b.id == id);
-            var body = placed.GetComponent<Rigidbody>();
+            var body = placed.GetComponent<Rigidbody2D>();
             var carry = placed.GetComponent<CarryableFeature>();
             Check(placed.GetComponent<ContactCube>().Color == CubeColor.Green && body != null && carry != null, "expected green cube " + id);
-            Check(!box.componentOverrides.Any(v => v.ComponentTypeName == typeof(Rigidbody).FullName && v.PropertyPath == "m_Constraints") &&
+            Check(!box.componentOverrides.Any(v => v.ComponentTypeName == typeof(Rigidbody2D).FullName && v.PropertyPath == "m_Constraints") &&
                 !box.componentOverrides.Any(v => v.ComponentTypeName == typeof(CarryableFeature).FullName && v.PropertyPath == "m_Enabled"),
                 "pin migration has not already been applied " + id);
-            Parameter(box, typeof(Rigidbody), "m_Constraints", "Integer", ((int)RigidbodyConstraints.FreezeAll).ToString());
+            Parameter(box, typeof(Rigidbody2D), "m_Constraints", "Integer", ((int)RigidbodyConstraints2D.FreezeAll).ToString());
             Parameter(box, typeof(CarryableFeature), "m_Enabled", "Boolean", "0");
-            body.constraints = RigidbodyConstraints.FreezeAll;
+            body.constraints = RigidbodyConstraints2D.FreezeAll;
             carry.enabled = false;
             placed.SetPlanningSource(box.id, JsonUtility.ToJson(box.PersistentClone()) + JsonUtility.ToJson(new OverrideSignature
             { values = LevelEditorComponentOverrideUtility.PersistentValues(box.componentOverrides) }), new Vector2Int(box.x, box.y));
@@ -260,7 +260,7 @@ public static class R1LevelBuilder
                 Quaternion.Angle(placed.transform.rotation, before.rotation) < .001f && placed.transform.localScale == before.scale,
                 "exact saved pose unchanged " + placed.PlanningBoxId);
             if (targets.Contains(placed.PlanningBoxId))
-                Check(placed.GetComponent<Rigidbody>().constraints == RigidbodyConstraints.FreezeAll &&
+                Check(placed.GetComponent<Rigidbody2D>().constraints == RigidbodyConstraints2D.FreezeAll &&
                     !placed.GetComponent<CarryableFeature>().enabled, "saved fixed and noncarryable " + placed.PlanningBoxId);
             else Check(placed.PlanningSignature == signatures[placed.PlanningBoxId], "unrelated signature unchanged " + placed.PlanningBoxId);
         }
@@ -327,7 +327,7 @@ public static class R1LevelBuilder
         Check(lower.SharedController.GetComponent<LevelEditorPlacedBlock>().PlanningBoxId == "r1_crank_right", "lower shares right crank progress");
         var fixedGreen = placed.Single(p => p.PlanningBoxId == "r1_green_horizontal");
         Check(fixedGreen.SizeCells == new Vector2Int(13, 1) && fixedGreen.transform.lossyScale == Vector3.one, "13-cell single cube footprint without root scaling");
-        Check(!fixedGreen.GetComponent<CarryableFeature>().enabled && fixedGreen.GetComponent<Rigidbody>().constraints == RigidbodyConstraints.FreezeAll, "green bar pinned and not carryable");
+        Check(!fixedGreen.GetComponent<CarryableFeature>().enabled && fixedGreen.GetComponent<Rigidbody2D>().constraints == RigidbodyConstraints2D.FreezeAll, "green bar pinned and not carryable");
         var door = Object.FindFirstObjectByType<DoorController>();
         Check(door != null && door.Buttons.Count == 2 && door.Buttons.All(b => b.Owner == door && b.Persistent), "one door with both latched buttons");
         Check(Object.FindObjectsByType<DirectionalCurrentFeature>(FindObjectsSortMode.None).Single().VisualFlowDirection == Vector2.up, "upward water");

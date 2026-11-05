@@ -17,7 +17,9 @@ namespace Project.WorldVisibility.Editor
     {
         public static void Run()
         {
-            if (!Application.dataPath.Replace('\\', '/').EndsWith("/Library/ConnectedSpaceProbe/Assets", StringComparison.OrdinalIgnoreCase))
+            string projectPath = Application.dataPath.Replace('\\', '/');
+            if (!projectPath.EndsWith("/Library/ConnectedSpaceProbe/Assets", StringComparison.OrdinalIgnoreCase) &&
+                !projectPath.EndsWith("/Library/Native2DValidation/Library/FlowRetirementProbe/Assets", StringComparison.OrdinalIgnoreCase))
                 throw new Exception("Only use the disposable ConnectedSpaceProbe.");
             int checks = 0;
             try
@@ -142,9 +144,9 @@ namespace Project.WorldVisibility.Editor
                 string report = $"PASS {checks} assertions. Actual PC+Mobile URP/D3D11 GPU: around corner/full original brightness/sealed room/32 unused lamps/one-cell passage/open-close/teleport/door/range fade. Formal scene {segments} segments, {cells} reachable samples, {actualLights} Unity Light components. CPU cold Prepare={formalCold:F3}ms, cached Prepare={formalWarm:F3}ms, moving rebuild={formalRebuild:F3}ms in local Editor; not Android GPU or whole-frame performance. No scenes saved.\n";
                 File.WriteAllText("Library/ConnectedSpaceAudit.txt", report); Debug.Log(report); EditorApplication.Exit(0);
 
-                BoxCollider Wall(string name, Vector2 position, Vector2 size)
+                BoxCollider2D Wall(string name, Vector2 position, Vector2 size)
                 {
-                    var box = new GameObject(name).AddComponent<BoxCollider>(); box.transform.position = position;
+                    var box = new GameObject(name).AddComponent<BoxCollider2D>(); box.transform.position = position;
                     box.size = new Vector3(size.x, size.y, 1); box.gameObject.AddComponent<VisibilityOccluder2D>().shapes = new[] { box }; return box;
                 }
                 void Check(bool ok, string label) { checks++; if (!ok) throw new Exception(label); }

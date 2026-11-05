@@ -1,6 +1,8 @@
 # 2026TapTap 协作入口
 
 Unity **6000.3.12f1**，禁止自动升级 Editor、Packages 或渲染管线。
+
+`codex/2d-long-term-migration` 分支采用原生 2D：Rigidbody2D/Collider2D/Physics2D、URP Renderer2D、XY 正交相机。不得重新引入 3D 物理、透视/环绕镜头、立体墙体或六面贴画。Vector3/Transform、平面 Mesh、粒子和表现层 Z 排序仍属正常 Unity 2D 实现；Z 不参与玩法碰撞。分支迁移及验收见 `Docs/Developer/NATIVE_2D_MIGRATION_20261105.md`。只在本分支交付，未经整合授权不得合入 main。
 比赛版本禁止非 TapTap SDK 的游戏运行时联网、局域网发现及遥测；当前已接入 TapTap SDK，仅 Android 在原生隐私同意后初始化，并只保留 INTERNET 与 ACCESS_NETWORK_STATE。不得使用 Development/Profiler/Script Debugging 构建。唯一网页例外为用户明确要求的隐私政策：仅玩家主动点击时用系统浏览器打开固定 HTTPS 政策页，不使用 WebView 或自动请求。见 `Docs/Developer/OFFLINE_BUILD.md`；不能借此例外引入其他联网组件。
 颜色钥匙与玩家资源最新约定：必须读取 `Docs/Agent/Integration/COLOR_UNLOCK_AND_STANDARD_PLAYER.md`。同色首把只解锁场景颜色，第二把才解锁玩家能力；唯一玩家来源为 `Assets/_Project/Content/Player/Player.prefab`，禁止重建旧的两份玩家。
 唯一工作仓库：**https://github.com/miao1suki/2026TapTapGameJam.git**。

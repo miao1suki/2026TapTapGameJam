@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -75,9 +76,9 @@ public static class MechanismSignalTimelineAudit
     {
         var position = new Vector3(on ? -1f : -10f, 5f, 0f);
         energy.transform.position = position;
-        var body = energy.GetComponent<Rigidbody>();
+        var body = energy.GetComponent<Rigidbody2D>();
         if (body != null) { body.position = position; if (!body.isKinematic) body.linearVelocity = Vector3.zero; }
-        Physics.SyncTransforms(); Call(source, "ScanForEnergy");
+        PlanarPhysics.SyncTransforms(); Call(source, "ScanForEnergy");
         Check(source.IsSignalActive == on, on ? "real neighboring red cube energizes base" : "moving red cube away removes signal");
     }
 
@@ -119,7 +120,7 @@ public static class MechanismSignalTimelineAudit
                     ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                     player = Spawn("Player/Player.prefab", new Vector3(-25f, 12f, 0f)).GetComponent<PlayerController>();
                     player.GetComponent<PlayerInputDriver>().enabled = false;
-                    player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                    player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                     baseline = player.ControlLockDepth;
                     cameraRoot = new GameObject("Signal timeline audit camera");
                     var camera = cameraRoot.AddComponent<Camera>(); camera.orthographic = true;
@@ -131,7 +132,7 @@ public static class MechanismSignalTimelineAudit
                         baselineDirectorIds.Add(existing.GetInstanceID());
                     Check(baselineDirectorIds.Contains(player.GetComponent<PlayableDirector>().GetInstanceID()),
                         "fixture preserves standard player action Director as an unrelated resource");
-                    var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                     floor.transform.position = new Vector3(0f, 4f, 0f); floor.transform.localScale = new Vector3(40f, 1f, 4f);
                     source = Spawn("ColorBlocks/Prefabs/Red_Foundation.prefab", new Vector3(0f, 5f, 0f)).GetComponent<MechanismBaseFeature>();
                     Set(source, "useGravity", false); source.ResetForRoom();

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -156,8 +157,8 @@ namespace Project.GreenHook.Editor
                     Check(Mathf.Abs(pitCube.transform.position.x - pitLava.transform.position.x) < .08f &&
                         pitCube.transform.position.y < pitLava.transform.position.y + 1.35f,
                         "real input lets authored red cube fall into the one-cell lava pit: cube=" +
-                        pitCube.transform.position + " body=" + pitCube.GetComponent<Rigidbody>().position +
-                        " lava=" + pitLava.transform.position + " player=" + player.Motor.position);
+                        pitCube.transform.position + " body=" + pitCube.GetComponent<Rigidbody2D>().position +
+                        " lava=" + pitLava.transform.position + " player=" + player.Motor.WorldPosition());
                     // Exercise the same old-target release collision transition
                     // as the video's target switch, without a second pull moving
                     // the fixture actor away from the infill during landing.
@@ -172,9 +173,9 @@ namespace Project.GreenHook.Editor
                 {
                     Check(!player.IsDead && !player.IsInvulnerable, "landing on authored infill survives without immunity");
                     Check(player.IsGrounded && Mathf.Abs(pitCube.transform.position.y - pitLava.transform.position.y) < .06f &&
-                        Mathf.Abs(player.Motor.position.y - pitCube.transform.position.y - 1) < .12f,
+                        Mathf.Abs(player.Motor.WorldPosition().y - pitCube.transform.position.y - 1) < .12f,
                         "player is physically supported above the filled lava pit, not passing through it: player=" +
-                        player.Motor.position + " cube=" + pitCube.transform.position + " grounded=" + player.IsGrounded);
+                        player.Motor.WorldPosition() + " cube=" + pitCube.transform.position + " grounded=" + player.IsGrounded);
                     Finish("PASS " + checks + " actual MRoom3 input/physics assertions", true);
                 }
             }

@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -102,7 +103,7 @@ public static class PlatformShapePlacementAudit
         {
             Check(placed != null && placed.SizeCells == size, label + " planner builds exactly one correctly sized scene body");
             var feature = placed.GetComponent<MovingPlatformFeature>();
-            var collider = placed.GetComponent<BoxCollider>(); Physics.SyncTransforms();
+            var collider = placed.GetComponent<BoxCollider2D>(); PlanarPhysics.SyncTransforms();
             Check(feature.BodyOrientation == (vertical ? MovingPlatformBodyOrientation.Vertical : MovingPlatformBodyOrientation.Horizontal), label + " serialized body orientation applied to real instance");
             float physicalLength = vertical ? collider.bounds.size.y : collider.bounds.size.x;
             Check(Mathf.Abs(physicalLength - length) < .001f, label + " collider long edge spans exact grid length, including thin crank platform");

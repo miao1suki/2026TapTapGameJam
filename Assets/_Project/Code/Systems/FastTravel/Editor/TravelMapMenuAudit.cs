@@ -30,7 +30,7 @@ namespace Project.FastTravel.Editor
         private static WorldTravelMap map;
         private static GameFlowController flow;
         private static StartMenuController menu;
-        private static RigidbodyConstraints constraints;
+        private static RigidbodyConstraints2D constraints;
         private static bool bodyUsesGravity;
 
         public static void Run()
@@ -90,7 +90,7 @@ namespace Project.FastTravel.Editor
                         if (key.gameObject.scene.handle == worldHandle) key.gameObject.SetActive(false);
                     Check(flow.EnterGameplayImmediatelyForDevelopment(), "explicit fixture entry releases initial menu preview");
                     constraints = player.Motor.constraints;
-                    bodyUsesGravity = player.Motor.useGravity;
+                    bodyUsesGravity = (player.Motor.gravityScale != 0f);
                     CheckGameplay("initial gameplay");
                     phaseAt = Time.unscaledTime;
                     phase = 1;
@@ -120,7 +120,7 @@ namespace Project.FastTravel.Editor
                 {
                     CheckGameplay("gameplay after round trip " + roundTrips);
                     CheckMapReleased("gameplay after round trip " + roundTrips);
-                    Check(player.Motor.constraints == constraints && player.Motor.useGravity == bodyUsesGravity,
+                    Check(player.Motor.constraints == constraints && (player.Motor.gravityScale != 0f) == bodyUsesGravity,
                         "map/menu handoff preserves authored body gravity and constraints");
                     phaseAt = Time.unscaledTime;
                     phase = roundTrips < 2 ? 1 : 4;

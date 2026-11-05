@@ -37,7 +37,7 @@ namespace Project.WorldVisibility.Editor
         {
             foreach (string path in new[] { "Assets/Settings/PC_Renderer.asset", "Assets/Settings/Mobile_Renderer.asset" })
             {
-                var renderer = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(path);
+                var renderer = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(path);
                 WorldVisibilityRendererFeature feature = null;
                 foreach (var item in renderer.rendererFeatures) if (item is WorldVisibilityRendererFeature found) feature = found;
                 if (!feature)

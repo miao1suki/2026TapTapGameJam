@@ -26,11 +26,11 @@ namespace Project.GridArt.Editor
 
         public static HashSet<Vector2Int> SelectedCells(float size, Scene scene)
         {
-            var bounds = new List<Bounds>(); var seen = new HashSet<BoxCollider>();
+            var bounds = new List<Bounds>(); var seen = new HashSet<BoxCollider2D>();
             foreach (var selected in Selection.gameObjects)
             {
                 if (EditorUtility.IsPersistent(selected) || selected.scene != scene) continue;
-                foreach (var box in selected.GetComponentsInChildren<BoxCollider>())
+                foreach (var box in selected.GetComponentsInChildren<BoxCollider2D>())
                     if (!box.isTrigger && box.enabled && seen.Add(box)) bounds.Add(box.bounds);
             }
             return Cells(bounds, size);

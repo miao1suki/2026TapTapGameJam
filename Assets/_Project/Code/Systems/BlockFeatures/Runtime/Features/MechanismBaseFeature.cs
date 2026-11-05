@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project.GreenHook;
@@ -89,28 +90,28 @@ namespace Project.BlockFeatures
         public bool IsTimelinePlaying => cameraShot != null && cameraShot.IsPlaying;
         internal int TimelineSequenceVersion => timelineSequenceVersion;
 
-        private readonly Collider[] overlapBuffer = new Collider[32];
+        private readonly Collider2D[] overlapBuffer = new Collider2D[32];
         private bool powered;
         private bool energyDetected;
         private bool carrySuspended;
-        private Rigidbody carryBody;
+        private Rigidbody2D carryBody;
         private bool beforeCarryKinematic, beforeCarryGravity;
-        private RigidbodyConstraints beforeCarryConstraints;
-        private Rigidbody motionBody;
+        private RigidbodyConstraints2D beforeCarryConstraints;
+        private Rigidbody2D motionBody;
         private GreenHookBodyMotion hookMotion;
-        private Collider supportShape;
-        private RigidbodyConstraints authoredConstraints;
+        private Collider2D supportShape;
+        private RigidbodyConstraints2D authoredConstraints;
         private bool capturedConstraints;
         private Vector3 pendingPlatformDelta;
-        private readonly RaycastHit[] supportHits = new RaycastHit[32];
+        private readonly RaycastHit2D[] supportHits = new RaycastHit2D[32];
         public bool UsesGravity => useGravity;
         internal bool CanRideMovingPlatform => CanRunFeature && motionBody != null && !carrySuspended &&
-            (authoredConstraints & RigidbodyConstraints.FreezePosition) != RigidbodyConstraints.FreezePosition &&
+            (authoredConstraints & RigidbodyConstraints2D.FreezePosition) != RigidbodyConstraints2D.FreezePosition &&
             !VineGrowthLift.IsLifting(motionBody) && (hookMotion == null || !hookMotion.IsHookMoving);
         internal bool CanAcceptPlatformDelta(Vector3 delta) =>
-            ((authoredConstraints & RigidbodyConstraints.FreezePositionX) == 0 || Mathf.Abs(delta.x) < .00001f) &&
-            ((authoredConstraints & RigidbodyConstraints.FreezePositionY) == 0 || Mathf.Abs(delta.y) < .00001f) &&
-            ((authoredConstraints & RigidbodyConstraints.FreezePositionZ) == 0 || Mathf.Abs(delta.z) < .00001f);
+            ((authoredConstraints & RigidbodyConstraints2D.FreezePositionX) == 0 || Mathf.Abs(delta.x) < .00001f) &&
+            ((authoredConstraints & RigidbodyConstraints2D.FreezePositionY) == 0 || Mathf.Abs(delta.y) < .00001f) &&
+            ((authoredConstraints & RigidbodyConstraints2D.None) == 0 || Mathf.Abs(delta.z) < .00001f);
         internal void ApplyPlatformDelta(Vector3 delta)
         {
             if (CanRideMovingPlatform && CanAcceptPlatformDelta(delta)) pendingPlatformDelta += delta;
@@ -127,10 +128,10 @@ namespace Project.BlockFeatures
         protected override void OnAttach()
         {
             suppressNextScanTimeline = false;
-            motionBody = GetComponent<Rigidbody>();
-            if (motionBody == null) motionBody = gameObject.AddComponent<Rigidbody>();
+            motionBody = GetComponent<Rigidbody2D>();
+            if (motionBody == null) motionBody = gameObject.AddComponent<Rigidbody2D>();
             if (!capturedConstraints) { authoredConstraints = motionBody.constraints; capturedConstraints = true; }
-            supportShape = GetComponent<Collider>();
+            supportShape = GetComponent<Collider2D>();
             hookMotion = GetComponent<GreenHookBodyMotion>() ?? gameObject.AddComponent<GreenHookBodyMotion>();
             // Also upgrades already-authored scene instances without a map rebuild.
             if (GetComponent<CarryableFeature>() == null) gameObject.AddComponent<CarryableFeature>();
@@ -153,9 +154,9 @@ namespace Project.BlockFeatures
             hookMotion?.ResetForRoom();
             if (motionBody != null)
             {
-                if (!motionBody.isKinematic) { motionBody.linearVelocity = Vector3.zero; motionBody.angularVelocity = Vector3.zero; }
+                if (!motionBody.isKinematic) { motionBody.linearVelocity = Vector3.zero; motionBody.angularVelocity = 0f; }
                 motionBody.isKinematic = true;
-                motionBody.useGravity = false;
+                motionBody.gravityScale = 0f;
             }
             SetPowered(false);
             suppressSignalTimeline = false;
@@ -191,16 +192,16 @@ namespace Project.BlockFeatures
             if (suspended)
             {
                 hookMotion?.ResetForRoom();
-                carryBody = GetComponent<Rigidbody>();
+                carryBody = GetComponent<Rigidbody2D>();
                 if (carryBody != null)
                 {
                     beforeCarryKinematic = carryBody.isKinematic;
-                    beforeCarryGravity = carryBody.useGravity;
+                    beforeCarryGravity = (carryBody.gravityScale != 0f);
                     beforeCarryConstraints = carryBody.constraints;
                     if (!carryBody.isKinematic)
-                    { carryBody.linearVelocity = Vector3.zero; carryBody.angularVelocity = Vector3.zero; }
+                    { carryBody.linearVelocity = Vector3.zero; carryBody.angularVelocity = 0f; }
                     carryBody.isKinematic = true;
-                    carryBody.useGravity = false;
+                    carryBody.gravityScale = 0f;
                 }
                 energyDetected = false;
                 SetPowered(false);
@@ -210,12 +211,12 @@ namespace Project.BlockFeatures
                 if (carryBody != null)
                 {
                     carryBody.position = transform.position;
-                    carryBody.rotation = transform.rotation;
+                    carryBody.rotation = (transform.rotation).eulerAngles.z;
                     carryBody.constraints = beforeCarryConstraints;
-                    carryBody.useGravity = beforeCarryGravity;
+                    carryBody.gravityScale = (beforeCarryGravity) ? 1f : 0f;
                     carryBody.isKinematic = beforeCarryKinematic;
                     if (!carryBody.isKinematic)
-                    { carryBody.linearVelocity = Vector3.zero; carryBody.angularVelocity = Vector3.zero; }
+                    { carryBody.linearVelocity = Vector3.zero; carryBody.angularVelocity = 0f; }
                     carryBody = null;
                 }
                 RefreshGravityMotion();
@@ -229,8 +230,8 @@ namespace Project.BlockFeatures
             Vector3 delta = pendingPlatformDelta; pendingPlatformDelta = Vector3.zero;
             if (delta.sqrMagnitude > .00000001f && CanRideMovingPlatform && CanAcceptPlatformDelta(delta))
             {
-                motionBody.constraints = authoredConstraints | RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ;
-                motionBody.position += delta;
+                motionBody.constraints = authoredConstraints | RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.None;
+                motionBody.position += (Vector2)delta;
                 if (!motionBody.isKinematic) { motionBody.linearVelocity = Vector3.zero; motionBody.WakeUp(); }
             }
         }
@@ -240,16 +241,16 @@ namespace Project.BlockFeatures
             if (motionBody == null || carrySuspended || VineGrowthLift.IsLifting(motionBody) || (hookMotion != null && hookMotion.IsHookMoving)) return;
             if (!useGravity)
             {
-                if (!motionBody.isKinematic) { motionBody.linearVelocity = Vector3.zero; motionBody.angularVelocity = Vector3.zero; }
-                motionBody.useGravity = false;
+                if (!motionBody.isKinematic) { motionBody.linearVelocity = Vector3.zero; motionBody.angularVelocity = 0f; }
+                motionBody.gravityScale = 0f;
                 motionBody.isKinematic = true;
                 return;
             }
             if (motionBody.isKinematic) motionBody.isKinematic = false;
-            if (!motionBody.useGravity) motionBody.useGravity = true;
+            if (!(motionBody.gravityScale != 0f)) motionBody.gravityScale = 1f;
             bool supported = HasSolidSupport() && Mathf.Abs(motionBody.linearVelocity.y) <= .08f;
-            var constraints = authoredConstraints | RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionZ |
-                RigidbodyConstraints.FreezePositionX | (supported ? RigidbodyConstraints.FreezePositionY : RigidbodyConstraints.None);
+            var constraints = authoredConstraints | RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.None |
+                RigidbodyConstraints2D.FreezePositionX | (supported ? RigidbodyConstraints2D.FreezePositionY : RigidbodyConstraints2D.None);
             if (motionBody.constraints != constraints) motionBody.constraints = constraints;
         }
 
@@ -263,14 +264,14 @@ namespace Project.BlockFeatures
             var half = new Vector3(Mathf.Max(.005f * cell, bounds.extents.x - inset), halfHeight,
                 Mathf.Max(.005f * cell, bounds.extents.z - inset));
             var origin = new Vector3(bounds.center.x, bounds.min.y + inset + halfHeight, bounds.center.z);
-            int count = Physics.BoxCastNonAlloc(origin, half, Vector3.down, supportHits,
-                Quaternion.identity, inset * 2f + supportShape.contactOffset, ~0, QueryTriggerInteraction.Ignore);
+            int count = PlanarPhysics.BoxCastNonAlloc(origin, half, Vector3.down, supportHits,
+                Quaternion.identity, inset * 2f + UnityEngine.Physics2D.defaultContactOffset, ~0, TriggerQuery.Ignore);
             for (int i = 0; i < count; i++)
             {
-                Collider hit = supportHits[i].collider;
+                Collider2D hit = supportHits[i].collider;
                 if (hit == null || hit.transform.IsChildOf(transform) || hit.GetComponentInParent<PlayerController>() != null ||
-                    Physics.GetIgnoreLayerCollision(supportShape.gameObject.layer, hit.gameObject.layer) ||
-                    Physics.GetIgnoreCollision(supportShape, hit)) continue;
+                    PlanarPhysics.GetIgnoreLayerCollision(supportShape.gameObject.layer, hit.gameObject.layer) ||
+                    PlanarPhysics.GetIgnoreCollision(supportShape, hit)) continue;
                 if (supportHits[i].normal.y > .5f) return true;
             }
             return false;
@@ -346,16 +347,16 @@ namespace Project.BlockFeatures
         private bool HasEnergyAt(Vector3 offset, IEnergySource requiredSource = null)
         {
             float cellSize = GridCellWorldSize;
-            int count = Physics.OverlapBoxNonAlloc(
+            int count = PlanarPhysics.OverlapBoxNonAlloc(
                 transform.position + offset,
                 Vector3.one * (cellSize * .45f),
                 overlapBuffer,
                 Quaternion.identity,
                 ~0,
-                QueryTriggerInteraction.Collide);
+                TriggerQuery.Collide);
             for (int index = 0; index < count; index++)
             {
-                Collider collider = overlapBuffer[index];
+                Collider2D collider = overlapBuffer[index];
                 if (collider == null ||
                     collider.gameObject == gameObject)
                 {

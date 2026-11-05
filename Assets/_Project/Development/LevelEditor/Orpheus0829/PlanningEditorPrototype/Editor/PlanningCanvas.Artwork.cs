@@ -202,16 +202,16 @@ namespace PlanningEditorPrototype
             int length = vertical ? rect.height : rect.width;
             int tracks = vertical ? rect.width : rect.height;
             int stride = separateCells ? 1 : nativeLength;
-            var bounds = entry?.Prefab != null ? entry.Prefab.GetComponent<BoxCollider>() : null;
+            var bounds = entry?.Prefab != null ? entry.Prefab.GetComponent<BoxCollider2D>() : null;
             // Resolve author geometry once per box, not once per visible tile.
             float topInset = bounds != null
-                ? (.5f - (bounds.center.y + bounds.size.y * .5f) * entry.Prefab.transform.localScale.y) * (separateCells ? 1 : rect.height)
+                ? (.5f - (bounds.offset.y + bounds.size.y * .5f) * entry.Prefab.transform.localScale.y) * (separateCells ? 1 : rect.height)
                 : 0f;
             bool explicitVertical = platform != null && PlanningPlatformShapeUtility.Orientation(platform,
                 box.hasComponentOverrides ? box.componentOverrides : entry.ComponentValueOverrides) == Project.BlockFeatures.MovingPlatformBodyOrientation.Vertical;
             float leftInset = bounds == null ? 0f : explicitVertical
-                ? (.5f - (bounds.center.y + bounds.size.y * .5f) * entry.Prefab.transform.localScale.y) * rect.width
-                : (.5f + (bounds.center.x - bounds.size.x * .5f) * entry.Prefab.transform.localScale.x) * rect.width;
+                ? (.5f - (bounds.offset.y + bounds.size.y * .5f) * entry.Prefab.transform.localScale.y) * rect.width
+                : (.5f + (bounds.offset.x - bounds.size.x * .5f) * entry.Prefab.transform.localScale.x) * rect.width;
             for (int track = 0; track < tracks; track++)
             for (int start = 0; start < length; start += stride)
             {

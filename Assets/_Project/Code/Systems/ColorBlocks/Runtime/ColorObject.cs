@@ -25,7 +25,7 @@ namespace Project.ColorBlocks
 
         private bool active;
         private bool registered;
-        private Collider[] cachedColliders;
+        private Collider2D[] cachedColliders;
         private bool[] originalTriggerStates;
         private bool[] originalEnabledStates;
         public string BaseColorTypeId => baseColorTypeId;
@@ -129,7 +129,7 @@ namespace Project.ColorBlocks
         private void CacheColliderStates()
         {
             cachedColliders =
-                GetComponentsInChildren<Collider>(true);
+                GetComponentsInChildren<Collider2D>(true);
             originalTriggerStates =
                 new bool[cachedColliders.Length];
             originalEnabledStates =
@@ -138,7 +138,7 @@ namespace Project.ColorBlocks
                  index < cachedColliders.Length;
                  index++)
             {
-                Collider collider = cachedColliders[index];
+                Collider2D collider = cachedColliders[index];
                 originalTriggerStates[index] =
                     collider != null && collider.isTrigger;
                 originalEnabledStates[index] =
@@ -157,7 +157,7 @@ namespace Project.ColorBlocks
                  index < cachedColliders.Length;
                  index++)
             {
-                Collider collider = cachedColliders[index];
+                Collider2D collider = cachedColliders[index];
                 if (collider == null)
                 {
                     continue;

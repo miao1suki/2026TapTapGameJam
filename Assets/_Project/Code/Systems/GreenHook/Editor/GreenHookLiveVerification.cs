@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -73,7 +74,7 @@ namespace Project.GreenHook.Editor
                 }
                 else if (stage == 1)
                 {
-                    start = target.GetComponent<Rigidbody>().position;
+                    start = target.GetComponent<Rigidbody2D>().position;
                     player.GetComponent<PlayerColorWheel>().TrySelectColor("green");
                     input.Pointer = camera.WorldToScreenPoint(start); input.ClickFrame = Time.frameCount + 2;
                     stage = 2; next = Time.time + .8f;
@@ -81,7 +82,7 @@ namespace Project.GreenHook.Editor
                 else if (stage == 2)
                 {
                     Check(hook.IsPulling && player.CanDriveGreenHook, "real loop attached " + variant);
-                    Check(target.GetComponent<Rigidbody>().position.x < start.x - .7f, "real loop target moves " + variant);
+                    Check(target.GetComponent<Rigidbody2D>().position.x < start.x - .7f, "real loop target moves " + variant);
                     Check(player.ControlLockDepth == 1, "real loop owns one control handle " + variant);
                     input.ReleaseFrame = Time.frameCount + 2; stage = 3; next = Time.time + .1f;
                 }
@@ -101,7 +102,7 @@ namespace Project.GreenHook.Editor
                 }
                 else if (stage == 5)
                 {
-                    Check(hook.IsSwinging && player.Motor.linearVelocity.sqrMagnitude > .1f, "real loop swing has momentum");
+                    Check(hook.IsSwinging && ((Vector3)player.Motor.linearVelocity).sqrMagnitude > .1f, "real loop swing has momentum");
                     input.Pointer = camera.WorldToScreenPoint(second.transform.position); input.ClickFrame = Time.frameCount + 2;
                     stage = 6; next = Time.time + .1f;
                 }
@@ -109,7 +110,7 @@ namespace Project.GreenHook.Editor
                 {
                     Transform actual = (Transform)typeof(GreenHookAbility).GetField("targetTransform", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hook);
                     Check(actual == second.transform && hook.IsSwinging, "real loop left click changes anchor");
-                    Check(player.ControlLockDepth == 1 && player.Motor.linearVelocity.sqrMagnitude > .1f,
+                    Check(player.ControlLockDepth == 1 && ((Vector3)player.Motor.linearVelocity).sqrMagnitude > .1f,
                         "real loop retarget keeps movement and single lock");
                     input.ReleaseFrame = Time.frameCount + 2; stage = 7; next = Time.time + .1f;
                 }
@@ -128,37 +129,37 @@ namespace Project.GreenHook.Editor
                 {
                     Check(hook.IsPulling && hook.IsPullingPlayer && player.CanDriveGreenHook && player.ControlLockDepth == 1,
                         "real loop both blocked keep rope " + variant);
-                    Check((player.Motor.position - playerStart).sqrMagnitude < .001f &&
-                        (target.GetComponent<Rigidbody>().position - start).sqrMagnitude < .001f,
+                    Check((player.Motor.WorldPosition() - playerStart).sqrMagnitude < .001f &&
+                        ((Vector3)target.GetComponent<Rigidbody2D>().position - start).sqrMagnitude < .001f,
                         "real loop both blocked do not penetrate " + variant);
                     Object.DestroyImmediate(playerStop); stage = 10; next = Time.time + .12f;
                 }
                 else if (stage == 10)
                 {
-                    Check(hook.IsPullingPlayer && player.Motor.position.x > playerStart.x + .2f &&
-                        (target.GetComponent<Rigidbody>().position - start).sqrMagnitude < .001f,
+                    Check(hook.IsPullingPlayer && player.Motor.WorldPosition().x > playerStart.x + .2f &&
+                        ((Vector3)target.GetComponent<Rigidbody2D>().position - start).sqrMagnitude < .001f,
                         "real loop resumes player pull " + variant);
-                    playerStart = player.Motor.position;
+                    playerStart = player.Motor.WorldPosition();
                     Object.DestroyImmediate(targetStop); stage = 11; next = Time.time + .12f;
                 }
                 else if (stage == 11)
                 {
-                    Check(hook.IsPulling && !hook.IsPullingPlayer && target.GetComponent<Rigidbody>().position.x < start.x - .2f &&
+                    Check(hook.IsPulling && !hook.IsPullingPlayer && target.GetComponent<Rigidbody2D>().position.x < start.x - .2f &&
                         player.IsGreenHookLocomotionAllowed &&
                         ((Vector2)typeof(PlayerController).GetField("greenHookVelocity", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(player)).sqrMagnitude < .0001f,
                         "real loop restores target priority " + variant);
-                    TeleportTarget(player.Motor.position + Vector3.right * 6f);
+                    TeleportTarget(player.Motor.WorldPosition() + Vector3.right * 6f);
                     stage = 12; next = Time.time + .1f;
                 }
                 else if (stage == 12)
                 {
                     Check(hook.IsHookActive, "real loop six-cell separation keeps rope " + variant);
-                    TeleportTarget(player.Motor.position + Vector3.right * 20f);
+                    TeleportTarget(player.Motor.WorldPosition() + Vector3.right * 20f);
                     stage = 13; next = Time.time + .1f;
                 }
                 else if (stage == 13)
                 {
-                    Check(Vector3.Distance(player.Motor.position, target.GetComponent<Rigidbody>().position) > 10f,
+                    Check(Vector3.Distance(player.Motor.WorldPosition(), target.GetComponent<Rigidbody2D>().position) > 10f,
                         "real loop fixture maintains actual overshoot " + variant);
                     Check(hook.IsHookActive, "real loop transient overshoot keeps rope " + variant);
                     stage = 14; next = Time.time + .4f;
@@ -169,7 +170,7 @@ namespace Project.GreenHook.Editor
                         "real loop out-of-range releases " + variant + " time=" + Time.time +
                         " phase=" + typeof(GreenHookAbility).GetField("phase", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hook) +
                         " rangeSince=" + typeof(GreenHookAbility).GetField("outOfRangeSince", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(hook) +
-                        " player=" + player.Motor.position + " target=" + target.GetComponent<Rigidbody>().position +
+                        " player=" + player.Motor.WorldPosition() + " target=" + target.GetComponent<Rigidbody2D>().position +
                         " locks=" + player.ControlLockDepth);
                     Cleanup(); variant++;
                     if (variant < Paths.Length) { SetupBlockedPull(); stage = 8; next = Time.time + .15f; }
@@ -186,16 +187,16 @@ namespace Project.GreenHook.Editor
                 {
                     Check(hook.IsPulling && hook.IsPullingPlayer && player.CanDriveGreenHook,
                         "puzzle blocked red block pulls player across spike gap");
-                    Check(player.Motor.position.x > 3.15f && player.Motor.position.x < 3.45f &&
+                    Check(player.Motor.WorldPosition().x > 3.15f && player.Motor.WorldPosition().x < 3.45f &&
                         !player.IsDead,
                         "puzzle reaches the real narrow shaft without dropping halfway onto spikes");
-                    Check(Mathf.Abs(target.GetComponent<Rigidbody>().position.x - 4.8f) < .05f,
+                    Check(Mathf.Abs(target.GetComponent<Rigidbody2D>().position.x - 4.8f) < .05f,
                         "puzzle red block remains physically blocked by pillar");
                     stage = 17; next = Time.time + .8f;
                 }
                 else if (stage == 17)
                 {
-                    Check(hook.IsHookActive && !player.IsDead && player.IsSwimming && player.Motor.position.y < 3.2f,
+                    Check(hook.IsHookActive && !player.IsDead && player.IsSwimming && player.Motor.WorldPosition().y < 3.2f,
                         "puzzle waiting allows normal gravity into the safe water passage without auto-detaching");
                     input.ReleaseFrame = Time.frameCount + 2;
                     stage = 18; next = Time.time + .8f;
@@ -203,7 +204,7 @@ namespace Project.GreenHook.Editor
                 else
                 {
                     Check(!hook.IsHookActive && !player.IsControlLocked && !player.IsDead &&
-                        player.IsSwimming && player.Motor.position.y < 3.2f,
+                        player.IsSwimming && player.Motor.WorldPosition().y < 3.2f,
                         "puzzle manual release enters underground water passage safely");
                     var signal = floor.GetComponentInChildren<MechanismBaseFeature>();
                     Check(target.GetComponent<ContactCube>().IsEnergyAvailable && signal.IsSignalActive,
@@ -220,17 +221,17 @@ namespace Project.GreenHook.Editor
             player = Instantiate("Player/Player.prefab", new Vector3(0, .5f, 0)).GetComponent<PlayerController>();
             hook = player.GetComponent<GreenHookAbility>();
             target = Instantiate(Paths[variant], new Vector3(3, .5f, 0));
-            floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             floor.transform.position = new Vector3(1, -.5f, 0); floor.transform.localScale = new Vector3(16, 1, 2);
         }
 
         private static void TeleportTarget(Vector3 point)
         {
             // SyncTransforms uploads Transform poses. Match both sides rather
-            // than undoing the interpolated base's Rigidbody-only teleport.
+            // than undoing the interpolated base's Rigidbody2D-only teleport.
             target.transform.position = point;
-            target.GetComponent<Rigidbody>().position = point;
-            Physics.SyncTransforms();
+            target.GetComponent<Rigidbody2D>().position = point;
+            PlanarPhysics.SyncTransforms();
         }
 
         private static void SetupSwing()
@@ -243,7 +244,7 @@ namespace Project.GreenHook.Editor
             floor = new GameObject("HookLiveSupports");
             foreach (var position in new[] { new Vector3(0, 3.25f, 0), new Vector3(2, 3.25f, 0), new Vector3(1, -.5f, 0) })
             {
-                var support = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                var support = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 support.transform.SetParent(floor.transform); support.transform.position = position;
                 support.transform.localScale = position.y < 0 ? new Vector3(16, 1, 2) : new Vector3(1, .5f, 1);
             }
@@ -252,14 +253,14 @@ namespace Project.GreenHook.Editor
         private static void SetupBlockedPull()
         {
             SetupPull();
-            playerStop = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            playerStop = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             playerStop.transform.position = player.transform.position + Vector3.right * .7f;
             playerStop.transform.localScale = new Vector3(.4f, 4f, 2f);
-            targetStop = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            targetStop = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             targetStop.transform.position = target.transform.position - Vector3.right * .7f;
             targetStop.transform.localScale = new Vector3(.4f, 4f, 2f);
-            playerStart = player.Motor.position; start = target.GetComponent<Rigidbody>().position;
-            Physics.SyncTransforms();
+            playerStart = player.Motor.WorldPosition(); start = target.GetComponent<Rigidbody2D>().position;
+            PlanarPhysics.SyncTransforms();
         }
 
         private static void SetupPuzzlePassage()
@@ -287,12 +288,12 @@ namespace Project.GreenHook.Editor
             var signal = foundation.GetComponent<MechanismBaseFeature>();
             typeof(MechanismBaseFeature).GetField("useGravity", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(signal, false);
             camera.transform.position = new Vector3(2, 3, -10);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
         }
 
         private static void PuzzleSolid(string name, Vector3 position, Vector3 size)
         {
-            var obj = GameObject.CreatePrimitive(PrimitiveType.Cube); obj.name = name;
+            var obj = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); obj.name = name;
             obj.transform.SetParent(floor.transform, false); obj.transform.position = position; obj.transform.localScale = size;
         }
 

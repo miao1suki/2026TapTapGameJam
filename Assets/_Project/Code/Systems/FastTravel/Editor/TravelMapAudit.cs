@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -79,9 +80,9 @@ namespace Project.FastTravel.Editor
                     graphic.OnPointerUp(first); graphic.OnEndDrag(second);
                     map.Close(); Check(!player.IsControlLocked && !GameplayPresentationGate.IsSuppressed, "close returns owned control and presentation leases");
                     Check(!player.Motor.isKinematic && !player.IsDead, "close restores body mode without killing player");
-                    var obstruction = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    var obstruction = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                     obstruction.transform.position = new Vector3(10.5f, 1.5f, 0); obstruction.transform.localScale = new Vector3(2, 3, 2);
-                    Physics.SyncTransforms(); string originalRegion = rooms.CurrentRegionId;
+                    PlanarPhysics.SyncTransforms(); string originalRegion = rooms.CurrentRegionId;
                     Check(!player.TryTravelToCheckpoint(destination) && rooms.CurrentRegionId == originalRegion,
                         "blocked destination rejects without changing source room ownership");
                     Object.DestroyImmediate(obstruction);
@@ -188,11 +189,11 @@ namespace Project.FastTravel.Editor
             RespawnAnchorFeature boundary = Point("boundary checkpoint", new Vector3(7.95f, 0, 0), true);
             var data = new SerializedObject(boundary);
             data.FindProperty("respawnRadiusBlocks").floatValue = .75f; data.ApplyModifiedPropertiesWithoutUndo();
-            var obstruction = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var obstruction = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             obstruction.name = "blocks every in-room candidate";
             obstruction.transform.position = new Vector3(7.15f, 1.5f, 0);
             obstruction.transform.localScale = new Vector3(1.4f, 3, 2);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
 
             // Prove there really is a physically valid neighbor fallback. A
             // rejection caused solely by bad fixture geometry would miss the bug.
@@ -211,7 +212,7 @@ namespace Project.FastTravel.Editor
             Check(!player.TryTravelToCheckpoint(boundary) && rooms.CurrentRegionId == origin &&
                 Vector3.Distance(position, player.transform.position) < .001f,
                 "checkpoint search rejects neighboring-room fallback without relocating or changing source owner");
-            Object.DestroyImmediate(obstruction); Object.DestroyImmediate(boundary.gameObject); Physics.SyncTransforms();
+            Object.DestroyImmediate(obstruction); Object.DestroyImmediate(boundary.gameObject); PlanarPhysics.SyncTransforms();
         }
         private static void Setup()
         {
@@ -224,7 +225,7 @@ namespace Project.FastTravel.Editor
                 regions.Add(r);
             }
             rooms = new GameObject("Map rooms").AddComponent<RoomLifecycleManager>(); rooms.Configure(regions, 1f, "");
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube); floor.transform.position = new Vector3(12, -.5f, 0); floor.transform.localScale = new Vector3(24, 1, 4);
+            var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); floor.transform.position = new Vector3(12, -.5f, 0); floor.transform.localScale = new Vector3(24, 1, 4);
             player = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab"), new Vector3(2.5f, .5f, 0), Quaternion.identity).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
             new SerializedObject(rooms).FindProperty("player").objectReferenceValue = player;
@@ -249,7 +250,7 @@ namespace Project.FastTravel.Editor
             locked = Point("locked", new Vector3(12.5f, 0, 0), false);
             bossPoint = Point("boss", new Vector3(18.5f, 0, 0), true); bossPoint.SetBossArenaRespawnPoint(true);
             BossTravelProgress.SetBossRegion(scene, "c");
-            var bossObject = new GameObject("Boss flag fixture", typeof(BoxCollider)); bossObject.transform.position = new Vector3(18.5f, 2, 0);
+            var bossObject = new GameObject("Boss flag fixture", typeof(BoxCollider2D)); bossObject.transform.position = new Vector3(18.5f, 2, 0);
             boss = bossObject.AddComponent<BossController>(); boss.ActivateHealthSystem();
             Check(BossTravelProgress.HasLivingBoss(scene) && !map.CanUseHere,
                 "only the scene with a living Boss reports the restriction");
@@ -259,7 +260,7 @@ namespace Project.FastTravel.Editor
             boss.Kill();
             Check(!BossTravelProgress.HasLivingBoss(scene) && map.CanUseHere,
                 "Boss death restores map availability");
-            Physics.SyncTransforms(); rooms.UpdatePlayerRegion(player);
+            PlanarPhysics.SyncTransforms(); rooms.UpdatePlayerRegion(player);
         }
 
         private static void VerifyBossBlockedNote(int before)

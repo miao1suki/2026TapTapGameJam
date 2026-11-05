@@ -60,8 +60,15 @@ namespace Project.BlockFeatures.Editor
             }
             Vector3 direction = platform.PreviewFirstTarget - platform.PreviewOrigin;
             if (direction.sqrMagnitude > .0001f && ScenePreviewCulling.Visible(new Bounds(platform.PreviewOrigin, Vector3.one * cell * 2)))
-                Handles.ArrowHandleCap(0, platform.PreviewOrigin,
-                    Quaternion.LookRotation(direction), Mathf.Min(cell * .6f, direction.magnitude), EventType.Repaint);
+            {
+                direction.z = 0f;
+                Vector3 end = platform.PreviewOrigin + direction.normalized * Mathf.Min(cell * .6f, direction.magnitude);
+                Vector3 back = -direction.normalized * cell * .15f;
+                Vector3 wing = new Vector3(-direction.y, direction.x, 0f).normalized * cell * .1f;
+                Handles.DrawLine(platform.PreviewOrigin, end);
+                Handles.DrawLine(end, end + back + wing);
+                Handles.DrawLine(end, end + back - wing);
+            }
             if (platform.CrankController != null)
             {
                 Handles.color = new Color(1f,.78f,.3f,.9f);

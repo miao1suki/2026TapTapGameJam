@@ -12,7 +12,7 @@ Shader "Custom/VisibleStencil"
         Pass
         {
             Name "VisibleStencil"
-            Tags { "LightMode" = "UniversalForward" }
+            Tags { "LightMode" = "Universal2D" }
 
             // 不写入颜色
             ColorMask 0

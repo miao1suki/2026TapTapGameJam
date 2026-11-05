@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -64,8 +65,8 @@ namespace Project.ContactCubes.Editor
                     carry = cube.GetComponent<CarryableFeature>(); motion = cube.GetComponent<ContactCubeMotion>();
                     Check(carry != null && PlayerCarryTargetRegistry.All.Contains(carry), "prefab registered");
                     Check(carry.CanCarry(host) && carry.BeginCarry(host), "begin carry");
-                    Check(motion.IsSuspended && cube.GetComponent<Rigidbody>().isKinematic, "physics handed off");
-                    Check(!cube.GetComponentInChildren<BoxCollider>().enabled, "held collision disabled");
+                    Check(motion.IsSuspended && cube.GetComponent<Rigidbody2D>().isKinematic, "physics handed off");
+                    Check(!cube.GetComponentInChildren<BoxCollider2D>().enabled, "held collision disabled");
                     Check(!carry.CanCarry(new Host()), "cannot steal held target");
                     phase = 1; deadline = Time.time + .55f; return;
                 }
@@ -73,20 +74,20 @@ namespace Project.ContactCubes.Editor
                 {
                     Check((cube.transform.position-host.CarryAnchorWorldPosition).sqrMagnitude < .001f, "head animation arrived");
                     Check(cube.State == CubeReactionState.Idle && cube.Length == (color == 1 ? 3 : 1), "held length retained");
-                    var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    var wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                     wall.transform.position = destination + (color == 1 ? Vector3.right * 2 : Vector3.zero);
-                    Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms();
                     Check(!carry.BeginCarryDrop(host,destination), "blocked placement rejected");
                     UnityEngine.Object.DestroyImmediate(wall);
-                    Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms();
                     Check(carry.BeginCarryDrop(host,destination), "drop accepted");
                     Check(motion.IsSuspended, "drop tween owns pose");
                     phase = 2; deadline = Time.time + .23f; return;
                 }
                 if (phase == 2)
                 {
-                    Check(!carry.IsCarryActive && !motion.IsSuspended && !cube.GetComponent<Rigidbody>().isKinematic, "drop releases physics");
-                    Check(cube.GetComponentInChildren<BoxCollider>().enabled, "drop restores collision");
+                    Check(!carry.IsCarryActive && !motion.IsSuspended && !cube.GetComponent<Rigidbody2D>().isKinematic, "drop releases physics");
+                    Check(cube.GetComponentInChildren<BoxCollider2D>().enabled, "drop restores collision");
                     Check(carry.BeginCarry(host), "can carry again");
                     Check(carry.BeginCarryReset(host), "carry reset starts");
                     phase = 3; deadline = Time.time + .31f; return;
@@ -104,10 +105,10 @@ namespace Project.ContactCubes.Editor
                     var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab");
                     player = UnityEngine.Object.Instantiate(playerPrefab,new Vector3(100.5f,.5f,0),Quaternion.identity).GetComponent<PlayerController>();
                     player.GetComponent<PlayerInputDriver>().enabled = false;
-                    player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                    player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                     var redPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ContactCubes/Red_ContactCube.prefab");
                     cube = UnityEngine.Object.Instantiate(redPrefab,new Vector3(101.5f,.5f,0),Quaternion.identity).GetComponent<ContactCube>();
-                    Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms();
                     Check(player.UpdateCarryInput(true,false,false,false) && player.IsCarryPreparing,"existing interact command selects cube");
                     phase = 4; deadline = Time.time + .15f; return;
                 }

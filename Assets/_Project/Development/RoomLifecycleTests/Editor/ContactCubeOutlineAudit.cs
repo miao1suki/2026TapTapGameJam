@@ -34,7 +34,7 @@ public static class ContactCubeOutlineAudit
                     // patched .96 fixture with no logical-size bookkeeping.
                     typeof(ContactCubeMotion).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
                         .Invoke(motion, null);
-                    var shape = owner.GetComponentInChildren<BoxCollider>();
+                    var shape = owner.GetComponentInChildren<BoxCollider2D>();
                     Vector3 physicalSize = shape.size;
                     var visual = MechanismArtworkPresentation.Ensure(owner).Visual;
                     if (color != "Green")
@@ -59,7 +59,7 @@ public static class ContactCubeOutlineAudit
                         Render(visual, color, pixelsPerCell, phase);
                         frames++;
                     }
-                    if (shape.size != physicalSize)
+                    if (((Vector3)shape.size) != physicalSize)
                         throw new InvalidOperationException("Artwork changed the physical clearance box.");
                 }
                 finally { Object.DestroyImmediate(owner); }

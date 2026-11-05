@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -45,10 +46,10 @@ namespace Project.Player.Editor
         {
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling) return;
             EditorApplication.update -= Tick;
-            var oldSimulation = Physics.simulationMode;
+            var oldSimulation = PlanarPhysics.simulationMode;
             try
             {
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
                 for (int kind = 0; kind < 4; kind++)
@@ -59,7 +60,7 @@ namespace Project.Player.Editor
                 Finish(true, "PASS " + checks);
             }
             catch (Exception error) { Debug.LogException(error); Finish(false, error.ToString()); }
-            finally { Physics.simulationMode = oldSimulation; }
+            finally { PlanarPhysics.simulationMode = oldSimulation; }
         }
         private static GameObject Spawn(string path, Vector3 position) =>
             Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/" + path), position, Quaternion.identity);
@@ -67,7 +68,7 @@ namespace Project.Player.Editor
         {
             var result = Spawn("Player/Player.prefab", position).GetComponent<PlayerController>();
             result.GetComponent<PlayerInputDriver>().enabled = false;
-            result.Motor.interpolation = RigidbodyInterpolation.None;
+            result.Motor.interpolation = RigidbodyInterpolation2D.None;
             Move(result, position); return result;
         }
         private static Component Surface(int kind, Vector3 position)
@@ -79,7 +80,7 @@ namespace Project.Player.Editor
             serialized.FindProperty("initialLength").intValue = kind == 0 ? 1 : 4;
             serialized.ApplyModifiedPropertiesWithoutUndo(); cube.ResetForRoom();
             if (kind == 2) obj.transform.rotation = Quaternion.Euler(0, 0, 90);
-            obj.GetComponent<Rigidbody>().isKinematic = true;
+            obj.GetComponent<Rigidbody2D>().isKinematic = true;
             typeof(ContactCubeMotion).GetField("<IsSettled>k__BackingField", Private).SetValue(obj.GetComponent<ContactCubeMotion>(), true);
             return obj.GetComponent<HorizontalCubeVine>();
         }
@@ -90,18 +91,18 @@ namespace Project.Player.Editor
         private static void Step(PlayerController player, params Component[] surfaces)
         {
             foreach (var surface in surfaces) Refresh(surface);
-            Call(player, "FixedUpdate"); Physics.Simulate(.02f); Physics.SyncTransforms();
+            Call(player, "FixedUpdate"); PlanarPhysics.Simulate(.02f); PlanarPhysics.SyncTransforms();
         }
         private static void Move(PlayerController player, Vector3 position)
         {
             player.transform.position = player.Motor.position = position;
-            player.Motor.linearVelocity = Vector3.zero; Physics.SyncTransforms();
+            player.Motor.linearVelocity = Vector3.zero; PlanarPhysics.SyncTransforms();
         }
-        private static Bounds Bounds(Component surface) => surface.GetComponentInChildren<BoxCollider>().bounds;
+        private static Bounds Bounds(Component surface) => surface.GetComponentInChildren<BoxCollider2D>().bounds;
         private static void VerifyUp(int kind, int side)
         {
             var source = Surface(kind, new Vector3(100 + kind * 25, 30 + side * 8, 0));
-            Physics.SyncTransforms(); var bounds = Bounds(source);
+            PlanarPhysics.SyncTransforms(); var bounds = Bounds(source);
             float edge = side > 0 ? bounds.max.x : bounds.min.x;
             var player = Player(new Vector3(edge + side * .52f, bounds.max.y - .2f, 0));
             player.SetMoveInput(Vector2.up);
@@ -109,14 +110,14 @@ namespace Project.Player.Editor
             float maximumStep = 0f;
             for (int i = 0; i < 170; i++)
             {
-                Vector3 before = player.Motor.position;
+                Vector3 before = player.Motor.WorldPosition();
                 Step(player, source); protectedOnce |= player.IsClimbCornerProtected;
-                maximumStep = Mathf.Max(maximumStep, Vector3.Distance(before, player.Motor.position));
-                if (protectedOnce && !player.IsClimbCornerProtected && player.Motor.position.y > bounds.max.y + .35f)
+                maximumStep = Mathf.Max(maximumStep, Vector3.Distance(before, player.Motor.WorldPosition()));
+                if (protectedOnce && !player.IsClimbCornerProtected && player.Motor.WorldPosition().y > bounds.max.y + .35f)
                 { completed = true; break; }
             }
             string label = kind + "/" + side;
-            Check(protectedOnce && completed, "upward outer corner completes " + label + " at " + player.Motor.position);
+            Check(protectedOnce && completed, "upward outer corner completes " + label + " at " + player.Motor.WorldPosition());
             Check(maximumStep < .15f, "corner uses bounded motor velocity, not teleport " + label);
             // A fresh corner remains explicitly releasable through the existing jump path.
             Object.DestroyImmediate(player.gameObject);
@@ -125,7 +126,7 @@ namespace Project.Player.Editor
             for (int i = 0; i < 10 && !player.IsClimbCornerProtected; i++) Step(player, source);
             Check(player.IsClimbCornerProtected, "fresh player attaches through surface " + label);
             player.RequestJump();
-            Check(!player.IsClimbCornerProtected && !player.IsHorizontalClimbing && player.Motor.linearVelocity.y < 0,
+            Check(!player.IsClimbCornerProtected && !player.IsHorizontalClimbing && ((Vector3)player.Motor.linearVelocity).y < 0,
                 "jump drops out of upward corner " + label);
             Step(player, source); Check(!player.IsClimbCornerProtected, "jump reattach cooldown " + label);
             Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(source.gameObject);
@@ -133,16 +134,16 @@ namespace Project.Player.Editor
         private static void VerifyCoveredTop()
         {
             var source = Surface(3, new Vector3(210, 40, 0));
-            var roof = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var roof = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             roof.transform.position = source.transform.position + Vector3.up;
             // A grown segment can be a child of the root; its collider must not be excluded.
             roof.transform.SetParent(source.transform, true);
-            Physics.SyncTransforms(); var bounds = Bounds(source);
+            PlanarPhysics.SyncTransforms(); var bounds = Bounds(source);
             var player = Player(new Vector3(bounds.max.x + .52f, bounds.max.y - .2f, 0));
             player.SetMoveInput(Vector2.up); bool protectedOnce = false;
             for (int i = 0; i < 4; i++) { Step(player, source); protectedOnce |= player.IsClimbCornerProtected; }
             Check(!protectedOnce, "covered root top does not start premature flip");
-            Object.DestroyImmediate(roof); Physics.SyncTransforms();
+            Object.DestroyImmediate(roof); PlanarPhysics.SyncTransforms();
             for (int i = 0; i < 4; i++) { Step(player, source); protectedOnce |= player.IsClimbCornerProtected; }
             Check(protectedOnce, "removing actual top obstruction permits flip");
             source.gameObject.SetActive(false);
@@ -156,7 +157,7 @@ namespace Project.Player.Editor
                 .GetComponent<ClimbableVineFeature>();
             upper.transform.SetParent(root.transform, true);
             root.ConfigureInitialGrowth(new[] { upper.gameObject });
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             var player = Player(root.transform.position + new Vector3(1.02f, .25f, 0));
             player.SetMoveInput(Vector2.up); bool upperProtected = false, rootProtected = false, completed = false;
             for (int i = 0; i < 180; i++)
@@ -164,7 +165,7 @@ namespace Project.Player.Editor
                 Step(player, root, upper);
                 rootProtected |= player.IsClimbCornerProtectedBy(root);
                 upperProtected |= player.IsClimbCornerProtectedBy(upper);
-                if (upperProtected && !player.IsClimbCornerProtected && player.Motor.position.y > Bounds(upper).max.y + .35f)
+                if (upperProtected && !player.IsClimbCornerProtected && player.Motor.WorldPosition().y > Bounds(upper).max.y + .35f)
                 { completed = true; break; }
             }
             Check(!rootProtected && upperProtected && completed, "linked vine passes buried edge and wraps only exposed upper segment");
@@ -175,20 +176,20 @@ namespace Project.Player.Editor
             foreach (int side in new[] { -1, 1 })
             {
                 var source = Surface(1, new Vector3(270, 40 + side * 10, 0));
-                Physics.SyncTransforms(); var bounds = Bounds(source);
+                PlanarPhysics.SyncTransforms(); var bounds = Bounds(source);
                 float edge = side > 0 ? bounds.max.x : bounds.min.x;
                 var player = Player(new Vector3(edge - side * .1f, bounds.max.y + .52f, 0));
                 player.SetMoveInput(Vector2.right * side);
                 for (int i = 0; i < 210; i++) Step(player, source);
-                Check(player.IsHorizontalClimbing && player.Motor.position.y < bounds.min.y - .35f &&
-                    player.Motor.position.y > bounds.min.y - .8f, "existing top-to-underside wrap preserved " + side);
+                Check(player.IsHorizontalClimbing && player.Motor.WorldPosition().y < bounds.min.y - .35f &&
+                    player.Motor.WorldPosition().y > bounds.min.y - .8f, "existing top-to-underside wrap preserved " + side);
                 player.enabled = false; player.enabled = true;
                 Move(player, new Vector3(edge - side * .1f, bounds.min.y - .52f, 0));
-                player.SetHorizontalVineSurface(source, player.Motor.position.y, 2f);
+                player.SetHorizontalVineSurface(source, player.Motor.WorldPosition().y, 2f);
                 player.SetMoveInput(Vector2.right * side);
                 for (int i = 0; i < 210; i++) Step(player, source);
-                Check(player.IsHorizontalClimbing && player.Motor.position.y > bounds.max.y + .35f &&
-                    player.Motor.position.y < bounds.max.y + .8f, "existing underside-to-top wrap preserved " + side);
+                Check(player.IsHorizontalClimbing && player.Motor.WorldPosition().y > bounds.max.y + .35f &&
+                    player.Motor.WorldPosition().y < bounds.max.y + .8f, "existing underside-to-top wrap preserved " + side);
                 Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(source.gameObject);
             }
         }

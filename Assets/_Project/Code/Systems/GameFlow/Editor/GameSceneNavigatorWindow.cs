@@ -262,7 +262,7 @@ namespace Project.GameFlow.Editor
                 return;
             }
 
-            GameObject goalObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject goalObject = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             goalObject.name = id == GameFlowSceneId.Level03
                 ? "LevelGoal_EndGame"
                 : $"LevelGoal_To_{DefaultNext(id)}";
@@ -270,7 +270,7 @@ namespace Project.GameFlow.Editor
             goalObject.transform.SetParent(FindContentRoot(context).transform, true);
             goalObject.transform.position = ResolvePlacementPosition() + Vector3.up;
             goalObject.transform.localScale = new Vector3(1.2f, 2.4f, 1.2f);
-            BoxCollider collider = goalObject.GetComponent<BoxCollider>();
+            BoxCollider2D collider = goalObject.GetComponent<BoxCollider2D>();
             collider.isTrigger = true;
             LevelGoal goal = goalObject.AddComponent<LevelGoal>();
             bool endsGame = id == GameFlowSceneId.Level03;

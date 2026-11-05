@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,7 +21,7 @@ public static class TimelineVineLiftAudit
     private sealed class Load
     {
         public ClimbableVineFeature Vine;
-        public Rigidbody Body;
+        public Rigidbody2D Body;
         public float InitialY;
         public bool Blocked, Intermediate;
         public int Rise = 1;
@@ -31,12 +32,12 @@ public static class TimelineVineLiftAudit
     private static int phase, checks;
     private static Load reset, hook, carry, dynamicCeiling;
     private static Load liveBlue, burn, disabled;
-    private static Rigidbody stackTop;
+    private static Rigidbody2D stackTop;
     private static PlayerController rider;
     private static float riderStart;
     private static RoomLifecycleManager manager;
     private static ContactTimelineTrigger trigger;
-    private static Collider lateCeiling;
+    private static Collider2D lateCeiling;
     private static readonly BindingFlags Hidden = BindingFlags.Instance | BindingFlags.NonPublic;
     private static void Set(object target, string field, object value)
     {
@@ -58,20 +59,20 @@ public static class TimelineVineLiftAudit
         AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/" + path), position, Quaternion.identity);
     private static GameObject Cube(string name, Vector3 position)
     {
-        var item = GameObject.CreatePrimitive(PrimitiveType.Cube); item.name = name; item.transform.position = position; return item;
+        var item = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); item.name = name; item.transform.position = position; return item;
     }
     private static Load Case(float x, string path = null, bool blocked = false)
     {
         var root = Spawn("ColorBlocks/Prefabs/Green_Ladder.prefab", new Vector3(x, 0, 0)).GetComponent<ClimbableVineFeature>();
         Set(root, "maxGrowthBlocks", 3); Set(root, "growthInterval", .6f); Set(root, "growInstantly", true);
         var item = path == null ? Cube("Gravity load", new Vector3(x, 1, 0)) : Spawn(path, new Vector3(x, 1, 0));
-        var body = item.GetComponent<Rigidbody>();
-        if (body == null) body = item.AddComponent<Rigidbody>();
+        var body = item.GetComponent<Rigidbody2D>();
+        if (body == null) body = item.AddComponent<Rigidbody2D>();
         // Isolate load-controller physics from red burning / blue auto-growth;
         // separate unmuted cases below verify that these reactions still happen.
         var reaction = item.GetComponent<ContactCube>();
         if (reaction != null) reaction.SetHookSuspended(true);
-        body.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionZ;
+        body.constraints = RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.None;
         var load = new Load { Vine = root, Body = body, InitialY = 1, Blocked = blocked };
         loads.Add(load); return load;
     }
@@ -103,9 +104,9 @@ public static class TimelineVineLiftAudit
                 Case(0); Case(8, "ContactCubes/Red_ContactCube.prefab");
                 Case(16, "ContactCubes/Green_ContactCube.prefab"); Case(24, "ContactCubes/Blue_ContactCube.prefab");
                 var stack = Case(32, "ContactCubes/Red_ContactCube.prefab");
-                stackTop = Cube("Stack upper gravity box", new Vector3(32, 2, 0)).AddComponent<Rigidbody>();
-                stackTop.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionZ;
-                var fixedBody = Case(40, blocked: true); fixedBody.Body.useGravity = false; fixedBody.Body.constraints = RigidbodyConstraints.FreezeAll;
+                stackTop = Cube("Stack upper gravity box", new Vector3(32, 2, 0)).AddComponent<Rigidbody2D>();
+                stackTop.constraints = RigidbodyConstraints2D.FreezeRotation | RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.None;
+                var fixedBody = Case(40, blocked: true); fixedBody.Body.gravityScale = 0f; fixedBody.Body.constraints = RigidbodyConstraints2D.FreezeAll;
                 var ceiling = Case(48, blocked: true); Cube("Ceiling", new Vector3(48, 2.5f, 0));
                 Case(56, "ColorBlocks/Prefabs/Red_Foundation.prefab");
                 var noGravityBase = Case(64, "ColorBlocks/Prefabs/Red_Foundation.prefab", true);
@@ -114,7 +115,7 @@ public static class TimelineVineLiftAudit
                 hook = Case(80, "ContactCubes/Red_ContactCube.prefab");
                 carry = Case(88, "ContactCubes/Blue_ContactCube.prefab");
                 dynamicCeiling = Case(96);
-                lateCeiling = Cube("Late ceiling", new Vector3(96, 2.6f, 0)).GetComponent<Collider>(); lateCeiling.enabled = false;
+                lateCeiling = Cube("Late ceiling", new Vector3(96, 2.6f, 0)).GetComponent<Collider2D>(); lateCeiling.enabled = false;
                 var ridden = Case(104, "ContactCubes/Red_ContactCube.prefab");
                 rider = Spawn("Player/Player.prefab", new Vector3(104, 2, 0)).GetComponent<PlayerController>();
                 rider.GetComponent<PlayerInputDriver>().enabled = false;
@@ -144,12 +145,12 @@ public static class TimelineVineLiftAudit
                 foreach (Load load in loads)
                 {
                     Check(load.Vine.isActiveAndEnabled, "unlocked vine attached at " + load.Vine.transform.position.x);
-                    load.InitialY = load.Body.position.y; load.Vine.GrowTo(load.Rise);
+                    load.InitialY = load.Body.WorldPosition().y; load.Vine.GrowTo(load.Rise);
                 }
                 riderStart = rider.transform.position.y;
                 Check(trigger.ManagedCollider.enabled && trigger.ManagedCollider.isTrigger, "invisible Timeline collider remains an enabled trigger");
                 Check(!trigger.GetComponent<Renderer>().enabled && trigger.GetComponentsInChildren<SpriteRenderer>(true).Length == 0, "Timeline has neither visible cube nor game photo renderer");
-                trigger.OnTriggerEnter(rider.GetComponent<Collider>());
+                trigger.OnTriggerEnter2D(rider.GetComponent<Collider2D>());
                 Check(trigger.HasTriggered, "hidden Timeline still accepts actual standard-player collider");
                 trigger.enabled = false;
                 Check(!trigger.GetComponent<Renderer>().enabled && !rider.IsControlLocked, "disable does not reveal trigger or leave a control lock");
@@ -159,23 +160,23 @@ public static class TimelineVineLiftAudit
             else if (phase == 2)
             {
                 foreach (Load load in loads)
-                    if (load.Body.position.y > load.InitialY + .02f && load.Body.position.y < load.InitialY + .95f) load.Intermediate = true;
+                    if (load.Body.WorldPosition().y > load.InitialY + .02f && load.Body.WorldPosition().y < load.InitialY + .95f) load.Intermediate = true;
                 if (Time.time - phaseTime > .2f)
                 {
                     Check(VineGrowthLift.IsLifting(hook.Body), "hook test is inside a real incremental lift");
                     hook.Body.GetComponent<ContactCubeMotion>().BeginGreenHookPull();
-                    Check(!VineGrowthLift.IsLifting(hook.Body) && hook.Body.useGravity && !hook.Body.isKinematic, "green hook cancels lift ownership and preserves target gravity");
+                    Check(!VineGrowthLift.IsLifting(hook.Body) && (hook.Body.gravityScale != 0f) && !hook.Body.isKinematic, "green hook cancels lift ownership and preserves target gravity");
                     carry.Body.GetComponent<ContactCubeMotion>().SuspendMotion(true);
                     Check(!VineGrowthLift.IsLifting(carry.Body) && carry.Body.isKinematic, "carry suspension takes over without dual body writers");
                     Check(VineGrowthLift.IsLifting(reset.Body), "room reset occurs during an active lift");
                     manager.ResetRegion("test");
-                    Check(!VineGrowthLift.IsLifting(reset.Body) && reset.Vine.CurrentGrowthBlocks == 0 && Mathf.Abs(reset.Body.position.y - 1) < .05f && reset.Body.useGravity,
+                    Check(!VineGrowthLift.IsLifting(reset.Body) && reset.Vine.CurrentGrowthBlocks == 0 && Mathf.Abs(reset.Body.position.y - 1) < .05f && (reset.Body.gravityScale != 0f),
                         "room reset atomically restores authored body and vine growth");
-                    lateCeiling.enabled = true; Physics.SyncTransforms();
+                    lateCeiling.enabled = true; PlanarPhysics.SyncTransforms();
                     burn.Vine.BeginBurn();
-                    Check(!VineGrowthLift.IsLifting(burn.Body) && burn.Body.useGravity, "burning immediately cancels an active load lease");
+                    Check(!VineGrowthLift.IsLifting(burn.Body) && (burn.Body.gravityScale != 0f), "burning immediately cancels an active load lease");
                     disabled.Vine.gameObject.SetActive(false);
-                    Check(!VineGrowthLift.IsLifting(disabled.Body) && disabled.Body.useGravity, "disabling the vine immediately restores its load physics");
+                    Check(!VineGrowthLift.IsLifting(disabled.Body) && (disabled.Body.gravityScale != 0f), "disabling the vine immediately restores its load physics");
                     phase = 3; phaseTime = Time.time;
                 }
             }
@@ -184,7 +185,7 @@ public static class TimelineVineLiftAudit
                 foreach (Load load in loads)
                 {
                     if (load == reset || load == hook || load == carry || load == dynamicCeiling || load == burn || load == disabled) continue;
-                    float dy = load.Body.position.y - load.InitialY;
+                    float dy = load.Body.WorldPosition().y - load.InitialY;
                     string label = "x=" + load.Vine.transform.position.x + " delta=" + dy;
                     if (load.Blocked)
                         Check(load.Vine.CurrentGrowthBlocks == 0 && load.Vine.IsGrowthBlocked && Mathf.Abs(dy) < .08f, "non-gravity or ceiling obstruction stops growth: " + label);
@@ -192,17 +193,17 @@ public static class TimelineVineLiftAudit
                     {
                         Check(load.Vine.CurrentGrowthBlocks == load.Rise && Mathf.Abs(dy - load.Rise) < .1f, "gravity load rises authored cell count " + load.Rise + ": " + label);
                         Check(load.Intermediate, "lift passes intermediate physical positions instead of teleporting: " + label);
-                        Check(!VineGrowthLift.IsLifting(load.Body) && load.Body.useGravity && !load.Body.isKinematic, "body gravity and control ownership restored: " + label);
+                        Check(!VineGrowthLift.IsLifting(load.Body) && (load.Body.gravityScale != 0f) && !load.Body.isKinematic, "body gravity and control ownership restored: " + label);
                     }
-                    Check(Mathf.Abs(load.Body.position.x - load.Vine.transform.position.x) < .05f, "no unintended sideways push: " + label);
+                    Check(Mathf.Abs(load.Body.WorldPosition().x - load.Vine.transform.position.x) < .05f, "no unintended sideways push: " + label);
                 }
-                Check(dynamicCeiling.Vine.CurrentGrowthBlocks == 0 && dynamicCeiling.Vine.IsGrowthBlocked && !VineGrowthLift.IsLifting(dynamicCeiling.Body) && dynamicCeiling.Body.useGravity,
+                Check(dynamicCeiling.Vine.CurrentGrowthBlocks == 0 && dynamicCeiling.Vine.IsGrowthBlocked && !VineGrowthLift.IsLifting(dynamicCeiling.Body) && (dynamicCeiling.Body.gravityScale != 0f),
                     "new obstruction during growth aborts safely and restores physics");
-                Check(Mathf.Abs(stackTop.position.y-3) < .1f && stackTop.useGravity && !VineGrowthLift.IsLifting(stackTop), "entire stacked load rises one cell and releases physics");
+                Check(Mathf.Abs(stackTop.position.y-3) < .1f && (stackTop.gravityScale != 0f) && !VineGrowthLift.IsLifting(stackTop), "entire stacked load rises one cell and releases physics");
                 Check(liveBlue.Vine.CurrentGrowthBlocks == 1 && Mathf.Abs(liveBlue.Body.position.y-2) < .1f, "unmuted blue contact triggers growth and is lifted by real gameplay");
                 Check(Mathf.Abs(rider.transform.position.y - riderStart - 1) < .18f && !rider.IsControlLocked && !rider.IsDead,
                     "standard player riding a lifted box moves one cell and remains controllable: dy=" + (rider.transform.position.y-riderStart));
-                Check(!Physics.GetIgnoreCollision(loads.Find(load=>Mathf.Abs(load.Vine.transform.position.x-104)<.1f).Body.GetComponentInChildren<Collider>(), rider.GetComponent<Collider>()), "lift keeps player-to-box collision enabled");
+                Check(!PlanarPhysics.GetIgnoreCollision(loads.Find(load=>Mathf.Abs(load.Vine.transform.position.x-104)<.1f).Body.GetComponentInChildren<Collider2D>(), rider.GetComponent<Collider2D>()), "lift keeps player-to-box collision enabled");
                 loads[1].Body.GetComponent<ContactCube>().SetHookSuspended(false);
                 phase = 4; phaseTime = Time.time;
             }

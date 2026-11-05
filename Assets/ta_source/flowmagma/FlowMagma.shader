@@ -18,7 +18,7 @@ Shader "TapTap/FlowMagma/Flowing Body"
         Pass
         {
             Name "FlowMagma"
-            Tags { "LightMode"="UniversalForward" }
+            Tags { "LightMode"="Universal2D" }
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
             Cull Off

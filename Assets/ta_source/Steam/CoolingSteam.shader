@@ -28,7 +28,7 @@ Shader "TapTap/Steam/岩浆冷却蒸汽"
         Pass
         {
             Name "CoolingSteamUnlit"
-            Tags { "LightMode" = "UniversalForward" }
+            Tags { "LightMode" = "Universal2D" }
 
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off

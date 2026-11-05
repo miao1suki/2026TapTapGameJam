@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Reflection;
@@ -48,14 +49,14 @@ public static class HazardContactAudit
         if (EditorApplication.timeSinceStartup - started > 90) { Finish(false, "Timeout"); return; }
         if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .15f) return;
         EditorApplication.update -= Tick;
-        var previous = Physics.simulationMode;
+        var previous = PlanarPhysics.simulationMode;
         try
         {
             // This audit intentionally creates many deaths; never play their audio to the author.
             _ = Project.Audio.AudioManager.Instance;
             AudioListener.volume = 0f;
             AudioListener.pause = true;
-            Physics.simulationMode = SimulationMode.Script; checks = 0;
+            PlanarPhysics.simulationMode = SimulationMode2D.Script; checks = 0;
             ColorRuntimeService.Instance.ResetProgress();
             foreach (string direction in new[] { "上", "下", "左", "右" }) VerifySpike(direction);
             VerifyProtectionAndReset(); VerifyRootTrigger();
@@ -66,7 +67,7 @@ public static class HazardContactAudit
             EditorApplication.update += VerifyLavaResetAfterFrame;
         }
         catch (Exception error) { Finish(false, error.ToString()); }
-        finally { Physics.simulationMode = previous; }
+        finally { PlanarPhysics.simulationMode = previous; }
     }
     private static GameObject Spawn(string path, Vector3 position) => Object.Instantiate(
         AssetDatabase.LoadAssetAtPath<GameObject>(path), position, Quaternion.identity);
@@ -74,7 +75,7 @@ public static class HazardContactAudit
     {
         var player = Spawn("Assets/_Project/Content/Player/Player.prefab", position).GetComponent<PlayerController>();
         player.GetComponent<PlayerInputDriver>().enabled = false;
-        player.Motor.useGravity = false; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+        player.Motor.gravityScale = 0f; player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
         Set(player, "invulnerableUntil", 0f);
         return player;
     }
@@ -82,8 +83,8 @@ public static class HazardContactAudit
         .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, value);
     private static void Step(PlayerController player)
     {
-        player.Motor.WakeUp(); Physics.SyncTransforms();
-        for (int i = 0; i < 3; i++) Physics.Simulate(.02f);
+        player.Motor.WakeUp(); PlanarPhysics.SyncTransforms();
+        for (int i = 0; i < 3; i++) PlanarPhysics.Simulate(.02f);
     }
     private static void VerifySpike(string direction)
     {
@@ -91,12 +92,12 @@ public static class HazardContactAudit
         var spike = Spawn("Assets/_Project/Content/WorldItems/Spike_" + direction + ".prefab", origin);
         var player = Player(origin + Vector3.left * 3); Step(player);
         Check(!player.IsDead, "outside spike remains safe " + direction);
-        var shape = spike.GetComponentInChildren<MeshCollider>();
-        Check(shape != null && shape.convex && shape.isTrigger && spike.GetComponent<NeutralSpike>() != null,
+        var shape = spike.GetComponentInChildren<PolygonCollider2D>();
+        Check(shape != null && shape.pathCount > 0 && shape.isTrigger && spike.GetComponent<NeutralSpike>() != null,
             "real authored directional trigger " + direction);
-        player.Motor.position = origin; player.transform.position = origin; Physics.SyncTransforms();
-        var playerShape = player.GetComponent<Collider>();
-        Check(Physics.ComputePenetration(shape, shape.transform.position, shape.transform.rotation,
+        player.Motor.position = origin; player.transform.position = origin; PlanarPhysics.SyncTransforms();
+        var playerShape = player.GetComponent<Collider2D>();
+        Check(PlanarPhysics.ComputePenetration(shape, shape.transform.position, shape.transform.rotation,
             playerShape, playerShape.transform.position, playerShape.transform.rotation, out _, out _), "physical overlap verified " + direction);
         Step(player);
         Check(player.IsDead, "real child trigger enters unified death " + direction);
@@ -131,7 +132,7 @@ public static class HazardContactAudit
     {
         Vector3 origin = new Vector3(220, 20, 0);
         var root = new GameObject("Root spike"); root.transform.position = origin;
-        root.AddComponent<BoxCollider>().isTrigger = true; root.AddComponent<NeutralSpike>();
+        root.AddComponent<BoxCollider2D>().isTrigger = true; root.AddComponent<NeutralSpike>();
         var player = Player(origin + Vector3.left * 3); Step(player); Move(player, origin);
         Check(player.IsDead, "root-collider spike remains supported");
         Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(root);
@@ -151,7 +152,7 @@ public static class HazardContactAudit
                 new RectInt(0,0,1,1), new RectInt(5,0,1,1), new RectInt(2,2,1,1) });
         var reset = spike.AddComponent<RoomResetObject>();
         spike.transform.SetParent(null, true); Object.DestroyImmediate(staging);
-        var volumes = spike.GetComponentsInChildren<MeshCollider>();
+        var volumes = spike.GetComponentsInChildren<PolygonCollider2D>();
         int active = 0; foreach (var volume in volumes) if (volume.enabled) active++;
         Check(active == (irregular ? 3 : 48), "one precise prism per occupied merged cell " + direction + "/" + irregular);
         int[] cells = irregular ? new[] { 0, 5, 14 } : new[] { 0, 24, 47 };
@@ -205,17 +206,17 @@ public static class HazardContactAudit
         if (EditorApplication.timeSinceStartup - started > 90) { Finish(false, "Lava reset frame timeout"); return; }
         if (!EditorApplication.isPlaying || Time.frameCount <= resetFrame + 1) return;
         EditorApplication.update -= VerifyLavaResetAfterFrame;
-        var previous = Physics.simulationMode;
+        var previous = PlanarPhysics.simulationMode;
         try
         {
-            Physics.simulationMode = SimulationMode.Script;
+            PlanarPhysics.simulationMode = SimulationMode2D.Script;
             Step(resetPlayer);
             Check(resetLava.activeSelf && ColorRuntimeService.Instance.IsUnlocked("red") && resetPlayer.IsDead,
                 "room reset restores lava danger without relocking color");
             Finish(true, "PASS " + checks);
         }
         catch (Exception error) { Finish(false, error.ToString()); }
-        finally { Physics.simulationMode = previous; }
+        finally { PlanarPhysics.simulationMode = previous; }
     }
     private static void VerifyRespawnSafety()
     {
@@ -224,14 +225,14 @@ public static class HazardContactAudit
         var spike = Spawn("Assets/_Project/Content/WorldItems/Spike_上.prefab", origin);
         var player = Player(origin + Vector3.left * 3);
         spike.transform.SetParent(group.transform, true); player.transform.SetParent(group.transform, true);
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
         var safe = typeof(PlayerController).GetMethod("IsRespawnPositionSafe", BindingFlags.Instance | BindingFlags.NonPublic);
         Check(!(bool)safe.Invoke(player, new object[] { origin }), "spikes are excluded from respawn even under shared map root");
-        spike.GetComponentInChildren<Collider>().enabled = false; Physics.SyncTransforms();
+        spike.GetComponentInChildren<Collider2D>().enabled = false; PlanarPhysics.SyncTransforms();
         Check((bool)safe.Invoke(player, new object[] { origin }), "disabled trigger does not block respawn");
-        var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
         floor.transform.position = origin + new Vector3(3, -1, 0); floor.transform.SetParent(group.transform, true);
-        Physics.SyncTransforms();
+        PlanarPhysics.SyncTransforms();
         var grounded = typeof(PlayerController).GetMethod("TryGetGroundedRespawnPosition", BindingFlags.Instance | BindingFlags.NonPublic);
         object[] arguments = { origin + new Vector3(3, .1f, 0), Vector3.zero };
         Check((bool)grounded.Invoke(player, arguments), "shared-root floor is valid ground rather than mistaken for player");

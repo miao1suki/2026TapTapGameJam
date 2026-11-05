@@ -15,7 +15,7 @@ namespace Project.Player
         [SerializeField, InspectorName("外观垂直偏移（格）")] private float verticalOffsetCells = -.0625f;
         [SerializeField, InspectorName("额外脚底偏移（美术像素）")] private int additionalVerticalOffsetPixels = -3;
         private PlayerController player;
-        private CapsuleCollider capsule;
+        private CapsuleCollider2D capsule;
         private Animator animator;
         private Renderer placeholder;
         private bool placeholderWasEnabled;
@@ -75,7 +75,7 @@ namespace Project.Player
         private void Initialize()
         {
             player = GetComponent<PlayerController>();
-            capsule = GetComponent<CapsuleCollider>();
+            capsule = GetComponent<CapsuleCollider2D>();
             animator ??=
                 GetComponentInChildren<Animator>(true);
             cellWorldSize = GridCellSizeUtility.Resolve(player);
@@ -146,12 +146,12 @@ namespace Project.Player
                 cellWorldSize, sourcePixelScale);
             if (capsule != null && sprite != null)
             {
-                float bodyHeight = Mathf.Max(capsule.height, capsule.radius * 2f) * Mathf.Abs(parentScale.y);
                 float pivotHeight = GridArtworkMetrics.PixelsToWorld(sprite.pivot, cellWorldSize, sourcePixelScale).y;
                 // Anchor the authored frame bottom to the existing feet offset; visual size never resizes physics.
-                visual.transform.position = transform.TransformPoint(capsule.center) + Vector3.up *
-                    (-bodyHeight * .5f + pivotHeight + verticalOffsetCells * cellWorldSize +
-                    additionalVerticalOffsetPixels * GridArtworkMetrics.PixelWorldSize(cellWorldSize));
+                Vector3 position = transform.TransformPoint(capsule.offset);
+                position.y = capsule.bounds.min.y + pivotHeight + verticalOffsetCells * cellWorldSize +
+                    additionalVerticalOffsetPixels * GridArtworkMetrics.PixelWorldSize(cellWorldSize);
+                visual.transform.position = position;
             }
             if (faceCamera)
             {

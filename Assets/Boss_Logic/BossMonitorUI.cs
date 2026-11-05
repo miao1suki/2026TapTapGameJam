@@ -591,10 +591,10 @@ namespace Project.BossLogic
             Vector3 bossPosition =
                 controller.WorldPosition;
             float yaw = main != null
-                ? main.transform.eulerAngles.y
+                ? main.transform.eulerAngles.z
                 : 0f;
             Quaternion rotation =
-                Quaternion.Euler(0f, yaw, 0f);
+                Quaternion.Euler(0f, 0f, yaw);
             float distance = main != null
                 ? Mathf.Abs(
                     main.transform.position.z -

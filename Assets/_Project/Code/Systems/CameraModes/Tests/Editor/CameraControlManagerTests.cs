@@ -23,7 +23,7 @@ namespace Project.CameraModes.Tests
                     rotation = Quaternion.identity,
                     projection = projection,
                     orthographicSize = 5f,
-                    fieldOfView = 50f,
+
                 };
             }
 
@@ -50,18 +50,18 @@ namespace Project.CameraModes.Tests
                 {
                     position = new Vector3(0f, 2f, -9f),
                     rotation = Quaternion.identity,
-                    projection = CameraProjectionMode.Perspective,
+                    projection = CameraProjectionMode.Orthographic,
                     orthographicSize = 2f,
-                    fieldOfView = 50f,
+
                 };
                 return true;
             }
 
             public bool TryGetLensOverride(
-                out float orthographicSize, out float fieldOfView)
+                out float orthographicSize)
             {
                 orthographicSize = 8f;
-                fieldOfView = 50f;
+
                 return true;
             }
         }
@@ -83,7 +83,7 @@ namespace Project.CameraModes.Tests
                     projection =
                         CameraProjectionMode.Orthographic,
                     orthographicSize = 5f,
-                    fieldOfView = 50f,
+
                 };
                 return true;
             }
@@ -118,7 +118,7 @@ namespace Project.CameraModes.Tests
             FixedSource cutscene = new FixedSource(
                 "Cutscene",
                 new Vector3(0f, 10f, -10f),
-                CameraProjectionMode.Perspective);
+                CameraProjectionMode.Orthographic);
 
             manager.RequestControl(gameplay);
             CameraControlHandle cutsceneHandle = manager.RequestControl(
@@ -147,7 +147,7 @@ namespace Project.CameraModes.Tests
             FixedSource cutscene = new FixedSource(
                 "Cutscene",
                 Vector3.right,
-                CameraProjectionMode.Perspective);
+                CameraProjectionMode.Orthographic);
             CameraControlHandle gameplayHandle = manager.RequestControl(
                 gameplay,
                 CameraControlPriorities.Gameplay,
@@ -176,7 +176,7 @@ namespace Project.CameraModes.Tests
             FixedSource cutscene = new FixedSource(
                 "Cutscene",
                 Vector3.right,
-                CameraProjectionMode.Perspective);
+                CameraProjectionMode.Orthographic);
             CameraControlHandle gameplayHandle = manager.RequestControl(gameplay);
             CameraControlHandle cutsceneHandle = manager.RequestControl(
                 cutscene,
@@ -198,7 +198,7 @@ namespace Project.CameraModes.Tests
             FixedSource emergency = new FixedSource(
                 "Emergency",
                 Vector3.right,
-                CameraProjectionMode.Perspective);
+                CameraProjectionMode.Orthographic);
             manager.RequestControl(
                 locked,
                 CameraControlPriorities.Cutscene,
@@ -223,14 +223,14 @@ namespace Project.CameraModes.Tests
                 cameraObject.AddComponent<CameraModeController>();
             modeController.Configure(cameraComponent, null, true);
             modeController.SnapToMode(
-                CameraViewMode.Perspective3D,
+                CameraViewMode.Side2D,
                 false);
             manager.ConfigureOutput(cameraComponent);
 
             FixedSource source = new FixedSource(
                 "Visual Only",
                 new Vector3(0f, 4f, -8f),
-                CameraProjectionMode.Perspective);
+                CameraProjectionMode.Orthographic);
             manager.RequestControl(
                 source,
                 CameraControlPriorities.Cutscene,
@@ -321,7 +321,7 @@ namespace Project.CameraModes.Tests
                 projection =
                     CameraProjectionMode.Orthographic,
                 orthographicSize = 3f,
-                fieldOfView = 50f,
+
             };
             CameraControlHandle cutsceneHandle =
                 manager.RequestControl(

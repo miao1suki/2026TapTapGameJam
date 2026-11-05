@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project.Audio;
@@ -27,7 +28,7 @@ namespace Project.BlockFeatures
             Order = 1)]
         [SerializeField] private bool hideRenderersWhenBroken = true;
 
-        private Collider[] colliders;
+        private Collider2D[] colliders;
         private Renderer[] renderers;
         private bool intact;
         private bool burning;
@@ -48,7 +49,7 @@ namespace Project.BlockFeatures
 
         protected override void OnAttach()
         {
-            colliders = GetComponentsInChildren<Collider>(true);
+            colliders = GetComponentsInChildren<Collider2D>(true);
             renderers = GetComponentsInChildren<Renderer>(true);
             intact = startsIntact;
             Attached.Add(this);
@@ -150,22 +151,22 @@ namespace Project.BlockFeatures
                         ? member.RegionId : manager?.FindRegion(obstacle.transform.position)
                 };
                 // Merging and runtime artwork can add geometry after OnAttach.
-                obstacle.colliders = obstacle.GetComponentsInChildren<Collider>(true);
+                obstacle.colliders = obstacle.GetComponentsInChildren<Collider2D>(true);
                 obstacle.renderers = obstacle.GetComponentsInChildren<Renderer>(true);
-                foreach (Collider volume in obstacle.colliders)
+                foreach (Collider2D volume in obstacle.colliders)
                 {
                     if (!volume.enabled || volume.isTrigger || !volume.gameObject.activeInHierarchy ||
                         volume.GetComponentInParent<PlantObstacleFeature>() != obstacle) continue;
                     Bounds bounds = volume.bounds;
-                    if (volume is BoxCollider box)
+                    if (volume is BoxCollider2D box)
                     {
-                        // Do not depend on whether Physics.SyncTransforms ran this frame.
+                        // Do not depend on whether PlanarPhysics.SyncTransforms ran this frame.
                         Vector3 half = box.size * .5f;
                         Matrix4x4 matrix = box.transform.localToWorldMatrix;
                         Vector3 x = matrix.MultiplyVector(new Vector3(half.x, 0, 0));
                         Vector3 y = matrix.MultiplyVector(new Vector3(0, half.y, 0));
                         Vector3 z = matrix.MultiplyVector(new Vector3(0, 0, half.z));
-                        bounds = new Bounds(matrix.MultiplyPoint3x4(box.center), 2f * new Vector3(
+                        bounds = new Bounds(matrix.MultiplyPoint3x4(box.offset), 2f * new Vector3(
                             Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x),
                             Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y),
                             Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z)));
@@ -184,14 +185,12 @@ namespace Project.BlockFeatures
         {
             Bounds broad = a.bounds;
             broad.Expand(tolerance * 2f);
-            if (!broad.Intersects(b.bounds)) return false;
+            if (!PlanarPhysics.IntersectsXY(broad, b.bounds)) return false;
             foreach (Bounds first in a.volumes)
             foreach (Bounds second in b.volumes)
             {
                 float overlapX = Mathf.Min(first.max.x, second.max.x) - Mathf.Max(first.min.x, second.min.x);
                 float overlapY = Mathf.Min(first.max.y, second.max.y) - Mathf.Max(first.min.y, second.min.y);
-                float overlapZ = Mathf.Min(first.max.z, second.max.z) - Mathf.Max(first.min.z, second.min.z);
-                if (overlapZ <= tolerance) continue;
                 bool horizontal = overlapY > tolerance &&
                     (Mathf.Abs(first.max.x - second.min.x) <= tolerance ||
                      Mathf.Abs(second.max.x - first.min.x) <= tolerance);

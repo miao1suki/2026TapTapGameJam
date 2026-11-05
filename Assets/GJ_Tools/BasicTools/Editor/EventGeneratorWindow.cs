@@ -16,7 +16,7 @@ public class EventGeneratorWindow : EditorWindow
         "float", "int", "string", "bool", "double", "long",
         "Vector2", "Vector3", "Vector2Int", "Vector3Int",
         "Color", "GameObject", "Transform", "Component",
-        "Collider", "Collider2D", "Rigidbody", "Rigidbody2D",
+        "Collider2D", "Collider2D", "Rigidbody2D", "Rigidbody2D",
         "Animator", "AudioClip", "Sprite", "LayerMask", "Material"
     };
     private static readonly string[] TypeOptions = BuildTypeOptions();

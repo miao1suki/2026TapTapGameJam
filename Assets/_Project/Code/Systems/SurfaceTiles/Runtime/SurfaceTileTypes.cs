@@ -3,15 +3,7 @@ using UnityEngine;
 
 namespace Project.SurfaceTiles
 {
-    public enum SurfaceTileFace
-    {
-        Front = 0,
-        Right = 1,
-        Back = 2,
-        Left = 3,
-        Top = 4,
-        Bottom = 5
-    }
+    public enum SurfaceTileFace { Front = 0 }
 
     public enum SurfaceTileAnchor
     {
@@ -297,91 +289,19 @@ namespace Project.SurfaceTiles
 
         public static SurfaceTileFace FaceFromLocalNormal(Vector3 normal)
         {
-            Vector3 absolute = new Vector3(
-                Mathf.Abs(normal.x),
-                Mathf.Abs(normal.y),
-                Mathf.Abs(normal.z));
-            if (absolute.y >= absolute.x && absolute.y >= absolute.z)
-            {
-                return normal.y >= 0f
-                    ? SurfaceTileFace.Top
-                    : SurfaceTileFace.Bottom;
-            }
-
-            if (absolute.x >= absolute.z)
-            {
-                return normal.x >= 0f
-                    ? SurfaceTileFace.Left
-                    : SurfaceTileFace.Right;
-            }
-
-            return normal.z >= 0f
-                ? SurfaceTileFace.Back
-                : SurfaceTileFace.Front;
+            return SurfaceTileFace.Front;
         }
 
-        public static SurfaceTileFaceBasis GetLocalBasis(
-            BoxCollider collider,
-            SurfaceTileFace face)
+        public static SurfaceTileFaceBasis GetLocalBasis(BoxCollider2D collider, SurfaceTileFace face)
         {
-            Vector3 center = collider != null ? collider.center : Vector3.zero;
-            Vector3 size = collider != null ? collider.size : Vector3.one;
-            switch (face)
-            {
-                case SurfaceTileFace.Right:
-                    return new SurfaceTileFaceBasis(
-                        center + Vector3.left * size.x * 0.5f,
-                        Vector3.left,
-                        Vector3.back,
-                        Vector3.up,
-                        size.z,
-                        size.y);
-                case SurfaceTileFace.Back:
-                    return new SurfaceTileFaceBasis(
-                        center + Vector3.forward * size.z * 0.5f,
-                        Vector3.forward,
-                        Vector3.left,
-                        Vector3.up,
-                        size.x,
-                        size.y);
-                case SurfaceTileFace.Left:
-                    return new SurfaceTileFaceBasis(
-                        center + Vector3.right * size.x * 0.5f,
-                        Vector3.right,
-                        Vector3.forward,
-                        Vector3.up,
-                        size.z,
-                        size.y);
-                case SurfaceTileFace.Top:
-                    return new SurfaceTileFaceBasis(
-                        center + Vector3.up * size.y * 0.5f,
-                        Vector3.up,
-                        Vector3.right,
-                        Vector3.forward,
-                        size.x,
-                        size.z);
-                case SurfaceTileFace.Bottom:
-                    return new SurfaceTileFaceBasis(
-                        center + Vector3.down * size.y * 0.5f,
-                        Vector3.down,
-                        Vector3.right,
-                        Vector3.back,
-                        size.x,
-                        size.z);
-                default:
-                    return new SurfaceTileFaceBasis(
-                        center + Vector3.back * size.z * 0.5f,
-                        Vector3.back,
-                        Vector3.right,
-                        Vector3.up,
-                        size.x,
-                        size.y);
-            }
+            Vector3 center = collider != null ? collider.offset : Vector3.zero;
+            Vector2 size = collider != null ? collider.size : Vector2.one;
+            return new SurfaceTileFaceBasis(center, Vector3.back, Vector3.right, Vector3.up, size.x, size.y);
         }
 
         public static Vector2Int GetGridSize(
             Transform transform,
-            BoxCollider collider,
+            BoxCollider2D collider,
             SurfaceTileFace face,
             float worldCellSize)
         {
@@ -398,7 +318,7 @@ namespace Project.SurfaceTiles
         }
 
         public static bool TryGetCell(
-            BoxCollider collider,
+            BoxCollider2D collider,
             SurfaceTileFace face,
             Vector3 localPoint,
             Vector2Int gridSize,

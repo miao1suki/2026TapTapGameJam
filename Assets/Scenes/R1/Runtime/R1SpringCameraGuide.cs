@@ -27,10 +27,10 @@ namespace Project.Levels.ILorR
         private CameraModeController mode;
         private CameraFollowController follow;
         private PlayerController player;
-        private Collider playerBody;
+        private Collider2D playerBody;
         private LevelEditorPlacedBlock buttonMarker;
         private BouncePlantFeature plant;
-        private Collider[] plantColliders;
+        private Collider2D[] plantColliders;
         private CameraLensRequestHandle lens;
         private bool guiding, wasInside;
         private float heldSize, requestedMultiplier, nextLookupTime;
@@ -136,7 +136,7 @@ namespace Project.Levels.ILorR
             float aspect = manager.OutputCamera != null ? Mathf.Max(.1f, manager.OutputCamera.aspect) : 1f;
             Quaternion inverse = Quaternion.Inverse(pose.rotation);
             float required = 0f;
-            foreach (Collider surface in plantColliders)
+            foreach (Collider2D surface in plantColliders)
             {
                 if (surface == null || !surface.enabled || surface.isTrigger || !surface.gameObject.activeInHierarchy) continue;
                 Bounds bounds = surface.bounds;
@@ -156,7 +156,7 @@ namespace Project.Levels.ILorR
         {
             if (playerBody == null || plantColliders == null) return false;
             Bounds body = playerBody.bounds;
-            foreach (Collider surface in plantColliders)
+            foreach (Collider2D surface in plantColliders)
             {
                 if (surface == null || !surface.enabled || surface.isTrigger || !surface.gameObject.activeInHierarchy) continue;
                 Bounds bounds = surface.bounds;
@@ -183,7 +183,7 @@ namespace Project.Levels.ILorR
             ClearGuide(true);
             if (player != null) player.CameraFollowRelocated -= OnPlayerRelocated;
             player = next;
-            playerBody = player != null ? player.GetComponent<Collider>() : null;
+            playerBody = player != null ? player.GetComponent<Collider2D>() : null;
             if (player != null) player.CameraFollowRelocated += OnPlayerRelocated;
         }
 
@@ -208,7 +208,7 @@ namespace Project.Levels.ILorR
             if (landingPlantAnchor == null) return;
             plant = landingPlantAnchor.GetComponent<BouncePlantFeature>();
             if (plant == null) return;
-            plantColliders = plant.GetComponentsInChildren<Collider>(true);
+            plantColliders = plant.GetComponentsInChildren<Collider2D>(true);
             plant.BounceTriggered += OnPlantBounce;
             plant.AppearanceReset += OnPlantReset;
         }

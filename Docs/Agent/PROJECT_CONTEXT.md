@@ -1,5 +1,7 @@
 # 项目上下文（持续更新）
 
+2026-11-05 原生 2D 专项分支：`codex/2d-long-term-migration` 已将物理、资源、相机、Timeline 和渲染器迁为原生 2D。此约定仅描述该专项分支，不表示 main 已合并。新增玩法只使用 Rigidbody2D/Collider2D/Physics2D，所有碰撞忽略表现深度；相机正交、沿 XY 平移、只绕 Z 旋转。PC/Mobile 均使用 Renderer2D；原星空以平面背景保留。正式 Scene 的作者 XY、稳定身份、机关引用与 GridArt 作者资产保留，历史 JSON 不重建。详见 [实施与验收报告](../Developer/NATIVE_2D_MIGRATION_20261105.md)，下文旧 3D 物理/六面贴画描述不适用于本分支。
+
 2026-10-27 关卡编辑器改版：正式 Scene 是房间/通道、真实对象、实例参数和 Unity 引用的唯一权威；GridArt 继续由 Scene 引用的 Map 与稀疏区域归属资产承载，但统一在锁定正交 2D SceneView 中制作。PlanningCanvas、JSON 存档槽/片段/应用到场景与旧 GridArt 画布已退役为 Legacy；下文历史记录中“Scene + planning 成套同步”的旧要求不再适用于当前制作和交付。当前规则以 `FORMAL_LEVEL_DELIVERY.md`、`WORKING_AGREEMENTS.md` 和 `SCENE_LEVEL_EDITOR.md` 为准。
 
 2026-10-21 1.0.2：接收TA83611de美术/天气，保持main3010条关卡规划与既有修复；实际碰撞10487格不变。Android仅GLES3避开TapPlay vivo S19/Android16的Adreno Vulkan绘制崩溃路径，配置专项3项通过，仍待同型号平台复测。双端1.0.2非开发构建均0错误，正式ICON已从产物提取确认，双本地存档已备份清理。交付见RELEASE_1_0_2.md。
@@ -57,7 +59,7 @@ TapTap Unity 成就 SDK 固定使用官方 NPM 当前可用的 Core/Login/Achiev
 
 - `Assets/_Project/Code/Systems/<Feature>`：功能源码，Runtime/Editor/Tests 分开。
 - `Assets/Player`：基础玩家及 Timeline 动作适配。
-- `Assets/GJ_Tools/TimelineTools3D`：保留的旧 Timeline 工具（兼容路径）。
+- `Assets/GJ_Tools/TimelineTools2D`：保留的旧 Timeline 工具（兼容路径）。
 - `Assets/_Project/Scenes/Start/MainMenu.unity`：仅旧编辑器兼容入口，新美术界面预览，运行重定向 Gaming，不进入正式构建。
 - `Assets/_Project/Scenes/Playing/Gaming.unity`：唯一正式启动与玩法场景，持有玩家、玩法相机和共享暂停 UI；启动前帧自动安装共享 `Resources/UI/WorldMainMenu.prefab`。
 - 正式流程为同一 Gaming 世界内的 MainMenu/Gaming 两个逻辑态。开始、返回、再次开始都不加载或卸载场景，不重置进度；相机通过同一 Manager 租约平滑入退。Bootstrap、旧五个 Systems 场景、旧 `Flow` 目录、Level_01～03 和 Ending 均退役，不再恢复。

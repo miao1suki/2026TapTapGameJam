@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -48,7 +49,7 @@ public static class GameplayRefinementAudit
         AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/" + relative), position, Quaternion.identity);
     private static GameObject Solid(string name, Vector3 position)
     {
-        var item = GameObject.CreatePrimitive(PrimitiveType.Cube); item.name = name; item.transform.position = position; return item;
+        var item = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); item.name = name; item.transform.position = position; return item;
     }
     public static void Run()
     {
@@ -69,10 +70,10 @@ public static class GameplayRefinementAudit
         if (EditorApplication.timeSinceStartup - started > 90) { Finish(false, "Timed out"); return; }
         if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .15f) return;
         EditorApplication.update -= Tick;
-        var mode = Physics.simulationMode;
+        var mode = PlanarPhysics.simulationMode;
         try
         {
-            Physics.simulationMode = SimulationMode.Script;
+            PlanarPhysics.simulationMode = SimulationMode2D.Script;
             ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
             ColorRuntimeService.Instance.UnlockAllAbilitiesForCurrentSession();
             checks = 0;
@@ -80,13 +81,13 @@ public static class GameplayRefinementAudit
             Finish(true, "PASS " + checks + " gameplay refinement assertions");
         }
         catch (Exception error) { Finish(false, error.ToString()); }
-        finally { Physics.simulationMode = mode; }
+        finally { PlanarPhysics.simulationMode = mode; }
     }
     private static PlayerController Player(Vector3 position)
     {
         var player = Spawn("Player/Player.prefab", position).GetComponent<PlayerController>();
         player.GetComponent<PlayerInputDriver>().enabled = false;
-        player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+        player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
         return player;
     }
     private static void VerifyPlantParameters()
@@ -115,22 +116,22 @@ public static class GameplayRefinementAudit
         var root = Spawn("ColorBlocks/Prefabs/Green_Ladder.prefab", origin).GetComponent<ClimbableVineFeature>();
         Set(root, "growInstantly", true); Set(root, "maxGrowthBlocks", 4);
         Set(root, "growthSegmentPrefab", AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ColorBlocks/Prefabs/Green_LadderSon.prefab"));
-        var edgeWall = Solid("Touching edge wall", origin + new Vector3(1, 1, 0)); Physics.SyncTransforms();
+        var edgeWall = Solid("Touching edge wall", origin + new Vector3(1, 1, 0)); PlanarPhysics.SyncTransforms();
         Check((bool)Call(root, "CanSpawnSegment", 0), "adjacent wall touching next cell edge is not a false obstruction");
         Object.DestroyImmediate(edgeWall);
-        var ownShape = Solid("Own root collider", origin + Vector3.up); ownShape.transform.SetParent(root.transform, true); Physics.SyncTransforms();
+        var ownShape = Solid("Own root collider", origin + Vector3.up); ownShape.transform.SetParent(root.transform, true); PlanarPhysics.SyncTransforms();
         Check((bool)Call(root, "CanSpawnSegment", 0), "same-root collision geometry never blocks its own growth");
         Object.DestroyImmediate(ownShape);
-        var wall = Solid("Growth wall", origin + Vector3.up * 2); Physics.SyncTransforms();
+        var wall = Solid("Growth wall", origin + Vector3.up * 2); PlanarPhysics.SyncTransforms();
         root.GrowTo(4);
         Check(root.CurrentGrowthBlocks == 1 && root.IsGrowthBlocked, "wall stops at last free growth cell");
         Object.DestroyImmediate(wall);
-        var obstacle = Spawn("ColorBlocks/Prefabs/Green_PlantObstacle.prefab", origin + Vector3.up * 2); Physics.SyncTransforms(); root.GrowTo(4);
+        var obstacle = Spawn("ColorBlocks/Prefabs/Green_PlantObstacle.prefab", origin + Vector3.up * 2); PlanarPhysics.SyncTransforms(); root.GrowTo(4);
         Check(root.CurrentGrowthBlocks == 1 && root.IsGrowthBlocked, "plant obstacle blocks growth");
         var obstacleFeature = obstacle.GetComponent<PlantObstacleFeature>();
         var obstacleArt = MechanismArtworkPresentation.Ensure(obstacle);
         Check(obstacleFeature.BreakObstacle() && !obstacleFeature.IsIntact && obstacleFeature.ShowsArtwork &&
-            obstacleFeature.GetComponentsInChildren<Collider>().All(collider => !collider.enabled),
+            obstacleFeature.GetComponentsInChildren<Collider2D>().All(collider => !collider.enabled),
             "burning obstacle immediately clears collision while retaining its transient artwork");
         obstacleArt.Refresh(0);
         Check(obstacleArt.Visual.enabled && obstacleFeature.GetComponent<Project.BurnEffects.PlantBurnEffectPlayer>().IsPlaying,
@@ -138,16 +139,16 @@ public static class GameplayRefinementAudit
         obstacleFeature.ResetForRoom(); obstacleArt.Refresh(0);
         Check(obstacleFeature.IsIntact && obstacleArt.Visual.enabled &&
             !obstacleFeature.GetComponent<Project.BurnEffects.PlantBurnEffectPlayer>().IsPlaying &&
-            obstacleFeature.GetComponentsInChildren<Collider>().All(collider => collider.enabled),
+            obstacleFeature.GetComponentsInChildren<Collider2D>().All(collider => collider.enabled),
             "mid-burn room reset cancels the visual and restores obstacle solidity and sprite");
         Object.DestroyImmediate(obstacle);
-        var platform = Spawn("ColorBlocks/Prefabs/Red_Platform.prefab", origin + Vector3.up * 2); Physics.SyncTransforms(); root.GrowTo(4);
+        var platform = Spawn("ColorBlocks/Prefabs/Red_Platform.prefab", origin + Vector3.up * 2); PlanarPhysics.SyncTransforms(); root.GrowTo(4);
         Check(root.CurrentGrowthBlocks == 1 && root.IsGrowthBlocked, "moving platform blocks growth");
         Object.DestroyImmediate(platform);
         var water = Spawn("ColorBlocks/Prefabs/Blue_WaterSource.prefab", origin + Vector3.up * 2);
         var decoration = new GameObject("Non-solid decoration"); decoration.transform.position = origin + Vector3.up * 3;
         decoration.AddComponent<SpriteRenderer>();
-        Physics.SyncTransforms(); root.GrowTo(4);
+        PlanarPhysics.SyncTransforms(); root.GrowTo(4);
         Check(root.CurrentGrowthBlocks == 4 && !root.IsGrowthBlocked, "water triggers and decoration do not stop growth");
         var segments = (List<GameObject>)Get(root, "spawnedSegments");
         Check(segments.All(s => s.GetComponent<ClimbableVineFeature>().Root == root), "all spawned segments preserve logical root");
@@ -155,19 +156,19 @@ public static class GameplayRefinementAudit
         var player = Player(origin + new Vector3(2, 2.9f, 0));
         var effect = player.GetComponent<InteractionLinkEffect>();
         Check(player.GetComponent<PlayerColorWheel>().TrySelectColor("red"), "red selected for read-only vine preview");
-        Physics.SyncTransforms(); Call(effect, "LateUpdate");
+        PlanarPhysics.SyncTransforms(); Call(effect, "LateUpdate");
         Check(effect.DetectedTargetCount == 1, "five-cell vine produces only one logical link");
         var candidates = (IList)Get(effect, "candidates");
-        var hit = (Collider)candidates[0].GetType().GetField("Collider").GetValue(candidates[0]);
+        var hit = (Collider2D)candidates[0].GetType().GetField("Collider2D").GetValue(candidates[0]);
         Check(Mathf.Abs(hit.transform.position.y - (origin.y + 3)) < .01f, "link uses nearest real segment, not mother pivot");
         int firstKey = (int)candidates[0].GetType().GetField("Key").GetValue(candidates[0]);
-        player.transform.position = origin + Vector3.right * 2; player.Motor.position = player.transform.position; Physics.SyncTransforms(); Call(effect, "ScanTargets");
+        player.transform.position = origin + Vector3.right * 2; player.Motor.position = player.transform.position; PlanarPhysics.SyncTransforms(); Call(effect, "ScanTargets");
         candidates = (IList)Get(effect, "candidates");
-        hit = (Collider)candidates[0].GetType().GetField("Collider").GetValue(candidates[0]);
+        hit = (Collider2D)candidates[0].GetType().GetField("Collider2D").GetValue(candidates[0]);
         Check(hit.gameObject == root.gameObject, "nearest endpoint follows player to mother cell");
         Check((int)candidates[0].GetType().GetField("Key").GetValue(candidates[0]) == firstKey, "changing nearest segment does not create another reveal key");
         var second = Spawn("ColorBlocks/Prefabs/Green_Ladder.prefab", origin + Vector3.right * 4);
-        Physics.SyncTransforms(); Call(effect, "ScanTargets");
+        PlanarPhysics.SyncTransforms(); Call(effect, "ScanTargets");
         Check(effect.DetectedTargetCount == 2, "independent vine roots remain independent links");
         Object.DestroyImmediate(second); Object.DestroyImmediate(player.gameObject);
         foreach (GameObject segment in segments.ToArray()) Object.DestroyImmediate(segment);
@@ -180,29 +181,29 @@ public static class GameplayRefinementAudit
         var baseObject = Spawn("ColorBlocks/Prefabs/Red_Foundation.prefab", origin);
         var mechanism = baseObject.GetComponent<MechanismBaseFeature>();
         var carry = baseObject.GetComponent<CarryableFeature>();
-        var body = baseObject.GetComponent<Rigidbody>();
+        var body = baseObject.GetComponent<Rigidbody2D>();
         Check(carry != null && carry.CanCarryNow, "base prefab uses existing carry target");
         Check(mechanism is ICarryMotionParticipant && baseObject.GetComponent<GreenHookBodyMotion>() != null,
             "carry and hook share the existing base physics owner");
         var energy = Spawn("ContactCubes/Red_ContactCube.prefab", origin + Vector3.right);
-        energy.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
-        Physics.SyncTransforms(); Call(mechanism, "ScanForEnergy");
+        energy.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
+        PlanarPhysics.SyncTransforms(); Call(mechanism, "ScanForEnergy");
         Check(mechanism.IsSignalActive, "arbitrary red cube still powers base");
         var baseArt = MechanismArtworkPresentation.Ensure(baseObject); baseArt.Refresh(0);
         Check(baseArt.Visual.sprite == ObjectArtworkLibrary.Load().Find(MechanismArtworkKind.MechanismBase).frames[1],
             "powered base uses active artwork frame");
-        bool kinematic = body.isKinematic, gravity = body.useGravity;
+        bool kinematic = body.isKinematic, gravity = (body.gravityScale != 0f);
         Check(carry.BeginCarry(player), "existing carry command picks up base");
         Check(!mechanism.IsSignalActive && !mechanism.CanBeGreenHooked(player.gameObject), "carried base suspends power and hook qualification");
         baseArt.Refresh(0);
         Check(baseArt.Visual.sprite == ObjectArtworkLibrary.Load().Find(MechanismArtworkKind.MechanismBase).frames[0],
             "suspended base returns to inactive artwork frame");
-        Check(body.isKinematic && !body.useGravity && !baseObject.GetComponent<Collider>().enabled,
+        Check(body.isKinematic && !(body.gravityScale != 0f) && !baseObject.GetComponent<Collider2D>().enabled,
             "carry alone owns pose while base colliders are disabled");
         Call(mechanism, "ScanForEnergy");
         Check(!mechanism.IsSignalActive, "even an explicit energy scan cannot power a carried base");
-        carry.CancelCarry(); Physics.SyncTransforms(); Call(mechanism, "ScanForEnergy");
-        Check((baseObject.transform.position - origin).sqrMagnitude < .00001f && body.isKinematic == kinematic && body.useGravity == gravity,
+        carry.CancelCarry(); PlanarPhysics.SyncTransforms(); Call(mechanism, "ScanForEnergy");
+        Check((baseObject.transform.position - origin).sqrMagnitude < .00001f && body.isKinematic == kinematic && (body.gravityScale != 0f) == gravity,
             "cancel restores authored pose and original body settings");
         Check(mechanism.IsSignalActive && mechanism.CanBeGreenHooked(player.gameObject), "put-down/cancel restores energy and hook contracts");
         var region = new RoomRegion { id = "base_a", label = "Base A" };
@@ -214,7 +215,7 @@ public static class GameplayRefinementAudit
         var member = baseObject.AddComponent<RoomResetObject>(); manager.Register(member);
         Check(carry.BeginCarry(player), "base may be carried again after restoration");
         Check(!carry.CanPlaceCarryAt(player, new Vector3(40.5f, 20.5f, 0)), "carry rejects crossing authored room boundary");
-        manager.ResetRegion("base_a"); Physics.SyncTransforms();
+        manager.ResetRegion("base_a"); PlanarPhysics.SyncTransforms();
         Check(!carry.IsCarryActive && (baseObject.transform.position - origin).sqrMagnitude < .00001f,
             "region/R reset restores carried base to authored position");
         Set(manager, "player", player); Set(manager, "currentRegionId", "base_a");
@@ -249,7 +250,7 @@ public static class GameplayRefinementAudit
         Call(door, "AdvanceTimers", .79f); Check(door.State == DoorState.Locked, "door keeps pattern visible before opening");
         Call(door, "AdvanceTimers", .02f); Check(door.State == DoorState.Unlocked, "door opens after open delay");
         held.ResetButton();
-        Check(door.IsWaitingToClose && door.State == DoorState.Unlocked && !door.GetComponent<Collider>().enabled,
+        Check(door.IsWaitingToClose && door.State == DoorState.Unlocked && !door.GetComponent<Collider2D>().enabled,
             "releasing held button starts delay but keeps doorway passable");
         Call(door, "AdvanceTimers", .3f); Check(door.State == DoorState.Unlocked, "door remains open during release delay");
         held.TryPress(player.gameObject);
@@ -258,7 +259,7 @@ public static class GameplayRefinementAudit
         held.ResetButton(); Call(door, "AdvanceTimers", 0f);
         Check(door.IsWaitingToClose && door.State == DoorState.Unlocked, "paused timer does not consume delay");
         Call(door, "AdvanceTimers", .61f);
-        Check(door.State == DoorState.Locked && !door.IsWaitingToClose && door.GetComponent<Collider>().enabled,
+        Check(door.State == DoorState.Locked && !door.IsWaitingToClose && door.GetComponent<Collider2D>().enabled,
             "release deadline closes and restores collision");
         Check(latched.IsPressed, "closing preserves other latched button progress");
         held.TryPress(player.gameObject); Call(door, "AdvanceTimers", 1f); held.ResetButton();
@@ -283,8 +284,8 @@ public static class GameplayRefinementAudit
             "seven authored signboard choices are available");
         var sign = Spawn("ColorBlocks/Prefabs/ScreenNoteTool.prefab", new Vector3(95, 20, 0)).GetComponent<SubtitleTrigger>();
         sign.RefreshSignVisual();
-        var collider = sign.GetComponent<BoxCollider>();
-        Vector3 size = collider.size, center = collider.center;
+        var collider = sign.GetComponent<BoxCollider2D>();
+        Vector3 size = collider.size, center = collider.offset;
         var visual = sign.GetComponentsInChildren<SpriteRenderer>(true).Single(r => r.name == "Subtitle Sign Visual");
         Check(sign.ShowSign && visual.enabled && visual.sprite == artwork.signboards[0],
             "legacy subtitle trigger receives visible default signboard at runtime");
@@ -307,12 +308,12 @@ public static class GameplayRefinementAudit
         LevelEditorComponentOverrideUtility.ApplyOverrides(restored.gameObject, new[] { value }, false); restored.RefreshSignVisual();
         Check(restored.SignSprite == artwork.signboards[4], "sign sprite restores through planning JSON round trip");
         serialized.Update(); serialized.FindProperty("showSign").boolValue = false; serialized.ApplyModifiedPropertiesWithoutUndo(); sign.RefreshSignVisual();
-        Check(!visual.enabled && collider.enabled && collider.isTrigger && collider.size == size && collider.center == center,
+        Check(!visual.enabled && collider.enabled && collider.isTrigger && ((Vector3)collider.size) == size && ((Vector3)collider.offset) == center,
             "hide/change artwork never changes subtitle trigger geometry");
         var player = Player(new Vector3(95, 20, 0));
         var service = new SubtitleCapture(); SubtitleServiceRegistry.Register(service);
-        Call(sign, "OnTriggerEnter", player.GetComponent<Collider>());
-        Call(sign, "OnTriggerEnter", player.GetComponent<Collider>());
+        Call(sign, "OnTriggerEnter2D", player.GetComponent<Collider2D>());
+        Call(sign, "OnTriggerEnter2D", player.GetComponent<Collider2D>());
         Check(service.Count == 1 && service.Cue != null && service.Cue.text == "ScreenNoteTool",
             "sign appearance preserves text cue and play-once subtitle semantics");
         SubtitleServiceRegistry.Unregister(service);
@@ -335,9 +336,9 @@ public static class GameplayRefinementAudit
         wall.AddComponent<LevelEditorPlacedBlock>().Configure(new Vector2Int(115, 20), "Wall", Color.white, false);
         var player = Player(position + Vector3.left * 2);
         var effect = player.GetComponent<InteractionLinkEffect>();
-        player.GetComponent<PlayerColorWheel>().TrySelectColor("red"); Physics.SyncTransforms(); Call(effect, "LateUpdate");
+        player.GetComponent<PlayerColorWheel>().TrySelectColor("red"); PlanarPhysics.SyncTransforms(); Call(effect, "LateUpdate");
         Check(effect.DetectedTargetCount == 0, "water fully covered by authored wall has no ability preview link");
-        Object.DestroyImmediate(wall); Physics.SyncTransforms(); Call(effect, "ScanTargets");
+        Object.DestroyImmediate(wall); PlanarPhysics.SyncTransforms(); Call(effect, "ScanTargets");
         Check(effect.DetectedTargetCount == 1, "removing covering wall restores visible water link");
         Object.DestroyImmediate(water); Object.DestroyImmediate(player.gameObject);
     }
@@ -345,40 +346,40 @@ public static class GameplayRefinementAudit
     {
         Vector3 origin = new Vector3(130.5f, 20.5f, 0);
         var owner = Spawn("ColorBlocks/Prefabs/Red_Foundation.prefab", origin);
-        var mechanism = owner.GetComponent<MechanismBaseFeature>(); var body = owner.GetComponent<Rigidbody>();
-        Check(mechanism.UsesGravity && !body.isKinematic && body.useGravity,
+        var mechanism = owner.GetComponent<MechanismBaseFeature>(); var body = owner.GetComponent<Rigidbody2D>();
+        Check(mechanism.UsesGravity && !body.isKinematic && (body.gravityScale != 0f),
             "base defaults to real dynamic gravity after color activation");
         Check(Field(typeof(MechanismBaseFeature), "useGravity").GetCustomAttribute<BlockParameterAttribute>() != null,
             "base gravity switch is available as Chinese instance parameter");
         var floor = Solid("Base gravity floor", origin + Vector3.down * 3);
-        Physics.SyncTransforms();
-        for (int i = 0; i < 60; i++) { Call(mechanism, "FixedUpdate"); Physics.Simulate(.02f); }
-        Check(body.position.y < origin.y - 1.5f && body.position.y > origin.y - 2.1f,
+        PlanarPhysics.SyncTransforms();
+        for (int i = 0; i < 60; i++) { Call(mechanism, "FixedUpdate"); PlanarPhysics.Simulate(.02f); }
+        Check(body.WorldPosition().y < origin.y - 1.5f && body.WorldPosition().y > origin.y - 2.1f,
             "enabled gravity falls onto a real solid support");
-        Vector3 resting = body.position;
-        body.AddForce(Vector3.right * 100, ForceMode.Impulse);
-        for (int i = 0; i < 4; i++) { Call(mechanism, "FixedUpdate"); Physics.Simulate(.02f); }
-        Check(Mathf.Abs(body.position.x - resting.x) < .001f && Mathf.Abs(body.position.y - resting.y) < .02f,
+        Vector3 resting = body.WorldPosition();
+        body.AddForce(Vector3.right * 100, ForceMode2D.Impulse);
+        for (int i = 0; i < 4; i++) { Call(mechanism, "FixedUpdate"); PlanarPhysics.Simulate(.02f); }
+        Check(Mathf.Abs(body.WorldPosition().x - resting.x) < .001f && Mathf.Abs(body.WorldPosition().y - resting.y) < .02f,
             "settled base remains solid but cannot be pushed horizontally");
         Set(mechanism, "useGravity", false); Call(mechanism, "FixedUpdate");
-        Object.DestroyImmediate(floor); body.position = origin; owner.transform.position = origin; Physics.SyncTransforms();
-        for (int i = 0; i < 10; i++) { Call(mechanism, "FixedUpdate"); Physics.Simulate(.02f); }
-        Check(body.isKinematic && !body.useGravity && (body.position - origin).sqrMagnitude < .00001f,
+        Object.DestroyImmediate(floor); body.position = origin; owner.transform.position = origin; PlanarPhysics.SyncTransforms();
+        for (int i = 0; i < 10; i++) { Call(mechanism, "FixedUpdate"); PlanarPhysics.Simulate(.02f); }
+        Check(body.isKinematic && !(body.gravityScale != 0f) && (body.WorldPosition() - origin).sqrMagnitude < .00001f,
             "disabled instance gravity preserves a floating authored position");
         var player = Player(origin + Vector3.left);
         var carry = owner.GetComponent<CarryableFeature>();
         Check(carry.BeginCarry(player), "gravity-disabled base remains carryable"); carry.CancelCarry();
-        Check(body.isKinematic && !body.useGravity, "carry restore respects disabled gravity parameter");
+        Check(body.isKinematic && !(body.gravityScale != 0f), "carry restore respects disabled gravity parameter");
         var hook = owner.GetComponent<GreenHookBodyMotion>(); hook.BeginGreenHookPull(); hook.SetGreenHookVelocity(Vector3.right * 2);
         Call(mechanism, "FixedUpdate");
-        Check(hook.IsHookMoving && !body.isKinematic && !body.useGravity && body.linearVelocity.x > 1.9f,
+        Check(hook.IsHookMoving && !body.isKinematic && !(body.gravityScale != 0f) && ((Vector3)body.linearVelocity).x > 1.9f,
             "base physics does not override active green-hook ownership");
         hook.EndGreenHookPull(false, Vector3.zero, 0); Call(mechanism, "FixedUpdate");
-        Check(body.isKinematic && !body.useGravity, "hook release restores disabled gravity parameter");
+        Check(body.isKinematic && !(body.gravityScale != 0f), "hook release restores disabled gravity parameter");
         Set(mechanism, "useGravity", true); Call(mechanism, "FixedUpdate");
         Check(carry.BeginCarry(player), "gravity-enabled base remains carryable"); carry.CancelCarry();
-        Check(!body.isKinematic && body.useGravity, "carry restore respects enabled gravity parameter");
-        mechanism.ResetForRoom(); Check(body.useGravity && !body.isKinematic, "room state reset retains authored enabled gravity");
+        Check(!body.isKinematic && (body.gravityScale != 0f), "carry restore respects enabled gravity parameter");
+        mechanism.ResetForRoom(); Check((body.gravityScale != 0f) && !body.isKinematic, "room state reset retains authored enabled gravity");
         Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(owner);
     }
     private static void Finish(bool passed, string message)

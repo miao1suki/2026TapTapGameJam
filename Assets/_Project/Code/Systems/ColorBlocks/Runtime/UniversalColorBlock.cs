@@ -1,3 +1,4 @@
+using Project.Planar;
 using System.Collections;
 using System.Collections.Generic;
 using Project.BlockFeatures;
@@ -38,7 +39,7 @@ namespace Project.ColorBlocks
         [SerializeField, Min(0f), Tooltip("选择“过一会褪色”时，等待多少秒后恢复中性色。")]
         private float fadeDelaySeconds = 3f;
 
-        private readonly Collider[] neighborBuffer = new Collider[64];
+        private readonly Collider2D[] neighborBuffer = new Collider2D[64];
         private Material runtimeStatusMaterial;
         private Coroutine fadeRoutine;
         private float fadeRemainingSeconds = -1f;
@@ -234,13 +235,13 @@ namespace Project.ColorBlocks
                 Vector3 center =
                     transform.position +
                     CardinalDirections[directionIndex] * cellSize;
-                int count = Physics.OverlapBoxNonAlloc(
+                int count = PlanarPhysics.OverlapBoxNonAlloc(
                     center,
                     halfExtents,
                     neighborBuffer,
                     Quaternion.identity,
                     ~0,
-                    QueryTriggerInteraction.Collide);
+                    TriggerQuery.Collide);
 
                 for (int index = 0; index < count; index++)
                 {
@@ -273,7 +274,7 @@ namespace Project.ColorBlocks
         }
 
         private static IColorApplicationTarget ResolveTarget(
-            Collider collider)
+            Collider2D collider)
         {
             if (collider == null)
             {

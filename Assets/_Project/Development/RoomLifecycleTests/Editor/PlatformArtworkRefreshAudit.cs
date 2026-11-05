@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -107,7 +108,7 @@ public static class PlatformArtworkRefreshAudit
                 var platform = owner.GetComponent<OneWayPlatform>(); platform.ConfigureAppearance(color);
                 var presentation = MechanismArtworkPresentation.Ensure(owner); presentation.Refresh(0);
                 player.transform.position = Vector3.up; player.Motor.position = Vector3.up;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Check(!ColorRuntimeService.Instance.IsUnlocked(platform.AppearanceColorId) && platform.enabled && platform.CanSupport(player),
                     color + " locked appearance does not disable runtime physical support");
                 Check(presentation.Visual.enabled && presentation.Visual.gameObject.layer == platform.ArtworkLayer &&
@@ -143,16 +144,16 @@ public static class PlatformArtworkRefreshAudit
             {
                 // Audit the same exact authored box in both orientations, without
                 // changing the real prefab's thin/legacy collision contract.
-                var box = owner.GetComponent<BoxCollider>();
-                // The crank prefab retains a thin legacy BoxCollider. Author a
+                var box = owner.GetComponent<BoxCollider2D>();
+                // The crank prefab retains a thin legacy BoxCollider2D. Author a
                 // true length-cell vertical fixture through root scale, exactly
                 // as the planner does, without changing that collider contract.
                 owner.transform.localScale = vertical ? new Vector3(1f / box.size.x, length / box.size.y, 1)
                     : new Vector3(length / box.size.x, 1, 1);
-                // Collider.bounds is native-physics cached after an immediate
+                // Collider2D.bounds is native-physics cached after an immediate
                 // edit-mode Transform change. Flush only in this audit fixture,
                 // not in the production artwork path, before comparing edges.
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 string before = EditorJsonUtility.ToJson(box);
                 var presentation = MechanismArtworkPresentation.Ensure(owner); presentation.Refresh(0);
                 var visual = presentation.Visual;
@@ -184,7 +185,7 @@ public static class PlatformArtworkRefreshAudit
             var owner = Object.Instantiate(entry.Prefab);
             try
             {
-                var shape = owner.GetComponent<BoxCollider>(); string before = EditorJsonUtility.ToJson(shape);
+                var shape = owner.GetComponent<BoxCollider2D>(); string before = EditorJsonUtility.ToJson(shape);
                 LevelEditorComponentOverrideUtility.ApplyOverrides(owner, entry.ComponentValueOverrides, false);
                 var platform = owner.GetComponent<OneWayPlatform>();
                 Check((int)platform.AppearanceColor == i + 1 && owner.GetComponent<ColorObject>() == null && shape.enabled,
@@ -268,24 +269,24 @@ public static class PlatformArtworkRefreshAudit
                 owners.Add(owner);
                 int length = column % 3 + 1; bool vertical = column >= 3;
                 owner.transform.position = new Vector3(2 + column * 4, 14 - row * 6, 0);
-                var box = owner.GetComponent<BoxCollider>();
+                var box = owner.GetComponent<BoxCollider2D>();
                 owner.transform.localScale = vertical ? new Vector3(1f / box.size.x, length / box.size.y, 1)
                     : new Vector3(length / box.size.x, 1, 1);
                 // A square1x1 footprint has no long-axis hint; rotate its authored
                 // root to also exercise a genuinely vertical one-cell sprite.
                 if (vertical && length == 1) owner.transform.rotation = Quaternion.Euler(0, 0, 90);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 var presentation = MechanismArtworkPresentation.Ensure(owner); presentation.Refresh(0);
-                Backing(owner.GetComponent<BoxCollider>().bounds, vertical); visuals.Add(presentation.Visual);
+                Backing(owner.GetComponent<BoxCollider2D>().bounds, vertical); visuals.Add(presentation.Visual);
             }
             for (int i = 0; i < 3; i++)
             {
                 var owner = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Mechanisms/OneWayPlatform.prefab"));
                 owners.Add(owner); owner.transform.position = new Vector3(4 + i * 8, 2.5f, 0);
                 owner.GetComponent<OneWayPlatform>().ConfigureAppearance((OneWayPlatformColor)(i + 1));
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 var presentation = MechanismArtworkPresentation.Ensure(owner); presentation.Refresh(0);
-                Backing(owner.GetComponent<BoxCollider>().bounds, false); visuals.Add(presentation.Visual);
+                Backing(owner.GetComponent<BoxCollider2D>().bounds, false); visuals.Add(presentation.Visual);
             }
             target.Create(); command.SetRenderTarget(target); command.ClearRenderTarget(true, true, Color.clear);
             command.SetViewProjectionMatrices(Matrix4x4.identity, GL.GetGPUProjectionMatrix(Matrix4x4.Ortho(0, 24, 0, 18, -10, 10), true));

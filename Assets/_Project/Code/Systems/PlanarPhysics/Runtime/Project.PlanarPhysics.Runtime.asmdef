@@ -1,0 +1,6 @@
+{
+  "name": "Project.PlanarPhysics.Runtime",
+  "rootNamespace": "Project.Planar",
+  "references": [],
+  "autoReferenced": true
+}

@@ -17,7 +17,7 @@ Shader "Hidden/2026TapTap/ColorObjectMask"
         Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" }
         Pass
         {
-            Tags { "LightMode"="UniversalForward" }
+            Tags { "LightMode"="Universal2D" }
             ZWrite Off
             ZTest LEqual
             Cull Off

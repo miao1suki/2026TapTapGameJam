@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -33,7 +34,7 @@ public static class R2GameplayVerification
     private static PlantObstacleFeature[] plants;
     private static GameObject blueFixture, redFixture;
     private static IDisposable controlLock;
-    private static RigidbodyConstraints oldConstraints;
+    private static RigidbodyConstraints2D oldConstraints;
     private static Vector3 liftStart, upperStart, climbStart;
     private static CameraControlHandle visualHandle;
     private static EditorWindow gameView;
@@ -67,7 +68,7 @@ public static class R2GameplayVerification
     private static void MoveTo(Vector3 point)
     {
         player.Motor.linearVelocity = Vector3.zero;
-        player.Motor.position = point; player.transform.position = point; Physics.SyncTransforms();
+        player.Motor.position = point; player.transform.position = point; PlanarPhysics.SyncTransforms();
     }
     private static void StepOn(int index) => MoveTo(door.Buttons[index].transform.position + Vector3.up * .015f);
     private static void Tick()
@@ -104,7 +105,7 @@ public static class R2GameplayVerification
                     entrance.GetComponent<BlueContactCubeGrowthTarget>().CanApplyColor("blue", player.gameObject),
                     "both authored green cubes expose main's player-blue hit receiver");
                 Check(upper.Length == 1 && upper.MaximumLength == 11 && upper.GetComponent<ContactCubeMotion>().IsAuthoredFixed, "fixed AK114 root starts one, max eleven");
-                Check(!upper.GetComponent<CarryableFeature>().enabled && upper.GetComponent<Rigidbody>().constraints == RigidbodyConstraints.FreezeAll, "AK114 immovable and not carryable");
+                Check(!upper.GetComponent<CarryableFeature>().enabled && upper.GetComponent<Rigidbody2D>().constraints == RigidbodyConstraints2D.FreezeAll, "AK114 immovable and not carryable");
                 Check(entrance.Length == 1 && entrance.MaximumLength == 9 && !entrance.GetComponent<ContactCubeMotion>().IsAuthoredFixed, "ordinary BG115 starts one, max nine");
                 Check(Vector3.Distance(entrance.transform.position,new Vector3(53.5f,-19.5f,0)) < .025f, "ordinary BG115 rests on its authored ledge");
                 upperStart = upper.transform.position;
@@ -122,7 +123,7 @@ public static class R2GameplayVerification
                 }
                 player.GetComponent<PlayerInputDriver>().enabled = false;
                 controlLock = player.AcquireControlLock(typeof(R2GameplayVerification));
-                oldConstraints = player.Motor.constraints; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                oldConstraints = player.Motor.constraints; player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                 crank = Find<CrankPlatformFeature>("crank"); lift = Find<MovingPlatformFeature>("lift"); liftStart = lift.transform.position;
                 Check(Mathf.Abs(liftStart.y + 22.5f) < .001f, "platform starts on row118");
                 MoveTo(crank.transform.position + Vector3.right);
@@ -156,7 +157,7 @@ public static class R2GameplayVerification
             {
                 if (elapsed < .25f) return;
                 Check(door.Buttons.Take(2).All(b => b.IsPressed) && !door.Buttons[2].IsPressed && door.State == DoorState.Locked,
-                    "two buttons still cannot open exit; " + string.Join(";",door.Buttons.Select(b => b.name+":"+b.IsPressed+" active="+b.isActiveAndEnabled+" pos="+b.transform.position+" collider="+b.GetComponent<BoxCollider>().enabled+" bounds="+b.GetComponent<BoxCollider>().bounds)) + "; player="+player.transform.position+" feet="+player.GetComponent<CapsuleCollider>().bounds.min.y+" state="+door.State);
+                    "two buttons still cannot open exit; " + string.Join(";",door.Buttons.Select(b => b.name+":"+b.IsPressed+" active="+b.isActiveAndEnabled+" pos="+b.transform.position+" collider="+b.GetComponent<BoxCollider2D>().enabled+" bounds="+b.GetComponent<BoxCollider2D>().bounds)) + "; player="+player.transform.position+" feet="+player.GetComponent<CapsuleCollider2D>().bounds.min.y+" state="+door.State);
                 // A 13-cell test teleport is not a playable fall. Respawn through
                 // the official API first, preserving the two latched buttons.
                 player.RequestRespawn(); StepOn(2); Next();
@@ -170,7 +171,7 @@ public static class R2GameplayVerification
             else if (stage == 7)
             {
                 if (elapsed < 1.1f) return;
-                Check(plants.All(p => !p.IsIntact && p.GetComponentsInChildren<Collider>().All(c => !c.enabled)), "all eight orthogonally connected plant cells burn away");
+                Check(plants.All(p => !p.IsIntact && p.GetComponentsInChildren<Collider2D>().All(c => !c.enabled)), "all eight orthogonally connected plant cells burn away");
                 MoveTo(innerPickup.transform.position); Next();
             }
             else if (stage == 8)
@@ -194,7 +195,7 @@ public static class R2GameplayVerification
                 blueFixture = new GameObject("Disposable blue contact audit"); blueFixture.SetActive(false);
                 MakeCube("Blue",upperStart + Vector3.left,blueFixture);
                 MakeCube("Blue",entrance.transform.position + Vector3.right,blueFixture);
-                blueFixture.SetActive(true); Physics.SyncTransforms(); Next();
+                blueFixture.SetActive(true); PlanarPhysics.SyncTransforms(); Next();
             }
             else if (stage == 10)
             {
@@ -202,7 +203,7 @@ public static class R2GameplayVerification
                 Check(upper.Length == 11 && upper.GrowthDirection == Vector3.right, "temporary blue contact grows AK114 right to AU114");
                 Check(entrance.Length == 9 && entrance.GrowthDirection == Vector3.left, "temporary blue contact grows BG115 left to AY115; length="+entrance.Length+" dir="+entrance.GrowthDirection.ToString("F6")+" state="+entrance.State+" pos="+entrance.transform.position.ToString("F6"));
                 Check(Vector3.Distance(upper.transform.position,upperStart) < .001f && upper.transform.lossyScale == Vector3.one, "growth holds fixed anchor without root scaling");
-                var bounds = upper.GetComponentInChildren<BoxCollider>().bounds;
+                var bounds = upper.GetComponentInChildren<BoxCollider2D>().bounds;
                 Check(Mathf.Abs(bounds.min.x-31) < .01f && Mathf.Abs(bounds.max.x-42) < .01f, "eleven-cell physical footprint is exact");
                 Object.DestroyImmediate(blueFixture); blueFixture = null;
                 controlLock.Dispose(); controlLock = null; player.Motor.constraints = oldConstraints;
@@ -225,10 +226,10 @@ public static class R2GameplayVerification
             {
                 if (elapsed < .15f) return;
                 Check(!player.IsHorizontalClimbing, "jump releases fixed green underside");
-                controlLock = player.AcquireControlLock(typeof(R2GameplayVerification)); player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                controlLock = player.AcquireControlLock(typeof(R2GameplayVerification)); player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                 MoveTo(new Vector3(57.5f,-19.5f,0));
                 redFixture = new GameObject("Disposable red contact audit"); redFixture.SetActive(false);
-                MakeCube("Red",upperStart+Vector3.left,redFixture); redFixture.SetActive(true); Physics.SyncTransforms(); Next();
+                MakeCube("Red",upperStart+Vector3.left,redFixture); redFixture.SetActive(true); PlanarPhysics.SyncTransforms(); Next();
             }
             else if (stage == 14)
             {
@@ -258,7 +259,7 @@ public static class R2GameplayVerification
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/ContactCubes/"+color+"_ContactCube.prefab");
         Check(prefab != null,"temporary contact prefab exists");
         var instance = Object.Instantiate(prefab,position,Quaternion.identity,parent.transform);
-        instance.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
+        instance.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
         instance.GetComponent<CarryableFeature>().enabled = false;
     }
     private static void ConfigureGameView()
@@ -289,9 +290,9 @@ public static class R2GameplayVerification
         public bool TryGetCameraState(in CameraControlContext context,out CameraState state)
         {
             state = new CameraState { position = new Vector3(29,-17,-80), rotation = Quaternion.identity,
-                projection = CameraProjectionMode.Orthographic, orthographicSize = 18, fieldOfView = 60 }; return true;
+                projection = CameraProjectionMode.Orthographic, orthographicSize = 18 }; return true;
         }
-        public bool TryGetLensOverride(out float orthographicSize,out float fieldOfView) { orthographicSize=18;fieldOfView=60;return true; }
+        public bool TryGetLensOverride(out float orthographicSize) { orthographicSize=18;return true; }
     }
     private static void Finish(bool success,string report)
     {

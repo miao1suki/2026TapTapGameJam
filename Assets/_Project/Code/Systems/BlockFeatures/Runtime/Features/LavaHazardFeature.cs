@@ -63,8 +63,8 @@ namespace Project.BlockFeatures
             GameObject prefab = flowArtworkPrefab != null ? flowArtworkPrefab : Project.FlowMagma.ReactionArtworkSettings.Load()?.magmaPrefab;
             if (prefab == null) return;
             var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
-            BoxCollider box = GetComponent<BoxCollider>();
-            Bounds local = shape != null ? shape.LocalBounds : box != null ? new Bounds(box.center, box.size) : new Bounds(Vector3.zero, Vector3.one);
+            BoxCollider2D box = GetComponent<BoxCollider2D>();
+            Bounds local = shape != null ? shape.LocalBounds : box != null ? new Bounds(box.offset, box.size) : new Bounds(Vector3.zero, Vector3.one);
             Vector3 front = transform.TransformPoint(new Vector3(local.center.x, local.center.y, local.min.z));
             // This is an underlay in the same cell, not a front-facing decal on its
             // contents. Put it behind opaque walls and the block's front artwork.
@@ -97,8 +97,8 @@ namespace Project.BlockFeatures
             if (flowArtwork != null) flowArtwork.CollectSurfaceOrigins(coolingOrigins, 8);
             if (coolingOrigins.Count == 0)
             {
-                var box = GetComponent<BoxCollider>();
-                Bounds bounds = box != null ? new Bounds(box.center, box.size) : new Bounds(Vector3.zero, Vector3.one);
+                var box = GetComponent<BoxCollider2D>();
+                Bounds bounds = box != null ? new Bounds(box.offset, box.size) : new Bounds(Vector3.zero, Vector3.one);
                 Vector3 point = transform.TransformPoint(new Vector3(bounds.center.x, bounds.max.y, bounds.min.z));
                 coolingOrigins.Add(point);
             }

@@ -34,11 +34,11 @@ namespace Project.Mechanisms
                 fallback.SetParent(transform, false);
                 for (int index = 0; index < 3; index++)
                 {
-                    var dot = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    var dot = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                     dot.name = "孔位 " + (index + 1);
                     dot.transform.SetParent(fallback, false);
                     dot.transform.localScale = new Vector3(.18f, .18f, .08f);
-                    var collider = dot.GetComponent<Collider>();
+                    var collider = dot.GetComponent<Collider2D>();
                     collider.enabled = false;
                     if (Application.isPlaying) Destroy(collider); else DestroyImmediate(collider);
                 }

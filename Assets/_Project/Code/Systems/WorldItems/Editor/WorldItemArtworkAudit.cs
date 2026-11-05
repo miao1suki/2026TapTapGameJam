@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -90,17 +91,17 @@ namespace Project.WorldItems.Editor
         {
             if (EditorApplication.timeSinceStartup - started > 120) { Finish(false, "Timeout"); return; }
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .2f) return;
-            EditorApplication.update -= Tick; var simulation = Physics.simulationMode;
+            EditorApplication.update -= Tick; var simulation = PlanarPhysics.simulationMode;
             try
             {
-                AudioListener.volume = 0f; AudioListener.pause = true; Physics.simulationMode = SimulationMode.Script; checks = 0;
+                AudioListener.volume = 0f; AudioListener.pause = true; PlanarPhysics.simulationMode = SimulationMode2D.Script; checks = 0;
                 foreach (NeutralSpike.SpikeSize size in Enum.GetValues(typeof(NeutralSpike.SpikeSize)))
                     foreach (var facing in new[] { NeutralSpike.SpikeFacing.Up, NeutralSpike.SpikeFacing.Down,
                         NeutralSpike.SpikeFacing.Left, NeutralSpike.SpikeFacing.Right }) VerifyKillAndBlood(size, facing);
                 Finish(true, "PASS " + checks + " real trigger / per-cell blood / reset / native sprite checks");
             }
             catch (Exception error) { Debug.LogException(error); Finish(false, error.ToString()); }
-            finally { Physics.simulationMode = simulation; }
+            finally { PlanarPhysics.simulationMode = simulation; }
         }
         private static void VerifyKillAndBlood(NeutralSpike.SpikeSize size, NeutralSpike.SpikeFacing facing)
         {
@@ -115,13 +116,13 @@ namespace Project.WorldItems.Editor
             spikeObject.transform.SetParent(null, true); Object.DestroyImmediate(staging);
             var player = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab"),
                 spikeObject.transform.position + Vector3.back * 4, Quaternion.identity).GetComponent<PlayerController>();
-            player.GetComponent<PlayerInputDriver>().enabled = false; player.Motor.useGravity = false; player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+            player.GetComponent<PlayerInputDriver>().enabled = false; player.Motor.gravityScale = 0f; player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
             var protection = typeof(PlayerController).GetField("invulnerableUntil", BindingFlags.Instance | BindingFlags.NonPublic);
             protection.SetValue(player, Time.time + 100);
             void Step(Vector3 position)
             {
-                player.Motor.position = position; player.transform.position = position; player.Motor.WakeUp(); Physics.SyncTransforms();
-                for (int i = 0; i < 3; i++) Physics.Simulate(.02f);
+                player.Motor.position = position; player.transform.position = position; player.Motor.WakeUp(); PlanarPhysics.SyncTransforms();
+                for (int i = 0; i < 3; i++) PlanarPhysics.Simulate(.02f);
             }
             Step(spikeObject.transform.position + Vector3.right);
             Check(!player.IsDead && spike.BloodyCellCount == 0, "protected touch does not stain " + size + "/" + facing);

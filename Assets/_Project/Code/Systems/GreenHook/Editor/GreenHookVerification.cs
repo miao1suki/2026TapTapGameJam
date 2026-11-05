@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Reflection;
@@ -61,14 +62,14 @@ namespace Project.GreenHook.Editor
             Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path), position, Quaternion.identity);
         private static GameObject Solid(string name, Vector3 position, Vector3 size)
         {
-            var obj = GameObject.CreatePrimitive(PrimitiveType.Cube); obj.name = name; obj.transform.position = position; obj.transform.localScale = size;
+            var obj = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); obj.name = name; obj.transform.position = position; obj.transform.localScale = size;
             return obj;
         }
         private static PlayerController Player(Vector3 position)
         {
             var player = Instantiate("Assets/_Project/Content/Player/Player.prefab", position).GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.interpolation = RigidbodyInterpolation.None;
+            player.Motor.interpolation = RigidbodyInterpolation2D.None;
             return player;
         }
         private static GreenHookAbility Attach(PlayerController player, IGreenHookTarget target)
@@ -76,18 +77,18 @@ namespace Project.GreenHook.Editor
             var hook = player.GetComponent<GreenHookAbility>();
             Set(hook, "hookDirection", Vector2.right); Set(hook, "hookLength", 6f);
             Invoke(hook, "BeginHook", target, target.GreenHookTransform.position);
-            Invoke(hook, "BeginPulling"); Physics.SyncTransforms(); return hook;
+            Invoke(hook, "BeginPulling"); PlanarPhysics.SyncTransforms(); return hook;
         }
         private static void Step(GreenHookAbility hook, PlayerController player, int count)
         {
             for (int i = 0; i < count; i++)
             {
-                Invoke(hook, "FixedUpdate"); Invoke(player, "FixedUpdate"); Physics.Simulate(Time.fixedDeltaTime);
+                Invoke(hook, "FixedUpdate"); Invoke(player, "FixedUpdate"); PlanarPhysics.Simulate(Time.fixedDeltaTime);
             }
         }
         private static void RunCases()
         {
-            var oldSimulation = Physics.simulationMode; Physics.simulationMode = SimulationMode.Script;
+            var oldSimulation = PlanarPhysics.simulationMode; PlanarPhysics.simulationMode = SimulationMode2D.Script;
             try
             {
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
@@ -103,17 +104,17 @@ namespace Project.GreenHook.Editor
                     Vector3 origin = new Vector3(variant * 30, 20, 0);
                     var player = Player(origin);
                     var cube = Instantiate("Assets/_Project/Content/ContactCubes/Red_ContactCube.prefab", origin + Vector3.right * 5).GetComponent<ContactCubeMotion>();
-                    cube.GetComponent<Rigidbody>().interpolation = variant == 1 ? RigidbodyInterpolation.Interpolate : RigidbodyInterpolation.None;
+                    cube.GetComponent<Rigidbody2D>().interpolation = variant == 1 ? RigidbodyInterpolation2D.Interpolate : RigidbodyInterpolation2D.None;
                     var floor = Solid("Floor", origin + new Vector3(2,-1.1f,0), new Vector3(20,1,2));
-                    Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms();
                     var hook = Attach(player, cube); Vector3 start = cube.GreenHookPosition;
                     Step(hook, player, 7);
                     Check(cube.GreenHookPosition.x < start.x - .5f && !hook.IsPullingPlayer, "target first " + variant);
-                    Check(Mathf.Abs(player.Motor.position.x - origin.x) < .03f, "player held during target motion");
+                    Check(Mathf.Abs(player.Motor.WorldPosition().x - origin.x) < .03f, "player held during target motion");
                     var wall = Solid("Wall", new Vector3(cube.GreenHookPosition.x-.7f,origin.y,0), new Vector3(.4f,4,2));
-                    Physics.SyncTransforms(); Step(hook,player,7);
-                    Check(hook.IsPullingPlayer && player.Motor.position.x > origin.x + .25f, "blocked target switches to player");
-                    Object.DestroyImmediate(wall); Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms(); Step(hook,player,7);
+                    Check(hook.IsPullingPlayer && player.Motor.WorldPosition().x > origin.x + .25f, "blocked target switches to player");
+                    Object.DestroyImmediate(wall); PlanarPhysics.SyncTransforms();
                     start = cube.GreenHookPosition; Step(hook,player,4);
                     Check(!hook.IsPullingPlayer && cube.GreenHookPosition.x < start.x-.2f, "target priority re-evaluated");
                     Step(hook,player,650);
@@ -125,15 +126,15 @@ namespace Project.GreenHook.Editor
                 {
                     var player = Player(new Vector3(100,20,0));
                     var cube = Instantiate("Assets/_Project/Content/ContactCubes/Green_ContactCube.prefab", new Vector3(103,22,0)).GetComponent<ContactCubeMotion>();
-                    cube.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
+                    cube.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
                     var hook = Attach(player,cube); Vector3 anchorStart = cube.GreenHookPosition;
                     Check(hook.IsSwinging, "green cube is swing anchor");
                     hook.DriveInput(Vector2.right,false); Step(hook,player,650);
                     Check(hook.IsSwinging && player.IsGreenHookActive, "swing never times out");
                     Check(Vector3.Distance(anchorStart,cube.GreenHookPosition)<.001f, "swing does not move anchor");
-                    Check(Vector2.Distance(player.Motor.position,anchorStart) <= 3.7f, "rope length constrained");
+                    Check(Vector2.Distance(player.Motor.WorldPosition(),anchorStart) <= 3.7f, "rope length constrained");
                     var externalLock=player.AcquireControlLock(new object()); Step(hook,player,1);
-                    Check(player.Motor.linearVelocity.sqrMagnitude < .001f && !player.CanDriveGreenHook, "additional control lock pauses hook motion");
+                    Check(((Vector3)player.Motor.linearVelocity).sqrMagnitude < .001f && !player.CanDriveGreenHook, "additional control lock pauses hook motion");
                     externalLock.Dispose(); player.UpdateGreenHookInput(Vector2.zero,true);
                     Check(!hook.IsHookActive && !player.IsControlLocked,"player API releases swing");
                     Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(cube.gameObject);
@@ -146,7 +147,7 @@ namespace Project.GreenHook.Editor
                 VerifySwingSafetyAndRapidRetarget();
                 VerifyExtendingTargetInvalidation();
             }
-            finally { Physics.simulationMode = oldSimulation; }
+            finally { PlanarPhysics.simulationMode = oldSimulation; }
         }
 
         private static readonly string[] PullPrefabs =
@@ -168,37 +169,37 @@ namespace Project.GreenHook.Editor
                     Set(feature, "useGravity", false);
                     Invoke(feature, "FixedUpdate");
                 }
-                var body = obj.GetComponent<Rigidbody>();
+                var body = obj.GetComponent<Rigidbody2D>();
                 var motion = obj.GetComponent<IGreenHookMotion>();
                 bool originalKinematic = body.isKinematic;
                 bool gravity = kind != 3;
                 if (!body.isKinematic) body.linearVelocity = Vector3.down * 2;
                 motion.BeginGreenHookPull();
-                Check(body.useGravity == gravity && !body.isKinematic, "hook gravity respects author setting " + kind);
-                Vector3 start = body.position;
+                Check((body.gravityScale != 0f) == gravity && !body.isKinematic, "hook gravity respects author setting " + kind);
+                Vector3 start = body.WorldPosition();
                 for (int step = 0; step < 20; step++)
                 {
                     motion.SetGreenHookVelocity(Vector3.left * 3);
-                    Physics.Simulate(Time.fixedDeltaTime);
+                    PlanarPhysics.Simulate(Time.fixedDeltaTime);
                 }
-                Check(body.position.x < start.x - 1f, "horizontal force still pulls target " + kind);
-                Check(gravity ? body.position.y < start.y - 1f : Mathf.Abs(body.position.y - start.y) < .001f,
+                Check(body.WorldPosition().x < start.x - 1f, "horizontal force still pulls target " + kind);
+                Check(gravity ? body.WorldPosition().y < start.y - 1f : Mathf.Abs(body.WorldPosition().y - start.y) < .001f,
                     "horizontal pull preserves falling or explicit no-gravity " + kind);
-                start = body.position;
+                start = body.WorldPosition();
                 for (int step = 0; step < 10; step++)
                 {
                     motion.SetGreenHookVelocity(Vector3.zero);
-                    Physics.Simulate(Time.fixedDeltaTime);
+                    PlanarPhysics.Simulate(Time.fixedDeltaTime);
                 }
-                Check(Mathf.Abs(body.position.x - start.x) < .001f &&
-                    (gravity ? body.position.y < start.y - .5f : Mathf.Abs(body.position.y - start.y) < .001f),
+                Check(Mathf.Abs(body.WorldPosition().x - start.x) < .001f &&
+                    (gravity ? body.WorldPosition().y < start.y - .5f : Mathf.Abs(body.WorldPosition().y - start.y) < .001f),
                     "blocked/held target stops lateral force without levitating " + kind);
                 motion.SetGreenHookVelocity(Vector3.up * 3);
-                Physics.Simulate(Time.fixedDeltaTime);
-                Check(Mathf.Abs(body.linearVelocity.x) < .001f && body.linearVelocity.y > 2.5f && body.useGravity == gravity,
+                PlanarPhysics.Simulate(Time.fixedDeltaTime);
+                Check(Mathf.Abs(((Vector3)body.linearVelocity).x) < .001f && ((Vector3)body.linearVelocity).y > 2.5f && (body.gravityScale != 0f) == gravity,
                     "vertical command preserves gravity policy " + kind);
                 motion.EndGreenHookPull(false, Vector3.zero, 0);
-                Check(body.useGravity == gravity && body.isKinematic == originalKinematic,
+                Check((body.gravityScale != 0f) == gravity && body.isKinematic == originalKinematic,
                     "release returns original motion ownership " + kind);
                 Object.DestroyImmediate(obj);
             }
@@ -207,13 +208,13 @@ namespace Project.GreenHook.Editor
                 Vector3 origin = new Vector3(2020 + kind * 25, 40, 0);
                 var player = Player(origin + Vector3.left * 3);
                 var obj = Instantiate(PullPrefabs[kind], origin);
-                var body = obj.GetComponent<Rigidbody>();
+                var body = obj.GetComponent<Rigidbody2D>();
                 var pillar = Solid("DeparturePillar", origin + Vector3.down * 2f, new Vector3(1, 3, 2));
                 var bottom = Solid("UndergroundFloor", origin + new Vector3(-2, -6, 0), new Vector3(14, 1, 2));
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 var hook = Attach(player, obj.GetComponent<IGreenHookTarget>());
                 Step(hook, player, 18);
-                Check(body.position.x < origin.x - 1f && body.position.y < origin.y - .25f,
+                Check(body.WorldPosition().x < origin.x - 1f && body.WorldPosition().y < origin.y - .25f,
                     "live hook target falls after leaving pillar " + kind);
                 Check(hook.IsHookActive && player.CanDriveGreenHook && !player.IsDead,
                     "falling target retains connection and single ownership " + kind);
@@ -223,14 +224,14 @@ namespace Project.GreenHook.Editor
 
                 player = Player(origin + Vector3.left * 3);
                 obj = Instantiate(PullPrefabs[kind], origin);
-                body = obj.GetComponent<Rigidbody>();
+                body = obj.GetComponent<Rigidbody2D>();
                 var sideWall = Solid("FallingSideWall", origin + Vector3.left * .7f, new Vector3(.4f, 8, 2));
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 hook = Attach(player, obj.GetComponent<IGreenHookTarget>());
                 Step(hook, player, 5);
-                Check(hook.IsPullingPlayer && body.position.y < origin.y - .04f && body.useGravity,
+                Check(hook.IsPullingPlayer && body.WorldPosition().y < origin.y - .04f && (body.gravityScale != 0f),
                     "blocked target still falls naturally while player is pulled " + kind);
-                Check(player.Motor.position.x > origin.x - 2.7f && hook.IsHookActive,
+                Check(player.Motor.WorldPosition().x > origin.x - 2.7f && hook.IsHookActive,
                     "falling target does not prevent player fallback or detach " + kind);
                 hook.CancelHook();
                 Object.DestroyImmediate(obj); Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(sideWall);
@@ -246,7 +247,7 @@ namespace Project.GreenHook.Editor
                 var player = Player(origin);
                 var obj = Instantiate(PullPrefabs[kind], origin + Vector3.right * 3);
                 var motion = obj.GetComponent<IGreenHookMotion>();
-                var body = obj.GetComponent<Rigidbody>();
+                var body = obj.GetComponent<Rigidbody2D>();
                 var hook = Attach(player, obj.GetComponent<IGreenHookTarget>());
                 Check(motion.IsGreenHookPullActive && player.ControlLockDepth == 1,
                     "handoff begins with unique target/player ownership " + kind + "/" + handoff);
@@ -258,7 +259,7 @@ namespace Project.GreenHook.Editor
                     "target handoff cancels rope and releases only its player handle " + kind + "/" + handoff);
                 if (handoff == 1)
                 {
-                    Check(body.isKinematic && !body.useGravity, "carry keeps exclusive target physics " + kind);
+                    Check(body.isKinematic && !(body.gravityScale != 0f), "carry keeps exclusive target physics " + kind);
                     obj.GetComponent<ICarryMotionParticipant>().SetCarrySuspended(false);
                 }
                 Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(obj);
@@ -278,7 +279,7 @@ namespace Project.GreenHook.Editor
                 var player = Player(origin);
                 var obj = Instantiate(PullPrefabs[kind], origin + axis * 4f);
                 var target = obj.GetComponent<IGreenHookTarget>();
-                var body = obj.GetComponent<Rigidbody>();
+                var body = obj.GetComponent<Rigidbody2D>();
                 var playerWall = Solid("PlayerStop", origin + axis * .7f, wallSize);
                 var targetWall = Solid("TargetStop", obj.transform.position - axis * .7f, wallSize);
                 // These are collision/fallback tests, not weightlessness tests. A
@@ -290,30 +291,30 @@ namespace Project.GreenHook.Editor
                 // PlayerStop itself is the support and must be removable for fallback.
                 var playerSupport = axis.y < 0f ? null : Solid("PlayerSupport", origin + Vector3.down * .75f,
                     new Vector3(axis.x != 0f ? 4f : 1f, .5f, 2f));
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 var hook = Attach(player, target);
-                Vector3 targetStart = body.position;
+                Vector3 targetStart = body.WorldPosition();
                 Step(hook, player, 650);
                 Check(hook.IsPulling && hook.IsPullingPlayer && player.CanDriveGreenHook && player.ControlLockDepth == 1,
-                    label + " stays connected without timeout (hook=" + hook.IsHookActive + ", target=" + body.position +
-                    ", player=" + player.Motor.position + ", pullingPlayer=" + hook.IsPullingPlayer + ", depth=" + player.ControlLockDepth + ")");
-                Check((body.position - targetStart).sqrMagnitude < .001f &&
-                    (player.Motor.position - origin).sqrMagnitude < .001f,
-                    label + " neither body penetrates blockers (target=" + (body.position - targetStart) +
-                    ", player=" + (player.Motor.position - origin) + ")");
+                    label + " stays connected without timeout (hook=" + hook.IsHookActive + ", target=" + body.WorldPosition() +
+                    ", player=" + player.Motor.WorldPosition() + ", pullingPlayer=" + hook.IsPullingPlayer + ", depth=" + player.ControlLockDepth + ")");
+                Check((body.WorldPosition() - targetStart).sqrMagnitude < .001f &&
+                    (player.Motor.WorldPosition() - origin).sqrMagnitude < .001f,
+                    label + " neither body penetrates blockers (target=" + (body.WorldPosition() - targetStart) +
+                    ", player=" + (player.Motor.WorldPosition() - origin) + ")");
 
-                Object.DestroyImmediate(playerWall); Physics.SyncTransforms();
+                Object.DestroyImmediate(playerWall); PlanarPhysics.SyncTransforms();
                 Step(hook, player, 4);
-                Check(hook.IsPullingPlayer && Vector3.Dot(player.Motor.position - origin, axis) > .3f &&
-                    (body.position - targetStart).sqrMagnitude < .001f, label + " resumes player pull without relaunch");
-                float playerSpeedBeforeHandoff = Mathf.Abs(player.Motor.linearVelocity.x);
-                Object.DestroyImmediate(targetWall); Physics.SyncTransforms();
+                Check(hook.IsPullingPlayer && Vector3.Dot(player.Motor.WorldPosition() - origin, axis) > .3f &&
+                    (body.WorldPosition() - targetStart).sqrMagnitude < .001f, label + " resumes player pull without relaunch");
+                float playerSpeedBeforeHandoff = Mathf.Abs(((Vector3)player.Motor.linearVelocity).x);
+                Object.DestroyImmediate(targetWall); PlanarPhysics.SyncTransforms();
                 Step(hook, player, 4);
-                Check(!hook.IsPullingPlayer && Vector3.Dot(targetStart - body.position, axis) > .3f &&
+                Check(!hook.IsPullingPlayer && Vector3.Dot(targetStart - body.WorldPosition(), axis) > .3f &&
                     player.IsGreenHookLocomotionAllowed, label + " restores target priority and ordinary player motor");
                 if (axis.x != 0f)
                     Check(((Vector2)typeof(PlayerController).GetField("greenHookVelocity", Private).GetValue(player)).sqrMagnitude < .0001f &&
-                        Mathf.Abs(player.Motor.linearVelocity.x) < playerSpeedBeforeHandoff + .001f,
+                        Mathf.Abs(((Vector3)player.Motor.linearVelocity).x) < playerSpeedBeforeHandoff + .001f,
                         label + " target motion clears the hook command and allows ordinary motor braking without freezing inertia");
                 var releaseInput = new HookInput { Release = true,
                     ReleaseAction = direction % 2 == 0 ? InputActionId.Jump : InputActionId.Interact };
@@ -340,8 +341,8 @@ namespace Project.GreenHook.Editor
                 var player = Player(origin);
                 string path = kind == 3 ? "Assets/_Project/Content/ContactCubes/Green_ContactCube.prefab" : PullPrefabs[kind];
                 var obj = Instantiate(path, origin + Vector3.right * 3f);
-                var body = obj.GetComponent<Rigidbody>();
-                if (kind == 3) body.constraints = RigidbodyConstraints.FreezeAll;
+                var body = obj.GetComponent<Rigidbody2D>();
+                if (kind == 3) body.constraints = RigidbodyConstraints2D.FreezeAll;
                 if (kind == 3) player.Motor.linearVelocity = Vector3.up * 2f;
                 var hook = Attach(player, obj.GetComponent<IGreenHookTarget>());
                 string label = "range " + kind + "/" + movePlayer + "/" + useUpdate;
@@ -351,12 +352,12 @@ namespace Project.GreenHook.Editor
                 Check(hook.IsHookActive && player.ControlLockDepth == 1, label + " ignores pointer outside circle");
                 if (movePlayer == 0) obj.transform.position = body.position = origin + Vector3.right * 6f;
                 else player.transform.position = player.Motor.position = origin - Vector3.right * 3f;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
                 Check(hook.IsHookActive && player.ControlLockDepth == 1, label + " six cells retains attached slack");
                 if (movePlayer == 0) obj.transform.position = body.position = origin + Vector3.right * 9f;
                 else player.transform.position = player.Motor.position = origin - Vector3.right * 6f;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
                 Check(hook.IsHookActive, label + " transient overshoot retains connection");
                 Set(hook, "outOfRangeSince", Time.time - .2f);
@@ -365,19 +366,19 @@ namespace Project.GreenHook.Editor
                 // Returning inside the enlarged radius clears the continuous-outside timer.
                 if (movePlayer == 0) obj.transform.position = body.position = origin + Vector3.right * 6f;
                 else player.transform.position = player.Motor.position = origin - Vector3.right * 3f;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
                 Check((float)typeof(GreenHookAbility).GetField("outOfRangeSince", Private).GetValue(hook) < 0f,
                     label + " returning inside resets grace");
                 if (movePlayer == 0) obj.transform.position = body.position = origin + Vector3.right * 9f;
                 else player.transform.position = player.Motor.position = origin - Vector3.right * 6f;
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
                 Set(hook, "outOfRangeSince", Time.time - .41f);
                 Invoke(hook, useUpdate == 0 ? "FixedUpdate" : "Update");
                 Check(!hook.IsHookActive && !player.IsGreenHookActive && !player.IsControlLocked,
                     label + " sustained nine-cell separation releases once");
-                if (kind == 3) Check(player.Motor.linearVelocity.y > 1.9f, label + " range release preserves swing momentum");
+                if (kind == 3) Check(((Vector3)player.Motor.linearVelocity).y > 1.9f, label + " range release preserves swing momentum");
                 Check(!(obj.GetComponent<IGreenHookMotion>() is GreenHookBodyMotion baseMotion) || !baseMotion.IsHookMoving,
                     label + " base physics ownership released");
                 Invoke(hook, "FixedUpdate"); Invoke(hook, "Update");
@@ -391,21 +392,21 @@ namespace Project.GreenHook.Editor
             Vector3 origin = new Vector3(1500, 50, 0);
             var player = Player(origin);
             var obj = Instantiate("Assets/_Project/Content/ContactCubes/Green_ContactCube.prefab", origin + Vector3.up * 5f);
-            obj.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
+            obj.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
             var hook = Attach(player, obj.GetComponent<IGreenHookTarget>());
             hook.DriveInput(Vector2.right, false); Step(hook, player, 650);
             Check(hook.IsSwinging && player.ControlLockDepth == 1, "maximum-length swing does not detach from rounding");
-            Check(Vector3.Distance(player.Motor.position, obj.transform.position) <= 5.001f,
+            Check(Vector3.Distance(player.Motor.WorldPosition(), obj.transform.position) <= 5.001f,
                 "maximum-length swing stays within range");
             var externalLock = player.AcquireControlLock(new object());
-            obj.transform.position = obj.GetComponent<Rigidbody>().position = player.Motor.position + Vector3.right * 9f;
-            Physics.SyncTransforms(); Invoke(hook, "FixedUpdate");
+            obj.transform.position = obj.GetComponent<Rigidbody2D>().position = player.Motor.WorldPosition() + Vector3.right * 9f;
+            PlanarPhysics.SyncTransforms(); Invoke(hook, "FixedUpdate");
             Check(hook.IsHookActive, "external lock does not remove range grace");
             // The extra owner (for example Timeline) stops the ordinary motor in
             // PlayerController's physics tick, not while disposing the hook lease.
             Invoke(player, "FixedUpdate");
             Set(hook, "outOfRangeSince", Time.time - .41f); Invoke(hook, "FixedUpdate");
-            Check(!hook.IsHookActive && player.ControlLockDepth == 1 && player.Motor.linearVelocity.sqrMagnitude < .0001f,
+            Check(!hook.IsHookActive && player.ControlLockDepth == 1 && ((Vector3)player.Motor.linearVelocity).sqrMagnitude < .0001f,
                 "range cleanup respects external control lock");
             externalLock.Dispose();
             Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(obj);
@@ -425,7 +426,7 @@ namespace Project.GreenHook.Editor
                 var camera = new GameObject("ImmediateSwingCamera").AddComponent<Camera>();
                 camera.tag = "MainCamera"; camera.orthographic = true; camera.orthographicSize = 7f;
                 camera.transform.position = origin + new Vector3(0, 1, -10);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 var hook = player.GetComponent<GreenHookAbility>();
                 Check(hook.TryLaunch(camera.WorldToScreenPoint(obj.transform.position), true) == GreenHookLaunchResult.Success &&
                     hook.IsSwinging && player.CanDriveGreenHook && player.ControlLockDepth == 1,
@@ -454,7 +455,7 @@ namespace Project.GreenHook.Editor
                 var hook = player.GetComponent<GreenHookAbility>();
                 camera.transform.position = origin + new Vector3(1, 1, -10);
                 var floor = Solid("Floor", origin + new Vector3(1, -1, 0), new Vector3(12, 1, 2));
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Vector2 pointer = camera.WorldToScreenPoint(obj.transform.position);
                 var result = hook.TryLaunch(pointer, true);
                 Check(result == GreenHookLaunchResult.Success && hook.IsPulling, "real screen click immediately attaches " + kind);
@@ -465,10 +466,10 @@ namespace Project.GreenHook.Editor
                 Vector2 direction = (Vector2)typeof(GreenHookAbility).GetField("hookDirection", Private).GetValue(hook);
                 Check(Mathf.Abs(direction.x) > .1f && Mathf.Abs(direction.y) > .1f, "visual direction is not snapped " + kind);
                 Check(hook.IsPulling && player.ControlLockDepth == 1, "off-axis target actually attaches " + kind);
-                Vector3 start = obj.GetComponent<Rigidbody>().position;
+                Vector3 start = obj.GetComponent<Rigidbody2D>().position;
                 Step(hook, player, 5);
-                Vector3 velocity = obj.GetComponent<Rigidbody>().linearVelocity;
-                Check(obj.GetComponent<Rigidbody>().position.x < start.x - .3f, "off-axis real launch moves object " + kind);
+                Vector3 velocity = obj.GetComponent<Rigidbody2D>().linearVelocity;
+                Check(obj.GetComponent<Rigidbody2D>().position.x < start.x - .3f, "off-axis real launch moves object " + kind);
                 Check(Mathf.Abs(velocity.x) < .001f || Mathf.Abs(velocity.y) < .001f, "pull velocity is cardinal " + kind);
                 hook.CancelHook(); Check(!player.IsControlLocked, "cancel releases only hook lock " + kind);
                 Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(obj); Object.DestroyImmediate(floor);
@@ -482,13 +483,13 @@ namespace Project.GreenHook.Editor
                 var obj = Instantiate("Assets/_Project/Content/ContactCubes/Red_ContactCube.prefab",
                     origin + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * 3f);
                 var hook = player.GetComponent<GreenHookAbility>();
-                camera.transform.position = origin + new Vector3(0, 0, -10); Physics.SyncTransforms();
+                camera.transform.position = origin + new Vector3(0, 0, -10); PlanarPhysics.SyncTransforms();
                 Check(hook.TryLaunch(camera.WorldToScreenPoint(obj.transform.position), true) == GreenHookLaunchResult.Success,
                     "free angle launch " + index);
                 Check(hook.IsPulling && player.CanDriveGreenHook, "free angle reaches clicked collider " + index);
                 Step(hook, player, 1);
-                Vector3 velocity = obj.GetComponent<Rigidbody>().linearVelocity;
-                Vector3 command = velocity - Physics.gravity * Time.fixedDeltaTime;
+                Vector3 velocity = obj.GetComponent<Rigidbody2D>().linearVelocity;
+                Vector3 command = velocity - (Vector3)PlanarPhysics.gravity * Time.fixedDeltaTime;
                 Check(velocity.sqrMagnitude > .1f && (Mathf.Abs(command.x) < .001f || Mathf.Abs(command.y) < .001f),
                     "free angle command remains cardinal while gravity is independent " + index);
                 hook.CancelHook(); Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(obj);
@@ -504,43 +505,43 @@ namespace Project.GreenHook.Editor
                 .GetComponent<ContactCubeMotion>();
             var second = Instantiate("Assets/_Project/Content/ContactCubes/Green_ContactCube.prefab", origin + new Vector3(2, 3, 0))
                 .GetComponent<ContactCubeMotion>();
-            first.GetComponent<Rigidbody>().constraints = second.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
+            first.GetComponent<Rigidbody2D>().constraints = second.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
             var camera = new GameObject("HookTestCamera").AddComponent<Camera>();
             camera.tag = "MainCamera"; camera.orthographic = true; camera.orthographicSize = 7f;
             camera.transform.position = origin + new Vector3(0, 1, -10);
             player.Motor.linearVelocity = Vector3.right * 5f;
             var hook = Attach(player, first);
-            Check(Mathf.Abs(player.Motor.linearVelocity.x - 5f) < .01f, "initial swing preserves incoming momentum");
+            Check(Mathf.Abs(((Vector3)player.Motor.linearVelocity).x - 5f) < .01f, "initial swing preserves incoming momentum");
             hook.DriveInput(Vector2.right, false); Step(hook, player, 5);
-            Check(player.Motor.linearVelocity.x > 5f, "tangential input pumps swing");
+            Check(((Vector3)player.Motor.linearVelocity).x > 5f, "tangential input pumps swing");
             var wheel = player.GetComponent<PlayerColorWheel>(); Check(wheel.TrySelectColor("green"), "green ability selected");
             var input = new HookInput { Click = true, Pointer = camera.WorldToScreenPoint(second.transform.position) };
-            Vector3 before = player.Motor.position;
+            Vector3 before = player.Motor.WorldPosition();
             GameInput.UseExternalSource(input);
             try
             {
                 player.GetComponent<PlayerInputDriver>().Drive(player);
                 Transform actual = (Transform)typeof(GreenHookAbility).GetField("targetTransform", Private).GetValue(hook);
                 Check(actual == second.transform && hook.IsSwinging, "existing player input retargets without reopening wheel");
-                Check(player.ControlLockDepth == 1 && (player.Motor.position - before).sqrMagnitude < .00001f,
+                Check(player.ControlLockDepth == 1 && (player.Motor.WorldPosition() - before).sqrMagnitude < .00001f,
                     "retarget neither stacks locks nor teleports player");
-                Check(player.Motor.linearVelocity.sqrMagnitude > 1f, "retarget does not zero momentum");
+                Check(((Vector3)player.Motor.linearVelocity).sqrMagnitude > 1f, "retarget does not zero momentum");
                 Check(wheel.IsSelected("green"), "retarget retains selected ability");
                 Check(hook.TryLaunch(camera.WorldToScreenPoint(origin + new Vector3(20, 20, 0)), true) == GreenHookLaunchResult.OutOfRange
                     && hook.IsSwinging, "invalid new target preserves current rope");
                 var extra = player.AcquireControlLock(new object());
                 Check(hook.TryLaunch(input.Pointer, true) == GreenHookLaunchResult.Ignored, "retarget respects external timeline lock");
-                Step(hook, player, 1); Check(player.Motor.linearVelocity.sqrMagnitude < .001f, "timeline pauses swing");
+                Step(hook, player, 1); Check(((Vector3)player.Motor.linearVelocity).sqrMagnitude < .001f, "timeline pauses swing");
                 extra.Dispose(); input.Click = false; input.Move = Vector2.right;
                 player.GetComponent<PlayerInputDriver>().Drive(player); Step(hook, player, 20);
-                Check(player.Motor.linearVelocity.sqrMagnitude > .1f && hook.IsSwinging, "swing resumes after external lock");
-                Vector3 velocity = player.Motor.linearVelocity;
+                Check(((Vector3)player.Motor.linearVelocity).sqrMagnitude > .1f && hook.IsSwinging, "swing resumes after external lock");
+                Vector3 velocity = ((Vector3)player.Motor.linearVelocity);
                 input.Release = true; player.GetComponent<PlayerInputDriver>().Drive(player);
                 Check(!hook.IsHookActive && !player.IsControlLocked, "existing interact input detaches");
                 float boostRatio = (float)typeof(GreenHookAbility).GetField("releaseBoostRatio", Private).GetValue(hook);
                 float boostLimit = (float)typeof(GreenHookAbility).GetField("releaseBoostLimit", Private).GetValue(hook);
                 Vector3 expectedVelocity = velocity + velocity.normalized * Mathf.Min(boostLimit, velocity.magnitude * boostRatio);
-                Check((player.Motor.linearVelocity - expectedVelocity).sqrMagnitude < .001f,
+                Check((((Vector3)player.Motor.linearVelocity) - expectedVelocity).sqrMagnitude < .001f,
                     "manual release preserves resolved direction and applies only the configured capped boost");
             }
             finally { GameInput.ClearExternalSource(input); }
@@ -556,11 +557,11 @@ namespace Project.GreenHook.Editor
                 .GetComponent<ContactCubeMotion>();
             var second = Instantiate("Assets/_Project/Content/ContactCubes/Green_ContactCube.prefab", origin + new Vector3(2, 3, 0))
                 .GetComponent<ContactCubeMotion>();
-            first.GetComponent<Rigidbody>().constraints = second.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeAll;
+            first.GetComponent<Rigidbody2D>().constraints = second.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
             var camera = new GameObject("HookSafetyCamera").AddComponent<Camera>();
             camera.tag = "MainCamera"; camera.orthographic = true; camera.orthographicSize = 7f;
             camera.transform.position = origin + new Vector3(0, 1, -10);
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             var hook = Attach(player, first);
             Invoke(hook, "UpdatePullingVisual");
             Check(hook.TryLaunch(camera.WorldToScreenPoint(second.transform.position), true) == GreenHookLaunchResult.Success,
@@ -583,8 +584,8 @@ namespace Project.GreenHook.Editor
             }
             finally { Time.timeScale = 1f; }
             var wall = Solid("SwingWall", origin + Vector3.right * 1.5f, new Vector3(.3f, 20f, 2f));
-            Physics.SyncTransforms(); hook.DriveInput(Vector2.right, false); Step(hook, player, 300);
-            Check(player.Motor.position.x < origin.x + 1.35f && hook.IsSwinging,
+            PlanarPhysics.SyncTransforms(); hook.DriveInput(Vector2.right, false); Step(hook, player, 300);
+            Check(player.Motor.WorldPosition().x < origin.x + 1.35f && hook.IsSwinging,
                 "swing sweep cannot pass through a wall");
             var extra = player.AcquireControlLock(new object());
             first.SuspendMotion(true); Invoke(hook, "Update");
@@ -607,9 +608,9 @@ namespace Project.GreenHook.Editor
             cube.SuspendMotion(true); Invoke(hook, "Update");
             Check(!hook.IsHookActive && !player.IsControlLocked && !player.IsGreenHookActive,
                 "target becoming carried during flight cancels before attachment");
-            Check(cube.IsSuspended && cube.GetComponent<Rigidbody>().isKinematic,
+            Check(cube.IsSuspended && cube.GetComponent<Rigidbody2D>().isKinematic,
                 "cancelled flight does not steal carried target physics");
-            Check(Mathf.Abs(player.Motor.linearVelocity.x - 4f) < .001f,
+            Check(Mathf.Abs(((Vector3)player.Motor.linearVelocity).x - 4f) < .001f,
                 "cancelled flight preserves normal movement");
             Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(cube.gameObject);
         }
@@ -642,14 +643,14 @@ namespace Project.GreenHook.Editor
             var feature=foundation.GetComponent<MechanismBaseFeature>();
             Check(feature != null && feature.GreenHookMotionMode == GreenHookMotionMode.PullTarget,"base contract target-first");
             var motion=foundation.GetComponent<GreenHookBodyMotion>();
-            var body = foundation.GetComponent<Rigidbody>();
-            bool originalKinematic = body.isKinematic, originalGravity = body.useGravity;
+            var body = foundation.GetComponent<Rigidbody2D>();
+            bool originalKinematic = body.isKinematic, originalGravity = (body.gravityScale != 0f);
             var originalConstraints = body.constraints;
             Check(motion != null, "existing base gains hook motion");
             var hook=Attach(player,feature); Step(hook,player,5);
-            Check(foundation.GetComponent<Rigidbody>().position.x < 304.5f && motion.IsHookMoving,"base actually pulled");
+            Check(foundation.GetComponent<Rigidbody2D>().position.x < 304.5f && motion.IsHookMoving,"base actually pulled");
             player.UpdateGreenHookInput(Vector2.zero,true);
-            Check(!motion.IsHookMoving && body.isKinematic == originalKinematic && body.useGravity == originalGravity &&
+            Check(!motion.IsHookMoving && body.isKinematic == originalKinematic && (body.gravityScale != 0f) == originalGravity &&
                 body.constraints == originalConstraints, "base releases physics ownership and restores author gravity settings");
             Object.DestroyImmediate(foundation); Object.DestroyImmediate(player.gameObject);
             for(int index=0;index<4;index++)
@@ -659,9 +660,9 @@ namespace Project.GreenHook.Editor
                 GameObject mover=index==3 ? Instantiate("Assets/_Project/Content/ColorBlocks/Prefabs/Red_Foundation.prefab",start) :
                     Instantiate("Assets/_Project/Content/ContactCubes/"+(CubeColor)index+"_ContactCube.prefab",start);
                 var item=Instantiate(WorldItemSetup.Folder+"/Collectible.prefab",start+Vector3.right*.9f);
-                var move=mover.GetComponent<IGreenHookMotion>(); move.BeginGreenHookPull(); Physics.SyncTransforms();
-                for(int step=0;step<30;step++) { move.SetGreenHookVelocity(Vector3.right*3); Physics.Simulate(.02f); }
-                Check(item.GetComponent<Rigidbody>().position.x>start.x+1.5f,"physical push pickup "+index);
+                var move=mover.GetComponent<IGreenHookMotion>(); move.BeginGreenHookPull(); PlanarPhysics.SyncTransforms();
+                for(int step=0;step<30;step++) { move.SetGreenHookVelocity(Vector3.right*3); PlanarPhysics.Simulate(.02f); }
+                Check(item.GetComponent<Rigidbody2D>().position.x>start.x+1.5f,"physical push pickup "+index);
                 move.EndGreenHookPull(false,Vector3.zero,0);
                 Object.DestroyImmediate(mover); Object.DestroyImmediate(item); Object.DestroyImmediate(floor);
             }
@@ -678,7 +679,7 @@ namespace Project.GreenHook.Editor
             for(int x=399;x<410;x++) for(int y=-24;y<-18;y++) cells.Add(new Vector2Int(x,y));
             manager.Configure(new List<Project.Rooms.RoomRegion>{new Project.Rooms.RoomRegion{id="room",cells=cells}},1f,"");
             var hook=Attach(player,cube); Step(hook,player,2); Check(hook.IsHookActive,"hook allowed within room");
-            player.Motor.position=new Vector3(430,20,0); Physics.SyncTransforms(); Step(hook,player,1);
+            player.Motor.position=new Vector3(430,20,0); PlanarPhysics.SyncTransforms(); Step(hook,player,1);
             Check(!hook.IsHookActive && !player.IsGreenHookActive,"room exit cancels and releases ownership");
             Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(cube.gameObject); Object.DestroyImmediate(obj);
         }
@@ -686,17 +687,17 @@ namespace Project.GreenHook.Editor
         {
             var player = Player(new Vector3(200,20,0));
             var obj = Instantiate(WorldItemSetup.Folder + "/Collectible.prefab", new Vector3(205,20,0));
-            var item = obj.GetComponent<CollectiblePickup>(); var body = obj.GetComponent<Rigidbody>();
+            var item = obj.GetComponent<CollectiblePickup>(); var body = obj.GetComponent<Rigidbody2D>();
             Check(item is DropItemBase && item.CanBePushed,"pushable shared pickup lifecycle");
-            body.position += Vector3.right; item.GetComponent<Project.Rooms.RoomResetObject>().RestorePose(); item.ResetForRoom();
-            Check(Mathf.Abs(body.position.x-205)<.001f && item.CanCollect,"collectible reset returns to author position");
+            body.position += (Vector2)(Vector3.right); item.GetComponent<Project.Rooms.RoomResetObject>().RestorePose(); item.ResetForRoom();
+            Check(Mathf.Abs(body.WorldPosition().x-205)<.001f && item.CanCollect,"collectible reset returns to author position");
             int collected=0; Action<CollectiblePickup,GameObject> listener=(pickup,actor)=>collected++;
             CollectiblePickup.Collected += listener;
             player.transform.position = obj.transform.position;
             player.Motor.position = obj.transform.position;
             player.Motor.linearVelocity = Vector3.zero;
-            Physics.SyncTransforms();
-            for (int step = 0; step < 3; step++) Physics.Simulate(Time.fixedDeltaTime);
+            PlanarPhysics.SyncTransforms();
+            for (int step = 0; step < 3; step++) PlanarPhysics.Simulate(Time.fixedDeltaTime);
             Check(item.CollectionRequested && !item.CollectionFinished && obj.activeSelf,"collection waits for flight instead of early hide");
             item.ResetForRoom();
             Check(item.CollectionRequested && !item.IsCollected && collected == 0 &&
@@ -711,16 +712,16 @@ namespace Project.GreenHook.Editor
             foreach (string direction in new[]{"上","下","左","右"})
             {
                 var spike=Instantiate(WorldItemSetup.Folder+"/Spike_"+direction+".prefab",new Vector3(210,20,0));
-                Check(spike.GetComponentInChildren<MeshCollider>().isTrigger && spike.GetComponent<ColorObject>()==null,"neutral spike trigger "+direction);
-                Check(spike.GetComponentInChildren<MeshCollider>().bounds.size.x > 0,"spike oriented geometry "+direction);
+                Check(spike.GetComponentInChildren<PolygonCollider2D>().isTrigger && spike.GetComponent<ColorObject>()==null,"neutral spike trigger "+direction);
+                Check(spike.GetComponentInChildren<PolygonCollider2D>().bounds.size.x > 0,"spike oriented geometry "+direction);
                 Object.DestroyImmediate(spike);
             }
             var hazard = new GameObject("hazard").AddComponent<NeutralSpike>();
             Set(player,"invulnerableUntil",Time.time+100);
-            Invoke(hazard,"OnTriggerEnter",player.GetComponent<Collider>());
+            Invoke(hazard,"OnTriggerEnter2D",player.GetComponent<Collider2D>());
             Check(!player.IsDead,"spikes respect revival protection");
             Set(player,"invulnerableUntil",0f);
-            Invoke(hazard,"OnTriggerEnter",player.GetComponent<Collider>());
+            Invoke(hazard,"OnTriggerEnter2D",player.GetComponent<Collider2D>());
             Check(player.IsDead,"spike touch enters normal death flow");
             Object.DestroyImmediate(player.gameObject); Object.DestroyImmediate(hazard.gameObject);
         }

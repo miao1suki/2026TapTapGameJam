@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -110,7 +111,7 @@ public static class R3LevelBuilder
             Check(a.x == b.x || a.y == b.y, "cardinal growth " + spec.id);
             var cube = Box(spec.id, "固定绿块 " + spec.column + spec.row + " → " + spec.targetColumn + spec.targetRow, "Green_ContactCube", spec.column,spec.row);
             Parameter(cube, typeof(ContactCube), "maximumLength", "Integer", (Math.Abs(a.x-b.x)+Math.Abs(a.y-b.y)+1).ToString(CultureInfo.InvariantCulture));
-            Parameter(cube, typeof(Rigidbody), "m_Constraints", "Integer", ((int)RigidbodyConstraints.FreezeAll).ToString());
+            Parameter(cube, typeof(Rigidbody2D), "m_Constraints", "Integer", ((int)RigidbodyConstraints2D.FreezeAll).ToString());
             Parameter(cube, typeof(CarryableFeature), "m_Enabled", "Boolean", "0");
         }
         var s = source.lift;
@@ -199,7 +200,7 @@ public static class R3LevelBuilder
         PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/UI/SharedGameUI.prefab"));
         new GameObject("R3 Starting Progress").AddComponent<R3SceneSetup>();
         RenderSettings.ambientMode=AmbientMode.Flat; RenderSettings.ambientLight=Color.white;
-        var light=new GameObject("Directional Light").AddComponent<Light>(); light.type=LightType.Directional; light.intensity=.8f;
+        var light=new GameObject("Directional Light").AddComponent<UnityEngine.Rendering.Universal.Light2D>(); light.lightType=UnityEngine.Rendering.Universal.Light2D.LightType.Global; light.intensity=.8f;
         light.transform.rotation=Quaternion.Euler(50,-30,0);
         Check(EditorSceneManager.SaveScene(scene,ScenePath),"scene saved");
         PlanningSaveStore.Save(SavePath,doc); AssetDatabase.Refresh(); AssetDatabase.SaveAssets(); Verify();
@@ -252,7 +253,7 @@ public static class R3LevelBuilder
     }
     private static void VerifyScene(PlanningDocument doc)
     {
-        Physics.SyncTransforms(); var room=doc.rooms.Single();
+        PlanarPhysics.SyncTransforms(); var room=doc.rooms.Single();
         var lifecycle=Object.FindFirstObjectByType<RoomLifecycleManager>();
         Check(lifecycle!=null&&PlanningDocument.FromPersistentJson(lifecycle.PlanningJson).ToPersistentJson()==doc.ToPersistentJson(),"embedded equals paired planning");
         var placed=Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None);
@@ -265,7 +266,7 @@ public static class R3LevelBuilder
             Check(item.GetComponent<RoomResetObject>()!=null,"region membership "+b.id);
             if(b.type==PlanningDetailType.Solid)
             {
-                var shape=item.GetComponent<BoxCollider>();
+                var shape=item.GetComponent<BoxCollider2D>();
                 Check(shape!=null&&Vector3.Distance(shape.bounds.center,new Vector3(b.x+b.width*.5f,-b.y-b.height*.5f,0))<.001f&&
                     Vector3.Distance(shape.bounds.size,new Vector3(b.width,b.height,1))<.001f,"exact solid collider "+b.id);
             }
@@ -283,7 +284,7 @@ public static class R3LevelBuilder
         foreach(var spec in ReadSource().growingCubes)
         {
             var item=placed.Single(p=>p.PlanningBoxId=="r3_"+spec.id);
-            Check(item.GetComponent<Rigidbody>().constraints==RigidbodyConstraints.FreezeAll&&!item.GetComponent<CarryableFeature>().enabled,"fixed non-carryable green root");
+            Check(item.GetComponent<Rigidbody2D>().constraints==RigidbodyConstraints2D.FreezeAll&&!item.GetComponent<CarryableFeature>().enabled,"fixed non-carryable green root");
         }
         var players=GameObject.FindGameObjectsWithTag("Player");
         Check(players.Length==1&&PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(players[0])==PlayerPath,"one standard player");

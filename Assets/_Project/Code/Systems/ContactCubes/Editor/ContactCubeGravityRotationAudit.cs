@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -62,18 +63,18 @@ namespace Project.ContactCubes.Editor
             if (EditorApplication.timeSinceStartup-started > 100) { Finish(false,"Timeout"); return; }
             if (!EditorApplication.isPlaying || EditorApplication.isCompiling || Time.time < .6f) return;
             EditorApplication.update -= Wait;
-            SimulationMode oldMode = Physics.simulationMode;
+            SimulationMode2D oldMode = PlanarPhysics.simulationMode;
             bool passed = false;
             try
             {
                 AudioListener.pause = true; AudioListener.volume = 0;
-                Physics.simulationMode = SimulationMode.Script;
+                PlanarPhysics.simulationMode = SimulationMode2D.Script;
                 ColorRuntimeService.Instance.SetAllUnlockedForCurrentSession(true);
                 player = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Content/Player/Player.prefab"),
                     new Vector3(1000,20,0),Quaternion.identity).GetComponent<PlayerController>();
                 roots.Add(player.gameObject);
                 player.GetComponent<PlayerInputDriver>().enabled = false;
-                player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+                player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
                 VerifyAllColors(); VerifyGrowthClimbing();
                 passed = true;
             }
@@ -81,7 +82,7 @@ namespace Project.ContactCubes.Editor
             finally
             {
                 for (int i=roots.Count-1;i>=0;i--) if (roots[i]!=null) Object.DestroyImmediate(roots[i]);
-                roots.Clear(); cubes.Clear(); player = null; Physics.simulationMode = oldMode;
+                roots.Clear(); cubes.Clear(); player = null; PlanarPhysics.simulationMode = oldMode;
             }
             Finish(passed,"");
         }
@@ -170,12 +171,12 @@ namespace Project.ContactCubes.Editor
             }
         }
 
-        private static ContactCube Spawn(CubeColor color,Vector3 position,bool gravity,RigidbodyConstraints? constraints=null,bool kinematic=false)
+        private static ContactCube Spawn(CubeColor color,Vector3 position,bool gravity,RigidbodyConstraints2D? constraints=null,bool kinematic=false)
         {
             var root = new GameObject("Gravity fixture " + color); roots.Add(root); root.SetActive(false);
             var prefab=AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_Project/Content/ContactCubes/{color}_ContactCube.prefab");
             var go=Object.Instantiate(prefab,position,Quaternion.identity,root.transform);
-            var body=go.GetComponent<Rigidbody>(); body.isKinematic=kinematic;
+            var body=go.GetComponent<Rigidbody2D>(); body.isKinematic=kinematic;
             if (constraints.HasValue) body.constraints=constraints.Value;
             var motion=go.GetComponent<ContactCubeMotion>();
             var settings=new SerializedObject(motion); settings.FindProperty("useGravity").boolValue=gravity; settings.ApplyModifiedPropertiesWithoutUndo();
@@ -186,7 +187,7 @@ namespace Project.ContactCubes.Editor
             // staging parent only delays Awake until authored settings have been applied;
             // retaining it would capture a child path and test against a different root.
             roots.Add(go); go.transform.SetParent(null,true);
-            cubes.Add(cube); Physics.SyncTransforms(); return cube;
+            cubes.Add(cube); PlanarPhysics.SyncTransforms(); return cube;
         }
         private static void Tick(Component target)
         {
@@ -201,13 +202,13 @@ namespace Project.ContactCubes.Editor
                 {
                     Tick(cube.GetComponent<ContactCubeMotion>()); Tick(cube); Tick(cube.GetComponent<HorizontalCubeVine>());
                 }
-                Physics.Simulate(Time.fixedDeltaTime); Physics.SyncTransforms();
+                PlanarPhysics.Simulate(Time.fixedDeltaTime); PlanarPhysics.SyncTransforms();
             }
         }
         private static void MovePlayer(Vector3 position,Vector2 movement)
         {
             player.transform.position=position; player.Motor.position=position;
-            player.Motor.linearVelocity=Vector3.zero; player.SetMoveInput(movement); Physics.SyncTransforms();
+            player.Motor.linearVelocity=Vector3.zero; player.SetMoveInput(movement); PlanarPhysics.SyncTransforms();
         }
         private static void VerifyAllColors()
         {
@@ -215,37 +216,37 @@ namespace Project.ContactCubes.Editor
             foreach (CubeColor color in new[] {CubeColor.Red,CubeColor.Green,CubeColor.Blue})
             {
                 var cube=Spawn(color,new Vector3(100+index++*20,20,0),false);
-                var motion=cube.GetComponent<ContactCubeMotion>(); var body=cube.GetComponent<Rigidbody>();
-                Vector3 origin=body.position; Step(10);
-                Check(!motion.UsesGravity && !body.useGravity && body.isKinematic,"per-instance gravity off floats " + color);
-                Check(Vector3.Distance(origin,body.position)<.0001f,"floating position retained " + color);
-                motion.BeginGreenHookPull(); motion.SetGreenHookVelocity(Vector3.right*2); Physics.Simulate(.02f); Physics.SyncTransforms();
-                Check(!body.useGravity && body.position.x>origin.x,"gravity-off cube remains hook-movable " + color);
-                motion.EndGreenHookPull(); Check(!body.useGravity && body.isKinematic,"hook release restores explicit no-gravity " + color);
+                var motion=cube.GetComponent<ContactCubeMotion>(); var body=cube.GetComponent<Rigidbody2D>();
+                Vector3 origin=body.WorldPosition(); Step(10);
+                Check(!motion.UsesGravity && !(body.gravityScale != 0f) && body.isKinematic,"per-instance gravity off floats " + color);
+                Check(Vector3.Distance(origin,body.WorldPosition())<.0001f,"floating position retained " + color);
+                motion.BeginGreenHookPull(); motion.SetGreenHookVelocity(Vector3.right*2); PlanarPhysics.Simulate(.02f); PlanarPhysics.SyncTransforms();
+                Check(!(body.gravityScale != 0f) && body.WorldPosition().x>origin.x,"gravity-off cube remains hook-movable " + color);
+                motion.EndGreenHookPull(); Check(!(body.gravityScale != 0f) && body.isKinematic,"hook release restores explicit no-gravity " + color);
                 motion.SetCarrySuspended(true); Check(body.isKinematic,"carry suspends " + color);
-                motion.SetCarrySuspended(false); Check(!body.useGravity && body.isKinematic,"placing retains per-instance gravity " + color);
-                motion.ResetForRoom(); Check(!motion.UsesGravity && !body.useGravity,"reset retains no-gravity " + color);
+                motion.SetCarrySuspended(false); Check(!(body.gravityScale != 0f) && body.isKinematic,"placing retains per-instance gravity " + color);
+                motion.ResetForRoom(); Check(!motion.UsesGravity && !(body.gravityScale != 0f),"reset retains no-gravity " + color);
                 var properties=new SerializedObject(motion); var property=properties.FindProperty("useGravity");
                 Check(LevelEditorComponentOverrideUtility.TryCapture(motion,property,out var captured) && captured.Value=="0","planning captures explicit gravity Boolean " + color);
                 Check(string.IsNullOrEmpty(captured.ComponentPath),"planning captures gravity relative to isolated prefab root " + color);
                 motion.ConfigureGravity(true); Step(10);
-                Check(motion.UsesGravity && body.useGravity && !body.isKinematic && body.position.y<origin.y-.03f,"gravity-on cube falls naturally " + color);
-                motion.BeginGreenHookPull(); motion.SetGreenHookVelocity(Vector3.left*2); Physics.Simulate(.02f);
-                Check(body.useGravity,"horizontal green pull preserves gravity " + color);
-                motion.EndGreenHookPull(); motion.ResetForRoom(); Check(body.useGravity,"gravity-on survives hook/reset " + color);
+                Check(motion.UsesGravity && (body.gravityScale != 0f) && !body.isKinematic && body.WorldPosition().y<origin.y-.03f,"gravity-on cube falls naturally " + color);
+                motion.BeginGreenHookPull(); motion.SetGreenHookVelocity(Vector3.left*2); PlanarPhysics.Simulate(.02f);
+                Check((body.gravityScale != 0f),"horizontal green pull preserves gravity " + color);
+                motion.EndGreenHookPull(); motion.ResetForRoom(); Check((body.gravityScale != 0f),"gravity-on survives hook/reset " + color);
                 var clone=Spawn(color,new Vector3(100+index++*20,20,0),true);
                 Check(LevelEditorComponentOverrideUtility.FindComponent(clone.gameObject,captured)==clone.GetComponent<ContactCubeMotion>(),
                     "planning gravity path resolves to clone Motion " + color);
                 LevelEditorComponentOverrideUtility.ApplyOverrides(clone.gameObject,new List<LevelEditorComponentValueOverride>{captured});
                 Check(!clone.GetComponent<ContactCubeMotion>().UsesGravity,"planning applies per-instance gravity override " + color);
-                var fixedCube=Spawn(color,new Vector3(100+index++*20,20,0),true,RigidbodyConstraints.FreezeAll);
-                var fixedMotion=fixedCube.GetComponent<ContactCubeMotion>(); var fixedBody=fixedCube.GetComponent<Rigidbody>();
+                var fixedCube=Spawn(color,new Vector3(100+index++*20,20,0),true,RigidbodyConstraints2D.FreezeAll);
+                var fixedMotion=fixedCube.GetComponent<ContactCubeMotion>(); var fixedBody=fixedCube.GetComponent<Rigidbody2D>();
                 Vector3 fixedPosition=fixedBody.position; Step(8);
-                Check(fixedBody.constraints==RigidbodyConstraints.FreezeAll && Vector3.Distance(fixedBody.position,fixedPosition)<.0001f,"legacy authored FreezeAll retained " + color);
-                fixedMotion.BeginGreenHookPull(); fixedMotion.SetGreenHookVelocity(Vector3.up*2); Physics.Simulate(.02f);
-                Check(fixedBody.constraints==RigidbodyConstraints.FreezeAll && Vector3.Distance(fixedBody.position,fixedPosition)<.0001f,"hook cannot clear author locks " + color);
+                Check(fixedBody.constraints==RigidbodyConstraints2D.FreezeAll && Vector3.Distance(fixedBody.position,fixedPosition)<.0001f,"legacy authored FreezeAll retained " + color);
+                fixedMotion.BeginGreenHookPull(); fixedMotion.SetGreenHookVelocity(Vector3.up*2); PlanarPhysics.Simulate(.02f);
+                Check(fixedBody.constraints==RigidbodyConstraints2D.FreezeAll && Vector3.Distance(fixedBody.position,fixedPosition)<.0001f,"hook cannot clear author locks " + color);
                 fixedMotion.EndGreenHookPull(); fixedMotion.ResetForRoom();
-                Check(fixedBody.constraints==RigidbodyConstraints.FreezeAll,"reset keeps legacy author locks " + color);
+                Check(fixedBody.constraints==RigidbodyConstraints2D.FreezeAll,"reset keeps legacy author locks " + color);
             }
         }
         private static void VerifyGrowthClimbing()
@@ -255,11 +256,11 @@ namespace Project.ContactCubes.Editor
             foreach (Vector3 direction in new[] {Vector3.right,Vector3.left,Vector3.up,Vector3.down})
             {
                 Vector3 origin=new Vector3(400+index++*20,30,0);
-                var green=Spawn(CubeColor.Green,origin,legacyLock,legacyLock ? RigidbodyConstraints.FreezeAll : (RigidbodyConstraints?)null);
-                var blue=Spawn(CubeColor.Blue,origin-direction,false,RigidbodyConstraints.FreezeAll);
+                var green=Spawn(CubeColor.Green,origin,legacyLock,legacyLock ? RigidbodyConstraints2D.FreezeAll : (RigidbodyConstraints2D?)null);
+                var blue=Spawn(CubeColor.Blue,origin-direction,false,RigidbodyConstraints2D.FreezeAll);
                 Step(20);
                 Check(green.Length==4 && Vector3.Dot(green.GrowthDirection,direction)>.999f,"fixed blue grows floating green in correct direction " + legacyLock+"/"+direction);
-                var vine=green.GetComponent<HorizontalCubeVine>(); var body=green.GetComponentInChildren<BoxCollider>();
+                var vine=green.GetComponent<HorizontalCubeVine>(); var body=green.GetComponentInChildren<BoxCollider2D>();
                 Check(green.GetComponent<ContactCubeMotion>().IsStableClimbAnchor,"extended fixed/no-gravity green is stable anchor");
                 Bounds bounds=body.bounds;
                 foreach (float y in new[] {origin.y,bounds.center.y})

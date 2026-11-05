@@ -60,7 +60,7 @@ public static class ScenePreviewPerformanceAudit
             discover.Invoke(null, null); flush.Invoke(null, null);
             Check(ArtworkScenePreview.PartCount(unrelated) == 0, "native RemoveComponent removes obsolete artwork");
             Check(ArtworkScenePreview.TryGetFirstMesh(owners[0], out var firstMesh, out _), "first owner has actual preview geometry");
-            report.AppendLine($"First owner position={owners[0].transform.position}, local preview bounds={firstMesh.bounds}, collider={owners[0].GetComponentInChildren<Collider>().bounds}, active={owners[0].activeInHierarchy}, hidden={SceneVisibilityManager.instance.IsHidden(owners[0])}, stage={UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().Contains(owners[0])}");
+            report.AppendLine($"First owner position={owners[0].transform.position}, local preview bounds={firstMesh.bounds}, collider={owners[0].GetComponentInChildren<Collider2D>().bounds}, active={owners[0].activeInHierarchy}, hidden={SceneVisibilityManager.instance.IsHidden(owners[0])}, stage={UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().Contains(owners[0])}");
             var method = typeof(ArtworkScenePreview).GetMethod("PickOwner", BindingFlags.NonPublic | BindingFlags.Static,
                 null, new[] { typeof(Camera), typeof(Ray) }, null);
             var pick = (Func<Camera, Ray, GameObject>)Delegate.CreateDelegate(typeof(Func<Camera, Ray, GameObject>), method);

@@ -65,7 +65,7 @@ public static class OutstandingBranchIntegrationAudit
             var start=placed.Single(p=>p.PlanningBoxId=="box_gameplay_start_anchor");
             var anchor=start.GetComponentInChildren<TeleportAnchorFeature>(true);
             Check(anchor!=null && anchor.TeleportId=="Start" && Vector3.Distance(anchor.transform.position,player.transform.position)<.0001f,"Start exact new-map player spawn");
-            Check(start.GetComponentsInChildren<Renderer>(true).Length==0 && start.GetComponentsInChildren<Collider>(true).Length==0,"Start is invisible and nonblocking");
+            Check(start.GetComponentsInChildren<Renderer>(true).Length==0 && start.GetComponentsInChildren<Collider2D>(true).Length==0,"Start is invisible and nonblocking");
             Check(roots.SelectMany(r=>r.GetComponentsInChildren<Camera>(true)).Count(c=>c.enabled)==1,"one active world camera");
             Check(EditorBuildSettings.scenes.Count(s=>s.enabled)==1 && EditorBuildSettings.scenes.Single(s=>s.enabled).path==scenePath,"single Gaming build entry retained");
             var before=placed.ToDictionary(p=>p.PlanningBoxId,p=>(id:p.GetInstanceID(),position:p.transform.position,rotation:p.transform.rotation,scale:p.transform.localScale));

@@ -28,7 +28,7 @@ namespace Project.SurfaceTiles.Editor
             }
             if (target == null)
             {
-                target = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                target = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 target.name = "SurfaceTileBlock";
                 target.transform.position = SceneView.lastActiveSceneView != null
                     ? SceneView.lastActiveSceneView.pivot
@@ -36,10 +36,10 @@ namespace Project.SurfaceTiles.Editor
                 Undo.RegisterCreatedObjectUndo(target, "创建可贴画方块");
             }
 
-            BoxCollider box = target.GetComponent<BoxCollider>();
+            BoxCollider2D box = target.GetComponent<BoxCollider2D>();
             if (box == null)
             {
-                box = Undo.AddComponent<BoxCollider>(target);
+                box = Undo.AddComponent<BoxCollider2D>(target);
             }
 
             SurfaceTileBlock block = target.GetComponent<SurfaceTileBlock>();

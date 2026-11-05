@@ -38,18 +38,10 @@ namespace Project.BlockFeatures.Editor
             EditorUtility.SetDirty(palette);
             var playerPath = "Assets/_Project/Content/Player/Player.prefab";
             var player = PrefabUtility.LoadPrefabContents(playerPath);
-            player.GetComponent<CapsuleCollider>().height = 1;
+            player.GetComponent<CapsuleCollider2D>().size = new Vector2(.96f, 1f);
             var playerSettings = new SerializedObject(player.GetComponent<Project.Player.PlayerController>());
             playerSettings.FindProperty("jumpRiseCells").floatValue = 4; playerSettings.ApplyModifiedPropertiesWithoutUndo();
-            const string meshPath = "Assets/_Project/Content/Player/OneCellCapsule.asset";
-            var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
-            if (mesh == null)
-            {
-                mesh = Object.Instantiate(player.GetComponent<MeshFilter>().sharedMesh); mesh.name = "OneCellCapsule";
-                var vertices = mesh.vertices; for (int i = 0; i < vertices.Length; i++) vertices[i].y *= .5f;
-                mesh.vertices = vertices; mesh.RecalculateBounds(); mesh.RecalculateNormals(); AssetDatabase.CreateAsset(mesh, meshPath);
-            }
-            player.GetComponent<MeshFilter>().sharedMesh = mesh;
+            player.GetComponent<MeshFilter>().sharedMesh = Resources.Load<Mesh>("Planar/UnitDisk");
             PrefabUtility.SaveAsPrefabAsset(player,playerPath); PrefabUtility.UnloadPrefabContents(player);
             AssetDatabase.SaveAssets(); EditorApplication.Exit(0);
         }
@@ -72,9 +64,9 @@ namespace Project.BlockFeatures.Editor
             var material = lift.GetComponent<Renderer>().sharedMaterial;
             Object.DestroyImmediate(lift.GetComponent<Renderer>()); Object.DestroyImmediate(lift.GetComponent<MeshFilter>());
             lift.transform.localScale = Vector3.one;
-            lift.GetComponent<BoxCollider>().size = new Vector3(1,.25f,1);
-            var model = GameObject.CreatePrimitive(PrimitiveType.Cube); model.name = "平台模型";
-            Object.DestroyImmediate(model.GetComponent<Collider>());
+            lift.GetComponent<BoxCollider2D>().size = new Vector3(1,.25f,1);
+            var model = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); model.name = "平台模型";
+            Object.DestroyImmediate(model.GetComponent<Collider2D>());
             model.transform.SetParent(lift.transform,false); model.transform.localScale = new Vector3(1,.25f,1);
             model.GetComponent<Renderer>().sharedMaterial = material;
             var feature = lift.GetComponent<MovingPlatformFeature>(); feature.BindCrank(null);
@@ -99,14 +91,14 @@ namespace Project.BlockFeatures.Editor
             if (legacy && root.GetComponent<ContactCube>() == null)
             {
                 var old = root.GetComponent<EnergyBlockFeature>(); if (old != null) Object.DestroyImmediate(old);
-                var oldCollider = root.GetComponent<Collider>(); if (oldCollider != null) Object.DestroyImmediate(oldCollider);
+                var oldCollider = root.GetComponent<Collider2D>(); if (oldCollider != null) Object.DestroyImmediate(oldCollider);
                 var oldRenderer = root.GetComponent<Renderer>(); if (oldRenderer != null) Object.DestroyImmediate(oldRenderer);
                 var filter = root.GetComponent<MeshFilter>(); if (filter != null) Object.DestroyImmediate(filter);
-                var rb = root.GetComponent<Rigidbody>(); if (rb == null) rb = root.AddComponent<Rigidbody>(); rb.useGravity = true;
-                rb.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
-                rb.interpolation = RigidbodyInterpolation.Interpolate; rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-                var body = new GameObject("实体"); body.transform.SetParent(root.transform,false); var shape = body.AddComponent<BoxCollider>();
-                var model = GameObject.CreatePrimitive(PrimitiveType.Cube); model.name = "模型"; model.transform.SetParent(body.transform,false); Object.DestroyImmediate(model.GetComponent<Collider>());
+                var rb = root.GetComponent<Rigidbody2D>(); if (rb == null) rb = root.AddComponent<Rigidbody2D>(); rb.gravityScale = 1f;
+                rb.constraints = RigidbodyConstraints2D.None | RigidbodyConstraints2D.FreezeRotation;
+                rb.interpolation = RigidbodyInterpolation2D.Interpolate; rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+                var body = new GameObject("实体"); body.transform.SetParent(root.transform,false); var shape = body.AddComponent<BoxCollider2D>();
+                var model = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); model.name = "模型"; model.transform.SetParent(body.transform,false); Object.DestroyImmediate(model.GetComponent<Collider2D>());
                 model.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(Cubes + "Red_ContactCube.mat");
                 var cube = root.AddComponent<ContactCube>(); var config = new SerializedObject(cube);
                 config.FindProperty("color").enumValueIndex = 0; config.FindProperty("shape").objectReferenceValue = shape; config.FindProperty("model").objectReferenceValue = model.transform; config.ApplyModifiedPropertiesWithoutUndo();
@@ -128,12 +120,12 @@ namespace Project.BlockFeatures.Editor
         }
         private static void MakeProp(string name,string title,bool oneWay)
         {
-            var root = GameObject.CreatePrimitive(PrimitiveType.Cube); root.name = name;
+            var root = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); root.name = name;
             if (oneWay)
             {
                 root.transform.localScale = new Vector3(1,.2f,1); root.AddComponent<OneWayPlatform>();
             }
-            else Object.DestroyImmediate(root.GetComponent<Collider>());
+            else Object.DestroyImmediate(root.GetComponent<Collider2D>());
             root.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<ColorCatalog>("Assets/_Project/Resources/ColorBlocks/ColorCatalog.asset").NeutralMaterial;
             root.AddComponent<RoomResetObject>();
             string path = "Assets/_Project/Content/Mechanisms/" + name + ".prefab";

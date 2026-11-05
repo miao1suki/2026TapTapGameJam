@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Linq;
 using Project.BlockFeatures;
@@ -56,12 +57,12 @@ namespace Project.Player.Editor
                         .Where(c => c.Color == CubeColor.Red)
                         .OrderBy(c => c.transform.position.x).First().GetComponent<CarryableFeature>();
                     authoredPosition = item.transform.position;
-                    item.GetComponent<Rigidbody>().position = new Vector3(16.5f, -28.5f, 0);
-                    item.transform.position = item.GetComponent<Rigidbody>().position;
+                    item.GetComponent<Rigidbody2D>().position = new Vector3(16.5f, -28.5f, 0);
+                    item.transform.position = item.GetComponent<Rigidbody2D>().position;
                     player.Motor.position = new Vector3(17.48f, -28.5f, 0);
-                    player.transform.position = player.Motor.position;
+                    player.transform.position = player.Motor.WorldPosition();
                     player.Motor.linearVelocity = Vector3.zero;
-                    Physics.SyncTransforms();
+                    PlanarPhysics.SyncTransforms();
                     player.SetMoveInput(Vector2.left); player.SetMoveInput(Vector2.zero);
                     player.UpdateCarryInput(true, false, false, false);
                     started = Time.time; phase = 1;
@@ -73,19 +74,19 @@ namespace Project.Player.Editor
                     Check(player.TryGetCarryPlacementPreview(out Bounds preview, out bool valid) && valid &&
                         Mathf.Abs(preview.center.x - 16.5f) < .01f,
                         "Gaming left preview is valid beside the authored white wall at 18,28");
-                    Vector3 before = player.Motor.position;
+                    Vector3 before = player.Motor.WorldPosition();
                     player.UpdateCarryInput(false, true, false, false);
-                    Check(item.IsCarryDropAnimating && player.Motor.position == before,
+                    Check(item.IsCarryDropAnimating && player.Motor.WorldPosition() == before,
                         "real command starts drop without teleporting player");
                     started = Time.time; phase = 2;
                 }
                 else if (phase == 2 && Time.time - started > .65f)
                 {
                     Check(!item.IsCarryActive && !item.IsCarryDropAnimating &&
-                        item.GetComponentsInChildren<Collider>().Any(c => c.enabled && !c.isTrigger),
+                        item.GetComponentsInChildren<Collider2D>().Any(c => c.enabled && !c.isTrigger),
                         "Gaming drop restores contact cube physics after separation");
                     Check(Mathf.Abs(item.transform.position.x - 16.5f) < .02f &&
-                        Mathf.Abs(player.Motor.position.x - 17.5f) < .02f,
+                        Mathf.Abs(player.Motor.WorldPosition().x - 17.5f) < .02f,
                         "real item and interpolated player fit the two grid cells beside the wall");
                     player.RequestRespawn();
                     Check(Vector3.Distance(item.transform.position, authoredPosition) < .02f,

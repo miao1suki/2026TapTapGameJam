@@ -11,7 +11,7 @@ namespace Project.Mechanisms
         [InspectorName("右侧连墙（从左侧攀爬）")] Right,
         [InspectorName("左侧连墙（从右侧攀爬）")] Left
     }
-    [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider))]
+    [DisallowMultipleComponent, RequireComponent(typeof(BoxCollider2D))]
     public sealed class NeutralLadder : MonoBehaviour
     {
         [BlockParameter(Label = "攀爬倍率", Group = "攀爬", Order = 0)]
@@ -23,30 +23,30 @@ namespace Project.Mechanisms
         [SerializeField, InspectorName("侧面梯子")] private bool sideFacing;
         [BlockParameter(Label = "靠墙方向", Group = "攀爬", Order = 3)]
         [SerializeField] private LadderWallSide wallSide;
-        private BoxCollider area;
-        private readonly Dictionary<Collider, PlayerController> contacts = new();
-        private readonly List<Collider> expired = new();
+        private BoxCollider2D area;
+        private readonly Dictionary<Collider2D, PlayerController> contacts = new();
+        private readonly List<Collider2D> expired = new();
         public bool SideFacing => sideFacing;
         public LadderWallSide WallSide => wallSide;
         public int ContactCount => contacts.Count;
 
-        private void Awake() { area = GetComponent<BoxCollider>(); area.isTrigger = true; PreserveLegacyFootprint(); }
+        private void Awake() { area = GetComponent<BoxCollider2D>(); area.isTrigger = true; PreserveLegacyFootprint(); }
 
         internal void PreserveLegacyFootprint()
         {
-            if (area == null) area = GetComponent<BoxCollider>();
-            if (area == null || !Mathf.Approximately(area.size.y, 1f) || !Mathf.Approximately(area.center.y, 0f)) return;
+            if (area == null) area = GetComponent<BoxCollider2D>();
+            if (area == null || !Mathf.Approximately(area.size.y, 1f) || !Mathf.Approximately(area.offset.y, 0f)) return;
             var placed = GetComponent<LevelEditorPlacedBlock>();
             if (placed == null || placed.SizeCells.y <= 1 ||
                 !Mathf.Approximately(Mathf.Abs(transform.lossyScale.y), placed.CellWorldSize)) return;
             // Old scene instances use a bottom-cell pivot and inherit the shared prefab
             // collider. New rectangular ladders already carry their height in root scale.
             var size = area.size; size.y = placed.SizeCells.y; area.size = size;
-            var center = area.center; center.y = (placed.SizeCells.y - 1) * .5f; area.center = center;
+            var center = area.offset; center.y = (placed.SizeCells.y - 1) * .5f; area.offset = center;
         }
-        private void OnTriggerEnter(Collider other) => Track(other);
-        private void OnTriggerStay(Collider other) => Track(other);
-        private void Track(Collider other)
+        private void OnTriggerEnter2D(Collider2D other) => Track(other);
+        private void OnTriggerStay2D(Collider2D other) => Track(other);
+        private void Track(Collider2D other)
         {
             if (!isActiveAndEnabled || other == null || other.isTrigger) return;
             var player = other.GetComponentInParent<PlayerController>();
@@ -63,8 +63,8 @@ namespace Project.Mechanisms
             player.SetClimbSlideSpeed(this, slideSpeed);
             player.SetClimbFastSlideSpeed(this, fastSlideSpeed);
         }
-        private void OnTriggerExit(Collider other) => Forget(other);
-        private void Forget(Collider other)
+        private void OnTriggerExit2D(Collider2D other) => Forget(other);
+        private void Forget(Collider2D other)
         {
             if (!contacts.TryGetValue(other, out var player)) return;
             contacts.Remove(other);

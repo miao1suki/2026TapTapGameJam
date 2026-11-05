@@ -14,7 +14,7 @@ Shader "2026TapTap/Outlined Color Block"
         {
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
-            Tags { "LightMode"="UniversalForward" }
+            Tags { "LightMode"="Universal2D" }
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag

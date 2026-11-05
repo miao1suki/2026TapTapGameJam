@@ -64,8 +64,8 @@ namespace Project.Fireflies.Editor
         private static void Assets()
         {
             Check(Prefab != null && Prefab.GetComponent<FireflyField>() != null, "TA prefab and script resolve");
-            Check(Prefab.layer == 0 && Prefab.GetComponent<ColorObject>() == null && Prefab.GetComponent<Collider>() == null &&
-                Prefab.GetComponent<Rigidbody>() == null, "warm neutral decoration has no color unlock, physics or interaction");
+            Check(Prefab.layer == 0 && Prefab.GetComponent<ColorObject>() == null && Prefab.GetComponent<Collider2D>() == null &&
+                Prefab.GetComponent<Rigidbody2D>() == null, "warm neutral decoration has no color unlock, physics or interaction");
             var data = new SerializedObject(Prefab.GetComponent<FireflyField>());
             Check(data.FindProperty("pixelSize") == null && data.FindProperty("realtimeLightCount").intValue == 0,
                 "hard pixel size cannot drift; realtime lights default to zero");
@@ -181,9 +181,9 @@ namespace Project.Fireflies.Editor
                 first.RefreshPreview();
                 first.SendMessage("UpdateLights");
                 Check(first.ActiveLightCount == 4 && first.transform.childCount == 4, "explicit light budget is hard capped at four");
-                Light[] pool = first.GetComponentsInChildren<Light>();
+                UnityEngine.Rendering.Universal.Light2D[] pool = first.GetComponentsInChildren<UnityEngine.Rendering.Universal.Light2D>();
                 for (int frame = 0; frame < 120; frame++) first.SendMessage("UpdateLights");
-                Check(pool.SequenceEqual(first.GetComponentsInChildren<Light>()) && pool.All(light => light.shadows == LightShadows.None && (light.gameObject.hideFlags & HideFlags.DontSave) != 0),
+                Check(pool.SequenceEqual(first.GetComponentsInChildren<UnityEngine.Rendering.Universal.Light2D>()) && pool.All(light => light.shadowIntensity == 0 && (light.gameObject.hideFlags & HideFlags.DontSave) != 0),
                     "120 light updates reuse the same no-shadow, nonpersistent objects");
                 properties.Update(); properties.FindProperty("realtimeLightCount").intValue = 0;
                 properties.ApplyModifiedPropertiesWithoutUndo(); first.SendMessage("UpdateLights");

@@ -5,7 +5,6 @@ namespace Project.CameraModes
     public enum CameraViewMode
     {
         Side2D = 0,
-        Perspective3D = 1,
     }
 
     public interface ICameraViewModeRequester
@@ -17,6 +16,7 @@ namespace Project.CameraModes
 
     public interface ICameraViewModeAuthority
     {
+        float PresentationDepth { get; }
         CameraViewMode CurrentMode { get; }
 
         CameraViewMode TargetMode { get; }

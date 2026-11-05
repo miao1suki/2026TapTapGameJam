@@ -6,7 +6,8 @@
     "Project.SurfaceTiles.Runtime",
     "Project.SurfaceTiles.Editor",
     "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner"
+    "UnityEditor.TestRunner",
+    "Project.PlanarPhysics.Runtime"
   ],
   "includePlatforms": [
     "Editor"

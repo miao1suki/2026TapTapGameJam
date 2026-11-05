@@ -347,7 +347,7 @@ namespace Project.LevelEditor.Editor
                     CaptureOverride(component, property);
                     statusLabel.text = "组件数值已修改，尚未保存。";
                 }) : new HashSet<string>();
-            if (component is Rigidbody)
+            if (component is Rigidbody2D)
             {
                 BuildRigidbodyConstraints(section, component, serializedObject);
             }
@@ -790,15 +790,15 @@ namespace Project.LevelEditor.Editor
             group.tooltip = "勾选后禁止刚体沿对应轴移动或旋转。";
             parent.Add(group);
             AddRow("锁定位置", "position", new[] {
-                RigidbodyConstraints.FreezePositionX,
-                RigidbodyConstraints.FreezePositionY,
-                RigidbodyConstraints.FreezePositionZ });
+                RigidbodyConstraints2D.FreezePositionX,
+                RigidbodyConstraints2D.FreezePositionY,
+                RigidbodyConstraints2D.None });
             AddRow("锁定旋转", "rotation", new[] {
-                RigidbodyConstraints.FreezeRotationX,
-                RigidbodyConstraints.FreezeRotationY,
-                RigidbodyConstraints.FreezeRotationZ });
+                RigidbodyConstraints2D.None,
+                RigidbodyConstraints2D.None,
+                RigidbodyConstraints2D.FreezeRotation });
 
-            void AddRow(string label, string key, RigidbodyConstraints[] flags)
+            void AddRow(string label, string key, RigidbodyConstraints2D[] flags)
             {
                 var row = new VisualElement();
                 row.style.flexDirection = FlexDirection.Row;
@@ -808,7 +808,7 @@ namespace Project.LevelEditor.Editor
                 group.Add(row);
                 for (int index = 0; index < flags.Length; index++)
                 {
-                    RigidbodyConstraints flag = flags[index];
+                    RigidbodyConstraints2D flag = flags[index];
                     string axis = new[] { "X", "Y", "Z" }[index];
                     var toggle = new Toggle(axis) {
                         name = "rigidbody-freeze-" + key + "-" + axis.ToLowerInvariant(),
@@ -833,7 +833,7 @@ namespace Project.LevelEditor.Editor
         private static bool CanEditProperty(
             SerializedProperty property)
         {
-            if (property.serializedObject.targetObject is Rigidbody &&
+            if (property.serializedObject.targetObject is Rigidbody2D &&
                 property.propertyPath == "m_Constraints") return false;
             if (property.propertyPath == "m_Script" ||
                 property.propertyPath == "m_ObjectHideFlags" ||
@@ -1020,11 +1020,11 @@ namespace Project.LevelEditor.Editor
                     { "Transform.m_LocalPosition", "本地位置" },
                     { "Transform.m_LocalRotation", "本地旋转" },
                     { "Transform.m_LocalScale", "本地缩放" },
-                    { "BoxCollider.m_Size", "碰撞体尺寸" },
-                    { "BoxCollider.m_Center", "碰撞体中心" },
-                    { "BoxCollider.m_IsTrigger", "作为触发器" },
-                    { "SphereCollider.m_Radius", "碰撞体半径" },
-                    { "SphereCollider.m_IsTrigger", "作为触发器" },
+                    { "BoxCollider2D.m_Size", "碰撞体尺寸" },
+                    { "BoxCollider2D.m_Center", "碰撞体中心" },
+                    { "BoxCollider2D.m_IsTrigger", "作为触发器" },
+                    { "CircleCollider2D.m_Radius", "碰撞体半径" },
+                    { "CircleCollider2D.m_IsTrigger", "作为触发器" },
                     { "ClimbableVineFeature.allowGrowthFromColor", "允许颜色触发生长" },
                     { "ClimbableVineFeature.initialSegments", "预置藤蔓节段" },
                     { "BlockAbilityHost.debugLog", "输出调试日志" },
@@ -1071,21 +1071,21 @@ namespace Project.LevelEditor.Editor
                     { typeof(Project.Mechanisms.DoorButton), "门按钮" },
                     { typeof(Project.Mechanisms.OneWayPlatform), "单向平台" },
                     { typeof(Transform), "变换" },
-                    { typeof(BoxCollider), "盒子碰撞体" },
-                    { typeof(SphereCollider), "球体碰撞体" },
-                    { typeof(CapsuleCollider), "胶囊碰撞体" },
+                    { typeof(BoxCollider2D), "盒子碰撞体" },
+                    { typeof(CircleCollider2D), "圆形碰撞体" },
+                    { typeof(CapsuleCollider2D), "胶囊碰撞体" },
                     { typeof(MeshFilter), "网格过滤器" },
                     { typeof(MeshRenderer), "网格渲染器" },
                     { typeof(SkinnedMeshRenderer), "蒙皮网格渲染器" },
                     { typeof(AudioSource), "音频源" },
                     { typeof(Camera), "相机" },
-                    { typeof(Light), "灯光" },
+                    { typeof(UnityEngine.Rendering.Universal.Light2D), "2D 灯光" },
                 };
 
             public static bool IsDefaultComponent(Component component)
             {
                 return component is Transform ||
-                       component is Collider ||
+                       component is Collider2D ||
                        component is Renderer ||
                        component is MeshFilter;
             }

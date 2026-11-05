@@ -44,7 +44,7 @@ namespace Project.GameFlow
         }
         private sealed class ColliderState
         {
-            public Collider target;
+            public Collider2D target;
             public bool enabled;
             public void Restore() { if (target != null) target.enabled = enabled; }
         }
@@ -55,7 +55,7 @@ namespace Project.GameFlow
             public readonly List<ToggleState> cameras = new List<ToggleState>();
             public readonly List<ColliderState> colliders = new List<ColliderState>();
             public IDisposable playerLock;
-            public Rigidbody body;
+            public Rigidbody2D body;
             public bool bodyKinematic;
             public void Dispose()
             {
@@ -214,14 +214,14 @@ namespace Project.GameFlow
                         if (type == "PlayerInputDriver" || type == "GreenHookAbility" || type == "PlayerColorWheel")
                             Disable(component, lease.interactions);
                     }
-                    lease.body = candidate.GetComponent<Rigidbody>();
+                    lease.body = candidate.GetComponent<Rigidbody2D>();
                     if (lease.body != null)
                     {
                         lease.bodyKinematic = lease.body.isKinematic;
-                        if (!lease.body.isKinematic) { lease.body.linearVelocity = Vector3.zero; lease.body.angularVelocity = Vector3.zero; }
+                        if (!lease.body.isKinematic) { lease.body.linearVelocity = Vector3.zero; lease.body.angularVelocity = 0f; }
                         lease.body.isKinematic = true;
                     }
-                    foreach (Collider collider in candidate.GetComponentsInChildren<Collider>(true))
+                    foreach (Collider2D collider in candidate.GetComponentsInChildren<Collider2D>(true))
                     {
                         lease.colliders.Add(new ColliderState { target = collider, enabled = collider.enabled });
                         collider.enabled = false;
@@ -425,7 +425,7 @@ namespace Project.GameFlow
         }
 
         public bool TryGetCameraState(in CameraControlContext context, out CameraState state) { state = menuState; return true; }
-        public bool TryGetLensOverride(out float size, out float fov) { size = menuState.orthographicSize; fov = menuState.fieldOfView; return true; }
+        public bool TryGetLensOverride(out float size) { size = menuState.orthographicSize;  return true; }
         private void OnDestroy()
         {
             DOTween.Kill(this);

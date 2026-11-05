@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections;
 using System.Reflection;
@@ -99,17 +100,17 @@ namespace Project.Player.Editor
                 "ordinary respawn remains synchronous with one relocation/completion");
             ColorRuntimeService.Instance.Unlock("red");
             ColorRuntimeService.Instance.UnlockAbility("blue");
-            Vector3 spawn = player.Motor.position;
+            Vector3 spawn = player.Motor.WorldPosition();
             player.Motor.position = player.transform.position = spawn + Vector3.right * 8;
-            Physics.SyncTransforms();
+            PlanarPhysics.SyncTransforms();
             player.ConfigureRespawn(PlayerRespawnMode.LoadingTransition, .35f);
             IDisposable external = player.AcquireControlLock("another cutscene");
             int externalDepth = player.ControlLockDepth;
-            Vector3 before = player.Motor.position;
+            Vector3 before = player.Motor.WorldPosition();
             player.RequestRespawn();
             Check(player.IsRespawning && player.IsControlLocked && player.IsInvulnerable,
                 "slow respawn acquires its own control and damage protection");
-            Check(player.ControlLockDepth == externalDepth + 1 && player.Motor.position == before,
+            Check(player.ControlLockDepth == externalDepth + 1 && player.Motor.WorldPosition() == before,
                 "slow request does not relocate before cover");
             for (int i = 0; i < 5; i++) player.RequestRespawn();
             Check(player.ControlLockDepth == externalDepth + 1 && completed == 1,
@@ -118,7 +119,7 @@ namespace Project.Player.Editor
             router.SetPaused(true, false, true);
             Check(!router.IsPaused && Time.timeScale > 0f, "pause cannot interrupt active respawn");
             yield return new WaitForSecondsRealtime(.15f);
-            Check(Vector3.Distance(player.Motor.position, before) < .001f && relocated == 1,
+            Check(Vector3.Distance(player.Motor.WorldPosition(), before) < .001f && relocated == 1,
                 "motor remains frozen while the iris is still closing");
             yield return WaitPhase(RespawnTransitionPhase.Loading);
             float loadingAt = Time.realtimeSinceStartup;

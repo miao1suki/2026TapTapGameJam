@@ -11,7 +11,6 @@ namespace Project.CameraModes.Editor
         private const string TransitionPreviewPreference =
             "2026TapTap.CameraModes.PreviewTransition";
         private static readonly Color Accent2D = new Color(0.12f, 0.55f, 0.95f, 1f);
-        private static readonly Color Accent3D = new Color(0.54f, 0.34f, 0.92f, 1f);
 
         private readonly Color cardColor;
         private readonly Color subtleColor;
@@ -20,7 +19,6 @@ namespace Project.CameraModes.Editor
         private readonly ObjectField followTargetField;
         private readonly Button configureButton;
         private readonly Button side2DButton;
-        private readonly Button perspective3DButton;
         private readonly Toggle previewTransitionToggle;
         private readonly Button locateButton;
         private readonly Label statusBadge;
@@ -89,9 +87,7 @@ namespace Project.CameraModes.Editor
             VisualElement previewCard = CreateCard("视角预览", "可在编辑态直接检查切换动画和构图");
             VisualElement modeRow = CreateRow();
             side2DButton = CreateModeButton("2D  平台", "正交 · 平视", Accent2D, CameraViewMode.Side2D);
-            perspective3DButton = CreateModeButton("3D  俯视", "透视 · 斜上方", Accent3D, CameraViewMode.Perspective3D);
             modeRow.Add(side2DButton);
-            modeRow.Add(perspective3DButton);
             previewCard.Add(modeRow);
 
             previewTransitionToggle = new Toggle("切换预览时启用过渡")
@@ -120,7 +116,7 @@ namespace Project.CameraModes.Editor
             {
                 text = "高级参数",
                 value = false,
-                tooltip = "调整 2D、3D、过渡和跟随参数"
+                tooltip = "调整 2D 构图、过渡和跟随参数"
             };
             settingsFoldout.style.marginTop = 5f;
             settingsFoldout.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -166,7 +162,7 @@ namespace Project.CameraModes.Editor
 
             VisualElement titleGroup = new VisualElement();
             titleGroup.style.flexGrow = 1f;
-            Label title = new Label("2D / 3D 相机");
+            Label title = new Label("2D 相机");
             title.style.fontSize = 14f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             titleGroup.Add(title);
@@ -374,7 +370,6 @@ namespace Project.CameraModes.Editor
 
             configureButton.SetEnabled(camera != null && !Application.isPlaying);
             side2DButton.SetEnabled(activeController != null);
-            perspective3DButton.SetEnabled(activeController != null);
             locateButton.SetEnabled(activeController != null);
             RefreshStatus();
         }
@@ -388,7 +383,6 @@ namespace Project.CameraModes.Editor
                 statusBadge.style.color = StyleKeyword.Null;
                 statusDetail.text = "先选择场景相机，再创建控制器";
                 side2DButton.style.backgroundColor = idleButtonColor;
-                perspective3DButton.style.backgroundColor = idleButtonColor;
                 return;
             }
 
@@ -404,7 +398,6 @@ namespace Project.CameraModes.Editor
                     ? "当前模式请求正在等待控制权"
                     : $"当前控制者：{activeName}；模式请求会在释放后生效";
                 side2DButton.style.backgroundColor = idleButtonColor;
-                perspective3DButton.style.backgroundColor = idleButtonColor;
                 return;
             }
 
@@ -414,16 +407,14 @@ namespace Project.CameraModes.Editor
             bool side2D = mode == CameraViewMode.Side2D;
             statusBadge.text = activeController.IsTransitioning
                 ? "切换中"
-                : (side2D ? "2D 模式" : "3D 模式");
-            statusBadge.style.backgroundColor = side2D ? Accent2D : Accent3D;
+                : "2D 模式";
+            statusBadge.style.backgroundColor = Accent2D;
             statusBadge.style.color = Color.white;
             statusDetail.text = activeController.IsTransitioning
-                ? $"正在前往 {(side2D ? "2D 平台" : "3D 俯视")} · {activeController.NormalizedTransitionTime:P0}"
-                : $"当前稳定在 {(side2D ? "2D 正交平视" : "3D 透视俯视")}";
+                ? $"正在前往 2D 构图 · {activeController.NormalizedTransitionTime:P0}"
+                : $"当前稳定在 2D 正交平视";
             side2DButton.style.backgroundColor = side2D ? Accent2D : idleButtonColor;
-            perspective3DButton.style.backgroundColor = side2D ? idleButtonColor : Accent3D;
             side2DButton.style.color = side2D ? Color.white : StyleKeyword.Null;
-            perspective3DButton.style.color = side2D ? StyleKeyword.Null : Color.white;
         }
 
         private void RebuildSettings()
@@ -451,7 +442,6 @@ namespace Project.CameraModes.Editor
                 : null;
             AddBoundProperty(boundManager, "fallbackFocusPoint", "无目标时的观察点");
             AddBoundProperty(boundController, "side2D", "2D 平台视角");
-            AddBoundProperty(boundController, "perspective3D", "3D 俯视视角");
             AddBoundProperty(boundController, "transition", "切换动画");
         }
 

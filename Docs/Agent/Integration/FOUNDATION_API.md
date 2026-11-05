@@ -2,6 +2,8 @@
 
 本文件列出迁移后契约。模块 README 是旧功能实现细节参考，不要照搬被移除的旧场景/玩法。
 
+2026-11-05：以下物理与镜头契约已随 `codex/2d-long-term-migration` 更新为原生 2D，不能与 main 的迁移前组件混用。详见 [实施报告](../../Developer/NATIVE_2D_MIGRATION_20261105.md)。正式启动流程仍以最新 `FORMAL_LEVEL_DELIVERY.md` 的单 Gaming 流程为准，以下早期多场景记录仅作历史。
+
 ## 启动与流程
 
 当前正式场景序列为 `Assets/_Project/Scenes/Start/MainMenu.unity` → `Assets/_Project/Scenes/Playing/Gaming.unity`。MainMenu 持有 `GameFlowController` 和 `StartMenuFlowBridge`，Gaming 持有 `LevelSceneContext`、玩家与玩法相机；暂停界面使用 `Content/UI/SharedGameUI.prefab`。Bootstrap、旧 Systems、三关和 Ending 流程已删除，`GameFlowSceneScaffolder.Generate` 保持禁用。
@@ -67,6 +69,7 @@ Renderer，同时保留 Collider。需要单独覆盖样式时，关闭
 句柄 `HasControl` 不等于 `IsValid`；非持有者不能假定输出已应用。`ReleaseControl`/`Retarget`/`SetPriority`/`SetInterruptionPolicy` 控制生命周期。
 禁用/销毁时释放自己的句柄；不由外部协程同时插值实际Camera。Manager统一处理输出过渡和抢占。
 模式请求实现 `ICameraViewModeRequester`，调用 `CameraModeController.RequestMode(requester, mode, [yaw], [transition])`，持有并释放请求句柄。
+本分支只提供 `Side2D` 与 `Orthographic`；`yaw` 历史字段名现在表示画面绕 Z 轴旋转。`CameraState`、`CameraViewportInfo` 不再含 FOV；`ICameraLensOverrideSource.TryGetLensOverride(out float orthographicSize)` 仅传正交半高，`TimelineCamRig.SetShotLens(float orthographicSize)` 同理。镜头禁止沿 X/Y 倾斜或切换透视。
 `CameraFollowController.SetTarget` 设置角色目标；模式控制与跟随解耦。
 
 目标可实现 `ICameraFollowRelocationSource.CameraFollowRelocated`，重定位完成后发送通知。PlayerController在死亡/主动重生完成后发送；跟随组件自动订阅，保持当前焦点并平滑追至新位置，追赶期间忽略大距离吸附、死区和瞬移观察提前量。也可直接调用 `NotifyTargetRelocated()`，不修改实际Camera。显式 `Snap()` / `SetTarget(target, true)` 仍立即定位；暂停不推进追赶，切换目标和禁用会解绑事件。
@@ -75,7 +78,7 @@ Timeline使用 `TimelineCamRig.Acquire/Release/SetShotTransform` 通过Manager�
 
 ## 玩家（基础子集）
 
-`Project.Player.PlayerController` 只负责马的物理与动作能力：Rigidbody + CapsuleCollider，固定XY平面移动、跳跃、冲刺，普通3D物理碰撞，无投影碰撞或深度校正。
+`Project.Player.PlayerController` 使用 Rigidbody2D + CapsuleCollider2D，在 XY 平面移动、跳跃、冲刺，使用原生 Box2D 碰撞。物理宽度为 0.96 格、高度 1 格，为一格宽通道留出接触皮肤；逻辑占格和美术换算不缩小。Z 只作表现深度，不允许通过 Z 分隔物理。外部用 `Rigidbody2D` 的 Vector2 位置/速度，不把原三维查询接口或约束枚举带回本分支。
 输入由 `Project.Player.PlayerInputDriver` 读取 GameInput，再通过 `SetMoveInput`、`SetSprintInput`、`RequestJump`、`TryPlayAction` 等命令驱动 PlayerController；`PlayerInputDriver` 同时也是相机模式的 `GameplayAbility` requester。
 API：`Motor`、`IsGrounded`、`IsControlLocked`、`CurrentStateId`、`TryPlayAction(ActSO)`、`SetControlLocked(bool)`、`ReceiveTimelineSignal()`。
 外部演出可通过 `IPlayerControlLockTarget.AcquireControlLock(owner)` 获取引用计数控制锁；释放返回的 `IDisposable` 才解除。锁定期间移动、跳跃、交互、搬运、染色和普通动作输入都会被清空并停止处理。

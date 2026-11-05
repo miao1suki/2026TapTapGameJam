@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.IO;
 using System.Linq;
@@ -113,7 +114,7 @@ public static class ArtGridRefinementAudit
                 var visual = MechanismArtworkPresentation.Ensure(owner).Visual;
                 Check(ladder.SideFacing && ladder.WallSide == pair.Item2 && visual.flipX == (pair.Item2 == LadderWallSide.Left), "side ladder retains explicit wall side " + pair.Item2);
                 Check(Near(visual.bounds.size.x, 1), "ladder artwork fills authored width independently of its narrow trigger");
-                var box = owner.GetComponent<BoxCollider>(); box.size = new Vector3(box.size.x, 5, box.size.z);
+                var box = owner.GetComponent<BoxCollider2D>(); box.size = new Vector3(box.size.x, 5, 0f);
                 MechanismArtworkPresentation.Ensure(owner).Refresh(0);
                 Check(Near(box.size.y, 5) && Near(visual.bounds.size.y, 5), "existing long ladder retains five-cell trigger and repeated art");
             }
@@ -127,8 +128,8 @@ public static class ArtGridRefinementAudit
         var owner = Spawn("ColorBlocks/Prefabs/Red_Platform.prefab");
         try
         {
-            var collider = owner.GetComponent<BoxCollider>();
-            Vector3 originalSize = collider.size, originalCenter = collider.center;
+            var collider = owner.GetComponent<BoxCollider2D>();
+            Vector3 originalSize = collider.size, originalCenter = collider.offset;
             var presentation = MechanismArtworkPresentation.Ensure(owner);
             Check(originalSize == Vector3.one, "legacy platform prefab geometry remains a single cell");
             owner.transform.localScale = new Vector3(1, 5, 1); presentation.Refresh(0);
@@ -136,7 +137,7 @@ public static class ArtGridRefinementAudit
             Check(Near(Quaternion.Angle(visual.transform.localRotation, Quaternion.Euler(0, 0, 90)), 0) && Near(visual.size.x, 5), "five-cell vertical platform rotates art before tiling its full length");
             Vector3 pixelX = visual.transform.TransformVector(Vector3.right / 16), pixelY = visual.transform.TransformVector(Vector3.up / 16);
             Check(Near(pixelX.magnitude, 1f / 16) && Near(pixelY.magnitude, 1f / 16), "vertical nonuniform parent retains square native pixels");
-            Check(collider.size == originalSize && collider.center == originalCenter, "visual refresh does not mutate existing collision geometry");
+            Check(((Vector3)collider.size) == originalSize && ((Vector3)collider.offset) == originalCenter, "visual refresh does not mutate existing collision geometry");
             var shape = owner.AddComponent<LevelEditorMergedShape>();
             shape.Configure(new Vector2Int(1, 5), new[] { new RectInt(0, 0, 1, 2), new RectInt(0, 3, 1, 2) });
             presentation.Refresh(0);
@@ -171,7 +172,7 @@ public static class ArtGridRefinementAudit
             try
             {
                 owner.transform.localScale = Vector3.Scale(owner.transform.localScale, new Vector3(length, 1, 1));
-                var collider = owner.GetComponent<BoxCollider>();
+                var collider = owner.GetComponent<BoxCollider2D>();
                 string before = EditorJsonUtility.ToJson(collider);
                 var presentation = MechanismArtworkPresentation.Ensure(owner);
                 presentation.Refresh(0);
@@ -196,11 +197,11 @@ public static class ArtGridRefinementAudit
         var owner = Spawn("ColorBlocks/Prefabs/Respawn_Block.prefab");
         try
         {
-            var colliders = owner.GetComponentsInChildren<Collider>(true);
+            var colliders = owner.GetComponentsInChildren<Collider2D>(true);
             var before = colliders.Select(EditorJsonUtility.ToJson).ToArray();
             var presentation = WorldObjectSpritePresentation.Ensure(owner); presentation.Refresh(0);
             Check(Near(presentation.Visual.bounds.size.x, 2) && Near(presentation.Visual.bounds.size.y, 2), "respawn genuine32x32 artwork naturally occupies2x2 visual cells");
-            var after = owner.GetComponentsInChildren<Collider>(true).Select(EditorJsonUtility.ToJson).ToArray();
+            var after = owner.GetComponentsInChildren<Collider2D>(true).Select(EditorJsonUtility.ToJson).ToArray();
             Check(before.SequenceEqual(after), "respawn visual conversion preserves existing activation collider configuration without inventing a box");
         }
         finally { Object.DestroyImmediate(owner); }
@@ -212,19 +213,19 @@ public static class ArtGridRefinementAudit
             var owner = Spawn("WorldItems/Spike_" + direction + ".prefab");
             try
             {
-                var collider = owner.GetComponentInChildren<MeshCollider>(); var original = collider.sharedMesh;
+                var collider = owner.GetComponentInChildren<PolygonCollider2D>(); var original = collider.GetPath(0);
                 var presentation = MechanismArtworkPresentation.Ensure(owner);
                 Check(presentation.Kind == MechanismArtworkKind.Spike && presentation.Visual.sprite.rect.width == 16,
                     "four-direction spike uses a single native art cell " + direction);
-                Check(Quaternion.Angle(presentation.Visual.transform.rotation, collider.transform.rotation) < .01f && collider.sharedMesh == original && collider.isTrigger,
+                Check(Quaternion.Angle(presentation.Visual.transform.rotation, collider.transform.rotation) < .01f && System.Linq.Enumerable.SequenceEqual(collider.GetPath(0), original) && collider.isTrigger,
                     "spike art follows existing direction without modifying hit volume " + direction);
-                Check(Near(collider.sharedMesh.bounds.min.y, -.5f) && Near(collider.sharedMesh.bounds.max.y, -.25f),
+                Check(Near(Project.Planar.PlanarGeometry.LocalBounds(collider).min.y, -.5f) && Near(Project.Planar.PlanarGeometry.LocalBounds(collider).max.y, -.25f),
                     "spike damage triangle follows visible quarter-cell height, not former invisible0.75 volume " + direction);
-                Physics.SyncTransforms();
+                PlanarPhysics.SyncTransforms();
                 Vector3 safe = collider.transform.TransformPoint(new Vector3(0, -.1f, 0));
                 Vector3 touching = collider.transform.TransformPoint(new Vector3(0, -.4f, 0));
-                Check(Vector3.Distance(collider.ClosestPoint(safe), safe) > .1f &&
-                    Vector3.Distance(collider.ClosestPoint(touching), touching) < .001f,
+                Check(Vector3.Distance(collider.ClosestWorldPoint(safe), safe) > .1f &&
+                    Vector3.Distance(collider.ClosestWorldPoint(touching), touching) < .001f,
                     "spike physical trigger excludes invisible upper area but retains visible base " + direction);
             }
             finally { Object.DestroyImmediate(owner); }

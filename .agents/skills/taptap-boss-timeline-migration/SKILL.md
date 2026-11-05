@@ -31,7 +31,7 @@ description: 2026TapTap Boss 与结局 Timeline 的迁移和演出规范；新�
 
 1. 在 Timeline 的 **Playable 轨道**放入 `PlayableAsset`。
 2. 用它的 `PlayableBehaviour` 实现场景专属演出。
-3. 不在 Boss 场景中为单次演出修改 `Assets/GJ_Tools/TimelineTools3D` 的通用工具脚本。
+3. 不在 Boss 场景中为单次演出修改 `Assets/GJ_Tools/TimelineTools2D` 的通用工具脚本。
 4. 只有多个场景都需要的通用能力，才允许扩展 Timeline 工具包，并另做回归。
 
 ## 实现流程

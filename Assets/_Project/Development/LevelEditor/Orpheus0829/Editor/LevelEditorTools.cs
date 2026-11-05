@@ -709,7 +709,7 @@ namespace Project.LevelEditor.Editor
             }
             else
             {
-                instance = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                instance = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 if (instance.scene != targetScene)
                     UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(instance, targetScene);
                 instance.transform.localScale =
@@ -1005,8 +1005,8 @@ namespace Project.LevelEditor.Editor
                     PrefabUtility.GetCorrespondingObjectFromSource(block.gameObject) != prefab ||
                     !CanMergeBlock(block) ||
                     block.GetComponent<MeshRenderer>().sharedMaterial != first.GetComponent<MeshRenderer>().sharedMaterial ||
-                    block.GetComponent<BoxCollider>().center != first.GetComponent<BoxCollider>().center ||
-                    block.GetComponent<BoxCollider>().size != first.GetComponent<BoxCollider>().size ||
+                    block.GetComponent<BoxCollider2D>().offset != first.GetComponent<BoxCollider2D>().offset ||
+                    block.GetComponent<BoxCollider2D>().size != first.GetComponent<BoxCollider2D>().size ||
                     Vector2.Distance(block.transform.position, CellToWorld(block.Cell)) > .002f)
                 {
                     message = "仅能合并同种、同尺寸、同层级且没有附加内容的单元方块。";
@@ -1037,7 +1037,7 @@ namespace Project.LevelEditor.Editor
             Undo.SetCurrentGroupName("合并方块");
             GameObject merged = prefab != null
                 ? PrefabUtility.InstantiatePrefab(prefab, first.gameObject.scene) as GameObject
-                : GameObject.CreatePrimitive(PrimitiveType.Cube);
+                : Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
             if (merged == null)
             {
                 message = "无法创建合并方块。";
@@ -1046,7 +1046,7 @@ namespace Project.LevelEditor.Editor
             Undo.RegisterCreatedObjectUndo(merged, "合并方块");
             merged.transform.SetParent(first.transform.parent, true);
             merged.name = first.gameObject.name;
-            merged.transform.rotation = first.transform.rotation;
+            merged.transform.rotation = (first.transform.rotation);
             merged.transform.localScale = Vector3.Scale(first.transform.localScale, new Vector3(width, height, 1f));
             merged.transform.position = CellToWorld(new Vector2Int(minX, minY)) +
                 new Vector3((width - 1) * LevelEditorState.CellSize * .5f,
@@ -1074,7 +1074,7 @@ namespace Project.LevelEditor.Editor
         private static bool CanMergeBlock(LevelEditorPlacedBlock block)
         {
             if (block.GetComponent<MeshRenderer>() == null ||
-                block.GetComponent<BoxCollider>() == null ||
+                block.GetComponent<BoxCollider2D>() == null ||
                 block.GetComponent<MeshFilter>() == null) return false;
             foreach (MonoBehaviour behaviour in block.GetComponents<MonoBehaviour>())
                 if (behaviour != null &&

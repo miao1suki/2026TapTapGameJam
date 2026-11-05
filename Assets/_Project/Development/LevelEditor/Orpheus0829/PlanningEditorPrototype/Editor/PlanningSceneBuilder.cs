@@ -1098,7 +1098,7 @@ namespace PlanningEditorPrototype
 
                         segment.transform.SetParent(bottom.transform, true);
                         segment.transform.position = upper.transform.position;
-                        segment.transform.rotation = upper.transform.rotation;
+                        segment.transform.rotation = (upper.transform.rotation);
                         segment.transform.localScale = upper.transform.localScale;
                         segment.name = $"藤蔓节段 [{upper.Cell.x},{upper.Cell.y}]";
                         LevelEditorPlacedBlock placed =
@@ -1246,7 +1246,7 @@ namespace PlanningEditorPrototype
 
             if (instance == null)
             {
-                instance = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                instance = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
                 instance.transform.localScale =
                     Vector3.one * CellSize;
             }
@@ -1426,11 +1426,11 @@ namespace PlanningEditorPrototype
             {
                 // Use authored dimensions, including old two-cell non-merged saves.
                 // A centered unit trigger avoids multiplying the legacy height twice.
-                var ladderCollider = placed.GetComponent<BoxCollider>();
+                var ladderCollider = placed.GetComponent<BoxCollider2D>();
                 if (ladderCollider != null)
                 {
                     var size = ladderCollider.size; size.y = 1f; ladderCollider.size = size;
-                    var center = ladderCollider.center; center.y = 0f; ladderCollider.center = center;
+                    var center = ladderCollider.offset; center.y = 0f; ladderCollider.offset = center;
                     PrefabUtility.RecordPrefabInstancePropertyModifications(ladderCollider);
                 }
                 placed.transform.localScale *= CellSize;
@@ -1451,13 +1451,13 @@ namespace PlanningEditorPrototype
             LevelEditorComponentOverrideUtility.ApplyOverrides(placed.gameObject,values,false);
             if (fittedPlatform && placed.TryGetComponent<Project.BlockFeatures.MovingPlatformFeature>(out var platformBody) &&
                 platformBody.BodyOrientation == Project.BlockFeatures.MovingPlatformBodyOrientation.Vertical &&
-                placed.TryGetComponent<BoxCollider>(out var platformCollider))
+                placed.TryGetComponent<BoxCollider2D>(out var platformCollider))
             {
                 // Rotate only the physical strip, not the moving root / world-space
                 // route. Old Auto data and its authored collision remain untouched.
-                Vector3 shape = platformCollider.size, pivot = platformCollider.center;
+                Vector3 shape = platformCollider.size, pivot = platformCollider.offset;
                 platformCollider.size = new Vector3(shape.y, shape.x, shape.z);
-                platformCollider.center = new Vector3(-pivot.y, pivot.x, pivot.z);
+                platformCollider.offset = new Vector3(-pivot.y, pivot.x, pivot.z);
                 PrefabUtility.RecordPrefabInstancePropertyModifications(platformCollider);
             }
             if(box.isMerged || fittedLadder || fittedPlatform && box.singleInstance)

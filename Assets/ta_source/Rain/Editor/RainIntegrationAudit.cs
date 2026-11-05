@@ -93,7 +93,7 @@ namespace Project.Rain.Editor
             {
                 GameObject prefab = Prefab(suffix);
                 Check(prefab != null && prefab.GetComponentsInChildren<RainSpriteField>(true).Length == 1, suffix + " has one field");
-                Check(prefab.transform.childCount == 0 && prefab.GetComponent<Collider>() == null && prefab.GetComponent<ColorObject>() == null,
+                Check(prefab.transform.childCount == 0 && prefab.GetComponent<Collider2D>() == null && prefab.GetComponent<ColorObject>() == null,
                     suffix + " is decoration only, with no children or gameplay components");
                 Check(prefab.layer == catalog.Find(suffix.ToLowerInvariant()).unityLayer, suffix + " prefab already has its catalog color Layer");
                 Material material = prefab.GetComponent<MeshRenderer>().sharedMaterial;
@@ -242,7 +242,7 @@ namespace Project.Rain.Editor
             Check(rain.Seed == 817 && rain.AreaCells == new Vector2(7, 5) && rain.ColorId == "green" && rain.DropCount == 84,
                 "saved Prefab overrides survive Scene reload");
             Check(rain.transform.position == new Vector3(1.25f, 3, 1) && expected.SequenceEqual(rain.GeneratedMesh.vertices), "Scene reload preserves position and exact seeded distribution");
-            Check(rain.transform.parent == null && rain.GetComponent<Collider>() == null && rain.GetComponent<ColorObject>() == null,
+            Check(rain.transform.parent == null && rain.GetComponent<Collider2D>() == null && rain.GetComponent<ColorObject>() == null,
                 "Scene reload preserves decoration-only ownership");
         }
 

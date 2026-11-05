@@ -58,14 +58,14 @@ public static class DoorFootprintAudit
     {
         var transform = door.transform;
         var position = transform.position; var rotation = transform.rotation; var scale = transform.localScale;
-        var collider = door.GetComponent<BoxCollider>();
-        var previousCentre = transform.TransformPoint(collider.center);
+        var collider = door.GetComponent<BoxCollider2D>();
+        var previousCentre = transform.TransformPoint(collider.offset);
         bool planning = door.TryGetPlanningWorldFootprint(out var expected);
         if (!planning) expected = collider.bounds;
         typeof(DoorController).GetMethod("Awake", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(door, null);
         Check(transform.position == position && transform.rotation == rotation && transform.localScale == scale,
             "preserve author root including fractional pose: " + door.name);
-        Check((transform.TransformPoint(collider.center) - previousCentre).sqrMagnitude < .000001f, "preserve physical centre: " + door.name);
+        Check((transform.TransformPoint(collider.offset) - previousCentre).sqrMagnitude < .000001f, "preserve physical centre: " + door.name);
         Check((collider.bounds.size - expected.size).sqrMagnitude < .000001f, "physical footprint: " + door.name);
         var presentation = MechanismArtworkPresentation.Ensure(door.gameObject);
         presentation.Refresh(0f);

@@ -23,7 +23,7 @@ namespace Project.BlockFeatures.Editor
             if (Application.isPlaying || SceneView.currentDrawingSceneView == null || trigger == null) return;
             if (Event.current != null && Event.current.type != EventType.Repaint) return;
             Texture2D texture = Texture;
-            Collider shape = trigger.GetComponent<Collider>();
+            Collider2D shape = trigger.GetComponent<Collider2D>();
             if (texture == null || shape == null || !ScenePreviewCulling.Visible(shape.bounds)) return;
             DrawColliderRange(
                 shape,
@@ -43,7 +43,7 @@ namespace Project.BlockFeatures.Editor
         }
 
         private static void DrawColliderRange(
-            Collider collider,
+            Collider2D collider,
             bool selected)
         {
             if (collider == null || !collider.enabled)
@@ -56,13 +56,13 @@ namespace Project.BlockFeatures.Editor
             Handles.color = selected
                 ? new Color(1f, .78f, .3f, .9f)
                 : new Color(1f, .78f, .3f, .45f);
-            if (collider is BoxCollider box)
+            if (collider is BoxCollider2D box)
             {
                 Handles.matrix =
                     box.transform.localToWorldMatrix;
                 DrawDottedBox(
                     new Bounds(
-                        box.center,
+                        box.offset,
                         box.size));
             }
             else

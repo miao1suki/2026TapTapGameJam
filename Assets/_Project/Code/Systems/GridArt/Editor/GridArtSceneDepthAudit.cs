@@ -49,7 +49,7 @@ namespace Project.GridArt.Editor
                 var propMaterial = new Material(Shader.Find("2026TapTap/Grid Art/Unlit"));
                 propMaterial.SetTexture("_BaseMap", texture); propMaterial.SetColor("_BaseColor", Color.green);
                 propRenderer.sharedMaterial = propMaterial;
-                var wall = GameObject.CreatePrimitive(PrimitiveType.Cube); wall.transform.position = new Vector3(.5f, .5f, 0);
+                var wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); wall.transform.position = new Vector3(.5f, .5f, 0);
                 var wallMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
                 wallMaterial.SetColor("_BaseColor", Color.cyan); wall.GetComponent<Renderer>().sharedMaterial = wallMaterial;
                 var camera = new GameObject("Depth validation camera").AddComponent<Camera>();
@@ -74,7 +74,7 @@ namespace Project.GridArt.Editor
                 Pixel(2, Color.blue, "near background must remain in front of far background");
                 Pixel(3, Color.yellow, "wall surface must remain in front of far background");
                 Pixel(4, Color.red, "uncovered far background must remain visible");
-                Check(output.GetComponentsInChildren<Collider>(true).Length == 0, "decorative art must not add gameplay collisions");
+                Check(output.GetComponentsInChildren<Collider2D>(true).Length == 0, "decorative art must not add gameplay collisions");
                 Check(far.depth == 5 && near.depth == 2 && surface.depth == -.51f, "author depth stays unchanged");
                 Check(map.layers.Count == 3 && map.layers.Sum(l => l.cells.Count) == 7, "author placement stays unchanged");
                 Object.DestroyImmediate(propMaterial); Object.DestroyImmediate(wallMaterial);

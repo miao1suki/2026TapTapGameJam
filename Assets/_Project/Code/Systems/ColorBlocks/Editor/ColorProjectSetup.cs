@@ -81,7 +81,7 @@ namespace Project.ColorBlocks.Editor
             if (mask == null || fade == null) throw new InvalidOperationException("HSV Shader 缺失。");
             foreach (string path in new[] { "Assets/Settings/PC_Renderer.asset", "Assets/Settings/Mobile_Renderer.asset" })
             {
-                var data = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(path);
+                var data = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(path);
                 if (data == null) throw new InvalidOperationException("找不到 URP Renderer: " + path);
                 var existing = data.rendererFeatures.OfType<SelectiveHsvRendererFeature>().FirstOrDefault();
                 if (existing != null) continue;
@@ -126,18 +126,17 @@ namespace Project.ColorBlocks.Editor
                         cameraClip.constrainOrthographicAxes = true;
                         cameraClip.allowPositionX = true;
                         cameraClip.allowPositionY = true;
-                        cameraClip.allowPositionZ = false;
                     }
                 }
 
                 var pickupPath = PrefabFolder + "/ColorKey_" + color.id + ".prefab";
                 if (AssetDatabase.LoadAssetAtPath<GameObject>(pickupPath) != null) continue;
-                var pickup = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                var pickup = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Disk);
                 try
                 {
                     pickup.name = "ColorKey_" + color.id;
                     pickup.transform.localScale = Vector3.one * 0.5f;
-                    pickup.GetComponent<Collider>().isTrigger = true;
+                    pickup.GetComponent<Collider2D>().isTrigger = true;
                     pickup.GetComponent<Renderer>().sharedMaterial = color.targetMaterial != null
                         ? color.targetMaterial : catalog.NeutralMaterial;
                     var director = pickup.AddComponent<PlayableDirector>();

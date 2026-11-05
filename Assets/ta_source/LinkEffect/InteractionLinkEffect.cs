@@ -1,3 +1,4 @@
+using Project.Planar;
 using System;
 using System.Collections.Generic;
 using Project.BlockFeatures;
@@ -47,7 +48,7 @@ namespace TaSource.LinkEffect
         private struct Candidate
         {
             public Component Component;
-            public Collider Collider;
+            public Collider2D Collider2D;
             public float DistanceSqr;
             public bool Feasible;
             public int Key;
@@ -66,7 +67,7 @@ namespace TaSource.LinkEffect
             public bool SeenThisFrame;
         }
 
-        private Collider[] overlapBuffer = new Collider[128];
+        private Collider2D[] overlapBuffer = new Collider2D[128];
         private readonly List<MonoBehaviour> behaviourBuffer = new List<MonoBehaviour>(16);
         private readonly List<Candidate> candidates = new List<Candidate>(32);
         private readonly Dictionary<int, int> candidateIndices = new Dictionary<int, int>(32);
@@ -180,22 +181,22 @@ namespace TaSource.LinkEffect
             int count;
             do
             {
-                count = Physics.OverlapSphereNonAlloc(rangeCenter, radius,
-                    overlapBuffer, targetMask.value, QueryTriggerInteraction.Collide);
+                count = PlanarPhysics.OverlapCircleNonAlloc(rangeCenter, radius,
+                    overlapBuffer, targetMask.value, TriggerQuery.Collide);
                 if (count < overlapBuffer.Length || overlapBuffer.Length >= 1024) break;
-                overlapBuffer = new Collider[overlapBuffer.Length * 2];
+                overlapBuffer = new Collider2D[overlapBuffer.Length * 2];
             } while (true);
 
             for (int hitIndex = 0; hitIndex < count; hitIndex++)
             {
-                Collider hit = overlapBuffer[hitIndex];
+                Collider2D hit = overlapBuffer[hitIndex];
                 if (hit == null || !hit.enabled || !hit.gameObject.activeInHierarchy ||
                     hit.transform.IsChildOf(transform)) continue;
                 // Ripple/mouse-preview colliders belong to presentation, not
                 // to the enclosing color target's gameplay interaction volume.
                 if (hit.GetComponentInParent<InteractiveWater.InteractiveWater>() != null)
                     continue;
-                float distanceSqr = (hit.ClosestPoint(rangeCenter) -
+                float distanceSqr = (hit.ClosestWorldPoint(rangeCenter) -
                     rangeCenter).sqrMagnitude;
                 if (distanceSqr > radius * radius) continue;
                 var water = hit.GetComponentInParent<WaterVisualFeature>();
@@ -249,7 +250,7 @@ namespace TaSource.LinkEffect
             return false;
         }
 
-        private void AddCandidate(Component component, Collider hit,
+        private void AddCandidate(Component component, Collider2D hit,
             float distanceSqr, bool feasible)
         {
             ColorObject colorObject = component.GetComponentInParent<ColorObject>();
@@ -266,7 +267,7 @@ namespace TaSource.LinkEffect
                     (feasible == existing.Feasible && distanceSqr < existing.DistanceSqr))
                 {
                     existing.Component = component;
-                    existing.Collider = hit;
+                    existing.Collider2D = hit;
                     existing.DistanceSqr = distanceSqr;
                 }
                 existing.Feasible |= feasible;
@@ -276,7 +277,7 @@ namespace TaSource.LinkEffect
             candidateIndices.Add(key, candidates.Count);
             candidates.Add(new Candidate
             {
-                Component = component, Collider = hit,
+                Component = component, Collider2D = hit,
                 DistanceSqr = distanceSqr, Feasible = feasible, Key = key
             });
         }
@@ -304,7 +305,7 @@ namespace TaSource.LinkEffect
                 Candidate candidate = candidates[index];
                 if (candidate.Component == null ||
                     !candidate.Component.gameObject.activeInHierarchy ||
-                    (candidate.Collider != null && !candidate.Collider.enabled) ||
+                    (candidate.Collider2D != null && !candidate.Collider2D.enabled) ||
                     !TryGetLineEndpoints(candidate, rangeCenter, rangeRadius,
                         out Vector3 source, out Vector3 destination)) continue;
 
@@ -368,17 +369,17 @@ namespace TaSource.LinkEffect
             float rangeRadius, out Vector3 source, out Vector3 destination)
         {
             source = SourceWorldPosition;
-            destination = candidate.Collider != null
-                ? candidate.Collider.ClosestPoint(rangeCenter)
+            destination = candidate.Collider2D != null
+                ? candidate.Collider2D.ClosestWorldPoint(rangeCenter)
                 : candidate.Component.transform.position;
             if ((destination - rangeCenter).sqrMagnitude > rangeRadius * rangeRadius)
                 return false;
 
-            if (candidate.Collider != null)
-                destination = candidate.Collider.ClosestPoint(source);
+            if (candidate.Collider2D != null)
+                destination = candidate.Collider2D.ClosestWorldPoint(source);
             var water = candidate.Component as WaterVisualFeature;
-            if (water != null && candidate.Collider != null &&
-                !WaterCellVisibility.TryVisiblePoint(water, candidate.Collider, source, rangeRadius, out destination)) return false;
+            if (water != null && candidate.Collider2D != null &&
+                !WaterCellVisibility.TryVisiblePoint(water, candidate.Collider2D, source, rangeRadius, out destination)) return false;
             Vector3 sourceOffsetFromCenter = source - rangeCenter;
             if (sourceOffsetFromCenter.sqrMagnitude > rangeRadius * rangeRadius)
                 source = rangeCenter + sourceOffsetFromCenter.normalized * rangeRadius;

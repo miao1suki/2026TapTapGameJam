@@ -465,13 +465,13 @@ namespace Project.GridArt.Tests
         {
             AddBrush(); GridArtLibraryService.Add(library,Sprite("Second"),Vector2.one,new Rect(0,0,1,1),"装饰");
             map.layers[0].Set(Vector2Int.zero,0); map.layers[0].Set(Vector2Int.right,1);
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube); SceneManager.MoveGameObjectToScene(cube,scene);
+            var cube = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box); SceneManager.MoveGameObjectToScene(cube,scene);
             var material = cube.GetComponent<Renderer>().sharedMaterial;
             var output = GridArtBuilder.Apply(map,scene);
             Assert.That(output.GetComponentsInChildren<MeshRenderer>().Length,Is.EqualTo(2));
             Assert.That(cube.GetComponent<Renderer>().sharedMaterial,Is.SameAs(material));
-            Assert.That(cube.GetComponent<BoxCollider>(),Is.Not.Null);
-            Assert.That(output.GetComponentsInChildren<Collider>().Length,Is.Zero);
+            Assert.That(cube.GetComponent<BoxCollider2D>(),Is.Not.Null);
+            Assert.That(output.GetComponentsInChildren<Collider2D>().Length,Is.Zero);
             foreach (var filter in output.GetComponentsInChildren<MeshFilter>())
             { Assert.That(filter.sharedMesh.normals.Length,Is.EqualTo(4)); Assert.That(filter.sharedMesh.tangents.Length,Is.EqualTo(4)); }
         }

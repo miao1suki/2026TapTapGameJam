@@ -24,7 +24,7 @@ namespace Project.LevelEditor.Editor
         static LevelEditorComponentValueOverride Value()
         {
             var v = new LevelEditorComponentValueOverride();
-            v.Configure("", "UnityEngine.Rigidbody", 0, "m_Mass", "Float", "2", null);
+            v.Configure("", "UnityEngine.Rigidbody2D", 0, "m_Mass", "Float", "2", null);
             return v;
         }
         public static void Run()

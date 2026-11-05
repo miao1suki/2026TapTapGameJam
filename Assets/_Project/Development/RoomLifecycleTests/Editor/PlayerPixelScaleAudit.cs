@@ -45,12 +45,12 @@ public static class PlayerPixelScaleAudit
             instance = Object.Instantiate(prefab, new Vector3(100, 100, 0), Quaternion.identity);
             var player = instance.GetComponent<PlayerController>();
             player.GetComponent<PlayerInputDriver>().enabled = false;
-            player.Motor.constraints = RigidbodyConstraints.FreezeAll;
+            player.Motor.constraints = RigidbodyConstraints2D.FreezeAll;
             var presentation = instance.GetComponent<PlayerSpritePresentation>();
-            var capsule = instance.GetComponent<CapsuleCollider>();
+            var capsule = instance.GetComponent<CapsuleCollider2D>();
             Check(presentation != null && presentation.Visual != null, "standard prefab creates its existing sprite presentation");
-            float radius = capsule.radius, height = capsule.height;
-            Vector3 center = capsule.center;
+            float radius = (capsule.size.x * .5f), height = capsule.size.y;
+            Vector3 center = capsule.offset;
             Check(Mathf.Approximately(radius, .5f) && Mathf.Approximately(height, 1), "standard collision stays one by one cell");
             var frames = Resources.Load<PlayerSpriteAnimationSet>("PlayerVisuals/PlayerSprites");
             foreach (PlayerSpriteState state in Enum.GetValues(typeof(PlayerSpriteState)))
@@ -74,7 +74,7 @@ public static class PlayerPixelScaleAudit
                     Mathf.Max(height, radius * 2) * Mathf.Abs(scale.y) * .5f - .08f - 2f / 16f;
                 float actualBottom = visual.transform.position.y - visual.sprite.pivot.y * py;
                 Check(Mathf.Abs(actualBottom - expectedBottom) < .0001f, "frame bottom adds two art pixels below existing feet offset " + scale);
-                Check(capsule.radius == radius && capsule.height == height && capsule.center == center,
+                Check((((Vector3)capsule.size).x * .5f) == radius && ((Vector3)capsule.size).y == height && ((Vector3)capsule.offset) == center,
                     "visual refresh cannot alter capsule " + scale);
             }
             Check(Mathf.Approximately(presentation.DeathAnimationDuration,
