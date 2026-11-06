@@ -102,7 +102,7 @@ namespace Project.BlockFeatures
             VisibleWhenField = "growInstantly",
             VisibleWhenValue = 0,
             Tooltip = "逐块生长时，每生成一块后等待的时间。")]
-        [SerializeField, Min(0f)] private float growthInterval = .18f;
+        [SerializeField, Min(0f)] private float growthInterval = .09f;
 
         [SerializeField] private List<GameObject> initialSegments =
             new List<GameObject>();
@@ -129,7 +129,7 @@ namespace Project.BlockFeatures
         [SerializeField, HideInInspector, Min(0)] private float initialParticleTime = 30.13f;
         [SerializeField, HideInInspector, Min(0)] private float grownParticleTime = 32.43f;
         [BlockParameter(Label = "生长表现时长", Group = "藤蔓表现", Order = 3)]
-        [SerializeField, Min(.1f)] private float visualGrowthDuration = 2.3f;
+        [SerializeField, Min(.1f)] private float visualGrowthDuration = 1.15f;
         [BlockParameter(Label = "藤蔓宽度（格）", Group = "藤蔓表现", Order = 4, Tooltip = "控制整束藤蔓的横向范围，不改变攀爬判定。")]
         [SerializeField, Min(.1f)] private float vineWidth = 1.2f;
         [SerializeField, HideInInspector, Min(.1f)] private float vineThickness = 3f;
@@ -678,7 +678,7 @@ namespace Project.BlockFeatures
                     while (growthLift.Active && growthLift.Progress < .99999f)
                     {
                         yield return new WaitForFixedUpdate();
-                        if (!growthLift.Advance(GridCellWorldSize * Time.fixedDeltaTime / Mathf.Max(.1f, growthInterval))) break;
+                        if (!growthLift.Advance(GridCellWorldSize * Time.fixedDeltaTime / Mathf.Max(Time.fixedDeltaTime, growthInterval))) break;
                         visibleCells = targetCells = CurrentGrowthBlocks + artworkBaseCells + growthLift.Progress;
                         visualProgress = visualTarget = maxGrowthBlocks > 0 ? (visibleCells - artworkBaseCells) / maxGrowthBlocks : 0;
                     }

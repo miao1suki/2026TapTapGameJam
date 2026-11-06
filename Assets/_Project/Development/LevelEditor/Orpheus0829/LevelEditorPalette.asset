@@ -1775,7 +1775,7 @@ MonoBehaviour:
       componentIndex: 0
       propertyPath: growthInterval
       valueType: Float
-      value: 0.18000000715255737
+      value: .09
       objectReferenceValue: {fileID: 0}
     - componentPath: 
       componentTypeName: Project.BlockFeatures.ClimbableVineFeature
@@ -1789,7 +1789,7 @@ MonoBehaviour:
       componentIndex: 0
       propertyPath: visualGrowthDuration
       valueType: Float
-      value: 2.2999999523162842
+      value: 1.15
       objectReferenceValue: {fileID: 0}
     - componentPath: 
       componentTypeName: Project.BlockFeatures.ClimbableVineFeature

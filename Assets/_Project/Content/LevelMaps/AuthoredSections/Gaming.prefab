@@ -914,13 +914,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -5223,13 +5223,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8751401496752840316}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -7413,13 +7413,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -8523,13 +8523,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 2553220283984523325}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -9715,7 +9715,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 18
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 4216019726384987931}
   - {fileID: 4272007378775377478}
@@ -9739,7 +9739,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -13150,13 +13150,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 2553220283984523325}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -21497,13 +21497,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8751401496752840316}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -34839,13 +34839,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -35649,13 +35649,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -40588,13 +40588,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8051656332659210211}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -49810,13 +49810,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 0}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -54904,13 +54904,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -61129,13 +61129,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -81124,13 +81124,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -91310,13 +91310,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -96734,13 +96734,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -102054,13 +102054,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8981092681684794848}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -105455,13 +105455,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8981092681684794848}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -111403,13 +111403,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -114631,13 +114631,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8051656332659210211}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -117942,13 +117942,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -142260,13 +142260,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 7491389481107612627}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -142781,13 +142781,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3820732390743442369}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -144062,13 +144062,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 392036193124933028}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -144927,13 +144927,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -151051,13 +151051,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8051656332659210211}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -161014,13 +161014,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -167663,13 +167663,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 7491389481107612627}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -170707,13 +170707,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -180069,13 +180069,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8981092681684794848}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -183037,13 +183037,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5372948123156839115}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -192427,13 +192427,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 7491389481107612627}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -196033,13 +196033,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -203829,13 +203829,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5372948123156839115}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -206707,13 +206707,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 2553220283984523325}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -207647,7 +207647,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 9
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 8004045920092745717}
   - {fileID: 7010497896533399736}
@@ -207662,7 +207662,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -209681,13 +209681,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -210454,13 +210454,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -211705,13 +211705,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8751401496752840316}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -221123,7 +221123,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 7
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 7474876696374486185}
   - {fileID: 5418270916976238545}
@@ -221136,7 +221136,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -223600,13 +223600,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -224107,13 +224107,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -229649,13 +229649,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 7491389481107612627}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -235110,13 +235110,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 2553220283984523325}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -244051,13 +244051,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8981092681684794848}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -253814,13 +253814,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 392036193124933028}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -257579,13 +257579,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8051656332659210211}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -266186,13 +266186,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -272574,13 +272574,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -275248,13 +275248,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -283480,13 +283480,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3820732390743442369}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -297327,13 +297327,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 0}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -299816,13 +299816,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -313030,7 +313030,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 5
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 2942297286293739905}
   - {fileID: 6624572575074755712}
@@ -313041,7 +313041,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -315569,7 +315569,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 8
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 8640842006009262299}
   - {fileID: 8891200239260246922}
@@ -315583,7 +315583,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -317304,13 +317304,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -321318,7 +321318,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 8
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 8790012205610960407}
   - {fileID: 5899754962259690598}
@@ -321332,7 +321332,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -323742,13 +323742,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -333894,13 +333894,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 392036193124933028}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -337845,13 +337845,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8981092681684794848}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -338756,13 +338756,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 392036193124933028}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -340724,13 +340724,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8051656332659210211}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -342381,13 +342381,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -344961,13 +344961,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3820732390743442369}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -346765,13 +346765,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8981092681684794848}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -348376,13 +348376,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 2553220283984523325}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -352122,13 +352122,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -364543,7 +364543,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 8
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 240118305506966856}
   - {fileID: 6533338014352866298}
@@ -364557,7 +364557,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -367555,13 +367555,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3820732390743442369}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -368161,13 +368161,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -368930,13 +368930,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3820732390743442369}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -369490,13 +369490,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -370863,13 +370863,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -377857,13 +377857,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -394388,13 +394388,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5372948123156839115}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -402464,7 +402464,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 10
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 6030235833204882113}
   - {fileID: 5170016037379699612}
@@ -402480,7 +402480,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -405415,13 +405415,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 0}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -405847,13 +405847,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 2553220283984523325}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -411244,13 +411244,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5372948123156839115}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -418736,13 +418736,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -429023,13 +429023,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -432685,13 +432685,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8751401496752840316}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -433979,13 +433979,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -436611,13 +436611,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -438518,13 +438518,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8981092681684794848}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -441017,13 +441017,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 2553220283984523325}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -442726,13 +442726,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8751401496752840316}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -444430,13 +444430,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 7491389481107612627}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -447508,13 +447508,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3820732390743442369}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -454393,13 +454393,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -455075,13 +455075,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 0}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -457406,13 +457406,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 392036193124933028}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -461276,13 +461276,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 392036193124933028}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -464215,13 +464215,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5372948123156839115}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -465322,13 +465322,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 0}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -467725,13 +467725,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8751401496752840316}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -468248,13 +468248,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -469369,7 +469369,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 8
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 8846314260033844779}
   - {fileID: 1651096502294166611}
@@ -469383,7 +469383,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -471792,13 +471792,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3992466328741410612}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -483287,13 +483287,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5455994020715940160}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -484309,13 +484309,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -488214,13 +488214,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 2553220283984523325}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -492280,13 +492280,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 5307107079288546735}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -493258,13 +493258,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8751401496752840316}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -496509,13 +496509,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8051656332659210211}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -503905,13 +503905,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 392036193124933028}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -506289,7 +506289,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 8
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 5446860293287951353}
   - {fileID: 8234209806010362343}
@@ -506303,7 +506303,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -510378,13 +510378,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8051656332659210211}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -524652,13 +524652,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8751401496752840316}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -534041,13 +534041,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3820732390743442369}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -536088,13 +536088,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 7491389481107612627}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -540055,7 +540055,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 1994381073939666919, guid: 6b76282023783344dbda362f140793df, type: 3}
   maxGrowthBlocks: 13
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments:
   - {fileID: 7868530429047159814}
   - {fileID: 5649571738262540343}
@@ -540074,7 +540074,7 @@ MonoBehaviour:
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.9
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.5
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -543609,13 +543609,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 3820732390743442369}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -546695,13 +546695,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8981092681684794848}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -548744,13 +548744,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 7491389481107612627}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -567680,13 +567680,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8751401496752840316}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -568374,13 +568374,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 7491389481107612627}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45
@@ -568630,13 +568630,13 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
   initialSegments: []
   vineRoot: {fileID: 8051656332659210211}
   vineParticlePrefab: {fileID: 0}
   initialParticleTime: 30.13
   grownParticleTime: 32.43
-  visualGrowthDuration: 2.3
+  visualGrowthDuration: 1.15
   vineWidth: 1.2
   vineThickness: 3
   burnSegmentDuration: 0.45

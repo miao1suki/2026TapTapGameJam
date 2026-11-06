@@ -441,13 +441,18 @@ namespace Project.CameraModes
                 if (!(component is ICameraFollowRelocationSource source)) continue;
                 relocationSource = source;
                 relocationSource.CameraFollowRelocated += NotifyTargetRelocated;
+                relocationSource.CameraFollowCutRequested += Snap;
                 break;
             }
         }
 
         private void UnbindRelocationSource()
         {
-            if (relocationSource != null) relocationSource.CameraFollowRelocated -= NotifyTargetRelocated;
+            if (relocationSource != null)
+            {
+                relocationSource.CameraFollowRelocated -= NotifyTargetRelocated;
+                relocationSource.CameraFollowCutRequested -= Snap;
+            }
             relocationSource = null;
             boundRelocationTarget = null;
         }

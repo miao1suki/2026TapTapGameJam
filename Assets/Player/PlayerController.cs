@@ -250,6 +250,7 @@ namespace Project.Player
         private float requestedJumpBoost = -1f;
         private float nextMovementSoundTime;
         private Vector3 pendingPlatformDelta;
+        private bool pendingPlatformSupport;
         private readonly HashSet<int> waterSources = new HashSet<int>();
         private readonly Dictionary<int, float> waterSpeedMultipliers =
             new Dictionary<int, float>();
@@ -409,6 +410,7 @@ namespace Project.Player
             (!IsGrounded || Time.time - lastLandingTime <= .3f);
         public bool IsDead => dead;
         public event Action CameraFollowRelocated;
+        public event Action CameraFollowCutRequested;
         public bool CanAutomaticallyRespawn => dead && !respawnInProgress && Time.time >= automaticRespawnReadyAt &&
             (spritePresentation == null || !spritePresentation.isActiveAndEnabled ||
              spritePresentation.DeathAnimationDuration <= 0f || spritePresentation.IsDeathAnimationComplete);
@@ -725,7 +727,7 @@ namespace Project.Player
             EndJumpHold();
             CancelVariableJump();
             requestedJumpBoost = -1f;
-            pendingPlatformDelta = Vector3.zero;
+            pendingPlatformDelta = Vector3.zero; pendingPlatformSupport = false;
             waterSources.Clear();
             horizontalVines.Clear();
             cornerSource = wrappedEdgeSource = null;
@@ -821,7 +823,7 @@ namespace Project.Player
             greenHookAllowLocomotion = false;
             greenHookReleaseMomentumUntil = 0f;
             ClearAutomaticClimbState();
-            pendingPlatformDelta = Vector3.zero;
+            pendingPlatformDelta = Vector3.zero; pendingPlatformSupport = false;
             greenHookVelocity = preserveVelocity && motor != null ? (Vector2)((Vector3)motor.linearVelocity) : Vector2.zero;
             if (motor != null)
             {
@@ -1161,6 +1163,14 @@ namespace Project.Player
             pendingPlatformDelta += delta;
         }
 
+        /// <summary>One physics-step support from the real growing vine tip; the player remains the motor writer.</summary>
+        public void QueueVineGrowthSupport(Vector3 delta)
+        {
+            if (IsControlLocked || respawnInProgress || IsGreenHookActive || VerticalVelocity > .1f) return;
+            QueuePlatformDelta(delta);
+            pendingPlatformSupport = true;
+        }
+
         public void ApplyJumpBoost(float verticalSpeed)
         {
             if (dead)
@@ -1285,20 +1295,46 @@ namespace Project.Player
             }
             if (IsHorizontalClimbing)
             {
+                bool standingOnTop = IsStandingOnHorizontalVine();
                 horizontalVines.Clear(); cornerSource = wrappedEdgeSource = null;
                 horizontalReleaseUntil = Time.time + .5f;
                 climbReattachUntil = Mathf.Max(climbReattachUntil, horizontalReleaseUntil);
-                jumpUntil = groundedUntil = -1f;
-                EndJumpHold();
-                CancelVariableJump();
-                Vector3 falling = ((Vector3)motor.linearVelocity);
-                falling.y = Mathf.Min(falling.y, -.5f * gridCellWorldSize);
-                motor.linearVelocity = falling;
-                return;
+                if (!standingOnTop)
+                {
+                    jumpUntil = groundedUntil = -1f;
+                    EndJumpHold();
+                    CancelVariableJump();
+                    Vector3 falling = ((Vector3)motor.linearVelocity);
+                    falling.y = Mathf.Min(falling.y, -.5f * gridCellWorldSize);
+                    motor.linearVelocity = falling;
+                    return;
+                }
+                groundedUntil = Time.time + coyoteTime;
             }
 
             jumpUntil = Time.time + jumpBufferTime;
             jumpHeld = true;
+        }
+
+        private bool IsStandingOnHorizontalVine()
+        {
+            if (capsule == null || VerticalVelocity > .1f) return false;
+            Bounds player = capsule.bounds;
+            player.center += (Vector3)motor.position - transform.position;
+            foreach (HorizontalVineSurface surface in horizontalVines.Values)
+                if (IsHorizontalVineSurfaceCurrent(surface) && IsTopSupport(surface.source, player)) return true;
+            return cornerSource != null && IsTopSupport(cornerSource, player);
+        }
+
+        private bool IsTopSupport(Component source, Bounds player)
+        {
+            Collider2D shape = source.GetComponentInChildren<Collider2D>();
+            if (shape == null || !shape.enabled || shape.isTrigger || PlanarPhysics.GetIgnoreCollision(capsule, shape)) return false;
+            Bounds support = shape.bounds;
+            float gap = player.min.y - support.max.y;
+            return gap >= -gridCellWorldSize * .08f && gap <= gridCellWorldSize * .24f &&
+                player.max.x > support.min.x + gridCellWorldSize * .02f &&
+                player.min.x < support.max.x - gridCellWorldSize * .02f;
         }
         public void SetJumpHeld(bool value)
         {
@@ -2572,10 +2608,12 @@ namespace Project.Player
                 return;
             }
 
+            bool vineSupported = pendingPlatformSupport && motor.linearVelocity.y <= .1f && !IsControlLocked;
+            pendingPlatformSupport = false;
             if (pendingPlatformDelta.sqrMagnitude > .000001f)
             {
                 motor.position += (Vector2)ConstrainCarryDisplacement(pendingPlatformDelta);
-                pendingPlatformDelta = Vector3.zero;
+                pendingPlatformDelta = Vector3.zero; pendingPlatformSupport = false;
             }
 
             if (protectBounceFromClimbing && ((Vector3)motor.linearVelocity).y <= 0f)
@@ -2596,6 +2634,7 @@ namespace Project.Player
             for (int i = 0; i < count; i++)
                 if (groundHits[i].collider.attachedRigidbody != motor && !PlanarPhysics.GetIgnoreCollision(capsule, groundHits[i].collider) && groundHits[i].normal.y > .5f && ((Vector3)motor.linearVelocity).y <= .1f)
                     IsGrounded = true;
+            if (vineSupported) IsGrounded = true;
             if (IsGrounded) groundedUntil = Time.time + coyoteTime;
             if (IsGrounded)
             {
@@ -3489,7 +3528,7 @@ namespace Project.Player
             airborneSince = -1f;
             requestedBounceSpeed = -1f;
             requestedJumpBoost = -1f;
-            pendingPlatformDelta = Vector3.zero;
+            pendingPlatformDelta = Vector3.zero; pendingPlatformSupport = false;
             waterSources.Clear();
             horizontalVines.Clear();
             cornerSource = wrappedEdgeSource = null;
@@ -3529,7 +3568,7 @@ namespace Project.Player
         public void PrepareForRoomReset()
         {
             GetComponent<GreenHookAbility>()?.CancelHook();
-            pendingPlatformDelta = Vector3.zero;
+            pendingPlatformDelta = Vector3.zero; pendingPlatformSupport = false;
             ReleaseHeldInteraction();
             CancelCarryState();
         }
@@ -3669,7 +3708,7 @@ namespace Project.Player
             // session-only fallback is replaced normally by the next real point.
             PlayerRespawnPointRegistry.Bind(this, new StoryRespawnPoint(destination));
             invulnerableUntil = Time.time + Mathf.Max(0f, respawnInvulnerabilitySeconds);
-            CameraFollowRelocated?.Invoke();
+            CameraFollowCutRequested?.Invoke();
             return true;
         }
 

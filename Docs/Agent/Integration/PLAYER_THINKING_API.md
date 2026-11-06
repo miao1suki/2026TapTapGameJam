@@ -1,5 +1,9 @@
 # Player Thinking 演出
 
+## 2026-11-06 结局入场相机修复
+
+`TryTeleportToStoryAnchor` 在黑幕内完成定位后发出 `CameraFollowCutRequested`，立即对准新房间；前置 `camera_down` 的 `CameraDownBehaviour` 同时释放自身倍率和向下偏移句柄，并通过 Manager 即时应用。不会等 3600 秒 Clip 结束才撤销下移 5 格。普通复活镜头保持平滑回位，结局演出不改地图坐标或 `Start`／`End` ID。复现及验证见 `Docs/Developer/VINE_ENDING_FIXES_20261106.md`。
+
 ## 资源
 
 - Timeline：`Assets/_Project/Content/Boss/Timelines/player_thinking.playable`

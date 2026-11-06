@@ -18,5 +18,7 @@ namespace Project.CameraModes
     public interface ICameraFollowRelocationSource
     {
         event Action CameraFollowRelocated;
+        /// <summary>A covered story teleport cuts to the new frame instead of chasing the previous room.</summary>
+        event Action CameraFollowCutRequested;
     }
 }

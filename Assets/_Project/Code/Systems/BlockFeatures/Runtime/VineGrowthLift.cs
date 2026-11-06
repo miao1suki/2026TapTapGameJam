@@ -21,11 +21,13 @@ namespace Project.BlockFeatures
         private static readonly Dictionary<Rigidbody2D, VineGrowthLift> owners = new();
         private readonly List<BodyState> bodies = new();
         private readonly List<PlayerController> riders = new();
+        private readonly HashSet<PlayerController> tipRiders = new();
         private readonly Collider2D[] hits = new Collider2D[128];
         private readonly ClimbableVineFeature vine;
         private float height, cell;
+        private Bounds tipSupport;
         private bool active;
-        public bool HasBodies => bodies.Count > 0;
+        public bool HasBodies => bodies.Count > 0 || riders.Count > 0;
         public float Progress { get; private set; }
         public bool Active => active;
         public Collider2D Blocker { get; private set; }
@@ -39,8 +41,9 @@ namespace Project.BlockFeatures
         public bool Prepare(Vector3 center, Vector3 half, Quaternion rotation, float cellSize)
         {
             if (active) return false;
-            bodies.Clear(); riders.Clear(); Blocker = null; Progress = 0;
+            bodies.Clear(); riders.Clear(); tipRiders.Clear(); Blocker = null; Progress = 0;
             height = cell = cellSize;
+            tipSupport = new Bounds(center - Vector3.up * half.y, new Vector3(half.x * 2f, 0f, 0f));
             // Only bodies resting at the growing tip may be lifted, never a side obstruction.
             if (!Collect(center, half, rotation, center.y - half.y, true)) return false;
             for (int index = 0; index < bodies.Count; index++)
@@ -100,9 +103,9 @@ namespace Project.BlockFeatures
                 var player = hit.GetComponentInParent<PlayerController>();
                 if (player != null && riders.Contains(player)) continue;
                 if (Mathf.Abs(hit.bounds.min.y - top) > cell * .08f) { Blocker = hit; return false; }
-                // A player directly on a vine is not a movable block. Only actual load riders are carried.
-                if (!atTip && player != null && !player.IsDead && player.VerticalVelocity <= .1f)
-                { riders.Add(player); continue; }
+                // Direct tip riders use the same clearance/lease checks as riders on a load.
+                if (player != null && !player.IsControlLocked && !player.IsGreenHookActive && player.VerticalVelocity <= .1f)
+                { riders.Add(player); if (atTip) tipRiders.Add(player); continue; }
                 if (player == null && body != null && !body.isKinematic && (body.gravityScale != 0f) && !IsLifting(body) &&
                     ((body.constraints & RigidbodyConstraints2D.FreezePositionY) == 0 ||
                         body.GetComponent<ContactCubeMotion>() != null || body.GetComponent<MechanismBaseFeature>() != null))
@@ -149,6 +152,7 @@ namespace Project.BlockFeatures
             foreach (PlayerController rider in riders)
                 if (rider != null && !rider.IsDead && !StepClear(rider.GetComponent<Collider2D>(), distance))
                 { End(); return false; }
+            float previousTip = tipSupport.center.y + height * Progress;
             Progress = Mathf.Min(1f, Progress + distance / height);
             foreach (BodyState state in bodies)
             {
@@ -156,7 +160,16 @@ namespace Project.BlockFeatures
                 state.Body.MovePosition(state.Start + Vector3.up * (height * Progress));
             }
             foreach (PlayerController rider in riders)
-                if (rider != null && !rider.IsDead) rider.QueuePlatformDelta(Vector3.up * distance);
+                if (rider != null && !rider.IsDead)
+                {
+                    if (tipRiders.Contains(rider))
+                    {
+                        float feet = rider.GetComponent<Collider2D>().bounds.min.y + rider.Motor.WorldPosition().y - rider.transform.position.y;
+                        float correction = Mathf.Max(0f, previousTip - feet);
+                        rider.QueueVineGrowthSupport(Vector3.up * (distance + correction));
+                    }
+                    else rider.QueuePlatformDelta(Vector3.up * distance);
+                }
             return true;
         }
 
@@ -169,6 +182,10 @@ namespace Project.BlockFeatures
             Vector3 offset = rider.Motor.WorldPosition() - rider.transform.position;
             Vector3 center = player.center + offset;
             float feet = player.min.y + offset.y, tolerance = cell * .12f;
+            if (tipRiders.Contains(rider))
+                return Mathf.Abs(feet - tipSupport.center.y - height * Progress) <= tolerance &&
+                    player.max.x + offset.x > tipSupport.min.x + cell * .02f &&
+                    player.min.x + offset.x < tipSupport.max.x - cell * .02f;
             foreach (BodyState state in bodies)
             foreach (Collider2D shape in state.Shapes)
             {

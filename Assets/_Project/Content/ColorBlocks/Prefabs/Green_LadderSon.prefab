@@ -62,7 +62,7 @@ MonoBehaviour:
   growthSegmentPrefab: {fileID: 0}
   maxGrowthBlocks: 4
   growInstantly: 0
-  growthInterval: 0.18
+  growthInterval: .09
 --- !u!33 &6991851180174354864
 MeshFilter:
   m_ObjectHideFlags: 0

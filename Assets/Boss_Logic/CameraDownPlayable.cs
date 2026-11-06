@@ -59,6 +59,7 @@ namespace Project.BossLogic
         private BossTimelinePerformanceFrame frame;
         private CameraLensRequestHandle lensHandle;
         private CameraViewOffsetRequestHandle offsetHandle;
+        private PlayerController boundPlayer;
         private bool warnedMissingCamera;
 
         public override void OnBehaviourPlay(
@@ -97,6 +98,8 @@ namespace Project.BossLogic
             PlayerController player =
                 ProjectDiscovery
                     .FindFirst<PlayerController>();
+            boundPlayer = player;
+            if (boundPlayer != null) boundPlayer.CameraFollowCutRequested += OnStoryCut;
             float cellSize = player != null
                 ? GridCellSizeUtility.Resolve(player)
                 : 1f;
@@ -130,10 +133,14 @@ namespace Project.BossLogic
             Release();
         }
 
-        private void Release()
+        private void OnStoryCut() => Release(true);
+
+        private void Release(bool immediate = false)
         {
-            CameraTransition transition =
-                CameraTransition.Ease(blendDuration);
+            if (boundPlayer != null) boundPlayer.CameraFollowCutRequested -= OnStoryCut;
+            boundPlayer = null;
+            CameraTransition transition = immediate
+                ? CameraTransition.Immediate : CameraTransition.Ease(blendDuration);
             if (lensHandle.IsValid)
             {
                 lensHandle.Release(transition);
@@ -145,6 +152,7 @@ namespace Project.BossLogic
             lensHandle = default;
             offsetHandle = default;
             frame = default;
+            if (immediate) manager?.ApplyViewModeAuthorityImmediately();
         }
 
         private static CameraControlManager ResolveManager()
