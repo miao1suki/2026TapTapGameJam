@@ -1,5 +1,7 @@
 # 颜色物体 API
 
+原生 2D 分支（2026-11-06）：全局场景颜色仍同步激活碰撞和特性。`ColorPresentationVisibility` 仅延后主相机外水体网格/气泡、岩浆美术的创建与藤蔓序列帧更新，进入范围补齐当前表现，不能延后能力或交互状态。`ColorObject` 复用 MPB、减少重复 Collider/材质写入；共享材质的渐变继续由 `ColorAppearanceManager` 统一更新。水体缓存和预热边界见 [水体 API](GAMEPLAY_PIXEL_WATER_API.md)。
+
 解锁进度已拆分：`Unlock/IsUnlocked` 只管理场景颜色，`UnlockAbility/IsAbilityUnlocked` 管理玩家能力。钥匙首把恢复场景、第二把授予能力；完整接入见 [颜色进度与标准玩家](COLOR_UNLOCK_AND_STANDARD_PLAYER.md)。
 
 ## 轮盘中央取消

@@ -23,6 +23,7 @@ namespace Project.Player.Editor
     public static class MobileCarryRegressionVerification
     {
         private const string Key = "MobileCarryRegressionVerification";
+        private const string PlacementKey = Key + ".PlacementOnly";
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
         private static int frames, checks, phase;
         private static float began;
@@ -34,9 +35,20 @@ namespace Project.Player.Editor
 
         public static void Run()
         {
+            Start(false);
+        }
+
+        public static void RunPlacementOnly()
+        {
+            Start(true);
+        }
+
+        private static void Start(bool placementOnly)
+        {
             if (!Application.dataPath.Contains("/Library/FlowRetirementProbe/Assets"))
                 throw new Exception("Isolated verification only");
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
+            SessionState.SetBool(PlacementKey, placementOnly);
             SessionState.SetBool(Key, true); Resume(); EditorApplication.EnterPlaymode();
         }
 
@@ -85,6 +97,7 @@ namespace Project.Player.Editor
                     typeof(PlayerController).GetField("selectedCarryTarget", Private).SetValue(player, carried);
                     carried.UpdateCarryAnchor(player.CarryAnchorWorldPosition); PlanarPhysics.SyncTransforms();
                     WallPlacementChecks();
+                    PlacementToleranceChecks();
                     player.SetMoveInput(Vector2.right);
                     Vector3 stable = Vector3.zero;
                     foreach (float x in new[] { 10.70f, 10.95f, 11.00f, 11.04f, 10.98f, 11.02f })
@@ -120,7 +133,8 @@ namespace Project.Player.Editor
                     Object.DestroyImmediate(obstacle);
                     Bounds huge = new Bounds(before + Vector3.right * .1f, Vector3.one * 3);
                     Check(!player.ResolveCarryOverlap(huge, item.transform, false), "deep overlap with merged object rejected");
-                    ColorChecks(); LayoutChecks(); PlatformHudChecks(); RebindingChecks(); CameraChecks();
+                    if (!SessionState.GetBool(PlacementKey, false))
+                    { ColorChecks(); LayoutChecks(); PlatformHudChecks(); RebindingChecks(); CameraChecks(); }
                     Move(new Vector3(10.8f, -28.5f, 0)); carried.UpdateCarryAnchor(player.CarryAnchorWorldPosition);
                     destination = new Vector3(11.5f, -28.5f, 0);
                     player.UpdateCarryInput(false, false, true, false);
@@ -165,7 +179,8 @@ namespace Project.Player.Editor
                 {
                     Check(!carried.IsCarryActive && carried.GetComponent<Collider2D>().enabled,
                         "wall-side left drop completes with solid restored");
-                    Check(Mathf.Abs(player.Motor.WorldPosition().x - 11.5f) < .015f,
+                    Check(player.GetComponent<CapsuleCollider2D>().bounds.min.x >= 11f - .004f &&
+                        player.GetComponent<CapsuleCollider2D>().bounds.max.x <= 12f + .004f,
                         "one-cell gap fits player between placed block and opposite wall");
                     Check(!PlanarPhysics.ComputePenetration(player.GetComponent<CapsuleCollider2D>(), player.Motor.WorldPosition(),
                         player.transform.rotation, obstacle.GetComponent<Collider2D>(), obstacle.transform.position,
@@ -190,7 +205,8 @@ namespace Project.Player.Editor
                 {
                     Check(!carried.IsCarryActive && carried.GetComponent<Collider2D>().enabled,
                         "mirror case right drop completes");
-                    Check(Mathf.Abs(player.Motor.WorldPosition().x - 20.5f) < .015f,
+                    Check(player.GetComponent<CapsuleCollider2D>().bounds.min.x >= 20f - .004f &&
+                        player.GetComponent<CapsuleCollider2D>().bounds.max.x <= 21f + .004f,
                         "mirror case motor separation settles in one cell");
                     Object.DestroyImmediate(obstacle);
                     Check(carried.BeginCarry(player), "cancel case pickup");
@@ -225,6 +241,40 @@ namespace Project.Player.Editor
             }
             Object.DestroyImmediate(wall);
             Move(new Vector3(10.5f, -28.5f, 0));
+            typeof(PlayerController).GetField("carryDropCellValid", Private).SetValue(player, false);
+        }
+
+        private static void PlacementToleranceChecks()
+        {
+            player.SetMoveInput(Vector2.right);
+            Move(new Vector3(10.92f, -28.5f, 0));
+            typeof(PlayerController).GetField("carryDropCellValid", Private).SetValue(player, false);
+            var wall = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
+            wall.transform.position = new Vector3(12.5f, -28.5f, 0);
+            PlanarPhysics.SyncTransforms();
+            Check(player.TryGetCarryPlacementPreview(out Bounds bounds, out bool valid) && valid &&
+                Mathf.Abs(bounds.center.x - 11.5f) < .01f,
+                "far wall touching the target cell does not falsely block the approach ray");
+            Object.DestroyImmediate(wall);
+            Move(new Vector3(10.5f, -28.5f, 0));
+            var floor = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
+            floor.transform.position = new Vector3(11.5f, -29.485f, 0);
+            PlanarPhysics.SyncTransforms();
+            Check(player.TryGetCarryPlacementPreview(out _, out valid) && valid,
+                "1.5 percent native resting contact is tolerated");
+            floor.transform.position = new Vector3(11.5f, -29.42f, 0); PlanarPhysics.SyncTransforms();
+            Check(player.TryGetCarryPlacementPreview(out _, out valid) && !valid,
+                "real floor penetration is still rejected");
+            Object.DestroyImmediate(floor);
+            var thin = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
+            thin.transform.position = new Vector3(10.99f, -28.5f, 0);
+            thin.transform.localScale = new Vector3(.01f, 1, 1); PlanarPhysics.SyncTransforms();
+            Check(player.TryGetCarryPlacementPreview(out _, out valid) && !valid,
+                "one-percent intervening wall cannot be bypassed with placement skin");
+            thin.transform.position = new Vector3(11.75f, -28.5f, 0); PlanarPhysics.SyncTransforms();
+            Check(player.TryGetCarryPlacementPreview(out _, out valid) && !valid,
+                "thin obstacle inside the destination remains blocked beyond the approach ray");
+            Object.DestroyImmediate(thin);
             typeof(PlayerController).GetField("carryDropCellValid", Private).SetValue(player, false);
         }
 

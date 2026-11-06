@@ -19,12 +19,12 @@ namespace Project.Player
             mesh = new Mesh { name = "Carry placement dashes" };
             mesh.MarkDynamic();
             root.GetComponent<MeshFilter>().sharedMesh = mesh;
-            material = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-            material.SetFloat("_Cull", 0f);
+            material = new Material(Shader.Find("2026TapTap/ColorVineReveal"));
             var renderer = root.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
+            renderer.sortingOrder = short.MaxValue;
             for (int i = 0; i < 128; i++)
             {
                 int v = i * 4, t = i * 6;
@@ -36,7 +36,7 @@ namespace Project.Player
         public void Show(Bounds bounds, bool valid, float cell)
         {
             root.SetActive(true);
-            material.SetColor("_BaseColor", valid ? new Color(.4f, 1f, .8f) : new Color(1f, .15f, .15f));
+            material.SetColor("_TintColor", valid ? new Color(.4f, 1f, .8f) : new Color(1f, .15f, .15f));
             int count = 0;
             Vector3 min = bounds.min, max = bounds.max;
             float z = min.z - cell * .04f;

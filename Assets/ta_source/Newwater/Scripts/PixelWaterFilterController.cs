@@ -222,6 +222,7 @@ namespace InteractiveWater
             properties.SetFloat(NoiseScaleId, noiseScale);
             properties.SetFloat(AnimationSpeedId, noiseFlowSpeed);
             properties.SetFloat(OpacityId, opacity);
+            properties.SetFloat("_WaterCellWorldSize", Project.BlockFeatures.GridCellSizeUtility.Resolve(this));
             filterRenderer.SetPropertyBlock(properties);
             propertiesDirty = false;
         }

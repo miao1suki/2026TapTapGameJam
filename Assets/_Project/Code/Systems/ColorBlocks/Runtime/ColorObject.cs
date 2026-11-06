@@ -28,6 +28,8 @@ namespace Project.ColorBlocks
         private Collider2D[] cachedColliders;
         private bool[] originalTriggerStates;
         private bool[] originalEnabledStates;
+        private MaterialPropertyBlock appearanceProperties;
+        private int appliedLayer = -1;
         public string BaseColorTypeId => baseColorTypeId;
         public bool IsActive => active;
         public Renderer TargetRenderer => targetRenderer;
@@ -119,7 +121,6 @@ namespace Project.ColorBlocks
             }
 
             ApplyCollisionState(active);
-            ApplyVisual();
             ActiveStateChanged?.Invoke(this, active);
             // Features may have assigned their own material during activation.
             // The neutral/real handoff remains owned by this presentation bridge.
@@ -165,13 +166,13 @@ namespace Project.ColorBlocks
 
                 if (!value)
                 {
-                    collider.enabled = true;
-                    collider.isTrigger = false;
+                    if (!collider.enabled) collider.enabled = true;
+                    if (collider.isTrigger) collider.isTrigger = false;
                     continue;
                 }
 
-                collider.enabled = originalEnabledStates[index];
-                collider.isTrigger = originalTriggerStates[index];
+                if (collider.enabled != originalEnabledStates[index]) collider.enabled = originalEnabledStates[index];
+                if (collider.isTrigger != originalTriggerStates[index]) collider.isTrigger = originalTriggerStates[index];
             }
         }
 
@@ -206,14 +207,16 @@ namespace Project.ColorBlocks
             if (showReal && material == definition?.targetMaterial) material = null;
             if (material != null)
             {
-                targetRenderer.sharedMaterial = ColorAppearanceManager.Instance.GetSharedMaterial(material, baseColorTypeId, showReal);
+                var shared = ColorAppearanceManager.Instance.GetSharedMaterial(material, baseColorTypeId, showReal);
+                if (targetRenderer.sharedMaterial != shared) targetRenderer.sharedMaterial = shared;
             }
 
-            targetRenderer.enabled = material != null;
-            var properties = new MaterialPropertyBlock();
-            properties.SetFloat("_ColorMaskGroup", ColorAppearanceManager.GetGroupIndex(baseColorTypeId));
-            properties.SetFloat("_ColorMaskReal", showReal ? 1f : 0f);
-            targetRenderer.SetPropertyBlock(properties);
+            if (targetRenderer.enabled != (material != null)) targetRenderer.enabled = material != null;
+            appearanceProperties ??= new MaterialPropertyBlock();
+            targetRenderer.GetPropertyBlock(appearanceProperties);
+            appearanceProperties.SetFloat("_ColorMaskGroup", ColorAppearanceManager.GetGroupIndex(baseColorTypeId));
+            appearanceProperties.SetFloat("_ColorMaskReal", showReal ? 1f : 0f);
+            targetRenderer.SetPropertyBlock(appearanceProperties);
         }
 
         private void ApplyLayer()
@@ -223,12 +226,13 @@ namespace Project.ColorBlocks
                     baseColorTypeId);
             if (definition == null ||
                 definition.unityLayer < 0 ||
-                definition.unityLayer >= 32)
+                definition.unityLayer >= 32 || appliedLayer == definition.unityLayer)
             {
                 return;
             }
 
             Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            appliedLayer = definition.unityLayer;
             for (int index = 0; index < renderers.Length; index++)
             {
                 renderers[index].gameObject.layer = definition.unityLayer;

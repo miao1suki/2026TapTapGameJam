@@ -32,6 +32,8 @@ namespace TATools.StarPanorama
         private void Update() => UpdateShaderTime();
         private void Prepare(ScriptableRenderContext context, Camera camera)
         {
+            if (camera && backgroundRenderer)
+                backgroundRenderer.forceRenderingOff = !camera.orthographic;
             if (!backgroundMaterial || !camera || !camera.orthographic || camera.cameraType == CameraType.Preview ||
                 camera.cameraType == CameraType.Reflection) return;
             if (camera.cameraType != CameraType.SceneView && camera.gameObject.scene != gameObject.scene) return;

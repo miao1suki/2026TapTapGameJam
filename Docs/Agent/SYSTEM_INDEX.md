@@ -1,5 +1,7 @@
 # 系统索引
 
+2026-11-06 原生 2D 回归：`Native2DScenePreview` 负责 Renderer2D SceneView 提前清屏；`WaterUnderlayRendererFeature`/`PixelWaterDistortion` 使用当前相机正确 UV、连续世界噪波和水足迹；`PlanarPlacementTolerance` 统一边界接触但保留薄墙阻挡；`ColorPresentationVisibility` 仅裁掉不可见表现预热，颜色玩法同步，水邻接使用空间索引。见 [修复与验收](../Developer/NATIVE_2D_REGRESSION_FIXES_20261106.md)、[搬运 API](Integration/PLAYER_CARRY_API.md)、[水体 API](Integration/GAMEPLAY_PIXEL_WATER_API.md)。仅在 2D 专项分支交付。
+
 2026-11-05 原生 2D 专项：`Code/Systems/PlanarPhysics` 提供原生 Physics2D 查询、假想姿态检测与平面基础几何；标准玩家/机关/关卡资产均已改用 Rigidbody2D/Collider2D。PC/Mobile Renderer2D 保留现有可见区域、HSV、水体与故障效果。Timeline 工具改为 `Assets/GJ_Tools/TimelineTools2D`，镜头仅 XY 正交构图和 Z 旋转，移除 FOV/透视/立体环绕。`StarPanoramaTimeDriver` 生成临时平面背景保留 TA 星空。执行状态及回归证据见 [迁移报告](../Developer/NATIVE_2D_MIGRATION_20261105.md)；旧历史条目中的 3D 物理与六面功能不再适用于该分支。
 
 编辑器改版统一读取 `.agents/skills/taptap-scene-editor-reform/SKILL.md`（显示名“编辑器改版方案”）。正式 Scene 已是玩法关卡唯一编辑权威：房间/通道、真实对象、参数和引用均在锁定正交 2D SceneView 直接编辑；GridArt 继续由稠密 Map 资产承载，在同一 Overlay 的 SceneView 绘制；区域装配是在同 Scene 整体平移区域、逻辑组、房间归属、显式附属物和已认领美术。PlanningCanvas、JSON 存档槽/片段/应用流程已从正常入口退役；历史 JSON 保留只读且不得覆盖 Scene。

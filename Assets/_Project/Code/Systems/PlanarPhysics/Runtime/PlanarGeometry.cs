@@ -32,5 +32,14 @@ namespace Project.Planar
             Vector2 nearest = shape.ClosestPoint(point);
             return new Vector3(nearest.x, nearest.y, point.z);
         }
+        public static Bounds AuthoredWorldBounds(Collider2D shape)
+        {
+            Bounds local = LocalBounds(shape);
+            Matrix4x4 matrix = shape.transform.localToWorldMatrix;
+            Vector3 x = matrix.MultiplyVector(Vector3.right * local.extents.x);
+            Vector3 y = matrix.MultiplyVector(Vector3.up * local.extents.y);
+            return new Bounds(matrix.MultiplyPoint3x4(local.center), new Vector3(
+                Mathf.Abs(x.x) + Mathf.Abs(y.x), Mathf.Abs(x.y) + Mathf.Abs(y.y), 0f) * 2f);
+        }
     }
 }

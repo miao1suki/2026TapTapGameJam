@@ -135,8 +135,8 @@ namespace Project.ColorBlocks
             {
                 material = new Material(source) { name = source.name + " (Color Appearance)", hideFlags = HideFlags.DontSave };
                 sharedMaterials.Add(key, material);
+                UpdateMaterial(key, material);
             }
-            UpdateMaterial(key, material);
             return material;
         }
         private void ApplyMaterials(string id)

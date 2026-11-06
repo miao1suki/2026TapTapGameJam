@@ -250,13 +250,17 @@ namespace Project.ContactCubes
             Transform t = shape.transform;
             Vector3 center = t.TransformPoint(shape.offset) + worldPosition - transform.position;
             Vector3 scale = t.lossyScale;
-            Vector3 half = Vector3.Scale(shape.size * .49f,
-                new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+            Vector3 half = Vector3.Max(Vector3.Scale(shape.size * .5f,
+                new Vector3(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z))) -
+                Vector3.one * PlanarPlacementTolerance.ForCell(GridCellSizeUtility.Resolve(this)), Vector3.one * .0001f);
             int count = PlanarPhysics.OverlapBoxNonAlloc(center, half, nearby, t.rotation, ~0, TriggerQuery.Ignore);
             if (count == nearby.Length) return false;
+            Bounds destination = PlanarGeometry.AuthoredWorldBounds(shape);
+            destination.center += worldPosition - transform.position;
             for (int i = 0; i < count; i++)
                 if (nearby[i] != null && !nearby[i].transform.IsChildOf(transform) &&
                     !Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(nearby[i]) &&
+                    PlanarPlacementTolerance.IntersectsInterior(destination, nearby[i], GridCellSizeUtility.Resolve(this)) &&
                     nearby[i].GetComponentInParent<IPlayerCarrySeparationHost>() == null) return false;
             return true;
         }

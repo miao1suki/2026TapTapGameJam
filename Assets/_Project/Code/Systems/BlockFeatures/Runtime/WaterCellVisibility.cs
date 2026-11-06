@@ -38,6 +38,9 @@ namespace Project.BlockFeatures
             if (volume == null || !volume.enabled || volume.isTrigger || !volume.gameObject.activeInHierarchy) return;
             float cell = block.CellWorldSize;
             Bounds bounds = volume.bounds;
+            float rotation = volume.transform.eulerAngles.z;
+            bool axisAlignedBox = volume is BoxCollider2D && Mathf.Abs(Mathf.DeltaAngle(rotation,
+                Mathf.Round(rotation / 90f) * 90f)) < .001f;
             int minX = Mathf.FloorToInt(bounds.min.x / cell + .001f);
             int minY = Mathf.FloorToInt(bounds.min.y / cell + .001f);
             int maxX = Mathf.CeilToInt(bounds.max.x / cell - .001f);
@@ -48,7 +51,8 @@ namespace Project.BlockFeatures
                 for (int x = minX; x < maxX; x++)
                 {
                     var center = new Vector3((x + .5f) * cell, (y + .5f) * cell, bounds.center.z);
-                    if ((volume.ClosestWorldPoint(center) - center).sqrMagnitude <= cell * cell * .000004f)
+                    if (axisAlignedBox ? PlanarPhysics.ContainsXY(bounds, center) :
+                        (volume.ClosestWorldPoint(center) - center).sqrMagnitude <= cell * cell * .000004f)
                         walls.Add((block.gameObject.scene.handle, cell, x, y));
                 }
         }

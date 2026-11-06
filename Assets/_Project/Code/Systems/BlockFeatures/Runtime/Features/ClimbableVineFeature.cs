@@ -817,6 +817,16 @@ namespace Project.BlockFeatures
 
         private bool UpdateVineSequence(float deltaTime)
         {
+            visualProgress = Mathf.MoveTowards(visualProgress, visualTarget, deltaTime / Mathf.Max(.1f, visualGrowthDuration));
+            visibleCells = Mathf.MoveTowards(visibleCells, targetCells,
+                deltaTime * Mathf.Max(1, maxGrowthBlocks) / Mathf.Max(.1f, visualGrowthDuration));
+            bool idle = !burning && Mathf.Approximately(visualProgress, visualTarget);
+            sequenceIdleTime = idle ? sequenceIdleTime + deltaTime : 0f;
+            Bounds visibleBounds = AuthoredArtworkRootBounds;
+            float height = Mathf.Max(visibleBounds.size.y, Mathf.Max(visibleCells, targetCells) * GridCellWorldSize);
+            visibleBounds.SetMinMax(visibleBounds.min, new Vector3(visibleBounds.max.x,
+                visibleBounds.min.y + height, visibleBounds.max.z));
+            if (!ColorPresentationVisibility.IsNearCamera(visibleBounds, GridCellWorldSize)) return true;
             if (sequenceArtwork == null) sequenceArtwork = ObjectArtworkLibrary.Load();
             if (sequenceArtwork == null || sequenceArtwork.vineGrowth == null || sequenceArtwork.vineGrowth.Length == 0 ||
                 sequenceArtwork.colorSpriteMaterial == null) return false;
@@ -836,11 +846,6 @@ namespace Project.BlockFeatures
                 lastPose = -1;
             }
             if (sequenceRenderer == null) return false;
-            visualProgress = Mathf.MoveTowards(visualProgress, visualTarget, deltaTime / Mathf.Max(.1f, visualGrowthDuration));
-            visibleCells = Mathf.MoveTowards(visibleCells, targetCells,
-                deltaTime * Mathf.Max(1, maxGrowthBlocks) / Mathf.Max(.1f, visualGrowthDuration));
-            bool idle = !burning && Mathf.Approximately(visualProgress, visualTarget);
-            sequenceIdleTime = idle ? sequenceIdleTime + deltaTime : 0f;
             int index = sequenceArtwork.VineFrame(visualProgress, sequenceIdleTime, idle);
             Sprite frame = sequenceArtwork.vineGrowth[index];
             if (frame == null) return true;

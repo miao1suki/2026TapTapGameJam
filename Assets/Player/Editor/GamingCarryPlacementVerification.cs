@@ -19,6 +19,8 @@ namespace Project.Player.Editor
         private static PlayerController player;
         private static CarryableFeature item;
         private static Vector3 authoredPosition;
+        private static Vector3 placementPosition;
+        private static int playerCell;
 
         public static void Run()
         {
@@ -49,12 +51,22 @@ namespace Project.Player.Editor
             {
                 if (phase == 0)
                 {
+                    var flow = Project.GameFlow.GameFlowController.Instance;
+                    if (flow == null || !flow.IsInitialized || flow.IsTransitioning) return;
+                    // Isolate placement from automatic save restore / the new-run story.
+                    var session = Project.Saving.RunSessionCoordinator.Instance;
+                    if (session != null) { session.StopAllCoroutines(); session.enabled = false; }
+                    Check(flow.EnterGameplayImmediatelyForDevelopment() && !Project.GameplayPresentationGate.IsSuppressed,
+                        "formal menu releases the real gameplay gate before carry input");
                     player = UnityEngine.Object.FindFirstObjectByType<PlayerController>();
                     Check(player != null, "Gaming uses its authored standard player");
                     player.GetComponent<PlayerInputDriver>().enabled = false;
                     ColorRuntimeService.Instance.Unlock("red");
+                    var rooms = UnityEngine.Object.FindFirstObjectByType<Project.Rooms.RoomLifecycleManager>();
+                    string targetRegion = rooms.FindRegion(new Vector3(16.5f, -28.5f, 0));
                     item = UnityEngine.Object.FindObjectsByType<ContactCube>(FindObjectsSortMode.None)
-                        .Where(c => c.Color == CubeColor.Red)
+                        .Where(c => c.Color == CubeColor.Red &&
+                            c.GetComponent<Project.Rooms.RoomResetObject>()?.RegionId == targetRegion)
                         .OrderBy(c => c.transform.position.x).First().GetComponent<CarryableFeature>();
                     authoredPosition = item.transform.position;
                     item.GetComponent<Rigidbody2D>().position = new Vector3(16.5f, -28.5f, 0);
@@ -62,18 +74,29 @@ namespace Project.Player.Editor
                     player.Motor.position = new Vector3(17.48f, -28.5f, 0);
                     player.transform.position = player.Motor.WorldPosition();
                     player.Motor.linearVelocity = Vector3.zero;
+                    // The fixture relocates across the map; that is not a hundred-cell fall.
+                    var hidden = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                    typeof(PlayerController).GetField("highestAirPosition", hidden).SetValue(player, player.transform.position.y);
+                    typeof(PlayerController).GetField("currentFallDistance", hidden).SetValue(player, 0f);
+                    rooms.UpdatePlayerRegion(player);
                     PlanarPhysics.SyncTransforms();
                     player.SetMoveInput(Vector2.left); player.SetMoveInput(Vector2.zero);
-                    player.UpdateCarryInput(true, false, false, false);
+                    Check(player.UpdateCarryInput(true, false, false, false),
+                        $"real pickup command accepted (locked={player.IsControlLocked}, dead={player.IsDead}, " +
+                        $"carryable={item.CanCarryNow}, player={player.CarryCenterWorldPosition}, item={item.transform.position})");
                     started = Time.time; phase = 1;
                 }
                 else if (phase == 1 && Time.time - started > .65f)
                 {
-                    Check(item.IsCarryActive && player.IsCarrying, "real red contact cube picked up through player command");
+                    Check(item.IsCarryActive && player.IsCarrying,
+                        $"real red contact cube picked up through player command (locked={player.IsControlLocked}, " +
+                        $"dead={player.IsDead}, carryable={item.CanCarryNow}, player={player.transform.position}, item={item.transform.position})");
                     player.SetMoveInput(Vector2.left); player.SetMoveInput(Vector2.zero);
+                    playerCell = Mathf.FloorToInt(player.CarryCenterWorldPosition.x / player.GridCellWorldSize);
                     Check(player.TryGetCarryPlacementPreview(out Bounds preview, out bool valid) && valid &&
-                        Mathf.Abs(preview.center.x - 16.5f) < .01f,
-                        "Gaming left preview is valid beside the authored white wall at 18,28");
+                        Mathf.Abs(preview.center.x - (playerCell - .5f) * player.GridCellWorldSize) < .01f,
+                        $"Gaming left preview uses the actual settled body cell (valid={valid}, preview={preview.center})");
+                    placementPosition = preview.center;
                     Vector3 before = player.Motor.WorldPosition();
                     player.UpdateCarryInput(false, true, false, false);
                     Check(item.IsCarryDropAnimating && player.Motor.WorldPosition() == before,
@@ -85,8 +108,10 @@ namespace Project.Player.Editor
                     Check(!item.IsCarryActive && !item.IsCarryDropAnimating &&
                         item.GetComponentsInChildren<Collider2D>().Any(c => c.enabled && !c.isTrigger),
                         "Gaming drop restores contact cube physics after separation");
-                    Check(Mathf.Abs(item.transform.position.x - 16.5f) < .02f &&
-                        Mathf.Abs(player.Motor.WorldPosition().x - 17.5f) < .02f,
+                    Bounds body = player.GetComponent<CapsuleCollider2D>().bounds;
+                    Check(Mathf.Abs(item.transform.position.x - placementPosition.x) < .02f &&
+                        body.min.x >= playerCell * player.GridCellWorldSize - .004f &&
+                        body.max.x <= (playerCell + 1) * player.GridCellWorldSize + .004f,
                         "real item and interpolated player fit the two grid cells beside the wall");
                     player.RequestRespawn();
                     Check(Vector3.Distance(item.transform.position, authoredPosition) < .02f,

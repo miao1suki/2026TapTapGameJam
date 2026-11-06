@@ -1,5 +1,14 @@
 # 玩法水体表现接入
 
+## 原生 Renderer2D 回归约定（2026-11-06）
+
+- 折射纹理属于同相机附件，屏幕 UV 用 `SV_POSITION.xy / _ScaledScreenParams.xy`；不能依赖 Renderer2D 未初始化的 `_ScaleBiasRt`。噪波采用连续世界 XY，位移从世界格尺寸投影并限制至每轴最多 4 个屏幕像素；采样越出当前可见水足迹时退回原像素。
+- `WaterUnderlayRendererFeature` 每相机先复制完整透明场景，再绘制水足迹和折射；纹理在执行阶段绑定，足迹 MSAA 与深度一致。旧 InteractiveWater 后备捕获只在存在实例时执行，独立清屏，不读取 Renderer2D 开始绘制前的未初始化色/深度。
+- `WaterUnderlayCaptureRequester` 在 Edit/Play 均注册，仅有相机视锥内水面时申请折射。SceneView 的透视调试预览使用明确背景清屏；玩法仍为原生 2D 正交。
+- 水体表现按主相机范围外扩 2 格预热。不可见水不创建后/前片和气泡；进入范围立即补齐当前状态。首次颜色渐变仍为中性外观时，初建网格按每帧 6ms 预算分批进行（单个网格不能抢占中断）；读档、已交接真实外观、动态拓扑更新不延迟。
+- 邻水使用按 Scene/格尺寸分桶的空间索引，本地拓扑签名避免远处水移动让可见水重建。蒸汽找顶的点击玩法查询始终读取实时启用体积，不依赖表现索引；禁用/恢复后必须重建被清掉的网格。
+- 颜色解锁、所有水域碰撞、推力、红蓝蒸汽与房间进度同步生效，不能用“不可见”跳过玩法。
+
 `WaterVisualFeature` 优先加载 `Resources/ColorBlocks/WaterPresentation`，生成 `GameplayWaterPresentation`。旧字段 `waterPrefab/waterLocalOffset/waterScale` 仅在新配置缺失时作为旧 InteractiveWater 后备路径；当前标准资源齐全时不再创建旧波纹水、顶板或反射相机。无需迁移既有 Scene 或规划 JSON。
 
 ## 所有权与资源

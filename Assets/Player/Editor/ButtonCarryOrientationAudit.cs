@@ -296,7 +296,7 @@ namespace Project.Player.Editor
                 {
                     Move(player.transform, new Vector3(cell.x + .5f + side, cell.y + .5f, target.z));
                     bool gridBlocked = (bool)Call(player, "IsCarryCellOccupiedByPlacedBlock", cell);
-                    bool rayBlocked = (bool)Call(player, "HasCarryBlockerInDirection", side < 0 ? Vector3Int.right : Vector3Int.left);
+                    bool rayBlocked = (bool)Call(player, "HasCarryBlockerInDirection", side < 0 ? Vector3Int.right : Vector3Int.left, cell);
                     bool free = CellFree(cell);
                     Debug.Log("GAMING BUTTON QUERY: " + (side < 0 ? "from left" : "from right") + " gridBlocked=" + gridBlocked +
                         " rayBlocked=" + rayBlocked + " cellFree=" + free);

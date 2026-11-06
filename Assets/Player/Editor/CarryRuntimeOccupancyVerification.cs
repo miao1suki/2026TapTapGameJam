@@ -87,7 +87,10 @@ namespace Project.Player.Editor
                     player.Motor.interpolation = RigidbodyInterpolation2D.None;
                     cellFree = Query("IsCarryDropCellFree");
                     gridBlocked = Query("IsCarryCellOccupiedByPlacedBlock");
-                    rayBlocked = Query("HasCarryBlockerInDirection");
+                    var ray = typeof(PlayerController).GetMethod("HasCarryBlockerInDirection", Private);
+                    rayBlocked = direction => (bool)ray.Invoke(player, new object[] { direction,
+                        new Vector3Int(Mathf.FloorToInt(player.CarryCenterWorldPosition.x / player.GridCellWorldSize),
+                            Mathf.FloorToInt(player.CarryCenterWorldPosition.y / player.GridCellWorldSize), 0) + direction });
                     var blocks = Object.FindObjectsByType<LevelEditorPlacedBlock>(FindObjectsSortMode.None);
                     carried = blocks.Single(b => b.Cell == new Vector2Int(-95, 18) && b.GetComponent<CarryableFeature>() != null)
                         .GetComponent<CarryableFeature>();

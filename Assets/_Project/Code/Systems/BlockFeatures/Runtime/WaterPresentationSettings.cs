@@ -10,7 +10,14 @@ namespace Project.BlockFeatures
         [InspectorName("透明扰动材质")] public Material filterMaterial;
         [InspectorName("定向气泡预制体")] public GameObject bubblePrefab;
         [InspectorName("气泡渐显材质")] public Material bubbleMaterial;
-        public static WaterPresentationSettings Load() => Resources.Load<WaterPresentationSettings>("ColorBlocks/WaterPresentation");
+        private static WaterPresentationSettings cached;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCache() => cached = null;
+        public static WaterPresentationSettings Load()
+        {
+            if (cached == null) cached = Resources.Load<WaterPresentationSettings>("ColorBlocks/WaterPresentation");
+            return cached;
+        }
         public bool IsValid => tiles != null && tiles.Length == 3 && tileMaterials != null && tileMaterials.Length == 3 &&
             tiles[0] && tiles[1] && tiles[2] && tileMaterials[0] && tileMaterials[1] && tileMaterials[2] && filterMaterial;
     }

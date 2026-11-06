@@ -59,11 +59,13 @@ namespace InteractiveWater
                 var description = graph.GetTextureDesc(source);
                 description.name = "Interactive Water Unlit Underlay";
                 description.msaaSamples = MSAASamples.None;
-                description.clearBuffer = false;
+                description.clearBuffer = true;
+                description.clearColor = camera.backgroundColor;
+                description.depthBufferBits = DepthBits.None;
                 var underlay = graph.CreateTexture(description);
-
-                graph.AddBlitPass(source, underlay, Vector2.one, Vector2.zero,
-                    passName: "Copy water background");
+                // Renderer2D injects BeforeRenderingTransparents before ALL scene draws.
+                // Reading camera color/depth here reads an uninitialised/currently reused target.
+                // This independent unlit capture owns its clear and uses 2D sorting instead.
 
                 var rendering = frameData.Get<UniversalRenderingData>();
                 var lights = frameData.Get<UniversalLightData>();
@@ -82,7 +84,6 @@ namespace InteractiveWater
                     passData.objects = objects;
                     builder.UseRendererList(objects);
                     builder.SetRenderAttachment(underlay, 0, AccessFlags.ReadWrite);
-                    builder.SetRenderAttachmentDepth(resources.activeDepthTexture, AccessFlags.Read);
                     builder.SetGlobalTextureAfterPass(underlay, WaterUnderlayId);
                     builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                         context.cmd.DrawRendererList(data.objects));
@@ -98,6 +99,7 @@ namespace InteractiveWater
         private sealed class PixelWaterRefractionPass : ScriptableRenderPass
         {
             private static readonly int SceneColorId = Shader.PropertyToID("_PixelWaterSceneColor");
+            private static readonly int FootprintId = Shader.PropertyToID("_PixelWaterFootprint");
             private static readonly List<ShaderTagId> ShaderTags = new()
             {
                 new ShaderTagId("PixelWaterRefraction")
@@ -105,9 +107,11 @@ namespace InteractiveWater
 
             private sealed class PassData
             {
-                public TextureHandle sceneColor;
+                public TextureHandle sceneColor, footprint;
                 public RendererListHandle waterPanels;
             }
+
+            private sealed class FootprintData { public RendererListHandle panels; }
 
             public PixelWaterRefractionPass()
             {
@@ -146,12 +150,37 @@ namespace InteractiveWater
                 var waterPanels = graph.CreateRendererList(
                     new RendererListParams(rendering.cullResults, drawing, filtering));
 
+                var footprintDescription = sceneColorDescription;
+                footprintDescription.name = "Pixel Water Visible Footprint";
+                footprintDescription.format = GraphicsFormat.R8_UNorm;
+                footprintDescription.clearBuffer = true;
+                footprintDescription.clearColor = Color.black;
+                footprintDescription.filterMode = FilterMode.Point;
+                if (resources.activeDepthTexture.IsValid())
+                    footprintDescription.msaaSamples = graph.GetTextureDesc(resources.activeDepthTexture).msaaSamples;
+                var footprint = graph.CreateTexture(footprintDescription);
+                drawing.SetShaderPassName(0, new ShaderTagId("PixelWaterFootprint"));
+                var footprintPanels = graph.CreateRendererList(
+                    new RendererListParams(rendering.cullResults, drawing, filtering));
+                using (var builder = graph.AddRasterRenderPass<FootprintData>("Mask visible pixel water", out var maskData))
+                {
+                    maskData.panels = footprintPanels;
+                    builder.UseRendererList(footprintPanels);
+                    builder.SetRenderAttachment(footprint, 0);
+                    if (resources.activeDepthTexture.IsValid())
+                        builder.SetRenderAttachmentDepth(resources.activeDepthTexture, AccessFlags.Read);
+                    builder.SetRenderFunc(static (FootprintData data, RasterGraphContext context) =>
+                        context.cmd.DrawRendererList(data.panels));
+                }
+
                 using (var builder = graph.AddRasterRenderPass<PassData>(
                     "Draw pixel water refraction filters", out var passData))
                 {
                     passData.sceneColor = sceneColor;
+                    passData.footprint = footprint;
                     passData.waterPanels = waterPanels;
                     builder.UseTexture(sceneColor, AccessFlags.Read);
+                    builder.UseTexture(footprint, AccessFlags.Read);
                     builder.UseRendererList(waterPanels);
                     builder.SetRenderAttachment(source, 0, AccessFlags.ReadWrite);
                     if (resources.activeDepthTexture.IsValid())
@@ -160,6 +189,7 @@ namespace InteractiveWater
                     builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                     {
                         context.cmd.SetGlobalTexture(SceneColorId, data.sceneColor);
+                        context.cmd.SetGlobalTexture(FootprintId, data.footprint);
                         context.cmd.DrawRendererList(data.waterPanels);
                     });
                 }
@@ -189,10 +219,10 @@ namespace InteractiveWater
             var isMainGameCamera = renderingData.cameraData.cameraType == CameraType.Game &&
                                    camera && camera.CompareTag("MainCamera");
 
-            if (pass != null && (isSceneView || (isMainGameCamera && InteractiveWater.ActiveInstanceCount > 0)))
+            if (pass != null && InteractiveWater.ActiveInstanceCount > 0 && (isSceneView || isMainGameCamera))
                 renderer.EnqueuePass(pass);
 
-            if (pixelWaterPass != null && WaterUnderlayCaptureRequester.HasActiveRequests &&
+            if (pixelWaterPass != null && WaterUnderlayCaptureRequester.HasVisibleRequests(camera) &&
                 (isSceneView || isMainGameCamera))
                 renderer.EnqueuePass(pixelWaterPass);
         }

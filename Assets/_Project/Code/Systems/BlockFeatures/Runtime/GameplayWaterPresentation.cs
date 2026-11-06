@@ -16,6 +16,12 @@ namespace Project.BlockFeatures
         private static readonly HashSet<GameplayWaterPresentation> active = new HashSet<GameplayWaterPresentation>();
         private static int revision;
         private static int wallRevision = -1;
+        private static int budgetFrame = -1;
+        private static double initialBuildSeconds;
+        private static int lookupRevision = -1;
+        private static readonly Dictionary<(int scene, float size, int x, int y), List<GameplayWaterPresentation>> lookup = new();
+        private static readonly List<(int scene, float size)> grids = new();
+        private readonly HashSet<GameplayWaterPresentation> neighbors = new();
         private int builtRevision = -1;
         private WaterVisualFeature owner;
         private WaterPresentationSettings settings;
@@ -28,6 +34,9 @@ namespace Project.BlockFeatures
         private Mesh originalNeutralMesh;
         private float cellSize = 1f;
         private Vector4 flowSettings;
+        private int topologySignature;
+        private bool geometryDirty = true;
+        public int MeshBuildCount { get; private set; }
         public int SurfaceCellCount { get; private set; }
         public int BodyCellCount { get; private set; }
         public int InteriorCellCount { get; private set; }
@@ -36,7 +45,9 @@ namespace Project.BlockFeatures
         private float CellSize => cellSize;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetRegistry() { active.Clear(); revision = 0; wallRevision = -1; }
+        private static void ResetRegistry()
+        { active.Clear(); lookup.Clear(); grids.Clear(); lookupRevision = -1; revision = 0;
+            wallRevision = -1; budgetFrame = -1; initialBuildSeconds = 0; }
 
         public void Initialize(WaterVisualFeature feature, WaterPresentationSettings configuration)
         {
@@ -55,7 +66,7 @@ namespace Project.BlockFeatures
 
         private void OnEnable()
         {
-            if (owner != null && active.Add(this)) { revision++; builtRevision = -1; }
+            if (owner != null && active.Add(this)) { revision++; builtRevision = -1; geometryDirty = true; }
         }
 
         private Vector4 ReadFlowSettings()
@@ -69,16 +80,75 @@ namespace Project.BlockFeatures
         {
             if (owner == null || settings == null) return;
             Bounds bounds = Volume;
-            if (bounds != lastBounds) { lastBounds = bounds; revision++; }
+            if (bounds != lastBounds) { lastBounds = bounds; geometryDirty = true; revision++; }
             Vector4 nextSettings = ReadFlowSettings();
-            if (nextSettings != flowSettings) { flowSettings = nextSettings; revision++; }
+            if (nextSettings != flowSettings) { flowSettings = nextSettings; geometryDirty = true; revision++; }
             if (wallRevision != LevelEditorPlacedBlock.SolidRevision) { wallRevision = LevelEditorPlacedBlock.SolidRevision; revision++; }
-            if (builtRevision != revision) Rebuild();
+            if (builtRevision == revision || !ColorPresentationVisibility.IsNearCamera(bounds, CellSize)) return;
+            int signature = GetTopologySignature(bounds);
+            if (geometryDirty || MeshBuildCount == 0 || signature != topologySignature)
+            {
+                bool prewarming = MeshBuildCount == 0 && ColorAppearanceManager.Existing != null &&
+                    !ColorAppearanceManager.Existing.ShowsUnlockedAppearance("blue");
+                if (budgetFrame != Time.frameCount) { budgetFrame = Time.frameCount; initialBuildSeconds = 0; }
+                // Finish during the neutral fade, before the real appearance handoff.
+                // Restored progress, entry into view and live topology changes stay synchronous.
+                if (prewarming && initialBuildSeconds >= .006) return;
+                double began = Time.realtimeSinceStartupAsDouble;
+                Rebuild();
+                if (prewarming) initialBuildSeconds += Time.realtimeSinceStartupAsDouble - began;
+                topologySignature = signature;
+                geometryDirty = false;
+            }
+            builtRevision = revision;
+        }
+
+        private int GetTopologySignature(Bounds bounds)
+        {
+            // A distant source changing must not recreate an unchanged visible pool.
+            bounds.Expand(CellSize * 4.01f);
+            int signature = LevelEditorPlacedBlock.SolidRevision;
+            EnsureLookup();
+            neighbors.Clear();
+            foreach (var grid in grids)
+            {
+                if (grid.scene != gameObject.scene.handle) continue;
+                int x0 = Mathf.FloorToInt(bounds.min.x / grid.size), x1 = Mathf.FloorToInt(bounds.max.x / grid.size);
+                int y0 = Mathf.FloorToInt(bounds.min.y / grid.size), y1 = Mathf.FloorToInt(bounds.max.y / grid.size);
+                for (int y = y0; y <= y1; y++) for (int x = x0; x <= x1; x++)
+                    if (lookup.TryGetValue((grid.scene, grid.size, x, y), out var candidates))
+                        foreach (var other in candidates)
+                            if (neighbors.Add(other)) signature = unchecked(signature + (other.GetInstanceID() * 397 ^ other.Volume.GetHashCode()));
+            }
+            return signature;
+        }
+
+        private static void EnsureLookup()
+        {
+            if (lookupRevision == revision) return;
+            lookup.Clear(); grids.Clear();
+            foreach (var water in active)
+            {
+                if (water == null || water.owner == null || !water.owner.isActiveAndEnabled) continue;
+                int scene = water.gameObject.scene.handle; float size = water.CellSize;
+                if (!grids.Contains((scene, size))) grids.Add((scene, size));
+                Bounds b = water.Volume;
+                int x0 = Mathf.FloorToInt(b.min.x / size), x1 = Mathf.CeilToInt(b.max.x / size);
+                int y0 = Mathf.FloorToInt(b.min.y / size), y1 = Mathf.CeilToInt(b.max.y / size);
+                for (int y = y0; y < y1; y++) for (int x = x0; x < x1; x++)
+                {
+                    var key = (scene, size, x, y);
+                    if (!lookup.TryGetValue(key, out var bucket)) lookup.Add(key, bucket = new List<GameplayWaterPresentation>(1));
+                    bucket.Add(water);
+                }
+            }
+            lookupRevision = revision;
         }
 
         private void OnDisable()
         {
             if (active.Remove(this)) revision++;
+            geometryDirty = true;
             ClearParts();
         }
 
@@ -106,6 +176,31 @@ namespace Project.BlockFeatures
             bool resolveTop, out float topY)
         {
             topY = float.NegativeInfinity;
+            // Click-time gameplay queries use live volumes, including motion before LateUpdate
+            // invalidates the presentation index. They are rare and must not depend on a cache.
+            if (resolveTop) return ResolveLiveTop(scene, world, out topY);
+            EnsureLookup();
+            foreach (var grid in grids)
+            {
+                if (grid.scene != scene.handle || !lookup.TryGetValue((grid.scene, grid.size,
+                    Mathf.FloorToInt(world.x / grid.size), Mathf.FloorToInt(world.y / grid.size)), out var candidates)) continue;
+                foreach (var water in candidates)
+                {
+                    if (water == null || water.owner == null || !water.isActiveAndEnabled ||
+                        !water.owner.isActiveAndEnabled || water.gameObject.scene != scene) continue;
+                    Bounds b = water.Volume;
+                    float epsilon = water.CellSize * .001f;
+                    if (world.x >= b.min.x + epsilon && world.x <= b.max.x - epsilon &&
+                        world.y >= b.min.y + epsilon && world.y <= b.max.y - epsilon &&
+                        (water.shape == null || water.shape.ContainsWorldPoint(world))) return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool ResolveLiveTop(UnityEngine.SceneManagement.Scene scene, Vector3 world, out float topY)
+        {
+            topY = float.NegativeInfinity;
             bool found = false;
             foreach (var water in active)
             {
@@ -113,23 +208,19 @@ namespace Project.BlockFeatures
                     !water.owner.isActiveAndEnabled || water.gameObject.scene != scene) continue;
                 Bounds b = water.Volume;
                 float epsilon = water.CellSize * .001f;
-                if (world.x >= b.min.x + epsilon && world.x <= b.max.x - epsilon &&
-                    world.y >= b.min.y + epsilon && world.y <= b.max.y - epsilon &&
-                    (water.shape == null || water.shape.ContainsWorldPoint(world)))
+                if (world.x < b.min.x + epsilon || world.x > b.max.x - epsilon ||
+                    world.y < b.min.y + epsilon || world.y > b.max.y - epsilon) continue;
+                if (water.shape == null)
                 {
-                    if (!resolveTop) return true;
-                    if (water.shape == null)
-                    {
-                        if (water.volumeCollider != null && !water.volumeCollider.enabled) continue;
-                        found = true;
-                        topY = Mathf.Max(topY, b.max.y);
-                    }
-                    else foreach (BoxCollider2D volume in water.shape.Volumes)
-                    {
-                        if (volume == null || !volume.enabled || !PlanarPhysics.ContainsXY(volume.bounds, world)) continue;
-                        found = true;
-                        topY = Mathf.Max(topY, volume.bounds.max.y);
-                    }
+                    if (water.volumeCollider != null && !water.volumeCollider.enabled) continue;
+                    found = true;
+                    topY = Mathf.Max(topY, b.max.y);
+                }
+                else foreach (BoxCollider2D volume in water.shape.Volumes)
+                {
+                    if (volume == null || !volume.enabled || !PlanarPhysics.ContainsXY(volume.bounds, world)) continue;
+                    found = true;
+                    topY = Mathf.Max(topY, volume.bounds.max.y);
                 }
             }
             return found;
@@ -140,21 +231,28 @@ namespace Project.BlockFeatures
         private bool OwnsSurfaceCell(Vector3 world)
         {
             int id = GetInstanceID();
-            foreach (var other in active)
+            EnsureLookup();
+            foreach (var grid in grids)
             {
-                if (other == null || other == this || other.owner == null ||
-                    other.gameObject.scene != gameObject.scene || other.GetInstanceID() >= id) continue;
-                Bounds b = other.Volume;
-                float epsilon = CellSize * .001f;
-                if (world.x >= b.min.x + epsilon && world.x <= b.max.x - epsilon &&
-                    world.y >= b.min.y + epsilon && world.y <= b.max.y - epsilon &&
-                    (other.shape == null || other.shape.ContainsWorldPoint(world))) return false;
+                if (grid.scene != gameObject.scene.handle || !lookup.TryGetValue((grid.scene, grid.size,
+                    Mathf.FloorToInt(world.x / grid.size), Mathf.FloorToInt(world.y / grid.size)), out var candidates)) continue;
+                foreach (var other in candidates)
+                {
+                    if (other == null || other == this || other.owner == null ||
+                        other.gameObject.scene != gameObject.scene || other.GetInstanceID() >= id) continue;
+                    Bounds b = other.Volume;
+                    float epsilon = CellSize * .001f;
+                    if (world.x >= b.min.x + epsilon && world.x <= b.max.x - epsilon &&
+                        world.y >= b.min.y + epsilon && world.y <= b.max.y - epsilon &&
+                        (other.shape == null || other.shape.ContainsWorldPoint(world))) return false;
+                }
             }
             return true;
         }
 
         private void Rebuild()
         {
+            MeshBuildCount++;
             ClearParts();
             SurfaceCellCount = BodyCellCount = InteriorCellCount = 0;
             Bounds b = Volume;
@@ -269,6 +367,7 @@ namespace Project.BlockFeatures
             properties.SetFloat("_ColorMaskReal", 1f); properties.SetFloat("_ColorMaskUseVertexAlpha", 1f);
             properties.SetTexture("_ColorMaskAlphaTexture", alphaTexture);
             properties.SetFloat("_GridArtSliceClamp", clampTileSlice ? 1f : 0f);
+            properties.SetFloat("_WaterCellWorldSize", GridCellSizeUtility.Resolve(renderer));
             renderer.SetPropertyBlock(properties);
         }
 

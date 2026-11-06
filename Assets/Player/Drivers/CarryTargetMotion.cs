@@ -74,7 +74,7 @@ namespace Project.Player
             Bounds bounds = GetPlacementBounds(position);
             if (bounds.size.sqrMagnitude < .00001f) return false;
             int count = PlanarPhysics.OverlapBoxNonAlloc(bounds.center,
-                Vector3.Max(bounds.extents - Vector3.one * .01f, Vector3.one * .0001f),
+                Vector3.Max(bounds.extents - Vector3.one * PlanarPlacementTolerance.ForCell(carryCell), Vector3.one * .0001f),
                 placementHits, Quaternion.identity, ~0, TriggerQuery.Ignore);
             if (count == placementHits.Length) return false;
             for (int i = 0; i < count; i++)
@@ -83,6 +83,7 @@ namespace Project.Player
                 if (other == null || other.transform.IsChildOf(root) ||
                     Project.Mechanisms.ButtonPressureGeometry.IsPressureVolume(other)) continue;
                 if (carrier != null && other.transform.IsChildOf(carrier) && separationHost != null) continue;
+                if (!PlanarPlacementTolerance.IntersectsInterior(bounds, other, carryCell)) continue;
                 return false;
             }
             return separationHost == null || separationHost.ResolveCarryOverlap(bounds, root, false);

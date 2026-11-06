@@ -41,7 +41,21 @@ namespace Project.BlockFeatures
         {
             base.OnAttach();
             contactOcclusion.Bind(this);
-            CreateFlowArtwork();
+            if (IsArtworkNearCamera()) CreateFlowArtwork();
+        }
+
+        protected override void OnTick(float deltaTime)
+        {
+            if (flowArtwork == null && IsArtworkNearCamera()) CreateFlowArtwork();
+        }
+
+        private bool IsArtworkNearCamera()
+        {
+            var shape = GetComponent<Project.LevelEditor.LevelEditorMergedShape>();
+            var collider = GetComponent<Collider2D>();
+            Bounds bounds = shape != null ? shape.WorldBounds : collider != null ? collider.bounds :
+                new Bounds(transform.position, Vector3.one * GridCellWorldSize);
+            return ColorPresentationVisibility.IsNearCamera(bounds, GridCellWorldSize);
         }
 
         protected override void OnDetach()

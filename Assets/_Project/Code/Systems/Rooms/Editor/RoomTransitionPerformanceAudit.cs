@@ -70,6 +70,9 @@ namespace Project.Rooms.Editor
                             throw new TimeoutException("Formal Gaming flow did not finish menu initialization.");
                         return;
                     }
+                    // This audit owns temporary progress; do not race automatic save restore.
+                    var session = Project.Saving.RunSessionCoordinator.Instance;
+                    if (session != null) { session.StopAllCoroutines(); session.enabled = false; }
                     Check(flow.EnterGameplayImmediatelyForDevelopment() && !Project.GameplayPresentationGate.IsSuppressed,
                         "Formal Gaming did not leave its menu presentation gate");
                     manager = Object.FindFirstObjectByType<RoomLifecycleManager>();
@@ -185,6 +188,14 @@ namespace Project.Rooms.Editor
             bool steamTested = false;
             foreach (var water in waters)
             {
+                if (water.SurfaceCellCount == 0 && Camera.main != null)
+                {
+                    // Deferred presentation needs an actual camera view before a steam test.
+                    Camera.main.orthographic = true;
+                    Camera.main.transform.SetPositionAndRotation(new Vector3(water.Volume.center.x,
+                        water.Volume.center.y, -100f), Quaternion.identity);
+                    WaterTick.Invoke(water, null);
+                }
                 if (water.SurfaceCellCount == 0) continue;
                 var feature = water.GetComponentInParent<WaterVisualFeature>();
                 typeof(WaterVisualFeature).GetField("steamMode", Hidden).SetValue(feature, SteamReactionMode.Continuous);

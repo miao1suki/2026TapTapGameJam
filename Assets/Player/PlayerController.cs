@@ -1977,7 +1977,6 @@ namespace Project.Player
         {
             GetCarryFootprintCells(carryFootprintBuffer, true);
             result = WorldToCell(CarryCenterWorldPosition) + direction;
-            bool blocked = HasCarryBlockerInDirection(direction);
             bool hasCandidate = false;
             int minX = int.MaxValue;
             int maxX = int.MinValue;
@@ -2015,7 +2014,7 @@ namespace Project.Player
                 Vector3Int candidate = occupied + direction;
                 if (!hasCandidate) { result = candidate; hasCandidate = true; }
                 if (carryFootprintBuffer.Contains(candidate) ||
-                    blocked || !IsCarryDropCellFree(candidate))
+                    HasCarryBlockerInDirection(direction, candidate) || !IsCarryDropCellFree(candidate))
                 {
                     continue;
                 }
@@ -2110,6 +2109,7 @@ namespace Project.Player
             {
                 var hit = carrySeparationSweep[i];
                 if (!IsCarrySeparationObstacle(hit.collider, item) || Vector3.Dot(hit.normal, delta.normalized) > -.01f) continue;
+                if (hit.collider.bounds.max.y <= body.min.y + skin || hit.collider.bounds.min.y >= body.max.y - skin) continue;
                 if (hit.distance + skin < amount) return false;
             }
             count = PlanarPhysics.OverlapCapsuleNonAlloc(top + delta, bottom + delta, radius,
@@ -2119,6 +2119,8 @@ namespace Project.Player
             {
                 Collider2D other = carrySeparationHits[i];
                 if (!IsCarrySeparationObstacle(other, item)) continue;
+                Bounds destinationBody = body; destinationBody.center += delta;
+                if (!PlanarPlacementTolerance.IntersectsInterior(destinationBody, other, gridCellWorldSize)) continue;
                 // Broad-phase tangency with a floor/back wall isn't penetration. A one-cell player
                 // must fit a one-cell gap without reserving extra space outside that gap.
                 if (PlanarPhysics.ComputePenetration(capsule, motor.WorldPosition() + delta, transform.rotation,
@@ -2173,7 +2175,7 @@ namespace Project.Player
         }
 
         private bool HasCarryBlockerInDirection(
-            Vector3Int direction)
+            Vector3Int direction, Vector3Int destination)
         {
             Vector3 rayDirection = new Vector3(
                 direction.x,
@@ -2185,10 +2187,15 @@ namespace Project.Player
             }
 
             rayDirection.Normalize();
+            // Keep the 1.1-cell thin-wall guard, but stop at the destination center.
+            // A wall touching the far edge of a valid cell is not between player and item;
+            // the full destination volume is checked separately below.
+            float destinationDistance = Mathf.Max(0f, Vector3.Dot(
+                CellToWorld(destination, transform.position.z) - CarryCenterWorldPosition, rayDirection));
             int count = PlanarPhysics.RaycastNonAlloc(
                 new Ray(CarryCenterWorldPosition, rayDirection),
                 carryRayBuffer,
-                gridCellWorldSize * 1.1f,
+                Mathf.Min(gridCellWorldSize * 1.1f, destinationDistance),
                 ~0,
                 TriggerQuery.Ignore);
             if (count == carryRayBuffer.Length) return true;
@@ -2218,7 +2225,7 @@ namespace Project.Player
                 transform.position.z);
             int count = PlanarPhysics.OverlapBoxNonAlloc(
                 center,
-                Vector3.one * (gridCellWorldSize * .49f),
+                Vector3.one * (gridCellWorldSize * .5f - PlanarPlacementTolerance.ForCell(gridCellWorldSize)),
                 carryDropBuffer,
                 Quaternion.identity,
                 ~0,
@@ -2227,7 +2234,8 @@ namespace Project.Player
             for (int index = 0; index < count; index++)
             {
                 Collider2D collider = carryDropBuffer[index];
-                if (!IsSolidCarryPlacementBlocker(collider))
+                if (!IsSolidCarryPlacementBlocker(collider) ||
+                    !PlanarPlacementTolerance.IntersectsInterior(new Bounds(center, Vector3.one * gridCellWorldSize), collider, gridCellWorldSize))
                 {
                     continue;
                 }
@@ -2262,7 +2270,7 @@ namespace Project.Player
         {
             Vector2Int gridCell = new Vector2Int(cell.x, cell.y);
             Bounds currentCell = new Bounds(CellToWorld(cell, transform.position.z),
-                Vector3.one * (gridCellWorldSize * .98f));
+                Vector3.one * (gridCellWorldSize - 2f * PlanarPlacementTolerance.ForCell(gridCellWorldSize)));
             IReadOnlyList<Project.LevelEditor.LevelEditorPlacedBlock>
                 blocks =
                     Project.LevelEditor.LevelEditorPlacedBlock.ActiveInstances;
