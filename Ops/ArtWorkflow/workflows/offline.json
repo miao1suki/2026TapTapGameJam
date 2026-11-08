@@ -1,0 +1,51 @@
+{
+  "id": "xzc-offline-check-v1",
+  "name": "形之彩 · 离线流程验收（不调用模型）",
+  "active": false,
+  "nodes": [
+    {
+      "id": "手动执行",
+      "name": "手动执行",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "离线结果",
+      "name": "离线结果",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "return [{json:{mode:'offline-fixture',paidRequests:0,notice:'这只是离线流程验收，不是模型回答，不代表 API 凭据已验证。',stages:['需求','原型','源像素','静态/动画/特效审查','材质审查','Unity 验收']}}];"
+      }
+    }
+  ],
+  "connections": {
+    "手动执行": {
+      "main": [
+        [
+          {
+            "node": "离线结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none"
+  },
+  "pinData": {},
+  "tags": []
+}

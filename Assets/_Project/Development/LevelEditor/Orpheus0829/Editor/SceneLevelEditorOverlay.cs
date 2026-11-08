@@ -289,7 +289,7 @@ namespace Project.LevelEditor.Editor
         public override VisualElement CreatePanelContent() =>
             new SceneLevelEditorPanel(containerWindow as SceneView);
 
-        [MenuItem("Tools/2026TapTap/关卡编辑器/场景编辑器 _m")]
+        [MenuItem("Tools/2026TapTap/关卡编辑器/高级/区域与机关面板")]
         public static void Open()
         {
             SceneView view = SceneView.lastActiveSceneView ?? EditorWindow.GetWindow<SceneView>();
@@ -790,6 +790,7 @@ namespace Project.LevelEditor.Editor
 
         private void BindAuthoring()
         {
+            if (SceneContentWorkspace.OwnsAuthoring) return;
             bool activeView = sceneView != null && SceneView.lastActiveSceneView == sceneView;
             bool authoring = activeView && mode == SceneEditMode.Region && SceneEditSession.IsLocked(sceneView) && !EditorApplication.isPlayingOrWillChangePlaymode;
             SceneRegionAuthoring.Bind(sceneView, ActiveManager(), selectedRegionId, authoring);

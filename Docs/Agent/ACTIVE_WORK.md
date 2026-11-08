@@ -1,3 +1,12 @@
+## 2026-11-08 2D 编辑器改造与多 AI 美术工作流（第一阶段）
+
+- 用户授权：将 bug 修复线合入 2D 线，再建专项分支；允许重做编辑器 UI，按原生地形与统一内容入口方向实施。OpenAI/Claude/Gemini 接入本地 n8n，Claude Code 固定低于 2.1.36 的实际可用版本 2.1.34。
+- 已将 `codex/2d-vine-ending-fixes` / `69a8a4b` 快进合并并推送 `codex/2d-long-term-migration`；新分支 `codex/2d-editor-art-workflow`，隔离工作区 `C:/Users/miao/.codex/worktrees/2d-editor-workflow/2026TapTap`。main 与用户打开的原工程不改。
+- 已实现可停靠统一内容工作台：同库搜索方块/机关道具/GridArt 笔刷，调用现有绘制事务、真实组件参数及房间导航；区域/连接仍复用高级面板。原生 Tilemap 是下一阶段，须先补齐 PlanarPoseQuery 对 Tilemap/Composite 的放置兼容，不自动迁移 Gaming 或重刷美术。新增联网只在 Assets 外的本机制作工具，不进入游戏。
+- 工作流软件与凭据数据放 `%LOCALAPPDATA%/XingZhiCai/ArtWorkflow`，仓库只保存无密钥脚本、流程和规范。API 真实调用待用户在本机配置密钥后验证，不能将离线模拟声明为服务连通。
+- n8n 2.46.6 / Claude Code 2.1.34 / Portable Git 已安装。n8n 仅监听 `127.0.0.1:5791`（JS runner 5792），三条流程已导入且未激活：离线验收、三模型美术审查、Image 2 单张原型（支持参考图编辑）。实际离线链路成功，真实 API 待凭据；Windows 原生 SQLite 使用官方预编译文件，Portable Git 经发布 SHA256 校验、7-Zip 解压，不运行下载的自解压程序。
+- Unity 编译及一次性场景专项通过：目录覆盖、搜索分类、进入绘制、内容刷新保留会话、筛选退出旧笔刷、打开关闭零写入/Undo；正式 Scene、Art Map、Palette SHA256 不变。人工手势/持续性能、实际重开及 Tilemap 尚未验收。用法见 `Docs/Developer/UNIFIED_CONTENT_WORKSPACE_20261108.md`、`Ops/ArtWorkflow/README.md`；制作规则 `.agents/skills/taptap-art-production/SKILL.md`。
+
 ## 2026-11-06 藤蔓与结局镜头专项（已实现，子分支交付）
 
 - 从已同步的 `codex/2d-long-term-migration` / `843db45` 建立 `codex/2d-vine-ending-fixes`；只提交、推送此子分支。

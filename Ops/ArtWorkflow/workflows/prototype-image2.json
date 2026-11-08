@@ -1,0 +1,245 @@
+{
+  "id": "xzc-image2-prototype-v1",
+  "name": "形之彩 · Image 2 原型生图（手动单张）",
+  "active": false,
+  "nodes": [
+    {
+      "id": "提交任务",
+      "name": "提交任务",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "formTitle": "Image 2 原型生图",
+        "formDescription": "每次生成一张候选图，会消耗 OpenAI API 额度。有参考图时调用编辑接口；无参考图时调用生成接口。结果不自动导入游戏。",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "原型需求",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "风格参考图",
+              "fieldType": "file",
+              "acceptFileTypes": ".png,.jpg,.jpeg,.webp",
+              "multipleFiles": false,
+              "requiredField": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "webhookId": "xzc-image2-prototype-v1-form"
+    },
+    {
+      "id": "准备原型",
+      "name": "准备原型",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "\nconst item=$input.first(); const brief=String(item.json['原型需求']??'').trim();\nif(!brief)throw new Error('请填写原型需求');\nconst key=Object.keys(item.binary??{})[0];\nif(key){const b=item.binary[key];if(!['image/png','image/jpeg','image/webp'].includes(b.mimeType))throw new Error('参考图格式不支持');const bytes=await this.helpers.getBinaryDataBuffer(0,key);if(bytes.length>5*1024*1024)throw new Error('参考图超过 5 MB');}\nreturn [{json:{model:'gpt-image-2',n:1,size:'1024x1024',quality:'medium',output_format:'png',hasReference:!!key,\nprompt:'Create a visual prototype for a 2D pixel-art platformer. This is a concept reference, not a production-ready sprite sheet. Keep a coherent silhouette, palette, material language and gameplay readability. Do not claim exact pixel-grid, animation timing, seamless tile or PBR-map correctness. Brief: '+brief},binary:key?{reference:item.binary[key]}:undefined}];"
+      }
+    },
+    {
+      "id": "有参考图",
+      "name": "有参考图",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        450,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "reference",
+              "leftValue": "={{ $json.hasReference }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "文本生图",
+      "name": "文本生图",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        150
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({model:$json.model,prompt:$json.prompt,n:$json.n,size:$json.size,quality:$json.quality,output_format:$json.output_format}) }}",
+        "options": {
+          "timeout": 300000
+        }
+      }
+    },
+    {
+      "id": "参考图编辑",
+      "name": "参考图编辑",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        -150
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/edits",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "options": {
+          "timeout": 300000
+        },
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "={{ $json.model }}"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.prompt }}"
+            },
+            {
+              "name": "n",
+              "value": "={{ $json.n }}"
+            },
+            {
+              "name": "size",
+              "value": "={{ $json.size }}"
+            },
+            {
+              "name": "quality",
+              "value": "={{ $json.quality }}"
+            },
+            {
+              "name": "output_format",
+              "value": "={{ $json.output_format }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "reference"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "下载原型图",
+      "name": "下载原型图",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const r=$input.first().json; const b64=r.data?.[0]?.b64_json; if(!b64)throw new Error('接口未返回 b64_json 图像'); const binary=await this.helpers.prepareBinaryData(Buffer.from(b64,'base64'),'prototype-reference.png','image/png'); return [{json:{stage:'concept-reference',usage:r.usage??null,notice:'人工选方向后再进行源像素制作；未自动导入 Unity'},binary:{image:binary}}];"
+      }
+    }
+  ],
+  "connections": {
+    "提交任务": {
+      "main": [
+        [
+          {
+            "node": "准备原型",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备原型": {
+      "main": [
+        [
+          {
+            "node": "有参考图",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "有参考图": {
+      "main": [
+        [
+          {
+            "node": "参考图编辑",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "文本生图",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "文本生图": {
+      "main": [
+        [
+          {
+            "node": "下载原型图",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "参考图编辑": {
+      "main": [
+        [
+          {
+            "node": "下载原型图",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none"
+  },
+  "pinData": {},
+  "tags": []
+}
