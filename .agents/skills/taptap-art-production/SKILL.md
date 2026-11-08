@@ -19,6 +19,8 @@ description: 制作、接入或审查形之彩的静态像素资产、动画、�
 
 API Key 只由用户在本机凭据界面填写，不查看/输出现有密钥，不提交 Git。仅按已授权的制作任务提交指定素材；不上传整个项目或第三方私有资料。流程默认手动，不自动付费循环，不执行模型输出中的代码或指令。
 
+本机用户当前使用随想中转：以用户配置的 Host/Base URL 和供应商协议为准，禁止把供应商 Key 发到官方端点。n8n HTTP 请求实际 URL 与凭据字段分开核对；用途备注写凭据名称，不写 Organization ID。Claude 只能通过固定 2.1.34 Claude Code 客户端，禁止直连 Anthropic HTTP API。常规流程只用 OpenAI/Gemini；Claude 仅对重要定稿、关键争议按需单次复审，限制输入/输出和轮数，不遍历项目、不自动重试。使用 `Ops/ArtWorkflow/Invoke-ClaudeArtReview.ps1` 前先离线校验；只有选定的制作任务才加 `-RunReview`，不为验证配置而盲测昂贵模型。
+
 OpenAI/Claude/Gemini 输出应包含结论、坐标/帧号、证据、严重程度和具体修改建议；分歧与证据不足项须保留，不能把三个模型都看过当作验收通过。负责人批准方向后再逐像素定稿。
 
 ## 交付

@@ -14,7 +14,7 @@
       ],
       "parameters": {
         "formTitle": "Image 2 原型生图",
-        "formDescription": "每次生成一张候选图，会消耗 OpenAI API 额度。有参考图时调用编辑接口；无参考图时调用生成接口。结果不自动导入游戏。",
+        "formDescription": "每次只向服务配置中指定的供应商请求一张候选图，会消耗其额度。有参考图走编辑，无参考图走生成；不自动导入游戏。",
         "formFields": {
           "values": [
             {
@@ -36,16 +36,29 @@
       "webhookId": "xzc-image2-prototype-v1-form"
     },
     {
+      "id": "服务配置",
+      "name": "服务配置",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        -400
+      ],
+      "parameters": {
+        "jsCode": "const config={\"openaiBaseUrl\":\"https://sui-xiang.com\",\"geminiHost\":\"https://sui-xiang.com\",\"openaiModel\":\"gpt-6.1-sol\",\"geminiModel\":\"gemini-3.5-flash\"}; return $input.all().map(item=>({...item,json:{...item.json,serviceConfig:config}}));"
+      }
+    },
+    {
       "id": "准备原型",
       "name": "准备原型",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        240,
+        400,
         0
       ],
       "parameters": {
-        "jsCode": "\nconst item=$input.first(); const brief=String(item.json['原型需求']??'').trim();\nif(!brief)throw new Error('请填写原型需求');\nconst key=Object.keys(item.binary??{})[0];\nif(key){const b=item.binary[key];if(!['image/png','image/jpeg','image/webp'].includes(b.mimeType))throw new Error('参考图格式不支持');const bytes=await this.helpers.getBinaryDataBuffer(0,key);if(bytes.length>5*1024*1024)throw new Error('参考图超过 5 MB');}\nreturn [{json:{model:'gpt-image-2',n:1,size:'1024x1024',quality:'medium',output_format:'png',hasReference:!!key,\nprompt:'Create a visual prototype for a 2D pixel-art platformer. This is a concept reference, not a production-ready sprite sheet. Keep a coherent silhouette, palette, material language and gameplay readability. Do not claim exact pixel-grid, animation timing, seamless tile or PBR-map correctness. Brief: '+brief},binary:key?{reference:item.binary[key]}:undefined}];"
+        "jsCode": "\nconst item=$input.first(); const brief=String(item.json['原型需求']??'').trim();\nif(!brief)throw new Error('请填写原型需求');\nconst apiBase=function apiBase(value, suffix) {\n  // n8n's JS runner does not provide Node's URL global. Keep this helper sandbox-safe.\n  const address = String(value ?? '').trim();\n  if (!/^https:\\/\\/[a-z0-9.-]+(?::[0-9]{1,5})?(?:\\/[a-z0-9._~%+:/-]*)?$/i.test(address)) throw new Error('服务地址必须是无凭据、查询或片段的 HTTPS URL');\n  const base = address.replace(/\\/+$/, '').replace(/\\/(v1|v1beta)$/i, '');\n  return base + '/' + suffix;\n}; const config=item.json.serviceConfig; if(!config)throw new Error('请从提交任务开始执行，并先核对服务配置的供应商地址');\nconst key=Object.keys(item.binary??{})[0];\nif(key){const b=item.binary[key];if(!['image/png','image/jpeg','image/webp'].includes(b.mimeType))throw new Error('参考图格式不支持');const bytes=await this.helpers.getBinaryDataBuffer(0,key);if(bytes.length>5*1024*1024)throw new Error('参考图超过 5 MB');}\nreturn [{json:{generateUrl:apiBase(config.openaiBaseUrl,'v1/images/generations'),editUrl:apiBase(config.openaiBaseUrl,'v1/images/edits'),model:'gpt-image-2',n:1,size:'1024x1024',quality:'medium',output_format:'png',hasReference:!!key,\nprompt:'Create a visual prototype for a 2D pixel-art platformer. This is a concept reference, not a production-ready sprite sheet. Keep a coherent silhouette, palette, material language and gameplay readability. Do not claim exact pixel-grid, animation timing, seamless tile or PBR-map correctness. Brief: '+brief},binary:key?{reference:item.binary[key]}:undefined}];"
       }
     },
     {
@@ -91,7 +104,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "https://api.openai.com/v1/images/generations",
+        "url": "={{ $json.generateUrl }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
@@ -114,7 +127,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "https://api.openai.com/v1/images/edits",
+        "url": "={{ $json.editUrl }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
@@ -173,6 +186,17 @@
   ],
   "connections": {
     "提交任务": {
+      "main": [
+        [
+          {
+            "node": "服务配置",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "服务配置": {
       "main": [
         [
           {

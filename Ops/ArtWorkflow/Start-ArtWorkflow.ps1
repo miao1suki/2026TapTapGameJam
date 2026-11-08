@@ -1,5 +1,6 @@
-param([switch]$ImportWorkflows, [switch]$CheckOnly, [switch]$OfflineCheck)
+param([switch]$ImportWorkflows, [switch]$UpdateWorkflows, [switch]$CheckOnly, [switch]$OfflineCheck)
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Use-UserLoopbackProxy.ps1')
 $taskRoot = Join-Path $env:LOCALAPPDATA 'XingZhiCai/ArtWorkflow'
 $nodeExe = (Get-Command node -ErrorAction Stop).Source
 $entry = Join-Path $taskRoot 'node_modules/n8n/bin/n8n'
@@ -37,6 +38,21 @@ if (!(Test-Path -LiteralPath $env:N8N_ENCRYPTION_KEY_FILE)) {
 }
 if ($CheckOnly) { & $nodeExe $entry --version; exit $LASTEXITCODE }
 if ($OfflineCheck) { & $nodeExe $entry execute --id=xzc-offline-check-v1 --rawOutput; exit $LASTEXITCODE }
+if ($UpdateWorkflows) {
+    if (Get-NetTCPConnection -LocalPort 5791 -State Listen -ErrorAction SilentlyContinue) { throw '请先停止本机 n8n 再升级，避免覆盖编辑中的内容。' }
+    $backupRoot = Join-Path $taskRoot ('workflow-backups/' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
+    New-Item -ItemType Directory -Force -Path $backupRoot | Out-Null
+    $snapshot = Join-Path $backupRoot 'before.json'
+    & $nodeExe $entry export:workflow --all "--output=$snapshot"
+    if ($LASTEXITCODE -ne 0) { throw '备份本机工作流失败，未升级。' }
+    & $nodeExe (Join-Path $PSScriptRoot 'build-workflows.mjs')
+    if ($LASTEXITCODE -ne 0) { throw '生成模板失败，未升级。' }
+    $upgradeRoot = Join-Path $backupRoot 'upgrade'
+    & $nodeExe (Join-Path $PSScriptRoot 'update-local-workflows.mjs') $snapshot $upgradeRoot
+    if ($LASTEXITCODE -ne 0) { throw '生成本机升级失败，未写入数据库。' }
+    & $nodeExe $entry import:workflow --separate "--input=$upgradeRoot"
+    exit $LASTEXITCODE
+}
 if ($ImportWorkflows) {
     & $nodeExe (Join-Path $PSScriptRoot 'build-workflows.mjs')
     if ($LASTEXITCODE -ne 0) { throw '生成工作流失败。' }
