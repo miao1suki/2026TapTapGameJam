@@ -1,85 +1,55 @@
-# 场景关卡编辑器
+# 场景关卡工作台
 
-入口：`Tools/2026TapTap/关卡编辑器/场景编辑器`，快捷键 `M`；也可从 SceneView 的 Overlays 启用“场景关卡编辑器”。Scene 是关卡唯一权威，不选择 JSON、不使用存档槽、不再点击“应用到场景”。现有 `Gaming.unity` 中的房间、通道、3000+ 真实对象、稳定 ID、参数和 Unity 引用可直接继续编辑。
+入口：`Tools/2026TapTap/关卡编辑器/场景编辑器`，快捷键 M；也可从 SceneView 的 Overlays 启用“场景关卡编辑器”。Scene 是房间、玩法对象、实例参数和 Unity 引用的唯一权威；美术作者数据是该 Scene 引用的 GridArtMap 和稀疏归属资产。不使用 JSON 存档槽或“应用到场景”。
 
-## 共通规则
+## 工作台与 Scene 最大化
 
-- 点击“开始搭建（锁定正交 2D）”后，当前 SceneView 固定为 XY 前视正交；从对象工具开始放置时也会自动进入该视角。对象原有 Z 只作为渲染深度保留。退出、关闭 Overlay、脚本重载或进入 Play Mode 会逐字段恢复原视角。
-- 打开、关闭、切模式、导航、选择模板和选择实例均为零写入。只有显式绘制、擦除、移动、改参、绑定或区域/美术归属等作者动作才修改数据。
-- 每个笔画或操作是一个 Unity Undo 组。Esc 取消尚未完成的区域/美术笔画。
-- 正式 `Gaming` 不会在开窗时迁移、补组件、重建或保存；保存仍遵循 Unity Scene/资产 dirty 语义。
-- Boss 复活位置标记不会再因场景打开、层级刷新或保存而自动补建/写回。需要恢复被删除的标记时，在对应重生点 Inspector 点击“定位附属标记”；这是显式可撤销的作者操作。
+工作台采用 Unity UI Toolkit Overlay，可用 Unity 原生标题栏浮动、停靠、折叠和关闭。鼠标放在 Scene 上用 Unity 的最大化操作后，Overlay 仍属于该 SceneView。默认宽 380，约束 330～420；高度限制为当前 SceneView 的 85%。顶部状态和工具不参与正文滚动。“展开 / 收起”可以只留下顶部控制，避免挡住画布中心。
 
-## 区域
+上方依次是落笔状态、Scene/美术保存徽标、共用工具与通道。下方是“物体 / 美术”资源抽屉、图层/笔刷设置、真实实例检查器和房间导航；模板管理、低频操作与诊断默认折叠。资源网格和检查器各自滚动。不要把旧独立素材窗作为日常必经步骤。
 
-- 直接编辑 `RoomLifecycleManager.Regions`；房间和通道共用真实区域数据，通道由 `corridor` 标记，连接关系由四邻接实时推导。
-- 可新建、选择、重命名、切换房间/通道、连续绘制或擦除。区域不能重叠，新格必须四邻接；会造成断裂的擦除默认拒绝。
-- “区域整体移动”输入一个或多个稳定 ID 及 Scene XY 格增量。先预检目标区域、同通道对象冲突、受保护根、GridArt 格尺寸和锁定层，再一次提交区域格、完整逻辑组、Transform/Cell、房间重置归属、显式 `SceneRegionAttachment` 和已认领美术。
-- 玩家、相机、UI、管理器、全局天气和 GridArt 输出根不会因落在选区内被隐式带走。旧美术默认未归属并保持原位。
+- 点击暂停状态条启用落笔并锁定 XY 正交视角；再点击暂停落笔，保留当前定位。点击“结束搭建 · 恢复原视角”释放会话并逐字段恢复原视角。
+- B 画线、E 擦除、R 矩形、V 点选。快捷键仅在此 SceneView 的编辑会话中处理，输入文字和已有拖动期间不抢键。区域模式只支持连续四邻接笔画；矩形用于物体/美术。
+- 资源抽屉可搜索、分类并显示缩略图。单击卡片只更新编辑器画笔；暂停状态仍需点状态条开启。美术和物体使用同一网格组件。
+- 墙/水/道具通道用于同格选择和擦除，放置通道由模板决定；标记与装饰也可从物体高级通道选项选择。同通道多个候选显示明确选择菜单。
+- Scene 与美术徽标独立显示 dirty。Scene 按钮只保存当前 Scene；美术按钮只保存当前 Map 与稀疏归属。新建归属链接后也要保存 Scene。
+- 打开、浏览、切模式、筛选、定位和选择均不写作者数据。显式落笔、移动、改参、绑定、认领和保存才写相应目标。
+- Esc、切换模式/SceneView、脚本重载及进入 Play Mode 会取消未提交的区域和美术笔画；取消不产生 Undo 或 dirty。
 
-## 对象
+## 房间与区域装配
 
-- Overlay 默认进入“2 物体”，按“第 1 步选择内容、第 2 步在场景操作”排列。顶部蓝色“打开方块与道具列表…”打开独立卡片选择器；菜单 `Tools/2026TapTap/关卡编辑器/选择方块和道具` 也可直接打开。选择器读取原有 `LevelEditorPalette.asset`，用“全部内容/只看方块/只看道具”三个显式按钮筛选，支持名称搜索、结果数量、缩略图和当前选择预览。
-- 选择器采用固定顶部筛选、可伸缩中央素材区、固定底部当前选择的三段布局。卡片预览与两行名称各有独立高度；窄停靠窗口中只压缩中央滚动区，不会让详情、卡片文字或主操作互相覆盖。完整 Prefab 路径放在悬停提示，底部只显示文件名。
-- 选择器顶部可直接点“+ 新建方块”或“+ 添加道具 Prefab”；保存模板后列表自动刷新，不必回到 Overlay 的高级区。
-- 新建道具按“选择共用 Prefab → 编辑当前模板组件初始值 → 保存独立模板”完成。同一 Prefab 可以建立多个道具模板并保存不同参数；参数只在之后生成新实例时应用一次，修改模板不会回写已经放入 Scene 的对象。
-- 单击卡片查看，双击卡片或点击底部蓝色“开始在 Scene 中放置”会自动切到对象模式、锁定正交 2D 并返回 SceneView。对象页持续高亮“点选并改参数/连续放置/擦除”中的当前工具；通道、Prefab 路径、新建与模板管理收在高级折叠区，不阻挡日常搭建。
-- 栏目直接实例化真实 Prefab。模板参数只在新实例化时应用一次；放到 Scene 后，真实组件字段和 Prefab override 是权威，不会再由 JSON 或 Palette 覆盖已有实例。
-- 命中按地形、水体、玩法道具、标记/触发器、装饰五个通道区分。单击选择优先使用鼠标实际点到的可见 Renderer/Collider，并统一提升到作者根；格命中回退和擦除仍只处理当前通道，同通道多个候选必须先明确选择。
-- 同一稳定作者 ID 的多实例始终作为完整逻辑组移动或删除，合并形状按真实覆盖（含孔洞）索引。
-- 方向按钮或 Unity Move Tool 会吸附同一 XY 网格并同步 `Transform` 与 `LevelEditorPlacedBlock.Cell`，保留 Z、稳定 ID 和作者局部格。跨区域默认回滚；启用“跨区重新归属”才更新 `RoomResetObject` 和兼容父容器。
-- 删除前扫描反向 Unity 引用。有引用默认拒绝；“解绑并删除”使用现有门/按钮、平台/曲柄/基座、PlatformMount API，在同一个 Undo 组解除关系并删除整个逻辑组。
+“房间导航与区域”默认收起，展开后按 Scene 中的真实格集合画轮廓，保留孔洞、负坐标和分离岛。滚轮缩放、中/右键平移、适配全图；搜索和“只看问题”筛选房间。四邻接计算通道关系，对角接触不算相连。重叠命中列出全部候选，空区、断裂、重叠和通道邻接不足只报告，不自动修复。
 
-### 模板与实例边界
+点击轮廓或房间行会定位 Scene、选择该区域并暂停落笔。此时点击画布不会绘制，须重新开启状态条。导航数据仅为按 manager instance/revision 缓存的内存快照。
 
-- Palette 只是一组“出生模板”，不是 Scene 对象的数据源。选择模板只改编辑器会话状态；绘制时实例化 Prefab、应用一次默认参数并建立作者 ID/房间归属。
-- 对象落入 Scene 后即完全独立：`LevelEditorPlacedBlock` 不保存 Palette 栏目 ID，不扫描或认领旧实例来源，也不会因为模板改名、删除或修改而覆盖现有对象。
-- 正交对象模式单击方块/道具时，命中会从 Renderer、Collider 等子物体统一上溯到 `LevelEditorPlacedBlock` 作者根。Hierarchy 选择固定为该根对象，并立即打开“实例参数”窗口，不会跳进易误选的子层级。
-- “实例参数”窗口优先显示通道、区域、位置格和占格，并提供“在 Scene 中定位”；作者 ID 和逻辑组数量收在“详细信息”。玩法组件默认展开，Transform、Renderer、Collider、Rigidbody、Animator 等引擎组件默认折叠，仍可按需展开编辑。所有参数修改进入 Unity Undo 和 Prefab override。
+展开“编辑房间 / 通道”可创建、改名、标记通道和画擦区域。ID 改名保持不变；新格必须四邻接且不能占其他区域。擦除有作者对象的格默认拒绝，不连带删除水体、道具等内容；既有分离岛允许不增加连通分量的编辑。区域笔画先暂存，松开才一次提交。
 
-## 绑定/参数
+“区域整体移动”使用房间名称勾选多区域；不选时使用当前区域。高级 ID 输入仅作兼容入口。先预检，显示区域/对象/逻辑组/附属物/已认领美术/跨选区引用数量及碰撞原因，再确认移动。移动保持作者 ID、局部格和 Unity 引用；跨选区引用保留，外部对象留在原位。与未选区域或同通道对象冲突、包含全局玩家/相机/UI/管理器或锁定美术层时拒绝。
 
-- “真实实例参数”既可在绑定/参数模式嵌入查看，也会在对象模式单击时独立弹出；两处都绑定作者根的真实 Unity `InspectorElement`，因此现有中文自定义 Inspector、条件显隐和 Prefab override 继续生效，不生成第二份 component override JSON。
-- 门/按钮使用 `DoorController.SetButtons`/`DoorButton.SetOwner`；移动平台、信号源、曲柄、基座及平台附着物使用各自类型安全绑定 API。保存、移动、Undo/Redo 后仍是同一真实 Unity 引用。
+## 物体、参数与机关
 
-## 改版后接口
+Palette 是出生模板。新实例只接收一次 Prefab 与默认参数，随后由真实 Scene 组件字段和 Prefab override 管理；组件不保存 Palette 来源，不反推旧实例模板。
 
-- 工具入口统一调用 `SceneLevelEditorOverlay.Open()`；正常功能不得再打开 `PlanningEditorWindow` 或 `GridArtWindow`。旧窗口只允许 Legacy 菜单和历史审计使用。
-- 房间/通道作者提交使用 `RoomLifecycleManager.ConfigureAuthoredRegions(...)`，只改 Scene 区域与格尺寸并保留隐藏的旧 planning 字段；运行时与新工具不再从该字段恢复布局。
-- 对象身份使用 `LevelEditorPlacedBlock.AuthoringId`、`AuthoringLocalCell`，格位置通过 `SetAuthoredCell(...)` 同步；旧 `Planning*` 名称只作为序列化兼容别名，不能作为 JSON 工作流接口。组件不保存 Palette 来源。
-- `ScenePlacementPaletteCatalog` 只读展开 Palette 并维护当前画笔，`ScenePlacementPaletteWindow` 提供卡片选择，`SceneObjectInspectorWindow` 负责作者根实例参数；三者在浏览、选择和开窗时不得写 Scene。
-- 非格对象跟随区域使用 `SceneRegionAttachment`；GridArt 跟随关系使用 `GridArtRegionOwnership` 与 Scene 上的 `GridArtRegionOwnershipLink`。两者都必须显式创建/认领，工具打开时不得自动补写。
-- 区域、对象、引用和美术的写入集中在 `SceneRegionAuthoring`、`SceneObjectAuthoring`、`SceneRegionAssembly`、`SceneArtAuthoring`；外围工具调用这些接口，不直接散落修改 JSON、销毁对象或全量 Apply。
+物体线段/矩形先显示场景预览，松开提交，一个笔画一个 Undo，最大 4096 格。V 点选作者根或框选当前通道；同格多候选显示菜单。工作台内嵌每个真实 MonoBehaviour 的 InspectorElement，保留现有中文自定义 Inspector、条件显隐和 Prefab override；日常点选不再自动弹参数窗口。独立模板和实例窗口保留为兼容/高级入口。
+
+同一稳定作者 ID 的多实例作为逻辑组移动/删除；覆盖索引保留合并形状孔洞。Unity Move Tool 和格移动同步 Transform 与 Cell；跨区默认拒绝，显式重绑才更新区域/容器。删除前扫描反向引用；有引用默认拒绝，显式解绑删除在一个 Undo 中处理。
+
+机关绑定区仍使用真实 Unity ObjectField 和类型安全 API：门/按钮用 SetButtons/SetOwner，平台、曲柄、基座、PlatformMount 保留既有 API。不创建另一份引用 JSON。整体移动后的 Prefab Transform/Cell/区域修改显式记录 override，保存重开保留。
 
 ## 美术
 
-- “4 美术”与对象模式一样采用两步工作流：先点击蓝色“打开美术素材卡片…”，再选择图层并在 Scene 中绘制。卡片窗口沿用旧关卡美术工作台的缩略图素材库，支持名称搜索、分类筛选、自动地形分类、结果数量、当前素材尺寸预览和选择高亮。
-- 美术选择器与方块/道具选择器使用相同三段式响应布局和卡片尺寸规则；缩放或停靠窗口时，素材库保持滚动，当前素材摘要与绘制按钮固定可见。
-- “+ 添加美术素材”可选择单个 Sprite 或已按 Multiple 切片的图片，确认后以一个可撤销操作追加到当前 Palette；重复素材不会重复加入，成功后自动选择新增素材。
-- 单击美术卡片只切换当前素材，不写 Map；双击卡片或点击“开始在 Scene 中绘制”会自动返回 SceneView、切到美术模式、锁定正交 2D 并启用所选素材。Overlay 持续显示当前素材缩略图、分类和占格尺寸。
-- 美术擦除不放在素材选择窗口。回到 Overlay 的“第 2 步　在场景中铺美术”，使用与对象工具位置一致的“绘制 / 擦除”互斥按钮；左键单击或拖动只处理当前 GridArt 图层，一次拖动为一个 Undo，按钮和状态文字会明确显示当前工具。
-- GridArt 仍使用 Scene 引用的稠密 `GridArtMap`，避免把上万美术格转成 GameObject；图层、笔刷、旋转、矩形和擦除均在同一 SceneView 完成。
-- 进入美术模式和切换选项不触发 Apply。一次笔画只在真实变化时增加 revision，重复写同格是空操作；提交后使用现有按 32×32 块保留式构建器刷新预览。
-- “创建稀疏归属资产”是显式动作。旧格不会自动认领；“认领当前层区域内美术”只添加 `layerId + anchorCell + regionId` 记录，不重写格内容。新笔画可选择跟随当前区域。
-- 区域整体移动只带走已认领锚点；未认领旧格、背景、视差、天气和全局前景保持原位。GridArt 与关卡格尺寸不同或图层锁定时拒绝跨系统移动。
+美术底层继续是 GridArtMap 加分块平面 Mesh，**不是 Unity Tilemap / Tile Palette 组件**。瓦片式交互不等于更换作者数据系统；不把上万格转换成 GameObject。
 
-## 性能与卡顿边界
+选择美术 Tab 后，顶部显示当前图层以及真实的显隐/锁定开关。切层零写入；点击显隐/锁定是可撤销的 Map 作者动作。隐藏、锁定或自动联动层拒绝手绘。笔刷旋转、矩形和“新笔画跟随当前区域”位于设置区。素材卡片只选笔刷，绘制使用共用 B/E/R 工具。
 
-- Overlay 只有绑定目标真实变化时才刷新；同一 SceneView/管理器/Map 的周期检查不会触发 `RepaintAll`。
-- 区域轮廓按 `RoomLifecycleManager.RegionRevision` 缓存为合并矩形；49017 格正式区域实测合并为 69 个矩形，不再逐格分配和绘制四边。
-- 对象命中使用失效驱动的 Scene 索引。正式 3004 对象首次构建实测 `60.932 ms`；10240 次缓存查询 `0.794 ms`、`0 B` GC。放置、删除、移动、Undo/Redo 和层级变化后才失效重建。
-- 卡片选择器只处理 Palette 条目，不扫描 3000+ Scene 对象；实例选择直接复用失效驱动索引，不在周期刷新和鼠标 Hover 路径做全场景来源推断。
-- GridArt 笔画只重建受影响的 32×32 块；大笔刷和自动地形会精确补入跨界块/邻块。单格增量实测 `6.054 ms`，未命中块 `0` 写入；自动预览不再同步保存 Mesh/Material。
-- 以上数字来自 Unity `6000.3.12f1` 隔离副本中的正式规模数据，用于发现性能回退，不是不同电脑的帧耗时保证。
+笔画先修改临时副本，提交时 Map 和稀疏归属进入同一 Undo；只在真实变化时增加 revision。构建器按受影响 32×32 块刷新派生预览。空操作不保存、不重建。
 
-## 交付
+“创建稀疏归属资产”和“认领当前层区域内美术”必须显式执行。认领先预览新增锚点、冲突和大笔刷数，取消零写入；锁定、自动联动、视差层和其他区域归属冲突被拒绝。旧格默认未归属，大笔刷按锚点整体跟随，不暗中拆分。区域装配只带已认领锚点，未认领旧格保持原位。
 
-提交 Scene/`.meta`、Scene 引用的 GridArt Map/区域归属资产及 `.meta`、新增 Palette/Prefab/材质/贴图/生成资源依赖。旧 `.planning.json` 和命名正式关卡 JSON 只作历史只读基线，不再同步或用于重建。
+## 接口、样板与交付
 
-提交前运行：
+只读层：SceneLevelSummary、SceneObjectIndex、SceneRoomSnapshot、SceneResourceDrawer。作者写入集中在 SceneRegionAuthoring、SceneObjectAuthoring、SceneRegionAssembly、SceneArtAuthoring；外围入口不迁移旧 JSON。
 
-```powershell
-pwsh -NoProfile -File Ops/LevelMaps/Test-PlanningMapCommit.ps1
-```
+SceneAuthoringFixture/Mixed.unity 是独立编辑样板，含墙、水、同格道具、真实门按钮、完整逻辑组、自有美术 Map/Palette/稀疏归属。它不是可通关关卡，不加入构建列表。可从验证菜单在没有样板目录的独立工作树生成，已有目录会拒绝覆盖。
 
-脚本文件名为兼容保留，现在检查 Scene 与 Unity 资源元数据完整性。
+提交 Scene/.meta、Scene 引用的 Map/归属/.meta 和所有新增依赖；Library 不是作者交付。提交前运行 Ops/LevelMaps/Test-PlanningMapCommit.ps1。性能、验收边界与 Claude 方案差异见 SCENE_AUTHORING_WORKBENCH_20261117.md。

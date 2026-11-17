@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185111e7e1aa2544483c7e2129b69e1d, type: 3}
+  m_Name: Palette
+  m_EditorClassIdentifier: Project.GridArt.Runtime::Project.GridArt.GridArtPalette
+  brushes:
+  - label: "\u9694\u79BB\u8BCA\u65AD\u74E6\u7247"
+    sourceKey: 
+    category: "\u88C5\u9970"
+    autoTerrain: 0
+    sprite: {fileID: -1437518083614475044, guid: ac69714fe842cd648809c11f5c5ae58e, type: 3}
+    size: {x: 1, y: 1}
+    visualSize: {x: 0, y: 0}
+    contentRect:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    sourcePixelScale: 1
+    colorId: none
+    normalMap: {fileID: 0}
+    pieces:
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}
+    - {fileID: 0}

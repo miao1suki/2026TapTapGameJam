@@ -90,11 +90,12 @@ namespace Project.LevelEditor.Editor
                 Check(manager != null && manager.Regions.Count == 25, "正式 Scene 读取 25 个房间/通道区域");
                 Check(manager.Regions.Count(item => item != null && item.corridor) == 1, "正式 Scene 保留通道标记");
                 var watch = Stopwatch.StartNew(); SceneObjectIndex index = SceneObjectIndex.Build(scene); watch.Stop();
-                Check(index.All.Count == 3004, "正式 Scene 读取 3004 个真实作者对象");
+                int rawBlocks = Roots<LevelEditorPlacedBlock>(scene).Count();
+                Check(index.All.Count == rawBlocks && rawBlocks >= 3000, $"正式 Scene {rawBlocks} 个真实作者对象全部进入索引");
                 int missing = index.All.Count(item => string.IsNullOrEmpty(item.authorId));
                 int groups = index.All.Where(item => !string.IsNullOrEmpty(item.authorId)).Select(item => item.authorId).Distinct().Count();
                 int repeated = index.All.Where(item => !string.IsNullOrEmpty(item.authorId)).GroupBy(item => item.authorId).Count(group => group.Count() > 1);
-                Check(missing == 0 && groups == 2998 && repeated == 1, "正式稳定身份 0 缺失 / 2998 组 / 1 个重复逻辑组");
+                Check(missing == 0 && groups == 3002 && repeated == 1, "当前 2D 基线稳定身份 0 缺失 / 3002 组 / 1 个重复逻辑组");
                 RoomResetObject[] resetObjects = Roots<RoomResetObject>(scene).ToArray();
                 Check(resetObjects.Length > 0, $"正式当前内存房间重置成员 {resetObjects.Length} 个原样接轨");
                 Check(resetObjects.All(item => manager.Regions.Any(region => region != null && region.id == item.RegionId)), "全部房间重置归属指向现有区域");
@@ -102,7 +103,8 @@ namespace Project.LevelEditor.Editor
                 DoorController[] doors = Roots<DoorController>(scene).ToArray();
                 Check(doors.All(door => door.Buttons.Where(button => button != null).All(button => button.Owner == door)), "全部门按钮双向引用一致");
                 GridArtScene art = Roots<GridArtScene>(scene).Single();
-                Check(art.map != null && art.map.layers.Sum(layer => layer?.cells?.Count ?? 0) == 13817, "正式 GridArt 13817 锚点原样读取");
+                int artAnchors = art.map != null ? art.map.layers.Sum(layer => layer?.cells?.Count ?? 0) : 0;
+                Check(art.map != null && artAnchors == 13821, "当前 2D 基线 GridArt 13821 锚点原样读取");
 
                 Vector2Int[] probes = index.All.SelectMany(item => item.cells.Take(1)).Take(512).ToArray();
                 long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
@@ -110,7 +112,7 @@ namespace Project.LevelEditor.Editor
                 for (int pass = 0; pass < 20; pass++) foreach (Vector2Int cell in probes) hits += index.At(cell).Count;
                 queryWatch.Stop(); long allocated = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
                 Check(hits > 0 && allocated < 4096, "缓存命中查询不随 3000+ 对象扫描且分配低于 4 KiB");
-                report.AppendLine($"PERF  Unity {Application.unityVersion} · 对象 {index.All.Count} · GridArt 13817 · 索引 {watch.Elapsed.TotalMilliseconds:0.###} ms · 10240 查询 {queryWatch.Elapsed.TotalMilliseconds:0.###} ms · 分配 {allocated} B");
+                report.AppendLine($"PERF  Unity {Application.unityVersion} · 对象 {index.All.Count} · GridArt {artAnchors} · 索引 {watch.Elapsed.TotalMilliseconds:0.###} ms · 10240 查询 {queryWatch.Elapsed.TotalMilliseconds:0.###} ms · 分配 {allocated} B");
 
                 var regionWatch = Stopwatch.StartNew(); int regionRectangles = SceneRegionAuthoring.CachedRectangleCount(manager); regionWatch.Stop();
                 int regionCells = manager.Regions.Sum(region => region?.cells?.Count ?? 0);

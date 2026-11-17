@@ -8,6 +8,7 @@ using Project.Rooms;
 using UnityEditor;
 using UnityEditor.Overlays;
 using UnityEditor.UIElements;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -345,13 +346,15 @@ namespace Project.LevelEditor.Editor
         }
     }
 
-    internal sealed class SceneLevelEditorPanel : ScrollView
+    internal sealed class SceneLevelEditorPanel : VisualElement
     {
         private readonly SceneView sceneView;
         private readonly string sessionOwner;
-        private readonly Label sessionStatus;
+        private readonly Button sessionStatus;
         private readonly Label modeStatus;
         private readonly Label summary;
+        private readonly Label saveStatus;
+        private readonly SceneRoomNavigator roomNavigator;
         private readonly Button lockButton;
         private readonly Dictionary<SceneEditMode, Button> modeButtons = new Dictionary<SceneEditMode, Button>();
         private readonly VisualElement regionPanel;
@@ -363,6 +366,8 @@ namespace Project.LevelEditor.Editor
         private readonly IntegerField assemblyDeltaX;
         private readonly IntegerField assemblyDeltaY;
         private readonly Label assemblyStatus;
+        private readonly VisualElement assemblyChoices;
+        private readonly HashSet<string> assemblySelection = new(StringComparer.Ordinal);
         private readonly VisualElement objectPanel;
         private DropdownField objectChannel;
         private ObjectField objectSourceAsset;
@@ -404,52 +409,99 @@ namespace Project.LevelEditor.Editor
         private int sceneHandle = -1;
         private int paletteRevision = -1;
         private bool summaryDirty = true;
+        private bool navigationPaused;
+        private readonly ScrollView body;
+        private readonly SceneResourceDrawer resources;
+        private readonly Foldout resourceFold;
+        private readonly Foldout inspectorFold;
+        private readonly List<UnityEditor.Editor> instanceEditors = new();
+        private readonly Dictionary<string, Button> workTools = new();
+        private readonly Dictionary<SceneObjectChannel, Button> workChannels = new();
+        private Button artChannelButton;
+        private readonly Button sceneSave, artSave;
+        private bool compact;
+        private bool artContext;
+        private VisualElement artLayerBar;
+        private Toggle layerVisible, layerLocked;
+        private Foldout navigationFold;
+        private int sessionVisualHash;
+        private bool sessionVisualReady;
 
-        internal SceneLevelEditorPanel(SceneView sceneView) : base(ScrollViewMode.Vertical)
+        internal SceneLevelEditorPanel(SceneView sceneView)
         {
             this.sceneView = sceneView;
+            body = new ScrollView { name = "workbench-body", style = { minHeight = 0, flexShrink = 1 } };
+            body.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             sessionOwner = "SceneLevelEditorOverlay:" + (sceneView != null ? sceneView.GetInstanceID().ToString() : "none");
             style.minWidth = 330f;
             style.maxWidth = 420f;
+            style.width = 380f;
             style.maxHeight = 760f;
-            style.paddingLeft = 9f;
-            style.paddingRight = 9f;
+            style.color = SceneWorkbenchTheme.Text;
+            style.backgroundColor = SceneWorkbenchTheme.Background;
+            style.fontSize = 12;
+            style.paddingLeft = 8f;
+            style.paddingRight = 8f;
             style.paddingTop = 8f;
             style.paddingBottom = 8f;
 
-            var title = new Label("关卡搭建");
-            title.style.fontSize = 16f;
+            var title = new Label("关卡工作台");
+            title.style.fontSize = 13f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
-            Add(title);
-            var subtitle = new Label("直接在 Scene 里画房间、放物体和铺美术");
-            subtitle.style.fontSize = 11f;
-            subtitle.style.opacity = .68f;
+            var heading = new VisualElement { style = { flexDirection = FlexDirection.Row } };
+            title.style.flexGrow = 1; heading.Add(title);
+            heading.Add(new Button(() => { compact = !compact; body.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex; }) { text = "展开 / 收起", tooltip = "最大化 Scene 时可收起资源与参数，只保留工具条。" });
+            base.Add(heading);
+            var subtitle = new Label("Scene 直接编辑 · 模板仅用于新建");
+            subtitle.style.fontSize = 12f;
+            subtitle.style.color = new Color(.72f, .75f, .79f);
             subtitle.style.marginBottom = 6f;
-            Add(subtitle);
+            subtitle.style.display = DisplayStyle.None;
 
-            sessionStatus = new Label();
+            sessionStatus = new Button(ToggleLock) { name = "workbench-authoring-toggle" };
             sessionStatus.style.unityFontStyleAndWeight = FontStyle.Bold;
             sessionStatus.style.marginBottom = 4f;
-            Add(sessionStatus);
+            sessionStatus.style.paddingLeft = 8;
+            sessionStatus.style.paddingTop = 6;
+            sessionStatus.style.paddingBottom = 6;
+            sessionStatus.style.borderLeftWidth = 4;
+            sessionStatus.style.backgroundColor = SceneWorkbenchTheme.Surface;
+            var stateRow = new VisualElement { style = { flexDirection = FlexDirection.Row, height = 32, marginTop = 4 } };
+            sessionStatus.style.flexGrow = 1; sessionStatus.style.fontSize = 12;
+            sessionStatus.tooltip = "点击切换落笔；结束搭建会恢复进入前的 Scene 视角。";
+            stateRow.Add(sessionStatus);
+            sceneSave = new Button(SaveSceneAuthor) { text = "Scene ✓" };
+            artSave = new Button(SaveArtAuthors) { text = "美术 ✓" };
+            foreach (var save in new[] { sceneSave, artSave }) { save.style.width = 72; save.style.height = 28; stateRow.Add(save); }
+            base.Add(stateRow);
 
             lockButton = new Button(ToggleLock);
             lockButton.style.height = 34f;
             lockButton.style.unityFontStyleAndWeight = FontStyle.Bold;
-            Add(lockButton);
+            lockButton.style.display = DisplayStyle.None;
+            saveStatus = new Label { style = { fontSize = 12, whiteSpace = WhiteSpace.Normal, marginTop = 4, unityFontStyleAndWeight = FontStyle.Bold } };
+            saveStatus.style.display = DisplayStyle.None;
 
             var modes = new VisualElement { style = { flexDirection = FlexDirection.Row, marginTop = 6f } };
             AddModeButton(modes, SceneEditMode.Region, "1 房间");
             AddModeButton(modes, SceneEditMode.Object, "2 物体");
             AddModeButton(modes, SceneEditMode.Binding, "3 参数");
             AddModeButton(modes, SceneEditMode.Art, "4 美术");
-            Add(modes);
+            modes.style.display = DisplayStyle.None;
+            base.Add(BuildWorkbenchTools());
+
+            roomNavigator = new SceneRoomNavigator(SelectRoomFromNavigator);
+            var navigation = new Foldout { text = "房间导航与区域", value = false, viewDataKey = "scene-room-navigation" };
+            navigationFold = navigation;
+            navigation.RegisterValueChangedCallback(evt => { if (evt.target == navigation && evt.newValue) RefreshNavigator(); });
+            navigation.Add(roomNavigator);
 
             modeStatus = new Label();
             modeStatus.style.whiteSpace = WhiteSpace.Normal;
-            modeStatus.style.fontSize = 10f;
-            modeStatus.style.opacity = .72f;
+            modeStatus.style.fontSize = 12f;
+            modeStatus.style.color = new Color(.72f, .75f, .79f);
             modeStatus.style.marginTop = 5f;
-            Add(modeStatus);
+            modeStatus.style.display = DisplayStyle.None;
 
             regionPanel = new VisualElement();
             regionPanel.style.marginTop = 6f;
@@ -459,6 +511,7 @@ namespace Project.LevelEditor.Editor
                 int index = regionDropdown.index;
                 selectedRegionId = index >= 0 && index < regionIds.Count ? regionIds[index] : string.Empty;
                 RefreshRegionControls();
+                RefreshNavigator();
                 BindAuthoring();
             });
             regionPanel.Add(regionDropdown);
@@ -486,13 +539,18 @@ namespace Project.LevelEditor.Editor
             regionPanel.Add(brushRow);
             regionStatus = new Label();
             regionStatus.style.whiteSpace = WhiteSpace.Normal;
-            regionStatus.style.fontSize = 10f;
-            regionStatus.style.opacity = .72f;
+            regionStatus.style.fontSize = 12f;
+            regionStatus.style.color = new Color(.72f, .75f, .79f);
             regionPanel.Add(regionStatus);
 
             var assembly = new Foldout { text = "区域整体移动（Scene 内装配）", value = false };
+            assemblyChoices = new VisualElement();
+            assembly.Add(new Label("勾选要一起移动的区域；不选时使用当前区域。"));
+            var assemblyScroll = new ScrollView { style = { maxHeight = 144 } };
+            assemblyScroll.Add(assemblyChoices); assembly.Add(assemblyScroll);
             assemblyRegionIds = new TextField("区域稳定 ID") { tooltip = "多个 ID 用逗号分隔；默认当前区域。" };
-            assembly.Add(assemblyRegionIds);
+            var idsAdvanced = new Foldout { text = "高级：区域 ID", value = false };
+            idsAdvanced.Add(assemblyRegionIds); assembly.Add(idsAdvanced);
             var deltaRow = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             assemblyDeltaX = new IntegerField("X 格") { value = 0 }; assemblyDeltaX.style.flexGrow = 1;
             assemblyDeltaY = new IntegerField("Y 格") { value = 0 }; assemblyDeltaY.style.flexGrow = 1;
@@ -501,30 +559,58 @@ namespace Project.LevelEditor.Editor
             assemblyButtons.Add(RegionButton("预检", PreviewAssembly));
             assemblyButtons.Add(RegionButton("整体移动", MoveAssembly));
             assembly.Add(assemblyButtons);
-            assemblyStatus = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10, opacity = .75f } };
+            assemblyStatus = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 12, color = new Color(.72f, .75f, .79f) } };
             assembly.Add(assemblyStatus); regionPanel.Add(assembly);
-            Add(regionPanel);
+            var regionEdit = new Foldout { text = "编辑房间 / 通道", value = false };
+            regionEdit.RegisterValueChangedCallback(evt => { if (evt.target == regionEdit && evt.newValue) SelectMode(SceneEditMode.Region); });
+            regionEdit.Add(regionPanel); navigation.Add(regionEdit);
 
-            objectPanel = BuildObjectPanel(); Add(objectPanel);
-            bindingPanel = BuildBindingPanel(out selectedInspector, out bindingConsumer, out bindingSource, out bindingStatus); Add(bindingPanel);
-            artPanel = BuildArtPanel(); Add(artPanel);
+            objectPanel = BuildObjectPanel();
+            var objectMore = new Foldout { text = "更多 · 物体操作与模板", value = false }; objectMore.Add(objectPanel);
+            bindingPanel = BuildBindingPanel(out selectedInspector, out bindingConsumer, out bindingSource, out bindingStatus);
+            artPanel = BuildArtPanel();
+            artLayer.RemoveFromHierarchy();
+            artLayerBar = new VisualElement { style = { flexDirection = FlexDirection.Row, marginTop = 4 } };
+            artLayer.label = "图层"; artLayer.style.flexGrow = 1; artLayer.style.minWidth = 0; artLayerBar.Add(artLayer);
+            artLayer.labelElement.style.minWidth = 32; artLayer.labelElement.style.width = 32;
+            artLayer.style.flexBasis = 0;
+            layerVisible = new Toggle("显示"); layerLocked = new Toggle("锁定");
+            foreach (var toggle in new[] { layerVisible, layerLocked }) { toggle.style.width = 58; toggle.style.flexShrink = 0; toggle.labelElement.style.minWidth = 28; toggle.labelElement.style.width = 28; }
+            layerVisible.RegisterValueChangedCallback(evt => ChangeArtLayerFlags(evt.newValue, null));
+            layerLocked.RegisterValueChangedCallback(evt => ChangeArtLayerFlags(null, evt.newValue));
+            artLayerBar.Add(layerVisible); artLayerBar.Add(layerLocked); base.Add(artLayerBar);
+            resources = new SceneResourceDrawer(ChooseResourceKind, ChooseObjectCard, ChooseArtCard);
+            resourceFold = new Foldout { text = "资源 · 物体 / 美术", value = true, viewDataKey = "workbench-resources" };
+            resourceFold.Add(resources); body.Add(resourceFold);
+            var artSettings = new Foldout { text = "美术图层与笔刷设置", value = false }; artSettings.Add(artPanel); body.Add(artSettings);
+            inspectorFold = new Foldout { text = "实例参数", value = true, viewDataKey = "workbench-inspector" };
+            var inspectorScroll = new ScrollView { style = { maxHeight = 240 } }; inspectorScroll.Add(bindingPanel); inspectorFold.Add(inspectorScroll); body.Add(inspectorFold);
+            body.Add(navigation); body.Add(objectMore);
 
-            var overview = new Foldout { text = "当前 Scene 只读接轨摘要", value = true };
+            var overview = new Foldout { text = "诊断 · 当前 Scene（只读）", value = false };
             overview.style.marginTop = 6f;
             summary = new Label();
             summary.style.whiteSpace = WhiteSpace.Normal;
-            summary.style.fontSize = 11f;
+            summary.style.fontSize = 12f;
             overview.Add(summary);
             overview.Add(new Button(() => { summaryDirty = true; Refresh(); }) { text = "重新扫描（只读）" });
-            Add(overview);
+            body.Add(overview);
+            SceneWorkbenchTheme.Section(resourceFold, SceneWorkbenchTheme.Object);
+            SceneWorkbenchTheme.Section(inspectorFold, SceneWorkbenchTheme.Object);
+            SceneWorkbenchTheme.Section(artSettings, SceneWorkbenchTheme.Art);
+            SceneWorkbenchTheme.Section(navigation, SceneWorkbenchTheme.Room);
+            SceneWorkbenchTheme.Section(objectMore, SceneWorkbenchTheme.Object);
+            SceneWorkbenchTheme.Section(overview, SceneWorkbenchTheme.Muted);
 
             var notice = new HelpBox("打开、浏览、切模式和选择方块、道具或美术素材均为零写入。只有绘制、擦除、移动、改参、绑定、区域/美术归属与保存等显式作者动作会修改 Scene/资产，并进入 Unity Undo。", HelpBoxMessageType.Info);
             notice.style.marginTop = 6f;
-            Add(notice);
+            notice.style.display = DisplayStyle.None;
+            base.Add(body);
 
             RegisterCallback<AttachToPanelEvent>(_ => Subscribe());
             RegisterCallback<DetachFromPanelEvent>(_ => Unsubscribe());
             schedule.Execute(Refresh).Every(200);
+            RegisterCallback<GeometryChangedEvent>(_ => { if (sceneView != null) { style.maxHeight = Mathf.Max(220, sceneView.position.height * .85f); body.style.maxHeight = Mathf.Max(100, sceneView.position.height * .85f - 120); } });
             SelectMode(SceneEditMode.Object);
             Refresh();
         }
@@ -534,7 +620,7 @@ namespace Project.LevelEditor.Editor
             var button = new Button(() => SelectMode(value)) { text = text };
             button.style.flexGrow = 1f;
             button.style.height = 30f;
-            button.style.fontSize = 11f;
+            button.style.fontSize = 12f;
             button.style.marginLeft = 1f;
             button.style.marginRight = 1f;
             modeButtons.Add(value, button);
@@ -544,6 +630,7 @@ namespace Project.LevelEditor.Editor
         private void SelectMode(SceneEditMode value)
         {
             mode = value;
+            if (mode == SceneEditMode.Object || mode == SceneEditMode.Art) artContext = mode == SceneEditMode.Art;
             foreach (var pair in modeButtons)
             {
                 bool active = pair.Key == mode;
@@ -551,8 +638,10 @@ namespace Project.LevelEditor.Editor
                     ? FontStyle.Bold
                     : FontStyle.Normal;
                 pair.Value.style.backgroundColor = active
-                    ? new Color(.12f, .42f, .72f)
+                    ? new Color(.20f, .29f, .39f)
                     : new Color(.20f, .21f, .23f);
+                pair.Value.style.borderBottomWidth = active ? 2 : 0;
+                pair.Value.style.borderBottomColor = new Color(.30f, .64f, 1f);
             }
             modeStatus.text = mode switch
             {
@@ -562,23 +651,102 @@ namespace Project.LevelEditor.Editor
                 SceneEditMode.Art => "从素材卡片选择美术，再直接在 Scene 里铺设。",
                 _ => string.Empty,
             };
-            regionPanel.style.display = mode == SceneEditMode.Region ? DisplayStyle.Flex : DisplayStyle.None;
-            objectPanel.style.display = mode == SceneEditMode.Object ? DisplayStyle.Flex : DisplayStyle.None;
-            bindingPanel.style.display = mode == SceneEditMode.Binding ? DisplayStyle.Flex : DisplayStyle.None;
-            artPanel.style.display = mode == SceneEditMode.Art ? DisplayStyle.Flex : DisplayStyle.None;
+            regionPanel.style.display = DisplayStyle.Flex;
+            objectPanel.style.display = DisplayStyle.Flex;
+            bindingPanel.style.display = DisplayStyle.Flex;
+            artPanel.style.display = DisplayStyle.Flex;
+            resources?.Bind(paletteItems, activeArtScene?.map, artContext);
+            if (artLayerBar != null) artLayerBar.style.display = artContext ? DisplayStyle.Flex : DisplayStyle.None;
             BindAuthoring();
+        }
+
+        private VisualElement BuildWorkbenchTools()
+        {
+            var tools = new VisualElement { name = "workbench-tools", style = { flexDirection = FlexDirection.Row, marginTop = 4 } };
+            foreach (var item in new[] { ("paint", "画 B"), ("erase", "擦 E"), ("rectangle", "矩形 R"), ("select", "点选 V") })
+            {
+                string key = item.Item1;
+                var button = new Button(() => UseWorkbenchTool(key)) { text = item.Item2, style = { flexGrow = 1, height = 32, fontSize = 12 } };
+                workTools[key] = button; tools.Add(button);
+            }
+            var group = new VisualElement(); group.Add(tools);
+            var channels = new VisualElement { name = "workbench-channels", style = { flexDirection = FlexDirection.Row, marginTop = 4 } };
+            foreach (var item in new[] { (SceneObjectChannel.TerrainSolid, "墙"), (SceneObjectChannel.WaterVolume, "水"), (SceneObjectChannel.GameplayProp, "道具") })
+            {
+                var channel = item.Item1;
+                var button = new Button(() => { ChooseResourceKind(false); SceneObjectAuthoring.ActiveChannel = channel; LevelEditorState.Tool = LevelEditorTool.Select; RefreshSession(); })
+                { text = item.Item2, tooltip = "选择/擦除只命中该通道；画笔通道由所选模板决定。", style = { flexGrow = 1, height = 26 } };
+                workChannels[channel] = button; channels.Add(button);
+            }
+            artChannelButton = new Button(() => ChooseResourceKind(true)) { text = "美术", style = { flexGrow = 1, height = 26 } };
+            channels.Add(artChannelButton);
+            group.Add(channels);
+            group.Add(new Button(() => { navigationPaused = false; SceneEditSession.Exit(sceneView, sessionOwner); RefreshSession(); })
+            { text = "结束搭建 · 恢复原视角", style = { height = 22, fontSize = 11 }, tooltip = "恢复此 SceneView 进入搭建前的视角；不保存或改写作者数据。" });
+            return group;
+        }
+
+        private void ChooseResourceKind(bool art)
+        {
+            artContext = art; SelectMode(art ? SceneEditMode.Art : SceneEditMode.Object);
+            resources?.Bind(paletteItems, activeArtScene?.map, art);
+        }
+
+        private void ChooseObjectCard(ScenePaletteItem item)
+        {
+            ChooseResourceKind(false); ScenePlacementPaletteCatalog.Select(item);
+            selectedPaletteItem = item; ApplyPaletteSelection(); LevelEditorState.Tool = LevelEditorTool.Paint;
+            RefreshSession();
+        }
+
+        private void ChooseArtCard(int index)
+        {
+            ChooseResourceKind(true); SceneArtPaletteSelection.Select(activeArtScene?.map, index);
+            artBrush.index = index; artErase.SetValueWithoutNotify(false); BindAuthoring(); RefreshSession();
+        }
+
+        private void UseWorkbenchTool(string tool)
+        {
+            if (tool == "select") { SelectMode(SceneEditMode.Object); LevelEditorState.Tool = LevelEditorTool.Select; }
+            else if (mode == SceneEditMode.Region)
+            {
+                if (tool == "rectangle") { regionStatus.text = "区域使用连续四邻接笔画；矩形工具用于物体和美术。"; return; }
+                SceneRegionAuthoring.Brush = tool == "erase" ? SceneRegionBrush.Erase : SceneRegionBrush.Paint;
+            }
+            else if (artContext)
+            {
+                SelectMode(SceneEditMode.Art); artErase.SetValueWithoutNotify(tool == "erase"); artRectangle.SetValueWithoutNotify(tool == "rectangle");
+            }
+            else
+            {
+                SelectMode(SceneEditMode.Object); LevelEditorState.Tool = tool == "erase" ? LevelEditorTool.Erase : LevelEditorTool.Paint;
+                LevelEditorScenePainter.RectangleStroke = tool == "rectangle";
+            }
+            RefreshSession();
+        }
+
+        private void OnWorkbenchKeys(SceneView view)
+        {
+            Event evt = Event.current;
+            if (view != sceneView || !SceneEditSession.IsLocked(view) || EditorGUIUtility.editingTextField || GUIUtility.hotControl != 0 ||
+                evt == null || evt.type != EventType.KeyDown || evt.alt || evt.control || evt.command || EditorApplication.isPlayingOrWillChangePlaymode) return;
+            string tool = evt.keyCode switch { KeyCode.B => "paint", KeyCode.E => "erase", KeyCode.R => "rectangle", KeyCode.V => "select", _ => null };
+            if (tool == null) return;
+            UseWorkbenchTool(tool); evt.Use();
         }
 
         private void ToggleLock()
         {
             if (sceneView == null) return;
-            if (SceneEditSession.IsLocked(sceneView)) SceneEditSession.Exit(sceneView, sessionOwner);
-            else SceneEditSession.Enter(sceneView, sessionOwner);
+            if (SceneEditSession.IsLocked(sceneView)) navigationPaused = !navigationPaused;
+            else { navigationPaused = false; SceneEditSession.Enter(sceneView, sessionOwner); }
             RefreshSession();
         }
 
         private void Subscribe()
         {
+            SceneWorkbenchInput.Register(sceneView, this);
+            SceneView.duringSceneGui -= OnWorkbenchKeys; SceneView.duringSceneGui += OnWorkbenchKeys;
             SceneEditSession.Changed -= RefreshSession;
             SceneEditSession.Changed += RefreshSession;
             SceneRegionAuthoring.Changed -= OnRegionChanged;
@@ -601,6 +769,7 @@ namespace Project.LevelEditor.Editor
             EditorApplication.hierarchyChanged += MarkSummaryDirty;
             Undo.undoRedoPerformed -= MarkSummaryDirty;
             Undo.undoRedoPerformed += MarkSummaryDirty;
+            RefreshSelectionInspector();
             if (SceneLevelEditorOverlay.HasPendingObjectPainting)
             {
                 schedule.Execute(BeginObjectPainting);
@@ -615,6 +784,10 @@ namespace Project.LevelEditor.Editor
 
         private void Unsubscribe()
         {
+            SceneWorkbenchInput.Unregister(sceneView, this);
+            SceneView.duringSceneGui -= OnWorkbenchKeys;
+            foreach (var editor in instanceEditors) if (editor != null) UnityEngine.Object.DestroyImmediate(editor);
+            instanceEditors.Clear();
             SceneEditSession.Changed -= RefreshSession;
             SceneRegionAuthoring.Changed -= OnRegionChanged;
             SceneObjectAuthoring.Changed -= OnObjectChanged;
@@ -642,6 +815,7 @@ namespace Project.LevelEditor.Editor
             }
 
             SelectMode(SceneEditMode.Object);
+            navigationPaused = false;
             if (!SceneEditSession.IsLocked(sceneView))
             {
                 SceneEditSession.Enter(sceneView, sessionOwner);
@@ -669,6 +843,7 @@ namespace Project.LevelEditor.Editor
                 return;
             }
 
+            navigationPaused = false;
             SelectMode(SceneEditMode.Art);
             if (!SceneEditSession.IsLocked(sceneView))
             {
@@ -694,8 +869,9 @@ namespace Project.LevelEditor.Editor
         private void Refresh()
         {
             RefreshSession();
+            resources?.Bind(paletteItems, activeArtScene?.map, artContext);
             Scene scene = SceneManager.GetActiveScene();
-            if (scene.handle != sceneHandle) { sceneHandle = scene.handle; summaryDirty = true; }
+            if (scene.handle != sceneHandle) { sceneHandle = scene.handle; summaryDirty = true; assemblySelection.Clear(); assemblyRegionIds.SetValueWithoutNotify(string.Empty); selectedRegionId = SessionState.GetString("SceneWorkbench.Region:" + scene.path, string.Empty); }
             if (paletteRevision != LevelEditorState.PaletteRevision)
             {
                 paletteRevision = LevelEditorState.PaletteRevision;
@@ -712,26 +888,104 @@ namespace Project.LevelEditor.Editor
             RefreshRegionChoices();
             RefreshObjectChoices();
             RefreshArtChoices();
+            resources?.Bind(paletteItems, activeArtScene?.map, artContext);
         }
 
         private void RefreshSession()
         {
+            Scene current = SceneManager.GetActiveScene();
+            GridArtMap map = activeArtScene != null ? activeArtScene.map : null;
+            GridArtLayer selectedLayer = map != null && artLayer.index >= 0 && artLayer.index < map.layers.Count ? map.layers[artLayer.index] : null;
+            var ownership = SceneArtAuthoring.OwnershipFor(activeArtScene);
             bool locked = SceneEditSession.IsLocked(sceneView);
+            bool artDirty = map != null && EditorUtility.IsDirty(map) || ownership != null && EditorUtility.IsDirty(ownership);
+            int visualHash = (current.handle, current.isDirty, map, selectedLayer, selectedLayer?.visible, selectedLayer?.locked, locked, navigationPaused,
+                artDirty, mode, artContext, LevelEditorState.Tool, LevelEditorScenePainter.RectangleStroke, SceneObjectAuthoring.ActiveChannel,
+                artErase.value, artRectangle.value, EditorApplication.isPlayingOrWillChangePlaymode, EditorGUIUtility.isProSkin).GetHashCode();
+            if (sessionVisualReady && visualHash == sessionVisualHash) { BindAuthoring(); return; }
+            sessionVisualReady = true; sessionVisualHash = visualHash;
+            layerVisible?.SetValueWithoutNotify(selectedLayer?.visible ?? false);
+            layerLocked?.SetValueWithoutNotify(selectedLayer?.locked ?? false);
+            artLayerBar?.SetEnabled(selectedLayer != null && !EditorApplication.isPlayingOrWillChangePlaymode);
+            saveStatus.text = $"场景 {(current.isDirty ? "待保存" : "已保存")} · 美术 {(map != null && EditorUtility.IsDirty(map) ? "待保存" : "无更改")} · 归属 {(ownership != null && EditorUtility.IsDirty(ownership) ? "待保存" : "无更改")}";
+            sceneSave.text = current.isDirty ? "Scene ●" : "Scene ✓";
+            sceneSave.tooltip = current.isDirty ? "场景待保存 · 点击只保存当前 Scene" : "场景已保存";
+            artSave.text = artDirty ? "美术 ●" : "美术 ✓";
+            artSave.tooltip = saveStatus.text + "\n点击只保存当前 Map 与稀疏归属。";
+            sceneSave.style.color = current.isDirty ? SceneWorkbenchTheme.Warning : SceneWorkbenchTheme.Saved;
+            artSave.style.color = artDirty ? SceneWorkbenchTheme.Warning : SceneWorkbenchTheme.Saved;
+            sceneSave.SetEnabled(!EditorApplication.isPlayingOrWillChangePlaymode);
+            artSave.SetEnabled(map != null && !EditorApplication.isPlayingOrWillChangePlaymode);
             sessionStatus.text = locked
-                ? "● 可以编辑：正交 2D 已锁定"
-                : "○ 当前不会落笔：请先开始搭建";
-            sessionStatus.style.color = locked
-                ? new Color(.45f, .86f, .58f)
-                : new Color(.84f, .74f, .42f);
+                ? navigationPaused ? "■ 暂停 · 点击继续" : "■ 落笔 · 点击暂停"
+                : "■ 暂停 · 点击开启";
+            Color identity = mode == SceneEditMode.Region ? SceneWorkbenchTheme.Room : artContext ? SceneWorkbenchTheme.Art : SceneWorkbenchTheme.Object;
+            Color sessionColor = locked && !navigationPaused ? identity : SceneWorkbenchTheme.Warning;
+            sessionStatus.style.color = sessionColor;
+            sessionStatus.style.borderLeftColor = sessionColor;
             lockButton.text = locked
-                ? "结束搭建并恢复原视角"
+                ? navigationPaused ? "继续搭建（启用落笔）" : "结束搭建并恢复原视角"
                 : "开始搭建（锁定正交 2D）";
-            lockButton.style.backgroundColor = locked
+            lockButton.style.backgroundColor = locked && !navigationPaused
                 ? new Color(.24f, .25f, .27f)
                 : new Color(.12f, .42f, .72f);
             lockButton.SetEnabled(sceneView != null && !EditorApplication.isPlayingOrWillChangePlaymode);
+            string activeTool = mode == SceneEditMode.Region ? SceneRegionAuthoring.Brush == SceneRegionBrush.Erase ? "erase" : "paint" :
+                artContext && mode == SceneEditMode.Art ? artErase.value ? "erase" : artRectangle.value ? "rectangle" : "paint" :
+                LevelEditorState.Tool == LevelEditorTool.Select ? "select" : LevelEditorState.Tool == LevelEditorTool.Erase ? "erase" : LevelEditorScenePainter.RectangleStroke ? "rectangle" : "paint";
+            foreach (var item in workTools) SceneWorkbenchTheme.Tool(item.Value, item.Key == activeTool, identity);
+            foreach (var item in workChannels) SceneWorkbenchTheme.Tool(item.Value, !artContext && SceneObjectAuthoring.ActiveChannel == item.Key, SceneWorkbenchTheme.Object);
+            SceneWorkbenchTheme.Tool(artChannelButton, artContext, SceneWorkbenchTheme.Art);
+            SceneWorkbenchTheme.Section(resourceFold, artContext ? SceneWorkbenchTheme.Art : SceneWorkbenchTheme.Object);
             RefreshObjectToolState();
             BindAuthoring();
+        }
+
+        private void SaveCurrentAuthors()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            Scene scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid() || !scene.isLoaded || !EditorSceneManager.SaveScene(scene)) return;
+            if (activeArtScene != null && activeArtScene.gameObject.scene == scene)
+            {
+                if (activeArtScene.map != null) AssetDatabase.SaveAssetIfDirty(activeArtScene.map);
+                var ownership = SceneArtAuthoring.OwnershipFor(activeArtScene);
+                if (ownership != null) AssetDatabase.SaveAssetIfDirty(ownership);
+            }
+            RefreshSession();
+        }
+
+        private void SaveSceneAuthor()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            Scene scene = SceneManager.GetActiveScene();
+            if (scene.IsValid() && scene.isLoaded) EditorSceneManager.SaveScene(scene);
+            RefreshSession();
+        }
+
+        private void SaveArtAuthors()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || activeArtScene?.map == null) return;
+            AssetDatabase.SaveAssetIfDirty(activeArtScene.map);
+            var ownership = SceneArtAuthoring.OwnershipFor(activeArtScene);
+            if (ownership != null) AssetDatabase.SaveAssetIfDirty(ownership);
+            RefreshSession();
+        }
+
+        private void ChangeArtLayerFlags(bool? visible, bool? locked)
+        {
+            var map = activeArtScene?.map;
+            if (map == null || artLayer.index < 0 || artLayer.index >= map.layers.Count || EditorApplication.isPlayingOrWillChangePlaymode) return;
+            var layer = map.layers[artLayer.index];
+            if (layer == null || (!visible.HasValue || visible.Value == layer.visible) && (!locked.HasValue || locked.Value == layer.locked)) return;
+            Undo.IncrementCurrentGroup(); int group = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("修改美术图层状态");
+            Undo.RegisterCompleteObjectUndo(map, "修改美术图层状态");
+            if (visible.HasValue) layer.visible = visible.Value;
+            if (locked.HasValue) layer.locked = locked.Value;
+            map.revision++; EditorUtility.SetDirty(map); Undo.CollapseUndoOperations(group);
+            if (!string.IsNullOrEmpty(AssetDatabase.GetAssetPath(map)) && !string.IsNullOrEmpty(activeArtScene.gameObject.scene.path))
+                Project.GridArt.Editor.GridArtBuilder.Apply(map, activeArtScene.gameObject.scene, false, false);
+            BindAuthoring(); RefreshSession();
         }
 
         private Button RegionButton(string text, Action clicked)
@@ -770,10 +1024,44 @@ namespace Project.LevelEditor.Editor
                 }
             }
             regionDropdown.choices = labels;
+            assemblySelection.RemoveWhere(id => !regionIds.Contains(id));
+            assemblyChoices.Clear();
+            for (int i = 0; i < regionIds.Count; i++)
+            {
+                string id = regionIds[i];
+                var toggle = new Toggle(labels[i]); toggle.SetValueWithoutNotify(assemblySelection.Contains(id));
+                toggle.RegisterValueChangedCallback(evt =>
+                {
+                    if (evt.newValue) assemblySelection.Add(id); else assemblySelection.Remove(id);
+                    assemblyRegionIds.SetValueWithoutNotify(string.Join(",", assemblySelection));
+                    assemblyStatus.text = "选择已改变，请重新预检。";
+                });
+                assemblyChoices.Add(toggle);
+            }
             int selected = regionIds.IndexOf(selectedRegionId);
             if (selected < 0 && regionIds.Count > 0) { selected = 0; selectedRegionId = regionIds[0]; }
             regionDropdown.index = selected;
+            RefreshNavigator();
             RefreshRegionControls();
+        }
+
+        private void SelectRoomFromNavigator(string id)
+        {
+            int index = regionIds.IndexOf(id);
+            if (index < 0) return;
+            selectedRegionId = id;
+            navigationPaused = true;
+            SessionState.SetString("SceneWorkbench.Region:" + SceneManager.GetActiveScene().path, id);
+            regionDropdown.SetValueWithoutNotify(regionDropdown.choices[index]);
+            regionDropdown.index = index;
+            RefreshRegionControls();
+            BindAuthoring();
+            roomNavigator.Bind(ActiveManager(), selectedRegionId);
+            SceneEditSession.Enter(sceneView, sessionOwner);
+            SceneRoomNavigator.Frame(ActiveManager(), id, sceneView);
+            RefreshSession();
+            var navigation = roomNavigator.GetFirstAncestorOfType<Foldout>();
+            if (navigation != null) navigation.value = false;
         }
 
         private void RefreshRegionControls()
@@ -785,12 +1073,11 @@ namespace Project.LevelEditor.Editor
             regionName.SetEnabled(region != null);
             corridorToggle.SetEnabled(region != null);
             regionStatus.text = (SceneRegionAuthoring.Brush == SceneRegionBrush.Paint ? "当前：绘制 · " : "当前：擦除 · ") + SceneRegionAuthoring.Status;
-            if (string.IsNullOrWhiteSpace(assemblyRegionIds.value)) assemblyRegionIds.SetValueWithoutNotify(selectedRegionId);
         }
 
         private void BindAuthoring()
         {
-            bool activeView = sceneView != null && SceneView.lastActiveSceneView == sceneView;
+            bool activeView = !navigationPaused && sceneView != null && SceneView.lastActiveSceneView == sceneView;
             bool authoring = activeView && mode == SceneEditMode.Region && SceneEditSession.IsLocked(sceneView) && !EditorApplication.isPlayingOrWillChangePlaymode;
             SceneRegionAuthoring.Bind(sceneView, ActiveManager(), selectedRegionId, authoring);
             bool objectAuthoring = activeView && mode == SceneEditMode.Object && SceneEditSession.IsLocked(sceneView) && !EditorApplication.isPlayingOrWillChangePlaymode;
@@ -804,7 +1091,13 @@ namespace Project.LevelEditor.Editor
         private void OnRegionChanged()
         {
             summaryDirty = true;
+            RefreshNavigator();
             RefreshRegionControls();
+        }
+
+        private void RefreshNavigator()
+        {
+            if (navigationFold != null && navigationFold.value) roomNavigator?.Bind(ActiveManager(), selectedRegionId);
         }
 
         private VisualElement BuildObjectPanel()
@@ -824,7 +1117,9 @@ namespace Project.LevelEditor.Editor
             openPicker.style.height = 38f;
             openPicker.style.marginBottom = 5f;
             openPicker.style.unityFontStyleAndWeight = FontStyle.Bold;
-            openPicker.style.backgroundColor = new Color(.12f, .42f, .72f);
+            openPicker.style.backgroundColor = new Color(.16f, .18f, .21f);
+            openPicker.style.borderTopWidth = openPicker.style.borderBottomWidth = openPicker.style.borderLeftWidth = openPicker.style.borderRightWidth = 1;
+            openPicker.style.borderTopColor = openPicker.style.borderBottomColor = openPicker.style.borderLeftColor = openPicker.style.borderRightColor = new Color(.30f, .64f, 1f);
             panel.Add(openPicker);
 
             var currentBrush = new VisualElement
@@ -850,7 +1145,7 @@ namespace Project.LevelEditor.Editor
                 style =
                 {
                     whiteSpace = WhiteSpace.Normal,
-                    fontSize = 11f,
+                    fontSize = 12f,
                     flexGrow = 1f,
                 },
             };
@@ -881,7 +1176,7 @@ namespace Project.LevelEditor.Editor
                 style =
                 {
                     whiteSpace = WhiteSpace.Normal,
-                    fontSize = 11f,
+                    fontSize = 12f,
                     marginTop = 4f,
                     marginBottom = 4f,
                 },
@@ -914,8 +1209,8 @@ namespace Project.LevelEditor.Editor
                 style =
                 {
                     whiteSpace = WhiteSpace.Normal,
-                    fontSize = 10f,
-                    opacity = .75f,
+                    fontSize = 12f,
+                    color = new Color(.72f, .75f, .79f),
                     marginTop = 4f,
                 },
             };
@@ -956,7 +1251,7 @@ namespace Project.LevelEditor.Editor
         {
             Button button = RegionButton(text, () => ActivateObjectTool(tool));
             button.style.height = 32f;
-            button.style.fontSize = 10f;
+            button.style.fontSize = 12f;
             objectToolButtons[tool] = button;
             parent.Add(button);
         }
@@ -980,7 +1275,7 @@ namespace Project.LevelEditor.Editor
             fold.Add(consumer); fold.Add(source);
             var row = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             row.Add(RegionButton("绑定门按钮", BindDoor)); row.Add(RegionButton("绑定机关", BindMechanism)); fold.Add(row);
-            status = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10, opacity = .75f } }; fold.Add(status); panel.Add(fold);
+            status = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 12, color = new Color(.72f, .75f, .79f) } }; fold.Add(status); panel.Add(fold);
             return panel;
         }
 
@@ -1028,7 +1323,7 @@ namespace Project.LevelEditor.Editor
                 {
                     flexGrow = 1f,
                     whiteSpace = WhiteSpace.Normal,
-                    fontSize = 11f,
+                    fontSize = 12f,
                 },
             };
             current.Add(artBrushDetails);
@@ -1058,7 +1353,7 @@ namespace Project.LevelEditor.Editor
                 style =
                 {
                     whiteSpace = WhiteSpace.Normal,
-                    fontSize = 11f,
+                    fontSize = 12f,
                     marginTop = 4f,
                     marginBottom = 5f,
                 },
@@ -1071,7 +1366,7 @@ namespace Project.LevelEditor.Editor
             artFollowRegion = new Toggle("新笔画跟随当前区域"); artFollowRegion.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artFollowRegion);
             var row = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             row.Add(RegionButton("创建稀疏归属资产", CreateArtOwnership)); row.Add(RegionButton("认领当前层区域内美术", ClaimArt)); panel.Add(row);
-            artStatus = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 10, opacity = .75f } }; panel.Add(artStatus);
+            artStatus = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 12, color = new Color(.72f, .75f, .79f) } }; panel.Add(artStatus);
             RefreshArtToolState();
             return panel;
         }
@@ -1117,7 +1412,7 @@ namespace Project.LevelEditor.Editor
                 : new Color(.20f, .21f, .23f);
         }
 
-        private string[] AssemblyIds() => (assemblyRegionIds.value ?? selectedRegionId ?? string.Empty)
+        private string[] AssemblyIds() => assemblySelection.Count > 0 ? assemblySelection.OrderBy(id => id, StringComparer.Ordinal).ToArray() : (string.IsNullOrWhiteSpace(assemblyRegionIds.value) ? selectedRegionId ?? string.Empty : assemblyRegionIds.value)
             .Split(new[] { ',', '，', ';', '；', '\n' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(value => value.Trim()).Where(value => value.Length > 0).Distinct().ToArray();
 
@@ -1129,6 +1424,9 @@ namespace Project.LevelEditor.Editor
 
         private void MoveAssembly()
         {
+            var preview = SceneRegionAssembly.Preview(ActiveManager(), AssemblyIds(), new Vector2Int(assemblyDeltaX.value, assemblyDeltaY.value));
+            assemblyStatus.text = preview.ToString();
+            if (!preview.CanCommit || !EditorUtility.DisplayDialog("整体移动预览", preview + $"\n位移：X {assemblyDeltaX.value}、Y {assemblyDeltaY.value} 格", "确认整体移动", "取消")) return;
             if (SceneRegionAssembly.Move(ActiveManager(), AssemblyIds(), new Vector2Int(assemblyDeltaX.value, assemblyDeltaY.value), out string result))
                 summaryDirty = true;
             assemblyStatus.text = result;
@@ -1332,11 +1630,28 @@ namespace Project.LevelEditor.Editor
         {
             selectedInspector.Unbind();
             selectedInspector.Clear();
+            foreach (var editor in instanceEditors) if (editor != null) UnityEngine.Object.DestroyImmediate(editor);
+            instanceEditors.Clear();
             LevelEditorPlacedBlock block =
                 LevelEditorBlockFactory.SelectedPlacedBlock();
             if (block != null)
-                selectedInspector.Bind(
-                    new SerializedObject(block.gameObject));
+            {
+                inspectorFold.text = "实例参数 · " + block.name;
+                foreach (var component in block.GetComponents<MonoBehaviour>())
+                {
+                    if (component == null) continue;
+                    var editor = UnityEditor.Editor.CreateEditor(component);
+                    if (editor == null) continue;
+                    instanceEditors.Add(editor);
+                    var fold = new Foldout { text = ObjectNames.NicifyVariableName(component.GetType().Name), value = component is not RoomResetObject };
+                    fold.Add(new InspectorElement(editor)); selectedInspector.Add(fold);
+                }
+            }
+            else
+            {
+                inspectorFold.text = "实例参数";
+                selectedInspector.Add(new Label("点选场景中的物体以编辑真实参数。") { style = { whiteSpace = WhiteSpace.Normal, color = new Color(.63f,.65f,.68f) } });
+            }
             foreach (Button button in selectedObjectButtons)
             {
                 button.SetEnabled(block != null);
@@ -1429,6 +1744,9 @@ namespace Project.LevelEditor.Editor
         private void ClaimArt()
         {
             GridArtLayer layer = activeArtScene?.map != null && artLayer.index >= 0 && artLayer.index < activeArtScene.map.layers.Count ? activeArtScene.map.layers[artLayer.index] : null;
+            string preview = SceneArtAuthoring.PreviewClaim(activeArtScene, layer, ActiveManager(), selectedRegionId, out bool canClaim);
+            artStatus.text = preview;
+            if (!canClaim || !EditorUtility.DisplayDialog("认领美术预览", preview, "确认认领", "取消")) return;
             int count = SceneArtAuthoring.ClaimRegion(activeArtScene, layer, ActiveManager(), selectedRegionId);
             artStatus.text = count > 0 ? $"已显式认领 {count} 个当前层锚点。" : SceneArtAuthoring.Status;
         }

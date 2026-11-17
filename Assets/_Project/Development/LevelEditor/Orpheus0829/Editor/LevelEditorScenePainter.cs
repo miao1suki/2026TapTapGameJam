@@ -19,6 +19,8 @@ namespace Project.LevelEditor.Editor
         private static bool selectionAdditive;
         private static bool selectionDragged;
         private static SceneView overlayView;
+        private static readonly HashSet<Vector2Int> strokeCells = new();
+        internal static bool RectangleStroke { get; set; } = true;
 
         internal static bool SetOverlayAuthoring(SceneView view, bool value)
         {
@@ -97,6 +99,11 @@ namespace Project.LevelEditor.Editor
             }
 
             Event evt = Event.current;
+            if (SceneWorkbenchInput.IsOverPanel(sceneView, evt))
+            {
+                if (evt.type == EventType.MouseUp) { strokeActive = false; selectionStroke = false; }
+                return;
+            }
             if(LevelEditorState.Tool == LevelEditorTool.Merge || LevelEditorState.Tool == LevelEditorTool.Parameters)
             {
                 strokeActive=false;
@@ -176,6 +183,7 @@ namespace Project.LevelEditor.Editor
                 IsStrokeTool(LevelEditorState.Tool))
             {
                 strokeActive = true;
+                strokeCells.Clear(); strokeCells.Add(cell);
                 strokeStart = cell;
                 strokeEnd = cell;
                 lastCell = cell;
@@ -195,6 +203,8 @@ namespace Project.LevelEditor.Editor
 
             if (evt.type == EventType.MouseDrag && strokeActive)
             {
+                if (!RectangleStroke && strokeCells.Count <= 4096)
+                    foreach (Vector2Int point in BuildStrokeCells(strokeEnd, cell)) strokeCells.Add(point);
                 strokeEnd = cell;
                 lastCell = cell;
                 evt.Use();
@@ -226,8 +236,9 @@ namespace Project.LevelEditor.Editor
                 PaintAt(strokeStart);
                 return;
             }
-            IEnumerable<Vector2Int> cells =
-                BuildAreaCells(strokeStart, strokeEnd);
+            if (RectangleStroke ? (long)(Mathf.Abs(strokeEnd.x - strokeStart.x) + 1) * (Mathf.Abs(strokeEnd.y - strokeStart.y) + 1) > 4096 : strokeCells.Count > 4096) return;
+            Undo.IncrementCurrentGroup(); int group = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("场景物体笔画");
+            IEnumerable<Vector2Int> cells = RectangleStroke ? BuildAreaCells(strokeStart, strokeEnd) : strokeCells;
             foreach (Vector2Int cell in cells)
             {
                 if (LevelEditorState.Tool == LevelEditorTool.Erase)
@@ -239,6 +250,7 @@ namespace Project.LevelEditor.Editor
                     PaintAt(cell);
                 }
             }
+            Undo.CollapseUndoOperations(group);
         }
 
         private static IEnumerable<Vector2Int> BuildAreaCells(
@@ -298,16 +310,26 @@ namespace Project.LevelEditor.Editor
             Vector2 mousePosition,
             bool additive)
         {
-            GameObject picked = HandleUtility.PickGameObject(
-                mousePosition,
-                false);
-            LevelEditorPlacedBlock block =
-                SceneObjectInspectorWindow.ResolveAuthorRoot(picked) ??
-                LevelEditorBlockFactory.FindAt(cell);
+            var candidates = SceneObjectAuthoring.Read(UnityEngine.SceneManagement.SceneManager.GetActiveScene()).At(cell, SceneObjectAuthoring.ActiveChannel);
+            if (candidates.Count > 1)
+            {
+                var menu = new GenericMenu();
+                for (int i = 0; i < candidates.Count; i++)
+                {
+                    var candidate = candidates[i];
+                    menu.AddItem(new GUIContent($"{i + 1} · {candidate.channel} · {candidate.block.name}"), false, () => SelectBlock(candidate.block, additive));
+                }
+                menu.ShowAsContext(); return;
+            }
+            SelectBlock(candidates.Count == 1 ? candidates[0].block : null, additive);
+        }
+
+        private static void SelectBlock(LevelEditorPlacedBlock block, bool additive)
+        {
             if (!additive)
             {
                 Selection.activeGameObject = block != null ? block.gameObject : null;
-                if (block != null)
+                if (block != null && overlayView == null)
                 {
                     SceneObjectInspectorWindow.OpenFor(block);
                 }
@@ -330,7 +352,7 @@ namespace Project.LevelEditor.Editor
                 if (!selected.Add(block.gameObject)) selected.Remove(block.gameObject);
             }
             Selection.objects = new List<Object>(selected).ToArray();
-            if (selected.Count == 1 && block != null)
+            if (selected.Count == 1 && block != null && overlayView == null)
             {
                 SceneObjectInspectorWindow.OpenFor(block);
             }
@@ -343,8 +365,8 @@ namespace Project.LevelEditor.Editor
                 : new HashSet<Object>();
             foreach (Vector2Int cell in BuildAreaCells(start, end))
             {
-                LevelEditorPlacedBlock block = LevelEditorBlockFactory.FindAt(cell);
-                if (block != null) selected.Add(block.gameObject);
+                foreach (var record in SceneObjectAuthoring.Read(UnityEngine.SceneManagement.SceneManager.GetActiveScene()).At(cell, SceneObjectAuthoring.ActiveChannel))
+                    if (record.block != null) selected.Add(record.block.gameObject);
             }
             Selection.objects = new List<Object>(selected).ToArray();
         }
@@ -450,6 +472,22 @@ namespace Project.LevelEditor.Editor
 
         private static void DrawHover(Vector2Int cell)
         {
+            if (Event.current.type != EventType.Repaint) return;
+            if (strokeActive && !IsPlacingDoor())
+            {
+                if (RectangleStroke) DrawSelectionArea(strokeStart, strokeEnd);
+                else
+                {
+                    int shown = 0; float cellSize = ResolveGridCellSize();
+                    Color previous = Handles.color; Handles.color = SceneWorkbenchTheme.Object;
+                    foreach (Vector2Int point in strokeCells)
+                    {
+                        if (++shown > 512) break;
+                        Handles.DrawWireCube(new Vector3((point.x + .5f) * cellSize, (point.y + .5f) * cellSize, 0), new Vector3(cellSize, cellSize, 0));
+                    }
+                    Handles.color = previous;
+                }
+            }
             float size = Mathf.Max(.05f, LevelEditorState.CellSize);
             bool door = IsPlacingDoor();
             if (door && strokeActive) cell = strokeStart;

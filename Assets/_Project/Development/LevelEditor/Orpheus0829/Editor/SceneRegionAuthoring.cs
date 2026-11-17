@@ -24,7 +24,8 @@ namespace Project.LevelEditor.Editor
         private static bool enabled;
         private static SceneView boundView;
         private static bool stroking;
-        private static int undoGroup = -1;
+        private static RoomRegion strokeRegion;
+        private static int strokeRevision;
         private static Vector2Int lastCell;
         private static int controlId;
         private static int cachedManagerId;
@@ -44,13 +45,17 @@ namespace Project.LevelEditor.Editor
             Undo.undoRedoPerformed += OnUndoRedo;
             AssemblyReloadEvents.beforeAssemblyReload -= CancelStroke;
             AssemblyReloadEvents.beforeAssemblyReload += CancelStroke;
+            EditorApplication.playModeStateChanged += change =>
+            {
+                if (change == PlayModeStateChange.ExitingEditMode) CancelStroke();
+            };
         }
 
         internal static bool Bind(SceneView view, RoomLifecycleManager value, string selectedId, bool valueEnabled)
         {
             selectedId ??= string.Empty;
             if (boundView == view && manager == value && regionId == selectedId && enabled == valueEnabled) return false;
-            if (stroking && (boundView != view || manager != value || regionId != selectedId || !valueEnabled)) FinishStroke();
+            if (stroking && (boundView != view || manager != value || regionId != selectedId || !valueEnabled)) CancelStroke();
             boundView = view;
             manager = value;
             regionId = selectedId;
@@ -60,6 +65,12 @@ namespace Project.LevelEditor.Editor
         }
 
         internal static bool StableBindIsNoOpForAudit() => !Bind(boundView, manager, regionId, enabled);
+
+        internal static void PreviewAndCancelForAudit(RoomLifecycleManager target, string id, Vector2Int cell)
+        {
+            manager = target; regionId = id; Brush = SceneRegionBrush.Paint;
+            BeginStroke(); ApplyCell(strokeRegion, cell); CancelStroke();
+        }
 
         internal static RoomLifecycleManager FindManager(Scene scene)
         {
@@ -132,9 +143,11 @@ namespace Project.LevelEditor.Editor
             if (!enabled || manager == null || view == null || view != boundView || manager.gameObject.scene != SceneManager.GetActiveScene() ||
                 !SceneEditSession.IsLocked(view)) return;
             RoomRegion selected = manager.Regions.FirstOrDefault(item => item != null && item.id == regionId);
+            if (stroking) selected = strokeRegion;
             Event evt = Event.current;
             if (evt == null) return;
             if (evt.type == EventType.Repaint) DrawRegions(selected);
+            if (SceneWorkbenchInput.IsOverPanel(view, evt)) { if (evt.type == EventType.MouseUp) CancelStroke(); return; }
             if (selected == null) return;
             if (evt.alt || evt.button != 0) return;
             controlId = GUIUtility.GetControlID("SceneRegionAuthoring".GetHashCode(), FocusType.Passive);
@@ -157,7 +170,9 @@ namespace Project.LevelEditor.Editor
             {
                 foreach (Vector2Int step in Manhattan(lastCell, cell))
                 {
-                    if (!CanChange(selected, step, Brush, out _)) break;
+                    if (Brush == SceneRegionBrush.Paint && selected.cells.Contains(step)) { lastCell = step; continue; }
+                    if (!CanChange(selected, step, Brush, out string reason))
+                    { CancelStroke(); SetStatus(reason); break; }
                     ApplyCell(selected, step);
                     lastCell = step;
                 }
@@ -171,47 +186,45 @@ namespace Project.LevelEditor.Editor
             }
             else if (evt.type == EventType.KeyDown && evt.keyCode == KeyCode.Escape && stroking)
             {
-                Undo.RevertAllDownToGroup(undoGroup);
-                stroking = false;
-                undoGroup = -1;
-                GUIUtility.hotControl = 0;
-                manager.RebuildOwnership();
-                SetStatus("已取消本次区域笔画。");
+                CancelStroke();
                 evt.Use();
             }
         }
 
         private static void BeginStroke()
         {
-            Undo.IncrementCurrentGroup();
-            undoGroup = Undo.GetCurrentGroup();
-            Undo.SetCurrentGroupName(Brush == SceneRegionBrush.Paint ? "绘制房间/通道" : "擦除房间/通道");
-            Undo.RegisterCompleteObjectUndo(manager, Undo.GetCurrentGroupName());
+            strokeRegion = Clone(manager.Regions).First(item => item.id == regionId);
+            strokeRevision = manager.Revision;
             stroking = true;
         }
 
         private static void ApplyCell(RoomRegion selected, Vector2Int cell)
         {
-            if (Brush == SceneRegionBrush.Paint) selected.cells.Add(cell);
-            else selected.cells.Remove(cell);
-            manager.RebuildOwnership();
-            EditorUtility.SetDirty(manager);
-            EditorSceneManager.MarkSceneDirty(manager.gameObject.scene);
-            SetStatus(Brush == SceneRegionBrush.Paint ? $"已绘制 {cell}。" : $"已擦除 {cell}。");
+            if (Brush == SceneRegionBrush.Paint) strokeRegion.cells.Add(cell);
+            else strokeRegion.cells.Remove(cell);
+            SetStatus($"预览 {strokeRegion.cells.Count} 格 · 松开提交，Esc 取消。");
         }
 
         private static void FinishStroke()
         {
             if (!stroking) return;
-            Undo.CollapseUndoOperations(undoGroup);
             stroking = false;
-            undoGroup = -1;
-            Changed?.Invoke();
+            if (manager == null || manager.Revision != strokeRevision)
+            { strokeRegion = null; SetStatus("区域已被其他操作改变，本笔已取消。请重新绘制。"); return; }
+            List<RoomRegion> regions = Clone(manager.Regions);
+            int index = regions.FindIndex(item => item.id == regionId);
+            if (index < 0) { strokeRegion = null; return; }
+            regions[index] = strokeRegion; strokeRegion = null;
+            Commit(manager, regions, Brush == SceneRegionBrush.Paint ? "绘制房间/通道" : "擦除房间/通道");
+            SetStatus("区域笔画已提交，可一次撤销。");
         }
 
         private static void CancelStroke()
         {
-            if (stroking) FinishStroke();
+            if (!stroking) return;
+            stroking = false; strokeRegion = null;
+            if (GUIUtility.hotControl == controlId) GUIUtility.hotControl = 0;
+            SetStatus("已取消未完成的区域笔画。");
         }
 
         private static bool CanChange(RoomRegion selected, Vector2Int cell, SceneRegionBrush brush, out string reason)
@@ -219,33 +232,40 @@ namespace Project.LevelEditor.Editor
             reason = string.Empty;
             if (brush == SceneRegionBrush.Paint)
             {
+                if (selected.cells.Contains(cell)) { reason = "该格已属于当前区域。"; return false; }
                 foreach (RoomRegion region in manager.Regions)
-                    if (region != null && region.cells != null && region.cells.Contains(cell))
+                    if (region != null && region.id != selected.id && region.cells != null && region.cells.Contains(cell))
                     { reason = region.id == selected.id ? "该格已属于当前区域。" : "该格已属于其他房间/通道。"; return false; }
                 if (selected.cells.Count > 0 && !Neighbors(cell).Any(selected.cells.Contains))
                 { reason = "新格必须与当前区域四邻接。"; return false; }
                 return true;
             }
             if (!selected.cells.Contains(cell)) { reason = "该格不属于当前区域。"; return false; }
+            Vector2Int sceneCell = SceneGridSpace.RegionToScene(cell);
+            var occupants = SceneObjectAuthoring.Read(manager.gameObject.scene).At(sceneCell);
+            if (occupants.Count > 0)
+            { reason = $"该格有 {occupants.Count} 个作者对象；请先移动对象。擦区域不会删除对象。"; return false; }
             if (selected.cells.Count <= 1) return true;
             var remaining = new HashSet<Vector2Int>(selected.cells); remaining.Remove(cell);
-            if (!IsConnected(remaining)) { reason = "擦除会使区域断裂；请先拆分区域。"; return false; }
+            if (ComponentCount(remaining) > ComponentCount(new HashSet<Vector2Int>(selected.cells)))
+            { reason = "擦除会增加区域断裂；请先调整连通部分。"; return false; }
             return true;
         }
 
-        private static bool IsConnected(HashSet<Vector2Int> cells)
+        private static int ComponentCount(HashSet<Vector2Int> cells)
         {
-            if (cells.Count == 0) return true;
-            var visited = new HashSet<Vector2Int>();
+            int count = 0;
             var queue = new Queue<Vector2Int>();
-            queue.Enqueue(cells.First());
-            while (queue.Count > 0)
+            while (cells.Count > 0)
             {
-                Vector2Int current = queue.Dequeue();
-                if (!visited.Add(current)) continue;
-                foreach (Vector2Int next in Neighbors(current)) if (cells.Contains(next) && !visited.Contains(next)) queue.Enqueue(next);
+                count++; Vector2Int first = cells.First(); cells.Remove(first); queue.Enqueue(first);
+                while (queue.Count > 0)
+                {
+                    Vector2Int current = queue.Dequeue();
+                    foreach (Vector2Int next in Neighbors(current)) if (cells.Remove(next)) queue.Enqueue(next);
+                }
             }
-            return visited.Count == cells.Count;
+            return count;
         }
 
         private static IEnumerable<Vector2Int> Manhattan(Vector2Int from, Vector2Int to)
@@ -350,10 +370,15 @@ namespace Project.LevelEditor.Editor
 
         private static void Commit(RoomLifecycleManager target, List<RoomRegion> regions, string undoName)
         {
+            Undo.IncrementCurrentGroup();
+            int group = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undoName);
             Undo.RegisterCompleteObjectUndo(target, undoName);
             target.ConfigureAuthoredRegions(regions, target.CellSize);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(target);
             EditorUtility.SetDirty(target);
             EditorSceneManager.MarkSceneDirty(target.gameObject.scene);
+            Undo.CollapseUndoOperations(group);
             Changed?.Invoke();
         }
 

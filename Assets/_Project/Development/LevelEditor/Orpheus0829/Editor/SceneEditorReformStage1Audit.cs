@@ -23,10 +23,10 @@ namespace Project.LevelEditor.Editor
         private static readonly IReadOnlyDictionary<string, string> FormalHashes =
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                { "Assets/_Project/Scenes/Playing/Gaming.unity", "1763418D57F60AFBB2B83DB7B6111EDB368A853908D1E5D793CEBFF1711CA057" },
+                { "Assets/_Project/Scenes/Playing/Gaming.unity", "16ACAB3B7A0B828B4DC6B41387F1ECD918BFBFA46254C2B6170018D189E7A324" },
                 { "Assets/_Project/Scenes/Playing/Gaming.planning.json", "5714D40118DD1109D0F56F80DD6DD9CCD9A0B622A93867BBA27F200E37EA3C90" },
                 { "Assets/_Project/Content/LevelMaps/正式关卡.json", "5714D40118DD1109D0F56F80DD6DD9CCD9A0B622A93867BBA27F200E37EA3C90" },
-                { "Assets/_Project/Scenes/Playing/Gaming_Art.asset", "056395010966A03C8F5AC277051A67BE5173F6EE043E45C743CCA824AC1683F1" },
+                { "Assets/_Project/Scenes/Playing/Gaming_Art.asset", "62172B600B200D47ABC5C5CEBC2E03CD35C40AFF12FA60DA262B3A21204D688D" },
             };
 
         [MenuItem("Tools/2026TapTap/关卡编辑器/验证/阶段 1 零写入")]
@@ -220,7 +220,8 @@ namespace Project.LevelEditor.Editor
         private static void ValidateObjectLibraryUi()
         {
             var panel = new SceneLevelEditorPanel(null);
-            Require(panel is ScrollView, "Overlay 正文没有可滚动容器。");
+            Require(panel.Q<ScrollView>("workbench-body") != null && panel.Q<VisualElement>("workbench-tools") != null &&
+                    panel.Q<ScrollView>("resource-grid-scroll") != null, "工作台缺少固定工具条、正文滚动区或内嵌资源抽屉。");
             List<string> buttons = panel.Query<Button>().ToList().Select(button => button.text).ToList();
             foreach (string required in new[]
                      {

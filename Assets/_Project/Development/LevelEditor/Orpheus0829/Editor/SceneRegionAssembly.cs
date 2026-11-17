@@ -17,11 +17,12 @@ namespace Project.LevelEditor.Editor
     {
         internal readonly int regions, cells, objects, logicalGroups, attachments, artAnchors;
         internal readonly string error;
+        internal readonly int externalReferences;
         internal bool CanCommit => string.IsNullOrEmpty(error) && regions > 0;
-        internal SceneRegionMovePreview(int regions, int cells, int objects, int logicalGroups, int attachments, int artAnchors, string error)
-        { this.regions = regions; this.cells = cells; this.objects = objects; this.logicalGroups = logicalGroups; this.attachments = attachments; this.artAnchors = artAnchors; this.error = error; }
+        internal SceneRegionMovePreview(int regions, int cells, int objects, int logicalGroups, int attachments, int artAnchors, string error, int externalReferences = 0)
+        { this.regions = regions; this.cells = cells; this.objects = objects; this.logicalGroups = logicalGroups; this.attachments = attachments; this.artAnchors = artAnchors; this.error = error; this.externalReferences = externalReferences; }
         public override string ToString() => CanCommit
-            ? $"区域 {regions} · 区域格 {cells} · 对象 {objects} · 逻辑组 {logicalGroups} · 附属物 {attachments} · 已认领美术 {artAnchors}"
+            ? $"区域 {regions} · 区域格 {cells} · 对象 {objects} · 逻辑组 {logicalGroups} · 附属物 {attachments} · 已认领美术 {artAnchors}\n跨选区引用 {externalReferences}（引用保留，外部对象保持原位）；未认领美术保持原位。"
             : error;
     }
 
@@ -48,6 +49,11 @@ namespace Project.LevelEditor.Editor
             foreach (string authorId in records.Select(record => record.authorId).Where(id => !string.IsNullOrEmpty(id)).Distinct().ToArray())
                 foreach (SceneObjectRecord member in index.All.Where(record => record.authorId == authorId)) records.Add(member);
             var movedBlocks = new HashSet<LevelEditorPlacedBlock>(records.Select(record => record.block));
+            foreach (var record in records)
+                if (record.block.GetComponentInChildren<Camera>(true) != null || record.block.GetComponentInChildren<Canvas>(true) != null ||
+                    record.block.GetComponentInChildren<RoomLifecycleManager>(true) != null || record.block.GetComponentInChildren<GridArtScene>(true) != null ||
+                    record.block.GetComponentsInChildren<MonoBehaviour>(true).Any(c => c != null && (c.GetType().Name == "PlayerController" || c.GetType().Name == "GameFlowController")))
+                    return new SceneRegionMovePreview(0, 0, 0, 0, 0, 0, $"作者组 {record.block.name} 包含玩家、相机、UI 或管理器，已拒绝整体移动。");
             foreach (SceneObjectRecord record in records)
             foreach (Vector2Int cell in record.cells)
             foreach (SceneObjectRecord collision in index.At(cell + sceneDelta, record.channel))
@@ -78,7 +84,8 @@ namespace Project.LevelEditor.Editor
                 }
             }
             return new SceneRegionMovePreview(regions.Length, selectedCells.Count, records.Count,
-                records.Select(record => string.IsNullOrEmpty(record.authorId) ? record.block.GetInstanceID().ToString() : record.authorId).Distinct().Count(), attachments.Length, artCount, string.Empty);
+                records.Select(record => string.IsNullOrEmpty(record.authorId) ? record.block.GetInstanceID().ToString() : record.authorId).Distinct().Count(), attachments.Length, artCount, string.Empty,
+                SceneObjectAuthoring.FindReverseReferences(movedBlocks).Count);
         }
 
         internal static bool Move(RoomLifecycleManager manager, IReadOnlyCollection<string> regionIds, Vector2Int sceneDelta, out string reason)
@@ -121,6 +128,9 @@ namespace Project.LevelEditor.Editor
                 Undo.RecordObjects(reset != null ? new UnityEngine.Object[] { record.block.transform, record.block, reset } : new UnityEngine.Object[] { record.block.transform, record.block }, "整体移动房间/通道");
                 record.block.transform.position += worldDelta;
                 record.block.SetAuthoredCell(record.block.Cell + sceneDelta);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(record.block.transform);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(record.block);
+                if (reset != null) PrefabUtility.RecordPrefabInstancePropertyModifications(reset);
                 EditorUtility.SetDirty(record.block); if (reset != null) EditorUtility.SetDirty(reset);
             }
             foreach (SceneRegionAttachment attachment in attachments)
@@ -128,6 +138,7 @@ namespace Project.LevelEditor.Editor
                 if (attachment == null || !movedTransforms.Add(attachment.transform)) continue;
                 Undo.RecordObject(attachment.transform, "整体移动房间/通道");
                 attachment.transform.position += worldDelta;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(attachment.transform);
             }
             if (art != null)
             {
@@ -146,6 +157,7 @@ namespace Project.LevelEditor.Editor
                 }
             }
             manager.ConfigureAuthoredRegions(regions, manager.CellSize);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(manager);
             EditorUtility.SetDirty(manager); EditorSceneManager.MarkSceneDirty(scene);
             Undo.CollapseUndoOperations(undo); SceneObjectAuthoring.NotifyChanged(); SceneView.RepaintAll();
             if (art != null && preview.artAnchors > 0 && !string.IsNullOrEmpty(scene.path)) GridArtBuilder.Apply(art.map, scene, false, false);
