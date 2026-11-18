@@ -1,0 +1,33 @@
+{
+  "schema": "single-winding-mother-candidates-v1",
+  "unity": "6000.3.12f1",
+  "userReferences": "Topology/layout only, not palette or material style. User reference images were not uploaded as style references.",
+  "sourceContract": "One continuous winding mother, 384 logical pixels, 12x12 source cells, 20 oriented quarter states; 47 legal compact neighbor states.",
+  "workflow": "Existing local n8n generation and fixed Claude Code review. Requested image model is recorded, supplier model is unverified.",
+  "status": {
+    "blob-r1": "Rejected: detached rounded cross, wrong topology.",
+    "r2": "Raw crops: compact moss too thin.",
+    "r2b": "Rejected: green internal grid from averaging fill and grass.",
+    "r2c": "Fill-priority compact seam correction; actual Unity candidate, Claude requested less uniform/bright grass.",
+    "r3b": "New single mother guided by actual Unity review. Actual GPU run completed. Claude conditional continue; hole transition still rework.",
+    "r3c": "Rejected: broad boundary equality introduced regular green teeth/grid despite numerical zero mismatch.",
+    "r3d": "r3b with 44 magenta-contaminated atlas pixels decontaminated only. Actual GPU run completed; not fully art-approved."
+  },
+  "selectedProgressCandidate": "r3d (unapproved, original showcase unchanged)",
+  "historicalManifestNote": "extraction.json was written before Unity import; its unityImported:false is historical. Actual runs are recorded here and in GPU captures.",
+  "reproduction": [
+    "Unzip scripts together with inputs; put moss-winding-plan-r2.json and mask next to extract_winding_mother.py.",
+    "python extract_winding_mother.py <sources/moss-winding-mother-r3.png> <fresh-output> --correct-compact --soil-contrast 1",
+    "python align_unity_sampling.py <fresh-output> <fresh-clean-output> <sampling-input-maps> <project GridArtWideContour.cs> --decontam-only",
+    "In project root run Unity 6000.3.12f1 -batchmode -projectPath <project> -executeMethod Project.LevelEditor.Editor.SceneWorkbenchWindingLab.CreateFromCommandLine -windingArtInput <fresh-clean-output> -windingLabName WindingMotherLabR4 -logFile <log>. Refuses overwrite.",
+    "Saved Scene/Map/Ownership/Palette/textures are in Development/LevelEditor/WindingMotherLabR4; GPU captures in Library/WindingMotherLabR4. These are isolated candidates, not formal Gaming."
+  ],
+  "limitations": [
+    "No separate corner generation; program handling is crop/key/registration/profile correction, not coded foliage.",
+    "Compact edge equality is bounded numerical evidence, not visual approval; wide/compact hole transition remains unresolved.",
+    "Historical r2b and r3c are preserved rejected images. Current scripts are not claimed to reproduce the earlier r2b algorithm revision.",
+    "Latest candidates have not replaced the committed source showcase; generated test scenes remain local.",
+    "No new native multilayer painting sources; raw generated PNG and processing scripts are the editable source for this candidate stage."
+  ],
+  "archiveSHA256": "c5ce6943a7b7a7a846df09f18f9c58f901c4ff5bf92ecb4d5fda4b3637eacde9"
+}

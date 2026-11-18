@@ -1,0 +1,43 @@
+{
+  "unity": "6000.3.12f1",
+  "relatedEditMode": {
+    "total": "146",
+    "passed": "146",
+    "failed": "0",
+    "skipped": "0",
+    "duration": "36.0787158"
+  },
+  "toolbarReproduction": {
+    "red": {
+      "total": "1",
+      "passed": "0",
+      "failed": "1",
+      "duration": "2.0401241"
+    },
+    "green": {
+      "total": "21",
+      "passed": "21",
+      "failed": "0",
+      "duration": "3.8503583"
+    },
+    "finding": "Attached UI Toolkit pointer click passes; B targeted at a panel button fails before routing fix and passes after. TextField B does not switch tools."
+  },
+  "sourceSHA256": {
+    "SceneLevelEditorOverlay.cs": "7b6548f53e32c5e0daca5600c75ed58e1b0cbb246dfa8bc2c64aee71df00eb14",
+    "SceneWorkbenchAudit.cs": "ed33a3bb98f21c8104ac000d57367eb768c0e5e8c9ea610e83eedef7fb7184cf",
+    "SceneWorkbenchWindingLab.cs": "6406d8a6b12ca35744d2c8922c3aff9b2ef7aa04fc2fe856e5e695716f6e855f"
+  },
+  "formalHashes": {
+    "Assets/_Project/Scenes/Playing/Gaming.unity": "16acab3b7a0b828b4dc6b41387f1ecd918bfbfa46254c2b6170018d189e7a324",
+    "Assets/_Project/Scenes/Playing/Gaming_Art.asset": "62172b600b200d47abc5c5cebc2e03cd35c40aff12fa60da262b3a21204d688d",
+    "Assets/_Project/Scenes/Playing/Gaming.planning.json": "5714d40118dd1109d0f56f80dd6dd9ccd9a0b622a93867bba27f200e37ea3c90",
+    "Assets/_Project/Content/LevelMaps/正式关卡.json": "5714d40118dd1109d0f56f80dd6dd9ccd9a0b622a93867bba27f200e37ea3c90"
+  },
+  "originalShowcasePackagesProjectSettingsGitDiffEmpty": true,
+  "artArchiveSHA256": "c5ce6943a7b7a7a846df09f18f9c58f901c4ff5bf92ecb4d5fda4b3637eacde9",
+  "nativeRound10": "Resource fold retained toolbar position. Observer showed no new author objects/art/dirty during browsing. Mouse click failure was not proven in attached-pointer regression; tooltip interception remains a hypothesis.",
+  "limits": [
+    "Native foreground B after fix, full binding journey, light theme and domain-reload session still pending.",
+    "No final art approval, no formal scene writes, no Android/build/full playthrough."
+  ]
+}

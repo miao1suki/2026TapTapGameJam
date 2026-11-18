@@ -16,6 +16,9 @@ public sealed class SceneWorkbenchTests
     [UnityEngine.TestTools.UnityTest]
     public System.Collections.IEnumerator FoldingResourcesKeepsBottomAlignedToolsStable() => VisualCase("stable-fold-layout");
 
+    [UnityEngine.TestTools.UnityTest]
+    public System.Collections.IEnumerator ToolbarPointerAndPanelKeyboardEventsActivateTools() => VisualCase("toolbar-ui-events");
+
     private static System.Collections.IEnumerator VisualCase(string name)
     {
         Type audit = AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("Project.LevelEditor.Editor.SceneWorkbenchAudit")).FirstOrDefault(t=>t!=null);

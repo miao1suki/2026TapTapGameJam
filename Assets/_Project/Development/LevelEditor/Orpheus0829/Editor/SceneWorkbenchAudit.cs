@@ -97,6 +97,27 @@ namespace Project.LevelEditor.Editor
                     for (int frame=0;frame<4;frame++) yield return null;
                     Check(!SceneEditSession.IsLocked(view),"关闭工作台后未释放视角会话");
                 }
+                else if (name == "toolbar-ui-events")
+                {
+                    panel.ToggleLock();
+                    panel.UseWorkbenchTool("select");
+                    var button = panel.Q<Button>("workbench-tool-paint");
+                    using (var down = PointerDownEvent.GetPooled(new Event { type=EventType.MouseDown, button=0, mousePosition=button.worldBound.center }))
+                    { down.target=button; button.SendEvent(down); }
+                    using (var up = PointerUpEvent.GetPooled(new Event { type=EventType.MouseUp, button=0, mousePosition=button.worldBound.center }))
+                    { up.target=button; button.SendEvent(up); }
+                    for (int frame=0;frame<3;frame++) yield return null;
+                    Check(LevelEditorState.Tool==LevelEditorTool.Paint,"工具栏真实Pointer点击未进入画笔");
+                    panel.UseWorkbenchTool("select");
+                    using (var key = KeyDownEvent.GetPooled(Event.KeyboardEvent("b")))
+                    { key.target=button; button.SendEvent(key); }
+                    Check(LevelEditorState.Tool==LevelEditorTool.Paint,"焦点在面板按钮时B快捷键未进入画笔");
+                    var search = panel.Query<TextField>().First();
+                    panel.UseWorkbenchTool("select");
+                    using (var key = KeyDownEvent.GetPooled(Event.KeyboardEvent("b")))
+                    { key.target=search; search.SendEvent(key); }
+                    Check(LevelEditorState.Tool==LevelEditorTool.Select,"输入框内B被误当成画笔快捷键");
+                }
                 else if (name == "stable-fold-layout")
                 {
                     host.rootVisualElement.style.justifyContent = Justify.FlexEnd;

@@ -624,6 +624,7 @@ namespace Project.LevelEditor.Editor
             RegisterCallback<DetachFromPanelEvent>(_ => Unsubscribe());
             schedule.Execute(Refresh).Every(200);
             RegisterCallback<GeometryChangedEvent>(_ => FitToScene());
+            RegisterCallback<KeyDownEvent>(OnPanelKeyDown, TrickleDown.TrickleDown);
             SelectMode(SceneEditMode.Object);
             Refresh();
             if (previousPanel != null)
@@ -700,7 +701,7 @@ namespace Project.LevelEditor.Editor
             foreach (var item in new[] { ("paint", "画 B"), ("erase", "擦 E"), ("rectangle", "矩形 R"), ("select", "点选 V") })
             {
                 string key = item.Item1;
-                var button = new Button(() => UseWorkbenchTool(key)) { text = item.Item2, style = { flexGrow = 1, height = 32, fontSize = 12 } };
+                var button = new Button(() => UseWorkbenchTool(key)) { name = "workbench-tool-" + key, text = item.Item2, style = { flexGrow = 1, height = 32, fontSize = 12 } };
                 workTools[key] = button; tools.Add(button);
             }
             var group = new VisualElement(); group.Add(tools);
@@ -764,12 +765,30 @@ namespace Project.LevelEditor.Editor
             RefreshSession();
         }
 
+        private static string WorkbenchToolForKey(KeyCode key) => key switch
+        {
+            KeyCode.B => "paint", KeyCode.E => "erase", KeyCode.R => "rectangle", KeyCode.V => "select", _ => null,
+        };
+
+        private void OnPanelKeyDown(KeyDownEvent evt)
+        {
+            if (!SceneEditSession.IsLocked(sceneView) || evt.altKey || evt.ctrlKey || evt.commandKey ||
+                EditorApplication.isPlayingOrWillChangePlaymode) return;
+            // Panel buttons own UI Toolkit keyboard focus, so those keys never
+            // reach duringSceneGui. Leave all field editing/navigation alone.
+            for (var element = evt.target as VisualElement; element != null && element != this; element = element.parent)
+                if (element.ClassListContains("unity-base-field")) return;
+            string tool = WorkbenchToolForKey(evt.keyCode);
+            if (tool == null) return;
+            UseWorkbenchTool(tool); evt.StopPropagation();
+        }
+
         private void OnWorkbenchKeys(SceneView view)
         {
             Event evt = Event.current;
             if (view != sceneView || !SceneEditSession.IsLocked(view) || EditorGUIUtility.editingTextField || GUIUtility.hotControl != 0 ||
                 evt == null || evt.type != EventType.KeyDown || evt.alt || evt.control || evt.command || EditorApplication.isPlayingOrWillChangePlaymode) return;
-            string tool = evt.keyCode switch { KeyCode.B => "paint", KeyCode.E => "erase", KeyCode.R => "rectangle", KeyCode.V => "select", _ => null };
+            string tool = WorkbenchToolForKey(evt.keyCode);
             if (tool == null) return;
             UseWorkbenchTool(tool); evt.Use();
         }

@@ -1,12 +1,13 @@
-## 2026-11-18 场景作者工作台（进行中，第五检查点）
+## 2026-11-18 场景作者工作台（进行中，第六检查点）
 
-- 分支codex/editor/scene-authoring-redesign，基线69a8a4b；a1739777、b059c65e、975899aa、785dba45已推送。仅隔离工作树，不合main、不写D盘项目或正式Gaming。
+- 分支codex/editor/scene-authoring-redesign，基线69a8a4b；a1739777、b059c65e、975899aa、785dba45、69f24f5a已推送。仅隔离工作树，不合main、不写D盘项目或正式Gaming。
 - Scene Overlay统一物体/美术资源、实例Inspector、房间导航与Claude配色；可编辑MossAqueduct和13类连接场景成套交付。32px宽轮廓覆盖两格，旧Palette兼容。
 - 冷开实际发现归属组件无稳定MonoScript资产，拆出同名GridArtRegionOwnershipLink.cs；仅修三份自有Scene脚本引用，新增Prefab持久化回归。当前相关EditMode142/142通过37.091秒；前次旧Canvas性能项间歇失败，隔离1/1和随后完整回归通过，记录保留。
 - 第8轮独立副本GUI：物体368→369一次撤销回368；美术387→388、撤销387、重做388；美术/Scene分别保存清除dirty。撤销后的完整Map哈希与初始不同，待字段级排查。实际记录和截图在Docs/Developer/Evidence/SceneWorkbench20261117/Round8。
 - 已修：展开面板保持高度，资源/参数折叠不移动上方工具；美术首次选可见未锁层，显式选择按图层ID保留；选择物体卡片清除残留矩形状态。真实附着UI布局/零写入断言通过，原生停靠前台复验仍待做。
 - 基础平面方块缺材质导致粉色，现引用已有Neutral材质；重开/编译后只恢复临时MPB着色，不写作者字段或Undo。第9轮后台冷开+GPU验证材质、黑色着色、368物体/388美术保存数据；本轮完整Map JSON撤销前后相同，第8轮哈希差异根因仍未证明。相关EditMode145/145通过37.560秒，证据Round9。
-- 用户两图仅作母版排列/连接拓扑参考，沿用苔草风格；先建四边开口的弯曲母版及20种象限取样合同，再生成一张图并程序提取。结构覆盖通过且Claude有条件可继续；新母图仍待相位/47邻接/Unity验证，未导入。先前独立圆头十字母图不符合纠正后的拓扑，不作通过素材。
+- 用户两图仅作母版排列/连接拓扑参考，沿用苔草风格。单张弯曲母版384逻辑像素，程序提取20类象限、验证47种紧凑邻接；r2c/r3b/r3c/r3d已在本地独立Scene实际GPU渲染，未替换已提交样板。Claude对r3b有条件可继续，孔洞宽窄接头仍需返工；r3d只清除44个受洋红污染的图集像素。r3c虽边界数值归零却产生规则草齿，已淘汰。安全来源、完整审图、脚本、实际渲染与限制归档Round4WindingMotherSources.zip。
+- 第10轮原生浏览中资源折叠保持工具位置，观察器未记录作者数据变化。附着UI Toolkit真实Pointer回归可进入画笔；B发给面板按钮则先失败，补面板键盘路由后21/21通过，输入框B保留。相关EditMode146/146通过36.079秒，正式四资源及原样板/Packages/ProjectSettings不变，证据Round10。前台点击失败是否受tooltip影响仍未证明，修复后的原生B仍待复验。
 - 完整绑定、Scene点击隔离、浅色、重编译恢复、原生停靠与新美术实际连接仍待验收。
 - 美术r3/r4成功生成但完整Claude审图退回，未导入Unity；Round3RejectedSources.zip归档源图、提示词、安全来源与意见。窄条颗粒/厚度、端帽和宽窄接缝继续返工，不能称定稿。
 - 详见Docs/Developer/SCENE_AUTHORING_WORKBENCH_20261117.md。原生2D/正式Gaming及两份历史JSON哈希保持基线。
