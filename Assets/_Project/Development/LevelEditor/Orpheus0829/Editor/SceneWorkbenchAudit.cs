@@ -123,6 +123,50 @@ namespace Project.LevelEditor.Editor
                     { key.target=search; search.SendEvent(key); }
                     Check(LevelEditorState.Tool==LevelEditorTool.Select,"输入框内B被误当成画笔快捷键");
                 }
+                else if (name == "binding-selection-ui")
+                {
+                    var input = new GameObject("Button source"); SceneManager.MoveGameObjectToScene(input,preview);
+                    var button = input.AddComponent<DoorButton>();
+                    var child = new GameObject("Door artwork"); child.transform.SetParent(go.transform);
+                    Selection.activeGameObject = child;
+                    for (int frame=0;frame<4;frame++) yield return null;
+                    Undo.FlushUndoRecordObjects(); undo=Undo.GetCurrentGroup(); undoHistory=UndoHistoryForAudit();
+                    string authors=EditorJsonUtility.ToJson(go.GetComponent<DoorController>())+EditorJsonUtility.ToJson(button);
+                    bool previewDirty=preview.isDirty;
+                    var fold=panel.Q<Foldout>("workbench-binding"); fold.value=true;
+                    void Click(Button control)
+                    {
+                        Vector2 at=control.worldBound.center;
+                        using(var down=PointerDownEvent.GetPooled(new Event {type=EventType.MouseDown,button=0,mousePosition=at}))
+                        {down.target=control;control.SendEvent(down);}
+                        using(var up=PointerUpEvent.GetPooled(new Event {type=EventType.MouseUp,button=0,mousePosition=at}))
+                        {up.target=control;control.SendEvent(up);}
+                    }
+                    for (int frame=0;frame<4;frame++) yield return null;
+                    Click(panel.Q<Button>("binding-use-target"));
+                    var target=panel.Q<UnityEditor.UIElements.ObjectField>("binding-target");
+                    var source=panel.Q<UnityEditor.UIElements.ObjectField>("binding-source");
+                    Check(target.value==go,"所选美术子物体没有解析为作者根");
+                    Check(!panel.Q<Button>("binding-apply").enabledSelf,"来源未设置却允许连接");
+                    Selection.activeGameObject=input;
+                    for (int frame=0;frame<4;frame++) yield return null;
+                    Undo.FlushUndoRecordObjects(); undo=Undo.GetCurrentGroup(); undoHistory=UndoHistoryForAudit();
+                    Click(panel.Q<Button>("binding-use-source"));
+                    Check(target.value==go && source.value==input && panel.Q<Button>("binding-apply").enabledSelf,"切换所选物体丢失目标或没有识别门按钮");
+                    Check(LevelEditorState.Tool==LevelEditorTool.Select,"设置连接端点后未进入点选工具");
+                    foreach(float width in new[] {330f,380f,420f})
+                    {
+                        panel.style.width=width;
+                        for(int frame=0;frame<4;frame++) yield return null;
+                        foreach(var field in new[] {target,source})
+                        {
+                            Check(field.worldBound.width>=120 && field.worldBound.xMax<=panel.worldBound.xMax,"连接字段超出窄面板或不可读");
+                            Check(field.parent.worldBound.xMax<=panel.worldBound.xMax,"使用所选按钮超出窄面板");
+                        }
+                    }
+                    Check(authors==EditorJsonUtility.ToJson(go.GetComponent<DoorController>())+EditorJsonUtility.ToJson(button) && preview.isDirty==previewDirty,
+                        "预检/设置端点修改作者数据");
+                }
                 else if (name == "scene-click-isolation")
                 {
                     // Exercise the real painter in a real Scene GUI context.
@@ -218,6 +262,10 @@ namespace Project.LevelEditor.Editor
                 view.Close();
                 EditorSceneManager.ClosePreviewScene(preview);
             }
+            // Unity records selection restoration on later Editor updates.
+            // Settle fixture teardown before the next test samples its Undo group.
+            for (int frame=0;frame<4;frame++) yield return null;
+            Undo.FlushUndoRecordObjects();
         }
 
         private static string UndoHistoryForAudit()
@@ -237,7 +285,52 @@ namespace Project.LevelEditor.Editor
         {
             void Check(bool value, string reason) { if (!value) throw new InvalidOperationException(reason); }
             RoomRegion Region(string id, params Vector2Int[] cells) => new RoomRegion { id = id, label = id, cells = cells.ToList() };
-            if (name == "showcase-saved-contract")
+            if (name == "binding-preflight")
+            {
+                Scene a=EditorSceneManager.NewPreviewScene(),b=EditorSceneManager.NewPreviewScene();
+                try
+                {
+                    GameObject Make(string label,Scene scene) {var go=new GameObject(label); SceneManager.MoveGameObjectToScene(go,scene);return go;}
+                    var target=Make("Target door",a); var door=target.AddComponent<DoorController>();
+                    var input=Make("Button",a); var button=input.AddComponent<DoorButton>();
+                    var other=Make("Foreign button",b); other.AddComponent<DoorButton>();
+                    var platform=Make("Platform",a).AddComponent<MovingPlatformFeature>();
+                    var crank=Make("Crank",a).AddComponent<CrankPlatformFeature>();
+                    var mount=Make("Mount",a).AddComponent<PlatformMount>();
+                    string before=EditorJsonUtility.ToJson(door)+EditorJsonUtility.ToJson(button);
+                    int undo=Undo.GetCurrentGroup();string history=UndoHistoryForAudit();
+                    Check(SceneObjectAuthoring.TryResolveBinding(target,input,out var consumer,out var source,out _) && consumer==door && source==button,"场景对象无法识别门按钮");
+                    Check(SceneObjectAuthoring.TryResolveBinding(platform.gameObject,input,out consumer,out source,out _) && consumer==platform && source==button,"平台无法识别按钮信号");
+                    Check(SceneObjectAuthoring.TryResolveBinding(platform.gameObject,crank.gameObject,out consumer,out source,out _) && consumer==platform && source==crank,"平台无法识别曲柄");
+                    Check(SceneObjectAuthoring.TryResolveBinding(mount.gameObject,platform.gameObject,out consumer,out source,out _) && consumer==mount && source==platform,"附着物无法识别平台");
+                    Check(!SceneObjectAuthoring.TryResolveBinding(target,other,out _,out _,out _) && !SceneObjectAuthoring.TryResolveBinding(input,target,out _,out _,out _) && !SceneObjectAuthoring.TryResolveBinding(target,target,out _,out _,out _),"错误方向/跨Scene/自身连接未被拒绝");
+                    Check(!SceneObjectAuthoring.BindMechanism(door,button,out _) && !SceneObjectAuthoring.BindDoor(door,other.GetComponent<DoorButton>(),out _),"错误连接提交未被拒绝");
+                    Check(before==EditorJsonUtility.ToJson(door)+EditorJsonUtility.ToJson(button) && Undo.GetCurrentGroup()==undo && UndoHistoryForAudit()==history,"连接预检/非法提交产生作者写入或Undo");
+                }
+                finally {EditorSceneManager.ClosePreviewScene(a);EditorSceneManager.ClosePreviewScene(b);}
+            }
+            else if (name == "binding-reassign-undo")
+            {
+                Scene scene=EditorSceneManager.NewPreviewScene();
+                try
+                {
+                    GameObject Make(string label) {var go=new GameObject(label);SceneManager.MoveGameObjectToScene(go,scene);return go;}
+                    var first=Make("First door").AddComponent<DoorController>();
+                    var next=Make("Next door").AddComponent<DoorController>();
+                    var button=Make("Button").AddComponent<DoorButton>();
+                    first.SetButtons(new[] {button});
+                    Check(SceneObjectAuthoring.BindDoor(next,button,out _),"改绑失败");Undo.FlushUndoRecordObjects();
+                    Check(button.Owner==next && next.Buttons.Contains(button) && !first.Buttons.Contains(button),"改绑后双向引用不一致");
+                    Undo.PerformUndo();Check(button.Owner==first && first.Buttons.Contains(button) && next.Buttons.Count==0,"一步撤销没有恢复原门引用");
+                    Undo.PerformRedo();Check(button.Owner==next && next.Buttons.Contains(button) && !first.Buttons.Contains(button),"重做没有恢复改绑");
+                    int undo=Undo.GetCurrentGroup();string history=UndoHistoryForAudit();
+                    string before=EditorJsonUtility.ToJson(first)+EditorJsonUtility.ToJson(next)+EditorJsonUtility.ToJson(button);
+                    Check(SceneObjectAuthoring.BindDoor(next,button,out _) && !SceneObjectAuthoring.TryResolveBinding(next.gameObject,button.gameObject,out _,out _,out _),"重复连接识别失败");
+                    Check(Undo.GetCurrentGroup()==undo && UndoHistoryForAudit()==history && before==EditorJsonUtility.ToJson(first)+EditorJsonUtility.ToJson(next)+EditorJsonUtility.ToJson(button),"重复连接产生伪Undo或作者写入");
+                }
+                finally {EditorSceneManager.ClosePreviewScene(scene);}
+            }
+            else if (name == "showcase-saved-contract")
             {
                 string folder=SceneWorkbenchShowcase.Folder;
                 var paths=new[] { SceneWorkbenchShowcase.ScenePath,folder+"/ShowcaseMap.asset",
@@ -323,7 +416,7 @@ namespace Project.LevelEditor.Editor
                     map.layers.Reverse();
                     panel.RefreshArtLayerChoices(other);
                     Check(layers.index == 0,"无可编辑层时丢失只读浏览入口");
-                    Check(EditorJsonUtility.ToJson(map)==before && Undo.GetCurrentGroup()==undo,"选择图层写入作者Map或Undo");
+                    Check(EditorJsonUtility.ToJson(map)==before && Undo.GetCurrentGroup()==undo,$"选择图层写入作者Map或Undo；mapEqual={EditorJsonUtility.ToJson(map)==before}; group={undo}/{Undo.GetCurrentGroup()}");
                 }
                 finally { host.Close(); UnityEngine.Object.DestroyImmediate(map); UnityEngine.Object.DestroyImmediate(other); UnityEngine.Object.DestroyImmediate(view); EditorSceneManager.ClosePreviewScene(preview); }
             }

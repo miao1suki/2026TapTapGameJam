@@ -1,0 +1,59 @@
+{
+  "unity": "6000.3.12f1",
+  "baselineCommit": "9685db34",
+  "tests": {
+    "total": "151",
+    "passed": "151",
+    "failed": "0",
+    "skipped": "0",
+    "duration": "39.7911913"
+  },
+  "sourceSHA256": {
+    "Assets/_Project/Development/LevelEditor/Orpheus0829/Editor/SceneLevelEditorOverlay.cs": "fae6339b993ab27ad4e7f6b0986018f087dbc357096f7a14cff184918b81e141",
+    "Assets/_Project/Development/LevelEditor/Orpheus0829/Editor/SceneObjectAuthoring.cs": "967f85593d1e73316a852fe0d73a1410ccb6d17871dbc1398ff2935abeb80b8d",
+    "Assets/_Project/Development/LevelEditor/Orpheus0829/Editor/SceneWorkbenchAudit.cs": "b2bad4daaaaab23763f151a3f095a5bd7eeda3fdb523cc0d303dd86217ca4c64",
+    "Assets/_Project/Development/LevelEditor/SceneAuthoringTests/SceneWorkbenchTests.cs": "2b9ac4a2bd4daea26bc5bd68b6e265e049ae295b2c18831432d165638e88220f"
+  },
+  "formalSHA256": {
+    "Assets/_Project/Scenes/Playing/Gaming.unity": "16acab3b7a0b828b4dc6b41387f1ecd918bfbfa46254c2b6170018d189e7a324",
+    "Assets/_Project/Scenes/Playing/Gaming_Art.asset": "62172b600b200d47abc5c5cebc2e03cd35c40aff12fa60da262b3a21204d688d",
+    "Assets/_Project/Scenes/Playing/Gaming.planning.json": "5714d40118dd1109d0f56f80dd6dd9ccd9a0b622a93867bba27f200e37ea3c90",
+    "Assets/_Project/Content/LevelMaps/ÕýÊ½¹Ø¿¨.json": "5714d40118dd1109d0f56f80dd6dd9ccd9a0b622a93867bba27f200e37ea3c90"
+  },
+  "bindingUI": "GameObject fields plus use-current-selection buttons. Author-root selection, typed pair resolution, invalid/already-bound disabled. Binding fold precedes component Inspector.",
+  "bindingSafety": "Door reassignment records previous door, target door and button together; prefab overrides recorded. Identical bindings return before Undo/dirty writes. Invalid mechanism pairs rejected before opening an Undo group.",
+  "coverage": [
+    "Attached UI Toolkit pointer gestures for both use-selection buttons; artwork child resolves to author root; target survives selection change.",
+    "Binding fields and buttons fit actual 330/380/420px panel layouts; endpoint selection/preflight preserves serialized data and Undo history.",
+    "Door/button, signal platform, crank platform and mount pair inference; cross-scene/reversed/self pairs rejected.",
+    "One Undo/Redo restores all three door reassignment objects; repeat binding is a zero operation."
+  ],
+  "testHarness": {
+    "r34": "26/26 targeted tests passed, 4.7077537s.",
+    "r35": "150/151, old editable-layer-default failed its combined map/Undo check. The old diagnostic did not distinguish the two conditions.",
+    "r36": "151/151 after settling native selection recording at visual-fixture teardown. No product code changed between r35 and r36; root cause not independently proven by that rerun alone."
+  },
+  "nativeRound12": {
+    "status": "Partial; physical Escape stopped Computer Use. No further foreground input authorized by the continuation.",
+    "observed": "Native authoring enable and Scene door selection worked. Binding expansion outcome was inconclusive with competing foreground activity.",
+    "observer": "Independent observer remained sceneDirty=False, objects=368, mapDirty=False, revision=3, cells=388, hash cca62cbc0ce9f8eee74711a2d0dfe5ed.",
+    "screenshots": "No new screenshots archived; unrelated foreground content excluded."
+  },
+  "protectedPathsUnchanged": [
+    "Packages",
+    "ProjectSettings",
+    "Assets/_Project/Development/LevelEditor/SceneAuthoringShowcase",
+    "Assets/_Project/Code/Systems/GridArt/Editor/GridArtWideContour.cs"
+  ],
+  "notVerified": [
+    "Complete native binding journey and save/reopen; all-mode native click isolation; light skin; domain reload session; full game or Android build."
+  ],
+  "verification": {
+    "file": "verification.zip",
+    "sha256": "3c073378200e98521625245961e6d69e0f74a9d49e0a9013343e43555bcfa678",
+    "bytes": 30901,
+    "hashedEntries": 5,
+    "crcAndHashesVerified": true,
+    "credentialScanPassed": true
+  }
+}

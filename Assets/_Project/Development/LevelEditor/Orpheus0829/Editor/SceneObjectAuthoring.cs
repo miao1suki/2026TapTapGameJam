@@ -329,29 +329,83 @@ namespace Project.LevelEditor.Editor
         internal static bool BindDoor(DoorController door, DoorButton button, out string reason)
         {
             reason = string.Empty;
-            if (door == null || button == null || door.gameObject.scene != button.gameObject.scene) { reason = "请选择同一 Scene 中的门和按钮。"; return false; }
+            if (!SameEditableScene(door, button)) { reason = "请选择同一 Scene 中的门和按钮。"; return false; }
+            if (button.Owner == door && door.Buttons.Contains(button)) return true;
+            DoorController previous = button.Owner;
+            if (previous != null && previous.gameObject.scene != door.gameObject.scene) { reason = "按钮的原门位于其他 Scene，请先检查引用。"; return false; }
             Undo.IncrementCurrentGroup(); int undo = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("绑定门与按钮");
-            Undo.RecordObjects(new UnityEngine.Object[] { door, button }, "绑定门与按钮");
+            var changed = new List<UnityEngine.Object> { door, button };
+            if (previous != null && previous != door) changed.Add(previous);
+            Undo.RecordObjects(changed.ToArray(), "绑定门与按钮");
             door.SetButtons(door.Buttons.Concat(new[] { button }).Distinct().ToArray());
-            EditorUtility.SetDirty(door); EditorUtility.SetDirty(button); EditorSceneManager.MarkSceneDirty(door.gameObject.scene);
+            foreach (var value in changed)
+            {
+                EditorUtility.SetDirty(value);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(value);
+            }
+            EditorSceneManager.MarkSceneDirty(door.gameObject.scene);
             Undo.CollapseUndoOperations(undo); NotifyChanged(); return true;
+        }
+
+        private static bool SameEditableScene(Component consumer, Component source) =>
+            consumer != null && source != null && consumer != source &&
+            !EditorApplication.isPlayingOrWillChangePlaymode &&
+            !EditorUtility.IsPersistent(consumer) && !EditorUtility.IsPersistent(source) &&
+            consumer.gameObject.scene.IsValid() && consumer.gameObject.scene == source.gameObject.scene;
+
+        private static bool IsMechanismPair(Component consumer, Component source) =>
+            consumer is MovingPlatformFeature && (source is CrankPlatformFeature || source is MonoBehaviour and IMechanismSignalSource) ||
+            consumer is CrankPlatformFeature && source is MechanismBaseFeature ||
+            consumer is PlatformMount && source is MovingPlatformFeature;
+
+        private static bool HasMechanismBinding(Component consumer, Component source) =>
+            consumer is MovingPlatformFeature platform && (source is CrankPlatformFeature crank
+                ? platform.IsCrankControlled && platform.CrankController == crank
+                : new SerializedObject(platform).FindProperty("driveMode").intValue == (int)MovingPlatformDriveMode.SignalControlled && platform.LinkedControls.Contains(source as MonoBehaviour)) ||
+            consumer is CrankPlatformFeature handle && handle.BrakeBase == source ||
+            consumer is PlatformMount mount && mount.Platform == source;
+
+        internal static bool TryResolveBinding(GameObject target, GameObject input, out Component consumer, out Component source, out string reason)
+        {
+            consumer = source = null;
+            reason = "先在场景中点选目标，再设置来源物体。";
+            if (target == null || input == null) return false;
+            if (target == input) { reason = "目标和来源不能是同一个物体。"; return false; }
+            if (!target.scene.IsValid() || target.scene != input.scene || EditorUtility.IsPersistent(target) || EditorUtility.IsPersistent(input))
+            { reason = "目标和来源必须是同一 Scene 中的实例。"; return false; }
+            if (EditorApplication.isPlayingOrWillChangePlaymode) { reason = "请退出运行模式后连接机关。"; return false; }
+            var matches = (from a in target.GetComponents<Component>()
+                           from b in input.GetComponents<Component>()
+                           where a != null && b != null && (a is DoorController && b is DoorButton || IsMechanismPair(a,b))
+                           select (a,b)).ToArray();
+            if (matches.Length != 1)
+            {
+                reason = matches.Length == 0 ? "类型不匹配：目标用门、平台、曲柄或附着物；来源用相应按钮、信号源、基座或平台。"
+                    : "这两个物体有多组可连接组件，请在实例 Inspector 中明确设置。";
+                return false;
+            }
+            (consumer,source) = matches[0];
+            if (consumer is DoorController door && source is DoorButton button ? button.Owner == door && door.Buttons.Contains(button) : HasMechanismBinding(consumer,source))
+            { reason = "这两个物体已经连接。"; return false; }
+            reason = target.name + " ← " + input.name;
+            return true;
         }
 
         internal static bool BindMechanism(Component consumer, Component source, out string reason)
         {
             reason = string.Empty;
-            if (consumer == null || source == null || consumer.gameObject.scene != source.gameObject.scene) { reason = "请选择同一 Scene 中的消费者与信号源。"; return false; }
+            if (!SameEditableScene(consumer, source)) { reason = "请选择同一 Scene 中的消费者与信号源。"; return false; }
+            if (!IsMechanismPair(consumer,source)) { reason = "当前消费者与来源类型不匹配。"; return false; }
+            if (HasMechanismBinding(consumer,source)) return true;
             Undo.IncrementCurrentGroup(); int undo = Undo.GetCurrentGroup(); Undo.SetCurrentGroupName("绑定机关关系");
             Undo.RecordObjects(new UnityEngine.Object[] { consumer, source }, "绑定机关关系");
-            bool applied = true;
             if (consumer is MovingPlatformFeature platform && source is CrankPlatformFeature crank) platform.BindCrank(crank);
             else if (consumer is MovingPlatformFeature signalPlatform && source is MonoBehaviour signal && source is IMechanismSignalSource)
                 signalPlatform.BindSignalSources(signalPlatform.LinkedControls.Concat(new[] { signal }).Distinct().ToArray());
             else if (consumer is CrankPlatformFeature crankFeature && source is MechanismBaseFeature mechanismBase) crankFeature.BindBase(mechanismBase);
             else if (consumer is PlatformMount mount && source is MovingPlatformFeature mountedPlatform) mount.Bind(mountedPlatform);
-            else applied = false;
-            if (!applied) { Undo.RevertAllDownToGroup(undo); reason = "当前消费者与来源类型不匹配。"; return false; }
-            EditorUtility.SetDirty(consumer); EditorSceneManager.MarkSceneDirty(consumer.gameObject.scene);
+            EditorUtility.SetDirty(consumer); PrefabUtility.RecordPrefabInstancePropertyModifications(consumer);
+            EditorSceneManager.MarkSceneDirty(consumer.gameObject.scene);
             Undo.CollapseUndoOperations(undo); NotifyChanged(); return true;
         }
     }

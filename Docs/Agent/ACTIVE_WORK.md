@@ -1,4 +1,4 @@
-## 2026-11-18 场景作者工作台（进行中，第八检查点）
+## 2026-11-18 场景作者工作台（进行中，第九检查点）
 
 - 分支codex/editor/scene-authoring-redesign，基线69a8a4b；a1739777、b059c65e、975899aa、785dba45、69f24f5a、a83fae93、1ee86735已推送。仅隔离工作树，不合main、不写正式Gaming。应用归档中断后已从4b4af20a快照恢复同一路径及原分支，保留未提交改动；Library重建。
 - Scene Overlay统一物体/美术资源、实例Inspector、房间导航与Claude配色；可编辑MossAqueduct和13类连接场景成套交付。32px宽轮廓覆盖两格，旧Palette兼容。
@@ -13,6 +13,10 @@
 - 母版结构独立验证为84格单连通、四边连续开口、20象限齐全及47邻接。复用原母图的单套16px、固定紧凑裁片、宽片直采/向内偏移均已实际GPU测试并淘汰；r4新母图Claude完整复审仍返工。未重复付费生图，未修改正式渲染逻辑或原样板；来源/后处理/失败实验归档Round5MotherExtractionExperiments.zip。
 - 单母图r6只校正采样清单816对中的30对宽/紧凑边界，相对去污染r3d改586像素；数值相等仍有暗槽，不能称无缝美术通过。Claude完整复审20261118-173952-726：保留A/r3d基线，B/r6修暗槽后有条件继续，C/r5c返工。没有新付费生图或程序补画叶簇。
 - r6独立可编辑候选成套交付于Development/LevelEditor/WindingMotherLabR6：Aqueduct、Connections、All47三份Scene；Map/归属/Palette/纹理及各自生成依赖共457文件、5,195,578字节。YAML GUID闭包无缺失，URP默认材质来自固定Package；三份实际GPU图与本次素材哈希一致。源码/正式资源与第11轮一致，复用148/148测试。来源/复现/审图/GPU/依赖清单见Round6MixedBoundarySources.zip及Round6Provenance.json。r6未定稿，r3d仍保留为基线，不替换原已提交样板。
+- 9685db34已推送。第12轮将机关连接移到实例组件参数前：目标/来源支持直接使用Scene所选作者根，自动解析既有类型契约，显示预检并禁用无效或已连接操作；不必从Inspector拖具体组件。改绑门按钮同时记录旧门、新门和按钮，单次Undo/Redo恢复双向引用，Prefab override同步记录；重复连接不新增Undo或dirty。
+- 真实附着UI Toolkit Pointer验证两侧“使用所选”、选择切换保留目标及330/380/420px宽度；覆盖类型方向、跨Scene、自连接、只读预检和三方改绑撤销。相关EditMode151/151、0失败/跳过、39.791秒；Round12保留r34/r35/r36 XML、源码/正式资源哈希。r35旧默认图层项失败后在夹具清理中等待Selection记录稳定，完整复跑通过；旧组合断言不能证明具体失败字段。
+- 第12轮原生仅观察到开启与选择物体，完整绑定未完成；前台出现用户其他窗口后停止，随后用户按Escape终止Computer Use。本次继续仅做后台任务，不归档用户其他窗口，不将局部观察当作原生绑定通过。
+- r7复用母图中4块原生8×8草纹理，经紧凑片土芯掩码转移1985像素，alpha和宽图不变；三份独立Scene实际GPU已导出。暗槽减轻但重复草齿/细柱暗缝仍在，没有完整Claude复审或美术通过，不替换原样板/r6。来源、脚本、实际GPU与同坐标对比归档Round7TextureTransferExperiment.zip，仅实验归档交付，本地r7资产不收录。
 - 完整原生绑定、各模式原生点击隔离、浅色、重编译恢复、原生停靠与新美术实际连接审美仍待验收；r3d保留为未定稿候选。
 - 较早的独立紧凑美术r3/r4成功生成但完整Claude审图退回，未导入Unity；Round3RejectedSources.zip归档源图、提示词、安全来源与意见。此处不是本轮连续母图r3/r4。窄条颗粒/厚度、端帽和宽窄接缝继续返工，不能称定稿。
 - 详见Docs/Developer/SCENE_AUTHORING_WORKBENCH_20261117.md。原生2D/正式Gaming及两份历史JSON哈希保持基线。

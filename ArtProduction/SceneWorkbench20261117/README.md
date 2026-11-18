@@ -31,3 +31,7 @@ r3b从同一新母图提取，实际Unity展示复审为有条件可继续；孔
 `Round6MixedBoundarySources.zip`只修采样清单中宽/紧凑片真正相接的30对边界（清单共816对），相对r3d改变586像素。校正依然来自生成像素的局部平均/去污染，没有代码补画叶簇。零边界差不代表视觉连续：实际Unity孔洞长条仍有暗槽、周期草齿。Claude完整审图20261118-173952-726保留A/r3d为基线，B/r6有条件继续，C/r5c返工。`Round6Provenance.json`索引完整输入/复现脚本、实际GPU、审图与依赖闭包，逐文件SHA和ZIP CRC已验证。
 
 本轮另外交付可直接编辑的`Assets/_Project/Development/LevelEditor/WindingMotherLabR6`，含`Aqueduct.unity`、`Connections.unity`、`All47.unity`及独立作者资产和生成依赖。它是未定稿候选，不自动替换原样板或r3d。素材与GPU导出哈希核对一致；YAML依赖闭包只允许本候选及其Scene/Map对应的生成目录，未扩大收录其他本地实验。URP默认材质沿用已有Package。源码未变，复用第11轮148项通过结果，本轮没有前台交互或构建验收。
+
+`Round7TextureTransferExperiment.zip`保留同源纹理转移实验及复现脚本。脚本从原生384px母图选择4块8×8全不透明草纹理，经目标紧凑片的土芯掩码替换RGB，共1985像素；保留alpha与宽图。输出经过目标掩码合成，不能称为完整裁片未经改变的直采，也没有程序绘制叶簇或新增付费生成。384px是本地最近邻处理尺度，未独立证明供应端有效像素/导出倍率。
+
+包内包含独立Aqueduct、Connections、All47实际Unity GPU图，以及r3d/r6/r7同坐标接头对比；SourcePatchReview只是软件图集预览。r7减轻水平暗槽，但草齿仍规则、细柱仍有暗缝，未获得完整Claude复审，`artApproved:false`。本次只归档实验，不提交本地WindingMotherLabR7资产或替换原样板。`texture-transfer.json`的`unityImported:false`为导入前历史值，实际状态以Round7Provenance.json与Unity结果为准。ZIP内逐文件SHA及CRC已核验。

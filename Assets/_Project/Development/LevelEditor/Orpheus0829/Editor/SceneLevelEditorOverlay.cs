@@ -389,6 +389,7 @@ namespace Project.LevelEditor.Editor
         private ObjectField bindingConsumer;
         private ObjectField bindingSource;
         private Label bindingStatus;
+        private Button bindingApply, bindingUseTarget, bindingUseSource;
         private readonly VisualElement artPanel;
         private DropdownField artLayer;
         private DropdownField artBrush;
@@ -911,7 +912,7 @@ namespace Project.LevelEditor.Editor
             SceneEditSession.Exit(sceneView, sessionOwner);
         }
 
-        private void MarkSummaryDirty() => summaryDirty = true;
+        private void MarkSummaryDirty() { summaryDirty = true; RefreshBindingState(); }
 
         private void BeginObjectPainting()
         {
@@ -1384,16 +1385,59 @@ namespace Project.LevelEditor.Editor
         private VisualElement BuildBindingPanel(out InspectorElement inspector, out ObjectField consumer, out ObjectField source, out Label status)
         {
             var panel = new VisualElement { style = { marginTop = 6 } };
+            var fold = new Foldout { name = "workbench-binding", text = "机关连接", value = false };
+            consumer = new ObjectField("目标物体") { name = "binding-target", objectType = typeof(GameObject), allowSceneObjects = true };
+            source = new ObjectField("来源物体") { name = "binding-source", objectType = typeof(GameObject), allowSceneObjects = true };
+            VisualElement ChoiceRow(ObjectField field, bool target)
+            {
+                var row = new VisualElement { style = { flexDirection = FlexDirection.Row, marginBottom = 4 } };
+                field.style.flexGrow = 1; field.style.flexShrink = 1; field.style.minWidth = 0;
+                var use = new Button(() => UseSelectionForBinding(target)) { name = target ? "binding-use-target" : "binding-use-source", text = "使用所选" };
+                use.style.width = 80; use.style.flexShrink = 0;
+                if (target) bindingUseTarget = use; else bindingUseSource = use;
+                field.RegisterValueChangedCallback(_ => RefreshBindingState());
+                row.Add(field); row.Add(use); return row;
+            }
+            fold.Add(ChoiceRow(consumer,true)); fold.Add(ChoiceRow(source,false));
+            bindingApply = new Button(ApplySelectedBinding) { name = "binding-apply", text = "连接这两个物体" };
+            bindingApply.style.minHeight = 28; fold.Add(bindingApply);
+            status = new Label { name = "binding-status", style = { whiteSpace = WhiteSpace.Normal, fontSize = 12, color = SceneWorkbenchTheme.Muted } };
+            fold.Add(status); panel.Add(fold);
             panel.Add(new Label("真实实例参数") { style = { unityFontStyleAndWeight = FontStyle.Bold } });
             inspector = new InspectorElement(); panel.Add(inspector);
-            var fold = new Foldout { text = "机关引用绑定", value = false };
-            consumer = new ObjectField("消费者") { objectType = typeof(Component), allowSceneObjects = true };
-            source = new ObjectField("来源 / 目标") { objectType = typeof(Component), allowSceneObjects = true };
-            fold.Add(consumer); fold.Add(source);
-            var row = new VisualElement { style = { flexDirection = FlexDirection.Row } };
-            row.Add(RegionButton("绑定门按钮", BindDoor)); row.Add(RegionButton("绑定机关", BindMechanism)); fold.Add(row);
-            status = new Label { style = { whiteSpace = WhiteSpace.Normal, fontSize = 12, color = new Color(.72f, .75f, .79f) } }; fold.Add(status); panel.Add(fold);
             return panel;
+        }
+
+        private void UseSelectionForBinding(bool target)
+        {
+            var selected = LevelEditorBlockFactory.SelectedPlacedBlock()?.gameObject ?? Selection.activeGameObject;
+            if (selected == null || !selected.scene.IsValid() || EditorUtility.IsPersistent(selected)) return;
+            UseWorkbenchTool("select");
+            (target ? bindingConsumer : bindingSource).value = selected;
+        }
+
+        private void RefreshBindingState()
+        {
+            if (bindingStatus == null) return;
+            bool valid = SceneObjectAuthoring.TryResolveBinding(bindingConsumer.value as GameObject,bindingSource.value as GameObject,
+                out _,out _,out string reason);
+            bindingApply.SetEnabled(valid);
+            bindingStatus.text = reason;
+            bindingStatus.style.color = valid ? SceneWorkbenchTheme.Text : reason == "这两个物体已经连接。" ? SceneWorkbenchTheme.Saved : SceneWorkbenchTheme.Muted;
+            bool selected = Selection.activeGameObject != null && Selection.activeGameObject.scene.IsValid() && !EditorUtility.IsPersistent(Selection.activeGameObject);
+            bindingUseTarget.SetEnabled(selected && !EditorApplication.isPlayingOrWillChangePlaymode);
+            bindingUseSource.SetEnabled(selected && !EditorApplication.isPlayingOrWillChangePlaymode);
+        }
+
+        private void ApplySelectedBinding()
+        {
+            if (!SceneObjectAuthoring.TryResolveBinding(bindingConsumer.value as GameObject,bindingSource.value as GameObject,
+                out var consumer,out var source,out string reason)) { bindingStatus.text = reason; return; }
+            bool applied = consumer is DoorController door && source is DoorButton button
+                ? SceneObjectAuthoring.BindDoor(door,button,out reason)
+                : SceneObjectAuthoring.BindMechanism(consumer,source,out reason);
+            RefreshBindingState();
+            if (!applied) bindingStatus.text = reason;
         }
 
         private VisualElement BuildArtPanel()
@@ -1572,6 +1616,7 @@ namespace Project.LevelEditor.Editor
             ApplyPaletteSelection();
             SceneObjectAuthoring.ActiveChannel = previousChannel;
             RefreshObjectStatus();
+            RefreshBindingState();
         }
 
         private void ApplyPaletteSelection()
@@ -1787,6 +1832,7 @@ namespace Project.LevelEditor.Editor
                 button.SetEnabled(block != null);
             }
             RefreshObjectStatus();
+            RefreshBindingState();
         }
 
         private void FitInspectorFields()
@@ -1804,20 +1850,6 @@ namespace Project.LevelEditor.Editor
                 label.style.flexShrink = 1; label.style.whiteSpace = WhiteSpace.Normal;
             });
             selectedInspector.Query<VisualElement>(className: "unity-base-field").ForEach(field => field.style.minWidth = 0);
-        }
-
-        private void BindDoor()
-        {
-            DoorController door = (bindingConsumer.value as Component)?.GetComponent<DoorController>();
-            DoorButton button = (bindingSource.value as Component)?.GetComponent<DoorButton>();
-            SceneObjectAuthoring.BindDoor(door, button, out string reason);
-            bindingStatus.text = string.IsNullOrEmpty(reason) ? "门与按钮双向引用已绑定。" : reason;
-        }
-
-        private void BindMechanism()
-        {
-            SceneObjectAuthoring.BindMechanism(bindingConsumer.value as Component, bindingSource.value as Component, out string reason);
-            bindingStatus.text = string.IsNullOrEmpty(reason) ? "机关真实 Unity 引用已绑定。" : reason;
         }
 
         private void RefreshArtChoices()
@@ -1912,7 +1944,7 @@ namespace Project.LevelEditor.Editor
             artStatus.text = count > 0 ? $"已显式认领 {count} 个当前层锚点。" : SceneArtAuthoring.Status;
         }
 
-        private void OnObjectChanged() { summaryDirty = true; RefreshObjectStatus(); }
+        private void OnObjectChanged() { summaryDirty = true; RefreshObjectStatus(); RefreshBindingState(); }
         private void OnArtChanged() { summaryDirty = true; if (artStatus != null) artStatus.text = SceneArtAuthoring.Status; }
     }
 }

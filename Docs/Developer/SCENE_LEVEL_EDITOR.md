@@ -34,7 +34,9 @@ Palette 是出生模板。新实例只接收一次 Prefab 与默认参数，随�
 
 同一稳定作者 ID 的多实例作为逻辑组移动/删除；覆盖索引保留合并形状孔洞。Unity Move Tool 和格移动同步 Transform 与 Cell；跨区默认拒绝，显式重绑才更新区域/容器。删除前扫描反向引用；有引用默认拒绝，显式解绑删除在一个 Undo 中处理。
 
-机关绑定区仍使用真实 Unity ObjectField 和类型安全 API：门/按钮用 SetButtons/SetOwner，平台、曲柄、基座、PlatformMount 保留既有 API。不创建另一份引用 JSON。整体移动后的 Prefab Transform/Cell/区域修改显式记录 override，保存重开保留。
+实例参数内的“机关连接”位于组件参数前。先在Scene选择目标物体，点目标行“使用所选”；再选择来源物体，点来源行“使用所选”，最后点“连接这两个物体”。也可直接向两个ObjectField拖入Scene物体。选择美术子物体时会识别作者根；切换选择保留已填目标。
+
+预检显示可连接类型及缺失条件；反向、不支持、自连接、跨Scene、多个匹配类型或已连接时禁用执行。门/按钮沿用SetButtons/SetOwner，平台、曲柄、基座、PlatformMount沿用既有类型安全API。门按钮改绑支持一次Undo恢复旧门、新门和按钮引用，重复连接不新增Undo或dirty。组件类型存在歧义时，可在真实组件Inspector精确设置引用。不创建另一份引用JSON。整体移动和绑定修改显式记录Prefab override，保存重开保留。
 
 ## 美术
 

@@ -1,5 +1,7 @@
 # 系统索引
 
+2026-11-18 第12轮机关连接：目标/来源可直接使用Scene所选作者物体，自动预检既有机关类型；连接区在组件参数前，重复/无效操作禁用。门按钮改绑同时记录旧门、新门与按钮，单次Undo/Redo恢复引用，Prefab override同步记录。真实附着UI和相关EditMode151/151通过，Round12保存证据与前台检查中止边界。r7仅复用母图纹理修紧凑土芯，实际GPU仍有周期草齿，Round7来源归档保留未通过状态；原样板与生产采样算法不变。
+
 2026-11-18 场景工作台进行中：Scene Overlay整合物体/美术、真实实例Inspector和房间导航；MossAqueduct与13类连接Scene可编辑交付。面板B/V及点击画笔已原生验证；删除遮挡工具栏的重复tooltip，移除后原生复查待做。新增SceneView事件点击隔离阳性对照、真实Undo历史及保存展示场景引用/碰撞/美术归属核对，相关EditMode148/148通过。单张弯曲母图结构已独立核对20象限/47邻接；WindingMotherLabR6新增三份成套候选Scene及依赖，实际GPU已导出，但宽窄接头暗槽仍待返工，Claude仅有条件继续，r3d仍保留作基线，原样板未替换。Round4/5/6来源档案和Round10/11验证保存失败实验及限制。完整原生绑定、各模式点击隔离、浅色和重编译会话仍待验收。见[进度与边界](../Developer/SCENE_AUTHORING_WORKBENCH_20261117.md)。
 
 2026-11-06 原生 2D 回归：`Native2DScenePreview` 负责 Renderer2D SceneView 提前清屏；`WaterUnderlayRendererFeature`/`PixelWaterDistortion` 使用当前相机正确 UV、连续世界噪波和水足迹；`PlanarPlacementTolerance` 统一边界接触但保留薄墙阻挡；`ColorPresentationVisibility` 仅裁掉不可见表现预热，颜色玩法同步，水邻接使用空间索引。见 [修复与验收](../Developer/NATIVE_2D_REGRESSION_FIXES_20261106.md)、[搬运 API](Integration/PLAYER_CARRY_API.md)、[水体 API](Integration/GAMEPLAY_PIXEL_WATER_API.md)。仅在 2D 专项分支交付。
