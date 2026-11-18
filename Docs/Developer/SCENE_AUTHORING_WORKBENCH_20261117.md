@@ -72,6 +72,18 @@ Palette可选widePieces要求13个32×32片完整齐备；宽源片跨两格以�
 
 本轮正式Gaming/Map/两份历史JSON哈希与基线相同，已提交原样板、Packages和ProjectSettings无diff。新候选Scene仅留本地，复现工具只响应显式命令且拒绝覆盖现有候选目录。修复后的原生B、完整绑定、浅色和重编译会话仍待验收。
 
+## 第11轮结果与当前边界
+
+原生SceneView复验B/V和直接点击画笔均成功；观察器保持368物体、388美术、revision 3及Map哈希cca62cbc0ce9f8eee74711a2d0dfe5ed。开启按钮的原生tooltip实际盖住下方工具栏，现移除重复提示。原生截图在修复前取得，不能宣称移除后的前台复查已完成。
+
+自动化使用SceneView.SendEvent检查正文、两处边角和原生标题带区域不启动物体笔画，面板外能启动作为阳性对照；取消暂存，不发送提交MouseUp。Undo门槛比较真实历史及游标，固定Editor的内部只读绑定参考[Unity Undo源码](https://github.com/Unity-Technologies/UnityCsReference/blob/master/Editor/Mono/Undo/Undo.bindings.cs)，本机6000.3.12f1已实际调用验证。早期在Repaint内替换Event.current的测试收到Ignore，后续夹具Selection又污染了基线；这些是测试设置失败，完整XML保留，不算产品回归。当前夹具选择先稳定，再测工作台打开及交互。
+
+保存展示场景用OpenPreviewScene实际只读重开：368个非空作者身份、366碰撞格与美术地形逐格一致、6层387锚点、门按钮双向引用、地形归属完整、0丢失脚本。Scene/Map/Palette/Ownership未标脏，文件哈希及Undo历史不变。相关SceneWorkbench/GridArt/ObjectArtwork EditMode148/148、0失败/跳过，38.029秒；Round11归档源码/正式资源哈希、测试记录与原生证据。这不代表完整可游玩关卡或完整绑定制作旅程通过。
+
+母版结构独立检查：84格单连通、四边连续开口、20种有向象限可从模板提取，256邻域归并47类且没有缺失状态。此检查不检验生成图轮廓，更不能证明接缝美观。r3e固定裁片丢失单格草；r4单套16px虽避免宽窄混接，Claude完整复审20261118-160537-611仍退回，草薄且土芯点阵重复；限厚版本更薄。复用r3母图统一缩采的r5仍失去厚度。r5b直接宽片采样丢失窄条，r5c向内取样恢复部分可见面却仍有接头/孤岛问题。两次渲染实验已撤回，GridArtWideContour源码与提交基线完全相同；不把实验结果留作新默认行为。本轮没有重复付费生图。
+
+Round5MotherExtractionExperiments.zip保存原图/关键词、安全来源、固定/单套提取脚本、拓扑检查、Claude意见、实际GPU与失败的实验源码文本；清单逐文件SHA和ZIP CRC已验证。r4限厚版历史GPU只保留缩略图，Library原图随应用归档移除，明确不作为全分辨率证据。原样板未替换，r3d继续是未定稿候选。候选命令支持-compactOnly，仅在全新实验目录建立单套16px笔刷。
+
 ## 下一轮
 
 继续从同源母图修复宽/紧凑轮廓在孔洞处的过渡，以真实Unity连接裁片复审，保留失败实验。PendingCompact中的HTTP500是更早一次请求，不能误记为本轮r3母图失败。继续验证浅色、重编译恢复，以及可比较的物体/美术制作、参数与门按钮绑定旅程，记录点击/展开层级/命令坐标距离，完成实际绘制、撤销、保存重开核对。

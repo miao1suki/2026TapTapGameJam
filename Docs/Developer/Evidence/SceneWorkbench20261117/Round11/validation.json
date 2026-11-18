@@ -1,0 +1,68 @@
+{
+  "unity": "6000.3.12f1",
+  "tests": {
+    "total": "148",
+    "passed": "148",
+    "failed": "0",
+    "skipped": "0",
+    "duration": "38.0291129"
+  },
+  "sourceSHA256": {
+    "Assets/_Project/Development/LevelEditor/Orpheus0829/Editor/SceneLevelEditorOverlay.cs": "28c3a715c05b3490bd938f4fb7cde79627ccd36133ebc9b7a790b236da09490d",
+    "Assets/_Project/Development/LevelEditor/Orpheus0829/Editor/SceneWorkbenchAudit.cs": "ecfdfa013700260ccc452d35ad6f442a82c30d02cad4d0fc3f1a572a6959a625",
+    "Assets/_Project/Development/LevelEditor/Orpheus0829/Editor/SceneWorkbenchWindingLab.cs": "6ca64ffd92be03225945f433f8c423eb4bb05de3ba8e582d4dd58d1fd68a2edd",
+    "Assets/_Project/Development/LevelEditor/Orpheus0829/Editor/SceneWorkbenchInput.cs": "0a2584658c3da94aa2c6e6c4051f1ab490a4684d5252c796af20dfb48460714b",
+    "Assets/_Project/Development/LevelEditor/SceneAuthoringTests/SceneWorkbenchTests.cs": "210e70528a6038db983b692f908bf68c055161425bb1cf092a40d6b7308af5e9"
+  },
+  "formalSHA256": {
+    "Assets/_Project/Scenes/Playing/Gaming.unity": "16acab3b7a0b828b4dc6b41387f1ecd918bfbfa46254c2b6170018d189e7a324",
+    "Assets/_Project/Scenes/Playing/Gaming_Art.asset": "62172b600b200d47abc5c5cebc2e03cd35c40aff12fa60da262b3a21204d688d",
+    "Assets/_Project/Scenes/Playing/Gaming.planning.json": "5714d40118dd1109d0f56f80dd6dd9ccd9a0b622a93867bba27f200e37ea3c90",
+    "Assets/_Project/Content/LevelMaps/\u6b63\u5f0f\u5173\u5361.json": "5714d40118dd1109d0f56f80dd6dd9ccd9a0b622a93867bba27f200e37ea3c90"
+  },
+  "protectedPathsUnchanged": [
+    "Packages",
+    "ProjectSettings",
+    "Assets/_Project/Development/LevelEditor/SceneAuthoringShowcase",
+    "Assets/_Project/Code/Systems/GridArt/Editor/GridArtWideContour.cs"
+  ],
+  "nativeUIRound11": {
+    "BWithButtonFocus": "passed",
+    "V": "passed",
+    "paintButtonClick": "passed",
+    "observer": "sceneDirty=False; objects=368; mapDirty=False; revision=3; cells=388; mapHash=cca62cbc0ce9f8eee74711a2d0dfe5ed",
+    "tooltip": "Native tooltip visibly covered toolbar. Removed redundant tooltip after this foreground run.",
+    "limit": "Native screenshots precede tooltip removal. No native post-removal check or Undo-stack snapshot was recorded."
+  },
+  "sceneClickIsolation": "SceneView.SendEvent: content center/corners/header strip do not stage object strokes; canvas control does. No MouseUp/author commit. Actual Undo records/cursor unchanged after settling fixture selection.",
+  "testHarnessFailures": {
+    "r24-r28": "Replacing Event.current inside Repaint gave Ignore on the positive control. Not a product regression.",
+    "r29": "SceneView.SendEvent positive control passed; old current-group equality rejected native MouseDown group advance.",
+    "r30-r31": "Actual history check exposed the test fixture selecting its sample before baseline. The selection record was confirmed in diagnostic XML.",
+    "r32": "Fixture selection settled before workbench baseline; 22/22 passed.",
+    "r33": "Full related 148/148 passed with saved-showcase contract."
+  },
+  "showcaseSavedContract": {
+    "objects": 368,
+    "terrainCollisionCells": 366,
+    "artLayers": 6,
+    "artAnchors": 387,
+    "realDoorButtonBidirectionalReferences": true,
+    "terrainOwnershipComplete": true,
+    "missingScripts": 0,
+    "authorFilesDirtyOrRewritten": false,
+    "undoHistoryUnchanged": true,
+    "playableLevel": false
+  },
+  "archiveRecovery": "Restored same path/branch and snapshot 4b4af20a9c88c3034026d502ce53ec391335e72b after interrupted app archive removed checkout. Ignored Library cache was rebuilt.",
+  "artStatus": "All follow-up extraction/sampling candidates remain rejected; r3d retained as unapproved progress; original showcase unchanged.",
+  "notVerified": [
+    "Full native mechanism binding journey",
+    "Light theme",
+    "Domain reload session journey",
+    "Native click isolation across every mode",
+    "Art seams approval",
+    "Playthrough or Android/build"
+  ],
+  "verificationZipSHA256": "a4ca7ee4425d7f1151c048c8128929fa4f828a4954aa1bd89c181e03a6daf06a"
+}

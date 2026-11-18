@@ -1,6 +1,6 @@
 # 系统索引
 
-2026-11-18 场景工作台进行中：Scene Overlay整合物体/美术、真实实例Inspector和房间导航；MossAqueduct与13类连接Scene可编辑交付。归属保存重开、折叠位置、默认可编辑层和方块临时着色已修；面板按钮焦点的B快捷键补UI Toolkit路由，输入框保留打字。相关EditMode146/146通过；完整绑定、浅色、重编译会话及修复后原生B仍待验收。单张弯曲母图已程序提取并在独立Scene实际GPU验证47邻接和展示图；孔洞宽窄接头仍需返工，未替换已提交样板。Round4WindingMotherSources.zip保存来源/脚本/候选/失败实验，Round10保存验证。见[进度与边界](../Developer/SCENE_AUTHORING_WORKBENCH_20261117.md)。
+2026-11-18 场景工作台进行中：Scene Overlay整合物体/美术、真实实例Inspector和房间导航；MossAqueduct与13类连接Scene可编辑交付。面板B/V及点击画笔已原生验证；删除遮挡工具栏的重复tooltip，移除后原生复查待做。新增SceneView事件点击隔离阳性对照、真实Undo历史及保存展示场景引用/碰撞/美术归属核对，相关EditMode148/148通过。单张弯曲母图结构已独立核对20象限/47邻接，后处理与实际GPU候选仍未通过接缝审美；保留r3d进度候选，原样板未替换。Round4/5来源档案和Round10/11验证保存失败实验及限制。完整原生绑定、各模式点击隔离、浅色和重编译会话仍待验收。见[进度与边界](../Developer/SCENE_AUTHORING_WORKBENCH_20261117.md)。
 
 2026-11-06 原生 2D 回归：`Native2DScenePreview` 负责 Renderer2D SceneView 提前清屏；`WaterUnderlayRendererFeature`/`PixelWaterDistortion` 使用当前相机正确 UV、连续世界噪波和水足迹；`PlanarPlacementTolerance` 统一边界接触但保留薄墙阻挡；`ColorPresentationVisibility` 仅裁掉不可见表现预热，颜色玩法同步，水邻接使用空间索引。见 [修复与验收](../Developer/NATIVE_2D_REGRESSION_FIXES_20261106.md)、[搬运 API](Integration/PLAYER_CARRY_API.md)、[水体 API](Integration/GAMEPLAY_PIXEL_WATER_API.md)。仅在 2D 专项分支交付。
 

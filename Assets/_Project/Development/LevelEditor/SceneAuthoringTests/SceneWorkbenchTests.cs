@@ -19,6 +19,9 @@ public sealed class SceneWorkbenchTests
     [UnityEngine.TestTools.UnityTest]
     public System.Collections.IEnumerator ToolbarPointerAndPanelKeyboardEventsActivateTools() => VisualCase("toolbar-ui-events");
 
+    [UnityEngine.TestTools.UnityTest]
+    public System.Collections.IEnumerator ScenePainterRejectsPanelAndHeaderButAcceptsCanvas() => VisualCase("scene-click-isolation");
+
     private static System.Collections.IEnumerator VisualCase(string name)
     {
         Type audit = AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("Project.LevelEditor.Editor.SceneWorkbenchAudit")).FirstOrDefault(t=>t!=null);
@@ -43,6 +46,7 @@ public sealed class SceneWorkbenchTests
     [TestCase("ownership-script-persistence")]
     [TestCase("editable-layer-default")]
     [TestCase("preview-tint-zero-write")]
+    [TestCase("showcase-saved-contract")]
     public void PreservesAuthoringContract(string name)
     {
         Type audit = AppDomain.CurrentDomain.GetAssemblies()

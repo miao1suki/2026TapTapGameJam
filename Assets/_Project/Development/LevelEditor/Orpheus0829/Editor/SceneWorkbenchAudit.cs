@@ -29,6 +29,7 @@ namespace Project.LevelEditor.Editor
             Scene active = SceneManager.GetActiveScene();
             bool dirty = active.isDirty;
             int undo = Undo.GetCurrentGroup();
+            string undoHistory = UndoHistoryForAudit();
             var previousSelection = Selection.activeObject;
             Scene preview = EditorSceneManager.NewPreviewScene();
             var view = ScriptableObject.CreateInstance<SceneView>();
@@ -49,6 +50,10 @@ namespace Project.LevelEditor.Editor
                     foreach (object item in overlays)
                         if (item is SceneLevelEditorOverlay overlay) overlay.displayed = false;
                 for (int frame=0;frame<4;frame++) yield return null;
+                // Fixture selection itself is recorded by Unity. Settle it
+                // before measuring the workbench's browsing/input behavior.
+                Undo.FlushUndoRecordObjects();
+                undo = Undo.GetCurrentGroup(); undoHistory = UndoHistoryForAudit();
                 host.position = new Rect(20,20,420,1000); host.Show();
                 var panel = new SceneLevelEditorPanel(view);
                 host.rootVisualElement.Add(panel);
@@ -118,6 +123,67 @@ namespace Project.LevelEditor.Editor
                     { key.target=search; search.SendEvent(key); }
                     Check(LevelEditorState.Tool==LevelEditorTool.Select,"输入框内B被误当成画笔快捷键");
                 }
+                else if (name == "scene-click-isolation")
+                {
+                    // Exercise the real painter in a real Scene GUI context.
+                    // An independent IMGUI probe supplies the UI panel's screen
+                    // origin, rather than repeating the input gate's conversion.
+                    panel.RemoveFromHierarchy();
+                    view.position = new Rect(10,10,1000,1000);
+                    panel.style.position = Position.Absolute;
+                    panel.style.left = 20; panel.style.top = 80;
+                    view.rootVisualElement.Add(panel);
+                    Vector2 panelScreenOrigin = default;
+                    bool measured = false;
+                    IMGUIContainer probe = null;
+                    probe = new IMGUIContainer(() =>
+                    {
+                        panelScreenOrigin = GUIUtility.GUIToScreenPoint(Vector2.zero) - probe.worldBound.position;
+                        measured = true;
+                    });
+                    probe.style.position = Position.Absolute;
+                    probe.style.left = 0; probe.style.top = 0;
+                    probe.style.width = 1; probe.style.height = 1;
+                    view.rootVisualElement.Add(probe);
+                    view.Focus();
+                    panel.ToggleLock(); panel.UseWorkbenchTool("select"); panel.UseWorkbenchTool("paint");
+                    for (int frame=0;frame<8;frame++) { view.Repaint(); yield return null; }
+                    var painter = typeof(LevelEditorScenePainter);
+                    var stroke = painter.GetField("strokeActive", System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static);
+                    Vector2 guiOrigin = default;
+                    bool guiMeasured = false;
+                    Action<SceneView> measure = current =>
+                    {
+                        if (current != view || Event.current.type != EventType.Repaint) return;
+                        guiOrigin=GUIUtility.GUIToScreenPoint(Vector2.zero); guiMeasured=true;
+                    };
+                    SceneView.duringSceneGui += measure;
+                    try
+                    {
+                        for (int frame=0;frame<8;frame++) { view.Repaint(); yield return null; }
+                        Check(measured && guiMeasured,"Scene/UI坐标探针未执行");
+                        Check(LevelEditorState.EditMode && LevelEditorState.Tool==LevelEditorTool.Paint,"点击隔离检查未启用物体画笔");
+                        var bounds = panel.worldBound;
+                        var points = new[] { bounds.center, new Vector2(bounds.xMin+3,bounds.yMin+3),
+                            new Vector2(bounds.xMax-3,bounds.yMax-3), new Vector2(bounds.center.x,bounds.yMin-12) };
+                        void Down(Vector2 point) => view.SendEvent(new Event { type=EventType.MouseDown,button=0,
+                            mousePosition=panelScreenOrigin+point-guiOrigin });
+                        foreach (var point in points)
+                        {
+                            Down(point);
+                            Check(!(bool)stroke.GetValue(null),"面板正文或原生标题下的点击启动了物体笔画");
+                        }
+                        Down(new Vector2(bounds.xMax+40,bounds.yMin+80));
+                        Check((bool)stroke.GetValue(null),"面板外Scene点击未启动笔画，隔离测试缺少有效阳性对照");
+                    }
+                    finally
+                    {
+                        // No MouseUp is sent: release the staged stroke without
+                        // committing objects, dirty state or an Undo operation.
+                        LevelEditorScenePainter.SetOverlayAuthoring(view,false);
+                        SceneView.duringSceneGui -= measure; probe.RemoveFromHierarchy();
+                    }
+                }
                 else if (name == "stable-fold-layout")
                 {
                     host.rootVisualElement.style.justifyContent = Justify.FlexEnd;
@@ -138,7 +204,11 @@ namespace Project.LevelEditor.Editor
                     Check(panel.Q<ScrollView>("workbench-body").resolvedStyle.display == DisplayStyle.None && panel.worldBound.height < height,"显式收起未释放画面空间");
                 }
                 else throw new ArgumentException(name);
-                Check(active.isDirty == dirty && Undo.GetCurrentGroup() == undo,"只读布局验收写入作者数据或Undo");
+                // Native MouseDown advances Unity's current group even without
+                // an undo record. Compare the actual history/cursor as well.
+                Check(active.isDirty == dirty && UndoHistoryForAudit() == undoHistory &&
+                    (name == "scene-click-isolation" || Undo.GetCurrentGroup() == undo),
+                    $"只读布局验收写入作者数据或Undo历史；dirty={dirty}/{active.isDirty}; group={undo}/{Undo.GetCurrentGroup()}; before={undoHistory}; after={UndoHistoryForAudit()}");
             }
             finally
             {
@@ -150,11 +220,59 @@ namespace Project.LevelEditor.Editor
             }
         }
 
+        private static string UndoHistoryForAudit()
+        {
+            // Read-only internal binding; fail explicitly if the pinned Editor
+            // changes it. Never clear or rebuild the user's Undo history.
+            var method = typeof(Undo).GetMethod("GetRecords",
+                System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static,
+                null,new[] { typeof(List<string>), typeof(int).MakeByRefType() },null);
+            if (method == null) throw new InvalidOperationException("当前Unity没有可审计的Undo历史接口");
+            var records = new List<string>(); object[] args = { records, 0 };
+            method.Invoke(null,args);
+            return args[1]+":"+string.Concat(records.Select(record => record.Length+":"+record));
+        }
+
         public static void RunCase(string name)
         {
             void Check(bool value, string reason) { if (!value) throw new InvalidOperationException(reason); }
             RoomRegion Region(string id, params Vector2Int[] cells) => new RoomRegion { id = id, label = id, cells = cells.ToList() };
-            if (name == "preview-tint-zero-write")
+            if (name == "showcase-saved-contract")
+            {
+                string folder=SceneWorkbenchShowcase.Folder;
+                var paths=new[] { SceneWorkbenchShowcase.ScenePath,folder+"/ShowcaseMap.asset",
+                    folder+"/ShowcasePalette.asset",folder+"/ShowcaseOwnership.asset" };
+                string Hash(string path)
+                {
+                    using var hash=System.Security.Cryptography.SHA256.Create();
+                    return Convert.ToBase64String(hash.ComputeHash(File.ReadAllBytes(path)));
+                }
+                var hashes=paths.Select(Hash).ToArray();
+                string history=UndoHistoryForAudit();
+                Scene scene=EditorSceneManager.OpenPreviewScene(SceneWorkbenchShowcase.ScenePath);
+                try
+                {
+                    var roots=scene.GetRootGameObjects();
+                    var objects=roots.SelectMany(root=>root.GetComponentsInChildren<Transform>(true)).ToArray();
+                    Check(objects.All(item=>GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(item.gameObject)==0),"保存展示场景含丢失脚本");
+                    var blocks=objects.Select(item=>item.GetComponent<LevelEditorPlacedBlock>()).Where(item=>item!=null).ToArray();
+                    Check(blocks.Length==368 && blocks.All(item=>!string.IsNullOrEmpty(item.AuthoringId)),"展示物体数量或作者身份丢失");
+                    var door=objects.Select(item=>item.GetComponent<DoorController>()).Single(item=>item!=null);
+                    var button=objects.Select(item=>item.GetComponent<DoorButton>()).Single(item=>item!=null);
+                    Check(door.Buttons.Count==1 && door.Buttons[0]==button && button.Owner==door,"重开后门按钮双向引用丢失");
+                    var art=objects.Select(item=>item.GetComponent<GridArtScene>()).Single(item=>item!=null);
+                    var map=art.map; var terrain=map.layers.Single(layer=>layer.id=="moss_terrain");
+                    Check(map.layers.Count==6 && map.layers.Sum(layer=>layer.cells.Count)==387 && terrain.cells.Count==366,"重开后美术层或锚点不匹配");
+                    var solids=roots.Single(root=>root.name=="实体地形 · 与美术初始对齐").GetComponentsInChildren<BoxCollider2D>();
+                    Check(solids.Length==366 && solids.Select(item=>item.GetComponent<LevelEditorPlacedBlock>().Cell).ToHashSet().SetEquals(terrain.cells.Select(cell=>cell.position)),"碰撞和美术地形覆盖不一致");
+                    var ownership=art.GetComponent<GridArtRegionOwnershipLink>()?.Ownership;
+                    Check(ownership!=null && terrain.cells.All(cell=>!string.IsNullOrEmpty(ownership.Get(terrain.id,cell.position))),"重开后地形归属不完整");
+                    Check(!scene.isDirty && !EditorUtility.IsDirty(map) && !EditorUtility.IsDirty(map.palette) && !EditorUtility.IsDirty(ownership),"只读重开标脏作者数据");
+                }
+                finally { EditorSceneManager.ClosePreviewScene(scene); }
+                Check(paths.Select(Hash).SequenceEqual(hashes) && UndoHistoryForAudit()==history,"只读重开改写文件或Undo历史");
+            }
+            else if (name == "preview-tint-zero-write")
             {
                 var preview = EditorSceneManager.NewPreviewScene();
                 try

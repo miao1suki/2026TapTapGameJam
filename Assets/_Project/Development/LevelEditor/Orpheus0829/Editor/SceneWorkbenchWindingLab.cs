@@ -35,10 +35,12 @@ namespace Project.LevelEditor.Editor
                 int index = Array.IndexOf(args, "-windingArtInput");
                 if (index < 0 || index + 1 >= args.Length) throw new ArgumentException("缺少 -windingArtInput");
                 string input = Path.GetFullPath(args[index + 1]);
-                foreach (string name in new[] { "MossWindingCompactRaw.png", "MossWindingWideRaw.png" })
+                bool compactOnly = Array.IndexOf(args, "-compactOnly") >= 0;
+                string[] textures = compactOnly ? new[] { "MossWindingCompactRaw.png" } : new[] { "MossWindingCompactRaw.png", "MossWindingWideRaw.png" };
+                foreach (string name in textures)
                     if (!File.Exists(Path.Combine(input, name))) throw new FileNotFoundException(name);
                 AssetDatabase.CreateFolder(Parent, labName);
-                foreach (string name in new[] { "MossWindingCompactRaw.png", "MossWindingWideRaw.png" })
+                foreach (string name in textures)
                 {
                     string path = Folder + "/" + name;
                     File.Copy(Path.Combine(input, name), path);
@@ -58,7 +60,8 @@ namespace Project.LevelEditor.Editor
                 var palette = AssetDatabase.LoadAssetAtPath<GridArtPalette>(palettePath);
                 var brush = palette.brushes[0];
                 var compact = AssetDatabase.LoadAssetAtPath<Texture2D>(Folder + "/MossWindingCompactRaw.png");
-                var wide = AssetDatabase.LoadAssetAtPath<Texture2D>(Folder + "/MossWindingWideRaw.png");
+                var wide = compactOnly ? null : AssetDatabase.LoadAssetAtPath<Texture2D>(Folder + "/MossWindingWideRaw.png");
+                if (compactOnly) brush.widePieces = Array.Empty<Sprite>();
                 brush.label = "候选 · 弯曲母版同源提取（未定稿）";
                 for (int i = 0; i < 13; i++)
                 {
@@ -68,7 +71,7 @@ namespace Project.LevelEditor.Editor
                         sprite.name = label + i; AssetDatabase.AddObjectToAsset(sprite, palette); return sprite;
                     }
                     brush.pieces[i] = Piece(compact, 16, "WindingCompact_");
-                    brush.widePieces[i] = Piece(wide, 32, "WindingWide_");
+                    if (!compactOnly) brush.widePieces[i] = Piece(wide, 32, "WindingWide_");
                 }
                 EditorUtility.SetDirty(palette); AssetDatabase.SaveAssetIfDirty(palette);
                 Directory.CreateDirectory(Output);

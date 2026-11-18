@@ -479,7 +479,8 @@ namespace Project.LevelEditor.Editor
             sessionStatus.style.backgroundColor = SceneWorkbenchTheme.Surface;
             var stateRow = new VisualElement { style = { flexDirection = FlexDirection.Row, height = 32, marginTop = 4 } };
             sessionStatus.style.flexGrow = 1; sessionStatus.style.fontSize = 12;
-            sessionStatus.tooltip = "点击切换落笔；结束搭建会恢复进入前的 Scene 视角。";
+            // The button text already names its action. A native tooltip here
+            // opens over the paint/erase row and can obstruct the next click.
             stateRow.Add(sessionStatus);
             sceneSave = new Button(SaveSceneAuthor) { text = "Scene ✓" };
             artSave = new Button(SaveArtAuthors) { text = "美术 ✓" };

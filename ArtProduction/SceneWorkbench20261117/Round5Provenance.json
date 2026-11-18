@@ -1,0 +1,49 @@
+{
+  "archive": "Round5MotherExtractionExperiments.zip",
+  "sha256": "868fdfebf266a0a32defc7e134e137678ad3b7fdd460a6caa374724145b3bd4c",
+  "hashedInputs": 62,
+  "status": "All new candidates rejected; retained unapproved r3d; original showcase unchanged.",
+  "topologyValidation": {
+    "planSHA256": "b517cb1cb34f68ee049b8ffb66600374ef5038fc954fe88234310ba01887fa31",
+    "connectedGuideComponents": [
+      84
+    ],
+    "guidePorts": {
+      "top": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "bottom": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "left": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "right": [
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "orientedQuarterBasis": 20,
+    "rawNeighborhoods": 256,
+    "normalizedStates": 47,
+    "missingQuarterStates": [],
+    "artApproval": false,
+    "limits": [
+      "Checks geometry guide, not generated silhouette.",
+      "Does not cover every two-cell wide phase or visual seams."
+    ]
+  },
+  "native16Review": "20261118-160537-611: REWORK",
+  "sourceDetails": "CandidateRuns.json and Manifest.json in archive"
+}

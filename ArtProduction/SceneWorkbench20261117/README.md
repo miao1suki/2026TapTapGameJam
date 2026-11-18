@@ -23,3 +23,7 @@ Round3RejectedSources.zip记录紧凑草边r3/r4：均已成功生成，完整Cl
 r3b从同一新母图提取，实际Unity展示复审为有条件可继续；孔洞长条的宽/紧凑片过渡需返工。r3d只清除44个洋红污染像素，保留其他取样。候选在独立本地Scene运行，已提交的MossAqueduct/Palette未改变。`extraction.json`写于导入前，其`unityImported:false`是历史状态，实际运行以`CandidateRuns.json`及GPU图为准。
 
 解压后按`CandidateRuns.json`复现。显式命令`SceneWorkbenchWindingLab.CreateFromCommandLine`会在新的`WindingMotherLabR<轮次>`目录生成可编辑Scene/Map/Ownership/Palette/纹理，并在Library导出相机截图；目录已存在则拒绝覆盖。当前仍是候选阶段，未声称最终审图通过、原生多层绘画源或完整可游玩关卡。
+
+`Round5MotherExtractionExperiments.zip`归档后续单套16px母图及提取实验、完整Claude审图、独立20象限/47邻接结构检查和实际GPU。源图、提示词、安全请求、脚本及逐文件SHA均可追溯；`Round5Provenance.json`索引状态。所有新候选均退回，r3d继续是未定稿候选，原样板未替换。本次续做复用了已有源图，没有重复付费生成。
+
+固定裁切r3e丢失窄条；r4/r5单套16px草边变薄；r5b/r5c只在隔离实验临时改采样，前者窄条缺失，后者接头仍不合格，已全部撤回。包内实验C#为文本档案，不能当作生产渲染代码安装。r4限厚版历史GPU仅存缩略图，Library原图在工作树归档时移除。候选CLI的`-compactOnly`会清除宽片引用，只在新建候选Palette使用，默认宽片流程保持。
