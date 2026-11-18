@@ -288,7 +288,7 @@ namespace Project.LevelEditor.Editor
             pendingArtMap != null && pendingArtBrush >= 0;
 
         public override VisualElement CreatePanelContent() =>
-            new SceneLevelEditorPanel(containerWindow as SceneView);
+            new SceneLevelEditorPanel(containerWindow as SceneView, this);
 
         [MenuItem("Tools/2026TapTap/关卡编辑器/场景编辑器 _m")]
         public static void Open()
@@ -349,6 +349,7 @@ namespace Project.LevelEditor.Editor
     internal sealed class SceneLevelEditorPanel : VisualElement
     {
         private readonly SceneView sceneView;
+        private readonly SceneLevelEditorOverlay ownerOverlay;
         private readonly string sessionOwner;
         private readonly Button sessionStatus;
         private readonly Label modeStatus;
@@ -418,6 +419,7 @@ namespace Project.LevelEditor.Editor
         private readonly Dictionary<string, Button> workTools = new();
         private readonly Dictionary<SceneObjectChannel, Button> workChannels = new();
         private Button artChannelButton;
+        private Button allChannelsButton;
         private readonly Button sceneSave, artSave;
         private bool compact;
         private bool artContext;
@@ -427,8 +429,9 @@ namespace Project.LevelEditor.Editor
         private int sessionVisualHash;
         private bool sessionVisualReady;
 
-        internal SceneLevelEditorPanel(SceneView sceneView)
+        internal SceneLevelEditorPanel(SceneView sceneView, SceneLevelEditorOverlay overlay = null)
         {
+            ownerOverlay = overlay;
             this.sceneView = sceneView;
             body = new ScrollView { name = "workbench-body", style = { minHeight = 0, flexShrink = 1 } };
             body.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
@@ -450,7 +453,7 @@ namespace Project.LevelEditor.Editor
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             var heading = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             title.style.flexGrow = 1; heading.Add(title);
-            heading.Add(new Button(() => { compact = !compact; body.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex; }) { text = "展开 / 收起", tooltip = "最大化 Scene 时可收起资源与参数，只保留工具条。" });
+            heading.Add(new Button(ToggleCompact) { text = "展开 / 收起", tooltip = "最大化 Scene 时可收起资源与参数，只保留工具条。" });
             base.Add(heading);
             var subtitle = new Label("Scene 直接编辑 · 模板仅用于新建");
             subtitle.style.fontSize = 12f;
@@ -584,7 +587,7 @@ namespace Project.LevelEditor.Editor
             resourceFold.Add(resources); body.Add(resourceFold);
             var artSettings = new Foldout { text = "美术图层与笔刷设置", value = false }; artSettings.Add(artPanel); body.Add(artSettings);
             inspectorFold = new Foldout { text = "实例参数", value = true, viewDataKey = "workbench-inspector" };
-            var inspectorScroll = new ScrollView { style = { maxHeight = 240 } }; inspectorScroll.Add(bindingPanel); inspectorFold.Add(inspectorScroll); body.Add(inspectorFold);
+            inspectorFold.Add(bindingPanel); body.Add(inspectorFold);
             body.Add(navigation); body.Add(objectMore);
 
             var overview = new Foldout { text = "诊断 · 当前 Scene（只读）", value = false };
@@ -610,7 +613,7 @@ namespace Project.LevelEditor.Editor
             RegisterCallback<AttachToPanelEvent>(_ => Subscribe());
             RegisterCallback<DetachFromPanelEvent>(_ => Unsubscribe());
             schedule.Execute(Refresh).Every(200);
-            RegisterCallback<GeometryChangedEvent>(_ => { if (sceneView != null) { style.maxHeight = Mathf.Max(220, sceneView.position.height * .85f); body.style.maxHeight = Mathf.Max(100, sceneView.position.height * .85f - 120); } });
+            RegisterCallback<GeometryChangedEvent>(_ => FitToScene());
             SelectMode(SceneEditMode.Object);
             Refresh();
         }
@@ -671,6 +674,9 @@ namespace Project.LevelEditor.Editor
             }
             var group = new VisualElement(); group.Add(tools);
             var channels = new VisualElement { name = "workbench-channels", style = { flexDirection = FlexDirection.Row, marginTop = 4 } };
+            allChannelsButton = new Button(() => { ChooseResourceKind(false); SceneObjectAuthoring.ActiveChannel = null; LevelEditorState.Tool = LevelEditorTool.Select; RefreshSession(); })
+            { text = "全部", tooltip = "点选所有物体通道；同格重叠时选择候选。", style = { flexGrow = 1, height = 26 } };
+            channels.Add(allChannelsButton);
             foreach (var item in new[] { (SceneObjectChannel.TerrainSolid, "墙"), (SceneObjectChannel.WaterVolume, "水"), (SceneObjectChannel.GameplayProp, "道具") })
             {
                 var channel = item.Item1;
@@ -689,6 +695,7 @@ namespace Project.LevelEditor.Editor
         private void ChooseResourceKind(bool art)
         {
             artContext = art; SelectMode(art ? SceneEditMode.Art : SceneEditMode.Object);
+            resourceFold.value = true;
             resources?.Bind(paletteItems, activeArtScene?.map, art);
         }
 
@@ -705,9 +712,9 @@ namespace Project.LevelEditor.Editor
             artBrush.index = index; artErase.SetValueWithoutNotify(false); BindAuthoring(); RefreshSession();
         }
 
-        private void UseWorkbenchTool(string tool)
+        internal void UseWorkbenchTool(string tool)
         {
-            if (tool == "select") { SelectMode(SceneEditMode.Object); LevelEditorState.Tool = LevelEditorTool.Select; }
+            if (tool == "select") { SceneObjectAuthoring.ActiveChannel = null; SelectMode(SceneEditMode.Object); LevelEditorState.Tool = LevelEditorTool.Select; }
             else if (mode == SceneEditMode.Region)
             {
                 if (tool == "rectangle") { regionStatus.text = "区域使用连续四邻接笔画；矩形工具用于物体和美术。"; return; }
@@ -735,12 +742,42 @@ namespace Project.LevelEditor.Editor
             UseWorkbenchTool(tool); evt.Use();
         }
 
-        private void ToggleLock()
+        internal void ToggleLock()
         {
             if (sceneView == null) return;
             if (SceneEditSession.IsLocked(sceneView)) navigationPaused = !navigationPaused;
             else { navigationPaused = false; SceneEditSession.Enter(sceneView, sessionOwner); }
             RefreshSession();
+        }
+
+        private void FitToScene()
+        {
+            if (sceneView == null) return;
+            float height = Mathf.Max(220, Mathf.Min(760, sceneView.position.height * .85f));
+            style.maxHeight = height;
+            body.style.maxHeight = Mathf.Max(100, height - 180);
+            if (ownerOverlay == null || !ownerOverlay.floating || !float.IsFinite(resolvedStyle.height)) return;
+            Vector2 position = ownerOverlay.floatingPosition;
+            float bottom = Mathf.Max(0, sceneView.position.height - resolvedStyle.height - 60);
+            if (position.y > bottom) ownerOverlay.floatingPosition = new Vector2(position.x, bottom);
+        }
+
+        private void ToggleCompact()
+        {
+            Vector2 position = ownerOverlay != null ? ownerOverlay.floatingPosition : Vector2.zero;
+            if (ownerOverlay != null && ownerOverlay.floating)
+            {
+                EventCallback<GeometryChangedEvent> resized = null;
+                resized = evt =>
+                {
+                    if (Mathf.Approximately(evt.newRect.height, evt.oldRect.height)) return;
+                    UnregisterCallback(resized);
+                    schedule.Execute(() => { if (ownerOverlay.floating) ownerOverlay.floatingPosition = position; });
+                };
+                RegisterCallback(resized);
+            }
+            compact = !compact;
+            body.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         private void Subscribe()
@@ -899,9 +936,16 @@ namespace Project.LevelEditor.Editor
             var ownership = SceneArtAuthoring.OwnershipFor(activeArtScene);
             bool locked = SceneEditSession.IsLocked(sceneView);
             bool artDirty = map != null && EditorUtility.IsDirty(map) || ownership != null && EditorUtility.IsDirty(ownership);
-            int visualHash = (current.handle, current.isDirty, map, selectedLayer, selectedLayer?.visible, selectedLayer?.locked, locked, navigationPaused,
-                artDirty, mode, artContext, LevelEditorState.Tool, LevelEditorScenePainter.RectangleStroke, SceneObjectAuthoring.ActiveChannel,
-                artErase.value, artRectangle.value, EditorApplication.isPlayingOrWillChangePlaymode, EditorGUIUtility.isProSkin).GetHashCode();
+            // ValueTuple with more than eight fields hashes only its trailing fields.
+            // Include early fields explicitly: dirty flags and lock/pause must refresh immediately.
+            var visual = new HashCode();
+            visual.Add(current.handle); visual.Add(current.isDirty); visual.Add(map); visual.Add(selectedLayer);
+            visual.Add(selectedLayer?.visible); visual.Add(selectedLayer?.locked); visual.Add(locked); visual.Add(navigationPaused);
+            visual.Add(artDirty); visual.Add(mode); visual.Add(artContext); visual.Add(LevelEditorState.Tool);
+            visual.Add(LevelEditorScenePainter.RectangleStroke); visual.Add(SceneObjectAuthoring.ActiveChannel);
+            visual.Add(artErase.value); visual.Add(artRectangle.value);
+            visual.Add(EditorApplication.isPlayingOrWillChangePlaymode); visual.Add(EditorGUIUtility.isProSkin);
+            int visualHash = visual.ToHashCode();
             if (sessionVisualReady && visualHash == sessionVisualHash) { BindAuthoring(); return; }
             sessionVisualReady = true; sessionVisualHash = visualHash;
             layerVisible?.SetValueWithoutNotify(selectedLayer?.visible ?? false);
@@ -935,6 +979,7 @@ namespace Project.LevelEditor.Editor
                 LevelEditorState.Tool == LevelEditorTool.Select ? "select" : LevelEditorState.Tool == LevelEditorTool.Erase ? "erase" : LevelEditorScenePainter.RectangleStroke ? "rectangle" : "paint";
             foreach (var item in workTools) SceneWorkbenchTheme.Tool(item.Value, item.Key == activeTool, identity);
             foreach (var item in workChannels) SceneWorkbenchTheme.Tool(item.Value, !artContext && SceneObjectAuthoring.ActiveChannel == item.Key, SceneWorkbenchTheme.Object);
+            SceneWorkbenchTheme.Tool(allChannelsButton, !artContext && !SceneObjectAuthoring.ActiveChannel.HasValue, SceneWorkbenchTheme.Object);
             SceneWorkbenchTheme.Tool(artChannelButton, artContext, SceneWorkbenchTheme.Art);
             SceneWorkbenchTheme.Section(resourceFold, artContext ? SceneWorkbenchTheme.Art : SceneWorkbenchTheme.Object);
             RefreshObjectToolState();
@@ -1637,6 +1682,8 @@ namespace Project.LevelEditor.Editor
             if (block != null)
             {
                 inspectorFold.text = "实例参数 · " + block.name;
+                inspectorFold.value = true;
+                resourceFold.value = false;
                 foreach (var component in block.GetComponents<MonoBehaviour>())
                 {
                     if (component == null) continue;
@@ -1652,11 +1699,22 @@ namespace Project.LevelEditor.Editor
                 inspectorFold.text = "实例参数";
                 selectedInspector.Add(new Label("点选场景中的物体以编辑真实参数。") { style = { whiteSpace = WhiteSpace.Normal, color = new Color(.63f,.65f,.68f) } });
             }
+            schedule.Execute(() => { FitInspectorFields(); FitToScene(); });
             foreach (Button button in selectedObjectButtons)
             {
                 button.SetEnabled(block != null);
             }
             RefreshObjectStatus();
+        }
+
+        private void FitInspectorFields()
+        {
+            selectedInspector.Query<Label>(className: "unity-base-field__label").ForEach(label =>
+            {
+                label.style.minWidth = 90; label.style.width = 110; label.style.maxWidth = 120;
+                label.style.flexShrink = 1; label.style.whiteSpace = WhiteSpace.Normal;
+            });
+            selectedInspector.Query<VisualElement>(className: "unity-base-field").ForEach(field => field.style.minWidth = 0);
         }
 
         private void BindDoor()

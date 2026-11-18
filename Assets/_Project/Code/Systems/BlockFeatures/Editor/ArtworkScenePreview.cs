@@ -507,7 +507,7 @@ namespace Project.BlockFeatures.Editor
         private static void AddDoorIndicators(Entry entry, Bounds bounds, float cell)
         {
             var door = entry.owner.GetComponent<DoorController>();
-            var library = ObjectArtworkLibrary.Load();
+            var library = entry.owner.GetComponent<MechanismArtworkPresentation>()?.Artwork ?? ObjectArtworkLibrary.Load();
             if (door == null || library == null || library.doorWhiteIndicators == null) return;
             for (int i = 0; i < Mathf.Min(door.Buttons.Count, library.doorWhiteIndicators.Length); i++)
             {

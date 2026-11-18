@@ -51,6 +51,77 @@ namespace Project.GridArt.Tests
             sprite.name = name; AssetDatabase.AddObjectToAsset(sprite, texture); return sprite;
         }
         private void AddBrush() => GridArtLibraryService.Add(library, Sprite("Tile"), Vector2.one, new Rect(0,0,1,1), "地面");
+
+        private GridArtBrush AddWideTerrain()
+        {
+            var outerTexture = new Texture2D(16,16); var innerTexture = new Texture2D(32,32);
+            AssetDatabase.CreateAsset(outerTexture,folder+"/Outer.asset"); AssetDatabase.CreateAsset(innerTexture,folder+"/Inner.asset");
+            var outer = UnityEngine.Sprite.Create(outerTexture,new Rect(0,0,16,16),Vector2.zero,16);
+            var inner = UnityEngine.Sprite.Create(innerTexture,new Rect(0,0,32,32),Vector2.zero,16);
+            AssetDatabase.AddObjectToAsset(outer,outerTexture); AssetDatabase.AddObjectToAsset(inner,innerTexture);
+            var brush = new GridArtBrush { autoTerrain=true, pieces=Enumerable.Repeat(outer,13).ToArray(), widePieces=Enumerable.Repeat(inner,13).ToArray() };
+            library.brushes.Add(brush); EditorUtility.SetDirty(library); AssetDatabase.SaveAssets(); return brush;
+        }
+
+        [Test] public void WideContourWrapsOuterAndHoleBoundariesWithoutChangingOccupancy()
+        {
+            var brush=AddWideTerrain(); var layer=map.layers[0];
+            for(int y=0;y<9;y++) for(int x=0;x<9;x++) layer.Set(new Vector2Int(x,y),0);
+            string before=EditorJsonUtility.ToJson(map);
+            var quads=GridArtBuilder.BuildQuads(layer,library);
+            Assert.That(EditorJsonUtility.ToJson(map),Is.EqualTo(before));
+            GridArtQuad At(int x,int y) => quads.First(q=>q.bounds.position==new Vector2(x,y));
+            Assert.That(At(1,4).texture,Is.SameAs(brush.widePieces[0].texture));
+            Assert.That(At(1,4).uv.width,Is.EqualTo(.25f),"eight source pixels must cover half a world cell");
+            var cells=layer.cells.ToDictionary(c=>c.position,c=>c.brush);
+            Assert.That(GridArtWideContour.Resolve(cells,new Vector2Int(4,4),0,0).slot,Is.EqualTo(4),"deep interior retains quiet core");
+            layer.Erase(new Vector2Int(4,4),library); quads=GridArtBuilder.BuildQuads(layer,library);
+            cells=layer.cells.ToDictionary(c=>c.position,c=>c.brush);
+            Assert.That(GridArtWideContour.Resolve(cells,new Vector2Int(2,4),0,0).slot,Is.EqualTo(5),"hole must produce a broad right-facing edge two cells inward");
+            Assert.That(quads.Count,Is.EqualTo(80*4));
+        }
+
+        [Test] public void WideContourKeepsThinAndNegativeCoordinateTerrainClosed()
+        {
+            var brush=AddWideTerrain(); var layer=map.layers[0];
+            for(int x=-5;x<5;x++) layer.Set(new Vector2Int(x,-3),0);
+            var quads=GridArtBuilder.BuildQuads(layer,library);
+            Assert.That(quads.Count,Is.EqualTo(40));
+            Assert.That(quads.All(q=>q.texture==brush.pieces[0].texture),Is.True,"opposing outer edges must keep their source pieces, not the inset fill");
+            brush.widePieces[12]=null;
+            Assert.That(brush.HasWideContour,Is.False,"partial author configuration must not activate the feature");
+        }
+
+        [Test] public void WideContourIncrementalUpdateIncludesSecondNeighbourAcrossChunkBoundary()
+        {
+            var brush=AddWideTerrain(); var layer=map.layers[0];
+            for(int y=0;y<9;y++) for(int x=0;x<70;x++) layer.Set(new Vector2Int(x,y),0);
+            var output=GridArtBuilder.Apply(map,scene,false,true);
+            layer.Erase(new Vector2Int(30,4),library); int previousRevision=map.revision; map.revision++;
+            output=GridArtBuilder.ApplyAffected(map,scene,layer,new[]{new Vector2Int(30,4)},previousRevision);
+            bool updated=output.GetComponentsInChildren<MeshRenderer>().Any(r=> {
+                if(r.sharedMaterial.GetTexture("_BaseMap")!=brush.widePieces[0].texture) return false;
+                var mesh=r.GetComponent<MeshFilter>().sharedMesh; var vertices=mesh.vertices; var uvs=mesh.uv;
+                if(mesh.bounds.min.x<31.99f) return false;
+                return Enumerable.Range(0,vertices.Length).Any(i=>vertices[i].x==32 && vertices[i].y==4 && Mathf.Abs(uvs[i].x-.5f)<.0001f);
+            });
+            Assert.That(updated,Is.True,"a hole at x30 changes wide contour samples at x32 in the next render chunk");
+        }
+
+        [Test] public void WideContourRejectsWrongPixelScaleBeforeChangingSceneOutput()
+        {
+            var brush=AddWideTerrain(); map.layers[0].Set(Vector2Int.zero,0);
+            var output=GridArtBuilder.Apply(map,scene,false,true);
+            int roots=scene.rootCount, children=output.GetComponentsInChildren<Transform>().Length;
+            var meshes=output.GetComponentsInChildren<MeshFilter>().Select(f=>f.sharedMesh).ToArray();
+            brush.widePieces[0]=brush.pieces[0];
+            EditorUtility.SetDirty(library);
+            Assert.That(GridArtPixelLayout.TerrainIssue(brush),Does.Contain("32×32"));
+            Assert.Throws<InvalidOperationException>(()=>GridArtBuilder.Apply(map,scene,false,true));
+            Assert.That(scene.rootCount,Is.EqualTo(roots));
+            Assert.That(output.GetComponentsInChildren<Transform>().Length,Is.EqualTo(children));
+            Assert.That(output.GetComponentsInChildren<MeshFilter>().Select(f=>f.sharedMesh),Is.EqualTo(meshes));
+        }
         [UnityEngine.TestTools.UnityTest]
         public System.Collections.IEnumerator OffsetFieldsRemainReadableInNarrowInspector()
         {

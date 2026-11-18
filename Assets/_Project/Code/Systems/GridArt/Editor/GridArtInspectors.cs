@@ -48,6 +48,25 @@ namespace Project.GridArt.Editor
                         Edit(() => { if (brush.pieces == null || brush.pieces.Length != 13) System.Array.Resize(ref brush.pieces, 13); brush.pieces[index] = e.newValue as Sprite; });
                     }); terrain.Add(field); terrain.Add(feedback);
                 }
+                var wide = new Foldout { text = "宽轮廓 · 32像素源片（可选）", value = false };
+                wide.Add(new HelpBox("完整配置13片后启用。32像素源片按16像素/格连续覆盖两格；单格窄条沿用上方紧凑源片。使用法线时，两套源片必须放在同一图集中。", HelpBoxMessageType.Info));
+                for (int slot = 0; slot < labels.Length; slot++)
+                {
+                    int index = slot;
+                    var field = new ObjectField(labels[slot]) { objectType = typeof(Sprite), allowSceneObjects = false,
+                        value = brush.widePieces != null && slot < brush.widePieces.Length ? brush.widePieces[slot] : null };
+                    var feedback = new Label();
+                    field.RegisterValueChangedCallback(e =>
+                    {
+                        var sprite = e.newValue as Sprite;
+                        if (sprite != null && sprite.rect.size/GridArtPixelLayout.SourceScale(sprite,brush.sourcePixelScale) != Vector2.one*32)
+                        { field.SetValueWithoutNotify(e.previousValue); feedback.text = "宽轮廓需32×32原像素切片。"; return; }
+                        feedback.text = "";
+                        Edit(() => { System.Array.Resize(ref brush.widePieces,13); brush.widePieces[index] = sprite; });
+                    });
+                    wide.Add(field); wide.Add(feedback);
+                }
+                terrain.Add(wide);
                 foldout.Add(terrain); foldout.Add(stamp); details.Add(foldout);
             }
             var choices = new System.Collections.Generic.List<string>();

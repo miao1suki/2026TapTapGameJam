@@ -91,7 +91,8 @@ namespace Project.BlockFeatures.Editor
                 if (cacheDefault) defaults[cacheKey] = preview;
                 return true;
             }
-            if (library == null) library = ObjectArtworkLibrary.Load();
+            if (ObjectArtworkPlanningPreview.library == null) ObjectArtworkPlanningPreview.library = ObjectArtworkLibrary.Load();
+            var library = prefab.GetComponent<MechanismArtworkPresentation>()?.Artwork ?? ObjectArtworkPlanningPreview.library;
             if (library == null) return false;
 
             if (prefab.TryGetComponent<SubtitleTrigger>(out var sign))

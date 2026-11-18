@@ -31,6 +31,10 @@ namespace Project.GridArt
             foreach (var sprite in brush.pieces)
                 if (sprite != null && !IsRuleSprite(sprite, brush.sourcePixelScale))
                     return $"边角素材“{sprite.name}”为 {sprite.rect.width:0}×{sprite.rect.height:0} 像素。自动边角需16×16原像素；大图请先按原尺寸切片。";
+            if (brush.widePieces != null)
+                foreach (var sprite in brush.widePieces)
+                    if (sprite != null && sprite.rect.size / SourceScale(sprite,brush.sourcePixelScale) != Vector2.one*32)
+                        return $"宽轮廓素材“{sprite.name}”需32×32原像素；按16像素/格覆盖两格。";
             return null;
         }
 

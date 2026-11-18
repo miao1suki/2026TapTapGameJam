@@ -19,6 +19,8 @@ public sealed class SceneWorkbenchTests
     [TestCase("art-staged-undo")]
     [TestCase("art-owned-undo")]
     [TestCase("resource-stroke-cache")]
+    [TestCase("session-status-refresh")]
+    [TestCase("custom-mechanism-preview")]
     public void PreservesAuthoringContract(string name)
     {
         Type audit = AppDomain.CurrentDomain.GetAssemblies()

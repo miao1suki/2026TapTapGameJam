@@ -1,0 +1,78 @@
+{
+  "workflow": "Existing fixed n8n image workflow and Claude Code review; no alternate provider path.",
+  "requested_image_model": "gpt-image-2.5-sunburst (workflow default); actual provider model not independently verified",
+  "processing": "Measured grid crop, magenta alpha key, nearest-neighbour 16/32px sampling, contrast reduction in quiet core. No generated pixel art drawn by code.",
+  "sources": [
+    {
+      "file": "moss-terrain-bands-r3.png",
+      "sha256": "57f1ea92d9fdea9b31cea0127f9fc356482e3d08a204ede3554a37e263629742"
+    },
+    {
+      "file": "moss-terrain-band-brief.txt",
+      "sha256": "db88c781bea41de6ed9bbc5ec8eba601e2ee57de96577e7114ce1fc73eadc0e2"
+    },
+    {
+      "file": "moss-inner-corners-r1.png",
+      "sha256": "3cf249df329d7a22b0c6fea3b9accab80cd888ad494beb8e7fe6e8e27f05a571"
+    },
+    {
+      "file": "moss-inner-corners-brief.txt",
+      "sha256": "f025ded1d38cac702bbda1070abcabfd9fdc5e6a9a77867c0b142c06427eadad"
+    },
+    {
+      "file": "moss-terrain-half-safe-r4.png",
+      "sha256": "86b1be04a847246a0d5c3e5a3845893159dad7311aecdba730fdd4b8760011c5"
+    },
+    {
+      "file": "moss-terrain-half-safe-brief.txt",
+      "sha256": "a458eb3543f7f6799412651fc7e21e406b2a5c68ea5a7b25b69f2b467e0cff7a"
+    },
+    {
+      "file": "moss-inner-wide-r2.png",
+      "sha256": "85193fd3a9a2c66edbb996c0737d4d9f2d644d43df7351758ad161cdbd5c0274"
+    },
+    {
+      "file": "moss-inner-wide-brief.txt",
+      "sha256": "3a5f1d716ff87e84206ae84241299c9014ed554a8ed35f2e97d302dbf754977f"
+    },
+    {
+      "file": "moss-compact-r1.png",
+      "sha256": "ebabb7d0e8a529c99be16994210d17f88fa837dac959e2a2bf1c2bc0f0282214"
+    },
+    {
+      "file": "moss-compact-brief.txt",
+      "sha256": "7c1a50eb26cc033ad1363350ef125ba6bd1ed4738e8cc6928127b81358841a0b"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "20261118-081419-935",
+      "complete": true,
+      "incomplete_reasons": []
+    },
+    {
+      "id": "20261118-082314-421",
+      "complete": false,
+      "incomplete_reasons": [
+        "Client reported API error or output truncation; later continuation is not a completed review."
+      ]
+    },
+    {
+      "id": "20261118-084622-067",
+      "complete": true,
+      "incomplete_reasons": []
+    },
+    {
+      "id": "20261118-090946-716",
+      "complete": false,
+      "incomplete_reasons": [
+        "Client reported API error or output truncation; later continuation is not a completed review."
+      ]
+    },
+    {
+      "id": "20261118-093940-626",
+      "complete": true,
+      "incomplete_reasons": []
+    }
+  ]
+}

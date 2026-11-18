@@ -6,10 +6,14 @@ using System.Linq;
 using Project.Rooms;
 using Project.GridArt;
 using Project.Mechanisms;
+using Project.ObjectArtwork;
+using Project.BlockFeatures;
+using Project.BlockFeatures.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
 
 namespace Project.LevelEditor.Editor
@@ -20,7 +24,25 @@ namespace Project.LevelEditor.Editor
         {
             void Check(bool value, string reason) { if (!value) throw new InvalidOperationException(reason); }
             RoomRegion Region(string id, params Vector2Int[] cells) => new RoomRegion { id = id, label = id, cells = cells.ToList() };
-            if (name == "hole")
+            if (name == "custom-mechanism-preview")
+            {
+                var scene=EditorSceneManager.NewPreviewScene();
+                var texture=new Texture2D(16,32);
+                var sprite=Sprite.Create(texture,new Rect(0,0,16,32),new Vector2(.5f,0),16);
+                var custom=ScriptableObject.CreateInstance<ObjectArtworkLibrary>();
+                try {
+                    custom.mechanisms=new[]{new MechanismArtworkEntry {kind=MechanismArtworkKind.Door,frames=new[]{sprite}}};
+                    var owner=new GameObject("Custom artwork door"); SceneManager.MoveGameObjectToScene(owner,scene);
+                    owner.AddComponent<DoorController>(); var presentation=owner.AddComponent<MechanismArtworkPresentation>();
+                    var serialized=new SerializedObject(presentation); serialized.FindProperty("artwork").objectReferenceValue=custom; serialized.ApplyModifiedPropertiesWithoutUndo();
+                    int undo=Undo.GetCurrentGroup(); string before=EditorJsonUtility.ToJson(presentation); bool dirty=scene.isDirty;
+                    Check(ObjectArtworkPlanningPreview.TryGet(owner,out var art)&&art.Sprite==sprite,"实例美术库被共享预览覆盖");
+                    Check(before==EditorJsonUtility.ToJson(presentation)&&undo==Undo.GetCurrentGroup()&&dirty==scene.isDirty,"读取实例美术改变作者状态");
+                    var other=new GameObject("Default artwork door"); SceneManager.MoveGameObjectToScene(other,scene); other.AddComponent<DoorController>();
+                    Check(ObjectArtworkPlanningPreview.TryGet(other,out var standard)&&standard.Sprite==ObjectArtworkLibrary.Load().FirstFrame(MechanismArtworkKind.Door),"实例美术污染共享默认库");
+                } finally { EditorSceneManager.ClosePreviewScene(scene); UnityEngine.Object.DestroyImmediate(custom); UnityEngine.Object.DestroyImmediate(sprite); UnityEngine.Object.DestroyImmediate(texture); }
+            }
+            else if (name == "hole")
             {
                 var region = Region("ring", Enumerable.Range(0, 9).Select(i => new Vector2Int(i % 3, i / 3)).Where(c => c != Vector2Int.one).ToArray());
                 var data = SceneRoomSnapshot.Build(new[] { region });
@@ -113,6 +135,26 @@ namespace Project.LevelEditor.Editor
                 }
                 finally { Undo.ClearUndo(map); Undo.ClearUndo(ownership); UnityEngine.Object.DestroyImmediate(map); UnityEngine.Object.DestroyImmediate(ownership); EditorSceneManager.ClosePreviewScene(preview); }
             }
+            else if (name == "session-status-refresh")
+            {
+                var view = ScriptableObject.CreateInstance<SceneView>();
+                var panel = new SceneLevelEditorPanel(view);
+                var status = panel.Q<UnityEngine.UIElements.Button>("workbench-authoring-toggle");
+                var oldChannel = SceneObjectAuthoring.ActiveChannel;
+                var oldTool = LevelEditorState.Tool;
+                int undo = Undo.GetCurrentGroup(); bool dirty = SceneManager.GetActiveScene().isDirty;
+                try
+                {
+                    Check(status.text.Contains("暂停"), "起始状态不是暂停");
+                    panel.ToggleLock(); Check(status.text.Contains("落笔"), "锁定状态被长元组哈希缓存忽略");
+                    panel.ToggleLock(); Check(status.text.Contains("暂停"), "暂停状态被缓存忽略");
+                    SceneObjectAuthoring.ActiveChannel = SceneObjectChannel.TerrainSolid;
+                    panel.UseWorkbenchTool("select");
+                    Check(!SceneObjectAuthoring.ActiveChannel.HasValue,"通用点选仍被旧的墙体通道过滤");
+                    Check(Undo.GetCurrentGroup() == undo && SceneManager.GetActiveScene().isDirty == dirty, "切换状态写入作者数据或Undo");
+                }
+                finally { SceneObjectAuthoring.ActiveChannel=oldChannel; LevelEditorState.Tool=oldTool; SceneEditSession.Exit(view,"SceneLevelEditorOverlay:"+view.GetInstanceID()); UnityEngine.Object.DestroyImmediate(view); }
+            }
             else if (name == "resource-stroke-cache")
             {
                 var palette = ScriptableObject.CreateInstance<GridArtPalette>();
@@ -203,6 +245,34 @@ namespace Project.LevelEditor.Editor
             var view = SceneView.lastActiveSceneView;
             view.in2DMode = true;
             SceneRoomNavigator.Frame(SceneRegionAuthoring.FindManager(SceneManager.GetActiveScene()), "fixture_a", view);
+            StartReviewObservations(SceneManager.GetActiveScene().path);
+        }
+
+        internal static void StartReviewObservations(string path)
+        {
+            reviewScenePath = path;
+            lastReviewState = null;
+            File.WriteAllText("Library/SceneWorkbenchUIAudit.txt", "Explicit fixture UI review; state observations only.\n");
+            EditorApplication.update -= ObserveReviewState;
+            EditorApplication.update += ObserveReviewState;
+        }
+
+        private static string lastReviewState;
+        private static string reviewScenePath;
+        private static double nextReviewObservation;
+        private static void ObserveReviewState()
+        {
+            if (EditorApplication.timeSinceStartup < nextReviewObservation) return;
+            nextReviewObservation = EditorApplication.timeSinceStartup + .5;
+            Scene scene = SceneManager.GetActiveScene();
+            if (scene.path != reviewScenePath) { EditorApplication.update -= ObserveReviewState; return; }
+            var art = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<GridArtScene>(true)).FirstOrDefault();
+            var map = art != null ? art.map : null;
+            string mapHash = map != null ? Hash128.Compute(EditorJsonUtility.ToJson(map)).ToString() : "none";
+            string state = $"sceneDirty={scene.isDirty}; objects={scene.GetRootGameObjects().Sum(r => r.GetComponentsInChildren<LevelEditorPlacedBlock>(true).Length)}; mapDirty={map != null && EditorUtility.IsDirty(map)}; revision={map?.revision}; cells={map?.layers.Sum(l => l.cells.Count)}; mapHash={mapHash}";
+            if (state == lastReviewState) return;
+            lastReviewState = state;
+            File.AppendAllText("Library/SceneWorkbenchUIAudit.txt", $"{DateTime.Now:HH:mm:ss.fff} {state}\n");
         }
 
         [MenuItem("Tools/2026TapTap/关卡编辑器/验证/创建隔离混合样板")]

@@ -33,12 +33,18 @@ namespace Project.GridArt.Editor
             var result = new List<GridArtQuad>();
             if (palette == null) return result;
             var cells = new Dictionary<Vector2Int, int>();
+            var validatedWideBrushes = new HashSet<int>();
             foreach (var cell in layer.cells) cells[cell.position] = cell.brush;
             foreach (var cell in layer.cells)
             {
                 if (chunkFilter != null && !chunkFilter.Contains(ChunkCoordinate(cell.position))) continue;
                 var brush = palette.Get(cell.brush);
                 if (brush == null) continue;
+                if (brush.autoTerrain && brush.HasWideContour && validatedWideBrushes.Add(cell.brush))
+                {
+                    string issue = GridArtPixelLayout.TerrainIssue(brush);
+                    if (issue != null) throw new InvalidOperationException(issue);
+                }
                 string colorId = string.IsNullOrEmpty(layer.colorId) ? brush.colorId : layer.colorId == "none" ? "" : layer.colorId;
                 if (!brush.autoTerrain)
                 {
@@ -54,6 +60,12 @@ namespace Project.GridArt.Editor
                         GridArtRules.Same(cells, cell.position + new Vector2Int(dx, dy), cell.brush));
                     var sprite = brush.GetPiece(GridArtRules.Slot(kind, q));
                     var quadrant = new Rect(q % 2 * .5f, q / 2 * .5f, .5f, .5f);
+                    if (brush.HasWideContour)
+                    {
+                        var sample = GridArtWideContour.Resolve(cells,cell.position,cell.brush,q);
+                        if (sample.slot >= 0)
+                        { Add(result,brush.widePieces[sample.slot],new Rect((Vector2)cell.position+quadrant.position,quadrant.size),sample.part,brush.normalMap,colorId); continue; }
+                    }
                     Add(result, sprite, new Rect((Vector2)cell.position + quadrant.position, quadrant.size), quadrant, brush.normalMap, colorId);
                 }
             }
@@ -62,6 +74,14 @@ namespace Project.GridArt.Editor
 
         private static Vector2Int ChunkCoordinate(Vector2Int cell) => new Vector2Int(
             Mathf.FloorToInt(cell.x / 32f), Mathf.FloorToInt(cell.y / 32f));
+
+        private static string PaletteHash(GridArtPalette palette)
+        {
+            string hash = AssetDatabase.GetAssetDependencyHash(AssetDatabase.GetAssetPath(palette)).ToString();
+            // Dependency hashes describe saved assets. Include pending Inspector
+            // edits so Apply cannot reuse geometry from an older palette state.
+            return EditorUtility.IsDirty(palette) ? hash + Hash128.Compute(EditorJsonUtility.ToJson(palette)) : hash;
+        }
 
         private static void Add(List<GridArtQuad> result, Sprite sprite, Rect bounds, Rect? part, Texture2D normal, string colorId, int rotation = 0)
         {
@@ -133,7 +153,7 @@ namespace Project.GridArt.Editor
             if (output != null && (PrefabUtility.IsPartOfPrefabInstance(output) || output.transform.position.sqrMagnitude > .0001f ||
                 Quaternion.Angle(output.transform.rotation, Quaternion.identity) > .01f || (output.transform.lossyScale - Vector3.one).sqrMagnitude > .0001f))
                 throw new InvalidOperationException("美术输出根节点必须保持世界原点、无旋转且缩放为1，并独立于共享预制体。");
-            string paletteHash = AssetDatabase.GetAssetDependencyHash(AssetDatabase.GetAssetPath(map.palette)).ToString();
+            string paletteHash = PaletteHash(map.palette);
             if (output != null && output.IsBuiltFor(map.revision, paletteHash)) return output;
             var prepared = new List<List<GridArtQuad>>();
             var colorLayers = new Dictionary<string,int>(StringComparer.Ordinal);
@@ -276,15 +296,16 @@ namespace Project.GridArt.Editor
                 return Apply(map, scene, false, saveMap);
 
             string sceneGuid = AssetDatabase.AssetPathToGUID(scene.path);
-            string paletteHash = AssetDatabase.GetAssetDependencyHash(AssetDatabase.GetAssetPath(map.palette)).ToString();
+            string paletteHash = PaletteHash(map.palette);
             GridArtScene output = FindOutput(map, scene);
             if (output == null || !output.IsBuiltFor(previousRevision, paletteHash))
                 return Apply(map, scene, false, saveMap);
 
             var affected = new HashSet<Vector2Int>();
+            int radius = map.palette.brushes.Any(b => b != null && b.autoTerrain && b.HasWideContour) ? 2 : 1;
             foreach (Vector2Int anchor in changedAnchors)
-                for (int y = -1; y <= 1; y++)
-                    for (int x = -1; x <= 1; x++)
+                for (int y = -radius; y <= radius; y++)
+                    for (int x = -radius; x <= radius; x++)
                         affected.Add(ChunkCoordinate(anchor + new Vector2Int(x, y)));
 
             List<GridArtQuad> quads = BuildQuads(layer, map.palette, affected);

@@ -1,6 +1,6 @@
 # 系统索引
 
-2026-11-17 场景工作台进行中：`SceneResourceDrawer` 将物体/美术卡片合入同一 Scene Overlay，`SceneRoomNavigator` 使用真实区域轮廓与四邻接缓存，`SceneWorkbenchTheme` 提供 Claude 视觉方案，`SceneWorkbenchInput` 负责面板输入边界。真实实例 Inspector 已嵌入工作台，旧独立窗保留为兼容入口。当前是中途检查点，输入隔离前台复验、厚草全包边与完整展示 Scene 未完成，见 [进度与边界](../Developer/SCENE_AUTHORING_WORKBENCH_20261117.md)。下文旧“独立卡片窗口”为原实现描述，以当前说明为准。
+2026-11-17 场景工作台进行中：SceneResourceDrawer / SceneRoomNavigator / SceneWorkbenchTheme / SceneWorkbenchInput 统一 Scene 内资源、真实轮廓导航、配色与输入边界。SceneWorkbenchShowcase 提供独立可编辑 MossAqueduct 与实际连接检查 MossConnections；GridArtWideContour 支持32px宽源片跨两格采样，旧Palette保持原路径。139项相关测试及随后14项UI审计通过；第5/6轮浏览UI零作者写入。美术窄条/孔洞、复合向量字段适配与完整交互验收仍在进行，见 [进度与边界](../Developer/SCENE_AUTHORING_WORKBENCH_20261117.md)。下文旧“独立卡片窗口”为原实现描述，以当前说明为准。
 
 2026-11-06 原生 2D 回归：`Native2DScenePreview` 负责 Renderer2D SceneView 提前清屏；`WaterUnderlayRendererFeature`/`PixelWaterDistortion` 使用当前相机正确 UV、连续世界噪波和水足迹；`PlanarPlacementTolerance` 统一边界接触但保留薄墙阻挡；`ColorPresentationVisibility` 仅裁掉不可见表现预热，颜色玩法同步，水邻接使用空间索引。见 [修复与验收](../Developer/NATIVE_2D_REGRESSION_FIXES_20261106.md)、[搬运 API](Integration/PLAYER_CARRY_API.md)、[水体 API](Integration/GAMEPLAY_PIXEL_WATER_API.md)。仅在 2D 专项分支交付。
 

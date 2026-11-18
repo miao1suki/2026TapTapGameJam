@@ -44,6 +44,7 @@ namespace Project.BlockFeatures
         private float elapsed, openProgress;
         private Vector3 previousPosition;
         public SpriteRenderer Visual => visual;
+        public ObjectArtworkLibrary Artwork => artwork;
         public MechanismArtworkKind Kind => kind;
 
         public static bool Supports(GameObject owner) => owner.GetComponent<DoorController>() != null ||
