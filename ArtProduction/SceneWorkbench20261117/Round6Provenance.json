@@ -1,0 +1,23 @@
+{
+  "archive": "Round6MixedBoundarySources.zip",
+  "sha256": "a128812ab7bd2cde147215439562558be3e5d882a5733914e74242c1627bba50",
+  "bytes": 1784491,
+  "hashedEntries": 33,
+  "crcAndHashesVerified": true,
+  "credentialScanPassed": true,
+  "artApproved": false,
+  "editableCandidate": "Assets/_Project/Development/LevelEditor/WindingMotherLabR6",
+  "newAssetAndMetaFiles": 457,
+  "missingReferences": 0,
+  "retainedBaseline": "r3d",
+  "currentCandidate": "r6 conditional continuation, dark groove still requires work",
+  "sourceAndFormalHashesVerifiedUnchanged": true,
+  "relatedTestsReused": {
+    "total": "148",
+    "passed": "148",
+    "failed": "0",
+    "skipped": "0",
+    "duration": "38.0291129"
+  },
+  "details": "CandidateRun.json, verification/r6-delivery-dependencies.json and Manifest.json in archive"
+}

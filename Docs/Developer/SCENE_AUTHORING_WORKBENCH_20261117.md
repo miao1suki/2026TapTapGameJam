@@ -84,6 +84,14 @@ Palette可选widePieces要求13个32×32片完整齐备；宽源片跨两格以�
 
 Round5MotherExtractionExperiments.zip保存原图/关键词、安全来源、固定/单套提取脚本、拓扑检查、Claude意见、实际GPU与失败的实验源码文本；清单逐文件SHA和ZIP CRC已验证。r4限厚版历史GPU只保留缩略图，Library原图随应用归档移除，明确不作为全分辨率证据。原样板未替换，r3d继续是未定稿候选。候选命令支持-compactOnly，仅在全新实验目录建立单套16px笔刷。
 
+## 单母图候选的可编辑交付
+
+`Assets/_Project/Development/LevelEditor/WindingMotherLabR6`提供三份独立候选：`Aqueduct.unity`看整体场景，`Connections.unity`看13类连接（含负坐标、分块边界和有意保留的孔洞），`All47.unity`看47种归一化邻接。Scene、Map、稀疏归属、候选Palette、纹理及各自生成依赖共457文件一同交付；不从Library恢复作者数据。YAML GUID闭包未发现缺失或其他未交付本地实验依赖；URP的Sprite-Lit-Default材质来自现有固定Package。
+
+r6沿用同一张苔草母图，只校正实际采样清单中30对宽/紧凑边界（清单共816对），相对去污染r3d改586像素。选定边界数值差降为零，但实际GPU仍出现水平暗槽，草边也有周期齿感。完整Claude审图20261118-173952-726要求保留A/r3d基线，B/r6修暗槽后有条件继续，C/r5c返工。因此r6是可检查、可编辑的进度候选，未替换原MossAqueduct，未通过美术定稿。
+
+三份Camera.Render原图、母图处理输入、脚本、复现命令、审图原文、依赖清单与限制保存在ArtProduction/SceneWorkbench20261117/Round6MixedBoundarySources.zip，Round6Provenance.json索引SHA。实际Unity导入的两张纹理与归档输入逐字节相同；GPU与Library导出相同。源码和正式四资源哈希与第11轮一致，复用148/148测试结果。没有新付费生图、修改生产采样算法、程序绘制叶簇或前台抢占操作。
+
 ## 下一轮
 
 继续从同源母图修复宽/紧凑轮廓在孔洞处的过渡，以真实Unity连接裁片复审，保留失败实验。PendingCompact中的HTTP500是更早一次请求，不能误记为本轮r3母图失败。继续验证浅色、重编译恢复，以及可比较的物体/美术制作、参数与门按钮绑定旅程，记录点击/展开层级/命令坐标距离，完成实际绘制、撤销、保存重开核对。

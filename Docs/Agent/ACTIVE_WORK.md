@@ -1,6 +1,6 @@
-## 2026-11-18 场景作者工作台（进行中，第七检查点）
+## 2026-11-18 场景作者工作台（进行中，第八检查点）
 
-- 分支codex/editor/scene-authoring-redesign，基线69a8a4b；a1739777、b059c65e、975899aa、785dba45、69f24f5a、a83fae93已推送。仅隔离工作树，不合main、不写正式Gaming。应用归档中断后已从4b4af20a快照恢复同一路径及原分支，保留未提交改动；Library重建。
+- 分支codex/editor/scene-authoring-redesign，基线69a8a4b；a1739777、b059c65e、975899aa、785dba45、69f24f5a、a83fae93、1ee86735已推送。仅隔离工作树，不合main、不写正式Gaming。应用归档中断后已从4b4af20a快照恢复同一路径及原分支，保留未提交改动；Library重建。
 - Scene Overlay统一物体/美术资源、实例Inspector、房间导航与Claude配色；可编辑MossAqueduct和13类连接场景成套交付。32px宽轮廓覆盖两格，旧Palette兼容。
 - 冷开实际发现归属组件无稳定MonoScript资产，拆出同名GridArtRegionOwnershipLink.cs；仅修三份自有Scene脚本引用，新增Prefab持久化回归。当前相关EditMode142/142通过37.091秒；前次旧Canvas性能项间歇失败，隔离1/1和随后完整回归通过，记录保留。
 - 第8轮独立副本GUI：物体368→369一次撤销回368；美术387→388、撤销387、重做388；美术/Scene分别保存清除dirty。撤销后的完整Map哈希与初始不同，待字段级排查。实际记录和截图在Docs/Developer/Evidence/SceneWorkbench20261117/Round8。
@@ -11,6 +11,8 @@
 - 第11轮原生B/V与直接点击画笔均成功，观察器保持368物体/388美术及完整Map哈希；实际看到开启按钮tooltip遮住画笔行，已去掉重复提示。截图先于tooltip移除，移除后尚未原生复查。
 - 新SceneView.SendEvent检查覆盖面板正文/角落/标题带，面板外有效落笔作对照；比较真实Undo历史及游标。测试夹具自身的Selection记录和Repaint内替换Event.current导致的Ignore均已厘清，不记产品回归。保存展示场景只读重开核对368物体、366碰撞、6层387锚点、门按钮双向引用、归属及无丢失脚本；当前相关EditMode148/148通过38.029秒，证据Round11。
 - 母版结构独立验证为84格单连通、四边连续开口、20象限齐全及47邻接。复用原母图的单套16px、固定紧凑裁片、宽片直采/向内偏移均已实际GPU测试并淘汰；r4新母图Claude完整复审仍返工。未重复付费生图，未修改正式渲染逻辑或原样板；来源/后处理/失败实验归档Round5MotherExtractionExperiments.zip。
+- 单母图r6只校正采样清单816对中的30对宽/紧凑边界，相对去污染r3d改586像素；数值相等仍有暗槽，不能称无缝美术通过。Claude完整复审20261118-173952-726：保留A/r3d基线，B/r6修暗槽后有条件继续，C/r5c返工。没有新付费生图或程序补画叶簇。
+- r6独立可编辑候选成套交付于Development/LevelEditor/WindingMotherLabR6：Aqueduct、Connections、All47三份Scene；Map/归属/Palette/纹理及各自生成依赖共457文件、5,195,578字节。YAML GUID闭包无缺失，URP默认材质来自固定Package；三份实际GPU图与本次素材哈希一致。源码/正式资源与第11轮一致，复用148/148测试。来源/复现/审图/GPU/依赖清单见Round6MixedBoundarySources.zip及Round6Provenance.json。r6未定稿，r3d仍保留为基线，不替换原已提交样板。
 - 完整原生绑定、各模式原生点击隔离、浅色、重编译恢复、原生停靠与新美术实际连接审美仍待验收；r3d保留为未定稿候选。
 - 较早的独立紧凑美术r3/r4成功生成但完整Claude审图退回，未导入Unity；Round3RejectedSources.zip归档源图、提示词、安全来源与意见。此处不是本轮连续母图r3/r4。窄条颗粒/厚度、端帽和宽窄接缝继续返工，不能称定稿。
 - 详见Docs/Developer/SCENE_AUTHORING_WORKBENCH_20261117.md。原生2D/正式Gaming及两份历史JSON哈希保持基线。

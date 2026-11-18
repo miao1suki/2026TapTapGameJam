@@ -1,0 +1,1572 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f484a41cc79d945ac3bcfc49332f81, type: 3}
+  m_Name: All47Map
+  m_EditorClassIdentifier: Project.GridArt.Runtime::Project.GridArt.GridArtMap
+  palette: {fileID: 11400000, guid: 07813b500d51e774faa39401b284003a, type: 2}
+  ownerSceneGuid: 6fe203be2afc42e47bd388b0e81f38ee
+  cellSize: 1
+  layers:
+  - id: 18c27a7806a642a18b2f0b2f6648b48a
+    label: "\u90BB\u63A5 0"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -30, y: -12}
+      brush: 0
+      quarterTurns: 0
+  - id: 882c3261a7094522b85d272616b01958
+    label: "\u90BB\u63A5 1"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -24, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -24, y: -13}
+      brush: 0
+      quarterTurns: 0
+  - id: c975c137f0a144f9a1c294105eac2306
+    label: "\u90BB\u63A5 2"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -18, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -19, y: -12}
+      brush: 0
+      quarterTurns: 0
+  - id: b099e9b8e10f4978a35af3118ee52f71
+    label: "\u90BB\u63A5 3"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -12, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -12, y: -13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -13, y: -12}
+      brush: 0
+      quarterTurns: 0
+  - id: 5f0becc7fc8948fe90fd73cfee8663f5
+    label: "\u90BB\u63A5 4"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -6, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -7, y: -13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -6, y: -13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -7, y: -12}
+      brush: 0
+      quarterTurns: 0
+  - id: 489418465abc407d9c2b5b65d6c5db4c
+    label: "\u90BB\u63A5 5"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 0, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 1, y: -12}
+      brush: 0
+      quarterTurns: 0
+  - id: 403c6ba2496340f38f0c05fa36393c8c
+    label: "\u90BB\u63A5 6"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 6, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 6, y: -13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 7, y: -12}
+      brush: 0
+      quarterTurns: 0
+  - id: a0a3618d545d4ec39b62c862a9ba43b6
+    label: "\u90BB\u63A5 7"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 12, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 12, y: -13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 13, y: -13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 13, y: -12}
+      brush: 0
+      quarterTurns: 0
+  - id: 254d14658cfe40e39bf43c0a4d52d672
+    label: "\u90BB\u63A5 8"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 18, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 17, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 19, y: -12}
+      brush: 0
+      quarterTurns: 0
+  - id: 617d535101e44d8f8480729e12618944
+    label: "\u90BB\u63A5 9"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 24, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 24, y: -13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 23, y: -12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 25, y: -12}
+      brush: 0
+      quarterTurns: 0
+  - id: bad9af9e28d44087b0f7b5abf7b5d7c4
+    label: "\u90BB\u63A5 10"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -30, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -31, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -30, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -31, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -29, y: -6}
+      brush: 0
+      quarterTurns: 0
+  - id: bf92c6e088ff46f8a3d34640d31efd1e
+    label: "\u90BB\u63A5 11"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -24, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -24, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -23, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -25, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -23, y: -6}
+      brush: 0
+      quarterTurns: 0
+  - id: 72d3d445c07d4d74b6010aa7d2957570
+    label: "\u90BB\u63A5 12"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -18, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -19, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -18, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -17, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -19, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -17, y: -6}
+      brush: 0
+      quarterTurns: 0
+  - id: 5b6c867f429845809849abe90c8f8317
+    label: "\u90BB\u63A5 13"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -12, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -12, y: -5}
+      brush: 0
+      quarterTurns: 0
+  - id: 6f8fac7914474f51998c6251b5efec73
+    label: "\u90BB\u63A5 14"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -6, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -6, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -6, y: -5}
+      brush: 0
+      quarterTurns: 0
+  - id: 453f6f0d62334eeb9d59f48bcc964269
+    label: "\u90BB\u63A5 15"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 0, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -1, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 0, y: -5}
+      brush: 0
+      quarterTurns: 0
+  - id: 6a8c8289e6ae49619eb812eafd725cff
+    label: "\u90BB\u63A5 16"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 6, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 6, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 5, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 6, y: -5}
+      brush: 0
+      quarterTurns: 0
+  - id: e9a69071c4954547a6fed721a7426130
+    label: "\u90BB\u63A5 17"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 12, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 11, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 12, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 11, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 12, y: -5}
+      brush: 0
+      quarterTurns: 0
+  - id: c45fa7d4e01748089793eeaa78368648
+    label: "\u90BB\u63A5 18"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 18, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 19, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 18, y: -5}
+      brush: 0
+      quarterTurns: 0
+  - id: 92506b4034f64f47ae11584cf7275ec7
+    label: "\u90BB\u63A5 19"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 24, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 24, y: -7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 25, y: -6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 24, y: -5}
+      brush: 0
+      quarterTurns: 0
+  - id: c825ac86dd3e48a8805f53b437005bcb
+    label: "\u90BB\u63A5 20"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -30, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -30, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -29, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -29, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -30, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: cbb426259cea4b1a8f9fe31d2fe77ee0
+    label: "\u90BB\u63A5 21"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -24, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -25, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -23, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -24, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: f1797e8a7e904008a4461375761e89b8
+    label: "\u90BB\u63A5 22"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -18, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -18, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -19, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -17, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -18, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: ed4ad0bc949e4f4485c4688c4b85415f
+    label: "\u90BB\u63A5 23"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -12, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -13, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -12, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -13, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -11, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -12, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: 5b2bce883576460b893ec81ac8a0e5e2
+    label: "\u90BB\u63A5 24"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -6, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -6, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -5, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -7, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -5, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -6, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: ab05710db4ef485b912143923051ef93
+    label: "\u90BB\u63A5 25"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 0, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -1, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 0, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 1, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -1, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 1, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 0, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: b56c1c7f36d44f45998095036ef5890c
+    label: "\u90BB\u63A5 26"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 6, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 5, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 5, y: 1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 6, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: 28b734f86e474a3e8c6e7780693c334e
+    label: "\u90BB\u63A5 27"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 12, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 12, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 11, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 11, y: 1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 12, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: d8916d647df945c49bc8daac5cec6bc1
+    label: "\u90BB\u63A5 28"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 18, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 17, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 18, y: -1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 17, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 17, y: 1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 18, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: d792a6d051b0431e80089c6f247c7de0
+    label: "\u90BB\u63A5 29"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 24, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 23, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 25, y: 0}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 23, y: 1}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 24, y: 1}
+      brush: 0
+      quarterTurns: 0
+  - id: 0a670ce5609645f4a0756c28da5e0046
+    label: "\u90BB\u63A5 30"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -30, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -30, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -31, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -29, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -31, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -30, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: c326ec84f51f4cfb999f35eb0dc3cd7e
+    label: "\u90BB\u63A5 31"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -24, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -25, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -24, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -25, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -23, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -25, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -24, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: 8d3290568c5a41a9b3368567dbdde74a
+    label: "\u90BB\u63A5 32"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -18, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -18, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -17, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -19, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -17, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -19, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -18, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: 19b919b5ab54467a872f16185bf54e2a
+    label: "\u90BB\u63A5 33"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -12, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -13, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -12, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -11, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -13, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -11, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -13, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -12, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: 4ca8a49a8dbd45f089a641f511d10a1d
+    label: "\u90BB\u63A5 34"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -6, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -5, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -6, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -5, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: d4f09770e31943a8af4b2c820738bdef
+    label: "\u90BB\u63A5 35"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 0, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 0, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 1, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 0, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 1, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: e0a8109b05d54a968035dc8ef50aafa6
+    label: "\u90BB\u63A5 36"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 6, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 6, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 7, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 7, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 6, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 7, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: 45ad2c5800aa4abe8fc263e469db222c
+    label: "\u90BB\u63A5 37"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 12, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 11, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 13, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 12, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 13, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: 6bd8bdf6d8594b269955aa1fcf86151c
+    label: "\u90BB\u63A5 38"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 18, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 18, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 17, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 19, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 18, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 19, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: 73d4c27f869f4b51952118b74651d480
+    label: "\u90BB\u63A5 39"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 24, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 23, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 24, y: 5}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 23, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 25, y: 6}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 24, y: 7}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 25, y: 7}
+      brush: 0
+      quarterTurns: 0
+  - id: e67a7c4538054efaa1ee6c09467efd2e
+    label: "\u90BB\u63A5 40"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -30, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -30, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -29, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -31, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -29, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -30, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -29, y: 13}
+      brush: 0
+      quarterTurns: 0
+  - id: 88f5d527a6cd4f0498533242270463a6
+    label: "\u90BB\u63A5 41"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -24, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -25, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -24, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -23, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -25, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -23, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -24, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -23, y: 13}
+      brush: 0
+      quarterTurns: 0
+  - id: 0bf92cbd9837442b9ec6ae9f400859ac
+    label: "\u90BB\u63A5 42"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -18, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -19, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -17, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -19, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -18, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -17, y: 13}
+      brush: 0
+      quarterTurns: 0
+  - id: 1104c8a0c61c4472a54af23d05e66ce3
+    label: "\u90BB\u63A5 43"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -12, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -12, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -13, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -11, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -13, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -12, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -11, y: 13}
+      brush: 0
+      quarterTurns: 0
+  - id: 60216ff31fe04bf1950f4d947b41787b
+    label: "\u90BB\u63A5 44"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: -6, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -7, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -6, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -7, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -5, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -7, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -6, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -5, y: 13}
+      brush: 0
+      quarterTurns: 0
+  - id: 86427f01381f497e8ab2a6b6b45756f5
+    label: "\u90BB\u63A5 45"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 0, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 0, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 1, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -1, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 1, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: -1, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 0, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 1, y: 13}
+      brush: 0
+      quarterTurns: 0
+  - id: 4d2af3116507440eb7180fadb1a59599
+    label: "\u90BB\u63A5 46"
+    visible: 1
+    locked: 0
+    depth: 2
+    parallax: {x: 1, y: 1}
+    lockParallaxX: 0
+    lockParallaxY: 0
+    maxParallaxOffset: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    colorId: 
+    lighting3D: 0
+    sortingOrder: -2147483648
+    followLevel: 0
+    sourceGroup: 
+    sourceBrush: 0
+    sourceQuarterTurns: 0
+    cells:
+    - position: {x: 6, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 5, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 6, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 7, y: 11}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 5, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 7, y: 12}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 5, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 6, y: 13}
+      brush: 0
+      quarterTurns: 0
+    - position: {x: 7, y: 13}
+      brush: 0
+      quarterTurns: 0
+  revision: 0
+  bakedRevision: 0
+  bakedPaletteHash: ba4099c147f2305042683e7f0ffd3356

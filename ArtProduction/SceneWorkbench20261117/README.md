@@ -27,3 +27,7 @@ r3b从同一新母图提取，实际Unity展示复审为有条件可继续；孔
 `Round5MotherExtractionExperiments.zip`归档后续单套16px母图及提取实验、完整Claude审图、独立20象限/47邻接结构检查和实际GPU。源图、提示词、安全请求、脚本及逐文件SHA均可追溯；`Round5Provenance.json`索引状态。所有新候选均退回，r3d继续是未定稿候选，原样板未替换。本次续做复用了已有源图，没有重复付费生成。
 
 固定裁切r3e丢失窄条；r4/r5单套16px草边变薄；r5b/r5c只在隔离实验临时改采样，前者窄条缺失，后者接头仍不合格，已全部撤回。包内实验C#为文本档案，不能当作生产渲染代码安装。r4限厚版历史GPU仅存缩略图，Library原图在工作树归档时移除。候选CLI的`-compactOnly`会清除宽片引用，只在新建候选Palette使用，默认宽片流程保持。
+
+`Round6MixedBoundarySources.zip`只修采样清单中宽/紧凑片真正相接的30对边界（清单共816对），相对r3d改变586像素。校正依然来自生成像素的局部平均/去污染，没有代码补画叶簇。零边界差不代表视觉连续：实际Unity孔洞长条仍有暗槽、周期草齿。Claude完整审图20261118-173952-726保留A/r3d为基线，B/r6有条件继续，C/r5c返工。`Round6Provenance.json`索引完整输入/复现脚本、实际GPU、审图与依赖闭包，逐文件SHA和ZIP CRC已验证。
+
+本轮另外交付可直接编辑的`Assets/_Project/Development/LevelEditor/WindingMotherLabR6`，含`Aqueduct.unity`、`Connections.unity`、`All47.unity`及独立作者资产和生成依赖。它是未定稿候选，不自动替换原样板或r3d。素材与GPU导出哈希核对一致；YAML依赖闭包只允许本候选及其Scene/Map对应的生成目录，未扩大收录其他本地实验。URP默认材质沿用已有Package。源码未变，复用第11轮148项通过结果，本轮没有前台交互或构建验收。
