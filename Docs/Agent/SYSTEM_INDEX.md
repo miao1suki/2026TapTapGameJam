@@ -1,6 +1,6 @@
 # 系统索引
 
-2026-11-17 场景工作台进行中：SceneResourceDrawer / SceneRoomNavigator / SceneWorkbenchTheme / SceneWorkbenchInput 统一 Scene 内资源、真实轮廓导航、配色与输入边界。SceneWorkbenchShowcase 提供独立可编辑 MossAqueduct 与实际连接检查 MossConnections；GridArtWideContour 支持32px宽源片跨两格采样，旧Palette保持原路径。139项相关测试及随后14项UI审计通过；第5/6轮浏览UI零作者写入。美术窄条/孔洞、复合向量字段适配与完整交互验收仍在进行，见 [进度与边界](../Developer/SCENE_AUTHORING_WORKBENCH_20261117.md)。下文旧“独立卡片窗口”为原实现描述，以当前说明为准。
+2026-11-17 场景工作台进行中：SceneResourceDrawer / SceneRoomNavigator / SceneWorkbenchTheme / SceneWorkbenchInput 统一Scene内资源、真实轮廓导航、配色与输入边界；资源使用真实机关美术，当前取消网格内滚、低频绑定默认折叠、工具实心选中。Overlay重建保留会话/工具/暂停/通道，XYZ字段适配330/380/420宽。SceneWorkbenchShowcase提供独立可编辑MossAqueduct与连接检查MossConnections；GridArtWideContour支持32px宽源片跨两格采样。139项相关测试及当前16项UI审计通过；第7轮3次点击显示真实门参数，最大化保持落笔，浏览零作者写入。美术窄条/孔洞、浅色和完整制作旅程仍在进行，见 [进度与边界](../Developer/SCENE_AUTHORING_WORKBENCH_20261117.md)。下文旧“独立卡片窗口”为原实现描述，以当前说明为准。
 
 2026-11-06 原生 2D 回归：`Native2DScenePreview` 负责 Renderer2D SceneView 提前清屏；`WaterUnderlayRendererFeature`/`PixelWaterDistortion` 使用当前相机正确 UV、连续世界噪波和水足迹；`PlanarPlacementTolerance` 统一边界接触但保留薄墙阻挡；`ColorPresentationVisibility` 仅裁掉不可见表现预热，颜色玩法同步，水邻接使用空间索引。见 [修复与验收](../Developer/NATIVE_2D_REGRESSION_FIXES_20261106.md)、[搬运 API](Integration/PLAYER_CARRY_API.md)、[水体 API](Integration/GAMEPLAY_PIXEL_WATER_API.md)。仅在 2D 专项分支交付。
 

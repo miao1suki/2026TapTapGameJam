@@ -29,8 +29,9 @@ namespace Project.LevelEditor.Editor
 
         internal static void Tool(Button button, bool selected, Color identity)
         {
-            button.style.backgroundColor = selected ? Color.Lerp(Surface, identity, .18f) : Surface;
-            button.style.color = selected ? Text : Muted;
+            button.style.backgroundColor = selected ? identity : Surface;
+            button.style.color = selected ? EditorGUIUtility.isProSkin ? Background : Color.white : Muted;
+            button.style.unityFontStyleAndWeight = selected ? FontStyle.Bold : FontStyle.Normal;
             Border(button, selected ? identity : Line);
         }
 

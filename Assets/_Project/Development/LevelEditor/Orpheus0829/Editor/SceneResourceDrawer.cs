@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Project.GridArt;
+using Project.BlockFeatures.Editor;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -43,10 +44,9 @@ namespace Project.LevelEditor.Editor
             search.RegisterValueChangedCallback(_ => { searchRefresh?.Pause(); searchRefresh = schedule.Execute(Rebuild).StartingIn(100); }); Add(search);
             filter = new DropdownField { label = "筛选" }; filter.RegisterValueChangedCallback(_ => Rebuild()); Add(filter);
             count = new Label { style = { fontSize = 11, color = SceneWorkbenchTheme.Muted } }; Add(count);
-            var scroll = new ScrollView { name = "resource-grid-scroll", style = { height = 180, minHeight = 90 } };
-            grid = new VisualElement { style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap } };
-            scroll.Add(grid); Add(scroll);
             current = new Label { style = { fontSize = 12, whiteSpace = WhiteSpace.Normal, marginTop = 4 } }; Add(current);
+            grid = new VisualElement { name = "resource-grid", style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap, flexShrink = 0 } };
+            Add(grid);
             RegisterCallback<AttachToPanelEvent>(_ => { EditorApplication.projectChanged -= ProjectChanged; EditorApplication.projectChanged += ProjectChanged; });
             RegisterCallback<DetachFromPanelEvent>(_ => EditorApplication.projectChanged -= ProjectChanged);
             SetKind(false, false);
@@ -94,7 +94,7 @@ namespace Project.LevelEditor.Editor
                 {
                     GridArtBrush brush = map.palette.Get(i);
                     if (brush == null || !Matches($"{brush.label} {brush.category} {brush.sourceKey}") || category != "全部" && category != brush.category) continue;
-                    int index = i; var button = Card(brush.label, brush.autoTerrain ? brush.GetPiece(4) ?? brush.sprite : brush.sprite, null,
+                    int index = i; var button = Card(brush.label, brush.autoTerrain ? brush.HasWideContour ? brush.widePieces[0] : brush.GetPiece(0) ?? brush.sprite : brush.sprite, null,
                         new Color(.16f,.17f,.19f), () => { chooseArt(index); RefreshSelection(); });
                     cards.Add((button, i.ToString())); total++;
                 }
@@ -105,8 +105,15 @@ namespace Project.LevelEditor.Editor
                 {
                     string kind = item.channel switch { SceneObjectChannel.TerrainSolid => "方块", SceneObjectChannel.WaterVolume => "水体", SceneObjectChannel.MarkerTrigger => "标记", SceneObjectChannel.DecorationObject => "装饰", _ => "道具" };
                     if (!Matches(item.SearchText) || category != "全部" && category != kind) continue;
-                    Texture preview = item.prefab != null ? AssetPreview.GetAssetPreview(item.prefab) ?? AssetPreview.GetMiniThumbnail(item.prefab) : null;
-                    var button = Card(item.displayName, null, preview, item.color, () => { chooseObject(item); RefreshSelection(); });
+                    PlanningArtworkPreview? artwork = null;
+                    if (item.prefab != null)
+                    {
+                        IReadOnlyList<LevelEditorComponentValueOverride> overrides = item.palette == null ? null : item.isProp
+                            ? item.palette.PropEntries[item.index].ComponentValueOverrides : item.palette.Entries[item.index].ComponentValueOverrides;
+                        if (ObjectArtworkPlanningPreview.TryGet(item.prefab,overrides,out var actual) && !actual.Hidden) artwork = actual;
+                    }
+                    Texture preview = !artwork.HasValue && item.prefab != null ? AssetPreview.GetAssetPreview(item.prefab) ?? AssetPreview.GetMiniThumbnail(item.prefab) : null;
+                    var button = Card(item.displayName, artwork?.Sprite, preview, item.color, () => { chooseObject(item); RefreshSelection(); }, artwork);
                     button.tooltip = $"{kind} · {item.displayName}\n单击选择；开启落笔后在 Scene 绘制。\n{item.AssetPath}";
                     cards.Add((button, $"{item.isProp}:{item.index}")); total++;
                 }
@@ -120,7 +127,7 @@ namespace Project.LevelEditor.Editor
             RefreshSelection();
         }
 
-        private Button Card(string title, Sprite sprite, Texture texture, Color fallback, Action click)
+        private Button Card(string title, Sprite sprite, Texture texture, Color fallback, Action click, PlanningArtworkPreview? artwork = null)
         {
             var button = new Button(click) { name = "resource-card", tooltip = title };
             button.style.width = 72; button.style.height = 86; button.style.marginRight = 4; button.style.marginBottom = 4;
@@ -133,7 +140,14 @@ namespace Project.LevelEditor.Editor
             button.RegisterCallback<PointerLeaveEvent>(_ => { selectedKey = null; RefreshSelection(); });
             var preview = new Image { sprite = sprite, image = texture, scaleMode = ScaleMode.ScaleToFit, pickingMode = PickingMode.Ignore };
             if (sprite != null) preview.sprite = sprite;
-            preview.style.width = 52; preview.style.height = 48; preview.style.backgroundColor = texture == null && sprite == null ? fallback : SceneWorkbenchTheme.Well;
+            if (artwork.HasValue)
+            {
+                var actual = artwork.Value;
+                if (actual.Sprite == null) { preview.image = actual.Texture; preview.uv = actual.UV; }
+                preview.style.rotate = new Rotate(new Angle(-actual.RotationDegrees,AngleUnit.Degree));
+                preview.style.scale = new Scale(new Vector3(actual.FlipX ? -1 : 1,1,1));
+            }
+            preview.style.width = 52; preview.style.height = 48; preview.style.backgroundColor = texture == null && sprite == null && !artwork.HasValue ? fallback : SceneWorkbenchTheme.Well;
             button.Add(preview);
             button.Add(new Label(title) { pickingMode = PickingMode.Ignore, style = { fontSize = 11, height = 28, whiteSpace = WhiteSpace.Normal, overflow = Overflow.Hidden, unityTextAlign = TextAnchor.MiddleCenter } });
             grid.Add(button); return button;

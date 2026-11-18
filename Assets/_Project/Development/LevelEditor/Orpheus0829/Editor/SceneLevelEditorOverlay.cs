@@ -348,6 +348,7 @@ namespace Project.LevelEditor.Editor
 
     internal sealed class SceneLevelEditorPanel : VisualElement
     {
+        private static readonly Dictionary<SceneView, SceneLevelEditorPanel> attachedPanels = new();
         private readonly SceneView sceneView;
         private readonly SceneLevelEditorOverlay ownerOverlay;
         private readonly string sessionOwner;
@@ -431,6 +432,8 @@ namespace Project.LevelEditor.Editor
 
         internal SceneLevelEditorPanel(SceneView sceneView, SceneLevelEditorOverlay overlay = null)
         {
+            SceneLevelEditorPanel previousPanel = null;
+            if (sceneView != null) attachedPanels.TryGetValue(sceneView, out previousPanel);
             ownerOverlay = overlay;
             this.sceneView = sceneView;
             body = new ScrollView { name = "workbench-body", style = { minHeight = 0, flexShrink = 1 } };
@@ -616,6 +619,27 @@ namespace Project.LevelEditor.Editor
             RegisterCallback<GeometryChangedEvent>(_ => FitToScene());
             SelectMode(SceneEditMode.Object);
             Refresh();
+            if (previousPanel != null)
+            {
+                // Scene maximization can replace the visual tree without ending
+                // the editing session. Keep its tool and navigation context too.
+                navigationPaused = previousPanel.navigationPaused;
+                artContext = previousPanel.artContext;
+                artErase.SetValueWithoutNotify(previousPanel.artErase.value);
+                artRectangle.SetValueWithoutNotify(previousPanel.artRectangle.value);
+                artTurns.SetValueWithoutNotify(previousPanel.artTurns.value);
+                artFollowRegion.SetValueWithoutNotify(previousPanel.artFollowRegion.value);
+                if (previousPanel.artLayer.index >= 0 && previousPanel.artLayer.index < artLayer.choices.Count)
+                    artLayer.index = previousPanel.artLayer.index;
+                if (previousPanel.artBrush.index >= 0 && previousPanel.artBrush.index < artBrush.choices.Count)
+                    artBrush.index = previousPanel.artBrush.index;
+                compact = previousPanel.compact;
+                body.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex;
+                resourceFold.value = previousPanel.resourceFold.value;
+                inspectorFold.value = previousPanel.inspectorFold.value;
+                SelectMode(previousPanel.mode);
+                RefreshSession();
+            }
         }
 
         private void AddModeButton(VisualElement parent, SceneEditMode value, string text)
@@ -782,6 +806,7 @@ namespace Project.LevelEditor.Editor
 
         private void Subscribe()
         {
+            if (sceneView != null) attachedPanels[sceneView] = this;
             SceneWorkbenchInput.Register(sceneView, this);
             SceneView.duringSceneGui -= OnWorkbenchKeys; SceneView.duringSceneGui += OnWorkbenchKeys;
             SceneEditSession.Changed -= RefreshSession;
@@ -836,10 +861,22 @@ namespace Project.LevelEditor.Editor
             Selection.selectionChanged -= RefreshSelectionInspector;
             EditorApplication.hierarchyChanged -= MarkSummaryDirty;
             Undo.undoRedoPerformed -= MarkSummaryDirty;
-            SceneEditSession.Exit(sceneView, sessionOwner);
+            // Maximizing a SceneView reparents/recreates its Overlay panel. Keep
+            // the camera lease if the same view attaches a replacement this frame.
+            EditorApplication.update -= ReleaseDetachedSession;
+            EditorApplication.update += ReleaseDetachedSession;
             SceneRegionAuthoring.Bind(sceneView, null, string.Empty, false);
             LevelEditorScenePainter.SetOverlayAuthoring(sceneView, false);
             SceneArtAuthoring.Bind(sceneView, null, null, -1, 0, false, false, false, string.Empty, false);
+        }
+
+        internal void ReleaseDetachedSession()
+        {
+            EditorApplication.update -= ReleaseDetachedSession;
+            if (sceneView == null) return;
+            if (attachedPanels.TryGetValue(sceneView, out var current) && (current != this || current.panel != null)) return;
+            attachedPanels.Remove(sceneView);
+            SceneEditSession.Exit(sceneView, sessionOwner);
         }
 
         private void MarkSummaryDirty() => summaryDirty = true;
@@ -964,8 +1001,9 @@ namespace Project.LevelEditor.Editor
                 ? navigationPaused ? "■ 暂停 · 点击继续" : "■ 落笔 · 点击暂停"
                 : "■ 暂停 · 点击开启";
             Color identity = mode == SceneEditMode.Region ? SceneWorkbenchTheme.Room : artContext ? SceneWorkbenchTheme.Art : SceneWorkbenchTheme.Object;
-            Color sessionColor = locked && !navigationPaused ? identity : SceneWorkbenchTheme.Warning;
-            sessionStatus.style.color = sessionColor;
+            Color sessionColor = locked && !navigationPaused ? SceneWorkbenchTheme.Saved : SceneWorkbenchTheme.Warning;
+            sessionStatus.style.color = SceneWorkbenchTheme.Text;
+            sessionStatus.style.backgroundColor = Color.Lerp(SceneWorkbenchTheme.Surface,sessionColor,.28f);
             sessionStatus.style.borderLeftColor = sessionColor;
             lockButton.text = locked
                 ? navigationPaused ? "继续搭建（启用落笔）" : "结束搭建并恢复原视角"
@@ -1489,7 +1527,9 @@ namespace Project.LevelEditor.Editor
             selectedPaletteItem =
                 ScenePlacementPaletteCatalog.Current(paletteItems) ??
                 paletteItems.FirstOrDefault();
+            var previousChannel = SceneObjectAuthoring.ActiveChannel;
             ApplyPaletteSelection();
+            SceneObjectAuthoring.ActiveChannel = previousChannel;
             RefreshObjectStatus();
         }
 
@@ -1690,7 +1730,8 @@ namespace Project.LevelEditor.Editor
                     var editor = UnityEditor.Editor.CreateEditor(component);
                     if (editor == null) continue;
                     instanceEditors.Add(editor);
-                    var fold = new Foldout { text = ObjectNames.NicifyVariableName(component.GetType().Name), value = component is not RoomResetObject };
+                    var fold = new Foldout { text = ObjectNames.NicifyVariableName(component.GetType().Name), value = component is not RoomResetObject and not LevelEditorPlacedBlock and not MechanismArtworkPresentation };
+                    fold.contentContainer.style.paddingLeft = 0;
                     fold.Add(new InspectorElement(editor)); selectedInspector.Add(fold);
                 }
             }
@@ -1709,8 +1750,15 @@ namespace Project.LevelEditor.Editor
 
         private void FitInspectorFields()
         {
+            selectedInspector.Query<Foldout>().ForEach(fold =>
+            {
+                if (fold.text == "模型与绑定") fold.value = false;
+            });
             selectedInspector.Query<Label>(className: "unity-base-field__label").ForEach(label =>
             {
+                // Vector component labels must stay compact; applying the root
+                // field width to X/Y/Z consumes the entire numeric input row.
+                if (label.text is "X" or "Y" or "Z" or "W" or "x" or "y" or "z" or "w") return;
                 label.style.minWidth = 90; label.style.width = 110; label.style.maxWidth = 120;
                 label.style.flexShrink = 1; label.style.whiteSpace = WhiteSpace.Normal;
             });

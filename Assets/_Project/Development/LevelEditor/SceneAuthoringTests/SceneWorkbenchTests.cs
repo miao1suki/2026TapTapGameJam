@@ -7,6 +7,19 @@ using NUnit.Framework;
 // Assembly-CSharp-Editor. Authoring code stays in its established assembly.
 public sealed class SceneWorkbenchTests
 {
+    [UnityEngine.TestTools.UnityTest]
+    public System.Collections.IEnumerator NarrowInspectorFitsRealVectorParameters() => VisualCase("inspector-vector-layout");
+
+    [UnityEngine.TestTools.UnityTest]
+    public System.Collections.IEnumerator RecreatedPanelKeepsSessionAndClosingReleasesIt() => VisualCase("panel-session-handoff");
+
+    private static System.Collections.IEnumerator VisualCase(string name)
+    {
+        Type audit = AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("Project.LevelEditor.Editor.SceneWorkbenchAudit")).FirstOrDefault(t=>t!=null);
+        Assert.That(audit,Is.Not.Null);
+        return (System.Collections.IEnumerator)audit.GetMethod("RunVisualCase",BindingFlags.Public|BindingFlags.Static).Invoke(null,new object[]{name});
+    }
+
     [TestCase("hole")]
     [TestCase("adjacency")]
     [TestCase("overlap")]

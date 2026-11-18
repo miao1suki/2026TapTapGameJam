@@ -20,6 +20,95 @@ namespace Project.LevelEditor.Editor
 {
     public static class SceneWorkbenchAudit
     {
+        public sealed class LayoutTestWindow : EditorWindow { }
+
+        public static System.Collections.IEnumerator RunVisualCase(string name)
+        {
+            void Check(bool value, string reason) { if (!value) throw new InvalidOperationException(reason); }
+            Scene active = SceneManager.GetActiveScene();
+            bool dirty = active.isDirty;
+            int undo = Undo.GetCurrentGroup();
+            var previousSelection = Selection.activeObject;
+            Scene preview = EditorSceneManager.NewPreviewScene();
+            var view = ScriptableObject.CreateInstance<SceneView>();
+            var host = ScriptableObject.CreateInstance<LayoutTestWindow>();
+            try
+            {
+                var go = new GameObject("Narrow Inspector sample");
+                SceneManager.MoveGameObjectToScene(go, preview);
+                go.AddComponent<LevelEditorPlacedBlock>();
+                go.AddComponent<DoorController>();
+                Selection.activeGameObject = go;
+                view.Show();
+                // This test hosts its own panel. Hide the SceneView's automatic
+                // copy so it cannot retain the same view's session lease.
+                var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+                object canvas = typeof(EditorWindow).GetProperty("overlayCanvas",flags)?.GetValue(view);
+                if (canvas?.GetType().GetProperty("overlays",flags)?.GetValue(canvas) is System.Collections.IEnumerable overlays)
+                    foreach (object item in overlays)
+                        if (item is SceneLevelEditorOverlay overlay) overlay.displayed = false;
+                for (int frame=0;frame<4;frame++) yield return null;
+                host.position = new Rect(20,20,420,1000); host.Show();
+                var panel = new SceneLevelEditorPanel(view);
+                host.rootVisualElement.Add(panel);
+                for (int frame=0;frame<8;frame++) yield return null;
+                if (name == "inspector-vector-layout")
+                {
+                    // Expand binding details so hidden fields also receive real
+                    // layout at each supported panel width.
+                    panel.Query<Foldout>().ForEach(fold => fold.value = true);
+                    var vectors = panel.Query<Vector3Field>().ToList();
+                    Check(vectors.Count > 0,"未创建真实门的向量参数字段");
+                    foreach (float width in new[] {330f,380f,420f})
+                    {
+                        panel.style.width = width;
+                        for (int frame=0;frame<4;frame++) yield return null;
+                        foreach (var vector in vectors)
+                        {
+                            foreach (var axis in vector.Query<FloatField>().ToList())
+                            {
+                                var label = axis.Q<Label>(className:"unity-base-field__label");
+                                var input = axis.Q(className:"unity-base-field__input");
+                                Check(label != null && label.worldBound.width < 30,$"{width}px轴标签错误继承主字段宽度");
+                                Check(input != null && input.worldBound.width >= 30,$"{width}px向量数值输入过窄");
+                                Check(input.worldBound.xMax <= vector.worldBound.xMax+1,$"{width}px向量参数超出面板宽度");
+                            }
+                        }
+                    }
+                }
+                else if (name == "panel-session-handoff")
+                {
+                    panel.ToggleLock(); Check(SceneEditSession.IsLocked(view),"未开启场景会话");
+                    panel.UseWorkbenchTool("select");
+                    typeof(SceneLevelEditorPanel).GetMethod("ChooseResourceKind",flags).Invoke(panel,new object[]{true});
+                    panel.UseWorkbenchTool("erase");
+                    panel.ToggleLock();
+                    panel.RemoveFromHierarchy();
+                    var replacement = new SceneLevelEditorPanel(view);
+                    host.rootVisualElement.Add(replacement);
+                    for (int frame=0;frame<4;frame++) yield return null;
+                    Check(SceneEditSession.IsLocked(view),"重建Overlay中断落笔会话");
+                    Check(SceneObjectAuthoring.ActiveChannel == null,"重建Overlay重置了全部物体通道");
+                    Check((SceneEditMode)typeof(SceneLevelEditorPanel).GetField("mode",flags).GetValue(replacement) == SceneEditMode.Art,"重建Overlay丢失美术模式");
+                    Check((bool)typeof(SceneLevelEditorPanel).GetField("navigationPaused",flags).GetValue(replacement),"重建Overlay意外恢复落笔");
+                    Check(((Toggle)typeof(SceneLevelEditorPanel).GetField("artErase",flags).GetValue(replacement)).value,"重建Overlay丢失美术擦除工具");
+                    replacement.RemoveFromHierarchy();
+                    for (int frame=0;frame<4;frame++) yield return null;
+                    Check(!SceneEditSession.IsLocked(view),"关闭工作台后未释放视角会话");
+                }
+                else throw new ArgumentException(name);
+                Check(active.isDirty == dirty && Undo.GetCurrentGroup() == undo,"只读布局验收写入作者数据或Undo");
+            }
+            finally
+            {
+                Selection.activeObject = previousSelection;
+                host.Close();
+                SceneEditSession.Exit(view,"SceneLevelEditorOverlay:"+view.GetInstanceID());
+                view.Close();
+                EditorSceneManager.ClosePreviewScene(preview);
+            }
+        }
+
         public static void RunCase(string name)
         {
             void Check(bool value, string reason) { if (!value) throw new InvalidOperationException(reason); }
@@ -37,6 +126,9 @@ namespace Project.LevelEditor.Editor
                     var serialized=new SerializedObject(presentation); serialized.FindProperty("artwork").objectReferenceValue=custom; serialized.ApplyModifiedPropertiesWithoutUndo();
                     int undo=Undo.GetCurrentGroup(); string before=EditorJsonUtility.ToJson(presentation); bool dirty=scene.isDirty;
                     Check(ObjectArtworkPlanningPreview.TryGet(owner,out var art)&&art.Sprite==sprite,"实例美术库被共享预览覆盖");
+                    var drawer=new SceneResourceDrawer(_=>{},_=>{},_=>{});
+                    drawer.Bind(new[]{new ScenePaletteItem {prefab=owner,isProp=true,index=0,displayName="真实门"}},null,false);
+                    Check(drawer.Q<Image>()?.sprite==sprite,"资源卡片没有显示真实机关美术");
                     Check(before==EditorJsonUtility.ToJson(presentation)&&undo==Undo.GetCurrentGroup()&&dirty==scene.isDirty,"读取实例美术改变作者状态");
                     var other=new GameObject("Default artwork door"); SceneManager.MoveGameObjectToScene(other,scene); other.AddComponent<DoorController>();
                     Check(ObjectArtworkPlanningPreview.TryGet(other,out var standard)&&standard.Sprite==ObjectArtworkLibrary.Load().FirstFrame(MechanismArtworkKind.Door),"实例美术污染共享默认库");

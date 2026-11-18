@@ -1,0 +1,16 @@
+{
+  "schema": "xzc-image-call-failure-v1",
+  "exceptionType": "HttpResponseException",
+  "createdUtc": "2026-11-18T02:01:34.6752476Z",
+  "briefSHA256": "6ad914b0cda23d3481a3e8f810ede82b72719b6faba865cc3a8a6daf04f86105",
+  "outputProduced": false,
+  "stage": "design",
+  "providerReached": "unknown",
+  "guideSHA256": null,
+  "referenceSHA256": "86b1be04a847246a0d5c3e5a3845893159dad7311aecdba730fdd4b8760011c5",
+  "taskPacketSHA256": null,
+  "phase": "generation",
+  "requestedModel": "gpt-image-2.5-sunburst",
+  "automaticRetry": false,
+  "httpStatus": 500
+}
