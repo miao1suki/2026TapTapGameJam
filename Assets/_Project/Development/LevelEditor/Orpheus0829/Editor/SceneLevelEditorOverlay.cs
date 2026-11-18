@@ -406,6 +406,8 @@ namespace Project.LevelEditor.Editor
         private readonly List<ScenePaletteItem> paletteItems = new List<ScenePaletteItem>();
         private ScenePaletteItem selectedPaletteItem;
         private GridArtScene activeArtScene;
+        private GridArtMap layerSelectionMap;
+        private string selectedArtLayerId;
         private SceneEditMode mode;
         private string selectedRegionId = string.Empty;
         private int sceneHandle = -1;
@@ -425,6 +427,7 @@ namespace Project.LevelEditor.Editor
         private bool compact;
         private bool artContext;
         private VisualElement artLayerBar;
+        private Label artLayerWarning;
         private Toggle layerVisible, layerLocked;
         private Foldout navigationFold;
         private int sessionVisualHash;
@@ -442,7 +445,9 @@ namespace Project.LevelEditor.Editor
             style.minWidth = 330f;
             style.maxWidth = 420f;
             style.width = 380f;
+            style.height = 760f;
             style.maxHeight = 760f;
+            body.style.flexGrow = 1;
             style.color = SceneWorkbenchTheme.Text;
             style.backgroundColor = SceneWorkbenchTheme.Background;
             style.fontSize = 12;
@@ -585,6 +590,8 @@ namespace Project.LevelEditor.Editor
             layerVisible.RegisterValueChangedCallback(evt => ChangeArtLayerFlags(evt.newValue, null));
             layerLocked.RegisterValueChangedCallback(evt => ChangeArtLayerFlags(null, evt.newValue));
             artLayerBar.Add(layerVisible); artLayerBar.Add(layerLocked); base.Add(artLayerBar);
+            artLayerWarning = new Label { name = "workbench-art-layer-warning", style = { color = SceneWorkbenchTheme.Warning, whiteSpace = WhiteSpace.Normal, fontSize = 11 } };
+            base.Add(artLayerWarning);
             resources = new SceneResourceDrawer(ChooseResourceKind, ChooseObjectCard, ChooseArtCard);
             resourceFold = new Foldout { text = "资源 · 物体 / 美术", value = true, viewDataKey = "workbench-resources" };
             resourceFold.Add(resources); body.Add(resourceFold);
@@ -727,6 +734,7 @@ namespace Project.LevelEditor.Editor
         {
             ChooseResourceKind(false); ScenePlacementPaletteCatalog.Select(item);
             selectedPaletteItem = item; ApplyPaletteSelection(); LevelEditorState.Tool = LevelEditorTool.Paint;
+            LevelEditorScenePainter.RectangleStroke = false;
             RefreshSession();
         }
 
@@ -779,6 +787,9 @@ namespace Project.LevelEditor.Editor
             if (sceneView == null) return;
             float height = Mathf.Max(220, Mathf.Min(760, sceneView.position.height * .85f));
             style.maxHeight = height;
+            // A bottom-docked Overlay grows upwards. Keep its expanded height
+            // stable when resources/inspector fold, so the tools stay in place.
+            style.height = compact ? new StyleLength(StyleKeyword.Auto) : new StyleLength(height);
             body.style.maxHeight = Mathf.Max(100, height - 180);
             if (ownerOverlay == null || !ownerOverlay.floating || !float.IsFinite(resolvedStyle.height)) return;
             Vector2 position = ownerOverlay.floatingPosition;
@@ -802,6 +813,7 @@ namespace Project.LevelEditor.Editor
             }
             compact = !compact;
             body.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex;
+            FitToScene();
         }
 
         private void Subscribe()
@@ -988,6 +1000,8 @@ namespace Project.LevelEditor.Editor
             layerVisible?.SetValueWithoutNotify(selectedLayer?.visible ?? false);
             layerLocked?.SetValueWithoutNotify(selectedLayer?.locked ?? false);
             artLayerBar?.SetEnabled(selectedLayer != null && !EditorApplication.isPlayingOrWillChangePlaymode);
+            artLayerWarning.text = selectedLayer == null ? "当前没有可选美术图层" : selectedLayer.locked ? "图层已锁定 · 取消锁定或切换图层后绘制" : !selectedLayer.visible ? "图层已隐藏 · 开启显示后检查绘制结果" : string.Empty;
+            artLayerWarning.style.display = artContext && !string.IsNullOrEmpty(artLayerWarning.text) ? DisplayStyle.Flex : DisplayStyle.None;
             saveStatus.text = $"场景 {(current.isDirty ? "待保存" : "已保存")} · 美术 {(map != null && EditorUtility.IsDirty(map) ? "待保存" : "无更改")} · 归属 {(ownership != null && EditorUtility.IsDirty(ownership) ? "待保存" : "无更改")}";
             sceneSave.text = current.isDirty ? "Scene ●" : "Scene ✓";
             sceneSave.tooltip = current.isDirty ? "场景待保存 · 点击只保存当前 Scene" : "场景已保存";
@@ -1442,7 +1456,14 @@ namespace Project.LevelEditor.Editor
                 },
             };
             panel.Add(artToolStatus);
-            artLayer = new DropdownField("GridArt 图层"); artLayer.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artLayer);
+            artLayer = new DropdownField("GridArt 图层");
+            artLayer.RegisterValueChangedCallback(_ =>
+            {
+                var map = activeArtScene?.map;
+                selectedArtLayerId = map != null && artLayer.index >= 0 && artLayer.index < map.layers.Count ? map.layers[artLayer.index]?.id : null;
+                BindAuthoring(); RefreshSession();
+            });
+            panel.Add(artLayer);
             artBrush = new DropdownField("笔刷"); artBrush.RegisterValueChangedCallback(_ => { RefreshArtBrushPreview(); BindAuthoring(); });
             artTurns = new IntegerField("旋转 90° 次数") { value = 0 }; artTurns.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artTurns);
             artRectangle = new Toggle("矩形"); artRectangle.RegisterValueChangedCallback(_ => BindAuthoring()); panel.Add(artRectangle);
@@ -1789,8 +1810,7 @@ namespace Project.LevelEditor.Editor
                 if (activeArtScene != null) break;
             }
             GridArtMap map = activeArtScene?.map;
-            artLayer.choices = map != null ? map.layers.Select(item => item?.label ?? "<空图层>").ToList() : new List<string>();
-            artLayer.index = artLayer.choices.Count > 0 ? Mathf.Clamp(artLayer.index, 0, artLayer.choices.Count - 1) : -1;
+            RefreshArtLayerChoices(map);
             artBrush.choices = map?.palette != null ? map.palette.brushes.Select((item, i) => $"{i} · {item?.label ?? "<空笔刷>"}").ToList() : new List<string>();
             artBrush.index = artBrush.choices.Count > 0
                 ? SceneArtPaletteSelection.Current(map)
@@ -1800,6 +1820,21 @@ namespace Project.LevelEditor.Editor
             artStatus.text = map == null ? "当前 Scene 没有已绑定的 GridArtMap；不会自动创建。" :
                 $"Map {map.name} · 图层 {map.layers.Count} · 美术格 {map.layers.Sum(item => item?.cells?.Count ?? 0)} · {(SceneArtAuthoring.OwnershipFor(activeArtScene) == null ? "旧美术默认未归属" : "已绑定稀疏归属资产")}\n{SceneArtAuthoring.Status}";
             BindAuthoring();
+        }
+
+        internal void RefreshArtLayerChoices(GridArtMap map)
+        {
+            int selected = layerSelectionMap == map && map != null
+                ? map.layers.FindIndex(item => item != null && item.id == selectedArtLayerId) : -1;
+            if (selected < 0 && map != null)
+            {
+                selected = map.layers.FindIndex(item => item != null && item.visible && !item.locked);
+                if (selected < 0 && map.layers.Count > 0) selected = 0;
+            }
+            artLayer.choices = map != null ? map.layers.Select(item => item?.label ?? "<空图层>").ToList() : new List<string>();
+            artLayer.SetValueWithoutNotify(selected >= 0 ? artLayer.choices[selected] : null);
+            layerSelectionMap = map;
+            selectedArtLayerId = selected >= 0 ? map.layers[selected]?.id : null;
         }
 
         private void OnArtBrushSelectionChanged(

@@ -709,7 +709,12 @@ namespace Project.LevelEditor.Editor
             }
             else
             {
+                // PlanarPrimitive supplies geometry/collision only. A null
+                // material renders magenta and cannot be fixed by entry tint.
+                var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Content/WorldItems/Neutral.mat");
+                if (material == null) throw new System.InvalidOperationException("缺少基础方块材质：Assets/_Project/Content/WorldItems/Neutral.mat");
                 instance = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
+                instance.GetComponent<MeshRenderer>().sharedMaterial = material;
                 if (instance.scene != targetScene)
                     UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(instance, targetScene);
                 instance.transform.localScale =

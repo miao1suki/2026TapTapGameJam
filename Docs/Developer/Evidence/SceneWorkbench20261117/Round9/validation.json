@@ -1,0 +1,32 @@
+{
+  "unity": "6000.3.12f1",
+  "relatedEditMode": {
+    "total": "145",
+    "passed": "145",
+    "failed": "0",
+    "skipped": "0",
+    "duration": "37.5595739"
+  },
+  "codeSHA256": {
+    "LevelEditorTools.cs": "32402a842269c8069134fcc3a32758015cc49072c2068254dc58cb9d6abf144e",
+    "Native2DScenePreview.cs": "75e601cdac59eef3ce3cf593fccb356f630d2aaedcbb22686d2156ad552cf797",
+    "SceneLevelEditorOverlay.cs": "4cabe0146493e71ee208cc9ee25d022ba0d823f6093add3e8f0f2752b79d1928",
+    "SceneWorkbenchAudit.cs": "5fa23c73aaf199fff4fa322dcde7ad1ab022d4cd726b3aee258b50edadacf584"
+  },
+  "backgroundAudit": "r9b Passed (earlier r9 failed on transient tint restoration; fix then rerun)",
+  "mapFullJsonBeforeEqualsUndo": true,
+  "mapFullJsonSHA256": "375e368da116ad7bded8b357cf87edd7e4eea90e41c26b453b4272670e49146d",
+  "actualGpuProbe": "Persistent shared material and black tint survived save/reopen; 256x256 isolated camera capture.",
+  "limitations": [
+    "Attached UI layout test is not native docking foreground verification.",
+    "Round8 GUI hash mismatch root cause remains unproven; Round9 full JSON matched.",
+    "Scene click isolation, light theme, binding workflow and real domain reload foreground checks still pending.",
+    "Artwork topology and seam review remain in progress; no candidate mother imported."
+  ],
+  "formalHashes": {
+    "Assets/_Project/Scenes/Playing/Gaming.unity": "16acab3b7a0b828b4dc6b41387f1ecd918bfbfa46254c2b6170018d189e7a324",
+    "Assets/_Project/Scenes/Playing/Gaming_Art.asset": "62172b600b200d47abc5c5cebc2e03cd35c40aff12fa60da262b3a21204d688d",
+    "Assets/_Project/Scenes/Playing/Gaming.planning.json": "5714d40118dd1109d0f56f80dd6dd9ccd9a0b622a93867bba27f200e37ea3c90",
+    "Assets/_Project/Content/LevelMaps/正式关卡.json": "5714d40118dd1109d0f56f80dd6dd9ccd9a0b622a93867bba27f200e37ea3c90"
+  }
+}

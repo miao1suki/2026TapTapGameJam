@@ -97,6 +97,25 @@ namespace Project.LevelEditor.Editor
                     for (int frame=0;frame<4;frame++) yield return null;
                     Check(!SceneEditSession.IsLocked(view),"关闭工作台后未释放视角会话");
                 }
+                else if (name == "stable-fold-layout")
+                {
+                    host.rootVisualElement.style.justifyContent = Justify.FlexEnd;
+                    for (int frame=0;frame<4;frame++) yield return null;
+                    var tool = panel.Q<Button>("workbench-authoring-toggle");
+                    float y = tool.worldBound.y, height = panel.worldBound.height;
+                    Check(height > 150,"工作台未参与真实布局");
+                    var resources = (Foldout)typeof(SceneLevelEditorPanel).GetField("resourceFold",flags).GetValue(panel);
+                    var inspector = (Foldout)typeof(SceneLevelEditorPanel).GetField("inspectorFold",flags).GetValue(panel);
+                    resources.value = false; inspector.value = false;
+                    for (int frame=0;frame<4;frame++) yield return null;
+                    Check(Mathf.Abs(tool.worldBound.y-y)<1 && Mathf.Abs(panel.worldBound.height-height)<1,"底部对齐时收起资源/参数移动了主工具");
+                    resources.value = true; inspector.value = true;
+                    for (int frame=0;frame<4;frame++) yield return null;
+                    Check(Mathf.Abs(tool.worldBound.y-y)<1,"重新展开资源移动了主工具");
+                    typeof(SceneLevelEditorPanel).GetMethod("ToggleCompact",flags).Invoke(panel,null);
+                    for (int frame=0;frame<4;frame++) yield return null;
+                    Check(panel.Q<ScrollView>("workbench-body").resolvedStyle.display == DisplayStyle.None && panel.worldBound.height < height,"显式收起未释放画面空间");
+                }
                 else throw new ArgumentException(name);
                 Check(active.isDirty == dirty && Undo.GetCurrentGroup() == undo,"只读布局验收写入作者数据或Undo");
             }
@@ -114,7 +133,62 @@ namespace Project.LevelEditor.Editor
         {
             void Check(bool value, string reason) { if (!value) throw new InvalidOperationException(reason); }
             RoomRegion Region(string id, params Vector2Int[] cells) => new RoomRegion { id = id, label = id, cells = cells.ToList() };
-            if (name == "ownership-script-persistence")
+            if (name == "preview-tint-zero-write")
+            {
+                var preview = EditorSceneManager.NewPreviewScene();
+                try
+                {
+                    var go = Project.Planar.PlanarPrimitive.Create(Project.Planar.PlanarPrimitive.Shape.Box);
+                    SceneManager.MoveGameObjectToScene(go,preview);
+                    var renderer = go.GetComponent<MeshRenderer>();
+                    renderer.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Content/WorldItems/Neutral.mat");
+                    var block = go.AddComponent<LevelEditorPlacedBlock>();
+                    block.Configure(Vector2Int.zero,"预览测试",new Color(.08f,.08f,.08f),true);
+                    renderer.SetPropertyBlock(null);
+                    string before = EditorJsonUtility.ToJson(block)+EditorJsonUtility.ToJson(renderer);
+                    bool dirty=preview.isDirty; int undo=Undo.GetCurrentGroup();
+                    Native2DScenePreview.RestoreBlockTints(preview);
+                    var props = new MaterialPropertyBlock(); renderer.GetPropertyBlock(props);
+                    Check(props.GetColor("_BaseColor")==block.EntryColor,"重载后未恢复临时方块颜色");
+                    Check(before==EditorJsonUtility.ToJson(block)+EditorJsonUtility.ToJson(renderer) && preview.isDirty==dirty && Undo.GetCurrentGroup()==undo,"临时预览着色写入作者字段、材质、Scene或Undo");
+                }
+                finally { EditorSceneManager.ClosePreviewScene(preview); }
+            }
+            else if (name == "editable-layer-default")
+            {
+                var map = ScriptableObject.CreateInstance<GridArtMap>();
+                var other = ScriptableObject.CreateInstance<GridArtMap>();
+                var view = ScriptableObject.CreateInstance<SceneView>();
+                var host = ScriptableObject.CreateInstance<LayoutTestWindow>();
+                var preview = EditorSceneManager.NewPreviewScene();
+                try
+                {
+                    map.layers.Add(new GridArtLayer {id="background",label="远景",locked=true});
+                    map.layers.Add(new GridArtLayer {id="hidden",label="隐藏",visible=false});
+                    map.layers.Add(new GridArtLayer {id="terrain",label="地形"});
+                    other.layers.Add(new GridArtLayer {id="only",label="只读",locked=true});
+                    var go = new GameObject("Layer selection"); SceneManager.MoveGameObjectToScene(go,preview);
+                    var art = go.AddComponent<GridArtScene>(); art.map = map;
+                    int undo = Undo.GetCurrentGroup(); string before = EditorJsonUtility.ToJson(map);
+                    var panel = new SceneLevelEditorPanel(view);
+                    var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                    typeof(SceneLevelEditorPanel).GetField("activeArtScene",flags).SetValue(panel,art);
+                    panel.RefreshArtLayerChoices(map);
+                    host.Show(); host.rootVisualElement.Add(panel);
+                    var layers = (DropdownField)typeof(SceneLevelEditorPanel).GetField("artLayer",flags).GetValue(panel);
+                    Check(layers.index == 2,"首次选择没有跳过隐藏/锁定层");
+                    layers.index = 0; panel.RefreshArtLayerChoices(map);
+                    Check(layers.index == 0,"刷新覆盖了作者显式选择的锁定层");
+                    map.layers.Reverse(); panel.RefreshArtLayerChoices(map);
+                    Check(layers.index == 2,"图层重排未按稳定ID保留选择");
+                    map.layers.Reverse();
+                    panel.RefreshArtLayerChoices(other);
+                    Check(layers.index == 0,"无可编辑层时丢失只读浏览入口");
+                    Check(EditorJsonUtility.ToJson(map)==before && Undo.GetCurrentGroup()==undo,"选择图层写入作者Map或Undo");
+                }
+                finally { host.Close(); UnityEngine.Object.DestroyImmediate(map); UnityEngine.Object.DestroyImmediate(other); UnityEngine.Object.DestroyImmediate(view); EditorSceneManager.ClosePreviewScene(preview); }
+            }
+            else if (name == "ownership-script-persistence")
             {
                 const string folder = "Assets/_Project/Development/LevelEditor/SceneAuthoringFixture";
                 const string prefabPath = folder + "/__OwnershipRoundTrip.prefab";
@@ -413,6 +487,114 @@ namespace Project.LevelEditor.Editor
             view.in2DMode = true;
             view.Frame(new Bounds(new Vector3(21,9,0),new Vector3(48,27,1)),true);
             StartReviewObservations(path);
+        }
+
+        // Explicit, disposable-lab verification; never called by normal UI.
+        public static void RunRoundNineAudit()
+        {
+            const string output = "Library/SceneWorkbenchRound9";
+            const string lab = "Assets/_Project/Development/LevelEditor/SceneWorkbenchInteractionLab/InteractionLab.unity";
+            GridArtMap map = null;
+            string original = null;
+            try
+            {
+                Directory.CreateDirectory(output);
+                foreach (string path in new[] {SceneWorkbenchShowcase.ScenePath,
+                    "Assets/_Project/Development/LevelEditor/SceneAuthoringShowcase/MossConnections.unity",
+                    "Assets/_Project/Development/LevelEditor/SceneAuthoringFixture/Mixed.unity"})
+                {
+                    var saved = EditorSceneManager.OpenScene(path);
+                    var links = saved.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<GridArtRegionOwnershipLink>(true)).ToArray();
+                    if (links.Length != 1 || links[0].Ownership == null) throw new InvalidOperationException("冷开丢失归属："+path);
+                }
+                Scene scene = EditorSceneManager.OpenScene(lab);
+                foreach (var probe in SceneObjectAuthoring.Read(scene).All.Where(r=>r.block.EntryName=="__RoundNineMaterialProbe" && r.block.Cell==new Vector2Int(-13,16)).ToArray())
+                    UnityEngine.Object.DestroyImmediate(probe.block.gameObject);
+                SceneObjectAuthoring.NotifyChanged();
+                if (scene.isDirty) EditorSceneManager.SaveScene(scene);
+                var art = scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<GridArtScene>(true)).Single();
+                map = art.map;
+                if (map.layers.Sum(l=>l.cells.Count)!=388 || SceneObjectAuthoring.Read(scene).All.Count!=368)
+                    throw new InvalidOperationException("前台保存后的作者数量未持久化");
+                if (map.ownerSceneGuid != AssetDatabase.AssetPathToGUID(lab)) throw new InvalidOperationException("副本Map仍归属源Scene");
+                var entry = new LevelEditorBlockEntry(); entry.Configure("__RoundNineMaterialProbe",new Color(.08f,.08f,.08f),null);
+                var block = LevelEditorBlockFactory.Place(entry,new Vector2Int(-13,16));
+                if (block == null || block.EntryName != "__RoundNineMaterialProbe") throw new InvalidOperationException("材质测试格被占用");
+                var material = block.GetComponent<MeshRenderer>().sharedMaterial;
+                if (material == null || material.shader == null || !material.shader.isSupported || !AssetDatabase.Contains(material))
+                    throw new InvalidOperationException("基础方块没有可持久引用的受支持材质");
+                EditorSceneManager.SaveScene(scene);
+                scene = EditorSceneManager.OpenScene(lab);
+                if (scene.isDirty) throw new InvalidOperationException("恢复临时着色时改写了Scene");
+                block = SceneObjectAuthoring.Read(scene).All.Single(r=>r.block.EntryName=="__RoundNineMaterialProbe").block;
+                if (block.GetComponent<MeshRenderer>().sharedMaterial != material) throw new InvalidOperationException("保存重开丢失基础方块材质");
+                CaptureBlockProbe(block,output+"/black-block-after-reopen.png");
+                UnityEngine.Object.DestroyImmediate(block.gameObject);
+                EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene);
+                art = scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<GridArtScene>(true)).Single();
+                map = art.map; original = EditorJsonUtility.ToJson(map,true);
+                File.WriteAllText(output+"/map-before.json",original);
+                string authorBefore = ArtworkAuthorSnapshot(map);
+                var layer = map.layers.First(l=>l.visible&&!l.locked);
+                int revision = map.revision;
+                SceneArtAuthoring.StrokeForAudit(art,layer,new Vector2Int(-14,16),false);
+                GridArtBuilder.ApplyAffected(map,scene,layer,new[]{new Vector2Int(-14,16)},revision,false);
+                string authorAfter = ArtworkAuthorSnapshot(map);
+                Undo.PerformUndo();
+                File.WriteAllText(output+"/map-after-undo.json",EditorJsonUtility.ToJson(map,true));
+                if (ArtworkAuthorSnapshot(map)!=authorBefore) throw new InvalidOperationException("美术撤销未精确恢复作者数据");
+                Undo.PerformRedo();
+                if (ArtworkAuthorSnapshot(map)!=authorAfter) throw new InvalidOperationException("美术重做未精确恢复作者数据");
+                File.WriteAllText(output+"/result.txt","PASS: three saved Scene ownership links; GUI-saved 368 objects/388 art cells; material reference and GPU black tint after save/reopen; exact art author Undo/Redo (derived bake fields excluded).\n");
+            }
+            catch (Exception e) { Debug.LogException(e); File.WriteAllText(output+"/failure.txt",e.ToString()); EditorApplication.Exit(1); return; }
+            finally
+            {
+                if (map != null && original != null)
+                {
+                    Undo.ClearUndo(map); EditorJsonUtility.FromJsonOverwrite(original,map);
+                    foreach (var layer in map.layers) layer.InvalidateLookup();
+                    EditorUtility.SetDirty(map);
+                    GridArtBuilder.Apply(map,SceneManager.GetActiveScene(),false,false);
+                    AssetDatabase.SaveAssetIfDirty(map); EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+                }
+            }
+            EditorApplication.Exit(0);
+        }
+
+        private static string ArtworkAuthorSnapshot(GridArtMap map)
+        {
+            var copy = UnityEngine.Object.Instantiate(map);
+            try
+            {
+                copy.name=map.name; copy.hideFlags=HideFlags.None;
+                copy.bakedRevision=-1; copy.bakedPaletteHash=null;
+                return EditorJsonUtility.ToJson(copy);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(copy); }
+        }
+
+        private static void CaptureBlockProbe(LevelEditorPlacedBlock block,string output)
+        {
+            var go = new GameObject("Material probe camera");
+            SceneManager.MoveGameObjectToScene(go,block.gameObject.scene);
+            var camera = go.AddComponent<Camera>(); camera.orthographic=true; camera.orthographicSize=1.5f;
+            camera.transform.position=block.transform.position+Vector3.back*10;
+            camera.clearFlags=CameraClearFlags.SolidColor; camera.backgroundColor=new Color(.1f,.5f,.8f);
+            camera.cullingMask=1<<30; block.gameObject.layer=30;
+            var rt=new RenderTexture(256,256,24); rt.Create();
+            var png=new Texture2D(256,256,TextureFormat.RGBA32,false);
+            var previous=RenderTexture.active;
+            try
+            {
+                camera.targetTexture=rt; camera.Render(); RenderTexture.active=rt;
+                png.ReadPixels(new Rect(0,0,256,256),0,0); png.Apply();
+                File.WriteAllBytes(output,png.EncodeToPNG());
+                Color center=png.GetPixel(128,128),corner=png.GetPixel(8,8);
+                if (Mathf.Max(center.r,center.g,center.b)>.45f || Mathf.Max(center.r,center.g,center.b)-Mathf.Min(center.r,center.g,center.b)>.025f || corner.b-corner.r<.2f)
+                    throw new InvalidOperationException($"基础方块实际像素不是深灰：{center}，背景{corner}");
+            }
+            finally { RenderTexture.active=previous; rt.Release(); UnityEngine.Object.DestroyImmediate(rt); UnityEngine.Object.DestroyImmediate(png); UnityEngine.Object.DestroyImmediate(go); }
         }
 
         private static string lastReviewState;

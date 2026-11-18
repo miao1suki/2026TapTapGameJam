@@ -1,6 +1,8 @@
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -14,6 +16,21 @@ namespace Project.LevelEditor
         {
             RenderPipelineManager.beginCameraRendering -= Prepare;
             RenderPipelineManager.beginCameraRendering += Prepare;
+            EditorSceneManager.sceneOpened += (scene, _) => RestoreBlockTints(scene);
+            EditorApplication.delayCall += () =>
+            {
+                for (int i=0;i<SceneManager.sceneCount;i++) RestoreBlockTints(SceneManager.GetSceneAt(i));
+            };
+        }
+
+        // MaterialPropertyBlocks are transient. Restore only preview state after
+        // reload; never change shared materials, author fields, dirty or Undo.
+        internal static void RestoreBlockTints(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded || EditorApplication.isPlayingOrWillChangePlaymode) return;
+            foreach (var root in scene.GetRootGameObjects())
+                foreach (var block in root.GetComponentsInChildren<LevelEditorPlacedBlock>(true))
+                    if (block.HasColorData) block.ApplyEntryColor();
         }
 
         private static void Prepare(ScriptableRenderContext context, Camera camera)
