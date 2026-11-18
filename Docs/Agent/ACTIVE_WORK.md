@@ -1,13 +1,12 @@
-## 2026-11-17 场景作者工作台（进行中，第三检查点）
+## 2026-11-17 场景作者工作台（进行中，第四检查点）
 
-- 分支：codex/editor/scene-authoring-redesign，基线69a8a4b；检查点a1739777、b059c65e已推送。仅隔离工作树，不合main，不修改用户D盘或正式Gaming。
-- 实现：Scene Overlay 统一资源、真实实例 Inspector、房间轮廓导航与 Claude 墨蓝/珊瑚/紫/青配色；修正浮动折叠锚点、状态哈希遗漏、点选通道默认及滚动层级。
-- 新增可编辑 MossAqueduct（366碰撞格、6美术层、387锚点、真实门/按钮双向绑定）和 MossConnections（13类实际连接输入）。32px可选宽轮廓覆盖两格，旧Palette继续原路径；增量构建邻域扩大至两格，补齐未保存Palette缓存键。
-- 最新专项：GridArt/ObjectArtwork/工作台139/139通过（34.930秒）；当前UI16/16通过（2.899秒），无失败或跳过。实际布局覆盖330/380/420宽XYZ输入、Overlay替换保留工具/暂停/通道以及关闭释放。不是全项目最新全量或Android验收。
-- 前台第7轮：开启→V→铜门共3次点击（已开启后2次），无需再切全部通道；最大化仍保持落笔，XYZ完整可见。浏览观察器只有初始单行，Scene/Map无写入，368作者对象、revision2和387锚点不变。Claude完整UI复审可继续但带条件，已落实低频折叠、外层单滚与实心选中态。浅色主题、重编译与完整制作/绑定/保存旅程仍待验收。
-- 美术仍未通过：Claude完整复审20261118-093940-626要求窄条粗细一致、端帽和孔洞过渡返工。已归档原图/提示词/审图来源及可编辑单层Aseprite，不能称定稿。
-- 新紧凑图生成返回HTTP500，未产生PNG；安全失败记录与提示词归档PendingCompact，没有以失败请求冒充素材交付。
-- 详见 Docs/Developer/SCENE_AUTHORING_WORKBENCH_20261117.md；继续处理窄条/孔洞与实际操作旅程。
+- 分支codex/editor/scene-authoring-redesign，基线69a8a4b；a1739777、b059c65e、975899aa已推送。仅隔离工作树，不合main、不写D盘项目或正式Gaming。
+- Scene Overlay统一物体/美术资源、实例Inspector、房间导航与Claude配色；可编辑MossAqueduct和13类连接场景成套交付。32px宽轮廓覆盖两格，旧Palette兼容。
+- 冷开实际发现归属组件无稳定MonoScript资产，拆出同名GridArtRegionOwnershipLink.cs；仅修三份自有Scene脚本引用，新增Prefab持久化回归。当前相关EditMode142/142通过37.091秒；前次旧Canvas性能项间歇失败，隔离1/1和随后完整回归通过，记录保留。
+- 第8轮独立副本GUI：物体368→369一次撤销回368；美术387→388、撤销387、重做388；美术/Scene分别保存清除dirty。撤销后的完整Map哈希与初始不同，待字段级排查。实际记录和截图在Docs/Developer/Evidence/SceneWorkbench20261117/Round8。
+- 待修：底部停靠折叠引发工具跳位、首次美术落在锁定背景层、黑块新放置粉色材质；完整绑定、浅色、重编译恢复仍待验收。
+- 美术r3/r4成功生成但完整Claude审图退回，未导入Unity；Round3RejectedSources.zip归档源图、提示词、安全来源与意见。窄条颗粒/厚度、端帽和宽窄接缝继续返工，不能称定稿。
+- 详见Docs/Developer/SCENE_AUTHORING_WORKBENCH_20261117.md。原生2D/正式Gaming及两份历史JSON哈希保持基线。
 
 ## 2026-11-06 藤蔓与结局镜头专项（已实现，子分支交付）
 

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Project.Rooms;
 using Project.GridArt;
+using Project.GridArt.Editor;
 using Project.Mechanisms;
 using Project.ObjectArtwork;
 using Project.BlockFeatures;
@@ -113,7 +114,40 @@ namespace Project.LevelEditor.Editor
         {
             void Check(bool value, string reason) { if (!value) throw new InvalidOperationException(reason); }
             RoomRegion Region(string id, params Vector2Int[] cells) => new RoomRegion { id = id, label = id, cells = cells.ToList() };
-            if (name == "custom-mechanism-preview")
+            if (name == "ownership-script-persistence")
+            {
+                const string folder = "Assets/_Project/Development/LevelEditor/SceneAuthoringFixture";
+                const string prefabPath = folder + "/__OwnershipRoundTrip.prefab";
+                const string assetPath = folder + "/__OwnershipRoundTrip.asset";
+                Check(!File.Exists(prefabPath) && !File.Exists(assetPath),"归属持久化测试路径已存在，拒绝覆盖");
+                Scene test = default;
+                GameObject reopened = null;
+                try
+                {
+                    var ownership = ScriptableObject.CreateInstance<GridArtRegionOwnership>();
+                    ownership.Set("terrain",new Vector2Int(-2,3),"room_a");
+                    AssetDatabase.CreateAsset(ownership,assetPath);
+                    test = EditorSceneManager.NewPreviewScene();
+                    var go = new GameObject("Persistent art ownership");
+                    SceneManager.MoveGameObjectToScene(go,test);
+                    var link = go.AddComponent<GridArtRegionOwnershipLink>();
+                    link.SetOwnership(ownership);
+                    Check(!string.IsNullOrEmpty(AssetDatabase.GetAssetPath(MonoScript.FromMonoBehaviour(link))),"归属组件没有可持久引用的脚本资产");
+                    PrefabUtility.SaveAsPrefabAsset(go,prefabPath);
+                    AssetDatabase.ImportAsset(prefabPath,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
+                    reopened = PrefabUtility.LoadPrefabContents(prefabPath);
+                    link = reopened.GetComponent<GridArtRegionOwnershipLink>();
+                    Check(link != null && link.Ownership != null && link.Ownership.Get("terrain",new Vector2Int(-2,3)) == "room_a","保存重开后丢失美术归属引用或负坐标归属");
+                }
+                finally
+                {
+                    if (reopened != null) PrefabUtility.UnloadPrefabContents(reopened);
+                    if (test.IsValid() && test.isLoaded) EditorSceneManager.ClosePreviewScene(test);
+                    AssetDatabase.DeleteAsset(prefabPath);
+                    AssetDatabase.DeleteAsset(assetPath);
+                }
+            }
+            else if (name == "custom-mechanism-preview")
             {
                 var scene=EditorSceneManager.NewPreviewScene();
                 var texture=new Texture2D(16,32);
@@ -347,6 +381,38 @@ namespace Project.LevelEditor.Editor
             File.WriteAllText("Library/SceneWorkbenchUIAudit.txt", "Explicit fixture UI review; state observations only.\n");
             EditorApplication.update -= ObserveReviewState;
             EditorApplication.update += ObserveReviewState;
+        }
+
+        // Explicit review entry only. Creates independent Scene/Map/ownership
+        // copies so painting, Undo and save/reopen trials cannot alter the demo.
+        public static void OpenInteractionLabForReview()
+        {
+            const string folder = "Assets/_Project/Development/LevelEditor/SceneWorkbenchInteractionLab";
+            string path = folder + "/InteractionLab.unity";
+            if (!File.Exists(path))
+            {
+                if (AssetDatabase.IsValidFolder(folder)) throw new InvalidOperationException("交互样板目录已存在，拒绝覆盖");
+                AssetDatabase.CreateFolder("Assets/_Project/Development/LevelEditor","SceneWorkbenchInteractionLab");
+                var source = EditorSceneManager.OpenScene(SceneWorkbenchShowcase.ScenePath);
+                var art = source.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<GridArtScene>(true)).Single();
+                var ownership = SceneArtAuthoring.OwnershipFor(art);
+                if (!AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(art.map),folder+"/Map.asset") ||
+                    !AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(ownership),folder+"/Ownership.asset"))
+                    throw new InvalidOperationException("独立作者资产复制失败，未覆盖源数据");
+                art.map = AssetDatabase.LoadAssetAtPath<GridArtMap>(folder+"/Map.asset");
+                art.map.ownerSceneGuid = string.Empty;
+                EditorUtility.SetDirty(art.map);
+                art.GetComponent<GridArtRegionOwnershipLink>().SetOwnership(AssetDatabase.LoadAssetAtPath<GridArtRegionOwnership>(folder+"/Ownership.asset"));
+                EditorSceneManager.SaveScene(source,path);
+                GridArtBuilder.Apply(art.map,source,false,true);
+                EditorSceneManager.SaveScene(source);
+            }
+            EditorSceneManager.OpenScene(path);
+            SceneLevelEditorOverlay.Open();
+            var view = SceneView.lastActiveSceneView;
+            view.in2DMode = true;
+            view.Frame(new Bounds(new Vector3(21,9,0),new Vector3(48,27,1)),true);
+            StartReviewObservations(path);
         }
 
         private static string lastReviewState;

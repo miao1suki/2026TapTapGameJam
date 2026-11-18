@@ -1134,21 +1134,6 @@ Transform:
   - {fileID: 1361137022}
   m_Father: {fileID: 1466863504}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!115 &287285100
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: GridArtRegionOwnershipLink
-  m_Namespace: Project.GridArt
-  m_AssemblyName: Project.GridArt.Runtime
 --- !u!1 &352452659
 GameObject:
   m_ObjectHideFlags: 0
@@ -2455,7 +2440,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 985941509}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 287285100}
+  m_Script: {fileID: 11500000, guid: d4f6d53cd89b4c7eb3242742cc1970ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Project.GridArt.Runtime::Project.GridArt.GridArtRegionOwnershipLink
   ownership: {fileID: 11400000, guid: d84b107ad906f7042baffcdf6f442f17, type: 2}

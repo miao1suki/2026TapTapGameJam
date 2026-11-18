@@ -1,0 +1,88 @@
+[
+  {
+    "at": 1794970971709,
+    "action": "enable",
+    "x": 1500,
+    "y": 295
+  },
+  {
+    "at": 1794970995309,
+    "action": "object-paint-tool",
+    "x": 1443,
+    "y": 334
+  },
+  {
+    "at": 1794971153462,
+    "action": "object-paint-shortcut",
+    "key": "b"
+  },
+  {
+    "at": 1794971267290,
+    "action": "choose-black-block",
+    "x": 1446,
+    "y": 588
+  },
+  {
+    "at": 1794971386138,
+    "action": "paint-object-cell",
+    "x": 680,
+    "y": 555
+  },
+  {
+    "at": 1794971452602,
+    "action": "undo-object-stroke",
+    "key": "Control_L+z"
+  },
+  {
+    "at": 1794971553018,
+    "action": "switch-art",
+    "x": 1723,
+    "y": 658
+  },
+  {
+    "at": 1794971603893,
+    "action": "open-art-layer",
+    "x": 1535,
+    "y": 412
+  },
+  {
+    "at": 1794971679759,
+    "action": "select-plants-layer",
+    "x": 1514,
+    "y": 529
+  },
+  {
+    "at": 1794971738449,
+    "action": "choose-generated-planter",
+    "x": 1535,
+    "y": 696
+  },
+  {
+    "at": 1794971813627,
+    "action": "paint-planter",
+    "x": 680,
+    "y": 555
+  },
+  {
+    "at": 1794971878635,
+    "action": "undo-art-stroke",
+    "key": "Control_L+z"
+  },
+  {
+    "at": 1794971953496,
+    "action": "redo-art-stroke",
+    "key": "Control_L+y"
+  },
+  {
+    "at": 1794972034672,
+    "action": "save-art",
+    "x": 1727,
+    "y": 287
+  },
+  {
+    "at": 1794972094162,
+    "action": "save-scene",
+    "x": 1645,
+    "y": 287
+  }
+]

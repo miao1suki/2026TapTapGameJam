@@ -34,6 +34,7 @@ public sealed class SceneWorkbenchTests
     [TestCase("resource-stroke-cache")]
     [TestCase("session-status-refresh")]
     [TestCase("custom-mechanism-preview")]
+    [TestCase("ownership-script-persistence")]
     public void PreservesAuthoringContract(string name)
     {
         Type audit = AppDomain.CurrentDomain.GetAssemblies()

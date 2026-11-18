@@ -49,13 +49,4 @@ namespace Project.GridArt
             return changed;
         }
     }
-
-    /// <summary>Added only by an explicit author action, keeping legacy GridArtScene serialization untouched.</summary>
-    [AddComponentMenu("")]
-    public sealed class GridArtRegionOwnershipLink : MonoBehaviour
-    {
-        [SerializeField, HideInInspector] private GridArtRegionOwnership ownership;
-        public GridArtRegionOwnership Ownership => ownership;
-        public void SetOwnership(GridArtRegionOwnership value) => ownership = value;
-    }
 }

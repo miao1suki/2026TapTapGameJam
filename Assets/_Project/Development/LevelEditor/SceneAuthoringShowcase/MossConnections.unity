@@ -1364,7 +1364,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1082441765}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 1657999818}
+  m_Script: {fileID: 11500000, guid: d4f6d53cd89b4c7eb3242742cc1970ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Project.GridArt.Runtime::Project.GridArt.GridArtRegionOwnershipLink
   ownership: {fileID: 11400000, guid: 196a59f3e49c77c489c5bc98f2b1c179, type: 2}
@@ -2072,21 +2072,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1567542674}
   m_Mesh: {fileID: 4300000, guid: c0f3c2d6c003bae4ea5dbb073dc10240, type: 2}
---- !u!115 &1657999818
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: GridArtRegionOwnershipLink
-  m_Namespace: Project.GridArt
-  m_AssemblyName: Project.GridArt.Runtime
 --- !u!1 &1666496789
 GameObject:
   m_ObjectHideFlags: 0

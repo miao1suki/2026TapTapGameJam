@@ -1,0 +1,9 @@
+Explicit fixture UI review; state observations only.
+11:01:16.388 sceneDirty=False; objects=368; mapDirty=False; revision=2; cells=387; mapHash=e18f6033fc4f8aa4a451fa717a7bf66b
+11:09:46.669 sceneDirty=True; objects=369; mapDirty=False; revision=2; cells=387; mapHash=e18f6033fc4f8aa4a451fa717a7bf66b
+11:10:52.703 sceneDirty=True; objects=368; mapDirty=False; revision=2; cells=387; mapHash=e18f6033fc4f8aa4a451fa717a7bf66b
+11:16:54.518 sceneDirty=True; objects=368; mapDirty=True; revision=3; cells=388; mapHash=cca62cbc0ce9f8eee74711a2d0dfe5ed
+11:18:01.390 sceneDirty=True; objects=368; mapDirty=True; revision=2; cells=387; mapHash=db9b3adf97f3bd56650c68d26c029c5d
+11:19:13.897 sceneDirty=True; objects=368; mapDirty=True; revision=3; cells=388; mapHash=cca62cbc0ce9f8eee74711a2d0dfe5ed
+11:20:34.907 sceneDirty=True; objects=368; mapDirty=False; revision=3; cells=388; mapHash=cca62cbc0ce9f8eee74711a2d0dfe5ed
+11:21:34.453 sceneDirty=False; objects=368; mapDirty=False; revision=3; cells=388; mapHash=cca62cbc0ce9f8eee74711a2d0dfe5ed

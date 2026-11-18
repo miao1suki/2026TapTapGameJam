@@ -1,0 +1,17 @@
+{
+  "unity": "6000.3.12f1",
+  "latest": {
+    "total": 142,
+    "passed": 142,
+    "failed": 0,
+    "durationSeconds": 37.0913233
+  },
+  "priorRun": {
+    "total": 142,
+    "passed": 141,
+    "failed": 1,
+    "failure": "legacy AttachedCanvasPanAndZoomKeepArtworkAlignedWithoutRetessellatingTiles; unchanged isolated rerun 1/1 and subsequent full run 142/142 passed"
+  },
+  "formalGamingSHA256": "16acab3b7a0b828b4dc6b41387f1ecd918bfbfa46254c2b6170018d189e7a324",
+  "formalArtSHA256": "62172b600b200d47abc5c5cebc2e03cd35c40aff12fa60da262b3a21204d688d"
+}

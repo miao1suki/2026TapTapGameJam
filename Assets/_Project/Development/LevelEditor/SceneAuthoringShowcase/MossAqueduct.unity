@@ -10381,7 +10381,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 583502521}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 1857150128}
+  m_Script: {fileID: 11500000, guid: d4f6d53cd89b4c7eb3242742cc1970ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Project.GridArt.Runtime::Project.GridArt.GridArtRegionOwnershipLink
   ownership: {fileID: 11400000, guid: f0e4ed11ea570984cbc367c929750fbe, type: 2}
@@ -37338,21 +37338,6 @@ MonoBehaviour:
   planningBoxId: moss_stone_39_10
   planningSignature: 
   planningLocalCell: {x: 0, y: 0}
---- !u!115 &1857150128
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: GridArtRegionOwnershipLink
-  m_Namespace: Project.GridArt
-  m_AssemblyName: Project.GridArt.Runtime
 --- !u!1001 &1859162973
 PrefabInstance:
   m_ObjectHideFlags: 0
